@@ -12,8 +12,6 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
-// JCIP import net.jcip.annotations.GuardedBy;
-
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.UUIDIteratorListIsEmpyException;
 import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
@@ -32,6 +30,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 import com.google.protobuf.Descriptors.EnumValueDescriptor;
+
+//JCIP import net.jcip.annotations.GuardedBy;
 
 /**
  * Handles asynchronous writes. Used only internally.

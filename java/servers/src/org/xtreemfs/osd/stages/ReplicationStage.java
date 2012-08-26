@@ -14,7 +14,6 @@ import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.buffer.BufferPool;
-import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
@@ -26,7 +25,6 @@ import org.xtreemfs.osd.replication.ObjectDissemination;
 import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.osd.storage.ObjectInformation;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList;
 
 /**
@@ -51,8 +49,8 @@ public class ReplicationStage extends Stage {
 
     private ObjectDissemination disseminationLayer;
     
-    public ReplicationStage(OSDRequestDispatcher master) {
-        super("OSD ReplSt");
+    public ReplicationStage(OSDRequestDispatcher master, int maxRequestsQueueLength) {
+        super("OSD ReplSt", maxRequestsQueueLength);
 
         // FIXME: test stuff
 //        Monitoring.enable();

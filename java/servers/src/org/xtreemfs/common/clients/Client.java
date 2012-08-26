@@ -59,8 +59,8 @@ public class Client {
     public Client(InetSocketAddress[] dirAddresses, int requestTimeout, int connectionTimeout, SSLOptions ssl)
         throws IOException {
         this.dirAddress = dirAddresses;
-        mdClient = new RPCNIOSocketClient(ssl, requestTimeout, connectionTimeout);
-        osdClient = new RPCNIOSocketClient(ssl, requestTimeout, connectionTimeout);
+        mdClient = new RPCNIOSocketClient(ssl, requestTimeout, connectionTimeout, "Client (dir)");
+        osdClient = new RPCNIOSocketClient(ssl, requestTimeout, connectionTimeout, "Client (osd)");
         DIRServiceClient dirRpcClient = new DIRServiceClient(mdClient, dirAddress[0]);
         dirClient = new DIRClient(dirRpcClient, dirAddress, 100, 1000 * 15);
         TimeSync.initializeLocal(0, 50);

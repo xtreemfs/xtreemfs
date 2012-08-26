@@ -129,10 +129,16 @@ public class VolumeOSDFilter {
 
         int index = key.indexOf('.');
 
-        if (index == -1)
-            for (OSDSelectionPolicy pol : policyMap.values())
-                pol.setAttribute(key, value);
-        else {
+        if (index == -1) {
+            Logging.logMessage(
+                    Logging.LEVEL_WARN,
+                    Category.misc,
+                    this,
+                    "'%s=%s :' XtreemFS no longer supports global policy attributes. It is necessary to specify a policy e.g., '1000.%s=%s'",
+                    key, value, key, value);
+//            for (OSDSelectionPolicy pol : policyMap.values())
+//                pol.setAttribute(key, value);
+        } else {
             short policyId = Short.parseShort(key.substring(0, index));
             OSDSelectionPolicy pol = policyMap.get(policyId);
             if (pol != null)
@@ -197,7 +203,7 @@ public class VolumeOSDFilter {
 
             String headOSD = repl.getOsdUuids(0);
 
-            // store the mapping in a temprorary replica map
+            // store the mapping in a temporary replica map
             replMap.put(headOSD, repl);
 
             // retrieve the service name from the 'known OSDs' map; if no such

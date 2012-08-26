@@ -25,12 +25,13 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrResponse;
  * Represents a volume. A volume object can be obtain by opening a volume with a client.
  */
 public abstract class Volume {
+
     public abstract void internalShutdown();
 
     /**
      * Start this volume, e.g. initialize all required things.
      */
-    public abstract void start() throws Exception;
+    protected abstract void start() throws Exception;
 
     /**
      * Close the volume.
@@ -259,7 +260,27 @@ public abstract class Volume {
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
-     * Creates a directory with the modes "mode".
+     * Creates a directory with the modes "mode". Creates missing parent directories if and only if recursive
+     * is set to true. Results in an error otherwise.
+     * 
+     * @param userCredentials
+     *            Name and Groups of the user.
+     * @param path
+     *            Path to the new directory.
+     * @param mode
+     *            Permissions of the new directory.
+     * @param recursive
+     *            Whether or not non existing parent directories should be created.
+     * 
+     * @throws IOException
+     * @throws PosixErrorException
+     * @throws AddressToUUIDNotFoundException
+     */
+    public abstract void createDirectory(UserCredentials userCredentials, String path, int mode,
+            boolean recursive) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
+
+    /**
+     * Creates a directory with the modes "mode". Results in an error when parent directory doesn't exist.
      * 
      * @param userCredentials
      *            Name and Groups of the user.
@@ -522,7 +543,7 @@ public abstract class Volume {
      * @param userCredentials
      *            Username and groups of the user.
      * @param directory
-     *            Path the the directory.
+     *            Path of the directory.
      * @param replicationPolicy
      *            Replication policy which is defined in {@link ReplicationPolicy}
      * @param replicationFactor
@@ -537,4 +558,75 @@ public abstract class Volume {
     public abstract void setDefaultReplicationPolicy(UserCredentials userCredentials, String directory,
             String replicationPolicy, int replicationFactor, int replicationFlags) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException;
+
+    
+    /**
+     * Returns a list of {@link StripeLocation} where each stripe of the file is located. 
+     * To determine where the a particular stripe is located the UUIDs of all replicas which have a
+     * copy of this stripe will be collected and resolved to hostnames. If a uuid can't be resolved 
+     * it will be deleted from the list because HDFS can't handle IP addresses.
+     *  
+     * @param userCredentials
+     *          Username and groups of the user.
+     * @param path
+     *          Path of the file.
+     * @param startSize
+     *          Size in byte where to start collecting the {@link StripeLocation}s.
+     * @param length
+     *          The length of the part of the file where the {@link StripeLocation}s should be collected
+     *          in byte.
+     * @return
+     *          {@link List} of  {@link StripeLocation}
+     *          
+     * @throws IOException
+     * @throws PosixErrorException
+     * @throws AddressToUUIDNotFoundException
+     */
+    public abstract List<StripeLocation> getStripeLocations(UserCredentials userCredentials, String path,
+            long startSize, long length) throws IOException, PosixErrorException,
+            AddressToUUIDNotFoundException;
+
+    /**
+     * Used only for HDFS Interface.
+     * 
+     * Encapsulates information about one stripe, i.e. the size in kb where the stripe begins,
+     * the length of the stripe and lists of hostnames and corresponding uuids where the stripe
+     * is located. Hostnames are usually the ones which are configured through the "hostname = " 
+     * option of the OSD. Otherwise it is the resolved hostname of registred IP address at the DIR.
+     * 
+     */
+    public class StripeLocation {
+        private long     startSize;
+        private long     length;
+        private String[] uuids;
+        
+        /**
+         * The hostname as configured with "hostname = " parameter of the OSD or otherwise the resolved
+         * hostname from the IP address registered at DIR. 
+         */
+        private String[] hostnames;
+
+        protected StripeLocation(long startSize, long length, String[] uuids, String[] hostnames) {
+            this.startSize = startSize;
+            this.length = length;
+            this.uuids = uuids;
+            this.hostnames = hostnames;
+        }
+
+        public long getStartSize() {
+            return startSize;
+        }
+
+        public long getLength() {
+            return length;
+        }
+
+        public String[] getUuids() {
+            return uuids;
+        }
+
+        public String[] getHostnames() {
+            return hostnames;
+        }
+    }
 }

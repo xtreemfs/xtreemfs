@@ -86,7 +86,7 @@ public class MRCStatusManager extends LifeCycleThread {
                     .xtreemfs_service_get_by_type(null, RPCAuthentication.authNone, RPCAuthentication.userService,
                             ServiceType.SERVICE_TYPE_MRC).toBuilder();
             
-        } catch (Exception exc) {
+        } catch (Throwable exc) {
             this.notifyCrashed(exc);
         }
         

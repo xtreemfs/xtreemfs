@@ -96,7 +96,7 @@ public class SimpleMasterEpochHandler extends LifeCycleThread implements MasterE
 
             } while (!interrupted());
         } catch (InterruptedException ex) {
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             notifyCrashed(ex);
         }
         notifyStopped();

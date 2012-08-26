@@ -14,12 +14,15 @@
 #include <vector>
 
 #include "libxtreemfs/async_write_buffer.h"
-#include "libxtreemfs/callback/execute_sync_request.h"
+#include "libxtreemfs/execute_sync_request.h"
 #include "libxtreemfs/file_info.h"
 #include "libxtreemfs/helper.h"
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/stripe_translator.h"
+#include "libxtreemfs/container_uuid_iterator.h"
+#include "libxtreemfs/simple_uuid_iterator.h"
 #include "libxtreemfs/uuid_resolver.h"
+#include "libxtreemfs/volume.h"
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "util/error_log.h"
 #include "util/logging.h"
@@ -31,7 +34,7 @@ using namespace std;
 using namespace xtreemfs::pbrpc;
 using namespace xtreemfs::util;
 
-// Fix ambigiuous map error on Solaris (see
+// Fix ambiguous map error on Solaris (see
 // http://groups.google.com/group/xtreemfs/msg/b44605dbbd7b6d0f)
 using std::map;
 
@@ -43,11 +46,13 @@ namespace xtreemfs {
  *         opened FileHandle Close() has to be called.
  */
 FileHandleImplementation::FileHandleImplementation(
+    ClientImplementation* client,
     const std::string& client_uuid,
     FileInfo* file_info,
     const xtreemfs::pbrpc::XCap& xcap,
     UUIDIterator* mrc_uuid_iterator,
     UUIDIterator* osd_uuid_iterator,
+    UUIDContainer* osd_uuid_container,
     UUIDResolver* uuid_resolver,
     xtreemfs::pbrpc::MRCServiceClient* mrc_service_client,
     xtreemfs::pbrpc::OSDServiceClient* osd_service_client,
@@ -57,9 +62,11 @@ FileHandleImplementation::FileHandleImplementation(
     const Options& options,
     const xtreemfs::pbrpc::Auth& auth_bogus,
     const xtreemfs::pbrpc::UserCredentials& user_credentials_bogus)
-    : client_uuid_(client_uuid),
+    : client_(client),
+      client_uuid_(client_uuid),
       mrc_uuid_iterator_(mrc_uuid_iterator),
       osd_uuid_iterator_(osd_uuid_iterator),
+      osd_uuid_container_(osd_uuid_container),
       uuid_resolver_(uuid_resolver),
       file_info_(file_info),
       xcap_(xcap),
@@ -112,19 +119,25 @@ int FileHandleImplementation::Read(
         POSIX_ERROR_EIO,
         "No replica found for file: " + path);
   }
-  // Pick the first replica to determine striping policy.
-  // (We assume that all replicas use the same striping policy.)
-  const StripingPolicy& striping_policy = xlocs.replicas(0).striping_policy();
+
+  // get all striping policies
+  StripeTranslator::PolicyContainer striping_policies;
+  for (uint32_t i = 0; i < xlocs.replicas_size(); ++i) {
+    striping_policies.push_back(&(xlocs.replicas(i).striping_policy()));
+  }
+
+  // NOTE: We assume that all replicas use the same striping policy type and
+  //       that all replicas use the same stripe size.
   const StripeTranslator* translator =
-      GetStripeTranslator(striping_policy.type());
+      GetStripeTranslator((*striping_policies.begin())->type());
 
   // Map offset to corresponding OSDs.
   std::vector<ReadOperation> operations;
-  translator->TranslateReadRequest(buf, count, offset, striping_policy,
+  translator->TranslateReadRequest(buf, count, offset, striping_policies,
                                    &operations);
 
-  UUIDIterator temp_uuid_iterator_for_striping;
-  string osd_uuid = "";
+  boost::scoped_ptr<ContainerUUIDIterator> temp_uuid_iterator_for_striping;
+
   // Read all objects.
   for (size_t j = 0; j < operations.size(); j++) {
     rq.set_object_number(operations[j].obj_number);
@@ -135,12 +148,11 @@ int FileHandleImplementation::Read(
     // Differ between striping and the rest (replication, no replication).
     UUIDIterator* uuid_iterator;
     if (xlocs.replicas(0).osd_uuids_size() > 1) {
-      // Replica is striped. Pick UUID from xlocset.
-      osd_uuid = GetOSDUUIDFromXlocSet(xlocs,
-                                       0,  // Use first and only replica.
-                                       operations[j].osd_offset);
-      temp_uuid_iterator_for_striping.ClearAndAddUUID(osd_uuid);
-      uuid_iterator = &temp_uuid_iterator_for_striping;
+      // Replica is striped. Get a UUID iterator from OSD offsets
+      temp_uuid_iterator_for_striping.reset(
+          new ContainerUUIDIterator(osd_uuid_container_,
+                                    operations[j].osd_offsets));
+      uuid_iterator = temp_uuid_iterator_for_striping.get();
     } else {
       // TODO(mberlin): Enhance UUIDIterator to read from different replicas.
       uuid_iterator = osd_uuid_iterator_;
@@ -212,15 +224,22 @@ int FileHandleImplementation::Write(
   }
 
   // Map operation to stripes.
-  vector<WriteOperation> operations;
-  const StripingPolicy& striping_policy = xlocs.replicas(0).striping_policy();
+
+  // get all striping policies
+  StripeTranslator::PolicyContainer striping_policies;
+  for (uint32_t i = 0; i < xlocs.replicas_size(); ++i) {
+    striping_policies.push_back(&(xlocs.replicas(i).striping_policy()));
+  }
+
+  // NOTE: We assume that all replicas use the same striping policy type and
+  //       that all replicas use the same stripe size.
   const StripeTranslator* translator =
-      GetStripeTranslator(striping_policy.type());
-  translator->TranslateWriteRequest(buf,
-                                    count,
-                                    offset,
-                                    striping_policy,
-                                    &operations);
+      GetStripeTranslator((*striping_policies.begin())->type());
+
+  // Map offset to corresponding OSDs.
+  std::vector<WriteOperation> operations;
+  translator->TranslateWriteRequest(buf, count, offset, striping_policies,
+                                   &operations);
 
   if (async_writes_enabled_) {
     string osd_uuid = "";
@@ -251,20 +270,18 @@ int FileHandleImplementation::Write(
             operations[j].data,
             operations[j].req_size,
             this,
+            this,
             GetOSDUUIDFromXlocSet(xlocs,
                                   0,  // Use first and only replica.
-                                  operations[j].osd_offset));
+                                  operations[j].osd_offsets[0]));
       } else {
         write_buffer = new AsyncWriteBuffer(write_request,
                                             operations[j].data,
                                             operations[j].req_size,
+                                            this,
                                             this);
       }
 
-      // TODO(mberlin): Currently the UserCredentials are ignored by the OSD and
-      //                therefore we avoid copying them into write_buffer.
-      // TODO(mberlin): Once the retry support for async writes is available,
-      //                modify the implementation to support the new XCapHandler
       file_info_->AsyncWrite(write_buffer);
 
       // Processing of file size updates is handled by the FileInfo's
@@ -272,7 +289,7 @@ int FileHandleImplementation::Write(
     }
   } else {
     // Synchronous writes.
-    UUIDIterator temp_uuid_iterator_for_striping;
+    SimpleUUIDIterator temp_uuid_iterator_for_striping;
     string osd_uuid = "";
     writeRequest write_request;
     write_request.mutable_file_credentials()->CopyFrom(file_credentials);
@@ -289,13 +306,13 @@ int FileHandleImplementation::Write(
       data->set_invalid_checksum_on_osd(false);
       data->set_zero_padding(0);
 
-      // Differ between striping and the rest (replication, no replication).
+      // Differ between striping and the rest.
       UUIDIterator* uuid_iterator;
       if (xlocs.replicas(0).osd_uuids_size() > 1) {
         // Replica is striped. Pick UUID from xlocset.
         osd_uuid = GetOSDUUIDFromXlocSet(xlocs,
                                          0,  // Use first and only replica.
-                                         operations[j].osd_offset);
+                                         operations[j].osd_offsets[0]);
         temp_uuid_iterator_for_striping.ClearAndAddUUID(osd_uuid);
         uuid_iterator = &temp_uuid_iterator_for_striping;
       } else {
@@ -330,7 +347,7 @@ int FileHandleImplementation::Write(
         if (file_info_->TryToUpdateOSDWriteResponse(response->response(),
                                                     xcap_)) {
           // Free everything except the response.
-          delete response->data();
+          delete [] response->data();
           delete response->error();
         } else {
           response->DeleteBuffers();
@@ -441,7 +458,7 @@ void FileHandleImplementation::TruncatePhaseTwoAndThree(
 
   assert(response->response()->has_size_in_bytes());
   // Free the rest of the msg.
-  delete response->data();
+  delete [] response->data();
   delete response->error();
 
   // Register the osd write response at this file's FileInfo.
@@ -743,7 +760,7 @@ void FileHandleImplementation::PingReplica(
   read_request.set_offset(0);
   read_request.set_length(1);  // 1 Byte.
 
-  UUIDIterator temp_uuid_iterator;
+  SimpleUUIDIterator temp_uuid_iterator;
   temp_uuid_iterator.AddUUID(osd_uuid);
 
   boost::scoped_ptr< SyncCallback<ObjectData> > response(
@@ -849,6 +866,13 @@ void FileHandleImplementation::WriteBackFileSize(
   rq.mutable_osd_write_response()->CopyFrom(owr);
   rq.set_close_file(close_file);
 
+  // Set vivaldi coordinates if vivaldi is enabled.
+  // According to UpdateFileSizeOperation.java sent coordinates are only
+  // evaluated if close_file in the request is set to true.
+  if (close_file && volume_options_.vivaldi_enable) {
+    rq.mutable_coordinates()->CopyFrom(this->client_->GetVivaldiCoordinates());
+  }
+
   boost::scoped_ptr< SyncCallback<timestampResponse> > response(
       ExecuteSyncRequest< SyncCallback<timestampResponse>* >(
           boost::bind(
@@ -870,7 +894,7 @@ void FileHandleImplementation::WriteBackFileSize(
   response->DeleteBuffers();
 }
 
-void FileHandleImplementation::WriteBackFileSizeAsync() {
+void FileHandleImplementation::WriteBackFileSizeAsync(const Options& options) {
   xtreemfs_update_file_sizeRequest rq;
   {
     boost::mutex::scoped_lock lock(mutex_);
@@ -894,19 +918,25 @@ void FileHandleImplementation::WriteBackFileSizeAsync() {
   // Set to false because a close would use a sync writeback.
   rq.set_close_file(false);
 
-  string mrc_uuid;
-  string mrc_address;
-  mrc_uuid_iterator_->GetUUID(&mrc_uuid);
-  uuid_resolver_->UUIDToAddress(mrc_uuid, &mrc_address);
-  mrc_service_client_->xtreemfs_update_file_size(mrc_address,
-                                                 auth_bogus_,
-                                                 user_credentials_bogus_,
-                                                 &rq,
-                                                 this,
-                                                 NULL);
+  // NOTE: no vivaldi coordinates needed since close_file is set false.
+
+  try {
+    string mrc_uuid;
+    string mrc_address;
+    mrc_uuid_iterator_->GetUUID(&mrc_uuid);
+    uuid_resolver_->UUIDToAddress(mrc_uuid, &mrc_address, options);
+    mrc_service_client_->xtreemfs_update_file_size(mrc_address,
+                                                   auth_bogus_,
+                                                   user_credentials_bogus_,
+                                                   &rq,
+                                                   this,
+                                                   NULL);
+  } catch (const XtreemFSException& e) {
+    // Do nothing.
+  }
 }
 
-void FileHandleImplementation::RenewXCapAsync() {
+void FileHandleImplementation::RenewXCapAsync(const Options& options) {
   XCap xcap_copy;
   {
     boost::mutex::scoped_lock lock(mutex_);
@@ -927,15 +957,19 @@ void FileHandleImplementation::RenewXCapAsync() {
 
   string mrc_uuid;
   string mrc_address;
-  mrc_uuid_iterator_->GetUUID(&mrc_uuid);
-  uuid_resolver_->UUIDToAddress(mrc_uuid, &mrc_address);
-  mrc_service_client_->xtreemfs_renew_capability(
-      mrc_address,
-      auth_bogus_,
-      user_credentials_bogus_,
-      &xcap_copy,
-      this,
-      NULL);
+  try {
+    mrc_uuid_iterator_->GetUUID(&mrc_uuid);
+    uuid_resolver_->UUIDToAddress(mrc_uuid, &mrc_address, options);
+    mrc_service_client_->xtreemfs_renew_capability(
+        mrc_address,
+        auth_bogus_,
+        user_credentials_bogus_,
+        &xcap_copy,
+        this,
+        NULL);
+  } catch (const XtreemFSException& e) {
+    // do nothing.
+  }
 }
 
 void FileHandleImplementation::CallFinished(
@@ -947,10 +981,18 @@ void FileHandleImplementation::CallFinished(
   if (error) {
     string path;
     file_info_->GetPath(&path);
+    LogLevel level = LEVEL_WARN;
+    if (error->posix_errno() == POSIX_ERROR_ENOENT) {
+      level = LEVEL_DEBUG;
+    }
     string error_msg = "Async filesize update for file: " + path
-        + "failed. Error: " + error->DebugString();
-    Logging::log->getLog(LEVEL_WARN) << error_msg << endl;
-    ErrorLog::error_log->AppendError(error_msg);
+        + " failed. Error: " + error->DebugString();
+    if (Logging::log->loggingActive(level)) {
+      Logging::log->getLog(level) << error_msg << endl;
+    }
+    if (level != LEVEL_DEBUG) {
+      ErrorLog::error_log->AppendError(error_msg);
+    }
   }
 
   file_info_->AsyncFileSizeUpdateResponseHandler(
@@ -960,7 +1002,7 @@ void FileHandleImplementation::CallFinished(
 
   // Cleanup.
   delete response_message;
-  delete data;
+  delete [] data;
   delete error;
 }
 
@@ -993,7 +1035,7 @@ void FileHandleImplementation::CallFinished(
 
   // Cleanup.
   delete new_xcap;
-  delete data;
+  delete [] data;
   delete error;
 
   xcap_renewal_pending_ = false;

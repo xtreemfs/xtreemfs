@@ -185,12 +185,12 @@ public class xtfs_cleanup_osd {
                 error("Zombies cannot be deleted and restored at the same time!", options);
             
             // connect to the OSD
-            osdClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000);
+            osdClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000, "xtfs_cleanup_osd (osd)");
             osdClient.start();
             osdClient.waitForStartup();
             osd = new OSDServiceClient(osdClient, null);
             
-            dirClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000);
+            dirClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000, "xtfs_cleanup_osd (dir)");
             dirClient.start();
             dirClient.waitForStartup();
             DIRServiceClient dirRpcClient = new DIRServiceClient(dirClient, dirAddr);

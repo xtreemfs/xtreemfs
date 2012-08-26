@@ -102,9 +102,18 @@ class Volume:
         print "xtestenv: mounting volume", self.__name, "at", self.get_mount_point_dir_path(), "with", " ".join(mount_xtreemfs_args)
 
         # Use subprocess.Popen instead of subprocess.call to run in the background
-        subprocess.Popen(mount_xtreemfs_args, stderr=stderr, stdout=stdout)
-
+        p = subprocess.Popen(mount_xtreemfs_args, stderr=stderr, stdout=stdout)
         sleep(2.0)
+        if p.returncode is not None:
+            raise RuntimeError("Failed to mount volume '" + self.__name + "' error: " + str(p.returncode))
+          
+        # Use 'waitpid' to touch any zombies and ensure that these are cleaned up first before checking /proc/<pid>.
+        try: os.waitpid(p.pid, os.WNOHANG)
+        # We dont care about the actual result of waitpid.
+        except OSError: pass
+          
+        if not os.path.exists("/proc/" + str(p.pid)):
+            raise RuntimeError("Failed to mount volume '" + self.__name + "' error: mount.xtreemfs did not successfully start.")
 
         # enable replication
         if self.__rwr_factor > 0:

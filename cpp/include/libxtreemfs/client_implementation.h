@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 by Michael Berlin, Zuse Institute Berlin
+ * Copyright (c) 2011-2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -10,13 +10,15 @@
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread/mutex.hpp>
+#include <gtest/gtest_prod.h>
 #include <list>
 #include <string>
 
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/uuid_cache.h"
-#include "libxtreemfs/uuid_iterator.h"
+#include "libxtreemfs/simple_uuid_iterator.h"
 #include "libxtreemfs/uuid_resolver.h"
+#include "libxtreemfs/vivaldi.h"
 
 namespace boost {
 class thread;
@@ -31,11 +33,14 @@ class VolumeImplementation;
 
 namespace pbrpc {
 class DIRServiceClient;
+class OSDServiceClient;
 }  // namespace pbrpc
 
 namespace rpc {
 class Client;
 class SSLOptions;
+class ClientTestFastLingerTimeout_LingerTests_Test;  // see FRIEND_TEST @bottom.
+class ClientTestFastLingerTimeoutConnectTimeout_LingerTests_Test;
 }  // namespace rpc
 
 /**
@@ -90,17 +95,25 @@ class ClientImplementation : public Client, public UUIDResolver {
   virtual UUIDResolver* GetUUIDResolver();
 
   virtual void UUIDToAddress(const std::string& uuid, std::string* address);
+  virtual void UUIDToAddress(const std::string& uuid,
+                             std::string* address,
+                             const Options& options);
   virtual void VolumeNameToMRCUUID(const std::string& volume_name,
                                    std::string* uuid);
   virtual void VolumeNameToMRCUUID(const std::string& volume_name,
-                                   UUIDIterator* uuid_iterator);
+                                   SimpleUUIDIterator* uuid_iterator);
+
+  const xtreemfs::pbrpc::VivaldiCoordinates& GetVivaldiCoordinates() const;
 
  private:
+  /** True if Shutdown() was executed. */
+  bool was_shutdown_;
+
   /** Auth of type AUTH_NONE which is required for most operations which do not
    *  check the authentication data (except Create, Delete, ListVolume(s)). */
   xtreemfs::pbrpc::Auth auth_bogus_;
 
-  UUIDIterator dir_service_addresses;
+  SimpleUUIDIterator dir_service_addresses;
 
   /** The auth_type of this object will always be set to AUTH_NONE. */
   // TODO(mberlin): change this when the DIR service supports real auth.
@@ -130,6 +143,17 @@ class ClientImplementation : public Client, public UUIDResolver {
 
   /** Random, non-persistent UUID to distinguish locks of different clients. */
   std::string client_uuid_;
+
+  /** Vivaldi thread, periodically updates vivaldi-coordinates. */
+  boost::scoped_ptr<boost::thread> vivaldi_thread_;
+  boost::scoped_ptr<xtreemfs::Vivaldi> vivaldi_;
+  boost::scoped_ptr<xtreemfs::pbrpc::OSDServiceClient> osd_service_client_;
+
+  /** Thread that handles the callbacks for asynchronous writes. */
+  boost::scoped_ptr<boost::thread> async_write_callback_thread_;
+
+  FRIEND_TEST(xtreemfs::rpc::ClientTestFastLingerTimeout, LingerTests);
+  FRIEND_TEST(xtreemfs::rpc::ClientTestFastLingerTimeoutConnectTimeout, LingerTests);
 };
 
 }  // namespace xtreemfs

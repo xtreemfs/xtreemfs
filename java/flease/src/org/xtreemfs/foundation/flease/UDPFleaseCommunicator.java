@@ -257,7 +257,7 @@ public class UDPFleaseCommunicator extends LifeCycleThread implements FleaseMess
         } catch (IOException ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
         } catch (Throwable th) {
-            notifyCrashed(th instanceof Exception ? (Exception) th : new Exception(th));
+            notifyCrashed(th);
             return;
         }
 

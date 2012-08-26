@@ -30,6 +30,12 @@ class Stat;
 class UserCredentials;
 }  // namespace pbrpc
 
+/** Uses fuse_interrupted() to check if an operation was cancelled by the user
+ *  and stops retrying to execute the request then.
+ *
+ * Always returns 0, if called from a non-Fuse thread. */
+int CheckIfOperationInterrupted();
+
 class FuseAdapter {
  public:
   /** Creates a new instance of FuseAdapter, but does not create any libxtreemfs
@@ -52,6 +58,10 @@ class FuseAdapter {
   /** Shutdown threads, close Volume and Client and blocks until all threads are
    *  stopped. */
   void Stop();
+
+  /** After successfully executing fuse_new, tell libxtreemfs to use
+   *  fuse_interrupted() if a request was cancelled by the user. */
+  void SetInterruptQueryFunction() const;
 
   void GenerateUserCredentials(
       uid_t uid,
@@ -139,6 +149,11 @@ class FuseAdapter {
 
   /** Opened libxtreemfs Volume. */
   Volume* volume_;
+
+  /** Bogus UserCredentials used for OSD requests. Since the OSD currently
+   *  (as of 5/2012) does not check the user credentials value, we sent a bogus
+   *  value. */
+  xtreemfs::pbrpc::UserCredentials osd_user_credentials_;
 
   /** Server for processing commands sent from the xtfsutil tool
       via xctl files. */

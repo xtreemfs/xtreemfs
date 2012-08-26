@@ -5,7 +5,12 @@ usage() {
 # deploys pacakges
 cat <<EOF
 Usage:
-  $0 <dist-dir> unstable|stable [nocommit]
+  $0 <dist-dir> unstable|testing|stable [nocommit]
+
+Available "targets":
+  unstable  = beta versions which contain latest changes
+  testing   = only used for testing a release
+  stable    = stable releases only
 
 If 'nocommit' is specified, the generated files will be kept in the temporary
 directory and not commited to the OpenSuse build service.
@@ -36,26 +41,41 @@ if [ -d "$TMP_DIR" ]; then
 fi
 
 cd $DIR
-if [ $CMD == "unstable" ]; then
+if [ $CMD = "unstable" -o $CMD = "testing" ]; then
 
   # create a tmp dir, check out current build files, delete all files
   mkdir -p $TMP_DIR
   cd $TMP_DIR
-  osc co home:xtreemfs:unstable xtreemfs-testing
-  rm $TMP_DIR/home:xtreemfs:unstable/xtreemfs-testing/*
+  osc co home:xtreemfs:$CMD xtreemfs-testing
+  rm $TMP_DIR/home:xtreemfs:$CMD/xtreemfs-testing/*
   cd -
   
   # copy all new files, add new and delete old files, check in project
-  cp xtreemfs-testing/* $TMP_DIR/home:xtreemfs:unstable/xtreemfs-testing
-  osc addremove $TMP_DIR/home:xtreemfs:unstable/xtreemfs-testing/
+  cp xtreemfs-testing/* $TMP_DIR/home:xtreemfs:$CMD/xtreemfs-testing
+  osc addremove $TMP_DIR/home:xtreemfs:$CMD/xtreemfs-testing/
   if [ -z "$NOCOMMIT" ]; then
-    exit 0
-    osc ci -m "update" $TMP_DIR/home:xtreemfs:unstable/xtreemfs-testing/
+    osc ci -m "update" $TMP_DIR/home:xtreemfs:$CMD/xtreemfs-testing/
   
     rm -rf $TMP_DIR
   fi
   
-elif [ $CMD == "stable" ]; then
+elif [ $CMD = "stable" ]; then
+  # Determine subproject for given version number
+  subproject=$(echo "$VER" | awk -F. '{ if (NF == 3) print $1"."$2".x"; else print "no_stable_version" }')
+  if [ "$subproject" = "no_stable_version" ]; then
+    echo "Failed to determine the subproject for this stable release: $VER"
+    echo
+    echo "Check if the required version number format x.y.z was used."
+    exit 1
+  fi
+
+  # Check if the determined subproject already exists
+  subproject_name="home:xtreemfs:$subproject"
+  osc meta prj "$subproject_name" &>/dev/null
+  if [ $rc -ne 0 ]; then
+    echo "The subproject '$subproject_name' does not exist yet. Create it first from the webinterface and see the docu for additional steps."
+    exit 1
+  fi
     
   # create release packages on the server
   osc meta pkg home:xtreemfs xtreemfs-$VERSION --file meta.xml

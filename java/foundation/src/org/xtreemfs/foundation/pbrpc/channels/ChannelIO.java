@@ -13,6 +13,7 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -64,7 +65,7 @@ public class ChannelIO {
             return channel.keyFor(sel);
     }
 
-    public int read(ByteBuffer dst) throws IOException {
+    public int read(ByteBuffer dst) throws IOException, NotYetConnectedException {
             return channel.read(dst);
     }
 
@@ -85,11 +86,11 @@ public class ChannelIO {
             return channel.validOps();
     }
 
-    public int write(ByteBuffer src) throws IOException {
+    public int write(ByteBuffer src) throws IOException, NotYetConnectedException {
             return channel.write(src);
     }
 
-    public long write(ByteBuffer[] src) throws IOException {
+    public long write(ByteBuffer[] src) throws IOException, NotYetConnectedException {
             return channel.write(src);
     }
 

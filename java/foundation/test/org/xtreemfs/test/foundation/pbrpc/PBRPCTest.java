@@ -86,7 +86,7 @@ public class PBRPCTest {
             server.start();
             server.waitForStartup();
 
-            client = new RPCNIOSocketClient(null, 15000, 5*60*1000);
+            client = new RPCNIOSocketClient(null, 15000, 5*60*1000, "testRPCClient");
             client.start();
             client.waitForStartup();
 
@@ -153,7 +153,7 @@ public class PBRPCTest {
             server.start();
             server.waitForStartup();
 
-            client = new RPCNIOSocketClient(null, 15000, 5*60*1000);
+            client = new RPCNIOSocketClient(null, 15000, 5*60*1000, "testRPCWithData");
             client.start();
             client.waitForStartup();
 
@@ -220,7 +220,7 @@ public class PBRPCTest {
             server.start();
             server.waitForStartup();
 
-            client = new RPCNIOSocketClient(null, 15000, 5*60*1000);
+            client = new RPCNIOSocketClient(null, 15000, 5*60*1000, "PBRPCTest::testEmptyMessages()");
             client.start();
             client.waitForStartup();
 

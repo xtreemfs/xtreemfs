@@ -205,13 +205,13 @@ public class xtfs_remove_osd {
         TimeSync.initializeLocal(0, 50);
 
         // connect to DIR
-        dirClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000);
+        dirClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000, "xtfs_remove_osd (dir)");
         dirClient.start();
         dirClient.waitForStartup();
         DIRServiceClient tmp = new DIRServiceClient(dirClient, dirAddress);
         dir = new DIRClient(tmp, new InetSocketAddress[] { dirAddress }, 100, 15 * 1000);
 
-        resolverClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000);
+        resolverClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000, "xtfs_remove_osd (resolver)");
         resolverClient.start();
         resolverClient.waitForStartup();
         this.resolver = UUIDResolver.startNonSingelton(dir, 1000, 10 * 10 * 1000);
@@ -221,7 +221,7 @@ public class xtfs_remove_osd {
         osdUUID.resolve();
         osdAddr = osdUUID.getAddress();
 
-        osdClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000);
+        osdClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000, "xtfs_remove_osd (osd)");
         osdClient.start();
         osdClient.waitForStartup();
         osd = new OSDServiceClient(osdClient, osdAddr);
@@ -237,7 +237,7 @@ public class xtfs_remove_osd {
             throw ioe;
         }
 
-        mrcClient = new RPCNIOSocketClient(sslOptions, 100000, 5 * 60 * 10000);
+        mrcClient = new RPCNIOSocketClient(sslOptions, 100000, 5 * 60 * 10000, "xtfs_remove_osd (mrc)");
         mrcClient.start();
         mrcClient.waitForStartup();
 

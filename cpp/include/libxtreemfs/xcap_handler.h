@@ -17,8 +17,10 @@ class XCap;
 /** An interface which allows to retrieve the latest XCap. */
 class XCapHandler {
  public:
-  virtual void GetXCap(xtreemfs::pbrpc::XCap* outdated_xcap) = 0;
+  virtual ~XCapHandler() {}
 
+  /** Update "outdated_xcap" with latest XCap. */
+  virtual void GetXCap(xtreemfs::pbrpc::XCap* outdated_xcap) = 0;
 };
 
 }  // namespace xtreemfs

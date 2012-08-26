@@ -34,8 +34,8 @@ public class LifeCycleThread extends Thread {
     private LifeCycleListener listener;
     
     public LifeCycleThread(String name) {
-        super(name);
-        startLock = new Object();
+    super(name);
+    startLock = new Object();
         stopLock = new Object();
     }
     
@@ -78,19 +78,19 @@ public class LifeCycleThread extends Thread {
     /**
      * This method should be invoked by subclasses when the thread has crashed.
      */
-    protected void notifyCrashed(Exception exc) {
+    protected void notifyCrashed(Throwable exc) {
         
         Logging.logMessage(Logging.LEVEL_CRIT, this, "service ***CRASHED***, shutting down");
         Logging.logError(Logging.LEVEL_CRIT, this, exc);
         
         synchronized (startLock) {
-            this.exc = exc;
+            this.exc = exc instanceof Exception ? (Exception) exc : new Exception(exc);
             started = true;
             startLock.notifyAll();
         }
         
         synchronized (stopLock) {
-            this.exc = exc;
+            this.exc = exc instanceof Exception ? (Exception) exc : new Exception(exc);
             stopped = true;
             stopLock.notifyAll();
         }
@@ -104,7 +104,7 @@ public class LifeCycleThread extends Thread {
      * procedure has been completed.
      * 
      * @throws Exception
-     *             if an error occured during the startup procedure
+     *             if an error occurred during the startup procedure
      */
     public void waitForStartup() throws Exception {
         synchronized (startLock) {
@@ -112,7 +112,7 @@ public class LifeCycleThread extends Thread {
             while (!started)
                 startLock.wait();
             
-            if (exc != null)
+            if (exc != null && listener == null)
                 throw exc;
         }
     }
@@ -122,7 +122,7 @@ public class LifeCycleThread extends Thread {
      * procedure has been completed.
      * 
      * @throws Exception
-     *             if an error occured during the shutdown procedure
+     *             if an error occurred during the shutdown procedure
      */
     public void waitForShutdown() throws Exception {
         synchronized (stopLock) {
@@ -130,9 +130,19 @@ public class LifeCycleThread extends Thread {
             if (!started)
                 return;
             while (!stopped)
-                stopLock.wait();
+                try {
+                    stopLock.wait();
+                } catch (InterruptedException e) {
+                    // In case this thread executes notifyCrashed(), he will
+                    // probably interrupt itself. However, this should not
+                    // interfere with the notifyCrashed() procedure and
+                    // therefore we swallow this exception.
+                    if (listener == null) {
+                        throw e;
+                    }
+                }
             
-            if (exc != null)
+            if (exc != null && listener == null)
                 throw exc;
         }
     }

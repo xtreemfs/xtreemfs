@@ -27,8 +27,9 @@
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/file_handle.h"
 #include "libxtreemfs/helper.h"
+#include "libxtreemfs/interrupt.h"
 #include "libxtreemfs/user_mapping.h"
-#include "libxtreemfs/uuid_iterator.h"
+#include "libxtreemfs/simple_uuid_iterator.h"
 #include "libxtreemfs/uuid_resolver.h"
 #include "libxtreemfs/volume.h"
 #include "libxtreemfs/xtreemfs_exception.h"
@@ -42,6 +43,11 @@
 #define ENOATTR EAGAIN
 #endif
 
+// FreeBSD has no ENODATA
+#ifndef ENODATA
+#define ENODATA EAGAIN
+#endif
+
 // Linux and Solaris have no ENOATTR
 #ifndef ENOATTR
 #define ENOATTR ENODATA
@@ -53,17 +59,23 @@ using namespace xtreemfs::util;
 
 namespace xtreemfs {
 
+int CheckIfOperationInterrupted() {
+  // TODO(mberlin): Test for other plattforms that it's safe to call this.
+  return fuse_interrupted();
+}
+
 FuseAdapter::FuseAdapter(FuseOptions* options) :
     options_(options),
-    xctl_("/.xctl$$$")
-{}
+    xctl_("/.xctl$$$") {
+  osd_user_credentials_.set_username("x");
+  osd_user_credentials_.add_groups("x");
+
+  volume_ = NULL;
+}
 
 FuseAdapter::~FuseAdapter() {}
 
 void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
-  // Set interrupt signal to SIGINT to allow the interruption of mount.xtreemfs.
-  int preserved_interrupt_signal = options_->interrupt_signal;
-  options_->interrupt_signal = SIGINT;
 
   // Start logging manually (altough it would be automatically started by
   // ClientImplementation()) as its required by UserMapping.
@@ -178,8 +190,8 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
   // Check the attributes of the Volume.
   // Ugly trick to get the addresses of all MRC UUIDs and pass them to
   // ListVolumes().
-  UUIDIterator mrc_uuids;
-  UUIDIterator mrc_addresses;
+  SimpleUUIDIterator mrc_uuids;
+  SimpleUUIDIterator mrc_addresses;
   client_->GetUUIDResolver()->VolumeNameToMRCUUID(options_->volume_name,
                                                   &mrc_uuids);
   string first_mrc_uuid = "";
@@ -261,9 +273,6 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
     user_mapping_->Start();
   }
 
-  // Restore original signal.
-  options_->interrupt_signal = preserved_interrupt_signal;
-
   // Also do not enable Fuse's POSIX checks, if the Globus or Unicore
   // mode is active, because User Certificates may be used by the under-
   // lying SSL connection. If that's the case, the MRC will ignore the
@@ -300,12 +309,6 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
   }
 
   // Add Fuse default options.
-  if (options_->interrupt_signal) {
-    required_fuse_options->push_back(strdup("-ointr"));
-    string signal = string("-ointr_signal=")
-                    + boost::lexical_cast<string>(options_->interrupt_signal);
-    required_fuse_options->push_back(strdup(signal.c_str()));
-  }
   if (options_->use_fuse_permission_checks) {
     required_fuse_options->push_back(strdup("-odefault_permissions"));
   }
@@ -324,6 +327,8 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
           (string("-ovolicon=") + default_xtreemfs_icon_path).c_str()));
     }
   }
+  // Increase default write size from 64 kB to 128 kB.
+  required_fuse_options->push_back(strdup("-oiosize=131072"));
 #endif  // __APPLE__
 #ifdef __linux
   #if FUSE_MAJOR_VERSION > 2 || \
@@ -345,11 +350,14 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
 }
 
 void FuseAdapter::Stop() {
-  // Close UserMapping.
-  user_mapping_->Stop();
+  if (user_mapping_.get()) {
+    user_mapping_->Stop();
+  }
 
   // Shutdown() Client. That does also invoke a volume->Close().
-  client_->Shutdown();
+  if (client_.get()) {
+    client_->Shutdown();
+  }
 }
 
 void FuseAdapter::GenerateUserCredentials(
@@ -379,6 +387,10 @@ void FuseAdapter::GenerateUserCredentials(
        it != groupnames.end(); ++it) {
     user_credentials->add_groups(*it);
   }
+}
+
+void FuseAdapter::SetInterruptQueryFunction() const {
+  options_->was_interrupted_function = &CheckIfOperationInterrupted;
 }
 
 void FuseAdapter::ConvertXtreemFSStatToFuse(
@@ -411,7 +423,7 @@ void FuseAdapter::ConvertXtreemFSStatToFuse(
 #endif
 
   fuse_stat->st_rdev = 0;
-  fuse_stat->st_blocks = 0;
+  fuse_stat->st_blocks = xtreemfs_stat.size() / 512;
 }
 
 xtreemfs::pbrpc::SYSTEM_V_FCNTL FuseAdapter::ConvertFlagsUnixToXtreemFS(
@@ -485,14 +497,30 @@ int FuseAdapter::statfs(const char *path, struct statvfs *statv) {
     //                       fields are ignored"
     // However, f_frsize is required on MacOSX to display the correct
     // number of total and free space (e.g. by df, see issue 247)
-    statv->f_frsize  = stat_vfs->bsize();  // file system block size
-    statv->f_bsize   = stat_vfs->bsize();  // file system block size
-    statv->f_bfree   = stat_vfs->bavail();  // # free blocks
-    // # free blocks for unprivileged users
-    statv->f_bavail  = stat_vfs->bavail();
+    // Additionally, the maximum size for f_frsize is 128 * 1024. Change
+    // the block count numbers if the default stripe size is larger.
+    boost::uint32_t default_stripe_size = stat_vfs->bsize();
+    boost::uint32_t statvfs_block_size = default_stripe_size;
+    boost::uint64_t total_blocks = stat_vfs->blocks();
+    boost::uint64_t avail_blocks = stat_vfs->bavail();
+
+#ifdef __APPLE__
+    while (statvfs_block_size > (128 * 1024)) {
+      statvfs_block_size /= 2;
+      total_blocks *= 2;
+      avail_blocks *= 2;
+    }
+
+    statv->f_bsize   = default_stripe_size;  // "preferred length of I/O requests"
+#else
+    statv->f_bsize   = statvfs_block_size;  // file system block size
+#endif  // ! __APPLE__
+
+    statv->f_frsize  = statvfs_block_size;  // file system block size
+    statv->f_blocks  = total_blocks;  // Total number of blocks in file system.
+    statv->f_bfree   = avail_blocks;  // # free blocks
+    statv->f_bavail  = avail_blocks;  // # free blocks for unprivileged users
     statv->f_files   = 2048;  // # inodes (we use here a bogus number)
-    // Total number of blocks in file system.
-    statv->f_blocks  = stat_vfs->blocks();
     statv->f_ffree   = 2048;  // # free inodes (we use here a bogus number)
     statv->f_namemax = stat_vfs->namemax();  // maximum filename length
   } catch(const PosixErrorException& e) {
@@ -661,7 +689,12 @@ int FuseAdapter::readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   CachedDirectoryEntries* cached_direntries
       = reinterpret_cast<CachedDirectoryEntries*>(fi->fh);
   // Struct was created at opendir and deleted at releasedir().
-  assert(cached_direntries != NULL);
+  if (cached_direntries == NULL) {
+    Logging::log->getLog(LEVEL_ERROR)
+        << "Crashing since Fuse tried to execute readdir() on a directory"
+           " which was not opened. Path: " << path << endl;
+    assert(cached_direntries != NULL);
+  }
   boost::mutex::scoped_lock lock(cached_direntries->mutex);
 
   // Use cached entries first if applicable
@@ -768,7 +801,7 @@ int FuseAdapter::releasedir(const char *path, struct fuse_file_info *fi) {
   assert(cached_direntries != NULL);
   delete cached_direntries->dir_entries;
   delete cached_direntries;
-  fi->fh = 0;  // NULL.
+  fi->fh = static_cast<uint64_t>(NULL);
 
   return 0;
 }
@@ -1029,6 +1062,12 @@ int FuseAdapter::ftruncate(const char *path,
 
     try {
       FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
+      if (file_handle == NULL) {
+        Logging::log->getLog(LEVEL_ERROR)
+            << "Crashing since Fuse tried to execute ftruncate() on a file"
+               " which was not opened. Path: " << path_str << endl;
+        assert(file_handle != NULL);
+      }
       file_handle->Truncate(user_credentials, new_file_size);
     } catch(const PosixErrorException& e) {
       return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
@@ -1048,14 +1087,18 @@ int FuseAdapter::write(
     const char *path, const char *buf, size_t size, off_t offset,
     struct fuse_file_info *fi) {
   const string path_str(path);
-  UserCredentials user_credentials;
-  GenerateUserCredentials(fuse_get_context(), &user_credentials);
 
   if (!xctl_.checkXctlFile(path_str)) {
     int result;
     try {
       FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
-      result = file_handle->Write(user_credentials, buf, size, offset);
+      if (file_handle == NULL) {
+        Logging::log->getLog(LEVEL_ERROR)
+            << "Crashing since Fuse tried to execute write() on a file"
+               " which was not opened. Path: " << path_str << endl;
+        assert(file_handle != NULL);
+      }
+      result = file_handle->Write(osd_user_credentials_, buf, size, offset);
     } catch(const PosixErrorException& e) {
       return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
@@ -1069,6 +1112,9 @@ int FuseAdapter::write(
     return result;
   } else {
     fuse_context* ctx = fuse_get_context();
+    UserCredentials user_credentials;
+    GenerateUserCredentials(ctx, &user_credentials);
+
     return xctl_.write(ctx->uid,
                        ctx->gid,
                        user_credentials,
@@ -1083,6 +1129,12 @@ int FuseAdapter::flush(const char *path, struct fuse_file_info *fi) {
   if (!xctl_.checkXctlFile(path_str)) {
     try {
       FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
+      if (file_handle == NULL) {
+        Logging::log->getLog(LEVEL_ERROR)
+            << "Crashing since Fuse tried to execute flush() on a file"
+               " which was not opened. Path: " << path_str << endl;
+        assert(file_handle != NULL);
+      }
       file_handle->Flush();
     } catch(const PosixErrorException& e) {
       return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
@@ -1102,12 +1154,15 @@ int FuseAdapter::read(const char *path, char *buf, size_t size, off_t offset,
          struct fuse_file_info *fi) {
   const string path_str(path);
   if (!xctl_.checkXctlFile(path_str)) {
-    UserCredentials user_credentials;
-    GenerateUserCredentials(fuse_get_context(), &user_credentials);
-
     try {
       FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
-      return file_handle->Read(user_credentials, buf, size, offset);
+      if (file_handle == NULL) {
+        Logging::log->getLog(LEVEL_ERROR)
+            << "Crashing since Fuse tried to execute read() on a file"
+               " which was not opened. Path: " << path_str << endl;
+        assert(file_handle != NULL);
+      }
+      return file_handle->Read(osd_user_credentials_, buf, size, offset);
     } catch(const PosixErrorException& e) {
       return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
@@ -1119,6 +1174,9 @@ int FuseAdapter::read(const char *path, char *buf, size_t size, off_t offset,
     }
   } else {
     fuse_context* ctx = fuse_get_context();
+    UserCredentials user_credentials;
+    GenerateUserCredentials(ctx, &user_credentials);
+
     return xctl_.read(ctx->uid, ctx->gid, path_str, buf, size, offset);
   }
 
@@ -1127,6 +1185,7 @@ int FuseAdapter::read(const char *path, char *buf, size_t size, off_t offset,
 
 int FuseAdapter::unlink(const char *path) {
   const string path_str(path);
+
   if (!xctl_.checkXctlFile(path_str)) {
     UserCredentials user_credentials;
     GenerateUserCredentials(fuse_get_context(), &user_credentials);
@@ -1160,6 +1219,12 @@ int FuseAdapter::fgetattr(
 
     try {
       FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
+      if (file_handle == NULL) {
+        Logging::log->getLog(LEVEL_ERROR)
+            << "Crashing since Fuse tried to execute fgetattr() on a file"
+               " which was not opened. Path: " << path_str << endl;
+        assert(file_handle != NULL);
+      }
       file_handle->GetAttr(user_credentials, &stat);
     } catch(const PosixErrorException& e) {
       return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
@@ -1183,7 +1248,12 @@ int FuseAdapter::release(const char *path, struct fuse_file_info *fi) {
   const string path_str(path);
   if (!xctl_.checkXctlFile(path_str)) {
     FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
-    assert(file_handle != NULL);
+    if (file_handle == NULL) {
+      Logging::log->getLog(LEVEL_ERROR)
+          << "Crashing since Fuse tried to execute release() on a file"
+             " which was not opened. Path: " << path_str << endl;
+      assert(file_handle != NULL);
+    }
 
     // Ensure POSIX semantics and release all locks of the filehandle's process.
     try {
@@ -1195,15 +1265,19 @@ int FuseAdapter::release(const char *path, struct fuse_file_info *fi) {
     try {
       file_handle->Close();
     } catch(const PosixErrorException& e) {
+      fi->fh = static_cast<uint64_t>(NULL);
       return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
+      fi->fh = static_cast<uint64_t>(NULL);
       return -1 * EIO;
     } catch(const exception& e) {
       ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
                 + string(e.what()));
+      fi->fh = static_cast<uint64_t>(NULL);
       return -1 * EIO;
     }
   }
+  fi->fh = static_cast<uint64_t>(NULL);
   return 0;
 }
 
@@ -1487,16 +1561,19 @@ int FuseAdapter::lock(const char* path, struct fuse_file_info *fi, int cmd,
   }
   // Fuse sets flock->l_whence always to SEEK_SET, meaning the offset has to be
   // interpreted relative to the start of the file.
-  UserCredentials user_credentials;
-  GenerateUserCredentials(fuse_get_context(), &user_credentials);
-
   try {
     FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
+    if (file_handle == NULL) {
+      Logging::log->getLog(LEVEL_ERROR)
+          << "Crashing since Fuse tried to execute lock() on a file"
+             " which was not opened. Path: " << path_str << endl;
+      assert(file_handle != NULL);
+    }
 
     if (cmd == F_GETLK) {
       // Only check if the lock could get acquired.
-      boost::shared_ptr<Lock> checked_lock(file_handle->CheckLock(
-          user_credentials,
+      boost::scoped_ptr<Lock> checked_lock(file_handle->CheckLock(
+          osd_user_credentials_,
           flock->l_pid,
           flock->l_start,
           flock->l_len,
@@ -1513,15 +1590,15 @@ int FuseAdapter::lock(const char* path, struct fuse_file_info *fi, int cmd,
     } else if (cmd == F_SETLK || cmd == F_SETLKW) {
       // Set the lock (type = F_RDLCK|F_WRLCK) or release it (type = F_UNLCK).
       if (flock->l_type == F_RDLCK || flock->l_type == F_WRLCK) {
-        boost::shared_ptr<Lock> checked_lock(file_handle->AcquireLock(
-            user_credentials,
+        boost::scoped_ptr<Lock> checked_lock(file_handle->AcquireLock(
+            osd_user_credentials_,
             flock->l_pid,
             flock->l_start,
             flock->l_len,
             (flock->l_type == F_WRLCK),
             (cmd == F_SETLKW)));
       } else if (flock->l_type == F_UNLCK) {
-        file_handle->ReleaseLock(user_credentials,
+        file_handle->ReleaseLock(osd_user_credentials_,
                                  flock->l_pid,
                                  flock->l_start,
                                  flock->l_len,

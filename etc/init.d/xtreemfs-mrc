@@ -6,19 +6,17 @@
 # Required-Stop:     $network $remote_fs
 # Should-Start:      xtreemfs-dir
 # Should-Stop:       $null
-# Default-Start:     2 3 4 5
+# Default-Start:     3 4 5
 # Default-Stop:
 # Short-Description: XtreemFS MRC
 # Description:       XtreemFS MRC. http://www.xtreemfs.org/
 ### END INIT INFO
 
-
 # Source function library.
-if [ -e /lib/lsb/init-functions ]
-then
-	. /lib/lsb/init-functions
+if [ -e /lib/lsb/init-functions ]; then
+    . /lib/lsb/init-functions
 else
-	. /etc/init.d/functions
+    . /etc/init.d/functions
 fi
 
 LOCKDIR=/var/lock/subsys
@@ -33,30 +31,33 @@ CONFIG_MRC=/etc/xos/xtreemfs/mrcconfig.properties
 LOG_MRC=/var/log/xtreemfs/mrc.log
 
 if [ -z $JAVA_HOME ]; then
-	export JAVA_HOME=/usr
+    export JAVA_HOME=/usr
 fi
-JAVA_CALL="$JAVA_HOME/bin/java -cp /usr/share/java/XtreemFS.jar:/usr/share/java/BabuDB.jar:/usr/share/java/Flease.jar:/usr/share/java/protobuf-java-2.3.0.jar:/usr/share/java/Foundation.jar:/usr/share/java/jdmkrt.jar:/usr/share/java/jdmktk.jar"
+JAVA_CALL="$JAVA_HOME/bin/java -ea -cp /usr/share/java/XtreemFS.jar:/usr/share/java/BabuDB.jar:/usr/share/java/Flease.jar:/usr/share/java/protobuf-java-2.3.0.jar:/usr/share/java/Foundation.jar:/usr/share/java/jdmkrt.jar:/usr/share/java/jdmktk.jar:/usr/share/java/commons-codec-1.3.jar"
+
+# For SELinux we need to use 'runuser' not 'su'
+if [ -x "/sbin/runuser" ]; then
+    SU="/sbin/runuser"
+else
+    SU="/bin/su"
+fi
 
 pre_check() {
-
-        exists=`grep -c $XTREEMFS_USER /etc/passwd`
-        if [ $exists -eq 0 ]
-        then
-                echo "user $XTREEMFS_USER does not exist."
-                exit 1
-        fi
-        dir=`dirname $LOG_MRC`
-        if [ ! -e $dir ]
-        then
-                echo "directory for logfiles $dir does not exist"
-        fi
+    exists=`grep -c $XTREEMFS_USER /etc/passwd`
+    if [ $exists -eq 0 ]; then
+        echo "user $XTREEMFS_USER does not exist."
+        exit 1
+    fi
+    dir=`dirname $LOG_MRC`
+    if [ ! -e $dir ]; then
+        echo "directory for logfiles $dir does not exist"
+    fi
 }
 
 start() {
-    if [ -f $LOCKFILE ]
-    then
-	echo -n "XtreemFS Metadata and Replica Catalog (MRC) already started"
-	echo
+    if [ -f $LOCKFILE ]; then
+        echo -n "XtreemFS Metadata and Replica Catalog (MRC) already started"
+        echo
         return 0
     fi
 
@@ -67,17 +68,16 @@ start() {
     echo -e "Starting XtreemFS Metadata and Replica Catalog (MRC)...\n\n" >> $LOG_MRC
 
     echo -n "starting XtreemFS Metadata and Replica Catalog (MRC)..."
-    sudo -u $XTREEMFS_USER $JAVA_CALL org.xtreemfs.mrc.MRC $CONFIG_MRC >> $LOG_MRC 2>&1 &
+    $SU -s /bin/sh $XTREEMFS_USER -c "$JAVA_CALL org.xtreemfs.mrc.MRC $CONFIG_MRC" >> $LOG_MRC 2>&1 &
     PROCPID=$!
     echo $PROCPID > $PID_MRC
     sleep 1s
 
-    if [ -e /proc/$PROCPID ]
-    then
-	echo
+    if [ -e /proc/$PROCPID ]; then
+        echo
     else
-	echo
-	return 1
+        echo
+        return 1
     fi
 
     if [ ! -d $LOCKDIR ]; then mkdir -p $LOCKDIR; fi
@@ -86,11 +86,10 @@ start() {
 }
 
 stop() {
-    if [ -f $PID_MRC ]
-    then
+    if [ -f $PID_MRC ]; then
         echo -n "stopping XtreemFS Metadata and Replica Catalog (MRC)..."
-        killproc -p $PID_MRC sudo
-	echo
+        killproc -p $PID_MRC $SU
+        echo
     fi
 
     rm -f $LOCKFILE
@@ -98,20 +97,18 @@ stop() {
 }
 
 status() {
-    if [ -f $PID_MRC ]
-    then
+    if [ -f $PID_MRC ]; then
         PROCPID=`cat $PID_MRC`
-	if [ ! -e /proc/$PROCPID ]
-	then
-		echo "XtreemFS Metadata and Replica Catalog (MRC) has crashed"
-		return 1
-	else
-		echo "XtreemFS Metadata and Replica Catalog (MRC) is running"
-		return 0
-	fi
+        if [ ! -e /proc/$PROCPID ]; then
+            echo "XtreemFS Metadata and Replica Catalog (MRC) has crashed"
+            return 1
+        else
+            echo "XtreemFS Metadata and Replica Catalog (MRC) is running"
+            return 0
+        fi
     else
-	echo "XtreemFS Metadata and Replica Catalog (MRC)) is not running"
-	return 3
+        echo "XtreemFS Metadata and Replica Catalog (MRC)) is not running"
+        return 3
     fi
 }
 
@@ -139,7 +136,8 @@ case "$1" in
     try-restart)
         ## Stop the service and if this succeeds (i.e. the
         ## service was running before), start it again.
-        if [ `$0 status >/dev/null` ]; then
+        $0 status >/dev/null
+        if [ $? -eq 0 ]; then
           $0 restart
           result=$?
         else

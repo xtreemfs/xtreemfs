@@ -28,6 +28,8 @@ import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.HeartbeatThread.ServiceDataGenerator;
 import org.xtreemfs.common.auth.AuthenticationProvider;
+import org.xtreemfs.common.config.RemoteConfigHelper;
+import org.xtreemfs.common.config.ServiceConfig;
 import org.xtreemfs.common.monitoring.StatusMonitor;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
@@ -152,6 +154,19 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             config.setDirectoryService(new InetSocketAddress(dir.getAddress(), dir.getPort()));
         }
         
+        if (config.isInitializable()) {
+            try {
+                ServiceConfig remoteConfig = RemoteConfigHelper.getConfigurationFromDIR(config);
+                config.mergeConfig(remoteConfig);
+                // TODO(mberlin): Also add support for remote BabuDB configurations.
+            } catch (Exception e) {
+                e.printStackTrace();
+                Logging.logMessage(Logging.LEVEL_WARN, config.getUUID(),
+                        "couldn't fetch configuration file from DIR");
+                Logging.logError(Logging.LEVEL_DEBUG, config.getUUID(), e);
+            }
+        }
+        
         if (Logging.isInfo())
             Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this, "use SSL=%b", config.isUsingSSL());
         
@@ -173,7 +188,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this,
                     "outgoing server connections will be bound to '%s'", config.getAddress());
         
-        clientStage = new RPCNIOSocketClient(sslOptions, RPC_TIMEOUT, CONNECTION_TIMEOUT, -1, -1, bindPoint);
+        clientStage = new RPCNIOSocketClient(sslOptions, RPC_TIMEOUT, CONNECTION_TIMEOUT, -1, -1, bindPoint, "MRCRequestDispatcher");
         clientStage.setLifeCycleListener(this);
         
         serverStage = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, sslOptions);
@@ -323,8 +338,10 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         httpServ.start();
         
         heartbeatThread = new HeartbeatThread("MRC Heartbeat Thread", dirClient, config.getUUID(), gen, config, false);
+        heartbeatThread.setLifeCycleListener(this);
         
         onCloseReplicationThread = new OnCloseReplicationThread(this);
+        onCloseReplicationThread.setLifeCycleListener(this);
         
         if (replicated) {
             mrcMonitor = new MRCStatusManager(this);

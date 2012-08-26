@@ -3,7 +3,6 @@ modules {
     name = "xtfs-dir-plugin"
     language = "python"
     # The following params are examples only
-    #  They are not actually used by the temp module
     param Host {
       value = localhost
     }

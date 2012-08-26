@@ -67,10 +67,13 @@ src_install() {
 	java-pkg_dojar java/servers/dist/XtreemFS.jar
 
 	java-pkg_jarinto /usr/share/${PN}/java/lib
-	java-pkg_dojar java/lib/protobuf-java-2.3.0.jar java/lib/Flease.jar java/lib/BabuDB.jar
+	java-pkg_dojar java/lib/protobuf-java-2.3.0.jar java/lib/BabuDB.jar
 
 	java-pkg_jarinto /usr/share/${PN}/java/foundation/dist
 	java-pkg_dojar java/foundation/dist/Foundation.jar
+
+	java-pkg_jarinto /usr/share/${PN}/java/flease/dist
+	java-pkg_dojar java/flease/dist/Flease.jar
 
 	java-pkg_jarinto /usr/share/${PN}/server-repl-plugin/lib
 	java-pkg_dojar contrib/server-repl-plugin/lib/Flease.jar contrib/server-repl-plugin/lib/PBRPC.jar contrib/server-repl-plugin/lib/protobuf-java-2.3.0.jar

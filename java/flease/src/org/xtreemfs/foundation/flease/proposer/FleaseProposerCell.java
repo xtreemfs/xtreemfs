@@ -14,6 +14,8 @@ import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.flease.Flease;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.flease.comm.ProposalNumber;
+import org.xtreemfs.foundation.flease.proposer.CellAction.ActionName;
+import org.xtreemfs.foundation.flease.proposer.CellAction.CellActionList;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 
@@ -154,6 +156,8 @@ public class FleaseProposerCell {
     private boolean requestMasteEpoch;
 
     private long masterEpochNumber;
+    
+    private final CellActionList actions;
 
     /**
      * the value to use for prepare, accept and learn
@@ -163,6 +167,7 @@ public class FleaseProposerCell {
     private FleaseMessage           messageSent;
 
     FleaseProposerCell(ASCIIString cellId, List<InetSocketAddress> acceptors, long senderId) {
+        this.actions = new CellActionList();
         this.cellId = cellId;
         this.acceptors = acceptors;
         this.responses = new ArrayList(acceptors.size()+1);
@@ -175,6 +180,14 @@ public class FleaseProposerCell {
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"opened new cell id %s with majority = %d ",cellId,majority);
         }
+    }
+    
+    public void addAction(ActionName actionName) {
+        actions.addAction(actionName);
+    }
+    
+    public void addAction(ActionName actionName, String message) {
+        actions.addAction(actionName, message);
     }
 
     public boolean majorityAvail() {
@@ -273,6 +286,40 @@ public class FleaseProposerCell {
         this.handoverTo = handoverTo;
     }
 
-
+    public String toString() {
+        StringBuilder text = new StringBuilder();
+        text.append(getClass().getSimpleName());
+        text.append(":{");
+        text.append(" cellId:");
+        text.append(cellId);
+        text.append(" ballotNo:");
+        text.append(ballotNo);
+        text.append(" numAcceptors:");
+        text.append(acceptors != null ? acceptors.size() : "null");
+        text.append(" numResponses:");
+        text.append(responses != null ? responses.size() : "null");
+        text.append(" cellState:");
+        text.append(cellState);
+        text.append(" numFail:");
+        text.append(numFailures);
+        text.append(" majority:");
+        text.append(majority);
+        text.append(" lastPTSP:");
+        text.append(lastPrepateTimestamp_ms);
+        text.append(" viewId:");
+        text.append(viewId);
+        text.append(" prevL:");
+        text.append(prevLease != null ? prevLease : "none");
+        text.append(" markedClose:");
+        text.append(markedClose);
+        text.append(" rqME:");
+        text.append(requestMasteEpoch);
+        text.append(" msgSent:");
+        text.append(messageSent);
+        text.append(" actions:");
+        text.append(actions);
+        text.append("}");
+        return text.toString();
+    }
 
 }

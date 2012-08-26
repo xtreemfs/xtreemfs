@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009-2010 by Bjoern Kolbeck, Zuse Institute Berlin
+ *                    2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -44,14 +45,24 @@ typedef boost::unordered_map<int32_t, ClientRequest*> request_map;
 typedef std::map<int32_t, ClientRequest*> request_map;
 #endif
 
+/** Created by xtreemfs::rpc::Client for every connection.
+ *
+ * This class contains the per-connection data.
+ *
+ * @remarks Special care has to be taken regarding the boost::asio callback
+ *          functions. In particular, every callback must not access members
+ *          when the error_code equals asio::error::operation_aborted.
+ *          Additionally, no further actions must be taken when
+ *          connection_state_ is set to CLOSED.
+ */
 class ClientConnection {
  public:
-  enum State {
-    CONNECTING,
-    IDLE,
-    ACTIVE,
-    CLOSED,
-    WAIT_FOR_RECONNECT
+  struct PendingRequest {
+    PendingRequest(uint32_t call_id, ClientRequest* rq)
+        : call_id(call_id), rq(rq) {}
+
+    uint32_t call_id;
+    ClientRequest* rq;
   };
 
   ClientConnection(const string& server_name,
@@ -67,20 +78,36 @@ class ClientConnection {
 
   void DoProcess();
   void AddRequest(ClientRequest *request);
-  void Close();
+  void Close(const std::string& error);
+  void SendError(xtreemfs::pbrpc::POSIXErrno posix_errno,
+                 const string &error_message);
+  void Reset();
 
   boost::posix_time::ptime last_used() const {
       return last_used_;
   }
 
+  std::string GetServerAddress() const {
+    return server_name_ + ":" + server_port_;
+  }
+
  private:
+  enum State {
+    CONNECTING,
+    IDLE,
+    ACTIVE,
+    CLOSED,
+    WAIT_FOR_RECONNECT
+  };
+
   RecordMarker *receive_marker_;
   char *receive_hdr_, *receive_msg_, *receive_data_;
 
   char *receive_marker_buffer_;
 
   State connection_state_;
-  std::queue<ClientRequest*> requests_;
+  /** Queue of requests which have not been sent out yet. */
+  std::queue<PendingRequest> requests_;
   ClientRequest* current_request_;
 
   const string server_name_;
@@ -90,11 +117,13 @@ class ClientConnection {
   AbstractSocketChannel *socket_;
 
   boost::asio::ip::tcp::endpoint *endpoint_;
+  /** Points to the Client's request_table_. */
   request_map *request_table_;
   boost::asio::deadline_timer timer_;
   const int32_t connect_timeout_s_;
   const int32_t max_reconnect_interval_s_;
   boost::posix_time::ptime next_reconnect_at_;
+  boost::posix_time::ptime last_connect_was_at_;
   int32_t reconnect_interval_s_;
   boost::posix_time::ptime last_used_;
 
@@ -112,13 +141,8 @@ class ClientConnection {
   void PostReadMessage(const boost::system::error_code& err);
   void PostReadRecordMarker(const boost::system::error_code& err);
   void PostWrite(const boost::system::error_code& err,
-          std::size_t bytes_written);
-
-  void SendError(xtreemfs::pbrpc::POSIXErrno posix_errno,
-          const string &error_message);
-  void Reset();
+                 std::size_t bytes_written);
   void DeleteInternalBuffers();
-
   void CreateChannel();
 };
 

@@ -9,10 +9,7 @@
 package org.xtreemfs.mrc;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Properties;
 
 
@@ -123,14 +120,6 @@ public class MRCConfig extends ServiceConfig {
         return (Integer) parameter.get(Parameter.OSD_CHECK_INTERVAL);	
     }
     
-    public InetSocketAddress getDirectoryService() {
-        return (InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE);
-    }
-    
-    public void setDirectoryService(InetSocketAddress addr) {
-        parameter.put(Parameter.DIRECTORY_SERVICE, addr);
-    }
-    
     public boolean isNoAtime() {
         return (Boolean) parameter.get(Parameter.NOATIME);
     }
@@ -167,28 +156,6 @@ public class MRCConfig extends ServiceConfig {
 
     }
 
-    public InetSocketAddress[] getDirectoryServices() {
-        List<InetSocketAddress> addresses = new ArrayList();
-        addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE));
-        if (parameter.get(Parameter.DIRECTORY_SERVICE0) != null) {
-            addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE0));
-        }
-        if (parameter.get(Parameter.DIRECTORY_SERVICE1) != null) {
-            addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE1));
-        }
-        if (parameter.get(Parameter.DIRECTORY_SERVICE2) != null) {
-            addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE2));
-        }
-        if (parameter.get(Parameter.DIRECTORY_SERVICE3) != null) {
-            addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE3));
-        }
-        if (parameter.get(Parameter.DIRECTORY_SERVICE4) != null) {
-            addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE4));
-        }
-        return addresses.toArray(new InetSocketAddress[0]);
-    }
-
-    
     /**
      * Set default values according to the value in {@link Parameter} for all configuration 
      * parameter which are null.

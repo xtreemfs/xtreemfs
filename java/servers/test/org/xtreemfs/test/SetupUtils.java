@@ -349,7 +349,7 @@ public class SetupUtils {
         final SSLOptions sslOptions = SSL_ON ? new SSLOptions(new FileInputStream(CERT_DIR + "Client.p12"),
                 "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trusted.jks"), "passphrase",
                 SSLOptions.JKS_CONTAINER, false) : null;
-        return new RPCNIOSocketClient(sslOptions, timeout, 5 * 60 * 1000);
+        return new RPCNIOSocketClient(sslOptions, timeout, 5 * 60 * 1000, "SetupUtils");
     }
     
     static DIRServiceClient createDIRClient(RPCNIOSocketClient client) throws IOException {

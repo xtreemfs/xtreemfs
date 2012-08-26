@@ -99,6 +99,7 @@ SyncCallback<ReturnMessageType>::SyncCallback()
 
 template <class ReturnMessageType>
 SyncCallback<ReturnMessageType>::~SyncCallback() {
+  // TODO(mberlin): Is a lock here really needed?!
   boost::lock_guard<boost::mutex> lock(cond_lock_);
   delete request_;
 }
@@ -157,9 +158,11 @@ ReturnMessageType* SyncCallback<ReturnMessageType>::response() {
 
 template <class ReturnMessageType>
 void SyncCallback<ReturnMessageType>::DeleteBuffers() {
-  delete[] request_->resp_data();
-  delete request_->error();
-  delete request_->resp_message();
+  if (request_) {
+    request_->clear_error();
+    request_->clear_resp_message();
+    request_->clear_resp_data();
+  }
 }
 
 }  // namespace rpc

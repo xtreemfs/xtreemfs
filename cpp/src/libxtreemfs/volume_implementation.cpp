@@ -10,15 +10,15 @@
 #include <algorithm>
 #include <boost/bind.hpp>
 #include <boost/thread/thread.hpp>
+#include <limits>
 #include <map>
 #include <string>
 
-#include "libxtreemfs/callback/execute_sync_request.h"
 #include "libxtreemfs/client_implementation.h"
+#include "libxtreemfs/execute_sync_request.h"
 #include "libxtreemfs/file_handle_implementation.h"
 #include "libxtreemfs/file_info.h"
 #include "libxtreemfs/helper.h"
-#include "libxtreemfs/options.h"
 #include "libxtreemfs/stripe_translator.h"
 #include "libxtreemfs/uuid_iterator.h"
 #include "libxtreemfs/xtreemfs_exception.h"
@@ -51,6 +51,7 @@ VolumeImplementation::VolumeImplementation(
       volume_name_(volume_name),
       volume_ssl_options_(ssl_options),
       volume_options_(options),
+      periodic_threads_options_(options),
       metadata_cache_(options.metadata_cache_size,
                       options.metadata_cache_ttl_s) {
   // Set AuthType to AUTH_NONE as it's currently not used.
@@ -59,6 +60,10 @@ VolumeImplementation::VolumeImplementation(
   user_credentials_bogus_.set_username("xtreemfs");
 
   mrc_uuid_iterator_.reset(mrc_uuid_iterator);
+
+  // Disable retries and interrupted querying for periodic threads.
+  periodic_threads_options_.max_tries = 1;
+  periodic_threads_options_.was_interrupted_function = NULL;
 }
 
 VolumeImplementation::~VolumeImplementation() {
@@ -98,9 +103,11 @@ void VolumeImplementation::Start() {
 
   // Start periodic threads.
   xcap_renewal_thread_.reset(new boost::thread(boost::bind(
-      &xtreemfs::VolumeImplementation::PeriodicXCapRenewal, this)));
+      &xtreemfs::VolumeImplementation::PeriodicXCapRenewal,
+      this)));
   filesize_writeback_thread_.reset(new boost::thread(boost::bind(
-      &xtreemfs::VolumeImplementation::PeriodicFileSizeUpdate, this)));
+      &xtreemfs::VolumeImplementation::PeriodicFileSizeUpdate,
+      this)));
 }
 
 /**
@@ -326,6 +333,11 @@ FileHandle* VolumeImplementation::OpenFile(
   rq.set_flags(flags);
   rq.set_mode(mode);
   rq.set_attributes(0);
+
+  // set vivaldi coordinates if vivaldi is enabled
+  if (volume_options_.vivaldi_enable) {
+    rq.mutable_coordinates()->CopyFrom(this->client_->GetVivaldiCoordinates());
+  }
 
   boost::scoped_ptr< SyncCallback<openResponse> > response(
       ExecuteSyncRequest< SyncCallback<openResponse>* >(
@@ -687,7 +699,7 @@ void VolumeImplementation::UnlinkAtOSD(const FileCredentials& fc,
   rq_osd.mutable_file_credentials()->CopyFrom(fc);
   rq_osd.set_file_id(fc.xcap().file_id());
 
-  UUIDIterator osd_uuid_iterator;
+  SimpleUUIDIterator osd_uuid_iterator;
 
   // Remove _all_ replicas.
   for (int k = 0; k < xlocs.replicas_size(); k++) {
@@ -886,6 +898,10 @@ xtreemfs::pbrpc::DirectoryEntries* VolumeImplementation::ReadDir(
     boost::uint32_t count,
     bool names_only) {
   DirectoryEntries* result = NULL;
+
+  if (count == 0) {
+    count = numeric_limits<boost::uint32_t>::max();
+  }
 
   result = metadata_cache_.GetDirEntries(path, offset, count);
   if (result != NULL) {
@@ -1316,7 +1332,7 @@ void VolumeImplementation::RemoveReplica(
           volume_options_));
 
   // Now unlink the replica at the OSD.
-  UUIDIterator osd_uuid_iterator;
+  SimpleUUIDIterator osd_uuid_iterator;
   osd_uuid_iterator.AddUUID(osd_uuid);
 
   unlink_osd_Request unlink_osd_Request;
@@ -1408,7 +1424,8 @@ FileInfo* VolumeImplementation::GetFileInfoOrCreateUnmutexed(
     return it->second;
   } else {
     // File has not been opened yet, add it.
-    FileInfo* file_info(new FileInfo(this,
+    FileInfo* file_info(new FileInfo(client_,
+                                     this,
                                      file_id,
                                      path,
                                      replicate_on_close,
@@ -1464,7 +1481,7 @@ void VolumeImplementation::PeriodicXCapRenewal() {
       map<boost::uint64_t, FileInfo*>::iterator it;
       for (it = open_file_table_.begin();
            it != open_file_table_.end(); ++it) {
-        it->second->RenewXCapsAsync();
+        it->second->RenewXCapsAsync(periodic_threads_options_);
       }
 
       if (Logging::log->loggingActive(LEVEL_DEBUG)) {
@@ -1498,7 +1515,7 @@ void VolumeImplementation::PeriodicFileSizeUpdate() {
       map<boost::uint64_t, FileInfo*>::iterator it;
       for (it = open_file_table_.begin();
            it != open_file_table_.end(); ++it) {
-        it->second->WriteBackFileSizeAsync();
+        it->second->WriteBackFileSizeAsync(periodic_threads_options_);
       }
 
       if (Logging::log->loggingActive(LEVEL_DEBUG)) {

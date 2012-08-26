@@ -19,6 +19,8 @@
 #include <string>
 
 #include "libxtreemfs/metadata_cache.h"
+#include "libxtreemfs/options.h"
+#include "libxtreemfs/uuid_iterator.h"
 #include "rpc/sync_callback.h"
 
 namespace boost {
@@ -40,9 +42,7 @@ class SSLOptions;
 class ClientImplementation;
 class FileHandleImplementation;
 class FileInfo;
-class Options;
 class StripeTranslator;
-class UUIDIterator;
 class UUIDResolver;
 
 /**
@@ -332,6 +332,10 @@ class VolumeImplementation : public Volume {
 
   /** libxtreemfs Options object which includes all program options */
   const Options& volume_options_;
+
+  /** Shallow copy of volume_options_, with disabled retry and interrupt
+   *  functionality. */
+  Options periodic_threads_options_;
 
   /** The PBRPC protocol requires an Auth & UserCredentials object in every
    *  request. However there are many operations which do not check the content

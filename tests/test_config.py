@@ -42,7 +42,7 @@ VolumeConfigs = {
                     'stripe_width': 1,
                     'rwr_factor': 0,
                     'ronly_factor': 0,
-                    'mount_options': [ '-o', 'user_xattr', '-o', 'allow_other' ],
+                    'mount_options': [ '-ouser_xattr', '-oallow_other' ],
                     'mkfs_options':  [ '--chown-non-root' ]
                 },
     'regular_two_osds' : {
@@ -58,7 +58,7 @@ VolumeConfigs = {
                     'stripe_width': 1,
                     'rwr_factor': 0,
                     'ronly_factor': 0,
-                    'mount_options': [ '--metadata-cache-size=0', '-o', 'user_xattr', '-o', 'allow_other' ],
+                    'mount_options': [ '--metadata-cache-size=0', '-ouser_xattr', '-oallow_other' ],
                     'mkfs_options':  [ '--chown-non-root' ]
                 },
     'directio' : {
@@ -73,14 +73,21 @@ VolumeConfigs = {
                     'stripe_width': 2,
                     'rwr_factor': 0,
                     'ronly_factor': 0,
-                    'mount_options': [ '--max-read-tries=9999' ]
+                    'mount_options': [ ]
                 },
     'replicated_wqrq' : {
                     'stripe_size': 128,
                     'stripe_width': 1,
                     'rwr_factor': 3,
                     'ronly_factor': 0,
-                    'mount_options': [ '--max-read-tries=50', '--max-write-tries=50', '--max-tries=50' ]
+                    'mount_options': [ ]
+                },
+    'replicated_wqrq_asyncwrites' : {
+                    'stripe_size': 128,
+                    'stripe_width': 1,
+                    'rwr_factor': 3,
+                    'ronly_factor': 0,
+                    'mount_options': [ '--max-writeahead=1310720' ]
                 },
     'replicated_war1' : {
                     'stripe_size': 128,
@@ -88,7 +95,7 @@ VolumeConfigs = {
                     'rwr_policy': 'all',
                     'rwr_factor': 2,
                     'ronly_factor': 0,
-                    'mount_options': [ '--max-read-tries=50', '--max-write-tries=50', '--max-tries=50' ]
+                    'mount_options': [ ]
                 },
 }
 
@@ -103,43 +110,43 @@ Tests = [
     {
         'name': 'Erichs dd write',
         'file': '02_erichs_ddwrite.py',
-        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1' ],
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1', 'replicated_wqrq_asyncwrites' ],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
     },
     {
         'name': 'Erichs data integrity test',
         'file': '03_erichs_data_integrity_test.py',
-        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1' ],
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1', 'replicated_wqrq_asyncwrites' ],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
     },
     {
         'name': 'Find Grep Tar',
         'file': '05_findgreptar.py',
-        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'nomdcache', 'replicated_wqrq', 'replicated_war1' ],
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'nomdcache', 'replicated_wqrq', 'replicated_war1', 'replicated_wqrq_asyncwrites' ],
         'TestSets': [ 'full', 'short' ]
     },
     {
         'name': 'fsx',
         'file': 'fsx.sh',
-        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'nomdcache', 'replicated_wqrq', 'replicated_war1' ],
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'nomdcache', 'replicated_wqrq', 'replicated_war1', 'replicated_wqrq_asyncwrites' ],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
     },
     {
         'name': 'bonnie',
         'file': '10_bonnie.py',
-        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1' ],
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1', 'replicated_wqrq_asyncwrites' ],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
     },
     {
         'name': 'IOZone diagnostic',
         'file': '11_iozone_diagnostic.py',
-        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1' ],
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1', 'replicated_wqrq_asyncwrites' ],
         'TestSets': [ 'full' ]
     },
     {
         'name': 'IOZone throughput',
         'file': '12_iozone_throughput.py',
-        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1' ],
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1', 'replicated_wqrq_asyncwrites' ],
         'TestSets': [ 'full' ]
     },
     {

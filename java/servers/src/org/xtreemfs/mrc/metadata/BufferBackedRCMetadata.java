@@ -165,13 +165,18 @@ public class BufferBackedRCMetadata {
     
     public BufferBackedXLocList getXLocList() {
         
+        // directories do not have XLocLists
+        if (directory)
+            return null;
+        
         if (cachedXLocList == null) {
             
             byte[] bytes = valBuf.array();
             int index = valBuf.getShort(RC_XLOC_OFFSET);
             
-            if (bytes.length - index > 0)
-                cachedXLocList = new BufferBackedXLocList(bytes, index, bytes.length - index);
+            assert (bytes.length - index >= 0);
+            if (bytes.length - index != 0)
+            	cachedXLocList = new BufferBackedXLocList(bytes, index, bytes.length - index);
         }
         
         return cachedXLocList;

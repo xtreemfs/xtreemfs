@@ -32,9 +32,8 @@ public class RPCClientConnection {
 
     public static final int RETRY_RESET_IN_MS = 500;
 
-    /** max wait is one hour
-     */
-    public static final int MAX_RETRY_WAIT = 1000*60;
+    /** max wait is one minute */
+    public static final int MAX_RETRY_WAIT_MS = 1000*60;
 
     private ChannelIO  channel;
 
@@ -56,6 +55,8 @@ public class RPCClientConnection {
 
     private ByteBuffer[]         requestBuffers;
 
+    private RPCClientRequest	 pendingRequest;
+    
     private ReceiveState         receiveState;
 
     private final InetSocketAddress    endpoint;
@@ -97,11 +98,12 @@ public class RPCClientConnection {
     void connectFailed() {
         numConnectAttempts++;
         long waitt = Math.round(RETRY_RESET_IN_MS*Math.pow(2,this.numConnectAttempts));
-        if (waitt > MAX_RETRY_WAIT)
-            waitt = MAX_RETRY_WAIT;
+        if (waitt > MAX_RETRY_WAIT_MS) {
+            waitt = MAX_RETRY_WAIT_MS;
+        }
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
-                "next reconnect possible after %d s, %d", (waitt / 1000), this.numConnectAttempts);
+                "next reconnect possible after %d s, attempt = %d", (waitt / 1000), this.numConnectAttempts);
         this.nextReconnectTime = System.currentTimeMillis()+waitt;
     }
 
@@ -165,18 +167,20 @@ public class RPCClientConnection {
         return responseRecordMarker;
     }
 
-
-    /**
-     * @return the endpoint
-     */
-    public InetSocketAddress getEndpoint() {
+    public String getEndpointString() {
+        String endpoint = "unknown";
+        try {
+            endpoint = endpoint.toString();
+        } catch (Exception ex2) {
+        }
+        
         return endpoint;
     }
 
     /**
      * @return the requestBuffers
      */
-    public ByteBuffer[] getSendBuffers() {
+    public ByteBuffer[] getRequestBuffers() {
         return requestBuffers;
     }
 
@@ -187,6 +191,14 @@ public class RPCClientConnection {
         this.requestBuffers = requestBuffers;
     }
 
+    public RPCClientRequest getPendingRequest() {
+        return pendingRequest;
+    }
+    
+    public void setPendingRequest(RPCClientRequest pendingRequest) {
+    	this.pendingRequest = pendingRequest;
+    }
+    
     /**
      * @return the receiveState
      */

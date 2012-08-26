@@ -9,10 +9,7 @@
 package org.xtreemfs.osd;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -68,7 +65,14 @@ public class OSDConfig extends ServiceConfig {
             Parameter.SNMP_ACL,
             Parameter.FAILOVER_MAX_RETRIES,
             Parameter.FAILOVER_WAIT,
-            Parameter.MAX_CLIENT_Q
+            Parameter.MAX_CLIENT_Q,
+            Parameter.MAX_REQUEST_QUEUE_LENGTH,
+            Parameter.VIVALDI_RECALCULATION_INTERVAL_IN_MS,
+            Parameter.VIVALDI_RECALCULATION_EPSILON_IN_MS,
+            Parameter.VIVALDI_ITERATIONS_BEFORE_UPDATING,
+            Parameter.VIVALDI_MAX_RETRIES_FOR_A_REQUEST,
+            Parameter.VIVALDI_MAX_REQUEST_TIMEOUT_IN_MS,
+            Parameter.VIVALDI_TIMER_INTERVAL_IN_MS
     };
     
     /**
@@ -113,7 +117,7 @@ public class OSDConfig extends ServiceConfig {
         
         this.customParams = new HashMap<String, String>();
         for (Entry<String, String> entry : hm.entrySet())
-            if (entry.getKey().startsWith(OSD_CUSTOM_RROPERTY_PREFIX))
+            if (entry.getKey().startsWith(OSD_CUSTOM_PROPERTY_PREFIX))
                 customParams.put(entry.getKey(), entry.getValue());
         
     }
@@ -121,7 +125,7 @@ public class OSDConfig extends ServiceConfig {
     public void read() throws IOException {
         
         for (String propName : this.props.stringPropertyNames()) {
-            if (propName.startsWith(ServiceConfig.OSD_CUSTOM_RROPERTY_PREFIX)) {
+            if (propName.startsWith(ServiceConfig.OSD_CUSTOM_PROPERTY_PREFIX)) {
                 customParams.put(propName, this.props.getProperty(propName));
             }
         }
@@ -130,35 +134,6 @@ public class OSDConfig extends ServiceConfig {
             parameter.put(param, readParameter(param));
         }
         
-    }
-
-    public InetSocketAddress getDirectoryService() {
-        return (InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE);
-    }
-
-    public InetSocketAddress[] getDirectoryServices() {
-        List<InetSocketAddress> addresses = new ArrayList();
-        addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE));
-        if (parameter.get(Parameter.DIRECTORY_SERVICE0) != null) {
-            addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE0));
-        }
-        if (parameter.get(Parameter.DIRECTORY_SERVICE1) != null) {
-            addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE1));
-        }
-        if (parameter.get(Parameter.DIRECTORY_SERVICE2) != null) {
-            addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE2));
-        }
-        if (parameter.get(Parameter.DIRECTORY_SERVICE3) != null) {
-            addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE3));
-        }
-        if (parameter.get(Parameter.DIRECTORY_SERVICE4) != null) {
-            addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE4));
-        }
-        return addresses.toArray(new InetSocketAddress[0]);
-    }
-
-    public void setDirectoryService(InetSocketAddress addr) {
-        parameter.put(Parameter.DIRECTORY_SERVICE, addr);
     }
 
     public String getObjDir() {
@@ -300,11 +275,42 @@ public class OSDConfig extends ServiceConfig {
         return (Integer) parameter.get(Parameter.MAX_CLIENT_Q);
     }
     
+    public int getMaxRequestsQueueLength() {
+        return (Integer) parameter.get(Parameter.MAX_REQUEST_QUEUE_LENGTH);
+    }
+    
     public HashMap<String, String> toHashMap() {
         HashMap<String, String> hm = super.toHashMap();
         hm.putAll(customParams);
         return hm;
     }
+    
+    
+    public int getVivaldiRecalculationInterval() {
+        return (Integer) parameter.get(Parameter.VIVALDI_RECALCULATION_INTERVAL_IN_MS);
+    }
+    
+    public int getVivaldiRecalculationEpsilon() {
+        return (Integer) parameter.get(Parameter.VIVALDI_RECALCULATION_EPSILON_IN_MS);
+    }
+
+    public int getVivaldiIterationsBeforeUpdating() {
+        return (Integer) parameter.get(Parameter.VIVALDI_ITERATIONS_BEFORE_UPDATING);
+    }
+
+    public int getVivaldiMaxRetriesForARequest() {
+        return (Integer) parameter.get(Parameter.VIVALDI_MAX_RETRIES_FOR_A_REQUEST);
+    }
+
+    public int getVivaldiMaxRequestTimeout() {
+        return (Integer) parameter.get(Parameter.VIVALDI_MAX_REQUEST_TIMEOUT_IN_MS);
+    }
+
+    public int getVivaldiTimerInterval() {
+        return (Integer) parameter.get(Parameter.VIVALDI_TIMER_INTERVAL_IN_MS);
+    }
+
 }
+
     
 

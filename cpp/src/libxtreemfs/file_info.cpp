@@ -23,18 +23,21 @@ using namespace std;
 namespace xtreemfs {
 
 FileInfo::FileInfo(
+    ClientImplementation* client,
     VolumeImplementation* volume,
     boost::uint64_t file_id,
     const std::string& path,
     bool replicate_on_close,
     const xtreemfs::pbrpc::XLocSet& xlocset,
     const std::string& client_uuid)
-    : volume_(volume),
+    : client_(client),
+      volume_(volume),
       file_id_(file_id),
       path_(path),
       replicate_on_close_(replicate_on_close),
       reference_count_(0),
       xlocset_(xlocset),
+      osd_uuid_container_(xlocset),
       client_uuid_(client_uuid),
       osd_write_response_(NULL),
       osd_write_response_status_(kClean),
@@ -44,10 +47,8 @@ FileInfo::FileInfo(
                            volume->osd_service_client(),
                            volume->auth_bogus(),
                            volume->user_credentials_bogus(),
-                           volume->volume_options().max_writeahead,
-                           volume->volume_options().max_writeahead_requests,
-                           volume->volume_options().max_write_tries) {
-  // Add the UUIDs of all replicas to the UUID Iterator.
+                           volume->volume_options()) {
+  // Add the head OSD UUIDs of all replicas to the UUID Iterator.
   for (int i = 0; i < xlocset_.replicas_size(); i++) {
     osd_uuid_iterator_.AddUUID(xlocset_.replicas(i).osd_uuids(0));
   }
@@ -68,11 +69,13 @@ FileHandleImplementation* FileInfo::CreateFileHandle(
     bool async_writes_enabled,
     bool used_for_pending_filesize_update) {
   FileHandleImplementation* file_handle = new FileHandleImplementation(
+      client_,
       volume_->client_uuid(),
       this,
       xcap,
       volume_->mrc_uuid_iterator(),
       &osd_uuid_iterator_,
+      &osd_uuid_container_,
       volume_->uuid_resolver(),
       volume_->mrc_service_client(),
       volume_->osd_service_client(),
@@ -163,7 +166,7 @@ bool FileInfo::TryToUpdateOSDWriteResponse(
   }
 }
 
-void FileInfo::WriteBackFileSizeAsync() {
+void FileInfo::WriteBackFileSizeAsync(const Options& options) {
   boost::mutex::scoped_lock lock(osd_write_response_mutex_);
 
   // Only update pending file size updates.
@@ -174,18 +177,18 @@ void FileInfo::WriteBackFileSizeAsync() {
     osd_write_response_status_ = kDirtyAndAsyncPending;
     file_handle->set_osd_write_response_for_async_write_back(
         *(osd_write_response_.get()));
-    file_handle->WriteBackFileSizeAsync();
+    file_handle->WriteBackFileSizeAsync(options);
   }
 }
 
-void FileInfo::RenewXCapsAsync() {
+void FileInfo::RenewXCapsAsync(const Options& options) {
   boost::mutex::scoped_lock lock(open_file_handles_mutex_);
 
   for (list<FileHandleImplementation*>::iterator it =
            open_file_handles_.begin();
        it != open_file_handles_.end();
        ++it) {
-    (*it)->RenewXCapAsync();
+    (*it)->RenewXCapAsync(options);
   }
 }
 

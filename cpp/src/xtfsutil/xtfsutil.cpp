@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2011 by Bjoern Kolbeck, Zuse Institute Berlin
+ *               2011-2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -99,6 +100,9 @@ bool executeOperation(const string& xctl_file,
 #ifdef __sun
       cerr << "This is a known issue on Solaris." << endl;
 #endif  // __sun
+#ifdef __FreeBSD__
+      cerr << "This is a known issue of FUSE for FreeBSD 0.4.4." << endl;
+#endif  // __FreeBSD__
     } else {
       cerr << "Read invalid JSON from xctl file: " << result << endl;
     }
@@ -124,6 +128,51 @@ string formatBytes(uint64_t bytes) {
   }
 }
 
+void OutputACLs(Json::Value* stat) {
+  if ((*stat).isMember("acl")) {
+    if ((*stat)["acl"].isObject() && !(*stat)["acl"].empty()) {
+      bool no_output_yet = true;
+      const size_t kPaddingCount = 21;
+      const string kACLOutputPrefix = "ACLs";
+      Json::Value::Members acl_entry_names;
+
+      const size_t kACLClassesCount = 4;
+      string acl_classes[kACLClassesCount] = {"u:", "g:", "m:", "o:"};
+
+      for (size_t i = 0; i < kACLClassesCount; i++) {
+        const string& prefix = acl_classes[i];
+
+        // Output default entry first.
+        if ((*stat)["acl"].isMember(prefix)) {
+          cout << (no_output_yet ? kACLOutputPrefix : string(kACLOutputPrefix.length(), ' '))  // NOLINT
+               << string(kPaddingCount - kACLOutputPrefix.length(), ' ')
+               << prefix << ":" << (*stat)["acl"][prefix].asString() << endl;
+          no_output_yet = false;
+
+          (*stat)["acl"].removeMember(prefix);
+        }
+
+        // Output remaining entries of the same class.
+        acl_entry_names = (*stat)["acl"].getMemberNames();
+        for (Json::Value::Members::const_iterator iter
+                 = acl_entry_names.begin();
+             iter != acl_entry_names.end();
+             ++iter) {
+          if ((*iter).substr(0, prefix.length()).compare(prefix) == 0) {
+            cout << (no_output_yet ? kACLOutputPrefix : string(kACLOutputPrefix.length(), ' '))  // NOLINT
+                 << string(kPaddingCount - kACLOutputPrefix.length(), ' ')
+                 << *iter << ":" << (*stat)["acl"][*iter].asString() << endl;
+            no_output_yet = false;
+          }
+        }
+      }
+    } else if ((*stat)["acl"].isString()
+               && !(*stat)["acl"].asString().empty()) {
+      cout << "ACL                  " << (*stat)["acl"].asString() << endl;
+    }  // else: do not output empty ACLs.
+  }
+}
+
 // Stat a file/directory/volume.
 bool getattr(const string& xctl_file,
              const string& path) {
@@ -139,9 +188,7 @@ bool getattr(const string& xctl_file,
     cout << "XtreemFS URL         " << stat["url"].asString() << endl;
     cout << "Owner                " << stat["owner"].asString() << endl;
     cout << "Group                " << stat["group"].asString() << endl;
-    if (stat.isMember("acl") && !stat["acl"].asString().empty()) {
-      cout << "ACL                  " << stat["acl"].asString() << endl;
-    }
+    OutputACLs(&stat);
     cout << "Type                 ";
     int type = boost::lexical_cast<int>(stat["object_type"].asString());
     switch (type) {
@@ -200,7 +247,7 @@ bool getattr(const string& xctl_file,
           cout << "Num. Files/Dirs      "
             << stat["num_files"].asString()
             << " / " << stat["num_dirs"].asString() << endl;
-          
+
           cout << "Access Control p.    ";
           if (stat["ac_policy_id"].asString() == "1") {
             cout << "Null Policy (no access control)";
@@ -255,6 +302,13 @@ bool getattr(const string& xctl_file,
 
         } else {
           cout << "not set" << endl;
+        }
+
+        cout << "Snapshots enabled    ";
+        if (stat.isMember("snapshots_enabled")) {
+          cout << (stat["snapshots_enabled"].asString() == "true" ? "yes" : "no") << endl;
+        } else {
+          cout << "unknown" << endl;
         }
 
         cout << "Selectable OSDs      ";
@@ -384,10 +438,10 @@ bool SetDefaultRP(const string& xctl_file,
   }
   request["replication-factor"] = factor;
   request["replication-flags"] = 0;
-  if (policy == "RONLY" && is_full) {
+  if (request["update-policy"] == "ronly" && is_full) {
     request["replication-flags"] = xtreemfs::pbrpc::REPL_FLAG_FULL_REPLICA
         | xtreemfs::pbrpc::REPL_FLAG_STRATEGY_RAREST_FIRST;
-  } else if (policy == "RONLY" && !is_full) {
+  } else if (request["update-policy"] == "ronly" && !is_full) {
     request["replication-flags"] =
         xtreemfs::pbrpc::REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETCHING;
   }
@@ -461,7 +515,7 @@ bool SetReplicationPolicy(const string& xctl_file,
         << "the replication policy." << endl;
     return false;
   }
-  
+
   Json::Value response;
   if (executeOperation(xctl_file, request, &response)) {
     cout << "Changed replication policy to: "
@@ -714,8 +768,98 @@ bool ListPolicyAttrs(const string& xctl_file,
   }
 }
 
+bool EnableDisableSnapshots(const string& xctl_file,
+                     const string& path,
+                     const variables_map& vm) {
+  Json::Value request(Json::objectValue);
+  request["operation"] = "enableDisableSnapshots";
+  request["path"] = path;
+
+  if (vm.count("enable-snapshots") > 0) {
+    request["snapshots_enabled"] = "true";
+  } else if (vm.count("disable-snapshots") > 0) {
+    request["snapshots_enabled"] = "false";
+  } else {
+    return false;
+  }
+
+  Json::Value response;
+  if (executeOperation(xctl_file, request, &response)) {
+    cout << "Success." << endl;
+    return true;
+  } else {
+    cerr << "FAILED" << endl;
+    return false;
+  }
+}
+
+bool ListSnapshots(const string& xctl_file,
+                     const string& path,
+                     const variables_map& vm) {
+  Json::Value request(Json::objectValue);
+  request["operation"] = "listSnapshots";
+  request["path"] = path;
+
+  Json::Value response;
+  if (executeOperation(xctl_file, request, &response)) {
+    if (response["result"]["list_snapshots"].empty() ||
+        // .empty() does not work for "", check the string directly.
+        (response["result"]["list_snapshots"].isString() &&
+         response["result"]["list_snapshots"].asString().empty())) {
+      cout << "No snapshots available." << endl;
+    } else {
+      if (response["result"]["list_snapshots"].isString()) {
+        cout << "List of available snapshots: "
+             << response["result"]["list_snapshots"].asString()
+             << endl;
+      } else if (response["result"]["list_snapshots"].isArray()) {
+        cout << "List of available snapshots:" << endl;
+        const Json::Value& snapshots = response["result"]["list_snapshots"];
+        for (int i = 0; i < snapshots.size(); i++) {
+          cout << "- " << snapshots[i].asString() << endl;
+        }
+      } else {
+        cerr << "FAILED (to parse the list of snapshots)" << endl;
+        return false;
+      }
+    }
+    return true;
+  } else {
+    cerr << "FAILED" << endl;
+    return false;
+  }
+}
+
+bool CreateDeleteSnapshot(const string& xctl_file,
+                          const string& path,
+                          const variables_map& vm) {
+  Json::Value request(Json::objectValue);
+  request["operation"] = "createDeleteSnapshot";
+  request["path"] = path;
+  if (vm.count("create-snapshot") > 0) {
+    request["snapshots"] = "cr " + vm["create-snapshot"].as<string>();
+  } else if (vm.count("create-snapshot-non-recursive") > 0) {
+    request["snapshots"] = "c "
+        + vm["create-snapshot-non-recursive"].as<string>();
+  } else if (vm.count("delete-snapshot") > 0) {
+    request["snapshots"] = "d " + vm["delete-snapshot"].as<string>();
+  } else {
+    return false;
+  }
+
+  Json::Value response;
+  if (executeOperation(xctl_file, request, &response)) {
+    cout << "Success." << endl;
+    return true;
+  } else {
+    cerr << "FAILED" << endl;
+    return false;
+  }
+}
+
 // Sets/Modifies/Removes the ACL.
-bool SetRemoveACL(const string& full_path,
+bool SetRemoveACL(const string& xctl_file,
+                  const string& path,
                   const variables_map& vm) {
   string contents;
   if (vm.count("set-acl") > 0) {
@@ -725,27 +869,20 @@ bool SetRemoveACL(const string& full_path,
   } else {
     return false;
   }
-  int result = -1;
-#ifdef __linux
-  result = setxattr(full_path.c_str(),
-                        "xtreemfs.acl",
-                        contents.c_str(),
-                        contents.size(),
-                        0);
-#elif __APPLE__
-  result = setxattr(full_path.c_str(),
-                        "xtreemfs.acl",
-                        contents.c_str(),
-                        contents.size(),
-                        0,
-                        0);
-#endif
-  if (result != 0) {
-    cerr << "Cannot add/modify/delete ACL entry: " << strerror(errno) << endl;
+
+  Json::Value request(Json::objectValue);
+  request["operation"] = "setRemoveACL";
+  request["path"] = path;
+  request["acl"] = contents;
+
+  Json::Value response;
+  if (executeOperation(xctl_file, request, &response)) {
+    cout << "Success." << endl;
+    return true;
+  } else {
+    cerr << "FAILED" << endl;
     return false;
   }
-  cout << "Success." << endl;
-  return true;
 }
 
 string GetPathOnVolume(const char* real_path_cstr) {
@@ -762,7 +899,7 @@ string GetPathOnVolume(const char* real_path_cstr) {
 
   string real_path = string(real_path_cstr);
   std::string line;
-  const boost::regex mtab_mount_point_re("^xtreemfs@[^\\t]+\\t([^\\t]+)\\tfuse\\t");
+  const boost::regex mtab_mount_point_re("^xtreemfs@[^\\t]+\\t([^\\t]+)\\tfuse\\t");  // NOLINT
   bool entry_found = false;
   while (getline(in, line)) {
     boost::smatch matcher;
@@ -780,7 +917,7 @@ string GetPathOnVolume(const char* real_path_cstr) {
         " found in " + string(mtab_file) +
         " for path: " + string(real_path_cstr));
   }
-#else
+#elif defined __linux || __APPLE__
   // get xtreemfs.url xattr.
   char xtfs_url[2048];
   int length = -1;
@@ -791,15 +928,15 @@ string GetPathOnVolume(const char* real_path_cstr) {
 #endif
 
   if (length <= 0) {
-      struct stat sb;
-      if (stat(real_path_cstr, &sb)) {
-          // Show more meaningful error message if path does not exist at all.
-          throw xtreemfs::XtreemFSException("File/Directory does not exist: "
-              + string(real_path_cstr));
-      } else {
-          throw xtreemfs::XtreemFSException("Path doesn't point to an entity on"
-              " an XtreemFS volume!\nxattr xtreemfs.url is missing.");
-      }
+    struct stat sb;
+    if (stat(real_path_cstr, &sb)) {
+      // Show more meaningful error message if path does not exist at all.
+      throw xtreemfs::XtreemFSException("File/Directory does not exist: "
+          + string(real_path_cstr));
+    } else {
+        throw xtreemfs::XtreemFSException("Path doesn't point to an entity on"
+            " an XtreemFS volume!\nxattr xtreemfs.url is missing.");
+    }
   }
 
   string url(xtfs_url, length);
@@ -809,6 +946,40 @@ string GetPathOnVolume(const char* real_path_cstr) {
     throw xtreemfs::XtreemFSException("Invalid XtreemFS url!");
   }
   path_on_volume = matcher[1];
+#elif __FreeBSD__
+  string real_path = string(real_path_cstr);
+  FILE* in;
+  char buf[1024];
+
+  if (!(in = popen("mount", "r"))) {
+    pclose(in);
+    throw xtreemfs::XtreemFSException("Failed to run the 'mount' command to"
+        " find out the path relative to the volume root.");
+  }
+
+  const boost::regex mount_point_re("^/dev/fuse[0-9] on ([^ ]+) \\(fusefs");  // NOLINT
+  bool entry_found = false;
+  while (fgets(buf, sizeof(buf), in) != NULL) {
+    string line(buf);
+
+    boost::smatch matcher;
+    if (boost::regex_search(line, matcher, mount_point_re)) {
+      string mount_point = matcher[1];
+      if (real_path.substr(0, mount_point.length()) == mount_point) {
+        path_on_volume = real_path.substr(mount_point.length());
+        entry_found = true;
+        break;
+      }
+    }
+  }
+  pclose(in);
+
+  if (!entry_found) {
+    throw xtreemfs::XtreemFSException("No matching mounted XtreemFS volume"
+        " found in 'mount' output for path: " + string(real_path_cstr));
+  }
+#else
+  #error "Plattform not supported yet by xtfsutil. Please add plattform-specific code to GetPathOnVolume() or disable compilation of xtfsutil in the CMake specification."  // NOLINT
 #endif
 
   return path_on_volume;
@@ -866,11 +1037,31 @@ int main(int argc, char **argv) {
        "adds/modifies an ACL entry, format: u|g|m|o:[<name>]:[<rwx>|<octal>]")
       ("del-acl", value<string>(),
        "removes an ACL entry, format: u|g|m|o:<name>");
+
+  options_description snapshot_desc("Snapshot Options");
+  snapshot_desc.add_options()
+      ("enable-snapshots",
+       "Enable snapshots on the volume.")
+      ("disable-snapshots",
+       "Disable snapshots on the volume.")
+      ("list-snapshots",
+       "List all available snapshots.")
+      ("create-snapshot",
+       value<string>(),
+       "Create a snapshot of the volume/directory with the name <arg>. If the argument is \"\", the current server time will be used as snapshot name.")
+      ("create-snapshot-non-recursive",
+       value<string>(),
+       "Same as --create-snapshot, however sub-directories are excluded.")
+      ("delete-snapshot",
+       value<string>(),
+       "Delete the snapshot with the name given as argument.");
+
+
   positional_options_description pd;
   pd.add("path", 1);
-  
+
   options_description cmdline_options;
-  cmdline_options.add(desc).add(hidden);
+  cmdline_options.add(desc).add(snapshot_desc).add(hidden);
   variables_map vm;
   try {
     store(command_line_parser(argc, argv)
@@ -908,7 +1099,7 @@ int main(int argc, char **argv) {
 
   if (vm.count("help") || option_path.empty()) {
     cerr << "Usage: xtfsutil <path>" << endl;
-    cerr << desc << endl;
+    cerr << desc << snapshot_desc << endl;
     return 1;
   }
 
@@ -960,7 +1151,9 @@ int main(int argc, char **argv) {
   char* real_path_cstr = realpath(option_path.c_str(), NULL);
   if (!real_path_cstr) {
     cerr << "xtfsutil failed to find the absolute path of: "
-         << option_path << endl;
+         << option_path
+         << " Maybe the path does not exist?"
+         << endl;
     return 1;
   }
   string path_on_volume;
@@ -1008,9 +1201,18 @@ int main(int argc, char **argv) {
     return DeleteReplica(xctl_file, path_on_volume, vm) ? 0 : 1;
   } else if (vm.count("list-osds") > 0) {
     return GetSuitableOSDs(xctl_file, path_on_volume, vm) ? 0 : 1;
-  } else if (vm.count("set-acl") > 0
-             || vm.count("del-acl") > 0) {
-    return SetRemoveACL(string(real_path_cstr), vm) ? 0 : 1;
+  } else if (vm.count("set-acl") > 0 ||
+             vm.count("del-acl") > 0) {
+    return SetRemoveACL(xctl_file, path_on_volume, vm) ? 0 : 1;
+  } else if (vm.count("enable-snapshots") > 0 ||
+             vm.count("disable-snapshots") > 0) {
+    return EnableDisableSnapshots(xctl_file, path_on_volume, vm) ? 0 : 1;
+  } else if (vm.count("list-snapshots") > 0) {
+    return ListSnapshots(xctl_file, path_on_volume, vm) ? 0 : 1;
+  } else if (vm.count("create-snapshot") > 0 ||
+             vm.count("create-snapshot-non-recursive") > 0 ||
+             vm.count("delete-snapshot") > 0) {
+    return CreateDeleteSnapshot(xctl_file, path_on_volume, vm) ? 0 : 1;
   } else if (vm.count("errors") > 0) {
     return ShowErrors(xctl_file, path_on_volume, vm) ? 0 : 1;
   } else {

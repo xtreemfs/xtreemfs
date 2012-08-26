@@ -12,6 +12,15 @@
 #include <iostream>
 #include <string>
 
+#ifdef __APPLE__
+  // for getpwuid
+  #include <sys/types.h>
+  #include <pwd.h>
+#else
+  // for getenv
+  #include <cstdlib>
+#endif
+
 #include "rpc/ssl_options.h"
 #include "libxtreemfs/pbrpc_url.h"
 #include "libxtreemfs/version_management.h"
@@ -34,6 +43,7 @@ Options::Options()
       error_handling_("Error Handling options"),
       ssl_options_("SSL options"),
       grid_options_("Grid Support options"),
+      vivaldi_options_("Vivaldi Options"),
       xtreemfs_advanced_options_("XtreemFS Advanced options") {
   // Version information.
   // If you change this, do not forget to change this also in xtfsutil.cpp!
@@ -94,7 +104,6 @@ Options::Options()
   connect_timeout_s = 60;
   request_timeout_s = 60;
   linger_timeout_s = 600;  // 10 Minutes.
-  interrupt_signal = 0;  // Disable interruption support by default.
 
   // SSL options.
   ssl_pem_cert_path = "";
@@ -112,12 +121,54 @@ Options::Options()
   grid_gridmap_location_default_unicore = "/etc/grid-security/d-grid_uudb";
   grid_gridmap_reload_interval_m = 60;  // 60 Minutes = 1 Hour.
 
+  // Vivaldi Options
+  vivaldi_enable = false;
+  vivaldi_enable_dir_updates = false;
+#ifdef __linux__
+  char* home_dir = getenv("HOME");
+  if (home_dir) {
+    vivaldi_filename = string(home_dir) + "/.xtreemfs_vivaldi_coordinates";
+  } else {
+    vivaldi_filename = ".xtreemfs_vivaldi_coordinates";
+  }
+#elif defined __APPLE__
+  struct passwd* pwd = getpwuid(getuid());
+  if (pwd) {
+    vivaldi_filename = string(pwd->pw_dir) + "/.xtreemfs_vivaldi_coordinates";
+  } else {
+    vivaldi_filename = ".xtreemfs_vivaldi_coordinates";
+  }
+#elif defined WIN32
+  char* home_drive = getenv("HOMEDRIVE");
+  char* home_path = getenv("HOMEPATH");
+  if (home_drive && home_path) {
+    vivaldi_filename = string(home_drive) + string(home_path)
+                       + "/.xtreemfs_vivaldi_coordinates";
+  } else {
+    vivaldi_filename = ".xtreemfs_vivaldi_coordinates";
+  }
+#else
+  vivaldi_filename = ".xtreemfs_vivaldi_coordinates";
+#endif
+  vivaldi_recalculation_interval_s = 1000 * 300; // in ms
+  vivaldi_recalculation_epsilon_s = 1000 * 30; // in ms
+  vivaldi_max_iterations_before_updating = 12;
+  vivaldi_max_request_retries = 2;
+
   // Advanced XtreemFS options.
   periodic_file_size_updates_interval_s = 60;  // Default: 1 Minute.
   periodic_xcap_renewal_interval_s = 60;  // Default: 1 Minute.
+  vivaldi_zipf_generator_skew = 0.5;
 
-  // By default no additional user mapping is used.
-  user_mapping_type = UserMapping::kNone;
+  // Internal options, not available from the command line interface.
+  was_interrupted_function = NULL;
+
+  // NOTE: Deprecated options are no longer needed as members
+
+#ifndef WIN32
+  // User mapping.
+  user_mapping_type = UserMapping::kUnix;
+#endif  // !WIN32
 
   all_descriptions_initialized_ = false;
 }
@@ -159,9 +210,6 @@ void Options::GenerateProgramOptionsDescriptions() {
             ->default_value(max_writeahead_requests),
         "Maximum number of pending write requests per file (Asynchronous writes"
         " will block if this or max-writeahead is reached first).")
-        //TODO(bjko): Insert new OSD parameter.
-//        "\nIf you increase this value, please take care of the value "
-//        " in the OSD config and do not set it to high to avoid flooding.")
     ("readdir-chunk-size",
         po::value(&readdir_chunk_size)->default_value(readdir_chunk_size),
         "Number of entries requested per readdir.");
@@ -191,19 +239,6 @@ void Options::GenerateProgramOptionsDescriptions() {
     ("retry-delay",
         po::value(&retry_delay_s)->default_value(retry_delay_s),
         "Wait time after a request failed until next attempt (in seconds).")
-    ("interrupt-signal",
-        po::value(&interrupt_signal)->default_value(interrupt_signal),
-        "Retry of a request is interrupted if this signal is sent "
-        "(set to 0 to disable it)."
-#ifdef __APPLE__
-        " (This option has no effect with MacFuse as it supports to interrupt"
-        " all requests by default.)"
-#endif  // __APPLE__
-#ifdef __linux
-        "\n(If not disabled and Fuse is used, -o intr and -o intr_signal=10 "
-        "(=SIGUSR1) will be passed to Fuse by default.)"
-#endif  // __linux
-        )
     ("connect-timeout",
         po::value(&connect_timeout_s)->default_value(connect_timeout_s),
         "Timeout after which a connection attempt will be retried "
@@ -217,22 +252,22 @@ void Options::GenerateProgramOptionsDescriptions() {
 
   ssl_options_.add_options()
     ("pem-certificate-file-path",
-        po::value(&ssl_pem_cert_path)->implicit_value(ssl_pem_cert_path),
+        po::value(&ssl_pem_cert_path)->default_value(ssl_pem_cert_path),
         "PEM certificate file path")
     ("pem-private-key-file-path",
-        po::value(&ssl_pem_key_path)->implicit_value(ssl_pem_key_path),
+        po::value(&ssl_pem_key_path)->default_value(ssl_pem_key_path),
         "PEM private key file path")
     ("pem-private-key-passphrase",
-        po::value(&ssl_pem_key_pass)->implicit_value(ssl_pem_key_pass),
-        "PEM private key passphrase (If no value is given, the user will be"
-        " prompted for it.)")
+        po::value(&ssl_pem_key_pass)->default_value(ssl_pem_key_pass),
+        "PEM private key passphrase  (If the argument is set to '-', the user"
+        " will be prompted for the passphrase.)")
     ("pkcs12-file-path",
-        po::value(&ssl_pkcs12_path)->implicit_value(ssl_pkcs12_path),
+        po::value(&ssl_pkcs12_path)->default_value(ssl_pkcs12_path),
         "PKCS#12 file path")
     ("pkcs12-passphrase",
-        po::value(&ssl_pkcs12_pass)->implicit_value(ssl_pkcs12_pass),
-        "PKCS#12 passphrase (If no value is given, the user will be prompted"
-        " for it.)");
+        po::value(&ssl_pkcs12_pass)->default_value(ssl_pkcs12_pass),
+        "PKCS#12 passphrase (If the argument is set to '-', the user will be"
+        " prompted for the passphrase.)");
 
   grid_options_.add_options()
     ("grid-ssl",
@@ -256,20 +291,73 @@ void Options::GenerateProgramOptionsDescriptions() {
         "Interval (in minutes) after which the gridmap file will be checked for"
         " changes and reloaded if necessary.");
 
+  vivaldi_options_.add_options()
+      ("vivaldi-enable",
+          po::value(&vivaldi_enable)->default_value(vivaldi_enable)
+            ->zero_tokens(),
+          "Enables the vivaldi coordinate calculation for the client.")
+      ("vivaldi-enable-dir-updates",
+          po::value(&vivaldi_enable_dir_updates)
+            ->default_value(vivaldi_enable_dir_updates)->zero_tokens(),
+          "Enables sending the coordinates to the DIR after each recalculation."
+          " This is only needed to add the clients to the vivaldi visualisation"
+          " at the cost of some additional traffic between client and DIR.")
+      ("vivaldi-filename",
+          po::value(&vivaldi_filename)->default_value(vivaldi_filename),
+          "The file where the vivaldi coordinates should be saved after each "
+          "recalculation.")
+      ("vivaldi-recalculation-interval",
+          po::value(&vivaldi_recalculation_interval_s)
+            ->default_value(vivaldi_recalculation_interval_s),
+          "The interval between coordinate recalculations in seconds. "
+          "Also see vivaldi-"
+          "recalculation-epsilon.")
+      ("vivaldi-recalculation-epsilon",
+          po::value(&vivaldi_recalculation_epsilon_s)
+            ->default_value(vivaldi_recalculation_epsilon_s),
+          "The recalculation interval will be randomly chosen from"
+          " vivaldi-recalculation-inverval +/- vivaldi-recalculation-epsilon "
+          "(Both in seconds).")
+      ("vivaldi-max-iterations-before-updating",
+          po::value(&vivaldi_max_iterations_before_updating)
+            ->default_value(vivaldi_max_iterations_before_updating),
+          "Number of coordinate recalculations before updating the list of OSDs.")
+      ("vivaldi-max-request-retries",
+          po::value(&vivaldi_max_request_retries)
+            ->default_value(vivaldi_max_request_retries),
+          "Maximal number of retries when requesting coordinates from another "
+          "vivaldi node.");
+
   xtreemfs_advanced_options_.add_options()
     ("periodic-filesize-update-interval",
         po::value(&periodic_file_size_updates_interval_s),
         "Pause time (in seconds) between two invocations of the thread which "
         "writes back file size updates to the MRC in the background.")
-    ("periodic-",
+    ("periodic-xcap-renewal-interval",
         po::value(&periodic_xcap_renewal_interval_s),
         "Pause time (in seconds) between two invocations of the thread which "
-        "renews the XCap of all open file handles.");
+        "renews the XCap of all open file handles.")
+    ("vivaldi-zipf-generator-skew",
+        po::value(&vivaldi_zipf_generator_skew)
+          ->default_value(vivaldi_zipf_generator_skew),
+        "Skewness of the Zipf distribution used for vivaldi OSD selection");
 
+  deprecated_options_.add_options()
+    ("interrupt-signal",
+        po::value<int>()->notifier(MsgOptionHandler<int>(
+        "'interrupt-signal' is no longer supported")),
+        "DEPRECATED (has no effect) - Retry of a request was interrupted if "
+        "this signal was sent in earlier versions."
+        );
+
+  // These options are parsed
   all_descriptions_.add(general_).add(optimizations_).add(error_handling_)
-      .add(ssl_options_).add(grid_options_);
-  // These options are not shown in the "-h" output to not confuse the user.
-  hidden_descriptions_.add(xtreemfs_advanced_options_);
+      .add(ssl_options_).add(grid_options_).add(vivaldi_options_)
+      .add(xtreemfs_advanced_options_).add(deprecated_options_);
+  // These options are shown in the "-h" output
+  visible_descriptions_.add(general_).add(optimizations_).add(error_handling_)
+      .add(ssl_options_).add(grid_options_).add(vivaldi_options_);
+
 
   all_descriptions_initialized_ = true;
 }
@@ -290,6 +378,7 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
     // Rethrow boost errors due to invalid command line parameters.
     throw InvalidCommandLineParametersException(string(e.what()));
   }
+
   po::parsed_options parsed = po::command_line_parser(argc, argv)
   .options(all_descriptions_)
   .allow_unregistered()
@@ -367,23 +456,21 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
   }
 
   // PEM certificate _and_ private key are both required.
-  if ((vm.count("pem-certificate-file-path") &&
-       vm.count("pem-private-key-file-path") == 0) ||
-      (vm.count("pem-private-key-file-path") &&
-       vm.count("pem-certificate-file-path") == 0)) {
+  if ((!ssl_pem_cert_path.empty() && ssl_pem_key_path.empty()) ||
+      (!ssl_pem_key_path.empty() && ssl_pem_cert_path.empty())) {
     throw InvalidCommandLineParametersException(
         "If you use SSL and PEM files, you have to specify both the PEM"
         " certificate and the PEM private key.");
   }
 
   // PKCS#12 and PEM files are mutually exclusive.
-  if (vm.count("pem-private-key-file-path") && vm.count("pkcs12-file-path")) {
+  if (!ssl_pem_key_path.empty() && !ssl_pkcs12_path.empty()) {
     throw InvalidCommandLineParametersException("You can only use PEM files"
         " OR a PKCS#12 certificate. However, you specified both.");
   }
 
   // PKCS#12 and PEM Private Key password are mutually exclusive.
-  if (vm.count("pem-private-key-passphrase") && vm.count("pkcs12-passphrase")) {
+  if (!ssl_pem_key_pass.empty() && !ssl_pkcs12_pass.empty()) {
     throw InvalidCommandLineParametersException("You can only use PEM files"
         " OR a PKCS#12 certificate. However, you specified the password option"
         " for both.");
@@ -391,10 +478,10 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
 
   // If a SSL password was given via command line, clean the value from args.
   string to_be_cleaned_password;
-  if (!ssl_pem_key_pass.empty()) {
+  if (!ssl_pem_key_pass.empty() && ssl_pem_key_pass != "-") {
     to_be_cleaned_password = ssl_pem_key_pass;
   }
-  if (!ssl_pkcs12_pass.empty()) {
+  if (!ssl_pkcs12_pass.empty() && ssl_pkcs12_pass != "-") {
     to_be_cleaned_password = ssl_pkcs12_pass;
   }
   if (!to_be_cleaned_password.empty()) {
@@ -410,12 +497,12 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
 
   // If the passphrase parameter was specified, but not set, mark that the
   // password shall be read from stdin.
-  if (vm.count("pem-private-key-passphrase") && ssl_pem_key_pass.empty()) {
+  if (!ssl_pem_key_path.empty() && ssl_pem_key_pass == "-") {
     ReadPasswordFromStdin(
         "No PEM private key passphrase was given. Please enter it now:",
         &ssl_pem_key_pass);
   }
-  if (vm.count("pkcs12-passphrase") && ssl_pkcs12_pass.empty()) {
+  if (!ssl_pkcs12_path.empty() && ssl_pkcs12_pass == "-") {
     ReadPasswordFromStdin(
         "No PKCS#12 certificate passphrase was given. Please enter it now:",
         &ssl_pkcs12_pass);
@@ -447,7 +534,7 @@ void Options::ParseURL(XtreemFSServiceType service_type) {
 std::string Options::ShowCommandLineHelp() {
   GenerateProgramOptionsDescriptions();
   ostringstream stream;
-  stream << all_descriptions_;
+  stream << visible_descriptions_;
   return stream.str();
 }
 

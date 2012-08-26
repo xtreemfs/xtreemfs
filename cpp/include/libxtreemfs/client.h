@@ -16,12 +16,13 @@
 
 namespace xtreemfs {
 
+class UUIDIterator;
+
 namespace rpc {
 class SSLOptions;
 }  // namespace rpc
 
 class Options;
-class UUIDIterator;
 class UUIDResolver;
 class Volume;
 

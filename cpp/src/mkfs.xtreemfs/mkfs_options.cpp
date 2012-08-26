@@ -51,9 +51,11 @@ MkfsOptions::MkfsOptions() : Options() {
         "MRC's admin_password (not required if not set at the MRC).");
 
   // Volume options.
+  volume_mode_decimal = 511;
   volume_mode_octal = 777;
   owner_username = "";
   owner_groupname = "";
+  access_policy_type = xtreemfs::pbrpc::ACCESS_CONTROL_POLICY_POSIX;
   access_policy_type_string = "POSIX";
 
   po::options_description volume_descriptions("Volume Options");
@@ -73,6 +75,7 @@ MkfsOptions::MkfsOptions() : Options() {
      "Access-control-policy=NULL|POSIX|VOLUME");
 
   // Striping policy options.
+  default_striping_policy_type = xtreemfs::pbrpc::STRIPING_POLICY_RAID0;
   default_striping_policy_type_string = "RAID0";
   default_stripe_size = 128;
   default_stripe_width = 1;

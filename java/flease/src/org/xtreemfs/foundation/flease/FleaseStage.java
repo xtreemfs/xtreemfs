@@ -283,9 +283,12 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
         if (oldFlease != null) {
             if (oldFlease.isValid()) {
                 if (!oldFlease.isSameLeaseHolder(newFlease)) {
-                    System.err.println("ERR: new lease replacing old lease which is still valid!!!");
-                    System.err.println(newFlease);
-                    System.err.println(oldFlease);
+                    Logging.logMessage(
+                            Logging.LEVEL_DEBUG,
+                            Category.replication,
+                            this,
+                            "New lease replaced old lease which is still valid according to this OSD's clocks. Make sure all OSD clocks are synchronized. New Lease: %s Old Lease: %s",
+                            newFlease, oldFlease);
                 }
             }
             if (Logging.isDebug()) {
@@ -462,7 +465,7 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
                 if (quit) {
                     break;
                 }
-            } catch (Exception ex) {
+            } catch (Throwable ex) {
                 notifyCrashed(ex);
                 break;
             }
@@ -481,7 +484,7 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
         this.interrupt();
     }
 
-    private int checkTimers() {
+    private int checkTimers() throws Throwable {
         final long now = TimeSync.getLocalSystemTime();
 
         TimerEntry e = timers.peek();
@@ -555,6 +558,7 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
     }
 
     protected void createTimer(FleaseMessage msg, long timestamp) {
+        msg.validateMessage();
         TimerEntry e = new TimerEntry(timestamp, msg);
         timers.add(e);
     }

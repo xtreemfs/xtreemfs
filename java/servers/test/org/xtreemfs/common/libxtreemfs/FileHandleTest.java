@@ -119,7 +119,6 @@ public class FileHandleTest {
             if (osds[i] != null) {
                 osds[i].shutdown();
             }
-
         }
 
         testEnv.shutdown();
@@ -459,7 +458,7 @@ public class FileHandleTest {
         Client client = Client.createClient(dirAddress, userCredentials, null, options);
         client.start();
         
-        // Open a volume named "foobar".
+        // Open a volume.
         client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
         Volume volume = client.openVolume(VOLUME_NAME, null, options);
         
@@ -528,7 +527,7 @@ public class FileHandleTest {
         Client client = Client.createClient(dirAddress, userCredentials, null, options);
         client.start();
         
-        // Open a volume named "foobar".
+        // Open a volume.
         client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
         Volume volume = client.openVolume(VOLUME_NAME, null, options);
         
@@ -573,5 +572,118 @@ public class FileHandleTest {
         
         fileHandle.close();
         client.shutdown();
+    }
+    
+    @Test
+    public void testReadBytePerByte() throws Exception {
+        final String VOLUME_NAME = "testReadBytePerByte";
+        
+        Options options = new Options();
+        options.setPeriodicFileSizeUpdatesIntervalS(10);
+        options.setMetadataCacheSize(0);
+        
+        String dirAddress = testEnv.getDIRAddress().getHostName() + ":" + testEnv.getDIRAddress().getPort();
+        String mrcAddress = testEnv.getMRCAddress().getHostName() + ":" + testEnv.getMRCAddress().getPort();
+        
+        Client client = Client.createClient(dirAddress, userCredentials, null, options);
+        client.start();
+        
+        // Open the volume.
+        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
+        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+        
+        // Open a file.
+        FileHandle fileHandle = volume.openFile(
+                userCredentials,
+                "/bla.tzt",
+                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
+                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
+                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber()
+                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_SYNC.getNumber());
+        
+        // Get file attributes
+        Stat stat = volume.getAttr(userCredentials, "/bla.tzt");
+        assertEquals(0, stat.getSize());
+        
+        // Write to file.\
+        final String data = "FFFFFFFFFF";
+        int writtenBytes = fileHandle.write(userCredentials, data.getBytes(), data.length(), 0);
+    
+        stat = volume.getAttr(userCredentials, "/bla.tzt");
+        assertEquals(data.length(), stat.getSize());
+        
+        // Read from file byte per byte. Should return 0 if EOF is reached. 
+        int readCount = -1;
+        int position = 0;
+        while (readCount != 0) {
+            byte[] readData = new byte[1];
+            readCount  = fileHandle.read(userCredentials, readData, 1, position); 
+            if (readCount != 0) {
+                assertEquals(readData[0], "F".getBytes()[0]);
+                position++;
+            }
+        }
+        assertEquals(writtenBytes, position);      
+            
+        fileHandle.close();
+        client.shutdown();        
+    }
+    
+    @Test 
+    public void readBytePerByteManyTimes() throws Exception {
+        final String VOLUME_NAME = "testReadBytePerByteManyTimes";
+        
+        Options options = new Options();
+        options.setPeriodicFileSizeUpdatesIntervalS(10);
+        options.setMetadataCacheSize(0);
+        
+        String dirAddress = testEnv.getDIRAddress().getHostName() + ":" + testEnv.getDIRAddress().getPort();
+        String mrcAddress = testEnv.getMRCAddress().getHostName() + ":" + testEnv.getMRCAddress().getPort();
+        
+        Client client = Client.createClient(dirAddress, userCredentials, null, options);
+        client.start();
+        
+        // Open the volume.
+        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
+        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+        
+        // Open a file.
+        FileHandle fileHandle = volume.openFile(
+                userCredentials,
+                "/bla.tzt",
+                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
+                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
+                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber()
+                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_SYNC.getNumber());
+        
+        // Get file attributes
+        Stat stat = volume.getAttr(userCredentials, "/bla.tzt");
+        assertEquals(0, stat.getSize());
+        
+        // Write to file. 2^20 times F to file
+        String data = "F";
+        for (int i = 0; i < 12; i++) {
+            data = data + data;
+        }
+        int writtenBytes = fileHandle.write(userCredentials, data.getBytes(), data.length(), 0);
+    
+        stat = volume.getAttr(userCredentials, "/bla.tzt");
+        assertEquals(data.length(), stat.getSize());
+        
+        // Read from file byte per byte. Should return 0 if EOF is reached. 
+        int readCount = -1;
+        int position = 0;
+        while (readCount != 0) {
+            byte[] readData = new byte[1];
+            readCount  = fileHandle.read(userCredentials, readData, 1, position); 
+            if (readCount != 0) {
+                assertEquals(readData[0], "F".getBytes()[0]);
+                position++;
+            }
+        }
+        assertEquals(writtenBytes, position);      
+            
+        fileHandle.close();
+        client.shutdown();    
     }
 }

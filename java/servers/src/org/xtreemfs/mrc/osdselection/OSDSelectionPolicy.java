@@ -41,9 +41,9 @@ public interface OSDSelectionPolicy {
     
     /**
      * Simplified version of
-     * <code>getOSDs(ServiceSet allOSDs, InetAddress clientIP, XLocList currentXLoc, int numOSDs)</code>
-     * . This method will be invoked by the framework if no context is
-     * available.
+     * <code>getOSDs(ServiceSet allOSDs, InetAddress clientIP, XLocList currentXLoc, int numOSDs)</code>.
+     * This method will be invoked by the framework if no context is available e.g., when displaying
+     * the list of suitable OSDs in the webinterface or a maintenance tool.
      * 
      * @param allOSDs
      *            a list of all available OSDs

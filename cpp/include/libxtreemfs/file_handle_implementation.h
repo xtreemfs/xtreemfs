@@ -20,7 +20,7 @@
 #include "rpc/callback_interface.h"
 #include "xtreemfs/GlobalTypes.pb.h"
 #include "xtreemfs/MRC.pb.h"
-
+#include "libxtreemfs/client_implementation.h"
 #include "libxtreemfs/file_handle.h"
 #include "libxtreemfs/xcap_handler.h"
 
@@ -48,11 +48,13 @@ class FileHandleImplementation
       public XCapHandler {
  public:
   FileHandleImplementation(
+      ClientImplementation* client,
       const std::string& client_uuid,
       FileInfo* file_info,
       const xtreemfs::pbrpc::XCap& xcap,
       UUIDIterator* mrc_uuid_iterator,
       UUIDIterator* osd_uuid_iterator,
+      UUIDContainer* osd_uuid_container,
       UUIDResolver* uuid_resolver,
       xtreemfs::pbrpc::MRCServiceClient* mrc_service_client,
       xtreemfs::pbrpc::OSDServiceClient* osd_service_client,
@@ -160,14 +162,14 @@ class FileHandleImplementation
                          bool close_file);
 
   /** Sends osd_write_response_for_async_write_back_ asynchronously. */
-  void WriteBackFileSizeAsync();
+  void WriteBackFileSizeAsync(const Options& options);
 
   /** Overwrites the current osd_write_response_ with "owr". */
   void set_osd_write_response_for_async_write_back(
       const xtreemfs::pbrpc::OSDWriteResponse& owr);
 
   /** Renew xcap_ asynchronously. */
-  void RenewXCapAsync();
+  void RenewXCapAsync(const Options& options);
 
   /** Blocks until the callback has completed (if an XCapRenewal is pending). */
   void WaitForPendingXCapRenewal();
@@ -208,6 +210,9 @@ class FileHandleImplementation
   /** Any modification to the object must obtain a lock first. */
   boost::mutex mutex_;
 
+  /** Reference to Client which did open this volume. */
+  ClientImplementation* client_;
+
   /** UUID of the Client (needed to distinguish Locks of different clients). */
   const std::string& client_uuid_;
 
@@ -216,6 +221,8 @@ class FileHandleImplementation
 
   /** UUIDIterator which contains the UUIDs of all replicas. */
   UUIDIterator* osd_uuid_iterator_;
+  /** UUIDIterator which contains the UUIDs of all replicas and stripes. */
+  UUIDContainer* osd_uuid_container_;
 
   /** Needed to resolve UUIDs. */
   UUIDResolver* uuid_resolver_;

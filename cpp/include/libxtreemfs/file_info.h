@@ -18,8 +18,10 @@
 #include <map>
 #include <string>
 
+#include "libxtreemfs/client_implementation.h"
 #include "libxtreemfs/async_write_handler.h"
-#include "libxtreemfs/uuid_iterator.h"
+#include "libxtreemfs/simple_uuid_iterator.h"
+#include "libxtreemfs/uuid_container.h"
 #include "xtreemfs/GlobalTypes.pb.h"
 
 namespace xtreemfs {
@@ -40,7 +42,8 @@ enum FilesizeUpdateStatus {
 
 class FileInfo {
  public:
-  FileInfo(VolumeImplementation* volume,
+  FileInfo(ClientImplementation* client,
+           VolumeImplementation* volume,
            boost::uint64_t file_id,
            const std::string& path,
            bool replicate_on_close,
@@ -118,10 +121,10 @@ class FileInfo {
   void MergeStatAndOSDWriteResponse(xtreemfs::pbrpc::Stat* stat);
 
   /** Sends pending file size updates to the MRC asynchronously. */
-  void WriteBackFileSizeAsync();
+  void WriteBackFileSizeAsync(const Options& options);
 
   /** Renews xcap of all file handles of this file asynchronously. */
-  void RenewXCapsAsync();
+  void RenewXCapsAsync(const Options& options);
 
   /** Releases all locks of process_id using file_handle to issue
    *  ReleaseLock(). */
@@ -205,6 +208,9 @@ class FileInfo {
   /** See WaitForPendingFileSizeUpdates(). */
   void WaitForPendingFileSizeUpdatesHelper(boost::mutex::scoped_lock* lock);
 
+  /** Reference to Client which did open this volume. */
+  ClientImplementation* client_;
+
   /** Volume which did open this file. */
   VolumeImplementation* volume_;
 
@@ -228,11 +234,15 @@ class FileInfo {
   /** List of corresponding OSDs. */
   xtreemfs::pbrpc::XLocSet xlocset_;
 
-  /** UUIDIterator which contains the UUIDs of all replicas.
-   *
-   * If striping is used, replication is not possible. Therefore, for striped
-   * files the UUID Iterator will contain only the head OSD. */
-  UUIDIterator osd_uuid_iterator_;
+  /** UUIDIterator which contains the head OSD UUIDs of all replicas.
+   *  It is used for non-striped files. */
+  SimpleUUIDIterator osd_uuid_iterator_;
+
+  /** This UUIDContainer contains all OSD UUIDs for all replicas and is
+   *  constructed from the xlocset_ passed to this class on construction.
+   *  It is used to construct a custom ContainerUUIDIterator on the fly when
+   *  accessing striped files. */
+  UUIDContainer osd_uuid_container_;
 
   /** Use this to protect xlocset_ and replicate_on_close_. */
   boost::mutex xlocset_mutex_;

@@ -12,16 +12,18 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.xtreemfs.babudb.BabuDBFactory;
 import org.xtreemfs.babudb.api.database.Database;
+import org.xtreemfs.babudb.api.database.ResultSet;
 import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.config.ServiceConfig;
@@ -114,7 +116,7 @@ public class StatusPage {
         
         long time = System.currentTimeMillis();
         
-        Iterator<Entry<byte[], byte[]>> iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_ADDRMAPS,
+        ResultSet<byte[], byte[]> iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_ADDRMAPS,
             new byte[0], null).get();
         
         StringBuilder dump = new StringBuilder();
@@ -150,6 +152,7 @@ public class StatusPage {
             dump.append("</b></td></tr></table>");
         }
         dump.append("</td></tr></table>");
+        iter.free();
         
         iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0], null).get();
         
@@ -251,6 +254,8 @@ public class StatusPage {
         }
         
         dump.append("</td></tr></table>");
+        iter.free();
+        
         // Configuration part
         
         iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_CONFIGURATIONS, new byte[0], null).get();
@@ -294,6 +299,8 @@ public class StatusPage {
             dump.append(conf.getVersion());
             dump.append("</b></td></table></td></tr>");
         }
+        iter.free();
+        
         dump.append("</b></td></table></td></tr>");
         dump.append("</table>");
         
@@ -328,7 +335,7 @@ public class StatusPage {
     IOException, InterruptedException {
         final Database database = master.getDirDatabase();
         StringBuilder dump = new StringBuilder();
-        Iterator<Entry<byte[], byte[]>> iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0], null).get();
+        ResultSet<byte[], byte[]> iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0], null).get();
         
         // create tab separated plain text table
         dump.append("uuid");
@@ -393,7 +400,54 @@ public class StatusPage {
             
         } // while
         
+        iter.free();
+
+        master.getVivaldiClientMap().filterTimeOuts();
+        // append clients
+        //for (Map.Entry<InetSocketAddress, VivaldiClientValue> entry: master.getVivaldiClientMap().entrySet()) {
+        for (Map.Entry<InetSocketAddress, org.xtreemfs.dir.VivaldiClientMap.VivaldiClientValue> entry: master.getVivaldiClientMap().entrySet()) {
+            dump.append("\n");
+            dump.append(entry.getKey().toString());
+            dump.append("\t");
+            dump.append(entry.getKey().getHostName());
+            dump.append("\t");
+            dump.append("CLIENT");
+            dump.append("\t");
+            dump.append("online");
+            dump.append("\t");
+            dump.append(entry.getValue().getCoordinates().getXCoordinate());
+            dump.append("\t");
+            dump.append(entry.getValue().getCoordinates().getYCoordinate());
+            dump.append("\t");
+            dump.append(entry.getValue().getCoordinates().getLocalError());
+        }
+        
         return dump.toString();
     }
     
+    public static String getDBInfo(Map<String, Object> dbStatus) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<HTML><BODY><H1>BABUDB STATE</H1>");
+        
+        if (dbStatus == null) {
+            sb.append("BabuDB has not yet been initialized.");
+        }
+        
+        else {
+            sb.append("<TABLE>");
+            Map<String, Object> status = new TreeMap<String, Object>(dbStatus);
+            for (Entry<String, Object> entry : status.entrySet()) {
+                sb.append("<TR><TD STYLE=\"text-align:right; font-style:italic\">");
+                sb.append(entry.getKey());
+                sb.append(":</TD><TD STYLE=\"font-weight:bold\">");
+                sb.append(entry.getValue());
+                sb.append("</TD></TR>");
+            }
+            sb.append("</TABLE>");
+        }
+        
+        sb.append("</BODY></HTML>");
+        
+        return sb.toString();
+    }
 }

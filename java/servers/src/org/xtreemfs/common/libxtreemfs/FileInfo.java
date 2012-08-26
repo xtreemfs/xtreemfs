@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-// JCIP import net.jcip.annotations.GuardedBy;
+
 
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
@@ -30,6 +30,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.getattrRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
 
+//JCIP import net.jcip.annotations.GuardedBy;
 /**
  * Stores metadata of the the file as well as the current size. On FileInfo is responsible for all open
  * FileHandles.

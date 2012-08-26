@@ -81,6 +81,10 @@ public class GetSuitableOSDsOperation extends MRCOperation {
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
                 "either file ID or volume name + path required");
         
+        if (file.isDirectory())
+            throw new UserException(POSIXErrno.POSIX_ERROR_EISDIR,
+                    "xtreemfs_get_suitable_osds must be invoked on a file");
+        
         // retrieve the set of OSDs for the new replica
         ServiceSet.Builder usableOSDs = master.getOSDStatusManager().getUsableOSDs(volumeId,
             ((InetSocketAddress) rq.getRPCRequest().getSenderAddress()).getAddress(), null,

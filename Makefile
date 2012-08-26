@@ -16,19 +16,22 @@ else
         CMAKE_BIN = $(CMAKE_HOME)/bin/cmake
 endif
 
+SHELL := $(shell which bash)
 WHICH_GPP = $(shell which g++)
 
 ifeq "$(shell uname)" "SunOS"
   PROTOBUF_DISABLE_64_BIT_SOLARIS = "--disable-64bit-solaris"
 endif
 
-SHELL=/bin/bash
+# Paths used during compilation.
+XTREEMFS_CLIENT_BUILD_DIR=$(shell pwd)/cpp/build
+XTREEMFS_BINARIES_DIR = $(shell pwd)/bin
 
+# Install paths relative to DESTDIR.
 XTREEMFS_JAR_DIR=$(DESTDIR)/usr/share/java
 XTREEMFS_CONFIG_PARENT_DIR=$(DESTDIR)/etc/xos
 XTREEMFS_CONFIG_DIR=$(XTREEMFS_CONFIG_PARENT_DIR)/xtreemfs
 XTREEMFS_INIT_DIR=$(DESTDIR)/etc/init.d
-XTREEMFS_CLIENT_BUILD_DIR=$(shell pwd)/cpp/build
 BIN_DIR=$(DESTDIR)/usr/bin
 SBIN_DIR=$(DESTDIR)/sbin
 MAN_DIR=$(DESTDIR)/usr/share/man/man1
@@ -52,12 +55,8 @@ CLIENT_GOOGLE_TEST_CPP_MAIN = $(CLIENT_GOOGLE_TEST_CPP)/lib/.libs/libgtest_main.
 # This prevents the target from getting executed again as long as the checkfile does not change.
 CLIENT_GOOGLE_TEST_CHECKFILE = .googletest_library_already_built
 
-TARGETS = client server foundation
+TARGETS = client server foundation flease
 .PHONY:	clean distclean set_version
-
-# Some toplevel configuration
-XTFS_BINDIR = $(shell pwd)/bin
-export XTFS_BINDIR
 
 all: check_server check_client check_test $(TARGETS)
 
@@ -69,14 +68,13 @@ install: install-client install-server install-tools
 
 install-client:
 
-	@if [ ! -f bin/mount.xtreemfs ]; then echo "PLEASE RUN 'make client' FIRST!"; exit 1; fi
+	@if [ ! -f $(XTREEMFS_BINARIES_DIR)/mount.xtreemfs ]; then echo "PLEASE RUN 'make client' FIRST!"; exit 1; fi
 
 	@mkdir -p $(DOC_DIR_CLIENT)
 	@cp LICENSE $(DOC_DIR_CLIENT)
 
 	@mkdir -p $(BIN_DIR)
-	@cp   -p  bin/*.xtreemfs bin/xtfsutil $(BIN_DIR)
-	          #bin/xtfs_vivaldi
+	@cp   -p  $(XTREEMFS_BINARIES_DIR)/*.xtreemfs $(XTREEMFS_BINARIES_DIR)/xtfsutil $(BIN_DIR)
 	          
 	@mkdir -p $(SBIN_DIR)
 	@ln -s $(BIN_DIR)/mount.xtreemfs $(SBIN_DIR)/mount.xtreemfs
@@ -99,6 +97,7 @@ install-server:
 	@mkdir -p $(XTREEMFS_JAR_DIR)
 	@cp java/servers/dist/XtreemFS.jar $(XTREEMFS_JAR_DIR)
 	@cp java/foundation/dist/Foundation.jar $(XTREEMFS_JAR_DIR)
+	@cp java/flease/dist/Flease.jar $(XTREEMFS_JAR_DIR)
 	@cp java/lib/*.jar $(XTREEMFS_JAR_DIR)
 
 	@mkdir -p $(PLUGIN_DIR)
@@ -137,10 +136,11 @@ install-tools:
 	@mkdir -p $(XTREEMFS_JAR_DIR)
 	@cp java/servers/dist/XtreemFS.jar $(XTREEMFS_JAR_DIR)
 	@cp java/foundation/dist/Foundation.jar $(XTREEMFS_JAR_DIR)
+	@cp java/flease/dist/Flease.jar $(XTREEMFS_JAR_DIR)
 	@cp java/lib/*.jar $(XTREEMFS_JAR_DIR)
 
 	@mkdir -p $(BIN_DIR)
-	@cp   -p  `ls bin/xtfs_* | grep -v xtfs_.*mount` $(BIN_DIR)
+	@cp   -p  `ls $(XTREEMFS_BINARIES_DIR)/xtfs_* | grep -v xtfs_.*mount` $(BIN_DIR)
 
 	@mkdir -p $(MAN_DIR)
 	@cp -R man/man1/xtfs_* $(MAN_DIR)
@@ -195,7 +195,9 @@ check_test:
 
 set_version:
 # Try to set the SVN revision and branch name as part of the version. We don't care if this may fail.
+ifndef SKIP_SET_SVN_VERSION
 	@./packaging/set_version.sh -s &>/dev/null; exit 0
+endif
 
 .PHONY:	client client_clean client_distclean client_thirdparty_clean client_package_macosx
 
@@ -254,9 +256,10 @@ client_debug: client
 
 client: check_client client_thirdparty set_version
 	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG) $(CMAKE_BOOST_ROOT) $(CMAKE_BUILD_CLIENT_TESTS)
-	@$(MAKE) -C $(XTREEMFS_CLIENT_BUILD_DIR)	
-	@cp   -p $(XTREEMFS_CLIENT_BUILD_DIR)/*.xtreemfs $(XTFS_BINDIR)
-	@cp   -p $(XTREEMFS_CLIENT_BUILD_DIR)/xtfsutil $(XTFS_BINDIR)
+	@$(MAKE) -C $(XTREEMFS_CLIENT_BUILD_DIR)
+	@cd $(XTREEMFS_CLIENT_BUILD_DIR); for i in *.xtreemfs xtfsutil; do [ -f $(XTREEMFS_BINARIES_DIR)/$$i ] && rm -f $(XTREEMFS_BINARIES_DIR)/$$i; done; true
+	@cp   -p $(XTREEMFS_CLIENT_BUILD_DIR)/*.xtreemfs $(XTREEMFS_BINARIES_DIR)
+	@cp   -p $(XTREEMFS_CLIENT_BUILD_DIR)/xtfsutil $(XTREEMFS_BINARIES_DIR)
 
 client_clean: check_client client_thirdparty_clean
 	@rm -rf $(XTREEMFS_CLIENT_BUILD_DIR)
@@ -274,7 +277,7 @@ endif
 # Clean everything first to ensure we package a clean client.
 	@$(MAKE) client_distclean
 # We call $(MAKE) instead of specifying the targets as requirements as its not possible to define dependencies between these two and this breaks in case of parallel builds.
-	@$(MAKE) client
+	@$(MAKE) client SKIP_SET_SVN_VERSION=1
 	@echo "Running the Apple Packagemaker..."
 	@/Developer/usr/bin/packagemaker -d packaging/macosx/XtreemFS_MacOSX_Package.pmdoc/ -o $(CLIENT_PACKAGE_MACOSX_OUTPUT_DIR)
 	@echo "Creating a DMG file..."
@@ -283,7 +286,15 @@ endif
 	@if [ -d "$(CLIENT_PACKAGE_MACOSX_OUTPUT_DIR)" ]; then echo "Cleaning up temporary files..."; rm -r "$(CLIENT_PACKAGE_MACOSX_OUTPUT_DIR)"; fi
 	@echo "Package file created: $(CLIENT_PACKAGE_MACOSX_OUTPUT_FILE)"
 
-.PHONY: foundation foundation_clean
+.PHONY: flease flease_clean flease_distclean
+flease: foundation
+	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/flease/build-1.6.5.xml jar
+flease_clean:
+	$(ANT_BIN)  -D"file.encoding=UTF-8" -f java/flease/build-1.6.5.xml clean || exit 1;
+flease_distclean:
+	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/flease/build-1.6.5.xml clean || exit 1;
+
+.PHONY: foundation foundation_clean foundation_distclean
 foundation: set_version
 	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/foundation/build-1.6.5.xml jar
 foundation_clean:
@@ -292,12 +303,20 @@ foundation_distclean:
 	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/foundation/build-1.6.5.xml clean || exit 1;
 
 .PHONY: server server_clean server_distclean
-server: check_server foundation
+server: check_server foundation flease
 	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/servers/build-1.6.5.xml jar
 server_clean: check_server
 	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/servers/build-1.6.5.xml clean || exit 1;
 server_distclean: check_server
 	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/servers/build-1.6.5.xml clean || exit 1;
 
+.PHONY: hadoop-client hadoop-client_clean hadoop-client_distclean
+hadoop-client: server foundation 
+	$(ANT_BIN) -D"file.encoding=UTF-8" -f contrib/hadoop/build.xml jar
+hadoop-client_clean:
+	$(ANT_BIN) -D"file.encoding=UTF-8" -f contrib/hadoop/build.xml clean || exit 1
+hadoop-client_distclean:
+	$(ANT_BIN) -D"file.encoding=UTF-8" -f contrib/hadoop/build.xml clean || exit 1
+
 test: check_test client server
-	python $(XTFS_BINDIR)/../tests/xtestenv -c $(XTFS_BINDIR)/../tests/test_config.py short
+	python ./tests/xtestenv -c ./tests/test_config.py short

@@ -24,7 +24,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.xtreemfs.foundation.LifeCycleThread;
@@ -110,9 +109,6 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
 
     public static final int         DEFAULT_MAX_CLIENT_Q_LENGTH = 100;
 
-    // Connections with pending writes.
-    private final ConcurrentLinkedQueue<RPCNIOSocketServerConnection>  writeableConnections;
-    
     public RPCNIOSocketServer(int bindPort, InetAddress bindAddr, RPCServerRequestListener rl,
         SSLOptions sslOptions) throws IOException {
         this(bindPort, bindAddr, rl, sslOptions, 256 * 1024);
@@ -167,8 +163,6 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
         
         this.connections = new LinkedList<RPCNIOSocketServerConnection>();
 
-        this.writeableConnections = new ConcurrentLinkedQueue<RPCNIOSocketServerConnection>();
-
         this.maxClientQLength = maxClientQLength;
         this.clientQThreshold = (maxClientQLength/2 >= 0) ? maxClientQLength/2 : 0;
         if (maxClientQLength <= 1) {
@@ -199,7 +193,10 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
         try {
             request.freeBuffers();
         } catch (AssertionError ex) {
-            ex.printStackTrace();
+            if (Logging.isInfo()) {
+                Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "Caught an AssertionError while trying to free buffers:");
+                Logging.logError(Logging.LEVEL_INFO, this, ex);
+            }
         }
         assert (connection.getServer() == this);
 
@@ -208,14 +205,17 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                 boolean isEmpty = connection.getPendingResponses().isEmpty();
                 connection.addPendingResponse(response);
                 if (isEmpty) {
-                    writeableConnections.add(connection);
-                    /*SelectionKey key = connection.getChannel().keyFor(selector);
+                    final SelectionKey key = connection.getChannel().keyFor(selector);
                     if (key != null) {
-                        key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
-                    }*/
+                        try {
+                            key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+                        } catch (CancelledKeyException e) {
+                         // Ignore it since the timeout mechanism will deal with it.
+                        }
+                    }
+                    selector.wakeup();
                 }
             }
-            selector.wakeup();
         } else {
             // ignore and free bufers
             response.freeBuffers();
@@ -251,15 +251,6 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                         "Exception while selecting: %s", ex.toString());
                     continue;
                 }
-
-                while (!writeableConnections.isEmpty()) {
-                    RPCNIOSocketServerConnection con = writeableConnections.poll();
-                    if (con == null)
-                        break;
-                    final SelectionKey key = con.getChannel().keyFor(selector);
-                    writeConnection(key);
-                }
-
 
                 if (numKeys > 0) {
                     // fetch events
@@ -308,8 +299,8 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                     "PBRPC Server %d shutdown complete", bindPort);
             
             notifyStopped();
-        } catch (Exception thr) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this, "ONRPC Server %d CRASHED!", bindPort);
+        } catch (Throwable thr) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this, "PBRPC Server %d CRASHED!", bindPort);
             notifyCrashed(thr);
         }
         
@@ -322,12 +313,7 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
      *            a readable key
      */
     private void readConnection(SelectionKey key) {
-        
-        if (key == null) {
-            Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "attempted to read on 'null' selection key");
-            return;
-        }
-        
+
         final RPCNIOSocketServerConnection con = (RPCNIOSocketServerConnection) key.attachment();
         final ChannelIO channel = con.getChannel();
         
@@ -470,6 +456,13 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                     }
                 }
             }
+        } catch (CancelledKeyException ex) {
+            if (Logging.isInfo()) {
+                Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
+                    "client closed connection (CancelledKeyException): %s", channel.socket().getRemoteSocketAddress()
+                            .toString());
+            }
+            closeConnection(key);
         } catch (ClosedByInterruptException ex) {
             if (Logging.isInfo()) {
                 Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
@@ -499,11 +492,6 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
      *            the writable key
      */
     private void writeConnection(SelectionKey key) {
-        
-        if (key == null) {
-            Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "attempted to write on 'null' selection key");
-            return;
-        }
         
         final RPCNIOSocketServerConnection con = (RPCNIOSocketServerConnection) key.attachment();
         final ChannelIO channel = con.getChannel();

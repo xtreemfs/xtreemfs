@@ -9,9 +9,15 @@ then
   exit 1
 fi
 
-echo "Remove all XtreemFS files from the system? Please type YES."
+# Ask user before uninstallation?
+if [ -n "$1" -a "$1" = "noprompt" ]
+then
+  check="YES"
+else
+  echo "Remove all XtreemFS files from the system? Please type YES."
+  read check
+fi
 
-read check
 if [ "$check" = "YES" ]
 then
   echo "Deleting all XtreemFS files now."
@@ -31,4 +37,10 @@ then
   echo "Please delete this script manually: sudo rm /usr/local/bin/uninstall_xtreemfs.sh"
 else
   echo "XtreemFS uninstallation aborted."
+fi
+
+# Exit successfully if called with 'noprompt'.
+if [ -n "$1" -a "$1" = "noprompt" ]
+then
+  exit 0
 fi

@@ -24,12 +24,12 @@ import org.xtreemfs.osd.OSDRequest;
 
 public abstract class Stage extends LifeCycleThread {
     
-    protected static final int DEFAULT_MAX_QUEUE_LENGTH = 1000; 
-
     /**
      * queue containing all requests
      */
     protected BlockingQueue<StageRequest> q;
+    
+    private final int queueCapacity;
 
     /**
      * set to true if stage should shut down
@@ -40,14 +40,11 @@ public abstract class Stage extends LifeCycleThread {
     
     public AtomicLong                     _sumRqTime;
     
-    public Stage(String stageName) {
-        this(stageName, DEFAULT_MAX_QUEUE_LENGTH);
-    }
-    
     public Stage(String stageName, int queueCapacity) {
         
         super(stageName);
-        q = new LinkedBlockingQueue<StageRequest>(queueCapacity);
+        q = new LinkedBlockingQueue<StageRequest>();
+        this.queueCapacity = queueCapacity;
         this.quit = false;
         
         _numRq = new AtomicInteger(0);
@@ -92,10 +89,20 @@ public abstract class Stage extends LifeCycleThread {
             try {
                 q.put(new StageRequest(stageOp, args, request, callback));
             } catch (InterruptedException e) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, OutputUtils.stackTraceToString(e));
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
+                        "Failed to queue internal request due to InterruptedException:");
+                Logging.logError(Logging.LEVEL_DEBUG, this, e);
             }
         } else {
-            if (!q.offer(new StageRequest(stageOp, args, request, callback))) {
+            if (q.size() < queueCapacity) {
+                try {
+                    q.put(new StageRequest(stageOp, args, request, callback));
+                } catch (InterruptedException e) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
+                            "Failed to queue external request due to InterruptedException:");
+                    Logging.logError(Logging.LEVEL_DEBUG, this, e);
+                }
+            } else {
                 // Make sure that the data buffer is returned to the pool if
                 // necessary, as some operations create view buffers on the
                 // data. Otherwise, a 'finalized but not freed before' warning
@@ -141,7 +148,7 @@ public abstract class Stage extends LifeCycleThread {
                 
             } catch (InterruptedException ex) {
                 break;
-            } catch (Exception ex) {
+            } catch (Throwable ex) {
                 this.notifyCrashed(ex);
                 break;
             }
@@ -199,6 +206,10 @@ public abstract class Stage extends LifeCycleThread {
         
         public Object getCallback() {
             return callback;
+        }
+        
+        public OSDRequest getRequest() {
+            return request;
         }
         
         public void sendInternalServerError(Throwable cause) {

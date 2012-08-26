@@ -1,17 +1,18 @@
 /*
  * Copyright (c) 2009-2010 by Bjoern Kolbeck, Zuse Institute Berlin
+ *                    2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
  */
 
-#include <google/protobuf/message.h>
+#include "rpc/client_request.h"
 
+#include <google/protobuf/message.h>
 #include <string>
 
-#include "rpc/client_request.h"
-#include "util/logging.h"
 #include "pbrpc/RPC.pb.h"
+#include "util/logging.h"
 
 namespace xtreemfs {
 namespace rpc {
@@ -22,22 +23,24 @@ using namespace boost;
 using namespace google::protobuf;
 
 ClientRequest::ClientRequest(const string& address,
-                             uint32_t call_id,
-                             uint32_t interface_id,
-                             uint32_t proc_id,
+                             const uint32_t call_id,
+                             const uint32_t interface_id,
+                             const uint32_t proc_id,
                              const UserCredentials& userCreds,
                              const Auth& auth,
                              const Message* request_message,
                              const char* request_data,
-                             int data_length,
+                             const int data_length,
                              Message* response_message,
                              void *context,
                              ClientRequestCallbackInterface *callback)
-    : call_id_(call_id),
+    : client_connection_(NULL),
+      call_id_(call_id),
+      interface_id_(interface_id),
+      proc_id_(proc_id),
       context_(context),
       callback_(callback),
       address_(address),
-      canceled_(false),
       callback_executed_(false),
       error_(NULL),
       resp_header_(NULL),

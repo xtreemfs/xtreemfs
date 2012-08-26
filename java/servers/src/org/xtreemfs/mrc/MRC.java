@@ -8,23 +8,11 @@
 
 package org.xtreemfs.mrc;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.HashMap;
-
 import org.xtreemfs.babudb.config.BabuDBConfig;
-import org.xtreemfs.dir.DIRClient;
-import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
-import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Configuration;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 
 /**
  * 
@@ -107,18 +95,6 @@ public class MRC {
         
         TimeSync.initializeLocal(60000, 50).waitForStartup();
         
-        if (config.isInitializable()) {
-            try {
-                MRCConfig remoteConfig = getConfigurationFromDIR(config);
-                config.mergeConfig(remoteConfig);
-            } catch (Exception e) {
-                e.printStackTrace();
-                Logging.logMessage(Logging.LEVEL_WARN, config.getUUID(),
-                    "couldn't fetch configuration file from DIR");
-                Logging.logError(Logging.LEVEL_DEBUG, config.getUUID(), e);
-            }
-        }
-        
         config.setDefaults();
         
         config.checkConfig();
@@ -133,46 +109,4 @@ public class MRC {
         
         new MRC(config, dbsConfig);
     }
-    
-    private static MRCConfig getConfigurationFromDIR(MRCConfig config) throws Exception {
-        final int WAIT_BETWEEN_RETRIES = 1000;
-        int retries = config.getWaitForDIR() * 1000 / WAIT_BETWEEN_RETRIES;
-        if (retries <= 0) {
-            retries = 1;
-        }
-        Logging.logMessage(Logging.LEVEL_INFO, null, "Loading configuration from DIR, %d retries", retries);
-        
-        SSLOptions sslOptions = config.isUsingSSL() ? new SSLOptions(new FileInputStream(config
-                .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
-                .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
-                .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config
-                .isGRIDSSLmode(), new MRCPolicyContainer(config).getTrustManager()) : null;
-        
-        RPCNIOSocketClient clientStage = new RPCNIOSocketClient(sslOptions, 1000, 60 * 1000);
-        DIRServiceClient dirRPCClient = new DIRServiceClient(clientStage, config.getDirectoryService());
-        DIRClient dirClient = new DIRClient(dirRPCClient, config.getDirectoryServices(),
-                retries, WAIT_BETWEEN_RETRIES);
-        
-        clientStage.start();
-        clientStage.waitForStartup();
-                
-        Auth authNone = Auth.newBuilder().setAuthType(AuthType.AUTH_NONE).build();
-        UserCredentials uc = UserCredentials.newBuilder().setUsername("main-method").addGroups(
-            "xtreemfs-services").build();
-        
-        Configuration conf = dirClient.xtreemfs_configuration_get(null, authNone, uc, config.getUUID()
-                    .toString());
-        
-        clientStage.shutdown();
-        clientStage.waitForShutdown();
-        
-        HashMap<String, String> returnMap = new HashMap<String, String>();
-        
-        for (KeyValuePair kvp : conf.getParameterList()) {
-            returnMap.put(kvp.getKey(), kvp.getValue());
-        }
-                
-        return new MRCConfig(returnMap);
-    };
-    
 }

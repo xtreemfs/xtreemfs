@@ -30,7 +30,6 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
-import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMappingSet;
@@ -57,9 +56,9 @@ public class HeartbeatThread extends LifeCycleThread {
         public DIR.ServiceSet getServiceData();
     }
     
-    public static final long      UPDATE_INTERVAL            = 60 * 1000;                    // 60s
+    public static final long      UPDATE_INTERVAL           = 60 * 1000;  // 60s
                                                                                               
-    public static final long      CONCURRENT_RETRY_INTERVALL = 5 * 1000;                     // 5s
+    public static final long      CONCURRENT_RETRY_INTERVAL = 5 * 1000;   // 5s
                                                                                               
     private ServiceUUID           uuid;
     
@@ -79,9 +78,9 @@ public class HeartbeatThread extends LifeCycleThread {
     
     private final UserCredentials uc;
     
-    public static final String    STATIC_ATTR_PREFIX         = "static.";
+    public static final String    STATIC_ATTR_PREFIX = "static.";
     
-    public static final String    STATUS_ATTR                = STATIC_ATTR_PREFIX + "status";
+    public static final String    STATUS_ATTR        = STATIC_ATTR_PREFIX + "status";
     
     /**
      * Timestamp when the last heartbeat was send.
@@ -123,7 +122,7 @@ public class HeartbeatThread extends LifeCycleThread {
     public synchronized void shutdown() {
         try {
             if (client.clientIsAlive()) {
-                client.xtreemfs_service_deregister(null, authNone, uc, uuid.toString(), 0);
+                client.xtreemfs_service_deregister(null, authNone, uc, uuid.toString(), 1);
             }
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_WARN, this, "could not deregister service at DIR");
@@ -149,7 +148,7 @@ public class HeartbeatThread extends LifeCycleThread {
                         if (Logging.isInfo())
                             Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this,
                                     "concurrent service registration; will try again after %d milliseconds",
-                                    CONCURRENT_RETRY_INTERVALL);
+                                    CONCURRENT_RETRY_INTERVAL);
                     } else
                         throw ex;
                 }
@@ -267,6 +266,8 @@ public class HeartbeatThread extends LifeCycleThread {
         try {
             this.setServiceConfiguration();
         } catch (Exception e) {
+            Logging.logMessage(Logging.LEVEL_ERROR, this,
+                    "An error occurred while submitting the service configuration to the DIR service:");
             Logging.logError(Logging.LEVEL_ERROR, this, e);
         }
     }
@@ -281,7 +282,7 @@ public class HeartbeatThread extends LifeCycleThread {
                 synchronized (this) {
                     try {
                         // update data on DIR; do not retry, as this is done periodically anyway
-                        registerServices(0);
+                        registerServices(1);
                     } catch (PBRPCException ex) {
                         if (ex.getPOSIXErrno() == POSIXErrno.POSIX_ERROR_EAGAIN) {
                             if (Logging.isInfo())
@@ -289,9 +290,10 @@ public class HeartbeatThread extends LifeCycleThread {
                                         "concurrent service registration; will try again after %d milliseconds",
                                         UPDATE_INTERVAL);
                         } else
+                            Logging.logMessage(Logging.LEVEL_ERROR, this, "An error occured during the periodic registration at the DIR:");
                             Logging.logError(Logging.LEVEL_ERROR, this, ex);
                     } catch (IOException ex) {
-                        Logging.logMessage(Logging.LEVEL_ERROR, this, ex.toString());
+                        Logging.logMessage(Logging.LEVEL_ERROR, this, "periodic registration at DIR failed: %s", ex.toString());
                         if (Logging.isDebug())
                             Logging.logError(Logging.LEVEL_DEBUG, this, ex);
                     } catch (InterruptedException ex) {
@@ -313,7 +315,7 @@ public class HeartbeatThread extends LifeCycleThread {
             }
             
             notifyStopped();
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             notifyCrashed(ex);
         }
     }
@@ -418,28 +420,23 @@ public class HeartbeatThread extends LifeCycleThread {
     }
     
     private void setServiceConfiguration() throws IOException, PBRPCException, InterruptedException {
-        try {
-            Configuration conf = client.xtreemfs_configuration_get(null, authNone, uc, uuid.toString());
-            long currentVersion = 0;
-            
-            currentVersion = conf.getVersion();
-            
-            Configuration.Builder confBuilder = Configuration.newBuilder();
-            confBuilder.setUuid(uuid.toString()).setVersion(currentVersion);
-            for (Map.Entry<String, String> mapEntry : config.toHashMap().entrySet()) {
-                confBuilder.addParameter(KeyValuePair.newBuilder().setKey(mapEntry.getKey())
-                        .setValue(mapEntry.getValue()).build());
-            }
-            
-            client.xtreemfs_configuration_set(null, authNone, uc, confBuilder.build());
-            
-            if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
-                        "%s successfully send configuration to Directory Service", uuid);
-            }
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        Configuration conf = client.xtreemfs_configuration_get(null, authNone, uc, uuid.toString());
+        long currentVersion = 0;
+        
+        currentVersion = conf.getVersion();
+        
+        Configuration.Builder confBuilder = Configuration.newBuilder();
+        confBuilder.setUuid(uuid.toString()).setVersion(currentVersion);
+        for (Map.Entry<String, String> mapEntry : config.toHashMap().entrySet()) {
+            confBuilder.addParameter(KeyValuePair.newBuilder().setKey(mapEntry.getKey())
+                    .setValue(mapEntry.getValue()).build());
+        }
+        
+        client.xtreemfs_configuration_set(null, authNone, uc, confBuilder.build());
+        
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
+                    "%s successfully send configuration to Directory Service", uuid);
         }
     }
     

@@ -30,6 +30,8 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.mrc.MRC;
+import org.xtreemfs.mrc.MRCConfig;
+import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.drain.OSDDrain;
@@ -75,6 +77,10 @@ public class OSDDrainTest extends TestCase {
 
     private OSDDrain              osdDrain;
 
+    private MRCConfig             mrc2Config;
+    
+    private MRCRequestDispatcher mrc2;
+
     public OSDDrainTest(String testName) throws IOException {
         super(testName);
         Logging.start(Logging.LEVEL_DEBUG);
@@ -101,6 +107,10 @@ public class OSDDrainTest extends TestCase {
 
         });
         testEnv.start();
+        
+        mrc2Config = SetupUtils.createMRC2Config();
+        mrc2 = new MRCRequestDispatcher(mrc2Config, SetupUtils.createMRC2dbsConfig());
+        mrc2.startup();
 
         osdServer = new ArrayList<OSD>(2);
 
@@ -116,7 +126,10 @@ public class OSDDrainTest extends TestCase {
     }
 
     protected void tearDown() throws Exception {
-
+        if (mrc2 != null) {
+            mrc2.shutdown();
+        }
+        
         testEnv.shutdown();
     }
 
@@ -332,8 +345,7 @@ public class OSDDrainTest extends TestCase {
         osdServer.add(new OSD(osdConfig2));
         osdServer.add(new OSD(osdConfig3));
         
-        MRC mrc2 = new MRC(SetupUtils.createMRC2Config(), SetupUtils.createMRC2dbsConfig());
-        String mrc2UUID = SetupUtils.createMRC2Config().getUUID().toString();
+        String mrc2UUID = mrc2Config.getUUID().toString();
         
         final int NUMBER_OF_FILES = 10;
         LinkedList<String> fileNames = new LinkedList<String>();

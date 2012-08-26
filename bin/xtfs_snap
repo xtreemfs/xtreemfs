@@ -2,11 +2,11 @@
 
 check_xtreemfs() {
     if [ -z "$XTREEMFS" ]; then
-        if [ -d src -a -d cpp -a -d etc ]; then
-            echo "Looks like you are in an XtreemFS base directory..."
+        if [ -d java -a -d cpp -a -d etc ]; then
+            #echo "Looks like you are in an XtreemFS base directory..."
             XTREEMFS=`pwd`
-        elif [ -d ../src -a -d ../cpp -a -d ../etc ]; then
-            echo "XTREEMFS base could be the parent directory..."
+        elif [ -d ../java -a -d ../cpp -a -d ../etc ]; then
+            #echo "XTREEMFS base could be the parent directory..."
             XTREEMFS=`pwd`/..
         fi
     fi
@@ -29,7 +29,7 @@ check_java() {
 
     JVERS=`$JAVA_HOME/bin/java -version 2>&1 | grep "java version" | \
        cut -d " " -f 3`
-    perl -e " exit 1 if ($JVERS < \"1.6.0\");"
+    test "$JVERS" \> "\"1.6.0"
     if [ $? -eq 1 ]; then
        echo "Java version is $JVERS. You need JAVA 1.6!!!"
        exit 1

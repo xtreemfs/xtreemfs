@@ -1,5 +1,5 @@
 /*
- * Copyright (c)      2011 by Michael Berlin, Zuse Institute Berlin
+ * Copyright (c) 2011-2012 by Michael Berlin, Zuse Institute Berlin
  *               2010-2011 by Patrick Schaefer, Zuse Institute Berlin
  *
  *
@@ -16,7 +16,8 @@
 #include <list>
 #include <string>
 
-#include "libxtreemfs/callback/execute_sync_request.h"
+#include "libxtreemfs/async_write_handler.h"
+#include "libxtreemfs/execute_sync_request.h"
 #include "libxtreemfs/helper.h"
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/pbrpc_url.h"
@@ -39,7 +40,8 @@ ClientImplementation::ClientImplementation(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const xtreemfs::rpc::SSLOptions* ssl_options,
     const Options& options)
-  : dir_service_auth_(),
+  : was_shutdown_(false),
+    dir_service_auth_(),
     dir_service_user_credentials_(user_credentials),
     dir_service_ssl_options_(ssl_options),
     options_(options),
@@ -69,6 +71,7 @@ ClientImplementation::ClientImplementation(
 }
 
 ClientImplementation::~ClientImplementation() {
+  Shutdown();
   if (!list_open_volumes_.empty()) {
     string error = "Client::~Client(): Not all XtreemFS volumes were closed."
         " Did you forget to call Client::Shutdown()? Memory leaks are the"
@@ -76,8 +79,16 @@ ClientImplementation::~ClientImplementation() {
     Logging::log->getLog(LEVEL_ERROR) << error << endl;
     ErrorLog::error_log->AppendError(error);
   }
+
   network_client_->shutdown();
   network_client_thread_->join();
+
+  // Since we wait for outstanding requests, the RPC client (network_client_)
+  // has to shutdown first and then we can wait for the Vivaldi thread.
+  // The other way around a deadlock might occur.
+  if (vivaldi_thread_.get() && vivaldi_thread_->joinable()) {
+    vivaldi_thread_->join();
+  }
 
   atexit(google::protobuf::ShutdownProtobufLibrary);
 
@@ -101,18 +112,49 @@ void ClientImplementation::Start() {
 
   GenerateVersion4UUID(&client_uuid_);
   assert(!client_uuid_.empty());
+
+  // Start vivaldi thread if configured
+  if (options_.vivaldi_enable) {
+    if (Logging::log->loggingActive(LEVEL_INFO)) {
+      Logging::log->getLog(LEVEL_INFO)
+          << "Starting vivaldi..." << endl;
+    }
+    vivaldi_.reset(new Vivaldi(network_client_.get(),
+                               dir_service_client_.get(),
+                               &dir_service_addresses,
+                               this->GetUUIDResolver(),
+                               options_));
+    vivaldi_thread_.reset(new boost::thread(boost::bind(&xtreemfs::Vivaldi::Run,
+                                                        vivaldi_.get())));
+  }
+
+  async_write_callback_thread_.reset(
+      new boost::thread(&xtreemfs::AsyncWriteHandler::ProcessCallbacks));
 }
 
 void ClientImplementation::Shutdown() {
-  boost::mutex::scoped_lock lock(list_open_volumes_mutex_);
+  if (!was_shutdown_) {
+    was_shutdown_ = true;
+    boost::mutex::scoped_lock lock(list_open_volumes_mutex_);
 
-  // Issue Close() on every Volume and remove it's pointer.
-  list<VolumeImplementation*>::iterator it;
-  while (!list_open_volumes_.empty()) {
-    it = list_open_volumes_.begin();
-    (*it)->CloseInternal();
-    delete *it;
-    it = list_open_volumes_.erase(it);
+    // Issue Close() on every Volume and remove it's pointer.
+    list<VolumeImplementation*>::iterator it;
+    while (!list_open_volumes_.empty()) {
+      it = list_open_volumes_.begin();
+      (*it)->CloseInternal();
+      delete *it;
+      it = list_open_volumes_.erase(it);
+    }
+
+    if (async_write_callback_thread_->joinable()) {
+      async_write_callback_thread_->interrupt();
+      async_write_callback_thread_->join();
+    }
+
+    // Stop vivaldi thread if running
+    if (vivaldi_thread_.get() && vivaldi_thread_->joinable()) {
+      vivaldi_thread_->interrupt();
+    }
   }
 }
 
@@ -120,7 +162,8 @@ Volume* ClientImplementation::OpenVolume(
     const std::string& volume_name,
     const xtreemfs::rpc::SSLOptions* ssl_options,
     const Options& options) {
-  UUIDIterator* mrc_uuid_iterator = new UUIDIterator;
+  // TODO(mberlin): Fix possible leak through the use of scoped_ptr and swap().
+  SimpleUUIDIterator* mrc_uuid_iterator = new SimpleUUIDIterator;
   VolumeNameToMRCUUID(volume_name, mrc_uuid_iterator);
 
   VolumeImplementation* volume = new VolumeImplementation(
@@ -190,7 +233,7 @@ void ClientImplementation::CreateVolume(
         ->set_value((*it)->value());
   }
 
-  UUIDIterator temp_uuid_iterator_with_addresses;
+  SimpleUUIDIterator temp_uuid_iterator_with_addresses;
   temp_uuid_iterator_with_addresses.AddUUID(mrc_address);
 
   boost::scoped_ptr< SyncCallback<emptyResponse> > response(
@@ -221,7 +264,7 @@ void ClientImplementation::DeleteVolume(
   xtreemfs_rmvolRequest rmvol_request;
   rmvol_request.set_volume_name(volume_name);
 
-  UUIDIterator temp_uuid_iterator_with_addresses;
+  SimpleUUIDIterator temp_uuid_iterator_with_addresses;
   temp_uuid_iterator_with_addresses.AddUUID(mrc_address);
 
   boost::scoped_ptr< SyncCallback<emptyResponse> > response(
@@ -242,11 +285,10 @@ void ClientImplementation::DeleteVolume(
   response->DeleteBuffers();
 }
 
-
 xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(
     const std::string& mrc_address,
     const xtreemfs::pbrpc::Auth& auth) {
-  UUIDIterator temp_uuid_iterator_with_addresses;
+  SimpleUUIDIterator temp_uuid_iterator_with_addresses;
   temp_uuid_iterator_with_addresses.AddUUID(mrc_address);
 
   return ListVolumes(&temp_uuid_iterator_with_addresses, auth);
@@ -287,6 +329,12 @@ xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(
 
 void ClientImplementation::UUIDToAddress(const std::string& uuid,
                                          std::string* address) {
+  UUIDToAddress(uuid, address, options_);
+}
+
+void ClientImplementation::UUIDToAddress(const std::string& uuid,
+                                         std::string* address,
+                                         const Options& options) {
   // The UUID must never be empty.
   assert(!uuid.empty());
 
@@ -311,8 +359,8 @@ void ClientImplementation::UUIDToAddress(const std::string& uuid,
               &rq),
           &dir_service_addresses,
           NULL,
-          options_.max_tries,
-          options_,
+          options.max_tries,
+          options,
           true,
           false));
 
@@ -410,7 +458,7 @@ void ClientImplementation::VolumeNameToMRCUUID(const std::string& volume_name,
 }
 
 void ClientImplementation::VolumeNameToMRCUUID(const std::string& volume_name,
-                                               UUIDIterator* uuid_iterator) {
+                                               SimpleUUIDIterator* uuid_iterator) {
   assert(uuid_iterator);
 
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
@@ -479,6 +527,11 @@ void ClientImplementation::VolumeNameToMRCUUID(const std::string& volume_name,
  *  returns just a cast to this. */
 UUIDResolver* ClientImplementation::GetUUIDResolver() {
   return static_cast<UUIDResolver*>(this);
+}
+
+
+const VivaldiCoordinates& ClientImplementation::GetVivaldiCoordinates() const {
+  return vivaldi_->GetVivaldiCoordinates();
 }
 
 }  // namespace xtreemfs

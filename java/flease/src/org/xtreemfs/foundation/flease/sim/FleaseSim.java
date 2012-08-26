@@ -156,8 +156,6 @@ public class FleaseSim {
                 final AtomicBoolean sync = new AtomicBoolean();
                 final AtomicReference<ASCIIString> ref = new AtomicReference();
 
-                final int host = (int)(Math.random()*numHosts);
-
                 Thread.sleep(100);
                 System.out.print("checking local states: ");
                 ASCIIString leaseHolder = null;
@@ -196,11 +194,15 @@ public class FleaseSim {
 
                 System.out.println("");
                 
+                final int host = (int)(Math.random()*numHosts);
+                stages[host].closeCell(new ASCIIString("testcell"), false);
+                
 
                 //make sure that cells also time out some times (requires a wait > 2*lease_timeout)
                 final int waitTime = (int)(Math.random()*(leaseTimeout*2+1000));
                 System.out.println("waiting for "+waitTime+"ms");
                 Thread.sleep(waitTime);
+                stages[host].openCell(new ASCIIString("testcell"), acceptors[host],false);
             } while (true);
 
             /*

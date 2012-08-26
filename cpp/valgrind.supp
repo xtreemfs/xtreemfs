@@ -73,7 +73,7 @@
    Memcheck:Leak
    fun:malloc
    fun:_ZN5boost6detail25get_once_per_thread_epochEv
-   fun:T.1209
+   fun:*
    fun:_ZN5boost6detail23get_current_thread_dataEv
    fun:_ZN5boost11this_thread6get_idEv
 }
@@ -82,6 +82,13 @@
    Memcheck:Leak
    fun:_Znwm
    fun:_ZN5boost12_GLOBAL__N_125make_external_thread_dataEv
+   fun:_ZN5boost11this_thread6get_idEv
+}
+{
+   boost_thread_TLS?
+   Memcheck:Leak
+   fun:_Znwm
+   obj:*libboost_thread*
    fun:_ZN5boost11this_thread6get_idEv
 }
 {
@@ -97,6 +104,18 @@
    fun:_ZN5boost4asio3ssl6detail12openssl_initILb1EEC1Ev
 }
 {
+   missing_openssl_compressionmethods_free_in_boost (1.49)
+   Memcheck:Leak
+   fun:malloc
+   fun:CRYPTO_malloc
+   ...
+   fun:SSL_COMP_get_compression_methods
+   fun:SSL_library_init
+   fun:_ZN5boost4asio3ssl6detail17openssl_init_base7do_initC1Ev
+   fun:_ZN5boost4asio3ssl6detail17openssl_init_base8instanceEv
+   fun:_ZN5boost4asio3ssl6detail12openssl_initILb1EEC1Ev
+}
+{
    pthread_cancel_init leak #1
    Memcheck:Leak
    fun:malloc
@@ -106,6 +125,7 @@
    fun:_dl_open
    fun:do_dlopen
    fun:_dl_catch_error
+   ...
    fun:__libc_dlopen_mode
    fun:pthread_cancel_init
    fun:pthread_cancel
@@ -115,7 +135,7 @@
    boost::thread_specific_ptr leak
    Memcheck:Leak
    fun:_Znwm
-   fun:_ZNSt8_Rb_treeIPKvSt4pairIKS1_N5boost6detail13tss_data_nodeEESt10_Select1stIS7_ESt4lessIS1_ESaIS7_EE10_M_insert_EPKSt18_Rb_tree_node_baseSG_RKS7_
+   ...
    fun:_ZN5boost6detail16add_new_tss_nodeEPKvNS_10shared_ptrINS0_20tss_cleanup_functionEEEPv
    fun:_ZN5boost6detail12set_tss_dataEPKvNS_10shared_ptrINS0_20tss_cleanup_functionEEEPvb
    fun:_ZN5boost19thread_specific_ptrIiED1Ev
@@ -125,7 +145,7 @@
    Memcheck:Leak
    fun:malloc
    fun:_ZN5boost6detail25get_once_per_thread_epochEv
-   fun:T.1209
+   fun:*
    fun:_ZN5boost6detail23get_current_thread_dataEv
    fun:_ZN5boost6detail13find_tss_dataEPKv
    fun:_ZN5boost6detail12get_tss_dataEPKv
@@ -136,19 +156,19 @@
    boost::thread_specific_ptr leak
    Memcheck:Leak
    fun:_Znwm
-   fun:_ZN5boost12_GLOBAL__N_125make_external_thread_dataEv
+   ...
    fun:_ZN5boost6detail16add_new_tss_nodeEPKvNS_10shared_ptrINS0_20tss_cleanup_functionEEEPv
    fun:_ZN5boost6detail12set_tss_dataEPKvNS_10shared_ptrINS0_20tss_cleanup_functionEEEPvb
    fun:_ZN5boost19thread_specific_ptrIiED1Ev
 }
 {
-   boost::thread_specific_ptr leak
+   boost::detail::get_current_thread_data() leak
    Memcheck:Leak
    fun:malloc
    fun:_ZN5boost6detail25get_once_per_thread_epochEv
-   fun:T.1209
+   fun:*
    fun:_ZN5boost6detail23get_current_thread_dataEv
-   fun:_ZN5boost6detail20interruption_checkerC1EP14pthread_cond_t
+   fun:_ZN5boost6detail20interruption_checker*
    fun:_ZN5boost18condition_variable4waitERNS_11unique_lockINS_5mutexEEE
 }
 {
@@ -156,7 +176,7 @@
    Memcheck:Leak
    fun:malloc
    fun:_ZN5boost6detail25get_once_per_thread_epochEv
-   fun:T.1209
+   fun:*
    fun:_ZN5boost6detail23get_current_thread_dataEv
    fun:_ZN5boost6thread4joinEv
 }
@@ -165,7 +185,7 @@
    Memcheck:Leak
    fun:malloc
    fun:_ZN5boost6detail25get_once_per_thread_epochEv
-   fun:T.1209
+   fun:*
    fun:_ZN5boost6detail23get_current_thread_dataEv
    fun:_ZN5boost6detail13find_tss_dataEPKv
    fun:_ZN5boost6detail12set_tss_dataEPKvNS_10shared_ptrINS0_20tss_cleanup_functionEEEPvb
@@ -196,4 +216,33 @@
    fun:malloc
    fun:realpath@@GLIBC_*
    fun:main
+}
+{
+   occurs when fusermount -u is run while fuse gets started
+   Memcheck:Leak
+   fun:calloc
+   fun:fuse_fs_new
+}
+{
+   boost static ssl init leak?
+   Memcheck:Leak
+   ...
+   fun:_ZN5boost4asio3ssl6detail12openssl_initILb1EEC1Ev
+   ...
+}
+{
+   unknown leak when interrupting a mount.xtreemfs retrying to mount a volume
+   Memcheck:Leak
+   fun:malloc
+   fun:_dl_map_object_deps
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:do_dlopen
+   fun:_dl_catch_error
+   fun:dlerror_run
+   fun:__libc_dlopen_mode
+   fun:__nss_lookup_function
+   obj:*
+   obj:*
 }

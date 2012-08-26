@@ -7,12 +7,15 @@
 package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 import org.xtreemfs.common.libxtreemfs.RPCCaller.CallGenerator;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
@@ -201,7 +204,7 @@ public class VolumeImplementation extends Volume {
     public void start() throws IOException {
         networkClient =
                 new RPCNIOSocketClient(sslOptions, volumeOptions.getRequestTimeout_s() * 1000,
-                        volumeOptions.getConnectTimeout_s() * 1000);
+                        volumeOptions.getConnectTimeout_s() * 1000, "Volume");
         networkClient.start();
         try {
             networkClient.waitForStartup();
@@ -384,7 +387,6 @@ public class VolumeImplementation extends Volume {
                                 return mrcServiceClient.link(server, authHeader, userCreds, input);
                             }
                         });
-        ;
 
         assert (response != null);
 
@@ -842,36 +844,78 @@ public class VolumeImplementation extends Volume {
     /*
      * (non-Javadoc)
      * 
+     * @see
+     * org.xtreemfs.common.libxtreemfs.Volume#createDirectory(org.xtreemfs.foundation.pbrpc.generatedinterfaces
+     * .RPC.UserCredentials, java.lang.String, int, boolean)
+     */
+    @Override
+    public void createDirectory(UserCredentials userCredentials, String path, int mode, boolean recursive)
+            throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+        if (recursive) {
+            if (path.equals("/")) {
+                return;
+            }
+            if (path.endsWith("/")) {
+                path = path.substring(0, path.length() - 1);
+            }
+            final String parent = path.substring(0, path.lastIndexOf("/"));
+            if (isDirectory(userCredentials, parent) || parent.isEmpty()) {
+                createDirectory(userCredentials, path, mode, false);
+            } else {
+                createDirectory(userCredentials, parent, mode, true);
+                createDirectory(userCredentials, path, mode, false);
+            }
+        } else {
+            mkdirRequest request =
+                    mkdirRequest.newBuilder().setVolumeName(volumeName).setPath(path).setMode(mode).build();
+
+            timestampResponse response =
+                    RPCCaller.<mkdirRequest, timestampResponse> syncCall(SERVICES.MRC, userCredentials,
+                            authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                            new CallGenerator<mkdirRequest, timestampResponse>() {
+                                @Override
+                                public RPCResponse<timestampResponse> executeCall(InetSocketAddress server,
+                                        Auth authHeader, UserCredentials userCreds, mkdirRequest input)
+                                        throws IOException {
+                                    return mrcServiceClient.mkdir(server, authHeader, userCreds, input);
+                                }
+                            });
+
+            assert (response != null);
+
+            String parentDir = Helper.resolveParentDirectory(path);
+            metadataCache.updateStatTime(path, response.getTimestampS(), Setattrs.SETATTR_CTIME.getNumber()
+                    | Setattrs.SETATTR_MTIME.getNumber());
+            // TODO: Retrieve stat as optional member of openResponse instead
+            // and update cached DirectoryEntries accordingly.
+            metadataCache.invalidateDirEntries(parentDir);
+        }
+    }
+
+    private boolean isDirectory(UserCredentials userCredentials, String path) throws PosixErrorException,
+            IOException, AddressToUUIDNotFoundException {
+        try {
+            Stat stat = getAttr(userCredentials, path);
+            return (stat.getMode() & SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_S_IFDIR.getNumber()) > 0;
+        } catch (PosixErrorException pee) {
+            if (pee.getPosixError().equals(POSIXErrno.POSIX_ERROR_ENOENT)) {
+                return false;
+            } else {
+                throw pee;
+            }
+        }
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
      * @see org.xtreemfs.common.libxtreemfs.Volume#createDirectory(org.xtreemfs.
      * foundation.pbrpc.generatedinterfaces .RPC.UserCredentials, java.lang.String, int)
      */
     @Override
     public void createDirectory(UserCredentials userCredentials, String path, int mode) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException {
-        mkdirRequest request =
-                mkdirRequest.newBuilder().setVolumeName(volumeName).setPath(path).setMode(mode).build();
-
-        timestampResponse response =
-                RPCCaller.<mkdirRequest, timestampResponse> syncCall(SERVICES.MRC, userCredentials,
-                        authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                        new CallGenerator<mkdirRequest, timestampResponse>() {
-                            @Override
-                            public RPCResponse<timestampResponse> executeCall(InetSocketAddress server,
-                                    Auth authHeader, UserCredentials userCreds, mkdirRequest input)
-                                    throws IOException {
-                                return mrcServiceClient.mkdir(server, authHeader, userCreds, input);
-                            }
-                        });
-
-        assert (response != null);
-
-        String parentDir = Helper.resolveParentDirectory(path);
-        metadataCache.updateStatTime(path, response.getTimestampS(), Setattrs.SETATTR_CTIME.getNumber()
-                | Setattrs.SETATTR_MTIME.getNumber());
-        // TODO: Retrieve stat as optional member of openResponse instead
-        // and update cached DirectoryEntries accordingly.
-        metadataCache.invalidateDirEntries(parentDir);
-
+        this.createDirectory(userCredentials, path, mode, false);
     }
 
     /*
@@ -905,7 +949,6 @@ public class VolumeImplementation extends Volume {
                 | Setattrs.SETATTR_MTIME.getNumber());
         metadataCache.invalidatePrefix(path);
         metadataCache.invalidateDirEntry(path, Helper.getBasename(path));
-
     }
 
     /*
@@ -919,9 +962,9 @@ public class VolumeImplementation extends Volume {
             boolean namesOnly) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         DirectoryEntries result = null;
         if (count == 0) {
-            count = Integer.MAX_VALUE - offset  - 1;
+            count = Integer.MAX_VALUE - offset - 1;
         }
-        
+
         // Try to get DirectoryEntries from cache
         result = metadataCache.getDirEntries(path, offset, count);
         if (result != null) {
@@ -980,7 +1023,8 @@ public class VolumeImplementation extends Volume {
                 if (dirEntriesBuilder.getEntries(i).getStbuf().getNlink() > 1) { // Do not cache hard links.
                     metadataCache.invalidate(path);
                 } else {
-                    metadataCache.updateStat(Helper.concatenatePath(path, dirEntriesBuilder.getEntries(i).getName()),
+                    metadataCache.updateStat(
+                            Helper.concatenatePath(path, dirEntriesBuilder.getEntries(i).getName()),
                             dirEntriesBuilder.getEntries(i).getStbuf());
                 }
             }
@@ -1025,7 +1069,7 @@ public class VolumeImplementation extends Volume {
         listxattrResponse response = null;
         if (useCache) {
             response = metadataCache.getXAttrs(path);
-            if (response != null)  {
+            if (response != null) {
                 return response;
             }
         }
@@ -1034,7 +1078,7 @@ public class VolumeImplementation extends Volume {
                 listxattrRequest.newBuilder().setVolumeName(volumeName).setPath(path).setNamesOnly(false)
                         .build();
 
-       response =
+        response =
                 RPCCaller.<listxattrRequest, listxattrResponse> syncCall(SERVICES.MRC, userCredentials,
                         authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
                         new CallGenerator<listxattrRequest, listxattrResponse>() {
@@ -1164,11 +1208,11 @@ public class VolumeImplementation extends Volume {
         // attributes from the cache.
         boolean xtreemfsAttributeRequested;
         if (name.length() >= 9) {
-            xtreemfsAttributeRequested = name.substring(0, 9).equals("xtreemfs.");    
+            xtreemfsAttributeRequested = name.substring(0, 9).equals("xtreemfs.");
         } else {
             xtreemfsAttributeRequested = false;
         }
-        
+
         // Differ between "xtreeemfs." attributes and user attributes.
         if (xtreemfsAttributeRequested) {
             // Always retrive from the server
@@ -1398,29 +1442,27 @@ public class VolumeImplementation extends Volume {
     }
 
     /**
-     * Called by FileHandle.Cclose() to remove fileHandle from the list.
+     * Called by FileHandle.close() to remove fileHandle from the list.
      */
     protected void closeFile(long fileId, FileInfo fileInfo, FileHandleImplementation fileHandle) {
-     // Remove file_info if it has no more open file handles.
+        // Remove file_info if it has no more open file handles.
         if (fileInfo.decreaseReferenceCount() == 0) {
             // The last file handle of this file was closed: Release all locks.
             // All locks for the process of this file handle have to be released.
             try {
-              fileInfo.releaseAllLocks(fileHandle);
-            } catch(XtreemFSException e) {
-              // Ignore errors.
-            } catch (Exception e) {
-                // TODO: change Type of AddressToUUIDNotFoundException, PosixErrorException to XTreemfsE 
+                fileInfo.releaseAllLocks(fileHandle);
+            } catch (XtreemFSException e) {
+                // Ignore errors.
             }
-            
+
             fileInfo.waitForPendingFileSizeUpdates();
             openFileTable.remove(fileId);
-            
+
             // Write back the OSDWriteResponse to the stat cache if there is one.
             OSDWriteResponse response = fileInfo.getOSDWriteResponse();
             if (response != null) {
                 String path = fileInfo.getPath();
-                metadataCache.updateStatFromOSDWriteResponse(path, response);   
+                metadataCache.updateStatFromOSDWriteResponse(path, response);
             }
         }
     }
@@ -1485,4 +1527,95 @@ public class VolumeImplementation extends Volume {
         return this.stripeTranslators;
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.xtreemfs.common.libxtreemfs.Volume#getStripeLocations(org.xtreemfs.foundation.pbrpc.generatedinterfaces
+     * .RPC.UserCredentials, java.lang.String, int, int)
+     */
+    @Override
+    public List<StripeLocation> getStripeLocations(UserCredentials userCredentials, String path,
+            long startSize, long length) throws IOException, PosixErrorException,
+            AddressToUUIDNotFoundException {
+        FileHandleImplementation fileHandle =
+                (FileHandleImplementation) this.openFile(userCredentials, path,
+                        SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
+        XLocSet xLocs = fileHandle.getXlocList();
+        fileHandle.close();
+
+        long stripeSize = xLocs.getReplicas(0).getStripingPolicy().getStripeSize() * 1024;
+        long indexOfFirstStripeToConsider = (startSize / stripeSize);
+        long remainingLengthOfFirstStripe = Math.min(length, stripeSize - (startSize % stripeSize));
+        int numberOfStrips = (int) (length / stripeSize + 1);
+
+        List<StripeLocation> stripeLocations = new ArrayList<StripeLocation>(numberOfStrips);
+        // add first Stripe
+        ArrayList<String> uuids =
+                getUuidsForStripeFromReplicas(xLocs.getReplicasList(), indexOfFirstStripeToConsider);
+        ArrayList<String> hostnames = resolveHostnamesFromUuids(uuids);
+        stripeLocations.add(new StripeLocation(startSize, remainingLengthOfFirstStripe, uuids
+                .toArray(new String[uuids.size()]), hostnames.toArray(new String[hostnames.size()])));
+
+        for (long index = indexOfFirstStripeToConsider + 1; index * stripeSize < startSize + length; index++) {
+            uuids = getUuidsForStripeFromReplicas(xLocs.getReplicasList(), index);
+            hostnames = resolveHostnamesFromUuids(uuids);
+            stripeLocations.add(new StripeLocation(index * stripeSize, Math.min(stripeSize,
+                    startSize+length-index*stripeSize), uuids.toArray(new String[uuids.size()]), hostnames.toArray(new String[hostnames
+                    .size()])));
+        }
+        return stripeLocations;
+    }
+
+    private ArrayList<String> resolveHostnamesFromUuids(ArrayList<String> uuids)
+            throws AddressToUUIDNotFoundException {
+        ArrayList<String> hostnames = new ArrayList<String>();
+        for (int i = 0; i < uuids.size(); i++) {
+            String hostname = uuidResolver.uuidToAddress(uuids.get(i));
+            hostname = hostname.substring(0, hostname.lastIndexOf(':'));
+            if (isIpAddress(hostname)) {
+                try {
+                    InetSocketAddress address = new InetSocketAddress(InetAddress.getByName(hostname), 0);
+                    hostname = address.getHostName();
+                } catch (Exception e) {
+                    hostname = null;
+                }
+
+                if (hostname == null) {
+                    // if hostname can't be resolved correctly, delete corresponding uuid. Also decrement
+                    // the counter i to not skip entries in the uuid list!
+                    if (Logging.isDebug()) {
+                        Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                                "Couldn't resolve hostname for uuid %s", uuids.get(i));
+                    }
+                    uuids.remove(i);
+                    i--;
+                } else {
+                    hostnames.add(hostname);
+                }
+            } else {
+                hostnames.add(hostname);
+            }
+        }
+        return hostnames;
+    }
+
+    private ArrayList<String> getUuidsForStripeFromReplicas(List<Replica> replicasList, long stripeIndex) {
+        ArrayList<String> uuids = new ArrayList<String>();
+        for (Replica replica : replicasList) {
+            int osdIndex = (int) stripeIndex % replica.getStripingPolicy().getWidth();
+            uuids.add(replica.getOsdUuids(osdIndex));
+        }
+        return uuids;
+    }
+
+    private boolean isIpAddress(String hostname) {
+        // TODO: Move this Function to a place where it can be reused.
+        final String IPADDRESS_PATTERN =
+                "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
+                        + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
+
+        Pattern pattern = Pattern.compile(IPADDRESS_PATTERN);
+        return pattern.matcher(hostname).matches();
+    }
 }

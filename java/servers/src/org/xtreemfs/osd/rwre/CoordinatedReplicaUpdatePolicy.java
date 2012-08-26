@@ -96,7 +96,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
             for (int i = 0; i < responses.length; i++) {
                 responses[i] = client.xtreemfs_rwr_status(remoteOSDUUIDs.get(i).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
                         credentials, credentials.getXcap().getFileId(),
-                        this.localObjVersion);
+                        0);  // maxObjVer = 0 => let the remote OSD assume that we don't have any objects yet. Important to detect wholes (writes not seen by this replica).
             }
         } catch (IOException ex) {
             callback.failed(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(),ex));
@@ -107,7 +107,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
             int numResponses = 0;
             int numErrors = 0;
             boolean exceptionSent = false;
-            ReplicaStatus[] states = new ReplicaStatus[numAcksRequired + 1];
+            ReplicaStatus[] states = new ReplicaStatus[remoteOSDUUIDs.size() + 1];
 
             @Override
             public void responseAvailable(RPCResponse r) {
@@ -155,7 +155,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                 }
 
                 if (numResponses == numAcksRequired) {
-                    states[numAcksRequired] = localReplicaState;
+                    states[states.length - 1] = localReplicaState;
                     if (Logging.isDebug()) {
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) received enough status responses for %s",localUUID, fileId);
                     }
@@ -167,7 +167,8 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                             r.freeBuffers();
                         }
                     };
-                    // TODO(bjko): Send auth state to all backups.
+                    
+                    // TODO(mberlin): Send auth state only to those backups which don't have the latest state.
                     for (int i = 0; i < remoteOSDUUIDs.size(); i++) {
                         try {
                             RPCResponse r2 = client.xtreemfs_rwr_auth_state(remoteOSDUUIDs.get(i).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
@@ -421,7 +422,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                     Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"unknown lease state for %s: %s",this.cellId,lease);
                     throw new RetryException("unknown lease state for cell "+this.cellId+", can't redirect to master. Please retry.");
                 } else
-                    Logging.logMessage(Logging.LEVEL_INFO, Category.replication, this, "(R:%s) local is backup, redirecting for fileid %s to %s",
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "(R:%s) local is backup, redirecting for fileid %s to %s",
                             localUUID, this.cellId,lease.getLeaseHolder().toString());
                     throw new RedirectToMasterException(lease.getLeaseHolder().toString());
             }

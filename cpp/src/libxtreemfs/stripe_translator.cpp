@@ -18,22 +18,27 @@ void StripeTranslatorRaid0::TranslateWriteRequest(
     const char *buf,
     size_t size,
     off_t offset,
-    const StripingPolicy& policy,
+    PolicyContainer policies,
     std::vector<WriteOperation>* operations) const {
-  // need to know stripe size and stripe width
-  unsigned int stripe_size = policy.stripe_size() * 1024;  // strip size in kB
-  unsigned int osdCount = policy.width();
+  // stripe size is stored in kB
+  unsigned int stripe_size = (*policies.begin())->stripe_size() * 1024;
 
   size_t start = 0;
   while (start < size) {
     size_t obj_number = (start + offset) / stripe_size;
-    size_t osd_offset = obj_number % osdCount;
     size_t req_offset = (start + offset) % stripe_size;
     size_t req_size
       = min(size - start, static_cast<size_t>(stripe_size - req_offset));
 
+    std::vector<size_t> osd_offsets;
+    for (PolicyContainer::iterator i = policies.begin();
+         i != policies.end();
+         ++i) {
+      osd_offsets.push_back(obj_number % (*i)->width());
+    }
+
     operations->push_back(WriteOperation(
-        obj_number, osd_offset, req_size, req_offset, buf + start));
+        obj_number, osd_offsets, req_size, req_offset, buf + start));
 
     start += req_size;
   }
@@ -43,22 +48,27 @@ void StripeTranslatorRaid0::TranslateReadRequest(
     char *buf,
     size_t size,
     off_t offset,
-    const StripingPolicy& policy,
+    PolicyContainer policies,
     std::vector<ReadOperation>* operations) const {
-  // need to know stripe size and stripe width
-  unsigned int stripe_size = policy.stripe_size() * 1024;  // strip size in kB
-  unsigned int osdCount = policy.width();
+  // stripe size is stored in kB
+  unsigned int stripe_size = (*policies.begin())->stripe_size() * 1024;
 
   size_t start = 0;
   while (start < size) {
     size_t obj_number = (start + offset) / stripe_size;
-    size_t osd_offset = obj_number % osdCount;
     off_t req_offset = (start + offset) % stripe_size;
     size_t req_size
       = min(size - start, static_cast<size_t>(stripe_size - req_offset));
 
+    std::vector<size_t> osd_offsets;
+    for (PolicyContainer::iterator i = policies.begin();
+         i != policies.end();
+         ++i) {
+      osd_offsets.push_back(obj_number % (*i)->width());
+    }
+
     operations->push_back(ReadOperation(
-        obj_number, osd_offset, req_size, req_offset, buf + start));
+        obj_number, osd_offsets, req_size, req_offset, buf + start));
 
     start += req_size;
   }

@@ -64,7 +64,6 @@ database.checkpoint.logfile_size = 16384
 
 # UUID for the OSD
 # IMPORTANT: replace 'localhost' with a reachable host name/IP address
-#uuid = http://farnsworth.zib.de:32636
 uuid = test-localhost-MRC3
 
 # Authentication providers are used to retrieve the user identities

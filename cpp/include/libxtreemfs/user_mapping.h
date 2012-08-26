@@ -8,6 +8,9 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_USER_MAPPING_H_
 #define CPP_INCLUDE_LIBXTREEMFS_USER_MAPPING_H_
 
+#include <sys/types.h>
+
+#include <list>
 #include <string>
 
 namespace xtreemfs {

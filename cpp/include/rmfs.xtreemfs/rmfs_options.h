@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef CPP_INCLUDE_FUSE_RMFS_OPTIONS_H_
-#define CPP_INCLUDE_FUSE_RMFS_OPTIONS_H_
+#ifndef CPP_INCLUDE_RMFS_XTREEMFS_RMFS_OPTIONS_H_
+#define CPP_INCLUDE_RMFS_XTREEMFS_RMFS_OPTIONS_H_
 
 #include "libxtreemfs/options.h"
 
@@ -51,4 +51,4 @@ class RmfsOptions : public Options {
 
 }  // namespace xtreemfs
 
-#endif  // CPP_INCLUDE_FUSE_RMFS_OPTIONS_H_
+#endif  // CPP_INCLUDE_RMFS_XTREEMFS_RMFS_OPTIONS_H_

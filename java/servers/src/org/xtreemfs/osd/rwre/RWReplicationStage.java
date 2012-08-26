@@ -35,6 +35,7 @@ import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.flease.proposer.FleaseException;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
@@ -129,11 +130,11 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
 
 
-    public RWReplicationStage(OSDRequestDispatcher master, SSLOptions sslOpts) throws IOException {
-        super("RWReplSt");
+    public RWReplicationStage(OSDRequestDispatcher master, SSLOptions sslOpts, int maxRequestsQueueLength) throws IOException {
+        super("RWReplSt", maxRequestsQueueLength);
         this.master = master;
-        client = new RPCNIOSocketClient(sslOpts, 15000, 60000*5);
-        fleaseClient = new RPCNIOSocketClient(sslOpts, 15000, 60000*5);
+        client = new RPCNIOSocketClient(sslOpts, 15000, 60000*5, "RWReplicationStage");
+        fleaseClient = new RPCNIOSocketClient(sslOpts, 15000, 60000*5, "RWReplicationStage (flease)");
         osdClient = new OSDServiceClient(client,null);
         fleaseOsdClient = new OSDServiceClient(fleaseClient,null);
         files = new HashMap<String, ReplicatedFileState>();
@@ -144,7 +145,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
         localID = new ASCIIString(master.getConfig().getUUID().toString());
 
-        masterEpochThread = new FleaseMasterEpochThread(master.getStorageStage().getStorageLayout());
+        masterEpochThread = new FleaseMasterEpochThread(master.getStorageStage().getStorageLayout(), maxRequestsQueueLength);
 
         FleaseConfig fcfg = new FleaseConfig(master.getConfig().getFleaseLeaseToMS(),
                 master.getConfig().getFleaseDmaxMS(), master.getConfig().getFleaseDmaxMS(),
@@ -172,6 +173,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 eventLeaseStateChanged(cellID, null, error);
             }
         }, masterEpochThread);
+        fstage.setLifeCycleListener(master);
     }
 
     @Override
@@ -348,6 +350,10 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             }
 
         } catch (Exception ex) {
+            Logging.logMessage(Logging.LEVEL_ERROR,
+                               this,
+                               "Exception was thrown and caught while processing the change of the lease state." +
+                                   " This is an error in the code. Please report it! Caught exception: ");
             Logging.logError(Logging.LEVEL_ERROR, this,ex);
         }
     }
@@ -366,12 +372,12 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 case INITIALIZING:
                 case OPEN:
                 case WAITING_FOR_LEASE: {
-                    Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"(R:%s) enqueued backup reset for file %s",localID, fileId);
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) enqueued backup reset for file %s",localID, fileId);
                     state.addPendingRequest(method);
                     break;
                 }
                 case BACKUP: {
-                    Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"(R:%s) backup reset triggered by AUTHSTATE request for file %s",localID, fileId);
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) backup reset triggered by AUTHSTATE request for file %s",localID, fileId);
                     state.setState(ReplicaState.RESET);
                     executeSetAuthState(localState, authState, state, fileId);
                     break;
@@ -479,8 +485,21 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                         ObjectData metadata = (ObjectData) r.get();
                         InternalObjectData data = new InternalObjectData(metadata, r.getData());
                         eventObjectFetched(fileId, record, data, null);
+                    } catch (PBRPCException ex) {
+                        // Transform exception into correct ErrorResponse.
+                        // TODO(mberlin): Generalize this functionality by returning "Throwable" instead of
+                        //                "ErrorResponse" to the event* functions.
+                        //                The "ErrorResponse" shall be created in the last 'step' at the
+                        //                invocation of failed().
+                        eventObjectFetched(fileId,
+                                           record,
+                                           null,
+                                           ErrorUtils.getErrorResponse(ex.getErrorType(), ex.getPOSIXErrno(), ex.toString(), ex));
                     } catch (Exception ex) {
-                        eventObjectFetched(fileId, record, null, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex));
+                        eventObjectFetched(fileId,
+                                           record,
+                                           null,
+                                           ErrorUtils.getErrorResponse(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_NONE, ex.toString(), ex));
                     } finally {
                         r.freeBuffers();
                     }
@@ -532,7 +551,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     fetchObjects();
                     if (numPendingFile == 0) {
                         //reset complete!
-                        Logging.logMessage(Logging.LEVEL_INFO, Category.replication, this,"(R:%s) RESET complete for file %s",localID, fileId);
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) RESET complete for file %s",localID, fileId);
                         doOpen(state);
                     }
                 }
@@ -706,7 +725,9 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         fstage.closeCell(file.getPolicy().getCellId(), false);
         for (StageRequest rq : file.getPendingRequests()) {
             RWReplicationCallback callback = (RWReplicationCallback) rq.getCallback();
-            callback.failed(ex);
+            if (callback != null) {
+                callback.failed(ex);
+            }
         }
         file.getPendingRequests().clear();
     }

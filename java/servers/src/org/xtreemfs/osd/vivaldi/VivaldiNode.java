@@ -256,7 +256,7 @@ public class VivaldiNode {
             vCoordinates = addCoordinates( vCoordinates, additionVector);
             vCoordinates = vCoordinates.toBuilder().setLocalError(localError).build();
 
-        }else{
+        } else {
             //The proposed movement is too big according to the current distance btw nodes
             ret = false;
         }

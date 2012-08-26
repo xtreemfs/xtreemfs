@@ -40,7 +40,7 @@ function update_version_macos_packaging() {
   if [ "$(uname)" != "Darwin" ]
   then
     # Skip editing the MacOSX files if we aren't on a MacOSX system.
-    continue
+    return
   fi
 
   for file in $package_files
@@ -212,10 +212,11 @@ EOF
 
         number=$(echo "$line" | cut -f1 -d\|)
         release=$(echo "$line" | cut -f2 -d\|)
-        echo "starting with $number: $release"
+        echo "- starting with $number: $release"
       done
       unset IFS
       echo
+      echo -n "enter new version: "
       read version
     done
 

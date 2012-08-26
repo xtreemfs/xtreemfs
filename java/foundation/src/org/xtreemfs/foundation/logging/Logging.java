@@ -130,6 +130,11 @@ public class Logging {
         Logging.out = out;
     }
     
+    public static String truncateString(String string, int maxLength) {
+        return (string.length() > maxLength) ? 
+                (string.substring(0, maxLength - 3) + "...") : string;
+    }
+    
     public static void logMessage(int level, Category cat, Object me, String formatPattern, Object... args) {
         
         // if the level is appropriate as well as the category, or the category
@@ -137,10 +142,13 @@ public class Logging {
         if (level <= instance.level && (cat == Category.all || (2 << cat.ordinal() & instance.catMask) > 0)) {
             
             char levelName = getLevelName(level);
-            
-            out.println(String.format(FORMAT_PATTERN, levelName, me == null ? "-" : me.getClass()
-                    .getSimpleName(), Thread.currentThread().getName(), Thread.currentThread().getId(),
-                getTimeStamp(), String.format(formatPattern, args)));
+                 
+            out.println(String.format(FORMAT_PATTERN, levelName, 
+                    me == null ? "-" : truncateString(me.getClass().getSimpleName(), 20), 
+                    truncateString(Thread.currentThread().getName(), 15),
+                    Thread.currentThread().getId(),
+                    getTimeStamp(), 
+                    String.format(formatPattern, args)));
         }
     }
     

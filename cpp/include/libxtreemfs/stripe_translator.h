@@ -8,6 +8,7 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_STRIPE_TRANSLATOR_H_
 #define CPP_INCLUDE_LIBXTREEMFS_STRIPE_TRANSLATOR_H_
 
+#include <list>
 #include <vector>
 
 #include "xtreemfs/GlobalTypes.pb.h"
@@ -16,16 +17,18 @@ namespace xtreemfs {
 
 class ReadOperation {
  public:
-  ReadOperation(size_t _obj_number, size_t _osd_offset,
+  typedef std::vector<size_t> OSDOffsetContainer;
+
+  ReadOperation(size_t _obj_number, OSDOffsetContainer _osd_offsets,
                 size_t _req_size, size_t _req_offset,
                 char *_data)
-      : obj_number(_obj_number), osd_offset(_osd_offset),
+      : obj_number(_obj_number), osd_offsets(_osd_offsets),
         req_size(_req_size), req_offset(_req_offset),
         data(_data) {
   };
 
   size_t obj_number;
-  size_t osd_offset;
+  OSDOffsetContainer osd_offsets;
   size_t req_size;
   size_t req_offset;
   char *data;
@@ -33,16 +36,18 @@ class ReadOperation {
 
 class WriteOperation {
  public:
-  WriteOperation(size_t _obj_number, size_t _osd_offset,
+  typedef std::vector<size_t> OSDOffsetContainer;
+
+  WriteOperation(size_t _obj_number, OSDOffsetContainer _osd_offsets,
                  size_t _req_size, size_t _req_offset,
                  const char *_data)
-      : obj_number(_obj_number), osd_offset(_osd_offset),
+      : obj_number(_obj_number), osd_offsets(_osd_offsets),
         req_size(_req_size), req_offset(_req_offset),
         data(_data) {
   };
 
   size_t obj_number;
-  size_t osd_offset;
+  OSDOffsetContainer osd_offsets;
   size_t req_size;
   size_t req_offset;
   const char *data;
@@ -50,19 +55,21 @@ class WriteOperation {
 
 class StripeTranslator {
  public:
+  typedef std::list<const xtreemfs::pbrpc::StripingPolicy*> PolicyContainer;
+
   virtual ~StripeTranslator() {}
   virtual void TranslateWriteRequest(
       const char *buf,
       size_t size,
       off_t offset,
-      const xtreemfs::pbrpc::StripingPolicy& policy,
+      PolicyContainer policies,
       std::vector<WriteOperation>* operations) const = 0;
 
   virtual void TranslateReadRequest(
       char *buf,
       size_t size,
       off_t offset,
-      const xtreemfs::pbrpc::StripingPolicy& policy,
+      PolicyContainer policies,
       std::vector<ReadOperation>* operations) const = 0;
 };
 
@@ -72,14 +79,14 @@ class StripeTranslatorRaid0 : public StripeTranslator {
       const char *buf,
       size_t size,
       off_t offset,
-      const xtreemfs::pbrpc::StripingPolicy& policy,
+      PolicyContainer policies,
       std::vector<WriteOperation>* operations) const;
 
   virtual void TranslateReadRequest(
       char *buf,
       size_t size,
       off_t offset,
-      const xtreemfs::pbrpc::StripingPolicy& policy,
+      PolicyContainer policies,
       std::vector<ReadOperation>* operations) const;
 };
 

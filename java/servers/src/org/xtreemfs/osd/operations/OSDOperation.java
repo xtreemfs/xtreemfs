@@ -10,6 +10,8 @@ package org.xtreemfs.osd.operations;
 
 import com.google.protobuf.Message;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerArray;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
@@ -53,10 +55,31 @@ public abstract class OSDOperation {
         assert(responses.length > 0);
 
         final AtomicInteger count = new AtomicInteger(0);
+        
+        final AtomicReferenceArray<StackTraceElement[]> stackTracePerRequest = new AtomicReferenceArray<StackTraceElement[]>(responses.length);
+        
         final RPCResponseAvailableListener l = new RPCResponseAvailableListener() {
 
             @Override
             public void responseAvailable(RPCResponse r) {
+                // TODO(mberlin): Remove this once the cause for possible duplicate calls of responseAvailable() is found.
+                for (int i = 0; i < responses.length; i++) {
+                    if (responses[i] == r) {
+                        if (!stackTracePerRequest.compareAndSet(i, null, Thread.currentThread().getStackTrace())) {
+                            StackTraceElement[] previousStackTrace = stackTracePerRequest.get(i);
+                            
+                            StringBuffer strace = new StringBuffer();
+                            for (int i1 = previousStackTrace.length-1; i1 >= 0; i1--) {
+                                strace.append("\t");
+                                strace.append(previousStackTrace[i1].toString());
+                            }
+                            throw new RuntimeException("responseAvailable() was already called here:\n"+strace.toString());
+                        }
+                        
+                        break;
+                    }
+                }
+                
                 if (count.incrementAndGet() == responses.length) {
                     listener.responsesAvailable();
                 }

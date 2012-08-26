@@ -10,7 +10,6 @@ package org.xtreemfs.osd.stages;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.xtreemfs.common.xloc.Replica;
@@ -38,9 +37,9 @@ public class StorageStage extends Stage {
     
     /** Creates a new instance of MultithreadedStorageStage */
     public StorageStage(OSDRequestDispatcher master, MetadataCache cache, StorageLayout layout,
-        int numOfThreads) throws IOException {
+        int numOfThreads, int maxRequestsQueueLength) throws IOException {
         
-        super("OSD Storage Stage");
+        super("OSD Storage Stage", maxRequestsQueueLength);
 
         this.layout = layout;
 
@@ -49,9 +48,14 @@ public class StorageStage extends Stage {
             numberOfThreads = numOfThreads;
         
         storageThreads = new StorageThread[numberOfThreads];
-        int maxQueueLength = DEFAULT_MAX_QUEUE_LENGTH / numberOfThreads;
-        for (int i = 0; i < numberOfThreads; i++)
-            storageThreads[i] = new StorageThread(i, master, cache, layout, maxQueueLength);
+        // TODO(mberlin): It's not safe to assume that the requests can be equally distributed across all threads.
+        //                Once somebody uses more than one thread (e.g., with SSDs), it should be checked to set the limit
+        //                of each StorageThread to 'maxRequestsQueueLength'.
+        int maxQueueLengthPerThread = maxRequestsQueueLength / numberOfThreads;
+        for (int i = 0; i < numberOfThreads; i++) {
+            storageThreads[i] = new StorageThread(i, master, cache, layout, maxQueueLengthPerThread);
+            storageThreads[i].setLifeCycleListener(master);
+        }
     }
 
     public StorageLayout getStorageLayout() {

@@ -8,13 +8,13 @@
 
 package org.xtreemfs.foundation.pbrpc.client;
 
-import com.google.protobuf.Message;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -37,13 +37,15 @@ import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.channels.ChannelIO;
 import org.xtreemfs.foundation.pbrpc.channels.SSLChannelIO;
 import org.xtreemfs.foundation.pbrpc.channels.SSLHandshakeOnlyChannelIO;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.pbrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.pbrpc.server.RPCNIOSocketServerConnection;
 import org.xtreemfs.foundation.pbrpc.utils.ReusableBufferInputStream;
 import org.xtreemfs.foundation.util.OutputUtils;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+
+import com.google.protobuf.Message;
 /**
  * 
  * @author bjko
@@ -54,7 +56,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
 
     
     /**
-     * Maxmimum tries to reconnect to the server
+     * Maximum tries to reconnect to the server
      */
     public static final int                                   MAX_RECONNECT       = 4;
     
@@ -95,17 +97,24 @@ public class RPCNIOSocketClient extends LifeCycleThread {
      */
     private boolean                                           brokenSelect;
 
-    // Connections with pending writes.
-    private final ConcurrentLinkedQueue<RPCClientConnection>  writeableConnections;
-    
     public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout)
         throws IOException {
-        this(sslOptions, requestTimeout, connectionTimeout, -1, -1, null);
+        this(sslOptions, requestTimeout, connectionTimeout, -1, -1, null, "");
+    }
+
+    public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout, String threadName)
+        throws IOException {
+        this(sslOptions, requestTimeout, connectionTimeout, -1, -1, null, threadName);
     }
     
     public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout,
         int sendBufferSize, int receiveBufferSize, SocketAddress localBindPoint) throws IOException {
-        super("RPC Client");
+        this(sslOptions, requestTimeout, connectionTimeout, sendBufferSize, receiveBufferSize, localBindPoint, "");
+    }
+    
+    public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout,
+        int sendBufferSize, int receiveBufferSize, SocketAddress localBindPoint, String threadName) throws IOException {
+        super(threadName);
         if (requestTimeout >= connectionTimeout - TIMEOUT_GRANULARITY * 2) {
             throw new IllegalArgumentException(
                 "request timeout must be smaller than connection timeout less " + TIMEOUT_GRANULARITY * 2
@@ -122,7 +131,6 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         quit = false;
         transactionId = new AtomicInteger((int) (Math.random() * 1e6 + 1.0));
         toBeEstablished = new ConcurrentLinkedQueue<RPCClientConnection>();
-        writeableConnections = new ConcurrentLinkedQueue<RPCClientConnection>();
     }
     
     
@@ -165,11 +173,16 @@ public class RPCNIOSocketClient extends LifeCycleThread {
 
             } else {
                 if (isEmpty) {
-                    writeableConnections.add(con);
-                    //final SelectionKey key = con.getChannel().keyFor(selector);
-                    //key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+                    final SelectionKey key = con.getChannel().keyFor(selector);
+                    if (key != null) {
+                        try {
+                            key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+                        } catch (CancelledKeyException e) {
+                            // Ignore it since the timeout mechanism will deal with it.
+                        }
+                    }
+                    selector.wakeup();
                 }
-                selector.wakeup();
             }
         }
     }
@@ -194,88 +207,83 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         notifyStarted();
         lastCheck = System.currentTimeMillis();
         
-        while (!quit) {
-            
-            int numKeys = 0;
-            
-            try {
-                numKeys = selector.select(TIMEOUT_GRANULARITY);
-            } catch (CancelledKeyException ex) {
-                Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Exception while selecting: %s",
-                    ex.toString());
-                continue;
-            } catch (IOException ex) {
-                Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Exception while selecting: %s",
-                    ex.toString());
-                continue;
-            }
-            
-            if (!toBeEstablished.isEmpty()) {
-                while (true) {
-                    RPCClientConnection con = toBeEstablished.poll();
-                    if (con == null) {
+        try {
+            while (!quit) {
+                if (!toBeEstablished.isEmpty()) {
+                    while (true) {
+                        RPCClientConnection con = toBeEstablished.poll();
+                        if (con == null) {
+                            break;
+                        }
+                        try {
+                            con.getChannel().register(selector,
+                                SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE | SelectionKey.OP_READ, con);
+                        } catch (ClosedChannelException ex) {
+                            closeConnection(con.getChannel().keyFor(selector), ex.toString());
+                        }
+                    }
+                    toBeEstablished.clear();
+                }
+                
+                int numKeys = 0;
+                try {
+                    numKeys = selector.select(TIMEOUT_GRANULARITY);
+                } catch (CancelledKeyException ex) {
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Exception while selecting: %s",
+                        ex.toString());
+                    continue;
+                } catch (IOException ex) {
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Exception while selecting: %s",
+                        ex.toString());
+                    continue;
+                }
+                if (numKeys > 0) {
+                    // fetch events
+                    Set<SelectionKey> keys = selector.selectedKeys();
+                    Iterator<SelectionKey> iter = keys.iterator();
+                    
+                    // process all events
+                    while (iter.hasNext()) {
+                        try {
+                            SelectionKey key = iter.next();
+                            
+                            // remove key from the list
+                            iter.remove();
+                            
+                            if (key.isConnectable()) {
+                                connectConnection(key);
+                            }
+                            if (key.isReadable()) {
+                                readConnection(key);
+                            }
+                            if (key.isWritable()) {
+                                writeConnection(key);
+                            }
+                        } catch (CancelledKeyException ex) {
+                            continue;
+                        }
+                    }
+                }
+    
+                if (numKeys == 0 && brokenSelect) {
+    
+                    try {
+                        sleep(25);
+                    } catch (InterruptedException ex) {
                         break;
                     }
-                    try {
-                        con.getChannel().register(selector,
-                            SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE | SelectionKey.OP_READ, con);
-                    } catch (ClosedChannelException ex) {
-                        closeConnection(con.getChannel().keyFor(selector), ex.toString());
-                    }
                 }
-                toBeEstablished.clear();
-            }
-            
-            if (numKeys > 0) {
-                // fetch events
-                Set<SelectionKey> keys = selector.selectedKeys();
-                Iterator<SelectionKey> iter = keys.iterator();
-                
-                // process all events
-                while (iter.hasNext()) {
-                    try {
-                        SelectionKey key = iter.next();
-                        
-                        // remove key from the list
-                        iter.remove();
-                        
-                        if (key.isConnectable()) {
-                            connectConnection(key);
-                        }
-                        if (key.isReadable()) {
-                            readConnection(key);
-                        }
-                        if (key.isWritable()) {
-                            writeConnection(key);
-                        }
-                    } catch (CancelledKeyException ex) {
-                        continue;
-                    }
-                }
-            }
-            while (!writeableConnections.isEmpty()) {
-                RPCClientConnection con = writeableConnections.poll();
-                if (con == null)
-                    break;
-                final SelectionKey key = con.getChannel().keyFor(selector);
-                writeConnection(key);
-            }
-            if (numKeys == 0 && brokenSelect) {
-
                 try {
-                    sleep(25);
-                } catch (InterruptedException ex) {
-                    break;
+                    checkForTimers();
+                } catch (ConcurrentModificationException ce) {
+                    Logging.logMessage(Logging.LEVEL_CRIT, this, 
+                            OutputUtils.getThreadDump());
                 }
             }
-            try {
-                checkForTimers();
-            } catch (ConcurrentModificationException ce) {
-                Logging.logMessage(Logging.LEVEL_CRIT, this, 
-                        OutputUtils.getThreadDump());
-            }
-
-        }
+        } catch (Throwable thr) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this, "PBRPC Client CRASHED!");
+            notifyCrashed(thr);
+        }            
         
         synchronized (connections) {
             for (RPCClientConnection con : connections.values()) {
@@ -348,7 +356,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 toBeEstablished.add(con);
                 selector.wakeup();
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "connection established");
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "connection created");
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "socket send buffer size: %d",
                         channel.socket().getSendBufferSize());
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "socket receive buffer size: %d",
@@ -360,11 +368,11 @@ public class RPCNIOSocketClient extends LifeCycleThread {
             } catch (Exception ex) {
                 if (Logging.isDebug()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "cannot contact server %s",
-                        con.getEndpoint().toString());
+                        con.getEndpointString());
                 }
                 con.connectFailed();
                 for (RPCClientRequest rq : con.getSendQueue()) {
-                    rq.getResponse().requestFailed("sending RPC failed: server '"+con.getEndpoint()+"' not reachable ("+ex+")");
+                    rq.getResponse().requestFailed("sending RPC failed: server '"+con.getEndpointString()+"' not reachable ("+ex+")");
                     rq.freeBuffers();
                 }
                 con.getSendQueue().clear();
@@ -373,11 +381,11 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         } else {
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
-                    "reconnect to server still blocked %s", con.getEndpoint().toString());
+                    "reconnect to server still blocked locally to avoid flooding (server: %s)", con.getEndpointString());
             }
             synchronized (con) {
                 for (RPCClientRequest rq : con.getSendQueue()) {
-                    rq.getResponse().requestFailed("sending RPC failed: server '"+con.getEndpoint()+"' not reachable (blocked due to reconnect timeout)");
+                    rq.getResponse().requestFailed("sending RPC failed: reconnecting to the server '"+con.getEndpointString()+"' was blocked locally to avoid flooding");
                     rq.freeBuffers();
                 }
                 con.getSendQueue().clear();
@@ -496,6 +504,12 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                         .stackTraceToString(ex));
             }
             closeConnection(key, "server closed connection ("+ex+")");
+        } catch (NotYetConnectedException e) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, OutputUtils
+                        .stackTraceToString(e));
+            }
+            closeConnection(key, "server closed connection: "+e);
         }
     }
 
@@ -546,9 +560,10 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 if (channel.doHandshake(key)) {
                     
                     while (true) {
-                        ByteBuffer[] buffers = con.getSendBuffers();
+                        ByteBuffer[] buffers = con.getRequestBuffers();
+                        RPCClientRequest send = con.getPendingRequest();
                         if (buffers == null) {
-                            RPCClientRequest send = null;
+                            assert(send == null);
                             synchronized (con) {
                                 if (con.getSendQueue().isEmpty()) {
                                     // no more responses, stop writing...
@@ -561,6 +576,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                             con.getRequestRecordMarker().clear();
                             buffers = send.packBuffers(con.getRequestRecordMarker());
                             con.setRequestBuffers(buffers);
+                            con.setPendingRequest(send);
                         }
 
                         assert(buffers != null);
@@ -583,19 +599,31 @@ public class RPCNIOSocketClient extends LifeCycleThread {
 
                         //remove from queue
                         synchronized (con) {
-                            RPCClientRequest send = con.getSendQueue().remove(0);
-                            con.addRequest(send.getRequestHeader().getCallId(), send);
-                            if (Logging.isDebug()) {
-                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
-                                    "sent request %d to %s", send.getRequestHeader().getCallId(), con.getEndpoint()
-                                        .toString());
+                            if (con.getSendQueue().remove(send)) {
+                                con.addRequest(send.getRequestHeader().getCallId(), send);
+                                if (Logging.isDebug()) {
+                                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                                        "sent request %d to %s", send.getRequestHeader().getCallId(), con.getEndpointString());
+                                }
+                            } else {
+                                if (Logging.isDebug()) {
+                                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                                        "sent request %d to %s, but it already timed out locally", send.getRequestHeader().getCallId(), con.getEndpointString());
+                                }
                             }
                         }
                         con.setRequestBuffers(null);
-
+                        con.setPendingRequest(null);
                     }
                 }
             }
+        } catch (CancelledKeyException ex) {
+            // simply close the connection
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, OutputUtils
+                        .stackTraceToString(ex));
+            }
+            closeConnection(key, "server closed connection: "+ex);
         } catch (IOException ex) {
             // simply close the connection
             if (Logging.isDebug()) {
@@ -603,6 +631,12 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                         .stackTraceToString(ex));
             }
             closeConnection(key, "server closed connection: "+ex);
+        } catch (NotYetConnectedException e) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, OutputUtils
+                        .stackTraceToString(e));
+            }
+            closeConnection(key, "server closed connection: "+e);
         }
     }
     
@@ -622,18 +656,14 @@ public class RPCNIOSocketClient extends LifeCycleThread {
             con.connected();
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "connected from %s to %s", con
-                        .getChannel().socket().getLocalSocketAddress().toString(), con.getEndpoint()
-                        .toString());
+                        .getChannel().socket().getLocalSocketAddress().toString(), con.getEndpointString());
             }
+        } catch (CancelledKeyException ex) {
+            con.connectFailed();
+            closeConnection(key, "server '" + con.getEndpointString() + "' not reachable ("+ex+")");
         } catch (IOException ex) {
             con.connectFailed();
-            String endpoint;
-            try {
-                endpoint = con.getEndpoint().toString();
-            } catch (Exception ex2) {
-                endpoint = "unknown";
-            }
-            closeConnection(key, "server '"+endpoint+"' not reachable ("+ex+")");
+            closeConnection(key, "server '" + con.getEndpointString() + "' not reachable ("+ex+")");
         }
         
     }
@@ -665,7 +695,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "closing connection to %s", con
-                    .getEndpoint().toString());
+                    .getEndpointString());
         }
     }
     

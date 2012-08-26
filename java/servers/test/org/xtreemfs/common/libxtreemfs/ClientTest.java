@@ -24,6 +24,8 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.mrc.MRC;
+import org.xtreemfs.mrc.MRCConfig;
+import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
@@ -58,6 +60,10 @@ public class ClientTest {
     
     private static OSD                  osds[];
     
+    private static MRCConfig            mrc2Config;
+    
+    private static MRCRequestDispatcher mrc2;
+    
     @BeforeClass
     public static void setUp() throws Exception {
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
@@ -80,7 +86,9 @@ public class ClientTest {
                 new InetSocketAddress[] { testEnv.getDIRAddress() }, 3, 1000);
         
         // start second MRC
-        new MRC(SetupUtils.createMRC2Config(), SetupUtils.createMRC2dbsConfig());
+        mrc2Config = SetupUtils.createMRC2Config();
+        mrc2 = new MRCRequestDispatcher(mrc2Config, SetupUtils.createMRC2dbsConfig());
+        mrc2.startup();
         
         osds = new OSD[NUMBER_OF_OSDS];
         for (int i = 0; i < osds.length; i++) {
@@ -95,6 +103,11 @@ public class ClientTest {
             if (osds[i] != null) {
                 osds[i].shutdown();
             }
+        }
+        
+        if (mrc2 != null) {
+            mrc2.shutdown();
+            mrc2 = null;
         }
         
         testEnv.shutdown();
@@ -161,8 +174,7 @@ public class ClientTest {
         // Create MRC Address List
         String invalidMrcAddress = "ThereIsNoMRC.org:36592";
         String mrcAddress = testEnv.getMRCAddress().getHostName() + ":" + testEnv.getMRCAddress().getPort();
-        String mrc2Address = SetupUtils.createMRC2Config().getHostName() + ":"
-                + SetupUtils.createMRC2Config().getPort();
+        String mrc2Address = mrc2Config.getHostName() + ":" + mrc2Config.getPort();
         List<String> mrcAddressList = new ArrayList<String>();
         mrcAddressList.add(invalidMrcAddress);
         mrcAddressList.add(mrcAddress);

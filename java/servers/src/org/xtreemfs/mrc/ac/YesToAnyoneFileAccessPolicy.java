@@ -38,6 +38,11 @@ public class YesToAnyoneFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
+    public String translatePermissions(int permissions) {
+        return null;
+    }
+    
+    @Override
     public void checkPermission(StorageManager sMan, FileMetadata file, long parentId, String userId,
         List<String> groupIds, String accessMode) {
         // do nothing

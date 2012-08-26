@@ -11,11 +11,10 @@ package org.xtreemfs.osd.storage;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.Replica;
@@ -157,9 +156,9 @@ public class StorageThread extends Stage {
                 break;
             }
             
-        } catch (Throwable th) {
-            method.sendInternalServerError(th);
-            Logging.logError(Logging.LEVEL_ERROR, this, th);
+        } catch (Exception ex) {
+            method.sendInternalServerError(ex);
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
     }
     
@@ -304,6 +303,15 @@ public class StorageThread extends Stage {
             final String fileId = (String) rq.getArgs()[0];
             final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
             final long remoteMaxObjVer = (Long) rq.getArgs()[2];
+
+            // Do not assume that objects exist on the remote side based on the maxObjVer.
+            // The reason for that is the remote side may not have seen all consecutive writes
+            // up to maxObjVer. As an optimization, one could implement a marker which contains
+            // the minimal version which was actually seen by all replicas. Until then,
+            // remoteMaxObjVer must not be > 0.
+            assert remoteMaxObjVer == 0 : "Received a request with remoteMaxObjVer != 0." +
+            		" This probably means that you run OSDs with different versions." +
+            		" Please update all OSDs to the same version.";
             
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             // final boolean rangeRequested = (offset > 0) || (length <

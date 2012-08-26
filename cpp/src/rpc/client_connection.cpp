@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009-2010 by Bjoern Kolbeck, Zuse Institute Berlin
+ *                    2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -54,6 +55,7 @@ ClientConnection::ClientConnection(
       connect_timeout_s_(connect_timeout_s),
       max_reconnect_interval_s_(max_reconnect_interval_s),
       next_reconnect_at_(boost::posix_time::not_a_date_time),
+      last_connect_was_at_(boost::posix_time::not_a_date_time),
       reconnect_interval_s_(1),
       use_gridssl_(use_gridssl),
       ssl_context_(ssl_context) {
@@ -62,29 +64,36 @@ ClientConnection::ClientConnection(
 }
 
 void ClientConnection::AddRequest(ClientRequest* request) {
-  requests_.push(request);
+  request->set_client_connection(this);
+  requests_.push(PendingRequest(request->call_id(), request));
   (*request_table_)[request->call_id()] = request;
 }
 
 void ClientConnection::SendError(POSIXErrno posix_errno,
                                  const string &error_message) {
   if (!requests_.empty()) {
-    Logging::log->getLog(LEVEL_ERROR)
-        << "operation failed: errno="
-        << posix_errno << " message="
-        << error_message << endl;
-    RPCHeader::ErrorResponse *err = new RPCHeader::ErrorResponse();
-    err->set_error_type(IO_ERROR);
-    err->set_posix_errno(posix_errno);
-    err->set_error_message(error_message);
+    RPCHeader::ErrorResponse err;
+    err.set_error_type(IO_ERROR);
+    err.set_posix_errno(posix_errno);
+    err.set_error_message(error_message);
+
     while (!requests_.empty()) {
-      ClientRequest *request = requests_.front();
-      request_table_->erase(request->call_id());
+      uint32_t call_id = requests_.front().call_id;
+      request_map::iterator iter = request_table_->find(call_id);
+      if (iter != request_table_->end()) {
+        // ClientRequest still exists in request_table_, it's safe to access it.
+        ClientRequest *request = requests_.front().rq;
+        request->set_error(new RPCHeader::ErrorResponse(err));
+        request->ExecuteCallback();
+        request_table_->erase(call_id);
+
+        Logging::log->getLog(LEVEL_ERROR)
+            << "operation failed: call_id=" << call_id
+            << " errno=" << posix_errno
+            << " message=" << error_message << endl;
+      }
       requests_.pop();
-      request->set_error(new RPCHeader::ErrorResponse(*err));
-      request->ExecuteCallback();
     }
-    delete err;
   }
 }
 
@@ -111,7 +120,8 @@ void ClientConnection::DoProcess() {
     } else {
       SendError(POSIX_ERROR_EIO,
                 "cannot connect to server '" + server_name_ + ":" + server_port_
-                    + "', reconnect blocked");
+                    + "', reconnect blocked locally"
+                    " to avoid flooding the server");
     }
   }
 }
@@ -136,9 +146,11 @@ void ClientConnection::CreateChannel() {
 
 void ClientConnection::Connect() {
   connection_state_ = CONNECTING;
+  last_connect_was_at_ = posix_time::second_clock::local_time();
   asio::ip::tcp::resolver::query query(server_name_, server_port_);
   resolver_.async_resolve(query,
-                          boost::bind(&ClientConnection::PostResolve, this,
+                          boost::bind(&ClientConnection::PostResolve,
+                                      this,
                                       asio::placeholders::error,
                                       asio::placeholders::iterator));
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
@@ -148,17 +160,20 @@ void ClientConnection::Connect() {
 }
 
 void ClientConnection::OnConnectTimeout(const boost::system::error_code& err) {
-  if (err != asio::error::operation_aborted) {
-    Reset();
-    SendError(POSIX_ERROR_EIO,
-              "connection to '" + server_name_ + ":" + server_port_
-                  + "' timed out");
+  if (err == asio::error::operation_aborted || connection_state_ == CLOSED) {
+    return;
   }
+  Reset();
+  SendError(POSIX_ERROR_EIO,
+            "connection to '" + server_name_ + ":" + server_port_
+                + "' timed out");
 }
 
-void ClientConnection::PostResolve(
-    const boost::system::error_code& err,
-    tcp::resolver::iterator endpoint_iterator) {
+void ClientConnection::PostResolve(const boost::system::error_code& err,
+                                   tcp::resolver::iterator endpoint_iterator) {
+  if (err == asio::error::operation_aborted || connection_state_ == CLOSED) {
+    return;
+  }
   if (err) {
     Reset();
     SendError(POSIX_ERROR_EIO,
@@ -188,14 +203,13 @@ void ClientConnection::PostResolve(
   }
 }
 
-void ClientConnection::PostConnect(
-    const boost::system::error_code& err,
-    tcp::resolver::iterator endpoint_iterator) {
+void ClientConnection::PostConnect(const boost::system::error_code& err,
+                                   tcp::resolver::iterator endpoint_iterator) {
+  if (err == asio::error::operation_aborted || connection_state_ == CLOSED) {
+    return;
+  }
   timer_.cancel();
   if (err) {
-    if (err == asio::error::operation_aborted) {
-      return;
-    }
     delete endpoint_;
     endpoint_ = NULL;
 
@@ -242,33 +256,38 @@ void ClientConnection::SendRequest() {
   if (!requests_.empty()) {
     connection_state_ = ACTIVE;
 
-    ClientRequest* rq = requests_.front();
+    uint32_t call_id = requests_.front().call_id;
+    ClientRequest* rq = requests_.front().rq;
     assert(rq != NULL);
 
-    if (rq->cancelled()) {
-      delete rq;
-      // The element must be poped from the queue.
+    // If the request is no longer present in request_table_, it was already
+    // deleted meanwhile (e.g. by Client::handleTimeout()).
+    // Get request from table.
+    request_map::iterator iter = request_table_->find(call_id);
+    if (iter == request_table_->end()) {
+      // ClientRequest was already deleted, stop here.
       requests_.pop();
       SendRequest();
-    }
+    } else {
+      // Process ClientRequest.
+      const RecordMarker* rrm = rq->request_marker();
 
-    const RecordMarker* rrm = rq->request_marker();
-
-    vector<boost::asio::const_buffer> bufs;
-    bufs.push_back(boost::asio::buffer(
-        reinterpret_cast<const void*>(rq->rq_hdr_msg()),
-        RecordMarker::get_size() + rrm->header_len() + rrm->message_len()));
-
-    if (rrm->data_len() > 0) {
+      vector<boost::asio::const_buffer> bufs;
       bufs.push_back(boost::asio::buffer(
-        reinterpret_cast<const void*> (rq->rq_data()), rrm->data_len()));
-    }
+          reinterpret_cast<const void*>(rq->rq_hdr_msg()),
+          RecordMarker::get_size() + rrm->header_len() + rrm->message_len()));
 
-    socket_->async_write(bufs, boost::bind(
-        &ClientConnection::PostWrite,
-        this,
-        asio::placeholders::error,
-        asio::placeholders::bytes_transferred));
+      if (rrm->data_len() > 0) {
+        bufs.push_back(boost::asio::buffer(
+            reinterpret_cast<const void*>(rq->rq_data()), rrm->data_len()));
+      }
+
+      socket_->async_write(bufs, boost::bind(
+          &ClientConnection::PostWrite,
+          this,
+          asio::placeholders::error,
+          asio::placeholders::bytes_transferred));
+    }
   } else {
     connection_state_ = IDLE;
   }
@@ -290,23 +309,42 @@ void ClientConnection::Reset() {
   endpoint_ = NULL;
   connection_state_ = WAIT_FOR_RECONNECT;
 
-  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-    Logging::log->getLog(LEVEL_DEBUG)
-        << "connection reset, next reconnect in " << reconnect_interval_s_
-        << "s " << endl;
+  posix_time::ptime now = posix_time::second_clock::local_time();
+  posix_time::seconds reconnect_interval(reconnect_interval_s_);
+  if (last_connect_was_at_ != boost::posix_time::not_a_date_time) {
+    posix_time::time_duration elapsed_time_since_last_connect =
+        now - last_connect_was_at_;
+    if (elapsed_time_since_last_connect.is_negative()) {
+      next_reconnect_at_ = now;
+    } else if (elapsed_time_since_last_connect <= reconnect_interval) {
+      next_reconnect_at_
+          = now + reconnect_interval - elapsed_time_since_last_connect;
+    } else {
+      next_reconnect_at_ = now;
+    }
+  } else {
+    next_reconnect_at_ = now + reconnect_interval;
   }
 
-  next_reconnect_at_ = posix_time::second_clock::local_time()
-      + posix_time::seconds(reconnect_interval_s_);
-  reconnect_interval_s_ = reconnect_interval_s_ * 2;
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+    Logging::log->getLog(LEVEL_DEBUG)
+        << "Connection reset, next reconnect in "
+        << (next_reconnect_at_ - now).seconds() << " seconds." << endl;
+  }
+
+  reconnect_interval_s_ *= 2;
   if (reconnect_interval_s_ > max_reconnect_interval_s_) {
     reconnect_interval_s_ = max_reconnect_interval_s_;
   }
 }
 
-void ClientConnection::Close() {
+void ClientConnection::Close(const std::string& error) {
+  resolver_.cancel();
+  timer_.cancel();
   try {
-    socket_->close();
+    if (socket_) {
+      socket_->close();
+    }
   } catch (const boost::system::system_error& e) {
     // Ignore close errors. Needed for Windows.
   }
@@ -314,32 +352,39 @@ void ClientConnection::Close() {
   socket_ = NULL;
   connection_state_ = CLOSED;
   SendError(POSIX_ERROR_EIO,
-            "connection to '" + server_name_ + ":" + server_port_ + "' closed"
-                " locally");
+            "Connection to '" + server_name_ + ":" + server_port_ + "' closed"
+                " locally due to: " + error);
 }
 
 void ClientConnection::PostWrite(const boost::system::error_code& err,
                                  size_t bytes_written) {
+  if (err == asio::error::operation_aborted || connection_state_ == CLOSED) {
+    return;
+  }
   if (err) {
     Reset();
     SendError(POSIX_ERROR_EIO,
-              "could not send request to '" + server_name_ + ":" +server_port_
+              "Could not send request to '" + server_name_ + ":" +server_port_
                   + "': " + err.message());
   } else {
-    // Send next?
-    requests_.pop();
-    connection_state_ = IDLE;
-    SendRequest();
+    // Pop sent request.
+    if (!requests_.empty()) {
+      requests_.pop();
+      connection_state_ = IDLE;
+
+      if (!requests_.empty()) {
+        SendRequest();
+      }
+    }
   }
 }
 
 void ClientConnection::PostReadRecordMarker(
     const boost::system::error_code& err) {
+  if (err == asio::error::operation_aborted || connection_state_ == CLOSED) {
+    return;
+  }
   if (err) {
-    if (err == boost::asio::error::operation_aborted) {
-      // Connection was closed. Ignore error.
-      return;
-    }
     Reset();
     SendError(POSIX_ERROR_EIO,
               "could not read record marker in response from '" + server_name_
@@ -374,6 +419,9 @@ void ClientConnection::PostReadRecordMarker(
 }
 
 void ClientConnection::PostReadMessage(const boost::system::error_code& err) {
+  if (err == asio::error::operation_aborted || connection_state_ == CLOSED) {
+    return;
+  }
   if (err) {
     DeleteInternalBuffers();
     Reset();
@@ -405,8 +453,9 @@ void ClientConnection::PostReadMessage(const boost::system::error_code& err) {
     } else {
       if (Logging::log->loggingActive(LEVEL_WARN)) {
         Logging::log->getLog(LEVEL_WARN)
-            << "Received response for unknown request id: "
-            << respHdr->call_id() << " from " << server_name_ << std::endl;
+            << "Received response for unknown request from "
+               "'" << server_name_ << ":" << server_port_ << "'"
+               " (call id = " << respHdr->call_id() << ")." << endl;
       }
       DeleteInternalBuffers();
       delete respHdr;

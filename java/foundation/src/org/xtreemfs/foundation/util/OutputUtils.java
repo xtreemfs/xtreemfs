@@ -6,7 +6,6 @@
  *
  */
 
-
 package org.xtreemfs.foundation.util;
 
 import java.io.ByteArrayOutputStream;
@@ -14,8 +13,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Map;
 
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
+import org.apache.commons.codec.binary.Base64;
 
 /**
  * 
@@ -23,14 +21,10 @@ import sun.misc.BASE64Encoder;
  */
 public final class OutputUtils {
 
-    static BASE64Encoder base64enc = new BASE64Encoder();
-    static BASE64Decoder base64dec = new BASE64Decoder();
-        
-    public static final char[] trHex = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C',
-        'D', 'E', 'F'               };
-    
+    public static final char[] trHex = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+
     public static final byte[] fromHex;
-    
+
     static {
         fromHex = new byte[128];
         fromHex['0'] = 0;
@@ -55,16 +49,16 @@ public final class OutputUtils {
         fromHex['e'] = 14;
         fromHex['F'] = 15;
         fromHex['f'] = 15;
-        
+
     }
-    
+
     public static final String byteToHexString(byte b) {
         StringBuilder sb = new StringBuilder(2);
         sb.append(trHex[((b >> 4) & 0x0F)]);
         sb.append(trHex[(b & 0x0F)]);
         return sb.toString();
     }
-    
+
     public static final String byteArrayToHexString(byte[] array) {
         StringBuilder sb = new StringBuilder(2 * array.length);
         for (byte b : array) {
@@ -73,11 +67,11 @@ public final class OutputUtils {
         }
         return sb.toString();
     }
-    
+
     public static final String byteArrayToFormattedHexString(byte[] array) {
         return byteArrayToFormattedHexString(array, 0, array.length);
     }
-    
+
     public static final String byteArrayToFormattedHexString(byte[] array, int offset, int len) {
         StringBuilder sb = new StringBuilder(2 * len);
         for (int i = offset; i < offset + len; i++) {
@@ -89,36 +83,36 @@ public final class OutputUtils {
                 else
                     sb.append(" ");
             }
-            
+
         }
         return sb.toString();
     }
-    
+
     public static final String stackTraceToString(Throwable th) {
-        
+
         PrintStream ps = null;
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             ps = new PrintStream(out);
             if (th != null)
                 th.printStackTrace(ps);
-            
+
             return new String(out.toByteArray());
-            
+
         } finally {
             if (ps != null)
                 ps.close();
         }
-        
+
     }
-    
+
     public static String formatBytes(long bytes) {
-        
+
         double kb = bytes / 1024.0;
         double mb = bytes / (1024.0 * 1024.0);
         double gb = bytes / (1024.0 * 1024.0 * 1024.0);
         double tb = bytes / (1024.0 * 1024.0 * 1024.0 * 1024.0);
-        
+
         if (tb >= 1.0) {
             return String.format("%.2f TB", tb);
         } else if (gb >= 1.0) {
@@ -131,7 +125,7 @@ public final class OutputUtils {
             return bytes + " bytes";
         }
     }
-    
+
     public static String escapeToXML(String st) {
         st = st.replace("&", "&amp;");
         st = st.replace("'", "&apos;");
@@ -140,7 +134,7 @@ public final class OutputUtils {
         st = st.replace("\"", "&quot;");
         return st;
     }
-    
+
     public static String unescapeFromXML(String st) {
         st = st.replace("&amp;", "&");
         st = st.replace("&apos;", "'");
@@ -149,28 +143,28 @@ public final class OutputUtils {
         st = st.replace("&quot;", "\"");
         return st;
     }
-    
+
     public static String encodeBase64(byte[] bytes) {
-        return base64enc.encode(bytes);
+        return new String(Base64.encodeBase64(bytes));
     }
-    
+
     public static byte[] decodeBase64(String s) throws IOException {
-        return base64dec.decodeBuffer(s);
+        return Base64.decodeBase64(s.getBytes());
     }
-    
+
     public static byte[] hexStringToByteArray(String hexString) {
-        
+
         assert (hexString.length() % 2 == 0);
         byte[] bytes = new byte[hexString.length() / 2];
-        
+
         for (int i = 0; i < hexString.length(); i += 2) {
             int b = Integer.parseInt(hexString.substring(i, i + 2), 16);
             bytes[i / 2] = b >= 128 ? (byte) (b - 256) : (byte) b;
         }
-        
+
         return bytes;
     }
-    
+
     /**
      * Writes an integer as a hex string to sb starting with the LSB.
      * 
@@ -187,12 +181,12 @@ public final class OutputUtils {
         sb.append(OutputUtils.trHex[((value >> 24) & 0x0F)]);
         sb.append(OutputUtils.trHex[((value >> 28) & 0x0F)]);
     }
-    
+
     public static void writeHexLong(final StringBuffer sb, final long value) {
         OutputUtils.writeHexInt(sb, (int) (value & 0xFFFFFFFF));
         OutputUtils.writeHexInt(sb, (int) (value >> 32));
     }
-    
+
     /**
      * Reads an integer from a hex string (starting with the LSB).
      * 
@@ -209,14 +203,14 @@ public final class OutputUtils {
         value += ((int) OutputUtils.fromHex[str.charAt(position + 5)]) << 20;
         value += ((int) OutputUtils.fromHex[str.charAt(position + 6)]) << 24;
         value += ((int) OutputUtils.fromHex[str.charAt(position + 7)]) << 28;
-        
+
         return value;
     }
-    
+
     public static long readHexLong(final String str, int position) {
         int low = OutputUtils.readHexInt(str, position);
         int high = OutputUtils.readHexInt(str, position + 8);
-        
+
         // calculate the value: left-shift the upper 4 bytes by 32 bit and
         // append the lower 32 bit
         long value = ((long) high) << 32 | (((long) low) & 4294967295L);
@@ -226,13 +220,13 @@ public final class OutputUtils {
     public static String getThreadDump() {
         StringBuilder sb = new StringBuilder();
         sb.append("<HTML><BODY><H1>THREAD STATES</H1><PRE>");
-        final Map<Thread,StackTraceElement[]> traces =  Thread.getAllStackTraces();
+        final Map<Thread, StackTraceElement[]> traces = Thread.getAllStackTraces();
         for (Thread t : traces.keySet()) {
             sb.append("<B>thread: ");
             sb.append(t.getName());
             sb.append("</B>\n");
             final StackTraceElement[] elems = traces.get(t);
-            for (int i = elems.length-1; i >= 0; i--) {
+            for (int i = elems.length - 1; i >= 0; i--) {
                 sb.append(elems[i].toString());
                 sb.append("\n");
             }

@@ -16,7 +16,7 @@ import org.xtreemfs.foundation.buffer.ReusableBuffer;
  */
 public class WriteOperation {
 
-    private int            objNumber;
+    private long            objNumber;
 
     private int            osdOffset;
 
@@ -26,7 +26,7 @@ public class WriteOperation {
     
     private ReusableBuffer buf;
 
-    protected WriteOperation(int objNumber, int osdOffset, int reqSize, int reqOffset, ReusableBuffer buf) {
+    protected WriteOperation(long objNumber, int osdOffset, int reqSize, int reqOffset, ReusableBuffer buf) {
         this.objNumber = objNumber;
         this.osdOffset = osdOffset;
         this.reqSize = reqSize;
@@ -34,7 +34,7 @@ public class WriteOperation {
         this.buf = buf;
     }
 
-    protected int getObjNumber() {
+    protected long getObjNumber() {
         return objNumber;
     }
 

@@ -8,6 +8,7 @@ from time import sleep
 from test_volume import Volume
 from optparse import OptionParser
 import test_server, os, traceback, subprocess, shutil, sys, socket, time
+import datetime
 
 START_STOP_SERVICE_RETRIES = 3
 
@@ -249,7 +250,7 @@ class TestEnvironment:
                     pass # The directory may already exist because of direct/nondirect volume sharing
 
                 os.chdir(test_run_dir_path)
-                testlog.write("Executing test '" + test['name'] + "' on VolumeConfig '" + vcName + "'\n\n")
+                testlog.write(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + " Executing test '" + test['name'] + "' on VolumeConfig '" + vcName + "'\n\n")
                 testlog.flush()
                 sys.stdout.write("xtestenv: Test '" + test['name'] + "' on VolumeConfig '" + vcName + "' ... ")
                 sys.stdout.flush()
@@ -304,7 +305,7 @@ class TestEnvironment:
         return perVolumeSuccess
 
     def _runSystemTest(self, test, testlog):
-        testlog.write("Executing system test '" + test['name'] + "'\n\n")
+        testlog.write(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + " Executing system test '" + test['name'] + "'\n\n")
         testlog.flush()
         sys.stdout.write("xtestenv: Executing system test '" + test['name'] + "' ... ")
         sys.stdout.flush()

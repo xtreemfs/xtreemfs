@@ -1,4 +1,4 @@
-//automatically generated from DIR.proto at Tue Feb 21 14:34:05 CET 2012
+//automatically generated from DIR.proto at Tue Feb 28 11:16:01 CET 2012
 //(c) 2012. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -217,6 +217,19 @@ public class DIRServiceClient {
     public RPCResponse<DIR.configurationSetResponse> xtreemfs_configuration_set(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, String uuid, List<GlobalTypes.KeyValuePair> parameter, long version) throws IOException {
          final DIR.Configuration msg = DIR.Configuration.newBuilder().setUuid(uuid).addAllParameter(parameter).setVersion(version).build();
          return xtreemfs_configuration_set(server, authHeader, userCreds,msg);
+    }
+
+    public RPCResponse xtreemfs_vivaldi_client_update(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.VivaldiCoordinates input) throws IOException {
+         if (server == null) server = defaultServer;
+         if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
+         RPCResponse response = new RPCResponse(null);
+         client.sendRequest(server, authHeader, userCreds, 10001, 24, input, null, response, false);
+         return response;
+    }
+
+    public RPCResponse xtreemfs_vivaldi_client_update(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, double x_coordinate, double y_coordinate, double local_error) throws IOException {
+         final GlobalTypes.VivaldiCoordinates msg = GlobalTypes.VivaldiCoordinates.newBuilder().setXCoordinate(x_coordinate).setYCoordinate(y_coordinate).setLocalError(local_error).build();
+         return xtreemfs_vivaldi_client_update(server, authHeader, userCreds,msg);
     }
 
     public boolean clientIsAlive() {
