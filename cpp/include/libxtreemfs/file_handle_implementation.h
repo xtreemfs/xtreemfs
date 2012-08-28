@@ -16,13 +16,13 @@
 #include <map>
 #include <string>
 
+#include "libxtreemfs/client_implementation.h"
+#include "libxtreemfs/file_handle.h"
+#include "libxtreemfs/xcap_handler.h"
 #include "pbrpc/RPC.pb.h"
 #include "rpc/callback_interface.h"
 #include "xtreemfs/GlobalTypes.pb.h"
 #include "xtreemfs/MRC.pb.h"
-#include "libxtreemfs/client_implementation.h"
-#include "libxtreemfs/file_handle.h"
-#include "libxtreemfs/xcap_handler.h"
 
 namespace xtreemfs {
 
@@ -233,7 +233,7 @@ class FileHandleImplementation
 
   // TODO(mberlin): Add flags member.
 
-  /** Capabilitiy for the file, used to authorize against services */
+  /** Capability for the file, used to authorize against services */
   xtreemfs::pbrpc::XCap xcap_;
 
   /** True if there is an outstanding xcap_renew callback. */
