@@ -120,6 +120,23 @@ PrintUserName(PDOKAN_FILE_INFO	DokanFileInfo)
 
 #define MirrorCheckFlag(val, flag) if (val&flag) { DbgPrint(L"\t" L#flag L"\n"); }
 
+static xtreemfs::DokanAdapter* adapter(PDOKAN_FILE_INFO DokanFileInfo) {
+  return reinterpret_cast<xtreemfs::DokanAdapter*>(
+      DokanFileInfo->DokanOptions->GlobalContext);
+}
+
+static int __stdcall DelegateCreateFile(
+    LPCWSTR	FileName,
+    DWORD	AccessMode,
+    DWORD	ShareMode,
+    DWORD	CreationDisposition,
+    DWORD	FlagsAndAttributes,
+    PDOKAN_FILE_INFO DokanFileInfo) {
+  return adapter(DokanFileInfo)->CreateFileW(
+      FileName, AccessMode, ShareMode, CreationDisposition, 
+      FlagsAndAttributes, DokanFileInfo);
+}
+
 static int
 __stdcall MirrorCreateFile(
   LPCWSTR					FileName,
@@ -591,6 +608,13 @@ __stdcall MirrorGetFileInformation(
   return 0;
 }
 
+static int __stdcall DelegateFindFiles(
+    LPCWSTR FileName,
+    PFillFindData FillFindData,
+    PDOKAN_FILE_INFO DokanFileInfo) {
+  return adapter(DokanFileInfo)->FindFiles(
+      FileName, FillFindData, DokanFileInfo);
+}
 
 static int
 __stdcall MirrorFindFiles(
@@ -1047,27 +1071,14 @@ int __cdecl
 wmain(ULONG argc, PWCHAR argv[])
 {
   int status;
-  ULONG command;
-  PDOKAN_OPERATIONS dokanOperations =
-      (PDOKAN_OPERATIONS)malloc(sizeof(DOKAN_OPERATIONS));
-  PDOKAN_OPTIONS dokanOptions =
-      (PDOKAN_OPTIONS)malloc(sizeof(DOKAN_OPTIONS));
-
-  if (argc < 5) {
-    fprintf(stderr, "mirror.exe\n"
-      "  /r RootDirectory (ex. /r c:\\test)\n"
-      "  /l DriveLetter (ex. /l m)\n"
-      "  /t ThreadCount (ex. /t 5)\n"
-      "  /d (enable debug output)\n"
-      "  /s (use stderr for output)\n"
-      "  /n (use network drive)\n"
-      "  /m (use removable drive)\n");
-    return -1;
-  }
 
   xtreemfs::DokanOptions dokan_options;
-  dokan_adapter = new xtreemfs::DokanAdapter(&dokan_options);
+  dokan_options.service_address = "demo.xtreemfs.org:32638";
+  dokan_options.volume_name = "demo";
+  boost::scoped_ptr<xtreemfs::DokanAdapter> dokan_adapter(
+      new xtreemfs::DokanAdapter(&dokan_options));
 
+#if 0  // TODO
     // Every operation is executed in the context of a given user and his groups.
   // The UserCredentials object does store this information and is currently
   // (08/2011) *only* evaluated by the MRC (although the protocol requires to
@@ -1103,59 +1114,28 @@ wmain(ULONG argc, PWCHAR argv[])
     cout << "An error occured:\n" << e.what() << endl;
     return 1;
   }
+#endif
 
   g_DebugMode = FALSE;
   g_UseStdErr = FALSE;
-
+  
+  PDOKAN_OPERATIONS dokanOperations =
+      (PDOKAN_OPERATIONS)malloc(sizeof(DOKAN_OPERATIONS));
+  PDOKAN_OPTIONS dokanOptions =
+      (PDOKAN_OPTIONS)malloc(sizeof(DOKAN_OPTIONS));
   ZeroMemory(dokanOptions, sizeof(DOKAN_OPTIONS));
   dokanOptions->Version = DOKAN_VERSION;
   dokanOptions->ThreadCount = 0; // use default
-
-  for (command = 1; command < argc; command++) {
-    switch (towlower(argv[command][1])) {
-    case L'r':
-      command++;
-      wcscpy_s(RootDirectory, sizeof(RootDirectory)/sizeof(WCHAR), argv[command]);
-      DbgPrint(L"RootDirectory: %ls\n", RootDirectory);
-      break;
-    case L'l':
-      command++;
-      wcscpy_s(MountPoint, sizeof(MountPoint)/sizeof(WCHAR), argv[command]);
-      dokanOptions->MountPoint = MountPoint;
-      break;
-    case L't':
-      command++;
-      dokanOptions->ThreadCount = (USHORT)_wtoi(argv[command]);
-      break;
-    case L'd':
-      g_DebugMode = TRUE;
-      break;
-    case L's':
-      g_UseStdErr = TRUE;
-      break;
-    case L'n':
-      dokanOptions->Options |= DOKAN_OPTION_NETWORK;
-      break;
-    case L'm':
-      dokanOptions->Options |= DOKAN_OPTION_REMOVABLE;
-      break;
-    default:
-      fwprintf(stderr, L"unknown command: %s\n", argv[command]);
-      return -1;
-    }
-  }
-
-  if (g_DebugMode) {
-    dokanOptions->Options |= DOKAN_OPTION_DEBUG;
-  }
-  if (g_UseStdErr) {
-    dokanOptions->Options |= DOKAN_OPTION_STDERR;
-  }
-
+  dokanOptions->GlobalContext = reinterpret_cast<ULONG64>(dokan_adapter.get());
+  
+  dokanOptions->MountPoint = L"X:";
+  dokanOptions->Options |= DOKAN_OPTION_NETWORK;
+  dokanOptions->Options |= DOKAN_OPTION_DEBUG;
+  dokanOptions->Options |= DOKAN_OPTION_STDERR;
   dokanOptions->Options |= DOKAN_OPTION_KEEP_ALIVE;
 
   ZeroMemory(dokanOperations, sizeof(DOKAN_OPERATIONS));
-  dokanOperations->CreateFile = MirrorCreateFile;
+  dokanOperations->CreateFile = DelegateCreateFile;
   dokanOperations->OpenDirectory = MirrorOpenDirectory;
   dokanOperations->CreateDirectory = MirrorCreateDirectory;
   dokanOperations->Cleanup = MirrorCleanup;
@@ -1164,7 +1144,7 @@ wmain(ULONG argc, PWCHAR argv[])
   dokanOperations->WriteFile = MirrorWriteFile;
   dokanOperations->FlushFileBuffers = MirrorFlushFileBuffers;
   dokanOperations->GetFileInformation = MirrorGetFileInformation;
-  dokanOperations->FindFiles = MirrorFindFiles;
+  dokanOperations->FindFiles = DelegateFindFiles;
   dokanOperations->FindFilesWithPattern = NULL;
   dokanOperations->SetFileAttributes = MirrorSetFileAttributes;
   dokanOperations->SetFileTime = MirrorSetFileTime;
@@ -1212,9 +1192,7 @@ wmain(ULONG argc, PWCHAR argv[])
   free(dokanOptions);
   free(dokanOperations);
 
-  // Shutdown() does also invoke a volume->Close().
-  client->Shutdown();
-  delete client;
+  dokan_adapter->Stop();
 
   fprintf(stderr, "Did shutdown the XtreemFS client.");
 

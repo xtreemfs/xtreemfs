@@ -45,6 +45,32 @@ using namespace xtreemfs::util;
 
 namespace xtreemfs {
 
+static int ConvertXtreemFSErrnoToDokan(
+    xtreemfs::pbrpc::POSIXErrno xtreemfs_errno);
+
+static string WideCharToUTF8(LPCWSTR from) {
+	char buffer[1024];
+  if (WideCharToMultiByte(CP_UTF8, 0, from, -1, buffer, 1024, 0, 0) > 1024)  {
+    return "error";
+  }
+	
+	char* pos = buffer;
+	while(*pos != 0) { // replace windows path delimiters
+		if (pos[0] == '\\' && pos[1] == 0 && pos != buffer) {	// suppress trailing slash
+			pos[0] = 0;
+    }	else if(*pos == '\\') { // convert
+			*pos = '/';
+    }
+		pos++;
+	}
+
+	return buffer;
+}
+
+static int UTF8ToWideChar(const std::string& utf8, wchar_t* buffer, int buffer_size) {
+	return MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, buffer, buffer_size);
+}
+
 DokanAdapter::DokanAdapter(DokanOptions* options)
     : options_(options),
       xctl_("/.xctl$$$")
@@ -58,7 +84,7 @@ int DokanAdapter::CreateFile(LPCWSTR path,
                              DWORD creation_disposition,
                              DWORD flags_and_attributes,
                              PDOKAN_FILE_INFO dokan_file_info) {
-  return 0;
+  return -ERROR_ACCESS_DENIED;
 }
 
 int DokanAdapter::OpenDirectory(
@@ -120,10 +146,39 @@ int DokanAdapter::GetFileInformation(
 }
 
 int DokanAdapter::FindFiles(
-    LPCWSTR,			// PathName
-    PFillFindData,		// call this function with PWIN32_FIND_DATAW
-    //  (see PFillFindData definition)
-    PDOKAN_FILE_INFO) {
+    LPCWSTR path,
+    PFillFindData callback,
+    PDOKAN_FILE_INFO dokan_file_info) {
+  UserCredentials user_credentials;
+  system_user_mapping_->GetUserCredentialsForCurrentUser(
+      &user_credentials);
+
+  try {
+    for (uint64_t offset = 0; ; offset += options_->readdir_chunk_size) {
+      xtreemfs::pbrpc::DirectoryEntries* entries = volume_->ReadDir(
+          user_credentials, WideCharToUTF8(path), offset,
+          options_->readdir_chunk_size, false);
+
+      for (int i = 0; i < entries->entries_size(); ++i) {
+        const xtreemfs::pbrpc::DirectoryEntry& entry = entries->entries(i);
+        WIN32_FIND_DATA find_data;
+
+        UTF8ToWideChar(entry.name(), find_data.cFileName, 260);
+        // ... other fields
+
+        callback(&find_data, dokan_file_info);
+      }
+    }
+  } catch(const PosixErrorException& e) {
+    return -1 * ConvertXtreemFSErrnoToDokan(e.posix_errno());
+  } catch(const XtreemFSException&) {
+    return -1 * EIO;
+  } catch(const exception& e) {
+    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+              + string(e.what()));
+    return -1 * EIO;
+  }
+
   return 0;
 }
 
@@ -455,42 +510,41 @@ void DokanAdapter::Stop() {
 //  return xtreemfs::pbrpc::SYSTEM_V_FCNTL(result);
 //}
 //
-//int DokanAdapter::ConvertXtreemFSErrnoToDokan(
-//    xtreemfs::pbrpc::POSIXErrno xtreemfs_errno) {
-//  switch (xtreemfs_errno) {
-//    case POSIX_ERROR_EPERM:
-//      return EPERM;
-//    case POSIX_ERROR_ENOENT:
-//      return ENOENT;
-//    case POSIX_ERROR_EINTR:
-//      return EINTR;
-//    case POSIX_ERROR_EIO:
-//      return EIO;
-//    case POSIX_ERROR_EAGAIN:
-//      return EAGAIN;
-//    case POSIX_ERROR_EACCES:
-//      return EACCES;
-//    case POSIX_ERROR_EEXIST:
-//      return EEXIST;
-//    case POSIX_ERROR_EXDEV:
-//      return EXDEV;
-//    case POSIX_ERROR_ENODEV:
-//      return ENODEV;
-//    case POSIX_ERROR_ENOTDIR:
-//      return ENOTDIR;
-//    case POSIX_ERROR_EISDIR:
-//      return EISDIR;
-//    case POSIX_ERROR_EINVAL:
-//      return EINVAL;
-//    case POSIX_ERROR_ENOTEMPTY:
-//      return ENOTEMPTY;
-//    case POSIX_ERROR_ENODATA:
-//      return ENODATA;
-//
-//    default:
-//      return xtreemfs_errno;
-//  }
-//}
+static int ConvertXtreemFSErrnoToDokan(
+    xtreemfs::pbrpc::POSIXErrno xtreemfs_errno) {
+  switch (xtreemfs_errno) {
+    case POSIX_ERROR_EPERM:
+      return EPERM;
+    case POSIX_ERROR_ENOENT:
+      return ENOENT;
+    case POSIX_ERROR_EINTR:
+      return EINTR;
+    case POSIX_ERROR_EIO:
+      return EIO;
+    case POSIX_ERROR_EAGAIN:
+      return EAGAIN;
+    case POSIX_ERROR_EACCES:
+      return EACCES;
+    case POSIX_ERROR_EEXIST:
+      return EEXIST;
+    case POSIX_ERROR_EXDEV:
+      return EXDEV;
+    case POSIX_ERROR_ENODEV:
+      return ENODEV;
+    case POSIX_ERROR_ENOTDIR:
+      return ENOTDIR;
+    case POSIX_ERROR_EISDIR:
+      return EISDIR;
+    case POSIX_ERROR_EINVAL:
+      return EINVAL;
+    case POSIX_ERROR_ENOTEMPTY:
+      return ENOTEMPTY;
+    case POSIX_ERROR_ENODATA:
+      return ENODATA;
+    default:
+      return xtreemfs_errno;
+  }
+}
 //
 //int DokanAdapter::statfs(const char *path, struct statvfs *statv) {
 //  UserCredentials user_credentials;
