@@ -102,7 +102,7 @@ int main(int argc, char* argv[]) {
     cout << "\nReading the content of the file example_libxtreemfs.txt:\n\n"
          << read_buf << endl;
   } catch(const xtreemfs::XtreemFSException& e) {
-    cout << "An error occured:\n" << e.what() << endl;
+    cout << "An error occurred:\n" << e.what() << endl;
     return_code = 1;
   }
   

@@ -584,7 +584,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //  } catch(const XtreemFSException& e) {
 //    return -1 * EIO;
 //  } catch(const exception& e) {
-//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //        + string(string(e.what())));
 //    return -1 * EIO;
 //  }
@@ -606,7 +606,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //    } catch(const XtreemFSException& e) {
 //      return -1 * EIO;
 //    } catch(const exception& e) {
-//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //          + string(e.what()));
 //      return -1 * EIO;
 //    }
@@ -669,7 +669,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //  } catch(const XtreemFSException& e) {
 //    return -1 * EIO;
 //  } catch(const exception& e) {
-//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //              + string(e.what()));
 //    return -1 * EIO;
 //  }
@@ -697,7 +697,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //    } catch(const XtreemFSException& e) {
 //      return -1 * EIO;
 //    } catch(const exception& e) {
-//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //                + string(e.what()));
 //      return -1 * EIO;
 //    }
@@ -776,7 +776,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //    } catch(const XtreemFSException& e) {
 //      return -1 * EIO;
 //    } catch(const exception& e) {
-//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //                + string(e.what()));
 //      return -1 * EIO;
 //    }
@@ -883,7 +883,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //  } catch(const XtreemFSException& e) {
 //    return -1 * EIO;
 //  } catch(const exception& e) {
-//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //              + string(e.what()));
 //    return -1 * EIO;
 //  }
@@ -918,7 +918,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //  } catch(const XtreemFSException& e) {
 //    return -1 * EIO;
 //  } catch(const exception& e) {
-//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //              + string(e.what()));
 //    return -1 * EIO;
 //  }
@@ -940,7 +940,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //    } catch(const XtreemFSException& e) {
 //      return -1 * EIO;
 //    } catch(const exception& e) {
-//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //                + string(e.what()));
 //      return -1 * EIO;
 //    }
@@ -982,7 +982,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //    } catch(const XtreemFSException& e) {
 //      return -1 * EIO;
 //    } catch(const exception& e) {
-//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //                + string(e.what()));
 //      return -1 * EIO;
 //    }
@@ -1014,7 +1014,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //    } catch(const XtreemFSException& e) {
 //      return -1 * EIO;
 //    } catch(const exception& e) {
-//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //                + string(e.what()));
 //      return -1 * EIO;
 //    }
@@ -1037,7 +1037,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //  } catch(const XtreemFSException& e) {
 //    return -1 * EIO;
 //  } catch(const exception& e) {
-//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //              + string(e.what()));
 //    return -1 * EIO;
 //  }
@@ -1076,7 +1076,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //  } catch(const XtreemFSException& e) {
 //    return -1 * EIO;
 //  } catch(const exception& e) {
-//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //              + string(e.what()));
 //    return -1 * EIO;
 //  }
@@ -1095,7 +1095,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //  } catch(const XtreemFSException& e) {
 //    return -1 * EIO;
 //  } catch(const exception& e) {
-//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //              + string(e.what()));
 //    return -1 * EIO;
 //  }
@@ -1119,7 +1119,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //    } catch(const XtreemFSException& e) {
 //      return -1 * EIO;
 //    } catch(const exception& e) {
-//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //                + string(e.what()));
 //      return -1 * EIO;
 //    }
@@ -1145,7 +1145,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //    } catch(const XtreemFSException& e) {
 //      return -1 * EIO;
 //    } catch(const exception& e) {
-//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //                + string(e.what()));
 //      return -1 * EIO;
 //    }
@@ -1173,7 +1173,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //    } catch(const XtreemFSException& e) {
 //      return -1 * EIO;
 //    } catch(const exception& e) {
-//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //                + string(e.what()));
 //      return -1 * EIO;
 //    }
@@ -1197,7 +1197,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //    } catch(const XtreemFSException& e) {
 //      return -1 * EIO;
 //    } catch(const exception& e) {
-//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //                + string(e.what()));
 //      return -1 * EIO;
 //    }
@@ -1222,7 +1222,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //    } catch(const XtreemFSException& e) {
 //      return -1 * EIO;
 //    } catch(const exception& e) {
-//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //                + string(e.what()));
 //      return -1 * EIO;
 //    }
@@ -1250,7 +1250,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //    } catch(const XtreemFSException& e) {
 //      return -1 * EIO;
 //    } catch(const exception& e) {
-//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //                + string(e.what()));
 //      return -1 * EIO;
 //    }
@@ -1273,7 +1273,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //    try {
 //      file_handle->ReleaseLockOfProcess(dokan_get_context()->pid);
 //    } catch(const XtreemFSException& e) {
-//      // We dont care if errors occured.
+//      // We dont care if errors occurred.
 //    }
 //
 //    try {
@@ -1283,7 +1283,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //    } catch(const XtreemFSException& e) {
 //      return -1 * EIO;
 //    } catch(const exception& e) {
-//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //                + string(e.what()));
 //      return -1 * EIO;
 //    }
@@ -1307,7 +1307,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //  } catch(const XtreemFSException& e) {
 //    return -1 * EIO;
 //  } catch(const exception& e) {
-//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //              + string(e.what()));
 //    return -1 * EIO;
 //  }
@@ -1326,7 +1326,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //  } catch(const XtreemFSException& e) {
 //    return -1 * EIO;
 //  } catch(const exception& e) {
-//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //              + string(e.what()));
 //    return -1 * EIO;
 //  }
@@ -1345,7 +1345,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //  } catch(const XtreemFSException& e) {
 //    return -1 * EIO;
 //  } catch(const exception& e) {
-//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //              + string(e.what()));
 //    return -1 * EIO;
 //  }
@@ -1364,7 +1364,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //  } catch(const XtreemFSException& e) {
 //    return -1 * EIO;
 //  } catch(const exception& e) {
-//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //              + string(e.what()));
 //    return -1 * EIO;
 //  }
@@ -1383,7 +1383,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //  } catch(const XtreemFSException& e) {
 //    return -1 * EIO;
 //  } catch(const exception& e) {
-//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //              + string(e.what()));
 //    return -1 * EIO;
 //  }
@@ -1407,7 +1407,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //  } catch(const XtreemFSException& e) {
 //    return -1 * EIO;
 //  } catch(const exception& e) {
-//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //              + string(e.what()));
 //    return -1 * EIO;
 //  }
@@ -1454,7 +1454,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //  } catch(const XtreemFSException& e) {
 //    return -1 * EIO;
 //  } catch(const exception& e) {
-//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //              + string(e.what()));
 //    return -1 * EIO;
 //  }
@@ -1486,7 +1486,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //  } catch(const XtreemFSException& e) {
 //    return -1 * EIO;
 //  } catch(const exception& e) {
-//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //              + string(e.what()));
 //    return -1 * EIO;
 //  }
@@ -1530,7 +1530,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //  } catch(const XtreemFSException& e) {
 //    return -1 * EIO;
 //  } catch(const exception& e) {
-//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //              + string(e.what()));
 //    return -1 * EIO;
 //  }
@@ -1554,7 +1554,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //  } catch(const XtreemFSException& e) {
 //    return -1 * EIO;
 //  } catch(const exception& e) {
-//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //              + string(e.what()));
 //    return -1 * EIO;
 //  }
@@ -1621,7 +1621,7 @@ static int ConvertXtreemFSErrnoToDokan(
 //  } catch(const XtreemFSException& e) {
 //    return -1 * EIO;
 //  } catch(const exception& e) {
-//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //              + string(e.what()));
 //    return -1 * EIO;
 //  }
