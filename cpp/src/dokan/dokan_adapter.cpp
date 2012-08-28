@@ -26,7 +26,7 @@
 #include "dokan/dokan_options.h"
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/file_handle.h"
-//#include "libxtreemfs/helper.h"
+#include "libxtreemfs/helper.h"
 #include "libxtreemfs/system_user_mapping.h"
 #include "libxtreemfs/user_mapping.h"
 #include "libxtreemfs/simple_uuid_iterator.h"
@@ -48,27 +48,31 @@ namespace xtreemfs {
 static int ConvertXtreemFSErrnoToDokan(
     xtreemfs::pbrpc::POSIXErrno xtreemfs_errno);
 
-static string WideCharToUTF8(LPCWSTR from) {
-	char buffer[1024];
-  if (WideCharToMultiByte(CP_UTF8, 0, from, -1, buffer, 1024, 0, 0) > 1024)  {
-    return "error";
-  }
-	
-	char* pos = buffer;
-	while(*pos != 0) { // replace windows path delimiters
-		if (pos[0] == '\\' && pos[1] == 0 && pos != buffer) {	// suppress trailing slash
-			pos[0] = 0;
-    }	else if(*pos == '\\') { // convert
-			*pos = '/';
-    }
-		pos++;
-	}
+static std::string WindowsPathToUTF8Unix(const wchar_t* from) {
+  string utf8;
+  ConvertWindowsToUTF8(from, &utf8);
 
-	return buffer;
+  // Suppress trailing slash.
+  if (utf8.length() > 1 && utf8[utf8.length() - 1] == '\\') {
+    utf8.resize(utf8.length() - 1);
+  }
+  
+  // Replace Windows path delimiters with Unix ones.
+  char* pos = &(utf8[0]);
+  while (*pos != 0) { 
+    if (*pos == '\\') {
+      *pos = '/';
+    }
+    pos++;
+  }
+
+  return utf8;
 }
 
-static int UTF8ToWideChar(const std::string& utf8, wchar_t* buffer, int buffer_size) {
-	return MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, buffer, buffer_size);
+static void UTF8UnixPathEntryToWindows(const std::string& utf8,
+                                       wchar_t* buf,
+                                       int buffer_size) {
+  ConvertUTF8ToWindows(utf8, buf, buffer_size);
 }
 
 DokanAdapter::DokanAdapter(DokanOptions* options)
@@ -84,7 +88,8 @@ int DokanAdapter::CreateFile(LPCWSTR path,
                              DWORD creation_disposition,
                              DWORD flags_and_attributes,
                              PDOKAN_FILE_INFO dokan_file_info) {
-  return -ERROR_ACCESS_DENIED;
+  // NOTE(mberlin): Changed back from -ERROR_ACCESS_DENIED to 0 - otherwise I could not browse the drive.  // NOLINT
+  return 0;
 }
 
 int DokanAdapter::OpenDirectory(
@@ -156,17 +161,26 @@ int DokanAdapter::FindFiles(
   try {
     for (uint64_t offset = 0; ; offset += options_->readdir_chunk_size) {
       xtreemfs::pbrpc::DirectoryEntries* entries = volume_->ReadDir(
-          user_credentials, WideCharToUTF8(path), offset,
-          options_->readdir_chunk_size, false);
+          user_credentials,
+          WindowsPathToUTF8Unix(path),
+          offset,
+          options_->readdir_chunk_size,
+          false);
 
-      for (int i = 0; i < entries->entries_size(); ++i) {
-        const xtreemfs::pbrpc::DirectoryEntry& entry = entries->entries(i);
+      // TODO(felix): Skip "." and ".." entries. See http://code.google.com/p/xtreemfs/source/browse/branches/XtreemFS-1.2.4/share/yield/src/yield/platform.cpp#3359  // NOLINT
+      for (int i = 2; i < entries->entries_size(); i++) {
+        const DirectoryEntry& entry = entries->entries(i);
+
         WIN32_FIND_DATA find_data;
-
-        UTF8ToWideChar(entry.name(), find_data.cFileName, 260);
+        UTF8UnixPathEntryToWindows(entry.name(), find_data.cFileName, 260);
         // ... other fields
 
         callback(&find_data, dokan_file_info);
+      }
+
+      if (entries->entries_size() == 0 ||
+          entries->entries_size() < options_->readdir_chunk_size) {
+        break;
       }
     }
   } catch(const PosixErrorException& e) {
@@ -174,7 +188,7 @@ int DokanAdapter::FindFiles(
   } catch(const XtreemFSException&) {
     return -1 * EIO;
   } catch(const exception& e) {
-    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
               + string(e.what()));
     return -1 * EIO;
   }

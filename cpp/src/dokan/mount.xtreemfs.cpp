@@ -1077,6 +1077,7 @@ wmain(ULONG argc, PWCHAR argv[])
   dokan_options.volume_name = "demo";
   boost::scoped_ptr<xtreemfs::DokanAdapter> dokan_adapter(
       new xtreemfs::DokanAdapter(&dokan_options));
+  dokan_adapter->Start();
 
 #if 0  // TODO
     // Every operation is executed in the context of a given user and his groups.
@@ -1087,7 +1088,7 @@ wmain(ULONG argc, PWCHAR argv[])
   user_credentials.set_username("example_libxtreemfs");
   user_credentials.add_groups("example_libxtreemfs");
 
-  // Class which allows to change options of the librray.
+  // Class which allows to change options of the library.
   xtreemfs::Options options;
   options.linger_timeout_s = 5;
 
@@ -1111,7 +1112,7 @@ wmain(ULONG argc, PWCHAR argv[])
         NULL,  // No SSL options.
         options);
   } catch(const xtreemfs::XtreemFSException& e) {
-    cout << "An error occured:\n" << e.what() << endl;
+    cout << "An error occurred:\n" << e.what() << endl;
     return 1;
   }
 #endif
@@ -1138,7 +1139,8 @@ wmain(ULONG argc, PWCHAR argv[])
   dokanOperations->CreateFile = DelegateCreateFile;
   dokanOperations->OpenDirectory = MirrorOpenDirectory;
   dokanOperations->CreateDirectory = MirrorCreateDirectory;
-  dokanOperations->Cleanup = MirrorCleanup;
+  // NOTE(mberlin): Disabled Cleanup since it tried to free a directory handle which was not opened.  // NOLINT
+  dokanOperations->Cleanup = NULL;
   dokanOperations->CloseFile = MirrorCloseFile;
   dokanOperations->ReadFile = MirrorReadFile;
   dokanOperations->WriteFile = MirrorWriteFile;

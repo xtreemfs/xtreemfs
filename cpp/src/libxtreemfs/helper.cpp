@@ -289,75 +289,55 @@ int GetMacOSXKernelVersion() {
 #endif  // __APPLE__
 
 #ifdef WIN32
-void ConvertWindowsToUTF8(const wchar_t* windows_string,
-                          std::string* utf8_string) {
-  UINT system_code_page = CP_UTF8;
+std::string ConvertWindowsToUTF8(const wchar_t* windows_string) {
+  string utf8;
+  ConvertWindowsToUTF8(windows_string, &utf8);
 
-  // Determine the size of the resulting string first.
-  int string_length = WideCharToMultiByte(system_code_page,
-                                          0,
-                                          windows_string,
-                                          -1,
-                                          NULL,
-                                          0,
-                                          NULL,
-                                          NULL);
-  if (string_length == 0) {
-    Logging::log->getLog(LEVEL_ERROR) <<
-       "Failed to convert Windows string to UTF8 encoded string, error"
-       " code: " << ::GetLastError() << endl;
+  return utf8;
+}
+
+void ConvertWindowsToUTF8(const wchar_t* from,
+                          std::string* utf8) {
+  // Assume that most strings will fit into a kDefaultBufferSize sized buffer.
+  // If not, the buffer will be increased.
+  const size_t kDefaultBufferSize = 1024;
+  // resize() does not count the null-terminating char, WideCharTo... does.
+  utf8->resize(kDefaultBufferSize - 1);
+
+  int r = WideCharToMultiByte(CP_UTF8,
+                              0,
+                              from,
+                              -1,
+                              &((*utf8)[0]),
+                              kDefaultBufferSize,
+                              0,
+                              0);
+
+  if (r == 0) {
+    throw XtreemFSException("Failed to convert a UTF-16"
+        " (wide character) string to an UTF8 string."
+        " Error code: " + ::GetLastError());
   }
 
-  // WideCharToMultiByte returns the length including the null-termination, but
-  // std::string.resize() does not.
-  utf8_string->resize(string_length - 1);
-  int conversion_result = WideCharToMultiByte(system_code_page,
-                                              0,
-                                              windows_string,
-                                              -1,
-                                              &((*utf8_string)[0]),
-                                              string_length,
-                                              NULL,
-                                              NULL);
-
-  if (conversion_result == 0 || conversion_result != string_length) {
-    Logging::log->getLog(LEVEL_ERROR) <<
-       "Failed to convert Windows string to UTF8 encoded string, error"
-       " code: " << ::GetLastError() << endl;
+  utf8->resize(r - 1);
+  if (r > kDefaultBufferSize) {
+    int r2 = WideCharToMultiByte(CP_UTF8, 0, from, -1, &((*utf8)[0]), r, 0, 0);
+    if (r != r2 || r2 == 0) {
+      throw XtreemFSException("Failed to convert a UTF-16"
+         " (wide character) string to an UTF8 string."
+         " Error code: " + ::GetLastError());
+    }
   }
 }
 
-void ConvertUTF8ToWindows(const std::string& utf8_string,
-                          std::wstring* utf16_string) {
-  UINT system_code_page = CP_UTF8;
-
-  int string_length = MultiByteToWideChar(system_code_page,
-                                          0,
-                                          utf8_string.c_str(),
-                                          -1,
-                                          NULL,
-                                          0);
-  if (string_length == 0) {
-    Logging::log->getLog(LEVEL_ERROR) <<
-       "Failed to convert UTF8 encoded string to Windows string, error"
-       " code: " << ::GetLastError() << endl;
-  }
-
-  // MultiByteToWideChar returns the length including the null-termination, but
-  // std::wstring.resize() does not.
-  utf16_string->resize(string_length - 1);
-
-  int conversion_result = MultiByteToWideChar(system_code_page,
-                                              0,
-                                              utf8_string.c_str(),
-                                              -1,
-                                              &((*utf16_string)[0]),
-                                              string_length);
-
-  if (conversion_result == 0 || conversion_result != string_length) {
-    Logging::log->getLog(LEVEL_ERROR) <<
-       "Failed to convert UTF8 encoded string to Windows string, error"
-       " code: " << ::GetLastError() << endl;
+void ConvertUTF8ToWindows(const std::string& utf8,
+                          wchar_t* buf,
+                          int buffer_size) {
+  int r = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, buf, buffer_size);
+  if (r == 0) {
+    throw XtreemFSException("Failed to convert this UTF8 string to a UTF-16"
+        " (wide character) string: " + utf8
+        + " Error code: " + ::GetLastError());
   }
 }
 #endif  // WIN32

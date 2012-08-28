@@ -86,14 +86,25 @@ int GetMacOSXKernelVersion();
 
 #ifdef WIN32
 /** Convert a Windows Multibyte string (e.g. a path or username) into
- *  an UTF8 string. */
+ *  an UTF8 string.
+ *
+ * @note  Use this function when you want the output as return value.
+ */
+std::string ConvertWindowsToUTF8(const wchar_t* windows_string);
+
+/** Convert a Windows Multibyte string (e.g. a path or username) into
+ *  an UTF8 string.
+ *
+ * @note  Use this function when you want the output as output argument.
+ */
 void ConvertWindowsToUTF8(const wchar_t* windows_string,
                           std::string* utf8_string);
 
 /** Convert an UTF8 string (e.g. a path or username) into
  *  a Windows Multibyte string. */
-void ConvertUTF8ToWindows(const std::string& utf8_string,
-                          std::wstring* utf16_string);
+void ConvertUTF8ToWindows(const std::string& utf8,
+                          wchar_t* buf,
+                          int buffer_size);
 #endif  // WIN32
 
 
