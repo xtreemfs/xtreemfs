@@ -417,7 +417,8 @@ xtreemfs::pbrpc::DirectoryEntries* MetadataCache::GetDirEntries(
         DirectoryEntries* result = new DirectoryEntries;
 
         // Copy all entries from cache.
-        if (offset == 0 && count >= cached_dentries->entries_size()) {
+        if (offset == 0 && count >=
+                static_cast<boost::uint32_t>(cached_dentries->entries_size())) {
           if (Logging::log->loggingActive(LEVEL_DEBUG)) {
             Logging::log->getLog(LEVEL_DEBUG)
               << "MetadataCache GetDirEntries hit: " << path << " ["
@@ -432,8 +433,11 @@ xtreemfs::pbrpc::DirectoryEntries* MetadataCache::GetDirEntries(
               << " [" << cache_.size() << "] offset: " << offset
               << "count: " << count << endl;
           }
-          for (boost::uint64_t i = offset; i < offset + count; i++) {
-            result->add_entries()->CopyFrom(cached_dentries->entries(i));
+          for (boost::uint64_t i = offset;
+               i < offset + count && i <= cached_dentries->entries_size();
+               i++) {
+            result->add_entries()->CopyFrom(cached_dentries->entries(
+                static_cast<int>(i)));
           }
         }
         return result;
@@ -729,7 +733,8 @@ void MetadataCache::UpdateXAttr(
     // Don't create a new xattr list for an existing cache entry.
     return;
   }
-  if (cache_entry->xattrs_timeout_s < time(NULL)) {
+  if (cache_entry->xattrs_timeout_s <
+          static_cast<boost::uint64_t>(time(NULL))) {
     return;  // Do not update expired xattrs.
   }
 
@@ -822,7 +827,8 @@ void MetadataCache::InvalidateXAttr(const std::string& path,
     // Don't create a new xattr list for an existing cache entry.
     return;
   }
-  if (cache_entry->xattrs_timeout_s < time(NULL)) {
+  if (cache_entry->xattrs_timeout_s <
+          static_cast<boost::uint64_t>(time(NULL))) {
     return;  // Do not update expired xattrs.
   }
 
