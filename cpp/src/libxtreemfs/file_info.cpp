@@ -41,6 +41,13 @@ FileInfo::FileInfo(
       client_uuid_(client_uuid),
       osd_write_response_(NULL),
       osd_write_response_status_(kClean),
+#ifdef _MSC_VER
+// Disable "warning C4355: 'this' : used in base member initializer list".
+// We can ignore that warning because we know that AsyncWriteHandler's
+// constructor doesn't dereference the pointer passed to it.
+#pragma warning(push)
+#pragma warning(disable:4355)
+#endif  // _MSC_VER
       async_write_handler_(this,
                            &osd_uuid_iterator_,
                            volume->uuid_resolver(),
@@ -48,6 +55,9 @@ FileInfo::FileInfo(
                            volume->auth_bogus(),
                            volume->user_credentials_bogus(),
                            volume->volume_options()) {
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
   // Add the head OSD UUIDs of all replicas to the UUID Iterator.
   for (int i = 0; i < xlocset_.replicas_size(); i++) {
     osd_uuid_iterator_.AddUUID(xlocset_.replicas(i).osd_uuids(0));

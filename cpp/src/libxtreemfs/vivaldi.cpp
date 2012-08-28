@@ -342,11 +342,11 @@ void Vivaldi::Run() {
       vivaldi_iterations = (vivaldi_iterations + 1) % LONG_MAX;
 
       // Sleep until the next iteration
-      uint64_t sleep_in_s = static_cast<uint64_t>(
+      long sleep_in_s = 
           vivaldi_options_.vivaldi_recalculation_interval_s -
           vivaldi_options_.vivaldi_recalculation_epsilon_s +
-          (static_cast<double>(rand()) / (RAND_MAX - 1)) *
-          2.0 * vivaldi_options_.vivaldi_recalculation_epsilon_s);
+          static_cast<long>((static_cast<double>(rand()) / (RAND_MAX - 1)) *
+              2.0 * vivaldi_options_.vivaldi_recalculation_epsilon_s);
 
       if (Logging::log->loggingActive(LEVEL_DEBUG)) {
         Logging::log->getLog(LEVEL_DEBUG)

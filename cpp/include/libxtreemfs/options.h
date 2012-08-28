@@ -182,15 +182,15 @@ class Options {
   std::string vivaldi_filename;
   /** The interval between coordinate recalculations. Also see
    *  vivaldi_recalculation_epsilon_s. */
-  unsigned int vivaldi_recalculation_interval_s;
+  int vivaldi_recalculation_interval_s;
   /** The recalculation interval will be randomly chosen from
    *  vivaldi_recalculation_inverval_s +/- vivaldi_recalculation_epsilon_s */
-  unsigned int vivaldi_recalculation_epsilon_s;
+  int vivaldi_recalculation_epsilon_s;
   /** Number of coordinate recalculations before updating the list of OSDs. */
-  unsigned int vivaldi_max_iterations_before_updating;
+  int vivaldi_max_iterations_before_updating;
   /** Maximal number of retries when requesting coordinates from another
    *  vivaldi node. */
-  unsigned int vivaldi_max_request_retries;
+  int vivaldi_max_request_retries;
 
   // Advanced XtreemFS options.
   /** Interval for periodic file size updates in seconds. */

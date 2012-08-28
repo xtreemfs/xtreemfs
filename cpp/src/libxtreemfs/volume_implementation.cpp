@@ -919,8 +919,9 @@ xtreemfs::pbrpc::DirectoryEntries* VolumeImplementation::ReadDir(
        current_offset += volume_options_.readdir_chunk_size) {
     rq.set_seen_directory_entries_count(current_offset);
     // Read complete chunk or only remaining rest.
-    rq.set_limit_directory_entries_count(current_offset > offset + count ?
-        current_offset - offset - count : volume_options_.readdir_chunk_size);
+    rq.set_limit_directory_entries_count(static_cast<boost::uint32_t>(
+        current_offset > offset + count ?
+        current_offset - offset - count : volume_options_.readdir_chunk_size));
 
     boost::scoped_ptr< SyncCallback<DirectoryEntries> > response(
         ExecuteSyncRequest< SyncCallback<DirectoryEntries>* >(
@@ -985,7 +986,9 @@ xtreemfs::pbrpc::DirectoryEntries* VolumeImplementation::ReadDir(
   // TODO(mberlin): Cache only names and no stat entries and remove names_only
   //                condition.
   // TODO(mberlin): Set an upper bound of dentries, otherwise don't cache it.
-  if (offset == 0 && result->entries_size() < count && !names_only) {
+  if (offset == 0 &&
+      static_cast<boost::uint32_t>(result->entries_size()) < count &&
+      !names_only) {
     metadata_cache_.UpdateDirEntries(path, *result);
   }
 

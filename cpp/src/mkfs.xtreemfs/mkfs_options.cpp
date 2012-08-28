@@ -212,7 +212,7 @@ void MkfsOptions::ParseCommandLine(int argc, char** argv) {
   }
 
   // Parse list of volume attributes.
-  for (int i = 0; i < volume_attributes_strings.size(); i++) {
+  for (size_t i = 0; i < volume_attributes_strings.size(); i++) {
     // Check if there is exactly one "=" delimiter.
     size_t first_match = volume_attributes_strings[i].find_first_of("=");
     if (first_match == string::npos) {

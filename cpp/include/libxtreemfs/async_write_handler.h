@@ -200,7 +200,7 @@ class AsyncWriteHandler
   std::list<AsyncWriteBuffer*> writes_in_flight_;
 
   /** Number of pending bytes. */
-  int pending_bytes_;
+  size_t pending_bytes_;
 
   /** Number of pending write requests
    *  NOTE: this does not equal writes_in_flight_.size(), since it also contains
@@ -263,10 +263,10 @@ class AsyncWriteHandler
                                //            when async writes support inerrupts
 
   /** Maximum number in bytes which may be pending. */
-  const int max_writeahead_;
+  const size_t max_writeahead_;
 
   /** Maximum number of pending write requests. */
-  const int max_writeahead_requests_;
+  const size_t max_writeahead_requests_;
 
   /** Maximum number of attempts a write will be tried. */
   const int max_write_tries_;

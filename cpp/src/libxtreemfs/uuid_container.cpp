@@ -40,7 +40,7 @@ void UUIDContainer::GetOSDUUIDsFromXlocSet(
         "Empty replica list in XlocSet: " + xlocs.DebugString());
   }
 
-  for (uint32_t replica_index = 0;
+  for (int replica_index = 0;
        replica_index < xlocs.replicas_size();
        ++replica_index) {
     const xtreemfs::pbrpc::Replica& replica = xlocs.replicas(replica_index);
@@ -51,7 +51,7 @@ void UUIDContainer::GetOSDUUIDsFromXlocSet(
     }
 
     uuids_.push_back(InnerContainer());
-    for (uint32_t stripe_index = 0;
+    for (int stripe_index = 0;
          stripe_index < replica.osd_uuids_size();
          ++stripe_index) {
       this->uuids_[replica_index].push_back(new UUIDItem(

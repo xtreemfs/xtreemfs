@@ -206,7 +206,7 @@ bool getattr(const string& xctl_file,
         cout << "XLoc version         "
             << stat["locations"]["version"].asInt() << endl;
         cout << "Replicas:" << endl;
-        for (int i = 0; i < stat["locations"]["replicas"].size(); ++i) {
+        for (size_t i = 0; i < stat["locations"]["replicas"].size(); i++) {
           Json::Value& replica = stat["locations"]["replicas"][i];
           cout << "  Replica " << (i+1) << endl;
           cout << "     Striping policy     "
@@ -227,7 +227,7 @@ bool getattr(const string& xctl_file,
             }
             cout << endl;
           }
-          for (int j = 0; j < replica["osds"].size(); ++j) {
+          for (size_t j = 0; j < replica["osds"].size(); j++) {
             cout << "     OSD " << (j+1) << "               "
                 << replica["osds"][j]["uuid"].asString()
                 << " (" << replica["osds"][j]["address"].asString() << ")"
@@ -599,7 +599,7 @@ bool ShowErrors(const string& xctl_file,
 
   Json::Value response;
   if (executeOperation(xctl_file, request, &response)) {
-    for (int i = 0; i < response["result"].size(); ++i) {
+    for (size_t i = 0; i < response["result"].size(); i++) {
       cout << "> " << response["result"][i].asString() << endl;
     }
     cout << endl;
@@ -621,7 +621,7 @@ bool GetSuitableOSDs(const string& xctl_file,
   Json::Value response;
   if (executeOperation(xctl_file, request, &response)) {
     cout << "OSDs suitable for new replicas: " << endl;
-    for (int i = 0; i < response["result"]["osds"].size(); ++i) {
+    for (size_t i = 0; i < response["result"]["osds"].size(); i++) {
       cout << "  " << response["result"]["osds"][i].asString() << endl;
     }
     return true;
@@ -758,7 +758,7 @@ bool ListPolicyAttrs(const string& xctl_file,
   Json::Value response;
   if (executeOperation(xctl_file, request, &response)) {
     const Json::Value::Members& keys = response["result"].getMemberNames();
-    for (int i = 0; i < keys.size(); ++i) {
+    for (size_t i = 0; i < keys.size(); i++) {
       cout << keys[i] << " = " << response["result"][keys[i]] << endl;
     }
     return true;
