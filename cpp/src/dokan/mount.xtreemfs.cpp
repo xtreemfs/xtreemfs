@@ -1,4 +1,8 @@
 /*
+ * Copyright (c) 2011-2012 by Michael Berlin, Zuse Institute Berlin
+ *
+ * Licensed under the BSD License, see LICENSE file for details.
+ *
 
 Copyright (c) 2007, 2008 Hiroki Asakawa info@dokan-dev.net
 
@@ -47,8 +51,8 @@ THE SOFTWARE.
 
 using namespace std;
 
-BOOL g_UseStdErr;
-BOOL g_DebugMode;
+BOOL g_UseStdErr = FALSE;
+BOOL g_DebugMode = FALSE;
 
 static void DbgPrint(LPCWSTR format, ...)
 {
@@ -122,15 +126,15 @@ PrintUserName(PDOKAN_FILE_INFO	DokanFileInfo)
 
 static xtreemfs::DokanAdapter* adapter(PDOKAN_FILE_INFO DokanFileInfo) {
   return reinterpret_cast<xtreemfs::DokanAdapter*>(
-      DokanFileInfo->DokanOptions->GlobalContext);
+    DokanFileInfo->DokanOptions->GlobalContext);
 }
 
 static int __stdcall DelegateCreateFile(
-    LPCWSTR	FileName,
-    DWORD	AccessMode,
-    DWORD	ShareMode,
-    DWORD	CreationDisposition,
-    DWORD	FlagsAndAttributes,
+    LPCWSTR FileName,
+    DWORD AccessMode,
+    DWORD ShareMode,
+    DWORD CreationDisposition,
+    DWORD FlagsAndAttributes,
     PDOKAN_FILE_INFO DokanFileInfo) {
   return adapter(DokanFileInfo)->CreateFileW(
       FileName, AccessMode, ShareMode, CreationDisposition, 
@@ -541,71 +545,12 @@ __stdcall MirrorFlushFileBuffers(
 
 }
 
-
-static int
-__stdcall MirrorGetFileInformation(
-  LPCWSTR							FileName,
-  LPBY_HANDLE_FILE_INFORMATION	HandleFileInformation,
-  PDOKAN_FILE_INFO				DokanFileInfo)
-{
-  WCHAR	filePath[MAX_PATH];
-  HANDLE	handle = (HANDLE)DokanFileInfo->Context;
-  BOOL	opened = FALSE;
-
-  GetFilePath(filePath, MAX_PATH, FileName);
-
-  DbgPrint(L"GetFileInfo : %s\n", filePath);
-
-  if (!handle || handle == INVALID_HANDLE_VALUE) {
-    DbgPrint(L"\tinvalid handle\n\n");
-
-    // If CreateDirectory returned FILE_ALREADY_EXISTS and 
-    // it is called with FILE_OPEN_IF, that handle must be opened.
-    handle = CreateFile(filePath, 0, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-      FILE_FLAG_BACKUP_SEMANTICS, NULL);
-    if (handle == INVALID_HANDLE_VALUE)
-      return -1;
-    opened = TRUE;
-  }
-
-  if (!GetFileInformationByHandle(handle,HandleFileInformation)) {
-    DbgPrint(L"\terror code = %d\n", GetLastError());
-
-    // FileName is a root directory
-    // in this case, FindFirstFile can't get directory information
-    if (wcslen(FileName) == 1) {
-      DbgPrint(L"  root dir\n");
-      HandleFileInformation->dwFileAttributes = GetFileAttributes(filePath);
-
-    } else {
-      WIN32_FIND_DATAW find;
-      ZeroMemory(&find, sizeof(WIN32_FIND_DATAW));
-      handle = FindFirstFile(filePath, &find);
-      if (handle == INVALID_HANDLE_VALUE) {
-        DbgPrint(L"\tFindFirstFile error code = %d\n\n", GetLastError());
-        return -1;
-      }
-      HandleFileInformation->dwFileAttributes = find.dwFileAttributes;
-      HandleFileInformation->ftCreationTime = find.ftCreationTime;
-      HandleFileInformation->ftLastAccessTime = find.ftLastAccessTime;
-      HandleFileInformation->ftLastWriteTime = find.ftLastWriteTime;
-      HandleFileInformation->nFileSizeHigh = find.nFileSizeHigh;
-      HandleFileInformation->nFileSizeLow = find.nFileSizeLow;
-      DbgPrint(L"\tFindFiles OK, file size = %d\n", find.nFileSizeLow);
-      FindClose(handle);
-    }
-  } else {
-    DbgPrint(L"\tGetFileInformationByHandle success, file size = %d\n",
-      HandleFileInformation->nFileSizeLow);
-  }
-
-  DbgPrint(L"\n");
-
-  if (opened) {
-    CloseHandle(handle);
-  }
-
-  return 0;
+static int __stdcall DelegateGetFileInformation(
+    LPCWSTR FileName,
+    LPBY_HANDLE_FILE_INFORMATION HandleFileInformation,
+    PDOKAN_FILE_INFO DokanFileInfo) {
+  return adapter(DokanFileInfo)->GetFileInformation(
+      FileName, HandleFileInformation, DokanFileInfo);
 }
 
 static int __stdcall DelegateFindFiles(
@@ -831,7 +776,6 @@ __stdcall MirrorSetEndOfFile(
   return 0;
 }
 
-
 static int
 __stdcall MirrorSetAllocationSize(
   LPCWSTR				FileName,
@@ -874,7 +818,6 @@ __stdcall MirrorSetAllocationSize(
   return 0;
 }
 
-
 static int
 __stdcall MirrorSetFileAttributes(
   LPCWSTR				FileName,
@@ -896,7 +839,6 @@ __stdcall MirrorSetFileAttributes(
   DbgPrint(L"\n");
   return 0;
 }
-
 
 static int
 __stdcall MirrorSetFileTime(
@@ -929,7 +871,6 @@ __stdcall MirrorSetFileTime(
   DbgPrint(L"\n");
   return 0;
 }
-
 
 static int
 __stdcall MirrorUnlockFile(
@@ -964,7 +905,6 @@ __stdcall MirrorUnlockFile(
     return -1;
   }
 }
-
 
 static int
 __stdcall MirrorGetFileSecurity(
@@ -1002,7 +942,6 @@ __stdcall MirrorGetFileSecurity(
   return 0;
 }
 
-
 static int
 __stdcall MirrorSetFileSecurity(
   LPCWSTR					FileName,
@@ -1032,167 +971,101 @@ __stdcall MirrorSetFileSecurity(
   return 0;
 }
 
-static int
-__stdcall MirrorGetVolumeInformation(
-  LPWSTR		VolumeNameBuffer,
-  DWORD		VolumeNameSize,
-  LPDWORD		VolumeSerialNumber,
-  LPDWORD		MaximumComponentLength,
-  LPDWORD		FileSystemFlags,
-  LPWSTR		FileSystemNameBuffer,
-  DWORD		FileSystemNameSize,
-  PDOKAN_FILE_INFO	DokanFileInfo)
-{
-  wcscpy_s(VolumeNameBuffer, VolumeNameSize / sizeof(WCHAR), L"DOKAN");
-  *VolumeSerialNumber = 0x19831116;
-  *MaximumComponentLength = 256;
-  *FileSystemFlags = FILE_CASE_SENSITIVE_SEARCH | 
-            FILE_CASE_PRESERVED_NAMES | 
-            FILE_SUPPORTS_REMOTE_STORAGE |
-            FILE_UNICODE_ON_DISK |
-            FILE_PERSISTENT_ACLS;
-
-  wcscpy_s(FileSystemNameBuffer, FileSystemNameSize / sizeof(WCHAR), L"Dokan");
-
-  return 0;
+static int __stdcall DelegateGetVolumeInformation(
+    LPWSTR VolumeNameBuffer,
+    DWORD VolumeNameSize,
+    LPDWORD VolumeSerialNumber,
+    LPDWORD MaximumComponentLength,
+    LPDWORD FileSystemFlags,
+    LPWSTR FileSystemNameBuffer,
+    DWORD FileSystemNameSize,
+    PDOKAN_FILE_INFO DokanFileInfo) {
+  return adapter(DokanFileInfo)->GetVolumeInformation(
+      VolumeNameBuffer, VolumeNameSize, VolumeSerialNumber,
+      MaximumComponentLength, FileSystemFlags, FileSystemNameBuffer,
+      FileSystemNameSize, DokanFileInfo);
 }
 
-
-static int
-__stdcall MirrorUnmount(
-  PDOKAN_FILE_INFO	DokanFileInfo)
-{
-  DbgPrint(L"Unmount\n");
-  return 0;
+static int __stdcall DelegateUnmount(
+    PDOKAN_FILE_INFO DokanFileInfo) {
+  return adapter(DokanFileInfo)->Unmount(DokanFileInfo);
 }
 
-
-int __cdecl
-wmain(ULONG argc, PWCHAR argv[])
-{
-  int status;
-
+int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
   xtreemfs::DokanOptions dokan_options;
   dokan_options.service_address = "demo.xtreemfs.org:32638";
   dokan_options.volume_name = "demo";
   boost::scoped_ptr<xtreemfs::DokanAdapter> dokan_adapter(
       new xtreemfs::DokanAdapter(&dokan_options));
   dokan_adapter->Start();
-
-#if 0  // TODO
-    // Every operation is executed in the context of a given user and his groups.
-  // The UserCredentials object does store this information and is currently
-  // (08/2011) *only* evaluated by the MRC (although the protocol requires to
-  // send user_credentials to DIR and OSD, too).
-  xtreemfs::pbrpc::UserCredentials user_credentials;
-  user_credentials.set_username("example_libxtreemfs");
-  user_credentials.add_groups("example_libxtreemfs");
-
-  // Class which allows to change options of the library.
-  xtreemfs::Options options;
-  options.linger_timeout_s = 5;
-
-  xtreemfs::Client* client = NULL;
-  try {
-    // Create a new instance of a client using the DIR service at
-    // 'demo.xtreemfs.org' (default port 32638).
-    client = xtreemfs::Client::CreateClient(
-        "demo.xtreemfs.org:32638",
-        user_credentials,
-        NULL,  // No SSL options.
-        options);
-
-    // Start the client (a connection to the DIR service will be setup).
-    client->Start();
-
-    // Open a volume named 'demo'.
-    xtreemfs::Volume *volume = NULL;
-    volume = client->OpenVolume(
-        "demo",
-        NULL,  // No SSL options.
-        options);
-  } catch(const xtreemfs::XtreemFSException& e) {
-    cout << "An error occurred:\n" << e.what() << endl;
-    return 1;
-  }
-#endif
-
-  g_DebugMode = FALSE;
-  g_UseStdErr = FALSE;
   
-  PDOKAN_OPERATIONS dokanOperations =
-      (PDOKAN_OPERATIONS)malloc(sizeof(DOKAN_OPERATIONS));
-  PDOKAN_OPTIONS dokanOptions =
-      (PDOKAN_OPTIONS)malloc(sizeof(DOKAN_OPTIONS));
-  ZeroMemory(dokanOptions, sizeof(DOKAN_OPTIONS));
-  dokanOptions->Version = DOKAN_VERSION;
-  dokanOptions->ThreadCount = 0; // use default
-  dokanOptions->GlobalContext = reinterpret_cast<ULONG64>(dokan_adapter.get());
+  DOKAN_OPTIONS dokanOptions;
+  ZeroMemory(&dokanOptions, sizeof(DOKAN_OPTIONS));
+  dokanOptions.Version = DOKAN_VERSION;
+  dokanOptions.ThreadCount = 0; // use default
+  dokanOptions.GlobalContext = reinterpret_cast<ULONG64>(dokan_adapter.get());
   
-  dokanOptions->MountPoint = L"X:";
-  dokanOptions->Options |= DOKAN_OPTION_NETWORK;
-  dokanOptions->Options |= DOKAN_OPTION_DEBUG;
-  dokanOptions->Options |= DOKAN_OPTION_STDERR;
-  dokanOptions->Options |= DOKAN_OPTION_KEEP_ALIVE;
-
-  ZeroMemory(dokanOperations, sizeof(DOKAN_OPERATIONS));
-  dokanOperations->CreateFile = DelegateCreateFile;
-  dokanOperations->OpenDirectory = MirrorOpenDirectory;
-  dokanOperations->CreateDirectory = MirrorCreateDirectory;
+  dokanOptions.MountPoint = L"X:";
+  dokanOptions.Options |= DOKAN_OPTION_DEBUG;
+  dokanOptions.Options |= DOKAN_OPTION_STDERR;
+  dokanOptions.Options |= DOKAN_OPTION_KEEP_ALIVE;
+  
+  DOKAN_OPERATIONS dokanOperations;
+  ZeroMemory(&dokanOperations, sizeof(DOKAN_OPERATIONS));
+  dokanOperations.CreateFile = DelegateCreateFile;
+  dokanOperations.OpenDirectory = MirrorOpenDirectory;
+  dokanOperations.CreateDirectory = MirrorCreateDirectory;
   // NOTE(mberlin): Disabled Cleanup since it tried to free a directory handle which was not opened.  // NOLINT
-  dokanOperations->Cleanup = NULL;
-  dokanOperations->CloseFile = MirrorCloseFile;
-  dokanOperations->ReadFile = MirrorReadFile;
-  dokanOperations->WriteFile = MirrorWriteFile;
-  dokanOperations->FlushFileBuffers = MirrorFlushFileBuffers;
-  dokanOperations->GetFileInformation = MirrorGetFileInformation;
-  dokanOperations->FindFiles = DelegateFindFiles;
-  dokanOperations->FindFilesWithPattern = NULL;
-  dokanOperations->SetFileAttributes = MirrorSetFileAttributes;
-  dokanOperations->SetFileTime = MirrorSetFileTime;
-  dokanOperations->DeleteFile = MirrorDeleteFile;
-  dokanOperations->DeleteDirectory = MirrorDeleteDirectory;
-  dokanOperations->MoveFile = MirrorMoveFile;
-  dokanOperations->SetEndOfFile = MirrorSetEndOfFile;
-  dokanOperations->SetAllocationSize = MirrorSetAllocationSize;	
-  dokanOperations->LockFile = MirrorLockFile;
-  dokanOperations->UnlockFile = MirrorUnlockFile;
-  dokanOperations->GetFileSecurity = MirrorGetFileSecurity;
-  dokanOperations->SetFileSecurity = MirrorSetFileSecurity;
-  dokanOperations->GetDiskFreeSpace = NULL;
-  dokanOperations->GetVolumeInformation = MirrorGetVolumeInformation;
-  dokanOperations->Unmount = MirrorUnmount;
+  dokanOperations.Cleanup = NULL;
+  dokanOperations.CloseFile = MirrorCloseFile;
+  dokanOperations.ReadFile = MirrorReadFile;
+  dokanOperations.WriteFile = MirrorWriteFile;
+  dokanOperations.FlushFileBuffers = MirrorFlushFileBuffers;
+  dokanOperations.GetFileInformation = DelegateGetFileInformation;
+  dokanOperations.FindFiles = DelegateFindFiles;
+  dokanOperations.FindFilesWithPattern = NULL;
+  dokanOperations.SetFileAttributes = MirrorSetFileAttributes;
+  dokanOperations.SetFileTime = MirrorSetFileTime;
+  dokanOperations.DeleteFile = MirrorDeleteFile;
+  dokanOperations.DeleteDirectory = MirrorDeleteDirectory;
+  dokanOperations.MoveFile = MirrorMoveFile;
+  dokanOperations.SetEndOfFile = MirrorSetEndOfFile;
+  dokanOperations.SetAllocationSize = MirrorSetAllocationSize;
+  dokanOperations.LockFile = MirrorLockFile;
+  dokanOperations.UnlockFile = MirrorUnlockFile;
+  dokanOperations.GetFileSecurity = MirrorGetFileSecurity;
+  dokanOperations.SetFileSecurity = MirrorSetFileSecurity;
+  dokanOperations.GetDiskFreeSpace = NULL;
+  dokanOperations.GetVolumeInformation = DelegateGetVolumeInformation;
+  dokanOperations.Unmount = DelegateUnmount;
 
-  status = DokanMain(dokanOptions, dokanOperations);
+  int status = DokanMain(&dokanOptions, &dokanOperations);
   switch (status) {
-  case DOKAN_SUCCESS:
-    fprintf(stderr, "Success\n");
-    break;
-  case DOKAN_ERROR:
-    fprintf(stderr, "Error\n");
-    break;
-  case DOKAN_DRIVE_LETTER_ERROR:
-    fprintf(stderr, "Bad Drive letter\n");
-    break;
-  case DOKAN_DRIVER_INSTALL_ERROR:
-    fprintf(stderr, "Can't install driver\n");
-    break;
-  case DOKAN_START_ERROR:
-    fprintf(stderr, "Driver something wrong\n");
-    break;
-  case DOKAN_MOUNT_ERROR:
-    fprintf(stderr, "Can't assign a drive letter\n");
-    break;
-  case DOKAN_MOUNT_POINT_ERROR:
-    fprintf(stderr, "Mount point error\n");
-    break;
-  default:
-    fprintf(stderr, "Unknown error: %d\n", status);
-    break;
+    case DOKAN_SUCCESS:
+      fprintf(stderr, "Success\n");
+      break;
+    case DOKAN_ERROR:
+      fprintf(stderr, "Error\n");
+      break;
+    case DOKAN_DRIVE_LETTER_ERROR:
+      fprintf(stderr, "Bad Drive letter\n");
+      break;
+    case DOKAN_DRIVER_INSTALL_ERROR:
+      fprintf(stderr, "Can't install driver\n");
+      break;
+    case DOKAN_START_ERROR:
+      fprintf(stderr, "Driver something wrong\n");
+      break;
+    case DOKAN_MOUNT_ERROR:
+      fprintf(stderr, "Can't assign a drive letter\n");
+      break;
+    case DOKAN_MOUNT_POINT_ERROR:
+      fprintf(stderr, "Mount point error\n");
+      break;
+    default:
+      fprintf(stderr, "Unknown error: %d\n", status);
+      break;
   }
-
-  free(dokanOptions);
-  free(dokanOperations);
 
   dokan_adapter->Stop();
 

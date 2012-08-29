@@ -46,7 +46,41 @@ using namespace xtreemfs::util;
 namespace xtreemfs {
 
 static int ConvertXtreemFSErrnoToDokan(
-    xtreemfs::pbrpc::POSIXErrno xtreemfs_errno);
+    xtreemfs::pbrpc::POSIXErrno xtreemfs_errno) {
+  switch (xtreemfs_errno) {
+    case POSIX_ERROR_EACCES:
+      return -ERROR_ACCESS_DENIED;
+    case POSIX_ERROR_EEXIST:
+      return -ERROR_ALREADY_EXISTS;
+    case POSIX_ERROR_ENOENT:
+      return -ERROR_FILE_NOT_FOUND;
+    // TODO: map remaining ones
+    case POSIX_ERROR_EPERM:
+      return EPERM;
+    case POSIX_ERROR_EINTR:
+      return EINTR;
+    case POSIX_ERROR_EIO:
+      return EIO;
+    case POSIX_ERROR_EAGAIN:
+      return EAGAIN;
+    case POSIX_ERROR_EXDEV:
+      return EXDEV;
+    case POSIX_ERROR_ENODEV:
+      return ENODEV;
+    case POSIX_ERROR_ENOTDIR:
+      return ENOTDIR;
+    case POSIX_ERROR_EISDIR:
+      return EISDIR;
+    case POSIX_ERROR_EINVAL:
+      return EINVAL;
+    case POSIX_ERROR_ENOTEMPTY:
+      return ENOTEMPTY;
+    case POSIX_ERROR_ENODATA:
+      return ENODATA;
+    default:
+      return xtreemfs_errno;
+  }
+}
 
 static std::string WindowsPathToUTF8Unix(const wchar_t* from) {
   string utf8;
@@ -75,10 +109,32 @@ static void UTF8UnixPathEntryToWindows(const std::string& utf8,
   ConvertUTF8ToWindows(utf8, buf, buffer_size);
 }
 
+void XtreemFSTimeToWinTime(uint64_t utime_ns,
+                           unsigned long* lower,
+                           unsigned long* upper) {
+  // TODO(fhupfeld): apparently XtreemFS time is not nanoseconds since epoch?
+  utime_ns = utime_ns / 1000000000;  // to seconds
+  uint64_t wintime = (utime_ns + 11644473600) * 10000000;
+  *lower = static_cast<DWORD>(wintime & 0xFFFFffff);
+  *upper = static_cast<DWORD>(wintime >> 32);
+}
+
+uint64_t WinTimeToUnixTime(unsigned long upper, unsigned long lower) {
+  if (lower == 0 && upper == 0) {
+    return 0;
+  }
+  if (upper == 0xFFFFFFFF && lower == 0xFFFFFFFF) {
+    return -1;  // Error
+  }
+
+  int64_t utime = static_cast<uint64_t>(upper) << 32 | 
+      static_cast<uint64_t>(lower);
+  return utime / 10000000 - 11644473600;
+}
+
 DokanAdapter::DokanAdapter(DokanOptions* options)
-    : options_(options),
-      xctl_("/.xctl$$$")
-{}
+    : options_(options), xctl_("/.xctl$$$") {
+}
 
 DokanAdapter::~DokanAdapter() {}
 
@@ -88,7 +144,6 @@ int DokanAdapter::CreateFile(LPCWSTR path,
                              DWORD creation_disposition,
                              DWORD flags_and_attributes,
                              PDOKAN_FILE_INFO dokan_file_info) {
-  // NOTE(mberlin): Changed back from -ERROR_ACCESS_DENIED to 0 - otherwise I could not browse the drive.  // NOLINT
   return 0;
 }
 
@@ -144,9 +199,40 @@ int DokanAdapter::FlushFileBuffers(
 }
 
 int DokanAdapter::GetFileInformation(
-    LPCWSTR,          // FileName
-    LPBY_HANDLE_FILE_INFORMATION, // Buffer
-    PDOKAN_FILE_INFO) {
+    LPCWSTR path,
+    LPBY_HANDLE_FILE_INFORMATION file_info,
+    PDOKAN_FILE_INFO dokan_file_info) {
+  UserCredentials user_credentials;
+  system_user_mapping_->GetUserCredentialsForCurrentUser(
+      &user_credentials);
+  
+  try {
+    xtreemfs::pbrpc::Stat stat;
+    volume_->GetAttr(
+        user_credentials,
+        WindowsPathToUTF8Unix(path),
+        &stat);
+    file_info->nFileSizeHigh = static_cast<DWORD>(stat.size() >> 32);
+    file_info->nFileSizeLow = stat.size() & 0xFFFFffff;
+    XtreemFSTimeToWinTime(stat.atime_ns(),
+        &file_info->ftLastAccessTime.dwHighDateTime,
+        &file_info->ftLastAccessTime.dwLowDateTime);
+    XtreemFSTimeToWinTime(stat.ctime_ns(),
+        &file_info->ftCreationTime.dwHighDateTime,
+        &file_info->ftCreationTime.dwLowDateTime);
+    XtreemFSTimeToWinTime(stat.mtime_ns(),
+        &file_info->ftLastWriteTime.dwHighDateTime,
+        &file_info->ftLastWriteTime.dwLowDateTime);
+    // TODO: not complete yet.
+  } catch(const PosixErrorException& e) {
+    return ConvertXtreemFSErrnoToDokan(e.posix_errno());
+  } catch(const XtreemFSException&) {
+    return -1 * EIO;
+  } catch(const exception& e) {
+    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
+              + string(e.what()));
+    return -1 * EIO;
+  }
   return 0;
 }
 
@@ -167,14 +253,27 @@ int DokanAdapter::FindFiles(
           options_->readdir_chunk_size,
           false);
 
-      // TODO(felix): Skip "." and ".." entries. See http://code.google.com/p/xtreemfs/source/browse/branches/XtreemFS-1.2.4/share/yield/src/yield/platform.cpp#3359  // NOLINT
-      for (int i = 2; i < entries->entries_size(); i++) {
+      for (int i = 0; i < entries->entries_size(); i++) {
         const DirectoryEntry& entry = entries->entries(i);
+
+        if (entry.name() == "." || entry.name() == "..") {
+          continue;
+        }
 
         WIN32_FIND_DATA find_data;
         UTF8UnixPathEntryToWindows(entry.name(), find_data.cFileName, 260);
-        // ... other fields
-
+        find_data.nFileSizeHigh = static_cast<DWORD>(entry.stbuf().size() >> 32);
+        find_data.nFileSizeLow = entry.stbuf().size() & 0xFFFFffff;
+        XtreemFSTimeToWinTime(entry.stbuf().atime_ns(),
+            &find_data.ftLastAccessTime.dwHighDateTime,
+            &find_data.ftLastAccessTime.dwLowDateTime);
+        XtreemFSTimeToWinTime(entry.stbuf().ctime_ns(),
+            &find_data.ftCreationTime.dwHighDateTime,
+            &find_data.ftCreationTime.dwLowDateTime);
+        XtreemFSTimeToWinTime(entry.stbuf().mtime_ns(),
+            &find_data.ftLastWriteTime.dwHighDateTime,
+            &find_data.ftLastWriteTime.dwLowDateTime);
+        // TODO: not complete yet.
         callback(&find_data, dokan_file_info);
       }
 
@@ -184,7 +283,7 @@ int DokanAdapter::FindFiles(
       }
     }
   } catch(const PosixErrorException& e) {
-    return -1 * ConvertXtreemFSErrnoToDokan(e.posix_errno());
+    return ConvertXtreemFSErrnoToDokan(e.posix_errno());
   } catch(const XtreemFSException&) {
     return -1 * EIO;
   } catch(const exception& e) {
@@ -295,14 +394,21 @@ int DokanAdapter::GetDiskFreeSpace(
 
 // see Win32 API GetVolumeInformation
 int DokanAdapter::GetVolumeInformation(
-    LPWSTR, // VolumeNameBuffer
-    DWORD,	// VolumeNameSize in num of chars
-    LPDWORD,// VolumeSerialNumber
-    LPDWORD,// MaximumComponentLength in num of chars
-    LPDWORD,// FileSystemFlags
-    LPWSTR,	// FileSystemNameBuffer
-    DWORD,	// FileSystemNameSize in num of chars
+    LPWSTR VolumeNameBuffer,
+    DWORD VolumeNameSize,
+    LPDWORD VolumeSerialNumber,
+    LPDWORD MaximumComponentLength,
+    LPDWORD FileSystemFlags,
+    LPWSTR FileSystemNameBuffer,
+    DWORD FileSystemNameSize,
     PDOKAN_FILE_INFO) {
+  ConvertUTF8ToWindows(
+      options_->volume_name, VolumeNameBuffer, VolumeNameSize);
+  FileSystemNameBuffer = L"XtreemFS";
+  *VolumeSerialNumber = 0;  // TODO(fhupfeld): volume uuid
+  *MaximumComponentLength = 256;
+  *FileSystemFlags = FILE_CASE_PRESERVED_NAMES | 
+      FILE_CASE_SENSITIVE_SEARCH | FILE_UNICODE_ON_DISK;
   return 0;
 }
 
@@ -469,38 +575,6 @@ void DokanAdapter::Stop() {
 //  }
 //}
 //
-//void DokanAdapter::ConvertXtreemFSStatToDokan(
-//    const xtreemfs::pbrpc::Stat& xtreemfs_stat, struct stat* dokan_stat) {
-//  dokan_stat->st_dev = xtreemfs_stat.dev();
-//  dokan_stat->st_blksize = 8 * 128 * 1024;
-//  dokan_stat->st_ino = xtreemfs_stat.ino();  // = fileId
-//  dokan_stat->st_mode = xtreemfs_stat.mode();
-//  dokan_stat->st_nlink = xtreemfs_stat.nlink();
-//
-//  // Map user- and groupnames.
-//  dokan_stat->st_uid = user_mapping_->UsernameToUID(xtreemfs_stat.user_id());
-//  dokan_stat->st_gid = user_mapping_->GroupnameToGID(xtreemfs_stat.group_id());
-//
-//  dokan_stat->st_size = xtreemfs_stat.size();
-//#ifdef __linux
-//  dokan_stat->st_atim.tv_sec  = xtreemfs_stat.atime_ns() / 1000000000;
-//  dokan_stat->st_atim.tv_nsec = xtreemfs_stat.atime_ns() % 1000000000;
-//  dokan_stat->st_mtim.tv_sec  = xtreemfs_stat.mtime_ns() / 1000000000;
-//  dokan_stat->st_mtim.tv_nsec = xtreemfs_stat.mtime_ns() % 1000000000;
-//  dokan_stat->st_ctim.tv_sec  = xtreemfs_stat.ctime_ns() / 1000000000;
-//  dokan_stat->st_ctim.tv_nsec = xtreemfs_stat.ctime_ns() % 1000000000;
-//#elif __APPLE__
-//  dokan_stat->st_atimespec.tv_sec  = xtreemfs_stat.atime_ns() / 1000000000;
-//  dokan_stat->st_atimespec.tv_nsec = xtreemfs_stat.atime_ns() % 1000000000;
-//  dokan_stat->st_mtimespec.tv_sec  = xtreemfs_stat.mtime_ns() / 1000000000;
-//  dokan_stat->st_mtimespec.tv_nsec = xtreemfs_stat.mtime_ns() % 1000000000;
-//  dokan_stat->st_ctimespec.tv_sec  = xtreemfs_stat.ctime_ns() / 1000000000;
-//  dokan_stat->st_ctimespec.tv_nsec = xtreemfs_stat.ctime_ns() % 1000000000;
-//#endif
-//
-//  dokan_stat->st_rdev = 0;
-//  dokan_stat->st_blocks = 0;
-//}
 //
 //xtreemfs::pbrpc::SYSTEM_V_FCNTL DokanAdapter::ConvertFlagsUnixToXtreemFS(
 //    int flags) {
@@ -524,100 +598,8 @@ void DokanAdapter::Stop() {
 //  return xtreemfs::pbrpc::SYSTEM_V_FCNTL(result);
 //}
 //
-static int ConvertXtreemFSErrnoToDokan(
-    xtreemfs::pbrpc::POSIXErrno xtreemfs_errno) {
-  switch (xtreemfs_errno) {
-    case POSIX_ERROR_EPERM:
-      return EPERM;
-    case POSIX_ERROR_ENOENT:
-      return ENOENT;
-    case POSIX_ERROR_EINTR:
-      return EINTR;
-    case POSIX_ERROR_EIO:
-      return EIO;
-    case POSIX_ERROR_EAGAIN:
-      return EAGAIN;
-    case POSIX_ERROR_EACCES:
-      return EACCES;
-    case POSIX_ERROR_EEXIST:
-      return EEXIST;
-    case POSIX_ERROR_EXDEV:
-      return EXDEV;
-    case POSIX_ERROR_ENODEV:
-      return ENODEV;
-    case POSIX_ERROR_ENOTDIR:
-      return ENOTDIR;
-    case POSIX_ERROR_EISDIR:
-      return EISDIR;
-    case POSIX_ERROR_EINVAL:
-      return EINVAL;
-    case POSIX_ERROR_ENOTEMPTY:
-      return ENOTEMPTY;
-    case POSIX_ERROR_ENODATA:
-      return ENODATA;
-    default:
-      return xtreemfs_errno;
-  }
-}
+
 //
-//int DokanAdapter::statfs(const char *path, struct statvfs *statv) {
-//  UserCredentials user_credentials;
-//  GenerateUserCredentials(dokan_get_context(), &user_credentials);
-//
-//  try {
-//    boost::scoped_ptr<StatVFS> stat_vfs(
-//            volume_->StatFS(user_credentials));
-//
-//    // According to Dokan.h: "The 'f_frsize', 'f_favail', 'f_fsid' and 'f_flag'
-//    //                       fields are ignored"
-//    statv->f_bsize   = stat_vfs->bsize();  // file system block size
-//    statv->f_bfree   = stat_vfs->bavail();  // # free blocks
-//    // # free blocks for unprivileged users
-//    statv->f_bavail  = stat_vfs->bavail();
-//    statv->f_files   = 2048;  // # inodes (we use here a bogus number)
-//    // Total number of blocks in file system.
-//    statv->f_blocks  = stat_vfs->blocks();
-//    statv->f_ffree   = 2048;  // # free inodes (we use here a bogus number)
-//    statv->f_namemax = stat_vfs->namemax();  // maximum filename length
-//  } catch(const PosixErrorException& e) {
-//    return -1 * ConvertXtreemFSErrnoToDokan(e.posix_errno());
-//  } catch(const XtreemFSException& e) {
-//    return -1 * EIO;
-//  } catch(const exception& e) {
-//    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
-//        + string(string(e.what())));
-//    return -1 * EIO;
-//  }
-//
-//  return 0;
-//}
-//
-//int DokanAdapter::getattr(const char *path, struct stat *statbuf) {
-//  const string path_str(path);
-//  if (!xctl_.checkXctlFile(path_str)) {
-//    Stat stat;
-//    UserCredentials user_credentials;
-//    GenerateUserCredentials(dokan_get_context(), &user_credentials);
-//
-//    try {
-//      volume_->GetAttr(user_credentials, path_str, &stat);
-//    } catch(const PosixErrorException& e) {
-//      return -1 * ConvertXtreemFSErrnoToDokan(e.posix_errno());
-//    } catch(const XtreemFSException& e) {
-//      return -1 * EIO;
-//    } catch(const exception& e) {
-//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
-//          + string(e.what()));
-//      return -1 * EIO;
-//    }
-//
-//    ConvertXtreemFSStatToDokan(stat, statbuf);
-//    return 0;
-//  } else {
-//    dokan_context* ctx = dokan_get_context();
-//    return xctl_.getattr(ctx->uid, ctx->gid, path_str, statbuf);
-//  }
-//}
 //
 ///** Returns the size of a value of an extended attribute (if size == 0) or fills
 // *  "value" with the value of this attribute if it's size does not exceed "size"
@@ -672,175 +654,6 @@ static int ConvertXtreemFSErrnoToDokan(
 //    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
 //              + string(e.what()));
 //    return -1 * EIO;
-//  }
-//
-//  return 0;
-//}
-//
-///* Creates a CachedDirectoryEntries struct on the heap which can hold the
-// * cached directory entries and provides a mutex in order serialize the access
-// * to this struct. Will be released on releasedir().
-// */
-//int DokanAdapter::opendir(const char *path, struct dokan_file_info *fi) {
-//  // No default POSIX permissions: Check if it's allowed to enter the dir.
-//  if (!options_->use_dokan_permission_checks) {
-//    UserCredentials user_credentials;
-//    GenerateUserCredentials(dokan_get_context(), &user_credentials);
-//
-//    // TODO(mberlin): Wait for change of access method and check for X_OK.
-//    try {
-//      volume_->Access(user_credentials,
-//                      string(path),
-//                      ACCESS_FLAGS_R_OK);
-//    } catch(const PosixErrorException& e) {
-//      return -1 * ConvertXtreemFSErrnoToDokan(e.posix_errno());
-//    } catch(const XtreemFSException& e) {
-//      return -1 * EIO;
-//    } catch(const exception& e) {
-//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
-//                + string(e.what()));
-//      return -1 * EIO;
-//    }
-//  }
-//
-//  CachedDirectoryEntries* cached_direntries = new CachedDirectoryEntries;
-//  cached_direntries->dir_entries = NULL;
-//  // @note The uint64_t cast is needed as Dokan does use a uint64_t instead of
-//  //       a void* to store a pointer.
-//  fi->fh = reinterpret_cast<uint64_t>(cached_direntries);
-//
-//  return 0;
-//}
-//
-///**
-// *  Dokan's filler() method called with offset=0 returns 1 only if an error
-// *  happened. In practice, this allows to fill complete directories with one
-// *  readdir() call. (According to the Dokan 2.8.5 source code, it will stop if
-// *  the complete buffer exceeded 2 GiB.)
-// *
-// *  Called with (offset != 0), filler returns 1 after filling the initial 4k
-// *  buffer (observed in Dokan 2.8.5). As entries are aligned to 32 Byte
-// *  boundaries, a maximum of 128 entries (or less if filenames are very long?)
-// *  is possible.
-// *  However, the libxtreemfs default readdir chunksize is 1024 entries.
-// *  Therefore, we temporary store unprocessed items in fi->fh.
-// *  Another reason why we cache the directory entries is due to the way Dokan
-// *  detects no more readdir() calls are needed:
-// *  If filler returns with 1 due to a full buffer, Dokan will call readdir()
-// *  again with the new offset value. If this execution of readdir does not call
-// *  filler() again, Dokan knows the directory was completely read. In order to
-// *  know if you don't have to call filler again, we need the cached directory
-// *  entries.
-// *
-// *  @attention If this function is executed with offset>0, duplicate or missing
-// *             entries may show up in case files were created or deleted during
-// *             two readdir calls.
-// */
-//int DokanAdapter::readdir(const char *path, void *buf, dokan_fill_dir_t filler,
-//    off_t offset, struct dokan_file_info *fi) {
-//  DirectoryEntries* dir_entries = NULL;
-//  boost::uint64_t dir_entries_offset = 0;
-//
-//  // Look up if there are some unprocessed directory entries.
-//  CachedDirectoryEntries* cached_direntries
-//      = reinterpret_cast<CachedDirectoryEntries*>(fi->fh);
-//  // Struct was created at opendir and deleted at releasedir().
-//  assert(cached_direntries != NULL);
-//  boost::mutex::scoped_lock lock(cached_direntries->mutex);
-//
-//  // Use cached entries first if applicable
-//  if (cached_direntries->dir_entries != NULL
-//      && cached_direntries->offset <= offset) {
-//    dir_entries = cached_direntries->dir_entries;
-//    // It may happen that the offset of the last cached entry is below the
-//    // requested "offset". This is fine, because filler() won't get called and
-//    // Dokan knows to stop executing further readdir()s.
-//    dir_entries_offset = cached_direntries->offset;
-//  }
-//
-//  // Fetch entries from MRC.
-//  if (dir_entries == NULL) {
-//    UserCredentials user_credentials;
-//    GenerateUserCredentials(dokan_get_context(), &user_credentials);
-//
-//    try {
-//      // libxtreemfs itself may have cached the readdir response, too.
-//      dir_entries = volume_->ReadDir(user_credentials,
-//                                     string(path),
-//                                     offset,
-//                                     options_->readdir_chunk_size,
-//                                     false);
-//      dir_entries_offset = offset;
-//    } catch(const PosixErrorException& e) {
-//      return -1 * ConvertXtreemFSErrnoToDokan(e.posix_errno());
-//    } catch(const XtreemFSException& e) {
-//      return -1 * EIO;
-//    } catch(const exception& e) {
-//      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
-//                + string(e.what()));
-//      return -1 * EIO;
-//    }
-//  }
-//
-//  // The directory entries must start at least at "offset".
-//  assert(dir_entries_offset <= offset);
-//
-//  // Let Dokan fill the buffers.
-//  struct stat dokan_statbuf;
-//  memset(&dokan_statbuf, 0, sizeof(dokan_statbuf));
-//
-//  int i;
-//  for (i = offset; i < dir_entries_offset + dir_entries->entries_size(); i++) {
-//    boost::uint64_t dir_entries_index = i -  dir_entries_offset;
-//    if (dir_entries->entries(dir_entries_index).has_stbuf()) {
-//      // Only set here st_ino and st_mode for the struct dirent.
-//      dokan_statbuf.st_ino
-//          = dir_entries->entries(dir_entries_index).stbuf().ino();
-//      dokan_statbuf.st_mode
-//          = dir_entries->entries(dir_entries_index).stbuf().mode();
-//
-//      if (filler(buf,
-//                 dir_entries->entries(dir_entries_index).name().c_str(),
-//                 &dokan_statbuf,
-//                 i + 1)) {
-//        break;
-//      }
-//    } else {
-//      if (filler(buf,
-//                 dir_entries->entries(dir_entries_index).name().c_str(),
-//                 NULL,
-//                 i + 1)) {
-//        break;
-//      }
-//    }
-//  }
-//
-//  bool chunk_completely_read
-//      = (dir_entries_offset + dir_entries->entries_size() == i);
-//  bool definetely_last_chunk
-//      = (dir_entries->entries_size() < options_->readdir_chunk_size);
-//  bool no_filler_called
-//      = (offset == dir_entries_offset + dir_entries->entries_size());
-//
-//  // Dokan did read all directory entries or this was not the last chunk
-//  // => don't cache it.
-//  if (no_filler_called || (!definetely_last_chunk && chunk_completely_read)) {
-//    delete dir_entries;
-//    if (cached_direntries->dir_entries == dir_entries) {
-//      cached_direntries->dir_entries = NULL;
-//    }
-//  } else {
-//    // Cache directory entries (if not already cached).
-//    if (cached_direntries->dir_entries != dir_entries) {
-//      // Free previously cached entries.
-//      if (cached_direntries->dir_entries != NULL) {
-//        delete cached_direntries->dir_entries;
-//        cached_direntries->dir_entries = NULL;
-//      }
-//
-//      cached_direntries->dir_entries = dir_entries;
-//      cached_direntries->offset = dir_entries_offset;
-//    }
 //  }
 //
 //  return 0;
