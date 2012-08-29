@@ -53,8 +53,9 @@ public class RPCResponse<V extends Message> implements RPCResponseListener<V> {
     }
 
     public void registerListener(RPCResponseAvailableListener<V> listener) {
-        this.listener = listener;
         synchronized (this) {
+            this.listener = listener;
+
             if (request != null || failed) {
                 //do notification
                 listener.responseAvailable(this);
