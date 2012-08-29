@@ -315,7 +315,9 @@ void ConvertWindowsToUTF8(const wchar_t* from,
 
   if (r == 0) {
     throw XtreemFSException("Failed to convert a UTF-16"
-        " (wide character) string to an UTF8 string.");
+        " (wide character) string to an UTF8 string."
+        " Error code: "
+        + boost::lexical_cast<string>(::GetLastError()));
   }
 
   utf8->resize(r - 1);
@@ -323,7 +325,9 @@ void ConvertWindowsToUTF8(const wchar_t* from,
     int r2 = WideCharToMultiByte(CP_UTF8, 0, from, -1, &((*utf8)[0]), r, 0, 0);
     if (r != r2 || r2 == 0) {
       throw XtreemFSException("Failed to convert a UTF-16"
-         " (wide character) string to an UTF8 string.");
+         " (wide character) string to an UTF8 string."
+         " Error code: "
+         + boost::lexical_cast<string>(::GetLastError()));
     }
   }
 }
@@ -334,7 +338,9 @@ void ConvertUTF8ToWindows(const std::string& utf8,
   int r = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, buf, buffer_size);
   if (r == 0) {
     throw XtreemFSException("Failed to convert this UTF8 string to a UTF-16"
-        " (wide character) string: " + utf8);
+        " (wide character) string: " + utf8
+        + " Error code: "
+        + boost::lexical_cast<string>(::GetLastError()));
   }
 }
 #endif  // WIN32
