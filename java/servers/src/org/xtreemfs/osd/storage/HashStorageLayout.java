@@ -263,6 +263,10 @@ public class HashStorageLayout extends StorageLayout {
                     return new ObjectInformation(ObjectInformation.ObjectStatus.EXISTS, bbuf, stripeSize);
                 }
             } catch (Exception e) {
+                if (bbuf != null) {
+                    BufferPool.free(bbuf);
+                }
+
                 if (e instanceof IOException) {
                     Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this, "Failed to read object file from disk. Error: %s Path to the file on disk: %s", e.getMessage(), fileName);
                     throw (IOException) e;
@@ -271,9 +275,6 @@ public class HashStorageLayout extends StorageLayout {
                 }
             } finally {
                 f.close();
-                if (bbuf != null) {
-                    BufferPool.free(bbuf);
-                }
             }
 
         } else {
