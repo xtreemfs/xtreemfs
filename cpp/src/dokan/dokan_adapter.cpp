@@ -22,7 +22,8 @@
 //#include <list>
 //#include <string>
 //
-//#include "dokan/cached_directory_entries.h"
+
+#include "fcntl.h"
 #include "dokan/dokan_options.h"
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/file_handle.h"
@@ -42,6 +43,18 @@
 using namespace std;
 using namespace xtreemfs::pbrpc;
 using namespace xtreemfs::util;
+
+#define CATCH_AND_CONVERT_ERRORS \
+  catch (const PosixErrorException& e) { \
+    return ConvertXtreemFSErrnoToDokan(e.posix_errno()); \
+  } catch (const XtreemFSException&) { \
+    return -1 * EIO; \
+  } catch (const exception& e) { \
+    ErrorLog::error_log->AppendError( \
+        "A non-XtreemFS exception occurred: " \
+        + string(e.what())); \
+    return -1 * EIO; \
+  }
 
 namespace xtreemfs {
 
@@ -109,9 +122,13 @@ static void UTF8UnixPathEntryToWindows(const std::string& utf8,
   ConvertUTF8ToWindows(utf8, buf, buffer_size);
 }
 
-void XtreemFSTimeToWinTime(uint64_t utime_ns,
-                           unsigned long* lower,
-                           unsigned long* upper) {
+static xtreemfs::FileHandle* file_handle(PDOKAN_FILE_INFO dokan_file_info) {
+  return reinterpret_cast<xtreemfs::FileHandle*>(dokan_file_info->Context);
+}
+
+static void XtreemFSTimeToWinTime(uint64_t utime_ns,
+                                  unsigned long* lower,
+                                  unsigned long* upper) {
   // TODO(fhupfeld): apparently XtreemFS time is not nanoseconds since epoch?
   utime_ns = utime_ns / 1000000000;  // to seconds
   uint64_t wintime = (utime_ns + 11644473600) * 10000000;
@@ -119,7 +136,8 @@ void XtreemFSTimeToWinTime(uint64_t utime_ns,
   *upper = static_cast<DWORD>(wintime >> 32);
 }
 
-uint64_t WinTimeToUnixTime(unsigned long upper, unsigned long lower) {
+static uint64_t WinTimeToUnixTime(unsigned long upper,
+                                  unsigned long lower) {
   if (lower == 0 && upper == 0) {
     return 0;
   }
@@ -144,7 +162,106 @@ int DokanAdapter::CreateFile(LPCWSTR path,
                              DWORD creation_disposition,
                              DWORD flags_and_attributes,
                              PDOKAN_FILE_INFO dokan_file_info) {
-  return 0;
+  UserCredentials user_credentials;
+  system_user_mapping_->GetUserCredentialsForCurrentUser(
+      &user_credentials);
+  
+  bool read = false;
+  bool write = false;
+
+  read |= (desired_access & FILE_READ_ATTRIBUTES ) != 0;
+  read |= (desired_access & FILE_READ_DATA ) != 0;
+  read |= (desired_access & FILE_READ_EA ) != 0;
+  write |= (desired_access & FILE_WRITE_ATTRIBUTES ) != 0;
+  write |= (desired_access & FILE_WRITE_DATA ) != 0;
+  write |= (desired_access & FILE_WRITE_EA ) != 0;
+  
+  int open_flags = 0;
+  if (read && write) {
+    open_flags = SYSTEM_V_FCNTL_H_O_RDWR;
+  } else if (read) {
+    open_flags = SYSTEM_V_FCNTL_H_O_RDONLY;
+  } else if (write) {
+    open_flags = SYSTEM_V_FCNTL_H_O_WRONLY;
+  }
+
+  if ((desired_access & FILE_APPEND_DATA ) != 0) {
+    open_flags |= SYSTEM_V_FCNTL_H_O_APPEND;
+  }
+
+  uint32_t file_attributes = 0600;
+  if ((flags_and_attributes & FILE_ATTRIBUTE_READONLY) != 0) {
+    file_attributes |= 0400;
+  }
+
+  dokan_file_info->IsDirectory = FALSE;
+  dokan_file_info->Context = NULL;
+
+  if (creation_disposition == CREATE_NEW) {
+    // Create the file only if it does not exist already
+    open_flags |= SYSTEM_V_FCNTL_H_O_CREAT | SYSTEM_V_FCNTL_H_O_EXCL;
+  } else if (creation_disposition == CREATE_ALWAYS) {
+     // Create the file and overwrite it if it exists
+    open_flags |= SYSTEM_V_FCNTL_H_O_CREAT;
+  } else if (creation_disposition == OPEN_ALWAYS) {
+    // Open an existing file; create if it doesn't exist
+    open_flags |= SYSTEM_V_FCNTL_H_O_CREAT | SYSTEM_V_FCNTL_H_O_EXCL;
+  } else if (creation_disposition == TRUNCATE_EXISTING) {
+    // Only open an existing file and truncate it
+    open_flags |= SYSTEM_V_FCNTL_H_O_TRUNC;
+  }
+
+  xtreemfs::pbrpc::SYSTEM_V_FCNTL sys_v_open =
+      static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(open_flags);
+  
+  try {
+    if (creation_disposition == CREATE_ALWAYS) {
+      try {
+        volume_->Unlink(user_credentials,
+                        WindowsPathToUTF8Unix(path));
+      } catch(const PosixErrorException&) {
+        try {
+          volume_->DeleteDirectory(user_credentials,
+                                    WindowsPathToUTF8Unix(path));
+          dokan_file_info->IsDirectory = TRUE;
+          return ERROR_SUCCESS;
+        } catch(const PosixErrorException&) {
+        }
+      }
+    }
+
+    if (creation_disposition == OPEN_EXISTING) {
+      if (WindowsPathToUTF8Unix(path) == "/") {
+        dokan_file_info->IsDirectory = TRUE;
+        return 0;
+      }
+       
+      // Don't catch: if it does not exist, escalate.
+      xtreemfs::pbrpc::Stat stat;
+      volume_->GetAttr(user_credentials,
+                        WindowsPathToUTF8Unix(path),
+                        true,  // bypass cache
+                        &stat);
+
+      if (stat.attributes()) {
+        dokan_file_info->IsDirectory = TRUE;
+        return 0;
+      }
+    }
+
+    xtreemfs::FileHandle* file_handle = 
+        volume_->OpenFile(user_credentials, 
+                          WindowsPathToUTF8Unix(path),
+                          sys_v_open,
+                          file_attributes);
+    // Needed?
+    if (creation_disposition == TRUNCATE_EXISTING) {
+      volume_->Truncate(user_credentials, WindowsPathToUTF8Unix(path), 0);
+    }
+
+    dokan_file_info->Context = reinterpret_cast<UINT64>(file_handle);
+    return 0;  // always?
+  } CATCH_AND_CONVERT_ERRORS
 }
 
 int DokanAdapter::OpenDirectory(
@@ -167,35 +284,82 @@ int DokanAdapter::Cleanup(
 }
 
 int DokanAdapter::CloseFile(
-    LPCWSTR,      // FileName
-    PDOKAN_FILE_INFO) {
-  return 0;
+    LPCWSTR file_name, PDOKAN_FILE_INFO dokan_file_info) {
+  xtreemfs::FileHandle* file = file_handle(dokan_file_info);
+  if (file == NULL) {
+    return -1;  // TODO
+  }
+
+  try {
+    file->Close();
+    dokan_file_info->Context = NULL;
+    return 0;
+  } CATCH_AND_CONVERT_ERRORS
 }
 
 int DokanAdapter::ReadFile(
-    LPCWSTR,  // FileName
-    LPVOID,   // Buffer
-    DWORD,    // NumberOfBytesToRead
-    LPDWORD,  // NumberOfBytesRead
-    LONGLONG, // Offset
-    PDOKAN_FILE_INFO) {
-  return 0;
+    LPCWSTR FileName,
+    LPVOID Buffer,
+    DWORD NumberOfBytesToRead,
+    LPDWORD NumberOfBytesRead,
+    LONGLONG Offset,
+    PDOKAN_FILE_INFO dokan_file_info) {
+  UserCredentials user_credentials;
+  system_user_mapping_->GetUserCredentialsForCurrentUser(
+      &user_credentials);
+  xtreemfs::FileHandle* file = file_handle(dokan_file_info);
+  if (file == NULL) {
+    return -1;  // TODO
+  }
+
+  try {
+    *NumberOfBytesRead = file->Read(user_credentials, 
+                                    static_cast<char*>(Buffer), 
+                                    NumberOfBytesToRead, 
+                                    static_cast<off_t>(Offset));
+    dokan_file_info->Context = NULL;
+    return 0;
+  } CATCH_AND_CONVERT_ERRORS
 }
 
 int DokanAdapter::WriteFile(
-    LPCWSTR,  // FileName
-    LPCVOID,  // Buffer
-    DWORD,    // NumberOfBytesToWrite
-    LPDWORD,  // NumberOfBytesWritten
-    LONGLONG, // Offset
-    PDOKAN_FILE_INFO) {
-  return 0;
+    LPCWSTR FileName,
+    LPCVOID Buffer,
+    DWORD NumberOfBytesToWrite,
+    LPDWORD NumberOfBytesWritten,
+    LONGLONG Offset,
+    PDOKAN_FILE_INFO dokan_file_info) {
+  UserCredentials user_credentials;
+  system_user_mapping_->GetUserCredentialsForCurrentUser(
+      &user_credentials);
+  xtreemfs::FileHandle* file = file_handle(dokan_file_info);
+  if (file == NULL) {
+    return -1;  // TODO
+  }
+
+  try {
+    *NumberOfBytesWritten = file->Write(user_credentials, 
+                                        static_cast<const char*>(Buffer), 
+                                        NumberOfBytesToWrite, 
+                                        static_cast<off_t>(Offset));
+    dokan_file_info->Context = NULL;
+    return 0;
+  } CATCH_AND_CONVERT_ERRORS
 }
 
 int DokanAdapter::FlushFileBuffers(
-    LPCWSTR, // FileName
-    PDOKAN_FILE_INFO) {
-  return 0;
+    LPCWSTR,
+    PDOKAN_FILE_INFO dokan_file_info) {
+  xtreemfs::FileHandle* file = file_handle(dokan_file_info);
+  if (file == NULL) {
+    return -1;  // TODO
+  }
+
+  try {
+    file->Flush();
+    dokan_file_info->Context = NULL;
+    return 0;
+  } CATCH_AND_CONVERT_ERRORS
 }
 
 int DokanAdapter::GetFileInformation(
@@ -224,16 +388,8 @@ int DokanAdapter::GetFileInformation(
         &file_info->ftLastWriteTime.dwHighDateTime,
         &file_info->ftLastWriteTime.dwLowDateTime);
     // TODO: not complete yet.
-  } catch(const PosixErrorException& e) {
-    return ConvertXtreemFSErrnoToDokan(e.posix_errno());
-  } catch(const XtreemFSException&) {
-    return -1 * EIO;
-  } catch(const exception& e) {
-    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
-              + string(e.what()));
-    return -1 * EIO;
-  }
-  return 0;
+    return 0;
+  } CATCH_AND_CONVERT_ERRORS
 }
 
 int DokanAdapter::FindFiles(
@@ -282,17 +438,8 @@ int DokanAdapter::FindFiles(
         break;
       }
     }
-  } catch(const PosixErrorException& e) {
-    return ConvertXtreemFSErrnoToDokan(e.posix_errno());
-  } catch(const XtreemFSException&) {
-    return -1 * EIO;
-  } catch(const exception& e) {
-    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
-              + string(e.what()));
-    return -1 * EIO;
-  }
-
-  return 0;
+    return 0;
+  } CATCH_AND_CONVERT_ERRORS
 }
 
 // You should implement either FindFiles or FindFilesWithPattern
