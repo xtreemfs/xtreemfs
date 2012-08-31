@@ -27,7 +27,6 @@ THE SOFTWARE.
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <winbase.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "dokan.h"
@@ -52,10 +51,9 @@ THE SOFTWARE.
 using namespace std;
 
 BOOL g_UseStdErr = FALSE;
-BOOL g_DebugMode = FALSE;
+BOOL g_DebugMode = TRUE;
 
-static void DbgPrint(LPCWSTR format, ...)
-{
+static void DbgPrint(LPCWSTR format, ...) {
   if (g_DebugMode) {
     WCHAR buffer[512];
     va_list argp;
@@ -70,25 +68,16 @@ static void DbgPrint(LPCWSTR format, ...)
   }
 }
 
-static WCHAR RootDirectory[MAX_PATH] = L"C:";
-static WCHAR MountPoint[MAX_PATH] = L"M:";
-
-static void
-GetFilePath(
-  PWCHAR	filePath,
-  ULONG	numberOfElements,
-  LPCWSTR FileName)
-{
+static void GetFilePath(
+    PWCHAR filePath,
+    ULONG numberOfElements,
+    LPCWSTR FileName) {
   RtlZeroMemory(filePath, numberOfElements * sizeof(WCHAR));
-  wcsncpy_s(filePath, numberOfElements, RootDirectory, wcslen(RootDirectory));
   wcsncat_s(filePath, numberOfElements, FileName, wcslen(FileName));
 }
 
-
-static void
-PrintUserName(PDOKAN_FILE_INFO	DokanFileInfo)
-{
-  HANDLE	handle;
+static void PrintUserName(PDOKAN_FILE_INFO DokanFileInfo) {
+  HANDLE handle;
   UCHAR buffer[1024];
   DWORD returnLength;
   WCHAR accountName[256];
@@ -104,8 +93,9 @@ PrintUserName(PDOKAN_FILE_INFO	DokanFileInfo)
     return;
   }
 
-  if (!GetTokenInformation(handle, TokenUser, buffer, sizeof(buffer), &returnLength)) {
-    DbgPrint(L"  GetTokenInformaiton failed: %d\n", GetLastError());
+  if (!GetTokenInformation(handle, TokenUser, buffer, sizeof(buffer),
+                           &returnLength)) {
+    DbgPrint(L"  GetTokenInformation failed: %d\n", GetLastError());
     CloseHandle(handle);
     return;
   }
@@ -122,40 +112,23 @@ PrintUserName(PDOKAN_FILE_INFO	DokanFileInfo)
   DbgPrint(L"  AccountName: %s, DomainName: %s\n", accountName, domainName);
 }
 
-#define MirrorCheckFlag(val, flag) if (val&flag) { DbgPrint(L"\t" L#flag L"\n"); }
+#define DelegateCheckFlag(val, flag) \
+    if (val&flag) { DbgPrint(L"\t" L#flag L"\n"); }
 
 static xtreemfs::DokanAdapter* adapter(PDOKAN_FILE_INFO DokanFileInfo) {
   return reinterpret_cast<xtreemfs::DokanAdapter*>(
     DokanFileInfo->DokanOptions->GlobalContext);
 }
 
-static int __stdcall DelegateCreateFile(
-    LPCWSTR FileName,
-    DWORD AccessMode,
-    DWORD ShareMode,
-    DWORD CreationDisposition,
-    DWORD FlagsAndAttributes,
-    PDOKAN_FILE_INFO DokanFileInfo) {
-  return adapter(DokanFileInfo)->CreateFileW(
-      FileName, AccessMode, ShareMode, CreationDisposition, 
-      FlagsAndAttributes, DokanFileInfo);
-}
-
-static int
-__stdcall MirrorCreateFile(
-  LPCWSTR					FileName,
-  DWORD					AccessMode,
-  DWORD					ShareMode,
-  DWORD					CreationDisposition,
-  DWORD					FlagsAndAttributes,
-  PDOKAN_FILE_INFO		DokanFileInfo)
-{
+static void DebugPrintCreateFile(
+    LPCWSTR     FileName,
+    DWORD     AccessMode,
+    DWORD     ShareMode,
+    DWORD     CreationDisposition,
+    DWORD     FlagsAndAttributes,
+    PDOKAN_FILE_INFO  DokanFileInfo) {
   WCHAR filePath[MAX_PATH];
-  HANDLE handle;
-  DWORD fileAttr;
-
   GetFilePath(filePath, MAX_PATH, FileName);
-
   DbgPrint(L"CreateFile : %s\n", filePath);
 
   PrintUserName(DokanFileInfo);
@@ -180,369 +153,150 @@ __stdcall MirrorCreateFile(
 
   DbgPrint(L"\tShareMode = 0x%x\n", ShareMode);
 
-  MirrorCheckFlag(ShareMode, FILE_SHARE_READ);
-  MirrorCheckFlag(ShareMode, FILE_SHARE_WRITE);
-  MirrorCheckFlag(ShareMode, FILE_SHARE_DELETE);
+  DelegateCheckFlag(ShareMode, FILE_SHARE_READ);
+  DelegateCheckFlag(ShareMode, FILE_SHARE_WRITE);
+  DelegateCheckFlag(ShareMode, FILE_SHARE_DELETE);
 
   DbgPrint(L"\tAccessMode = 0x%x\n", AccessMode);
 
-  MirrorCheckFlag(AccessMode, GENERIC_READ);
-  MirrorCheckFlag(AccessMode, GENERIC_WRITE);
-  MirrorCheckFlag(AccessMode, GENERIC_EXECUTE);
+  DelegateCheckFlag(AccessMode, GENERIC_READ);
+  DelegateCheckFlag(AccessMode, GENERIC_WRITE);
+  DelegateCheckFlag(AccessMode, GENERIC_EXECUTE);
   
-  MirrorCheckFlag(AccessMode, DELETE);
-  MirrorCheckFlag(AccessMode, FILE_READ_DATA);
-  MirrorCheckFlag(AccessMode, FILE_READ_ATTRIBUTES);
-  MirrorCheckFlag(AccessMode, FILE_READ_EA);
-  MirrorCheckFlag(AccessMode, READ_CONTROL);
-  MirrorCheckFlag(AccessMode, FILE_WRITE_DATA);
-  MirrorCheckFlag(AccessMode, FILE_WRITE_ATTRIBUTES);
-  MirrorCheckFlag(AccessMode, FILE_WRITE_EA);
-  MirrorCheckFlag(AccessMode, FILE_APPEND_DATA);
-  MirrorCheckFlag(AccessMode, WRITE_DAC);
-  MirrorCheckFlag(AccessMode, WRITE_OWNER);
-  MirrorCheckFlag(AccessMode, SYNCHRONIZE);
-  MirrorCheckFlag(AccessMode, FILE_EXECUTE);
-  MirrorCheckFlag(AccessMode, STANDARD_RIGHTS_READ);
-  MirrorCheckFlag(AccessMode, STANDARD_RIGHTS_WRITE);
-  MirrorCheckFlag(AccessMode, STANDARD_RIGHTS_EXECUTE);
+  DelegateCheckFlag(AccessMode, DELETE);
+  DelegateCheckFlag(AccessMode, FILE_READ_DATA);
+  DelegateCheckFlag(AccessMode, FILE_READ_ATTRIBUTES);
+  DelegateCheckFlag(AccessMode, FILE_READ_EA);
+  DelegateCheckFlag(AccessMode, READ_CONTROL);
+  DelegateCheckFlag(AccessMode, FILE_WRITE_DATA);
+  DelegateCheckFlag(AccessMode, FILE_WRITE_ATTRIBUTES);
+  DelegateCheckFlag(AccessMode, FILE_WRITE_EA);
+  DelegateCheckFlag(AccessMode, FILE_APPEND_DATA);
+  DelegateCheckFlag(AccessMode, WRITE_DAC);
+  DelegateCheckFlag(AccessMode, WRITE_OWNER);
+  DelegateCheckFlag(AccessMode, SYNCHRONIZE);
+  DelegateCheckFlag(AccessMode, FILE_EXECUTE);
+  DelegateCheckFlag(AccessMode, STANDARD_RIGHTS_READ);
+  DelegateCheckFlag(AccessMode, STANDARD_RIGHTS_WRITE);
+  DelegateCheckFlag(AccessMode, STANDARD_RIGHTS_EXECUTE);
 
-  // When filePath is a directory, needs to change the flag so that the file can be opened.
-  fileAttr = GetFileAttributes(filePath);
-  if (fileAttr && fileAttr & FILE_ATTRIBUTE_DIRECTORY) {
-    FlagsAndAttributes |= FILE_FLAG_BACKUP_SEMANTICS;
-    //AccessMode = 0;
-  }
   DbgPrint(L"\tFlagsAndAttributes = 0x%x\n", FlagsAndAttributes);
 
-  MirrorCheckFlag(FlagsAndAttributes, FILE_ATTRIBUTE_ARCHIVE);
-  MirrorCheckFlag(FlagsAndAttributes, FILE_ATTRIBUTE_ENCRYPTED);
-  MirrorCheckFlag(FlagsAndAttributes, FILE_ATTRIBUTE_HIDDEN);
-  MirrorCheckFlag(FlagsAndAttributes, FILE_ATTRIBUTE_NORMAL);
-  MirrorCheckFlag(FlagsAndAttributes, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
-  MirrorCheckFlag(FlagsAndAttributes, FILE_ATTRIBUTE_OFFLINE);
-  MirrorCheckFlag(FlagsAndAttributes, FILE_ATTRIBUTE_READONLY);
-  MirrorCheckFlag(FlagsAndAttributes, FILE_ATTRIBUTE_SYSTEM);
-  MirrorCheckFlag(FlagsAndAttributes, FILE_ATTRIBUTE_TEMPORARY);
-  MirrorCheckFlag(FlagsAndAttributes, FILE_FLAG_WRITE_THROUGH);
-  MirrorCheckFlag(FlagsAndAttributes, FILE_FLAG_OVERLAPPED);
-  MirrorCheckFlag(FlagsAndAttributes, FILE_FLAG_NO_BUFFERING);
-  MirrorCheckFlag(FlagsAndAttributes, FILE_FLAG_RANDOM_ACCESS);
-  MirrorCheckFlag(FlagsAndAttributes, FILE_FLAG_SEQUENTIAL_SCAN);
-  MirrorCheckFlag(FlagsAndAttributes, FILE_FLAG_DELETE_ON_CLOSE);
-  MirrorCheckFlag(FlagsAndAttributes, FILE_FLAG_BACKUP_SEMANTICS);
-  MirrorCheckFlag(FlagsAndAttributes, FILE_FLAG_POSIX_SEMANTICS);
-  MirrorCheckFlag(FlagsAndAttributes, FILE_FLAG_OPEN_REPARSE_POINT);
-  MirrorCheckFlag(FlagsAndAttributes, FILE_FLAG_OPEN_NO_RECALL);
-  MirrorCheckFlag(FlagsAndAttributes, SECURITY_ANONYMOUS);
-  MirrorCheckFlag(FlagsAndAttributes, SECURITY_IDENTIFICATION);
-  MirrorCheckFlag(FlagsAndAttributes, SECURITY_IMPERSONATION);
-  MirrorCheckFlag(FlagsAndAttributes, SECURITY_DELEGATION);
-  MirrorCheckFlag(FlagsAndAttributes, SECURITY_CONTEXT_TRACKING);
-  MirrorCheckFlag(FlagsAndAttributes, SECURITY_EFFECTIVE_ONLY);
-  MirrorCheckFlag(FlagsAndAttributes, SECURITY_SQOS_PRESENT);
-
-  handle = CreateFile(
-    filePath,
-    AccessMode,//GENERIC_READ|GENERIC_WRITE|GENERIC_EXECUTE,
-    ShareMode,
-    NULL, // security attribute
-    CreationDisposition,
-    FlagsAndAttributes,// |FILE_FLAG_NO_BUFFERING,
-    NULL); // template file handle
-
-  if (handle == INVALID_HANDLE_VALUE) {
-    DWORD error = GetLastError();
-    DbgPrint(L"\terror code = %d\n\n", error);
-    return error * -1; // error codes are negated value of Windows System Error codes
-  }
+  DelegateCheckFlag(FlagsAndAttributes, FILE_ATTRIBUTE_ARCHIVE);
+  DelegateCheckFlag(FlagsAndAttributes, FILE_ATTRIBUTE_ENCRYPTED);
+  DelegateCheckFlag(FlagsAndAttributes, FILE_ATTRIBUTE_HIDDEN);
+  DelegateCheckFlag(FlagsAndAttributes, FILE_ATTRIBUTE_NORMAL);
+  DelegateCheckFlag(FlagsAndAttributes, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
+  DelegateCheckFlag(FlagsAndAttributes, FILE_ATTRIBUTE_OFFLINE);
+  DelegateCheckFlag(FlagsAndAttributes, FILE_ATTRIBUTE_READONLY);
+  DelegateCheckFlag(FlagsAndAttributes, FILE_ATTRIBUTE_SYSTEM);
+  DelegateCheckFlag(FlagsAndAttributes, FILE_ATTRIBUTE_TEMPORARY);
+  DelegateCheckFlag(FlagsAndAttributes, FILE_FLAG_WRITE_THROUGH);
+  DelegateCheckFlag(FlagsAndAttributes, FILE_FLAG_OVERLAPPED);
+  DelegateCheckFlag(FlagsAndAttributes, FILE_FLAG_NO_BUFFERING);
+  DelegateCheckFlag(FlagsAndAttributes, FILE_FLAG_RANDOM_ACCESS);
+  DelegateCheckFlag(FlagsAndAttributes, FILE_FLAG_SEQUENTIAL_SCAN);
+  DelegateCheckFlag(FlagsAndAttributes, FILE_FLAG_DELETE_ON_CLOSE);
+  DelegateCheckFlag(FlagsAndAttributes, FILE_FLAG_BACKUP_SEMANTICS);
+  DelegateCheckFlag(FlagsAndAttributes, FILE_FLAG_POSIX_SEMANTICS);
+  DelegateCheckFlag(FlagsAndAttributes, FILE_FLAG_OPEN_REPARSE_POINT);
+  DelegateCheckFlag(FlagsAndAttributes, FILE_FLAG_OPEN_NO_RECALL);
+  DelegateCheckFlag(FlagsAndAttributes, SECURITY_ANONYMOUS);
+  DelegateCheckFlag(FlagsAndAttributes, SECURITY_IDENTIFICATION);
+  DelegateCheckFlag(FlagsAndAttributes, SECURITY_IMPERSONATION);
+  DelegateCheckFlag(FlagsAndAttributes, SECURITY_DELEGATION);
+  DelegateCheckFlag(FlagsAndAttributes, SECURITY_CONTEXT_TRACKING);
+  DelegateCheckFlag(FlagsAndAttributes, SECURITY_EFFECTIVE_ONLY);
+  DelegateCheckFlag(FlagsAndAttributes, SECURITY_SQOS_PRESENT);
 
   DbgPrint(L"\n");
-
-  // save the file handle in Context
-  DokanFileInfo->Context = (ULONG64)handle;
-  return 0;
 }
 
+static int __stdcall DelegateCreateFile(
+    LPCWSTR FileName,
+    DWORD AccessMode,
+    DWORD ShareMode,
+    DWORD CreationDisposition,
+    DWORD FlagsAndAttributes,
+    PDOKAN_FILE_INFO DokanFileInfo) {
+  DebugPrintCreateFile(
+      FileName, AccessMode, ShareMode, CreationDisposition, 
+      FlagsAndAttributes, DokanFileInfo);
+  return adapter(DokanFileInfo)->CreateFile(
+      FileName, AccessMode, ShareMode, CreationDisposition, 
+      FlagsAndAttributes, DokanFileInfo);
+}
 
-static int
-__stdcall MirrorCreateDirectory(
-  LPCWSTR					FileName,
-  PDOKAN_FILE_INFO		DokanFileInfo)
-{
+static int __stdcall DelegateCreateDirectory(
+    LPCWSTR FileName,
+    PDOKAN_FILE_INFO DokanFileInfo) {
+  return adapter(DokanFileInfo)->CreateDirectory(
+      FileName, DokanFileInfo);
+}
+
+static int __stdcall DelegateOpenDirectory(
+  LPCWSTR FileName,
+  PDOKAN_FILE_INFO DokanFileInfo) {
+  return adapter(DokanFileInfo)->OpenDirectory(
+      FileName, DokanFileInfo);
+}
+
+static int __stdcall DelegateCloseFile(
+    LPCWSTR FileName,
+    PDOKAN_FILE_INFO DokanFileInfo) {
   WCHAR filePath[MAX_PATH];
   GetFilePath(filePath, MAX_PATH, FileName);
-
-  DbgPrint(L"CreateDirectory : %s\n", filePath);
-  if (!CreateDirectory(filePath, NULL)) {
-    DWORD error = GetLastError();
-    DbgPrint(L"\terror code = %d\n\n", error);
-    return error * -1; // error codes are negated value of Windows System Error codes
-  }
+  DbgPrint(L"CloseFile : %s\n", filePath);
+  return adapter(DokanFileInfo)->CloseFile(
+      FileName, DokanFileInfo);
   return 0;
 }
 
-
-static int
-__stdcall MirrorOpenDirectory(
-  LPCWSTR					FileName,
-  PDOKAN_FILE_INFO		DokanFileInfo)
-{
-  WCHAR filePath[MAX_PATH];
-  HANDLE handle;
-  DWORD attr;
-
-  GetFilePath(filePath, MAX_PATH, FileName);
-
-  DbgPrint(L"OpenDirectory : %s\n", filePath);
-
-  attr = GetFileAttributes(filePath);
-  if (attr == INVALID_FILE_ATTRIBUTES) {
-    DWORD error = GetLastError();
-    DbgPrint(L"\terror code = %d\n\n", error);
-    return error * -1;
-  }
-  if (!(attr & FILE_ATTRIBUTE_DIRECTORY)) {
-    return -1;
-  }
-
-  handle = CreateFile(
-    filePath,
-    0,
-    FILE_SHARE_READ|FILE_SHARE_WRITE,
-    NULL,
-    OPEN_EXISTING,
-    FILE_FLAG_BACKUP_SEMANTICS,
-    NULL);
-
-  if (handle == INVALID_HANDLE_VALUE) {
-    DWORD error = GetLastError();
-    DbgPrint(L"\terror code = %d\n\n", error);
-    return error * -1;
-  }
-
-  DbgPrint(L"\n");
-
-  DokanFileInfo->Context = (ULONG64)handle;
-
-  return 0;
-}
-
-
-static int
-__stdcall MirrorCloseFile(
-  LPCWSTR					FileName,
-  PDOKAN_FILE_INFO		DokanFileInfo)
-{
+static int __stdcall DelegateCleanup(
+    LPCWSTR FileName,
+    PDOKAN_FILE_INFO DokanFileInfo) {
   WCHAR filePath[MAX_PATH];
   GetFilePath(filePath, MAX_PATH, FileName);
-
-  if (DokanFileInfo->Context) {
-    DbgPrint(L"CloseFile: %s\n", filePath);
-    DbgPrint(L"\terror : not cleanuped file\n\n");
-    CloseHandle((HANDLE)DokanFileInfo->Context);
-    DokanFileInfo->Context = 0;
-  } else {
-    //DbgPrint(L"Close: %s\n\tinvalid handle\n\n", filePath);
-    DbgPrint(L"Close: %s\n\n", filePath);
-    return 0;
-  }
-
-  //DbgPrint(L"\n");
-  return 0;
+  DbgPrint(L"Cleanup : %s\n", filePath);
+  return adapter(DokanFileInfo)->Cleanup(
+      FileName, DokanFileInfo);
 }
 
-
-static int
-__stdcall MirrorCleanup(
-  LPCWSTR					FileName,
-  PDOKAN_FILE_INFO		DokanFileInfo)
-{
+static int __stdcall DelegateReadFile(
+    LPCWSTR FileName,
+    LPVOID Buffer,
+    DWORD BufferLength,
+    LPDWORD ReadLength,
+    LONGLONG Offset,
+    PDOKAN_FILE_INFO DokanFileInfo) {
   WCHAR filePath[MAX_PATH];
   GetFilePath(filePath, MAX_PATH, FileName);
-
-  if (DokanFileInfo->Context) {
-    DbgPrint(L"Cleanup: %s\n\n", filePath);
-    CloseHandle((HANDLE)DokanFileInfo->Context);
-    DokanFileInfo->Context = 0;
-
-    if (DokanFileInfo->DeleteOnClose) {
-      DbgPrint(L"\tDeleteOnClose\n");
-      if (DokanFileInfo->IsDirectory) {
-        DbgPrint(L"  DeleteDirectory ");
-        if (!RemoveDirectory(filePath)) {
-          DbgPrint(L"error code = %d\n\n", GetLastError());
-        } else {
-          DbgPrint(L"success\n\n");
-        }
-      } else {
-        DbgPrint(L"  DeleteFile ");
-        if (DeleteFile(filePath) == 0) {
-          DbgPrint(L" error code = %d\n\n", GetLastError());
-        } else {
-          DbgPrint(L"success\n\n");
-        }
-      }
-    }
-
-  } else {
-    DbgPrint(L"Cleanup: %s\n\tinvalid handle\n\n", filePath);
-    return -1;
-  }
-
-  return 0;
-}
-
-
-static int
-__stdcall MirrorReadFile(
-  LPCWSTR				FileName,
-  LPVOID				Buffer,
-  DWORD				BufferLength,
-  LPDWORD				ReadLength,
-  LONGLONG			Offset,
-  PDOKAN_FILE_INFO	DokanFileInfo)
-{
-  WCHAR	filePath[MAX_PATH];
-  HANDLE	handle = (HANDLE)DokanFileInfo->Context;
-  ULONG	offset = (ULONG)Offset;
-  BOOL	opened = FALSE;
-
-  GetFilePath(filePath, MAX_PATH, FileName);
-
   DbgPrint(L"ReadFile : %s\n", filePath);
-
-  if (!handle || handle == INVALID_HANDLE_VALUE) {
-    DbgPrint(L"\tinvalid handle, cleanuped?\n");
-    handle = CreateFile(
-      filePath,
-      GENERIC_READ,
-      FILE_SHARE_READ,
-      NULL,
-      OPEN_EXISTING,
-      0,
-      NULL);
-    if (handle == INVALID_HANDLE_VALUE) {
-      DbgPrint(L"\tCreateFile error : %d\n\n", GetLastError());
-      return -1;
-    }
-    opened = TRUE;
-  }
-  
-  if (SetFilePointer(handle, offset, NULL, FILE_BEGIN) == 0xFFFFFFFF) {
-    DbgPrint(L"\tseek error, offset = %d\n\n", offset);
-    if (opened)
-      CloseHandle(handle);
-    return -1;
-  }
-
-    
-  if (!ReadFile(handle, Buffer, BufferLength, ReadLength,NULL)) {
-    DbgPrint(L"\tread error = %u, buffer length = %d, read length = %d\n\n",
-      GetLastError(), BufferLength, *ReadLength);
-    if (opened)
-      CloseHandle(handle);
-    return -1;
-
-  } else {
-    DbgPrint(L"\tread %d, offset %d\n\n", *ReadLength, offset);
-  }
-
-  if (opened)
-    CloseHandle(handle);
-
-  return 0;
+  return adapter(DokanFileInfo)->ReadFile(
+      FileName, Buffer, BufferLength, ReadLength, Offset,
+      DokanFileInfo);
 }
 
-
-static int
-__stdcall MirrorWriteFile(
-  LPCWSTR		FileName,
-  LPCVOID		Buffer,
-  DWORD		NumberOfBytesToWrite,
-  LPDWORD		NumberOfBytesWritten,
-  LONGLONG			Offset,
-  PDOKAN_FILE_INFO	DokanFileInfo)
-{
-  WCHAR	filePath[MAX_PATH];
-  HANDLE	handle = (HANDLE)DokanFileInfo->Context;
-  ULONG	offset = (ULONG)Offset;
-  BOOL	opened = FALSE;
-
+static int __stdcall DelegateWriteFile(
+    LPCWSTR FileName,
+    LPCVOID Buffer,
+    DWORD NumberOfBytesToWrite,
+    LPDWORD NumberOfBytesWritten,
+    LONGLONG Offset,
+    PDOKAN_FILE_INFO  DokanFileInfo) {
+  WCHAR filePath[MAX_PATH];
   GetFilePath(filePath, MAX_PATH, FileName);
-
-  DbgPrint(L"WriteFile : %s, offset %I64d, length %d\n", filePath, Offset, NumberOfBytesToWrite);
-
-  // reopen the file
-  if (!handle || handle == INVALID_HANDLE_VALUE) {
-    DbgPrint(L"\tinvalid handle, cleanuped?\n");
-    handle = CreateFile(
-      filePath,
-      GENERIC_WRITE,
-      FILE_SHARE_WRITE,
-      NULL,
-      OPEN_EXISTING,
-      0,
-      NULL);
-    if (handle == INVALID_HANDLE_VALUE) {
-      DbgPrint(L"\tCreateFile error : %d\n\n", GetLastError());
-      return -1;
-    }
-    opened = TRUE;
-  }
-
-  if (DokanFileInfo->WriteToEndOfFile) {
-    if (SetFilePointer(handle, 0, NULL, FILE_END) == INVALID_SET_FILE_POINTER) {
-      DbgPrint(L"\tseek error, offset = EOF, error = %d\n", GetLastError());
-      return -1;
-    }
-  } else if (SetFilePointer(handle, offset, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER) {
-    DbgPrint(L"\tseek error, offset = %d, error = %d\n", offset, GetLastError());
-    return -1;
-  }
-
-    
-  if (!WriteFile(handle, Buffer, NumberOfBytesToWrite, NumberOfBytesWritten, NULL)) {
-    DbgPrint(L"\twrite error = %u, buffer length = %d, write length = %d\n",
-      GetLastError(), NumberOfBytesToWrite, *NumberOfBytesWritten);
-    return -1;
-
-  } else {
-    DbgPrint(L"\twrite %d, offset %d\n\n", *NumberOfBytesWritten, offset);
-  }
-
-  // close the file when it is reopened
-  if (opened)
-    CloseHandle(handle);
-
-  return 0;
+  DbgPrint(L"WriteFile : %s\n", filePath);
+  return adapter(DokanFileInfo)->WriteFile(
+      FileName, Buffer, NumberOfBytesToWrite, NumberOfBytesWritten, Offset,
+      DokanFileInfo);
 }
 
-
-static int
-__stdcall MirrorFlushFileBuffers(
-  LPCWSTR		FileName,
-  PDOKAN_FILE_INFO	DokanFileInfo)
-{
-  WCHAR	filePath[MAX_PATH];
-  HANDLE	handle = (HANDLE)DokanFileInfo->Context;
-
-  GetFilePath(filePath, MAX_PATH, FileName);
-
-  DbgPrint(L"FlushFileBuffers : %s\n", filePath);
-
-  if (!handle || handle == INVALID_HANDLE_VALUE) {
-    DbgPrint(L"\tinvalid handle\n\n");
-    return 0;
-  }
-
-  if (FlushFileBuffers(handle)) {
-    return 0;
-  } else {
-    DbgPrint(L"\tflush error code = %d\n", GetLastError());
-    return -1;
-  }
-
+static int __stdcall DelegateFlushFileBuffers(
+  LPCWSTR FileName,
+  PDOKAN_FILE_INFO DokanFileInfo) {
+  return adapter(DokanFileInfo)->FlushFileBuffers(
+      FileName, DokanFileInfo);
 }
 
 static int __stdcall DelegateGetFileInformation(
@@ -561,414 +315,103 @@ static int __stdcall DelegateFindFiles(
       FileName, FillFindData, DokanFileInfo);
 }
 
-static int
-__stdcall MirrorFindFiles(
-  LPCWSTR				FileName,
-  PFillFindData		FillFindData, // function pointer
-  PDOKAN_FILE_INFO	DokanFileInfo)
-{
-  WCHAR				filePath[MAX_PATH];
-  HANDLE				hFind;
-  WIN32_FIND_DATAW	findData;
-  DWORD				error;
-  PWCHAR				yenStar = L"\\*";
-  int count = 0;
-
-  GetFilePath(filePath, MAX_PATH, FileName);
-
-  wcscat_s(filePath, MAX_PATH, yenStar);
-  DbgPrint(L"FindFiles :%s\n", filePath);
-
-  hFind = FindFirstFile(filePath, &findData);
-
-  if (hFind == INVALID_HANDLE_VALUE) {
-    DbgPrint(L"\tinvalid file handle. Error is %u\n\n", GetLastError());
-    return -1;
-  }
-
-  FillFindData(&findData, DokanFileInfo);
-  count++;
-
-  while (FindNextFile(hFind, &findData) != 0) {
-    FillFindData(&findData, DokanFileInfo);
-    count++;
-  }
-  
-  error = GetLastError();
-  FindClose(hFind);
-
-  if (error != ERROR_NO_MORE_FILES) {
-    DbgPrint(L"\tFindNextFile error. Error is %u\n\n", error);
-    return -1;
-  }
-
-  DbgPrint(L"\tFindFiles return %d entries in %s\n\n", count, filePath);
-
-  return 0;
+static int __stdcall DelegateDeleteFile(
+  LPCWSTR    FileName,
+  PDOKAN_FILE_INFO DokanFileInfo) {
+    return adapter(DokanFileInfo)->DeleteFile(
+      FileName, DokanFileInfo);
 }
 
-
-static int
-__stdcall MirrorDeleteFile(
-  LPCWSTR				FileName,
-  PDOKAN_FILE_INFO	DokanFileInfo)
-{
-  WCHAR	filePath[MAX_PATH];
-  HANDLE	handle = (HANDLE)DokanFileInfo->Context;
-
-  GetFilePath(filePath, MAX_PATH, FileName);
-
-  DbgPrint(L"DeleteFile %s\n", filePath);
-
-  return 0;
+static int __stdcall DelegateDeleteDirectory(
+  LPCWSTR    FileName,
+  PDOKAN_FILE_INFO DokanFileInfo) {
+    return adapter(DokanFileInfo)->DeleteDirectory(
+      FileName, DokanFileInfo);
 }
 
-
-static int
-__stdcall MirrorDeleteDirectory(
-  LPCWSTR				FileName,
-  PDOKAN_FILE_INFO	DokanFileInfo)
-{
-  WCHAR	filePath[MAX_PATH];
-  HANDLE	handle = (HANDLE)DokanFileInfo->Context;
-  HANDLE	hFind;
-  WIN32_FIND_DATAW	findData;
-  ULONG	fileLen;
-
-  ZeroMemory(filePath, sizeof(filePath));
-  GetFilePath(filePath, MAX_PATH, FileName);
-
-  DbgPrint(L"DeleteDirectory %s\n", filePath);
-
-  fileLen = wcslen(filePath);
-  if (filePath[fileLen-1] != L'\\') {
-    filePath[fileLen++] = L'\\';
-  }
-  filePath[fileLen] = L'*';
-
-  hFind = FindFirstFile(filePath, &findData);
-  while (hFind != INVALID_HANDLE_VALUE) {
-    if (wcscmp(findData.cFileName, L"..") != 0 &&
-      wcscmp(findData.cFileName, L".") != 0) {
-      FindClose(hFind);
-      DbgPrint(L"  Directory is not empty: %s\n", findData.cFileName);
-      return -(int)ERROR_DIR_NOT_EMPTY;
-    }
-    if (!FindNextFile(hFind, &findData)) {
-      break;
-    }
-  }
-  FindClose(hFind);
-
-  if (GetLastError() == ERROR_NO_MORE_FILES) {
-    return 0;
-  } else {
-    return -1;
-  }
+static int __stdcall DelegateMoveFile(
+  LPCWSTR    FileName, // existing file name
+  LPCWSTR    NewFileName,
+  BOOL    ReplaceIfExisting,
+  PDOKAN_FILE_INFO DokanFileInfo) {
+    return adapter(DokanFileInfo)->MoveFile(
+      FileName, NewFileName, ReplaceIfExisting, DokanFileInfo);
 }
 
-
-static int
-__stdcall MirrorMoveFile(
-  LPCWSTR				FileName, // existing file name
-  LPCWSTR				NewFileName,
-  BOOL				ReplaceIfExisting,
-  PDOKAN_FILE_INFO	DokanFileInfo)
-{
-  WCHAR			filePath[MAX_PATH];
-  WCHAR			newFilePath[MAX_PATH];
-  BOOL			status;
-
-  GetFilePath(filePath, MAX_PATH, FileName);
-  GetFilePath(newFilePath, MAX_PATH, NewFileName);
-
-  DbgPrint(L"MoveFile %s -> %s\n\n", filePath, newFilePath);
-
-  if (DokanFileInfo->Context) {
-    // should close? or rename at closing?
-    CloseHandle((HANDLE)DokanFileInfo->Context);
-    DokanFileInfo->Context = 0;
-  }
-
-  if (ReplaceIfExisting)
-    status = MoveFileEx(filePath, newFilePath, MOVEFILE_REPLACE_EXISTING);
-  else
-    status = MoveFile(filePath, newFilePath);
-
-  if (status == FALSE) {
-    DWORD error = GetLastError();
-    DbgPrint(L"\tMoveFile failed status = %d, code = %d\n", status, error);
-    return -(int)error;
-  } else {
-    return 0;
-  }
+static int __stdcall DelegateLockFile(
+  LPCWSTR    FileName,
+  LONGLONG   ByteOffset,
+  LONGLONG   Length,
+  PDOKAN_FILE_INFO DokanFileInfo) {
+    return adapter(DokanFileInfo)->LockFile(
+      FileName, ByteOffset, Length, DokanFileInfo);
 }
 
-
-static int
-__stdcall MirrorLockFile(
-  LPCWSTR				FileName,
-  LONGLONG			ByteOffset,
-  LONGLONG			Length,
-  PDOKAN_FILE_INFO	DokanFileInfo)
-{
-  WCHAR	filePath[MAX_PATH];
-  HANDLE	handle;
-  LARGE_INTEGER offset;
-  LARGE_INTEGER length;
-
-  GetFilePath(filePath, MAX_PATH, FileName);
-
-  DbgPrint(L"LockFile %s\n", filePath);
-
-  handle = (HANDLE)DokanFileInfo->Context;
-  if (!handle || handle == INVALID_HANDLE_VALUE) {
-    DbgPrint(L"\tinvalid handle\n\n");
-    return -1;
-  }
-
-  length.QuadPart = Length;
-  offset.QuadPart = ByteOffset;
-
-  if (LockFile(handle, offset.HighPart, offset.LowPart, length.HighPart, length.LowPart)) {
-    DbgPrint(L"\tsuccess\n\n");
-    return 0;
-  } else {
-    DbgPrint(L"\tfail\n\n");
-    return -1;
-  }
+static int __stdcall DelegateSetEndOfFile(
+  LPCWSTR    FileName,
+  LONGLONG   ByteOffset,
+  PDOKAN_FILE_INFO DokanFileInfo) {
+    return adapter(DokanFileInfo)->SetAllocationSize(
+      FileName, ByteOffset, DokanFileInfo);
 }
 
-
-static int
-__stdcall MirrorSetEndOfFile(
-  LPCWSTR				FileName,
-  LONGLONG			ByteOffset,
-  PDOKAN_FILE_INFO	DokanFileInfo)
-{
-  WCHAR			filePath[MAX_PATH];
-  HANDLE			handle;
-  LARGE_INTEGER	offset;
-
-  GetFilePath(filePath, MAX_PATH, FileName);
-
-  DbgPrint(L"SetEndOfFile %s, %I64d\n", filePath, ByteOffset);
-
-  handle = (HANDLE)DokanFileInfo->Context;
-  if (!handle || handle == INVALID_HANDLE_VALUE) {
-    DbgPrint(L"\tinvalid handle\n\n");
-    return -1;
-  }
-
-  offset.QuadPart = ByteOffset;
-  if (!SetFilePointerEx(handle, offset, NULL, FILE_BEGIN)) {
-    DbgPrint(L"\tSetFilePointer error: %d, offset = %I64d\n\n",
-        GetLastError(), ByteOffset);
-    return GetLastError() * -1;
-  }
-
-  if (!SetEndOfFile(handle)) {
-    DWORD error = GetLastError();
-    DbgPrint(L"\terror code = %d\n\n", error);
-    return error * -1;
-  }
-
-  return 0;
+static int __stdcall DelegateSetAllocationSize(
+  LPCWSTR    FileName,
+  LONGLONG   AllocSize,
+  PDOKAN_FILE_INFO DokanFileInfo) {
+    return adapter(DokanFileInfo)->SetAllocationSize(
+      FileName, AllocSize, DokanFileInfo);
 }
 
-static int
-__stdcall MirrorSetAllocationSize(
-  LPCWSTR				FileName,
-  LONGLONG			AllocSize,
-  PDOKAN_FILE_INFO	DokanFileInfo)
-{
-  WCHAR			filePath[MAX_PATH];
-  HANDLE			handle;
-  LARGE_INTEGER	fileSize;
-
-  GetFilePath(filePath, MAX_PATH, FileName);
-
-  DbgPrint(L"SetAllocationSize %s, %I64d\n", filePath, AllocSize);
-
-  handle = (HANDLE)DokanFileInfo->Context;
-  if (!handle || handle == INVALID_HANDLE_VALUE) {
-    DbgPrint(L"\tinvalid handle\n\n");
-    return -1;
-  }
-
-  if (GetFileSizeEx(handle, &fileSize)) {
-    if (AllocSize < fileSize.QuadPart) {
-      fileSize.QuadPart = AllocSize;
-      if (!SetFilePointerEx(handle, fileSize, NULL, FILE_BEGIN)) {
-        DbgPrint(L"\tSetAllocationSize: SetFilePointer eror: %d, "
-          L"offset = %I64d\n\n", GetLastError(), AllocSize);
-        return GetLastError() * -1;
-      }
-      if (!SetEndOfFile(handle)) {
-        DWORD error = GetLastError();
-        DbgPrint(L"\terror code = %d\n\n", error);
-        return error * -1;
-      }
-    }
-  } else {
-    DWORD error = GetLastError();
-    DbgPrint(L"\terror code = %d\n\n", error);
-    return error * -1;
-  }
-  return 0;
+static int __stdcall DelegateSetFileAttributes(
+  LPCWSTR    FileName,
+  DWORD    FileAttributes,
+  PDOKAN_FILE_INFO DokanFileInfo) {
+    return adapter(DokanFileInfo)->SetFileAttributes(
+      FileName, FileAttributes, DokanFileInfo);
 }
 
-static int
-__stdcall MirrorSetFileAttributes(
-  LPCWSTR				FileName,
-  DWORD				FileAttributes,
-  PDOKAN_FILE_INFO	DokanFileInfo)
-{
-  WCHAR	filePath[MAX_PATH];
-  
-  GetFilePath(filePath, MAX_PATH, FileName);
-
-  DbgPrint(L"SetFileAttributes %s\n", filePath);
-
-  if (!SetFileAttributes(filePath, FileAttributes)) {
-    DWORD error = GetLastError();
-    DbgPrint(L"\terror code = %d\n\n", error);
-    return error * -1;
-  }
-
-  DbgPrint(L"\n");
-  return 0;
+static int __stdcall DelegateSetFileTime(
+  LPCWSTR    FileName,
+  CONST FILETIME*  CreationTime,
+  CONST FILETIME*  LastAccessTime,
+  CONST FILETIME*  LastWriteTime,
+  PDOKAN_FILE_INFO DokanFileInfo) {
+    return adapter(DokanFileInfo)->SetFileTime(
+      FileName, CreationTime, LastAccessTime, LastWriteTime, 
+      DokanFileInfo);
 }
 
-static int
-__stdcall MirrorSetFileTime(
-  LPCWSTR				FileName,
-  CONST FILETIME*		CreationTime,
-  CONST FILETIME*		LastAccessTime,
-  CONST FILETIME*		LastWriteTime,
-  PDOKAN_FILE_INFO	DokanFileInfo)
-{
-  WCHAR	filePath[MAX_PATH];
-  HANDLE	handle;
-
-  GetFilePath(filePath, MAX_PATH, FileName);
-
-  DbgPrint(L"SetFileTime %s\n", filePath);
-
-  handle = (HANDLE)DokanFileInfo->Context;
-
-  if (!handle || handle == INVALID_HANDLE_VALUE) {
-    DbgPrint(L"\tinvalid handle\n\n");
-    return -1;
-  }
-
-  if (!SetFileTime(handle, CreationTime, LastAccessTime, LastWriteTime)) {
-    DWORD error = GetLastError();
-    DbgPrint(L"\terror code = %d\n\n", error);
-    return error * -1;
-  }
-
-  DbgPrint(L"\n");
-  return 0;
+static int __stdcall DelegateUnlockFile(
+  LPCWSTR    FileName,
+  LONGLONG   ByteOffset,
+  LONGLONG   Length,
+  PDOKAN_FILE_INFO DokanFileInfo) {
+  return adapter(DokanFileInfo)->UnlockFile(
+      FileName, ByteOffset, Length, DokanFileInfo);
 }
 
-static int
-__stdcall MirrorUnlockFile(
-  LPCWSTR				FileName,
-  LONGLONG			ByteOffset,
-  LONGLONG			Length,
-  PDOKAN_FILE_INFO	DokanFileInfo)
-{
-  WCHAR	filePath[MAX_PATH];
-  HANDLE	handle;
-  LARGE_INTEGER	length;
-  LARGE_INTEGER	offset;
-
-  GetFilePath(filePath, MAX_PATH, FileName);
-
-  DbgPrint(L"UnlockFile %s\n", filePath);
-
-  handle = (HANDLE)DokanFileInfo->Context;
-  if (!handle || handle == INVALID_HANDLE_VALUE) {
-    DbgPrint(L"\tinvalid handle\n\n");
-    return -1;
-  }
-
-  length.QuadPart = Length;
-  offset.QuadPart = ByteOffset;
-
-  if (UnlockFile(handle, offset.HighPart, offset.LowPart, length.HighPart, length.LowPart)) {
-    DbgPrint(L"\tsuccess\n\n");
-    return 0;
-  } else {
-    DbgPrint(L"\tfail\n\n");
-    return -1;
-  }
+static int __stdcall DelegateGetFileSecurity(
+  LPCWSTR FileName,
+  PSECURITY_INFORMATION SecurityInformation,
+  PSECURITY_DESCRIPTOR SecurityDescriptor,
+  ULONG    BufferLength,
+  PULONG    LengthNeeded,
+  PDOKAN_FILE_INFO DokanFileInfo) {
+  return adapter(DokanFileInfo)->GetFileSecurity(
+      FileName, SecurityInformation, SecurityDescriptor,
+      BufferLength, LengthNeeded, DokanFileInfo);
 }
 
-static int
-__stdcall MirrorGetFileSecurity(
-  LPCWSTR					FileName,
-  PSECURITY_INFORMATION	SecurityInformation,
-  PSECURITY_DESCRIPTOR	SecurityDescriptor,
-  ULONG				BufferLength,
-  PULONG				LengthNeeded,
-  PDOKAN_FILE_INFO	DokanFileInfo)
-{
-  HANDLE	handle;
-  WCHAR	filePath[MAX_PATH];
-
-  GetFilePath(filePath, MAX_PATH, FileName);
-
-  DbgPrint(L"GetFileSecurity %s\n", filePath);
-
-  handle = (HANDLE)DokanFileInfo->Context;
-  if (!handle || handle == INVALID_HANDLE_VALUE) {
-    DbgPrint(L"\tinvalid handle\n\n");
-    return -1;
-  }
-
-  if (!GetUserObjectSecurity(handle, SecurityInformation, SecurityDescriptor,
-      BufferLength, LengthNeeded)) {
-    int error = GetLastError();
-    if (error == ERROR_INSUFFICIENT_BUFFER) {
-      DbgPrint(L"  GetUserObjectSecurity failed: ERROR_INSUFFICIENT_BUFFER\n");
-      return error * -1;
-    } else {
-      DbgPrint(L"  GetUserObjectSecurity failed: %d\n", error);
-      return -1;
-    }
-  }
-  return 0;
-}
-
-static int
-__stdcall MirrorSetFileSecurity(
-  LPCWSTR					FileName,
-  PSECURITY_INFORMATION	SecurityInformation,
-  PSECURITY_DESCRIPTOR	SecurityDescriptor,
-  ULONG				SecurityDescriptorLength,
-  PDOKAN_FILE_INFO	DokanFileInfo)
-{
-  HANDLE	handle;
-  WCHAR	filePath[MAX_PATH];
-
-  GetFilePath(filePath, MAX_PATH, FileName);
-
-  DbgPrint(L"SetFileSecurity %s\n", filePath);
-
-  handle = (HANDLE)DokanFileInfo->Context;
-  if (!handle || handle == INVALID_HANDLE_VALUE) {
-    DbgPrint(L"\tinvalid handle\n\n");
-    return -1;
-  }
-
-  if (!SetUserObjectSecurity(handle, SecurityInformation, SecurityDescriptor)) {
-    int error = GetLastError();
-    DbgPrint(L"  SetUserObjectSecurity failed: %d\n", error);
-    return -1;
-  }
-  return 0;
+static int __stdcall DelegateSetFileSecurity(
+  LPCWSTR FileName,
+  PSECURITY_INFORMATION SecurityInformation,
+  PSECURITY_DESCRIPTOR SecurityDescriptor,
+  ULONG SecurityDescriptorLength,
+  PDOKAN_FILE_INFO DokanFileInfo) {
+  return adapter(DokanFileInfo)->SetFileSecurity(
+      FileName, SecurityInformation, SecurityDescriptor,
+      SecurityDescriptorLength, DokanFileInfo);
 }
 
 static int __stdcall DelegateGetVolumeInformation(
@@ -1013,28 +456,27 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
   DOKAN_OPERATIONS dokanOperations;
   ZeroMemory(&dokanOperations, sizeof(DOKAN_OPERATIONS));
   dokanOperations.CreateFile = DelegateCreateFile;
-  dokanOperations.OpenDirectory = MirrorOpenDirectory;
-  dokanOperations.CreateDirectory = MirrorCreateDirectory;
-  // NOTE(mberlin): Disabled Cleanup since it tried to free a directory handle which was not opened.  // NOLINT
-  dokanOperations.Cleanup = NULL;
-  dokanOperations.CloseFile = MirrorCloseFile;
-  dokanOperations.ReadFile = MirrorReadFile;
-  dokanOperations.WriteFile = MirrorWriteFile;
-  dokanOperations.FlushFileBuffers = MirrorFlushFileBuffers;
+  dokanOperations.OpenDirectory = DelegateOpenDirectory;
+  dokanOperations.CreateDirectory = DelegateCreateDirectory;
+  dokanOperations.Cleanup = DelegateCleanup;
+  dokanOperations.CloseFile = DelegateCloseFile;
+  dokanOperations.ReadFile = DelegateReadFile;
+  dokanOperations.WriteFile = DelegateWriteFile;
+  dokanOperations.FlushFileBuffers = DelegateFlushFileBuffers;
   dokanOperations.GetFileInformation = DelegateGetFileInformation;
   dokanOperations.FindFiles = DelegateFindFiles;
   dokanOperations.FindFilesWithPattern = NULL;
-  dokanOperations.SetFileAttributes = MirrorSetFileAttributes;
-  dokanOperations.SetFileTime = MirrorSetFileTime;
-  dokanOperations.DeleteFile = MirrorDeleteFile;
-  dokanOperations.DeleteDirectory = MirrorDeleteDirectory;
-  dokanOperations.MoveFile = MirrorMoveFile;
-  dokanOperations.SetEndOfFile = MirrorSetEndOfFile;
-  dokanOperations.SetAllocationSize = MirrorSetAllocationSize;
-  dokanOperations.LockFile = MirrorLockFile;
-  dokanOperations.UnlockFile = MirrorUnlockFile;
-  dokanOperations.GetFileSecurity = MirrorGetFileSecurity;
-  dokanOperations.SetFileSecurity = MirrorSetFileSecurity;
+  dokanOperations.SetFileAttributes = DelegateSetFileAttributes;
+  dokanOperations.SetFileTime = DelegateSetFileTime;
+  dokanOperations.DeleteFile = DelegateDeleteFile;
+  dokanOperations.DeleteDirectory = DelegateDeleteDirectory;
+  dokanOperations.MoveFile = DelegateMoveFile;
+  dokanOperations.SetEndOfFile = DelegateSetEndOfFile;
+  dokanOperations.SetAllocationSize = DelegateSetAllocationSize;
+  dokanOperations.LockFile = DelegateLockFile;
+  dokanOperations.UnlockFile = DelegateUnlockFile;
+  dokanOperations.GetFileSecurity = DelegateGetFileSecurity;
+  dokanOperations.SetFileSecurity = DelegateSetFileSecurity;
   dokanOperations.GetDiskFreeSpace = NULL;
   dokanOperations.GetVolumeInformation = DelegateGetVolumeInformation;
   dokanOperations.Unmount = DelegateUnmount;
@@ -1073,4 +515,3 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
 
   return 0;
 }
-

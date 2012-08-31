@@ -7,22 +7,6 @@
 
 #include "dokan/dokan_adapter.h"
 
-//#include <csignal>
-//#include <cstring>
-//#define DOKAN_USE_VERSION 26
-//#include <dokan.h>
-//#include <sys/errno.h>
-//#include <sys/types.h>
-//#include <unistd.h>
-//
-//#include <algorithm>
-//#include <boost/cstdint.hpp>
-//#include <boost/lexical_cast.hpp>
-//#include <fstream>
-//#include <list>
-//#include <string>
-//
-
 #include "fcntl.h"
 #include "dokan/dokan_options.h"
 #include "libxtreemfs/client.h"
@@ -37,8 +21,6 @@
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "util/logging.h"
 #include "util/error_log.h"
-//#include "xtreemfs/MRC.pb.h"
-//#include "xtreemfs/OSD.pb.h"
 
 using namespace std;
 using namespace xtreemfs::pbrpc;
@@ -213,16 +195,16 @@ int DokanAdapter::CreateFile(LPCWSTR path,
 
   xtreemfs::pbrpc::SYSTEM_V_FCNTL sys_v_open =
       static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(open_flags);
+
+  const string utf8_path = WindowsPathToUTF8Unix(path);
   
   try {
     if (creation_disposition == CREATE_ALWAYS) {
       try {
-        volume_->Unlink(user_credentials,
-                        WindowsPathToUTF8Unix(path));
+        volume_->Unlink(user_credentials, utf8_path);
       } catch(const PosixErrorException&) {
         try {
-          volume_->DeleteDirectory(user_credentials,
-                                    WindowsPathToUTF8Unix(path));
+          volume_->DeleteDirectory(user_credentials, utf8_path);
           dokan_file_info->IsDirectory = TRUE;
           return ERROR_SUCCESS;
         } catch(const PosixErrorException&) {
@@ -231,15 +213,14 @@ int DokanAdapter::CreateFile(LPCWSTR path,
     }
 
     if (creation_disposition == OPEN_EXISTING) {
-      if (WindowsPathToUTF8Unix(path) == "/") {
+      if (utf8_path == "/" || utf8_path == "/*") {
         dokan_file_info->IsDirectory = TRUE;
         return 0;
       }
        
       // Don't catch: if it does not exist, escalate.
       xtreemfs::pbrpc::Stat stat;
-      volume_->GetAttr(user_credentials,
-                        WindowsPathToUTF8Unix(path),
+      volume_->GetAttr(user_credentials, utf8_path,
                         true,  // bypass cache
                         &stat);
 
@@ -250,16 +231,15 @@ int DokanAdapter::CreateFile(LPCWSTR path,
     }
 
     xtreemfs::FileHandle* file_handle = 
-        volume_->OpenFile(user_credentials, 
-                          WindowsPathToUTF8Unix(path),
-                          sys_v_open,
-                          file_attributes);
+        volume_->OpenFile(user_credentials, utf8_path,
+                          sys_v_open, file_attributes);
     // Needed?
     if (creation_disposition == TRUNCATE_EXISTING) {
-      volume_->Truncate(user_credentials, WindowsPathToUTF8Unix(path), 0);
+      volume_->Truncate(user_credentials, utf8_path, 0);
     }
 
     dokan_file_info->Context = reinterpret_cast<UINT64>(file_handle);
+    dokan_file_info->IsDirectory = FALSE;
     return 0;  // always?
   } CATCH_AND_CONVERT_ERRORS
 }
@@ -278,16 +258,12 @@ int DokanAdapter::CreateDirectory(
 
 // When FileInfo->DeleteOnClose is true, you must delete the file in Cleanup.
 int DokanAdapter::Cleanup(
-    LPCWSTR,      // FileName
-    PDOKAN_FILE_INFO) {
-  return 0;
-}
-
-int DokanAdapter::CloseFile(
-    LPCWSTR file_name, PDOKAN_FILE_INFO dokan_file_info) {
+    LPCWSTR file_name,
+    PDOKAN_FILE_INFO dokan_file_info) {
+  // TODO Handle delete on close for files and directories.
   xtreemfs::FileHandle* file = file_handle(dokan_file_info);
   if (file == NULL) {
-    return -1;  // TODO
+    return 0;
   }
 
   try {
@@ -295,6 +271,12 @@ int DokanAdapter::CloseFile(
     dokan_file_info->Context = NULL;
     return 0;
   } CATCH_AND_CONVERT_ERRORS
+  return 0;
+}
+
+int DokanAdapter::CloseFile(
+    LPCWSTR file_name, PDOKAN_FILE_INFO dokan_file_info) {
+  return 0;
 }
 
 int DokanAdapter::ReadFile(
@@ -309,7 +291,7 @@ int DokanAdapter::ReadFile(
       &user_credentials);
   xtreemfs::FileHandle* file = file_handle(dokan_file_info);
   if (file == NULL) {
-    return -1;  // TODO
+    return -1;  // TODO: open file, read, close
   }
 
   try {
@@ -336,6 +318,8 @@ int DokanAdapter::WriteFile(
   if (file == NULL) {
     return -1;  // TODO
   }
+
+  // TODO: implement DokanFileInfo->WriteToEndOfFile
 
   try {
     *NumberOfBytesWritten = file->Write(user_credentials, 
