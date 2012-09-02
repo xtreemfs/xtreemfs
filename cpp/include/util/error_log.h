@@ -45,7 +45,7 @@ class ErrorLog {
   std::list<std::string> error_messages_;
 };
 
-void initialize_error_log(int max_enries);
+void initialize_error_log(int max_entries);
 
 void shutdown_error_log();
 
