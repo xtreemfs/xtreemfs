@@ -47,33 +47,29 @@ THE SOFTWARE.
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "pbrpc/RPC.pb.h"  // xtreemfs::pbrpc::UserCredentials
 #include "xtreemfs/MRC.pb.h"  // xtreemfs::pbrpc::Stat
+#include "util/logging.h"
 
 using namespace std;
+using namespace xtreemfs::util;
 
 BOOL g_UseStdErr = FALSE;
 BOOL g_DebugMode = TRUE;
 
 static void DbgPrint(LPCWSTR format, ...) {
+  WCHAR buffer[512];
+  va_list argp;
+  va_start(argp, format);
+  vswprintf_s(buffer, sizeof(buffer)/sizeof(WCHAR), format, argp);
+  va_end(argp);
+  GET_LOG(LEVEL_DEBUG) << buffer; 
   if (g_DebugMode) {
-    WCHAR buffer[512];
-    va_list argp;
-    va_start(argp, format);
-    vswprintf_s(buffer, sizeof(buffer)/sizeof(WCHAR), format, argp);
-    va_end(argp);
     if (g_UseStdErr) {
       fwprintf(stderr, buffer);
     } else {
       OutputDebugStringW(buffer);
+      OutputDebugStringW(L"\n");
     }
   }
-}
-
-static void GetFilePath(
-    PWCHAR filePath,
-    ULONG numberOfElements,
-    LPCWSTR FileName) {
-  RtlZeroMemory(filePath, numberOfElements * sizeof(WCHAR));
-  wcsncat_s(filePath, numberOfElements, FileName, wcslen(FileName));
 }
 
 static void PrintUserName(PDOKAN_FILE_INFO DokanFileInfo) {
@@ -89,13 +85,13 @@ static void PrintUserName(PDOKAN_FILE_INFO DokanFileInfo) {
 
   handle = DokanOpenRequestorToken(DokanFileInfo);
   if (handle == INVALID_HANDLE_VALUE) {
-    DbgPrint(L"  DokanOpenRequestorToken failed\n");
+    DbgPrint(L"  DokanOpenRequestorToken failed ");
     return;
   }
 
   if (!GetTokenInformation(handle, TokenUser, buffer, sizeof(buffer),
                            &returnLength)) {
-    DbgPrint(L"  GetTokenInformation failed: %d\n", GetLastError());
+    DbgPrint(L"  GetTokenInformation failed: %d ", GetLastError());
     CloseHandle(handle);
     return;
   }
@@ -105,19 +101,22 @@ static void PrintUserName(PDOKAN_FILE_INFO DokanFileInfo) {
   tokenUser = (PTOKEN_USER)buffer;
   if (!LookupAccountSid(NULL, tokenUser->User.Sid, accountName,
       &accountLength, domainName, &domainLength, &snu)) {
-    DbgPrint(L"  LookupAccountSid failed: %d\n", GetLastError());
+    DbgPrint(L"  LookupAccountSid failed: %d ", GetLastError());
     return;
   }
 
-  DbgPrint(L"  AccountName: %s, DomainName: %s\n", accountName, domainName);
+  DbgPrint(L"  AccountName: %s, DomainName: %s ", accountName, domainName);
 }
 
 #define DelegateCheckFlag(val, flag) \
-    if (val&flag) { DbgPrint(L"\t" L#flag L"\n"); }
+    if (val&flag) { DbgPrint(L" " L#flag L" "); }
+
+#define TRACE(function) \
+    DbgPrint(L"%s: %s %d", function, FileName, DokanFileInfo->Context);
 
 static xtreemfs::DokanAdapter* adapter(PDOKAN_FILE_INFO DokanFileInfo) {
   return reinterpret_cast<xtreemfs::DokanAdapter*>(
-    DokanFileInfo->DokanOptions->GlobalContext);
+      DokanFileInfo->DokanOptions->GlobalContext);
 }
 
 static void DebugPrintCreateFile(
@@ -127,22 +126,20 @@ static void DebugPrintCreateFile(
     DWORD     CreationDisposition,
     DWORD     FlagsAndAttributes,
     PDOKAN_FILE_INFO  DokanFileInfo) {
-  WCHAR filePath[MAX_PATH];
-  GetFilePath(filePath, MAX_PATH, FileName);
-  DbgPrint(L"CreateFile : %s\n", filePath);
+  TRACE(L"CreateFile");
 
   PrintUserName(DokanFileInfo);
 
   if (CreationDisposition == CREATE_NEW)
-    DbgPrint(L"\tCREATE_NEW\n");
+    DbgPrint(L" CREATE_NEW ");
   if (CreationDisposition == OPEN_ALWAYS)
-    DbgPrint(L"\tOPEN_ALWAYS\n");
+    DbgPrint(L" OPEN_ALWAYS ");
   if (CreationDisposition == CREATE_ALWAYS)
-    DbgPrint(L"\tCREATE_ALWAYS\n");
+    DbgPrint(L" CREATE_ALWAYS ");
   if (CreationDisposition == OPEN_EXISTING)
-    DbgPrint(L"\tOPEN_EXISTING\n");
+    DbgPrint(L" OPEN_EXISTING ");
   if (CreationDisposition == TRUNCATE_EXISTING)
-    DbgPrint(L"\tTRUNCATE_EXISTING\n");
+    DbgPrint(L" TRUNCATE_EXISTING ");
 
   /*
   if (ShareMode == 0 && AccessMode & FILE_WRITE_DATA)
@@ -151,13 +148,13 @@ static void DebugPrintCreateFile(
     ShareMode = FILE_SHARE_READ;
   */
 
-  DbgPrint(L"\tShareMode = 0x%x\n", ShareMode);
+  DbgPrint(L" ShareMode = 0x%x ", ShareMode);
 
   DelegateCheckFlag(ShareMode, FILE_SHARE_READ);
   DelegateCheckFlag(ShareMode, FILE_SHARE_WRITE);
   DelegateCheckFlag(ShareMode, FILE_SHARE_DELETE);
 
-  DbgPrint(L"\tAccessMode = 0x%x\n", AccessMode);
+  DbgPrint(L" AccessMode = 0x%x ", AccessMode);
 
   DelegateCheckFlag(AccessMode, GENERIC_READ);
   DelegateCheckFlag(AccessMode, GENERIC_WRITE);
@@ -180,7 +177,7 @@ static void DebugPrintCreateFile(
   DelegateCheckFlag(AccessMode, STANDARD_RIGHTS_WRITE);
   DelegateCheckFlag(AccessMode, STANDARD_RIGHTS_EXECUTE);
 
-  DbgPrint(L"\tFlagsAndAttributes = 0x%x\n", FlagsAndAttributes);
+  DbgPrint(L" FlagsAndAttributes = 0x%x ", FlagsAndAttributes);
 
   DelegateCheckFlag(FlagsAndAttributes, FILE_ATTRIBUTE_ARCHIVE);
   DelegateCheckFlag(FlagsAndAttributes, FILE_ATTRIBUTE_ENCRYPTED);
@@ -209,7 +206,7 @@ static void DebugPrintCreateFile(
   DelegateCheckFlag(FlagsAndAttributes, SECURITY_EFFECTIVE_ONLY);
   DelegateCheckFlag(FlagsAndAttributes, SECURITY_SQOS_PRESENT);
 
-  DbgPrint(L"\n");
+  DbgPrint(L" ");
 }
 
 static int __stdcall DelegateCreateFile(
@@ -230,6 +227,7 @@ static int __stdcall DelegateCreateFile(
 static int __stdcall DelegateCreateDirectory(
     LPCWSTR FileName,
     PDOKAN_FILE_INFO DokanFileInfo) {
+  TRACE(L"CreateDirectory");
   return adapter(DokanFileInfo)->CreateDirectory(
       FileName, DokanFileInfo);
 }
@@ -237,6 +235,7 @@ static int __stdcall DelegateCreateDirectory(
 static int __stdcall DelegateOpenDirectory(
   LPCWSTR FileName,
   PDOKAN_FILE_INFO DokanFileInfo) {
+  TRACE(L"OpenDirectory");
   return adapter(DokanFileInfo)->OpenDirectory(
       FileName, DokanFileInfo);
 }
@@ -244,9 +243,7 @@ static int __stdcall DelegateOpenDirectory(
 static int __stdcall DelegateCloseFile(
     LPCWSTR FileName,
     PDOKAN_FILE_INFO DokanFileInfo) {
-  WCHAR filePath[MAX_PATH];
-  GetFilePath(filePath, MAX_PATH, FileName);
-  DbgPrint(L"CloseFile : %s\n", filePath);
+  TRACE(L"CloseFile");
   return adapter(DokanFileInfo)->CloseFile(
       FileName, DokanFileInfo);
   return 0;
@@ -255,9 +252,7 @@ static int __stdcall DelegateCloseFile(
 static int __stdcall DelegateCleanup(
     LPCWSTR FileName,
     PDOKAN_FILE_INFO DokanFileInfo) {
-  WCHAR filePath[MAX_PATH];
-  GetFilePath(filePath, MAX_PATH, FileName);
-  DbgPrint(L"Cleanup : %s\n", filePath);
+  TRACE(L"Cleanup");
   return adapter(DokanFileInfo)->Cleanup(
       FileName, DokanFileInfo);
 }
@@ -269,9 +264,7 @@ static int __stdcall DelegateReadFile(
     LPDWORD ReadLength,
     LONGLONG Offset,
     PDOKAN_FILE_INFO DokanFileInfo) {
-  WCHAR filePath[MAX_PATH];
-  GetFilePath(filePath, MAX_PATH, FileName);
-  DbgPrint(L"ReadFile : %s\n", filePath);
+  TRACE(L"ReadFile");
   return adapter(DokanFileInfo)->ReadFile(
       FileName, Buffer, BufferLength, ReadLength, Offset,
       DokanFileInfo);
@@ -284,17 +277,16 @@ static int __stdcall DelegateWriteFile(
     LPDWORD NumberOfBytesWritten,
     LONGLONG Offset,
     PDOKAN_FILE_INFO  DokanFileInfo) {
-  WCHAR filePath[MAX_PATH];
-  GetFilePath(filePath, MAX_PATH, FileName);
-  DbgPrint(L"WriteFile : %s\n", filePath);
+  TRACE(L"WriteFile");
   return adapter(DokanFileInfo)->WriteFile(
       FileName, Buffer, NumberOfBytesToWrite, NumberOfBytesWritten, Offset,
       DokanFileInfo);
 }
 
 static int __stdcall DelegateFlushFileBuffers(
-  LPCWSTR FileName,
-  PDOKAN_FILE_INFO DokanFileInfo) {
+    LPCWSTR FileName,
+    PDOKAN_FILE_INFO DokanFileInfo) {
+  TRACE(L"FlushFileBuffers");
   return adapter(DokanFileInfo)->FlushFileBuffers(
       FileName, DokanFileInfo);
 }
@@ -303,6 +295,7 @@ static int __stdcall DelegateGetFileInformation(
     LPCWSTR FileName,
     LPBY_HANDLE_FILE_INFORMATION HandleFileInformation,
     PDOKAN_FILE_INFO DokanFileInfo) {
+  TRACE(L"GetFileInformation");
   return adapter(DokanFileInfo)->GetFileInformation(
       FileName, HandleFileInformation, DokanFileInfo);
 }
@@ -311,20 +304,23 @@ static int __stdcall DelegateFindFiles(
     LPCWSTR FileName,
     PFillFindData FillFindData,
     PDOKAN_FILE_INFO DokanFileInfo) {
+  TRACE(L"FindFiles");
   return adapter(DokanFileInfo)->FindFiles(
       FileName, FillFindData, DokanFileInfo);
 }
 
 static int __stdcall DelegateDeleteFile(
-  LPCWSTR    FileName,
-  PDOKAN_FILE_INFO DokanFileInfo) {
+    LPCWSTR FileName,
+    PDOKAN_FILE_INFO DokanFileInfo) {
+  TRACE(L"DeleteFile");
     return adapter(DokanFileInfo)->DeleteFile(
       FileName, DokanFileInfo);
 }
 
 static int __stdcall DelegateDeleteDirectory(
-  LPCWSTR    FileName,
-  PDOKAN_FILE_INFO DokanFileInfo) {
+    LPCWSTR    FileName,
+    PDOKAN_FILE_INFO DokanFileInfo) {
+  TRACE(L"DeleteDirectory");
     return adapter(DokanFileInfo)->DeleteDirectory(
       FileName, DokanFileInfo);
 }
@@ -334,6 +330,7 @@ static int __stdcall DelegateMoveFile(
   LPCWSTR    NewFileName,
   BOOL    ReplaceIfExisting,
   PDOKAN_FILE_INFO DokanFileInfo) {
+  TRACE(L"MoveFile");
     return adapter(DokanFileInfo)->MoveFile(
       FileName, NewFileName, ReplaceIfExisting, DokanFileInfo);
 }
@@ -343,6 +340,7 @@ static int __stdcall DelegateLockFile(
   LONGLONG   ByteOffset,
   LONGLONG   Length,
   PDOKAN_FILE_INFO DokanFileInfo) {
+  TRACE(L"LockFile");
     return adapter(DokanFileInfo)->LockFile(
       FileName, ByteOffset, Length, DokanFileInfo);
 }
@@ -351,7 +349,8 @@ static int __stdcall DelegateSetEndOfFile(
   LPCWSTR    FileName,
   LONGLONG   ByteOffset,
   PDOKAN_FILE_INFO DokanFileInfo) {
-    return adapter(DokanFileInfo)->SetAllocationSize(
+  TRACE(L"SetEndOfFile");
+    return adapter(DokanFileInfo)->SetEndOfFile(
       FileName, ByteOffset, DokanFileInfo);
 }
 
@@ -359,6 +358,7 @@ static int __stdcall DelegateSetAllocationSize(
   LPCWSTR    FileName,
   LONGLONG   AllocSize,
   PDOKAN_FILE_INFO DokanFileInfo) {
+  TRACE(L"SetAllocationSize");
     return adapter(DokanFileInfo)->SetAllocationSize(
       FileName, AllocSize, DokanFileInfo);
 }
@@ -367,6 +367,7 @@ static int __stdcall DelegateSetFileAttributes(
   LPCWSTR    FileName,
   DWORD    FileAttributes,
   PDOKAN_FILE_INFO DokanFileInfo) {
+  TRACE(L"SetFileAttributes");
     return adapter(DokanFileInfo)->SetFileAttributes(
       FileName, FileAttributes, DokanFileInfo);
 }
@@ -377,6 +378,7 @@ static int __stdcall DelegateSetFileTime(
   CONST FILETIME*  LastAccessTime,
   CONST FILETIME*  LastWriteTime,
   PDOKAN_FILE_INFO DokanFileInfo) {
+  TRACE(L"SetFileTime");
     return adapter(DokanFileInfo)->SetFileTime(
       FileName, CreationTime, LastAccessTime, LastWriteTime, 
       DokanFileInfo);
@@ -387,28 +389,31 @@ static int __stdcall DelegateUnlockFile(
   LONGLONG   ByteOffset,
   LONGLONG   Length,
   PDOKAN_FILE_INFO DokanFileInfo) {
+  TRACE(L"UnlockFile");
   return adapter(DokanFileInfo)->UnlockFile(
       FileName, ByteOffset, Length, DokanFileInfo);
 }
 
 static int __stdcall DelegateGetFileSecurity(
-  LPCWSTR FileName,
-  PSECURITY_INFORMATION SecurityInformation,
-  PSECURITY_DESCRIPTOR SecurityDescriptor,
-  ULONG    BufferLength,
-  PULONG    LengthNeeded,
-  PDOKAN_FILE_INFO DokanFileInfo) {
+    LPCWSTR FileName,
+    PSECURITY_INFORMATION SecurityInformation,
+    PSECURITY_DESCRIPTOR SecurityDescriptor,
+    ULONG    BufferLength,
+    PULONG    LengthNeeded,
+    PDOKAN_FILE_INFO DokanFileInfo) {
+  TRACE(L"GetFileSecurity");
   return adapter(DokanFileInfo)->GetFileSecurity(
       FileName, SecurityInformation, SecurityDescriptor,
       BufferLength, LengthNeeded, DokanFileInfo);
 }
 
 static int __stdcall DelegateSetFileSecurity(
-  LPCWSTR FileName,
-  PSECURITY_INFORMATION SecurityInformation,
-  PSECURITY_DESCRIPTOR SecurityDescriptor,
-  ULONG SecurityDescriptorLength,
-  PDOKAN_FILE_INFO DokanFileInfo) {
+    LPCWSTR FileName,
+    PSECURITY_INFORMATION SecurityInformation,
+    PSECURITY_DESCRIPTOR SecurityDescriptor,
+    ULONG SecurityDescriptorLength,
+    PDOKAN_FILE_INFO DokanFileInfo) {
+  TRACE(L"SetFileSecurity");
   return adapter(DokanFileInfo)->SetFileSecurity(
       FileName, SecurityInformation, SecurityDescriptor,
       SecurityDescriptorLength, DokanFileInfo);
@@ -423,6 +428,7 @@ static int __stdcall DelegateGetVolumeInformation(
     LPWSTR FileSystemNameBuffer,
     DWORD FileSystemNameSize,
     PDOKAN_FILE_INFO DokanFileInfo) {
+  DbgPrint(L"GetVolumeInformation %d", DokanFileInfo->Context);
   return adapter(DokanFileInfo)->GetVolumeInformation(
       VolumeNameBuffer, VolumeNameSize, VolumeSerialNumber,
       MaximumComponentLength, FileSystemFlags, FileSystemNameBuffer,
@@ -435,9 +441,14 @@ static int __stdcall DelegateUnmount(
 }
 
 int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
+  initialize_logger(LEVEL_DEBUG, "mount.xtreemfs.log");
+  
   xtreemfs::DokanOptions dokan_options;
   dokan_options.service_address = "demo.xtreemfs.org:32638";
   dokan_options.volume_name = "demo";
+  GET_LOG(LEVEL_DEBUG) << "Starting client, mounting " 
+                       << dokan_options.service_address
+                       << " " << dokan_options.volume_name;
   boost::scoped_ptr<xtreemfs::DokanAdapter> dokan_adapter(
       new xtreemfs::DokanAdapter(&dokan_options));
   dokan_adapter->Start();
@@ -484,34 +495,35 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
   int status = DokanMain(&dokanOptions, &dokanOperations);
   switch (status) {
     case DOKAN_SUCCESS:
-      fprintf(stderr, "Success\n");
+      GET_LOG(LEVEL_DEBUG) << "Success";
       break;
     case DOKAN_ERROR:
-      fprintf(stderr, "Error\n");
+      GET_LOG(LEVEL_ERROR) << "Error";
       break;
     case DOKAN_DRIVE_LETTER_ERROR:
-      fprintf(stderr, "Bad Drive letter\n");
+      GET_LOG(LEVEL_ERROR) << "Bad drive letter";
       break;
     case DOKAN_DRIVER_INSTALL_ERROR:
-      fprintf(stderr, "Can't install driver\n");
+      GET_LOG(LEVEL_ERROR) << "Can't install driver";
       break;
     case DOKAN_START_ERROR:
-      fprintf(stderr, "Driver something wrong\n");
+      GET_LOG(LEVEL_ERROR) << "Driver: something wrong";
       break;
     case DOKAN_MOUNT_ERROR:
-      fprintf(stderr, "Can't assign a drive letter\n");
+      GET_LOG(LEVEL_ERROR) << "Can't assign a drive letter";
       break;
     case DOKAN_MOUNT_POINT_ERROR:
-      fprintf(stderr, "Mount point error\n");
+      GET_LOG(LEVEL_ERROR) << "Mount point error";
       break;
     default:
-      fprintf(stderr, "Unknown error: %d\n", status);
+      GET_LOG(LEVEL_ERROR) << "Unknown error: " << status;
       break;
   }
 
   dokan_adapter->Stop();
-
-  fprintf(stderr, "Did shutdown the XtreemFS client.");
+  GET_LOG(LEVEL_DEBUG)  << "Did shutdown the XtreemFS client.";
+  // libxtreemfs shuts down logger.
+  dokan_adapter.reset(NULL);
 
   return 0;
 }

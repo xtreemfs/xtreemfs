@@ -26,6 +26,10 @@ using namespace std;
 using namespace xtreemfs::pbrpc;
 using namespace xtreemfs::util;
 
+#define S_IFDIR  0040000
+#define S_IFMT  00170000
+#define S_ISDIR(m)      (((m) & S_IFMT) == S_IFDIR)
+
 #define CATCH_AND_CONVERT_ERRORS \
   catch (const PosixErrorException& e) { \
     return ConvertXtreemFSErrnoToDokan(e.posix_errno()); \
@@ -132,6 +136,10 @@ static uint64_t WinTimeToUnixTime(unsigned long upper,
   return utime / 10000000 - 11644473600;
 }
 
+static bool IsDirectory(const xtreemfs::pbrpc::Stat& stat) {
+  return S_ISDIR(stat.mode());
+}
+
 DokanAdapter::DokanAdapter(DokanOptions* options)
     : options_(options), xctl_("/.xctl$$$") {
 }
@@ -151,12 +159,12 @@ int DokanAdapter::CreateFile(LPCWSTR path,
   bool read = false;
   bool write = false;
 
-  read |= (desired_access & FILE_READ_ATTRIBUTES ) != 0;
-  read |= (desired_access & FILE_READ_DATA ) != 0;
-  read |= (desired_access & FILE_READ_EA ) != 0;
-  write |= (desired_access & FILE_WRITE_ATTRIBUTES ) != 0;
-  write |= (desired_access & FILE_WRITE_DATA ) != 0;
-  write |= (desired_access & FILE_WRITE_EA ) != 0;
+  read |= (desired_access & FILE_READ_ATTRIBUTES) != 0;
+  read |= (desired_access & FILE_READ_DATA) != 0;
+  read |= (desired_access & FILE_READ_EA) != 0;
+  write |= (desired_access & FILE_WRITE_ATTRIBUTES) != 0;
+  write |= (desired_access & FILE_WRITE_DATA) != 0;
+  write |= (desired_access & FILE_WRITE_EA) != 0;
   
   int open_flags = 0;
   if (read && write) {
@@ -188,6 +196,8 @@ int DokanAdapter::CreateFile(LPCWSTR path,
   } else if (creation_disposition == OPEN_ALWAYS) {
     // Open an existing file; create if it doesn't exist
     open_flags |= SYSTEM_V_FCNTL_H_O_CREAT | SYSTEM_V_FCNTL_H_O_EXCL;
+  } else if (creation_disposition == OPEN_EXISTING) {
+    // Only open an existing file
   } else if (creation_disposition == TRUNCATE_EXISTING) {
     // Only open an existing file and truncate it
     open_flags |= SYSTEM_V_FCNTL_H_O_TRUNC;
@@ -213,7 +223,7 @@ int DokanAdapter::CreateFile(LPCWSTR path,
     }
 
     if (creation_disposition == OPEN_EXISTING) {
-      if (utf8_path == "/" || utf8_path == "/*") {
+      if (utf8_path == "/") {
         dokan_file_info->IsDirectory = TRUE;
         return 0;
       }
@@ -224,7 +234,7 @@ int DokanAdapter::CreateFile(LPCWSTR path,
                         true,  // bypass cache
                         &stat);
 
-      if (stat.attributes()) {
+      if (IsDirectory(stat)) {
         dokan_file_info->IsDirectory = TRUE;
         return 0;
       }
@@ -240,13 +250,30 @@ int DokanAdapter::CreateFile(LPCWSTR path,
 
     dokan_file_info->Context = reinterpret_cast<UINT64>(file_handle);
     dokan_file_info->IsDirectory = FALSE;
-    return 0;  // always?
+    return 0;
   } CATCH_AND_CONVERT_ERRORS
 }
 
 int DokanAdapter::OpenDirectory(
-    LPCWSTR,				// FileName
-    PDOKAN_FILE_INFO) {
+    LPCWSTR file_name,
+    PDOKAN_FILE_INFO dokan_file_info) {
+  UserCredentials user_credentials;
+  system_user_mapping_->GetUserCredentialsForCurrentUser(
+      &user_credentials);
+  try {
+    xtreemfs::pbrpc::Stat stat;
+    volume_->GetAttr(user_credentials,
+                     WindowsPathToUTF8Unix(file_name),
+                     true,  // bypass cache
+                     &stat);
+    dokan_file_info->Context = NULL;
+    if (IsDirectory(stat)) {
+      dokan_file_info->IsDirectory = TRUE;
+      return 0;
+    } else {
+      return -1;
+    }
+  } CATCH_AND_CONVERT_ERRORS
   return 0;
 }
 
@@ -371,7 +398,14 @@ int DokanAdapter::GetFileInformation(
     XtreemFSTimeToWinTime(stat.mtime_ns(),
         &file_info->ftLastWriteTime.dwHighDateTime,
         &file_info->ftLastWriteTime.dwLowDateTime);
+    // Overwritten with other flags.
+    file_info->dwFileAttributes = FILE_ATTRIBUTE_NORMAL;
     // TODO: not complete yet.
+    if (IsDirectory(stat)) {
+      file_info->dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY;
+      dokan_file_info->IsDirectory = TRUE;
+      return 0;
+    }
     return 0;
   } CATCH_AND_CONVERT_ERRORS
 }
@@ -413,6 +447,10 @@ int DokanAdapter::FindFiles(
         XtreemFSTimeToWinTime(entry.stbuf().mtime_ns(),
             &find_data.ftLastWriteTime.dwHighDateTime,
             &find_data.ftLastWriteTime.dwLowDateTime);
+        find_data.dwFileAttributes = FILE_ATTRIBUTE_NORMAL;
+        if (IsDirectory(entry.stbuf())) {
+          find_data.dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY;
+        }
         // TODO: not complete yet.
         callback(&find_data, dokan_file_info);
       }
@@ -460,23 +498,48 @@ int DokanAdapter::SetFileTime(
 // FileInfo->DeleteOnClose set TRUE and you have to delete the
 // file in Close.
 int DokanAdapter::DeleteFile(
-    LPCWSTR, // FileName
+    LPCWSTR path,
     PDOKAN_FILE_INFO) {
-  return 0;
+  UserCredentials user_credentials;
+  system_user_mapping_->GetUserCredentialsForCurrentUser(
+      &user_credentials);
+  try {
+    volume_->Unlink(
+        user_credentials,
+        WindowsPathToUTF8Unix(path));
+    return 0;
+  } CATCH_AND_CONVERT_ERRORS
 }
 
 int DokanAdapter::DeleteDirectory( 
-    LPCWSTR, // FileName
+    LPCWSTR path,
     PDOKAN_FILE_INFO) {
-  return 0;
+  UserCredentials user_credentials;
+  system_user_mapping_->GetUserCredentialsForCurrentUser(
+      &user_credentials);
+  try {
+    volume_->DeleteDirectory(
+        user_credentials,
+        WindowsPathToUTF8Unix(path));
+    return 0;
+  } CATCH_AND_CONVERT_ERRORS
 }
 
 int DokanAdapter::MoveFile(
-    LPCWSTR, // ExistingFileName
-    LPCWSTR, // NewFileName
-    BOOL,	// ReplaceExisiting
+    LPCWSTR from,
+    LPCWSTR to,
+    BOOL, // TODO ReplaceExisiting
     PDOKAN_FILE_INFO) {
-  return 0;
+  UserCredentials user_credentials;
+  system_user_mapping_->GetUserCredentialsForCurrentUser(
+      &user_credentials);
+  try {
+    volume_->Rename(
+        user_credentials,
+        WindowsPathToUTF8Unix(from),
+        WindowsPathToUTF8Unix(to));
+    return 0;
+  } CATCH_AND_CONVERT_ERRORS
 }
 
 int DokanAdapter::SetEndOfFile(
@@ -516,10 +579,21 @@ int DokanAdapter::UnlockFile(
 
 // see Win32 API GetDiskFreeSpaceEx
 int DokanAdapter::GetDiskFreeSpace(
-    PULONGLONG, // FreeBytesAvailable
-    PULONGLONG, // TotalNumberOfBytes
-    PULONGLONG, // TotalNumberOfFreeBytes
+    PULONGLONG FreeBytesAvailable,
+    PULONGLONG TotalNumberOfBytes,
+    PULONGLONG TotalNumberOfFreeBytes,
     PDOKAN_FILE_INFO) {
+      
+  UserCredentials user_credentials;
+  system_user_mapping_->GetUserCredentialsForCurrentUser(
+      &user_credentials);
+  try {
+    xtreemfs::pbrpc::StatVFS* stat = volume_->StatFS(
+        user_credentials);
+    *FreeBytesAvailable = stat->bavail() * stat->bsize();
+    *TotalNumberOfBytes = stat->blocks() * stat->bsize();
+    return 0;
+  } CATCH_AND_CONVERT_ERRORS
   return 0;
 }
 
