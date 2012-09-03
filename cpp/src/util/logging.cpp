@@ -53,9 +53,6 @@ std::ostream& Logging::getLog(LogLevel level, const char* file, int line) {
 
   log_stream_
       << "[ " << levelToChar(level) << " | "
-      // NOTE(mberlin): Disabled output of __FILE__ and __LINE__ since they are
-      // not used in the current (3/2012) code base.
-//      << file << ":" << line << " | "
 
       << setiosflags(ios::dec)
 #ifdef WIN32
