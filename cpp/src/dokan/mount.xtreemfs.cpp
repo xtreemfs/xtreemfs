@@ -42,12 +42,13 @@ THE SOFTWARE.
 
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/file_handle.h"
+#include "libxtreemfs/helper.h"
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/volume.h"
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "pbrpc/RPC.pb.h"  // xtreemfs::pbrpc::UserCredentials
-#include "xtreemfs/MRC.pb.h"  // xtreemfs::pbrpc::Stat
 #include "util/logging.h"
+#include "xtreemfs/MRC.pb.h"  // xtreemfs::pbrpc::Stat
 
 using namespace std;
 using namespace xtreemfs::util;
@@ -56,12 +57,14 @@ BOOL g_UseStdErr = FALSE;
 BOOL g_DebugMode = TRUE;
 
 static void DbgPrint(LPCWSTR format, ...) {
-  WCHAR buffer[512];
+  wchar_t buffer[512];
   va_list argp;
   va_start(argp, format);
-  vswprintf_s(buffer, sizeof(buffer)/sizeof(WCHAR), format, argp);
+  vswprintf_s(buffer, sizeof(buffer) / sizeof(wchar_t), format, argp);
   va_end(argp);
-  GET_LOG(LEVEL_DEBUG) << buffer; 
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+    Logging::log->getLog(LEVEL_DEBUG) << xtreemfs::ConvertWindowsToUTF8(buffer) << endl;
+  }
   if (g_DebugMode) {
     if (g_UseStdErr) {
       fwprintf(stderr, buffer);
@@ -70,42 +73,6 @@ static void DbgPrint(LPCWSTR format, ...) {
       OutputDebugStringW(L"\n");
     }
   }
-}
-
-static void PrintUserName(PDOKAN_FILE_INFO DokanFileInfo) {
-  HANDLE handle;
-  UCHAR buffer[1024];
-  DWORD returnLength;
-  WCHAR accountName[256];
-  WCHAR domainName[256];
-  DWORD accountLength = sizeof(accountName) / sizeof(WCHAR);
-  DWORD domainLength = sizeof(domainName) / sizeof(WCHAR);
-  PTOKEN_USER tokenUser;
-  SID_NAME_USE snu;
-
-  handle = DokanOpenRequestorToken(DokanFileInfo);
-  if (handle == INVALID_HANDLE_VALUE) {
-    DbgPrint(L"  DokanOpenRequestorToken failed ");
-    return;
-  }
-
-  if (!GetTokenInformation(handle, TokenUser, buffer, sizeof(buffer),
-                           &returnLength)) {
-    DbgPrint(L"  GetTokenInformation failed: %d ", GetLastError());
-    CloseHandle(handle);
-    return;
-  }
-
-  CloseHandle(handle);
-
-  tokenUser = (PTOKEN_USER)buffer;
-  if (!LookupAccountSid(NULL, tokenUser->User.Sid, accountName,
-      &accountLength, domainName, &domainLength, &snu)) {
-    DbgPrint(L"  LookupAccountSid failed: %d ", GetLastError());
-    return;
-  }
-
-  DbgPrint(L"  AccountName: %s, DomainName: %s ", accountName, domainName);
 }
 
 #define DelegateCheckFlag(val, flag) \
@@ -127,8 +94,6 @@ static void DebugPrintCreateFile(
     DWORD     FlagsAndAttributes,
     PDOKAN_FILE_INFO  DokanFileInfo) {
   TRACE(L"CreateFile");
-
-  PrintUserName(DokanFileInfo);
 
   if (CreationDisposition == CREATE_NEW)
     DbgPrint(L" CREATE_NEW ");
@@ -419,6 +384,18 @@ static int __stdcall DelegateSetFileSecurity(
       SecurityDescriptorLength, DokanFileInfo);
 }
 
+static int __stdcall DelegateGetDiskFreeSpace(
+    PULONGLONG FreeBytesAvailable,
+    PULONGLONG TotalNumberOfBytes,
+    PULONGLONG TotalNumberOfFreeBytes,
+    PDOKAN_FILE_INFO DokanFileInfo) {
+  DbgPrint(L"GetVolumeInformation %d", DokanFileInfo->Context);
+  return adapter(DokanFileInfo)->GetDiskFreeSpace(FreeBytesAvailable,
+                                                          TotalNumberOfBytes,
+                                                          TotalNumberOfFreeBytes,
+                                                          DokanFileInfo);
+}
+
 static int __stdcall DelegateGetVolumeInformation(
     LPWSTR VolumeNameBuffer,
     DWORD VolumeNameSize,
@@ -441,14 +418,17 @@ static int __stdcall DelegateUnmount(
 }
 
 int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
+  // TODO(mberlin): Init logger based on parsed options.
   initialize_logger(LEVEL_DEBUG, "mount.xtreemfs.log");
   
   xtreemfs::DokanOptions dokan_options;
   dokan_options.service_address = "demo.xtreemfs.org:32638";
   dokan_options.volume_name = "demo";
-  GET_LOG(LEVEL_DEBUG) << "Starting client, mounting " 
-                       << dokan_options.service_address
-                       << " " << dokan_options.volume_name;
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+    Logging::log->getLog(LEVEL_DEBUG) << "Starting client, mounting " 
+                                 << dokan_options.service_address
+                                 << " " << dokan_options.volume_name << endl;
+  }
   boost::scoped_ptr<xtreemfs::DokanAdapter> dokan_adapter(
       new xtreemfs::DokanAdapter(&dokan_options));
   dokan_adapter->Start();
@@ -456,7 +436,7 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
   DOKAN_OPTIONS dokanOptions;
   ZeroMemory(&dokanOptions, sizeof(DOKAN_OPTIONS));
   dokanOptions.Version = DOKAN_VERSION;
-  dokanOptions.ThreadCount = 0; // use default
+  dokanOptions.ThreadCount = 0;  // use default
   dokanOptions.GlobalContext = reinterpret_cast<ULONG64>(dokan_adapter.get());
   
   dokanOptions.MountPoint = L"X:";
@@ -476,6 +456,7 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
   dokanOperations.FlushFileBuffers = DelegateFlushFileBuffers;
   dokanOperations.GetFileInformation = DelegateGetFileInformation;
   dokanOperations.FindFiles = DelegateFindFiles;
+  // Dokan Docu: You should implement either FindFiles or FindFilesWithPattern
   dokanOperations.FindFilesWithPattern = NULL;
   dokanOperations.SetFileAttributes = DelegateSetFileAttributes;
   dokanOperations.SetFileTime = DelegateSetFileTime;
@@ -488,42 +469,46 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
   dokanOperations.UnlockFile = DelegateUnlockFile;
   dokanOperations.GetFileSecurity = DelegateGetFileSecurity;
   dokanOperations.SetFileSecurity = DelegateSetFileSecurity;
-  dokanOperations.GetDiskFreeSpace = NULL;
+  dokanOperations.GetDiskFreeSpace = DelegateGetDiskFreeSpace;
   dokanOperations.GetVolumeInformation = DelegateGetVolumeInformation;
   dokanOperations.Unmount = DelegateUnmount;
 
   int status = DokanMain(&dokanOptions, &dokanOperations);
   switch (status) {
     case DOKAN_SUCCESS:
-      GET_LOG(LEVEL_DEBUG) << "Success";
+      if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+        Logging::log->getLog(LEVEL_DEBUG) << "Success" << endl;
+      }
       break;
     case DOKAN_ERROR:
-      GET_LOG(LEVEL_ERROR) << "Error";
+      Logging::log->getLog(LEVEL_ERROR) << "Error" << endl;
       break;
     case DOKAN_DRIVE_LETTER_ERROR:
-      GET_LOG(LEVEL_ERROR) << "Bad drive letter";
+      Logging::log->getLog(LEVEL_ERROR) << "Bad drive letter" << endl;
       break;
     case DOKAN_DRIVER_INSTALL_ERROR:
-      GET_LOG(LEVEL_ERROR) << "Can't install driver";
+      Logging::log->getLog(LEVEL_ERROR) << "Can't install driver" << endl;
       break;
     case DOKAN_START_ERROR:
-      GET_LOG(LEVEL_ERROR) << "Driver: something wrong";
+      Logging::log->getLog(LEVEL_ERROR) << "Driver: something wrong" << endl;
       break;
     case DOKAN_MOUNT_ERROR:
-      GET_LOG(LEVEL_ERROR) << "Can't assign a drive letter";
+      Logging::log->getLog(LEVEL_ERROR) << "Can't assign a drive letter" << endl;
       break;
     case DOKAN_MOUNT_POINT_ERROR:
-      GET_LOG(LEVEL_ERROR) << "Mount point error";
+      Logging::log->getLog(LEVEL_ERROR) << "Mount point error" << endl;
       break;
     default:
-      GET_LOG(LEVEL_ERROR) << "Unknown error: " << status;
+      Logging::log->getLog(LEVEL_ERROR) << "Unknown error: " << status << endl;
       break;
   }
 
   dokan_adapter->Stop();
-  GET_LOG(LEVEL_DEBUG)  << "Did shutdown the XtreemFS client.";
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+    Logging::log->getLog(LEVEL_DEBUG) << "Did shutdown the XtreemFS client." << endl;
+  }
+
   // libxtreemfs shuts down logger.
-  dokan_adapter.reset(NULL);
 
   return 0;
 }

@@ -26,10 +26,6 @@ using namespace std;
 using namespace xtreemfs::pbrpc;
 using namespace xtreemfs::util;
 
-#define S_IFDIR  0040000
-#define S_IFMT  00170000
-#define S_ISDIR(m)      (((m) & S_IFMT) == S_IFDIR)
-
 #define CATCH_AND_CONVERT_ERRORS \
   catch (const PosixErrorException& e) { \
     return ConvertXtreemFSErrnoToDokan(e.posix_errno()); \
@@ -53,7 +49,7 @@ static int ConvertXtreemFSErrnoToDokan(
       return -ERROR_ALREADY_EXISTS;
     case POSIX_ERROR_ENOENT:
       return -ERROR_FILE_NOT_FOUND;
-    // TODO: map remaining ones
+    // TODO(fhupfeld): map remaining ones
     case POSIX_ERROR_EPERM:
       return EPERM;
     case POSIX_ERROR_EINTR:
@@ -108,22 +104,21 @@ static void UTF8UnixPathEntryToWindows(const std::string& utf8,
   ConvertUTF8ToWindows(utf8, buf, buffer_size);
 }
 
-static xtreemfs::FileHandle* file_handle(PDOKAN_FILE_INFO dokan_file_info) {
+static xtreemfs::FileHandle* GetFileHandle(PDOKAN_FILE_INFO dokan_file_info) {
   return reinterpret_cast<xtreemfs::FileHandle*>(dokan_file_info->Context);
 }
 
 static void XtreemFSTimeToWinTime(uint64_t utime_ns,
-                                  unsigned long* lower,
-                                  unsigned long* upper) {
-  // TODO(fhupfeld): apparently XtreemFS time is not nanoseconds since epoch?
-  utime_ns = utime_ns / 1000000000;  // to seconds
-  uint64_t wintime = (utime_ns + 11644473600) * 10000000;
+                                  DWORD* lower,
+                                  DWORD* upper) {
+  // Windows starts on Jan 1, 1601 (UTC), counting in 100 nanoseconds steps.
+  LONGLONG wintime = utime_ns / 100 + 116444736000000000LL;
   *lower = static_cast<DWORD>(wintime & 0xFFFFffff);
   *upper = static_cast<DWORD>(wintime >> 32);
 }
 
-static uint64_t WinTimeToUnixTime(unsigned long upper,
-                                  unsigned long lower) {
+static uint64_t WinTimeToUnixTime(DWORD upper,
+                                  DWORD lower) {
   if (lower == 0 && upper == 0) {
     return 0;
   }
@@ -133,11 +128,12 @@ static uint64_t WinTimeToUnixTime(unsigned long upper,
 
   int64_t utime = static_cast<uint64_t>(upper) << 32 | 
       static_cast<uint64_t>(lower);
+  // Windows starts on Jan 1, 1601 (UTC), counting in 100 nanoseconds steps.
   return utime / 10000000 - 11644473600;
 }
 
 static bool IsDirectory(const xtreemfs::pbrpc::Stat& stat) {
-  return S_ISDIR(stat.mode());
+  return stat.mode() & SYSTEM_V_FCNTL_H_S_IFDIR ? true : false;
 }
 
 DokanAdapter::DokanAdapter(DokanOptions* options)
@@ -152,13 +148,20 @@ int DokanAdapter::CreateFile(LPCWSTR path,
                              DWORD creation_disposition,
                              DWORD flags_and_attributes,
                              PDOKAN_FILE_INFO dokan_file_info) {
-  UserCredentials user_credentials;
-  system_user_mapping_->GetUserCredentialsForCurrentUser(
-      &user_credentials);
+  dokan_file_info->IsDirectory = FALSE;
+  dokan_file_info->Context = NULL;
+
+  const string utf8_path = WindowsPathToUTF8Unix(path);
+
+  // TODO(mberlin): What about paths ending with "/*"?
+
+  if (creation_disposition == OPEN_EXISTING && utf8_path == "/") {
+    dokan_file_info->IsDirectory = TRUE;
+    return 0;
+  }
   
   bool read = false;
   bool write = false;
-
   read |= (desired_access & FILE_READ_ATTRIBUTES) != 0;
   read |= (desired_access & FILE_READ_DATA) != 0;
   read |= (desired_access & FILE_READ_EA) != 0;
@@ -179,23 +182,34 @@ int DokanAdapter::CreateFile(LPCWSTR path,
     open_flags |= SYSTEM_V_FCNTL_H_O_APPEND;
   }
 
-  uint32_t file_attributes = 0600;
+  // TODO(mberlin): Let user specify a umask whose complement is bitwise AND'd
+  //                with 777 instead of the static values used here.
+  uint32_t file_attributes = 384;  // Octal: 600
   if ((flags_and_attributes & FILE_ATTRIBUTE_READONLY) != 0) {
-    file_attributes |= 0400;
+    file_attributes |= 256;  // Octal: 400
   }
 
-  dokan_file_info->IsDirectory = FALSE;
-  dokan_file_info->Context = NULL;
-
   if (creation_disposition == CREATE_NEW) {
-    // Create the file only if it does not exist already
+    // Create the file only if it does not exist already. Otherwise, return
+    // ERROR_FILE_EXISTS.
     open_flags |= SYSTEM_V_FCNTL_H_O_CREAT | SYSTEM_V_FCNTL_H_O_EXCL;
   } else if (creation_disposition == CREATE_ALWAYS) {
-     // Create the file and overwrite it if it exists
+    // MSDN Docu:
+    // "If the specified file exists and is writable, the function overwrites
+    //  the file, the function succeeds, and last-error code is set to
+    //  ERROR_ALREADY_EXISTS (183).
+    //  If the specified file does not exist and is a valid path, a new file is
+    //  created, the function succeeds, and the last-error code is set to zero."
     open_flags |= SYSTEM_V_FCNTL_H_O_CREAT;
   } else if (creation_disposition == OPEN_ALWAYS) {
-    // Open an existing file; create if it doesn't exist
-    open_flags |= SYSTEM_V_FCNTL_H_O_CREAT | SYSTEM_V_FCNTL_H_O_EXCL;
+    // MSDN Docu:
+    // "If the specified file exists, the function succeeds and the last-error
+    //  code is set to ERROR_ALREADY_EXISTS (183).
+    //  If the specified file does not exist and is a valid path to a writable
+    //  location, the function creates a file and the last-error code is set to
+    //  zero."
+    // Unlike CREATE_ALWAYS, it does not overwrite existing files.
+    open_flags |= SYSTEM_V_FCNTL_H_O_CREAT;
   } else if (creation_disposition == OPEN_EXISTING) {
     // Only open an existing file
   } else if (creation_disposition == TRUNCATE_EXISTING) {
@@ -206,63 +220,86 @@ int DokanAdapter::CreateFile(LPCWSTR path,
   xtreemfs::pbrpc::SYSTEM_V_FCNTL sys_v_open =
       static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(open_flags);
 
-  const string utf8_path = WindowsPathToUTF8Unix(path);
-  
+  // Depending on 'creation_disposition' an error has to be returned despite
+  // a successfully opened/created file in case the file existed before.
+  bool path_existed = false;
+  bool path_was_directory = false;
+
   try {
-    if (creation_disposition == CREATE_ALWAYS) {
+    if (creation_disposition == CREATE_ALWAYS ||
+        creation_disposition == OPEN_ALWAYS ||
+        creation_disposition == CREATE_NEW) {
       try {
-        volume_->Unlink(user_credentials, utf8_path);
+        xtreemfs::pbrpc::Stat stat;
+        volume_->GetAttr(user_credentials_,
+                         utf8_path,
+                         true,  // bypass cache
+                         &stat);
+        path_existed = true;
+        path_was_directory = IsDirectory(stat);
       } catch(const PosixErrorException&) {
-        try {
-          volume_->DeleteDirectory(user_credentials, utf8_path);
-          dokan_file_info->IsDirectory = TRUE;
-          return ERROR_SUCCESS;
-        } catch(const PosixErrorException&) {
+      }
+
+      if (path_existed && creation_disposition == CREATE_NEW) {
+        // MSDN Docu: "If the specified file exists, the function fails and the last-error code is set to ERROR_FILE_EXISTS"
+        // TODO(mberlin): What means "function fails" here? Always return an error or only in case the open w/ create did not succeed?
+        return -ERROR_FILE_EXISTS;
+      }
+
+      if (path_existed && creation_disposition == CREATE_ALWAYS) {
+        // "overwrites the file" by deleting it first.
+        if (path_was_directory) {
+          try {
+            // TODO(mberlin): Is it safe to delete a directory or should it fail?
+            volume_->DeleteDirectory(user_credentials_, utf8_path);
+          } catch(const PosixErrorException&) {
+          }
+        } else {
+          try {
+            // TODO(mberlin): Do we really need to delete the file?
+            volume_->Unlink(user_credentials_, utf8_path);
+          } catch(const PosixErrorException&) {
+          }
         }
       }
     }
 
-    if (creation_disposition == OPEN_EXISTING) {
-      if (utf8_path == "/") {
+    xtreemfs::FileHandle* file_handle = NULL;
+    try {
+      file_handle = volume_->OpenFile(user_credentials_,
+                                      utf8_path,
+                                      sys_v_open,
+                                      file_attributes);
+    } catch(const PosixErrorException& e) {
+      if (e.posix_errno() == POSIX_ERROR_EISDIR &&
+          creation_disposition == OPEN_EXISTING) {
         dokan_file_info->IsDirectory = TRUE;
         return 0;
+      } else {
+        throw;
       }
-       
-      // Don't catch: if it does not exist, escalate.
-      xtreemfs::pbrpc::Stat stat;
-      volume_->GetAttr(user_credentials, utf8_path,
-                        true,  // bypass cache
-                        &stat);
-
-      if (IsDirectory(stat)) {
-        dokan_file_info->IsDirectory = TRUE;
-        return 0;
-      }
-    }
-
-    xtreemfs::FileHandle* file_handle = 
-        volume_->OpenFile(user_credentials, utf8_path,
-                          sys_v_open, file_attributes);
-    // Needed?
-    if (creation_disposition == TRUNCATE_EXISTING) {
-      volume_->Truncate(user_credentials, utf8_path, 0);
     }
 
     dokan_file_info->Context = reinterpret_cast<UINT64>(file_handle);
     dokan_file_info->IsDirectory = FALSE;
-    return 0;
+    
+    if (path_existed && (creation_disposition == CREATE_ALWAYS ||
+                         creation_disposition == OPEN_ALWAYS)) {
+      // Does not work when the error code is multiplied with -1.
+      return ERROR_ALREADY_EXISTS;
+    } else {
+      return 0;
+    }
+
   } CATCH_AND_CONVERT_ERRORS
 }
 
 int DokanAdapter::OpenDirectory(
     LPCWSTR file_name,
     PDOKAN_FILE_INFO dokan_file_info) {
-  UserCredentials user_credentials;
-  system_user_mapping_->GetUserCredentialsForCurrentUser(
-      &user_credentials);
   try {
     xtreemfs::pbrpc::Stat stat;
-    volume_->GetAttr(user_credentials,
+    volume_->GetAttr(user_credentials_,
                      WindowsPathToUTF8Unix(file_name),
                      true,  // bypass cache
                      &stat);
@@ -274,21 +311,27 @@ int DokanAdapter::OpenDirectory(
       return -1;
     }
   } CATCH_AND_CONVERT_ERRORS
-  return 0;
 }
 
 int DokanAdapter::CreateDirectory(
-    LPCWSTR,				// FileName
-    PDOKAN_FILE_INFO) {
-  return 0;
+    LPCWSTR file_name,
+    PDOKAN_FILE_INFO dokan_file_info) {
+  try {
+    // TODO(mberlin): Allow user to specify a file mask.
+    volume_->MakeDirectory(user_credentials_,
+                           WindowsPathToUTF8Unix(file_name),
+                           448);  // Octal: 700
+    dokan_file_info->IsDirectory = TRUE;
+    return 0;
+  } CATCH_AND_CONVERT_ERRORS
 }
 
-// When FileInfo->DeleteOnClose is true, you must delete the file in Cleanup.
+// Dokan Docu: When FileInfo->DeleteOnClose is true, you must delete the file in Cleanup.
 int DokanAdapter::Cleanup(
     LPCWSTR file_name,
     PDOKAN_FILE_INFO dokan_file_info) {
-  // TODO Handle delete on close for files and directories.
-  xtreemfs::FileHandle* file = file_handle(dokan_file_info);
+  // TODO(fhupfeld): Handle delete on close for files and directories.
+  xtreemfs::FileHandle* file = GetFileHandle(dokan_file_info);
   if (file == NULL) {
     return 0;
   }
@@ -313,16 +356,13 @@ int DokanAdapter::ReadFile(
     LPDWORD NumberOfBytesRead,
     LONGLONG Offset,
     PDOKAN_FILE_INFO dokan_file_info) {
-  UserCredentials user_credentials;
-  system_user_mapping_->GetUserCredentialsForCurrentUser(
-      &user_credentials);
-  xtreemfs::FileHandle* file = file_handle(dokan_file_info);
+  xtreemfs::FileHandle* file = GetFileHandle(dokan_file_info);
   if (file == NULL) {
-    return -1;  // TODO: open file, read, close
+    return -1;  // TODO(fhupfeld): open file, read, close
   }
 
   try {
-    *NumberOfBytesRead = file->Read(user_credentials, 
+    *NumberOfBytesRead = file->Read(user_credentials_, 
                                     static_cast<char*>(Buffer), 
                                     NumberOfBytesToRead, 
                                     static_cast<off_t>(Offset));
@@ -338,18 +378,15 @@ int DokanAdapter::WriteFile(
     LPDWORD NumberOfBytesWritten,
     LONGLONG Offset,
     PDOKAN_FILE_INFO dokan_file_info) {
-  UserCredentials user_credentials;
-  system_user_mapping_->GetUserCredentialsForCurrentUser(
-      &user_credentials);
-  xtreemfs::FileHandle* file = file_handle(dokan_file_info);
+  xtreemfs::FileHandle* file = GetFileHandle(dokan_file_info);
   if (file == NULL) {
-    return -1;  // TODO
+    return -1;  // TODO(fhupfeld)
   }
 
-  // TODO: implement DokanFileInfo->WriteToEndOfFile
+  // TODO(fhupfeld): implement DokanFileInfo->WriteToEndOfFile
 
   try {
-    *NumberOfBytesWritten = file->Write(user_credentials, 
+    *NumberOfBytesWritten = file->Write(user_credentials_, 
                                         static_cast<const char*>(Buffer), 
                                         NumberOfBytesToWrite, 
                                         static_cast<off_t>(Offset));
@@ -361,9 +398,9 @@ int DokanAdapter::WriteFile(
 int DokanAdapter::FlushFileBuffers(
     LPCWSTR,
     PDOKAN_FILE_INFO dokan_file_info) {
-  xtreemfs::FileHandle* file = file_handle(dokan_file_info);
+  xtreemfs::FileHandle* file = GetFileHandle(dokan_file_info);
   if (file == NULL) {
-    return -1;  // TODO
+    return -1;  // TODO(fhupfeld)
   }
 
   try {
@@ -377,30 +414,25 @@ int DokanAdapter::GetFileInformation(
     LPCWSTR path,
     LPBY_HANDLE_FILE_INFORMATION file_info,
     PDOKAN_FILE_INFO dokan_file_info) {
-  UserCredentials user_credentials;
-  system_user_mapping_->GetUserCredentialsForCurrentUser(
-      &user_credentials);
-  
   try {
     xtreemfs::pbrpc::Stat stat;
-    volume_->GetAttr(
-        user_credentials,
-        WindowsPathToUTF8Unix(path),
-        &stat);
+    volume_->GetAttr(user_credentials_,
+                     WindowsPathToUTF8Unix(path),
+                     &stat);
     file_info->nFileSizeHigh = static_cast<DWORD>(stat.size() >> 32);
-    file_info->nFileSizeLow = stat.size() & 0xFFFFffff;
+    file_info->nFileSizeLow = static_cast<DWORD>(stat.size() & 0xFFFFffff);
     XtreemFSTimeToWinTime(stat.atime_ns(),
-        &file_info->ftLastAccessTime.dwHighDateTime,
-        &file_info->ftLastAccessTime.dwLowDateTime);
+                          &file_info->ftLastAccessTime.dwLowDateTime,
+                          &file_info->ftLastAccessTime.dwHighDateTime);
     XtreemFSTimeToWinTime(stat.ctime_ns(),
-        &file_info->ftCreationTime.dwHighDateTime,
-        &file_info->ftCreationTime.dwLowDateTime);
+                          &file_info->ftCreationTime.dwLowDateTime,
+                          &file_info->ftCreationTime.dwHighDateTime);
     XtreemFSTimeToWinTime(stat.mtime_ns(),
-        &file_info->ftLastWriteTime.dwHighDateTime,
-        &file_info->ftLastWriteTime.dwLowDateTime);
+                          &file_info->ftLastWriteTime.dwLowDateTime,
+                          &file_info->ftLastWriteTime.dwHighDateTime);
     // Overwritten with other flags.
     file_info->dwFileAttributes = FILE_ATTRIBUTE_NORMAL;
-    // TODO: not complete yet.
+    // TODO(fhupfeld): not complete yet.
     if (IsDirectory(stat)) {
       file_info->dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY;
       dokan_file_info->IsDirectory = TRUE;
@@ -414,18 +446,14 @@ int DokanAdapter::FindFiles(
     LPCWSTR path,
     PFillFindData callback,
     PDOKAN_FILE_INFO dokan_file_info) {
-  UserCredentials user_credentials;
-  system_user_mapping_->GetUserCredentialsForCurrentUser(
-      &user_credentials);
-
   try {
     for (uint64_t offset = 0; ; offset += options_->readdir_chunk_size) {
-      xtreemfs::pbrpc::DirectoryEntries* entries = volume_->ReadDir(
-          user_credentials,
+      boost::scoped_ptr<DirectoryEntries> entries(volume_->ReadDir(
+          user_credentials_,
           WindowsPathToUTF8Unix(path),
           offset,
           options_->readdir_chunk_size,
-          false);
+          false));
 
       for (int i = 0; i < entries->entries_size(); i++) {
         const DirectoryEntry& entry = entries->entries(i);
@@ -439,19 +467,19 @@ int DokanAdapter::FindFiles(
         find_data.nFileSizeHigh = static_cast<DWORD>(entry.stbuf().size() >> 32);
         find_data.nFileSizeLow = entry.stbuf().size() & 0xFFFFffff;
         XtreemFSTimeToWinTime(entry.stbuf().atime_ns(),
-            &find_data.ftLastAccessTime.dwHighDateTime,
-            &find_data.ftLastAccessTime.dwLowDateTime);
+            &find_data.ftLastAccessTime.dwLowDateTime,
+            &find_data.ftLastAccessTime.dwHighDateTime);
         XtreemFSTimeToWinTime(entry.stbuf().ctime_ns(),
-            &find_data.ftCreationTime.dwHighDateTime,
-            &find_data.ftCreationTime.dwLowDateTime);
+            &find_data.ftCreationTime.dwLowDateTime,
+            &find_data.ftCreationTime.dwHighDateTime);
         XtreemFSTimeToWinTime(entry.stbuf().mtime_ns(),
-            &find_data.ftLastWriteTime.dwHighDateTime,
-            &find_data.ftLastWriteTime.dwLowDateTime);
+            &find_data.ftLastWriteTime.dwLowDateTime,
+            &find_data.ftLastWriteTime.dwHighDateTime);
         find_data.dwFileAttributes = FILE_ATTRIBUTE_NORMAL;
         if (IsDirectory(entry.stbuf())) {
           find_data.dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY;
         }
-        // TODO: not complete yet.
+        // TODO(fhupfeld): not complete yet.
         callback(&find_data, dokan_file_info);
       }
 
@@ -462,15 +490,6 @@ int DokanAdapter::FindFiles(
     }
     return 0;
   } CATCH_AND_CONVERT_ERRORS
-}
-
-// You should implement either FindFiles or FindFilesWithPattern
-int DokanAdapter::FindFilesWithPattern(
-    LPCWSTR,			// PathName
-    LPCWSTR,			// SearchPattern
-    PFillFindData,		// call this function with PWIN32_FIND_DATAW
-    PDOKAN_FILE_INFO) {
-  return 0;
 }
 
 int DokanAdapter::SetFileAttributes(
@@ -489,6 +508,7 @@ int DokanAdapter::SetFileTime(
   return 0;
 }
 
+// Dokan Docu: 
 // You should not delete file on DeleteFile or DeleteDirectory.
 // When DeleteFile or DeleteDirectory, you must check whether
 // you can delete the file or not, and return 0 (when you can delete it)
@@ -500,13 +520,8 @@ int DokanAdapter::SetFileTime(
 int DokanAdapter::DeleteFile(
     LPCWSTR path,
     PDOKAN_FILE_INFO) {
-  UserCredentials user_credentials;
-  system_user_mapping_->GetUserCredentialsForCurrentUser(
-      &user_credentials);
   try {
-    volume_->Unlink(
-        user_credentials,
-        WindowsPathToUTF8Unix(path));
+    volume_->Unlink(user_credentials_, WindowsPathToUTF8Unix(path));
     return 0;
   } CATCH_AND_CONVERT_ERRORS
 }
@@ -514,13 +529,8 @@ int DokanAdapter::DeleteFile(
 int DokanAdapter::DeleteDirectory( 
     LPCWSTR path,
     PDOKAN_FILE_INFO) {
-  UserCredentials user_credentials;
-  system_user_mapping_->GetUserCredentialsForCurrentUser(
-      &user_credentials);
   try {
-    volume_->DeleteDirectory(
-        user_credentials,
-        WindowsPathToUTF8Unix(path));
+    volume_->DeleteDirectory(user_credentials_, WindowsPathToUTF8Unix(path));
     return 0;
   } CATCH_AND_CONVERT_ERRORS
 }
@@ -528,16 +538,12 @@ int DokanAdapter::DeleteDirectory(
 int DokanAdapter::MoveFile(
     LPCWSTR from,
     LPCWSTR to,
-    BOOL, // TODO ReplaceExisiting
+    BOOL, // TODO(fhupfeld): ReplaceExisiting
     PDOKAN_FILE_INFO) {
-  UserCredentials user_credentials;
-  system_user_mapping_->GetUserCredentialsForCurrentUser(
-      &user_credentials);
   try {
-    volume_->Rename(
-        user_credentials,
-        WindowsPathToUTF8Unix(from),
-        WindowsPathToUTF8Unix(to));
+    volume_->Rename(user_credentials_,
+                    WindowsPathToUTF8Unix(from),
+                    WindowsPathToUTF8Unix(to));
     return 0;
   } CATCH_AND_CONVERT_ERRORS
 }
@@ -572,32 +578,27 @@ int DokanAdapter::UnlockFile(
   return 0;
 }
 
+// Dokan Docu:
 // Neither GetDiskFreeSpace nor GetVolumeInformation
 // save the DokanFileContext->Context.
 // Before these methods are called, CreateFile may not be called.
 // (ditto CloseFile and Cleanup)
 
-// see Win32 API GetDiskFreeSpaceEx
+// Dokan Docu: see Win32 API GetDiskFreeSpaceEx
 int DokanAdapter::GetDiskFreeSpace(
     PULONGLONG FreeBytesAvailable,
     PULONGLONG TotalNumberOfBytes,
     PULONGLONG TotalNumberOfFreeBytes,
     PDOKAN_FILE_INFO) {
-      
-  UserCredentials user_credentials;
-  system_user_mapping_->GetUserCredentialsForCurrentUser(
-      &user_credentials);
   try {
-    xtreemfs::pbrpc::StatVFS* stat = volume_->StatFS(
-        user_credentials);
+    boost::scoped_ptr<StatVFS> stat(volume_->StatFS(user_credentials_));
     *FreeBytesAvailable = stat->bavail() * stat->bsize();
     *TotalNumberOfBytes = stat->blocks() * stat->bsize();
     return 0;
   } CATCH_AND_CONVERT_ERRORS
-  return 0;
 }
 
-// see Win32 API GetVolumeInformation
+// Dokan Docu: see Win32 API GetVolumeInformation
 int DokanAdapter::GetVolumeInformation(
     LPWSTR VolumeNameBuffer,
     DWORD VolumeNameSize,
@@ -607,9 +608,11 @@ int DokanAdapter::GetVolumeInformation(
     LPWSTR FileSystemNameBuffer,
     DWORD FileSystemNameSize,
     PDOKAN_FILE_INFO) {
-  ConvertUTF8ToWindows(
-      options_->volume_name, VolumeNameBuffer, VolumeNameSize);
-  FileSystemNameBuffer = L"XtreemFS";
+  // TODO(mberlin): This has to be cached since Windows polls it up to every second.
+  ConvertUTF8ToWindows(options_->volume_name, VolumeNameBuffer, VolumeNameSize);
+  wcscpy_s(FileSystemNameBuffer,
+           FileSystemNameSize / sizeof(WCHAR),
+           L"XtreemFS");
   *VolumeSerialNumber = 0;  // TODO(fhupfeld): volume uuid
   *MaximumComponentLength = 256;
   *FileSystemFlags = FILE_CASE_PRESERVED_NAMES | 
@@ -622,7 +625,7 @@ int DokanAdapter::Unmount(
   return 0;
 }
 
-// Suported since 0.6.0. You must specify the version at DOKAN_OPTIONS.Version.
+// Dokan Docu: Supported since 0.6.0. You must specify the version at DOKAN_OPTIONS.Version.
 int DokanAdapter::GetFileSecurity(
     LPCWSTR, // FileName
     // A pointer to SECURITY_INFORMATION value being requested
@@ -653,13 +656,16 @@ void DokanAdapter::Start() {
 
   // Setup Usermapping.
   system_user_mapping_.reset(SystemUserMapping::GetSystemUserMapping());
+  system_user_mapping_->GetUserCredentialsForCurrentUser(&user_credentials_);
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+    Logging::log->getLog(LEVEL_DEBUG) << "Executing all operations on behalf of"
+        " username: " << user_credentials_.username()
+        << " and group: " << user_credentials_.groups(0) << endl;
+  }
 
   // Create new Client.
-  UserCredentials client_user_credentials;
-  system_user_mapping_->GetUserCredentialsForCurrentUser(
-      &client_user_credentials);
   client_.reset(Client::CreateClient(options_->service_address,
-                                     client_user_credentials,
+                                     user_credentials_,
                                      options_->GenerateSSLOptions(),
                                      *options_,
                                      Client::kDefaultClient));
@@ -674,35 +680,13 @@ void DokanAdapter::Start() {
 
   // Try to access Volume. If it fails, an error will be thrown.
   Stat stat;
-  volume_->GetAttr(client_user_credentials, "/", &stat);
+  volume_->GetAttr(user_credentials_, "/", &stat);
 
+  // TODO(mberlin): Put this into a common function used by Dokan- and
+  //                FuseAdapter.
   // Check the attributes of the Volume.
-  // Ugly trick to get the addresses of all MRC UUIDs and pass them to
-  // ListVolumes().
-  SimpleUUIDIterator mrc_uuids;
-  SimpleUUIDIterator mrc_addresses;
-  client_->GetUUIDResolver()->VolumeNameToMRCUUID(options_->volume_name,
-                                                  &mrc_uuids);
-  string first_mrc_uuid = "";
-  string current_mrc_uuid;
-  string current_mrc_address;
-  while (true) {
-    mrc_uuids.GetUUID(&current_mrc_uuid);
-    if (first_mrc_uuid == "") {
-      first_mrc_uuid = current_mrc_uuid;
-    } else if (first_mrc_uuid == current_mrc_uuid) {
-      break;
-    }
-    client_->GetUUIDResolver()->UUIDToAddress(current_mrc_uuid,
-                                              &current_mrc_address);
-    mrc_uuids.MarkUUIDAsFailed(current_mrc_uuid);
-    mrc_addresses.AddUUID(current_mrc_address);
-  }
-
-  // Get volume information as xattr.
-  // Check attributes.
   boost::scoped_ptr<listxattrResponse> xattrs(
-      volume_->ListXAttrs(client_user_credentials, "/", false));
+      volume_->ListXAttrs(user_credentials_, "/", false));
   for (int i = 0; i < xattrs->xattrs_size(); ++i) {
     const xtreemfs::pbrpc::XAttr& xattr = xattrs->xattrs(i);
 
@@ -740,69 +724,23 @@ void DokanAdapter::Start() {
     system_user_mapping_->RegisterAdditionalUserMapping(
       additional_user_mapping);
     system_user_mapping_->StartAdditionalUserMapping();
+
+    // Retrieve user_credentials again, this time using the additional mapping.
+    system_user_mapping_->GetUserCredentialsForCurrentUser(&user_credentials_);
+  }
+
+  // The user mapping is no longer needed.
+  if (system_user_mapping_.get()) {
+    system_user_mapping_->StopAdditionalUserMapping();
   }
 }
 
 void DokanAdapter::Stop() {
-  // Close UserMapping.
-  system_user_mapping_->StopAdditionalUserMapping();
-
   // Shutdown() Client. That does also invoke a volume->Close().
-  client_->Shutdown();
+  if (client_.get()) {
+    client_->Shutdown();
+  }
 }
-
-//void DokanAdapter::GenerateUserCredentials(
-//    struct dokan_context* dokan_context,
-//    xtreemfs::pbrpc::UserCredentials* user_credentials) {
-//  // No dokan_context known, use information of current process.
-//  if (dokan_context == NULL) {
-//    GenerateUserCredentials(getuid(), getgid(), getpid(), user_credentials);
-//  } else {
-//    GenerateUserCredentials(dokan_context->uid,
-//                            dokan_context->gid,
-//                            dokan_context->pid,
-//                            user_credentials);
-//  }
-//}
-//
-//void DokanAdapter::GenerateUserCredentials(
-//    uid_t uid,
-//    gid_t gid,
-//    pid_t pid,
-//    xtreemfs::pbrpc::UserCredentials* user_credentials) {
-//  user_credentials->set_username(user_mapping_->UIDToUsername(uid));
-//
-//  list<string> groupnames;
-//  user_mapping_->GetGroupnames(uid, gid, pid, &groupnames);
-//  for (list<string>::iterator it = groupnames.begin();
-//       it != groupnames.end(); ++it) {
-//    user_credentials->add_groups(*it);
-//  }
-//}
-//
-//
-//xtreemfs::pbrpc::SYSTEM_V_FCNTL DokanAdapter::ConvertFlagsUnixToXtreemFS(
-//    int flags) {
-//  int result = 0;
-//
-//#define CHECK(result, flags, unix, proto) { \
-//  if ((flags & unix) != 0) result |= proto; \
-//}
-//  CHECK(result, flags, O_RDONLY   , SYSTEM_V_FCNTL_H_O_RDONLY);
-//  CHECK(result, flags, O_WRONLY   , SYSTEM_V_FCNTL_H_O_WRONLY);
-//  CHECK(result, flags, O_RDWR     , SYSTEM_V_FCNTL_H_O_RDWR);
-//  CHECK(result, flags, O_APPEND   , SYSTEM_V_FCNTL_H_O_APPEND);
-//  CHECK(result, flags, O_CREAT    , SYSTEM_V_FCNTL_H_O_CREAT);
-//  CHECK(result, flags, O_TRUNC    , SYSTEM_V_FCNTL_H_O_TRUNC);
-//  CHECK(result, flags, O_EXCL     , SYSTEM_V_FCNTL_H_O_EXCL);
-//  CHECK(result, flags, O_SYNC     , SYSTEM_V_FCNTL_H_O_SYNC);
-//#ifdef __linux
-//  CHECK(result, flags, O_DSYNC    , SYSTEM_V_FCNTL_H_O_SYNC);
-//#endif
-//
-//  return xtreemfs::pbrpc::SYSTEM_V_FCNTL(result);
-//}
-//
 
 //
 //

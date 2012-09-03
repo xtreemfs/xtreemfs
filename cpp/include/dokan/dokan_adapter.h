@@ -290,6 +290,10 @@ class DokanAdapter {
    *  remote usernames and groups. */
   boost::scoped_ptr<SystemUserMapping> system_user_mapping_;
 
+  /** Username and domain name of user executing the Dokan client. Will be used
+   *  by all XtreemFS operations. */
+  xtreemfs::pbrpc::UserCredentials user_credentials_;
+
   /** Created libxtreemfs Client. */
   boost::scoped_ptr<Client> client_;
 
