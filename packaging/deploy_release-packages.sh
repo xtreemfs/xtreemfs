@@ -113,7 +113,7 @@ You can use them to test building a package locally e.g.,
 
 cd $TMP_DIR
 cd home:xtreemfs:unstable/xtreemfs-testing
-# Build the package for openSUSE_11.4, 64 Bit:
-osc build openSUSE_11.4 x86_64 xtreemfs-testing.spec
+# Build the package for openSUSE_12.1:
+osc build --ccache openSUSE_12.1 xtreemfs-testing.spec
 EOF
 fi
