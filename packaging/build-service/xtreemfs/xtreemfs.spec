@@ -77,7 +77,7 @@ This package contains the backend modules and libraries shared between the serve
 Summary:        XtreemFS server components (DIR, MRC, OSD)
 Group:          System/Filesystems
 Requires:       %{name}-backend == %{version}-%{release}
-Requires:       grep sudo
+Requires:       grep
 Requires:       jre >= 1.6.0
 Provides:       XtreemFS-server = %{version}
 Obsoletes:      XtreemFS-server < %{version}
