@@ -188,30 +188,6 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
   volume_->GetAttr(client_user_credentials, "/", &stat);
 
   // Check the attributes of the Volume.
-  // Ugly trick to get the addresses of all MRC UUIDs and pass them to
-  // ListVolumes().
-  SimpleUUIDIterator mrc_uuids;
-  SimpleUUIDIterator mrc_addresses;
-  client_->GetUUIDResolver()->VolumeNameToMRCUUID(options_->volume_name,
-                                                  &mrc_uuids);
-  string first_mrc_uuid = "";
-  string current_mrc_uuid;
-  string current_mrc_address;
-  while (true) {
-    mrc_uuids.GetUUID(&current_mrc_uuid);
-    if (first_mrc_uuid == "") {
-      first_mrc_uuid = current_mrc_uuid;
-    } else if (first_mrc_uuid == current_mrc_uuid) {
-      break;
-    }
-    client_->GetUUIDResolver()->UUIDToAddress(current_mrc_uuid,
-                                              &current_mrc_address);
-    mrc_uuids.MarkUUIDAsFailed(current_mrc_uuid);
-    mrc_addresses.AddUUID(current_mrc_address);
-  }
-
-  // Get volume information as xattr.
-  // Check attributes.
   UserMapping::UserMappingType current_user_mapping_type =
       options_->user_mapping_type;
   boost::scoped_ptr<listxattrResponse> xattrs(
