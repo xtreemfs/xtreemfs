@@ -137,7 +137,7 @@ message XCap {
   required string client_identity = 2;
   // Number of seconds this XCap is valid.
   required fixed64 expire_time_s = 3;
-  // Timestamp in gloabl synchronized XtreemFS time when
+  // Timestamp in global synchronized XtreemFS time when
   // the XCap expires.
   required fixed32 expire_timeout_s = 4;
   // FileID for which this XCap is valid.

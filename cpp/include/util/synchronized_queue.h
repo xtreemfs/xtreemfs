@@ -16,7 +16,7 @@
 namespace xtreemfs {
 namespace util {
 
-/** Queue class that has thread synchronisation. Intended to synchronise
+/** Queue class that has thread synchronization. Intended to synchronize
  *  threads in a producer consumer scenario.*/
 template <typename T>
 class SynchronizedQueue {
@@ -49,7 +49,7 @@ class SynchronizedQueue {
  private:
   /** STL queue for data storage. */
   std::queue<T> queue_;
-  /** The mutex to synchronise queue access. */
+  /** The mutex to synchronize queue access. */
   boost::mutex mutex_;
   /** The condition to wait for if the queue is empty. */
   boost::condition_variable queue_not_empty_cond_;

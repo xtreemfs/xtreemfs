@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2011 by Michael Berlin, Zuse Institute Berlin
+ *               2012 by Matthias Noack, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *

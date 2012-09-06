@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Tue Feb 28 11:16:01 CET 2012
+//automatically generated from OSD.proto at Thu Apr 05 20:23:13 CEST 2012
 //(c) 2012. See LICENSE file for details.
 
 #ifndef OSDSERVICECLIENT_H
@@ -17,7 +17,7 @@
 
 
 namespace xtreemfs {
-    namespace pbrpc {
+namespace pbrpc {
         using ::xtreemfs::rpc::Client;
         using ::xtreemfs::rpc::CallbackInterface;
         using ::xtreemfs::rpc::SyncCallback;

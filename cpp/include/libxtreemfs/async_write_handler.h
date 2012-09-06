@@ -128,7 +128,8 @@ class AsyncWriteHandler
   /** Implements callback handling for an async write request. This method is
    *  called for all queued callbacks in a separate thread.*/
   void HandleCallback(xtreemfs::pbrpc::OSDWriteResponse* response_message,
-                      char* data, boost::uint32_t data_length,
+                      char* data,
+                      boost::uint32_t data_length,
                       xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
                       void* context);
 
@@ -260,7 +261,7 @@ class AsyncWriteHandler
 
   const Options& volume_options_;
   Options interrupt_options_;  // TODO(mno): define was_interrupted_function
-                               //            when async writes support inerrupts
+                               //            when async writes support interrupts
 
   /** Maximum number in bytes which may be pending. */
   const int max_writeahead_;

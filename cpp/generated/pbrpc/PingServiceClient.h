@@ -1,4 +1,4 @@
-//automatically generated from Ping.proto at Tue Feb 28 11:16:01 CET 2012
+//automatically generated from Ping.proto at Wed Apr 04 18:21:52 CEST 2012
 //(c) 2012. See LICENSE file for details.
 
 #ifndef PINGSERVICECLIENT_H
@@ -13,7 +13,7 @@
 
 
 namespace xtreemfs {
-    namespace pbrpc {
+namespace pbrpc {
         using ::xtreemfs::rpc::Client;
         using ::xtreemfs::rpc::CallbackInterface;
         using ::xtreemfs::rpc::SyncCallback;

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2011 by Michael Berlin, Zuse Institute Berlin
+ *               2012 by Matthias Noack, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -30,7 +31,6 @@ void UUIDIterator::GetUUID(std::string* result) {
   boost::mutex::scoped_lock lock(mutex_);
 
   if (current_uuid_ == uuids_.end()) {
-    assert(uuids_.size() > 0);
     throw UUIDIteratorListIsEmpyException("GetUUID() failed because the list of"
         " UUIDs is empty.");
   } else {

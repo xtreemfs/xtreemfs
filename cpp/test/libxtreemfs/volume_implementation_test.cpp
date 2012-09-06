@@ -849,7 +849,7 @@ TEST_F(VolumeImplementationTest, CorrectDirectoryEntriesUpdateAfterRmDir) {
 
   ASSERT_NO_THROW({
     // Create dir.
-    volume_->CreateDirectory(user_credentials_, path, 448);
+    volume_->MakeDirectory(user_credentials_, path, 448);
 
     // List directory (and thereby caching it).
     boost::scoped_ptr<DirectoryEntries> dentries(volume_->ReadDir(
@@ -857,7 +857,7 @@ TEST_F(VolumeImplementationTest, CorrectDirectoryEntriesUpdateAfterRmDir) {
     EXPECT_EQ(3, dentries->entries_size());
 
     // Delete dir.
-    volume_->RemoveDirectory(user_credentials_, path);
+    volume_->DeleteDirectory(user_credentials_, path);
 
     // List directory again and check for correct update.
     dentries.reset(volume_->ReadDir(
@@ -1001,6 +1001,44 @@ TEST_F(VolumeImplementationTest, ConcurrentGetAttrAndWriteAsyncPlusClose) {
   });
   delete[] buf;
   buf = NULL;
+}
+
+/** Make sure the result of Truncate() is correctly returned despite the
+ *  metadata cache. */
+TEST_F(VolumeImplementationTestFastPeriodicFileSizeUpdate, Truncate) {
+  string path_to_file = "test2";
+  int kNewFileSize = 23;
+
+  ASSERT_NO_THROW({
+    FileHandle* file_handle = volume_->OpenFile(
+        user_credentials_,
+        path_to_file,
+        static_cast<SYSTEM_V_FCNTL>(
+            SYSTEM_V_FCNTL_H_O_CREAT |SYSTEM_V_FCNTL_H_O_RDWR),
+        511);
+    Stat stat;
+
+    // File has a size of 0 bytes.
+    file_handle->GetAttr(user_credentials_, &stat);
+    EXPECT_EQ(0, stat.size());
+
+    file_handle->Truncate(user_credentials_, kNewFileSize);
+
+    // Wait until the file size was written back to the MRC.
+    boost::this_thread::sleep(boost::posix_time::seconds(2));
+
+    // File has a size of kNewFileSize bytes.
+    volume_->GetAttr(user_credentials_, path_to_file, &stat);
+    EXPECT_EQ(kNewFileSize, stat.size());
+
+    file_handle->Close();
+
+    // File has a size of kNewFileSize bytes.
+    volume_->GetAttr(user_credentials_, path_to_file, &stat);
+    EXPECT_EQ(kNewFileSize, stat.size());
+
+    volume_->Unlink(user_credentials_, path_to_file);
+  });
 }
 
 }  // namespace xtreemfs

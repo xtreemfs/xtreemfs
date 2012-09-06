@@ -16,13 +16,14 @@ class TestEnvironment:
     def __init__(self,
                  config_file,
                  test_set_name,
+                 volume,
                  xtreemfs_dir,
                  test_dir,
                  debug_level):
         self.__xtreemfs_dir = xtreemfs_dir
         self.__test_dir = os.path.abspath(test_dir)
         self.__debug_level = debug_level
-        self.__config = TestConfig(config_file, test_set_name)
+        self.__config = TestConfig(config_file, test_set_name, volume)
         self.__volumes = dict()
         self.__dir = None
         self.__mrc = None
@@ -428,8 +429,9 @@ if __name__ == "__main__":
     xtreemfs_dir = os.path.join(os.path.dirname( os.path.abspath( sys.modules[__name__].__file__ ) ), "..")
 
     option_parser = OptionParser( "usage: %prog [options] test_set_name")
-    option_parser.add_option( "-t", "--test-dir", action="store", dest="test_dir", default='/tmp/xtreemfs_xtestenv/')
-    option_parser.add_option( "--clean-test-dir", action="store_true", dest="clean_test_dir")
+    option_parser.add_option( "-t", "--test-dir", action="store", dest="test_dir", default='/tmp/xtreemfs_xtestenv/', help="Directory where all temporary test files will be stored.")
+    option_parser.add_option( "-v", "--volume", action="store", dest="volume", help="Test a specific volume config.")
+    option_parser.add_option( "--clean-test-dir", action="store_true", dest="clean_test_dir", help="Remove content of --test-dir before executing the test")
     option_parser.add_option( "-c", "--config-file-path", action="store", dest="config_file_path", default='test_config.py')
     option_parser.add_option( "-d", "--debug-level", action="store", dest="debug_level", default=6 )
     option_parser.add_option( "-x", "--xtreemfs-base-dir", action="store", dest="xtreemfs_dir", default=xtreemfs_dir)
@@ -456,6 +458,7 @@ if __name__ == "__main__":
         print "Starting test environment..."
         testEnv = TestEnvironment(options.config_file_path,
                                   'manual',
+                                  options.volume,
                                   options.xtreemfs_dir,
                                   options.test_dir,
                                   options.debug_level)
@@ -480,6 +483,7 @@ if __name__ == "__main__":
 
         testEnv = TestEnvironment(options.config_file_path,
                                   positional_args[0],
+                                  options.volume,
                                   options.xtreemfs_dir,
                                   options.test_dir,
                                   options.debug_level)

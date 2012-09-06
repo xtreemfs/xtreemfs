@@ -236,7 +236,7 @@ void FileInfo::AsyncFileSizeUpdateResponseHandler(
     bool success) {
   boost::mutex::scoped_lock lock(osd_write_response_mutex_);
 
-  // Only change the status of the OSDWriteResponse has not changed meanwhile.
+  // Only change the status if the OSDWriteResponse has not changed meanwhile.
   if (CompareOSDWriteResponses(&owr, osd_write_response_.get()) == 0) {
     // The status must not have changed.
     assert(osd_write_response_status_ == kDirtyAndAsyncPending);

@@ -452,6 +452,10 @@ void VolumeImplementation::CloseFile(
   // Remove file_info if it has no more open file handles.
   boost::mutex::scoped_lock lock(open_file_table_mutex_);
   if (file_info->DecreaseReferenceCount() == 0) {
+    RemoveFileInfoUnmutexed(file_id, file_info);
+    // file_info is no longer visible: it's safe to unlock the open_file_table_.
+    lock.unlock();
+
     // The last file handle of this file was closed: Release all locks.
     // All locks for the process of this file handle have to be released.
     try {
@@ -461,9 +465,6 @@ void VolumeImplementation::CloseFile(
     }
 
     file_info->WaitForPendingFileSizeUpdates();
-    RemoveFileInfoUnmutexed(file_id, file_info);
-    // file_info is no longer visible: it's safe to unlock the open_file_table_.
-    lock.unlock();
 
     // Write back the OSDWriteResponse to the stat cache.
     OSDWriteResponse response;

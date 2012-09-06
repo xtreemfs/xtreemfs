@@ -45,8 +45,6 @@ Options::Options()
       grid_options_("Grid Support options"),
       vivaldi_options_("Vivaldi Options"),
       xtreemfs_advanced_options_("XtreemFS Advanced options") {
-  // Version information.
-  // If you change this, do not forget to change this also in xtfsutil.cpp!
   version_string = XTREEMFS_VERSION_STRING;
 
   // XtreemFS URL Options.
