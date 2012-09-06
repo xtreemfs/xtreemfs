@@ -277,6 +277,8 @@ class FileInfo {
    * If osd_write_response_ != NULL, the file_size and truncate_epoch of the
    * referenced OSDWriteResponse have to be respected, e.g. when answering
    * a GetAttr request.
+   * When all file handles to a file are closed, the information of the
+   * stored osd_write_response_ will be merged back into the metadata cache.
    * This osd_write_response_ also corresponds to the "maximum" of all known
    * OSDWriteReponses. The maximum has the highest truncate_epoch, or if equal
    * compared to another response, the higher size_in_bytes value.
