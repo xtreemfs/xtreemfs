@@ -237,6 +237,7 @@ bool getattr(const string& xctl_file,
       case 2 : {
         if (path == "/") {
           cout << "volume" << endl;
+
           cout << "Free/Used Space      "
             << formatBytes(boost::lexical_cast<uint64_t>(
                 stat["free_space"].asString()))
@@ -304,26 +305,29 @@ bool getattr(const string& xctl_file,
 
         cout << "Snapshots enabled    ";
         if (stat.isMember("snapshots_enabled")) {
-          cout << (stat["snapshots_enabled"].asString() == "true" ? "yes" : "no") << endl;
+          cout << (stat["snapshots_enabled"].asString() == "true" ?
+                       "yes" : "no") << endl;
         } else {
           cout << "unknown" << endl;
         }
 
-        cout << "Selectable OSDs      ";
-        if (stat.isMember("usable_osds") && stat["usable_osds"].size() > 0) {
-          Json::Value& usable_osds = stat["usable_osds"];
-          for(Json::ValueIterator it = usable_osds.begin();
-              it != usable_osds.end();
-              ++it) {
-            if (it != usable_osds.begin()) {
-              cout << endl << "                     ";
+        if (path == "/") {
+          cout << "Selectable OSDs      ";
+          if (stat.isMember("usable_osds") && stat["usable_osds"].size() > 0) {
+            Json::Value& usable_osds = stat["usable_osds"];
+            for(Json::ValueIterator it = usable_osds.begin();
+                it != usable_osds.end();
+                ++it) {
+              if (it != usable_osds.begin()) {
+                cout << endl << "                     ";
+              }
+              cout << it.key().asString() << " (" << (*it).asString() << ")";
             }
-            cout << it.key().asString() << " (" << (*it).asString() << ")";
-          }
-          cout << endl;
+            cout << endl;
 
-        } else {
-          cout << "none available" << endl;
+          } else {
+            cout << "none available" << endl;
+          }
         }
 
         break;
