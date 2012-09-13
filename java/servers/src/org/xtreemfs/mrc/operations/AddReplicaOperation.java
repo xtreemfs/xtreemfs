@@ -130,7 +130,7 @@ public class AddReplicaOperation extends MRCOperation {
         if (!MRCHelper.isAddable(xLocList, newRepl.getOsdUuidsList()))
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
                 "at least one OSD already used in current X-Locations list '"
-                    + Converter.xLocListToXLocSet(xLocList).toString() + "'");
+                    + Converter.xLocListToString(xLocList) + "'");
         
         // create a new replica and add it to the client's X-Locations list
         // (this will automatically increment the X-Locations list version)
