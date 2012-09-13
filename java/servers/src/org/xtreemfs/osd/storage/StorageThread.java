@@ -452,7 +452,9 @@ public class StorageThread extends Stage {
             cback.writeComplete(response, null);
             
         } catch (IOException ex) {
-            ex.printStackTrace();
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "Failed to create a padded object due to the following IOException:");
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
+
             cback.writeComplete(null, ErrorUtils.getErrorResponse(ErrorType.ERRNO,
                 POSIXErrno.POSIX_ERROR_EIO, ex.toString()));
         }
@@ -596,7 +598,9 @@ public class StorageThread extends Stage {
             cback.writeComplete(response.build(), null);
             
         } catch (IOException ex) {
-            ex.printStackTrace();
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "Failed to process write() request due to the following IOException:");
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
+            
             cback.writeComplete(null, ErrorUtils.getErrorResponse(ErrorType.ERRNO,
                 POSIXErrno.POSIX_ERROR_EIO, ex.toString()));
         }
