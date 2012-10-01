@@ -400,24 +400,35 @@ FileHandle* VolumeImplementation::OpenFile(
 
   // If O_TRUNC was set, go on processing the truncate request.
   if ((flags & SYSTEM_V_FCNTL_H_O_TRUNC)) {
-    // Update mtime and ctime of the file if O_TRUNC was set.
-    metadata_cache_.UpdateStatTime(
-        path,
-        timestamp_s,
-        static_cast<Setattrs>(SETATTR_CTIME | SETATTR_MTIME));
-
     if (Logging::log->loggingActive(LEVEL_DEBUG)) {
       Logging::log->getLog(LEVEL_DEBUG)
           << "open called with O_TRUNC." << endl;
     }
 
-    try {
-      file_handle->TruncatePhaseTwoAndThree(user_credentials,
-                                            truncate_new_file_size);
-    } catch(const XtreemFSException& e) {
-      // Truncate did fail, close file again.
-      file_handle->Close();
-      throw;  // Rethrow error.
+    if (volume_options_.max_writeahead > 0) {
+      // async writes enabled: wait for pending writes
+      try {
+        file_handle->Truncate(user_credentials, truncate_new_file_size);
+      } catch(const XtreemFSException& e) {
+        // Truncate did fail, close file again.
+        file_handle->Close();
+        throw;  // Rethrow error.
+      }
+    } else {
+      // Update mtime and ctime of the file if O_TRUNC was set.
+      metadata_cache_.UpdateStatTime(
+          path,
+          timestamp_s,
+          static_cast<Setattrs>(SETATTR_CTIME | SETATTR_MTIME));
+
+      try {
+        file_handle->TruncatePhaseTwoAndThree(user_credentials,
+                                              truncate_new_file_size);
+      } catch(const XtreemFSException& e) {
+        // Truncate did fail, close file again.
+        file_handle->Close();
+        throw;  // Rethrow error.
+      }
     }
   }
 
