@@ -204,7 +204,7 @@ public class VolumeImplementation extends Volume {
     public void start() throws IOException {
         networkClient =
                 new RPCNIOSocketClient(sslOptions, volumeOptions.getRequestTimeout_s() * 1000,
-                        volumeOptions.getConnectTimeout_s() * 1000, "Volume");
+                        volumeOptions.getLingerTimeout_s() * 1000, "Volume");
         networkClient.start();
         try {
             networkClient.waitForStartup();
