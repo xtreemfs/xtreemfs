@@ -856,6 +856,7 @@ public class FileHandleImplementation implements FileHandle {
         }
         boolean uuidFound = false;
         for (Replica replica : xlocs.getReplicasList()) {
+            // TODO(mberlin): Every OSD in a striped replica has to be pinged.
             // Always check only the head OSD.
             if (replica.getOsdUuids(0).equals(osdUuid)) {
                 uuidFound = true;
