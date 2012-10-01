@@ -736,6 +736,7 @@ void FileHandleImplementation::PingReplica(
   }
   bool uuid_found = false;
   for (int i = 0; i < xlocs.replicas_size(); i++) {
+    // TODO(mberlin): Every OSD in a striped replica has to be pinged.
     // Always check only the head OSD.
     if (xlocs.replicas(i).osd_uuids(0) == osd_uuid) {
       uuid_found = true;
