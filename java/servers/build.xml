@@ -72,4 +72,14 @@
     nbproject/build-impl.xml file. 
 
     -->
+	
+  	<target name="xtreemfs-tests-jar" depends="compile-test">
+  	   <echo level="info">Creating XtreemFS-tests.jar.</echo>
+  	   <!-- Create a new JAR. -->
+  	   <jar destfile="dist/XtreemFS-tests.jar" basedir="build/test/classes">
+  	     <include name="org/xtreemfs/**/*.class"/>
+  	     <zipfileset dir="../../" includes="LICENSE" fullpath="/LICENSE"/>
+  	   </jar>
+    </target>
+	
 </project>
