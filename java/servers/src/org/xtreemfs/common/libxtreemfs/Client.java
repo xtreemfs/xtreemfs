@@ -9,6 +9,7 @@ package org.xtreemfs.common.libxtreemfs;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
@@ -16,6 +17,7 @@ import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
@@ -342,4 +344,16 @@ public abstract class Client {
    */
   public abstract Volumes listVolumes(List<String> mrcAddresses) throws IOException, PosixErrorException,
   AddressToUUIDNotFoundException;
+
+  /**
+   * Returns the registered OSDs and their attributes on the DIR.
+   * 
+   * @throws AddressToUUIDNotFoundException
+   * @throws IOException
+   * @throws PosixErrorException
+   * 
+   * @remark Ownership of the return value is transferred to the caller.
+   */
+  public abstract Map<String,Service> listOSDsAndAttributes() throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
+
 }
