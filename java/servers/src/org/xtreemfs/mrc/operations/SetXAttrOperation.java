@@ -25,8 +25,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.setxattrRequest;
 
-import com.google.protobuf.ByteString;
-
 /**
  * 
  * @author stender
@@ -89,9 +87,9 @@ public class SetXAttrOperation extends MRCOperation {
             
             boolean exists = sMan.getXAttr(file.getId(), rq.getDetails().userId, attrKey) != null;
             if (exists && rqArgs.getFlags() == XATTR_FLAGS.XATTR_FLAGS_CREATE.getNumber())
-                throw new UserException(POSIXErrno.POSIX_ERROR_EEXIST, "attribte exists already");
+                throw new UserException(POSIXErrno.POSIX_ERROR_EEXIST, "attribute exists already");
             if (!exists && rqArgs.getFlags() == XATTR_FLAGS.XATTR_FLAGS_REPLACE.getNumber())
-                throw new UserException(POSIXErrno.POSIX_ERROR_ENODATA, "attribte does not exist");
+                throw new UserException(POSIXErrno.POSIX_ERROR_ENODATA, "attribute does not exist");
             
             sMan.setXAttr(file.getId(), rq.getDetails().userId, attrKey, attrVal.length == 0 ? null
                 : attrVal, update);

@@ -37,8 +37,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
  */
 public class VolumeOSDFilter {
 
-    private static final String            ATTR_PREFIX = "xtreemfs." + MRCHelper.POLICY_ATTR_PREFIX + ".";
-
     private MRCRequestDispatcher           master;
 
     /**
@@ -81,8 +79,9 @@ public class VolumeOSDFilter {
         policyMap = new HashMap<Short, OSDSelectionPolicy>();
         for (short pol : osdPolicy) {
             try {
-                if (!policyMap.containsKey(pol))
+                if (!policyMap.containsKey(pol)) {
                     policyMap.put(pol, master.getPolicyContainer().getOSDSelectionPolicy(pol));
+                }
             } catch (Exception e) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, "could not instantiate OSDSelectionPolicy %d",
                         pol);
@@ -92,8 +91,9 @@ public class VolumeOSDFilter {
 
         for (short pol : replPolicy) {
             try {
-                if (!policyMap.containsKey(pol))
+                if (!policyMap.containsKey(pol)) {
                     policyMap.put(pol, master.getPolicyContainer().getOSDSelectionPolicy(pol));
+                }
             } catch (Exception e) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, "could not instantiate OSDSelectionPolicy %d",
                         pol);
@@ -104,13 +104,14 @@ public class VolumeOSDFilter {
         // get all policy attributes
 
         try {
-            DatabaseResultSet<XAttr> xattrs = master.getVolumeManager().getStorageManager(volId)
+            DatabaseResultSet<XAttr> xattrs = master.getVolumeManager().getStorageManager(this.volId)
                     .getXAttrs(1, StorageManager.SYSTEM_UID);
 
             while (xattrs.hasNext()) {
                 XAttr xattr = xattrs.next();
-                if (xattr.getKey().startsWith(ATTR_PREFIX))
+                if (xattr.getKey().startsWith(MRCHelper.XTREEMFS_POLICY_ATTR_PREFIX)) {
                     setAttribute(xattr.getKey(), new String(xattr.getValue()));
+                }
             }
 
             xattrs.destroy();
@@ -124,11 +125,13 @@ public class VolumeOSDFilter {
 
     public void setAttribute(String key, String value) {
 
-        assert (key.startsWith(ATTR_PREFIX));
-        key = key.substring(ATTR_PREFIX.length());
+        assert (key.startsWith(MRCHelper.XTREEMFS_POLICY_ATTR_PREFIX));
+        key = key.substring(MRCHelper.XTREEMFS_POLICY_ATTR_PREFIX.length());
 
         int index = key.indexOf('.');
 
+        // TODO refactored. is now moved to MRCHelper.setPolicyValue()!
+        //		so: delete this?
         if (index == -1) {
             Logging.logMessage(
                     Logging.LEVEL_WARN,
@@ -141,8 +144,9 @@ public class VolumeOSDFilter {
         } else {
             short policyId = Short.parseShort(key.substring(0, index));
             OSDSelectionPolicy pol = policyMap.get(policyId);
-            if (pol != null)
+            if (pol != null) {
                 pol.setAttribute(key.substring(index + 1), value);
+            }
         }
 
     }
@@ -173,9 +177,9 @@ public class VolumeOSDFilter {
 
         ServiceSet.Builder result = ServiceSet.newBuilder().addAllServices(knownOSDs.getServicesList());
         for (short id : osdPolicy) {
-            
+
             OSDSelectionPolicy policy = policyMap.get(id);
-            
+
             if (policy == null) {
                 Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
                         "could not find OSD selection policy with ID %d, will be ignored", id);
@@ -210,18 +214,20 @@ public class VolumeOSDFilter {
             // service has been registered, create a dummy service object from
             // the OSD UUID
             Service s = knownOSDMap.get(headOSD);
-            if (s == null)
+            if (s == null) {
                 s = Service.newBuilder().setData(ServiceDataMap.newBuilder()).setLastUpdatedS(0)
                         .setName("OSD @ " + headOSD).setType(ServiceType.SERVICE_TYPE_OSD).setUuid(headOSD)
                         .setVersion(0).build();
+            }
 
             headOSDServiceSetBuilder.addServices(s);
         }
 
         // sort the list of head OSDs according to the policy
-        for (short id : replPolicy)
+        for (short id : replPolicy) {
             headOSDServiceSetBuilder = policyMap.get(id).getOSDs(headOSDServiceSetBuilder, clientIP, clientCoords,
                     xLocList, headOSDServiceSetBuilder.getServicesCount());
+        }
 
         // arrange the resulting list of replicas in the same order as the list
         // of sorted head OSDs
@@ -235,8 +241,9 @@ public class VolumeOSDFilter {
             Replica.Builder replBuilder = Replica.newBuilder().setReplicationFlags(r.getReplicationFlags())
                     .setStripingPolicy(r.getStripingPolicy());
 
-            for (int j = 0; j < r.getOsdUuidsCount(); j++)
+            for (int j = 0; j < r.getOsdUuidsCount(); j++) {
                 replBuilder.addOsdUuids(r.getOsdUuids(j));
+            }
 
             sortedReplsBuilder.addReplicas(replBuilder);
         }

@@ -88,6 +88,8 @@ public class MRCHelper {
     
     public static final String VOL_ATTR_PREFIX    = "volattr";
     
+    public static final String XTREEMFS_POLICY_ATTR_PREFIX = "xtreemfs." + POLICY_ATTR_PREFIX + ".";
+    
     public enum SysAttrs {
             locations,
             file_id,
@@ -832,8 +834,23 @@ public class MRCHelper {
     }
     
     private static void setPolicyValue(StorageManager sMan, String keyString, String value, AtomicDBUpdate update)
-            throws DatabaseException {
-        
+            throws DatabaseException, UserException {
+
+        // remove "policies."
+        String checkString = keyString.substring(POLICY_ATTR_PREFIX.length()+1);
+        int index = checkString.indexOf('.');
+
+        if (index <= 0) {
+            // remove trailing "."
+            if (keyString.startsWith(".")) {
+                keyString = keyString.substring(1);
+            }
+            throw new UserException(POSIXErrno.POSIX_ERROR_EPERM,
+                    "'"+keyString+"="+value+" :' " +
+                            "XtreemFS no longer supports global policy attributes. " +
+                            "It is necessary to specify a policy e.g., '1000."+keyString+"="+value+"'");
+        }
+
         // set the value in the database
         byte[] bytes = value.getBytes();
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, "xtreemfs." + keyString, bytes == null || bytes.length == 0 ? null
