@@ -59,6 +59,7 @@ Licensed under the BSD License, see LICENSE file for details.
 var coords = []; // coordinate data
 var edges = []; // edge data
 var paused = false;
+var showClients = false;
 var intervalID = 0; // for periodic data fetch via GET
 var reloadInterval = 2000; // in ms
 var vis; // d3 svg element
@@ -110,7 +111,7 @@ window.onload = function() {
 			.attr("width", realCanvasWidth)
 			.attr("height", realCanvasHeight)
 			.on("mousedown", function() {
-				if(d3.event.button == 0) { // left mouse button
+				if (d3.event.button == 0) { // left mouse button
 					d3.event.preventDefault(); // prevent firefox dragging the svg
 					removeInfo(); // in case we are on a circle and mouse-over info is shown
 					var p = screenToSVG(d3.event);
@@ -138,7 +139,7 @@ window.onload = function() {
 				}
 			})
 			.on("mousemove", function() {
-				if(isMouseDown && d3.event.button == 0) {
+				if (isMouseDown && d3.event.button == 0) {
 					var p = screenToSVG(d3.event);
 					var xScale = getXScale();
 					var yScale = getYScale();
@@ -158,7 +159,7 @@ window.onload = function() {
 				}
 			})
 			.on("mouseup", function() {
-				if(isMouseDown && d3.event.button == 0) {
+				if (isMouseDown && d3.event.button == 0) {
 					isMouseDown = false;
 					vis.selectAll("text.measure").remove()
 					vis.selectAll("line.measure").remove();
@@ -232,7 +233,7 @@ function loadData() {
 	var req = new XMLHttpRequest();
 	req.open('GET', '/vivaldi/data', true);
 	req.onreadystatechange = function() {
-		if(req.readyState == 4) {
+		if (req.readyState == 4) {
 			//document.write(req.responseText);
 			parseData(req.responseText)
 			drawData();
@@ -244,21 +245,21 @@ function loadData() {
 
 // called at the beginning of mouseOver handlers to disable automatic reloads
 function preMouseOver() {
-	if(!paused)	{
+	if (!paused)	{
 		clearInterval(intervalID);
 	}
 }
 
 // called at the end of mouseOut handlers to re-enable automatic reloads
 function postMouseOver() {
-	if(!paused) {
+	if (!paused) {
 		loadData();
 		intervalID = setInterval('loadData()', reloadInterval); // execute loadData every 2000 ms
 	}
 }
 
 function pauseButtonHandler() {
-	if(paused == true) {
+	if (paused) {
 		loadData();
 		intervalID = setInterval('loadData()', reloadInterval); // execute loadData every 2000 ms
 		paused = false;
@@ -270,9 +271,23 @@ function pauseButtonHandler() {
 	}
 }
 
+function showClientsButtonHandler() {
+	if (showClients) {
+		showClients = false;
+		loadData();
+		document.getElementById("showClientsButton").innerHTML="Show Clients";
+	} else {
+		showClients = true;
+		loadData();
+		document.getElementById("showClientsButton").innerHTML="Hide Clients";
+	} 
+}
+
 // parse data into global coords array (called by reloadData)
 function parseData(data) {
 	coords = [];
+	var zeroCoords = [];
+	var OSDCount = 0;
 	edges = [];
 	var dataArray = [[]];
 
@@ -285,24 +300,37 @@ function parseData(data) {
 
 	// genenrate additional test data
 	/*
-	for(i = 0; i < 3; i++) 
+	for (i = 0; i < 3; i++) 
 		coords.push({"uuid": Math.random().toString(), "x": 200 *Math.random(), "y": 200*Math.random(), "error": Math.random()})
-	for(i = 0; i < 3; i++) 
+	for (i = 0; i < 3; i++) 
 		coords.push({"uuid": "my_uuid-" + i.toString(), "x": 200 *Math.random(), "y": 200*Math.random(), "error": Math.random()})
 	*/
 
 	// create coords
 	for (i = 0; (i < dataArray.length) && (dataArray[i].length >= 7); i++) {
-	
+		serviceType = dataArray[i][2].toString();
+		isOnline = dataArray[i][3].toString() == "online";
 		x = parseFloat(dataArray[i][4]);
 		y = parseFloat(dataArray[i][5]);
 		error = parseFloat(dataArray[i][6]);
-		if (x != 0.0 && y != 0.0 && error != 0) {
-			coords.push({"uuid": dataArray[i][0].toString(), "type": dataArray[i][2].toString(), "x": x, "y": y, "error": error})
+		
+		isZero = (x == 0.0 && y == 0.0 && error == 0.0);
+		// filter and add
+		if (isOnline) {
+			if (serviceType == "SERVICE_TYPE_OSD") { // add OSDs
+				(isZero ? zeroCoords : coords).push({"uuid": dataArray[i][0].toString(), "type": dataArray[i][2].toString(), "x": x, "y": y, "error": error});
+				++OSDCount;
+			} else if (showClients && (serviceType == "CLIENT")) { // add clients
+				coords.push({"uuid": dataArray[i][0].toString(), "type": dataArray[i][2].toString(), "x": x, "y": y, "error": error});
+			}
 		}
 	}
-	
-	// create edges
+	// handle zeroCoords: to avoid visual clutter by showing multiple zero coords, we only show one if there is exactly one OSD with zero coords, otherwise the next vivaldi iteration will yield non-zero coords 
+	if ((OSDCount == 1) && (zeroCoords.length == 1)) {
+		coords.push(zeroCoords[0]);
+	}
+		
+	// create edges between coords
 	for (i = 0; i < coords.length; i++) {
 		for (j = i+1; j < coords.length; j++) {
 			var uuids = [coords[i].uuid, coords[j].uuid];
@@ -389,7 +417,7 @@ function drawData() {
 		.attr("r", function(d) { return d.type == "CLIENT" ? conf.nodeRadiusClient : conf.nodeRadius; })
 		.attr("fill", conf.bgColour)
 		.on("mouseover", function(d) { 
-			if(!isMouseDown) {
+			if (!isMouseDown) {
 				preMouseOver();
 	
 				this.parentNode.appendChild(this);
@@ -472,13 +500,13 @@ function drawData() {
 					.style("font-size", "small")
 					.attr("fill", conf.textColour)
 					;
-			} // if(!isMouseDown) {
+			} // if (!isMouseDown) {
 		})
 		.on("mouseout", function() { 
-			if(!isMouseDown) {
+			if (!isMouseDown) {
 				removeInfo();
 				postMouseOver();
-			} // if(!isMouseDown) {
+			} // if (!isMouseDown) {
 		})
 		.transition()
 		.duration(conf.nodeDuration)
@@ -500,6 +528,7 @@ function drawData() {
 		<div class="body" id="controls">
 			<button onclick="loadData()">Reload</button>
 			<button type="button" id="pauseButton" onclick="pauseButtonHandler()">Disable Auto Reload</button>
+			<button type="button" id="showClientsButton" onclick="showClientsButtonHandler()">Show Clients</button>
 		</div>
 		<div class="body" id="canvas"></div>
 		<div class="body" id="help">
