@@ -161,6 +161,10 @@ class AsyncWriteHandler
    */
   void DeleteBufferHelper(boost::mutex::scoped_lock* lock);
 
+  /** Helper to enter the FINALLY_FAILED state in a thread-safe way. CleanUp
+   *  is done automatically when the last expected Callback arrives.
+   */
+  void FailFinallyHelper();
 
   /** This helper method is used to clean up after the AsyncWriteHandler
    *  reaches the finally failed state. So all write buffers are deleted,

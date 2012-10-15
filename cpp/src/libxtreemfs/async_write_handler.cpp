@@ -271,7 +271,7 @@ void AsyncWriteHandler::WriteCommon(AsyncWriteBuffer* write_buffer,
     uuid_resolver_->UUIDToAddress(osd_uuid,
                                   &osd_address,
                                   uuid_resolver_options_);
-  } catch(const exception& e) {
+  } catch (const exception& e) {
     if (is_rewrite) {
       // In case of errors, throw exception.
       --pending_writes_;
@@ -283,6 +283,9 @@ void AsyncWriteHandler::WriteCommon(AsyncWriteBuffer* write_buffer,
     }
     throw;
   }
+
+  // save the resolved uuid in the buffer (used for logging)
+  write_buffer->service_address = osd_address;
 
   // make sure to use the potentially renewed XCap
   write_buffer->xcap_handler_->GetXCap(write_buffer->write_request
@@ -361,19 +364,20 @@ bool AsyncWriteHandler::WaitForPendingWritesNonBlocking(
 void AsyncWriteHandler::ProcessCallbacks() {
   while (!(boost::this_thread::interruption_requested() &&
            boost::this_thread::interruption_enabled())) {
+    const CallbackEntry& entry = callback_queue.Dequeue();
     try {
-      const CallbackEntry& e = callback_queue.Dequeue();
-      e.handler_->HandleCallback(e.response_message_,
-                                 e.data_,
-                                 e.data_length_,
-                                 e.error_,
-                                 e.context_);
-    } catch(exception& e) {
+      entry.handler_->HandleCallback(entry.response_message_,
+                                 entry.data_,
+                                 entry.data_length_,
+                                 entry.error_,
+                                 entry.context_);
+    } catch (const exception& e) {
       if (Logging::log->loggingActive(LEVEL_DEBUG)) {
         Logging::log->getLog(LEVEL_DEBUG)
             << "AsyncWriteHandler::ProcessCallbacks(): caught unhandled "
-            "exception: " << e.what() << endl;
+            "exception: " << e.what() << ". Invalidating file handle." << endl;
       }
+      entry.handler_->FailFinallyHelper();
     }
   }
 }
@@ -419,12 +423,8 @@ void AsyncWriteHandler::HandleCallback(
       }
 
       // Resolve UUID first.
-      std::string service_uuid = "";
-      std::string service_address = "";
-      uuid_iterator_->GetUUID(&service_uuid);
-      uuid_resolver_->UUIDToAddress(service_uuid,
-                                    &service_address,
-                                    uuid_resolver_options_);
+      const std::string& service_uuid = write_buffer->osd_uuid;;
+      const std::string& service_address = write_buffer->service_address;
 
       if (((write_buffer->retry_count_ < max_write_tries_ || max_write_tries_ == 0) ||
           // or this last retry should be delayed
@@ -442,14 +442,18 @@ void AsyncWriteHandler::HandleCallback(
 
           // set the current error as new worst error if it is worse:
           // REDIRECT is worse than other error types and worse than a
-          // previous REDIRECT error if it is from a more recent request
+          // previous REDIRECT error if it belongs to a more recent request
           if ((worst_error_.error_type() != xtreemfs::pbrpc::REDIRECT) ||
               (worst_write_buffer_->request_sent_time <
                write_buffer->request_sent_time)) {
-              worst_error_.CopyFrom(*error);
-              worst_write_buffer_ = write_buffer;
+            worst_error_.CopyFrom(*error);
+            worst_write_buffer_ = write_buffer;
           }
 
+          // TODO: log only the first redirect in a row of redirect errors
+          // since redirect precedes all other errors, the following condition
+          // identifies the first redirect
+          // if (worst_error_.error_type() != xtreemfs::pbrpc::REDIRECT)
           // Log the redirect.
           level = xtreemfs::util::LEVEL_INFO;
           error_str = "The server with the UUID: " + service_uuid
@@ -472,6 +476,7 @@ void AsyncWriteHandler::HandleCallback(
               worst_error_.CopyFrom(*error);
           }
 
+          // TODO(mno): see review ..
           // Log only the first retry.
           if (write_buffer->retry_count_ == 1 && max_write_tries_ != 1) {
             std::string retries_left = max_write_tries_ == 0 ? "infinite"
@@ -485,7 +490,6 @@ void AsyncWriteHandler::HandleCallback(
             if (xtreemfs::util::Logging::log->loggingActive(level)) {
               xtreemfs::util::Logging::log->getLog(level) << error_str << std::endl;
             }
-
           }
 
         }
@@ -589,23 +593,33 @@ void AsyncWriteHandler::HandleCallback(
 
       // rewrite all in list (leading successfully sent entries have been
       // deleted by the DeleteBufferHelper() call above)
-      std::list<AsyncWriteBuffer*>::iterator it;
-      for (it = writes_in_flight_.begin();
-           it != writes_in_flight_.end();
-           ++it) {
-        ReWrite(*it, &lock);
+      try {
+        std::list<AsyncWriteBuffer*>::iterator it;
+        for (it = writes_in_flight_.begin();
+             it != writes_in_flight_.end();
+             ++it) {
+          ReWrite(*it, &lock);
+        }
+        // reset states
+        state_ = WRITES_PENDING;
+        worst_error_.Clear();
+        worst_write_buffer_ = 0;
+      } catch (const exception& e) {
+        if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+          Logging::log->getLog(LEVEL_DEBUG)
+              << "AsyncWriteHandler::HandleCallback(): caught exception: "
+              << e.what() << ". Invalidating file handle." << endl;
+        }
+        state_ = FINALLY_FAILED;  // Cleanup follow below
       }
-      // reset states
-      state_ = WRITES_PENDING;
-      worst_error_.Clear();
-      worst_write_buffer_ = 0;
     }  // if ((state_ == HAS_FAILED_WRITES) && (pending_writes_ == 0))
-  } else {  // state_ == FINALLY_FAILED
-      // clean up when last expected callback arrives
-      if (pending_writes_ == 0) {
-          CleanUp(&lock);
-      }
   }  // if (state_ != FINALLY_FAILED)
+
+  // check current again and clean up if writing has finally failed and this
+  // is the last expected cleanup
+  if ((state_ == FINALLY_FAILED) && (pending_writes_ == 0)) {
+    CleanUp(&lock);
+  }
 
   // Cleanup.
   if (delete_response_message) {
@@ -697,6 +711,11 @@ void AsyncWriteHandler::DeleteBufferHelper(
   }
 
   assert(!writes_in_flight_.empty() || (pending_bytes_ == 0));
+}
+
+void AsyncWriteHandler::FailFinallyHelper() {
+  boost::mutex::scoped_lock lock(mutex_);
+  state_ = FINALLY_FAILED;
 }
 
 void AsyncWriteHandler::CleanUp(boost::mutex::scoped_lock* lock) {

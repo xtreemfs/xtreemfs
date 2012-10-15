@@ -72,6 +72,9 @@ struct AsyncWriteBuffer {
    *  is false, this variable is initialized to the OSD to be used. */
   std::string osd_uuid;
 
+  /** Resolved UUID */
+  std::string service_address;
+
   /** Current state of the object. */
   State state_;
 
