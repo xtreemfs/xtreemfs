@@ -11,9 +11,11 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
@@ -22,6 +24,9 @@ import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
 import org.xtreemfs.foundation.SSLOptions;
+import org.xtreemfs.foundation.json.JSONException;
+import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
@@ -1382,6 +1387,49 @@ public class VolumeImplementation extends Volume {
                 });
     }
 
+    @Override
+    public void removeACL(UserCredentials userCreds, String path, String user) throws IOException {
+        Set<String> elements = new HashSet<String>();
+        elements.add(user);
+        removeACL(userCreds, path, elements);
+    }
+    
+    @Override
+    public void removeACL(UserCredentials userCreds, String path, Set<String> aclEntries) throws IOException {
+        // add all entries from the given list
+        for (String entity : aclEntries) {            
+            if (!entity.equals("u:")  && !entity.equals("g:") && !entity.equals("o:") && !entity.equals("m:")) {
+                setXAttr(userCreds, path, "xtreemfs.acl", "x " + entity, XATTR_FLAGS.XATTR_FLAGS_REPLACE.getNumber());
+            }
+        }
+    }
+    
+    @Override
+    public void setACL(UserCredentials userCreds, String path, String user, String accessrights) throws IOException {
+        HashMap<String, Object> elements = new HashMap<String, Object>();
+        elements.put(user, accessrights);
+        setACL(userCreds, path, elements);
+    }
+    
+    @Override
+    public void setACL(UserCredentials userCreds, String path, Map<String, Object> aclEntries) throws IOException {                
+        // add all entries from the given list
+        for (Entry<String, Object> entry : aclEntries.entrySet())
+            setXAttr(userCreds, path, "xtreemfs.acl", 
+                    "m " + entry.getKey() + ":" + entry.getValue(), 
+                    XATTR_FLAGS.XATTR_FLAGS_REPLACE.getNumber());
+    }
+    
+    @Override
+    public Map<String, Object> listACL(UserCredentials userCreds, String path) throws IOException {        
+        try {
+            String aclAsJSON = getXAttr(userCreds, path, "xtreemfs.acl");        
+            return (Map<String, Object>) JSONParser.parseJSON(new JSONString(aclAsJSON));
+        } catch (JSONException e) {
+            throw new IOException(e);
+        }
+    }
+    
     /*
      * (non-Javadoc)
      * 
@@ -1617,5 +1665,6 @@ public class VolumeImplementation extends Volume {
 
         Pattern pattern = Pattern.compile(IPADDRESS_PATTERN);
         return pattern.matcher(hostname).matches();
-    }
+    }    
+    
 }

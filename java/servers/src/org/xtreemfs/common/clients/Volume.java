@@ -726,9 +726,8 @@ public class Volume {
     }
     
     Map<String, Object> getACL(String path, UserCredentials userCreds) throws IOException {
-        
-        String aclAsJSON = getxattr(path, "xtreemfs.acl", userCreds);
         try {
+            String aclAsJSON = getxattr(path, "xtreemfs.acl", userCreds);
             return (Map<String, Object>) JSONParser.parseJSON(new JSONString(aclAsJSON));
         } catch (JSONException e) {
             throw new IOException(e);

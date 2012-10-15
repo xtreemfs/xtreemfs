@@ -8,6 +8,8 @@ package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
@@ -586,6 +588,74 @@ public abstract class Volume {
             long startSize, long length) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException;
 
+    
+    /**
+     * Removes the user from the ACL stored in path 
+     * 
+     * @param userCreds 
+     *          Username and groups of the user. 
+     * @param path 
+     *          The path on the volume where the ACL is stored
+     * @param user 
+     *          The user to remove access rights
+     * @throws IOException
+     */
+    public abstract void removeACL(UserCredentials userCreds, String path, String user) throws IOException;
+    
+    /**
+     * Removes all provided users from the ACL stored in path 
+     * 
+     * @param userCreds 
+     *          Username and groups of the user. 
+     * @param path 
+     *          The path on the volume where the ACL is stored
+     * @param user 
+     *          The user to remove access rights
+     * @throws IOException
+     */    
+    public abstract void removeACL(UserCredentials userCreds, String path, Set<String> aclEntries) throws IOException;
+    
+    /**
+     * Adds the user to the ACL for the provided path 
+     * 
+     * @param userCreds 
+     *          Username and groups of the user. 
+     * @param path 
+     *          The path on the volume where the ACL is stored
+     * @param user 
+     *          The user to remove access rights
+     * @param accessrights 
+     *          The accessrights to be set for the user. I.e. rwx, rx, rw, ...
+     * @throws IOException
+     */ 
+    public abstract void setACL(UserCredentials userCreds, String path, String user, String accessrights) throws IOException;
+    
+    /**
+     * Adds all users to the ACL for the provided path 
+     * 
+     * @param userCreds 
+     *          Username and groups of the user. 
+     * @param path 
+     *          The path on the volume where the ACL is stored
+     * @param user 
+     *          The user to remove access rights
+     * @throws IOException
+     */ 
+    public abstract void setACL(UserCredentials userCreds, String path, Map<String, Object> aclEntries) throws IOException;
+    
+    /**
+     * Returns all users in the ACL for the provided path 
+     * 
+     * @param userCreds 
+     *          Username and groups of the user. 
+     * @param path 
+     *          The path on the volume where the ACL is stored
+     * @param user 
+     *          The user to remove access rights
+     * @throws IOException
+     */ 
+    public abstract Map<String, Object> listACL(UserCredentials userCreds, String path) throws IOException;
+    
     /**
      * Used only for HDFS Interface.
      * 
