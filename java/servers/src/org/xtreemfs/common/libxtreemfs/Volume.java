@@ -28,6 +28,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrResponse;
  */
 public abstract class Volume {
 
+    public static final String XTREEMFS_DEFAULT_RP = "xtreemfs.default_rp";
+    
     public abstract void internalShutdown();
 
     /**

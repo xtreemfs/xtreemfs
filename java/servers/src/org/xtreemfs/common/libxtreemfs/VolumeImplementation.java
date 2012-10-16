@@ -1485,7 +1485,7 @@ public class VolumeImplementation extends Volume {
                 "{ " + "\"replication-factor\": " + String.valueOf(replicationFactor) + ","
                         + "\"update-policy\": " + "\"" + replicationPolicy + "\","
                         + "\"replication-flags\": " + String.valueOf(replicationFlags) + " }";
-        this.setXAttr(userCredentials, directory, "xtreemfs.default_rp", JSON,
+        setXAttr(userCredentials, directory, XTREEMFS_DEFAULT_RP, JSON,
                 XATTR_FLAGS.XATTR_FLAGS_CREATE.getNumber());
     }
 
