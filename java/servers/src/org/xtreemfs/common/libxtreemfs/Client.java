@@ -324,6 +324,7 @@ public abstract class Client {
    * @throws IOException
    * @throws PosixErrorException
    * 
+   * @remark Ownership of the return value is transferred to the caller. 
    */
   public abstract Volumes listVolumes() throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
@@ -353,14 +354,21 @@ public abstract class Client {
   AddressToUUIDNotFoundException;
 
   /**
-   * Returns the registered OSDs and their attributes on the DIR.
+   * List all servers and return their host names
    * 
    * @throws AddressToUUIDNotFoundException
    * @throws IOException
    * @throws PosixErrorException
-   * 
-   * @remark Ownership of the return value is transferred to the caller.
    */
-  public abstract Map<String,Service> listOSDsAndAttributes() throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
+  public abstract Map<String, Service> listServers() throws IOException, PosixErrorException;  
+  
+  /**
+   * Returns the registered UUID of the OSDs and their attributes on the DIR.
+   * 
+   * @throws AddressToUUIDNotFoundException
+   * @throws IOException
+   * @throws PosixErrorException
+   */
+  public abstract Map<String,Service> listOSDsAndAttributes() throws IOException, PosixErrorException;
 
 }

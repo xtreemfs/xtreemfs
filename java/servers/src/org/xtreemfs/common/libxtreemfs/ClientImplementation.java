@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.common.KeyValuePairs;
@@ -46,8 +45,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
-
-import com.google.protobuf.Descriptors.FieldDescriptor;
 
 /**
  * Standard implementation of the client. Used only internally.
@@ -494,11 +491,41 @@ public class ClientImplementation extends Client implements UUIDResolver {
   /*
    * (non-Javadoc)
    * 
-   * @see org.xtreemfs.common.libxtreemfs.UUIDResolver#listOSDsAndAttributes()
+   * @see org.xtreemfs.common.libxtreemfs.Client#listServers()
    */
   @Override
-  public Map<String, Service> listOSDsAndAttributes()
-      throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+  public Map<String, Service> listServers() throws IOException, PosixErrorException {
+    // access the list of servers at the DIR
+    ServiceSet osds = RPCCaller.<String, ServiceSet> syncCall(SERVICES.DIR, this.dirServiceUserCredentials,
+        this.dirServiceAuth, this.options, this, this.dirServiceAddresses, true, null,
+        new CallGenerator<String, ServiceSet>() {
+
+      @Override
+      public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
+          UserCredentials userCreds, String input) throws IOException {
+        return ClientImplementation.this.dirServiceClient.xtreemfs_service_get_by_type(server,
+            authHeader, userCreds, ServiceType.SERVICE_TYPE_MIXED);
+      }
+    });
+
+    Map<String, Service> serviceConfigs= new HashMap<String, Service>();
+    for (Service service : osds.getServicesList()) {
+        if (service.getType() == ServiceType.SERVICE_TYPE_MRC
+            || service.getType() == ServiceType.SERVICE_TYPE_OSD) {
+            serviceConfigs.put(uuidToAddress(service.getUuid()), service);
+        }
+    }
+
+    return serviceConfigs;
+  }
+  
+  /*
+   * (non-Javadoc)
+   * 
+   * @see org.xtreemfs.common.libxtreemfs.Client#listOSDsAndAttributes()
+   */
+  @Override
+  public Map<String, Service> listOSDsAndAttributes() throws IOException, PosixErrorException {
     // access the list of OSDs
     ServiceSet osds = RPCCaller.<String, ServiceSet> syncCall(SERVICES.DIR, this.dirServiceUserCredentials,
         this.dirServiceAuth, this.options, this, this.dirServiceAddresses, true, null,
@@ -514,8 +541,6 @@ public class ClientImplementation extends Client implements UUIDResolver {
 
     Map<String, Service> osdConfigs= new HashMap<String, Service>();
     for (Service service : osds.getServicesList()) {
-
-
       //      // access the config files of each OSD
       //      Configuration config = RPCCaller.<String, Configuration> syncCall(SERVICES.DIR, this.dirServiceUserCredentials,
       //          this.dirServiceAuth, this.options, this, this.dirServiceAddresses, true, uuid.getUuid(),
@@ -527,8 +552,7 @@ public class ClientImplementation extends Client implements UUIDResolver {
       //              authHeader, userCreds, input);
       //        }
       //      });
-
-      osdConfigs.put(uuidToAddress(service.getUuid()), service);
+      osdConfigs.put(service.getUuid(), service);
     }
 
     return osdConfigs;
