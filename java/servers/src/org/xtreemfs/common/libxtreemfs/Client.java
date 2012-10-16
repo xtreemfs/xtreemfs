@@ -318,17 +318,24 @@ public abstract class Client {
   AddressToUUIDNotFoundException;
 
   /**
-   * Returns the available volumes.
-   * 
-   * @param userCredentials
-   *            Username and groups of the user who executes CreateVolume().
+   * Returns the available volumes on a MRC.
    * 
    * @throws AddressToUUIDNotFoundException
    * @throws IOException
    * @throws PosixErrorException
    * 
    */
-  public abstract String[] listVolumeNames(UserCredentials credentials) throws IOException;
+  public abstract Volumes listVolumes() throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
+
+  /**
+   * Returns the available volumes as list of names
+   * 
+   * @throws AddressToUUIDNotFoundException
+   * @throws IOException
+   * @throws PosixErrorException
+   * 
+   */
+  public abstract String[] listVolumeNames() throws IOException;
 
   /**
    * Returns the available volumes on a MRC.

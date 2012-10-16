@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.common.KeyValuePairs;
@@ -45,6 +46,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
+
+import com.google.protobuf.Descriptors.FieldDescriptor;
 
 /**
  * Standard implementation of the client. Used only internally.
@@ -433,12 +436,42 @@ public class ClientImplementation extends Client implements UUIDResolver {
   /*
    * (non-Javadoc)
    * 
-   * @see org.xtreemfs.common.libxtreemfs.Client#listVolumes(java.lang.String)
+   * @see org.xtreemfs.common.libxtreemfs.Client#listVolumes()
    */
   @Override
-  public String[] listVolumeNames(UserCredentials credentials) throws IOException {
-    assert (credentials != null);
+  public Volumes listVolumes() throws IOException {
+    ServiceSet sSet = RPCCaller.<String, ServiceSet> syncCall(SERVICES.DIR, this.dirServiceUserCredentials,
+        this.dirServiceAuth, this.options, this, this.dirServiceAddresses, true, null,
+        new CallGenerator<String, ServiceSet>() {
 
+      @Override
+      public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
+          UserCredentials userCreds, String input) throws IOException {
+        return ClientImplementation.this.dirServiceClient.xtreemfs_service_get_by_type(server, authHeader,
+            userCreds, ServiceType.SERVICE_TYPE_VOLUME);
+      }
+    });
+    
+    UUIDIterator iteratorWithAddresses = new UUIDIterator(); 
+    for (int i = 0; i < sSet.getServicesCount(); i++) {
+        for (KeyValuePair kvp : sSet.getServices(i).getData().getDataList()) {
+            if (kvp.getKey().substring(0, 3).equals("mrc")) {
+                String mrcUuid = kvp.getValue();
+                iteratorWithAddresses.addUUID(uuidToAddress(mrcUuid));
+                break;
+            }            
+        }        
+    }
+    return listVolumes(iteratorWithAddresses);
+  }
+  
+  /*
+   * (non-Javadoc)
+   * 
+   * @see org.xtreemfs.common.libxtreemfs.Client#listVolumeNames()
+   */
+  @Override
+  public String[] listVolumeNames() throws IOException {
     ServiceSet sSet = RPCCaller.<String, ServiceSet> syncCall(SERVICES.DIR, this.dirServiceUserCredentials,
         this.dirServiceAuth, this.options, this, this.dirServiceAddresses, true, null,
         new CallGenerator<String, ServiceSet>() {
@@ -461,7 +494,7 @@ public class ClientImplementation extends Client implements UUIDResolver {
   /*
    * (non-Javadoc)
    * 
-   * @see org.xtreemfs.common.libxtreemfs.UUIDResolver#uuidToAddress(java.lang. String, java.lang.String)
+   * @see org.xtreemfs.common.libxtreemfs.UUIDResolver#listOSDsAndAttributes()
    */
   @Override
   public Map<String, Service> listOSDsAndAttributes()
