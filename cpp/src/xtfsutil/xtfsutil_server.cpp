@@ -12,7 +12,9 @@
 #include <cassert>
 #include <errno.h>
 #include <list>
+#ifndef WIN32
 #include <sys/fcntl.h>
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 

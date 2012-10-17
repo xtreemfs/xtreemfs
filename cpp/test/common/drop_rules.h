@@ -86,18 +86,22 @@ class ProcIDFilterRule : public DropRule {
 /** This rule drops n requests without checking the proc_id. */
 class DropNRule : public DropRule {
 public:
-  DropNRule(size_t count)
-      : count_(count) {}
+  DropNRule(size_t count) : count_(count) {}
 
   virtual bool DropRequest(boost::uint32_t proc_id) {
-    return count_-- > 0 ? true : ++count_;
+    if (count_ - 1 > 0) {
+      --count_;
+      return true;
+    } else {
+      return false;
+    }
   }
 
   virtual bool IsPointless() const {
     return count_ == 0;
   }
 
-private:
+ private:
   size_t count_;
 };
 
@@ -120,7 +124,6 @@ public:
 private:
   size_t proc_id_;
 };
-
 
 }  // namespace rpc
 }  // namespace xtreemfs

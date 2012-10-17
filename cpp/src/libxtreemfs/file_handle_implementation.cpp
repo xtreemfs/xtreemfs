@@ -794,7 +794,7 @@ void FileHandleImplementation::WaitForPendingXCapRenewal() {
 void FileHandleImplementation::Close() {
   try {
     Flush(true);  // true = Tell Flush() the file will be closed.
-  } catch(const XtreemFSException& e) {
+  } catch(const XtreemFSException&) {
     // Current C++ does not allow to store the exception and rethrow it outside
     // the catch block. We also don't want to use an extra meta object with a
     // destructor that could execute the cleanup code.
@@ -932,7 +932,7 @@ void FileHandleImplementation::WriteBackFileSizeAsync(const Options& options) {
                                                    &rq,
                                                    this,
                                                    NULL);
-  } catch (const XtreemFSException& e) {
+  } catch (const XtreemFSException&) {
     // Do nothing.
   }
 }
@@ -968,7 +968,7 @@ void FileHandleImplementation::RenewXCapAsync(const Options& options) {
         &xcap_copy,
         this,
         NULL);
-  } catch (const XtreemFSException& e) {
+  } catch (const XtreemFSException&) {
     // do nothing.
   }
 }

@@ -271,7 +271,7 @@ void AsyncWriteHandler::WriteCommon(AsyncWriteBuffer* write_buffer,
     uuid_resolver_->UUIDToAddress(osd_uuid,
                                   &osd_address,
                                   uuid_resolver_options_);
-  } catch (const exception& e) {
+  } catch (const exception&) {
     if (is_rewrite) {
       // In case of errors, throw exception.
       --pending_writes_;
@@ -577,7 +577,7 @@ void AsyncWriteHandler::HandleCallback(
           Interruptibilizer::SleepInterruptible(
               delay_time_left.total_milliseconds(),
               interrupt_options_);
-        } catch (const boost::thread_interrupted& e) {
+        } catch (const boost::thread_interrupted&) {
           // Cleanup.
           if (delete_response_message) {
             delete response_message;

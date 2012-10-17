@@ -9,6 +9,7 @@
 #define CPP_INCLUDE_LIBXTREEMFS_VIVALDI_NODE_H_
 
 #include <string>
+#include <cstdint>
 
 #include "pbrpc/RPC.pb.h"
 #include "xtreemfs/GlobalTypes.pb.h"
@@ -60,23 +61,12 @@ class VivaldiNode {
   xtreemfs::pbrpc::VivaldiCoordinates ownCoordinates;
 };
 
-
 class OutputUtils {
  public:
-  static void WriteHexInt(std::ostringstream &oss, const int value);
-  static int ReadHexInt(const std::string &str, const int position);
-
-  static void WriteHexLongLong(std::ostringstream &oss, const int64_t value);
-  static int64_t ReadHexLongLong(const std::string &str, const int position);
-
-  static void StringToCoordinates(const std::string &str,
+  static void StringToCoordinates(const std::string& str,
                                   xtreemfs::pbrpc::VivaldiCoordinates &vc);
-
- private:
-  static const char trHex[16];
-  static const char frHex[22][2];
-  static char GetEquivalentByte(char ch);
 };
-}
+
+}  // namespace xtreemfs
 
 #endif  // CPP_INCLUDE_LIBXTREEMFS_VIVALDI_NODE_H_

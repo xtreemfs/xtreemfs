@@ -8,20 +8,13 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_CALLBACK_EXECUTE_SYNC_REQUEST_H_
 #define CPP_INCLUDE_LIBXTREEMFS_CALLBACK_EXECUTE_SYNC_REQUEST_H_
 
-#ifdef WIN32
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#else
-#include <ctime>
-#endif
-
 #include <algorithm>
 #include <boost/cstdint.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/thread/thread.hpp>
+#include <ctime>
 #include <google/protobuf/descriptor.h>
 #include <iostream>
 #include <string>
@@ -42,7 +35,6 @@ namespace xtreemfs {
 namespace rpc {
 class ClientRequestCallbackInterface;
 }  // namespace rpc
-
 
 /** Retries to execute the synchronous request "sync_function" up to "options.
  *  max_tries" times and may get interrupted. The "uuid_iterator" object is used
@@ -110,7 +102,7 @@ template<class ReturnMessageType, class F>
     bool has_failed;
     try {
       has_failed = response->HasFailed();
-    } catch (const boost::thread_interrupted& e) {
+    } catch (const boost::thread_interrupted&) {
         if (response != NULL) {
           // Wait until request was processed - otherwise leaks and accesses
           // to deleted memory may occur.
@@ -222,9 +214,9 @@ template<class ReturnMessageType, class F>
 
           try {
             Interruptibilizer::SleepInterruptible(
-                delay_time_left.total_milliseconds(),
+                static_cast<int>(delay_time_left.total_milliseconds()),
                 options);
-          } catch (const boost::thread_interrupted& e) {
+          } catch (const boost::thread_interrupted&) {
             if (response != NULL) {
               // Free response.
               response->DeleteBuffers();

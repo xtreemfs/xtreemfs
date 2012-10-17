@@ -270,7 +270,10 @@ template <class Derived> class TestRPCServer {
     using boost::asio::ip::tcp;
     using xtreemfs::util::Logging;
 
+#ifndef WIN32
     signal(SIGUSR2, DummySignalHandler);
+#endif
+
     for (;;) {
       if (boost::this_thread::interruption_requested()) {
         if (Logging::log->loggingActive(xtreemfs::util::LEVEL_DEBUG)) {
@@ -297,7 +300,7 @@ template <class Derived> class TestRPCServer {
           active_sessions_[new_thread->get_id()] = new_thread;
           active_sessions_socks_[new_thread->get_id()] = sock;
         }
-      } catch (const boost::system::system_error& ec) {
+      } catch (const boost::system::system_error&) {
         break;
       }
     }

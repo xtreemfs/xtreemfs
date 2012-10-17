@@ -371,7 +371,7 @@ void Vivaldi::Run() {
         current_retries.clear();
         retries_in_a_row = 0;
       }
-    } catch(const boost::thread_interrupted& e) {
+    } catch(const boost::thread_interrupted&) {
       if (ping_response.get()) {
         ping_response->DeleteBuffers();
       }

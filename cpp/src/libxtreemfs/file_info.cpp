@@ -295,7 +295,7 @@ void FileInfo::FlushPendingFileSizeUpdate(FileHandleImplementation* file_handle,
 
       try {
         file_handle->WriteBackFileSize(response_copy, close_file);
-      } catch (const XtreemFSException& e) {
+      } catch (const XtreemFSException&) {
         osd_write_response_status_ = kDirty;
         throw;  // Rethrow error.
       }

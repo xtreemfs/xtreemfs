@@ -130,7 +130,7 @@ void ClientConnection::CreateChannel() {
   if (socket_ != NULL) {
     try {
       socket_->close();
-    } catch (const boost::system::system_error& e) {
+    } catch (const boost::system::system_error&) {
       // Ignore close errors. Needed for Windows.
     }
     delete socket_;
@@ -345,7 +345,7 @@ void ClientConnection::Close(const std::string& error) {
     if (socket_) {
       socket_->close();
     }
-  } catch (const boost::system::system_error& e) {
+  } catch (const boost::system::system_error&) {
     // Ignore close errors. Needed for Windows.
   }
   delete socket_;
