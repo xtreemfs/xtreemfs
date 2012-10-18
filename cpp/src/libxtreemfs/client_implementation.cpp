@@ -236,8 +236,8 @@ void ClientImplementation::CreateVolume(
   SimpleUUIDIterator temp_uuid_iterator_with_addresses;
   temp_uuid_iterator_with_addresses.AddUUID(mrc_address);
 
-  boost::scoped_ptr< SyncCallback<emptyResponse> > response(
-      ExecuteSyncRequest< SyncCallback<emptyResponse>* >(
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::xtreemfs_mkvol_sync,
               &mrc_service_client,
@@ -267,8 +267,8 @@ void ClientImplementation::DeleteVolume(
   SimpleUUIDIterator temp_uuid_iterator_with_addresses;
   temp_uuid_iterator_with_addresses.AddUUID(mrc_address);
 
-  boost::scoped_ptr< SyncCallback<emptyResponse> > response(
-      ExecuteSyncRequest< SyncCallback<emptyResponse>* >(
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::xtreemfs_rmvol_sync,
               &mrc_service_client,
@@ -304,8 +304,8 @@ xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(
   user_credentials.set_username("xtreemfs");
 
   // Retrieve the list of volumes from the MRC.
-  boost::scoped_ptr< SyncCallback<xtreemfs::pbrpc::Volumes> > response(
-      ExecuteSyncRequest< SyncCallback<xtreemfs::pbrpc::Volumes>* >(
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::xtreemfs_lsvol_sync,
               &mrc_service_client,
@@ -324,7 +324,7 @@ xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(
   delete response->error();
 
   // Return the list of volumes.
-  return response->response();
+  return static_cast<xtreemfs::pbrpc::Volumes*>(response->response());
 }
 
 void ClientImplementation::UUIDToAddress(const std::string& uuid,
@@ -347,8 +347,8 @@ void ClientImplementation::UUIDToAddress(const std::string& uuid,
   addressMappingGetRequest rq = addressMappingGetRequest();
   rq.set_uuid(uuid);
 
-  boost::scoped_ptr< SyncCallback<AddressMappingSet> > response(
-      ExecuteSyncRequest< SyncCallback<AddressMappingSet>* >(
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::DIRServiceClient::
                   xtreemfs_address_mappings_get_sync,
@@ -364,7 +364,8 @@ void ClientImplementation::UUIDToAddress(const std::string& uuid,
           true,
           false));
 
-  AddressMappingSet* set = response->response();
+  AddressMappingSet* set = static_cast<AddressMappingSet*>(
+      response->response());
   for (int i = 0; i < set->mappings_size(); i++) {
     if (set->mappings(i).protocol() == PBRPCURL::SCHEME_PBRPC
         || set->mappings(i).protocol() == PBRPCURL::SCHEME_PBRPCS
@@ -416,8 +417,8 @@ void ClientImplementation::VolumeNameToMRCUUID(const std::string& volume_name,
   serviceGetByNameRequest rq = serviceGetByNameRequest();
   rq.set_name(parsed_volume_name);
 
-  boost::scoped_ptr< SyncCallback<ServiceSet> > response(
-      ExecuteSyncRequest< SyncCallback<ServiceSet>* >(
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::DIRServiceClient::
                   xtreemfs_service_get_by_name_sync,
@@ -433,7 +434,7 @@ void ClientImplementation::VolumeNameToMRCUUID(const std::string& volume_name,
           true,
           false));
 
-  ServiceSet *service_set = response->response();
+  ServiceSet* service_set = static_cast<ServiceSet*>(response->response());
   *mrc_uuid = "";
   for (int i = 0; i < service_set->services_size(); i++) {
     Service service = service_set->services(i);
@@ -477,8 +478,8 @@ void ClientImplementation::VolumeNameToMRCUUID(const std::string& volume_name,
   serviceGetByNameRequest rq = serviceGetByNameRequest();
   rq.set_name(parsed_volume_name);
 
-  boost::scoped_ptr< SyncCallback<ServiceSet> > response(
-      ExecuteSyncRequest< SyncCallback<ServiceSet>* >(
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::DIRServiceClient::
                   xtreemfs_service_get_by_name_sync,
@@ -495,7 +496,7 @@ void ClientImplementation::VolumeNameToMRCUUID(const std::string& volume_name,
           false));
 
   bool mrc_found = false;
-  ServiceSet *service_set = response->response();
+  ServiceSet* service_set = static_cast<ServiceSet*>(response->response());
   for (int i = 0; i < service_set->services_size(); i++) {
     Service service = service_set->services(i);
     if ((service.type() == SERVICE_TYPE_VOLUME)

@@ -8,25 +8,21 @@
 #ifndef CPP_INCLUDE_RPC_SYNC_CALLBACK_H_
 #define CPP_INCLUDE_RPC_SYNC_CALLBACK_H_
 
-#include <boost/cstdint.hpp>
+#include <cstdint>
 #include <boost/thread.hpp>
 
 #include "pbrpc/RPC.pb.h"
 #include "rpc/client_request_callback_interface.h"
-#include "rpc/client_request.h"
-
-#include "util/logging.h"
 
 namespace xtreemfs {
 namespace rpc {
-using boost::int32_t;
-using boost::uint32_t;
 
-template <class ReturnMessageType> class SyncCallback
-    : public ClientRequestCallbackInterface {
+class ClientRequest;
+
+class SyncCallbackBase : public ClientRequestCallbackInterface {
  public:
-  SyncCallback();
-  virtual ~SyncCallback();
+  SyncCallbackBase();
+  virtual ~SyncCallbackBase();
 
   /**
    * Returns if the rpc has finished (response was received or error).
@@ -56,7 +52,7 @@ template <class ReturnMessageType> class SyncCallback
    * @return pointer to response message, caller is responsible for
    * deleting the object or calling deleteBuffers
    */
-  ReturnMessageType* response();
+  ::google::protobuf::Message* response();
 
   /**
    * Returns the length of the response data or 0.
@@ -80,90 +76,19 @@ template <class ReturnMessageType> class SyncCallback
   void DeleteBuffers();
 
   /** internal callback, ignore */
-  virtual void RequestCompleted(ClientRequest *rq);
+  virtual void RequestCompleted(ClientRequest* rq);
 
  private:
   boost::mutex cond_lock_;
   boost::condition_variable response_avail_;
-  ClientRequest *request_;
+  ClientRequest* request_;
 
   void WaitForResponse();
 };
 
+// TODO(hupfeld): update pbrpcgen to emit dynamic types.
 template <class ReturnMessageType>
-SyncCallback<ReturnMessageType>::SyncCallback()
-    : cond_lock_(),
-      response_avail_(),
-      request_(NULL) {
-}
-
-template <class ReturnMessageType>
-SyncCallback<ReturnMessageType>::~SyncCallback() {
-  // TODO(mberlin): Is a lock here really needed?!
-  boost::lock_guard<boost::mutex> lock(cond_lock_);
-  delete request_;
-}
-
-template <class ReturnMessageType>
-void SyncCallback<ReturnMessageType>::RequestCompleted(ClientRequest* rq) {
-  boost::lock_guard<boost::mutex> lock(cond_lock_);
-  request_ = rq;
-  response_avail_.notify_all();
-}
-
-template <class ReturnMessageType>
-void SyncCallback<ReturnMessageType>::WaitForResponse() {
-  boost::unique_lock<boost::mutex> lock(cond_lock_);
-  while (!request_) {
-    response_avail_.wait(lock);
-  }
-}
-
-template <class ReturnMessageType>
-bool SyncCallback<ReturnMessageType>::HasFinished() {
-  boost::unique_lock<boost::mutex> lock(cond_lock_);
-  return (request_ != NULL);
-}
-
-template <class ReturnMessageType>
-bool SyncCallback<ReturnMessageType>::HasFailed() {
-  WaitForResponse();
-  return (request_->error() != NULL);
-}
-
-template <class ReturnMessageType>
-uint32_t SyncCallback<ReturnMessageType>::data_length() {
-  WaitForResponse();
-  return (request_->resp_data_len());
-}
-
-template <class ReturnMessageType>
-char* SyncCallback<ReturnMessageType>::data() {
-  WaitForResponse();
-  return (request_->resp_data());
-}
-
-template <class ReturnMessageType>
-xtreemfs::pbrpc::RPCHeader::ErrorResponse*
-SyncCallback<ReturnMessageType>::error() {
-  WaitForResponse();
-  return request_->error();
-}
-
-template <class ReturnMessageType>
-ReturnMessageType* SyncCallback<ReturnMessageType>::response() {
-  WaitForResponse();
-  return reinterpret_cast<ReturnMessageType*>(request_->resp_message());
-}
-
-template <class ReturnMessageType>
-void SyncCallback<ReturnMessageType>::DeleteBuffers() {
-  if (request_) {
-    request_->clear_error();
-    request_->clear_resp_message();
-    request_->clear_resp_data();
-  }
-}
+class SyncCallback : public SyncCallbackBase {};
 
 }  // namespace rpc
 }  // namespace xtreemfs

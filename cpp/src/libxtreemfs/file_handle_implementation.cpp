@@ -159,8 +159,8 @@ int FileHandleImplementation::Read(
     }
 
     // TODO(mberlin): Update xloc list if newer version found (on OSD?).
-    boost::scoped_ptr< SyncCallback<ObjectData> > response(
-        ExecuteSyncRequest< SyncCallback<ObjectData>* >(
+    boost::scoped_ptr<rpc::SyncCallbackBase> response(
+        ExecuteSyncRequest(
             boost::bind(&xtreemfs::pbrpc::OSDServiceClient::read_sync,
                         osd_service_client_,
                         _1,
@@ -175,17 +175,18 @@ int FileHandleImplementation::Read(
             false,
             this,
             rq.mutable_file_credentials()->mutable_xcap()));
-
+    xtreemfs::pbrpc::ObjectData* data = 
+        static_cast<xtreemfs::pbrpc::ObjectData*>(response->response());
     // Insert data into read-buffer
     int data_length = response->data_length();
     memcpy(operations[j].data, response->data(), data_length);
     // If zero_padding() > 0, the gap has to be filled with zeroes.
     memset(operations[j].data + data_length,
            0,
-           response->response()->zero_padding());
+           data->zero_padding());
 
     received_data += response->data_length() +
-                     response->response()->zero_padding();
+                     data->zero_padding();
     response->DeleteBuffers();
   }
 
@@ -320,8 +321,8 @@ int FileHandleImplementation::Write(
         uuid_iterator = osd_uuid_iterator_;
       }
 
-      boost::scoped_ptr< SyncCallback<OSDWriteResponse> > response(
-          ExecuteSyncRequest< SyncCallback<OSDWriteResponse>* >(
+      boost::scoped_ptr<rpc::SyncCallbackBase> response(
+          ExecuteSyncRequest(
               boost::bind(
                   &xtreemfs::pbrpc::OSDServiceClient::write_sync,
                   osd_service_client_,
@@ -339,13 +340,13 @@ int FileHandleImplementation::Write(
               false,
               this,
               write_request.mutable_file_credentials()->mutable_xcap()));
-
+      xtreemfs::pbrpc::OSDWriteResponse* write_response =
+          static_cast<xtreemfs::pbrpc::OSDWriteResponse*>(response->response());
       // If the filesize has changed, remember OSDWriteResponse for later file
       // size update towards the MRC (executed by
       // VolumeImplementation::PeriodicFileSizeUpdate).
-      if (response->response()->has_size_in_bytes()) {
-        if (file_info_->TryToUpdateOSDWriteResponse(response->response(),
-                                                    xcap_)) {
+      if (write_response->has_size_in_bytes()) {
+        if (file_info_->TryToUpdateOSDWriteResponse(write_response, xcap_)) {
           // Free everything except the response.
           delete [] response->data();
           delete response->error();
@@ -398,8 +399,8 @@ void FileHandleImplementation::Truncate(
   }
 
   // 1. Call truncate at the MRC (in order to increase the trunc epoch).
-  boost::scoped_ptr< SyncCallback<XCap> > response(
-    ExecuteSyncRequest< SyncCallback<XCap>* >(
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+    ExecuteSyncRequest(
         boost::bind(
             &xtreemfs::pbrpc::MRCServiceClient::ftruncate_sync,
             mrc_service_client_,
@@ -438,8 +439,8 @@ void FileHandleImplementation::TruncatePhaseTwoAndThree(
   }
   truncate_rq.set_new_file_size(new_file_size);
 
-  boost::scoped_ptr< SyncCallback<OSDWriteResponse> > response(
-      ExecuteSyncRequest< SyncCallback<OSDWriteResponse>* >(
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::OSDServiceClient::truncate_sync,
               osd_service_client_,
@@ -455,14 +456,16 @@ void FileHandleImplementation::TruncatePhaseTwoAndThree(
           false,
           this,
           truncate_rq.mutable_file_credentials()->mutable_xcap()));
+  xtreemfs::pbrpc::OSDWriteResponse* write_response =
+      static_cast<xtreemfs::pbrpc::OSDWriteResponse*>(response->response());
 
-  assert(response->response()->has_size_in_bytes());
+  assert(write_response->has_size_in_bytes());
   // Free the rest of the msg.
   delete [] response->data();
   delete response->error();
 
   // Register the osd write response at this file's FileInfo.
-  file_info_->TryToUpdateOSDWriteResponse(response->response(), xcap_);
+  file_info_->TryToUpdateOSDWriteResponse(write_response, xcap_);
 
   // 3. Update the file size at the MRC.
   file_info_->FlushPendingFileSizeUpdate(this);
@@ -520,9 +523,9 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
         ->CopyFrom(xcap_);
   }
 
-  boost::scoped_ptr< SyncCallback<Lock> > response;
+  boost::scoped_ptr<rpc::SyncCallbackBase> response;
   if (!wait_for_lock) {
-    response.reset(ExecuteSyncRequest< SyncCallback<Lock>* >(
+    response.reset(ExecuteSyncRequest(
         boost::bind(
             &xtreemfs::pbrpc::OSDServiceClient::xtreemfs_lock_acquire_sync,
             osd_service_client_,
@@ -543,7 +546,7 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
     int retries_left = volume_options_.max_tries;
     while (retries_left == 0 || retries_left--) {
       try {
-        response.reset(ExecuteSyncRequest< SyncCallback<Lock>* >(
+        response.reset(ExecuteSyncRequest(
             boost::bind(
                 &xtreemfs::pbrpc::OSDServiceClient::xtreemfs_lock_acquire_sync,
                 osd_service_client_,
@@ -575,9 +578,11 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
   delete response->error();
 
   // "Cache" new lock.
-  file_info_->PutLock(*(response->response()));
-
-  return response->response();
+  xtreemfs::pbrpc::Lock* lock =
+      static_cast<xtreemfs::pbrpc::Lock*>(response->response());
+  file_info_->PutLock(*lock);
+  
+  return lock;
 }
 
 xtreemfs::pbrpc::Lock* FileHandleImplementation::CheckLock(
@@ -622,8 +627,8 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::CheckLock(
         ->CopyFrom(xcap_);
   }
 
-  boost::scoped_ptr< SyncCallback<Lock> > response(
-    ExecuteSyncRequest< SyncCallback<Lock>* >(
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+    ExecuteSyncRequest(
         boost::bind(
             &xtreemfs::pbrpc::OSDServiceClient::xtreemfs_lock_check_sync,
             osd_service_client_,
@@ -643,7 +648,7 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::CheckLock(
   delete[] response->data();
   delete response->error();
 
-  return response->response();
+  return static_cast<xtreemfs::pbrpc::Lock*>(response->response());
 }
 
 void FileHandleImplementation::ReleaseLock(
@@ -690,8 +695,8 @@ void FileHandleImplementation::ReleaseLock(
   }
   unlock_request.mutable_lock_request()->CopyFrom(lock);
 
-  boost::scoped_ptr< SyncCallback<emptyResponse> > response(
-    ExecuteSyncRequest< SyncCallback<emptyResponse>* >(
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+    ExecuteSyncRequest(
         boost::bind(
             &xtreemfs::pbrpc::OSDServiceClient::xtreemfs_lock_release_sync,
             osd_service_client_,
@@ -764,8 +769,8 @@ void FileHandleImplementation::PingReplica(
   SimpleUUIDIterator temp_uuid_iterator;
   temp_uuid_iterator.AddUUID(osd_uuid);
 
-  boost::scoped_ptr< SyncCallback<ObjectData> > response(
-      ExecuteSyncRequest< SyncCallback<ObjectData>* >(
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(&xtreemfs::pbrpc::OSDServiceClient::read_sync,
               osd_service_client_,
               _1,
@@ -874,8 +879,8 @@ void FileHandleImplementation::WriteBackFileSize(
     rq.mutable_coordinates()->CopyFrom(this->client_->GetVivaldiCoordinates());
   }
 
-  boost::scoped_ptr< SyncCallback<timestampResponse> > response(
-      ExecuteSyncRequest< SyncCallback<timestampResponse>* >(
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::
                   xtreemfs_update_file_size_sync,

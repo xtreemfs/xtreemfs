@@ -21,6 +21,7 @@
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/pbrpc_url.h"
 #include "libxtreemfs/simple_uuid_iterator.h"
+#include "libxtreemfs/xtreemfs_exception.h"
 #include "util/logging.h"
 #include "util/zipf_generator.h"
 #include "xtreemfs/GlobalTypes.pb.h"
@@ -93,7 +94,7 @@ void Vivaldi::Run() {
   ZipfGenerator rank_generator(vivaldi_options_.vivaldi_zipf_generator_skew);
 
   for (;;) {
-    boost::scoped_ptr< SyncCallback<xtreemfs_pingMesssage> > ping_response;
+    boost::scoped_ptr<rpc::SyncCallbackBase> ping_response;
     try {
       // Get a list of OSDs from the DIR(s)
       if ((vivaldi_iterations %
@@ -148,7 +149,7 @@ void Vivaldi::Run() {
 
         // execute sync ping
         ping_response.reset(
-            ExecuteSyncRequest< SyncCallback<xtreemfs_pingMesssage>* >(
+            ExecuteSyncRequest(
                 boost::bind(
                     &xtreemfs::pbrpc::OSDServiceClient::xtreemfs_ping_sync,
                     osd_client_,
@@ -167,8 +168,10 @@ void Vivaldi::Run() {
         boost::posix_time::time_duration rtt = end_time - start_time;
         uint64_t measured_rtt = rtt.total_milliseconds();
 
-        random_osd_vivaldi_coordinates = ping_response->response()
-            ->mutable_coordinates();
+        xtreemfs::pbrpc::xtreemfs_pingMesssage* ping_response_obj =
+            static_cast<xtreemfs::pbrpc::xtreemfs_pingMesssage*>(
+            ping_response->response());
+        random_osd_vivaldi_coordinates = ping_response_obj->mutable_coordinates();
 
         if (Logging::log->loggingActive(LEVEL_DEBUG)) {
           Logging::log->getLog(LEVEL_DEBUG)
@@ -236,10 +239,10 @@ void Vivaldi::Run() {
             Logging::log->getLog(LEVEL_DEBUG)
                 << "Vivaldi: Sending coordinates to DIR." << endl;
           }
-          boost::scoped_ptr< SyncCallback<emptyResponse> > response;
+          boost::scoped_ptr<rpc::SyncCallbackBase> response;
           try {
             response.reset(
-                ExecuteSyncRequest< SyncCallback<emptyResponse>* >(
+                ExecuteSyncRequest(
                     boost::bind(
                         &xtreemfs::pbrpc::DIRServiceClient
                             ::xtreemfs_vivaldi_client_update_sync,
@@ -386,13 +389,13 @@ bool Vivaldi::UpdateKnownOSDs(list<KnownOSD>* updated_osds,
   // TODO(mno): Requesting the list of all OSDs does not scale with the number
   //            of services. Therefore, request only a subset of it.
   bool retval = true;
-  boost::scoped_ptr< SyncCallback<ServiceSet> > response;
+  boost::scoped_ptr<rpc::SyncCallbackBase> response;
 
   try {
     serviceGetByTypeRequest request;
     request.set_type(SERVICE_TYPE_OSD);
 
-    response.reset(ExecuteSyncRequest< SyncCallback<ServiceSet>* >(
+    response.reset(ExecuteSyncRequest(
         boost::bind(
             &xtreemfs::pbrpc::DIRServiceClient
                 ::xtreemfs_service_get_by_type_sync,
@@ -408,7 +411,7 @@ bool Vivaldi::UpdateKnownOSDs(list<KnownOSD>* updated_osds,
         true,
         false));
 
-    ServiceSet* received_osds = response->response();
+    ServiceSet* received_osds = static_cast<ServiceSet*>(response->response());
     updated_osds->clear();
 
     // Fill the list, ignoring every offline OSD

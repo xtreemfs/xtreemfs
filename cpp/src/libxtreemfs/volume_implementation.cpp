@@ -23,6 +23,7 @@
 #include "libxtreemfs/uuid_iterator.h"
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "rpc/client.h"
+#include "util/error_log.h"
 #include "util/logging.h"
 #include "xtreemfs/MRC.pb.h"
 #include "xtreemfs/MRCServiceClient.h"
@@ -148,8 +149,8 @@ StatVFS* VolumeImplementation::StatFS(
   statvfsRequest rq;
   rq.set_volume_name(volume_name_);
   rq.set_known_etag(0);
-  boost::scoped_ptr< SyncCallback<StatVFS> > response(
-      ExecuteSyncRequest< SyncCallback<StatVFS>* >(
+  boost::scoped_ptr<rpc::SyncCallbackBase > response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::statvfs_sync,
               mrc_service_client_.get(),
@@ -165,7 +166,7 @@ StatVFS* VolumeImplementation::StatFS(
   // Delete everything except the response.
   delete[] response->data();
   delete response->error();
-  return response->response();
+  return static_cast<StatVFS*>(response->response());
 }
 
 void VolumeImplementation::ReadLink(
@@ -175,8 +176,8 @@ void VolumeImplementation::ReadLink(
   readlinkRequest rq;
   rq.set_volume_name(volume_name_);
   rq.set_path(path);
-  boost::scoped_ptr< SyncCallback<readlinkResponse> > response(
-      ExecuteSyncRequest< SyncCallback<readlinkResponse>* >(
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::readlink_sync,
               mrc_service_client_.get(),
@@ -189,9 +190,12 @@ void VolumeImplementation::ReadLink(
           volume_options_.max_tries,
           volume_options_));
 
+  readlinkResponse* readlink_response =
+      static_cast<readlinkResponse*>(response->response());
+
   // The XtreemFS MRC always returns one resolved target or throws an EINVAL.
-  assert(response->response()->link_target_path_size() == 1);
-  *link_target_path = response->response()->link_target_path(0);
+  assert(readlink_response->link_target_path_size() == 1);
+  *link_target_path = readlink_response->link_target_path(0);
   response->DeleteBuffers();
 }
 
@@ -203,8 +207,8 @@ void VolumeImplementation::Symlink(
   rq.set_volume_name(volume_name_);
   rq.set_target_path(target_path);
   rq.set_link_path(link_path);
-  boost::scoped_ptr< SyncCallback<timestampResponse> > response(
-      ExecuteSyncRequest< SyncCallback<timestampResponse>* >(
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::symlink_sync,
               mrc_service_client_.get(),
@@ -216,11 +220,13 @@ void VolumeImplementation::Symlink(
           uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
+  timestampResponse* ts_response = static_cast<timestampResponse*>(
+      response->response());
 
   const string parent_dir = ResolveParentDirectory(link_path);
   metadata_cache_.UpdateStatTime(
       parent_dir,
-      response->response()->timestamp_s(),
+      ts_response->timestamp_s(),
       static_cast<Setattrs>(SETATTR_CTIME | SETATTR_MTIME));
   // TODO(mberlin): Retrieve stat as optional member of the response instead
   //                and update cached DirectoryEntries accordingly.
@@ -237,8 +243,8 @@ void VolumeImplementation::Link(
   rq.set_volume_name(volume_name_);
   rq.set_target_path(target_path);
   rq.set_link_path(link_path);
-  boost::scoped_ptr< SyncCallback<timestampResponse> > response(
-      ExecuteSyncRequest< SyncCallback<timestampResponse>* >(
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::link_sync,
               mrc_service_client_.get(),
@@ -250,11 +256,13 @@ void VolumeImplementation::Link(
           uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
+  timestampResponse* ts_response = static_cast<timestampResponse*>(
+      response->response());
 
   const string parent_dir = ResolveParentDirectory(link_path);
   metadata_cache_.UpdateStatTime(
       parent_dir,
-      response->response()->timestamp_s(),
+      ts_response->timestamp_s(),
       static_cast<Setattrs>(SETATTR_CTIME | SETATTR_MTIME));
   // TODO(mberlin): Retrieve stat as optional member of the response instead
   //                and update cached DirectoryEntries accordingly.
@@ -275,9 +283,9 @@ void VolumeImplementation::Access(
   rq.set_volume_name(volume_name_);
   rq.set_path(path);
   rq.set_flags(flags);
-
-  boost::scoped_ptr< SyncCallback<emptyResponse> > response(
-      ExecuteSyncRequest< SyncCallback<emptyResponse>* >(
+  
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::access_sync,
               mrc_service_client_.get(),
@@ -338,9 +346,9 @@ FileHandle* VolumeImplementation::OpenFile(
   if (volume_options_.vivaldi_enable) {
     rq.mutable_coordinates()->CopyFrom(this->client_->GetVivaldiCoordinates());
   }
-
-  boost::scoped_ptr< SyncCallback<openResponse> > response(
-      ExecuteSyncRequest< SyncCallback<openResponse>* >(
+  
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::open_sync,
               mrc_service_client_.get(),
@@ -353,7 +361,8 @@ FileHandle* VolumeImplementation::OpenFile(
           volume_options_.max_tries,
           volume_options_));
 
-  openResponse* open_response = response->response();
+  openResponse* open_response = static_cast<openResponse*>(
+      response->response());
   // We must have obtained file credentials.
   assert(open_response->has_creds());
 
@@ -522,9 +531,9 @@ void VolumeImplementation::GetAttrHelper(
     rq.set_volume_name(volume_name_);
     rq.set_path(path);
     rq.set_known_etag(0);
-
-    boost::scoped_ptr< SyncCallback<getattrResponse> > response(
-        ExecuteSyncRequest< SyncCallback<getattrResponse>* >(
+    
+    boost::scoped_ptr<rpc::SyncCallbackBase> response(
+        ExecuteSyncRequest(
             boost::bind(
                 &xtreemfs::pbrpc::MRCServiceClient::getattr_sync,
                 mrc_service_client_.get(),
@@ -536,8 +545,10 @@ void VolumeImplementation::GetAttrHelper(
             uuid_resolver_,
             volume_options_.max_tries,
             volume_options_));
+    getattrResponse* getattr = static_cast<getattrResponse*>(
+        response->response());
 
-    stat_buffer->CopyFrom(response->response()->stbuf());
+    stat_buffer->CopyFrom(getattr->stbuf());
     if (stat_buffer->nlink() > 1) {  // Do not cache hard links.
       metadata_cache_.Invalidate(path);
     } else {
@@ -630,9 +641,9 @@ void VolumeImplementation::SetAttr(
   rq.set_path(path);
   rq.mutable_stbuf()->CopyFrom(stat);
   rq.set_to_set(to_set);
-
-  boost::scoped_ptr< SyncCallback<timestampResponse> > response(
-      ExecuteSyncRequest< SyncCallback<timestampResponse>* >(
+  
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::setattr_sync,
               mrc_service_client_.get(),
@@ -644,13 +655,15 @@ void VolumeImplementation::SetAttr(
           uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
+  timestampResponse* ts_response = static_cast<timestampResponse*>(
+      response->response());
 
   // "chmod" or "chown" operations result into updating the ctime attribute.
   if ((to_set &  SETATTR_MODE) || (to_set &  SETATTR_UID) ||
       (to_set &  SETATTR_GID)) {
     to_set = static_cast<Setattrs>(to_set | SETATTR_CTIME);
     rq.mutable_stbuf()->set_ctime_ns(static_cast<boost::uint64_t>(
-        response->response()->timestamp_s()) * 1000000000);
+        ts_response->timestamp_s()) * 1000000000);
   }
 
   // Do not cache hardlinks or chmod operations which try to set the SGID bit
@@ -671,9 +684,9 @@ void VolumeImplementation::Unlink(
   unlinkRequest rq;
   rq.set_volume_name(volume_name_);
   rq.set_path(path);
-
-  boost::scoped_ptr< SyncCallback<unlinkResponse> > response(
-      ExecuteSyncRequest< SyncCallback<unlinkResponse>* >(
+  
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::unlink_sync,
               mrc_service_client_.get(),
@@ -685,19 +698,21 @@ void VolumeImplementation::Unlink(
           uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
+  unlinkResponse* unlink_response = static_cast<unlinkResponse*>(
+      response->response());
 
   // 2. Invalidate metadata caches.
   metadata_cache_.Invalidate(path);
   const string parent_dir = ResolveParentDirectory(path);
   metadata_cache_.UpdateStatTime(
       parent_dir,
-      response->response()->timestamp_s(),
+      unlink_response->timestamp_s(),
       static_cast<Setattrs>(SETATTR_CTIME | SETATTR_MTIME));
   metadata_cache_.InvalidateDirEntry(parent_dir, GetBasename(path));
 
   // 3. Delete objects of all replicas on the OSDs.
-  if (response->response()->has_creds()) {
-    UnlinkAtOSD(response->response()->creds(), path);
+  if (unlink_response->has_creds()) {
+    UnlinkAtOSD(unlink_response->creds(), path);
   }
 
   response->DeleteBuffers();
@@ -718,9 +733,9 @@ void VolumeImplementation::UnlinkAtOSD(const FileCredentials& fc,
     osd_uuid_iterator.ClearAndAddUUID(GetOSDUUIDFromXlocSet(xlocs,
                                                             k,
                                                             0));
-
-    boost::scoped_ptr< SyncCallback<emptyResponse> > response_osd(
-        ExecuteSyncRequest< SyncCallback<emptyResponse>* >(
+    
+    boost::scoped_ptr<rpc::SyncCallbackBase> response(
+        ExecuteSyncRequest(
             boost::bind(&xtreemfs::pbrpc::OSDServiceClient::unlink_sync,
                 osd_service_client_.get(),
                 _1,
@@ -731,7 +746,7 @@ void VolumeImplementation::UnlinkAtOSD(const FileCredentials& fc,
             uuid_resolver_,
             volume_options_.max_tries,
             volume_options_));
-    response_osd->DeleteBuffers();
+    response->DeleteBuffers();
   }
 }
 
@@ -747,9 +762,9 @@ void VolumeImplementation::Rename(
   rq.set_volume_name(volume_name_);
   rq.set_source_path(path);
   rq.set_target_path(new_path);
-
-  boost::scoped_ptr< SyncCallback<renameResponse> > response(
-      ExecuteSyncRequest< SyncCallback<renameResponse>* >(
+  
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::rename_sync,
               mrc_service_client_.get(),
@@ -761,24 +776,26 @@ void VolumeImplementation::Rename(
           uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
+  renameResponse* rename_response = static_cast<renameResponse*>(
+      response->response());
 
   // 2. Remove file content of any previous files at "new_path".
-  if (response->response()->has_creds()) {
-    UnlinkAtOSD(response->response()->creds(), new_path);
+  if (rename_response->has_creds()) {
+    UnlinkAtOSD(rename_response->creds(), new_path);
   }
 
   // 3. Update caches
   // Update the timestamps of parents of both directories.
   const std::string parent_path = ResolveParentDirectory(path);
   const std::string parent_new_path = ResolveParentDirectory(new_path);
-  if (response->response()->timestamp_s() != 0) {
+  if (rename_response->timestamp_s() != 0) {
     metadata_cache_.UpdateStatTime(
         parent_path,
-        response->response()->timestamp_s(),
+        rename_response->timestamp_s(),
         static_cast<Setattrs>(SETATTR_CTIME | SETATTR_MTIME));
     metadata_cache_.UpdateStatTime(
         parent_new_path,
-        response->response()->timestamp_s(),
+        rename_response->timestamp_s(),
         static_cast<Setattrs>(SETATTR_CTIME | SETATTR_MTIME));
   }
   metadata_cache_.InvalidateDirEntry(parent_path, GetBasename(path));
@@ -796,7 +813,7 @@ void VolumeImplementation::Rename(
   //  and some do not."
   // => XtreemFS does so, i.e. update the client's cache, too.
   metadata_cache_.UpdateStatTime(new_path,
-                                 response->response()->timestamp_s(),
+                                 rename_response->timestamp_s(),
                                  static_cast<Setattrs>(SETATTR_CTIME));
 
   // Rename path in all open FileInfo objects.
@@ -820,9 +837,9 @@ void VolumeImplementation::MakeDirectory(
   rq.set_volume_name(volume_name_);
   rq.set_path(path);
   rq.set_mode(mode);
-
-  boost::scoped_ptr< SyncCallback<timestampResponse> > response(
-      ExecuteSyncRequest< SyncCallback<timestampResponse>* >(
+  
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::mkdir_sync,
               mrc_service_client_.get(),
@@ -834,11 +851,13 @@ void VolumeImplementation::MakeDirectory(
           uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
+  timestampResponse* ts_response = static_cast<timestampResponse*>(
+      response->response());
 
   const string parent_dir = ResolveParentDirectory(path);
   metadata_cache_.UpdateStatTime(
       parent_dir,
-      response->response()->timestamp_s(),
+      ts_response->timestamp_s(),
       static_cast<Setattrs>(SETATTR_CTIME | SETATTR_MTIME));
   // TODO(mberlin): Retrieve stat as optional member of openResponse instead
   //                and update cached DirectoryEntries accordingly.
@@ -853,9 +872,9 @@ void VolumeImplementation::DeleteDirectory(
   rmdirRequest rq;
   rq.set_volume_name(volume_name_);
   rq.set_path(path);
-
-  boost::scoped_ptr< SyncCallback<timestampResponse> > response(
-      ExecuteSyncRequest< SyncCallback<timestampResponse>* >(
+  
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::rmdir_sync,
               mrc_service_client_.get(),
@@ -867,11 +886,13 @@ void VolumeImplementation::DeleteDirectory(
           uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
+  timestampResponse* ts_response = static_cast<timestampResponse*>(
+      response->response());
 
   const string parent_dir = ResolveParentDirectory(path);
   metadata_cache_.UpdateStatTime(
       parent_dir,
-      response->response()->timestamp_s(),
+      ts_response->timestamp_s(),
       static_cast<Setattrs>(SETATTR_CTIME | SETATTR_MTIME));
   metadata_cache_.InvalidatePrefix(path);
   metadata_cache_.InvalidateDirEntry(parent_dir, GetBasename(path));
@@ -933,9 +954,9 @@ xtreemfs::pbrpc::DirectoryEntries* VolumeImplementation::ReadDir(
     // Read complete chunk or only remaining rest.
     rq.set_limit_directory_entries_count(current_offset > offset + count ?
         current_offset - offset - count : volume_options_.readdir_chunk_size);
-
-    boost::scoped_ptr< SyncCallback<DirectoryEntries> > response(
-        ExecuteSyncRequest< SyncCallback<DirectoryEntries>* >(
+    
+    boost::scoped_ptr<rpc::SyncCallbackBase> response(
+        ExecuteSyncRequest(
             boost::bind(
                 &xtreemfs::pbrpc::MRCServiceClient::readdir_sync,
                 mrc_service_client_.get(),
@@ -947,12 +968,13 @@ xtreemfs::pbrpc::DirectoryEntries* VolumeImplementation::ReadDir(
             uuid_resolver_,
             volume_options_.max_tries,
             volume_options_));
-    DirectoryEntries* dentries = response->response();
+    DirectoryEntries* dentries = static_cast<DirectoryEntries*>(
+        response->response());
 
     // Process request and free memory.
     if (current_offset == offset) {
       // First chunk
-      result = response->response();
+      result = dentries;
 
       // Delete everything except the response.
       delete[] response->data();
@@ -1036,9 +1058,9 @@ xtreemfs::pbrpc::listxattrResponse* VolumeImplementation::ListXAttrs(
   rq.set_volume_name(volume_name_);
   rq.set_path(path);
   rq.set_names_only(false);
-
-  boost::scoped_ptr< SyncCallback<listxattrResponse> > response(
-      ExecuteSyncRequest< SyncCallback<listxattrResponse>* >(
+  
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::listxattr_sync,
               mrc_service_client_.get(),
@@ -1051,7 +1073,7 @@ xtreemfs::pbrpc::listxattrResponse* VolumeImplementation::ListXAttrs(
           volume_options_.max_tries,
           volume_options_));
 
-  result = response->response();
+  result = static_cast<listxattrResponse*>(response->response());
   // Delete everything except the response.
   delete[] response->data();
   delete response->error();
@@ -1077,9 +1099,9 @@ void VolumeImplementation::SetXAttr(
   rq.set_value(value.c_str());
   rq.set_value_bytes(value.c_str(), value.size());
   rq.set_flags(flags);
-
-  boost::scoped_ptr< SyncCallback<timestampResponse> > response(
-      ExecuteSyncRequest< SyncCallback<timestampResponse>* >(
+  
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::setxattr_sync,
               mrc_service_client_.get(),
@@ -1111,9 +1133,9 @@ bool VolumeImplementation::GetXAttr(
     rq.set_volume_name(volume_name_);
     rq.set_path(path);
     rq.set_name(name);
-
-    boost::scoped_ptr< SyncCallback<getxattrResponse> > response(
-        ExecuteSyncRequest< SyncCallback<getxattrResponse>* >(
+    
+    boost::scoped_ptr<rpc::SyncCallbackBase> response(
+        ExecuteSyncRequest(
             boost::bind(
                 &xtreemfs::pbrpc::MRCServiceClient::getxattr_sync,
                 mrc_service_client_.get(),
@@ -1125,12 +1147,14 @@ bool VolumeImplementation::GetXAttr(
             uuid_resolver_,
             volume_options_.max_tries,
             volume_options_));
-    if (response->response()->has_value_bytes()) {
-      *value = response->response()->value_bytes();
+    getxattrResponse* get_response = static_cast<getxattrResponse*>(
+        response->response());
+    if (get_response->has_value_bytes()) {
+      *value = get_response->value_bytes();
       response->DeleteBuffers();
       return true;
-    } else if (response->response()->has_value()) {
-      *value = response->response()->value();
+    } else if (get_response->has_value()) {
+      *value = get_response->value();
       response->DeleteBuffers();
       return true;
     } else {
@@ -1231,9 +1255,9 @@ void VolumeImplementation::RemoveXAttr(
   rq.set_volume_name(volume_name_);
   rq.set_path(path);
   rq.set_name(name);
-
-  boost::scoped_ptr< SyncCallback<timestampResponse> > response(
-      ExecuteSyncRequest< SyncCallback<timestampResponse>* >(
+  
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::removexattr_sync,
               mrc_service_client_.get(),
@@ -1260,8 +1284,8 @@ void VolumeImplementation::AddReplica(
   replica_addRequest.mutable_new_replica()->CopyFrom(new_replica);
 
   // Add replica to file in MRC.
-  boost::scoped_ptr< SyncCallback<xtreemfs::pbrpc::emptyResponse> > response(
-      ExecuteSyncRequest< SyncCallback<xtreemfs::pbrpc::emptyResponse>* >(
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::xtreemfs_replica_add_sync,
               mrc_service_client_.get(),
@@ -1297,8 +1321,8 @@ xtreemfs::pbrpc::Replicas* VolumeImplementation::ListReplicas(
   replica_listRequest.set_path(path);
 
   // Retrieve list of replicas.
-  boost::scoped_ptr< SyncCallback<xtreemfs::pbrpc::Replicas> > response(
-      ExecuteSyncRequest< SyncCallback<xtreemfs::pbrpc::Replicas>* >(
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::xtreemfs_replica_list_sync,
               mrc_service_client_.get(),
@@ -1316,7 +1340,7 @@ xtreemfs::pbrpc::Replicas* VolumeImplementation::ListReplicas(
   delete response->error();
 
   // Return the Replicas object.
-  return response->response();
+  return static_cast<xtreemfs::pbrpc::Replicas*>(response->response());
 }
 
 void VolumeImplementation::RemoveReplica(
@@ -1329,8 +1353,8 @@ void VolumeImplementation::RemoveReplica(
   replica_removeRequest.set_osd_uuid(osd_uuid);
 
   // Remove replica.
-  boost::scoped_ptr< SyncCallback<FileCredentials> > response_mrc(
-      ExecuteSyncRequest< SyncCallback<FileCredentials>* >(
+  boost::scoped_ptr<rpc::SyncCallbackBase> response_mrc(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::xtreemfs_replica_remove_sync,
               mrc_service_client_.get(),
@@ -1342,19 +1366,21 @@ void VolumeImplementation::RemoveReplica(
           uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
+  FileCredentials* creds = static_cast<FileCredentials*>(
+      response_mrc->response());
 
   // Now unlink the replica at the OSD.
   SimpleUUIDIterator osd_uuid_iterator;
   osd_uuid_iterator.AddUUID(osd_uuid);
 
   unlink_osd_Request unlink_osd_Request;
-  unlink_osd_Request.set_file_id(response_mrc->response()->xcap().file_id());
+  unlink_osd_Request.set_file_id(creds->xcap().file_id());
   unlink_osd_Request.mutable_file_credentials()->CopyFrom(
       *(response_mrc->response()));
 
   OSDServiceClient osd_service_client(network_client_.get());
-  boost::scoped_ptr< SyncCallback<emptyResponse> > response_osd(
-      ExecuteSyncRequest< SyncCallback<emptyResponse>* >(
+  boost::scoped_ptr<rpc::SyncCallbackBase> response_osd(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::OSDServiceClient::unlink_sync,
               &osd_service_client,
@@ -1385,10 +1411,8 @@ void VolumeImplementation::GetSuitableOSDs(
   get_suitable_osdsRequest.set_num_osds(number_of_osds);
 
   // Retrieve the list of volumes from the MRC.
-  boost::scoped_ptr< SyncCallback<
-      xtreemfs::pbrpc::xtreemfs_get_suitable_osdsResponse> > response(
-      ExecuteSyncRequest< SyncCallback<
-          xtreemfs::pbrpc::xtreemfs_get_suitable_osdsResponse>* >(
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::
                   xtreemfs_get_suitable_osds_sync,
@@ -1403,9 +1427,10 @@ void VolumeImplementation::GetSuitableOSDs(
           volume_options_));
 
   // Write back list of UUIDs to list_of_osd_uuids.
-  const xtreemfs_get_suitable_osdsResponse& osds = *response->response();
-  for (int i = 0; i < osds.osd_uuids_size(); i++) {
-    list_of_osd_uuids->push_back(osds.osd_uuids(i));
+  xtreemfs_get_suitable_osdsResponse* osds =
+      static_cast<xtreemfs_get_suitable_osdsResponse*>(response->response());
+  for (int i = 0; i < osds->osd_uuids_size(); i++) {
+    list_of_osd_uuids->push_back(osds->osd_uuids(i));
   }
 
   // Cleanup.
