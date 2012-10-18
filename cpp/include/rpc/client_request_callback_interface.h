@@ -8,8 +8,6 @@
 #ifndef CPP_INCLUDE_RPC_CLIENT_REQUEST_CALLBACK_INTERFACE_H_
 #define CPP_INCLUDE_RPC_CLIENT_REQUEST_CALLBACK_INTERFACE_H_
 
-#include "rpc/client_request.h"
-
 namespace xtreemfs {
 namespace rpc {
 
@@ -25,4 +23,3 @@ class ClientRequestCallbackInterface {
 }  // namespace xtreemfs
 
 #endif  // CPP_INCLUDE_RPC_CLIENT_REQUEST_CALLBACK_INTERFACE_H_
-

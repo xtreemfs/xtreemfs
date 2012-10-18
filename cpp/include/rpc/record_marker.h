@@ -8,12 +8,11 @@
 #ifndef CPP_INCLUDE_RPC_RECORD_MARKER_H_
 #define CPP_INCLUDE_RPC_RECORD_MARKER_H_
 
-#include <boost/cstdint.hpp>
+#include <cstdint>
 #include <cstddef>
 
 namespace xtreemfs {
 namespace rpc {
-using boost::uint32_t;
 
 class RecordMarker {
  public:
@@ -28,7 +27,7 @@ class RecordMarker {
   uint32_t header_len() const;
 
   static std::size_t get_size() {
-    return sizeof(uint32_t)*3;
+    return sizeof(uint32_t) * 3;
   }
 
  private:

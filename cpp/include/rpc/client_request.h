@@ -9,34 +9,26 @@
 #ifndef CPP_INCLUDE_RPC_CLIENT_REQUEST_H_
 #define CPP_INCLUDE_RPC_CLIENT_REQUEST_H_
 
-#include <boost/cstdint.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/system/error_code.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
-#include <boost/function.hpp>
-
+#include <cstdint>
 #include <string>
 
 #include "include/Common.pb.h"
 #include "pbrpc/RPC.pb.h"
-#include "rpc/client_request_callback_interface.h"
-#include "rpc/record_marker.h"
 
 namespace xtreemfs {
 namespace rpc {
-using std::string;
-using boost::int32_t;
-using boost::uint32_t;
 
 class ClientConnection;
 class ClientRequest;
 class ClientRequestCallbackInterface;
+class RecordMarker;
 
 class ClientRequest {
  public:
   static const int ERR_NOERR = 0;
 
-  ClientRequest(const string& address,
+  ClientRequest(const std::string& address,
                 const uint32_t call_id,
                 const uint32_t interface_id,
                 const uint32_t proc_id,
@@ -193,7 +185,7 @@ class ClientRequest {
   const uint32_t proc_id_;
   void *context_;
   ClientRequestCallbackInterface *callback_;
-  string address_;
+  std::string address_;
   boost::posix_time::ptime time_sent_;
   bool callback_executed_;
 

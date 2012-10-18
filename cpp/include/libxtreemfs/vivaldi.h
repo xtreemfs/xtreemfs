@@ -14,14 +14,23 @@
 #include <list>
 #include <string>
 
-#include "libxtreemfs/client.h"
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/vivaldi_node.h"
-#include "xtreemfs/DIRServiceClient.h"
-#include "xtreemfs/OSDServiceClient.h"
 #include "xtreemfs/GlobalTypes.pb.h"
+#include "xtreemfs/OSDServiceClient.h"
 
 namespace xtreemfs {
+
+namespace pbrpc {
+class DIRServiceClient;
+}  // namespace pbrpc
+
+namespace rpc {
+class Client;
+}  // namespace rpc
+
+class UUIDIterator;
+class UUIDResolver;
 
 class KnownOSD {
  public:

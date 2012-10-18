@@ -12,6 +12,8 @@
 #include <string>
 
 #include "pbrpc/RPC.pb.h"
+#include "rpc/client_request_callback_interface.h"
+#include "rpc/record_marker.h"
 #include "util/logging.h"
 
 namespace xtreemfs {

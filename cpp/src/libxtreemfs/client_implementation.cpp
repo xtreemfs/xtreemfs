@@ -24,6 +24,7 @@
 #include "libxtreemfs/uuid_iterator.h"
 #include "libxtreemfs/volume_implementation.h"
 #include "libxtreemfs/xtreemfs_exception.h"
+#include "util/logging.h"
 #include "util/error_log.h"
 #include "xtreemfs/DIRServiceClient.h"
 #include "xtreemfs/MRCServiceClient.h"

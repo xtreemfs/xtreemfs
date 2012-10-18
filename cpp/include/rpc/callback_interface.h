@@ -8,16 +8,18 @@
 #ifndef  CPP_INCLUDE_RPC_CALLBACK_INTERFACE_H_
 #define  CPP_INCLUDE_RPC_CALLBACK_INTERFACE_H_
 
-#include <boost/cstdint.hpp>
+#include <cstdint>
 
 #include "pbrpc/RPC.pb.h"
-#include "rpc/client_request.h"
+#include "rpc/client_request_callback_interface.h"
 
 namespace xtreemfs {
 namespace rpc {
 
-template <class ReturnMessageType> class CallbackInterface
-    : public ClientRequestCallbackInterface {
+class ClientRequest;
+
+template <class ReturnMessageType>
+class CallbackInterface : public ClientRequestCallbackInterface {
  public:
   virtual ~CallbackInterface();
 
@@ -34,7 +36,7 @@ template <class ReturnMessageType> class CallbackInterface
    */
   virtual void CallFinished(ReturnMessageType* response_message,
                             char* data,
-                            boost::uint32_t data_length,
+                            uint32_t data_length,
                             xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
                             void* context) = 0;
 
@@ -43,10 +45,10 @@ template <class ReturnMessageType> class CallbackInterface
 };
 
 template <class ReturnMessageType>
-    CallbackInterface<ReturnMessageType>::~CallbackInterface() {}
+CallbackInterface<ReturnMessageType>::~CallbackInterface() {}
 
 template <class ReturnMessageType>
-    void CallbackInterface<ReturnMessageType>::RequestCompleted(
+void CallbackInterface<ReturnMessageType>::RequestCompleted(
         ClientRequest* request) {
   assert(request->resp_message() != NULL || request->error() != NULL);
   CallFinished(dynamic_cast<ReturnMessageType*>(request->resp_message()),
