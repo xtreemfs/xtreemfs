@@ -4,7 +4,8 @@
 #ifndef DIRSERVICECLIENT_H
 #define DIRSERVICECLIENT_H
 
-#include <boost/cstdint.hpp>
+#include <stdint.h>
+
 #include "pbrpc/RPC.pb.h"
 #include "rpc/client.h"
 #include "rpc/sync_callback.h"

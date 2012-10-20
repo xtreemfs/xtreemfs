@@ -9,10 +9,10 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_OPTIONS_H_
 #define CPP_INCLUDE_LIBXTREEMFS_OPTIONS_H_
 
-#include <boost/cstdint.hpp>
 #include <boost/function.hpp>
 #include <boost/program_options.hpp>
 #include <iostream>
+#include <stdint.h>
 #include <string>
 #include <vector>
 

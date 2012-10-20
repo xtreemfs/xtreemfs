@@ -15,7 +15,6 @@
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
-#include <boost/cstdint.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/scoped_array.hpp>
@@ -24,6 +23,7 @@
 #include <boost/thread/thread.hpp>
 #include <iostream>
 #include <map>
+#include <stdint.h>
 #include <string>
 #include <vector>
 

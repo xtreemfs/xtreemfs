@@ -13,10 +13,10 @@
 #include <pwd.h>
 #include <sys/types.h>
 
-#include <boost/cstdint.hpp>
 #include <boost/lexical_cast.hpp>
 #include <fstream>
 #include <iostream>
+#include <stdint.h>
 
 #include "util/logging.h"
 

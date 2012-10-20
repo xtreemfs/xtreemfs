@@ -8,8 +8,8 @@
 #ifndef CPP_INCLUDE_RPC_RECORD_MARKER_H_
 #define CPP_INCLUDE_RPC_RECORD_MARKER_H_
 
-#include <cstdint>
 #include <cstddef>
+#include <stdint.h>
 
 namespace xtreemfs {
 namespace rpc {

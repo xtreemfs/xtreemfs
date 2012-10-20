@@ -7,9 +7,9 @@
 
 #include <gtest/gtest.h>
 
-#include <boost/cstdint.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <stdint.h>
 #include <string>
 
 #include "libxtreemfs/metadata_cache.h"

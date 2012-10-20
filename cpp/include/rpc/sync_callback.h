@@ -8,8 +8,8 @@
 #ifndef CPP_INCLUDE_RPC_SYNC_CALLBACK_H_
 #define CPP_INCLUDE_RPC_SYNC_CALLBACK_H_
 
-#include <cstdint>
 #include <boost/thread.hpp>
+#include <stdint.h>
 
 #include "pbrpc/RPC.pb.h"
 #include "rpc/client_request_callback_interface.h"

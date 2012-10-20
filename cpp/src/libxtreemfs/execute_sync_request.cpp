@@ -8,7 +8,6 @@
 #include "libxtreemfs/execute_sync_request.h"
 
 #include <algorithm>
-#include <boost/cstdint.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/format.hpp>
 #include <boost/function.hpp>
@@ -18,6 +17,7 @@
 #include <google/protobuf/descriptor.h>
 #include <iostream>
 #include <string>
+#include <stdint.h>
 
 #include "libxtreemfs/interrupt.h"
 #include "libxtreemfs/options.h"

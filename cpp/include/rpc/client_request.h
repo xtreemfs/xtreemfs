@@ -10,7 +10,7 @@
 #define CPP_INCLUDE_RPC_CLIENT_REQUEST_H_
 
 #include <boost/date_time/posix_time/posix_time_types.hpp>
-#include <cstdint>
+#include <stdint.h>
 #include <string>
 
 #include "include/Common.pb.h"

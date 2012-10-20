@@ -8,7 +8,6 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_FILE_INFO_H_
 #define CPP_INCLUDE_LIBXTREEMFS_FILE_INFO_H_
 
-#include <boost/cstdint.hpp>
 #include <boost/optional.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread/condition.hpp>
@@ -16,6 +15,7 @@
 #include <gtest/gtest_prod.h>
 #include <list>
 #include <map>
+#include <stdint.h>
 #include <string>
 
 #include "libxtreemfs/client_implementation.h"
