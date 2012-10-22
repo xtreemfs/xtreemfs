@@ -40,6 +40,42 @@ public abstract class Client {
   /**
    * Returns an instance of the default Client implementation.
    * 
+   * @param dir_service_addresses
+   *            Address of the DIR service (Format: ip-addr:port, e.g. localhost:32638)
+   * @param user_credentials
+   *            Name and Groups of the user.
+   * @param ssl_options
+   *            NULL if no SSL is used.
+   * @param options
+   *            Has to contain loglevel string and logfile path.
+   */
+  public static Client createClient(String[] dirServiceAddresses, UserCredentials userCredentials,
+        SSLOptions sslOptions, Options options) {
+      return createClient(dirServiceAddresses, userCredentials, sslOptions, options,
+          ClientImplementationType.kDefaultClient);
+  }
+    
+  /**
+   * Returns an instance of the default Client implementation.
+   * 
+   * @param dir_service_address
+   *            Addresses of the DIR services (Format: ip-addr:port, e.g. localhost:32638)
+   * @param user_credentials
+   *            Name and Groups of the user.
+   * @param ssl_options
+   *            NULL if no SSL is used.
+   * @param options
+   *            Has to contain loglevel string and logfile path.
+   */
+  public static Client createClient(String dirServiceAddress, UserCredentials userCredentials,
+      SSLOptions sslOptions, Options options) {
+    return createClient(new String[]{dirServiceAddress}, userCredentials, sslOptions, options,
+        ClientImplementationType.kDefaultClient);
+  }
+
+  /**
+   * Returns an instance of the default Client implementation.
+   * 
    * @param dir_service_address
    *            Address of the DIR service (Format: ip-addr:port, e.g. localhost:32638)
    * @param user_credentials
@@ -50,18 +86,28 @@ public abstract class Client {
    *            Has to contain loglevel string and logfile path.
    */
   public static Client createClient(String dirServiceAddress, UserCredentials userCredentials,
-      SSLOptions sslOptions, Options options) {
-    return createClient(dirServiceAddress, userCredentials, sslOptions, options,
-        ClientImplementationType.kDefaultClient);
+          SSLOptions sslOptions, Options options, ClientImplementationType type) {
+      return createClient(new String[]{dirServiceAddress}, userCredentials, sslOptions, options, type);
   }
-
-  /** Returns an instance of the chosen Client implementation. */
-  public static Client createClient(String dirServiceAddress, UserCredentials userCredentials,
+  
+  /**
+   * Returns an instance of the default Client implementation.
+   * 
+   * @param dir_service_addresses
+   *            Addresses of the DIR services (Format: ip-addr:port, e.g. localhost:32638)
+   * @param user_credentials
+   *            Name and Groups of the user.
+   * @param ssl_options
+   *            NULL if no SSL is used.
+   * @param options
+   *            Has to contain loglevel string and logfile path.
+   */  
+  public static Client createClient(String[] dirServiceAddresses, UserCredentials userCredentials,
       SSLOptions sslOptions, Options options, ClientImplementationType type) {
 
     switch (type) {
     case kDefaultClient:
-      return new ClientImplementation(dirServiceAddress, userCredentials, sslOptions, options);
+      return new ClientImplementation(dirServiceAddresses, userCredentials, sslOptions, options);
     default:
       return null;
     }

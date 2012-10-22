@@ -93,10 +93,14 @@ public class ClientImplementation extends Client implements UUIDResolver {
    */
   private String                                 clientUUID                = null;
 
-  /**
-   * 
-   */
+  
+  
   protected ClientImplementation(String dirAddress, UserCredentials userCredentials, SSLOptions sslOptions,
+          Options options) {
+      this(new String[]{dirAddress}, userCredentials, sslOptions, options);
+  }
+   
+  protected ClientImplementation(String[] dirAddresses, UserCredentials userCredentials, SSLOptions sslOptions,
       Options options) {
     this.dirServiceUserCredentials = userCredentials;
     this.dirServiceSSLOptions = sslOptions;
@@ -104,7 +108,9 @@ public class ClientImplementation extends Client implements UUIDResolver {
 
     this.dirServiceAddresses = new UUIDIterator();
 
-    this.dirServiceAddresses.addUUID(dirAddress);
+    for (String address: dirAddresses) {
+        this.dirServiceAddresses.addUUID(address);
+    }
 
     // Set bogus auth object
     this.authBogus = Auth.newBuilder().setAuthType(AuthType.AUTH_NONE).build();
