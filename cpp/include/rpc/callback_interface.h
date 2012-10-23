@@ -8,15 +8,14 @@
 #ifndef  CPP_INCLUDE_RPC_CALLBACK_INTERFACE_H_
 #define  CPP_INCLUDE_RPC_CALLBACK_INTERFACE_H_
 
-#include <cstdint>
+#include <stdint.h>
 
 #include "pbrpc/RPC.pb.h"
+#include "rpc/client_request.h"
 #include "rpc/client_request_callback_interface.h"
 
 namespace xtreemfs {
 namespace rpc {
-
-class ClientRequest;
 
 template <class ReturnMessageType>
 class CallbackInterface : public ClientRequestCallbackInterface {
