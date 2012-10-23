@@ -17,8 +17,6 @@
 
 namespace xtreemfs {
 
-using boost::uint16_t;
-
 class PBRPCURL {
  public:
 
@@ -27,9 +25,10 @@ class PBRPCURL {
   static const std::string SCHEME_PBRPCS;
   static const std::string SCHEME_PBRPCU;
 
-  PBRPCURL(
-      const std::string& scheme, const std::string& server,
-      std::string& volume, uint16_t port);
+  PBRPCURL(const std::string& scheme,
+           const std::string& server,
+           std::string& volume,
+           uint16_t port);
 
   PBRPCURL();
 
@@ -39,7 +38,8 @@ class PBRPCURL {
    *
    * @throws InvalidURLException
    */
-  void parseURL(const std::string& url, const std::string& default_scheme,
+  void parseURL(const std::string& url,
+                const std::string& default_scheme,
                 const uint16_t default_port);
 
   uint16_t getPort_() const {
