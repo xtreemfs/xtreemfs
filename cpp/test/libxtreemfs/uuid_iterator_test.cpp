@@ -218,7 +218,7 @@ TYPED_TEST(UUIDIteratorTest, DebugString) {
 class SimpleUUIDIteratorTest : public UUIDIteratorTest<SimpleUUIDIterator> {
  public:
   void SetUp() {
-    UUIDIteratorTest::SetUp();
+    UUIDIteratorTest<SimpleUUIDIterator>::SetUp();
     simple_uuid_iterator_ =
         static_cast<SimpleUUIDIterator*>(uuid_iterator_.get());
   }
