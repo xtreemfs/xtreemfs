@@ -9,9 +9,10 @@
 #ifndef CPP_INCLUDE_RPC_CLIENT_H_
 #define CPP_INCLUDE_RPC_CLIENT_H_
 
+#include <stdint.h>
+
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
-#include <boost/cstdint.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 #include <boost/system/error_code.hpp>
@@ -33,17 +34,14 @@
 
 namespace xtreemfs {
 namespace rpc {
-using std::string;
-using boost::int32_t;
-using boost::uint32_t;
 
 // Boost introduced unordered_map in version 1.36 but we need to support
 // older versions for Debian 5.
 // TODO(bjko): Remove this typedef when support for Debian 5 is dropped.
 #if (BOOST_VERSION / 100000 > 1) || (BOOST_VERSION / 100 % 1000 > 35)
-typedef boost::unordered_map<string, ClientConnection*> connection_map;
+typedef boost::unordered_map<std::string, ClientConnection*> connection_map;
 #else
-typedef std::map<string, ClientConnection*> connection_map;
+typedef std::map<std::string, ClientConnection*> connection_map;
 #endif
 
 class Client {
@@ -59,7 +57,7 @@ class Client {
 
   void shutdown();
 
-  void sendRequest(const string& address,
+  void sendRequest(const std::string& address,
                    int32_t interface_id,
                    int32_t proc_id,
                    const xtreemfs::pbrpc::UserCredentials& userCreds,
@@ -115,11 +113,11 @@ class Client {
   /** True when the RPC client was stopped, only accessed in the context of
    *  io_service::run. */
   bool stopped_ioservice_only_;
-  boost::uint32_t callid_counter_;
+  uint32_t callid_counter_;
   boost::asio::deadline_timer rq_timeout_timer_;
-  boost::int32_t rq_timeout_s_;
-  boost::int32_t connect_timeout_s_;
-  boost::int32_t max_con_linger_;
+  int32_t rq_timeout_s_;
+  int32_t connect_timeout_s_;
+  int32_t max_con_linger_;
 
   const SSLOptions* ssl_options;
 

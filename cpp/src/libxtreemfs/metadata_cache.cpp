@@ -54,7 +54,7 @@ using namespace xtreemfs::util;
 
 namespace xtreemfs {
 
-MetadataCache::MetadataCache(boost::uint64_t size, boost::uint64_t ttl_s)
+MetadataCache::MetadataCache(uint64_t size, uint64_t ttl_s)
     : size_(size), ttl_s_(ttl_s) {
   enabled = size > 0 ? true : false;
 }
@@ -167,7 +167,7 @@ bool MetadataCache::GetStat(const std::string& path,
     // We must never have cached a hard link.
     assert(cache_entry->stat == NULL || cache_entry->stat->nlink() == 1);
     // Entry found for path, check timeout of Stat value.
-    boost::uint64_t current_time_s = time(NULL);
+    uint64_t current_time_s = time(NULL);
     if (cache_entry->stat_timeout_s >= current_time_s) {
       if (cache_entry->stat != NULL) {
         stat->CopyFrom(*(cache_entry->stat));
@@ -245,7 +245,7 @@ void MetadataCache::UpdateStat(const std::string& path,
 
 // TODO(mberlin): Also update the stat entry in the direntry of the parent dir.
 void MetadataCache::UpdateStatTime(const std::string& path,
-                                   boost::uint64_t timestamp_s,
+                                   uint64_t timestamp_s,
                                    xtreemfs::pbrpc::Setattrs to_set) {
   if (path.empty() || !enabled) {
     return;
@@ -401,8 +401,8 @@ void MetadataCache::InvalidateStat(const std::string& path) {
 
 xtreemfs::pbrpc::DirectoryEntries* MetadataCache::GetDirEntries(
     const std::string& path,
-    boost::uint64_t offset,
-    boost::uint32_t count) {
+    uint64_t offset,
+    uint32_t count) {
   boost::mutex::scoped_lock lock(mutex_);
 
   by_hash& index = cache_.get<IndexHash>();
@@ -410,7 +410,7 @@ xtreemfs::pbrpc::DirectoryEntries* MetadataCache::GetDirEntries(
   if (it_hash != index.end()) {
     // Entry found for path, check timeout of DirectoryEntries value.
     MetadataCacheEntry* cache_entry = *it_hash;
-    boost::uint64_t current_time_s = time(NULL);
+    uint64_t current_time_s = time(NULL);
     if (cache_entry->dir_entries != NULL) {
       if (cache_entry->dir_entries_timeout_s >= current_time_s) {
         DirectoryEntries* cached_dentries = cache_entry->dir_entries;
@@ -432,7 +432,7 @@ xtreemfs::pbrpc::DirectoryEntries* MetadataCache::GetDirEntries(
               << " [" << cache_.size() << "] offset: " << offset
               << "count: " << count << endl;
           }
-          for (boost::uint64_t i = offset; i < offset + count; i++) {
+          for (uint64_t i = offset; i < offset + count; i++) {
             result->add_entries()->CopyFrom(cached_dentries->entries(i));
           }
         }
@@ -559,7 +559,7 @@ bool MetadataCache::GetXAttr(const std::string& path, const std::string& name,
   if (it_hash != index.end()) {
     // Entry found for path, check timeout of listxattrResponse value.
     MetadataCacheEntry* cache_entry = *it_hash;
-    boost::uint64_t current_time_s = time(NULL);
+    uint64_t current_time_s = time(NULL);
     if (cache_entry->xattrs != NULL) {
       if (cache_entry->xattrs_timeout_s >= current_time_s) {
         *xattrs_cached = true;
@@ -615,7 +615,7 @@ bool MetadataCache::GetXAttrSize(const std::string& path,
   if (it_hash != index.end()) {
     // Entry found for path, check timeout of listxattrResponse value.
     MetadataCacheEntry* cache_entry = *it_hash;
-    boost::uint64_t current_time_s = time(NULL);
+    uint64_t current_time_s = time(NULL);
     if (cache_entry->xattrs != NULL) {
       if (cache_entry->xattrs_timeout_s >= current_time_s) {
         *xattrs_cached = true;
@@ -667,7 +667,7 @@ xtreemfs::pbrpc::listxattrResponse* MetadataCache::GetXAttrs(
   if (it_hash != index.end()) {
     // Entry found for path, check timeout of listxattrResponse value.
     MetadataCacheEntry* cache_entry = *it_hash;
-    boost::uint64_t current_time_s = time(NULL);
+    uint64_t current_time_s = time(NULL);
     if (cache_entry->xattrs != NULL) {
       if (cache_entry->xattrs_timeout_s >= current_time_s) {
         // Create copy of object.
@@ -852,7 +852,7 @@ void MetadataCache::InvalidateXAttrs(const std::string& path) {
   }
 }
 
-boost::uint64_t MetadataCache::Size() {
+uint64_t MetadataCache::Size() {
   boost::mutex::scoped_lock lock(mutex_);
   return cache_.size();
 }

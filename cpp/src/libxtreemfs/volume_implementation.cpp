@@ -283,7 +283,7 @@ void VolumeImplementation::Access(
   rq.set_volume_name(volume_name_);
   rq.set_path(path);
   rq.set_flags(flags);
-  
+
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
           boost::bind(
@@ -312,7 +312,7 @@ FileHandle* VolumeImplementation::OpenFile(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path,
     const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
-    boost::uint32_t mode) {
+    uint32_t mode) {
   return OpenFile(user_credentials, path, flags, mode, 0);
 }
 
@@ -323,7 +323,7 @@ FileHandle* VolumeImplementation::OpenFile(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path,
     const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
-    boost::uint32_t mode,
+    uint32_t mode,
     int truncate_new_file_size) {
   bool async_writes_enabled = (volume_options_.max_writeahead > 0);
 
@@ -346,7 +346,7 @@ FileHandle* VolumeImplementation::OpenFile(
   if (volume_options_.vivaldi_enable) {
     rq.mutable_coordinates()->CopyFrom(this->client_->GetVivaldiCoordinates());
   }
-  
+
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
           boost::bind(
@@ -389,7 +389,7 @@ FileHandle* VolumeImplementation::OpenFile(
   }
 
   // Copy timestamp and free response memory.
-  boost::uint64_t timestamp_s = open_response->timestamp_s();
+  uint64_t timestamp_s = open_response->timestamp_s();
   response->DeleteBuffers();
 
   // If O_CREAT is set and the file did not previously exist, upon successful
@@ -463,7 +463,7 @@ void VolumeImplementation::Truncate(
  * @throws FileHandleNotFoundException
  */
 void VolumeImplementation::CloseFile(
-    boost::uint64_t file_id,
+    uint64_t file_id,
     FileInfo* file_info,
     FileHandleImplementation* file_handle) {
   // Put file_handle into a scoped_ptr as it definitely has to be deleted.
@@ -531,7 +531,7 @@ void VolumeImplementation::GetAttrHelper(
     rq.set_volume_name(volume_name_);
     rq.set_path(path);
     rq.set_known_etag(0);
-    
+
     boost::scoped_ptr<rpc::SyncCallbackBase> response(
         ExecuteSyncRequest(
             boost::bind(
@@ -574,7 +574,7 @@ void VolumeImplementation::GetAttr(
     // Unknown if this file at "path" is open - look it up by its file_id.
     boost::mutex::scoped_lock oft_lock(open_file_table_mutex_);
 
-    map< boost::uint64_t, FileInfo* >::const_iterator it
+    map<uint64_t, FileInfo*>::const_iterator it
         = open_file_table_.find(stat_buffer->ino());  // ino = file_id.
     if (it != open_file_table_.end()) {
       // File at "path" is opened.
@@ -605,7 +605,7 @@ void VolumeImplementation::GetAttr(
         // As wait did unlock the open file table, the previously
         // found FileInfo object may be removed and deleted meanwhile, i.e.
         // search again for it.
-        map< boost::uint64_t, FileInfo* >::const_iterator it2
+        map<uint64_t, FileInfo*>::const_iterator it2
             = open_file_table_.find(stat_buffer->ino());  // ino = file_id.
         if (it2 != open_file_table_.end()) {
           it2->second->MergeStatAndOSDWriteResponse(stat_buffer);
@@ -641,7 +641,7 @@ void VolumeImplementation::SetAttr(
   rq.set_path(path);
   rq.mutable_stbuf()->CopyFrom(stat);
   rq.set_to_set(to_set);
-  
+
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
           boost::bind(
@@ -662,7 +662,7 @@ void VolumeImplementation::SetAttr(
   if ((to_set &  SETATTR_MODE) || (to_set &  SETATTR_UID) ||
       (to_set &  SETATTR_GID)) {
     to_set = static_cast<Setattrs>(to_set | SETATTR_CTIME);
-    rq.mutable_stbuf()->set_ctime_ns(static_cast<boost::uint64_t>(
+    rq.mutable_stbuf()->set_ctime_ns(static_cast<uint64_t>(
         ts_response->timestamp_s()) * 1000000000);
   }
 
@@ -684,7 +684,7 @@ void VolumeImplementation::Unlink(
   unlinkRequest rq;
   rq.set_volume_name(volume_name_);
   rq.set_path(path);
-  
+
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
           boost::bind(
@@ -733,7 +733,7 @@ void VolumeImplementation::UnlinkAtOSD(const FileCredentials& fc,
     osd_uuid_iterator.ClearAndAddUUID(GetOSDUUIDFromXlocSet(xlocs,
                                                             k,
                                                             0));
-    
+
     boost::scoped_ptr<rpc::SyncCallbackBase> response(
         ExecuteSyncRequest(
             boost::bind(&xtreemfs::pbrpc::OSDServiceClient::unlink_sync,
@@ -762,7 +762,7 @@ void VolumeImplementation::Rename(
   rq.set_volume_name(volume_name_);
   rq.set_source_path(path);
   rq.set_target_path(new_path);
-  
+
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
           boost::bind(
@@ -819,7 +819,7 @@ void VolumeImplementation::Rename(
   // Rename path in all open FileInfo objects.
   {
     boost::mutex::scoped_lock lock(open_file_table_mutex_);
-    map<boost::uint64_t, FileInfo*>::iterator it;
+    map<uint64_t, FileInfo*>::iterator it;
     for (it = open_file_table_.begin();
          it != open_file_table_.end(); ++it) {
       it->second->RenamePath(path, new_path);
@@ -837,7 +837,7 @@ void VolumeImplementation::MakeDirectory(
   rq.set_volume_name(volume_name_);
   rq.set_path(path);
   rq.set_mode(mode);
-  
+
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
           boost::bind(
@@ -872,7 +872,7 @@ void VolumeImplementation::DeleteDirectory(
   rmdirRequest rq;
   rq.set_volume_name(volume_name_);
   rq.set_path(path);
-  
+
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
           boost::bind(
@@ -927,13 +927,13 @@ void VolumeImplementation::DeleteDirectory(
 xtreemfs::pbrpc::DirectoryEntries* VolumeImplementation::ReadDir(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path,
-    boost::uint64_t offset,
-    boost::uint32_t count,
+    uint64_t offset,
+    uint32_t count,
     bool names_only) {
   DirectoryEntries* result = NULL;
 
   if (count == 0) {
-    count = numeric_limits<boost::uint32_t>::max();
+    count = numeric_limits<uint32_t>::max();
   }
 
   result = metadata_cache_.GetDirEntries(path, offset, count);
@@ -954,7 +954,7 @@ xtreemfs::pbrpc::DirectoryEntries* VolumeImplementation::ReadDir(
     // Read complete chunk or only remaining rest.
     rq.set_limit_directory_entries_count(current_offset > offset + count ?
         current_offset - offset - count : volume_options_.readdir_chunk_size);
-    
+
     boost::scoped_ptr<rpc::SyncCallbackBase> response(
         ExecuteSyncRequest(
             boost::bind(
@@ -1000,7 +1000,7 @@ xtreemfs::pbrpc::DirectoryEntries* VolumeImplementation::ReadDir(
   // Cache the first stat buffers that fit into the cache.
   for (int i = 0;
        i < min(volume_options_.metadata_cache_size,
-               static_cast<boost::uint64_t>(result->entries_size()));
+               static_cast<uint64_t>(result->entries_size()));
        i++) {
     if (result->entries(i).has_stbuf()) {
       if (result->entries(i).stbuf().nlink() > 1) {  // Do not cache hard links.
@@ -1058,7 +1058,7 @@ xtreemfs::pbrpc::listxattrResponse* VolumeImplementation::ListXAttrs(
   rq.set_volume_name(volume_name_);
   rq.set_path(path);
   rq.set_names_only(false);
-  
+
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
           boost::bind(
@@ -1099,7 +1099,7 @@ void VolumeImplementation::SetXAttr(
   rq.set_value(value.c_str());
   rq.set_value_bytes(value.c_str(), value.size());
   rq.set_flags(flags);
-  
+
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
           boost::bind(
@@ -1133,7 +1133,7 @@ bool VolumeImplementation::GetXAttr(
     rq.set_volume_name(volume_name_);
     rq.set_path(path);
     rq.set_name(name);
-    
+
     boost::scoped_ptr<rpc::SyncCallbackBase> response(
         ExecuteSyncRequest(
             boost::bind(
@@ -1255,7 +1255,7 @@ void VolumeImplementation::RemoveXAttr(
   rq.set_volume_name(volume_name_);
   rq.set_path(path);
   rq.set_name(name);
-  
+
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
           boost::bind(
@@ -1443,13 +1443,12 @@ void VolumeImplementation::GetSuitableOSDs(
  * @remark Assumes that open_file_table_mutex_ is already locked.
  */
 FileInfo* VolumeImplementation::GetFileInfoOrCreateUnmutexed(
-    boost::uint64_t file_id,
+    uint64_t file_id,
     const std::string& path,
     bool replicate_on_close,
     const xtreemfs::pbrpc::XLocSet& xlocset) {
   // Check if the file is already open and a FileInfo object exists for it.
-  map< boost::uint64_t, FileInfo* >::const_iterator it
-    = open_file_table_.find(file_id);
+  map<uint64_t, FileInfo*>::const_iterator it = open_file_table_.find(file_id);
   if (it != open_file_table_.end()) {
     // File has already been opened.
     it->second->UpdateXLocSetAndRest(xlocset, replicate_on_close);
@@ -1484,9 +1483,9 @@ FileInfo* VolumeImplementation::GetFileInfoOrCreateUnmutexed(
  * @remark Assumes that open_file_table_mutex_ is already locked.
  */
 void VolumeImplementation::RemoveFileInfoUnmutexed(
-    boost::uint64_t file_id, FileInfo* file_info) {
+    uint64_t file_id, FileInfo* file_info) {
   // Find the correct entry and delete it
-  std::map< boost::uint64_t, FileInfo* >::iterator it;
+  std::map<uint64_t, FileInfo*>::iterator it;
   it = open_file_table_.find(file_id);
   // The entry has to be found or throw an exception.
   if (it == open_file_table_.end()) {
@@ -1515,7 +1514,7 @@ void VolumeImplementation::PeriodicXCapRenewal() {
       }
 
       // Iterate over the open_file_table_.
-      map<boost::uint64_t, FileInfo*>::iterator it;
+      map<uint64_t, FileInfo*>::iterator it;
       for (it = open_file_table_.begin();
            it != open_file_table_.end(); ++it) {
         it->second->RenewXCapsAsync(periodic_threads_options_);
@@ -1549,7 +1548,7 @@ void VolumeImplementation::PeriodicFileSizeUpdate() {
       }
 
       // Iterate over the open_file_table_.
-      map<boost::uint64_t, FileInfo*>::iterator it;
+      map<uint64_t, FileInfo*>::iterator it;
       for (it = open_file_table_.begin();
            it != open_file_table_.end(); ++it) {
         it->second->WriteBackFileSizeAsync(periodic_threads_options_);

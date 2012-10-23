@@ -175,7 +175,7 @@ int FileHandleImplementation::Read(
             false,
             this,
             rq.mutable_file_credentials()->mutable_xcap()));
-    xtreemfs::pbrpc::ObjectData* data = 
+    xtreemfs::pbrpc::ObjectData* data =
         static_cast<xtreemfs::pbrpc::ObjectData*>(response->response());
     // Insert data into read-buffer
     int data_length = response->data_length();
@@ -480,8 +480,8 @@ void FileHandleImplementation::GetAttr(
 xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     int process_id,
-    boost::uint64_t offset,
-    boost::uint64_t length,
+    uint64_t offset,
+    uint64_t length,
     bool exclusive,
     bool wait_for_lock) {
   // Create lockRequest object for the acquire lock request.
@@ -581,15 +581,15 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
   xtreemfs::pbrpc::Lock* lock =
       static_cast<xtreemfs::pbrpc::Lock*>(response->response());
   file_info_->PutLock(*lock);
-  
+
   return lock;
 }
 
 xtreemfs::pbrpc::Lock* FileHandleImplementation::CheckLock(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     int process_id,
-    boost::uint64_t offset,
-    boost::uint64_t length,
+    uint64_t offset,
+    uint64_t length,
     bool exclusive) {
   // Create lockRequest object for the check lock request.
   lockRequest lock_request;
@@ -654,8 +654,8 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::CheckLock(
 void FileHandleImplementation::ReleaseLock(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     int process_id,
-    boost::uint64_t offset,
-    boost::uint64_t length,
+    uint64_t offset,
+    uint64_t length,
     bool exclusive) {
   Lock lock;
   lock.set_client_uuid(client_uuid_);
@@ -813,13 +813,13 @@ void FileHandleImplementation::Close() {
   file_info_->CloseFileHandle(this);
 }
 
-boost::uint64_t FileHandleImplementation::GetFileId() {
+uint64_t FileHandleImplementation::GetFileId() {
   boost::mutex::scoped_lock lock(mutex_);
 
   return GetFileIdHelper(&lock);
 }
 
-boost::uint64_t FileHandleImplementation::GetFileIdHelper(
+uint64_t FileHandleImplementation::GetFileIdHelper(
     boost::mutex::scoped_lock* lock) {
   assert(lock && lock->owns_lock());
 
@@ -981,7 +981,7 @@ void FileHandleImplementation::RenewXCapAsync(const Options& options) {
 void FileHandleImplementation::CallFinished(
     xtreemfs::pbrpc::timestampResponse* response_message,
     char* data,
-    boost::uint32_t data_length,
+    uint32_t data_length,
     xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
     void* context) {
   if (error) {
@@ -1015,7 +1015,7 @@ void FileHandleImplementation::CallFinished(
 void FileHandleImplementation::CallFinished(
     xtreemfs::pbrpc::XCap* new_xcap,
     char* data,
-    boost::uint32_t data_length,
+    uint32_t data_length,
     xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
     void* context) {
   boost::mutex::scoped_lock lock(mutex_);

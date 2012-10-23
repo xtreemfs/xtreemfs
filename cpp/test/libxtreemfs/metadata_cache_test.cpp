@@ -7,9 +7,10 @@
 
 #include <gtest/gtest.h>
 
+#include <stdint.h>
+
 #include <boost/lexical_cast.hpp>
 #include <boost/scoped_ptr.hpp>
-#include <stdint.h>
 #include <string>
 
 #include "libxtreemfs/metadata_cache.h"
@@ -259,7 +260,7 @@ TEST_F(MetadataCacheTestSize1024, UpdateStatAttributes) {
   EXPECT_EQ(0, stat.ino());
   EXPECT_EQ(0, stat.mtime_ns());
 
-  boost::uint64_t time = 1234567890;
+  uint64_t time = 1234567890;
   time *= 1000000000;
   update_stat.set_atime_ns(time);
   update_stat.set_mtime_ns(time);

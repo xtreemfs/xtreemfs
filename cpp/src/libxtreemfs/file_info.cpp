@@ -25,7 +25,7 @@ namespace xtreemfs {
 FileInfo::FileInfo(
     ClientImplementation* client,
     VolumeImplementation* volume,
-    boost::uint64_t file_id,
+    uint64_t file_id,
     const std::string& path,
     bool replicate_on_close,
     const xtreemfs::pbrpc::XLocSet& xlocset,

@@ -8,6 +8,7 @@
 #ifndef CPP_TEST_COMMON_TEST_RPC_SERVER_H_
 #define CPP_TEST_COMMON_TEST_RPC_SERVER_H_
 
+#include <stdint.h>
 #ifndef WIN32
 #include <csignal>
 #include <pthread.h>
@@ -23,7 +24,6 @@
 #include <boost/thread/thread.hpp>
 #include <iostream>
 #include <map>
-#include <stdint.h>
 #include <string>
 #include <vector>
 
@@ -188,7 +188,7 @@ template <class Derived> class TestRPCServer {
       const pbrpc::UserCredentials& user_credentials,
       const google::protobuf::Message& request,
       const char* data,
-      boost::uint32_t data_len);
+      uint32_t data_len);
 
   struct Op {
     Op() {}
@@ -203,11 +203,11 @@ template <class Derived> class TestRPCServer {
   };
 
   /** Interface ID of the implemented XtreemFS service. */
-  boost::uint32_t interface_id_;
+  uint32_t interface_id_;
 
   /** Implementations have to register implemented operations with the
    *  corresponding proc_id here. */
-  std::map<boost::uint32_t, Op> operations_;
+  std::map<uint32_t, Op> operations_;
 
  private:
   /** Delete old rules, should be called from a locked context */
@@ -216,7 +216,7 @@ template <class Derived> class TestRPCServer {
   }
 
   /** Returns true if the request shall be dropped. */
-  bool CheckIfRequestShallBeDropped(boost::uint32_t proc_id) {
+  bool CheckIfRequestShallBeDropped(uint32_t proc_id) {
     using xtreemfs::util::Logging;
     boost::mutex::scoped_lock lock(drop_rules_mutex_);
 
@@ -248,13 +248,13 @@ template <class Derived> class TestRPCServer {
    * @remarks Ownership of return value is transferred to caller.
    */
   google::protobuf::Message* ExecuteOperation(
-      boost::uint32_t proc_id,
+      uint32_t proc_id,
       const pbrpc::Auth& auth,
       const pbrpc::UserCredentials& user_credentials,
       const google::protobuf::Message& request,
       const char* data,
-      boost::uint32_t data_len) {
-    typename std::map<boost::uint32_t, Op>::iterator iter
+      uint32_t data_len) {
+    typename std::map<uint32_t, Op>::iterator iter
         = operations_.find(proc_id);
     if (iter == operations_.end()) {
       return NULL;
@@ -416,9 +416,9 @@ template <class Derived> class TestRPCServer {
           break;
         }
 
-        boost::uint32_t interface_id
+        uint32_t interface_id
             = request_rpc_header.request_header().interface_id();
-        boost::uint32_t proc_id = request_rpc_header.request_header().proc_id();
+        uint32_t proc_id = request_rpc_header.request_header().proc_id();
         if (interface_id != interface_id_) {
           if (Logging::log->loggingActive(xtreemfs::util::LEVEL_WARN)) {
             Logging::log->getLog(xtreemfs::util::LEVEL_WARN)

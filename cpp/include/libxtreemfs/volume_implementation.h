@@ -10,7 +10,8 @@
 
 #include "libxtreemfs/volume.h"
 
-#include <boost/cstdint.hpp>
+#include <stdint.h>
+
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 #include <gtest/gtest_prod.h>
@@ -96,14 +97,14 @@ class VolumeImplementation : public Volume {
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& path,
       const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
-      boost::uint32_t mode);
+      uint32_t mode);
 
   /** Used by Volume->Truncate(). Otherwise truncate_new_file_size = 0. */
   FileHandle* OpenFile(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& path,
       const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
-      boost::uint32_t mode,
+      uint32_t mode,
       int truncate_new_file_size);
 
   virtual void Truncate(
@@ -161,8 +162,8 @@ class VolumeImplementation : public Volume {
   virtual xtreemfs::pbrpc::DirectoryEntries* ReadDir(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& path,
-      boost::uint64_t offset,
-      boost::uint32_t count,
+      uint64_t offset,
+      uint32_t count,
       bool names_only);
 
   virtual xtreemfs::pbrpc::listxattrResponse* ListXAttrs(
@@ -226,7 +227,7 @@ class VolumeImplementation : public Volume {
   void CloseInternal();
 
   /** Called by FileHandle.Close() to remove file_handle from the list. */
-  void CloseFile(boost::uint64_t file_id,
+  void CloseFile(uint64_t file_id,
                  FileInfo* file_info,
                  FileHandleImplementation* file_handle);
 
@@ -297,13 +298,13 @@ class VolumeImplementation : public Volume {
    *         deleted by DecreaseFileInfoReferenceCount() if no further
    *         FileHandle references it. */
   FileInfo* GetFileInfoOrCreateUnmutexed(
-      boost::uint64_t file_id,
+      uint64_t file_id,
       const std::string& path,
       bool replicate_on_close,
       const xtreemfs::pbrpc::XLocSet& xlocset);
 
   /** Deregisters file_id from open_file_table_. */
-  void RemoveFileInfoUnmutexed(boost::uint64_t file_id, FileInfo* file_info);
+  void RemoveFileInfoUnmutexed(uint64_t file_id, FileInfo* file_info);
 
   /** Renew the XCap of every FileHandle before it does expire. */
   void PeriodicXCapRenewal();
@@ -367,7 +368,7 @@ class VolumeImplementation : public Volume {
   boost::scoped_ptr<xtreemfs::pbrpc::OSDServiceClient> osd_service_client_;
 
   /** Maps file_id -> FileInfo* for every open file. */
-  std::map<boost::uint64_t, FileInfo*> open_file_table_;
+  std::map<uint64_t, FileInfo*> open_file_table_;
   /**
    * @attention If a function uses open_file_table_mutex_ and
    *            file_handle_list_mutex_, file_handle_list_mutex_ has to be

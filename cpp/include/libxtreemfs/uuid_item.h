@@ -44,7 +44,7 @@ class UUIDItem {
   const std::string uuid;
 
  private:
-  boost::uint32_t marked_as_failed;
+  uint32_t marked_as_failed;
 };
 
 }  // namespace xtreemfs

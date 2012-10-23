@@ -17,7 +17,7 @@ namespace rpc {
 class DropRule {
  public:
   /** This method is called for every received process */
-  virtual bool DropRequest(boost::uint32_t proc_id) = 0;
+  virtual bool DropRequest(uint32_t proc_id) = 0;
 
   /** This method is used to determine whether or not a rule can be deleted */
   virtual bool IsPointless() const = 0;
@@ -37,7 +37,7 @@ class SkipMDropNRule : public DropRule {
  public:
   SkipMDropNRule(size_t skip, size_t drop) : skip_count_(skip), drop_count_(drop) {}
 
-  virtual bool DropRequest(boost::uint32_t proc_id) {
+  virtual bool DropRequest(uint32_t proc_id) {
     if (skip_count_ == 0 && drop_count_ > 0) {
       --drop_count_;
       return true;
@@ -67,10 +67,10 @@ class ProcIDFilterRule : public DropRule {
   /** Construct a proc_id filtered rule from an existing rule.
    *  The ownership of rule's pointee is transfered to the created instance.
    */
-  ProcIDFilterRule(boost::uint32_t proc_id, DropRule* rule)
+  ProcIDFilterRule(uint32_t proc_id, DropRule* rule)
       : proc_id_(proc_id), rule_(rule) {}
 
-  virtual bool DropRequest(boost::uint32_t proc_id) {
+  virtual bool DropRequest(uint32_t proc_id) {
     return proc_id == proc_id_ ? rule_->DropRequest(proc_id) : false;
   }
 
@@ -79,7 +79,7 @@ class ProcIDFilterRule : public DropRule {
   }
 
  private:
-  boost::uint32_t proc_id_;
+  uint32_t proc_id_;
   boost::scoped_ptr<DropRule> rule_;
 };
 
@@ -88,7 +88,7 @@ class DropNRule : public DropRule {
 public:
   DropNRule(size_t count) : count_(count) {}
 
-  virtual bool DropRequest(boost::uint32_t proc_id) {
+  virtual bool DropRequest(uint32_t proc_id) {
     if (count_ - 1 > 0) {
       --count_;
       return true;
@@ -110,10 +110,10 @@ public:
  */
 class DropByProcIDRule : public DropRule {
 public:
-  DropByProcIDRule(boost::uint32_t proc_id)
+  DropByProcIDRule(uint32_t proc_id)
       : proc_id_(proc_id) {}
 
-  virtual bool DropRequest(boost::uint32_t proc_id) {
+  virtual bool DropRequest(uint32_t proc_id) {
     return proc_id_ == proc_id;
   }
 

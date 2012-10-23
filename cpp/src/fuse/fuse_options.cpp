@@ -177,7 +177,7 @@ void FuseOptions::ParseCommandLine(int argc, char** argv) {
     }
     if (fuse_options[i] == "xtreemfs_acl") {
       // Fuse may prevent operations based on the evaluation of stat records
-      // altough a user is allowed to due to further ACLs, so we disable this
+      // although a user is allowed to due to further ACLs, so we disable this
       // Fuse feature here.
       use_fuse_permission_checks = false;
       // Don't send this option to Fuse.

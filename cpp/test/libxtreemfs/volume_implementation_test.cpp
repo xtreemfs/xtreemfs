@@ -304,8 +304,8 @@ TEST_F(VolumeImplementationTestFastPeriodicXCapRenewal,
                                                 SYSTEM_V_FCNTL_H_O_CREAT);
 
     // Wait for the periodic xcap renewal thread.
-    boost::uint64_t timeout_s = dynamic_cast<FileHandleImplementation*>(file_handle)
-            ->xcap_.expire_time_s();
+    uint64_t timeout_s = dynamic_cast<FileHandleImplementation*>(file_handle)
+        ->xcap_.expire_time_s();
     sleep(2);
     EXPECT_LT(timeout_s, dynamic_cast<FileHandleImplementation*>(file_handle)
         ->xcap_.expire_time_s());

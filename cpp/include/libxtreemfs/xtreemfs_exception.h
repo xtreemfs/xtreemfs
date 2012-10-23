@@ -8,7 +8,8 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_XTREEMFS_EXCEPTION_H_
 #define CPP_INCLUDE_LIBXTREEMFS_XTREEMFS_EXCEPTION_H_
 
-#include <boost/cstdint.hpp>
+#include <stdint.h>
+
 #include <stdexcept>
 #include <string>
 
@@ -59,7 +60,7 @@ class InternalServerErrorException : public XtreemFSException {
  */
 class FileInfoNotFoundException : public XtreemFSException {
  public:
-  explicit FileInfoNotFoundException(boost::uint64_t file_id)
+  explicit FileInfoNotFoundException(uint64_t file_id)
     : XtreemFSException("The FileInfo object was not found in the OpenFileTable"
         " for the FileId: " + file_id) {}
 };

@@ -8,7 +8,8 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_FILE_HANDLE_IMPLEMENTATION_H_
 #define CPP_INCLUDE_LIBXTREEMFS_FILE_HANDLE_IMPLEMENTATION_H_
 
-#include <boost/cstdint.hpp>
+#include <stdint.h>
+
 #include <boost/thread/condition.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -104,16 +105,16 @@ class FileHandleImplementation
   virtual xtreemfs::pbrpc::Lock* AcquireLock(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       int process_id,
-      boost::uint64_t offset,
-      boost::uint64_t length,
+      uint64_t offset,
+      uint64_t length,
       bool exclusive,
       bool wait_for_lock);
 
   virtual xtreemfs::pbrpc::Lock* CheckLock(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       int process_id,
-      boost::uint64_t offset,
-      boost::uint64_t length,
+      uint64_t offset,
+      uint64_t length,
       bool exclusive);
 
   virtual void ReleaseLock(
@@ -123,8 +124,8 @@ class FileHandleImplementation
   virtual void ReleaseLock(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       int process_id,
-      boost::uint64_t offset,
-      boost::uint64_t length,
+      uint64_t offset,
+      uint64_t length,
       bool exclusive);
 
   /** Used by FileInfo object to free active locks. */
@@ -178,14 +179,15 @@ class FileHandleImplementation
   /** Implements callback for an async xtreemfs_update_file_size request. */
   virtual void CallFinished(
       xtreemfs::pbrpc::timestampResponse* response_message,
-      char* data, boost::uint32_t data_length,
+      char* data,
+      uint32_t data_length,
       xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
       void* context);
 
   /** Implements callback for an async xtreemfs_renew_capability request. */
   virtual void CallFinished(xtreemfs::pbrpc::XCap* new_xcap,
                             char* data,
-                            boost::uint32_t data_length,
+                            uint32_t data_length,
                             xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
                             void* context);
 
@@ -193,13 +195,13 @@ class FileHandleImplementation
   void Flush(bool close_file);
 
   /** Extracts the file_id from the stored xcap_. */
-  boost::uint64_t GetFileId();
+  uint64_t GetFileId();
 
   /** Extracts the file_id from the stored xcap_.
    *
    * @remark Requires a lock on mutex_.
    */
-  boost::uint64_t GetFileIdHelper(boost::mutex::scoped_lock* lock);
+  uint64_t GetFileIdHelper(boost::mutex::scoped_lock* lock);
 
   /** Actual implementation of ReleaseLock(). */
   void ReleaseLock(

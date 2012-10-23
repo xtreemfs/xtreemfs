@@ -9,10 +9,11 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_OPTIONS_H_
 #define CPP_INCLUDE_LIBXTREEMFS_OPTIONS_H_
 
+#include <stdint.h>
+
 #include <boost/function.hpp>
 #include <boost/program_options.hpp>
 #include <iostream>
-#include <stdint.h>
 #include <string>
 #include <vector>
 
@@ -119,9 +120,9 @@ class Options {
 
   // Optimizations.
   /** Maximum number of entries of the StatCache */
-  boost::uint64_t metadata_cache_size;
+  uint64_t metadata_cache_size;
   /** Time to live for MetadataCache entries. */
-  boost::uint64_t metadata_cache_ttl_s;
+  uint64_t metadata_cache_ttl_s;
   /** Maximum number of pending bytes (of async writes) per file. */
   int max_writeahead;
   /** Maximum number of pending async write requests per file. */
@@ -139,12 +140,12 @@ class Options {
   /** How long to wait after a failed request? */
   int retry_delay_s;
   /** Maximum time until a connection attempt will be aborted. */
-  boost::int32_t connect_timeout_s;
+  int32_t connect_timeout_s;
   /** Maximum time until a request will be aborted and the response returned. */
-  boost::int32_t request_timeout_s;
+  int32_t request_timeout_s;
   /** The RPC Client closes connections after "linger_timeout_s" time of
    *  inactivity. */
-  boost::int32_t linger_timeout_s;
+  int32_t linger_timeout_s;
 
   // SSL options.
   std::string ssl_pem_cert_path;

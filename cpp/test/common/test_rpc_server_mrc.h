@@ -34,21 +34,21 @@ class TestRPCServerMRC : public TestRPCServer<TestRPCServerMRC> {
       const pbrpc::UserCredentials& user_credentials,
       const google::protobuf::Message& request,
       const char* data,
-      boost::uint32_t data_len);
+      uint32_t data_len);
 
   google::protobuf::Message* UpdateFileSizeOperation(
       const pbrpc::Auth& auth,
       const pbrpc::UserCredentials& user_credentials,
       const google::protobuf::Message& request,
       const char* data,
-      boost::uint32_t data_len);
+      uint32_t data_len);
 
   google::protobuf::Message* RenewCapabilityOperation(
       const pbrpc::Auth& auth,
       const pbrpc::UserCredentials& user_credentials,
       const google::protobuf::Message& request,
       const char* data,
-      boost::uint32_t data_len);
+      uint32_t data_len);
 
   /** Mutex used to protect all member variables from concurrent access. */
   boost::mutex mutex_;

@@ -11,12 +11,12 @@
 #include <cstring>
 #define FUSE_USE_VERSION 26
 #include <fuse.h>
+#include <stdint.h>
 #include <sys/errno.h>
 #include <sys/types.h>
 #include <unistd.h>
 
 #include <algorithm>
-#include <boost/cstdint.hpp>
 #include <boost/lexical_cast.hpp>
 #include <fstream>
 #include <list>
@@ -77,7 +77,7 @@ FuseAdapter::~FuseAdapter() {}
 
 void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
 
-  // Start logging manually (altough it would be automatically started by
+  // Start logging manually (although it would be automatically started by
   // ClientImplementation()) as its required by UserMapping.
   initialize_logger(options_->log_level_string,
                     options_->log_file_path,
@@ -475,10 +475,10 @@ int FuseAdapter::statfs(const char *path, struct statvfs *statv) {
     // number of total and free space (e.g. by df, see issue 247)
     // Additionally, the maximum size for f_frsize is 128 * 1024. Change
     // the block count numbers if the default stripe size is larger.
-    boost::uint32_t default_stripe_size = stat_vfs->bsize();
-    boost::uint32_t statvfs_block_size = default_stripe_size;
-    boost::uint64_t total_blocks = stat_vfs->blocks();
-    boost::uint64_t avail_blocks = stat_vfs->bavail();
+    uint32_t default_stripe_size = stat_vfs->bsize();
+    uint32_t statvfs_block_size = default_stripe_size;
+    uint64_t total_blocks = stat_vfs->blocks();
+    uint64_t avail_blocks = stat_vfs->bavail();
 
 #ifdef __APPLE__
     while (statvfs_block_size > (128 * 1024)) {
@@ -659,7 +659,7 @@ int FuseAdapter::opendir(const char *path, struct fuse_file_info *fi) {
 int FuseAdapter::readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     off_t offset, struct fuse_file_info *fi) {
   DirectoryEntries* dir_entries = NULL;
-  boost::uint64_t dir_entries_offset = 0;
+  uint64_t dir_entries_offset = 0;
 
   // Look up if there are some unprocessed directory entries.
   CachedDirectoryEntries* cached_direntries
@@ -716,7 +716,7 @@ int FuseAdapter::readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
   int i;
   for (i = offset; i < dir_entries_offset + dir_entries->entries_size(); i++) {
-    boost::uint64_t dir_entries_index = i -  dir_entries_offset;
+    uint64_t dir_entries_index = i -  dir_entries_offset;
     if (dir_entries->entries(dir_entries_index).has_stbuf()) {
       // Only set here st_ino and st_mode for the struct dirent.
       fuse_statbuf.st_ino
@@ -790,12 +790,12 @@ int FuseAdapter::utime(const char *path, struct utimbuf *ubuf) {
 
   // Convert seconds to nanoseconds.
   if (ubuf != NULL) {
-    stat.set_atime_ns(static_cast<boost::uint64_t>(ubuf->actime) * 1000000000);
-    stat.set_mtime_ns(static_cast<boost::uint64_t>(ubuf->modtime) * 1000000000);
+    stat.set_atime_ns(static_cast<uint64_t>(ubuf->actime) * 1000000000);
+    stat.set_mtime_ns(static_cast<uint64_t>(ubuf->modtime) * 1000000000);
   } else {
     // POSIX: If times is a null pointer, the access and modification
     //        times of the file shall be set to the current time.
-    boost::uint64_t current_time = time(NULL);
+    uint64_t current_time = time(NULL);
     stat.set_atime_ns(current_time * 1000000000);
     stat.set_mtime_ns(current_time * 1000000000);
   }
@@ -823,14 +823,14 @@ int FuseAdapter::utimens(const char *path, const struct timespec tv[2]) {
 
   // Convert seconds to nanoseconds.
   if (tv != NULL) {
-    stat.set_atime_ns(static_cast<boost::uint64_t>(tv[0].tv_sec)
+    stat.set_atime_ns(static_cast<uint64_t>(tv[0].tv_sec)
                       * 1000000000 + tv[0].tv_nsec);
-    stat.set_mtime_ns(static_cast<boost::uint64_t>(tv[1].tv_sec)
+    stat.set_mtime_ns(static_cast<uint64_t>(tv[1].tv_sec)
                       * 1000000000 + tv[1].tv_nsec);
   } else {
     // POSIX: If times is a null pointer, the access and modification
     //        times of the file shall be set to the current time.
-    boost::uint64_t current_time = time(NULL);
+    uint64_t current_time = time(NULL);
     stat.set_atime_ns(current_time * 1000000000);
     stat.set_mtime_ns(current_time * 1000000000);
   }

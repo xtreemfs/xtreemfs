@@ -21,6 +21,7 @@
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "rpc/client.h"
 
+using namespace std;
 using namespace xtreemfs::pbrpc;
 using namespace xtreemfs::util;
 

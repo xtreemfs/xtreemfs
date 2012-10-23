@@ -9,8 +9,9 @@
 #ifndef CPP_INCLUDE_RPC_CLIENT_CONNECTION_H_
 #define CPP_INCLUDE_RPC_CLIENT_CONNECTION_H_
 
+#include <stdint.h>
+
 #include <boost/asio.hpp>
-#include <boost/cstdint.hpp>
 #include <boost/function.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/version.hpp>
@@ -31,10 +32,6 @@
 
 namespace xtreemfs {
 namespace rpc {
-
-using std::string;
-using boost::int32_t;
-using boost::uint32_t;
 
 // Boost introduced unordered_map in version 1.36 but we need to support
 // older versions for Debian 5.
@@ -65,8 +62,8 @@ class ClientConnection {
     ClientRequest* rq;
   };
 
-  ClientConnection(const string& server_name,
-                   const string& port,
+  ClientConnection(const std::string& server_name,
+                   const std::string& port,
                    boost::asio::io_service& service,
                    request_map *request_table,
                    int32_t connect_timeout_s,
@@ -80,7 +77,7 @@ class ClientConnection {
   void AddRequest(ClientRequest *request);
   void Close(const std::string& error);
   void SendError(xtreemfs::pbrpc::POSIXErrno posix_errno,
-                 const string &error_message);
+                 const std::string &error_message);
   void Reset();
 
   boost::posix_time::ptime last_used() const {
@@ -110,8 +107,8 @@ class ClientConnection {
   std::queue<PendingRequest> requests_;
   ClientRequest* current_request_;
 
-  const string server_name_;
-  const string server_port_;
+  const std::string server_name_;
+  const std::string server_port_;
   boost::asio::io_service &service_;
   boost::asio::ip::tcp::resolver resolver_;
   AbstractSocketChannel *socket_;

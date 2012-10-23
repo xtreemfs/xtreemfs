@@ -8,6 +8,8 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_METADATA_CACHE_H_
 #define CPP_INCLUDE_LIBXTREEMFS_METADATA_CACHE_H_
 
+#include <stdint.h>
+
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/ordered_index.hpp>
@@ -59,7 +61,7 @@ class MetadataCache {
   typedef Cache::index<IndexMap>::type by_map;
   typedef Cache::index<IndexHash>::type by_hash;
 
-  MetadataCache(boost::uint64_t size, boost::uint64_t ttl_s);
+  MetadataCache(uint64_t size, uint64_t ttl_s);
 
   /** Frees all MetadataCacheEntry objects. */
   ~MetadataCache();
@@ -83,7 +85,7 @@ class MetadataCache {
    * Values for to_set: SETATTR_ATIME, SETATTR_MTIME, SETATTR_CTIME
    */
   void UpdateStatTime(const std::string& path,
-                      boost::uint64_t timestamp,
+                      uint64_t timestamp,
                       xtreemfs::pbrpc::Setattrs to_set);
 
   /** Updates the attributes given in "stat" and selected by "to_set". */
@@ -102,8 +104,8 @@ class MetadataCache {
    * @remark Ownership is transferred to the caller.
    */
   xtreemfs::pbrpc::DirectoryEntries* GetDirEntries(const std::string& path,
-                     boost::uint64_t offset,
-                     boost::uint32_t count);
+                                                   uint64_t offset,
+                                                   uint32_t count);
 
   /** Invalidates the stat entry stored for "path". */
   void InvalidateStat(const std::string& path);
@@ -124,13 +126,17 @@ class MetadataCache {
 
   /** Writes value for an XAttribute with "name" stored for "path" in "value".
    *  Returns true if found, false otherwise. */
-  bool GetXAttr(const std::string& path, const std::string& name,
-                std::string* value, bool* xattrs_cached);
+  bool GetXAttr(const std::string& path,
+                const std::string& name,
+                std::string* value,
+                bool* xattrs_cached);
 
   /** Stores the size of a value (string length) of an XAttribute "name" cached
    *  for "path" in "size". */
-  bool GetXAttrSize(const std::string& path, const std::string& name,
-                    int* size, bool* xattrs_cached);
+  bool GetXAttrSize(const std::string& path,
+                    const std::string& name,
+                    int* size,
+                    bool* xattrs_cached);
 
   /** Get all extended attributes cached for "path".
    *
@@ -142,7 +148,8 @@ class MetadataCache {
    *  attributes for "path" is already cached.
    *
    *  @remark   This function does not extend the TTL of the xattr list. */
-  void UpdateXAttr(const std::string& path, const std::string& name,
+  void UpdateXAttr(const std::string& path,
+                   const std::string& name,
                    const std::string& value);
 
   /** Stores/updates XAttrs in cache for path.
@@ -159,10 +166,10 @@ class MetadataCache {
   void InvalidateXAttrs(const std::string& path);
 
   /** Returns the current number of elements. */
-  boost::uint64_t Size();
+  uint64_t Size();
 
   /** Returns the maximum number of elements. */
-  boost::uint64_t Capacity() { return size_; }
+  uint64_t Capacity() { return size_; }
 
  private:
   /** Evicts first n oldest entries from cache_. */
@@ -170,9 +177,9 @@ class MetadataCache {
 
   bool enabled;
 
-  boost::uint64_t size_;
+  uint64_t size_;
 
-  boost::uint64_t ttl_s_;
+  uint64_t ttl_s_;
 
   boost::mutex mutex_;
 

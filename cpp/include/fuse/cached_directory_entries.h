@@ -8,7 +8,8 @@
 #ifndef CPP_INCLUDE_FUSE_CACHED_DIRECTORY_ENTRIES_H_
 #define CPP_INCLUDE_FUSE_CACHED_DIRECTORY_ENTRIES_H_
 
-#include <boost/cstdint.hpp>
+#include <stdint.h>
+
 #include <boost/thread/mutex.hpp>
 
 namespace xtreemfs {
@@ -20,7 +21,7 @@ class DirectoryEntries;
 }  // namespace pbrpc
 
 struct CachedDirectoryEntries {
-  boost::uint64_t offset;
+  uint64_t offset;
   xtreemfs::pbrpc::DirectoryEntries* dir_entries;
   boost::mutex mutex;
 };

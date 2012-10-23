@@ -39,7 +39,7 @@ class AsyncWriteHandler
     CallbackEntry(AsyncWriteHandler* handler,
                   xtreemfs::pbrpc::OSDWriteResponse* response_message,
                   char* data,
-                  boost::uint32_t data_length,
+                  uint32_t data_length,
                   xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
                   void* context)
         : handler_(handler),
@@ -52,7 +52,7 @@ class AsyncWriteHandler
     AsyncWriteHandler* handler_;
     xtreemfs::pbrpc::OSDWriteResponse* response_message_;
     char* data_;
-    boost::uint32_t data_length_;
+    uint32_t data_length_;
     xtreemfs::pbrpc::RPCHeader::ErrorResponse* error_;
     void* context_;
   };
@@ -121,7 +121,8 @@ class AsyncWriteHandler
    *  data. The actual handling of the callback is done by another thread via
    *  HandleCallback(). */
   virtual void CallFinished(xtreemfs::pbrpc::OSDWriteResponse* response_message,
-                            char* data, boost::uint32_t data_length,
+                            char* data,
+                            uint32_t data_length,
                             xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
                             void* context);
 
@@ -129,7 +130,7 @@ class AsyncWriteHandler
    *  called for all queued callbacks in a separate thread.*/
   void HandleCallback(xtreemfs::pbrpc::OSDWriteResponse* response_message,
                       char* data,
-                      boost::uint32_t data_length,
+                      uint32_t data_length,
                       xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
                       void* context);
 

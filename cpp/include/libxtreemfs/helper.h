@@ -8,7 +8,8 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_HELPER_H_
 #define CPP_INCLUDE_LIBXTREEMFS_HELPER_H_
 
-#include <boost/cstdint.hpp>
+#include <stdint.h>
+
 #include <string>
 
 namespace xtreemfs {
@@ -33,7 +34,7 @@ int CompareOSDWriteResponses(
     const xtreemfs::pbrpc::OSDWriteResponse* new_response,
     const xtreemfs::pbrpc::OSDWriteResponse* current_response);
 
-boost::uint64_t ExtractFileIdFromXCap(const xtreemfs::pbrpc::XCap& xcap);
+uint64_t ExtractFileIdFromXCap(const xtreemfs::pbrpc::XCap& xcap);
 
 /** Same as dirname(): Returns the path to the parent directory of a path. */
 std::string ResolveParentDirectory(const std::string& path);

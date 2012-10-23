@@ -10,6 +10,8 @@
 
 #include "common/test_rpc_server.h"
 
+#include <stdint.h>
+
 #include <boost/thread/mutex.hpp>
 #include <vector>
 
@@ -27,7 +29,7 @@ class WriteEntry {
   WriteEntry()
       : object_number_(0), offset_(0), data_len_(0) { }
 
-  WriteEntry(uint64_t objectNumber, boost::uint32_t offset, boost::uint32_t data_len)
+  WriteEntry(uint64_t objectNumber, uint32_t offset, uint32_t data_len)
     : object_number_(objectNumber), offset_(offset), data_len_(data_len) { }
 
   bool operator==(const WriteEntry& other) const {
@@ -36,9 +38,9 @@ class WriteEntry {
         && (other.data_len_ == this->data_len_);
   }
 
-  boost::uint64_t object_number_;
-  boost::uint32_t offset_;
-  boost::uint32_t data_len_;
+  uint64_t object_number_;
+  uint32_t offset_;
+  uint32_t data_len_;
 };
 
 class TestRPCServerOSD : public TestRPCServer<TestRPCServerOSD> {
@@ -52,14 +54,14 @@ class TestRPCServerOSD : public TestRPCServer<TestRPCServerOSD> {
       const pbrpc::UserCredentials& user_credentials,
       const google::protobuf::Message& request,
       const char* data,
-      boost::uint32_t data_len);
+      uint32_t data_len);
 
   google::protobuf::Message* WriteOperation(
       const pbrpc::Auth& auth,
       const pbrpc::UserCredentials& user_credentials,
       const google::protobuf::Message& request,
       const char* data,
-      boost::uint32_t data_len);
+      uint32_t data_len);
 
   /** Mutex used to protect all member variables from concurrent access. */
   mutable boost::mutex mutex_;

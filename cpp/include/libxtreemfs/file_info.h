@@ -8,6 +8,8 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_FILE_INFO_H_
 #define CPP_INCLUDE_LIBXTREEMFS_FILE_INFO_H_
 
+#include <stdint.h>
+
 #include <boost/optional.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread/condition.hpp>
@@ -15,7 +17,6 @@
 #include <gtest/gtest_prod.h>
 #include <list>
 #include <map>
-#include <stdint.h>
 #include <string>
 
 #include "libxtreemfs/client_implementation.h"
@@ -44,7 +45,7 @@ class FileInfo {
  public:
   FileInfo(ClientImplementation* client,
            VolumeImplementation* volume,
-           boost::uint64_t file_id,
+           uint64_t file_id,
            const std::string& path,
            bool replicate_on_close,
            const xtreemfs::pbrpc::XLocSet& xlocset,
@@ -215,7 +216,7 @@ class FileInfo {
   VolumeImplementation* volume_;
 
   /** XtreemFS File ID of this file (does never change). */
-  boost::uint64_t file_id_;
+  uint64_t file_id_;
 
   /** Path of the File, used for debug output and writing back the
    *  OSDWriteResponse to the MetadataCache. */

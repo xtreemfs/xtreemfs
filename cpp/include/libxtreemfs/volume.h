@@ -8,7 +8,8 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_VOLUME_H_
 #define CPP_INCLUDE_LIBXTREEMFS_VOLUME_H_
 
-#include <boost/cstdint.hpp>
+#include <stdint.h>
+
 #include <list>
 #include <string>
 
@@ -148,7 +149,7 @@ class Volume {
         const xtreemfs::pbrpc::UserCredentials& user_credentials,
         const std::string& path,
         const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
-        boost::uint32_t mode) = 0;
+        uint32_t mode) = 0;
 
   /** Truncates the file to "new_file_size_ bytes.
    *
@@ -312,8 +313,8 @@ class Volume {
   virtual xtreemfs::pbrpc::DirectoryEntries* ReadDir(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& path,
-      boost::uint64_t offset,
-      boost::uint32_t count,
+      uint64_t offset,
+      uint32_t count,
       bool names_only) = 0;
 
   /** Returns the list of extended attributes stored for "path" (Entries may

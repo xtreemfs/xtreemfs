@@ -8,7 +8,7 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_FILE_HANDLE_H_
 #define CPP_INCLUDE_LIBXTREEMFS_FILE_HANDLE_H_
 
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 
 namespace xtreemfs {
 
@@ -132,8 +132,8 @@ class FileHandle {
   virtual xtreemfs::pbrpc::Lock* AcquireLock(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       int process_id,
-      boost::uint64_t offset,
-      boost::uint64_t length,
+      uint64_t offset,
+      uint64_t length,
       bool exclusive,
       bool wait_for_lock) = 0;
 
@@ -157,8 +157,8 @@ class FileHandle {
   virtual xtreemfs::pbrpc::Lock* CheckLock(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       int process_id,
-      boost::uint64_t offset,
-      boost::uint64_t length,
+      uint64_t offset,
+      uint64_t length,
       bool exclusive) = 0;
 
   /** Releases "lock".
@@ -177,8 +177,8 @@ class FileHandle {
   virtual void ReleaseLock(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       int process_id,
-      boost::uint64_t offset,
-      boost::uint64_t length,
+      uint64_t offset,
+      uint64_t length,
       bool exclusive) = 0;
 
   /** Releases "lock" (parameters given in Lock object).

@@ -271,7 +271,7 @@ void AsyncWriteHandler::WriteCommon(AsyncWriteBuffer* write_buffer,
     uuid_resolver_->UUIDToAddress(osd_uuid,
                                   &osd_address,
                                   uuid_resolver_options_);
-  } catch (const exception&) {
+  } catch (const XtreemFSException&) {
     if (is_rewrite) {
       // In case of errors, throw exception.
       --pending_writes_;
@@ -371,7 +371,7 @@ void AsyncWriteHandler::ProcessCallbacks() {
                                  entry.data_length_,
                                  entry.error_,
                                  entry.context_);
-    } catch (const exception& e) {
+    } catch (const XtreemFSException& e) {
       if (Logging::log->loggingActive(LEVEL_DEBUG)) {
         Logging::log->getLog(LEVEL_DEBUG)
             << "AsyncWriteHandler::ProcessCallbacks(): caught unhandled "
@@ -385,7 +385,7 @@ void AsyncWriteHandler::ProcessCallbacks() {
 void AsyncWriteHandler::CallFinished(
     xtreemfs::pbrpc::OSDWriteResponse* response_message,
     char* data,
-    boost::uint32_t data_length,
+    uint32_t data_length,
     xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
     void* context) {
   callback_queue.Enqueue(CallbackEntry(this,
@@ -399,7 +399,7 @@ void AsyncWriteHandler::CallFinished(
 void AsyncWriteHandler::HandleCallback(
     xtreemfs::pbrpc::OSDWriteResponse* response_message,
     char* data,
-    boost::uint32_t data_length,
+    uint32_t data_length,
     xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
     void* context) {
   boost::mutex::scoped_lock lock(mutex_);
@@ -604,7 +604,7 @@ void AsyncWriteHandler::HandleCallback(
         state_ = WRITES_PENDING;
         worst_error_.Clear();
         worst_write_buffer_ = 0;
-      } catch (const exception& e) {
+      } catch (const XtreemFSException& e) {
         if (Logging::log->loggingActive(LEVEL_DEBUG)) {
           Logging::log->getLog(LEVEL_DEBUG)
               << "AsyncWriteHandler::HandleCallback(): caught exception: "

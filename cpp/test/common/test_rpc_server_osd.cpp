@@ -36,7 +36,7 @@ google::protobuf::Message* TestRPCServerOSD::TruncateOperation(
     const pbrpc::UserCredentials& user_credentials,
     const google::protobuf::Message& request,
     const char* data,
-    boost::uint32_t data_len) {
+    uint32_t data_len) {
   const truncateRequest* rq
       = reinterpret_cast<const truncateRequest*>(&request);
 
@@ -58,7 +58,7 @@ google::protobuf::Message* TestRPCServerOSD::WriteOperation(
     const pbrpc::UserCredentials& user_credentials,
     const google::protobuf::Message& request,
     const char* data,
-    boost::uint32_t data_len) {
+    uint32_t data_len) {
   const writeRequest* rq
       = reinterpret_cast<const writeRequest*>(&request);
 

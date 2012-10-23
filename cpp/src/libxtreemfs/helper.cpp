@@ -10,6 +10,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <stdint.h>
 #ifdef __APPLE__
 #include <sys/utsname.h>
 #endif  // __APPLE__
@@ -60,12 +61,12 @@ int CompareOSDWriteResponses(
 }
 
 /** The XCap contains the Volume UUID and File ID concatenated by a ":". */
-boost::uint64_t ExtractFileIdFromXCap(const xtreemfs::pbrpc::XCap& xcap) {
+uint64_t ExtractFileIdFromXCap(const xtreemfs::pbrpc::XCap& xcap) {
   string string = xcap.file_id();
 
   int start = string.find(":") + 1;
   int length = string.length() - start;
-  return boost::lexical_cast<boost::uint64_t>(
+  return boost::lexical_cast<uint64_t>(
       string.substr(start, length));
 }
 
@@ -213,10 +214,10 @@ bool CheckIfLocksAreEqual(const xtreemfs::pbrpc::Lock& lock1,
 bool CheckIfLocksDoConflict(const xtreemfs::pbrpc::Lock& lock1,
                             const xtreemfs::pbrpc::Lock& lock2) {
   // 0 means to lock till the end of the file.
-  boost::uint64_t lock1_end = lock1.length() == 0 ? 0 :
+  uint64_t lock1_end = lock1.length() == 0 ? 0 :
       lock1.offset() + lock1.length();
-  boost::uint64_t lock2_end = lock2.length() == 0 ? 0 :
-        lock2.offset() + lock2.length();
+  uint64_t lock2_end = lock2.length() == 0 ? 0 :
+      lock2.offset() + lock2.length();
 
   // Check for overlaps.
   if (lock1_end == 0) {
@@ -247,7 +248,7 @@ bool CheckIfUnsignedInteger(const std::string& string) {
     // It's needed to use a 64 bit signed integer to detect a -(2^31)-1
     // as a negative value and not as an overflowed unsigned integer of
     // value 2^32-1.
-    boost::int64_t integer = boost::lexical_cast<boost::int64_t>(string);
+    int64_t integer = boost::lexical_cast<int64_t>(string);
     // If casted to uint, no bad_lexical_cast is thrown for negative values -
     // therefore we check for them on our own.
     if (integer < 0) {

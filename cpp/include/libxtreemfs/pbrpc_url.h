@@ -8,8 +8,9 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_PBRPC_URL_H_
 #define CPP_INCLUDE_LIBXTREEMFS_PBRPC_URL_H_
 
+#include <stdint.h>
+
 #include <boost/lexical_cast.hpp>
-#include <boost/cstdint.hpp>
 
 #include <string>
 #include <utility>
