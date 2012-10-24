@@ -35,8 +35,8 @@ public class RPCCPPSourceGenerator {
         ttt.put(Type.TYPE_BOOL,"boolean");
         ttt.put(Type.TYPE_BYTES,"ByteString");
         ttt.put(Type.TYPE_DOUBLE,"double");
-        ttt.put(Type.TYPE_FIXED32,"boost::uint32_t");
-        ttt.put(Type.TYPE_FIXED64,"boost:uint64_t");
+        ttt.put(Type.TYPE_FIXED32,"uint32_t");
+        ttt.put(Type.TYPE_FIXED64,"uint64_t");
         ttt.put(Type.TYPE_FLOAT,"float");
         ttt.put(Type.TYPE_STRING,"std::string");
 
@@ -120,7 +120,7 @@ public class RPCCPPSourceGenerator {
 
                 codeBuilderGetRequestMessageH.append("#ifndef "+ includeGuardGetRequestMessage +"\n");
                 codeBuilderGetRequestMessageH.append("#define "+ includeGuardGetRequestMessage +"\n\n");
-                codeBuilderGetRequestMessageH.append("#include <boost/cstdint.hpp>\n");
+                codeBuilderGetRequestMessageH.append("#include <stdint.h>\n");
                 codeBuilderGetRequestMessageH.append("\n");
                 codeBuilderGetRequestMessageH.append("namespace google {\n");
                 codeBuilderGetRequestMessageH.append("namespace protobuf {\n");
@@ -162,15 +162,15 @@ public class RPCCPPSourceGenerator {
                         }
                         codeBuilderGetRequestMessageH.append("\n");
                         codeBuilderGetRequestMessageH.append(
-    "google::protobuf::Message* GetMessageForProcID(boost::uint32_t interface_id,\n");
+    "google::protobuf::Message* GetMessageForProcID(uint32_t interface_id,\n");
                         codeBuilderGetRequestMessageH.append(
-    "                                               boost::uint32_t proc_id);\n\n");
+    "                                               uint32_t proc_id);\n\n");
                         
                         codeBuilderGetRequestMessageCC.append("\n");
                         codeBuilderGetRequestMessageCC.append(
-    "google::protobuf::Message* GetMessageForProcID(boost::uint32_t interface_id,\n");
+    "google::protobuf::Message* GetMessageForProcID(uint32_t interface_id,\n");
                         codeBuilderGetRequestMessageCC.append(
-    "                                               boost::uint32_t proc_id) {\n");
+    "                                               uint32_t proc_id) {\n");
                         codeBuilderGetRequestMessageCC.append(
     "  switch (interface_id) {\n");
                         initializedGetRequestMessage = true;
@@ -206,12 +206,12 @@ public class RPCCPPSourceGenerator {
                         codeBuilderConst.append("//(c) "+((new Date()).getYear()+1900)+". See LICENSE file for details.\n\n");
                         codeBuilderConst.append("#ifndef "+classNameConst.toUpperCase()+"_H_\n");
                         codeBuilderConst.append("#define "+classNameConst.toUpperCase()+"_H_\n");
-                        codeBuilderConst.append("#include <boost/cstdint.hpp>\n\n");
+                        codeBuilderConst.append("#include <stdint.h>\n\n");
                         for (int i = 0; i < namespaceTokens.length; i++) {
                             codeBuilderConst.append("namespace " + namespaceTokens[i] + " {\n");
                         }
                         codeBuilderConst.append("\n");
-                        codeBuilderConst.append("const boost::uint32_t INTERFACE_ID_" + (new java.io.File(proto.getName())).getName().replace(".proto", "").toUpperCase() + " = " + interfaceId + ";\n");
+                        codeBuilderConst.append("const uint32_t INTERFACE_ID_" + (new java.io.File(proto.getName())).getName().replace(".proto", "").toUpperCase() + " = " + interfaceId + ";\n");
 
                         //imports
                         codeBuilder.append("//automatically generated from "+filchen.getName()+" at "+new Date()+"\n");
@@ -220,7 +220,7 @@ public class RPCCPPSourceGenerator {
                         codeBuilder.append("#ifndef "+className.toUpperCase()+"_H\n");
                         codeBuilder.append("#define "+className.toUpperCase()+"_H\n\n");
 
-                        codeBuilder.append("#include <boost/cstdint.hpp>\n");
+                        codeBuilder.append("#include <stdint.h>\n");
                         codeBuilder.append("#include \"pbrpc/RPC.pb.h\"\n");
                         codeBuilder.append("#include \"rpc/client.h\"\n");
                         codeBuilder.append("#include \"rpc/sync_callback.h\"\n");
@@ -261,7 +261,7 @@ public class RPCCPPSourceGenerator {
                             includes.add(typeDefs.get(method.getOutputType()).fileName);
 
                             final int procId = method.getOptions().getExtension(PBRPC.procId);
-                            codeBuilderConst.append("const boost::uint32_t PROC_ID_"+method.getName().toUpperCase()+" = " + procId + ";\n");
+                            codeBuilderConst.append("const uint32_t PROC_ID_"+method.getName().toUpperCase()+" = " + procId + ";\n");
 
                             final boolean data_in = method.getOptions().hasExtension(PBRPC.dataIn) ? method.getOptions().getExtension(PBRPC.dataIn) : false;
                             final String dataValue = data_in ? "data" : "null";
@@ -291,12 +291,12 @@ public class RPCCPPSourceGenerator {
                             if (!inputType.contains("emptyRequest"))
                                 codeBuilder.append("\n"+indent+ONE_INDENT+ONE_INDENT+"const "+inputType+"* request,");
                             if (data_in)
-                                codeBuilder.append("const char* data, boost::uint32_t data_length,");
+                                codeBuilder.append("const char* data, uint32_t data_length,");
                             codeBuilder.append("\n"+indent+ONE_INDENT+ONE_INDENT+"CallbackInterface<"+returnType+"> *callback, void *context = NULL) {\n");
 
 
                             if (!data_in)
-                                codeBuilder.append(indent+ONE_INDENT+ONE_INDENT+"const char* data = NULL; boost::uint32_t data_length = 0;\n");
+                                codeBuilder.append(indent+ONE_INDENT+ONE_INDENT+"const char* data = NULL; uint32_t data_length = 0;\n");
                             if (inputType.contains("emptyRequest"))
                                 codeBuilder.append(indent+ONE_INDENT+ONE_INDENT+inputType+"* request = NULL;\n");
 
@@ -312,12 +312,12 @@ public class RPCCPPSourceGenerator {
                             if (!inputType.contains("emptyRequest"))
                                 codeBuilder.append("\n"+indent+ONE_INDENT+ONE_INDENT+", const "+inputType+"* request");
                             if (data_in)
-                                codeBuilder.append(", const char* data, boost::uint32_t data_length");
+                                codeBuilder.append(", const char* data, uint32_t data_length");
                             codeBuilder.append(") {\n");
 
 
                             if (!data_in)
-                                codeBuilder.append(indent+ONE_INDENT+ONE_INDENT+"const char* data = NULL; boost::uint32_t data_length = 0;\n");
+                                codeBuilder.append(indent+ONE_INDENT+ONE_INDENT+"const char* data = NULL; uint32_t data_length = 0;\n");
                             if (inputType.contains("emptyRequest"))
                                 codeBuilder.append(indent+ONE_INDENT+ONE_INDENT+inputType+"* request = NULL;\n");
 
