@@ -25,6 +25,13 @@
 #include "xtreemfs/MRC.pb.h"
 #include "xtreemfs/OSD.pb.h"
 
+#ifdef WIN32 
+#define snprintf _snprintf
+void sleep(int seconds) {
+  Sleep(1000 * seconds);
+}
+#endif
+
 /** Assumes a running XtreemFS installation listing to localhost at the default
  *  ports.
  *
@@ -39,9 +46,11 @@ using namespace xtreemfs::util;
 namespace xtreemfs {
 
 std::string RandomVolumeName(const int length) {
+#ifndef WIN32
   struct timeval time;
   gettimeofday(&time, NULL);
   srand((time.tv_sec * 1000) + (time.tv_usec / 1000));
+#endif
 
   std::string result = "volume_implementation_test_";
   char c;

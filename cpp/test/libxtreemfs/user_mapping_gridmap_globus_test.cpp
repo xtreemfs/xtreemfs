@@ -5,6 +5,8 @@
  *
  */
 
+#ifndef WIN32
+
 #include <gtest/gtest.h>
 
 #include <cstdio>
@@ -133,3 +135,5 @@ TEST_F(UserMappingGridmapGlobusTest, GridmapFileReload) {
   EXPECT_EQ("Dummy OU 1",
             *(list_of_groups_new.begin()));
 }
+
+#endif  // WIN32
