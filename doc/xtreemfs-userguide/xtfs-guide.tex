@@ -1863,9 +1863,9 @@ The process will be started and can be stopped by setting the option
 \texttt{-stop}. To watch the cleanup progress use option \texttt{-i} for the
 interactive mode. For further information see \texttt{man xtfs\_cleanup}.
 
-\subsection{Setting the Service Status}
+\subsection{Setting the OSD Status}
 
-The service's status field is shown in the service status page as \texttt{static.status}. The status can be 0 (online), 1 (marked for removal) and 2 (dead/removed). Status 0 (online) is the regular status for all services, even if they are temporarily offline. Status 2 (dead/removed) marks an OSD as permanently failed and the scrubber will removed replicas and files from these OSDs. Status 1 (marked for removal) is for future use.
+The OSD's status field is shown in the service status page as \texttt{static.status}. The status can be online (new files be assigned to it), locked (new files will not be assigned to it) and removed (replicas assigned to this OSD will be replaced). Status online is the regular status for all services, even if they are temporarily offline. Status removed marks an OSD as permanently failed and the scrubber will removed replicas and files from these OSDs. Status locked is for future use.
 
 The status can be set with the \texttt{xtfs\_chstatus} tool:
 
@@ -1874,7 +1874,7 @@ $> xtfs_chstatus -dir pbrpc://localhost:32638 \
    u2i3-28isu2-iwuv29-isjd83 online
 \end{verbatim}
 
-This command sets the status of the service with the UUID \texttt{u2i3-28isu2-iwuv29-isjd83} to online.
+This command sets the status of the OSD with the UUID \texttt{u2i3-28isu2-iwuv29-isjd83} to online.
 
 % \subsection{Drain an OSD}
 % To drain a running OSD from the system all object files stored on this OSD have to be moved to another one. This can be done with the \texttt{tunefs do} (\texttt{tunefs drainosd} for the long version) command. The syntax is in the following way:
@@ -2807,7 +2807,7 @@ The libxtreemfs for Java is currently not separated from the remaining server Ja
  \item[xtestenv] Tool for automatic set-up of a test environment and for executing the autotests.
  \item[xtfsutil] XtreemFS's swiss army knife.
  \item[xtfs\_cleanup] Deletes orphaned objects on an OSD, restores orphaned files and removes obsolete file versions.
- \item[xtfs\_chstatus] Changes the status of an service.
+ \item[xtfs\_chstatus] Changes the status of an OSD.
  \item[xtfs\_snap] Creates, lists and deletes snapshots.
  \item[xtfs\_mrcdbtool] Dumps and restores an XML representation of the MRC database.
  \item[xtfs\_remove\_osd] Relocates all files stored on an OSD in order to remove the OSD from the system.
