@@ -1,18 +1,19 @@
-//automatically generated from MRC.proto at Thu Apr 05 20:23:13 CEST 2012
+//automatically generated from MRC.proto at Wed Oct 24 12:53:13 CEST 2012
 //(c) 2012. See LICENSE file for details.
 
 #ifndef MRCSERVICECLIENT_H
 #define MRCSERVICECLIENT_H
 
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include "pbrpc/RPC.pb.h"
 #include "rpc/client.h"
 #include "rpc/sync_callback.h"
 #include "rpc/callback_interface.h"
+#include "xtreemfs/OSD.pb.h"
 #include "xtreemfs/MRC.pb.h"
 #include "include/Common.pb.h"
-#include "xtreemfs/GlobalTypes.pb.h"
 #include "xtreemfs/DIR.pb.h"
+#include "xtreemfs/GlobalTypes.pb.h"
 
 
 namespace xtreemfs {
@@ -35,7 +36,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::fsetattrRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::emptyResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 2,
                      creds, auth, request, data, data_length, NULL,
                      context, callback);
@@ -45,7 +46,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::fsetattrRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
                 client_->sendRequest(address, 20001, 2,
                      creds, auth, request, data, data_length, NULL,
@@ -58,7 +59,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::XCap* request,
                 CallbackInterface<xtreemfs::pbrpc::XCap> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 3,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::XCap(),
                      context, callback);
@@ -68,7 +69,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::XCap* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::XCap>* sync_cb = new SyncCallback<xtreemfs::pbrpc::XCap>();
                 client_->sendRequest(address, 20001, 3,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::XCap(),
@@ -81,7 +82,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::getattrRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::getattrResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 4,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::getattrResponse(),
                      context, callback);
@@ -91,7 +92,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::getattrRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::getattrResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::getattrResponse>();
                 client_->sendRequest(address, 20001, 4,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::getattrResponse(),
@@ -104,7 +105,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::getxattrRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::getxattrResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 5,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::getxattrResponse(),
                      context, callback);
@@ -114,7 +115,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::getxattrRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::getxattrResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::getxattrResponse>();
                 client_->sendRequest(address, 20001, 5,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::getxattrResponse(),
@@ -127,7 +128,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::linkRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::timestampResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 6,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::timestampResponse(),
                      context, callback);
@@ -137,7 +138,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::linkRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::timestampResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::timestampResponse>();
                 client_->sendRequest(address, 20001, 6,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::timestampResponse(),
@@ -150,7 +151,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::listxattrRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::listxattrResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 7,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::listxattrResponse(),
                      context, callback);
@@ -160,7 +161,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::listxattrRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::listxattrResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::listxattrResponse>();
                 client_->sendRequest(address, 20001, 7,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::listxattrResponse(),
@@ -173,7 +174,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::mkdirRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::timestampResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 8,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::timestampResponse(),
                      context, callback);
@@ -183,7 +184,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::mkdirRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::timestampResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::timestampResponse>();
                 client_->sendRequest(address, 20001, 8,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::timestampResponse(),
@@ -196,7 +197,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::openRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::openResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 9,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::openResponse(),
                      context, callback);
@@ -206,7 +207,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::openRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::openResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::openResponse>();
                 client_->sendRequest(address, 20001, 9,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::openResponse(),
@@ -219,7 +220,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::readdirRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::DirectoryEntries> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 10,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::DirectoryEntries(),
                      context, callback);
@@ -229,7 +230,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::readdirRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::DirectoryEntries>* sync_cb = new SyncCallback<xtreemfs::pbrpc::DirectoryEntries>();
                 client_->sendRequest(address, 20001, 10,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::DirectoryEntries(),
@@ -242,7 +243,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::readlinkRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::readlinkResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 11,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::readlinkResponse(),
                      context, callback);
@@ -252,7 +253,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::readlinkRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::readlinkResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::readlinkResponse>();
                 client_->sendRequest(address, 20001, 11,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::readlinkResponse(),
@@ -265,7 +266,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::removexattrRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::timestampResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 12,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::timestampResponse(),
                      context, callback);
@@ -275,7 +276,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::removexattrRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::timestampResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::timestampResponse>();
                 client_->sendRequest(address, 20001, 12,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::timestampResponse(),
@@ -288,7 +289,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::renameRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::renameResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 13,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::renameResponse(),
                      context, callback);
@@ -298,7 +299,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::renameRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::renameResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::renameResponse>();
                 client_->sendRequest(address, 20001, 13,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::renameResponse(),
@@ -311,7 +312,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::rmdirRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::timestampResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 14,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::timestampResponse(),
                      context, callback);
@@ -321,7 +322,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::rmdirRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::timestampResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::timestampResponse>();
                 client_->sendRequest(address, 20001, 14,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::timestampResponse(),
@@ -334,7 +335,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::setattrRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::timestampResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 15,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::timestampResponse(),
                      context, callback);
@@ -344,7 +345,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::setattrRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::timestampResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::timestampResponse>();
                 client_->sendRequest(address, 20001, 15,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::timestampResponse(),
@@ -357,7 +358,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::setxattrRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::timestampResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 16,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::timestampResponse(),
                      context, callback);
@@ -367,7 +368,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::setxattrRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::timestampResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::timestampResponse>();
                 client_->sendRequest(address, 20001, 16,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::timestampResponse(),
@@ -380,7 +381,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::statvfsRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::StatVFS> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 17,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::StatVFS(),
                      context, callback);
@@ -390,7 +391,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::statvfsRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::StatVFS>* sync_cb = new SyncCallback<xtreemfs::pbrpc::StatVFS>();
                 client_->sendRequest(address, 20001, 17,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::StatVFS(),
@@ -403,7 +404,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::symlinkRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::timestampResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 18,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::timestampResponse(),
                      context, callback);
@@ -413,7 +414,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::symlinkRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::timestampResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::timestampResponse>();
                 client_->sendRequest(address, 20001, 18,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::timestampResponse(),
@@ -426,7 +427,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::unlinkRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::unlinkResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 19,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::unlinkResponse(),
                      context, callback);
@@ -436,7 +437,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::unlinkRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::unlinkResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::unlinkResponse>();
                 client_->sendRequest(address, 20001, 19,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::unlinkResponse(),
@@ -449,7 +450,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::accessRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::emptyResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 20,
                      creds, auth, request, data, data_length, NULL,
                      context, callback);
@@ -459,7 +460,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::accessRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
                 client_->sendRequest(address, 20001, 20,
                      creds, auth, request, data, data_length, NULL,
@@ -471,7 +472,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 CallbackInterface<xtreemfs::pbrpc::emptyResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 xtreemfs::pbrpc::emptyRequest* request = NULL;
                 client_->sendRequest(address, 20001, 30,
                      creds, auth, request, data, data_length, NULL,
@@ -481,7 +482,7 @@ namespace pbrpc {
             SyncCallback<xtreemfs::pbrpc::emptyResponse>* xtreemfs_checkpoint_sync(const std::string &address,
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 xtreemfs::pbrpc::emptyRequest* request = NULL;
                 SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
                 client_->sendRequest(address, 20001, 30,
@@ -495,7 +496,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::xtreemfs_check_file_existsRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::xtreemfs_check_file_existsResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 31,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_check_file_existsResponse(),
                      context, callback);
@@ -505,7 +506,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::xtreemfs_check_file_existsRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::xtreemfs_check_file_existsResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::xtreemfs_check_file_existsResponse>();
                 client_->sendRequest(address, 20001, 31,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_check_file_existsResponse(),
@@ -518,7 +519,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::xtreemfs_dump_restore_databaseRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::emptyResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 32,
                      creds, auth, request, data, data_length, NULL,
                      context, callback);
@@ -528,7 +529,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::xtreemfs_dump_restore_databaseRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
                 client_->sendRequest(address, 20001, 32,
                      creds, auth, request, data, data_length, NULL,
@@ -541,7 +542,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::xtreemfs_get_suitable_osdsRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::xtreemfs_get_suitable_osdsResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 33,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_get_suitable_osdsResponse(),
                      context, callback);
@@ -551,7 +552,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::xtreemfs_get_suitable_osdsRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::xtreemfs_get_suitable_osdsResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::xtreemfs_get_suitable_osdsResponse>();
                 client_->sendRequest(address, 20001, 33,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_get_suitable_osdsResponse(),
@@ -564,7 +565,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::stringMessage* request,
                 CallbackInterface<xtreemfs::pbrpc::stringMessage> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 34,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::stringMessage(),
                      context, callback);
@@ -574,7 +575,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::stringMessage* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::stringMessage>* sync_cb = new SyncCallback<xtreemfs::pbrpc::stringMessage>();
                 client_->sendRequest(address, 20001, 34,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::stringMessage(),
@@ -587,7 +588,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::xtreemfs_listdirRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::xtreemfs_listdirResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 35,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_listdirResponse(),
                      context, callback);
@@ -597,7 +598,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::xtreemfs_listdirRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::xtreemfs_listdirResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::xtreemfs_listdirResponse>();
                 client_->sendRequest(address, 20001, 35,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_listdirResponse(),
@@ -609,7 +610,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 CallbackInterface<xtreemfs::pbrpc::Volumes> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 xtreemfs::pbrpc::emptyRequest* request = NULL;
                 client_->sendRequest(address, 20001, 36,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::Volumes(),
@@ -619,7 +620,7 @@ namespace pbrpc {
             SyncCallback<xtreemfs::pbrpc::Volumes>* xtreemfs_lsvol_sync(const std::string &address,
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 xtreemfs::pbrpc::emptyRequest* request = NULL;
                 SyncCallback<xtreemfs::pbrpc::Volumes>* sync_cb = new SyncCallback<xtreemfs::pbrpc::Volumes>();
                 client_->sendRequest(address, 20001, 36,
@@ -633,7 +634,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::Volume* request,
                 CallbackInterface<xtreemfs::pbrpc::emptyResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 47,
                      creds, auth, request, data, data_length, NULL,
                      context, callback);
@@ -643,7 +644,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::Volume* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
                 client_->sendRequest(address, 20001, 47,
                      creds, auth, request, data, data_length, NULL,
@@ -656,7 +657,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::XCap* request,
                 CallbackInterface<xtreemfs::pbrpc::XCap> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 37,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::XCap(),
                      context, callback);
@@ -666,7 +667,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::XCap* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::XCap>* sync_cb = new SyncCallback<xtreemfs::pbrpc::XCap>();
                 client_->sendRequest(address, 20001, 37,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::XCap(),
@@ -678,7 +679,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 CallbackInterface<xtreemfs::pbrpc::emptyResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 xtreemfs::pbrpc::emptyRequest* request = NULL;
                 client_->sendRequest(address, 20001, 38,
                      creds, auth, request, data, data_length, NULL,
@@ -688,7 +689,7 @@ namespace pbrpc {
             SyncCallback<xtreemfs::pbrpc::emptyResponse>* xtreemfs_replication_to_master_sync(const std::string &address,
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 xtreemfs::pbrpc::emptyRequest* request = NULL;
                 SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
                 client_->sendRequest(address, 20001, 38,
@@ -702,7 +703,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::xtreemfs_replica_addRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::emptyResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 39,
                      creds, auth, request, data, data_length, NULL,
                      context, callback);
@@ -712,7 +713,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::xtreemfs_replica_addRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
                 client_->sendRequest(address, 20001, 39,
                      creds, auth, request, data, data_length, NULL,
@@ -725,7 +726,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::xtreemfs_replica_listRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::Replicas> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 40,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::Replicas(),
                      context, callback);
@@ -735,7 +736,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::xtreemfs_replica_listRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::Replicas>* sync_cb = new SyncCallback<xtreemfs::pbrpc::Replicas>();
                 client_->sendRequest(address, 20001, 40,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::Replicas(),
@@ -748,7 +749,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::xtreemfs_replica_removeRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::FileCredentials> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 41,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::FileCredentials(),
                      context, callback);
@@ -758,7 +759,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::xtreemfs_replica_removeRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::FileCredentials>* sync_cb = new SyncCallback<xtreemfs::pbrpc::FileCredentials>();
                 client_->sendRequest(address, 20001, 41,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::FileCredentials(),
@@ -771,7 +772,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::xtreemfs_dump_restore_databaseRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::emptyResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 42,
                      creds, auth, request, data, data_length, NULL,
                      context, callback);
@@ -781,7 +782,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::xtreemfs_dump_restore_databaseRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
                 client_->sendRequest(address, 20001, 42,
                      creds, auth, request, data, data_length, NULL,
@@ -794,7 +795,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::xtreemfs_restore_fileRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::emptyResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 43,
                      creds, auth, request, data, data_length, NULL,
                      context, callback);
@@ -804,7 +805,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::xtreemfs_restore_fileRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
                 client_->sendRequest(address, 20001, 43,
                      creds, auth, request, data, data_length, NULL,
@@ -817,7 +818,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::xtreemfs_rmvolRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::emptyResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 44,
                      creds, auth, request, data, data_length, NULL,
                      context, callback);
@@ -827,7 +828,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::xtreemfs_rmvolRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
                 client_->sendRequest(address, 20001, 44,
                      creds, auth, request, data, data_length, NULL,
@@ -839,7 +840,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 CallbackInterface<xtreemfs::pbrpc::emptyResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 xtreemfs::pbrpc::emptyRequest* request = NULL;
                 client_->sendRequest(address, 20001, 45,
                      creds, auth, request, data, data_length, NULL,
@@ -849,7 +850,7 @@ namespace pbrpc {
             SyncCallback<xtreemfs::pbrpc::emptyResponse>* xtreemfs_shutdown_sync(const std::string &address,
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 xtreemfs::pbrpc::emptyRequest* request = NULL;
                 SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
                 client_->sendRequest(address, 20001, 45,
@@ -863,7 +864,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::xtreemfs_update_file_sizeRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::timestampResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 46,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::timestampResponse(),
                      context, callback);
@@ -873,7 +874,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::xtreemfs_update_file_sizeRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::timestampResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::timestampResponse>();
                 client_->sendRequest(address, 20001, 46,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::timestampResponse(),
@@ -886,7 +887,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::xtreemfs_set_replica_update_policyRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::xtreemfs_set_replica_update_policyResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 48,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_set_replica_update_policyResponse(),
                      context, callback);
@@ -896,7 +897,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::xtreemfs_set_replica_update_policyRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::xtreemfs_set_replica_update_policyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::xtreemfs_set_replica_update_policyResponse>();
                 client_->sendRequest(address, 20001, 48,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_set_replica_update_policyResponse(),
@@ -909,7 +910,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::xtreemfs_set_read_only_xattrRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::xtreemfs_set_read_only_xattrResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 49,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_set_read_only_xattrResponse(),
                      context, callback);
@@ -919,7 +920,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::xtreemfs_set_read_only_xattrRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::xtreemfs_set_read_only_xattrResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::xtreemfs_set_read_only_xattrResponse>();
                 client_->sendRequest(address, 20001, 49,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_set_read_only_xattrResponse(),
@@ -932,7 +933,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::xtreemfs_get_file_credentialsRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::FileCredentials> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 50,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::FileCredentials(),
                      context, callback);
@@ -942,7 +943,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::xtreemfs_get_file_credentialsRequest* request) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::FileCredentials>* sync_cb = new SyncCallback<xtreemfs::pbrpc::FileCredentials>();
                 client_->sendRequest(address, 20001, 50,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::FileCredentials(),

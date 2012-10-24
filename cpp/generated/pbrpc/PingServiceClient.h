@@ -1,10 +1,10 @@
-//automatically generated from Ping.proto at Wed Apr 04 18:21:52 CEST 2012
+//automatically generated from Ping.proto at Wed Oct 24 12:53:14 CEST 2012
 //(c) 2012. See LICENSE file for details.
 
 #ifndef PINGSERVICECLIENT_H
 #define PINGSERVICECLIENT_H
 
-#include <boost/cstdint.hpp>
+#include <stdint.h>
 #include "pbrpc/RPC.pb.h"
 #include "rpc/client.h"
 #include "rpc/sync_callback.h"
@@ -30,7 +30,7 @@ namespace pbrpc {
             void doPing(const std::string &address,
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds,
-                const xtreemfs::pbrpc::PingRequest* request,const char* data, boost::uint32_t data_length,
+                const xtreemfs::pbrpc::PingRequest* request,const char* data, uint32_t data_length,
                 CallbackInterface<xtreemfs::pbrpc::PingResponse> *callback, void *context = NULL) {
                 client_->sendRequest(address, 1, 1,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::PingResponse(),
@@ -40,7 +40,7 @@ namespace pbrpc {
             SyncCallback<xtreemfs::pbrpc::PingResponse>* doPing_sync(const std::string &address,
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
-                , const xtreemfs::pbrpc::PingRequest* request, const char* data, boost::uint32_t data_length) {
+                , const xtreemfs::pbrpc::PingRequest* request, const char* data, uint32_t data_length) {
                 SyncCallback<xtreemfs::pbrpc::PingResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::PingResponse>();
                 client_->sendRequest(address, 1, 1,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::PingResponse(),
@@ -52,7 +52,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 CallbackInterface<xtreemfs::pbrpc::Ping_emptyResponse> *callback, void *context = NULL) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 xtreemfs::pbrpc::Ping_emptyRequest* request = NULL;
                 client_->sendRequest(address, 1, 2,
                      creds, auth, request, data, data_length, NULL,
@@ -62,7 +62,7 @@ namespace pbrpc {
             SyncCallback<xtreemfs::pbrpc::Ping_emptyResponse>* emptyPing_sync(const std::string &address,
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds) {
-                const char* data = NULL; boost::uint32_t data_length = 0;
+                const char* data = NULL; uint32_t data_length = 0;
                 xtreemfs::pbrpc::Ping_emptyRequest* request = NULL;
                 SyncCallback<xtreemfs::pbrpc::Ping_emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::Ping_emptyResponse>();
                 client_->sendRequest(address, 1, 2,
