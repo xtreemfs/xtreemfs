@@ -9,7 +9,6 @@
 package org.xtreemfs.mrc.database.babudb;
 
 import java.nio.ByteBuffer;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -484,47 +483,55 @@ public class BabuDBStorageHelper {
     public static BufferBackedFileMetadata resolveLink(DatabaseRO database, byte[] target, String fileName)
         throws BabuDBException {
         
-        // determine the key for the link index
-        byte[] fileIdBytes = new byte[8];
-        System.arraycopy(target, 1, fileIdBytes, 0, fileIdBytes.length);
+        ResultSet<byte[], byte[]> it = null;
         
-        byte[][] valBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
-        
-        // retrieve the metadata from the link index
-        Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(BabuDBStorageManager.FILE_ID_INDEX,
-            fileIdBytes, null).get();
-        
-        while (it.hasNext()) {
+        try {
+            // determine the key for the link index
+            byte[] fileIdBytes = new byte[8];
+            System.arraycopy(target, 1, fileIdBytes, 0, fileIdBytes.length);
             
-            Entry<byte[], byte[]> curr = it.next();
+            byte[][] valBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
             
-            int type = getType(curr.getKey(), BabuDBStorageManager.FILE_ID_INDEX);
-            if (type == 3) {
-                long fileId = ByteBuffer.wrap(fileIdBytes).getLong();
-                Logging.logMessage(Logging.LEVEL_WARN, Category.storage, (Object) null,
-                    "MRC database contains redundant data for file %d", fileId);
-                continue;
+            // retrieve the metadata from the link index
+            it = database.prefixLookup(BabuDBStorageManager.FILE_ID_INDEX,
+                fileIdBytes, null).get();
+            
+            while (it.hasNext()) {
+                
+                Entry<byte[], byte[]> curr = it.next();
+                
+                int type = getType(curr.getKey(), BabuDBStorageManager.FILE_ID_INDEX);
+                if (type == 3) {
+                    long fileId = ByteBuffer.wrap(fileIdBytes).getLong();
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.storage, (Object) null,
+                        "MRC database contains redundant data for file %d", fileId);
+                    continue;
+                }
+                valBufs[type] = curr.getValue();
             }
-            valBufs[type] = curr.getValue();
+            
+            assert (valBufs[FileMetadata.RC_METADATA] != null) : "*** DATABASE CORRUPTED *** dangling hardlink";
+            if (valBufs[FileMetadata.RC_METADATA] == null)
+                return null;
+            
+            // replace the file name with the link name
+            BufferBackedRCMetadata tmp = new BufferBackedRCMetadata(null, valBufs[FileMetadata.RC_METADATA]);
+            BufferBackedRCMetadata tmp2 = tmp.isDirectory() ? new BufferBackedRCMetadata(0, fileName, tmp
+                    .getOwnerId(), tmp.getOwningGroupId(), tmp.getId(), tmp.getPerms(), tmp.getW32Attrs(), tmp
+                    .getLinkCount()) : new BufferBackedRCMetadata(0, fileName, tmp.getOwnerId(), tmp
+                    .getOwningGroupId(), tmp.getId(), tmp.getPerms(), tmp.getW32Attrs(), tmp.getLinkCount(), tmp
+                    .getEpoch(), tmp.getIssuedEpoch(), tmp.isReadOnly());
+            if (!tmp2.isDirectory())
+                tmp2.setXLocList(tmp.getXLocList());
+            valBufs[FileMetadata.RC_METADATA] = tmp2.getValue();
+            byte[][] keyBufs = new byte[][] { null, tmp2.getKey() };
+            
+            return new BufferBackedFileMetadata(keyBufs, valBufs, BabuDBStorageManager.FILE_ID_INDEX);
+        
+        } finally {
+            if (it != null)
+                it.free();
         }
-        
-        assert (valBufs[FileMetadata.RC_METADATA] != null) : "*** DATABASE CORRUPTED *** dangling hardlink";
-        if (valBufs[FileMetadata.RC_METADATA] == null)
-            return null;
-        
-        // replace the file name with the link name
-        BufferBackedRCMetadata tmp = new BufferBackedRCMetadata(null, valBufs[FileMetadata.RC_METADATA]);
-        BufferBackedRCMetadata tmp2 = tmp.isDirectory() ? new BufferBackedRCMetadata(0, fileName, tmp
-                .getOwnerId(), tmp.getOwningGroupId(), tmp.getId(), tmp.getPerms(), tmp.getW32Attrs(), tmp
-                .getLinkCount()) : new BufferBackedRCMetadata(0, fileName, tmp.getOwnerId(), tmp
-                .getOwningGroupId(), tmp.getId(), tmp.getPerms(), tmp.getW32Attrs(), tmp.getLinkCount(), tmp
-                .getEpoch(), tmp.getIssuedEpoch(), tmp.isReadOnly());
-        if (!tmp2.isDirectory())
-            tmp2.setXLocList(tmp.getXLocList());
-        valBufs[FileMetadata.RC_METADATA] = tmp2.getValue();
-        byte[][] keyBufs = new byte[][] { null, tmp2.getKey() };
-        
-        return new BufferBackedFileMetadata(keyBufs, valBufs, BabuDBStorageManager.FILE_ID_INDEX);
     }
     
     public static ChildrenIterator getChildren(DatabaseRO database, long parentId, int from, int num)
@@ -568,15 +575,17 @@ public class BabuDBStorageHelper {
     }
     
     public static String getRootDirName(DatabaseRO database, long rootParentId) throws BabuDBException {
-        
+            
         byte[] rootParentIdBytes = ByteBuffer.wrap(new byte[8]).putLong(rootParentId).array();
         
-        Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(BabuDBStorageManager.FILE_INDEX,
+        ResultSet<byte[], byte[]> it = database.prefixLookup(BabuDBStorageManager.FILE_INDEX,
             rootParentIdBytes, null).get();
         if (!it.hasNext())
             return null;
         
         byte[] key = it.next().getKey();
+        it.free();
+        
         return new String(key, 8, key.length - 9);
     }
     

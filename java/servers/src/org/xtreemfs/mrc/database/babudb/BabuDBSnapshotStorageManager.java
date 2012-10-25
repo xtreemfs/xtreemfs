@@ -11,7 +11,6 @@ package org.xtreemfs.mrc.database.babudb;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Iterator;
 import java.util.Map.Entry;
 
 import org.xtreemfs.babudb.api.SnapshotManager;
@@ -21,11 +20,11 @@ import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
+import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.DatabaseResultSet;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeChangeListener;
 import org.xtreemfs.mrc.database.VolumeInfo;
-import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.ACLIterator;
 import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.XAttrIterator;
 import org.xtreemfs.mrc.metadata.ACLEntry;
@@ -208,6 +207,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     @Override
     public FileMetadata getMetadata(long fileId) throws DatabaseException {
         
+        ResultSet<byte[], byte[]> it = null;
         try {
             
             // create the key for the file ID index lookup
@@ -217,7 +217,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
             byte[][] valBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
             
             // retrieve the metadata from the link index
-            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(
+            it = database.prefixLookup(
                 BabuDBSnapshotStorageManager.FILE_ID_INDEX, key, null).get();
             
             while (it.hasNext()) {
@@ -252,6 +252,9 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
             
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
+        } finally {
+            if (it != null)
+                it.free();
         }
     }
     
@@ -282,11 +285,12 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     @Override
     public byte[] getXAttr(long fileId, String uid, String key) throws DatabaseException {
         
+        ResultSet<byte[], byte[]> it = null;
         try {
             
             // peform a prefix lookup
             byte[] prefix = BabuDBStorageHelper.createXAttrPrefixKey(fileId, uid, key);
-            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(XATTRS_INDEX, prefix, null).get();
+            it = database.prefixLookup(XATTRS_INDEX, prefix, null).get();
             
             // check whether the entry is the correct one
             while (it.hasNext()) {
@@ -301,6 +305,9 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
             
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
+        } finally {
+            if (it != null)
+                it.free();
         }
     }
     

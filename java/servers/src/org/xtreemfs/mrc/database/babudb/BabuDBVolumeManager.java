@@ -28,6 +28,7 @@ import org.xtreemfs.babudb.api.BabuDB;
 import org.xtreemfs.babudb.api.DatabaseManager;
 import org.xtreemfs.babudb.api.SnapshotManager;
 import org.xtreemfs.babudb.api.database.Database;
+import org.xtreemfs.babudb.api.database.ResultSet;
 import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.babudb.api.exception.BabuDBException.ErrorCode;
 import org.xtreemfs.babudb.api.transaction.Operation;
@@ -364,8 +365,9 @@ public class BabuDBVolumeManager implements VolumeManager {
             
             byte[] prefix = (volName + SNAPSHOT_SEPARATOR).getBytes();
             
+            ResultSet<byte[], byte[]> it = null;
             try {
-                Iterator<Entry<byte[], byte[]>> it = snapVersionDB.prefixLookup(0, prefix, null).get();
+                it = snapVersionDB.prefixLookup(0, prefix, null).get();
                 
                 while (it.hasNext()) {
                     byte[] bytes = it.next().getValue();
@@ -375,6 +377,9 @@ public class BabuDBVolumeManager implements VolumeManager {
                 
             } catch (BabuDBException exc) {
                 throw new DatabaseException(exc);
+            } finally {
+                if (it != null)
+                    it.free();
             }
             
             return result;

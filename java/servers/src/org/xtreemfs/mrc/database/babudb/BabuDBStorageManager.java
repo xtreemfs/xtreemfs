@@ -452,20 +452,21 @@ public class BabuDBStorageManager implements StorageManager {
                 ByteBuffer.wrap(idBytes).putLong(file.getId());
                 
                 // remove all ACLs
-                Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(BabuDBStorageManager.ACL_INDEX, idBytes,
+                ResultSet<byte[], byte[]> it = database.prefixLookup(BabuDBStorageManager.ACL_INDEX, idBytes,
                         null).get();
                 while (it.hasNext())
                     update.addUpdate(BabuDBStorageManager.ACL_INDEX, it.next().getKey(), null);
+                it.free();
                 
                 // remove all extended attributes
                 it = database.prefixLookup(BabuDBStorageManager.XATTRS_INDEX, idBytes, null).get();
                 while (it.hasNext())
                     update.addUpdate(BabuDBStorageManager.XATTRS_INDEX, it.next().getKey(), null);
+                it.free();
                 
                 // if a file is deleted, update file count and volume size
                 if (file.isDirectory()) {
                     updateCount(NUM_DIRS_KEY, false, update);
-                    
                 }
                 
                 else if (file.getXLocList() != null) {
@@ -569,7 +570,7 @@ public class BabuDBStorageManager implements StorageManager {
             byte[][] valBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
             
             // retrieve the metadata from the link index
-            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(BabuDBStorageManager.FILE_ID_INDEX, key, null)
+            ResultSet<byte[], byte[]> it = database.prefixLookup(BabuDBStorageManager.FILE_ID_INDEX, key, null)
                     .get();
             
             while (it.hasNext()) {
@@ -589,6 +590,8 @@ public class BabuDBStorageManager implements StorageManager {
                 
                 valBufs[type] = curr.getValue();
             }
+            
+            it.free();
             
             // if not metadata was found for the file ID, return null
             if (valBufs[FileMetadata.RC_METADATA] == null)
@@ -631,11 +634,12 @@ public class BabuDBStorageManager implements StorageManager {
     @Override
     public byte[] getXAttr(long fileId, String uid, String key) throws DatabaseException {
         
+        ResultSet<byte[], byte[]> it = null;
         try {
             
             // peform a prefix lookup
             byte[] prefix = BabuDBStorageHelper.createXAttrPrefixKey(fileId, uid, key);
-            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(XATTRS_INDEX, prefix, null).get();
+            it = database.prefixLookup(XATTRS_INDEX, prefix, null).get();
             
             // check whether the entry is the correct one
             while (it.hasNext()) {
@@ -650,6 +654,9 @@ public class BabuDBStorageManager implements StorageManager {
             
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
+        } finally {
+            if (it != null)
+                it.free();
         }
     }
     
@@ -940,11 +947,12 @@ public class BabuDBStorageManager implements StorageManager {
         
         System.out.println("FILE_ID_INDEX");
         
-        Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(FILE_ID_INDEX, new byte[0], null).get();
+        ResultSet<byte[], byte[]> it = database.prefixLookup(FILE_ID_INDEX, new byte[0], null).get();
         while (it.hasNext()) {
             Entry<byte[], byte[]> next = it.next();
             System.out.println(Arrays.toString(next.getKey()) + " = " + Arrays.toString(next.getValue()));
         }
+        it.free();
         
         System.out.println("\nFILE_INDEX");
         
@@ -953,6 +961,7 @@ public class BabuDBStorageManager implements StorageManager {
             Entry<byte[], byte[]> next = it.next();
             System.out.println(Arrays.toString(next.getKey()) + " = " + Arrays.toString(next.getValue()));
         }
+        it.free();
     }
     
     public void dumpDB(BufferedWriter xmlWriter) throws DatabaseException, IOException {
