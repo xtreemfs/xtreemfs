@@ -546,7 +546,7 @@ public class VolumeTest {
 
         // creating a new Xattr should increase the number of xattrs
         volume.setXAttr(userCredentials, TESTFILE, "foobarasdf", "nyancat",
-                XATTR_FLAGS.XATTR_FLAGS_CREATE.getNumber());
+                XATTR_FLAGS.XATTR_FLAGS_CREATE);
 
         assertEquals(initialNumberOfXattr + 1, volume.listXAttrs(userCredentials, TESTFILE).getXattrsCount());
 
@@ -692,7 +692,7 @@ public class VolumeTest {
         assertEquals(userCredentials.getUsername().length(), size);
         size = volume.getXAttrSize(userCredentials, fileName, "doesnt-exist");
         assertEquals(-1, size);
-        volume.setXAttr(userCredentials, fileName, "foo", "bar", XATTR_FLAGS.XATTR_FLAGS_CREATE.getNumber());
+        volume.setXAttr(userCredentials, fileName, "foo", "bar", XATTR_FLAGS.XATTR_FLAGS_CREATE);
         size = volume.getXAttrSize(userCredentials, fileName, "foo");
         assertEquals(3, size);
         size = volume.getXAttrSize(userCredentials, fileName, "doesnt-exist-in-cache");

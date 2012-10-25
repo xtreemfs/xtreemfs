@@ -1110,11 +1110,11 @@ public class VolumeImplementation extends Volume {
      * org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS)
      */
     @Override
-    public void setXAttr(UserCredentials userCredentials, String path, String name, String value, int flags)
+    public void setXAttr(UserCredentials userCredentials, String path, String name, String value, XATTR_FLAGS flags)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         setxattrRequest request =
                 setxattrRequest.newBuilder().setVolumeName(volumeName).setPath(path).setName(name)
-                        .setValue(value).setFlags(flags).build();
+                        .setValue(value).setFlags(flags.getNumber()).build();
 
         timestampResponse response =
                 RPCCaller.<setxattrRequest, timestampResponse> syncCall(SERVICES.MRC, userCredentials,
@@ -1399,7 +1399,7 @@ public class VolumeImplementation extends Volume {
         // add all entries from the given list
         for (String entity : aclEntries) {            
             if (!entity.equals("u:")  && !entity.equals("g:") && !entity.equals("o:") && !entity.equals("m:")) {
-                setXAttr(userCreds, path, "xtreemfs.acl", "x " + entity, XATTR_FLAGS.XATTR_FLAGS_REPLACE.getNumber());
+                setXAttr(userCreds, path, "xtreemfs.acl", "x " + entity, XATTR_FLAGS.XATTR_FLAGS_REPLACE);
             }
         }
     }
@@ -1417,7 +1417,7 @@ public class VolumeImplementation extends Volume {
         for (Entry<String, Object> entry : aclEntries.entrySet())
             setXAttr(userCreds, path, "xtreemfs.acl", 
                     "m " + entry.getKey() + ":" + entry.getValue(), 
-                    XATTR_FLAGS.XATTR_FLAGS_REPLACE.getNumber());
+                    XATTR_FLAGS.XATTR_FLAGS_REPLACE);
     }
     
     @Override
@@ -1486,7 +1486,7 @@ public class VolumeImplementation extends Volume {
                         + "\"update-policy\": " + "\"" + replicationPolicy + "\","
                         + "\"replication-flags\": " + String.valueOf(replicationFlags) + " }";
         setXAttr(userCredentials, directory, XTREEMFS_DEFAULT_RP, JSON,
-                XATTR_FLAGS.XATTR_FLAGS_CREATE.getNumber());
+                XATTR_FLAGS.XATTR_FLAGS_CREATE);
     }
 
     /**

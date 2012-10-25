@@ -21,6 +21,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replicas;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.StatVFS;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrResponse;
 
 /**
@@ -397,7 +398,7 @@ public abstract class Volume {
      * @param value
      *            Value of the extended attribute.
      * @param flags
-     *            May be 1 (= XATTR_CREATE) or 2 (= XATTR_REPLACE).
+     *            May be XATTR_CREATE or XATTR_REPLACE.
      * 
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
@@ -405,7 +406,7 @@ public abstract class Volume {
      * @throws UnknownAddressSchemeException
      */
     public abstract void setXAttr(UserCredentials userCredentials, String path, String name, String value,
-            int flags) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
+            XATTR_FLAGS flags) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
      * Returns value for an XAttribute with "name" stored for "path" in "value".
