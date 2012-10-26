@@ -442,9 +442,17 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
             localObjVersion = 1;
             return false;
         }
+        
+        if (objVersion <= localObjVersion) {
+            Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,
+                    "Received object version %d, local is %d for file %s",
+                    objVersion, localObjVersion, cellId.toString());
+        }
 
-        if (objVersion > localObjVersion)
+        if (objVersion > localObjVersion) {
             localObjVersion = objVersion;
+        }
+        
         return false;
     }
 
