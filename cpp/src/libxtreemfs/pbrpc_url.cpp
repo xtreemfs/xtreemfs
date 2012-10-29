@@ -67,13 +67,17 @@ void PBRPCURL::parseURL(
     // Port found.
     if (last_colon > address_pos) {
       try {
-        if (last_slash !=  std::string::npos && last_slash > last_colon+1) {
-          port_ = boost::lexical_cast<uint16_t>(
-              url.substr(last_colon + 1, last_slash-last_colon-1));
+        if (last_slash != std::string::npos) {
+          if (last_slash > last_colon + 1) {
+            port_ = boost::lexical_cast<uint16_t>(
+                url.substr(last_colon + 1, last_slash - last_colon - 1));
+          }
+        } else {
+          port_ = boost::lexical_cast<uint16_t>(url.substr(last_colon + 1));
         }
       } catch(const boost::bad_lexical_cast&) {
         throw InvalidURLException("invalid port: " +
-            url.substr(last_colon + 1, last_slash-last_colon-1));
+            url.substr(last_colon + 1, last_slash - last_colon - 1));
       }
     } else {
       last_colon = last_slash;
