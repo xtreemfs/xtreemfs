@@ -38,8 +38,6 @@ MAN_DIR=$(DESTDIR)/usr/share/man/man1
 DOC_DIR_SERVER=$(DESTDIR)/usr/share/doc/xtreemfs-server
 DOC_DIR_CLIENT=$(DESTDIR)/usr/share/doc/xtreemfs-client
 DOC_DIR_TOOLS=$(DESTDIR)/usr/share/doc/xtreemfs-tools
-CONTRIB_DIR=$(DESTDIR)/usr/share/xtreemfs
-PLUGIN_DIR=$(CONTRIB_DIR)/server-repl-plugin
 PLUGIN_CONFIG_DIR=$(XTREEMFS_CONFIG_DIR)/server-repl-plugin
 
 #Configuration of cpp code thirdparty dependencies.
@@ -99,23 +97,19 @@ install-server:
 	@cp java/foundation/dist/Foundation.jar $(XTREEMFS_JAR_DIR)
 	@cp java/flease/dist/Flease.jar $(XTREEMFS_JAR_DIR)
 	@cp java/lib/*.jar $(XTREEMFS_JAR_DIR)
-
-	@mkdir -p $(PLUGIN_DIR)
-	@cp -r contrib/server-repl-plugin/lib $(PLUGIN_DIR)
-	@cp contrib/server-repl-plugin/replication.jar $(PLUGIN_DIR)
+	@cp contrib/server-repl-plugin/BabuDB_replication_plugin.jar $(XTREEMFS_JAR_DIR)
 
 	@mkdir -p $(XTREEMFS_CONFIG_DIR)
 #	@cp etc/xos/xtreemfs/*config.properties $(XTREEMFS_CONFIG_DIR)
-
-	@mkdir -p $(PLUGIN_CONFIG_DIR)
-	@cp contrib/server-repl-plugin/config/dir.properties $(PLUGIN_CONFIG_DIR)
-	@cp contrib/server-repl-plugin/config/mrc.properties $(PLUGIN_CONFIG_DIR)
-	
 	# delete UUID from config-files
 	@grep -v '^uuid\W*=\W*\w\+' etc/xos/xtreemfs/dirconfig.properties > $(XTREEMFS_CONFIG_DIR)/dirconfig.properties
 	@grep -v '^uuid\W*=\W*\w\+' etc/xos/xtreemfs/mrcconfig.properties > $(XTREEMFS_CONFIG_DIR)/mrcconfig.properties
 	@grep -v '^uuid\W*=\W*\w\+' etc/xos/xtreemfs/osdconfig.properties > $(XTREEMFS_CONFIG_DIR)/osdconfig.properties
 
+	@mkdir -p $(PLUGIN_CONFIG_DIR)
+	@cp contrib/server-repl-plugin/config/dir.properties $(PLUGIN_CONFIG_DIR)
+	@cp contrib/server-repl-plugin/config/mrc.properties $(PLUGIN_CONFIG_DIR)
+	
 	@cp packaging/generate_uuid $(XTREEMFS_CONFIG_DIR)
 	@cp packaging/postinstall_setup.sh $(XTREEMFS_CONFIG_DIR)
 	@chmod a+x $(XTREEMFS_CONFIG_DIR)/postinstall_setup.sh
@@ -166,8 +160,6 @@ uninstall:
 	@rm -rf $(MAN_DIR)/xtfs*
 	@rm -rf $(MAN_DIR)/*.xtreemfs*
 	
-	@rm -rf $(CONTRIB_DIR)
-
 	@echo "uninstall complete"
 	
 purge: uninstall
