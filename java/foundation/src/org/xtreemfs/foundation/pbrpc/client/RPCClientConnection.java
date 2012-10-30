@@ -168,13 +168,13 @@ public class RPCClientConnection {
     }
 
     public String getEndpointString() {
-        String endpoint = "unknown";
+        String endpointString = "unknown";
         try {
-            endpoint = endpoint.toString();
+            endpointString = endpoint.toString();
         } catch (Exception ex2) {
         }
         
-        return endpoint;
+        return endpointString;
     }
 
     /**
