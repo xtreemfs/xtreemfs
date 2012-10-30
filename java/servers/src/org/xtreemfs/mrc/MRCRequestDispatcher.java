@@ -57,7 +57,6 @@ import org.xtreemfs.foundation.pbrpc.server.RPCServerRequestListener;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
-import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.VolumeManager;
@@ -132,8 +131,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     private List<MRCStatusListener>        statusListener;
     
-    public MRCRequestDispatcher(final MRCConfig config, final BabuDBConfig dbConfig) throws IOException,
-            ClassNotFoundException, IllegalAccessException, InstantiationException, DatabaseException {
+    public MRCRequestDispatcher(final MRCConfig config, final BabuDBConfig dbConfig) throws Exception {
         
         Logging.logMessage(Logging.LEVEL_INFO, this, "XtreemFS Metadata Service version "
                 + VersionManagement.RELEASE_VERSION);
@@ -198,6 +196,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         dirClient = new DIRClient(dirRpcClient, config.getDirectoryServices(), config.getFailoverMaxRetries(),
                 config.getFailoverWait());
         osdClient = new OSDServiceClient(clientStage, null);
+        TimeSync.initialize(dirClient, config.getRemoteTimeSync(), config.getLocalClockRenew());
         
         authProvider = policyContainer.getAuthenticationProvider();
         authProvider.initialize(config.isUsingSSL());
