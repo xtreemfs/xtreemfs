@@ -45,6 +45,8 @@ public class PBRPCClientServerTest {
     private int TEST_PORT = 12999;
 
     private static final String[] schemes = new String[]{Schemes.SCHEME_PBRPC, Schemes.SCHEME_PBRPCS, Schemes.SCHEME_PBRPCG};
+    
+    private static TimeSync ts = null;
 
     public PBRPCClientServerTest() {
     }
@@ -52,12 +54,12 @@ public class PBRPCClientServerTest {
     @BeforeClass
     public static void setUpClass() throws Exception {
         Logging.start(Logging.LEVEL_DEBUG, Logging.Category.all);
-        TimeSync.initializeLocal(0, 50);
+        ts = TimeSync.initializeLocal(50);
     }
 
     @AfterClass
     public static void tearDownClass() throws Exception {
-        TimeSync.close();
+        ts.close();
     }
 
     // TODO add test methods here.

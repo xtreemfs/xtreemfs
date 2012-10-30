@@ -37,6 +37,8 @@ import static org.junit.Assert.*;
  */
 public class PBRPCTest {
     private int TEST_PORT = 12999;
+    
+    private static TimeSync ts = null;
 
     public PBRPCTest() {
         
@@ -45,12 +47,12 @@ public class PBRPCTest {
     @BeforeClass
     public static void setUpClass() throws Exception {
         Logging.start(Logging.LEVEL_DEBUG, Logging.Category.all);
-        TimeSync.initializeLocal(0, 50);
+        ts = TimeSync.initializeLocal(50);
     }
 
     @AfterClass
     public static void tearDownClass() throws Exception {
-        TimeSync.close();
+        ts.close();
     }
 
 

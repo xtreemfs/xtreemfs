@@ -46,7 +46,7 @@ public class xtfs_chstatus {
         try {
             Logging.start(Logging.LEVEL_WARN);
             
-            TimeSync.initializeLocal(60000, 50);
+            TimeSync ts = TimeSync.initializeLocal(50);
             Map<String, CliOption> options = utils.getDefaultAdminToolOptions(false);
             List<String> arguments = new ArrayList<String>(1);
             CliOption oDir = new CliOption(
@@ -172,7 +172,7 @@ public class xtfs_chstatus {
             }
             
             rpcClient.shutdown();
-            TimeSync.close();
+            ts.close();
         } catch (Exception ex) {
             ex.printStackTrace();
             System.exit(1);

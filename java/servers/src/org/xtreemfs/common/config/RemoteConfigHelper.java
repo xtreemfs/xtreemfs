@@ -29,7 +29,7 @@ public class RemoteConfigHelper {
         if (retries <= 0) {
             retries = 1;
         }
-        Logging.logMessage(Logging.LEVEL_INFO, null, "Loading configuration from DIR, %d retries", retries);
+        Logging.logMessage(Logging.LEVEL_INFO, null, "Loading configuration from DIR (will retry up to %d times)", retries);
 
         SSLOptions sslOptions = config.isUsingSSL() ? new SSLOptions(new FileInputStream(
                 config.getServiceCredsFile()), config.getServiceCredsPassphrase(),
@@ -45,9 +45,11 @@ public class RemoteConfigHelper {
         clientStage.start();
         clientStage.waitForStartup();
 
+        TimeSync ts = null;
         boolean timeSyncAlreadyRunning = TimeSync.isInitialized();
         if (!timeSyncAlreadyRunning) {
-            TimeSync.initializeLocal(60000, 50);
+            ts = TimeSync.initializeLocal(50);
+            ts.waitForStartup();
         }
 
         Auth authNone = Auth.newBuilder().setAuthType(AuthType.AUTH_NONE).build();
@@ -67,7 +69,7 @@ public class RemoteConfigHelper {
         }
 
         if (!timeSyncAlreadyRunning) {
-            TimeSync.close();
+            ts.close();
         }
 
         return new ServiceConfig(returnMap);

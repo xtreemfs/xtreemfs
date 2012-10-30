@@ -541,7 +541,7 @@ public class xtfs_scrub {
 
         Logging.start(Logging.LEVEL_WARN);
 
-        TimeSync.initializeLocal(60000, 50);
+        TimeSync ts = TimeSync.initializeLocal(50);
 
         System.out.println("XtreemFS scrubber version " + VersionManagement.RELEASE_VERSION
                 + " (file system data integrity check)\n");
@@ -654,7 +654,7 @@ public class xtfs_scrub {
             e.printStackTrace();
         }
 
-        TimeSync.close();
+        ts.close();
         c.stop();
 
     }

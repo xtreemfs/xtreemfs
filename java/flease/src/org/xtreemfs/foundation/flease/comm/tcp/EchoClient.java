@@ -27,9 +27,11 @@ public class EchoClient {
         // TODO code application logic here
 
         Logging.start(Logging.LEVEL_DEBUG);
-        TimeSync.initializeLocal(5000, 50);
+        TimeSync ts = TimeSync.initializeLocal(50);
 
         try {
+            ts.waitForStartup();
+
             TCPClient com = new TCPClient(3334,null, new NIOServer() {
 
                 public void onAccept(NIOConnection connection) {
@@ -83,7 +85,7 @@ public class EchoClient {
 
             Thread.sleep(2000);
             com.shutdown();
-            TimeSync.close();
+            ts.close();
             
         } catch (Exception ex) {
             ex.printStackTrace();
