@@ -52,7 +52,7 @@ public class FleaseSim {
             final boolean useME = true;
 
             Logging.start(Logging.LEVEL_DEBUG, Category.all);
-            TimeSync.initializeLocal(10000, 50);
+            TimeSync.initializeLocal(50);
 
             final Communicator com = new Communicator(10, 100, 30000, 5, true, 0.2, 0.05, DEBUG_COMM_MSGS);
             com.start();

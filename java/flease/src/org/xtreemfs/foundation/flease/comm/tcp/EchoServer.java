@@ -28,7 +28,7 @@ public class EchoServer implements NIOServer {
 
         try {
             Logging.start(Logging.LEVEL_DEBUG);
-            TimeSync.initializeLocal(5000, 50);
+            TimeSync.initializeLocal(50);
 
             EchoServer s = new EchoServer();
             TCPCommunicator srv = new TCPCommunicator(s, 3333, null);

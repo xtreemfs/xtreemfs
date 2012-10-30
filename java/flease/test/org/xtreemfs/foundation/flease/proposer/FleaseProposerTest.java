@@ -48,7 +48,7 @@ public class FleaseProposerTest extends TestCase {
 
         result = new AtomicReference();
         Logging.start(Logging.LEVEL_DEBUG, Category.all);
-        TimeSync.initializeLocal(10000, 50);
+        TimeSync.initializeLocal(50);
 
         cfg = new FleaseConfig(10000, 500, 500, new InetSocketAddress(12345), "localhost:12345",5);
     }
