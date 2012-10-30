@@ -62,7 +62,7 @@ public class SetupUtils {
         props.setProperty("listen.port", "" + port);
         props.setProperty("http_port", "" + (port - 3000));
         props.setProperty("listen.address", "localhost");
-        props.setProperty("local_clock_renewal", "50");
+        props.setProperty("local_clock_renewal", "0");
         props.setProperty("remote_time_sync", "60000");
         props.setProperty("ssl.enabled", "" + SSL_ON);
         props.setProperty("ssl.service_creds", CERT_DIR + "OSD.p12");
@@ -181,7 +181,7 @@ public class SetupUtils {
         props.setProperty("http_port", "30636");
         props.setProperty("listen.address", "localhost");
         props.setProperty("no_atime", "true");
-        props.setProperty("local_clock_renewal", "50");
+        props.setProperty("local_clock_renewal", "0");
         props.setProperty("remote_time_sync", "60000");
         props.setProperty("ssl.enabled", "" + SSL_ON);
         props.setProperty("ssl.service_creds", CERT_DIR + "MRC.p12");
@@ -233,7 +233,7 @@ public class SetupUtils {
         props.setProperty("http_port", "30639");
         props.setProperty("listen.address", "localhost");
         props.setProperty("no_atime", "true");
-        props.setProperty("local_clock_renewal", "50");
+        props.setProperty("local_clock_renewal", "0");
         props.setProperty("remote_time_sync", "60000");
         props.setProperty("ssl.enabled", "" + SSL_ON);
         props.setProperty("ssl.service_creds", CERT_DIR + "MRC.p12");

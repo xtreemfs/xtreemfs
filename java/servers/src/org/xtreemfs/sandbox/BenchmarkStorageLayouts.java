@@ -126,7 +126,7 @@ public class BenchmarkStorageLayouts {
         props.setProperty("listen.port", "3333");
         props.setProperty("http_port", "3334");
         props.setProperty("listen.address", "localhost");
-        props.setProperty("local_clock_renewal", "50");
+        props.setProperty("local_clock_renewal", "0");
         props.setProperty("remote_time_sync", "60000");
         props.setProperty("ssl.enabled", "false");
         props.setProperty("report_free_space", "true");
