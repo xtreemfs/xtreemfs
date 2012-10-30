@@ -40,8 +40,8 @@ dir_service.port = 32638
 # directory containing XtreemFS file content
 object_dir = /tmp/xtreemfs-test/osd/
 
-# granularity of the local clock (in ms)
-local_clock_renewal = 50
+# granularity of the local clock (in ms) (0 disables it to always use the current system time)
+local_clock_renewal = 0
 
 # interval between two remote clock syncs (in ms)
 remote_time_sync = 60000
@@ -63,10 +63,6 @@ checksums.enabled = false
 # algorithm used for checksum calculation
 # by default, Adler32, CRC32, MD5 and SHA-1 are supported
 checksums.algorithm = Adler32
-
-# UUID for the OSD
-# IMPORTANT: replace 'localhost' with a reachable host name/IP address
-uuid = test-localhost-OSD
 
 checksums.enabled = false
 
@@ -95,24 +91,5 @@ policy_dir = /etc/xos/xtreemfs/policies
 #snmp.port = 34640
 #snmp.aclfile = etc/xos/xtreemfs/snmp.acl
 
-# vivaldi algorithm configuration
-
-# the time between two recalculations of the vivaldi coordinates is randomly
-# choosen as recalculation_interval +/- recalculation_epsilon
-vivaldi.recalculation_interval_in_ms = 300 
-vivaldi_recalculation_epsilon_in_ms = 30
-
-# the number of vivaldi iterations before a new list of peers (OSDs) will be
-# fetched from the DIR
-#vivaldi.iterations_before_updating = 12
-
-# number of retries before accepting a 'suspiciously high' RTT
-#vivaldi.max_retries_for_a_request = 2
-
-# maximum number of milliseconds an OSD waits for a RESPONSE before discarding
-# its corresponding REQUEST (expiration times smaller than 
-# vivaldi.timer_interval_in_ms are not granted)
-#vivaldi.max_request_timeout_in_ms = 10000
-
-# period of time between timer executions (used for regular tasks)
-#vivaldi.timer_interval_in_ms = 60000
+# UUID for the OSD
+uuid = test-localhost-OSD

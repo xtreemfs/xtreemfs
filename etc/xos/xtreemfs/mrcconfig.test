@@ -39,13 +39,15 @@ osd_check_interval = 10
 # Directory Service endpoint
 dir_service.host = localhost
 dir_service.port = 32638
+#dir_service1.host = localhost
+#dir_service1.port = 32639
 
 # specify whether access time stamps are updated
 no_atime = true
 no_fsync = true
 
-# granularity of the local clock (in ms)
-local_clock_renewal = 50
+# granularity of the local clock (in ms) (0 disables it to always use the current system time)
+local_clock_renewal = 0
 
 # interval between two remote clock syncs (in ms)
 remote_time_sync = 60000
@@ -61,10 +63,6 @@ database.checkpoint.idle_interval = 1000
 
 # minimum size in bytes the log file must have to create a checkpoint
 database.checkpoint.logfile_size = 16384
-
-# UUID for the OSD
-# IMPORTANT: replace 'localhost' with a reachable host name/IP address
-uuid = test-localhost-MRC
 
 # Authentication providers are used to retrieve the user identities
 # from the client or from certificate.
@@ -86,11 +84,6 @@ authentication_provider = org.xtreemfs.common.auth.NullAuthProvider
 # require a public static long field called POLICY_ID that assigns the policy
 # a unique number.
 policy_dir = /etc/xos/xtreemfs/policies
-
-# Enables support for FIFOs (names pipes) on the local machine. If set to
-# false, any attempt to open a FIFO will be rejected with EIO. Note that
-# FIFOs will not work across multiple mounts!
-#enable_local_FIFOs = true
 
 geographic_coordinates = 52.455483,13.297405
 
@@ -147,7 +140,7 @@ babudb.logDir = /tmp/xtreemfs-test/mrc/db-log
 # SYNC_WRITE_METADATA - synchronously writes the log entry to disk and updates
 #                       the metadata before ack.
 #babudb.sync = ASYNC
-babudb.sync = SYNC_WRITE
+babudb.sync = FDATASYNC
 
 # max queue length: if > 0, the queue for each worker is limited to maxQ
 babudb.worker.maxQueueLength = 250
@@ -155,7 +148,7 @@ babudb.worker.maxQueueLength = 250
 # number of worker threads to use
 babudb.worker.numThreads = 0
 
-# a checkpoint is generated ,if maxLogfileSize is exceeded
+# a checkpoint is generated, if maxLogfileSize is exceeded
 babudb.maxLogfileSize = 16777216
 
 # interval between two checks in seconds, 0 disables auto checkPointing
@@ -175,3 +168,6 @@ babudb.pseudoSyncWait = 0
 
 # replication configuration
 #babudb.plugin.0 = contrib/server-repl-plugin/config/mrc-test1.properties
+
+# UUID for the MRC
+uuid = test-localhost-MRC

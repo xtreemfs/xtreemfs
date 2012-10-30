@@ -37,8 +37,8 @@ dir_service.port = 32638
 # directory containing XtreemFS file content
 object_dir = /tmp/xtreemfs-test/osd/
 
-# granularity of the local clock (in ms)
-local_clock_renewal = 50
+# granularity of the local clock (in ms) (0 disables it to always use the current system time)
+local_clock_renewal = 0
 
 # interval between two remote clock syncs (in ms)
 remote_time_sync = 60000
@@ -68,10 +68,6 @@ checksums.enabled = false
 # by default, Adler32, CRC32, MD5 and SHA-1 are supported
 checksums.algorithm = Adler32
 
-# UUID for the OSD
-# IMPORTANT: replace 'localhost' with a reachable host name/IP address
-uuid = test-localhost-OSD
-
 checksums.enabled = false
 
 geographic_coordinates = 41.388417,2.114632
@@ -88,3 +84,6 @@ capability_secret = Yagga
 # deployed either as .java, .class or .jar files. While Java and Class files
 # may be located in subdirectories, JAR files mustn't.
 policy_dir = /etc/xos/xtreemfs/policies
+
+# UUID for the OSD
+uuid = test-localhost-OSD

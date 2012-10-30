@@ -45,9 +45,6 @@ ssl.enabled = false
 # may be located in subdirectories, JAR files mustn't.
 policy_dir = /etc/xos/xtreemfs/policies
 
-uuid = test-localhost-DIR
-
-
 # If you want to monitor your XtreemFS installation through SNMP 
 # uncomment the following lines. You have to set snmp.enabled = true
 # and provide a listen port and optional a address. Also optional 
@@ -87,7 +84,7 @@ babudb.logDir = /tmp/xtreemfs-test/dir/db-log
 #              update the metadata.
 # SYNC_WRITE_METADATA - synchronously writes the log entry to disk and updates
 #                       the metadata before ack.
-babudb.sync = FSYNC
+babudb.sync = FDATASYNC
 
 # max queue length: if > 0, the queue for each worker is limited to maxQ
 babudb.worker.maxQueueLength = 250
@@ -95,7 +92,7 @@ babudb.worker.maxQueueLength = 250
 # number of worker threads to use
 babudb.worker.numThreads = 0
 
-# a checkpoint is generated ,if maxLogfileSize is exceeded
+# a checkpoint is generated, if maxLogfileSize is exceeded
 babudb.maxLogfileSize = 16777216
 
 # interval between two checks in seconds, 0 disables auto checkPointing
@@ -108,15 +105,6 @@ babudb.checkInterval = 300
 babudb.pseudoSyncWait = 200
 
 # replication configuration
-#babudb.plugin.0 = contrib/server-repl-plugin/config/dir1.properties
+babudb.plugin.0 = contrib/server-repl-plugin/config/dir-test1.properties
 
-# vivaldi status visualisation configuration
-# set the maximum number of client data set to be remembered, 0 deactivates
-# the client visualisation (but clients might still try)
-#vivaldi.max_clients = 32
-
-# set a timeout (in ms) after which a client's data set will be removed
-# this value should be set with respect to the recalculation interval
-# of the vivaldi algorithm
-#vivaldi.client_timeout = 600000
-
+uuid = test-localhost-DIR

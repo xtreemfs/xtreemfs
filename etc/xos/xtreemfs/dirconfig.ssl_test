@@ -87,7 +87,7 @@ babudb.logDir = /tmp/xtreemfs-test/dir/database
 #              update the metadata.
 # SYNC_WRITE_METADATA - synchronously writes the log entry to disk and updates
 #                       the metadata before ack.
-babudb.sync = FSYNC
+babudb.sync = FDATASYNC
 
 # max queue length: if > 0, the queue for each worker is limited to maxQ
 babudb.worker.maxQueueLength = 250
@@ -95,7 +95,7 @@ babudb.worker.maxQueueLength = 250
 # number of worker threads to use
 babudb.worker.numThreads = 0
 
-# a checkpoint is generated ,if maxLogfileSize is exceeded
+# a checkpoint is generated, if maxLogfileSize is exceeded
 babudb.maxLogfileSize = 16777216
 
 # interval between two checks in seconds, 0 disables auto checkPointing

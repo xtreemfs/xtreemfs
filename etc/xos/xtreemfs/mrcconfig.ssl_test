@@ -41,8 +41,8 @@ dir_service.port = 32638
 no_atime = true
 no_fsync = true
 
-# granularity of the local clock (in ms)
-local_clock_renewal = 50
+# granularity of the local clock (in ms) (0 disables it to always use the current system time)
+local_clock_renewal = 0
 
 # interval between two remote clock syncs (in ms)
 remote_time_sync = 60000
@@ -69,10 +69,6 @@ database.checkpoint.idle_interval = 1000
 
 # minimum size in bytes the log file must have to create a checkpoint
 database.checkpoint.logfile_size = 16384
-
-# UUID for the OSD
-# IMPORTANT: replace 'localhost' with a reachable host name/IP address
-uuid = test-localhost-MRC
 
 # Authentication providers are used to retrieve the user identities
 # from the client or from certificate.
@@ -145,7 +141,7 @@ babudb.worker.maxQueueLength = 250
 # number of worker threads to use
 babudb.worker.numThreads = 0
 
-# a checkpoint is generated ,if maxLogfileSize is exceeded
+# a checkpoint is generated, if maxLogfileSize is exceeded
 babudb.maxLogfileSize = 16777216
 
 # interval between two checks in seconds, 0 disables auto checkPointing
@@ -160,50 +156,5 @@ babudb.pseudoSyncWait = 0
 # flag that determines whether the indices shall be compressed or not.
 #babudb.compression = false
 
-#TOGGLE COMMENT OF THE FOLLOWING LINES TO ENABLE THE REPLICATION
-#CHECK THE REFERENCE FOR FURTHER INFORMATIONS
-
-######################################################################
-## BabuDB replication configuration                                 #
-######################################################################
-#
-## local time renew in milliseconds
-##babudb.localTimeRenew = 3000
-#
-## specifies if the DBs should be modified optimistic.
-## if you want to use the replication with a pseudoSyncWait > 0 set
-## this flag true to increase performance and lose data integrity.
-## if pseudoSyncWait is set to 0 it is highly recommended to leave this
-## flag false.
-##babudb.repl.optimistic = false
-#
-## specify whether SSL is required
-#babudb.ssl.enabled = false
-#
-## server credentials for SSL handshakes
-##babudb.ssl.service_creds = /etc/xos/xtreemfs/truststore/certs/dir.p12
-##babudb.ssl.service_creds.pw = xtreemfs
-##babudb.ssl.service_creds.container = pkcs12
-#
-## trusted certificates for SSL handshakes
-##babudb.ssl.trusted_certs = /etc/xos/xtreemfs/truststore/certs/xosrootca.jks
-##babudb.ssl.trusted_certs.pw = xtreemfs
-##babudb.ssl.trusted_certs.container = jks
-#
-##babudb.ssl.authenticationWithoutEncryption = false
-#
-## number of slaves that at least have to be up to date
-#babudb.repl.sync.n = 0
-#
-## participants of the replication including the local address
-#babudb.repl.participant.0 = local.host.com
-#babudb.repl.participant.0.port = 35667
-#babudb.repl.participant.1 = other.host.com
-#babudb.repl.participant.1.port = 35666
-#
-## chunk size, for initial load of file chunks
-##babudb.repl.chunkSize = 5242880
-#
-## DB backup directory - needed for the initial loading of the BabuDB from the 
-## master in replication context.
-#babudb.repl.backupDir = /tmp/babuDB/backup/
+# UUID for the MRC
+uuid = test-localhost-MRC
