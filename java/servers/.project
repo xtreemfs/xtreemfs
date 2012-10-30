@@ -3,6 +3,7 @@
 	<name>xtreemfs_trunk_server</name>
 	<comment></comment>
 	<projects>
+		<project>xtreemfs_trunk_foundation</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
