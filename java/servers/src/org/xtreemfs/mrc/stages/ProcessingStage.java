@@ -308,7 +308,7 @@ public class ProcessingStage extends MRCStage {
         if (Logging.isDebug())
             Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, exc);
         op.finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
-            "an error has occurred", exc));
+            "An error has occurred at the MRC. Details: " + exc.getMessage(), exc));
     }
     
     private void redirect(MRCRequest rq, String uuid) {
