@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
 
     // Create a new client and start it.
     client.reset(Client::CreateClient(
-        "DIR-host-not-required-for-rmfs",  // Using a bogus value as DIR address
+        ServiceAddresses(1, "DIR-host-not-required-for-rmfs"),  // Using a bogus value as DIR address.  // NOLINT
         user_credentials,
         options.GenerateSSLOptions(),
         options));
@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
     }
     cout << "Trying to delete the volume: " << options.xtreemfs_url << endl;
 
-    client->DeleteVolume(options.service_address,
+    client->DeleteVolume(options.mrc_service_address,
                          auth,
                          user_credentials,
                          options.volume_name);
@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
 
   if (success) {
     cout << "Successfully deleted the volume \"" << options.volume_name
-             << "\" at MRC: " << options.service_address << "\n"
+             << "\" at MRC: " << options.mrc_service_address << "\n"
          << "\n"
          << "The disk space on the OSDs, occupied by the objects of the\n"
             "files of the deleted volume, is not freed yet.\n"

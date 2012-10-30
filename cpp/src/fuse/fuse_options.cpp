@@ -220,7 +220,7 @@ void FuseOptions::ParseCommandLine(int argc, char** argv) {
   Options::ParseURL(kDIR);
 
   // Check for required parameters.
-  if (service_address.empty()) {
+  if (service_addresses.empty()) {
     throw InvalidCommandLineParametersException("missing DIR host.");
   }
   if (volume_name.empty()) {

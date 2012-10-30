@@ -48,6 +48,11 @@ class MkfsOptions : public Options {
   /** MRC admin_password as set in the MRC config. */
   std::string admin_password;
 
+  /** The service_adresses of Options became service_address, so we can no
+   *  longer use this option for the MRC address and need a new member.
+   */
+  std::string mrc_service_address;
+
   // Volume options.
   /** Permissions mode of "/".
    *

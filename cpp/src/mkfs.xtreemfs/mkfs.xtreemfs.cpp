@@ -173,14 +173,14 @@ int main(int argc, char* argv[]) {
 
     // Create a new client and start it.
     client.reset(Client::CreateClient(
-        "DIR-host-not-required-for-mkfs",  // Using a bogus value as DIR address
+        ServiceAddresses(1, "DIR-host-not-required-for-mkfs"),  // Using a bogus value as DIR address.  // NOLINT
         user_credentials,
         options.GenerateSSLOptions(),
         options));
     client->Start();
 
     // Create the volume on the MRC.
-    client->CreateVolume(options.service_address,
+    client->CreateVolume(options.mrc_service_address,
                          auth,
                          user_credentials,
                          options.volume_name,

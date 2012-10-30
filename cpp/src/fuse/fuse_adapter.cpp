@@ -169,7 +169,7 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
   // Create new Client.
   UserCredentials client_user_credentials;
   GenerateUserCredentials(NULL, &client_user_credentials);
-  client_.reset(Client::CreateClient(options_->service_address,
+  client_.reset(Client::CreateClient(options_->service_addresses,
                                      client_user_credentials,
                                      options_->GenerateSSLOptions(),
                                      *options_,

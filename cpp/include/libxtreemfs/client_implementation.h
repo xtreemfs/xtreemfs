@@ -17,6 +17,7 @@
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/uuid_cache.h"
 #include "libxtreemfs/simple_uuid_iterator.h"
+#include "libxtreemfs/typedefs.h"
 #include "libxtreemfs/uuid_resolver.h"
 #include "libxtreemfs/vivaldi.h"
 
@@ -49,7 +50,7 @@ class ClientTestFastLingerTimeoutConnectTimeout_LingerTests_Test;
 class ClientImplementation : public Client, public UUIDResolver {
  public:
   ClientImplementation(
-      const std::string& dir_service_address,
+      const ServiceAddresses& dir_service_addressses,
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const xtreemfs::rpc::SSLOptions* ssl_options,
       const Options& options);

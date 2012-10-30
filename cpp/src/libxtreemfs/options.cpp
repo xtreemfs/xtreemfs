@@ -49,7 +49,6 @@ Options::Options()
 
   // XtreemFS URL Options.
   xtreemfs_url = "";
-  service_address = "";
   volume_name = "";
   protocol = "";
   mount_point = "";
@@ -531,9 +530,9 @@ void Options::ParseURL(XtreemFSServiceType service_type) {
   }
 
   PBRPCURL url_parser;
-  url_parser.parseURL(xtreemfs_url, PBRPCURL::SCHEME_PBRPC, default_port);
+  url_parser.ParseURL(xtreemfs_url, PBRPCURL::SCHEME_PBRPC, default_port);
   volume_name = url_parser.volume();
-  service_address = url_parser.getAddress();
+  url_parser.GetAddresses(&service_addresses);
   protocol = url_parser.scheme();
 }
 

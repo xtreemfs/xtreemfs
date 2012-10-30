@@ -15,24 +15,29 @@
 namespace xtreemfs {
 
 Client* Client::CreateClient(
-    const std::string& dir_service_address,
+    const ServiceAddresses& dir_service_addressses,
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const xtreemfs::rpc::SSLOptions* ssl_options,
     const Options& options) {
-  return CreateClient(dir_service_address, user_credentials, ssl_options,
-                      options, kDefaultClient);
+  return CreateClient(dir_service_addressses,
+                      user_credentials,
+                      ssl_options,
+                      options,
+                      kDefaultClient);
 }
 
 Client* Client::CreateClient(
-    const std::string& dir_service_address,
+    const ServiceAddresses& dir_service_addressses,
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const xtreemfs::rpc::SSLOptions* ssl_options,
     const Options& options,
     ClientImplementationType type) {
   switch (type) {
     case kDefaultClient:
-      return new ClientImplementation(dir_service_address, user_credentials,
-                                      ssl_options, options);
+      return new ClientImplementation(dir_service_addressses,
+                                      user_credentials,
+                                      ssl_options,
+                                      options);
     default:
       return NULL;
   }

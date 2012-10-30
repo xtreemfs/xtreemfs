@@ -11,6 +11,7 @@
 #include <list>
 #include <string>
 
+#include "libxtreemfs/typedefs.h"
 #include "pbrpc/RPC.pb.h"
 #include "xtreemfs/MRC.pb.h"
 
@@ -38,21 +39,20 @@ class Client {
   };
 
   /** Returns an instance of the default Client implementation.
-   * @param dir_service_address Address of the DIR service
-   *                            (Format: ip-addr:port, e.g. localhost:32638)
+   * @param dir_service_addressses  List of DIR replicas
    * @param user_credentials    Name and Groups of the user.
    * @param ssl_options         NULL if no SSL is used.
    * @param options             Has to contain loglevel string and logfile path.
    */
   static Client* CreateClient(
-      const std::string& dir_service_address,
+      const ServiceAddresses& dir_service_addressses,
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const xtreemfs::rpc::SSLOptions* ssl_options,
       const Options& options);
 
   /** Returns an instance of the chosen Client implementation. */
   static Client* CreateClient(
-      const std::string& dir_service_address,
+      const ServiceAddresses& dir_service_addressses,
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const xtreemfs::rpc::SSLOptions* ssl_options,
       const Options& options,

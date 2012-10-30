@@ -62,7 +62,8 @@ class ClientTestFastLingerTimeoutConnectTimeout : public ClientTest {
     test_env.options.max_tries = 1;
 
     // We set an address which definitely won't work.
-    test_env.options.service_address = "130.73.78.254:80";
+    test_env.options.service_addresses.clear();
+    test_env.options.service_addresses.push_back("130.73.78.254:80");
 
     ClientTest::SetUp();
   }

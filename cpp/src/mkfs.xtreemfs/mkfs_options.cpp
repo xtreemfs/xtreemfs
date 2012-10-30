@@ -160,10 +160,21 @@ void MkfsOptions::ParseCommandLine(int argc, char** argv) {
   // Extract information from command line.
   Options::ParseURL(kMRC);
 
-  // Check for required parameters.
-  if (service_address.empty()) {
-    throw InvalidCommandLineParametersException("missing MRC host.");
+  // take first service address parsed from xtreemfs_url
+  if(!service_addresses.empty()) {
+    mrc_service_address = service_addresses.front();
   }
+
+  // Check for MRC host
+  if(service_addresses.empty()) {
+    throw InvalidCommandLineParametersException("missing MRC host.");
+  } else if (service_addresses.empty() > 1) {
+    throw InvalidCommandLineParametersException("more than one MRC host was specified.");
+  } else {
+    mrc_service_address = service_addresses.front();
+  }
+
+  // Check for required parameters.
   if (volume_name.empty()) {
     throw InvalidCommandLineParametersException("missing volume name.");
   }

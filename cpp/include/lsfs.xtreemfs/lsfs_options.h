@@ -41,6 +41,11 @@ class LsfsOptions : public Options {
   /** MRC admin_password as set in the MRC config. */
   std::string admin_password;
 
+  /** The service_adresses of Options became service_address, so we can no
+   *  longer use this option for the MRC address and need a new member.
+   */
+  std::string mrc_service_address;
+
  private:
   /** Contains all available lsfs options and its descriptions. */
   boost::program_options::options_description lsfs_descriptions_;

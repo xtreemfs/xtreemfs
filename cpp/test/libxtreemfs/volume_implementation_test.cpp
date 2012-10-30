@@ -82,7 +82,7 @@ class VolumeImplementationTest : public ::testing::Test {
     // at port 32638 using the default implementation.
     options_.log_level_string = "WARN";
     client_ = Client::CreateClient(
-        "localhost:32638",
+        ServiceAddresses(1, "localhost:32638"),
         user_credentials_,
         NULL,  // No SSL options.
         options_);

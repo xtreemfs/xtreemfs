@@ -58,14 +58,15 @@ bool TestEnvironment::Start() {
 
   // If the DIR server address was not explicitly overridden, set it to the
   // started test DIR server.
-  if (options.service_address.empty()) {
-    options.service_address = dir->GetAddress();
+  if (options.service_addresses.empty()) {
+    options.service_addresses.push_back(dir->GetAddress());
   }
 
-  client.reset(Client::CreateClient(options.service_address,
-                                    user_credentials,
-                                    NULL,  // No SSL options.
-                                    options));
+  client.reset(Client::CreateClient(
+      options.service_addresses,
+      user_credentials,
+      NULL,  // No SSL options.
+      options));
 
   // Start the client (a connection to the DIR service will be setup).
   client->Start();

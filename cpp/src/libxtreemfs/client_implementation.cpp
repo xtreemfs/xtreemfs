@@ -13,8 +13,6 @@
 
 #include <boost/bind.hpp>
 #include <boost/thread/thread.hpp>
-#include <list>
-#include <string>
 
 #include "libxtreemfs/async_write_handler.h"
 #include "libxtreemfs/execute_sync_request.h"
@@ -37,22 +35,27 @@ using namespace xtreemfs::util;
 namespace xtreemfs {
 
 ClientImplementation::ClientImplementation(
-    const std::string& dir_service_address,
+    const ServiceAddresses& dir_service_addressses,
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const xtreemfs::rpc::SSLOptions* ssl_options,
     const Options& options)
-  : was_shutdown_(false),
-    dir_service_auth_(),
-    dir_service_user_credentials_(user_credentials),
-    dir_service_ssl_options_(ssl_options),
-    options_(options),
-    list_open_volumes_(),
-    uuid_cache_(),
-    network_client_(NULL),
-    network_client_thread_(NULL),
-    dir_service_client_(NULL),
-    client_uuid_("") {
-  dir_service_addresses.AddUUID(dir_service_address);
+    : was_shutdown_(false),
+      dir_service_auth_(),
+      dir_service_user_credentials_(user_credentials),
+      dir_service_ssl_options_(ssl_options),
+      options_(options),
+      list_open_volumes_(),
+      uuid_cache_(),
+      network_client_(NULL),
+      network_client_thread_(NULL),
+      dir_service_client_(NULL),
+      client_uuid_("") {
+  for (ServiceAddresses::const_iterator iter
+           = dir_service_addressses.begin();
+       iter != dir_service_addressses.end();
+       ++iter) {
+    dir_service_addresses.AddUUID(*iter);
+  }
 
   // Set bogus auth object.
   auth_bogus_.set_auth_type(AUTH_NONE);

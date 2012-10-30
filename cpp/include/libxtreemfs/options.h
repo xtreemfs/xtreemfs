@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "libxtreemfs/typedefs.h"
 #include "libxtreemfs/user_mapping.h"
 
 namespace xtreemfs {
@@ -90,15 +91,20 @@ class Options {
   std::string version_string;
 
   // XtreemFS URL Options.
-  /** URL to the Volume, Form: [pbrpc://]service-hostname[:port]/volume_name.  // NOLINT
+  /** URL to the Volume.
+   *
+   * Format:[pbrpc://]service-hostname[:port](,[pbrpc://]service-hostname2[:port])*[/volume_name].  // NOLINT
    *
    * Depending on the type of operation the service-hostname has to point to the
    * DIR (to open/"mount" a volume) or the MRC (create/delete/list volumes).
    * Depending on this type, the default port differs (DIR: 32638; MRC: 32636).
    */
   std::string xtreemfs_url;
-  /** Usually extracted from xtreemfs_url (Form: ip-address:port). */
-  std::string service_address;
+  /** Usually extracted from xtreemfs_url (Form: ip-address:port).
+   *
+   * Depending on the application, it may contain the addresses of DIR replicas
+   * (e.g., mount.xtreemfs) or MRC replicas (e.g., mkfs.xtreemfs). */
+  ServiceAddresses service_addresses;
   /** Usually extracted from xtreemfs_url. */
   std::string volume_name;
   /** Usually extracted from xtreemfs_url. */
