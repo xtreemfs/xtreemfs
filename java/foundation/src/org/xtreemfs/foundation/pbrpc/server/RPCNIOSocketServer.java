@@ -111,7 +111,7 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
 
     public RPCNIOSocketServer(int bindPort, InetAddress bindAddr, RPCServerRequestListener rl,
         SSLOptions sslOptions) throws IOException {
-        this(bindPort, bindAddr, rl, sslOptions, 256 * 1024);
+        this(bindPort, bindAddr, rl, sslOptions, -1);
     }
 
     public RPCNIOSocketServer(int bindPort, InetAddress bindAddr, RPCServerRequestListener rl,
