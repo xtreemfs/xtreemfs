@@ -56,6 +56,9 @@ public final class TimeSync extends LifeCycleThread {
 
     /**
      * interval between updates of the local system clock.
+     * 
+     * If it's set to 0, the local renew by the thread is disabled and the time
+     * is read from the system on demand. 
      */
     private volatile int           localTimeRenew;
 
@@ -125,12 +128,18 @@ public final class TimeSync extends LifeCycleThread {
      * @param localTimeRenew
      */
     public synchronized void init(ExtSyncSource source, TimeServerClient dir, InetSocketAddress gpsd, int timeSyncInterval, int localTimeRenew) {
-        
         this.localTimeRenew = localTimeRenew;
         this.timeSyncInterval = timeSyncInterval;
         this.timeServerClient = dir;
         this.syncSource = source;
         this.gpsdAddr = gpsd;
+        
+        if (this.timeServerClient != null && this.timeSyncInterval != 0 && this.localTimeRenew != 0) {
+            this.localTimeRenew = 0;
+            Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                    "Disabled the periodic local time renew (set local_clock_renewal to 0)" +
+                    " and using always the current system time as base since the time will be corrected by synchronizing with the DIR service.");
+        }
 
         if (source == ExtSyncSource.GPSD) {
             try {
@@ -155,19 +164,46 @@ public final class TimeSync extends LifeCycleThread {
     public void run() {
         TimeSync.theInstance = this;
         notifyStarted();
-        String tsStatus = " using the local clock (precision is " + this.localTimeRenew + "ms)";
-        if (this.timeServerClient != null) {
-            tsStatus = " and remote sync every " + this.timeSyncInterval + "ms";
+        String tsStatus;
+        if (localTimeRenew == 0) {
+            tsStatus = "using the local clock";
+        } else {
+            tsStatus = "using the local clock (precision is " + this.localTimeRenew + " ms)";
+        }
+        if (this.timeServerClient != null && timeSyncInterval != 0) {
+            tsStatus += " and remote sync every " + this.timeSyncInterval + " ms";
         }
         Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this, "TimeSync is running %s", tsStatus);
         while (!quit) {
+            // Renew cached local time.
+            final long previousLocalSysTime = localSysTime;
             localSysTime = System.currentTimeMillis();
-            if (localSysTime - lastSyncAttempt > timeSyncInterval) {
+            if (localTimeRenew > 0 && previousLocalSysTime != 0) {
+                final long timeBetweenUpdates = Math.abs(localSysTime - previousLocalSysTime);
+                if (timeBetweenUpdates > 4 * localTimeRenew) {
+                    Logging.logMessage(Logging.LEVEL_WARN, this,
+                            "The granularity of the renewed local time could not be guaranteed" +
+                            " since it took longer to retrieve the latest local time (%d ms) than configured (local_clock_renewal = %d)." +
+                            " Maybe the system is under high I/O load and therefore scheduling threads takes longer than usual?",
+                            timeBetweenUpdates,
+                            localTimeRenew);
+                }
+            }
+            
+            // Remote sync time.
+            if (timeSyncInterval != 0 && localSysTime - lastSyncAttempt > timeSyncInterval) {
                 resync();
             }
             if (!quit) {
+                // 
                 try {
-                    TimeSync.sleep(localTimeRenew);
+                    // If local refresh was disabled, use timeSyncInterval as sleep time.
+                    long sleepTimeMs = localTimeRenew != 0 ? localTimeRenew : timeSyncInterval;
+                    if (sleepTimeMs == 0) {
+                        // If there is no need to run this thread at all, let it sleep for 10 minutes.
+                        sleepTimeMs = 600000;
+                    }
+                    TimeSync.sleep(sleepTimeMs);
                 } catch (InterruptedException ex) {
                     break;
                 }
@@ -189,8 +225,7 @@ public final class TimeSync extends LifeCycleThread {
      * @param localTimeRenew
      * @param dirAuthStr
      */
-    public static TimeSync initialize(TimeServerClient dir, int timeSyncInterval, int localTimeRenew)
-            throws Exception {
+    public static TimeSync initialize(TimeServerClient dir, int timeSyncInterval, int localTimeRenew) throws Exception {
         
         if (theInstance != null) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.lifecycle, null, "time sync already running",
@@ -204,14 +239,14 @@ public final class TimeSync extends LifeCycleThread {
         return s;
     }
     
-    public static TimeSync initializeLocal(int timeSyncInterval, int localTimeRenew) {
+    public static TimeSync initializeLocal(int localTimeRenew) {
         if (theInstance != null) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.lifecycle, null, "time sync already running",
                 new Object[0]);
             return theInstance;
         }
         
-        TimeSync s = new TimeSync(ExtSyncSource.LOCAL_CLOCK, null, null, timeSyncInterval, localTimeRenew);
+        TimeSync s = new TimeSync(ExtSyncSource.LOCAL_CLOCK, null, null, 0, localTimeRenew);
         s.start();
         return s;
     }
@@ -228,27 +263,13 @@ public final class TimeSync extends LifeCycleThread {
         return s;
     }
     
-    public void enableRemoteSynchronization(TimeServerClient client) {
-        if (this.timeServerClient != null) {
-            throw new RuntimeException("remote time synchronization is already enabled");
-        }
-        this.timeServerClient = client;
-        
-        if (Logging.isInfo())
-            Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this,
-                "TimeSync remote synchronization enabled every %d ms", this.timeSyncInterval);
-    }
-    
-    public static void close() {
-        if (theInstance == null)
-            return;
-        theInstance.shutdown();
+    public void close() {
+        shutdown();
         try {
-            theInstance.waitForShutdown();
+            waitForShutdown();
         } catch (Exception e) {
             Logging.logError(Logging.LEVEL_ERROR, null, e);
         }
-        theInstance = null;
     }
     
     /**
@@ -270,7 +291,12 @@ public final class TimeSync extends LifeCycleThread {
      * resolution of localTimeRenew ms.
      */
     public static long getLocalSystemTime() {
-        return getInstance().localSysTime;
+        TimeSync ts = getInstance();
+        if (ts.localTimeRenew == 0 || ts.localSysTime == 0) {
+            return System.currentTimeMillis();
+        } else {
+            return ts.localSysTime;
+        }
     }
     
     /**
@@ -278,7 +304,12 @@ public final class TimeSync extends LifeCycleThread {
      * time. Has a resolution of localTimeRenew ms.
      */
     public static long getGlobalTime() {
-        return getInstance().localSysTime + getInstance().currentDrift;
+        TimeSync ts = getInstance();
+        if (ts.localTimeRenew == 0 || ts.localSysTime == 0) {
+            return System.currentTimeMillis() + ts.currentDrift;
+        } else {
+            return ts.localSysTime + ts.currentDrift;
+        }
     }
     
     public static long getLocalRenewInterval() {
@@ -430,34 +461,4 @@ public final class TimeSync extends LifeCycleThread {
     public static boolean isInitialized() {
         return theInstance != null;
     }
-    
-    /**
-     * Simple demonstration routine
-     */
-    public static void main(String[] args) {
-        try {
-            // simple test
-            Logging.start(Logging.LEVEL_DEBUG);
-            
-            /*RPCNIOSocketClient c = new RPCNIOSocketClient(null, 5000, 60000);
-            c.start();
-            c.waitForStartup();
-            DIRClient dir = new DIRClient(c, new InetSocketAddress("xtreem.zib.de", 32638));*/
-            TimeSync ts = new TimeSync(ExtSyncSource.GPSD,null, new InetSocketAddress("localhost", 2947), 10000, 50);
-            ts.start();
-            ts.waitForStartup();
-            
-            for (;;) {
-                Logging.logMessage(Logging.LEVEL_INFO, Category.misc, (Object) null, 
-                        "local time  = %d", TimeSync.getLocalSystemTime());
-                Logging.logMessage(Logging.LEVEL_INFO, Category.misc, (Object) null, 
-                        "global time = %d + %d", TimeSync.getGlobalTime(), ts.getDrift());
-                Thread.sleep(1000);
-            }
-            
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-    
 }
