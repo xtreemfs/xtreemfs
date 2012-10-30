@@ -8,9 +8,10 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_PBRPC_URL_H_
 #define CPP_INCLUDE_LIBXTREEMFS_PBRPC_URL_H_
 
+#include <stdint.h>
+
 #include <boost/lexical_cast.hpp>
 #include <list>
-#include <stdint.h>
 #include <string>
 
 #include "libxtreemfs/typedefs.h"
@@ -50,11 +51,16 @@ class PBRPCURL {
   void GetAddresses(ServiceAddresses* addresses) const;
 
  private:
+  /** List of servers (hostnames only) */
   typedef std::list<std::string> ServerList;
+  /** List of ports */
   typedef std::list<uint16_t> PortList;
 
   std::string scheme_;
+  /** List of all parsed server's hostnames. Ports are stored in ports_ */
   ServerList servers_;
+  /** Ports for the hostnames in servers. Server and ports with the same list
+   *  position belong together. */
   PortList ports_;
   std::string volume_;
 };

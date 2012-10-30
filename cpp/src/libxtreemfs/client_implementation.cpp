@@ -35,7 +35,7 @@ using namespace xtreemfs::util;
 namespace xtreemfs {
 
 ClientImplementation::ClientImplementation(
-    const ServiceAddresses& dir_service_addressses,
+    const ServiceAddresses& dir_service_addresses,
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const xtreemfs::rpc::SSLOptions* ssl_options,
     const Options& options)
@@ -51,10 +51,10 @@ ClientImplementation::ClientImplementation(
       dir_service_client_(NULL),
       client_uuid_("") {
   for (ServiceAddresses::const_iterator iter
-           = dir_service_addressses.begin();
-       iter != dir_service_addressses.end();
+           = dir_service_addresses.begin();
+       iter != dir_service_addresses.end();
        ++iter) {
-    dir_service_addresses.AddUUID(*iter);
+    dir_service_addresses_.AddUUID(*iter);
   }
 
   // Set bogus auth object.
@@ -125,7 +125,7 @@ void ClientImplementation::Start() {
     }
     vivaldi_.reset(new Vivaldi(network_client_.get(),
                                dir_service_client_.get(),
-                               &dir_service_addresses,
+                               &dir_service_addresses_,
                                this->GetUUIDResolver(),
                                options_));
     vivaldi_thread_.reset(new boost::thread(boost::bind(&xtreemfs::Vivaldi::Run,
@@ -361,7 +361,7 @@ void ClientImplementation::UUIDToAddress(const std::string& uuid,
               boost::cref(dir_service_auth_),
               boost::cref(dir_service_user_credentials_),
               &rq),
-          &dir_service_addresses,
+          &dir_service_addresses_,
           NULL,
           options.max_tries,
           options,
@@ -431,7 +431,7 @@ void ClientImplementation::VolumeNameToMRCUUID(const std::string& volume_name,
               boost::cref(dir_service_auth_),
               boost::cref(dir_service_user_credentials_),
               &rq),
-          &dir_service_addresses,
+          &dir_service_addresses_,
           NULL,
           options_.max_tries,
           options_,
@@ -492,7 +492,7 @@ void ClientImplementation::VolumeNameToMRCUUID(const std::string& volume_name,
               boost::cref(dir_service_auth_),
               boost::cref(dir_service_user_credentials_),
               &rq),
-          &dir_service_addresses,
+          &dir_service_addresses_,
           NULL,
           options_.max_tries,
           options_,

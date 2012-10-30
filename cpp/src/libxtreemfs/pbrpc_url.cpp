@@ -77,7 +77,7 @@ void PBRPCURL::ParseURL(const std::string& original_url,
           if (last_slash != string::npos && last_slash > last_colon + 1) {
             // there is a volume in this address
             port = boost::lexical_cast<uint16_t>(
-                address.substr(last_colon + 1, last_slash-last_colon - 1));
+                address.substr(last_colon + 1, last_slash - last_colon - 1));
           } else {
             port = boost::lexical_cast<uint16_t>(address.substr(last_colon + 1));
           }

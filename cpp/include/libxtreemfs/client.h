@@ -39,20 +39,20 @@ class Client {
   };
 
   /** Returns an instance of the default Client implementation.
-   * @param dir_service_addressses  List of DIR replicas
+   * @param dir_service_addresses  List of DIR replicas
    * @param user_credentials    Name and Groups of the user.
    * @param ssl_options         NULL if no SSL is used.
    * @param options             Has to contain loglevel string and logfile path.
    */
   static Client* CreateClient(
-      const ServiceAddresses& dir_service_addressses,
+      const ServiceAddresses& dir_service_addresses,
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const xtreemfs::rpc::SSLOptions* ssl_options,
       const Options& options);
 
   /** Returns an instance of the chosen Client implementation. */
   static Client* CreateClient(
-      const ServiceAddresses& dir_service_addressses,
+      const ServiceAddresses& dir_service_addresses,
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const xtreemfs::rpc::SSLOptions* ssl_options,
       const Options& options,

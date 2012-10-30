@@ -214,7 +214,7 @@ TEST_F(PBRPCURLTest, URLWithMultipleAddressesProtocolsAndVolume) {
 
 TEST_F(PBRPCURLTest, URLAddressesWithDifferentProtocols) {
   EXPECT_THROW({
-      pbrpc_url_->ParseURL("pbrpc://localhost,pbrpcg::/remote/" + volume_name,
+      pbrpc_url_->ParseURL("pbrpc://localhost,pbrpcg://remote/" + volume_name,
                            PBRPCURL::SCHEME_PBRPC,
                            DIR_PBRPC_PORT_DEFAULT);
       }, InvalidURLException);

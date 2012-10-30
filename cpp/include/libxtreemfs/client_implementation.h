@@ -50,7 +50,7 @@ class ClientTestFastLingerTimeoutConnectTimeout_LingerTests_Test;
 class ClientImplementation : public Client, public UUIDResolver {
  public:
   ClientImplementation(
-      const ServiceAddresses& dir_service_addressses,
+      const ServiceAddresses& dir_service_addresses,
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const xtreemfs::rpc::SSLOptions* ssl_options,
       const Options& options);
@@ -114,7 +114,7 @@ class ClientImplementation : public Client, public UUIDResolver {
    *  check the authentication data (except Create, Delete, ListVolume(s)). */
   xtreemfs::pbrpc::Auth auth_bogus_;
 
-  SimpleUUIDIterator dir_service_addresses;
+  SimpleUUIDIterator dir_service_addresses_;
 
   /** The auth_type of this object will always be set to AUTH_NONE. */
   // TODO(mberlin): change this when the DIR service supports real auth.
