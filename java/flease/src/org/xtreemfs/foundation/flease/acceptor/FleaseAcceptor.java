@@ -82,7 +82,7 @@ public class FleaseAcceptor {
             /*waitUntilTimestamp_ms = TimeSync.getLocalSystemTime()+TimeSync.getLocalRenewInterval()+
                     config.getRestartWait();*/
             waitUntilTimestamp_ms = System.currentTimeMillis() + config.getRestartWait();
-            Logging.logMessage(Logging.LEVEL_INFO, Category.replication, this,"restarted after crash (lock file %s exists). acceptor will ignore all messages for %d ms (recovery period until %s)\n",
+            Logging.logMessage(Logging.LEVEL_INFO, Category.replication, this,"restarted after crash (lock file %s exists). acceptor will ignore all messages for %d ms (recovery period until %s)",
                     lockfile,config.getRestartWait(),(new Date(waitUntilTimestamp_ms)).toString());
 
         } else {
