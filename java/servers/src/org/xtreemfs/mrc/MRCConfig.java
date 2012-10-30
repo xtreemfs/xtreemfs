@@ -54,7 +54,6 @@ public class MRCConfig extends ServiceConfig {
             Parameter.CAPABILITY_TIMEOUT,
             Parameter.ADMIN_PASSWORD,
             Parameter.RENEW_TIMED_OUT_CAPS,
-            Parameter.ENABLE_LOCAL_FIFOS,
             Parameter.USE_SNMP,
             Parameter.SNMP_ADDRESS,
             Parameter.SNMP_PORT,
@@ -142,10 +141,6 @@ public class MRCConfig extends ServiceConfig {
     
     public int getCapabilityTimeout() {
         return (Integer) parameter.get(Parameter.CAPABILITY_TIMEOUT);
-    }
-    
-    public boolean isLocalFIFOsEnabled() {
-        return (Boolean) parameter.get(Parameter.ENABLE_LOCAL_FIFOS);
     }
     
     /**

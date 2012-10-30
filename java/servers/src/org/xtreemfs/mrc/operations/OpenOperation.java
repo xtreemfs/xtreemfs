@@ -135,9 +135,9 @@ public class OpenOperation extends MRCOperation {
                 // get the next free file ID
                 long fileId = sMan.getNextFileId();
                 
-                if ((rqArgs.getMode() & GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_S_IFIFO.getNumber()) != 0
-                    && !master.getConfig().isLocalFIFOsEnabled())
+                if ((rqArgs.getMode() & GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_S_IFIFO.getNumber()) != 0) {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EIO, "FIFOs not supported");
+                }
                 
                 // create the metadata object
                 file = sMan.createFile(fileId, res.getParentDirId(), res.getFileName(), time, time, time, rq
