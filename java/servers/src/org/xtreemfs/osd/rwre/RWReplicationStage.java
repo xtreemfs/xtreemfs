@@ -148,7 +148,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         masterEpochThread = new FleaseMasterEpochThread(master.getStorageStage().getStorageLayout(), maxRequestsQueueLength);
 
         FleaseConfig fcfg = new FleaseConfig(master.getConfig().getFleaseLeaseToMS(),
-                master.getConfig().getFleaseDmaxMS(), master.getConfig().getFleaseDmaxMS(),
+                master.getConfig().getFleaseDmaxMS(), master.getConfig().getFleaseMsgToMS(),
                 null, localID.toString(), master.getConfig().getFleaseRetries());
 
         fstage = new FleaseStage(fcfg, master.getConfig().getObjDir()+"/",
