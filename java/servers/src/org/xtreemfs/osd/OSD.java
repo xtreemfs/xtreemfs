@@ -93,13 +93,11 @@ public class OSD {
         String cfgFile = (args.length > 0) ? args[0] : "./etc/xos/xtreemfs/osdconfig.test";
         OSDConfig config = new OSDConfig(cfgFile);
         
-        config.setDefaults(config.getConnectionParameter());
-        
-        Logging.start(config.getDebugLevel(), config.getDebugCategories());
-        
         config.setDefaults();
         
         config.checkConfig();
+        
+        Logging.start(config.getDebugLevel(), config.getDebugCategories());
         
         new OSD(config);
     }

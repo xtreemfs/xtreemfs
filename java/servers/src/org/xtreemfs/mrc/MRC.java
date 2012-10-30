@@ -10,7 +10,6 @@ package org.xtreemfs.mrc;
 
 import java.io.IOException;
 import org.xtreemfs.babudb.config.BabuDBConfig;
-import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 
@@ -89,12 +88,6 @@ public class MRC {
         
         MRCConfig config = new MRCConfig(configFileName);
         
-        config.setDefaults(config.getConnectionParameter());
-        
-        Logging.start(config.getDebugLevel(), config.getDebugCategories());
-        
-        TimeSync.initializeLocal(60000, 50).waitForStartup();
-        
         config.setDefaults();
         
         config.checkConfig();
@@ -106,6 +99,8 @@ public class MRC {
             ex.printStackTrace();
             return;
         }
+        
+        Logging.start(config.getDebugLevel(), config.getDebugCategories());
         
         new MRC(config, dbsConfig);
     }
