@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2011 by Bjoern Kolbeck,
+ * Copyright (c) 2010-2012 by Bjoern Kolbeck,
  *               Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
@@ -454,6 +454,11 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
         }
         
         return false;
+    }
+    
+    @Override
+    public boolean acceptRemoteUpdate(long objVersion) throws IOException {
+        return objVersion >= localObjVersion;
     }
 
     @Override

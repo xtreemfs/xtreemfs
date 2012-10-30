@@ -1063,6 +1063,20 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                         return;
                     }
                 }
+                if (!state.getPolicy().acceptRemoteUpdate(objVersion)) {
+                    Logging.logMessage(
+                            Logging.LEVEL_WARN,
+                            Category.replication,
+                            this,
+                            "received outdated object version %d for file %s",
+                            objVersion,
+                            fileId);
+                    callback.failed(ErrorUtils.getErrorResponse(
+                            ErrorType.IO_ERROR,
+                            POSIXErrno.POSIX_ERROR_EIO,
+                            "outdated object version for update rejected"));
+                    return;
+                }
                 boolean needsReset = state.getPolicy().onRemoteUpdate(objVersion, state.getState());
                 if (Logging.isDebug()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"%s needs reset: %s",fileId,needsReset);
