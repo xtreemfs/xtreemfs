@@ -94,7 +94,6 @@ public class ServiceConfig extends Config {
             CAPABILITY_SECRET("capability_secret", null, String.class, true),
             CAPABILITY_TIMEOUT("capability_timeout", 600, Integer.class, false),
             RENEW_TIMED_OUT_CAPS("renew_to_caps", false, Boolean.class, false),
-            ENABLE_LOCAL_FIFOS("enable_local_FIFOs", false, Boolean.class, false),
             
             /*
              * OSD specific configuration parameter
@@ -105,8 +104,10 @@ public class ServiceConfig extends Config {
             CHECKSUM_PROVIDER("checksums.algorithm", null, String.class, false),
             STORAGE_LAYOUT("storage_layout", "HashStorageLayout", String.class, false),
             IGNORE_CAPABILITIES("ignore_capabilities", false, Boolean.class, false),
+            /** Maximum assumed drift between two server clocks. If the drift is higher, the system may not function properly. */
             FLEASE_DMAX_MS("flease.dmax_ms", 1000, Integer.class, false),
             FLEASE_LEASE_TIMEOUT_MS("flease.lease_timeout_ms", 15000, Integer.class, false),
+            /** Message timeout. Maximum allowed in-transit time for a Flease message. */
             FLEASE_MESSAGE_TO_MS("flease.message_to_ms", 500, Integer.class, false),
             FLEASE_RETRIES("flease.retries", 3, Integer.class, false),
             SOCKET_SEND_BUFFER_SIZE("socket.send_buffer_size", -1, Integer.class, false),
