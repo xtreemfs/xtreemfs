@@ -72,4 +72,18 @@
     nbproject/build-impl.xml file. 
 
     -->
+    
+    <!-- 
+    This target is required by the BabuDB replication plugin which uses only a subset
+    of the foundation code (the PBRPC communication infrastructure).
+    The generated .jar file contains the required files of the subset.
+      -->
+    <target name="pbrpc-jar" depends="compile">
+      <echo level="info">Creating PBRPC.jar.</echo>
+      <!-- Create a new JAR. -->
+      <jar destfile="dist/PBRPC.jar" basedir="build/classes">
+        <include name="org/xtreemfs/foundation/pbrpc/**/*.class"/>
+        <zipfileset dir="../../" includes="LICENSE" fullpath="/LICENSE"/>
+      </jar>
+    </target>
 </project>
