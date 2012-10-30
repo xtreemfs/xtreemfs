@@ -76,7 +76,7 @@ public class TortureXtreemFS {
             final List<String> arguments = parser.getArguments();
             
             Logging.start(Logging.LEVEL_WARN);
-            TimeSync.initializeLocal(10000, 50);
+            TimeSync.initializeLocal(50);
             
             if (arguments.size() != 1) {
                 usage();

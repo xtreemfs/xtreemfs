@@ -159,7 +159,7 @@ public class TestEnvironment {
             }
             
             if (enabledServs.contains(Services.TIME_SYNC) || enabledServs.contains(Services.MOCKUP_OSD)) {
-                tsInstance = TimeSync.initializeLocal(60 * 1000, 50);
+                tsInstance = TimeSync.initializeLocal(50);
                 tsInstance.waitForStartup();
             }
             

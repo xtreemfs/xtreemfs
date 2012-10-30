@@ -63,7 +63,7 @@ public class Client {
         osdClient = new RPCNIOSocketClient(ssl, requestTimeout, connectionTimeout, "Client (osd)");
         DIRServiceClient dirRpcClient = new DIRServiceClient(mdClient, dirAddress[0]);
         dirClient = new DIRClient(dirRpcClient, dirAddress, 100, 1000 * 15);
-        TimeSync.initializeLocal(0, 50);
+        TimeSync.initializeLocal(50);
         uuidRes = UUIDResolver.startNonSingelton(dirClient, 3600, 1000);
         volumeMap = new HashMap<String, Volume>();
     }

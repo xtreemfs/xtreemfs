@@ -195,7 +195,7 @@ public class OSDDrainTest extends TestCase {
         }
         osdServer.clear();
 
-        TimeSync.initializeLocal(60 * 1000, 50).waitForStartup();
+        TimeSync.initializeLocal(50).waitForStartup();
 
     }
 
@@ -336,7 +336,7 @@ public class OSDDrainTest extends TestCase {
         }
         osdServer.clear();
 
-        TimeSync.initializeLocal(60 * 1000, 50).waitForStartup();
+        TimeSync.initializeLocal(50).waitForStartup();
 
     }
 
@@ -469,7 +469,7 @@ public class OSDDrainTest extends TestCase {
         }
         osdServer.clear();
         
-        TimeSync.initializeLocal(60 * 1000, 50).waitForStartup();
+        TimeSync.initializeLocal(50).waitForStartup();
     }
 
 }

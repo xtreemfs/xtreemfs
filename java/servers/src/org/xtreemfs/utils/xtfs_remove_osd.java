@@ -202,7 +202,7 @@ public class xtfs_remove_osd {
 
     public void initialize() throws Exception {
 
-        TimeSync.initializeLocal(0, 50);
+        TimeSync.initializeLocal(50);
 
         // connect to DIR
         dirClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000, "xtfs_remove_osd (dir)");

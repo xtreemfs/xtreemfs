@@ -133,7 +133,7 @@ public class ClientImplementation extends Client implements UUIDResolver {
     this.networkClient.start();
     this.networkClient.waitForStartup();
 
-    TimeSync tsInstance = TimeSync.initializeLocal(60 * 1000, 50);
+    TimeSync tsInstance = TimeSync.initializeLocal(50);
     tsInstance.waitForStartup();
 
     this.dirServiceClient = new DIRServiceClient(this.networkClient, null);

@@ -49,7 +49,7 @@ public class rwrepl_test {
             }
 
             Logging.start(Logging.LEVEL_INFO, Category.all);
-            TimeSync.initializeLocal(5000, 50);
+            TimeSync.initializeLocal(50);
 
             final UserCredentials uc = UserCredentials.newBuilder().setUsername("test").addGroups("users").build();
 

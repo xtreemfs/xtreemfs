@@ -40,7 +40,7 @@ public class xtfs_mrcdbtool {
         
         Logging.start(Logging.LEVEL_ERROR);
         try {
-            TimeSync.initializeLocal(60000, 50);
+            TimeSync.initializeLocal(50);
         } catch (Exception ex) {
             ex.printStackTrace();
             System.exit(1);
