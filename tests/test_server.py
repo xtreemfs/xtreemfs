@@ -272,7 +272,7 @@ class MRC(Server):
         self._config['osd_check_interval'] = 300
         self._config['no_atime'] = 'true'
         self._config['no_fsync'] = 'true'
-        self._config['local_clock_renewal'] = 50
+        self._config['local_clock_renewal'] = 0
         self._config['remote_time_sync'] = 60000
         self._config['capability_secret'] = 'testsecret'
         self._config['database.checkpoint.interval'] = 1800000
@@ -287,7 +287,7 @@ class MRC(Server):
         self._config['babudb.worker.numThreads'] = '0'
         self._config['babudb.maxLogfileSize'] = '16777216'
         self._config['babudb.checkInterval'] = '300'
-        self._config['babudb.pseudoSyncWait'] = '200'
+        self._config['babudb.pseudoSyncWait'] = '0'
         self._config['database.dir'] = self._data_dir
         self._config['database.log'] = self._data_dir
         self._config['authentication_provider'] = 'org.xtreemfs.common.auth.NullAuthProvider'
@@ -303,7 +303,7 @@ class OSD(Server):
         self._config['dir_service.host'] = dir_host
         self._config['dir_service.port'] = dir_port
 
-        self._config['local_clock_renewal'] = 50
+        self._config['local_clock_renewal'] = 0
         self._config['remote_time_sync'] = 60000
         self._config['capability_secret'] = 'testsecret'
         self._config['report_free_space'] = 'true'
