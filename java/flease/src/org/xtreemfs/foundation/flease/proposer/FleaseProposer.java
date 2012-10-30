@@ -543,11 +543,12 @@ public class FleaseProposer {
             return;
         }
 
-        if (msg.getSendTimestamp() > TimeSync.getGlobalTime() + config.getDMax()) {
+        final long currentTime = TimeSync.getGlobalTime();
+        if (msg.getSendTimestamp() > currentTime + config.getDMax()) {
             cell.addAction(ActionName.PROPOSER_RECEIVED_OUT_OF_SYNC_MSG,
                     msg.getSendTimestamp()
                     + " > "
-                    + TimeSync.getGlobalTime()
+                    + currentTime
                     + "+"
                     + config.getDMax());
             //drop outdated message
@@ -555,11 +556,14 @@ public class FleaseProposer {
                     Logging.Category.replication,
                     this,
                     "RECEIVED MESSAGE WITH TIMESTAMP TOO FAR IN THE FUTURE (likely cause: "
-                            + "clocks aren't in sync). SYSTEM IS NOT IN A SAFE STATE: %s",
+                            + "clocks aren't in sync). SYSTEM IS NOT IN A SAFE STATE. Msg TS %d > current Time %d + dMax %d. FleaseMessage Details: %s",
+                    msg.getSendTimestamp(),
+                    currentTime,
+                    config.getDMax(),
                     msg.toString());
             cell.addAction(ActionName.PROPOSER_PREPARE_FAILED);
             cancel(cell,
-                    new FleaseException("System is not in sync (clock sync drift exceeded)!"), 0);
+                   new FleaseException("System is not in sync (clock sync drift exceeded)!"), 0);
             return;
         }
 
