@@ -820,8 +820,7 @@ bool FileHandleImplementation::DidAsyncWritesFail() {
 }
 
 void FileHandleImplementation::ThrowIfAsyncWritesFailed() {
-  boost::mutex::scoped_lock lock(mutex_);
-  if (async_writes_failed_) {
+  if (DidAsyncWritesFail()) {
     throw PosixErrorException(POSIX_ERROR_EIO, "A previous asynchronous write"
         " did fail. No more actions on this file handle are allowed.");
   }
