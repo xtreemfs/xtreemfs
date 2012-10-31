@@ -143,53 +143,6 @@ void AsyncWriteHandler::Write(AsyncWriteBuffer* write_buffer) {
     IncreasePendingBytesHelper(write_buffer, &lock);
   }
 
-  // TODO(mno): remove code below after testing WriteCommon
-  /*
-  // Retrieve address for UUID.
-  string osd_uuid, osd_address;
-  if (write_buffer->use_uuid_iterator) {
-    uuid_iterator_->GetUUID(&osd_uuid);
-    // Store used OSD in write_buffer for the callback.
-    write_buffer->osd_uuid = osd_uuid;
-  } else {
-    osd_uuid = write_buffer->osd_uuid;
-  }
-  try {
-    uuid_resolver_->UUIDToAddress(osd_uuid,
-                                  &osd_address,
-                                  uuid_resolver_options_);
-  } catch(const exception& e) {
-    // In case of errors, remove write again and throw exception.
-    {
-      boost::mutex::scoped_lock lock(mutex_);
-      DecreasePendingBytesHelper(write_buffer, &lock, true);
-      --pending_writes_;
-    }
-    throw;
-  }
-
-  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-    Logging::log->getLog(LEVEL_DEBUG)
-       << "AsyncWriteHandler::Write for file_id: "
-       << write_buffer->write_request->mutable_file_credentials()
-           ->xcap().file_id()
-       << ", XCap Expiration in: " << (write_buffer->write_request
-           ->mutable_file_credentials()->xcap().expire_time_s() - time(NULL))
-       << endl;
-  }
-
-  // Send out request.
-  write_buffer->request_sent_time =
-      boost::posix_time::microsec_clock::local_time();
-  osd_service_client_->write(osd_address,
-                             auth_bogus_,
-                             user_credentials_bogus_,
-                             write_buffer->write_request,
-                             write_buffer->data,
-                             write_buffer->data_length,
-                             this,
-                             reinterpret_cast<void*>(write_buffer));
-  */
   WriteCommon(write_buffer, NULL, false);
 }
 
@@ -201,55 +154,6 @@ void AsyncWriteHandler::ReWrite(AsyncWriteBuffer* write_buffer,
   write_buffer->retry_count_++;
   write_buffer->state_ = AsyncWriteBuffer::PENDING;
   ++pending_writes_;
-
-  // TODO(mno): remove code below after testing WriteCommon
-  /*
-  // Retrieve address for UUID.
-  string osd_uuid, osd_address;
-  if (write_buffer->use_uuid_iterator) {
-    uuid_iterator_->GetUUID(&osd_uuid);
-    // Store used OSD in write_buffer for the callback.
-    write_buffer->osd_uuid = osd_uuid;
-  } else {
-    osd_uuid = write_buffer->osd_uuid;
-  }
-  try {
-    uuid_resolver_->UUIDToAddress(osd_uuid,
-                                  &osd_address,
-                                  uuid_resolver_options_);
-  } catch(const exception& e) {
-    // In case of errors, throw exception.
-    --pending_writes_;
-    throw;
-  }
-
-  // make sure to use the potentially renewed XCap
-  write_buffer->xcap_handler_->GetXCap(
-      write_buffer->write_request->mutable_file_credentials()->mutable_xcap());
-
-  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-    Logging::log->getLog(LEVEL_DEBUG)
-        << "AsyncWriteHandler::ReWrite for file_id: "
-        << write_buffer->write_request->mutable_file_credentials()
-            ->xcap().file_id()
-        << ", XCap Expiration in: " << (write_buffer->write_request
-            ->mutable_file_credentials()->xcap().expire_time_s() - time(NULL))
-        << endl;
-  }
-
-  // Send out request.
-  write_buffer->request_sent_time =
-      boost::posix_time::microsec_clock::local_time();
-  osd_service_client_->write(osd_address,
-                             auth_bogus_,
-                             user_credentials_bogus_,
-                             write_buffer->write_request,
-                             write_buffer->data,
-                             write_buffer->data_length,
-                             this,
-                             reinterpret_cast<void*>(write_buffer));
-  */
-  WriteCommon(write_buffer, lock, true);
 }
 
 void AsyncWriteHandler::WriteCommon(AsyncWriteBuffer* write_buffer,
@@ -416,7 +320,8 @@ void AsyncWriteHandler::HandleCallback(
       write_buffer->state_ = AsyncWriteBuffer::FAILED;
       writing_paused_ = true;  // forbid new writes
 
-      if (state_ != HAS_FAILED_WRITES) {
+      bool first_fail = state_ != HAS_FAILED_WRITES;
+      if (first_fail) {
         state_ = HAS_FAILED_WRITES;
         worst_error_.MergeFrom(*error);
         worst_write_buffer_ = write_buffer;
@@ -440,6 +345,22 @@ void AsyncWriteHandler::HandleCallback(
         if (error->error_type() == xtreemfs::pbrpc::REDIRECT) {
           assert(error->has_redirect_to_server_uuid());
 
+          // Log only the first redirect in a row of redirect errors
+          // since redirect precedes all other errors, the following condition
+          // identifies the first redirect (and we log before setting
+          // worst_error_)
+          if (worst_error_.error_type() != xtreemfs::pbrpc::REDIRECT) {
+            level = xtreemfs::util::LEVEL_INFO;
+            error_str = "The server with the UUID: " + service_uuid
+                + " redirected to the current master with the UUID: "
+                + error->redirect_to_server_uuid()
+                + " after attempt: "
+                + boost::lexical_cast<std::string>(write_buffer->retry_count_);
+            if (xtreemfs::util::Logging::log->loggingActive(level)) {
+              xtreemfs::util::Logging::log->getLog(level) << error_str << std::endl;
+            }
+          }
+
           // set the current error as new worst error if it is worse:
           // REDIRECT is worse than other error types and worse than a
           // previous REDIRECT error if it belongs to a more recent request
@@ -448,21 +369,6 @@ void AsyncWriteHandler::HandleCallback(
                write_buffer->request_sent_time)) {
             worst_error_.CopyFrom(*error);
             worst_write_buffer_ = write_buffer;
-          }
-
-          // TODO: log only the first redirect in a row of redirect errors
-          // since redirect precedes all other errors, the following condition
-          // identifies the first redirect
-          // if (worst_error_.error_type() != xtreemfs::pbrpc::REDIRECT)
-          // Log the redirect.
-          level = xtreemfs::util::LEVEL_INFO;
-          error_str = "The server with the UUID: " + service_uuid
-              + " redirected to the current master with the UUID: "
-              + error->redirect_to_server_uuid()
-              + " after attempt: "
-              + boost::lexical_cast<std::string>(write_buffer->retry_count_);
-          if (xtreemfs::util::Logging::log->loggingActive(level)) {
-            xtreemfs::util::Logging::log->getLog(level) << error_str << std::endl;
           }
         } else {
           // Communication error or Internal Server Error.
@@ -476,9 +382,9 @@ void AsyncWriteHandler::HandleCallback(
               worst_error_.CopyFrom(*error);
           }
 
-          // TODO(mno): see review ..
-          // Log only the first retry.
-          if (write_buffer->retry_count_ == 1 && max_write_tries_ != 1) {
+          // Log only the first retry in a series of write requests
+          if (first_fail) {
+          //if (write_buffer->retry_count_ == 1 && max_write_tries_ != 1) {
             std::string retries_left = max_write_tries_ == 0 ? "infinite"
                 : boost::lexical_cast<std::string>(max_write_tries_
                     - write_buffer->retry_count_);
