@@ -42,14 +42,14 @@ if [ -e $XTREEMFS_ETC ]; then
         chgrp -R $XTREEMFS_GROUP $XTREEMFS_ETC
     fi
     for file in `ls $XTREEMFS_ETC/*.properties 2>/dev/null`; do
-      if [ -f $file -a "$(stat -c %a $file)" != "750" ]; then
-          echo "setting $file 0750, executing chmod"
-          chmod 0750 $file
+      if [ -f $file -a "$(stat -c %a $file)" != "640" ]; then
+          echo "setting $file 0640, executing chmod"
+          chmod 0640 $file
       fi
     done
     if [ -d "$XTREEMFS_ETC/truststore/" -a "$(stat -c %a "$XTREEMFS_ETC/truststore/")" != "750" ]
     then
         echo "setting $XTREEMFS_ETC/truststore/ to 0750, executing chmod (may take some time)"
-        chmod -R 0750 $XTREEMFS_ETC/truststore/
+        chmod -R u=rwX,g=rX,o= $XTREEMFS_ETC/truststore/
     fi
 fi
