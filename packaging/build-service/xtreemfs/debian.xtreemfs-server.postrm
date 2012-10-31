@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-if [ "$1" = purge ]; then
-  echo "Removing dir, mrc, osd RC-links"
+if [ "$1" = "remove" ]; then
+  echo "Removing DIR, MRC, OSD RC-links"
   update-rc.d -f xtreemfs-dir remove > /dev/null
   update-rc.d -f xtreemfs-mrc remove > /dev/null
   update-rc.d -f xtreemfs-osd remove > /dev/null
