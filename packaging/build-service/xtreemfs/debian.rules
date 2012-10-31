@@ -61,9 +61,6 @@ install: build
 	rmdir $(BUILD_DIR)/usr/share/doc/xtreemfs-server
 	rmdir $(BUILD_DIR)/usr/share/doc/xtreemfs-tools
 	
-	# remove test program
-	#rm -f $(BUILD_DIR)/usr/bin/xtfs_test
-	
 	# --- end custom part for installing
 	
 	# move files of the xtreemfs-client package
@@ -74,15 +71,10 @@ install: build
 	mkdir -p $(BUILD_DIR)-client/sbin
 	ln    -sf /usr/bin/mount.xtreemfs $(BUILD_DIR)-client/sbin/mount.xtreemfs
 	ln    -sf /usr/bin/umount.xtreemfs $(BUILD_DIR)-client/sbin/umount.xtreemfs
-	mkdir -p $(BUILD_DIR)-client/sbin
-	mkdir -p $(BUILD_DIR)-client/etc/init.d
 	mkdir -p $(BUILD_DIR)-client/usr/share/man/man1
 	mv    -t $(BUILD_DIR)-client/usr/share/man/man1 \
 	         $(BUILD_DIR)/usr/share/man/man1/*.xtreemfs* \
 	         $(BUILD_DIR)/usr/share/man/man1/xtfsutil*
-	mkdir -p $(BUILD_DIR)-client/etc/xos/xtreemfs
-	mv    -t $(BUILD_DIR)-client/etc/xos/xtreemfs \
-	         $(BUILD_DIR)/etc/xos/xtreemfs/default_dir
 	mkdir -p $(BUILD_DIR)-client/usr/share/doc/xtreemfs-client
 	cp    -t $(BUILD_DIR)-client/usr/share/doc/xtreemfs-client \
 	         $(CURDIR)/LICENSE
@@ -95,6 +87,7 @@ install: build
 	         $(BUILD_DIR)/usr/share/java/protobuf-java-2.3.0.jar \
 	         $(BUILD_DIR)/usr/share/java/Flease.jar \
 	         $(BUILD_DIR)/usr/share/java/BabuDB.jar \
+	         $(BUILD_DIR)/usr/share/java/BabuDB_replication_plugin.jar \
 	         $(BUILD_DIR)/usr/share/java/jdmkrt.jar \
 	         $(BUILD_DIR)/usr/share/java/jdmktk.jar \
 	         $(BUILD_DIR)/usr/share/java/commons-codec-1.3.jar
@@ -114,9 +107,6 @@ install: build
 	mkdir -p $(BUILD_DIR)-server/etc/xos/xtreemfs/server-repl-plugin
 	mv    -t $(BUILD_DIR)-server/etc/xos/xtreemfs/server-repl-plugin \
 	         $(BUILD_DIR)/etc/xos/xtreemfs/server-repl-plugin/*.properties
-	mkdir -p $(BUILD_DIR)-server/usr/share/xtreemfs
-	mv    -t $(BUILD_DIR)-server/usr/share/xtreemfs \
-	         $(BUILD_DIR)/usr/share/xtreemfs/server-repl-plugin
 	mkdir -p $(BUILD_DIR)-server/usr/share/doc/xtreemfs-server
 	cp    -t $(BUILD_DIR)-server/usr/share/doc/xtreemfs-server \
 	         $(CURDIR)/LICENSE
