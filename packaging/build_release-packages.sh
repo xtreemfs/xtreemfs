@@ -21,6 +21,9 @@ SOURCE_BLACK_LIST=(
   "contrib/hadoop"
   "doc"
   "etc/xos/xtreemfs/*test"
+  "contrib/server-repl-plugin/config/*-test*"
+  "etc/init.d/xtreemfs-service.template"
+  "etc/init.d/generate_initd_scripts.sh"
   "classfiles"
   "cpp/CMakeFiles"
   "java/pbrpcgen/build"
@@ -36,83 +39,80 @@ usage() {
 Usage:
   $0 <build-version> [<xtreemfs home dir>]
 EOF
-	exit 0
+  exit 0
 }
 
 # source tarball
 build_source_tarball() {
-	PACKAGE_PATH="$TMP_PATH/$SOURCE_TARBALL_NAME"
+  PACKAGE_PATH="$TMP_PATH/$SOURCE_TARBALL_NAME"
 
-	echo "build source distribution"
+  echo "build source distribution"
 
-	cleanup_client $PACKAGE_PATH
+  cleanup_client $PACKAGE_PATH
 
-	# delete all from black-list in temporary dir
-	delete_source_black_list $PACKAGE_PATH
-	
-	# wipe all files and directories from the 'packaging' directory, except
-	# for the post install and uuid gen scripts
-	mkdir $PACKAGE_PATH/tmp
-	mv $PACKAGE_PATH/packaging/generate_uuid $PACKAGE_PATH/tmp
-	mv $PACKAGE_PATH/packaging/postinstall_setup.sh $PACKAGE_PATH/tmp
-	rm -rf $PACKAGE_PATH/packaging
-	mv $PACKAGE_PATH/tmp $PACKAGE_PATH/packaging
+  # delete all from black-list in temporary dir
+  delete_source_black_list $PACKAGE_PATH
+  
+  # wipe all files and directories from the 'packaging' directory, except
+  # for the post install and uuid gen scripts
+  mkdir $PACKAGE_PATH/tmp
+  mv $PACKAGE_PATH/packaging/generate_uuid $PACKAGE_PATH/tmp
+  mv $PACKAGE_PATH/packaging/postinstall_setup.sh $PACKAGE_PATH/tmp
+  rm -rf $PACKAGE_PATH/packaging
+  mv $PACKAGE_PATH/tmp $PACKAGE_PATH/packaging
 
-	# delete all .svn directories
-	delete_svn $PACKAGE_PATH
+  # delete all .svn directories
+  delete_svn $PACKAGE_PATH
 
-	# delete UUID from config-files
-	grep -v '^uuid\W*=\W*\w\+' $PACKAGE_PATH/etc/xos/xtreemfs/dirconfig.properties > $PACKAGE_PATH/etc/xos/xtreemfs/dirconfig.properties_new
-	grep -v '^uuid\W*=\W*\w\+' $PACKAGE_PATH/etc/xos/xtreemfs/mrcconfig.properties > $PACKAGE_PATH/etc/xos/xtreemfs/mrcconfig.properties_new
-	grep -v '^uuid\W*=\W*\w\+' $PACKAGE_PATH/etc/xos/xtreemfs/osdconfig.properties > $PACKAGE_PATH/etc/xos/xtreemfs/osdconfig.properties_new
-	mv $PACKAGE_PATH/etc/xos/xtreemfs/dirconfig.properties_new $PACKAGE_PATH/etc/xos/xtreemfs/dirconfig.properties
-	mv $PACKAGE_PATH/etc/xos/xtreemfs/mrcconfig.properties_new $PACKAGE_PATH/etc/xos/xtreemfs/mrcconfig.properties
-	mv $PACKAGE_PATH/etc/xos/xtreemfs/osdconfig.properties_new $PACKAGE_PATH/etc/xos/xtreemfs/osdconfig.properties
+  # delete UUID from config-files
+  grep -v '^uuid\W*=\W*\w\+' $PACKAGE_PATH/etc/xos/xtreemfs/dirconfig.properties > $PACKAGE_PATH/etc/xos/xtreemfs/dirconfig.properties_new
+  grep -v '^uuid\W*=\W*\w\+' $PACKAGE_PATH/etc/xos/xtreemfs/mrcconfig.properties > $PACKAGE_PATH/etc/xos/xtreemfs/mrcconfig.properties_new
+  grep -v '^uuid\W*=\W*\w\+' $PACKAGE_PATH/etc/xos/xtreemfs/osdconfig.properties > $PACKAGE_PATH/etc/xos/xtreemfs/osdconfig.properties_new
+  mv $PACKAGE_PATH/etc/xos/xtreemfs/dirconfig.properties_new $PACKAGE_PATH/etc/xos/xtreemfs/dirconfig.properties
+  mv $PACKAGE_PATH/etc/xos/xtreemfs/mrcconfig.properties_new $PACKAGE_PATH/etc/xos/xtreemfs/mrcconfig.properties
+  mv $PACKAGE_PATH/etc/xos/xtreemfs/osdconfig.properties_new $PACKAGE_PATH/etc/xos/xtreemfs/osdconfig.properties
 
-	# create archive
-	tar -czf "$SOURCE_TARBALL_NAME.tar.gz" -C $TMP_PATH $SOURCE_TARBALL_NAME
+  # create archive
+  tar -czf "$SOURCE_TARBALL_NAME.tar.gz" -C $TMP_PATH $SOURCE_TARBALL_NAME
 }
 
 function delete_source_black_list() {
-	SRC_PATH=$1
+  SRC_PATH=$1
 
-	for (( i = 0 ; i < ${#SOURCE_BLACK_LIST[@]} ; i++ ))
-	do
-		rm -Rf $SRC_PATH/${SOURCE_BLACK_LIST[i]}
-	done
+  for (( i = 0 ; i < ${#SOURCE_BLACK_LIST[@]} ; i++ ))
+  do
+    rm -Rf $SRC_PATH/${SOURCE_BLACK_LIST[i]}
+  done
 }
 
 function create_dir() {
-	CREATE_DIR=$1
-	if [ -d "$CREATE_DIR" ]; then
-		rm -Rf $CREATE_DIR
-	fi
-	mkdir -p $CREATE_DIR
+  CREATE_DIR=$1
+  if [ -d "$CREATE_DIR" ]; then
+    rm -Rf $CREATE_DIR
+  fi
+  mkdir -p $CREATE_DIR
 }
 
 function cleanup_client() {
-	CLEANUP_PATH=$1
-	echo "cleanup client"
+  CLEANUP_PATH=$1
+  echo "cleanup client"
 
-	# copy to temporary dir
-	create_dir $CLEANUP_PATH
-	cp -a $XTREEMFS_HOME_DIR/* "$CLEANUP_PATH"
+  # copy to temporary dir
+  create_dir $CLEANUP_PATH
+  cp -a $XTREEMFS_HOME_DIR/* "$CLEANUP_PATH"
 
-	make -C "$CLEANUP_PATH" clean
+  make -C "$CLEANUP_PATH" clean
 }
 
 function delete_svn() {
-	PACKAGE_PATH=$1
-	find $PACKAGE_PATH -name ".svn" -print0 | xargs -0 rm -rf
+  PACKAGE_PATH=$1
+  find $PACKAGE_PATH -name ".svn" -print0 | xargs -0 rm -rf
+  find $PACKAGE_PATH -name ".gitignore" -delete
 }
 
 function prepare_build_files() {
     cp -r $BUILD_FILES_DIR/xtreemfs $TARGET_DIR/xtreemfs
-    mv $TARGET_DIR/xtreemfs/xtreemfs.spec $TARGET_DIR/xtreemfs/xtreemfs.spec
-    mv $TARGET_DIR/xtreemfs/xtreemfs.dsc $TARGET_DIR/xtreemfs/xtreemfs.dsc
     cp -r $BUILD_FILES_DIR/xtreemfs $TARGET_DIR/xtreemfs-testing
-    mv $TARGET_DIR/xtreemfs-testing/xtreemfs.spec $TARGET_DIR/xtreemfs-testing/xtreemfs-testing.spec
-    mv $TARGET_DIR/xtreemfs-testing/xtreemfs.dsc $TARGET_DIR/xtreemfs-testing/xtreemfs-testing.dsc
     find $TARGET_DIR -type f -exec sed -i "s/_VERSION_/$VERSION/g" {} \;
     # write contents of postinstall_setup.sh into the packages' spec files:
     find $TARGET_DIR -type f -exec sed -i -e "/_POSTINSTALL_/r $BUILD_FILES_DIR/../postinstall_setup.sh" -e '/_POSTINSTALL_/d' {} \;
@@ -133,19 +133,19 @@ XTREEMFS_HOME_DIR=
 
 # parse command line options
 if [ -z "$1" ]; then
-	usage
+  usage
 fi
 if [ -z "$2" ]; then
-	XTREEMFS_HOME_DIR="."
+  XTREEMFS_HOME_DIR="."
 else
-	XTREEMFS_HOME_DIR="$2"
+  XTREEMFS_HOME_DIR="$2"
 fi
 
 VERSION="$1"
 if [ ! -d "$XTREEMFS_HOME_DIR/java/servers" ] ;
 then
-	echo "directory is not the xtreemfs home directory"
-	usage
+  echo "directory is not the xtreemfs home directory"
+  usage
 fi
 
 # Set version in client and server version management files.
