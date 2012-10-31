@@ -51,10 +51,12 @@ public class SetupUtils {
     
     public static final Category[] DEBUG_CATEGORIES = new Category[] { Category.all };
     
+    public static final int PORT_RANGE_OFFSET = 10000;
+    
     private static Properties createOSDProperties(int port, String dir) {
         Properties props = new Properties();
         props.setProperty("dir_service.host", "localhost");
-        props.setProperty("dir_service.port", "33638");
+        props.setProperty("dir_service.port", new Integer(32638 + PORT_RANGE_OFFSET).toString());
         props.setProperty("object_dir", dir);
         props.setProperty("debug.level", "" + DEBUG_LEVEL);
         props.setProperty("debug.categories",
@@ -84,28 +86,28 @@ public class SetupUtils {
     }
     
     public static OSDConfig createOSD1Config() throws IOException {
-        Properties props = createOSDProperties(33637, TEST_DIR + "/osd0");
+        Properties props = createOSDProperties(32637 + PORT_RANGE_OFFSET, TEST_DIR + "/osd0");
         OSDConfig config = new OSDConfig(props);
         config.setDefaults();
         return config;
     }
     
     public static OSDConfig createOSD2Config() throws IOException {
-        Properties props = createOSDProperties(33640, TEST_DIR + "/osd1");
+        Properties props = createOSDProperties(32640 + PORT_RANGE_OFFSET, TEST_DIR + "/osd1");
         OSDConfig config = new OSDConfig(props);
         config.setDefaults();
         return config;
     }
     
     public static OSDConfig createOSD3Config() throws IOException {
-        Properties props = createOSDProperties(33641, TEST_DIR + "/osd2");
+        Properties props = createOSDProperties(32641 + PORT_RANGE_OFFSET, TEST_DIR + "/osd2");
         OSDConfig config = new OSDConfig(props);
         config.setDefaults();
         return config;
     }
     
     public static OSDConfig createOSD4Config() throws IOException {
-        Properties props = createOSDProperties(33642, TEST_DIR + "/osd3");
+        Properties props = createOSDProperties(32642 + PORT_RANGE_OFFSET, TEST_DIR + "/osd3");
         OSDConfig config = new OSDConfig(props);
         config.setDefaults();
         return config;
@@ -113,7 +115,7 @@ public class SetupUtils {
     
     public static OSDConfig[] createMultipleOSDConfigs(int number) throws IOException {
         OSDConfig[] configs = new OSDConfig[number];
-        int startPort = 33640;
+        int startPort = 32640 + PORT_RANGE_OFFSET;
         
         for (int i = 0; i < configs.length; i++) {
             Properties props = createOSDProperties(startPort, TEST_DIR + "/osd" + i);
@@ -129,9 +131,9 @@ public class SetupUtils {
         props.setProperty("debug.level", "" + DEBUG_LEVEL);
         props.setProperty("debug.categories",
                 "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
-        props.setProperty("listen.port", "33638");
-        props.setProperty("http_port", "30638");
-        props.setProperty("uuid", "UUID:localhost:33638");
+        props.setProperty("listen.port", new Integer(32638 + PORT_RANGE_OFFSET).toString());
+        props.setProperty("http_port", new Integer(30638 + PORT_RANGE_OFFSET).toString());
+        props.setProperty("uuid", "UUID:localhost:" + new Integer(32638 + PORT_RANGE_OFFSET).toString());
         props.setProperty("ssl.enabled", "" + SSL_ON);
         props.setProperty("ssl.service_creds", CERT_DIR + "DIR.p12");
         props.setProperty("ssl.service_creds.pw", "passphrase");
@@ -141,7 +143,7 @@ public class SetupUtils {
         props.setProperty("ssl.trusted_certs.container", "jks");
         props.setProperty("authentication_provider", "org.xtreemfs.common.auth.NullAuthProvider");
         props.setProperty("snmp.enabled", "true");
-        props.setProperty("snmp.port", "34638");
+        props.setProperty("snmp.port", new Integer(34638 + PORT_RANGE_OFFSET).toString());
         props.setProperty("snmp.address", "localhost");
         props.setProperty("measure_requests", "false");
         
@@ -172,13 +174,13 @@ public class SetupUtils {
     public static MRCConfig createMRC1Config() throws IOException {
         Properties props = new Properties();
         props.setProperty("dir_service.host", "localhost");
-        props.setProperty("dir_service.port", "33638");
+        props.setProperty("dir_service.port", new Integer(32638 + PORT_RANGE_OFFSET).toString());
         props.setProperty("osd_check_interval", "10");
         props.setProperty("debug.level", "" + DEBUG_LEVEL);
         props.setProperty("debug.categories",
                 "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
-        props.setProperty("listen.port", "33636");
-        props.setProperty("http_port", "30636");
+        props.setProperty("listen.port", new Integer(32636 + PORT_RANGE_OFFSET).toString());
+        props.setProperty("http_port", new Integer(30636 + PORT_RANGE_OFFSET).toString());
         props.setProperty("listen.address", "localhost");
         props.setProperty("no_atime", "true");
         props.setProperty("local_clock_renewal", "0");
@@ -194,7 +196,7 @@ public class SetupUtils {
         props.setProperty("capability_secret", "secretPassphrase");
         props.setProperty("uuid", getMRC1UUID().toString());
         props.setProperty("snmp.enabled", "true");
-        props.setProperty("snmp.port", "34636");
+        props.setProperty("snmp.port", new Integer(34636 + PORT_RANGE_OFFSET).toString());
         props.setProperty("snmp.address", "localhost");
         props.setProperty("measure_requests", "false");
         
@@ -224,13 +226,13 @@ public class SetupUtils {
     public static MRCConfig createMRC2Config() throws IOException {
         Properties props = new Properties();
         props.setProperty("dir_service.host", "localhost");
-        props.setProperty("dir_service.port", "33638");
+        props.setProperty("dir_service.port", new Integer(32638 + PORT_RANGE_OFFSET).toString());
         props.setProperty("osd_check_interval", "10");
         props.setProperty("debug.level", "" + DEBUG_LEVEL);
         props.setProperty("debug.categories",
                 "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
-        props.setProperty("listen.port", "33639");
-        props.setProperty("http_port", "30639");
+        props.setProperty("listen.port", new Integer(32639 + PORT_RANGE_OFFSET).toString());
+        props.setProperty("http_port", new Integer(30639 + PORT_RANGE_OFFSET).toString());
         props.setProperty("listen.address", "localhost");
         props.setProperty("no_atime", "true");
         props.setProperty("local_clock_renewal", "0");
@@ -246,7 +248,7 @@ public class SetupUtils {
         props.setProperty("capability_secret", "secretPassphrase");
         props.setProperty("uuid", getMRC2UUID().toString());
         props.setProperty("snmp.enabled", "true");
-        props.setProperty("snmp.port", "34639");
+        props.setProperty("snmp.port", new Integer(34639 + PORT_RANGE_OFFSET).toString());
         props.setProperty("snmp.address", "localhost");
         
         MRCConfig config = new MRCConfig(props);
@@ -273,64 +275,64 @@ public class SetupUtils {
     }
     
     public static InetSocketAddress getMRC1Addr() {
-        return new InetSocketAddress("localhost", 33636);
+        return new InetSocketAddress("localhost", 32636 + PORT_RANGE_OFFSET);
     }
     
     public static InetSocketAddress getMRC2Addr() {
-        return new InetSocketAddress("localhost", 33639);
+        return new InetSocketAddress("localhost", 32639 + PORT_RANGE_OFFSET);
     }
     
     public static InetSocketAddress getOSD1Addr() {
-        return new InetSocketAddress("localhost", 33637);
+        return new InetSocketAddress("localhost", 32637 + PORT_RANGE_OFFSET);
     }
     
     public static InetSocketAddress getOSD2Addr() {
-        return new InetSocketAddress("localhost", 33640);
+        return new InetSocketAddress("localhost", 32640 + PORT_RANGE_OFFSET);
     }
     
     public static InetSocketAddress getOSD3Addr() {
-        return new InetSocketAddress("localhost", 33641);
+        return new InetSocketAddress("localhost", 32641 + PORT_RANGE_OFFSET);
     }
     
     public static InetSocketAddress getOSD4Addr() {
-        return new InetSocketAddress("localhost", 33642);
+        return new InetSocketAddress("localhost", 32642 + PORT_RANGE_OFFSET);
     }
     
     public static InetSocketAddress getDIRAddr() {
-        return new InetSocketAddress("localhost", 33638);
+        return new InetSocketAddress("localhost", 32638 + PORT_RANGE_OFFSET);
     }
     
     public static ServiceUUID getMRC1UUID() {
-        return new ServiceUUID("UUID:localhost:33636");
+        return new ServiceUUID("UUID:localhost:" + new Integer(32636 + PORT_RANGE_OFFSET).toString());
     }
     
     public static ServiceUUID getMRC2UUID() {
-        return new ServiceUUID("UUID:localhost:33639");
+        return new ServiceUUID("UUID:localhost:" + new Integer(32639 + PORT_RANGE_OFFSET).toString());
     }
     
     public static ServiceUUID getOSD1UUID() {
-        return new ServiceUUID("UUID:localhost:33637");
+        return new ServiceUUID("UUID:localhost:" + new Integer(32637 + PORT_RANGE_OFFSET).toString());
     }
     
     public static ServiceUUID getOSD2UUID() {
-        return new ServiceUUID("UUID:localhost:33640");
+        return new ServiceUUID("UUID:localhost:" + new Integer(32640 + PORT_RANGE_OFFSET).toString());
     }
     
     public static ServiceUUID getOSD3UUID() {
-        return new ServiceUUID("UUID:localhost:33641");
+        return new ServiceUUID("UUID:localhost:" + new Integer(32641 + PORT_RANGE_OFFSET).toString());
     }
     
     public static ServiceUUID getOSD4UUID() {
-        return new ServiceUUID("UUID:localhost:33642");
+        return new ServiceUUID("UUID:localhost:" + new Integer(32642 + PORT_RANGE_OFFSET).toString());
     }
     
     static void localResolver() {
-        UUIDResolver.addLocalMapping(getMRC1UUID(), 33636, SSL_ON ? Schemes.SCHEME_PBRPCS : Schemes.SCHEME_PBRPC);
-        UUIDResolver.addLocalMapping(getMRC2UUID(), 33639, SSL_ON ? Schemes.SCHEME_PBRPCS : Schemes.SCHEME_PBRPC);
-        UUIDResolver.addLocalMapping(getOSD1UUID(), 33637, SSL_ON ? Schemes.SCHEME_PBRPCS : Schemes.SCHEME_PBRPC);
-        UUIDResolver.addLocalMapping(getOSD2UUID(), 33640, SSL_ON ? Schemes.SCHEME_PBRPCS : Schemes.SCHEME_PBRPC);
-        UUIDResolver.addLocalMapping(getOSD3UUID(), 33641, SSL_ON ? Schemes.SCHEME_PBRPCS : Schemes.SCHEME_PBRPC);
-        UUIDResolver.addLocalMapping(getOSD4UUID(), 33642, SSL_ON ? Schemes.SCHEME_PBRPCS : Schemes.SCHEME_PBRPC);
+        UUIDResolver.addLocalMapping(getMRC1UUID(), 32636 + PORT_RANGE_OFFSET, SSL_ON ? Schemes.SCHEME_PBRPCS : Schemes.SCHEME_PBRPC);
+        UUIDResolver.addLocalMapping(getMRC2UUID(), 32639 + PORT_RANGE_OFFSET, SSL_ON ? Schemes.SCHEME_PBRPCS : Schemes.SCHEME_PBRPC);
+        UUIDResolver.addLocalMapping(getOSD1UUID(), 32637 + PORT_RANGE_OFFSET, SSL_ON ? Schemes.SCHEME_PBRPCS : Schemes.SCHEME_PBRPC);
+        UUIDResolver.addLocalMapping(getOSD2UUID(), 32640 + PORT_RANGE_OFFSET, SSL_ON ? Schemes.SCHEME_PBRPCS : Schemes.SCHEME_PBRPC);
+        UUIDResolver.addLocalMapping(getOSD3UUID(), 32641 + PORT_RANGE_OFFSET, SSL_ON ? Schemes.SCHEME_PBRPCS : Schemes.SCHEME_PBRPC);
+        UUIDResolver.addLocalMapping(getOSD4UUID(), 32642 + PORT_RANGE_OFFSET, SSL_ON ? Schemes.SCHEME_PBRPCS : Schemes.SCHEME_PBRPC);
     }
     
     private static ServiceUUID getUUID(String listenAddress, int port) {
@@ -353,7 +355,7 @@ public class SetupUtils {
     }
     
     static DIRServiceClient createDIRClient(RPCNIOSocketClient client) throws IOException {
-        return new DIRServiceClient(client, new InetSocketAddress("localhost", 33638));
+        return new DIRServiceClient(client, new InetSocketAddress("localhost", 32638 + PORT_RANGE_OFFSET));
     }
     
     public static OSDConfig createOSD1ConfigForceWithoutSSL() throws IOException {

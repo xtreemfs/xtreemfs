@@ -31,6 +31,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMappingSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.addressMappingGetResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.globalTimeSGetResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
+import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
 /**
@@ -47,8 +48,8 @@ public class DIRClientTest extends TestCase {
     
     InetSocketAddress[] servers;
     
-    static final int    PORT_DIR1 = 32638;
-    static final int    PORT_DIR2 = 32639;
+    static final int    PORT_DIR1 = 32638 + SetupUtils.PORT_RANGE_OFFSET;
+    static final int    PORT_DIR2 = 32639 + SetupUtils.PORT_RANGE_OFFSET;
     
     protected class DummyDir implements RPCServerRequestListener {
         public volatile boolean resetAfterCall = false;
