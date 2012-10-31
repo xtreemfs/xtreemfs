@@ -1,10 +1,8 @@
 # norootforbuild
 
-%define client_subpackage 1
-
 Name:           xtreemfs
 Version:        _VERSION_
-Release:        1
+Release:        %mkrel
 License:        BSD
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 Group:          System/Filesystems
@@ -18,9 +16,8 @@ Source0:        XtreemFS-%{version}.tar.gz
 BuildRequires:  ant-nodeps >= 1.6.5
 %endif
 BuildRequires:  ant >= 1.6.5 ant-apache-regexp >= 1.6.5 java-devel >= 1.6.0
-%if %{client_subpackage}
+# Client dependencies.
 BuildRequires:  gcc-c++ >= 4.1 fuse >= 2.6 fuse-devel >= 2.6 openssl-devel >= 0.9.8 cmake >= 2.6 boost-devel >= 1.35 libattr-devel >= 2
-%endif
 
 # openSUSE >=10.2
 %if 0%{?suse_version} >= 1020
@@ -45,7 +42,6 @@ BuildRequires:  kernel redhat-rpm-config
 %description
 XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org.
 
-%if %{client_subpackage}
 %package client
 Summary:        XtreemFS client
 Group:          System/Filesystems
@@ -59,8 +55,6 @@ Obsoletes:      XtreemFS-client < %{version}
 XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org.
 
 This package contains the XtreemFS client module.
-
-%endif
 
 %package backend
 Summary:        XtreemFS backend modules and libraries
@@ -87,7 +81,6 @@ Requires(post): util-linux
 XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org.
 
 This package contains the XtreemFS server components (DIR, MRC, OSD).
-To run the XtreemFS services, a SUN JAVA 6 RUNTIME ENVIROMENT IS REQUIRED! Make sure that Java is installed in /usr/bin, or $JAVA_HOME is set.
 
 %package tools
 Summary:        XtreemFS administration tools
@@ -102,7 +95,6 @@ Obsoletes:      XtreemFS-tools < %{version}
 XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org.
 
 This package contains XtreemFS administration tools.
-To run the tools, a SUN JAVA 6 RUNTIME ENVIROMENT IS REQUIRED! Make sure that Java is installed in /usr/bin, or $JAVA_HOME is set.
 
 %prep
 %setup -q -n XtreemFS-%{version}
@@ -117,34 +109,22 @@ export CXXFLAGS=$CFLAGS
 export CCFLAGS="$CCFLAGS -fPIC"
 %endif
 
-%if %{client_subpackage}
 make %{?jobs:-j%jobs}
-%else
-make %{?jobs:-j%jobs} server
-%endif
 
 %install
 export NO_BRP_CHECK_BYTECODE_VERSION=true
 
-%if %{client_subpackage}
 make install DESTDIR=$RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT%{_libdir}/xtreemfs/policies/
 ln -sf /usr/bin/mount.xtreemfs ${RPM_BUILD_ROOT}/sbin/mount.xtreemfs
 ln -sf /usr/bin/umount.xtreemfs ${RPM_BUILD_ROOT}/sbin/umount.xtreemfs
-%else
-make install-server DESTDIR=$RPM_BUILD_ROOT
-make install-tools DESTDIR=$RPM_BUILD_ROOT
-%endif
 
 # add /etc/xos/xtreemfs/truststore/certs/ folder used for storing certificates
 mkdir -p $RPM_BUILD_ROOT/etc/xos/xtreemfs/truststore/certs/
 
 # remove copyright notes (let rpm handle that)
-%if %{client_subpackage}
 rm $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-client/LICENSE
 rmdir $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-client
-rm $RPM_BUILD_ROOT/etc/xos/xtreemfs/default_dir # disable for Vivaldi
-%endif
 rm $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-server/LICENSE
 rmdir $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-server
 rm $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-tools/LICENSE
@@ -152,7 +132,7 @@ rmdir $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-tools
 
 %pre server
 /usr/sbin/groupadd xtreemfs 2>/dev/null || :
-/usr/sbin/useradd -r --home /var/lib/xtreemfs -g xtreemfs xtreemfs 2>/dev/null || :
+/usr/sbin/useradd -r --home %{_libdir}/xtreemfs -g xtreemfs xtreemfs 2>/dev/null || :
 /usr/sbin/usermod -g xtreemfs xtreemfs 2>/dev/null || :
 
 %post server
@@ -181,6 +161,7 @@ _POSTINSTALL_
 %if 0%{?mandriva_version}
 %_post_service xtreemfs-dir xtreemfs-mrc xtreemfs-osd
 %endif
+# TODO(mberlin): Discuss with Nico if an else is required here.
 
 %preun server
 %if 0%{?suse_version}
@@ -209,9 +190,9 @@ _POSTINSTALL_
 %if 0%{?fedora_version}
 # >=1 packages after uninstall -> pkg was updated -> restart
 if [ "$1" -ge "1" ] ; then
-  /sbin/service xtreemfs-dir condrestart >/dev/null 2>&1 || :
-  /sbin/service xtreemfs-mrc condrestart >/dev/null 2>&1 || :
-  /sbin/service xtreemfs-osd condrestart >/dev/null 2>&1 || :
+  /sbin/service xtreemfs-dir try-restart >/dev/null 2>&1 || :
+  /sbin/service xtreemfs-mrc try-restart >/dev/null 2>&1 || :
+  /sbin/service xtreemfs-osd try-restart >/dev/null 2>&1 || :
 fi
 %endif
 %if 0%{?mandriva_version}
@@ -220,18 +201,14 @@ fi
 %clean
 rm -rf $RPM_BUILD_ROOT
 
-%if %{client_subpackage}
 %files client
 %defattr(-,root,root)
 /usr/bin/*.xtreemfs
 /usr/bin/xtfsutil
 /sbin/*.xtreemfs
-%dir %{_libdir}/xtreemfs
-%dir %{_libdir}/xtreemfs/policies
 /usr/share/man/man1/*.xtreemfs*
 /usr/share/man/man1/xtfsutil*
 %doc LICENSE
-%endif
 
 %files backend
 %defattr(-,root,root)
@@ -240,10 +217,10 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/java/protobuf-java-2.3.0.jar
 /usr/share/java/Flease.jar
 /usr/share/java/BabuDB.jar
+/usr/share/java/BabuDB_replication_plugin.jar
 /usr/share/java/jdmkrt.jar
 /usr/share/java/jdmktk.jar
 /usr/share/java/commons-codec-1.3.jar
-
 %doc LICENSE
 
 %files server
@@ -257,20 +234,17 @@ rm -rf $RPM_BUILD_ROOT
 /etc/xos/xtreemfs/generate_uuid
 /etc/xos/xtreemfs/postinstall_setup.sh
 %dir /etc/xos/xtreemfs/server-repl-plugin/
-%config(noreplace) /etc/xos/xtreemfs/server-repl-plugin/dir.properties
-%config(noreplace) /etc/xos/xtreemfs/server-repl-plugin/mrc.properties
-%dir /usr/share/xtreemfs/
-%dir /usr/share/xtreemfs/server-repl-plugin/
-/usr/share/xtreemfs/server-repl-plugin/replication.jar
-%dir /usr/share/xtreemfs/server-repl-plugin/lib/
-/usr/share/xtreemfs/server-repl-plugin/lib/*.jar
+%config(noreplace) %attr(0640,root,xtreemfs) /etc/xos/xtreemfs/server-repl-plugin/dir.properties
+%config(noreplace) %attr(0640,root,xtreemfs) /etc/xos/xtreemfs/server-repl-plugin/mrc.properties
+%dir %attr(0750,root,xtreemfs) %{_libdir}/xtreemfs
+%dir %attr(0750,root,xtreemfs) %{_libdir}/xtreemfs/policies
+%dir %attr(0750,xtreemfs,xtreemfs) /var/log/xtreemfs
 %doc LICENSE
 
 %files tools
 %defattr(-,root,root)
 /usr/bin/xtfs_*
 /usr/share/man/man1/xtfs_*
-#/usr/share/doc/xtreemfs-tools/
 %doc LICENSE
 
 %changelog
