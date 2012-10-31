@@ -10,6 +10,7 @@
 
 #include <boost/bind.hpp>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -467,28 +468,25 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
   lock_request.mutable_lock_request()->set_exclusive(exclusive);
 
   // Check active locks first.
-  Lock* conflicting_lock = new Lock();
+  std::auto_ptr<Lock> conflicting_lock(new Lock());
   bool lock_for_pid_cached, cached_lock_for_pid_equal, conflict_found;
   file_info_->CheckLock(lock_request.lock_request(),
-                        conflicting_lock,
+                        conflicting_lock.get(),
                         &lock_for_pid_cached,
                         &cached_lock_for_pid_equal,
                         &conflict_found);
   if (conflict_found) {
-    delete conflicting_lock;
     throw PosixErrorException(POSIX_ERROR_EAGAIN, "conflicting lock");
   }
   // We allow only one lock per PID, i.e. an existing lock can be always
   // overwritten. In consequence, AcquireLock always has to be executed except
   // the new lock is equal to the current lock.
   if (cached_lock_for_pid_equal) {
-    // Reuse memory of conflicting_lock.
     conflicting_lock->CopyFrom(lock_request.lock_request());
-    return conflicting_lock;
+    return conflicting_lock.release();
   }
 
   // Cache could not be used. Complete lockRequest and send to OSD.
-  delete conflicting_lock;
   file_info_->GetXLocSet(
       lock_request.mutable_file_credentials()->mutable_xlocs());
   GetXCap(lock_request.mutable_file_credentials()->mutable_xcap());
@@ -570,25 +568,24 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::CheckLock(
   lock_request.mutable_lock_request()->set_exclusive(exclusive);
 
   // Check active locks first.
-  Lock* conflicting_lock = new Lock();
+  std::auto_ptr<Lock> conflicting_lock(new Lock());
   bool lock_for_pid_cached, cached_lock_for_pid_equal, conflict_found;
   file_info_->CheckLock(lock_request.lock_request(),
-                        conflicting_lock,
+                        conflicting_lock.get(),
                         &lock_for_pid_cached,
                         &cached_lock_for_pid_equal,
                         &conflict_found);
   if (conflict_found) {
-    return conflicting_lock;
+    return conflicting_lock.release();
   }
   // We allow only one lock per PID, i.e. an existing lock can be always
   // overwritten.
   if (lock_for_pid_cached) {
     conflicting_lock->CopyFrom(lock_request.lock_request());
-    return conflicting_lock;
+    return conflicting_lock.release();
   }
 
   // Cache could not be used. Complete lockRequest and send to OSD.
-  delete conflicting_lock;
   file_info_->GetXLocSet(
       lock_request.mutable_file_credentials()->mutable_xlocs());
   GetXCap(lock_request.mutable_file_credentials()->mutable_xcap());
