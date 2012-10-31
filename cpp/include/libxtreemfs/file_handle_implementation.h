@@ -149,8 +149,14 @@ class FileHandleImplementation
   /** Copies xcap_ to xcap. */
   virtual void GetXCap(xtreemfs::pbrpc::XCap* xcap);
 
+  void UpdateXCap(const xtreemfs::pbrpc::XCap& xcap);
+
   /** Sets async_writes_failed_ to true. */
   void MarkAsyncWritesAsFailed();
+  /** Thread-safe check if async_writes_failed_ */
+  bool DidAsyncWritesFail();
+  /** Thread-safe check and throw if async_writes_failed_ */
+  void ThrowIfAsyncWritesFailed();
 
   /** Sends pending file size updates synchronous (needed for flush/close).
    *

@@ -90,19 +90,12 @@ int FileHandleImplementation::Read(
     size_t count,
     off_t offset) {
   file_info_->WaitForPendingAsyncWrites();
+  ThrowIfAsyncWritesFailed();
 
   // Prepare request object.
   readRequest rq;
-  {
-    boost::mutex::scoped_lock lock(mutex_);
-
-    if (async_writes_failed_) {
-      throw PosixErrorException(POSIX_ERROR_EIO, "A previous asynchronous write"
-          " did fail. No more actions on this file handle are allowed.");
-    }
-    rq.mutable_file_credentials()->mutable_xcap()->CopyFrom(xcap_);
-    rq.set_file_id(xcap_.file_id());
-  }
+  GetXCap(rq.mutable_file_credentials()->mutable_xcap());
+  rq.set_file_id(rq.file_credentials().xcap().file_id());
   file_info_->GetXLocSet(rq.mutable_file_credentials()->mutable_xlocs());
   // Use a reference for shorter code.
   const XLocSet& xlocs = rq.file_credentials().xlocs();
@@ -122,7 +115,7 @@ int FileHandleImplementation::Read(
 
   // get all striping policies
   StripeTranslator::PolicyContainer striping_policies;
-  for (uint32_t i = 0; i < xlocs.replicas_size(); ++i) {
+  for (int32_t i = 0; i < xlocs.replicas_size(); ++i) {
     striping_policies.push_back(&(xlocs.replicas(i).striping_policy()));
   }
 
@@ -198,19 +191,11 @@ int FileHandleImplementation::Write(
     const char *buf,
     size_t count,
     off_t offset) {
+  ThrowIfAsyncWritesFailed();
+
   // Create copies of required data.
   FileCredentials file_credentials;
-  {
-    boost::mutex::scoped_lock lock(mutex_);
-
-    if (async_writes_failed_) {
-      assert(async_writes_enabled_);
-      throw PosixErrorException(POSIX_ERROR_EIO, "A previous asynchronous write"
-          " did fail. No further writes on this file handle are allowed.");
-    }
-
-    file_credentials.mutable_xcap()->CopyFrom(xcap_);
-  }
+  GetXCap(file_credentials.mutable_xcap());
   file_info_->GetXLocSet(file_credentials.mutable_xlocs());
   // Use references for shorter code.
   const string& global_file_id = file_credentials.xcap().file_id();
@@ -228,7 +213,7 @@ int FileHandleImplementation::Write(
 
   // get all striping policies
   StripeTranslator::PolicyContainer striping_policies;
-  for (uint32_t i = 0; i < xlocs.replicas_size(); ++i) {
+  for (int32_t i = 0; i < xlocs.replicas_size(); ++i) {
     striping_policies.push_back(&(xlocs.replicas(i).striping_policy()));
   }
 
@@ -369,8 +354,7 @@ void FileHandleImplementation::Flush() {
 void FileHandleImplementation::Flush(bool close_file) {
   file_info_->Flush(this, close_file);
 
-  boost::mutex::scoped_lock lock(mutex_);
-  if (async_writes_failed_) {
+  if (DidAsyncWritesFail()) {
     string path;
     file_info_->GetPath(&path);
     string error = "Flush for file: " + path + " did not succeed flushing"
@@ -386,17 +370,10 @@ void FileHandleImplementation::Truncate(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     off_t new_file_size) {
   file_info_->WaitForPendingAsyncWrites();
+  ThrowIfAsyncWritesFailed();
 
   XCap xcap_copy;
-  {
-    boost::mutex::scoped_lock lock(mutex_);
-
-    if (async_writes_failed_) {
-      throw PosixErrorException(POSIX_ERROR_EIO, "A previous asynchronous write"
-          " did fail. No further actions on this file handle are allowed.");
-    }
-    xcap_copy.CopyFrom(xcap_);
-  }
+  GetXCap(&xcap_copy);
 
   // 1. Call truncate at the MRC (in order to increase the trunc epoch).
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
@@ -416,10 +393,10 @@ void FileHandleImplementation::Truncate(
         false,
         this,
         &xcap_copy));
-  {
-    boost::mutex::scoped_lock lock(mutex_);
-    xcap_.CopyFrom(*(response->response()));
-  }
+
+  xtreemfs::pbrpc::XCap* updated_xcap = static_cast<xtreemfs::pbrpc::XCap*>(
+      response->response());
+  UpdateXCap(*updated_xcap);
   response->DeleteBuffers();
 
   TruncatePhaseTwoAndThree(user_credentials, new_file_size);
@@ -432,11 +409,8 @@ void FileHandleImplementation::TruncatePhaseTwoAndThree(
   truncateRequest truncate_rq;
   file_info_->GetXLocSet(
       truncate_rq.mutable_file_credentials()->mutable_xlocs());
-  {
-    boost::mutex::scoped_lock lock(mutex_);
-    truncate_rq.mutable_file_credentials()->mutable_xcap()->CopyFrom(xcap_);
-    truncate_rq.set_file_id(xcap_.file_id());
-  }
+  GetXCap(truncate_rq.mutable_file_credentials()->mutable_xcap());
+  truncate_rq.set_file_id(truncate_rq.file_credentials().xcap().file_id());
   truncate_rq.set_new_file_size(new_file_size);
 
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
@@ -517,11 +491,7 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
   delete conflicting_lock;
   file_info_->GetXLocSet(
       lock_request.mutable_file_credentials()->mutable_xlocs());
-  {
-    boost::mutex::scoped_lock lock(mutex_);
-    lock_request.mutable_file_credentials()->mutable_xcap()
-        ->CopyFrom(xcap_);
-  }
+  GetXCap(lock_request.mutable_file_credentials()->mutable_xcap());
 
   boost::scoped_ptr<rpc::SyncCallbackBase> response;
   if (!wait_for_lock) {
@@ -621,12 +591,8 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::CheckLock(
   delete conflicting_lock;
   file_info_->GetXLocSet(
       lock_request.mutable_file_credentials()->mutable_xlocs());
-  {
-    boost::mutex::scoped_lock lock(mutex_);
-    lock_request.mutable_file_credentials()->mutable_xcap()
-        ->CopyFrom(xcap_);
-  }
-
+  GetXCap(lock_request.mutable_file_credentials()->mutable_xcap());
+    
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
     ExecuteSyncRequest(
         boost::bind(
@@ -688,11 +654,7 @@ void FileHandleImplementation::ReleaseLock(
   lockRequest unlock_request;
   file_info_->GetXLocSet(
       unlock_request.mutable_file_credentials()->mutable_xlocs());
-  {
-    boost::mutex::scoped_lock lock(mutex_);
-    unlock_request.mutable_file_credentials()->mutable_xcap()
-        ->CopyFrom(xcap_);
-  }
+  GetXCap(unlock_request.mutable_file_credentials()->mutable_xcap());
   unlock_request.mutable_lock_request()->CopyFrom(lock);
 
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
@@ -726,11 +688,8 @@ void FileHandleImplementation::PingReplica(
     const std::string& osd_uuid) {
   // Get xlocset. and check if osd_uuid is included.
   readRequest read_request;
-  {
-    boost::mutex::scoped_lock lock(mutex_);
-    read_request.mutable_file_credentials()->mutable_xcap()->CopyFrom(xcap_);
-    read_request.set_file_id(xcap_.file_id());
-  }
+  GetXCap(read_request.mutable_file_credentials()->mutable_xcap());
+  read_request.set_file_id(read_request.file_credentials().xcap().file_id());
   file_info_->GetXLocSet(
       read_request.mutable_file_credentials()->mutable_xlocs());
   const XLocSet& xlocs = read_request.file_credentials().xlocs();
@@ -848,9 +807,27 @@ void FileHandleImplementation::GetXCap(xtreemfs::pbrpc::XCap* xcap) {
   xcap->CopyFrom(xcap_);
 }
 
+void FileHandleImplementation::UpdateXCap(const xtreemfs::pbrpc::XCap& xcap) {
+  boost::mutex::scoped_lock lock(mutex_);
+  xcap_.CopyFrom(xcap);
+}
+
 void FileHandleImplementation::MarkAsyncWritesAsFailed() {
   boost::mutex::scoped_lock lock(mutex_);
   async_writes_failed_ = true;
+}
+
+bool FileHandleImplementation::DidAsyncWritesFail() {
+  boost::mutex::scoped_lock lock(mutex_);
+  return async_writes_failed_;
+}
+
+void FileHandleImplementation::ThrowIfAsyncWritesFailed() {
+  boost::mutex::scoped_lock lock(mutex_);
+  if (async_writes_failed_) {
+    throw PosixErrorException(POSIX_ERROR_EIO, "A previous asynchronous write"
+        " did fail. No more actions on this file handle are allowed.");
+  }
 }
 
 void FileHandleImplementation::WriteBackFileSize(
@@ -865,10 +842,7 @@ void FileHandleImplementation::WriteBackFileSize(
   }
 
   xtreemfs_update_file_sizeRequest rq;
-  {
-    boost::mutex::scoped_lock lock(mutex_);
-    rq.mutable_xcap()->CopyFrom(xcap_);
-  }
+  GetXCap(rq.mutable_xcap());
   rq.mutable_osd_write_response()->CopyFrom(owr);
   rq.set_close_file(close_file);
 
@@ -916,11 +890,10 @@ void FileHandleImplementation::WriteBackFileSizeAsync(const Options& options) {
           << osd_write_response_for_async_write_back_->size_in_bytes()
           << endl;
     }
-
-    rq.mutable_xcap()->CopyFrom(xcap_);
     rq.mutable_osd_write_response()
         ->CopyFrom(*osd_write_response_for_async_write_back_);
   }
+  GetXCap(rq.mutable_xcap());
   // Set to false because a close would use a sync writeback.
   rq.set_close_file(false);
 
