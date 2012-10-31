@@ -6,6 +6,7 @@ Release:        %mkrel
 License:        BSD
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 Group:          System/Filesystems
+URL:            http://www.XtreemFS.org
 Summary:        XtreemFS base package
 Source0:        XtreemFS-%{version}.tar.gz
 
@@ -205,7 +206,7 @@ fi
 rm -rf $RPM_BUILD_ROOT
 
 %files client
-%defattr(-,root,root)
+%defattr(-,root,root,-)
 /usr/bin/*.xtreemfs
 /usr/bin/xtfsutil
 /sbin/*.xtreemfs
@@ -214,7 +215,7 @@ rm -rf $RPM_BUILD_ROOT
 %doc LICENSE
 
 %files backend
-%defattr(-,root,root)
+%defattr(-,root,root,-)
 /usr/share/java/XtreemFS.jar
 /usr/share/java/Foundation.jar
 /usr/share/java/protobuf-java-2.3.0.jar
@@ -227,7 +228,7 @@ rm -rf $RPM_BUILD_ROOT
 %doc LICENSE
 
 %files server
-%defattr(-,root,xtreemfs)
+%defattr(-,root,xtreemfs,-)
 /etc/init.d/xtreemfs-*
 %dir /etc/xos/
 %dir %attr(0750,root,xtreemfs) /etc/xos/xtreemfs/
@@ -245,8 +246,8 @@ rm -rf $RPM_BUILD_ROOT
 %doc LICENSE
 
 %files tools
-%defattr(-,root,root)
-/etc/xos/xtreemfs/default_dir
+%defattr(-,root,root,-)
+%config(noreplace) %attr(0640,root,xtreemfs) /etc/xos/xtreemfs/default_dir
 /usr/bin/xtfs_*
 /usr/share/man/man1/xtfs_*
 %doc LICENSE
