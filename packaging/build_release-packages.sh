@@ -161,6 +161,9 @@ EOF
   exit 1
 fi
 
+# Generating init.d scripts based on template.
+$XTREEMFS_HOME_DIR/etc/init.d/generate_initd_scripts.sh
+
 BUILD_FILES_DIR=$XTREEMFS_HOME_DIR/packaging/build-service
 SOURCE_TARBALL_NAME="XtreemFS-$VERSION"
 
