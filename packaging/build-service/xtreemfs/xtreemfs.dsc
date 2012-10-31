@@ -2,7 +2,7 @@ Format: 1.0
 Source: xtreemfs
 Version: _VERSION_
 Binary: xtreemfs
-Maintainer: xtreemfs <xtreemfs-users@googlegroups.com>
+Maintainer: XtreemFS Project <xtreemfs-users@googlegroups.com>
 Architecture: any
 Build-Depends:
   debhelper (>= 5),

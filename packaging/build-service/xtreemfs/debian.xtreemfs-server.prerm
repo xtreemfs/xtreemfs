@@ -3,7 +3,7 @@ set -e
 
 # stop before remove
 if [ "$1" = "remove" -o "$1" = "deconfigure" ]; then
-  echo "Stopping dir, mrc, osd services..."
+  echo "Stopping DIR, MRC, OSD services..."
   if which invoke-rc.d >/dev/null 2>&1; then
     invoke-rc.d xtreemfs-dir stop
     invoke-rc.d xtreemfs-mrc stop
