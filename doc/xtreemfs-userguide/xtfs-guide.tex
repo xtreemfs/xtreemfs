@@ -891,14 +891,6 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & If set to true the DIR will received UDP broadcasts and advertise itself in response to XtreemFS components using the DIR automatic discovery mechanism. If set to false, the DIR will ignore all UDP traffic. For details see Sec. \ref{sec:autodiscover}.
 \end{tabular}
 
-\subsubsection{\texttt{enable\_local\_FIFOs} \textit{optional}}
-\begin{tabular}{lp{10cm}}
- Services & MRC\\
- Values   & true, false \\
- Default  & false\\
- Description & Enables support for FIFOs (names pipes) on the local machine for compatibility reasons. If set to \texttt{false}, any attempt to open a FIFO will be rejected with EIO. Even if set to \texttt{true}, FIFOs will not work across multiple mounts.
-\end{tabular}
-
 \subsubsection{\texttt{flease.dmax\_ms} \textit{optional}}
 \begin{tabular}{lp{10cm}}
  Services & OSD\\
@@ -1229,6 +1221,70 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Values   & String, but limited to alphanumeric characters, - and . \\
  Default  & \\
  Description & Must be set to a unique identifier, preferably a UUID according to RFC 4122. UUIDs can be generated with \texttt{uuidgen}. Example: \texttt{eacb6bab-f444-4ebf-a06a-3f72d7465e40}.
+\end{tabular}
+
+\subsubsection{\texttt{vivaldi.max\_clients}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR\\
+ Values   & 0..N \\
+ Default  & 32 \\
+ Description & Set the maximum number of client coordinates to be remembered. 0 deactivates the client visualization (but clients might still try).
+\end{tabular}
+
+\subsubsection{\texttt{vivaldi.client\_timeout}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR\\
+ Values   & 1..N milliseconds \\
+ Default  & 600000 \\
+ Description & Set a timeout (in ms) after which a client's data set will be removed. This value should be set with respect to the recalculation interval of the Vivaldi algorithm set on the client.
+\end{tabular}
+
+\subsubsection{\texttt{vivaldi.recalculation\_interval\_ms}}
+\begin{tabular}{lp{10cm}}
+ Services & OSD \\
+ Values   & 1..N milliseconds \\
+ Default  & 300000 \\
+ Description & The time between two recalculations of the Vivaldi coordinates is randomly chosen as vivaldi.recalculation\_interval\_ms +/- vivaldi.recalculation\_epsilon\_ms.
+\end{tabular}
+
+\subsubsection{\texttt{vivaldi.recalculation\_epsilon\_ms}}
+\begin{tabular}{lp{10cm}}
+ Services & OSD \\
+ Values   & 1..N milliseconds \\
+ Default  & 30000 \\
+ Description & See vivaldi.recalculation\_interval\_ms.
+\end{tabular}
+
+\subsubsection{\texttt{vivaldi.iterations\_before\_updating}}
+\begin{tabular}{lp{10cm}}
+ Services & OSD \\
+ Values   & 1..N \\
+ Default  & 12 \\
+ Description & The number of Vivaldi iterations before a new list of peers (OSDs) will be fetched from the DIR.
+\end{tabular}
+
+\subsubsection{\texttt{vivaldi.max\_retries\_for\_a\_request}}
+\begin{tabular}{lp{10cm}}
+ Services & OSD \\
+ Values   & 1..N \\
+ Default  & 2 \\
+ Description & Number of retries before accepting a 'suspiciously high' RTT.
+\end{tabular}
+
+\subsubsection{\texttt{vivaldi.max\_request\_timeout\_ms}}
+\begin{tabular}{lp{10cm}}
+ Services & OSD\\
+ Values   & 1..N milliseconds \\
+ Default  & 10000 \\
+ Description & Maximum number of milliseconds an OSD waits for a response before discarding its corresponding request (expiration times smaller than vivaldi.timer\_interval\_ms are not granted).
+\end{tabular}
+
+\subsubsection{\texttt{vivaldi.timer\_interval\_ms}}
+\begin{tabular}{lp{10cm}}
+ Services & OSD\\
+ Values   & 1..N milliseconds \\
+ Default  & 600000 \\
+ Description & Period of time between two Vivaldi probes.
 \end{tabular}
 
 \section{Execution and Monitoring}
@@ -2254,7 +2310,7 @@ Similar as with read/write replication, enabling read-only replication requires 
 Aside from file replication across OSDs, XtreemFS also supports MRC and DIR replication to increase data safety. MRC replication covers all file system metadata, whereas DIR replication covers configuration information of services as well as volumes.
 
 \subsection{Technical Details}
-DIR and MRC replication rely on the same principle as read-write replication of files. A primary replica, which is distinguished by means of a lease, accepts all updates and disseminates these to all backup replicas in the same order. When the primary fails, the lease will eventually expire and one of the former backup replicas can become primary. Unlike file replication, which may involve a different set of OSDs for each file, an MRC or DIR replicates its entire database.
+DIR and MRC replication rely on the same principle as read-write replication of files. A primary replica, which is distinguished by means of a lease, accepts all updates and disseminates these to all backup replicas in the same order. When the primary fails, the lease will eventually expire and one of the former backup replicas can become primary. Unlike file replication, which may involve a different set of OSDs for each file, an MRC or DIR replicates its entire database. A replicated MRC or DIR consists of at least two individual server instances. Note that you will need three or more instances to be able to transparently recover from failures, as a majority of replicas always needs to be available to make progress.
 
 \subsection{Setup}
 To enable database replication across a set of DIR or MRC instances, it is necessary to enable replication and configure its parameters. This needs to be done prior to starting up the services. The basic steps are the following:
@@ -2266,61 +2322,75 @@ To enable database replication across a set of DIR or MRC instances, it is neces
 \end{itemize}
 
 \subsubsection{Enabling and Configuring MRC Replication}
-A replicated MRC consists of at least two individual server instances. Note that you will need three or more instances to be able to transparently recover from failures, as a majority of replicas always needs to be available to make progress.
+The replication of the database requires that all records are synchronously written to disk. Therefore, the parameter \texttt{babudb.sync} has to be changed to the value \texttt{FSYNCDATA} in the MRC configuration file \texttt{/etc/xos/xtreemfs/mrcconfig.properties}:
+\begin{verbatim}
+babudb.sync = FSYNCDATA
+\end{verbatim}
 
-To configure multiple MRC instances as replicas of each other, it is necessary to enable and configure the replication plug-in across these instances. This is done by setting the property \texttt{babudb.plugin.0} in the configuration file of each MRC instance, such that it points to the plug-in's configuration file. If the \texttt{xtreemfs-server} package has been installed, a default configuration file for the replication plug-in can be found at \texttt{/etc/xos/xtreemfs/server-repl-plugin/mrc.properties}. In order to activate the plug-in, open \texttt{/etc/xos/xtreemfs/mrcconfig.properties} with a text editor and enter (or un-comment) the following line:
+To configure multiple MRC instances as replicas of each other, it is necessary to enable and configure the replication plug-in across these instances. This is done by setting the property \texttt{babudb.plugin.0} in each MRC configuration file, such that it points to the plug-in's configuration file. In order to activate the plug-in, un-comment the following line in the MRC configuration file \texttt{/etc/xos/xtreemfs/mrcconfig.properties}:
 
 \begin{verbatim}
 babudb.plugin.0 = /etc/xos/xtreemfs/server-repl-plugin/mrc.properties
 \end{verbatim}
 
-The replication of the database requires that all records are synchronously written to disk. Therefore, the parameter \texttt{babudb.sync} has to be changed to the value \texttt{SYNC\_WRITE} in the same configuration file \texttt{/etc/xos/xtreemfs/mrcconfig.properties}:
-\begin{verbatim}
-babudb.sync = SYNC_WRITE
-\end{verbatim}
-
 Now, it is necessary to configure the replication plug-in. For this purpose, open \texttt{/etc/xos/xtreemfs/server-repl-plugin/mrc.properties} with a text editor. The configuration file will look as follows:
 
 \begin{verbatim}
+...
+
+# participants of the replication including this replica
+babudb.repl.participant.0 = first-MRC-replica
+babudb.repl.participant.0.port = 35676
+babudb.repl.participant.1 = second-MRC-replica
+babudb.repl.participant.1.port = 35676
+babudb.repl.participant.2 = third-MRC-replica
+babudb.repl.participant.2.port = 35676
+
+...
+
 # number of servers that at least have to be up to date
 babudb.repl.sync.n = 2
 
 ...
-
-# participants of the replication including the local address
-# (may be missing, if localhost was defined explicitly)
-babudb.repl.participant.0 = localhost
-babudb.repl.participant.0.port = 35676
-babudb.repl.participant.1 = somehost
-babudb.repl.participant.1.port = 35676
-
-...
 \end{verbatim}
 
-\texttt{babudb.repl.sync.n} defines the number of servers that need to respond to an update before acknowledging the update to the client. To ensure data safety in the face of failures, it is necessary to set the property to a number that reflects at least a majority of all replicas. The list of replicas can be extended arbitrarily by adding new \texttt{babudb.repl.participant.n} as well as \texttt{babudb.repl.participant.n.port} properties, where \texttt{n} defines the replica number. Host names have to be resolvable, and hosts have to be able to reach each other on the respective ports. Please also make sure that replica lists are equivalent across all replicated MRC instances, i.e.\ each can reach all other hosts in the replica set.
+
+Each MRC replica has to be specified by the properties \texttt{babudb.repl.participant.n} and \texttt{babudb.repl.participant.n.port}, where \texttt{n} defines the replica number. Please note that the configured port is not the same as the port of the MRC since it is used solely by the database replication. Hostnames have to be resolvable, and hosts have to be able to reach each other on the respective ports. Please also make sure that replica lists are equivalent across all replicated MRC instances, i.e.\ each can reach all other hosts in the replica set.
+
+\texttt{babudb.repl.sync.n} defines the number of servers that need to respond to an update before acknowledging the update to the client. To ensure data safety in the face of failures, it is necessary to set the property to a number that reflects at least a majority of all replicas. Consequently, a failure tolerant setup requires at least three MRC replicas as the majority of it is two.
 
 Note that it is necessary to explicitly enable SSL if server-to-server authentication and encryption between replicas are required, regardless of whether an SSL-based XtreemFS installation was set up. This is because BabuDB establishes its own connection to exchange data with other replicated instances.
 
 Please make sure that all replicated instances have consistent configurations before starting them up, which includes replica lists, \texttt{babudb.repl.sync.n} parameters as well as SSL settings if necessary.
 
-\subsubsection{Enabling and Configuring DIR Replication}
-DIR replication is enabled and configured in the exact same way as MRC replication. Change \texttt{/etc/xos/xtreemfs/server-repl-plugin/dir.properties} accordingly to configure the plug-in and set the sync mode to \texttt{SYNC\_WRITE}.
+When mounting a volume with an XtreemFS client it is not necessary to specify the list of MRC replicas since the client automatically retrieves the MRC replicas of each volume.
 
-In order to ensure that MRCs and OSDs know all DIR replicas, you have to add the addresses of all DIR replicas to each MRC and OSD configuration file. Specify the first DIR replica in the options \texttt{dir\_service.host} and \texttt{dir\_service.port} and all subsequent ones in the options \texttt{dir\_service.<i>.host} and \texttt{dir\_service.<i>.port} where i starts from zero. For example:
+\subsubsection{Enabling and Configuring DIR Replication}
+DIR replication is enabled and configured in the exact same way as MRC replication. Change \texttt{/etc/xos/xtreemfs/server-repl-plugin/dir.properties} accordingly to configure the plug-in. If you use the default DIR configuration, the parameter \texttt{babudb.sync} is already set to \texttt{FSYNCDATA}.
+
+In order to ensure that MRCs and OSDs know all DIR replicas, you have to add the addresses of all DIR replicas to each MRC and OSD configuration file (e.g.,  \texttt{/etc/xos/xtreemfs/mrcconfig.properties} and \texttt{/etc/xos/xtreemfs/osdconfig.properties}). Specify the first DIR replica in the options \texttt{dir\_service.host} and \texttt{dir\_service.port} and all subsequent ones in the options \texttt{dir\_service.<i>.host} and \texttt{dir\_service.<i>.port} where i starts from one. For example:
 
 \begin{verbatim}
-dir_service.host = dir1.example.com
+dir_service.host = first-DIR-replica
 dir_service.port = 32638
-dir_service.0.host = dir2.example.com
-dir_service.0.port = 32638
-dir_service.1.host = dir3.example.com
-dir_service.1.port = 32638
+dir_service1.host = second-DIR-replica
+dir_service1.port = 32638
+dir_service2.host = third-DIR-replica
+dir_service2.port = 32638
 \end{verbatim}
 
-This allows the MRCs and OSDs to fail over to each DIR replica. On the contrary, the XtreemFS client does not support yet to specify multiple DIR replicas and therefore cannot automatically fail over between them.
+This allows the MRCs and OSDs to fail over to each DIR replica. The default MRC and OSD configuration files already contain commented entries which you just have to un-comment and edit.
+
+Here, the port of each DIR replica corresponds to the port which is configured in the DIR configuration with the parameter \texttt{listen.port} and defaults to 32638. Do not mix it up with the the one you specified in the replication plug-in configuration.
+
+When mounting a volume with an XtreemFS client, you have to provide all DIR replicas as comma separated list before the volume name. Given our example from above, you can mount a volume \texttt{myVol} as follows:
+
+\begin{verbatim}
+mount.xtreemfs first-DIR-replica,second-DIR-replica,third-DIR-replica/myVol
+\end{verbatim}
 
 \subsubsection{Startup and Access}
-Once all service instances have been configured, they can be started up individually as described in Section \ref{sec:startstopservice}. From a user's point of view, a replicated MRC behaves exactly like a non-replicated MRC. Failures will be transparently handled by the system and hidden from users to the best possible extent. For the service to remain operable, however, at least a majority of all replicas in the list have to be reachable.
+Once all service instances have been configured, they can be started up individually as described in Section \ref{sec:startstopservice}. From a user's point of view, a replicated MRC behaves exactly like a non-replicated MRC. Failures will be transparently handled by the system and hidden from users to the best possible extent. For the service to remain operable, however, at least a majority of all replicas in the list have to be reachable. Please note that the default lease timeout for the DIR/MRC replication is 60 seconds i.e., a fail-over to another replica may take up to 60 seconds.
 
 
 \chapter{Policies} \label{chap:policies}
