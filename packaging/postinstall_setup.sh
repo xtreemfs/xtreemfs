@@ -21,7 +21,7 @@ if [ $exists -eq 0 ]; then
 else
     if [ ! -d $XTREEMFS_HOME ]; then
         mkdir $XTREEMFS_HOME
-        echo "user $XTREEMFS_USER exists but created data directory $XTREEMFS_HOME"
+        echo "user $XTREEMFS_USER exists but data directory $XTREEMFS_HOME had to be created"
     fi
     owner=`stat -c %U $XTREEMFS_HOME`
     if [ $owner != $XTREEMFS_USER ]; then
@@ -42,12 +42,12 @@ if [ -e $XTREEMFS_ETC ]; then
         chgrp -R $XTREEMFS_GROUP $XTREEMFS_ETC
     fi
     for file in `ls $XTREEMFS_ETC/*.properties 2>/dev/null`; do
-      if [ -f $file ]; then
+      if [ -f $file -a "$(stat -c %a $file)" != "750" ]; then
           echo "setting $file 0750, executing chmod"
           chmod 0750 $file
       fi
     done
-    if [ -d "$XTREEMFS_ETC/truststore/" ]
+    if [ -d "$XTREEMFS_ETC/truststore/" -a "$(stat -c %a "$XTREEMFS_ETC/truststore/")" != "750" ]
     then
         echo "setting $XTREEMFS_ETC/truststore/ to 0750, executing chmod (may take some time)"
         chmod -R 0750 $XTREEMFS_ETC/truststore/
