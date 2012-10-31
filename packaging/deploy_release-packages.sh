@@ -28,6 +28,11 @@ DIR=$1
 CMD=$2
 NOCOMMIT=$3
 VERSION=`cat $DIR/VER`
+# Directory which contains the files that will be uploaded to the OBS. Path does not include "$DIR".
+XTREEMFS_DIRECTORY="xtreemfs"
+HOME_PROJECT_PREFIX="home:xtreemfs"
+SELECTED_PROJECT=$HOME_PROJECT_PREFIX
+SELECTED_PACKAGE="xtreemfs"
 
 TMP_DIR=/tmp/xtreemfs-upload
 
@@ -42,19 +47,21 @@ fi
 
 cd $DIR
 if [ $CMD = "unstable" -o $CMD = "testing" ]; then
+  SELECTED_PROJECT=$HOME_PROJECT_PREFIX":"$CMD
+  SELECTED_PACKAGE="xtreemfs-testing"
 
   # create a tmp dir, check out current build files, delete all files
   mkdir -p $TMP_DIR
   cd $TMP_DIR
-  osc co home:xtreemfs:$CMD xtreemfs-testing
-  rm $TMP_DIR/home:xtreemfs:$CMD/xtreemfs-testing/*
+  osc co $SELECTED_PROJECT $SELECTED_PACKAGE
+  rm $TMP_DIR/$SELECTED_PROJECT/$SELECTED_PACKAGE/*
   cd -
   
   # copy all new files, add new and delete old files, check in project
-  cp xtreemfs-testing/* $TMP_DIR/home:xtreemfs:$CMD/xtreemfs-testing
-  osc addremove $TMP_DIR/home:xtreemfs:$CMD/xtreemfs-testing/
+  cp $XTREEMFS_DIRECTORY/* $TMP_DIR/$SELECTED_PROJECT/$SELECTED_PACKAGE
+  osc addremove $TMP_DIR/$SELECTED_PROJECT/$SELECTED_PACKAGE/
   if [ -z "$NOCOMMIT" ]; then
-    osc ci -m "update" $TMP_DIR/home:xtreemfs:$CMD/xtreemfs-testing/
+    osc ci -m "update" $TMP_DIR/$SELECTED_PROJECT/$SELECTED_PACKAGE/
   
     rm -rf $TMP_DIR
   fi
@@ -69,13 +76,18 @@ elif [ $CMD = "stable" ]; then
     exit 1
   fi
 
+  SELECTED_PROJECT=$HOME_PROJECT_PREFIX":"$subproject
+  SELECTED_PACKAGE="xtreemfs"
+
   # Check if the determined subproject already exists
-  subproject_name="home:xtreemfs:$subproject"
-  osc meta prj "$subproject_name" &>/dev/null
+  osc meta prj "$SELECTED_PROJECT" &>/dev/null
   if [ $rc -ne 0 ]; then
-    echo "The subproject '$subproject_name' does not exist yet. Create it first from the webinterface and see the docu for additional steps."
+    echo "The subproject '$SELECTED_PROJECT' does not exist yet. Create it first from the webinterface and see the docu for additional steps."
     exit 1
   fi
+
+  echo "ERROR: Deploying stable packages is currently broken in this script. Talk to Nico Kruber first to find out what changes are required for this script and then fix it."
+  exit 1
     
   # create release packages on the server
   osc meta pkg home:xtreemfs xtreemfs-$VERSION --file meta.xml
@@ -89,7 +101,7 @@ elif [ $CMD = "stable" ]; then
   
   cd -
   
-  cp xtreemfs/* $TMP_DIR/home:xtreemfs/xtreemfs-$VERSION
+  cp $XTREEMFS_DIRECTORY/* $TMP_DIR/home:xtreemfs/xtreemfs-$VERSION
     
   # add and commit the new files
   osc add $TMP_DIR/home:xtreemfs/xtreemfs-$VERSION/*
@@ -112,8 +124,8 @@ service. Instead they are still present in: $TMP_DIR
 You can use them to test building a package locally e.g.,
 
 cd $TMP_DIR
-cd home:xtreemfs:unstable/xtreemfs-testing
+cd $SELECTED_PROJECT/$SELECTED_PACKAGE
 # Build the package for openSUSE_12.1:
-osc build --ccache openSUSE_12.1 xtreemfs-testing.spec
+osc build --ccache openSUSE_12.1 xtreemfs.spec
 EOF
 fi
