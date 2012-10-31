@@ -122,6 +122,9 @@ ln -sf /usr/bin/umount.xtreemfs ${RPM_BUILD_ROOT}/sbin/umount.xtreemfs
 # add /etc/xos/xtreemfs/truststore/certs/ folder used for storing certificates
 mkdir -p $RPM_BUILD_ROOT/etc/xos/xtreemfs/truststore/certs/
 
+# Create log directory.
+mkdir -p $RPM_BUILD_ROOT/var/log/xtreemfs
+
 # remove copyright notes (let rpm handle that)
 rm $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-client/LICENSE
 rmdir $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-client
@@ -243,6 +246,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files tools
 %defattr(-,root,root)
+/etc/xos/xtreemfs/default_dir
 /usr/bin/xtfs_*
 /usr/share/man/man1/xtfs_*
 %doc LICENSE

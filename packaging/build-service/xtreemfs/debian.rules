@@ -114,6 +114,9 @@ install: build
 	# move files of the xtreemfs-tools package
 	# this file has already been moved and does not have to be explicitly excluded:
 	# %exclude /usr/bin/xtfs_*mount
+	mkdir -p $(BUILD_DIR)-tools/etc/xos/xtreemfs
+	mv    -t $(BUILD_DIR)-tools/etc/xos/xtreemfs \
+	         $(BUILD_DIR)/etc/xos/xtreemfs/default_dir
 	mkdir -p $(BUILD_DIR)-tools/usr/bin
 	mv    -t $(BUILD_DIR)-tools/usr/bin \
 	         $(BUILD_DIR)/usr/bin/xtfs_*
