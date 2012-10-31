@@ -1,0 +1,158 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          xtreemfs-@SHORT_SERVICE_NAME_LOWERCASE@
+# Required-Start:    $network $remote_fs
+# Required-Stop:     $network $remote_fs
+# Should-Start:      @SHOULD_START@
+# Should-Stop:       $null
+# Default-Start:     3 5
+# Default-Stop:      0 1 2 6
+# Short-Description: XtreemFS @SHORT_SERVICE_NAME@
+# Description:       XtreemFS @LONG_SERVICE_NAME@ (@SHORT_SERVICE_NAME@). http://www.xtreemfs.org/
+### END INIT INFO
+
+# Source function library.
+if [ -e /lib/lsb/init-functions ]; then
+    . /lib/lsb/init-functions
+else
+    . /etc/init.d/functions
+fi
+
+XTREEMFS_USER=xtreemfs
+
+PID=/var/run/xtreemfs_@SHORT_SERVICE_NAME_LOWERCASE@.pid
+
+CONFIG=/etc/xos/xtreemfs/@SHORT_SERVICE_NAME_LOWERCASE@config.properties
+
+LOG=/var/log/xtreemfs/@SHORT_SERVICE_NAME_LOWERCASE@.log
+
+if [ -z $JAVA_HOME ]; then
+    export JAVA_HOME=/usr
+fi
+JAVA_CALL="$JAVA_HOME/bin/java -ea -cp /usr/share/java/XtreemFS.jar:/usr/share/java/BabuDB.jar:/usr/share/java/Flease.jar:/usr/share/java/protobuf-java-2.3.0.jar:/usr/share/java/Foundation.jar:/usr/share/java/jdmkrt.jar:/usr/share/java/jdmktk.jar:/usr/share/java/commons-codec-1.3.jar"
+
+# For SELinux we need to use 'runuser' not 'su'
+if [ -x "/sbin/runuser" ]; then
+    SU="/sbin/runuser"
+else
+    SU="/bin/su"
+fi
+
+pre_check() {
+    exists=`grep -c $XTREEMFS_USER /etc/passwd`
+    if [ $exists -eq 0 ]; then
+        echo "User $XTREEMFS_USER does not exist. Create it first."
+        exit 1
+    fi
+    log_directory=`dirname $LOG`
+    if [ ! -e $log_directory ]; then
+        echo "Directory for logfiles $log_directory does not exist. Create it first."
+        exit 1
+    fi
+}
+
+start() {
+    if [ -f $PID ]; then
+        PROCPID=`cat $PID`
+        if [ -e /proc/$PROCPID ];then
+            echo "XtreemFS @LONG_SERVICE_NAME@ (@SHORT_SERVICE_NAME@) already started"
+            return 0
+        else
+            echo -n "Previous XtreemFS @LONG_SERVICE_NAME@ (@SHORT_SERVICE_NAME@) was not shutdown correctly (PID $PROCPID). "
+        fi
+    fi
+
+    pre_check
+
+    echo >> $LOG
+    date >> $LOG
+    echo -e "Starting XtreemFS @LONG_SERVICE_NAME@ (@SHORT_SERVICE_NAME@)...\n\n" >> $LOG
+
+    echo -n "Starting XtreemFS @LONG_SERVICE_NAME@ (@SHORT_SERVICE_NAME@)..."
+    $SU -s /bin/sh $XTREEMFS_USER -c "$JAVA_CALL org.xtreemfs.@SHORT_SERVICE_NAME_LOWERCASE@.@SHORT_SERVICE_NAME@ $CONFIG" >> $LOG 2>&1 &
+    PROCPID=$!
+    echo $PROCPID > $PID
+    sleep 1s
+
+    if [ -e /proc/$PROCPID ]; then
+        echo "success"
+    else
+        echo "failed"
+        return 1
+    fi
+
+    return 0
+}
+
+stop() {
+    if [ -f $PID ]; then
+        echo -n "Stopping XtreemFS @LONG_SERVICE_NAME@ (@SHORT_SERVICE_NAME@)..."
+        killproc -p $PID $SU
+        result=$?
+    fi
+    if [ $result -eq 0 ]; then
+        rm -f $PID
+        echo "success"
+    else
+        echo "failed"
+    fi
+
+    return $result
+}
+
+status() {
+    if [ -f $PID ]; then
+        PROCPID=`cat $PID`
+        if [ ! -e /proc/$PROCPID ]; then
+            echo "XtreemFS @LONG_SERVICE_NAME@ (@SHORT_SERVICE_NAME@) has crashed"
+            return 1
+        else
+            echo "XtreemFS @LONG_SERVICE_NAME@ (@SHORT_SERVICE_NAME@) is running"
+            return 0
+        fi
+    else
+        echo "XtreemFS @LONG_SERVICE_NAME@ (@SHORT_SERVICE_NAME@) is not running"
+        return 3
+    fi
+}
+
+# See how we were called.
+case "$1" in
+    start)
+        start
+        result=$?
+        ;;
+    stop)
+        stop
+        result=$?
+        ;;
+    status)
+        status
+        result=$?
+        ;;
+    reload)
+        result=0
+        ;;
+    restart)
+        stop && sleep 1 && start
+        result=$?
+        ;;
+    try-restart)
+        ## Stop the service and if this succeeds (i.e. the
+        ## service was running before), start it again.
+        $0 status >/dev/null
+        if [ $? -eq 0 ]; then
+          $0 restart
+          result=$?
+        else
+          result=0
+        fi
+        ;;
+    *)
+        echo -e "Usage: $0 {start|stop|restart|reload|status|try-restart}\n"
+        result=1
+        ;;
+esac
+
+exit $result
