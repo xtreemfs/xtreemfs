@@ -70,8 +70,6 @@ FileHandleImplementation::FileHandleImplementation(
       osd_uuid_container_(osd_uuid_container),
       uuid_resolver_(uuid_resolver),
       file_info_(file_info),
-      xcap_(xcap),
-      xcap_renewal_pending_(false),
       osd_write_response_for_async_write_back_(NULL),
       mrc_service_client_(mrc_service_client),
       osd_service_client_(osd_service_client),
@@ -80,7 +78,10 @@ FileHandleImplementation::FileHandleImplementation(
       async_writes_failed_(false),
       volume_options_(options),
       auth_bogus_(auth_bogus),
-      user_credentials_bogus_(user_credentials_bogus) {
+      user_credentials_bogus_(user_credentials_bogus),
+      xcap_manager_(xcap, mrc_service_client, uuid_resolver,
+                    mrc_uuid_iterator, auth_bogus_,
+                    user_credentials_bogus_) {
 }
 
 FileHandleImplementation::~FileHandleImplementation() {}
@@ -95,7 +96,7 @@ int FileHandleImplementation::Read(
 
   // Prepare request object.
   readRequest rq;
-  GetXCap(rq.mutable_file_credentials()->mutable_xcap());
+  xcap_manager_.GetXCap(rq.mutable_file_credentials()->mutable_xcap());
   rq.set_file_id(rq.file_credentials().xcap().file_id());
   file_info_->GetXLocSet(rq.mutable_file_credentials()->mutable_xlocs());
   // Use a reference for shorter code.
@@ -167,7 +168,7 @@ int FileHandleImplementation::Read(
             volume_options_,
             false,
             false,
-            this,
+            &xcap_manager_,
             rq.mutable_file_credentials()->mutable_xcap()));
     xtreemfs::pbrpc::ObjectData* data =
         static_cast<xtreemfs::pbrpc::ObjectData*>(response->response());
@@ -196,7 +197,7 @@ int FileHandleImplementation::Write(
 
   // Create copies of required data.
   FileCredentials file_credentials;
-  GetXCap(file_credentials.mutable_xcap());
+  xcap_manager_.GetXCap(file_credentials.mutable_xcap());
   file_info_->GetXLocSet(file_credentials.mutable_xlocs());
   // Use references for shorter code.
   const string& global_file_id = file_credentials.xcap().file_id();
@@ -257,7 +258,7 @@ int FileHandleImplementation::Write(
             operations[j].data,
             operations[j].req_size,
             this,
-            this,
+            &xcap_manager_,
             GetOSDUUIDFromXlocSet(xlocs,
                                   0,  // Use first and only replica.
                                   operations[j].osd_offsets[0]));
@@ -266,7 +267,7 @@ int FileHandleImplementation::Write(
                                             operations[j].data,
                                             operations[j].req_size,
                                             this,
-                                            this);
+                                            &xcap_manager_);
       }
 
       file_info_->AsyncWrite(write_buffer);
@@ -324,7 +325,7 @@ int FileHandleImplementation::Write(
               volume_options_,
               false,
               false,
-              this,
+              &xcap_manager_,
               write_request.mutable_file_credentials()->mutable_xcap()));
       xtreemfs::pbrpc::OSDWriteResponse* write_response =
           static_cast<xtreemfs::pbrpc::OSDWriteResponse*>(response->response());
@@ -332,7 +333,9 @@ int FileHandleImplementation::Write(
       // size update towards the MRC (executed by
       // VolumeImplementation::PeriodicFileSizeUpdate).
       if (write_response->has_size_in_bytes()) {
-        if (file_info_->TryToUpdateOSDWriteResponse(write_response, xcap_)) {
+        XCap xcap;
+        xcap_manager_.GetXCap(&xcap);
+        if (file_info_->TryToUpdateOSDWriteResponse(write_response, xcap)) {
           // Free everything except the response.
           delete [] response->data();
           delete response->error();
@@ -373,8 +376,8 @@ void FileHandleImplementation::Truncate(
   file_info_->WaitForPendingAsyncWrites();
   ThrowIfAsyncWritesFailed();
 
-  XCap xcap_copy;
-  GetXCap(&xcap_copy);
+  XCap xcap;
+  xcap_manager_.GetXCap(&xcap);
 
   // 1. Call truncate at the MRC (in order to increase the trunc epoch).
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
@@ -385,19 +388,19 @@ void FileHandleImplementation::Truncate(
             _1,
             boost::cref(auth_bogus_),
             boost::cref(user_credentials),
-            &xcap_copy),
+            &xcap),
         mrc_uuid_iterator_,
         uuid_resolver_,
         volume_options_.max_tries,
         volume_options_,
         false,
         false,
-        this,
-        &xcap_copy));
+        &xcap_manager_,
+        &xcap));
 
   xtreemfs::pbrpc::XCap* updated_xcap = static_cast<xtreemfs::pbrpc::XCap*>(
       response->response());
-  UpdateXCap(*updated_xcap);
+  xcap_manager_.SetXCap(*updated_xcap);
   response->DeleteBuffers();
 
   TruncatePhaseTwoAndThree(user_credentials, new_file_size);
@@ -410,7 +413,7 @@ void FileHandleImplementation::TruncatePhaseTwoAndThree(
   truncateRequest truncate_rq;
   file_info_->GetXLocSet(
       truncate_rq.mutable_file_credentials()->mutable_xlocs());
-  GetXCap(truncate_rq.mutable_file_credentials()->mutable_xcap());
+  xcap_manager_.GetXCap(truncate_rq.mutable_file_credentials()->mutable_xcap());
   truncate_rq.set_file_id(truncate_rq.file_credentials().xcap().file_id());
   truncate_rq.set_new_file_size(new_file_size);
 
@@ -429,7 +432,7 @@ void FileHandleImplementation::TruncatePhaseTwoAndThree(
           volume_options_,
           false,
           false,
-          this,
+          &xcap_manager_,
           truncate_rq.mutable_file_credentials()->mutable_xcap()));
   xtreemfs::pbrpc::OSDWriteResponse* write_response =
       static_cast<xtreemfs::pbrpc::OSDWriteResponse*>(response->response());
@@ -440,7 +443,9 @@ void FileHandleImplementation::TruncatePhaseTwoAndThree(
   delete response->error();
 
   // Register the osd write response at this file's FileInfo.
-  file_info_->TryToUpdateOSDWriteResponse(write_response, xcap_);
+  XCap xcap;
+  xcap_manager_.GetXCap(&xcap);
+  file_info_->TryToUpdateOSDWriteResponse(write_response, xcap);
 
   // 3. Update the file size at the MRC.
   file_info_->FlushPendingFileSizeUpdate(this);
@@ -489,7 +494,8 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
   // Cache could not be used. Complete lockRequest and send to OSD.
   file_info_->GetXLocSet(
       lock_request.mutable_file_credentials()->mutable_xlocs());
-  GetXCap(lock_request.mutable_file_credentials()->mutable_xcap());
+  xcap_manager_.GetXCap(
+      lock_request.mutable_file_credentials()->mutable_xcap());
 
   boost::scoped_ptr<rpc::SyncCallbackBase> response;
   if (!wait_for_lock) {
@@ -507,7 +513,7 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
         volume_options_,
         false,
         false,
-        this,
+        &xcap_manager_,
         lock_request.mutable_file_credentials()->mutable_xcap()));
   } else {
     // Retry to obtain the lock in case of EAGAIN responses.
@@ -528,7 +534,7 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
             volume_options_,
             false,  // UUIDIterator contains UUIDs and not addresses.
             true,  // true means to delay this attempt in case of errors.
-            this,
+            &xcap_manager_,
             lock_request.mutable_file_credentials()->mutable_xcap()));
         break;  // If successful, do not retry again.
       } catch(const PosixErrorException& e) {
@@ -588,7 +594,8 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::CheckLock(
   // Cache could not be used. Complete lockRequest and send to OSD.
   file_info_->GetXLocSet(
       lock_request.mutable_file_credentials()->mutable_xlocs());
-  GetXCap(lock_request.mutable_file_credentials()->mutable_xcap());
+  xcap_manager_.GetXCap(
+      lock_request.mutable_file_credentials()->mutable_xcap());
     
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
     ExecuteSyncRequest(
@@ -605,7 +612,7 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::CheckLock(
         volume_options_,
         false,
         false,
-        this,
+        &xcap_manager_,
         lock_request.mutable_file_credentials()->mutable_xcap()));
   // Delete everything except the response.
   delete[] response->data();
@@ -651,7 +658,7 @@ void FileHandleImplementation::ReleaseLock(
   lockRequest unlock_request;
   file_info_->GetXLocSet(
       unlock_request.mutable_file_credentials()->mutable_xlocs());
-  GetXCap(unlock_request.mutable_file_credentials()->mutable_xcap());
+  xcap_manager_.GetXCap(unlock_request.mutable_file_credentials()->mutable_xcap());
   unlock_request.mutable_lock_request()->CopyFrom(lock);
 
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
@@ -669,7 +676,7 @@ void FileHandleImplementation::ReleaseLock(
         volume_options_,
         false,
         false,
-        this,
+        &xcap_manager_,
         unlock_request.mutable_file_credentials()->mutable_xcap()));
   response->DeleteBuffers();
 
@@ -685,7 +692,8 @@ void FileHandleImplementation::PingReplica(
     const std::string& osd_uuid) {
   // Get xlocset. and check if osd_uuid is included.
   readRequest read_request;
-  GetXCap(read_request.mutable_file_credentials()->mutable_xcap());
+  xcap_manager_.GetXCap(
+      read_request.mutable_file_credentials()->mutable_xcap());
   read_request.set_file_id(read_request.file_credentials().xcap().file_id());
   file_info_->GetXLocSet(
       read_request.mutable_file_credentials()->mutable_xlocs());
@@ -739,17 +747,10 @@ void FileHandleImplementation::PingReplica(
           volume_options_,
           false,
           false,
-          this,
+          &xcap_manager_,
           read_request.mutable_file_credentials()->mutable_xcap()));
   // We don't care about the result.
   response->DeleteBuffers();
-}
-
-void FileHandleImplementation::WaitForPendingXCapRenewal() {
-  boost::mutex::scoped_lock lock(mutex_);
-  while (xcap_renewal_pending_) {
-    xcap_renewal_pending_cond_.wait(lock);
-  }
 }
 
 void FileHandleImplementation::Close() {
@@ -769,19 +770,6 @@ void FileHandleImplementation::Close() {
   file_info_->CloseFileHandle(this);
 }
 
-uint64_t FileHandleImplementation::GetFileId() {
-  boost::mutex::scoped_lock lock(mutex_);
-
-  return GetFileIdHelper(&lock);
-}
-
-uint64_t FileHandleImplementation::GetFileIdHelper(
-    boost::mutex::scoped_lock* lock) {
-  assert(lock && lock->owns_lock());
-
-  return ExtractFileIdFromXCap(xcap_);
-}
-
 const StripeTranslator* FileHandleImplementation::GetStripeTranslator(
     xtreemfs::pbrpc::StripingPolicyType type) {
   // Find the corresponding StripingPolicy.
@@ -795,18 +783,6 @@ const StripeTranslator* FileHandleImplementation::GetStripeTranslator(
     // Type found.
     return it->second;
   }
-}
-
-void FileHandleImplementation::GetXCap(xtreemfs::pbrpc::XCap* xcap) {
-  assert(xcap);
-
-  boost::mutex::scoped_lock lock(mutex_);
-  xcap->CopyFrom(xcap_);
-}
-
-void FileHandleImplementation::UpdateXCap(const xtreemfs::pbrpc::XCap& xcap) {
-  boost::mutex::scoped_lock lock(mutex_);
-  xcap_.CopyFrom(xcap);
 }
 
 void FileHandleImplementation::MarkAsyncWritesAsFailed() {
@@ -831,14 +807,14 @@ void FileHandleImplementation::WriteBackFileSize(
     bool close_file) {
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
     Logging::log->getLog(LEVEL_DEBUG)
-        << "WriteBackFileSize: file_id: " <<  GetFileId()
+        << "WriteBackFileSize: file_id: " << xcap_manager_.GetFileId()
         << " # bytes: " << owr.size_in_bytes()
         << " close file? " << close_file
         << endl;
   }
 
   xtreemfs_update_file_sizeRequest rq;
-  GetXCap(rq.mutable_xcap());
+  xcap_manager_.GetXCap(rq.mutable_xcap());
   rq.mutable_osd_write_response()->CopyFrom(owr);
   rq.set_close_file(close_file);
 
@@ -865,7 +841,7 @@ void FileHandleImplementation::WriteBackFileSize(
           volume_options_,
           false,
           false,
-          this,
+          &xcap_manager_,
           rq.mutable_xcap()));
   response->DeleteBuffers();
 }
@@ -889,7 +865,7 @@ void FileHandleImplementation::WriteBackFileSizeAsync(const Options& options) {
     rq.mutable_osd_write_response()
         ->CopyFrom(*osd_write_response_for_async_write_back_);
   }
-  GetXCap(rq.mutable_xcap());
+  xcap_manager_.GetXCap(rq.mutable_xcap());
   // Set to false because a close would use a sync writeback.
   rq.set_close_file(false);
 
@@ -911,48 +887,15 @@ void FileHandleImplementation::WriteBackFileSizeAsync(const Options& options) {
   }
 }
 
-void FileHandleImplementation::RenewXCapAsync(const Options& options) {
-  XCap xcap_copy;
-  {
-    boost::mutex::scoped_lock lock(mutex_);
-
-    // TODO(mberlin): Only renew after some time has elapsed.
-    // TODO(mberlin): Cope with local clocks which have a high clock skew.
-    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-        Logging::log->getLog(LEVEL_DEBUG)
-            << "Renew XCap for file_id: " <<  GetFileIdHelper(&lock)
-            << " Expiration in: " << (xcap_.expire_time_s() - time(NULL))
-            << endl;
-    }
-
-    // Create a copy of the XCap.
-    xcap_copy.CopyFrom(xcap_);
-    xcap_renewal_pending_ = true;
-  }
-
-  string mrc_uuid;
-  string mrc_address;
-  try {
-    mrc_uuid_iterator_->GetUUID(&mrc_uuid);
-    uuid_resolver_->UUIDToAddress(mrc_uuid, &mrc_address, options);
-    mrc_service_client_->xtreemfs_renew_capability(
-        mrc_address,
-        auth_bogus_,
-        user_credentials_bogus_,
-        &xcap_copy,
-        this,
-        NULL);
-  } catch (const XtreemFSException&) {
-    // do nothing.
-  }
-}
-
 void FileHandleImplementation::CallFinished(
     xtreemfs::pbrpc::timestampResponse* response_message,
     char* data,
     uint32_t data_length,
     xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
     void* context) {
+  boost::scoped_ptr<timestampResponse> autodelete_xcap(response_message);
+  boost::scoped_ptr<RPCHeader::ErrorResponse> autodelete_error(error);
+  boost::scoped_array<char> autodelete_data(data);
   if (error) {
     string path;
     file_info_->GetPath(&path);
@@ -974,47 +917,6 @@ void FileHandleImplementation::CallFinished(
       *(osd_write_response_for_async_write_back_.get()),
       this,
       error == NULL);
-
-  // Cleanup.
-  delete response_message;
-  delete [] data;
-  delete error;
-}
-
-void FileHandleImplementation::CallFinished(
-    xtreemfs::pbrpc::XCap* new_xcap,
-    char* data,
-    uint32_t data_length,
-    xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
-    void* context) {
-  boost::mutex::scoped_lock lock(mutex_);
-
-  if (error) {
-    string path;
-    file_info_->GetPath(&path);
-    string error_msg =  "Renewing XCap of file: " + path + " failed. Error: " +
-        error->DebugString();
-    Logging::log->getLog(LEVEL_ERROR) << error_msg << endl;
-    ErrorLog::error_log->AppendError(error_msg);
-  } else {
-    // Overwrite current XCap only by a newer one (i.e. later expire time).
-    if (new_xcap->expire_time_s() > xcap_.expire_time_s()) {
-      xcap_.CopyFrom(*new_xcap);
-
-      if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-        Logging::log->getLog(LEVEL_DEBUG)
-           << "XCap renewed for file_id: " << GetFileIdHelper(&lock) << endl;
-      }
-    }
-  }
-
-  // Cleanup.
-  delete new_xcap;
-  delete [] data;
-  delete error;
-
-  xcap_renewal_pending_ = false;
-  xcap_renewal_pending_cond_.notify_all();
 }
 
 void FileHandleImplementation::set_osd_write_response_for_async_write_back(
@@ -1025,6 +927,126 @@ void FileHandleImplementation::set_osd_write_response_for_async_write_back(
   // to set an OSD Write Response twice.
   assert(!osd_write_response_for_async_write_back_.get());
   osd_write_response_for_async_write_back_.reset(new OSDWriteResponse(owr));
+}
+
+void FileHandleImplementation::WaitForAsyncOperations() {
+  xcap_manager_.WaitForPendingXCapRenewal();
+}
+
+void FileHandleImplementation::ExecutePeriodTasks(const Options& options) {
+  xcap_manager_.RenewXCapAsync(options);
+}
+
+void FileHandleImplementation::GetXCap(xtreemfs::pbrpc::XCap* xcap) {
+  assert(xcap);
+  xcap_manager_.GetXCap(xcap);
+}
+
+XCapManager::XCapManager(
+    const xtreemfs::pbrpc::XCap& xcap,
+    xtreemfs::pbrpc::MRCServiceClient* mrc_service_client,
+    UUIDResolver* uuid_resolver,
+    UUIDIterator* mrc_uuid_iterator,
+    const xtreemfs::pbrpc::Auth& auth_bogus,
+    const xtreemfs::pbrpc::UserCredentials& user_credentials_bogus) :
+        xcap_(xcap),
+        xcap_renewal_pending_(false),
+        mrc_service_client_(mrc_service_client),
+        uuid_resolver_(uuid_resolver),
+        mrc_uuid_iterator_(mrc_uuid_iterator),
+        auth_bogus_(auth_bogus),
+        user_credentials_bogus_(user_credentials_bogus) {}
+
+void XCapManager::WaitForPendingXCapRenewal() {
+  boost::mutex::scoped_lock lock(mutex_);
+  while (xcap_renewal_pending_) {
+    xcap_renewal_pending_cond_.wait(lock);
+  }
+}
+
+void XCapManager::GetXCap(xtreemfs::pbrpc::XCap* xcap) {
+  assert(xcap);
+
+  boost::mutex::scoped_lock lock(mutex_);
+  xcap->CopyFrom(xcap_);
+}
+
+void XCapManager::SetXCap(const xtreemfs::pbrpc::XCap& xcap) {
+  boost::mutex::scoped_lock lock(mutex_);
+  xcap_.CopyFrom(xcap);
+}
+
+uint64_t XCapManager::GetFileId() {
+  boost::mutex::scoped_lock lock(mutex_);
+  return ExtractFileIdFromXCap(xcap_);
+}
+
+void XCapManager::RenewXCapAsync(const Options& options) {
+  // TODO(mberlin): Only renew after some time has elapsed.
+  // TODO(mberlin): Cope with local clocks which have a high clock skew.
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+      Logging::log->getLog(LEVEL_DEBUG)
+          << "Renew XCap for file_id: " << GetFileId()
+          << " Expiration in: " << (xcap_.expire_time_s() - time(NULL))
+          << endl;
+  }
+  {
+    boost::mutex::scoped_lock lock(mutex_);
+    xcap_renewal_pending_ = true;
+  }
+  
+  XCap xcap;
+  GetXCap(&xcap);
+
+  string mrc_uuid;
+  string mrc_address;
+  try {
+    mrc_uuid_iterator_->GetUUID(&mrc_uuid);
+    uuid_resolver_->UUIDToAddress(mrc_uuid, &mrc_address, options);
+    mrc_service_client_->xtreemfs_renew_capability(
+        mrc_address,
+        auth_bogus_,
+        user_credentials_bogus_,
+        &xcap,
+        this,
+        NULL);
+  } catch (const XtreemFSException&) {
+    // do nothing.
+  }
+}
+
+void XCapManager::CallFinished(
+    xtreemfs::pbrpc::XCap* new_xcap,
+    char* data,
+    uint32_t data_length,
+    xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
+    void* context) {
+  boost::scoped_ptr<XCap> autodelete_xcap(new_xcap);
+  boost::scoped_ptr<RPCHeader::ErrorResponse> autodelete_error(error);
+  boost::scoped_array<char> autodelete_data(data);
+
+  if (error != NULL) {
+    Logging::log->getLog(LEVEL_ERROR)
+        << "Renewing XCap of file: " << GetFileId()
+        << " failed. Error: " << error->DebugString() << endl;
+    ErrorLog::error_log->AppendError(
+        "Renewing XCap failed: " + error->DebugString());
+    return;
+  } 
+  
+  // Overwrite current XCap only by a newer one (i.e. later expire time).
+  if (new_xcap->expire_time_s() > xcap_.expire_time_s()) {
+    SetXCap(*new_xcap);
+
+    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+      Logging::log->getLog(LEVEL_DEBUG)
+          << "XCap renewed for file_id: " << GetFileId() << endl;
+    }
+  }
+  
+  boost::mutex::scoped_lock lock(mutex_);
+  xcap_renewal_pending_ = false;
+  xcap_renewal_pending_cond_.notify_all();
 }
 
 }  // namespace xtreemfs

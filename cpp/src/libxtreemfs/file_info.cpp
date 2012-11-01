@@ -108,7 +108,7 @@ void FileInfo::CloseFileHandle(FileHandleImplementation* file_handle) {
     open_file_handles_.remove(file_handle);
   }
   // Waiting does not require a lock on the open_file_handles_.
-  file_handle->WaitForPendingXCapRenewal();
+  file_handle->WaitForAsyncOperations();
   // Defer the deletion of file_handle as it might be needed by
   // VolumeImplementation::CloseFile() to release all locks.
 
@@ -188,7 +188,7 @@ void FileInfo::RenewXCapsAsync(const Options& options) {
            open_file_handles_.begin();
        it != open_file_handles_.end();
        ++it) {
-    (*it)->RenewXCapAsync(options);
+    (*it)->ExecutePeriodTasks(options);
   }
 }
 
