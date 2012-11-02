@@ -102,8 +102,8 @@ install: build
 	mkdir -p $(BUILD_DIR)-server/etc/xos/xtreemfs
 	mv    -t $(BUILD_DIR)-server/etc/xos/xtreemfs \
 	         $(BUILD_DIR)/etc/xos/xtreemfs/*.properties \
-	         $(BUILD_DIR)/etc/xos/xtreemfs/generate_uuid \
-	         $(BUILD_DIR)/etc/xos/xtreemfs/postinstall_setup.sh
+	         $(BUILD_DIR)/etc/xos/xtreemfs/generate_uuid
+# 	         $(BUILD_DIR)/etc/xos/xtreemfs/postinstall_setup.sh
 	mkdir -p $(BUILD_DIR)-server/etc/xos/xtreemfs/server-repl-plugin
 	mv    -t $(BUILD_DIR)-server/etc/xos/xtreemfs/server-repl-plugin \
 	         $(BUILD_DIR)/etc/xos/xtreemfs/server-repl-plugin/*.properties

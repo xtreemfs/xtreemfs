@@ -116,7 +116,8 @@ make %{?jobs:-j%jobs}
 export NO_BRP_CHECK_BYTECODE_VERSION=true
 
 make install DESTDIR=$RPM_BUILD_ROOT
-mkdir -p $RPM_BUILD_ROOT%{_libdir}/xtreemfs/policies/
+mkdir -p $RPM_BUILD_ROOT/var/lib/xtreemfs
+mkdir    $RPM_BUILD_ROOT/var/lib/xtreemfs/policies
 ln -sf /usr/bin/mount.xtreemfs ${RPM_BUILD_ROOT}/sbin/mount.xtreemfs
 ln -sf /usr/bin/umount.xtreemfs ${RPM_BUILD_ROOT}/sbin/umount.xtreemfs
 
@@ -136,8 +137,9 @@ rmdir $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-tools
 
 %pre server
 /usr/sbin/groupadd xtreemfs 2>/dev/null || :
-/usr/sbin/useradd -r --home %{_libdir}/xtreemfs -g xtreemfs xtreemfs 2>/dev/null || :
+/usr/sbin/useradd -r --home /var/lib/xtreemfs -g xtreemfs xtreemfs 2>/dev/null || :
 /usr/sbin/usermod -g xtreemfs xtreemfs 2>/dev/null || :
+
 
 %post server
 XTREEMFS_CONFIG_DIR=/etc/xos/xtreemfs/
@@ -236,18 +238,18 @@ rm -rf $RPM_BUILD_ROOT
 %dir %attr(0750,root,xtreemfs) /etc/xos/xtreemfs/truststore/certs/
 %config(noreplace) %attr(0640,root,xtreemfs) /etc/xos/xtreemfs/*.properties
 /etc/xos/xtreemfs/generate_uuid
-/etc/xos/xtreemfs/postinstall_setup.sh
+# /etc/xos/xtreemfs/postinstall_setup.sh
 %dir /etc/xos/xtreemfs/server-repl-plugin/
 %config(noreplace) %attr(0640,root,xtreemfs) /etc/xos/xtreemfs/server-repl-plugin/dir.properties
 %config(noreplace) %attr(0640,root,xtreemfs) /etc/xos/xtreemfs/server-repl-plugin/mrc.properties
-%dir %attr(0750,root,xtreemfs) %{_libdir}/xtreemfs
-%dir %attr(0750,root,xtreemfs) %{_libdir}/xtreemfs/policies
+%dir %attr(0750,root,xtreemfs) /var/lib/xtreemfs
+%dir %attr(0750,root,xtreemfs) /var/lib/xtreemfs/policies
 %dir %attr(0750,xtreemfs,xtreemfs) /var/log/xtreemfs
 %doc LICENSE
 
 %files tools
 %defattr(-,root,root,-)
-%config(noreplace) %attr(0640,root,xtreemfs) /etc/xos/xtreemfs/default_dir
+%config(noreplace) /etc/xos/xtreemfs/default_dir
 /usr/bin/xtfs_*
 /usr/share/man/man1/xtfs_*
 %doc LICENSE
