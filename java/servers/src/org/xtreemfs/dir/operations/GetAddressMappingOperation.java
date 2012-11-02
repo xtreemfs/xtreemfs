@@ -12,6 +12,7 @@ import java.util.Map.Entry;
 
 import org.xtreemfs.babudb.api.database.Database;
 import org.xtreemfs.babudb.api.database.ResultSet;
+import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.AddressMappingRecords;
@@ -30,7 +31,7 @@ public class GetAddressMappingOperation extends DIROperation {
 
     private final Database database;
 
-    public GetAddressMappingOperation(DIRRequestDispatcher master) {
+    public GetAddressMappingOperation(DIRRequestDispatcher master) throws BabuDBException {
         super(master);
         database = master.getDirDatabase();
     }

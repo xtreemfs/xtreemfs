@@ -413,7 +413,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         this.waitForShutdown();
     }
     
-    private void registerOperations() {
+    private void registerOperations() throws BabuDBException {
         
         DIROperation op;
         op = new GetGlobalTimeOperation(this);
@@ -456,13 +456,8 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         registry.put(op.getProcedureId(), op);
     }
     
-    public Database getDirDatabase() {
-        try {
-            return database.getDatabaseManager().getDatabase(DB_NAME);
-        } catch (BabuDBException e) {
-            Logging.logError(Logging.LEVEL_ERROR, this, e);
-            return null;
-        }
+    public Database getDirDatabase() throws BabuDBException {
+        return database.getDatabaseManager().getDatabase(DB_NAME);
     }
     
     @Override

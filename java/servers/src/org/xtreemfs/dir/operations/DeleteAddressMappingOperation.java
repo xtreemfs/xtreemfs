@@ -10,6 +10,7 @@ package org.xtreemfs.dir.operations;
 
 import org.xtreemfs.babudb.api.database.Database;
 import org.xtreemfs.babudb.api.database.DatabaseInsertGroup;
+import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
@@ -26,7 +27,7 @@ public class DeleteAddressMappingOperation extends DIROperation {
     
     private final Database database;
     
-    public DeleteAddressMappingOperation(DIRRequestDispatcher master) {
+    public DeleteAddressMappingOperation(DIRRequestDispatcher master) throws BabuDBException {
         super(master);
         database = master.getDirDatabase();
     }

@@ -9,6 +9,7 @@
 package org.xtreemfs.dir.operations;
 
 import org.xtreemfs.babudb.api.database.Database;
+import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ServiceRecord;
@@ -27,7 +28,7 @@ public class GetServiceByUuidOperation extends DIROperation {
     
     private final Database database;
     
-    public GetServiceByUuidOperation(DIRRequestDispatcher master) {
+    public GetServiceByUuidOperation(DIRRequestDispatcher master) throws BabuDBException {
         super(master);
         database = master.getDirDatabase();
     }

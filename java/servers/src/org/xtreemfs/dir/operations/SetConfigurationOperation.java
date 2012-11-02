@@ -11,6 +11,7 @@ package org.xtreemfs.dir.operations;
 import java.util.ConcurrentModificationException;
 
 import org.xtreemfs.babudb.api.database.Database;
+import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ConfigurationRecord;
@@ -27,7 +28,7 @@ public class SetConfigurationOperation extends DIROperation {
     
     private final Database database;
     
-    public SetConfigurationOperation(DIRRequestDispatcher master) {
+    public SetConfigurationOperation(DIRRequestDispatcher master) throws BabuDBException {
         super(master);
         database = master.getDirDatabase();
         

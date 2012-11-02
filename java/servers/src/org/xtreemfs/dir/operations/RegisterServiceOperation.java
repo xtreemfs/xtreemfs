@@ -11,6 +11,7 @@ package org.xtreemfs.dir.operations;
 import java.util.ConcurrentModificationException;
 
 import org.xtreemfs.babudb.api.database.Database;
+import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
@@ -31,7 +32,7 @@ public class RegisterServiceOperation extends DIROperation {
     
     private final Database database;
     
-    public RegisterServiceOperation(DIRRequestDispatcher master) {
+    public RegisterServiceOperation(DIRRequestDispatcher master) throws BabuDBException {
         super(master);
         database = master.getDirDatabase();
     }

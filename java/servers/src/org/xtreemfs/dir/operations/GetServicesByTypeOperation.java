@@ -12,6 +12,7 @@ import java.util.Map.Entry;
 
 import org.xtreemfs.babudb.api.database.Database;
 import org.xtreemfs.babudb.api.database.ResultSet;
+import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ServiceRecord;
@@ -31,7 +32,7 @@ public class GetServicesByTypeOperation extends DIROperation {
     
     private final Database database;
     
-    public GetServicesByTypeOperation(DIRRequestDispatcher master) {
+    public GetServicesByTypeOperation(DIRRequestDispatcher master) throws BabuDBException {
         super(master);
         database = master.getDirDatabase();
     }

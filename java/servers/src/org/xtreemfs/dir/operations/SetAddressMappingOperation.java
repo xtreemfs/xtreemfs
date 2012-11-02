@@ -11,6 +11,7 @@ package org.xtreemfs.dir.operations;
 import java.util.ConcurrentModificationException;
 
 import org.xtreemfs.babudb.api.database.Database;
+import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.AddressMappingRecord;
@@ -33,7 +34,7 @@ public class SetAddressMappingOperation extends DIROperation {
     
     private final Database database;
     
-    public SetAddressMappingOperation(DIRRequestDispatcher master) {
+    public SetAddressMappingOperation(DIRRequestDispatcher master) throws BabuDBException {
         super(master);
         database = master.getDirDatabase();
     }
