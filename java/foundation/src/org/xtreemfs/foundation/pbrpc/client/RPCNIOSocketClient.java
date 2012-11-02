@@ -131,6 +131,11 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         quit = false;
         transactionId = new AtomicInteger((int) (Math.random() * 1e6 + 1.0));
         toBeEstablished = new ConcurrentLinkedQueue<RPCClientConnection>();
+        
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                    "RPC Client '%s': Using the following address for outgoing connections: %s", threadName, this.localBindPoint);
+        }
     }
     
     
@@ -366,6 +371,14 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 }
                 
             } catch (Exception ex) {
+                if (ex.getClass() == java.net.SocketException.class && ex.getMessage().equals("Invalid argument")) {
+                    Logging.logMessage(
+                            Logging.LEVEL_ERROR,
+                            Category.net,
+                            this,
+                            "FAILED TO USE THE FOLLOWING ADDRESS FOR OUTGOING REQUESTS: %s. Make sure that the hostname is correctly spelled in the configuration and it resolves to the correct IP.",
+                            localBindPoint);
+                }
                 if (Logging.isDebug()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "cannot contact server %s",
                         con.getEndpointString());
