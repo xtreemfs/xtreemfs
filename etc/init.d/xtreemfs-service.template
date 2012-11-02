@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 ### BEGIN INIT INFO
 # Provides:          xtreemfs-@SHORT_SERVICE_NAME_LOWERCASE@
@@ -70,7 +70,7 @@ start() {
     echo -e "Starting XtreemFS @LONG_SERVICE_NAME@ (@SHORT_SERVICE_NAME@)...\n\n" >> $LOG
 
     echo -n "Starting XtreemFS @LONG_SERVICE_NAME@ (@SHORT_SERVICE_NAME@)..."
-    $SU -s /bin/sh $XTREEMFS_USER -c "$JAVA_CALL org.xtreemfs.@SHORT_SERVICE_NAME_LOWERCASE@.@SHORT_SERVICE_NAME@ $CONFIG" >> $LOG 2>&1 &
+    $SU -s /bin/bash $XTREEMFS_USER -c "$JAVA_CALL org.xtreemfs.@SHORT_SERVICE_NAME_LOWERCASE@.@SHORT_SERVICE_NAME@ $CONFIG" >> $LOG 2>&1 &
     PROCPID=$!
     echo $PROCPID > $PID
     sleep 1s
@@ -86,16 +86,19 @@ start() {
 }
 
 stop() {
+    result=0
     if [ -f $PID ]; then
         echo -n "Stopping XtreemFS @LONG_SERVICE_NAME@ (@SHORT_SERVICE_NAME@)..."
         killproc -p $PID $SU
         result=$?
-    fi
-    if [ $result -eq 0 ]; then
-        rm -f $PID
-        echo "success"
+        if [ $result -eq 0 ]; then
+            rm -f $PID
+            echo "success"
+        else
+            echo "failed"
+        fi
     else
-        echo "failed"
+        echo "XtreemFS @LONG_SERVICE_NAME@ (@SHORT_SERVICE_NAME@) is not running"
     fi
 
     return $result
