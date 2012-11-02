@@ -107,6 +107,14 @@ public class HashStorageLayout extends StorageLayout {
 
     private static final boolean           USE_PATH_CACHE        = true;
 
+    /** An incomplete read may be caused by a bad sector. This parameter defines
+     *  how often the OSD should retry to read the data as the disk firmware 
+     *  might remap the sector in the meantime / recover the data.
+     */
+    private static final int               RETRIES_INCOMPLETE_READ = 2;
+    
+    private static final String            ERROR_MESSAGE_INCOMPLETE_READ = "Failed to read the requested number of bytes from the file on disk. Maybe there's a media error or the file was modified outside the scope of the OSD by another process?";
+
     /** Creates a new instance of HashStorageLayout */
     public HashStorageLayout(OSDConfig config, MetadataCache cache) throws IOException {
         this(config, cache, DEFAULT_HASH, DEFAULT_SUBDIRS, DEFAULT_MAX_DIR_DEPTH);
@@ -180,10 +188,16 @@ public class HashStorageLayout extends StorageLayout {
         }
 
         ReusableBuffer bbuf = null;
+        boolean checkChecksum = false;
 
         if (length == -1) {
             assert (offset == 0) : "if length is -1 offset must be 0 but is " + offset;
             length = stripeSize;
+            if (checksumsEnabled) {
+                // Check checksum only if -1 was supplied as length. Fortunately, only xtfs_scrub uses this parameter effictively
+                // skipping the expensive checksum check for regular operations for now.
+                checkChecksum = true;
+            }
         }
 
         if (version == 0) {
@@ -244,23 +258,51 @@ public class HashStorageLayout extends StorageLayout {
                         bbuf = BufferPool.allocate(length);
                     }
 
-                    f.getChannel().position(offset);
-                    f.getChannel().read(bbuf.getBuffer());
+                    for (int attempt = 0; attempt <= RETRIES_INCOMPLETE_READ; attempt++) {
+                        if (attempt > 0) {
+                            bbuf.position(0);
+                            Logging.logMessage(Logging.LEVEL_INFO, Category.storage, this, "Retrying to read object from disk since it failed before (retry %d/%d). Path to the file on disk: %s", attempt, RETRIES_INCOMPLETE_READ, fileName);
+                        }
 
-                    if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
-                                "object %d is read at offset %d, %d bytes read", objNo, offset, bbuf.limit());
+                        f.getChannel().position(offset);
+                        f.getChannel().read(bbuf.getBuffer());
+                        if (Logging.isDebug()) {
+                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
+                                    "object %d is read at offset %d, %d bytes read, attempt: %d", objNo, offset, bbuf.limit(), attempt);
+                        }
+    
+                        if (bbuf.hasRemaining()) {
+                            if (attempt == 0) {
+                                Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this, "%s Path to the file on disk: %s", ERROR_MESSAGE_INCOMPLETE_READ, fileName);
+                            }
+                        } else {
+                            if (attempt > 0) {
+                                Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this, "Successfully read object from disk at retry %d after previous failures. Path to the file on disk: %s", attempt, fileName);
+                            }
+                            break;
+                        }
+                        
+                        if (attempt == RETRIES_INCOMPLETE_READ) {
+                            throw new IOException(ERROR_MESSAGE_INCOMPLETE_READ);
+                        }
                     }
-
-                    if (bbuf.hasRemaining()) {
-                        String error = "Failed to read the requested number of bytes from the file on disk." +
-                                " Maybe there's a media error or the file was modified outside the scope of the OSD by another process?";
-                        Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this, "%s Path to the file on disk: %s", error, fileName);
-                        throw new IOException(error);
-                    }
-                    bbuf.position(0);
+                    
                     f.close();
-                    return new ObjectInformation(ObjectInformation.ObjectStatus.EXISTS, bbuf, stripeSize);
+
+                    bbuf.position(0);
+                    ObjectInformation oInfo = new ObjectInformation(ObjectInformation.ObjectStatus.EXISTS,
+                            bbuf, stripeSize);
+
+                    if (checkChecksum) {
+                        ReusableBuffer bbufCopy = bbuf.createViewBuffer();
+                        checksumAlgo.reset();
+                        checksumAlgo.update(bbufCopy.getBuffer());
+                        BufferPool.free(bbufCopy);
+                        long newChecksum = checksumAlgo.getValue();
+                        oInfo.setChecksumInvalidOnOSD(newChecksum != oldChecksum);
+                    }
+
+                    return oInfo;
                 }
             } catch (Exception e) {
                 if (bbuf != null) {
