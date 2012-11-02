@@ -405,11 +405,11 @@ public class StatusPage {
         master.getVivaldiClientMap().filterTimeOuts();
         // append clients
         //for (Map.Entry<InetSocketAddress, VivaldiClientValue> entry: master.getVivaldiClientMap().entrySet()) {
-        for (Map.Entry<InetSocketAddress, org.xtreemfs.dir.VivaldiClientMap.VivaldiClientValue> entry: master.getVivaldiClientMap().entrySet()) {
+        for (Map.Entry<String, org.xtreemfs.dir.VivaldiClientMap.VivaldiClientValue> entry: master.getVivaldiClientMap().entrySet()) {
             dump.append("\n");
-            dump.append(entry.getKey().toString());
+            dump.append(entry.getValue().getAddress().toString());
             dump.append("\t");
-            dump.append(entry.getKey().getHostName());
+            dump.append(entry.getValue().getAddress().getHostName());
             dump.append("\t");
             dump.append("CLIENT");
             dump.append("\t");

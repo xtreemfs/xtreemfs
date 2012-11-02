@@ -16,24 +16,31 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.xtreemfs.dir.VivaldiClientMap.VivaldiClientValue;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 
-public class VivaldiClientMap extends ConcurrentHashMap<InetSocketAddress, VivaldiClientValue> {
+public class VivaldiClientMap extends ConcurrentHashMap<String, VivaldiClientValue> {
 
     private static final long serialVersionUID = 1L;
     private final int MAX_SIZE; 
     private final long TIME_OUT_IN_MS;
 
     public class VivaldiClientValue {
+        private InetSocketAddress address;
         private VivaldiCoordinates coordinates;
         private long timeStamp;
         
-        public VivaldiClientValue(VivaldiCoordinates coords, long time) {
+        public VivaldiClientValue(InetSocketAddress addr, VivaldiCoordinates coords, long time) {
+            this.address = addr;
             this.coordinates = coords;
             this.timeStamp = time;
         }
     
-        public VivaldiClientValue(VivaldiCoordinates coords) {
+        public VivaldiClientValue(InetSocketAddress addr, VivaldiCoordinates coords) {
+            this.address = addr;
             this.coordinates = coords;
             this.timeStamp = System.currentTimeMillis();
+        }
+        
+        public InetSocketAddress getAddress() {
+            return address;
         }
         
         public VivaldiCoordinates getCoordinates() {
@@ -57,7 +64,7 @@ public class VivaldiClientMap extends ConcurrentHashMap<InetSocketAddress, Vival
         if(MAX_SIZE > 0)
         {
             // first put ...
-            this.put(addr, new VivaldiClientValue(coords));
+            this.put(addr.getHostName(), new VivaldiClientValue(addr, coords));
             
             // ...then check if size was exceeded, this avoids re-inserts for puts with existing keys
             if (this.size() > MAX_SIZE) {
@@ -71,10 +78,10 @@ public class VivaldiClientMap extends ConcurrentHashMap<InetSocketAddress, Vival
     
     private void removeOldestEntry() {
         long minTime = Long.MAX_VALUE;
-        InetSocketAddress minKey = null;
+        String minKey = null;
         boolean first = true;
                 
-        for (Map.Entry<InetSocketAddress, VivaldiClientValue> e : this.entrySet()) {
+        for (Map.Entry<String, VivaldiClientValue> e : this.entrySet()) {
             final long putTime = e.getValue().getTimeStamp();
             if (first || (minTime < putTime)) {
                 minTime = putTime;
@@ -88,7 +95,7 @@ public class VivaldiClientMap extends ConcurrentHashMap<InetSocketAddress, Vival
     }
     
     public void filterTimeOuts() {
-        for (Iterator<Map.Entry<InetSocketAddress, VivaldiClientValue>> it = this.entrySet().iterator(); it.hasNext(); ) {
+        for (Iterator<Map.Entry<String, VivaldiClientValue>> it = this.entrySet().iterator(); it.hasNext(); ) {
             final long timeSinceLastUpdate = System.currentTimeMillis() - it.next().getValue().getTimeStamp();
             if (timeSinceLastUpdate > TIME_OUT_IN_MS) {
                 it.remove();
