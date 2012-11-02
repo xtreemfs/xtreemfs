@@ -16,12 +16,12 @@ fi
 #$XTREEMFS_CONFIG_DIR/postinstall_setup.sh
 _POSTINSTALL_
 
-echo "Installing DIR, MRC, OSD RC-links..."
-update-rc.d xtreemfs-dir defaults > /dev/null
-update-rc.d xtreemfs-mrc defaults > /dev/null
-update-rc.d xtreemfs-osd defaults > /dev/null
+#echo "Installing DIR, MRC, OSD RC-links..."
+update-rc.d xtreemfs-dir start 20 3 5 . stop 20 0 1 2 6 . > /dev/null
+update-rc.d xtreemfs-mrc start 25 3 5 . stop 25 0 1 2 6 . > /dev/null
+update-rc.d xtreemfs-osd start 25 3 5 . stop 25 0 1 2 6 . > /dev/null
 
-echo "Re-starting DIR, MRC, OSD services if started..."
+#echo "Re-starting DIR, MRC, OSD services if started..."
 if which invoke-rc.d >/dev/null 2>&1; then
   invoke-rc.d xtreemfs-dir try-restart
   invoke-rc.d xtreemfs-mrc try-restart
