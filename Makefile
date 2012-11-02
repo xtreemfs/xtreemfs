@@ -305,6 +305,7 @@ server_distclean: check_server
 .PHONY: hadoop-client hadoop-client_clean hadoop-client_distclean
 hadoop-client: server foundation 
 	$(ANT_BIN) -D"file.encoding=UTF-8" -f contrib/hadoop/build.xml jar
+	@echo -e "\n\nHadoop Client was successfully compiled. You can find it here:\n\n\tcontrib/hadoop/dist/XtreemFSHadoopClient.jar\n\nSee the XtreemFS User Guide how to add it in Hadoop.\n"
 hadoop-client_clean:
 	$(ANT_BIN) -D"file.encoding=UTF-8" -f contrib/hadoop/build.xml clean || exit 1
 hadoop-client_distclean:
