@@ -89,7 +89,7 @@ public:
   DropNRule(size_t count) : count_(count) {}
 
   virtual bool DropRequest(uint32_t proc_id) {
-    if (count_ - 1 > 0) {
+    if (count_ > 0) {
       --count_;
       return true;
     } else {
