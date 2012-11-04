@@ -35,7 +35,6 @@
 #include "xtreemfs/get_request_message.h"
 #include "drop_rules.h"
 
-
 namespace xtreemfs {
 namespace rpc {
 
@@ -73,8 +72,10 @@ template <class Derived> class TestRPCServer {
     }
 
     try {
+      tcp::endpoint localhost(
+          boost::asio::ip::address::from_string("127.0.0.1"), 0);
       acceptor_.reset(
-          new tcp::acceptor(io_service, tcp::endpoint(tcp::v4(), 0)));
+          new tcp::acceptor(io_service, localhost));
       daemon_.reset(new boost::thread(boost::bind(&TestRPCServer<Derived>::Run,
                                                   this)));
     } catch (const std::exception& e) {
@@ -563,8 +564,6 @@ template <class Derived> class TestRPCServer {
 
   /** Guards access drop_connection_. */
   boost::mutex drop_connection_mutex_;
-
-
 };
 
 }  // namespace rpc
