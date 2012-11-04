@@ -11,8 +11,10 @@
 #include "common/test_rpc_server_mrc.h"
 #include "common/test_rpc_server_osd.h"
 #include "libxtreemfs/client.h"
+#include "util/logging.h"
 
 using namespace xtreemfs::rpc;
+using xtreemfs::util::Logging;
 
 namespace xtreemfs {
 
@@ -44,14 +46,20 @@ bool TestEnvironment::Start() {
   if (!dir->Start()) {
     return false;
   }
+  Logging::log->getLog(xtreemfs::util::LEVEL_INFO)
+      << "DIR running at: " << dir->GetAddress() << std::endl;
   if (!mrc->Start()) {
     return false;
   }
+  Logging::log->getLog(xtreemfs::util::LEVEL_INFO)
+      << "MRC running at: " << mrc->GetAddress() << std::endl;
   dir->RegisterVolume(volume_name_, mrc->GetAddress());
   for (size_t i = 0; i < osds.size(); i++) {
     if (!osds[i]->Start()) {
       return false;
     }
+    Logging::log->getLog(xtreemfs::util::LEVEL_INFO)
+        << "OSD running at: " << osds[i]->GetAddress() << std::endl;
     mrc->RegisterOSD(osds[i]->GetAddress());
   }
   // TODO(mberlin): Register OSDs at MRC.
