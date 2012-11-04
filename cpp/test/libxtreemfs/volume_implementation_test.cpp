@@ -313,11 +313,12 @@ TEST_F(VolumeImplementationTestFastPeriodicXCapRenewal,
                                                 SYSTEM_V_FCNTL_H_O_CREAT);
 
     // Wait for the periodic xcap renewal thread.
-    uint64_t timeout_s = dynamic_cast<FileHandleImplementation*>(file_handle)
-        ->xcap_.expire_time_s();
+    xtreemfs::pbrpc::XCap xcap_one;
+    static_cast<FileHandleImplementation*>(file_handle)->GetXCap(&xcap_one);
     sleep(2);
-    EXPECT_LT(timeout_s, dynamic_cast<FileHandleImplementation*>(file_handle)
-        ->xcap_.expire_time_s());
+    xtreemfs::pbrpc::XCap xcap_two;
+    static_cast<FileHandleImplementation*>(file_handle)->GetXCap(&xcap_two);
+    EXPECT_LT(xcap_one.expire_time_s(), xcap_two.expire_time_s());
 
     // Cleanup.
     file_handle->Close();
