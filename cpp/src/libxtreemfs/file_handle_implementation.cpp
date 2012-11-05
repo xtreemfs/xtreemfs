@@ -1036,19 +1036,17 @@ void XCapManager::CallFinished(
         << " failed. Error: " << error->DebugString() << endl;
     ErrorLog::error_log->AppendError(
         "Renewing XCap failed: " + error->DebugString());
-    return;
-  } 
-  
-  // Overwrite current XCap only by a newer one (i.e. later expire time).
-  if (new_xcap->expire_time_s() > xcap_.expire_time_s()) {
-    SetXCap(*new_xcap);
+  } else {
+    // Overwrite current XCap only by a newer one (i.e. later expire time).
+    if (new_xcap->expire_time_s() > xcap_.expire_time_s()) {
+      SetXCap(*new_xcap);
 
-    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-      Logging::log->getLog(LEVEL_DEBUG)
-          << "XCap renewed for file_id: " << GetFileId() << endl;
+      if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+        Logging::log->getLog(LEVEL_DEBUG)
+            << "XCap renewed for file_id: " << GetFileId() << endl;
+      }
     }
   }
-  
   boost::mutex::scoped_lock lock(mutex_);
   xcap_renewal_pending_ = false;
   xcap_renewal_pending_cond_.notify_all();
