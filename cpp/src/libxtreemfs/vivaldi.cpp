@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "libxtreemfs/execute_sync_request.h"
+#include "libxtreemfs/helper.h"
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/pbrpc_url.h"
 #include "libxtreemfs/simple_uuid_iterator.h"
@@ -160,8 +161,7 @@ void Vivaldi::Run() {
                     &ping_message),
                 &pinged_osd,
                 uuid_resolver_,
-                vivaldi_options_.max_tries,
-                vivaldi_options_));
+                RPCOptionsFromOptions(vivaldi_options_)));
 
         // stop timing
         boost::posix_time::ptime end_time(
@@ -254,10 +254,8 @@ void Vivaldi::Run() {
                         own_node.GetCoordinates()),
                     dir_service_addresses_,
                     NULL,
-                    vivaldi_options_.max_tries,
-                    vivaldi_options_,
-                    true,
-                    false));
+                    RPCOptionsFromOptions(vivaldi_options_),
+                    true));
             response->DeleteBuffers();
           } catch (const XtreemFSException& e) {
             if (response.get()) {
@@ -407,10 +405,8 @@ bool Vivaldi::UpdateKnownOSDs(list<KnownOSD>* updated_osds,
             &request),
         dir_service_addresses_,
         NULL,
-        vivaldi_options_.max_tries,
-        vivaldi_options_,
-        true,
-        false));
+        RPCOptionsFromOptions(vivaldi_options_),
+        true));
 
     ServiceSet* received_osds = static_cast<ServiceSet*>(response->response());
     updated_osds->clear();

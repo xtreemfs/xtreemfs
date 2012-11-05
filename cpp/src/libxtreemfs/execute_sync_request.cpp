@@ -32,19 +32,15 @@
 
 namespace xtreemfs {
 
-namespace rpc {
-class ClientRequestCallbackInterface;
-}  // namespace rpc
-
 /** Retries to execute the synchronous request "sync_function" up to "options.
- *  max_tries" times and may get interrupted. The "uuid_iterator" object is used
+ *  options.max_retries()" times and may get interrupted. The "uuid_iterator" object is used
  *  to retrieve UUIDs or mark them as failed.
  *  If uuid_iterator_has_addresses=true, the resolving of the UUID is skipped
  *  and the string retrieved by uuid_iterator->GetUUID() is used as address.
  *  (in this case uuid_resolver may be NULL).
  *
  *  The parameter delay_last_attempt should be set true, if this method is
- *  called with max_tries = 1 and one does the looping over the retries on its
+ *  called with options.max_retries() = 1 and one does the looping over the retries on its
  *  own (for instance in FileHandleImplementation::AcquireLock). If set to false
  *  this method would return immediately after the _last_ try and the caller would
  *  have to ensure the delay of options.retry_delay_s on its own.
@@ -57,10 +53,8 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
     boost::function<rpc::SyncCallbackBase* (const std::string&)> sync_function,
     UUIDIterator* uuid_iterator,
     UUIDResolver* uuid_resolver,
-    int max_tries,
-    const Options& options,
+    const RPCOptions& options,
     bool uuid_iterator_has_addresses,
-    bool delay_last_attempt,
     XCapHandler* xcap_handler,
     xtreemfs::pbrpc::XCap* xcap_in_req) {
   assert(uuid_iterator_has_addresses || uuid_resolver);
@@ -73,8 +67,8 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
   std::string service_address;
 
   // Retry unless maximum tries reached or interrupted.
-  while ((++attempt <= max_tries || max_tries == 0) &&
-         !Interruptibilizer::WasInterrupted(options)) {
+  while ((++attempt <= options.max_retries() || options.max_retries() == 0) &&
+         !Interruptibilizer::WasInterrupted(options.was_interrupted_cb())) {
     // Delete any previous response;
     if (response != NULL) {
       response->DeleteBuffers();
@@ -86,7 +80,8 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
       uuid_iterator->GetUUID(&service_address);
     } else {
       uuid_iterator->GetUUID(&service_uuid);
-      uuid_resolver->UUIDToAddress(service_uuid, &service_address, options);
+      uuid_resolver->UUIDToAddressWithOptions(service_uuid, &service_address,
+                                              options);
     }
 
     // Execute request.
@@ -121,9 +116,9 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
       // allowed) and application errors (need to pass to the caller).
 
       // Retry (and delay) only if at least one retry is left
-      if (((attempt < max_tries || max_tries == 0) ||
+      if (((attempt < options.max_retries() || options.max_retries() == 0) ||
            //                      or this last retry should be delayed
-           (attempt == max_tries && delay_last_attempt)) &&
+           (attempt == options.max_retries() && options.delay_last_attempt())) &&
           // AND it is an recoverable error.
           (response->error()->error_type() == xtreemfs::pbrpc::IO_ERROR ||
            response->error()->error_type() == xtreemfs::pbrpc::INTERNAL_SERVER_ERROR ||  // NOLINT
@@ -158,7 +153,7 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
             xtreemfs::util::ErrorLog::error_log->AppendError(error);
             redirected = true;
             // Do not count the first redirect as a try.
-            if (max_tries != 0) {
+            if (options.max_retries() != 0) {
               --attempt;
             }
             continue;
@@ -176,9 +171,9 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
           }
 
           // Log only the first retry.
-          if (attempt == 1 && max_tries != 1) {
-            std::string retries_left = max_tries == 0 ? "infinite"
-                : boost::lexical_cast<std::string>(max_tries - attempt);
+          if (attempt == 1 && options.max_retries() != 1) {
+            std::string retries_left = options.max_retries() == 0 ? "infinite"
+                : boost::lexical_cast<std::string>(options.max_retries() - attempt);
             error = "Got no response from server "
                 + (uuid_iterator_has_addresses ? service_address
                       : ( service_address + " (" + service_uuid + ")"))
@@ -193,7 +188,7 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
 
         // delay = retry_delay - (current_time - request_sent_time)
         boost::posix_time::time_duration delay_time_left =
-            boost::posix_time::seconds(options.retry_delay_s) -  // delay
+            boost::posix_time::seconds(options.retry_delay_s()) -  // delay
             (boost::posix_time::microsec_clock::local_time() -   // current time
              request_sent_time);
 
@@ -216,7 +211,7 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
           try {
             Interruptibilizer::SleepInterruptible(
                 static_cast<int>(delay_time_left.total_milliseconds()),
-                options);
+                options.was_interrupted_cb());
           } catch (const boost::thread_interrupted&) {
             if (response != NULL) {
               // Free response.
@@ -235,7 +230,7 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
     }  // if (response->HasFailed())
 
     // Have we been interrupted?
-    if (Interruptibilizer::WasInterrupted(options)) {
+    if (Interruptibilizer::WasInterrupted(options.was_interrupted_cb())) {
       if (xtreemfs::util::Logging::log->loggingActive(
               xtreemfs::util::LEVEL_INFO)) {
         std::string error = "Caught interrupt, aborting sync request.";
@@ -390,17 +385,14 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
     boost::function<rpc::SyncCallbackBase* (const std::string&)> sync_function,
     UUIDIterator* uuid_iterator,
     UUIDResolver* uuid_resolver,
-    int max_tries,
-    const Options& options) {
+    const RPCOptions& options) {
   return ExecuteSyncRequest(sync_function,
-                                               uuid_iterator,
-                                               uuid_resolver,
-                                               max_tries,
-                                               options,
-                                               false,
-                                               false,
-                                               NULL,
-                                               NULL);
+                            uuid_iterator,
+                            uuid_resolver,
+                            options,
+                            false,
+                            NULL,
+                            NULL);
 }
 
 /** Executes the request without a xcap handler. */
@@ -408,19 +400,15 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
     boost::function<rpc::SyncCallbackBase* (const std::string&)> sync_function,
     UUIDIterator* uuid_iterator,
     UUIDResolver* uuid_resolver,
-    int max_tries,
-    const Options& options,
-    bool uuid_iterator_has_addresses,
-    bool delay_last_attempt) {
+    const RPCOptions& options,
+    bool uuid_iterator_has_addresses) {
   return ExecuteSyncRequest(sync_function,
-                                               uuid_iterator,
-                                               uuid_resolver,
-                                               max_tries,
-                                               options,
-                                               uuid_iterator_has_addresses,
-                                               delay_last_attempt,
-                                               NULL,
-                                               NULL);
+                            uuid_iterator,
+                            uuid_resolver,
+                            options,
+                            uuid_iterator_has_addresses,
+                            NULL,
+                            NULL);
 }
 
 }  // namespace xtreemfs

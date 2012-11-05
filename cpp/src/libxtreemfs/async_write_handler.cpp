@@ -50,6 +50,10 @@ AsyncWriteHandler::AsyncWriteHandler(
       file_info_(file_info),
       uuid_iterator_(uuid_iterator),
       uuid_resolver_(uuid_resolver),
+      uuid_resolver_options_(volume_options.max_write_tries,
+                             volume_options.retry_delay_s,
+                             false,
+                             NULL),
       osd_service_client_(osd_service_client),
       auth_bogus_(auth_bogus),
       user_credentials_bogus_(user_credentials_bogus),
@@ -61,12 +65,6 @@ AsyncWriteHandler::AsyncWriteHandler(
       fast_redirect_(false),
       worst_write_buffer_(0) {
   assert(file_info && uuid_iterator && uuid_resolver && osd_service_client);
-
-  // Make sure the callback processing thread does not call fuse_interrupted().
-  interrupt_options_.was_interrupted_function = NULL;
-
-  uuid_resolver_options_.max_tries = max_write_tries_;
-  uuid_resolver_options_.was_interrupted_function = NULL;
 }
 
 AsyncWriteHandler::~AsyncWriteHandler() {
@@ -172,9 +170,9 @@ void AsyncWriteHandler::WriteCommon(AsyncWriteBuffer* write_buffer,
     osd_uuid = write_buffer->osd_uuid;
   }
   try {
-    uuid_resolver_->UUIDToAddress(osd_uuid,
-                                  &osd_address,
-                                  uuid_resolver_options_);
+    uuid_resolver_->UUIDToAddressWithOptions(osd_uuid,
+                                             &osd_address,
+                                             uuid_resolver_options_);
   } catch (const XtreemFSException&) {
     if (is_rewrite) {
       // In case of errors, throw exception.
@@ -482,7 +480,7 @@ void AsyncWriteHandler::HandleCallback(
           // boost::thread interruption point
           Interruptibilizer::SleepInterruptible(
               delay_time_left.total_milliseconds(),
-              interrupt_options_);
+              NULL);
         } catch (const boost::thread_interrupted&) {
           // Cleanup.
           if (delete_response_message) {

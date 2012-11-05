@@ -54,7 +54,7 @@ class XCapManager :
       const xtreemfs::pbrpc::UserCredentials& user_credentials_bogus);
    
   /** Renew xcap_ asynchronously. */
-  void RenewXCapAsync(const Options& options);
+  void RenewXCapAsync(const RPCOptions& options);
 
   /** Blocks until the callback has completed (if an XCapRenewal is pending). */
   void WaitForPendingXCapRenewal();
@@ -223,7 +223,7 @@ class FileHandleImplementation
                          bool close_file);
 
   /** Sends osd_write_response_for_async_write_back_ asynchronously. */
-  void WriteBackFileSizeAsync(const Options& options);
+  void WriteBackFileSizeAsync(const RPCOptions& options);
 
   /** Overwrites the current osd_write_response_ with "owr". */
   void set_osd_write_response_for_async_write_back(
@@ -233,7 +233,7 @@ class FileHandleImplementation
   void WaitForAsyncOperations();
 
   /** Execute period tasks */
-  void ExecutePeriodTasks(const Options& options);
+  void ExecutePeriodTasks(const RPCOptions& options);
   
   /** XCapHandler: Get current capability.*/
   virtual void GetXCap(xtreemfs::pbrpc::XCap* xcap);

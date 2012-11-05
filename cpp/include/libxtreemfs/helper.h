@@ -12,6 +12,8 @@
 
 #include <string>
 
+#include <libxtreemfs/execute_sync_request.h>
+
 namespace xtreemfs {
 
 namespace pbrpc {
@@ -79,6 +81,9 @@ bool CheckIfLocksDoConflict(const xtreemfs::pbrpc::Lock& lock1,
 
 /** Tests if string is a numeric (positive) value. */
 bool CheckIfUnsignedInteger(const std::string& string);
+
+/** Adapter to create RPCOptions from an Options object */
+RPCOptions RPCOptionsFromOptions(const Options& options);
 
 #ifdef __APPLE__
 /** Returns the MacOSX Kernel Version (8 = Tiger, 9 = Leopard, 10 = Snow Leopard). */

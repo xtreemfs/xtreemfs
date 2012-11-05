@@ -52,7 +52,8 @@ VolumeImplementation::VolumeImplementation(
       volume_name_(volume_name),
       volume_ssl_options_(ssl_options),
       volume_options_(options),
-      periodic_threads_options_(options),
+      // Disable retries and interrupted querying for periodic threads.
+      periodic_threads_options_(1, 40, false, NULL),
       metadata_cache_(options.metadata_cache_size,
                       options.metadata_cache_ttl_s) {
   // Set AuthType to AUTH_NONE as it's currently not used.
@@ -61,10 +62,6 @@ VolumeImplementation::VolumeImplementation(
   user_credentials_bogus_.set_username("xtreemfs");
 
   mrc_uuid_iterator_.reset(mrc_uuid_iterator);
-
-  // Disable retries and interrupted querying for periodic threads.
-  periodic_threads_options_.max_tries = 1;
-  periodic_threads_options_.was_interrupted_function = NULL;
 }
 
 VolumeImplementation::~VolumeImplementation() {
@@ -160,8 +157,7 @@ StatVFS* VolumeImplementation::StatFS(
               &rq),
           mrc_uuid_iterator_.get(),
           uuid_resolver_,
-          volume_options_.max_tries,
-          volume_options_));
+          RPCOptionsFromOptions(volume_options_)));
 
   // Delete everything except the response.
   delete[] response->data();
@@ -187,8 +183,7 @@ void VolumeImplementation::ReadLink(
               &rq),
           mrc_uuid_iterator_.get(),
           uuid_resolver_,
-          volume_options_.max_tries,
-          volume_options_));
+          RPCOptionsFromOptions(volume_options_)));
 
   readlinkResponse* readlink_response =
       static_cast<readlinkResponse*>(response->response());
@@ -218,8 +213,7 @@ void VolumeImplementation::Symlink(
               &rq),
           mrc_uuid_iterator_.get(),
           uuid_resolver_,
-          volume_options_.max_tries,
-          volume_options_));
+          RPCOptionsFromOptions(volume_options_)));
   timestampResponse* ts_response = static_cast<timestampResponse*>(
       response->response());
 
@@ -254,8 +248,7 @@ void VolumeImplementation::Link(
               &rq),
           mrc_uuid_iterator_.get(),
           uuid_resolver_,
-          volume_options_.max_tries,
-          volume_options_));
+          RPCOptionsFromOptions(volume_options_)));
   timestampResponse* ts_response = static_cast<timestampResponse*>(
       response->response());
 
@@ -295,8 +288,7 @@ void VolumeImplementation::Access(
               &rq),
           mrc_uuid_iterator_.get(),
           uuid_resolver_,
-          volume_options_.max_tries,
-          volume_options_));
+          RPCOptionsFromOptions(volume_options_)));
 
   response->DeleteBuffers();
 }
@@ -358,8 +350,7 @@ FileHandle* VolumeImplementation::OpenFile(
               &rq),
           mrc_uuid_iterator_.get(),
           uuid_resolver_,
-          volume_options_.max_tries,
-          volume_options_));
+          RPCOptionsFromOptions(volume_options_)));
 
   openResponse* open_response = static_cast<openResponse*>(
       response->response());
@@ -543,8 +534,7 @@ void VolumeImplementation::GetAttrHelper(
                 &rq),
             mrc_uuid_iterator_.get(),
             uuid_resolver_,
-            volume_options_.max_tries,
-            volume_options_));
+            RPCOptionsFromOptions(volume_options_)));
     getattrResponse* getattr = static_cast<getattrResponse*>(
         response->response());
 
@@ -653,8 +643,7 @@ void VolumeImplementation::SetAttr(
               &rq),
           mrc_uuid_iterator_.get(),
           uuid_resolver_,
-          volume_options_.max_tries,
-          volume_options_));
+          RPCOptionsFromOptions(volume_options_)));
   timestampResponse* ts_response = static_cast<timestampResponse*>(
       response->response());
 
@@ -696,8 +685,7 @@ void VolumeImplementation::Unlink(
               &rq),
           mrc_uuid_iterator_.get(),
           uuid_resolver_,
-          volume_options_.max_tries,
-          volume_options_));
+          RPCOptionsFromOptions(volume_options_)));
   unlinkResponse* unlink_response = static_cast<unlinkResponse*>(
       response->response());
 
@@ -744,8 +732,7 @@ void VolumeImplementation::UnlinkAtOSD(const FileCredentials& fc,
                 &rq_osd),
             &osd_uuid_iterator,
             uuid_resolver_,
-            volume_options_.max_tries,
-            volume_options_));
+            RPCOptionsFromOptions(volume_options_)));
     response->DeleteBuffers();
   }
 }
@@ -774,8 +761,7 @@ void VolumeImplementation::Rename(
               &rq),
           mrc_uuid_iterator_.get(),
           uuid_resolver_,
-          volume_options_.max_tries,
-          volume_options_));
+          RPCOptionsFromOptions(volume_options_)));
   renameResponse* rename_response = static_cast<renameResponse*>(
       response->response());
 
@@ -849,8 +835,7 @@ void VolumeImplementation::MakeDirectory(
               &rq),
           mrc_uuid_iterator_.get(),
           uuid_resolver_,
-          volume_options_.max_tries,
-          volume_options_));
+          RPCOptionsFromOptions(volume_options_)));
   timestampResponse* ts_response = static_cast<timestampResponse*>(
       response->response());
 
@@ -884,8 +869,7 @@ void VolumeImplementation::DeleteDirectory(
               &rq),
           mrc_uuid_iterator_.get(),
           uuid_resolver_,
-          volume_options_.max_tries,
-          volume_options_));
+          RPCOptionsFromOptions(volume_options_)));
   timestampResponse* ts_response = static_cast<timestampResponse*>(
       response->response());
 
@@ -966,8 +950,7 @@ xtreemfs::pbrpc::DirectoryEntries* VolumeImplementation::ReadDir(
                 &rq),
             mrc_uuid_iterator_.get(),
             uuid_resolver_,
-            volume_options_.max_tries,
-            volume_options_));
+            RPCOptionsFromOptions(volume_options_)));
     DirectoryEntries* dentries = static_cast<DirectoryEntries*>(
         response->response());
 
@@ -1070,8 +1053,7 @@ xtreemfs::pbrpc::listxattrResponse* VolumeImplementation::ListXAttrs(
               &rq),
           mrc_uuid_iterator_.get(),
           uuid_resolver_,
-          volume_options_.max_tries,
-          volume_options_));
+          RPCOptionsFromOptions(volume_options_)));
 
   result = static_cast<listxattrResponse*>(response->response());
   // Delete everything except the response.
@@ -1111,8 +1093,7 @@ void VolumeImplementation::SetXAttr(
               &rq),
           mrc_uuid_iterator_.get(),
           uuid_resolver_,
-          volume_options_.max_tries,
-          volume_options_));
+          RPCOptionsFromOptions(volume_options_)));
   response->DeleteBuffers();
 
   metadata_cache_.UpdateXAttr(path, name, value);
@@ -1145,8 +1126,7 @@ bool VolumeImplementation::GetXAttr(
                 &rq),
             mrc_uuid_iterator_.get(),
             uuid_resolver_,
-            volume_options_.max_tries,
-            volume_options_));
+            RPCOptionsFromOptions(volume_options_)));
     getxattrResponse* get_response = static_cast<getxattrResponse*>(
         response->response());
     if (get_response->has_value_bytes()) {
@@ -1267,8 +1247,7 @@ void VolumeImplementation::RemoveXAttr(
               &rq),
           mrc_uuid_iterator_.get(),
           uuid_resolver_,
-          volume_options_.max_tries,
-          volume_options_));
+          RPCOptionsFromOptions(volume_options_)));
   response->DeleteBuffers();
 
   metadata_cache_.InvalidateXAttr(path, name);
@@ -1295,8 +1274,7 @@ void VolumeImplementation::AddReplica(
               &replica_addRequest),
           mrc_uuid_iterator_.get(),
           uuid_resolver_,
-          volume_options_.max_tries,
-          volume_options_));
+          RPCOptionsFromOptions(volume_options_)));
 
   response->DeleteBuffers();
 
@@ -1332,8 +1310,7 @@ xtreemfs::pbrpc::Replicas* VolumeImplementation::ListReplicas(
               &replica_listRequest),
           mrc_uuid_iterator_.get(),
           uuid_resolver_,
-          volume_options_.max_tries,
-          volume_options_));
+          RPCOptionsFromOptions(volume_options_)));
 
   // Delete everything except the response.
   delete[] response->data();
@@ -1364,8 +1341,7 @@ void VolumeImplementation::RemoveReplica(
               &replica_removeRequest),
           mrc_uuid_iterator_.get(),
           uuid_resolver_,
-          volume_options_.max_tries,
-          volume_options_));
+          RPCOptionsFromOptions(volume_options_)));
   FileCredentials* creds = static_cast<FileCredentials*>(
       response_mrc->response());
 
@@ -1390,8 +1366,7 @@ void VolumeImplementation::RemoveReplica(
               &unlink_osd_Request),
           &osd_uuid_iterator,
           uuid_resolver_,
-          volume_options_.max_tries,
-          volume_options_));
+          RPCOptionsFromOptions(volume_options_)));
 
   // Cleanup.
   response_mrc->DeleteBuffers();
@@ -1423,8 +1398,7 @@ void VolumeImplementation::GetSuitableOSDs(
               &get_suitable_osdsRequest),
           mrc_uuid_iterator_.get(),
           uuid_resolver_,
-          volume_options_.max_tries,
-          volume_options_));
+          RPCOptionsFromOptions(volume_options_)));
 
   // Write back list of UUIDs to list_of_osd_uuids.
   xtreemfs_get_suitable_osdsResponse* osds =

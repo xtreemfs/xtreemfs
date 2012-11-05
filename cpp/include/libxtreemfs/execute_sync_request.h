@@ -27,6 +27,50 @@ class UUIDResolver;
 class Options;
 class XCapHandler;
 
+class RPCOptions {
+ public: 
+  typedef boost::function0<int> InterruptedCallback;
+
+  RPCOptions(int max_retries, 
+             int retry_delay_s,
+             bool delay_last_attempt,
+             InterruptedCallback was_interrupted_cb)
+     : max_retries_(max_retries), 
+       retry_delay_s_(retry_delay_s),
+       delay_last_attempt_(delay_last_attempt),
+       was_interrupted_cb_(was_interrupted_cb) {}
+
+  RPCOptions(int max_retries,
+             int retry_delay_s,
+             InterruptedCallback was_interrupted_cb)
+     : max_retries_(max_retries), 
+       retry_delay_s_(retry_delay_s),
+       delay_last_attempt_(false),
+       was_interrupted_cb_(was_interrupted_cb) {}
+
+  int max_retries() const {
+    return max_retries_;
+  }
+
+  int retry_delay_s() const {
+    return retry_delay_s_;
+  }
+
+  bool delay_last_attempt() const {
+    return delay_last_attempt_;
+  }
+
+  InterruptedCallback was_interrupted_cb() const {
+    return was_interrupted_cb_;
+  }
+
+ private:
+  int max_retries_;
+  int retry_delay_s_;
+  bool delay_last_attempt_;
+  InterruptedCallback was_interrupted_cb_;
+};
+
 /** Retries to execute the synchronous request "sync_function" up to "options.
  *  max_tries" times and may get interrupted. The "uuid_iterator" object is used
  *  to retrieve UUIDs or mark them as failed.
@@ -48,10 +92,8 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
     boost::function<rpc::SyncCallbackBase* (const std::string&)> sync_function,
     UUIDIterator* uuid_iterator,
     UUIDResolver* uuid_resolver,
-    int max_tries,
-    const Options& options,
+    const RPCOptions& options,
     bool uuid_iterator_has_addresses,
-    bool delay_last_attempt,
     XCapHandler* xcap_handler,
     xtreemfs::pbrpc::XCap* xcap_in_req);
 
@@ -60,18 +102,15 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
     boost::function<rpc::SyncCallbackBase* (const std::string&)> sync_function,
     UUIDIterator* uuid_iterator,
     UUIDResolver* uuid_resolver,
-    int max_tries,
-    const Options& options);
+    const RPCOptions& options);
 
 /** Executes the request without a xcap handler. */
 rpc::SyncCallbackBase* ExecuteSyncRequest(
     boost::function<rpc::SyncCallbackBase* (const std::string&)> sync_function,
     UUIDIterator* uuid_iterator,
     UUIDResolver* uuid_resolver,
-    int max_tries,
-    const Options& options,
-    bool uuid_iterator_has_addresses,
-    bool delay_last_attempt);
+    const RPCOptions& options,
+    bool uuid_iterator_has_addresses);
 
 }  // namespace xtreemfs
 

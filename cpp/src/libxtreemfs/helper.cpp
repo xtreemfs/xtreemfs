@@ -18,6 +18,7 @@
 #include <boost/lexical_cast.hpp>
 #include <string>
 
+#include "libxtreemfs/options.h"
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "rpc/sync_callback.h"
 #include "util/logging.h"
@@ -259,6 +260,13 @@ bool CheckIfUnsignedInteger(const std::string& string) {
   }
 
   return true;  // It actually was an unsigned integer.
+}
+
+RPCOptions RPCOptionsFromOptions(const Options& options) {
+  return RPCOptions(options.max_tries, 
+                    options.retry_delay_s,
+                    false,  // do not delay last attempt
+                    options.was_interrupted_function);
 }
 
 #ifdef __APPLE__

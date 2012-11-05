@@ -19,6 +19,7 @@
 #include <map>
 #include <string>
 
+#include "libxtreemfs/execute_sync_request.h"
 #include "libxtreemfs/metadata_cache.h"
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/uuid_iterator.h"
@@ -334,9 +335,8 @@ class VolumeImplementation : public Volume {
   /** libxtreemfs Options object which includes all program options */
   const Options& volume_options_;
 
-  /** Shallow copy of volume_options_, with disabled retry and interrupt
-   *  functionality. */
-  Options periodic_threads_options_;
+  /** Disabled retry and interrupt functionality. */
+  RPCOptions periodic_threads_options_;
 
   /** The PBRPC protocol requires an Auth & UserCredentials object in every
    *  request. However there are many operations which do not check the content

@@ -12,7 +12,7 @@
 
 namespace xtreemfs {
 
-class Options;
+class RPCOptions;
 class SimpleUUIDIterator;
 
 /** Abstract base class which defines the interface to resolve UUIDs from the
@@ -33,9 +33,9 @@ class UUIDResolver {
    * @throws AddressToUUIDNotFoundException
    * @throws UnknownAddressSchemeException
    */
-  virtual void UUIDToAddress(const std::string& uuid,
-                             std::string* address,
-                             const Options& options) = 0;
+  virtual void UUIDToAddressWithOptions(const std::string& uuid,
+                                        std::string* address,
+                                        const RPCOptions& options) = 0;
 
   /** Resolves the UUID for a given volume name.
    *

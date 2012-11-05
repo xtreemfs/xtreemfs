@@ -12,6 +12,7 @@
 #include <boost/thread/mutex.hpp>
 #include <list>
 
+#include "libxtreemfs/execute_sync_request.h"
 #include "libxtreemfs/options.h"
 #include "rpc/callback_interface.h"
 #include "util/synchronized_queue.h"
@@ -253,7 +254,7 @@ class AsyncWriteHandler
   UUIDResolver* uuid_resolver_;
 
   /** Options (Max retries, ...) used when resolving UUIDs. */
-  Options uuid_resolver_options_;
+  RPCOptions uuid_resolver_options_;
 
   /** Client which is used to send out the writes. */
   xtreemfs::pbrpc::OSDServiceClient* osd_service_client_;
@@ -265,8 +266,6 @@ class AsyncWriteHandler
   const xtreemfs::pbrpc::UserCredentials& user_credentials_bogus_;
 
   const Options& volume_options_;
-  Options interrupt_options_;  // TODO(mno): define was_interrupted_function
-                               //            when async writes support interrupts
 
   /** Maximum number in bytes which may be pending. */
   const int max_writeahead_;

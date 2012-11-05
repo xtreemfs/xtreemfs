@@ -96,9 +96,9 @@ class ClientImplementation : public Client, public UUIDResolver {
   virtual UUIDResolver* GetUUIDResolver();
 
   virtual void UUIDToAddress(const std::string& uuid, std::string* address);
-  virtual void UUIDToAddress(const std::string& uuid,
-                             std::string* address,
-                             const Options& options);
+  virtual void UUIDToAddressWithOptions(const std::string& uuid,
+                                        std::string* address,
+                                        const RPCOptions& options);
   virtual void VolumeNameToMRCUUID(const std::string& volume_name,
                                    std::string* uuid);
   virtual void VolumeNameToMRCUUID(const std::string& volume_name,

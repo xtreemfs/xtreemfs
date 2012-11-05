@@ -41,6 +41,23 @@ using std::map;
 
 namespace xtreemfs {
 
+namespace {
+class RenewableXCap {
+ public:
+  RenewableXCap(
+     XCapHandler* handler,
+     xtreemfs::pbrpc::XCap* xcap) : handler_(handler), xcap_(xcap) {}
+
+  void Renew() {
+    handler_->GetXCap(xcap_);
+  }
+
+  XCapHandler* handler_;
+  xtreemfs::pbrpc::XCap* xcap_;
+};
+
+}  // anonymous namespace
+
 /** Constructor called by FileInfo.CreateFileHandle().
  *
  * @remark The ownership of all parameters will not be transferred. For every
@@ -164,9 +181,10 @@ int FileHandleImplementation::Read(
                         &rq),
             uuid_iterator,
             uuid_resolver_,
-            volume_options_.max_read_tries,
-            volume_options_,
-            false,
+            RPCOptions(volume_options_.max_read_tries,
+                       volume_options_.retry_delay_s,
+                       false,
+                       volume_options_.was_interrupted_function),
             false,
             &xcap_manager_,
             rq.mutable_file_credentials()->mutable_xcap()));
@@ -321,9 +339,10 @@ int FileHandleImplementation::Write(
                   operations[j].req_size),
               uuid_iterator,
               uuid_resolver_,
-              volume_options_.max_write_tries,
-              volume_options_,
-              false,
+              RPCOptions(volume_options_.max_write_tries,
+                         volume_options_.retry_delay_s,
+                         false,
+                         volume_options_.was_interrupted_function),
               false,
               &xcap_manager_,
               write_request.mutable_file_credentials()->mutable_xcap()));
@@ -391,9 +410,7 @@ void FileHandleImplementation::Truncate(
             &xcap),
         mrc_uuid_iterator_,
         uuid_resolver_,
-        volume_options_.max_tries,
-        volume_options_,
-        false,
+        RPCOptionsFromOptions(volume_options_),
         false,
         &xcap_manager_,
         &xcap));
@@ -428,9 +445,7 @@ void FileHandleImplementation::TruncatePhaseTwoAndThree(
               &truncate_rq),
           osd_uuid_iterator_,
           uuid_resolver_,
-          volume_options_.max_tries,
-          volume_options_,
-          false,
+          RPCOptionsFromOptions(volume_options_),
           false,
           &xcap_manager_,
           truncate_rq.mutable_file_credentials()->mutable_xcap()));
@@ -509,9 +524,7 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
             &lock_request),
         osd_uuid_iterator_,
         uuid_resolver_,
-        volume_options_.max_tries,
-        volume_options_,
-        false,
+        RPCOptionsFromOptions(volume_options_),
         false,
         &xcap_manager_,
         lock_request.mutable_file_credentials()->mutable_xcap()));
@@ -530,10 +543,10 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
                 &lock_request),
             osd_uuid_iterator_,
             uuid_resolver_,
-            1,
-            volume_options_,
+            RPCOptions(1, volume_options_.retry_delay_s,
+                       true,  //  delay this attempt in case of errors.
+                       volume_options_.was_interrupted_function),
             false,  // UUIDIterator contains UUIDs and not addresses.
-            true,  // true means to delay this attempt in case of errors.
             &xcap_manager_,
             lock_request.mutable_file_credentials()->mutable_xcap()));
         break;  // If successful, do not retry again.
@@ -608,9 +621,7 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::CheckLock(
             &lock_request),
         osd_uuid_iterator_,
         uuid_resolver_,
-        volume_options_.max_tries,
-        volume_options_,
-        false,
+        RPCOptionsFromOptions(volume_options_),
         false,
         &xcap_manager_,
         lock_request.mutable_file_credentials()->mutable_xcap()));
@@ -672,9 +683,7 @@ void FileHandleImplementation::ReleaseLock(
             &unlock_request),
         osd_uuid_iterator_,
         uuid_resolver_,
-        volume_options_.max_tries,
-        volume_options_,
-        false,
+        RPCOptionsFromOptions(volume_options_),
         false,
         &xcap_manager_,
         unlock_request.mutable_file_credentials()->mutable_xcap()));
@@ -743,9 +752,7 @@ void FileHandleImplementation::PingReplica(
               &read_request),
           &temp_uuid_iterator,
           uuid_resolver_,
-          volume_options_.max_tries,
-          volume_options_,
-          false,
+          RPCOptionsFromOptions(volume_options_),
           false,
           &xcap_manager_,
           read_request.mutable_file_credentials()->mutable_xcap()));
@@ -837,16 +844,14 @@ void FileHandleImplementation::WriteBackFileSize(
               &rq),
           mrc_uuid_iterator_,
           uuid_resolver_,
-          volume_options_.max_tries,
-          volume_options_,
-          false,
+          RPCOptionsFromOptions(volume_options_),
           false,
           &xcap_manager_,
           rq.mutable_xcap()));
   response->DeleteBuffers();
 }
 
-void FileHandleImplementation::WriteBackFileSizeAsync(const Options& options) {
+void FileHandleImplementation::WriteBackFileSizeAsync(const RPCOptions& options) {
   xtreemfs_update_file_sizeRequest rq;
   {
     boost::mutex::scoped_lock lock(mutex_);
@@ -875,7 +880,7 @@ void FileHandleImplementation::WriteBackFileSizeAsync(const Options& options) {
     string mrc_uuid;
     string mrc_address;
     mrc_uuid_iterator_->GetUUID(&mrc_uuid);
-    uuid_resolver_->UUIDToAddress(mrc_uuid, &mrc_address, options);
+    uuid_resolver_->UUIDToAddressWithOptions(mrc_uuid, &mrc_address, options);
     mrc_service_client_->xtreemfs_update_file_size(mrc_address,
                                                    auth_bogus_,
                                                    user_credentials_bogus_,
@@ -933,7 +938,7 @@ void FileHandleImplementation::WaitForAsyncOperations() {
   xcap_manager_.WaitForPendingXCapRenewal();
 }
 
-void FileHandleImplementation::ExecutePeriodTasks(const Options& options) {
+void FileHandleImplementation::ExecutePeriodTasks(const RPCOptions& options) {
   xcap_manager_.RenewXCapAsync(options);
 }
 
@@ -981,7 +986,7 @@ uint64_t XCapManager::GetFileId() {
   return ExtractFileIdFromXCap(xcap_);
 }
 
-void XCapManager::RenewXCapAsync(const Options& options) {
+void XCapManager::RenewXCapAsync(const RPCOptions& options) {
   // TODO(mberlin): Only renew after some time has elapsed.
   // TODO(mberlin): Cope with local clocks which have a high clock skew.
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
@@ -1002,7 +1007,7 @@ void XCapManager::RenewXCapAsync(const Options& options) {
   string mrc_address;
   try {
     mrc_uuid_iterator_->GetUUID(&mrc_uuid);
-    uuid_resolver_->UUIDToAddress(mrc_uuid, &mrc_address, options);
+    uuid_resolver_->UUIDToAddressWithOptions(mrc_uuid, &mrc_address, options);
     mrc_service_client_->xtreemfs_renew_capability(
         mrc_address,
         auth_bogus_,

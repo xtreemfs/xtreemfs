@@ -251,10 +251,8 @@ void ClientImplementation::CreateVolume(
               &new_volume),
           &temp_uuid_iterator_with_addresses,
           NULL,
-          options_.max_tries,
-          options_,
-          true,
-          false));
+          RPCOptionsFromOptions(options_),
+          true));
   response->DeleteBuffers();
 }
 
@@ -282,10 +280,8 @@ void ClientImplementation::DeleteVolume(
               &rmvol_request),
           &temp_uuid_iterator_with_addresses,
           NULL,
-          options_.max_tries,
-          options_,
-          true,
-          false));
+          RPCOptionsFromOptions(options_),
+          true));
   response->DeleteBuffers();
 }
 
@@ -318,10 +314,8 @@ xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(
               boost::cref(user_credentials)),
           uuid_iterator_with_mrc_addresses,
           NULL,
-          options_.max_tries,
-          options_,
-          true,
-          false));
+          RPCOptionsFromOptions(options_),
+          true));
 
   // Delete everything except the response.
   delete[] response->data();
@@ -333,12 +327,12 @@ xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(
 
 void ClientImplementation::UUIDToAddress(const std::string& uuid,
                                          std::string* address) {
-  UUIDToAddress(uuid, address, options_);
+  UUIDToAddressWithOptions(uuid, address, RPCOptionsFromOptions(options_));
 }
 
-void ClientImplementation::UUIDToAddress(const std::string& uuid,
-                                         std::string* address,
-                                         const Options& options) {
+void ClientImplementation::UUIDToAddressWithOptions(const std::string& uuid,
+                                                    std::string* address,
+                                                    const RPCOptions& options) {
   // The UUID must never be empty.
   assert(!uuid.empty());
 
@@ -363,10 +357,8 @@ void ClientImplementation::UUIDToAddress(const std::string& uuid,
               &rq),
           &dir_service_addresses_,
           NULL,
-          options.max_tries,
           options,
-          true,
-          false));
+          true));
 
   AddressMappingSet* set = static_cast<AddressMappingSet*>(
       response->response());
@@ -433,10 +425,8 @@ void ClientImplementation::VolumeNameToMRCUUID(const std::string& volume_name,
               &rq),
           &dir_service_addresses_,
           NULL,
-          options_.max_tries,
-          options_,
-          true,
-          false));
+          RPCOptionsFromOptions(options_),
+          true));
 
   ServiceSet* service_set = static_cast<ServiceSet*>(response->response());
   *mrc_uuid = "";
@@ -494,10 +484,8 @@ void ClientImplementation::VolumeNameToMRCUUID(const std::string& volume_name,
               &rq),
           &dir_service_addresses_,
           NULL,
-          options_.max_tries,
-          options_,
-          true,
-          false));
+          RPCOptionsFromOptions(options_),
+          true));
 
   bool mrc_found = false;
   ServiceSet* service_set = static_cast<ServiceSet*>(response->response());

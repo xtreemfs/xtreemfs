@@ -8,15 +8,17 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_INTERRUPT_H_
 #define CPP_INCLUDE_LIBXTREEMFS_INTERRUPT_H_
 
-namespace xtreemfs {
+#include <boost/function.hpp>
 
-class Options;
+namespace xtreemfs {
+  
+typedef boost::function0<int> InterruptedCallback;
 
 /** Aggregates helper functions which check for an interrupted request or are
  *  responsible for the delay between two request execution attempts. */
 class Interruptibilizer {
  public:
-  static bool WasInterrupted(const Options& options);
+  static bool WasInterrupted(InterruptedCallback cb);
 
   /** Wrapper for boost::thread::sleep which checks for interruptions by
    *  the signal handler.
@@ -24,7 +26,7 @@ class Interruptibilizer {
    * @remarks this function contains a boost::thread interruption point and
    *          thus might throw boost::thread_interrupted.
    */
-  static void SleepInterruptible(int rel_time_ms, const Options& options);
+  static void SleepInterruptible(int rel_time_ms, InterruptedCallback cb);
 };
 
 }  // namespace xtreemfs
