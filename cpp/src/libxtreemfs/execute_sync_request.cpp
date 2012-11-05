@@ -33,8 +33,8 @@
 namespace xtreemfs {
 
 /** Retries to execute the synchronous request "sync_function" up to "options.
- *  options.max_retries()" times and may get interrupted. The "uuid_iterator" object is used
- *  to retrieve UUIDs or mark them as failed.
+ *  options.max_retries()" times and may get interrupted. The "uuid_iterator" 
+ *  object is used to retrieve UUIDs or mark them as failed.
  *  If uuid_iterator_has_addresses=true, the resolving of the UUID is skipped
  *  and the string retrieved by uuid_iterator->GetUUID() is used as address.
  *  (in this case uuid_resolver may be NULL).
@@ -80,7 +80,8 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
       uuid_iterator->GetUUID(&service_address);
     } else {
       uuid_iterator->GetUUID(&service_uuid);
-      uuid_resolver->UUIDToAddressWithOptions(service_uuid, &service_address,
+      uuid_resolver->UUIDToAddressWithOptions(service_uuid,
+                                              &service_address,
                                               options);
     }
 

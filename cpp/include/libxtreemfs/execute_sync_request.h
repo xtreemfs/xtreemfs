@@ -29,12 +29,12 @@ class XCapHandler;
 
 class RPCOptions {
  public: 
-  typedef boost::function0<int> InterruptedCallback;
+  typedef boost::function0<int> WasInterruptedCallback;
 
   RPCOptions(int max_retries, 
              int retry_delay_s,
              bool delay_last_attempt,
-             InterruptedCallback was_interrupted_cb)
+             WasInterruptedCallback was_interrupted_cb)
      : max_retries_(max_retries), 
        retry_delay_s_(retry_delay_s),
        delay_last_attempt_(delay_last_attempt),
@@ -42,7 +42,7 @@ class RPCOptions {
 
   RPCOptions(int max_retries,
              int retry_delay_s,
-             InterruptedCallback was_interrupted_cb)
+             WasInterruptedCallback was_interrupted_cb)
      : max_retries_(max_retries), 
        retry_delay_s_(retry_delay_s),
        delay_last_attempt_(false),
@@ -60,7 +60,7 @@ class RPCOptions {
     return delay_last_attempt_;
   }
 
-  InterruptedCallback was_interrupted_cb() const {
+  WasInterruptedCallback was_interrupted_cb() const {
     return was_interrupted_cb_;
   }
 
@@ -68,7 +68,7 @@ class RPCOptions {
   int max_retries_;
   int retry_delay_s_;
   bool delay_last_attempt_;
-  InterruptedCallback was_interrupted_cb_;
+  WasInterruptedCallback was_interrupted_cb_;
 };
 
 /** Retries to execute the synchronous request "sync_function" up to "options.

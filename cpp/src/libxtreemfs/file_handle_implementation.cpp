@@ -39,25 +39,6 @@ using namespace xtreemfs::util;
 // http://groups.google.com/group/xtreemfs/msg/b44605dbbd7b6d0f)
 using std::map;
 
-namespace xtreemfs {
-
-namespace {
-class RenewableXCap {
- public:
-  RenewableXCap(
-     XCapHandler* handler,
-     xtreemfs::pbrpc::XCap* xcap) : handler_(handler), xcap_(xcap) {}
-
-  void Renew() {
-    handler_->GetXCap(xcap_);
-  }
-
-  XCapHandler* handler_;
-  xtreemfs::pbrpc::XCap* xcap_;
-};
-
-}  // anonymous namespace
-
 /** Constructor called by FileInfo.CreateFileHandle().
  *
  * @remark The ownership of all parameters will not be transferred. For every
@@ -543,7 +524,8 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
                 &lock_request),
             osd_uuid_iterator_,
             uuid_resolver_,
-            RPCOptions(1, volume_options_.retry_delay_s,
+            RPCOptions(1,
+                       volume_options_.retry_delay_s,
                        true,  //  delay this attempt in case of errors.
                        volume_options_.was_interrupted_function),
             false,  // UUIDIterator contains UUIDs and not addresses.
