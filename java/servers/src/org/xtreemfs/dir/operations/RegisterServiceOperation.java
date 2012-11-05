@@ -9,6 +9,7 @@
 package org.xtreemfs.dir.operations;
 
 import java.util.ConcurrentModificationException;
+import java.util.Map;
 
 import org.xtreemfs.babudb.api.database.Database;
 import org.xtreemfs.babudb.api.exception.BabuDBException;
@@ -29,31 +30,37 @@ import com.google.protobuf.Message;
  * @author bjko
  */
 public class RegisterServiceOperation extends DIROperation {
-    
+
     private final Database database;
-    
+
     public RegisterServiceOperation(DIRRequestDispatcher master) throws BabuDBException {
         super(master);
         database = master.getDirDatabase();
     }
-    
+
     @Override
     public int getProcedureId() {
         return DIRServiceConstants.PROC_ID_XTREEMFS_SERVICE_REGISTER;
     }
-    
+
     @Override
     public void startRequest(DIRRequest rq) {
         final serviceRegisterRequest request = (serviceRegisterRequest) rq.getRequestMessage();
-        
+
         final Service.Builder reg = request.getService().toBuilder();
-        
-        database.lookup(DIRRequestDispatcher.INDEX_ID_SERVREG, reg.getUuid().getBytes(), rq).registerListener(
-                new DBRequestListener<byte[], Long>(false) {
-                    
+
+        database.lookup(DIRRequestDispatcher.INDEX_ID_SERVREG, reg.getUuid().getBytes(), rq)
+                .registerListener(new DBRequestListener<byte[], Long>(false) {
+
                     @Override
                     Long execute(byte[] result, DIRRequest rq) throws Exception {
                         long currentVersion = 0;
+                        ServiceRecord sRec = new ServiceRecord(request.getService().toBuilder().build());
+
+                        // get HB_ATTR(false if HB_ATTR is not set)
+                        Boolean setLastUpdateS = Boolean.parseBoolean(sRec.getData().get(
+                                HeartbeatThread.HB_ATTR));
+
                         if (result != null) {
                             ReusableBuffer buf = ReusableBuffer.wrap(result);
                             ServiceRecord dbData = new ServiceRecord(buf);
@@ -65,17 +72,15 @@ public class RegisterServiceOperation extends DIROperation {
                             String uuid, name, type, pageUrl, geoCoordinates;
                             long totalRam, usedRam, lastUpdated;
                             int status, load, protoVersion;
-                            
-                            ServiceRecord sRec = new ServiceRecord(request.getService().toBuilder().build());
-                            
+
                             uuid = sRec.getUuid();
                             name = sRec.getName();
                             type = sRec.getType().toString();
-                            
-                            pageUrl = sRec.getData().get("status_page_url") == null ? "" : sRec.getData().get(
-                                    "status_page_url");
-                            geoCoordinates = sRec.getData().get("vivaldi_coordinates") == null ? "" : sRec.getData()
-                                    .get("vivaldi_coordinates");
+
+                            pageUrl = sRec.getData().get("status_page_url") == null ? "" : sRec.getData()
+                                    .get("status_page_url");
+                            geoCoordinates = sRec.getData().get("vivaldi_coordinates") == null ? "" : sRec
+                                    .getData().get("vivaldi_coordinates");
                             try {
                                 totalRam = Long.parseLong(sRec.getData().get("totalRAM"));
                             } catch (NumberFormatException nfe) {
@@ -102,54 +107,63 @@ public class RegisterServiceOperation extends DIROperation {
                             } catch (NumberFormatException nfe) {
                                 protoVersion = -1;
                             }
-                            
-                            master.notifyServiceRegistred(uuid, name, type, pageUrl, geoCoordinates, totalRam, usedRam,
-                                    lastUpdated, status, load, protoVersion);
+
+                            master.notifyServiceRegistred(uuid, name, type, pageUrl, geoCoordinates,
+                                    totalRam, usedRam, lastUpdated, status, load, protoVersion);
                         }
-                        
+
                         if (reg.getVersion() != currentVersion) {
                             throw new ConcurrentModificationException("The requested version number ("
-                                    + reg.getVersion() + ") did not match the " + "expected version (" + currentVersion
-                                    + ")!");
+                                    + reg.getVersion() + ") did not match the " + "expected version ("
+                                    + currentVersion + ")!");
                         }
-                        
+
                         final long version = ++currentVersion;
-                        
+
                         reg.setVersion(currentVersion);
-                        reg.setLastUpdatedS(System.currentTimeMillis() / 1000l);
-                        
+                        if (setLastUpdateS) {
+                            reg.setLastUpdatedS(System.currentTimeMillis() / 1000l);
+                        }
+
                         ServiceRecord newRec = new ServiceRecord(reg.build());
+
+                        // remove HB_ATTR(not needed anymore)
+                        Map<String, String> newRecData = newRec.getData();
+                        newRecData.remove(HeartbeatThread.HB_ATTR);
+                        newRec.setData(newRecData);
+
                         byte[] newData = new byte[newRec.getSize()];
                         newRec.serialize(ReusableBuffer.wrap(newData));
-                        
-                        database.singleInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, newRec.getUuid().getBytes(),
-                                newData, rq).registerListener(new DBRequestListener<Object, Long>(true) {
-                            
-                            @Override
-                            Long execute(Object result, DIRRequest rq) throws Exception {
-                                
-                                return version;
-                            }
-                        });
+                        database.singleInsert(DIRRequestDispatcher.INDEX_ID_SERVREG,
+                                newRec.getUuid().getBytes(), newData, rq).registerListener(
+                                new DBRequestListener<Object, Long>(true) {
+
+                                    @Override
+                                    Long execute(Object result, DIRRequest rq) throws Exception {
+
+                                        return version;
+                                    }
+                                });
                         return null;
                     }
                 });
     }
-    
+
     @Override
     public boolean isAuthRequired() {
         return false;
     }
-    
+
     @Override
     protected Message getRequestMessagePrototype() {
         return serviceRegisterRequest.getDefaultInstance();
     }
-    
+
     @Override
     void requestFinished(Object result, DIRRequest rq) {
-        serviceRegisterResponse resp = serviceRegisterResponse.newBuilder().setNewVersion((Long) result).build();
+        serviceRegisterResponse resp = serviceRegisterResponse.newBuilder().setNewVersion((Long) result)
+                .build();
         rq.sendSuccess(resp);
     }
-    
+
 }

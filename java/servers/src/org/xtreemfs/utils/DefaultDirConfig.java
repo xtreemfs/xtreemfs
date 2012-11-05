@@ -8,54 +8,88 @@
 
 package org.xtreemfs.utils;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.Properties;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.xtreemfs.common.config.Config;
-import org.xtreemfs.dir.DIRConfig;
+import org.xtreemfs.foundation.SSLOptions;
 
-/**
- * @deprecated use {@link DIRConfig} instead!
- *
- */
-@Deprecated
 public class DefaultDirConfig extends Config {
 
-    protected InetSocketAddress directoryService;
+    public static final String DEFAULT_DIR_CONFIG = "/etc/xos/xtreemfs/default_dir";
 
-    private boolean sslEnabled;
-    private String serviceCredsFile;
+    private static final int   MAX_NUM_DIRS       = 5;
 
-    private String serviceCredsPassphrase;
+    private boolean            sslEnabled;
 
-    private String serviceCredsContainer;
+    protected String[]         directoryServices;
 
-    private String trustedCertsFile;
+    private String             serviceCredsFile;
 
-    private String trustedCertsPassphrase;
+    private String             serviceCredsPassphrase;
 
-    private String trustedCertsContainer;
+    private String             serviceCredsContainer;
 
-    public DefaultDirConfig() {
-            super();
+    private String             trustedCertsFile;
+
+    private String             trustedCertsPassphrase;
+
+    private String             trustedCertsContainer;
+
+    public DefaultDirConfig() throws IOException {
+        super(DEFAULT_DIR_CONFIG);
+        // TODO(lukas) this will throw NullPointerExcpetions
+        directoryServices = null;
+        read();
     }
 
-    public DefaultDirConfig(Properties prop) {
-            super(prop);
+    public String[] getDirectoryServices() {
+        return directoryServices;
     }
 
-    public DefaultDirConfig(String filename) throws IOException {
-            super(filename);
+    /**
+     * Returns SSL Options or null if SSL is not enabled
+     * 
+     * @throws IOException
+     * @throws FileNotFoundException
+     */
+    public SSLOptions getSSLOptions() throws FileNotFoundException, IOException {
+        if (sslEnabled) {
+            return new SSLOptions(new FileInputStream(serviceCredsFile), serviceCredsPassphrase,
+                    serviceCredsContainer, new FileInputStream(trustedCertsFile), trustedCertsPassphrase,
+                    trustedCertsContainer, false, false, null);
+        } else {
+            return null;
+        }
     }
 
-    public void read() throws IOException {
+    private void read() throws IOException {
 
-        this.directoryService = this.readRequiredInetAddr("dir_service.host", "dir_service.port");
-        
+        List<String> dirServices = new ArrayList<String>();
+
+        // read required DIR service
+        dirServices.add(this.readRequiredString("dir_service.host") + ":"
+                + this.readRequiredString("dir_service.port"));
+
+        // read optional DIR services
+        for (int i = 1; i < MAX_NUM_DIRS; i++) {
+            String dirHost = this.readOptionalString("dir_service" + (i + 1) + ".host", null);
+            String dirPort = this.readOptionalString("dir_service" + (i + 1) + ".port", null);
+            if (dirHost == null | dirPort == null) {
+                break;
+            }
+            dirServices.add(dirHost + ":" + dirPort);
+        }
+
+        directoryServices = dirServices.toArray(new String[dirServices.size()]);
+
         this.sslEnabled = readOptionalBoolean("ssl.enabled", false);
-        
-        if(isSslEnabled()){
+
+        // read SSL settings if SSL is enabled
+        if (sslEnabled) {
             this.serviceCredsFile = this.readRequiredString("ssl.service_creds");
 
             this.serviceCredsPassphrase = this.readRequiredString("ssl.service_creds.pw");
@@ -68,39 +102,5 @@ public class DefaultDirConfig extends Config {
 
             this.trustedCertsContainer = this.readRequiredString("ssl.trusted_certs.container");
         }
-
     }
-
-    public InetSocketAddress getDirectoryService() {
-        return directoryService;
-    }
-
-    public boolean isSslEnabled() {
-        return sslEnabled;
-    }
-
-    public String getServiceCredsFile() {
-        return serviceCredsFile;
-    }
-
-    public String getServiceCredsPassphrase() {
-        return serviceCredsPassphrase;
-    }
-
-    public String getServiceCredsContainer() {
-        return serviceCredsContainer;
-    }
-
-    public String getTrustedCertsFile() {
-        return trustedCertsFile;
-    }
-
-    public String getTrustedCertsPassphrase() {
-        return trustedCertsPassphrase;
-    }
-
-    public String getTrustedCertsContainer() {
-        return trustedCertsContainer;
-    }
-
 }

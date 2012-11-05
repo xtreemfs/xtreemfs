@@ -29,7 +29,6 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.CLIParser;
 import org.xtreemfs.foundation.util.CLIParser.CliOption;
-import org.xtreemfs.foundation.util.ONCRPCServiceURL;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.drain.OSDDrain;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
@@ -41,23 +40,22 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 public class xtfs_remove_osd {
 
-    private static final String DEFAULT_DIR_CONFIG = "/etc/xos/xtreemfs/default_dir";
-    private OSDServiceClient    osd;
-    private DIRClient           dir;
-    private MRCServiceClient    mrc;
-    private RPCNIOSocketClient  dirClient;
-    private RPCNIOSocketClient  osdClient;
-    private RPCNIOSocketClient  mrcClient;
-    private InetSocketAddress   osdAddr;
-    private InetSocketAddress   mrcAddr;
-    private SSLOptions          sslOptions;
-    private InetSocketAddress   dirAddress;
-    private UUIDResolver        resolver;
-    private RPCNIOSocketClient  resolverClient;
-    private Auth                authHeader;
-    private UserCredentials     credentials;
-    private String              osdUUIDString;
-    private ServiceUUID         osdUUID;
+    private OSDServiceClient   osd;
+    private DIRClient          dir;
+    private MRCServiceClient   mrc;
+    private RPCNIOSocketClient dirClient;
+    private RPCNIOSocketClient osdClient;
+    private RPCNIOSocketClient mrcClient;
+    private InetSocketAddress  osdAddr;
+    private InetSocketAddress  mrcAddr;
+    private SSLOptions         sslOptions;
+    private String[]           dirAddresses;
+    private UUIDResolver       resolver;
+    private RPCNIOSocketClient resolverClient;
+    private Auth               authHeader;
+    private UserCredentials    credentials;
+    private String             osdUUIDString;
+    private ServiceUUID        osdUUID;
 
     public static void main(String[] args) {
 
@@ -67,7 +65,7 @@ public class xtfs_remove_osd {
             options = utils.getDefaultAdminToolOptions(true);
             List<String> arguments = new ArrayList<String>(1);
 
-            CliOption oDir = new CliOption(CliOption.OPTIONTYPE.URL,
+            CliOption oDir = new CliOption(CliOption.OPTIONTYPE.STRING,
                     "directory service to use (e.g. 'pbrpc://localhost:32638')", "<uri>");
             oDir.urlDefaultPort = PORTS.DIR_PBRPC_PORT_DEFAULT.getNumber();
             oDir.urlDefaultProtocol = Schemes.SCHEME_PBRPC;
@@ -94,17 +92,12 @@ public class xtfs_remove_osd {
                 error("invalid number of arguments", options, true);
             }
 
-            ONCRPCServiceURL dirURL = options.get("dir").urlValue;
             boolean shutdown = options.get("s").switchValue;
             String password = (options.get(utils.OPTION_ADMIN_PASS).stringValue != null) ? options
                     .get(utils.OPTION_ADMIN_PASS).stringValue : "";
-            boolean useSSL = false;
-            boolean gridSSL = false;
-            String serviceCredsFile = null;
-            String serviceCredsPass = null;
-            String trustedCAsFile = null;
-            String trustedCAsPass = null;
-            InetSocketAddress dirAddr = null;
+
+            String[] dirURLs = (options.get("dir").stringValue != null) ? options.get("dir").stringValue
+                    .split(",") : null;
 
             // read default settings for the OSD
             String osdUUID = null;
@@ -114,57 +107,77 @@ public class xtfs_remove_osd {
                 error("There was no UUID for the OSD given!", options);
             }
 
-            // parse security info if protocol is 'https'
-            if (dirURL != null
-                    && (Schemes.SCHEME_PBRPCS.equals(dirURL.getProtocol()) || Schemes.SCHEME_PBRPCG
-                            .equals(dirURL.getProtocol()))) {
-                useSSL = true;
-                serviceCredsFile = options.get(utils.OPTION_USER_CREDS_FILE).stringValue;
-                serviceCredsPass = options.get(utils.OPTION_USER_CREDS_PASS).stringValue;
-                trustedCAsFile = options.get(utils.OPTION_TRUSTSTORE_FILE).stringValue;
-                trustedCAsPass = options.get(utils.OPTION_TRUSTSTORE_PASS).stringValue;
-                if (Schemes.SCHEME_PBRPCG.equals(dirURL.getProtocol())) {
-                    gridSSL = true;
-                }
+            SSLOptions sslOptions = null;
+            String[] dirAddrs = null;
 
-                if (serviceCredsFile == null) {
-                    System.out.println("SSL requires '-" + utils.OPTION_USER_CREDS_FILE
-                            + "' parameter to be specified");
-                    usage(options);
-                    System.exit(1);
-                } else if (trustedCAsFile == null) {
-                    System.out.println("SSL requires '-" + utils.OPTION_TRUSTSTORE_FILE
-                            + "' parameter to be specified");
-                    usage(options);
-                    System.exit(1);
+            // parse security info if protocol is 'https'
+            if (dirURLs != null) {
+                int i = 0;
+                boolean gridSSL = false;
+                dirAddrs = new String[dirURLs.length];
+                for (String dirURL : dirURLs) {
+
+                    // parse security info if protocol is 'https'
+                    if (dirURL.contains(Schemes.SCHEME_PBRPCS + "://")
+                            || dirURL.contains(Schemes.SCHEME_PBRPCG + "://") && sslOptions == null) {
+                        String serviceCredsFile = options.get(utils.OPTION_USER_CREDS_FILE).stringValue;
+                        String serviceCredsPass = options.get(utils.OPTION_USER_CREDS_PASS).stringValue;
+                        String trustedCAsFile = options.get(utils.OPTION_TRUSTSTORE_FILE).stringValue;
+                        String trustedCAsPass = options.get(utils.OPTION_TRUSTSTORE_PASS).stringValue;
+                        if (dirURL.contains(Schemes.SCHEME_PBRPCG + "://")) {
+                            gridSSL = true;
+                        }
+
+                        if (serviceCredsFile == null) {
+                            System.out.println("SSL requires '-" + utils.OPTION_USER_CREDS_FILE
+                                    + "' parameter to be specified");
+                            usage(options);
+                            System.exit(1);
+                        } else if (trustedCAsFile == null) {
+                            System.out.println("SSL requires '-" + utils.OPTION_TRUSTSTORE_FILE
+                                    + "' parameter to be specified");
+                            usage(options);
+                            System.exit(1);
+                        }
+
+                        // TODO: support custom SSL trust managers
+                        try {
+                            sslOptions = new SSLOptions(new FileInputStream(serviceCredsFile),
+                                    serviceCredsPass, SSLOptions.PKCS12_CONTAINER, new FileInputStream(
+                                            trustedCAsFile), trustedCAsPass, SSLOptions.JKS_CONTAINER, false,
+                                    gridSSL, null);
+                        } catch (Exception e) {
+                            System.err.println("unable to get SSL options, because:" + e.getMessage());
+                            System.exit(1);
+                        }
+                    }
+
+                    // add URL to dirAddrs
+                    if (dirURL.contains("://")) {
+                        // remove Protocol information
+                        String[] tmp = dirURL.split("://");
+                        // remove possible slash
+                        dirAddrs[i++] = tmp[1].replace("/", "");
+                    } else {
+                        // remove possible slash
+                        dirAddrs[i++] = dirURL.replace("/", "");
+                    }
                 }
             }
 
             // read default settings
-            if (dirURL == null) {
+            if (dirURLs == null) {
                 try {
-                    DefaultDirConfig cfg = new DefaultDirConfig(DEFAULT_DIR_CONFIG);
-                    cfg.read();
-
-                    dirAddr = cfg.getDirectoryService();
-                    useSSL = cfg.isSslEnabled();
-                    serviceCredsFile = cfg.getServiceCredsFile();
-                    serviceCredsPass = cfg.getServiceCredsPassphrase();
-                    trustedCAsFile = cfg.getTrustedCertsFile();
-                    trustedCAsPass = cfg.getTrustedCertsPassphrase();
-                } catch (IOException e) {
-                    error("No DIR service configuration available. Please use the -dir option.", options);
+                    DefaultDirConfig cfg = new DefaultDirConfig();
+                    sslOptions = cfg.getSSLOptions();
+                    dirAddrs = cfg.getDirectoryServices();
+                } catch (Exception e) {
+                    System.err.println("unable to get SSL options, because: " + e.getMessage());
+                    System.exit(1);
                 }
-            } else {
-                dirAddr = new InetSocketAddress(dirURL.getHost(), dirURL.getPort());
             }
 
-            // TODO: support custom SSL trust managers
-            SSLOptions sslOptions = useSSL ? new SSLOptions(new FileInputStream(serviceCredsFile),
-                    serviceCredsPass, SSLOptions.PKCS12_CONTAINER, new FileInputStream(trustedCAsFile),
-                    trustedCAsPass, SSLOptions.JKS_CONTAINER, false, gridSSL, null) : null;
-
-            xtfs_remove_osd removeOsd = new xtfs_remove_osd(dirAddr, osdUUID, sslOptions, password);
+            xtfs_remove_osd removeOsd = new xtfs_remove_osd(dirAddrs, osdUUID, sslOptions, password);
             removeOsd.initialize();
             removeOsd.drainOSD(shutdown);
             removeOsd.shutdown();
@@ -177,12 +190,12 @@ public class xtfs_remove_osd {
         }
     }
 
-    public xtfs_remove_osd(InetSocketAddress dirAddress, String osdUUIDString, SSLOptions sslOptions,
-            String password) throws Exception {
+    public xtfs_remove_osd(String[] dirAddresses, String osdUUIDString, SSLOptions sslOptions, String password)
+            throws Exception {
         try {
 
             this.sslOptions = sslOptions;
-            this.dirAddress = dirAddress;
+            this.dirAddresses = dirAddresses;
             this.osdUUIDString = osdUUIDString;
             if (password.equals("")) {
                 this.authHeader = Auth.newBuilder().setAuthType(AuthType.AUTH_NONE).build();
@@ -204,12 +217,15 @@ public class xtfs_remove_osd {
 
         TimeSync.initializeLocal(50);
 
+        // TODO(lukas): support multiple DIRs
         // connect to DIR
         dirClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000, "xtfs_remove_osd (dir)");
         dirClient.start();
         dirClient.waitForStartup();
-        DIRServiceClient tmp = new DIRServiceClient(dirClient, dirAddress);
-        dir = new DIRClient(tmp, new InetSocketAddress[] { dirAddress }, 100, 15 * 1000);
+        String[] dirAddr = dirAddresses[0].split(":");
+        InetSocketAddress dirSocketAddr = new InetSocketAddress(dirAddr[0], Integer.parseInt(dirAddr[1]));
+        DIRServiceClient tmp = new DIRServiceClient(dirClient, dirSocketAddr);
+        dir = new DIRClient(tmp, new InetSocketAddress[] { dirSocketAddr }, 100, 15 * 1000);
 
         resolverClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000, "xtfs_remove_osd (resolver)");
         resolverClient.start();

@@ -12,18 +12,16 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Properties;
 
-
 import org.xtreemfs.common.config.ServiceConfig;
-import org.xtreemfs.common.config.ServiceConfig.Parameter;
- 
-
 
 /**
  * 
  * @author bjko
  */
 public class MRCConfig extends ServiceConfig {
-    
+    /*
+     * @formatter:off
+     */
     final Parameter[] mrcParameter = {
             Parameter.DEBUG_LEVEL,
             Parameter.DEBUG_CATEGORIES,
@@ -61,110 +59,76 @@ public class MRCConfig extends ServiceConfig {
             Parameter.FAILOVER_MAX_RETRIES,
             Parameter.FAILOVER_WAIT,
             };
-    
-    /**
-     * Parameter which are required to connect to the DIR.
+    /*
+     * @formatter:on
      */
-    final Parameter[] connectionParameter = {
-            Parameter.DEBUG_CATEGORIES,
-            Parameter.DEBUG_LEVEL,
-            Parameter.HOSTNAME,
-            Parameter.DIRECTORY_SERVICE,
-            Parameter.WAIT_FOR_DIR,
-            Parameter.PORT,
-            Parameter.USE_SSL,
-            Parameter.UUID
-            };
-    
+
     /** Creates a new instance of MRCConfig */
     public MRCConfig(String filename) throws IOException {
         super(filename);
         read();
     }
-    
+
     public MRCConfig(Properties prop) throws IOException {
         super(prop);
         read();
     }
-    
+
     public MRCConfig(HashMap<String, String> hm) {
-    	super(hm);
+        super(hm);
     }
-    
+
     public void read() throws IOException {
 
         for (Parameter parm : mrcParameter) {
             parameter.put(parm, readParameter(parm));
         }
     }
-    
-    /**
-     * Checks if there are all required configuration parameter to initialize a connection to the
-     * DIR and request the rest of the configuration
-     * @return {@link Boolean}
-     */
-    public Boolean isInitializable() {
-        
-        for (Parameter param : connectionParameter) {
-            if (parameter.get(param) == null) {
-                throw new RuntimeException("property '" + param.getPropertyString()
-                        + "' is required but was not found");  
-            }
-        }
-        checkSSLConfiguration();
-        return true;
-    }
-    
+
     public int getOsdCheckInterval() {
-        return (Integer) parameter.get(Parameter.OSD_CHECK_INTERVAL);	
+        return (Integer) parameter.get(Parameter.OSD_CHECK_INTERVAL);
     }
-    
+
     public boolean isNoAtime() {
         return (Boolean) parameter.get(Parameter.NOATIME);
     }
-    
+
     public int getLocalClockRenew() {
-    	return (Integer) parameter.get(Parameter.LOCAL_CLOCK_RENEW);
+        return (Integer) parameter.get(Parameter.LOCAL_CLOCK_RENEW);
     }
-    
+
     public int getRemoteTimeSync() {
-    	return (Integer) parameter.get(Parameter.REMOTE_TIME_SYNC);
+        return (Integer) parameter.get(Parameter.REMOTE_TIME_SYNC);
     }
-    
+
     public String getAuthenticationProvider() {
-        return (String)parameter.get(Parameter.AUTHENTICATION_PROVIDER);
+        return (String) parameter.get(Parameter.AUTHENTICATION_PROVIDER);
     }
-    
+
     public String getCapabilitySecret() {
         return (String) parameter.get(Parameter.CAPABILITY_SECRET);
     }
-    
+
     public int getCapabilityTimeout() {
         return (Integer) parameter.get(Parameter.CAPABILITY_TIMEOUT);
     }
-    
+
     /**
      * @return the renewTimedOutCaps
      */
     public boolean isRenewTimedOutCaps() {
-    	return (Boolean)parameter.get(Parameter.RENEW_TIMED_OUT_CAPS);
+        return (Boolean) parameter.get(Parameter.RENEW_TIMED_OUT_CAPS);
 
     }
 
     /**
-     * Set default values according to the value in {@link Parameter} for all configuration 
-     * parameter which are null.
+     * Set default values according to the value in {@link Parameter} for all configuration parameter which
+     * are null.
      */
     public void setDefaults() {
         super.setDefaults(mrcParameter);
     }
-    /**
-     * Return the required Parameter that are necessary for a connection to the DIR
-     * @return {@link Parameter}[]
-     */
-    public Parameter[] getConnectionParameter() {
-        return this.connectionParameter;
-    }
+
     /**
      * Check if the configuration contain all necessary values to start the service
      */

@@ -15,8 +15,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-
-
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
@@ -27,6 +25,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.getattrRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
 
@@ -56,7 +55,7 @@ public class FileInfo {
     /**
      * Path of the File, used for debug output and writing back the OSDWriteResponse to the MetadataCache.
      */
-// JCIP     @GuardedBy("pathLock")
+    // JCIP @GuardedBy("pathLock")
     private String                                          path;
 
     /**
@@ -78,7 +77,7 @@ public class FileInfo {
     /**
      * List of corresponding OSDs.
      */
-// JCIP     @GuardedBy("xLocSetLock")
+    // JCIP @GuardedBy("xLocSetLock")
     private XLocSet                                         xlocset;
 
     /**
@@ -116,7 +115,7 @@ public class FileInfo {
      * This extra list is needed to distinguish between the regular file handles (see open_file_handles_) and
      * the ones used for file size updates. The intersection of both lists is empty.
      */
-// JCIP     @GuardedBy("osdWriteResponseLock")
+    // JCIP @GuardedBy("osdWriteResponseLock")
     private List<FileHandle>                                pendingFilesizeUpdates;
 
     /**
@@ -127,19 +126,19 @@ public class FileInfo {
      * "osdWriteResponse" also corresponds to the "maximum" of all known OSDWriteReponses. The maximum has the
      * highest "truncateEpoch", or if equal compared to another response, the higher "sizeInBytes" value.
      */
-// JCIP     @GuardedBy("osdWriteResponseLock")
+    // JCIP @GuardedBy("osdWriteResponseLock")
     private OSDWriteResponse                                osdWriteResponse;
 
     /**
      * Denotes the state of the stored "osdWriteResponse" object.
      */
-// JCIP     @GuardedBy("osdWriteResponseLock")
+    // JCIP @GuardedBy("osdWriteResponseLock")
     private FilesizeUpdateStatus                            osdWriteResponseStatus;
 
     /**
      * XCap required to send an OSDWriteResponse to the MRC.
      */
-// JCIP     @GuardedBy("osdWriteResponseLock")
+    // JCIP @GuardedBy("osdWriteResponseLock")
     private XCap                                            osdWriteResponseXcap;
 
     /**
@@ -183,12 +182,10 @@ public class FileInfo {
             osdUuidIterator.addUUID(xlocset.getReplicas(i).getOsdUuids(0));
         }
 
-        asyncWriteHandler =
-                new AsyncWriteHandler(this, osdUuidIterator, volume.getUUIDResolver(),
-                        volume.getOsdServiceClient(), volume.getAuthBogus(),
-                        volume.getUserCredentialsBogus(), volume.getOptions().getMaxWriteahead(), volume
-                                .getOptions().getMaxWriteaheadRequests(), volume.getOptions()
-                                .getMaxWriteTries());
+        asyncWriteHandler = new AsyncWriteHandler(this, osdUuidIterator, volume.getUUIDResolver(),
+                volume.getOsdServiceClient(), volume.getAuthBogus(), volume.getUserCredentialsBogus(), volume
+                        .getOptions().getMaxWriteahead(), volume.getOptions().getMaxWriteaheadRequests(),
+                volume.getOptions().getMaxWriteTries());
 
         pendingFilesizeUpdates = new ArrayList<FileHandle>(volume.getOptions().getMaxWriteahead());
     }
@@ -229,11 +226,11 @@ public class FileInfo {
      */
     FileHandleImplementation createFileHandle(XCap xcap, boolean asyncWritesEnabled,
             boolean usedForPendingFilesizeUpdate) {
-        FileHandleImplementation fileHandleImplementation =
-                new FileHandleImplementation(clientUuid, this, xcap, volume.getMrcUuidIterator(),
-                        osdUuidIterator, volume.getUUIDResolver(), volume.getMrcServiceClient(),
-                        volume.getOsdServiceClient(), volume.getStripeTranslators(), asyncWritesEnabled,
-                        volume.getOptions(), volume.getAuthBogus(), volume.getUserCredentialsBogus());
+        FileHandleImplementation fileHandleImplementation = new FileHandleImplementation(clientUuid, this,
+                xcap, volume.getMrcUuidIterator(), osdUuidIterator, volume.getUUIDResolver(),
+                volume.getMrcServiceClient(), volume.getOsdServiceClient(), volume.getStripeTranslators(),
+                asyncWritesEnabled, volume.getOptions(), volume.getAuthBogus(),
+                volume.getUserCredentialsBogus());
 
         // increase reference count and add it to openFileHandles
         referenceCount.incrementAndGet();
@@ -283,7 +280,7 @@ public class FileInfo {
      */
     protected String getPath() {
         synchronized (pathLock) {
-            return path;    
+            return path;
         }
     }
 
@@ -294,8 +291,8 @@ public class FileInfo {
         synchronized (pathLock) {
             if (this.path.equals(path)) {
                 this.path = newPath;
-            }   
-        }      
+            }
+        }
     }
 
     /**
@@ -335,9 +332,8 @@ public class FileInfo {
                         || stat.getTruncateEpoch() == osdWriteResponse.getTruncateEpoch()
                         && stat.getSize() < osdWriteResponse.getSizeInBytes()) {
                     // Information from "osdWriteResponse" are newer.
-                    stat =
-                            stat.toBuilder().setSize(osdWriteResponse.getSizeInBytes())
-                                    .setTruncateEpoch(osdWriteResponse.getTruncateEpoch()).build();
+                    stat = stat.toBuilder().setSize(osdWriteResponse.getSizeInBytes())
+                            .setTruncateEpoch(osdWriteResponse.getTruncateEpoch()).build();
 
                     if (Logging.isDebug()) {
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
@@ -473,6 +469,19 @@ public class FileInfo {
             AddressToUUIDNotFoundException {
         String path = getPath();
         return volume.getAttr(userCredentials, path);
+    }
+
+    /**
+     * Passes FileHandle.setXAttr() through to Volume
+     * 
+     * @throws IOException
+     * @throws AddressToUUIDNotFoundException
+     * @throws PosixErrorException
+     */
+    protected void setXAttr(UserCredentials userCredentials, String name, String value, XATTR_FLAGS flags)
+            throws PosixErrorException, AddressToUUIDNotFoundException, IOException {
+        String path = getPath();
+        volume.setXAttr(userCredentials, path, name, value, flags);
     }
 
     /**

@@ -8,7 +8,6 @@
 
 package org.xtreemfs.osd.operations;
 
-
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
@@ -19,7 +18,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 public final class CleanupStartOperation extends OSDOperation {
-
 
     public CleanupStartOperation(OSDRequestDispatcher master) {
         super(master);
@@ -34,13 +32,16 @@ public final class CleanupStartOperation extends OSDOperation {
     public void startRequest(final OSDRequest rq) {
 
         Auth authData = rq.getRPCRequest().getHeader().getRequestHeader().getAuthData();
-        if (!authData.hasAuthPasswd() || authData.getAuthPasswd().equals(master.getConfig().getAdminPassword())) {
-            rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES, "this operation requires an admin password");
+        if (!authData.hasAuthPasswd()
+                || !authData.getAuthPasswd().getPassword().equals(master.getConfig().getAdminPassword())) {
+            rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES,
+                    "this operation requires an admin password");
             return;
         }
-        xtreemfs_cleanup_startRequest args = (xtreemfs_cleanup_startRequest)rq.getRequestArgs();
-        master.getCleanupThread().cleanupStart(args.getRemoveZombies(),args.getRemoveUnavailVolume(),args.getLostAndFound(),rq.getRPCRequest().getHeader().getRequestHeader().getUserCreds());
-        rq.sendSuccess(null,null);
+        xtreemfs_cleanup_startRequest args = (xtreemfs_cleanup_startRequest) rq.getRequestArgs();
+        master.getCleanupThread().cleanupStart(args.getRemoveZombies(), args.getRemoveUnavailVolume(),
+                args.getLostAndFound(), rq.getRPCRequest().getHeader().getRequestHeader().getUserCreds());
+        rq.sendSuccess(null, null);
     }
 
     @Override
@@ -59,7 +60,5 @@ public final class CleanupStartOperation extends OSDOperation {
     public void startInternalEvent(Object[] args) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    
 
 }

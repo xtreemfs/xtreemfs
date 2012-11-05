@@ -6,7 +6,12 @@
  */
 package org.xtreemfs.common.libxtreemfs;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,6 +38,7 @@ import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.utils.MRCHelper.SysAttrs;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
@@ -48,7 +54,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.getattrResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.openResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.statvfsRequest;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
@@ -96,10 +101,9 @@ public class VolumeTest {
         dir.startup();
         dir.waitForStartup();
 
-        testEnv =
-                new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_CLIENT,
-                        TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.RPC_CLIENT,
-                        TestEnvironment.Services.MRC });
+        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_CLIENT,
+                TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.RPC_CLIENT,
+                TestEnvironment.Services.MRC });
         testEnv.start();
 
         userCredentials = UserCredentials.newBuilder().setUsername("test").addGroups("test").build();
@@ -107,11 +111,10 @@ public class VolumeTest {
         dirAddress = testEnv.getDIRAddress().getHostName() + ":" + testEnv.getDIRAddress().getPort();
         mrcAddress = testEnv.getMRCAddress().getHostName() + ":" + testEnv.getMRCAddress().getPort();
 
-        defaultCoordinates =
-                VivaldiCoordinates.newBuilder().setXCoordinate(0).setYCoordinate(0).setLocalError(0).build();
-        defaultStripingPolicy =
-                StripingPolicy.newBuilder().setType(StripingPolicyType.STRIPING_POLICY_RAID0)
-                        .setStripeSize(128).setWidth(1).build();
+        defaultCoordinates = VivaldiCoordinates.newBuilder().setXCoordinate(0).setYCoordinate(0)
+                .setLocalError(0).build();
+        defaultStripingPolicy = StripingPolicy.newBuilder().setType(StripingPolicyType.STRIPING_POLICY_RAID0)
+                .setStripeSize(128).setWidth(1).build();
 
         osds = new OSD[4];
         configs = SetupUtils.createMultipleOSDConfigs(4);
@@ -125,7 +128,8 @@ public class VolumeTest {
         mrcClient = new MRCServiceClient(testEnv.getRpcClient(), null);
 
         options = new Options();
-        client = (ClientImplementation) Client.createClient(dirAddress, userCredentials, null, options);
+        client = (ClientImplementation) ClientFactory
+                .createClient(dirAddress, userCredentials, null, options);
         client.start();
     }
 
@@ -159,8 +163,8 @@ public class VolumeTest {
         StatVFS mrcClientVFS = null;
         RPCResponse<StatVFS> resp = null;
         try {
-            statvfsRequest input =
-                    statvfsRequest.newBuilder().setVolumeName(VOLUME_NAME_1).setKnownEtag(0).build();
+            statvfsRequest input = statvfsRequest.newBuilder().setVolumeName(VOLUME_NAME_1).setKnownEtag(0)
+                    .build();
             resp = mrcClient.statvfs(testEnv.getMRCAddress(), auth, userCredentials, input);
             mrcClientVFS = resp.get();
         } catch (Exception e) {
@@ -201,9 +205,8 @@ public class VolumeTest {
         FileHandle fileHandles[] = new FileHandle[10];
 
         for (int i = 0; i < fileHandles.length; i++) {
-            fileHandles[i] =
-                    volume.openFile(userCredentials, DIR1 + "/" + TESTFILE + i,
-                            SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber());
+            fileHandles[i] = volume.openFile(userCredentials, DIR1 + "/" + TESTFILE + i,
+                    SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber());
         }
 
         // // try to create a file w/o a name
@@ -276,9 +279,8 @@ public class VolumeTest {
         openResponse open = null;
         RPCResponse<openResponse> resp = null;
         try {
-            resp =
-                    mrcClient.open(testEnv.getMRCAddress(), auth, userCredentials, VOLUME_NAME, ORIG_FILE,
-                            FileAccessManager.O_CREAT, 0, 0777, defaultCoordinates);
+            resp = mrcClient.open(testEnv.getMRCAddress(), auth, userCredentials, VOLUME_NAME, ORIG_FILE,
+                    FileAccessManager.O_CREAT, 0, 0777, defaultCoordinates);
             open = resp.get();
         } finally {
             if (resp != null) {
@@ -294,9 +296,8 @@ public class VolumeTest {
         open = null;
         resp = null;
         try {
-            resp =
-                    mrcClient.open(testEnv.getMRCAddress(), auth, userCredentials, VOLUME_NAME,
-                            "test-hardlink.txt", FileAccessManager.O_CREAT, 0, 0, defaultCoordinates);
+            resp = mrcClient.open(testEnv.getMRCAddress(), auth, userCredentials, VOLUME_NAME,
+                    "test-hardlink.txt", FileAccessManager.O_CREAT, 0, 0, defaultCoordinates);
             open = resp.get();
         } catch (Exception e) {
             e.printStackTrace();
@@ -313,14 +314,12 @@ public class VolumeTest {
         RPCResponse<getattrResponse> resp1 = null;
         RPCResponse<getattrResponse> resp2 = null;
         try {
-            resp1 =
-                    mrcClient.getattr(testEnv.getMRCAddress(), auth, userCredentials, VOLUME_NAME, ORIG_FILE,
-                            0);
+            resp1 = mrcClient.getattr(testEnv.getMRCAddress(), auth, userCredentials, VOLUME_NAME, ORIG_FILE,
+                    0);
             stat1 = resp1.get().getStbuf();
 
-            resp2 =
-                    mrcClient.getattr(testEnv.getMRCAddress(), auth, userCredentials, VOLUME_NAME,
-                            LINKED_FILE, 0);
+            resp2 = mrcClient.getattr(testEnv.getMRCAddress(), auth, userCredentials, VOLUME_NAME,
+                    LINKED_FILE, 0);
             stat2 = resp2.get().getStbuf();
 
         } catch (Exception e) {
@@ -348,14 +347,12 @@ public class VolumeTest {
         resp1 = null;
         resp2 = null;
         try {
-            resp1 =
-                    mrcClient.getattr(testEnv.getMRCAddress(), auth, userCredentials, VOLUME_NAME,
-                            LINKED_FILE, 0);
+            resp1 = mrcClient.getattr(testEnv.getMRCAddress(), auth, userCredentials, VOLUME_NAME,
+                    LINKED_FILE, 0);
             stat1 = resp1.get().getStbuf();
 
-            resp2 =
-                    mrcClient.getattr(testEnv.getMRCAddress(), auth, userCredentials, VOLUME_NAME,
-                            LINKED_FILE2, 0);
+            resp2 = mrcClient.getattr(testEnv.getMRCAddress(), auth, userCredentials, VOLUME_NAME,
+                    LINKED_FILE2, 0);
             stat2 = resp2.get().getStbuf();
         } catch (Exception e) {
             e.printStackTrace();
@@ -379,14 +376,12 @@ public class VolumeTest {
         resp1 = null;
         resp2 = null;
         try {
-            resp1 =
-                    mrcClient.getattr(testEnv.getMRCAddress(), auth, userCredentials, VOLUME_NAME, ORIG_FILE,
-                            0);
+            resp1 = mrcClient.getattr(testEnv.getMRCAddress(), auth, userCredentials, VOLUME_NAME, ORIG_FILE,
+                    0);
             stat1 = resp1.get().getStbuf();
 
-            resp2 =
-                    mrcClient.getattr(testEnv.getMRCAddress(), auth, userCredentials, VOLUME_NAME,
-                            LINKED_FILE2, 0);
+            resp2 = mrcClient.getattr(testEnv.getMRCAddress(), auth, userCredentials, VOLUME_NAME,
+                    LINKED_FILE2, 0);
             stat2 = resp2.get().getStbuf();
         } catch (Exception e) {
             e.printStackTrace();
@@ -478,8 +473,8 @@ public class VolumeTest {
         } catch (PosixErrorException e) {
         }
 
-        UserCredentials rootCreds =
-                userCredentials.toBuilder().setUsername("root").setGroups(0, "root").build();
+        UserCredentials rootCreds = userCredentials.toBuilder().setUsername("root").setGroups(0, "root")
+                .build();
 
         volume.setAttr(rootCreds, TESTDIR, stat,
                 Setattrs.SETATTR_UID.getNumber() | Setattrs.SETATTR_GID.getNumber());
@@ -507,17 +502,15 @@ public class VolumeTest {
         flags = ReplicationFlags.setFullReplica(flags);
         volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE,
                 2, flags);
-        FileHandle fileHandle =
-                volume.openFile(userCredentials, fileName,
-                        SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber(), 0777);
+        FileHandle fileHandle = volume.openFile(userCredentials, fileName,
+                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber(), 0777);
         fileHandle.close();
 
         assertEquals(2, volume.listReplicas(userCredentials, fileName).getReplicasCount());
 
         String osdUUID = volume.getSuitableOSDs(userCredentials, fileName, 1).get(0);
-        Replica replica =
-                Replica.newBuilder().addOsdUuids(osdUUID).setStripingPolicy(defaultStripingPolicy)
-                        .setReplicationFlags(flags).build();
+        Replica replica = Replica.newBuilder().addOsdUuids(osdUUID).setStripingPolicy(defaultStripingPolicy)
+                .setReplicationFlags(flags).build();
         volume.addReplica(userCredentials, fileName, replica);
         assertEquals(3, volume.listReplicas(userCredentials, fileName).getReplicasCount());
 
@@ -566,9 +559,8 @@ public class VolumeTest {
         } catch (Exception e) {
         }
 
-        xattr =
-                volume.getXAttr(userCredentials, TESTFILE,
-                        "xtreemfs." + SysAttrs.set_repl_update_policy.toString());
+        xattr = volume.getXAttr(userCredentials, TESTFILE,
+                "xtreemfs." + SysAttrs.set_repl_update_policy.toString());
         assertEquals(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE, xattr);
 
         // read existing systemflag
@@ -628,10 +620,9 @@ public class VolumeTest {
         String emptyFileName = "emptyFileName";
         client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
         Volume volume = client.openVolume(VOLUME_NAME, null, options);
-        FileHandleImplementation fileHandle =
-                (FileHandleImplementation) volume.openFile(userCredentials, fileName,
-                        SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
-                                | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 0777);
+        FileHandleImplementation fileHandle = (FileHandleImplementation) volume.openFile(userCredentials,
+                fileName, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
+                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 0777);
 
         String data = "1234567890";
         fileHandle.write(userCredentials, data.getBytes(), data.length(), 0);
@@ -643,10 +634,11 @@ public class VolumeTest {
         assertEquals(5, volume.getAttr(userCredentials, fileName).getSize());
         fileHandle.close();
 
-        fileHandle =
-                (FileHandleImplementation) volume.openFile(userCredentials, emptyFileName,
-                        SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
-                                | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 0777);
+        fileHandle = (FileHandleImplementation) volume.openFile(
+                userCredentials,
+                emptyFileName,
+                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
+                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 0777);
         assertEquals(0, fileHandle.getAttr(userCredentials).getSize());
         volume.truncate(userCredentials, emptyFileName, 1000);
         assertEquals(1000, fileHandle.getAttr(userCredentials).getSize());
@@ -791,9 +783,8 @@ public class VolumeTest {
                 2, flags);
 
         final String FILENAME = "/foobar.tzt";
-        FileHandle fileHandle =
-                volume.openFile(userCredentials, FILENAME,
-                        SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber(), 0777);
+        FileHandle fileHandle = volume.openFile(userCredentials, FILENAME,
+                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber(), 0777);
         byte[] data = new byte[6];
         for (int i = 0; i < data.length; i++) {
             data[i] = (byte) "FOOBAR".charAt(i);
@@ -815,9 +806,8 @@ public class VolumeTest {
         assertEquals(123, stripeLocations.get(0).getLength());
 
         List<String> suitableOsds = volume.getSuitableOSDs(userCredentials, FILENAME, 1);
-        Replica replica =
-                Replica.newBuilder().setStripingPolicy(defaultStripingPolicy).setReplicationFlags(flags)
-                        .addOsdUuids(suitableOsds.get(0)).build();
+        Replica replica = Replica.newBuilder().setStripingPolicy(defaultStripingPolicy)
+                .setReplicationFlags(flags).addOsdUuids(suitableOsds.get(0)).build();
         volume.addReplica(userCredentials, FILENAME, replica);
 
         stripeLocations = volume.getStripeLocations(userCredentials, FILENAME, 0, 100);
@@ -853,9 +843,8 @@ public class VolumeTest {
                 2, replicationFlags);
 
         // create new striping policy with width 2
-        StripingPolicy stripingPolicy =
-                StripingPolicy.newBuilder().setStripeSize(2).setWidth(2)
-                        .setType(StripingPolicyType.STRIPING_POLICY_RAID0).build();
+        StripingPolicy stripingPolicy = StripingPolicy.newBuilder().setStripeSize(2).setWidth(2)
+                .setType(StripingPolicyType.STRIPING_POLICY_RAID0).build();
 
         // create file
         final String FILENAME = "/foobar.tzt";
@@ -872,9 +861,8 @@ public class VolumeTest {
 
         // create replica and add it
         List<String> suitableOsds = volume.getSuitableOSDs(userCredentials, FILENAME, 2);
-        Replica replica =
-                Replica.newBuilder().setReplicationFlags(replicationFlags).setStripingPolicy(stripingPolicy)
-                        .addAllOsdUuids(suitableOsds).build();
+        Replica replica = Replica.newBuilder().setReplicationFlags(replicationFlags)
+                .setStripingPolicy(stripingPolicy).addAllOsdUuids(suitableOsds).build();
         volume.addReplica(userCredentials, FILENAME, replica);
 
         List<StripeLocation> stripeLocations = volume.getStripeLocations(userCredentials, FILENAME, 0, 4000);
@@ -885,8 +873,8 @@ public class VolumeTest {
         assertEquals(0, stripeLocations.get(0).getStartSize());
         assertEquals(2048, stripeLocations.get(0).getLength());
         assertEquals(2048, stripeLocations.get(1).getStartSize());
-        assertEquals(4000-2048, stripeLocations.get(1).getLength());
-     
+        assertEquals(4000 - 2048, stripeLocations.get(1).getLength());
+
         assertEquals(stripeLocations.get(0).getUuids()[0], stripeLocations.get(1).getUuids()[0]);
         assertEquals(stripeLocations.get(0).getUuids()[1], stripeLocations.get(1).getUuids()[1]);
         assertNotSame(stripeLocations.get(0).getUuids()[2], stripeLocations.get(1).getUuids()[2]);

@@ -18,12 +18,11 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 public final class CleanupStopOperation extends OSDOperation {
 
-
     public CleanupStopOperation(OSDRequestDispatcher master) {
         super(master);
     }
 
-@Override
+    @Override
     public int getProcedureId() {
         return OSDServiceConstants.PROC_ID_XTREEMFS_CLEANUP_STOP;
     }
@@ -32,12 +31,14 @@ public final class CleanupStopOperation extends OSDOperation {
     public void startRequest(final OSDRequest rq) {
 
         Auth authData = rq.getRPCRequest().getHeader().getRequestHeader().getAuthData();
-        if (!authData.hasAuthPasswd() || authData.getAuthPasswd().equals(master.getConfig().getAdminPassword())) {
-            rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES, "this operation requires an admin password");
+        if (!authData.hasAuthPasswd()
+                || !authData.getAuthPasswd().getPassword().equals(master.getConfig().getAdminPassword())) {
+            rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES,
+                    "this operation requires an admin password");
             return;
         }
         master.getCleanupThread().cleanupStop();
-        rq.sendSuccess(null,null);
+        rq.sendSuccess(null, null);
     }
 
     @Override
@@ -56,7 +57,5 @@ public final class CleanupStopOperation extends OSDOperation {
     public void startInternalEvent(Object[] args) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    
 
 }

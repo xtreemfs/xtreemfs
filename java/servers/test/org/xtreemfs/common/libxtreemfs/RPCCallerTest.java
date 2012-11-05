@@ -73,11 +73,9 @@ public class RPCCallerTest {
         dir.startup();
         dir.waitForStartup();
 
-        testEnv =
-                new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_CLIENT,
-                        TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.RPC_CLIENT,
-                        TestEnvironment.Services.MRC, TestEnvironment.Services.OSD,
-                        TestEnvironment.Services.OSD });
+        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_CLIENT,
+                TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.RPC_CLIENT,
+                TestEnvironment.Services.MRC, TestEnvironment.Services.OSD, TestEnvironment.Services.OSD });
         testEnv.start();
 
         userCredentials = UserCredentials.newBuilder().setUsername("test").addGroups("test").build();
@@ -104,15 +102,15 @@ public class RPCCallerTest {
         final int NUMBER_OF_REPLICAS = 2;
 
         Options options = new Options();
-        ClientImplementation client =
-                (ClientImplementation) Client.createClient(dirServiceAddress, userCredentials, null, options);
+        ClientImplementation client = (ClientImplementation) ClientFactory.createClient(dirServiceAddress,
+                userCredentials, null, options);
         client.start();
         client.createVolume(mrcServiceAddress, auth, userCredentials, VOLUME_NAME);
 
         Volume volume = client.openVolume(VOLUME_NAME, null, options);
 
         // set default replication policy for root dir
-       volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE,
+        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE,
                 NUMBER_OF_REPLICAS, REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber());
 
         String replPolString = volume.getXAttr(userCredentials, "/", "xtreemfs.default_rp");
@@ -124,33 +122,29 @@ public class RPCCallerTest {
         UUIDIterator mrcUUIDIterator = new UUIDIterator();
         mrcUUIDIterator.addUUID(mrcServiceAddress);
 
-        openRequest request =
-                openRequest
-                        .newBuilder()
-                        .setVolumeName(VOLUME_NAME)
-                        .setPath(FILE_PATH)
-                        .setFlags(
-                                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
-                                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
-                                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber()).setMode(0777)
-                        .setAttributes(0).build();
+        openRequest request = openRequest
+                .newBuilder()
+                .setVolumeName(VOLUME_NAME)
+                .setPath(FILE_PATH)
+                .setFlags(
+                        SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
+                                | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
+                                | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber()).setMode(0777)
+                .setAttributes(0).build();
 
-        openResponse response =
-                RPCCaller.<openRequest, openResponse> syncCall(SERVICES.MRC, userCredentials, auth, options,
-                        client, mrcUUIDIterator, true, request,
-                        new CallGenerator<openRequest, openResponse>() {
-                            @Override
-                            public RPCResponse<openResponse> executeCall(InetSocketAddress server,
-                                    Auth authHeader, UserCredentials userCreds, openRequest input)
-                                    throws IOException {
-                                return mrcServiceClient.open(server, authHeader, userCreds, input);
-                            }
-                        });
+        openResponse response = RPCCaller.<openRequest, openResponse> syncCall(SERVICES.MRC, userCredentials,
+                auth, options, client, mrcUUIDIterator, true, request,
+                new CallGenerator<openRequest, openResponse>() {
+                    @Override
+                    public RPCResponse<openResponse> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, openRequest input) throws IOException {
+                        return mrcServiceClient.open(server, authHeader, userCreds, input);
+                    }
+                });
 
-        FileInfo fileInfo =
-                new FileInfo((VolumeImplementation) volume, Helper.extractFileIdFromXcap(response.getCreds()
-                        .getXcap()), FILE_PATH, false, response.getCreds().getXlocs(),
-                        Helper.generateVersion4UUID());
+        FileInfo fileInfo = new FileInfo((VolumeImplementation) volume, Helper.extractFileIdFromXcap(response
+                .getCreds().getXcap()), FILE_PATH, false, response.getCreds().getXlocs(),
+                Helper.generateVersion4UUID());
 
         FileHandleImplementation fileHandle = fileInfo.createFileHandle(response.getCreds().getXcap(), false);
 
@@ -174,9 +168,8 @@ public class RPCCallerTest {
         writeReq.setOffset(0);
         writeReq.setLeaseTimeout(0);
 
-        ObjectData objectData =
-                ObjectData.newBuilder().setChecksum(0).setInvalidChecksumOnOsd(false).setZeroPadding(0)
-                        .build();
+        ObjectData objectData = ObjectData.newBuilder().setChecksum(0).setInvalidChecksumOnOsd(false)
+                .setZeroPadding(0).build();
         writeReq.setObjectData(objectData);
 
         RPCCaller.<writeRequest, OSDWriteResponse> syncCall(SERVICES.OSD, userCredentials, auth, options,

@@ -19,7 +19,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 public final class CleanupGetStatusOperation extends OSDOperation {
 
-
     public CleanupGetStatusOperation(OSDRequestDispatcher master) {
         super(master);
     }
@@ -33,12 +32,15 @@ public final class CleanupGetStatusOperation extends OSDOperation {
     public void startRequest(final OSDRequest rq) {
 
         Auth authData = rq.getRPCRequest().getHeader().getRequestHeader().getAuthData();
-        if (!authData.hasAuthPasswd() || authData.getAuthPasswd().equals(master.getConfig().getAdminPassword())) {
-            rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES, "this operation requires an admin password");
+        if (!authData.hasAuthPasswd()
+                || !authData.getAuthPasswd().getPassword().equals(master.getConfig().getAdminPassword())) {
+            rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES,
+                    "this operation requires an admin password");
             return;
         }
-        xtreemfs_cleanup_statusResponse response = xtreemfs_cleanup_statusResponse.newBuilder().setStatus(master.getCleanupThread().getStatus()).build();
-        rq.sendSuccess(response,null);
+        xtreemfs_cleanup_statusResponse response = xtreemfs_cleanup_statusResponse.newBuilder()
+                .setStatus(master.getCleanupThread().getStatus()).build();
+        rq.sendSuccess(response, null);
     }
 
     @Override
@@ -57,7 +59,5 @@ public final class CleanupGetStatusOperation extends OSDOperation {
     public void startInternalEvent(Object[] args) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    
 
 }

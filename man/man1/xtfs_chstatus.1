@@ -22,8 +22,8 @@ Path to a PKCS#12 credentials file (private key + certificate) to use for SSL au
 \fB-cpass \fI<creds_passphrase>
 An optional passphrase to access the credentials file.
 .TP
-\fB-dir \fI<uri>
-Specifies the directory service to use (e.g. 'pbrpc://localhost:32638'). If no URI is specified, URI and security settings are taken from '/etc/xos/xtreemfs/default_dir'. In case of a secured URI ('pbrpcs://...' or 'pbrpcg://...'), it is necessary to also specify SSL settings.
+\fB-dirs \fI<uri(,uri...)>
+Specifies the directory services to use (e.g. 'pbrpc://localhost:32638,pbrpc://myDir.com:32638') (comma-separated). If no URI is specified, URIs and security settings are taken from '/etc/xos/xtreemfs/default_dir'. In case of a secured URI ('pbrpcs://...' or 'pbrpcg://...'), it is necessary to also specify SSL settings.
 .TP
 \fB-h/--help
 Show usage info.

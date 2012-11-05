@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.xtreemfs.common.libxtreemfs.Client;
+import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.FileHandle;
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.common.libxtreemfs.Volume;
@@ -103,7 +104,7 @@ public class CleanupDemoVolume {
         Options options = new Options();
 
         try {
-            client = Client.createClient(dirAddress, userCredentials, sslOptions, options);
+            client = ClientFactory.createClient(dirAddress, userCredentials, sslOptions, options);
             client.start();
             volume = client.openVolume("demo", sslOptions, options);
         } catch (Exception e) {

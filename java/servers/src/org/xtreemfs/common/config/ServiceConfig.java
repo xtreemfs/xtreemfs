@@ -27,9 +27,12 @@ import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.Schemes;
 
 public class ServiceConfig extends Config {
-    
+
     final private static Category[] debugCategoryDefault = { Category.all };
-    
+
+    /*
+     * @formatter:off
+     */
     public static enum Parameter {
             /*
              * general configuration parameter
@@ -119,65 +122,68 @@ public class ServiceConfig extends Config {
             VIVALDI_MAX_REQUEST_TIMEOUT_IN_MS("vivaldi.max_request_timeout_ms", 10000, Integer.class, false),
             VIVALDI_TIMER_INTERVAL_IN_MS("vivaldi.timer_interval_ms", 60000, Integer.class, false);
         
+            /*
+             * @formatter:on
+             */
+
         Parameter(String propString, Object defaultValue, Class propClass, Boolean req) {
             propertyString = propString;
             this.defaultValue = defaultValue;
             propertyClass = propClass;
             required = req;
         }
-        
+
         /**
          * number of values the enumeration contains
          */
         private static final int size = 35;
-        
+
         /**
          * String representation of the parameter in .property file
          */
         private final String     propertyString;
-        
+
         /**
-         * Class of the parameter. Used for deserilization. Note: If you add a
-         * new Class type, don't forget to update the ServiceConfig(HashMap
-         * <String,String>) constructor
+         * Class of the parameter. Used for deserilization. Note: If you add a new Class type, don't forget to
+         * update the ServiceConfig(HashMap <String,String>) constructor
          */
         private final Class      propertyClass;
-        
+
         /**
-         * Default parameter which will be used if there is neither a Parameter
-         * in the properties file nor in the DIR
+         * Default parameter which will be used if there is neither a Parameter in the properties file nor in
+         * the DIR
          */
         private final Object     defaultValue;
-        
+
         /**
          * True if this is a required parameter. False otherwise.
          */
-        private final Boolean 	 required;
-        
+        private final Boolean    required;
+
         public String getPropertyString() {
             return propertyString;
         }
-        
+
         public Object getDefaultValue() {
             return defaultValue;
         }
-        
+
         public Class getPropertyClass() {
             return propertyClass;
         }
-        
+
         public static int getSize() {
             return size;
         }
-        
-        public  Boolean isRequired() {
-        	return required;
+
+        public Boolean isRequired() {
+            return required;
         }
-        
+
         public Boolean isOptional() {
-        	return !required;
+            return !required;
         }
-        
+
         public static Parameter getParameterFromString(String s) throws RuntimeException {
             for (Parameter parm : Parameter.values()) {
                 if (s.equals(parm.getPropertyString()))
@@ -185,73 +191,130 @@ public class ServiceConfig extends Config {
             }
             throw new RuntimeException("Configuration parameter " + s + " doesn't exist!");
         }
-        
+
     }
+
+    /*
+     * @formatter:off
+     */
+    /**
+     * Parameter which are required to connect to the DIR.
+     * 
+     */
+    private final Parameter[] connectionParameter = {
+            Parameter.DEBUG_CATEGORIES,
+            Parameter.DEBUG_LEVEL,
+            Parameter.HOSTNAME,
+            Parameter.DIRECTORY_SERVICE,
+            Parameter.WAIT_FOR_DIR,
+            Parameter.PORT,
+            Parameter.USE_SSL,
+            Parameter.UUID
+            };
     
-    protected EnumMap<Parameter, Object> parameter = new EnumMap<Parameter, Object>(Parameter.class);
-    
-    public static final String OSD_CUSTOM_PROPERTY_PREFIX = "config.";
-    
+    /*
+     * @formatter:on
+     */
+
+    /**
+     * Checks if there are all required configuration parameter to initialize a connection to the DIR and
+     * request the rest of the configuration
+     * 
+     * @return {@link Boolean}
+     */
+    public Boolean isInitializable() {
+        for (Parameter param : connectionParameter) {
+            if (parameter.get(param) == null) {
+                throw new RuntimeException("property '" + param.getPropertyString()
+                        + "' is required but was not found");
+            }
+        }
+        checkSSLConfiguration();
+        return true;
+    }
+
+    public Parameter[] getConnectionParameter() {
+        return this.connectionParameter;
+    }
+
+    /**
+     * reads only the given Parameters from the config file
+     * 
+     * @throws IOException
+     */
+    public void readParameters(Parameter[] params) throws IOException {
+        for (Parameter param : params) {
+            parameter.put(param, readParameter(param));
+        }
+        setDefaults(params);
+    }
+
+    protected EnumMap<Parameter, Object> parameter                  = new EnumMap<Parameter, Object>(
+                                                                            Parameter.class);
+
+    public static final String           OSD_CUSTOM_PROPERTY_PREFIX = "config.";
+
     public ServiceConfig() {
         super();
     }
-    
+
     public ServiceConfig(Properties prop) {
         super(prop);
     }
-    
+
     public ServiceConfig(String filename) throws IOException {
         super(filename);
     }
-    
+
     public ServiceConfig(HashMap<String, String> hm) {
         super();
-        
+
         /*
          * Create a configuration from String Key-Values of a HashMap
          */
         for (Entry<String, String> entry : hm.entrySet()) {
-            
+
             // ignore custom configuration properties for OSDs here
-            if(entry.getKey().startsWith(OSD_CUSTOM_PROPERTY_PREFIX))
+            if (entry.getKey().startsWith(OSD_CUSTOM_PROPERTY_PREFIX)) {
                 continue;
-            
+            }
+
             Parameter param = null;
             try {
                 param = Parameter.getParameterFromString(entry.getKey());
             } catch (RuntimeException e) {
                 e.printStackTrace();
             }
-            
+
             /* Integer values */
             if (Integer.class == param.getPropertyClass()) {
                 parameter.put(param, Integer.parseInt(entry.getValue()));
             }
-            
+
             /* String values */
             if (String.class == param.getPropertyClass()) {
                 parameter.put(param, entry.getValue());
             }
-            
+
             /* Boolean values */
             if (Boolean.class == param.getPropertyClass()) {
                 parameter.put(param, Boolean.valueOf(entry.getValue()));
             }
-            
+
             /* ServiceUUID values */
             if (ServiceUUID.class == param.getPropertyClass()) {
                 parameter.put(param, new ServiceUUID(entry.getValue()));
             }
-            
+
             /* InetAddress values */
             if (InetAddress.class == param.getPropertyClass()) {
-                
+
                 InetAddress inetAddr = null;
-                
+
                 try {
-                    
+
                     inetAddr = InetAddress.getByName(entry.getValue().substring(
-                        entry.getValue().indexOf('/') + 1));
+                            entry.getValue().indexOf('/') + 1));
                 } catch (UnknownHostException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
@@ -260,49 +323,49 @@ public class ServiceConfig extends Config {
             }
             /* InetSocketAddress values */
             if (InetSocketAddress.class == param.getPropertyClass()) {
-                
+
                 /*
-                 * Get a host and port of a string like
-                 * 'hostname/192.168.2.141:36365' and create a InetSocketAddress
+                 * Get a host and port of a string like 'hostname/192.168.2.141:36365' and create a
+                 * InetSocketAddress
                  */
                 String host = entry.getValue().substring(0, entry.getValue().indexOf("/"));
                 String port = entry.getValue().substring(entry.getValue().lastIndexOf(":") + 1);
                 InetSocketAddress isa = new InetSocketAddress(host, Integer.parseInt(port));
-                
+
                 parameter.put(param, isa);
             }
-            
+
             /* Category[] values */
             if (Category[].class == param.getPropertyClass()) {
-                
+
                 StringTokenizer stk = new StringTokenizer(entry.getValue(), ", ");
-                
+
                 Category[] catArray = new Category[stk.countTokens()];
                 int count = 0;
                 while (stk.hasMoreElements()) {
                     catArray[count] = Category.valueOf(stk.nextToken());
                     count++;
                 }
-                
+
                 parameter.put(param, catArray);
             }
         }
     }
-    
+
     /**
-     * Merges a second configuration in this one. Only required parameters which aren't set 
-     * will be used from the new configuration.
+     * Merges a second configuration in this one. Only required parameters which aren't set will be used from
+     * the new configuration.
      * 
      * @param conf
      */
     public void mergeConfig(ServiceConfig conf) {
-        for (Entry<Parameter, Object> entry : conf.parameter.entrySet()) { 
+        for (Entry<Parameter, Object> entry : conf.parameter.entrySet()) {
             if (entry.getKey().isRequired() && parameter.get(entry.getKey()) == null) {
                 parameter.put(entry.getKey(), entry.getValue());
             }
         }
     }
-    
+
     /**
      * Set the default value for a specific Parameter
      * 
@@ -314,7 +377,7 @@ public class ServiceConfig extends Config {
             parameter.put(param, param.getDefaultValue());
         }
     }
-    
+
     /**
      * Set the default values for the parameter in p
      * 
@@ -327,15 +390,15 @@ public class ServiceConfig extends Config {
             }
         }
     }
-    
+
     protected int readDebugLevel() {
         String level = props.getProperty("debug.level");
         if (level == null)
             return Logging.LEVEL_INFO;
         else {
-            
+
             level = level.trim().toUpperCase();
-            
+
             if (level.equals("EMERG")) {
                 return Logging.LEVEL_EMERG;
             } else if (level.equals("ALERT")) {
@@ -353,55 +416,55 @@ public class ServiceConfig extends Config {
             } else if (level.equals("DEBUG")) {
                 return Logging.LEVEL_DEBUG;
             } else {
-                
+
                 try {
                     int levelInt = Integer.valueOf(level);
                     return levelInt;
                 } catch (NumberFormatException ex) {
                     throw new RuntimeException("'" + level + "' is not a valid level name nor an integer");
                 }
-                
+
             }
-            
+
         }
-        
+
     }
-    
+
     /**
-     * Read configuration parameter from property file and return an Object of
-     * the value if the parameter was set. Else return null.
+     * Read configuration parameter from property file and return an Object of the value if the parameter was
+     * set. Else return null.
      * 
      * @param Parameter
      *            param
      * @return Object
      */
     protected Object readParameter(Parameter param) {
-        
+
         String tmpString = props.getProperty(param.getPropertyString());
         if (tmpString == null) {
             return null;
         }
-        
+
         // Integer values
         if (Integer.class == param.getPropertyClass()) {
             return Integer.parseInt(tmpString.trim());
         }
-        
+
         // Boolean values
         if (Boolean.class == param.getPropertyClass()) {
             return Boolean.parseBoolean(tmpString.trim());
         }
-        
+
         // String values
         if (String.class == param.getPropertyClass()) {
             return tmpString.trim();
         }
-        
+
         // ServiceUUID values
         if (ServiceUUID.class == param.getPropertyClass()) {
             return new ServiceUUID(tmpString);
         }
-        
+
         // InetAddress values
         if (InetAddress.class == param.getPropertyClass()) {
             InetAddress iAddr = null;
@@ -412,29 +475,29 @@ public class ServiceConfig extends Config {
             }
             return iAddr;
         }
-        
+
         // InetSocketAddress values
         if (InetSocketAddress.class == param.getPropertyClass()) {
             // assumes that the parameter in the property file like
             // "foobar.host" and "foobar.port" if you
             // want to read a InetSocketAddress
-            return readRequiredInetAddr(param.getPropertyString(), param.getPropertyString().replaceAll(
-                "host", "port"));
+            return readRequiredInetAddr(param.getPropertyString(),
+                    param.getPropertyString().replaceAll("host", "port"));
         }
-        
+
         // Category[] values
         if (Category[].class == param.getPropertyClass()) {
             return readCategories(param.getPropertyString());
         }
-        
+
         return null;
     }
-    
+
     protected Category[] readCategories(String property) {
-        
+
         String tmp = this.readOptionalString(property, "");
         StringTokenizer st = new StringTokenizer(tmp, " \t,");
-        
+
         List<Category> cats = new LinkedList<Category>();
         while (st.hasMoreTokens()) {
             String token = st.nextToken();
@@ -444,24 +507,24 @@ public class ServiceConfig extends Config {
                 System.err.println("invalid logging category: " + token);
             }
         }
-        
+
         if (cats.size() == 0)
             cats.add(Category.all);
-        
+
         return cats.toArray(new Category[cats.size()]);
     }
-    
+
     public HashMap<String, String> toHashMap() {
-        
+
         HashMap<String, String> hm = new HashMap<String, String>();
-        
+
         for (Parameter param : Parameter.values()) {
             if (parameter.get(param) != null) {
-                
+
                 if (Category[].class == param.getPropertyClass()) {
                     Category[] debugCategories = (Category[]) parameter.get(param);
                     String putString = "";
-                    
+
                     boolean firstValue = true;
                     for (Category cat : debugCategories) {
                         if (firstValue) {
@@ -471,102 +534,102 @@ public class ServiceConfig extends Config {
                             putString += ", " + cat.toString();
                         }
                     }
-                    
+
                     hm.put(param.getPropertyString(), putString);
                 } else {
                     hm.put(param.getPropertyString(), parameter.get(param).toString());
-                    
+
                 }
             }
         }
         return hm;
-        
+
     }
-    
+
     public int getDebugLevel() {
         return (Integer) parameter.get(Parameter.DEBUG_LEVEL);
     }
-    
+
     public Category[] getDebugCategories() {
         return (Category[]) parameter.get(Parameter.DEBUG_CATEGORIES);
     }
-    
+
     public int getPort() {
         return (Integer) parameter.get(Parameter.PORT);
     }
-    
+
     public int getHttpPort() {
         return (Integer) parameter.get(Parameter.HTTP_PORT);
     }
-    
+
     public InetAddress getAddress() {
         return (InetAddress) parameter.get(Parameter.LISTEN_ADDRESS);
     }
-    
+
     public boolean isUsingSSL() {
         return (Boolean) parameter.get(Parameter.USE_SSL);
     }
-    
+
     public String getServiceCredsContainer() {
         return (String) parameter.get(Parameter.SERVICE_CREDS_CONTAINER);
     }
-    
+
     public String getServiceCredsFile() {
         return (String) parameter.get(Parameter.SERVICE_CREDS_FILE);
     }
-    
+
     public String getServiceCredsPassphrase() {
         return (String) parameter.get(Parameter.SERVICE_CREDS_PASSPHRASE);
     }
-    
+
     public String getTrustedCertsContainer() {
         return (String) parameter.get(Parameter.TRUSTED_CERTS_CONTAINER);
     }
-    
+
     public String getTrustedCertsFile() {
         return (String) parameter.get(Parameter.TRUSTED_CERTS_FILE);
     }
-    
+
     public String getTrustedCertsPassphrase() {
         return (String) parameter.get(Parameter.TRUSTED_CERTS_PASSPHRASE);
     }
-    
+
     public String getTrustManager() {
         return (String) parameter.get(Parameter.TRUST_MANAGER);
     }
-    
+
     public String getGeoCoordinates() {
         return (String) parameter.get(Parameter.GEO_COORDINATES);
     }
-    
+
     public void setGeoCoordinates(String geoCoordinates) {
         parameter.put(Parameter.GEO_COORDINATES, geoCoordinates);
     }
-    
+
     public String getAdminPassword() {
         return (String) parameter.get(Parameter.ADMIN_PASSWORD);
     }
-    
+
     public String getHostName() {
         return (String) parameter.get(Parameter.HOSTNAME);
     }
-    
+
     public ServiceUUID getUUID() {
         return (ServiceUUID) parameter.get(Parameter.UUID);
     }
-    
-    
+
     /**
      * @return the useFakeSSLmodeport
      */
     public boolean isGRIDSSLmode() {
-        return parameter.get(Parameter.USE_GRID_SSL_MODE) != null && (Boolean) parameter.get(Parameter.USE_GRID_SSL_MODE);
+        return parameter.get(Parameter.USE_GRID_SSL_MODE) != null
+                && (Boolean) parameter.get(Parameter.USE_GRID_SSL_MODE);
     }
-    
+
     public int getWaitForDIR() {
         return (Integer) parameter.get(Parameter.WAIT_FOR_DIR);
     }
-    
+
     public String getURLScheme() {
         if (isUsingSSL()) {
             if (isGRIDSSLmode()) {
@@ -577,23 +640,23 @@ public class ServiceConfig extends Config {
         }
         return Schemes.SCHEME_PBRPC;
     }
-    
+
     public String getPolicyDir() {
         return (String) parameter.get(Parameter.POLICY_DIR);
     }
-    
+
     public Boolean isUsingSnmp() {
         return (Boolean) parameter.get(Parameter.USE_SNMP);
     }
-    
+
     public InetAddress getSnmpAddress() {
         return (InetAddress) parameter.get(Parameter.SNMP_ADDRESS);
     }
-    
+
     public Integer getSnmpPort() {
         return (Integer) parameter.get(Parameter.SNMP_PORT);
     }
-    
+
     public String getSnmpACLFile() {
         return (String) parameter.get(Parameter.SNMP_ACL);
     }
@@ -605,7 +668,7 @@ public class ServiceConfig extends Config {
     public Integer getFailoverWait() {
         return (Integer) parameter.get(Parameter.FAILOVER_WAIT);
     }
-    
+
     public InetSocketAddress getDirectoryService() {
         return (InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE);
     }
@@ -634,19 +697,18 @@ public class ServiceConfig extends Config {
     public void setDirectoryService(InetSocketAddress addr) {
         parameter.put(Parameter.DIRECTORY_SERVICE, addr);
     }
-    
+
     /**
-     * Checks if the SSL Configuration is valid. If not throws a
-     * {@link RuntimeException}.
+     * Checks if the SSL Configuration is valid. If not throws a {@link RuntimeException}.
      * 
      * @throws RuntimeException
      */
     public void checkSSLConfiguration() {
-        
+
         Parameter[] sslRelatedParameter = { Parameter.SERVICE_CREDS_CONTAINER, Parameter.SERVICE_CREDS_FILE,
-            Parameter.SERVICE_CREDS_PASSPHRASE, Parameter.TRUSTED_CERTS_CONTAINER,
-            Parameter.TRUSTED_CERTS_FILE, Parameter.TRUSTED_CERTS_PASSPHRASE };
-        
+                Parameter.SERVICE_CREDS_PASSPHRASE, Parameter.TRUSTED_CERTS_CONTAINER,
+                Parameter.TRUSTED_CERTS_FILE, Parameter.TRUSTED_CERTS_PASSPHRASE };
+
         if (isUsingSSL() == true) {
             for (Parameter param : sslRelatedParameter) {
                 if (parameter.get(param) == null) {
@@ -657,19 +719,19 @@ public class ServiceConfig extends Config {
             if (parameter.get(Parameter.USE_GRID_SSL_MODE) != null) {
                 if (isGRIDSSLmode()) {
                     throw new RuntimeException(
-                        "ssl must be enabled to use the grid_ssl mode. Please make sure to set ssl.enabled = true and to configure all SSL options.");
+                            "ssl must be enabled to use the grid_ssl mode. Please make sure to set ssl.enabled = true and to configure all SSL options.");
                 }
             }
         }
-        
+
     }
-    
+
     protected void checkConfig(Parameter[] params) {
         for (Parameter param : params) {
             if (param.isRequired() && parameter.get(param) == null) {
-                    throw new RuntimeException("property '" + param.getPropertyString()
+                throw new RuntimeException("property '" + param.getPropertyString()
                         + "' is required but was not found");
-                
+
             }
         }
         this.checkSSLConfiguration();

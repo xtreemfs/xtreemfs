@@ -48,50 +48,50 @@ public class HashStorageLayout extends StorageLayout {
     /**
      * file to store the truncate epoch in (metadata)
      */
-    public static final String             TEPOCH_FILENAME       = ".tepoch";
+    public static final String             TEPOCH_FILENAME               = ".tepoch";
 
     /**
      * File to store the master epoch.
      */
-    public static final String             MASTER_EPOCH_FILENAME = ".mepoch";
+    public static final String             MASTER_EPOCH_FILENAME         = ".mepoch";
 
-    public static final String             TRUNCATE_LOG_FILENAME = ".tlog";
-
-    /**
-     * file that stores the mapping between file and object versions
-     */
-    public static final String             VTABLE_FILENAME       = ".vtable";
+    public static final String             TRUNCATE_LOG_FILENAME         = ".tlog";
 
     /**
      * file that stores the mapping between file and object versions
      */
-    public static final String             CURRENT_VER_FILENAME  = ".curr_file_ver";
+    public static final String             VTABLE_FILENAME               = ".vtable";
 
-    public static final int                SL_TAG                = 0x00000002;
+    /**
+     * file that stores the mapping between file and object versions
+     */
+    public static final String             CURRENT_VER_FILENAME          = ".curr_file_ver";
+
+    public static final int                SL_TAG                        = 0x00000002;
 
     /** 32bit algorithm */
-    public static final String             JAVA_HASH             = "Java-Hash";
+    public static final String             JAVA_HASH                     = "Java-Hash";
 
     /** 64bit algorithm */
-    public static final String             SDBM_HASH             = "SDBM";
+    public static final String             SDBM_HASH                     = "SDBM";
 
-    public static final int                SUBDIRS_16            = 15;
+    public static final int                SUBDIRS_16                    = 15;
 
-    public static final int                SUBDIRS_256           = 255;
+    public static final int                SUBDIRS_256                   = 255;
 
-    public static final int                SUBDIRS_4096          = 4095;
+    public static final int                SUBDIRS_4096                  = 4095;
 
-    public static final int                SUBDIRS_65535         = 65534;
+    public static final int                SUBDIRS_65535                 = 65534;
 
-    public static final int                SUBDIRS_1048576       = 1048575;
+    public static final int                SUBDIRS_1048576               = 1048575;
 
-    public static final int                SUBDIRS_16777216      = 16777215;
+    public static final int                SUBDIRS_16777216              = 16777215;
 
-    public static final String             DEFAULT_HASH          = JAVA_HASH;
+    public static final String             DEFAULT_HASH                  = JAVA_HASH;
 
-    private static final int               DEFAULT_SUBDIRS       = SUBDIRS_256;
+    private static final int               DEFAULT_SUBDIRS               = SUBDIRS_256;
 
-    private static final int               DEFAULT_MAX_DIR_DEPTH = 4;
+    private static final int               DEFAULT_MAX_DIR_DEPTH         = 4;
 
     private int                            prefixLength;
 
@@ -105,14 +105,14 @@ public class HashStorageLayout extends StorageLayout {
 
     private final LRUCache<String, String> hashedPathCache;
 
-    private static final boolean           USE_PATH_CACHE        = true;
+    private static final boolean           USE_PATH_CACHE                = true;
 
-    /** An incomplete read may be caused by a bad sector. This parameter defines
-     *  how often the OSD should retry to read the data as the disk firmware 
-     *  might remap the sector in the meantime / recover the data.
+    /**
+     * An incomplete read may be caused by a bad sector. This parameter defines how often the OSD should retry
+     * to read the data as the disk firmware might remap the sector in the meantime / recover the data.
      */
-    private static final int               RETRIES_INCOMPLETE_READ = 2;
-    
+    private static final int               RETRIES_INCOMPLETE_READ       = 2;
+
     private static final String            ERROR_MESSAGE_INCOMPLETE_READ = "Failed to read the requested number of bytes from the file on disk. Maybe there's a media error or the file was modified outside the scope of the OSD by another process?";
 
     /** Creates a new instance of HashStorageLayout */
@@ -151,7 +151,8 @@ public class HashStorageLayout extends StorageLayout {
             } catch (NoSuchAlgorithmException e) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,
                         "could not instantiate checksum algorithm '%s'", config.getChecksumProvider());
-                Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this, "OSD checksums will be switched off");
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,
+                        "OSD checksums will be switched off");
             }
         }
 
@@ -178,13 +179,13 @@ public class HashStorageLayout extends StorageLayout {
     }
 
     @Override
-    public ObjectInformation readObject(String fileId, FileMetadata md, long objNo, int offset, int length, long version)
-            throws IOException {
+    public ObjectInformation readObject(String fileId, FileMetadata md, long objNo, int offset, int length,
+            long version) throws IOException {
 
         final int stripeSize = md.getStripingPolicy().getStripeSizeForObject(objNo);
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "fetching object %s-%d from disk", fileId,
-                    objNo);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
+                    "fetching object %s-%d from disk", fileId, objNo);
         }
 
         ReusableBuffer bbuf = null;
@@ -194,7 +195,8 @@ public class HashStorageLayout extends StorageLayout {
             assert (offset == 0) : "if length is -1 offset must be 0 but is " + offset;
             length = stripeSize;
             if (checksumsEnabled) {
-                // Check checksum only if -1 was supplied as length. Fortunately, only xtfs_scrub uses this parameter effictively
+                // Check checksum only if -1 was supplied as length. Fortunately, only xtfs_scrub uses this
+                // parameter effictively
                 // skipping the expensive checksum check for regular operations for now.
                 checkChecksum = true;
             }
@@ -213,7 +215,8 @@ public class HashStorageLayout extends StorageLayout {
         String fileName = generateAbsoluteObjectPathFromFileId(fileId, objNo, version, oldChecksum);
 
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "path to object on disk: %s", fileName);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "path to object on disk: %s",
+                    fileName);
         }
 
         File file = new File(fileName);
@@ -232,7 +235,8 @@ public class HashStorageLayout extends StorageLayout {
                                 "object %d is a padding object", objNo);
                     }
 
-                    return new ObjectInformation(ObjectInformation.ObjectStatus.PADDING_OBJECT, null, stripeSize);
+                    return new ObjectInformation(ObjectInformation.ObjectStatus.PADDING_OBJECT, null,
+                            stripeSize);
 
                 } else if (flength <= offset) {
 
@@ -261,32 +265,45 @@ public class HashStorageLayout extends StorageLayout {
                     for (int attempt = 0; attempt <= RETRIES_INCOMPLETE_READ; attempt++) {
                         if (attempt > 0) {
                             bbuf.position(0);
-                            Logging.logMessage(Logging.LEVEL_INFO, Category.storage, this, "Retrying to read object from disk since it failed before (retry %d/%d). Path to the file on disk: %s", attempt, RETRIES_INCOMPLETE_READ, fileName);
+                            Logging.logMessage(
+                                    Logging.LEVEL_INFO,
+                                    Category.storage,
+                                    this,
+                                    "Retrying to read object from disk since it failed before (retry %d/%d). Path to the file on disk: %s",
+                                    attempt, RETRIES_INCOMPLETE_READ, fileName);
                         }
 
                         f.getChannel().position(offset);
                         f.getChannel().read(bbuf.getBuffer());
                         if (Logging.isDebug()) {
                             Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
-                                    "object %d is read at offset %d, %d bytes read, attempt: %d", objNo, offset, bbuf.limit(), attempt);
+                                    "object %d is read at offset %d, %d bytes read, attempt: %d", objNo,
+                                    offset, bbuf.limit(), attempt);
                         }
-    
+
                         if (bbuf.hasRemaining()) {
                             if (attempt == 0) {
-                                Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this, "%s Path to the file on disk: %s", ERROR_MESSAGE_INCOMPLETE_READ, fileName);
+                                Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,
+                                        "%s Path to the file on disk: %s", ERROR_MESSAGE_INCOMPLETE_READ,
+                                        fileName);
                             }
                         } else {
                             if (attempt > 0) {
-                                Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this, "Successfully read object from disk at retry %d after previous failures. Path to the file on disk: %s", attempt, fileName);
+                                Logging.logMessage(
+                                        Logging.LEVEL_ERROR,
+                                        Category.storage,
+                                        this,
+                                        "Successfully read object from disk at retry %d after previous failures. Path to the file on disk: %s",
+                                        attempt, fileName);
                             }
                             break;
                         }
-                        
+
                         if (attempt == RETRIES_INCOMPLETE_READ) {
                             throw new IOException(ERROR_MESSAGE_INCOMPLETE_READ);
                         }
                     }
-                    
+
                     f.close();
 
                     bbuf.position(0);
@@ -310,7 +327,9 @@ public class HashStorageLayout extends StorageLayout {
                 }
 
                 if (e instanceof IOException) {
-                    Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this, "Failed to read object file from disk. Error: %s Path to the file on disk: %s", e.getMessage(), fileName);
+                    Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,
+                            "Failed to read object file from disk. Error: %s Path to the file on disk: %s",
+                            e.getMessage(), fileName);
                     throw (IOException) e;
                 } else {
                     throw new IOException(e);
@@ -322,7 +341,8 @@ public class HashStorageLayout extends StorageLayout {
         } else {
 
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "object %d does not exist", objNo);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "object %d does not exist",
+                        objNo);
             }
 
             return new ObjectInformation(ObjectInformation.ObjectStatus.DOES_NOT_EXIST, null, stripeSize);
@@ -343,8 +363,8 @@ public class HashStorageLayout extends StorageLayout {
         new File(this.storageDir + relPath).mkdirs();
 
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "writing object %s-%d to disk: %s", fileId,
-                    objNo, relPath);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
+                    "writing object %s-%d to disk: %s", fileId, objNo, relPath);
         }
 
         try {
@@ -366,8 +386,9 @@ public class HashStorageLayout extends StorageLayout {
         }
     }
 
-    private void partialWriteCOW(String relativePath, String fileId, FileMetadata md, ReusableBuffer data, int offset,
-            long objNo, long newVersion, boolean sync, boolean deleteOldVersion) throws IOException {
+    private void partialWriteCOW(String relativePath, String fileId, FileMetadata md, ReusableBuffer data,
+            int offset, long objNo, long newVersion, boolean sync, boolean deleteOldVersion)
+            throws IOException {
         // write file
 
         assert (data != null);
@@ -383,7 +404,8 @@ public class HashStorageLayout extends StorageLayout {
             checksumAlgo.update(fullObj.getBuffer());
             newChecksum = checksumAlgo.getValue();
         }
-        final String newFilename = generateAbsoluteObjectPathFromRelPath(relativePath, objNo, newVersion, newChecksum);
+        final String newFilename = generateAbsoluteObjectPathFromRelPath(relativePath, objNo, newVersion,
+                newChecksum);
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "writing to file (COW): %s", newFilename);
         }
@@ -396,7 +418,9 @@ public class HashStorageLayout extends StorageLayout {
             fullObj.position(0);
             f.getChannel().write(fullObj.getBuffer());
         } catch (IOException e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this, "Failed to write object file to disk. Error: %s Path to the file on disk: %s", e.getMessage(), newFilename);
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,
+                    "Failed to write object file to disk. Error: %s Path to the file on disk: %s",
+                    e.getMessage(), newFilename);
             throw e;
         } finally {
             if (f != null) {
@@ -406,7 +430,8 @@ public class HashStorageLayout extends StorageLayout {
         }
 
         if (deleteOldVersion) {
-            String oldFilename = generateAbsoluteObjectPathFromRelPath(relativePath, objNo, oldVersion, oldChecksum);
+            String oldFilename = generateAbsoluteObjectPathFromRelPath(relativePath, objNo, oldVersion,
+                    oldChecksum);
             File oldFile = new File(oldFilename);
             oldFile.delete();
         }
@@ -435,7 +460,9 @@ public class HashStorageLayout extends StorageLayout {
             f.seek(offset);
             f.getChannel().write(data.getBuffer());
         } catch (IOException e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this, "Failed to write object file to disk. Error: %s Path to the file on disk: %s", e.getMessage(), filename);
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,
+                    "Failed to write object file to disk. Error: %s Path to the file on disk: %s",
+                    e.getMessage(), filename);
             throw e;
         } finally {
             if (f != null) {
@@ -454,8 +481,8 @@ public class HashStorageLayout extends StorageLayout {
         }
     }
 
-    private void completeWrite(String relativePath, String fileId, FileMetadata md, ReusableBuffer data, long objNo,
-            long newVersion, boolean sync, boolean deleteOldVersion) throws IOException {
+    private void completeWrite(String relativePath, String fileId, FileMetadata md, ReusableBuffer data,
+            long objNo, long newVersion, boolean sync, boolean deleteOldVersion) throws IOException {
         // write file
 
         final long oldVersion = md.getLatestObjectVersion(objNo);
@@ -467,7 +494,8 @@ public class HashStorageLayout extends StorageLayout {
             checksumAlgo.update(data.getBuffer());
             newChecksum = checksumAlgo.getValue();
         }
-        final String newFilename = generateAbsoluteObjectPathFromRelPath(relativePath, objNo, newVersion, newChecksum);
+        final String newFilename = generateAbsoluteObjectPathFromRelPath(relativePath, objNo, newVersion,
+                newChecksum);
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "writing to file: %s", newFilename);
         }
@@ -487,7 +515,8 @@ public class HashStorageLayout extends StorageLayout {
         }
 
         if (((oldVersion != newVersion) || (newChecksum != oldChecksum)) && (deleteOldVersion)) {
-            String oldFilename = generateAbsoluteObjectPathFromRelPath(relativePath, objNo, oldVersion, oldChecksum);
+            String oldFilename = generateAbsoluteObjectPathFromRelPath(relativePath, objNo, oldVersion,
+                    oldChecksum);
             File oldFile = new File(oldFilename);
             oldFile.delete();
         }
@@ -534,8 +563,8 @@ public class HashStorageLayout extends StorageLayout {
     }
 
     @Override
-    public void truncateObject(String fileId, FileMetadata md, long objNo, int newLength, long newVersion, boolean cow)
-            throws IOException {
+    public void truncateObject(String fileId, FileMetadata md, long objNo, int newLength, long newVersion,
+            boolean cow) throws IOException {
 
         final long oldVersion = md.getLatestObjectVersion(objNo);
         final long oldChecksum = md.getObjectChecksum(objNo, oldVersion);
@@ -621,7 +650,8 @@ public class HashStorageLayout extends StorageLayout {
                 md.updateObjectVersion(objNo, newVersion);
                 if (Logging.isDebug()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
-                            "truncate object %d, renamed file for new version %d: %s", objNo, newVersion, newFilename);
+                            "truncate object %d, renamed file for new version %d: %s", objNo, newVersion,
+                            newFilename);
                 }
             }
         }
@@ -698,7 +728,8 @@ public class HashStorageLayout extends StorageLayout {
     }
 
     @Override
-    public void deleteObject(String fileId, FileMetadata md, final long objNo, long version) throws IOException {
+    public void deleteObject(String fileId, FileMetadata md, final long objNo, long version)
+            throws IOException {
         final long verToDel = (version == LATEST_VERSION) ? md.getLatestObjectVersion(objNo) : version;
         File fileDir = new File(generateAbsoluteFilePath(fileId));
         File[] objs = fileDir.listFiles(new FileFilter() {
@@ -935,7 +966,7 @@ public class HashStorageLayout extends StorageLayout {
         return objectSet;
     }
 
-    private String generateAbsoluteFilePath(String fileId) {
+    public String generateAbsoluteFilePath(String fileId) {
         return this.storageDir + generateRelativeFilePath(fileId);
     }
 
@@ -1156,8 +1187,9 @@ public class HashStorageLayout extends StorageLayout {
                             }
                         } catch (Exception e) {
 
-                            Logging.logMessage(Logging.LEVEL_WARN, Category.storage, this, "CleanUp: an illegal file ("
-                                    + ch.getAbsolutePath() + ") was discovered and ignored.");
+                            Logging.logMessage(Logging.LEVEL_WARN, Category.storage, this,
+                                    "CleanUp: an illegal file (" + ch.getAbsolutePath()
+                                            + ") was discovered and ignored.");
                         }
                     }
                 }
@@ -1181,8 +1213,8 @@ public class HashStorageLayout extends StorageLayout {
                             + newestLast.length();
 
                     // insert the data into the FileList
-                    l.files.put((WIN) ? dir.getName().replace('_', ':') : dir.getName(), new FileData(fileSize,
-                            (int) (objectSize / 1024)));
+                    l.files.put((WIN) ? dir.getName().replace('_', ':') : dir.getName(), new FileData(
+                            fileSize, (int) (objectSize / 1024)));
                 }
             } while (l.files.size() < maxNumEntries);
             l.hasMore = true;

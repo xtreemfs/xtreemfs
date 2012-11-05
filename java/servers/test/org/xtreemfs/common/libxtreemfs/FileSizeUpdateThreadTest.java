@@ -52,10 +52,9 @@ public class FileSizeUpdateThreadTest {
         dir.startup();
         dir.waitForStartup();
 
-        testEnv =
-                new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_CLIENT,
-                        TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.RPC_CLIENT,
-                        TestEnvironment.Services.MRC, TestEnvironment.Services.OSD});
+        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_CLIENT,
+                TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.RPC_CLIENT,
+                TestEnvironment.Services.MRC, TestEnvironment.Services.OSD });
         testEnv.start();
 
         userCredentials = UserCredentials.newBuilder().setUsername("test").addGroups("test").build();
@@ -84,7 +83,7 @@ public class FileSizeUpdateThreadTest {
         String dirAddress = testEnv.getDIRAddress().getHostName() + ":" + testEnv.getDIRAddress().getPort();
         String mrcAddress = testEnv.getMRCAddress().getHostName() + ":" + testEnv.getMRCAddress().getPort();
 
-        Client client = Client.createClient(dirAddress, userCredentials, null, options);
+        Client client = ClientFactory.createClient(dirAddress, userCredentials, null, options);
         client.start();
 
         // Open a volume named "foobar".
@@ -92,11 +91,12 @@ public class FileSizeUpdateThreadTest {
         Volume volume = client.openVolume(VOLUME_NAME_1, null, options);
 
         // Open a file.
-        FileHandle fileHandle =
-                volume.openFile(userCredentials, "/bla.tzt",
-                        SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
-                                | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
-                                | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber());
+        FileHandle fileHandle = volume.openFile(
+                userCredentials,
+                "/bla.tzt",
+                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
+                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
+                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber());
 
         // Get file attributes
         Stat stat = volume.getAttr(userCredentials, "/bla.tzt");
@@ -107,19 +107,17 @@ public class FileSizeUpdateThreadTest {
         fileHandle.write(userCredentials, data.getBytes(), data.length(), 0);
 
         // MRC shouldn't know about filesize yet
-        stat =
-                mrcClient
-                        .getattr(testEnv.getMRCAddress(), auth, userCredentials, VOLUME_NAME_1, "/bla.tzt", 0)
-                        .get().getStbuf();
+        stat = mrcClient
+                .getattr(testEnv.getMRCAddress(), auth, userCredentials, VOLUME_NAME_1, "/bla.tzt", 0).get()
+                .getStbuf();
         assertEquals(0, stat.getSize());
 
         Thread.sleep(10000);
 
         // Now the thread should have updated the filesize at MRC
-        stat =
-            mrcClient
-                    .getattr(testEnv.getMRCAddress(), auth, userCredentials, VOLUME_NAME_1, "/bla.tzt", 0)
-                    .get().getStbuf();
+        stat = mrcClient
+                .getattr(testEnv.getMRCAddress(), auth, userCredentials, VOLUME_NAME_1, "/bla.tzt", 0).get()
+                .getStbuf();
         assertEquals(data.length(), stat.getSize());
 
         fileHandle.close();

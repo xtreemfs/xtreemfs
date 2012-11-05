@@ -28,8 +28,8 @@ An optional passphrase to access the credentials file.
 \fB\-delete
 Deletes files where the objects are lost because they were stored on a failed/removed OSD.
 .TP
-\fB-dir \fI<uri>
-Specifies the directory service to use (e.g. 'pbrpc://localhost:32638'). If no URI is specified, URI and security settings are taken from '/etc/xos/xtreemfs/default_dir'. In case of a secured URI ('pbrpcs://...' or 'pbrpcg://...'), it is necessary to also specify SSL settings.
+\fB-dirs \fI<uri(,uri...)>
+Specifies the directory services to use (e.g. 'pbrpc://localhost:32638,pbrpc://myDir.com:32638') (comma-separated). If no URI is specified, URIs and security settings are taken from '/etc/xos/xtreemfs/default_dir'. In case of a secured URI ('pbrpcs://...' or 'pbrpcg://...'), it is necessary to also specify SSL settings.
 .TP
 \fB-h/--help
 Shows usage info.
@@ -38,7 +38,7 @@ Shows usage info.
 Repairs inconsistent file sizes and replace replicas on failed/removed OSD.
 .TP
 \fB\-silent
-Hides the progress bar.
+Hides detailed informations about the scrubbed files.
 .TP
 \fB-t \fI<trusted_CAs>
 Path to a PKCS#12 file containing a set of certificates from trusted certification authorities. These certificates will be used to authenticate the MRC. Must be present when MRC URL starts with pbrpcs:// or pbrpcg://.

@@ -12,7 +12,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -49,42 +48,35 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
  * @author bjko
  */
 public class StatusPage {
-    
+
     private final static String statusPageTemplate;
-    
+
+    private final static int    SERVICE_TIMEOUT = 600000;
+
     private enum Vars {
-            
-            MAXMEM("<!-- $MAXMEM -->"),
-            FREEMEM("<!-- $FREEMEM -->"),
-            AVAILPROCS("<!-- $AVAILPROCS -->"),
-            BPSTATS("<!-- $BPSTATS -->"),
-            PORT("<!-- $PORT -->"),
-            DEBUG("<!-- $DEBUG -->"),
-            NUMCON("<!-- $NUMCON -->"),
-            PINKYQ("<!-- $PINKYQ -->"),
-            NUMREQS("<!-- $NUMREQS -->"),
-            TIME("<!-- $TIME -->"),
-            TABLEDUMP("<!-- $TABLEDUMP -->"),
-            PROTOVERSION("<!-- $PROTOVERSION -->"),
-            VERSION("<!-- $VERSION -->"),
-            DBVERSION("<!-- $DBVERSION -->");
-        
+
+        MAXMEM("<!-- $MAXMEM -->"), FREEMEM("<!-- $FREEMEM -->"), AVAILPROCS("<!-- $AVAILPROCS -->"), BPSTATS(
+                "<!-- $BPSTATS -->"), PORT("<!-- $PORT -->"), DEBUG("<!-- $DEBUG -->"), NUMCON(
+                "<!-- $NUMCON -->"), PINKYQ("<!-- $PINKYQ -->"), NUMREQS("<!-- $NUMREQS -->"), TIME(
+                "<!-- $TIME -->"), TABLEDUMP("<!-- $TABLEDUMP -->"), PROTOVERSION("<!-- $PROTOVERSION -->"), VERSION(
+                "<!-- $VERSION -->"), DBVERSION("<!-- $DBVERSION -->");
+
         private String template;
-        
+
         Vars(String template) {
             this.template = template;
         }
-        
+
         public String toString() {
             return template;
         }
     };
-    
+
     static {
         StringBuffer sb = null;
         try {
             InputStream is = StatusPage.class.getClassLoader().getResourceAsStream(
-                "org/xtreemfs/dir/templates/status.html");
+                    "org/xtreemfs/dir/templates/status.html");
             if (is == null) {
                 is = StatusPage.class.getClass().getResourceAsStream("../templates/status.html");
             }
@@ -98,7 +90,7 @@ public class StatusPage {
             br.close();
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.misc, (Object) null,
-                "could not load status page template: %s", OutputUtils.stackTraceToString(ex));
+                    "could not load status page template: %s", OutputUtils.stackTraceToString(ex));
         }
         if (sb == null) {
             statusPageTemplate = "<H1>Template was not found, unable to show status page!</h1>";
@@ -106,29 +98,28 @@ public class StatusPage {
             statusPageTemplate = sb.toString();
         }
     }
-    
+
     public static String getStatusPage(DIRRequestDispatcher master, DIRConfig config) throws BabuDBException,
-        IOException, InterruptedException {
-        
+            IOException, InterruptedException {
+
         final Database database = master.getDirDatabase();
-        
+
         assert (statusPageTemplate != null);
-        
+
         long time = System.currentTimeMillis();
-        
+
         ResultSet<byte[], byte[]> iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_ADDRMAPS,
-            new byte[0], null).get();
-        
+                new byte[0], null).get();
+
         StringBuilder dump = new StringBuilder();
-        dump
-                .append("<br><table width=\"100%\" frame=\"box\"><td colspan=\"2\" class=\"heading\">Address Mapping</td>");
+        dump.append("<br><table width=\"100%\" frame=\"box\"><td colspan=\"2\" class=\"heading\">Address Mapping</td>");
         dump.append("<tr><td class=\"dumpTitle\">UUID</td><td class=\"dumpTitle\">mapping</td></tr>");
         while (iter.hasNext()) {
             Entry<byte[], byte[]> e = iter.next();
             AddressMappingRecords ams = new AddressMappingRecords(ReusableBuffer.wrap(e.getValue()));
-            
+
             final String uuid = new String(e.getKey());
-            
+
             dump.append("<tr><td class=\"uuid\">");
             dump.append(uuid);
             dump.append("</td><td class=\"dump\"><table width=\"100%\"><tr>");
@@ -137,7 +128,7 @@ public class StatusPage {
             for (AddressMappingRecord am : ams.getRecords()) {
                 dump.append("<tr><td class=\"mapping\">");
                 String endpoint = am.getUri() + " (" + am.getProtocol() + "," + am.getAddress() + ","
-                    + am.getPort() + ")";
+                        + am.getPort() + ")";
                 dump.append(endpoint);
                 dump.append("</td><td class=\"mapping\">");
                 dump.append(am.getMatch_network());
@@ -153,70 +144,71 @@ public class StatusPage {
         }
         dump.append("</td></tr></table>");
         iter.free();
-        
+
         iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0], null).get();
-        
-        dump
-                .append("<br><table width=\"100%\" frame=\"box\"><td colspan=\"2\" class=\"heading\">Service Registry</td>");
+
+        dump.append("<br><table width=\"100%\" frame=\"box\"><td colspan=\"2\" class=\"heading\">Service Registry</td>");
         dump.append("<tr><td class=\"dumpTitle\">UUID</td><td class=\"dumpTitle\">mapping</td></tr>");
         while (iter.hasNext()) {
             Entry<byte[], byte[]> e = iter.next();
             final String uuid = new String(e.getKey());
             final ServiceRecord sreg = new ServiceRecord(ReusableBuffer.wrap(e.getValue()));
-            
+
             dump.append("<tr><td class=\"uuid\">");
             dump.append(uuid);
             dump.append("</td><td class=\"dump\"><table width=\"100%\">");
-            
+
             dump.append("<tr><td width=\"30%\">");
             dump.append("type");
             dump.append("</td><td><b>");
             dump.append(sreg.getType());
             dump.append("</b></td></tr>");
-            
+
             dump.append("<tr><td width=\"30%\">");
             dump.append("name");
             dump.append("</td><td><b>");
             dump.append(sreg.getName());
             dump.append("</b></td></tr>");
-            
+
             // sort the set of entries
             SortedMap<String, String> sMap = new TreeMap<String, String>();
-            for(Entry<String, String> entry: sreg.getData().entrySet())
+            for (Entry<String, String> entry : sreg.getData().entrySet())
                 sMap.put(entry.getKey(), entry.getValue());
-                
+
             for (Entry<String, String> dataEntry : sMap.entrySet()) {
                 dump.append("<tr><td width=\"30%\">");
                 dump.append(dataEntry.getKey());
                 dump.append("</td><td><b>");
-                
+
                 if (dataEntry.getKey().equals("status_page_url")) {
                     dump.append("<a href=\"");
                     dump.append(dataEntry.getValue());
                     dump.append("\">");
                 }
-                
-                dump.append(dataEntry.getValue());
-                
+
+                if (!dataEntry.getKey().equals(HeartbeatThread.STATUS_ATTR)) {
+                    dump.append(dataEntry.getValue());
+                }
+
                 if (dataEntry.getKey().equals("status_page_url")) {
                     dump.append("</a>");
                 } else if (dataEntry.getKey().equals("last_updated")) {
-                    
+
                 } else if (dataEntry.getKey().equals(HeartbeatThread.STATUS_ATTR)) {
                     ServiceStatus status = ServiceStatus.valueOf(Integer.valueOf(dataEntry.getValue()));
                     switch (status) {
                     case SERVICE_STATUS_AVAIL:
-                        dump.append(" (online)");
+                        dump.append("online (new files be assigned to it)");
                         break;
                     case SERVICE_STATUS_TO_BE_REMOVED:
-                        dump.append(" (locked for removal)");
+                        dump.append("locked (new files will not be assigned to it)");
                         break;
                     case SERVICE_STATUS_REMOVED:
-                        dump.append(" (removed, dead)");
+                        dump.append("removed (replicas assigned to this OSD will be replaced)");
                         break;
                     }
                 } else if (dataEntry.getKey().equals("free") || dataEntry.getKey().equals("total")
-                    || dataEntry.getKey().endsWith("RAM") || dataEntry.getKey().equals("used")) {
+                        || dataEntry.getKey().endsWith("RAM") || dataEntry.getKey().equals("used")) {
                     dump.append(" bytes (");
                     dump.append(OutputUtils.formatBytes(Long.parseLong(dataEntry.getValue())));
                     dump.append(")");
@@ -234,81 +226,97 @@ public class StatusPage {
                 }
                 dump.append("</b></td></tr>");
             }
-            
+
             dump.append("<tr><td width=\"30%\">");
             dump.append("last updated");
             dump.append("</td><td><b>");
             dump.append(sreg.getLast_updated_s());
             if (sreg.getLast_updated_s() == 0) {
-                dump.append(" (service is offline)");
+                dump.append(" (service was shutdown)");
             } else {
                 dump.append(" (");
-                dump.append(new Date(sreg.getLast_updated_s() * 1000));
+                Date lastUpdatedDate = new Date(sreg.getLast_updated_s() * 1000);
+                dump.append(lastUpdatedDate);
+                // check timeout only for MRCs and OSDs
+                if (sreg.getType() != ServiceType.SERVICE_TYPE_VOLUME) {
+                    if (lastUpdatedDate.getTime() < System.currentTimeMillis() - SERVICE_TIMEOUT) {
+                        long timeout = System.currentTimeMillis() - lastUpdatedDate.getTime();
+                        dump.append(", that's ");
+                        if (timeout < 3600000) {
+                            dump.append(timeout / 60000);
+                            dump.append(" minutes");
+                        } else if (timeout < 86400000) {
+                            dump.append(timeout / 3600000);
+                            dump.append(" hours");
+                        } else {
+                            dump.append(timeout / 86400000);
+                            dump.append(" days");
+                        }
+                        dump.append(" ago check connectivity of the server");
+                    }
+                }
                 dump.append(")");
                 dump.append("</b></td></tr>");
             }
-            
+
             dump.append("<td></td><td class=\"version\">version: <b>");
             dump.append(sreg.getVersion());
             dump.append("</b></td></table></td></tr>");
         }
-        
+
         dump.append("</td></tr></table>");
         iter.free();
-        
+
         // Configuration part
-        
+
         iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_CONFIGURATIONS, new byte[0], null).get();
-        
-        dump
-                .append("<br><table width=\"100%\" frame=\"box\"><td colspan=\"2\" class=\"heading\">Configurations</td>");
-        dump
-                .append("<tr><td class=\"dumpTitle\">UUID</td><td class=\"dumpTitle\">Configuration Parameter</td></tr>");
-        
+
+        dump.append("<br><table width=\"100%\" frame=\"box\"><td colspan=\"2\" class=\"heading\">Configurations</td>");
+        dump.append("<tr><td class=\"dumpTitle\">UUID</td><td class=\"dumpTitle\">Configuration Parameter</td></tr>");
+
         while (iter.hasNext()) {
             Entry<byte[], byte[]> e = iter.next();
             final String uuid = new String(e.getKey());
             final ConfigurationRecord conf = new ConfigurationRecord(ReusableBuffer.wrap(e.getValue()));
-            
+
             dump.append("<tr><td class=\"uuid\">");
             dump.append(uuid);
             dump.append("</td><td class=\"dump\"><table width=\"100%\">");
-            
+
             Collections.sort(conf.getData(), new Comparator<KeyValuePair>() {
                 public int compare(KeyValuePair o1, KeyValuePair o2) {
                     return o1.getKey().compareTo(o2.getKey());
                 }
             });
-            
+
             for (KeyValuePair kvp : conf.getData()) {
                 dump.append("<tr><td width=\"30%\">");
                 dump.append(kvp.getKey());
                 dump.append("</td><td><b>");
-                
+
                 dump.append(kvp.getKey().equals(ServiceConfig.Parameter.ADMIN_PASSWORD.getPropertyString())
-                    || kvp.getKey().equals(ServiceConfig.Parameter.CAPABILITY_SECRET.getPropertyString())
-                    || kvp.getKey().equals(
-                        ServiceConfig.Parameter.SERVICE_CREDS_PASSPHRASE.getPropertyString())
-                    || kvp.getKey().equals(
-                        ServiceConfig.Parameter.TRUSTED_CERTS_PASSPHRASE.getPropertyString()) ? "*******"
-                    : kvp.getValue());
+                        || kvp.getKey().equals(ServiceConfig.Parameter.CAPABILITY_SECRET.getPropertyString())
+                        || kvp.getKey().equals(
+                                ServiceConfig.Parameter.SERVICE_CREDS_PASSPHRASE.getPropertyString())
+                        || kvp.getKey().equals(
+                                ServiceConfig.Parameter.TRUSTED_CERTS_PASSPHRASE.getPropertyString()) ? "*******"
+                        : kvp.getValue());
                 dump.append("</b></td></tr>");
             }
-            
+
             dump.append("<td></td><td class=\"version\">version: <b>");
             dump.append(conf.getVersion());
             dump.append("</b></td></table></td></tr>");
         }
         iter.free();
-        
+
         dump.append("</b></td></table></td></tr>");
         dump.append("</table>");
-        
+
         String tmp = null;
         try {
             tmp = statusPageTemplate.replace(Vars.AVAILPROCS.toString(), Runtime.getRuntime()
-                    .availableProcessors()
-                + " bytes");
+                    .availableProcessors() + " bytes");
         } catch (Exception e) {
             tmp = statusPageTemplate;
         }
@@ -321,22 +329,22 @@ public class StatusPage {
         tmp = tmp.replace(Vars.NUMREQS.toString(), Long.toString(master.getNumRequests()));
         tmp = tmp.replace(Vars.TIME.toString(), new Date(time).toString() + " (" + time + ")");
         tmp = tmp.replace(Vars.TABLEDUMP.toString(), dump.toString());
-        
+
         tmp = tmp.replace(Vars.VERSION.toString(), VersionManagement.RELEASE_VERSION);
         tmp = tmp.replace(Vars.PROTOVERSION.toString(), Integer.toString(DIRServiceConstants.INTERFACE_ID));
         tmp = tmp.replace(Vars.DBVERSION.toString(), BabuDBFactory.BABUDB_VERSION);
-        
+
         return tmp;
-        
+
     }
-    
-    
-    public static String getVivaldiData(DIRRequestDispatcher master, DIRConfig config) throws BabuDBException,
-    IOException, InterruptedException {
+
+    public static String getVivaldiData(DIRRequestDispatcher master, DIRConfig config)
+            throws BabuDBException, IOException, InterruptedException {
         final Database database = master.getDirDatabase();
         StringBuilder dump = new StringBuilder();
-        ResultSet<byte[], byte[]> iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0], null).get();
-        
+        ResultSet<byte[], byte[]> iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_SERVREG,
+                new byte[0], null).get();
+
         // create tab separated plain text table
         dump.append("uuid");
         dump.append("\t");
@@ -351,23 +359,24 @@ public class StatusPage {
         dump.append("vivaldi_y");
         dump.append("\t");
         dump.append("vivaldi_err");
-                
+
         while (iter.hasNext()) {
             Entry<byte[], byte[]> e = iter.next();
             final String uuid = new String(e.getKey());
             final ServiceRecord sreg = new ServiceRecord(ReusableBuffer.wrap(e.getValue()));
 
-            final ServiceStatus status = ServiceStatus.valueOf(Integer.valueOf(sreg.getData().get(HeartbeatThread.STATUS_ATTR)));
+            final ServiceStatus status = ServiceStatus.valueOf(Integer.valueOf(sreg.getData().get(
+                    HeartbeatThread.STATUS_ATTR)));
             String statusString = "unknown value";
             switch (status) {
             case SERVICE_STATUS_AVAIL:
-                statusString = "online";
+                dump.append("online (new files be assigned to it)");
                 break;
             case SERVICE_STATUS_TO_BE_REMOVED:
-                statusString = "locked for removal";
+                dump.append("locked (new files will not be assigned to it)");
                 break;
             case SERVICE_STATUS_REMOVED:
-                statusString = "removed, dead";
+                dump.append("removed (replicas assigned to this OSD will be replaced)");
                 break;
             }
 
@@ -380,9 +389,9 @@ public class StatusPage {
                 coordBuilder.setXCoordinate(0.0);
                 coordBuilder.setYCoordinate(0.0);
                 coordBuilder.setLocalError(0.0);
-                coords = coordBuilder.build(); 
+                coords = coordBuilder.build();
             }
-            
+
             dump.append("\n");
             dump.append(uuid);
             dump.append("\t");
@@ -397,15 +406,18 @@ public class StatusPage {
             dump.append(coords.getYCoordinate());
             dump.append("\t");
             dump.append(coords.getLocalError());
-            
+
         } // while
-        
+
         iter.free();
 
         master.getVivaldiClientMap().filterTimeOuts();
         // append clients
-        //for (Map.Entry<InetSocketAddress, VivaldiClientValue> entry: master.getVivaldiClientMap().entrySet()) {
-        for (Map.Entry<String, org.xtreemfs.dir.VivaldiClientMap.VivaldiClientValue> entry: master.getVivaldiClientMap().entrySet()) {
+
+        // for (Map.Entry<InetSocketAddress, VivaldiClientValue> entry:
+        // master.getVivaldiClientMap().entrySet()) {
+        for (Map.Entry<String, org.xtreemfs.dir.VivaldiClientMap.VivaldiClientValue> entry : master
+                .getVivaldiClientMap().entrySet()) {
             dump.append("\n");
             dump.append(entry.getValue().getAddress().toString());
             dump.append("\t");
@@ -421,18 +433,18 @@ public class StatusPage {
             dump.append("\t");
             dump.append(entry.getValue().getCoordinates().getLocalError());
         }
-        
+
         return dump.toString();
     }
-    
+
     public static String getDBInfo(Map<String, Object> dbStatus) {
         StringBuilder sb = new StringBuilder();
         sb.append("<HTML><BODY><H1>BABUDB STATE</H1>");
-        
+
         if (dbStatus == null) {
             sb.append("BabuDB has not yet been initialized.");
         }
-        
+
         else {
             sb.append("<TABLE>");
             Map<String, Object> status = new TreeMap<String, Object>(dbStatus);
@@ -445,9 +457,9 @@ public class StatusPage {
             }
             sb.append("</TABLE>");
         }
-        
+
         sb.append("</BODY></HTML>");
-        
+
         return sb.toString();
     }
 }

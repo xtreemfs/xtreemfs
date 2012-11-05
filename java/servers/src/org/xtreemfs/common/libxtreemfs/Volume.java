@@ -27,7 +27,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrResponse;
 /**
  * Represents a volume. A volume object can be obtain by opening a volume with a client.
  */
-public abstract class Volume {
+public interface Volume {
 
     public static final String XTREEMFS_DEFAULT_RP = "xtreemfs.default_rp";
     
@@ -36,7 +36,7 @@ public abstract class Volume {
     /**
      * Start this volume, e.g. initialize all required things.
      */
-    protected abstract void start() throws Exception;
+    void start() throws Exception;
 
     /**
      * Close the volume.
@@ -44,7 +44,7 @@ public abstract class Volume {
     public abstract void close();
 
     /**
-     * Returns information about the volume (e.g. used/free space)
+     * Returns information about the volume (e.g. used/free space).
      * 
      * @param userCredentials
      *            Name and groups of the User.
@@ -564,29 +564,43 @@ public abstract class Volume {
             String replicationPolicy, int replicationFactor, int replicationFlags) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException;
 
-    
     /**
-     * Returns a list of {@link StripeLocation} where each stripe of the file is located. 
-     * To determine where the a particular stripe is located the UUIDs of all replicas which have a
-     * copy of this stripe will be collected and resolved to hostnames. If a uuid can't be resolved 
-     * it will be deleted from the list because HDFS can't handle IP addresses.
-     *  
+     * Returns a list of {@link StripeLocation} where each stripe of the file is located. To determine where
+     * the a particular stripe is located the UUIDs of all replicas which have a copy of this stripe will be
+     * collected and resolved to hostnames. If a uuid can't be resolved it will be deleted from the list
+     * because HDFS can't handle IP addresses.
+     * 
      * @param userCredentials
-     *          Username and groups of the user.
+     *            Username and groups of the user.
      * @param path
-     *          Path of the file.
+     *            Path of the file.
      * @param startSize
-     *          Size in byte where to start collecting the {@link StripeLocation}s.
+     *            Size in byte where to start collecting the {@link StripeLocation}s.
      * @param length
-     *          The length of the part of the file where the {@link StripeLocation}s should be collected
-     *          in byte.
-     * @return
-     *          {@link List} of  {@link StripeLocation}
-     *          
+     *            The length of the part of the file where the {@link StripeLocation}s should be collected in
+     *            byte.
+     * @return {@link List} of {@link StripeLocation}
+     * 
      * @throws IOException
      * @throws PosixErrorException
      * @throws AddressToUUIDNotFoundException
      */
+
+    /**
+     * Returns the FileID of the file in "path" as a String.
+     * 
+     * @param userCredentials
+     *            Name and groups of the user
+     * @param path
+     *            Path to the file
+     * 
+     * @throws PosixErrorException
+     * @throws AddressToUUIDNotFoundException
+     * @throws IOException
+     */
+    public String getFileId(UserCredentials userCredentials, String path) throws PosixErrorException,
+            AddressToUUIDNotFoundException, IOException;
+
     public abstract List<StripeLocation> getStripeLocations(UserCredentials userCredentials, String path,
             long startSize, long length) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException;
@@ -662,20 +676,21 @@ public abstract class Volume {
     /**
      * Used only for HDFS Interface.
      * 
-     * Encapsulates information about one stripe, i.e. the size in kb where the stripe begins,
-     * the length of the stripe and lists of hostnames and corresponding uuids where the stripe
-     * is located. Hostnames are usually the ones which are configured through the "hostname = " 
-     * option of the OSD. Otherwise it is the resolved hostname of registred IP address at the DIR.
+     * Encapsulates information about one stripe, i.e. the size in kb where the stripe begins, the length of
+     * the stripe and lists of hostnames and corresponding uuids where the stripe is located. Hostnames are
+     * usually the ones which are configured through the "hostname = " option of the OSD. Otherwise it is the
+     * resolved hostname of registred IP address at the DIR.
      * 
      */
+
     public class StripeLocation {
         private long     startSize;
         private long     length;
         private String[] uuids;
-        
+
         /**
          * The hostname as configured with "hostname = " parameter of the OSD or otherwise the resolved
-         * hostname from the IP address registered at DIR. 
+         * hostname from the IP address registered at DIR.
          */
         private String[] hostnames;
 

@@ -69,6 +69,8 @@ message ObjectData {
   required bool invalid_checksum_on_osd = 2;
   // Number of zeros the client must append to data before delivering
   // data to an application (for sparse files).
+  // If "xtreemfs_check_object" is used
+  // it stores the total number of bits(data + sparse data)
   required fixed32 zero_padding = 3;
 }
 

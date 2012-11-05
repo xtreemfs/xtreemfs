@@ -25,8 +25,8 @@ An optional passphrase to access the credentials file.
 \fB-deleteVolumes
 Deletes volumes that might be dead.
 .TP
-\fB-dir \fI<uri>
-Specifies the directory service to use (e.g. 'pbrpc://localhost:32638'). If no URI is specified, URI and security settings are taken from '/etc/xos/xtreemfs/default_dir'. In case of a secured URI ('pbrpcs://...' or 'pbrpcg://...'), it is necessary to also specify SSL settings.
+\fB-dirs \fI<uri(,uri...)>
+Specifies the directory services to use (e.g. 'pbrpc://localhost:32638,pbrpc://myDir.com:32638') (comma-separated). If no URI is specified, URIs and security settings are taken from '/etc/xos/xtreemfs/default_dir'. In case of a secured URI ('pbrpcs://...' or 'pbrpcg://...'), it is necessary to also specify SSL settings.
 .TP
 \fB-e
 Automatically deletes orphaned files.
