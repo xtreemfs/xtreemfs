@@ -405,16 +405,6 @@ FileHandle* VolumeImplementation::OpenFile(
           << "open called with O_TRUNC." << endl;
     }
 
-    if (volume_options_.max_writeahead > 0) {
-      // async writes enabled: wait for pending writes
-      try {
-        file_handle->Truncate(user_credentials, truncate_new_file_size);
-      } catch(const XtreemFSException&) {
-        // Truncate did fail, close file again.
-        file_handle->Close();
-        throw;  // Rethrow error.
-      }
-    } else {
       // Update mtime and ctime of the file if O_TRUNC was set.
       metadata_cache_.UpdateStatTime(
           path,
@@ -429,7 +419,6 @@ FileHandle* VolumeImplementation::OpenFile(
         file_handle->Close();
         throw;  // Rethrow error.
       }
-    }
   }
 
   return file_handle;
