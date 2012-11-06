@@ -2,9 +2,9 @@
 .SH NAME
 xtfsutil \- shows and modifies XtreemFS specific file, directory and volume attributes
 .SH SYNOPSIS
-\fBxtfsutil [\fIpath\fR] \- shows the XtreemFS attributes such as URL, locations etc.
+\fBxtfsutil \fP[\fIpath\fP]\fR \- shows the XtreemFS attributes such as URL, locations etc.
 .br
-\fBxtfsutil [OPTIONS] [\fIpath\fR] \- modifies XtreemFS attributes, adds/removes replicas
+\fBxtfsutil \fP[OPTIONS] [\fIpath\fP]\fR \- modifies XtreemFS attributes, adds/removes replicas, snapshots, etc.
 .br
 
 .SH DESCRIPTION
@@ -138,6 +138,30 @@ Policy attributes can be removed by setting an empty value, e.g.:
 .TP
 \fB\-\-list-pattrs
 Lists all policy attributes that are set on a volume.
+
+.TP
+\fB\-\-enable-snapshots
+Enables snapshots on the volume.
+
+.TP
+\fB\-\-disable-snapshots
+Disables snapshots on the volume.
+
+.TP
+\fB\-\-list-snapshots
+Lists all available snapshots.
+
+.TP
+\fB\-\-create-snapshot \fP[\fIname\fP]
+Creates a snapshot of the volume/directory with the name \fIname\fP. If \fIname\fP is empty, the current server time will be used as snapshot name.
+
+.TP
+\fB\-\-create-snapshot-non-recursive \fP[\fIname\fP]
+Same as --create-snapshot but excludes any subdirectories.
+
+.TP
+\fB\-\-delete-snapshot \fP[\fIname\fP]
+Deletes the snapshot with the name \fIname\fP.
 
 .TP
 FILE OPTIONS:

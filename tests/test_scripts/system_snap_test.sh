@@ -13,16 +13,9 @@ fi
 #
 
 # enable snapshots
-COMMAND="$1/bin/xtfs_snap --enable -d .."
+COMMAND="$1/bin/xtfsutil --enable-snapshots .."
 echo "Running ${COMMAND}..."
 $COMMAND
-RESULT=$?
-if [ "$RESULT" -ne "0" ]; then echo "$COMMAND failed"; exit $RESULT; fi
-
-# check if snapshots are enabled
-COMMAND="$1/bin/xtfs_snap --is_enabled -d .."
-echo "Running ${COMMAND}..."
-$COMMAND |grep true
 RESULT=$?
 if [ "$RESULT" -ne "0" ]; then echo "$COMMAND failed"; exit $RESULT; fi
 
@@ -30,14 +23,14 @@ if [ "$RESULT" -ne "0" ]; then echo "$COMMAND failed"; exit $RESULT; fi
 mkdir ./newdir
 
 # take a snapshot
-COMMAND="$1/bin/xtfs_snap -c -r -d . mySnap"
+COMMAND="$1/bin/xtfsutil --create-snapshot mySnap ."
 echo "Running ${COMMAND}..."
 $COMMAND
 RESULT=$?
 if [ "$RESULT" -ne "0" ]; then echo "$COMMAND failed"; exit $RESULT; fi
 
 # list all snapshots
-COMMAND="$1/bin/xtfs_snap -l -d ."
+COMMAND="$1/bin/xtfsutil --list-snapshots ."
 echo "Running ${COMMAND}..."
 $COMMAND |grep mySnap
 RESULT=$?
@@ -49,7 +42,7 @@ echo "test" > file.txt
 # TODO: mount and check the snapshot
 
 # delete a snapshot
-COMMAND="$1/bin/xtfs_snap -x -d . mySnap"
+COMMAND="$1/bin/xtfsutil --delete-snapshot mySnap ."
 echo "Running ${COMMAND}..."
 $COMMAND
 RESULT=$?

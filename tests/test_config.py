@@ -168,7 +168,7 @@ Tests = [
         'TestSets': [ 'full', 'short', 'short-ssl' ]
     },
     {
-        'name': 'xtfs_snap test',
+        'name': 'snapshot test',
         'file': 'system_snap_test.sh',
         'VolumeConfigs': ['regular'],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
