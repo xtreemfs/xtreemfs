@@ -203,8 +203,8 @@ public class FileInfo {
     protected void updateXLocSetAndRest(XLocSet newXlocset, boolean replicateOnClose) {
         synchronized (xLocSetLock) {
             xlocset = XLocSet.newBuilder(newXlocset).build();
+            this.replicateOnClose = replicateOnClose;
         }
-        this.replicateOnClose = replicateOnClose;
     }
 
     /**
@@ -643,7 +643,11 @@ public class FileInfo {
                 osdWriteResponseStatus = FilesizeUpdateStatus.kClean;
             }
 
-            if (closeFile && replicateOnClose) {
+            boolean replicateOnCloseValue = false;
+            synchronized (xLocSetLock) {
+                replicateOnCloseValue = this.replicateOnClose; 
+            }
+            if (closeFile && replicateOnCloseValue) {
                 // Send an explicit close only if the on-close-replication should be
                 // triggered. Use an empty OSDWriteResponse object therefore.
                 fileHandle.writeBackFileSize(OSDWriteResponse.getDefaultInstance(), closeFile);
@@ -655,7 +659,7 @@ public class FileInfo {
      * Returns a new copy of xlocSet.
      */
     protected XLocSet getXLocSet() {
-        synchronized (activeLocks) {
+        synchronized (xLocSetLock) {
             return xlocset.toBuilder().build();
         }
     }
