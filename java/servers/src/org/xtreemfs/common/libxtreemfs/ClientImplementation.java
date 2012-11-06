@@ -44,6 +44,10 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceDataMap;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceGetByTypeRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceGetByUUIDRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceRegisterRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceRegisterResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
@@ -55,6 +59,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
@@ -808,17 +813,6 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
 
     // Methods for AdminClient
 
-    /**
-     * Returns a InetSocketAddress for the given OSD UUID.
-     * 
-     * @param uuid
-     *            OSD UUID
-     */
-    private InetSocketAddress osdUUIDToInetSocketAddress(String uuid) throws AddressToUUIDNotFoundException {
-        String osdAddr = uuidToAddress(uuid);
-        return Helper.stringToInetSocketAddress(osdAddr, 0);
-    }
-
     private Auth StringToAuth(String password) {
         return Auth.newBuilder().setAuthType(AuthType.AUTH_PASSWORD)
                 .setAuthPasswd(AuthPassword.newBuilder().setPassword(password).build()).build();
@@ -826,134 +820,170 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
 
     public void startCleanUp(String osdUUID, String password, boolean remove, boolean deleteVolumes,
             boolean restore) throws IOException {
-        RPCResponse<?> r = null;
-        InetSocketAddress osdAddr = null;
         try {
-            osdAddr = osdUUIDToInetSocketAddress(osdUUID);
+            xtreemfs_cleanup_startRequest request = xtreemfs_cleanup_startRequest.newBuilder()
+                    .setRemoveZombies(remove).setRemoveUnavailVolume(deleteVolumes).setLostAndFound(restore)
+                    .build();
             Auth pw = StringToAuth(password);
-            r = osdServiceClient.xtreemfs_cleanup_start(osdAddr, pw, RPCAuthentication.userService, remove,
-                    deleteVolumes, restore);
-            r.get();
+            UUIDIterator it = new UUIDIterator();
+            it.addUUID(osdUUID);
+            RPCCaller.<xtreemfs_cleanup_startRequest, emptyResponse> syncCall(SERVICES.OSD,
+                    RPCAuthentication.userService, pw, options, this, it, false, request,
+                    new CallGenerator<xtreemfs_cleanup_startRequest, emptyResponse>() {
+                        @Override
+                        @SuppressWarnings("unchecked")
+                        public RPCResponse<emptyResponse> executeCall(InetSocketAddress server,
+                                Auth authHeader, UserCredentials userCreds,
+                                xtreemfs_cleanup_startRequest input) throws IOException {
+                            return osdServiceClient.xtreemfs_cleanup_start(server, authHeader, userCreds,
+                                    input);
+                        }
+                    });
         } catch (Exception e) {
             throw new IOException("Cleanup could not be started on the given OSD, because: " + e.getMessage());
-        } finally {
-            if (r != null) {
-                r.freeBuffers();
-            }
         }
-
     }
 
     public void startVersionCleanUp(String osdUUID, String password) throws IOException {
-        RPCResponse<?> r = null;
-        InetSocketAddress osdAddr = null;
         try {
-            osdAddr = osdUUIDToInetSocketAddress(osdUUID);
             Auth pw = StringToAuth(password);
-            r = osdServiceClient.xtreemfs_cleanup_versions_start(osdAddr, pw, RPCAuthentication.userService);
-            r.get();
+            UUIDIterator it = new UUIDIterator();
+            it.addUUID(osdUUID);
+            RPCCaller.<emptyRequest, emptyResponse> syncCall(SERVICES.OSD, RPCAuthentication.userService, pw,
+                    options, this, it, false, null, new CallGenerator<emptyRequest, emptyResponse>() {
+                        @Override
+                        @SuppressWarnings("unchecked")
+                        public RPCResponse<emptyResponse> executeCall(InetSocketAddress server,
+                                Auth authHeader, UserCredentials userCreds, emptyRequest input)
+                                throws IOException {
+                            return osdServiceClient.xtreemfs_cleanup_versions_start(server, authHeader,
+                                    userCreds);
+                        }
+                    });
         } catch (Exception e) {
             throw new IOException("Version cleanup could not be started on the given OSD, because: "
                     + e.getMessage());
-        } finally {
-            if (r != null) {
-                r.freeBuffers();
-            }
         }
     }
 
     public void stopCleanUp(String osdUUID, String password) throws IOException {
-        RPCResponse<?> r = null;
-        InetSocketAddress osdAddr = null;
-        try {
-            osdAddr = osdUUIDToInetSocketAddress(osdUUID);
-            Auth pw = StringToAuth(password);
-            r = osdServiceClient.xtreemfs_cleanup_stop(osdAddr, pw, RPCAuthentication.userService);
-            r.get();
-        } catch (Exception e) {
-            throw new IOException("Cleanup could not be stopped on the given OSD, because: " + e.getMessage());
-        } finally {
-            if (r != null) {
-                r.freeBuffers();
-            }
-        }
+        Auth pw = StringToAuth(password);
+        UUIDIterator it = new UUIDIterator();
+        it.addUUID(osdUUID);
+        RPCCaller.<emptyRequest, emptyResponse> syncCall(SERVICES.OSD, RPCAuthentication.userService, pw,
+                options, this, it, false, null, new CallGenerator<emptyRequest, emptyResponse>() {
+                    @Override
+                    @SuppressWarnings("unchecked")
+                    public RPCResponse<emptyResponse> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, emptyRequest input) throws IOException,
+                            PosixErrorException {
+                        return osdServiceClient.xtreemfs_cleanup_stop(server, authHeader, userCreds);
+                    }
+                });
     }
 
     public boolean isRunningCleanUp(String osdUUID, String password) throws IOException {
-        RPCResponse<xtreemfs_cleanup_is_runningResponse> r = null;
-        InetSocketAddress osdAddr = null;
-        try {
-            osdAddr = osdUUIDToInetSocketAddress(osdUUID);
-            Auth pw = StringToAuth(password);
-            r = osdServiceClient.xtreemfs_cleanup_is_running(osdAddr, pw, RPCAuthentication.userService);
-            return r.get().getIsRunning();
-        } catch (Exception e) {
-            Logging.logError(Logging.LEVEL_WARN, null, e);
-            throw new IOException("Status-request for cleanup on the given OSD failed, because: "
-                    + e.getMessage());
-        } finally {
-            if (r != null) {
-                r.freeBuffers();
-            }
-        }
+        Auth pw = StringToAuth(password);
+        UUIDIterator it = new UUIDIterator();
+        it.addUUID(osdUUID);
+        xtreemfs_cleanup_is_runningResponse response = RPCCaller
+                .<emptyRequest, xtreemfs_cleanup_is_runningResponse> syncCall(SERVICES.OSD,
+                        RPCAuthentication.userService, pw, options, this, it, false, null,
+                        new CallGenerator<emptyRequest, xtreemfs_cleanup_is_runningResponse>() {
+                            @Override
+                            public RPCResponse<xtreemfs_cleanup_is_runningResponse> executeCall(
+                                    InetSocketAddress server, Auth authHeader, UserCredentials userCreds,
+                                    emptyRequest input) throws IOException, PosixErrorException {
+                                return osdServiceClient.xtreemfs_cleanup_is_running(server, authHeader,
+                                        userCreds);
+                            }
+                        });
+        assert (response != null);
+        return response.getIsRunning();
     }
 
     public String getCleanUpState(String osdUUID, String password) throws IOException {
-        RPCResponse<xtreemfs_cleanup_statusResponse> r = null;
-        InetSocketAddress osdAddr = null;
-        try {
-            osdAddr = osdUUIDToInetSocketAddress(osdUUID);
-            Auth pw = StringToAuth(password);
-            r = osdServiceClient.xtreemfs_cleanup_status(osdAddr, pw, RPCAuthentication.userService);
-            return r.get().getStatus();
-        } catch (Exception e) {
-            throw new IOException("Cleanup status could not be retrieved, because: " + e.getMessage());
-        } finally {
-            if (r != null) {
-                r.freeBuffers();
-            }
-        }
+        Auth pw = StringToAuth(password);
+        UUIDIterator it = new UUIDIterator();
+        it.addUUID(osdUUID);
+        xtreemfs_cleanup_statusResponse response = RPCCaller
+                .<emptyRequest, xtreemfs_cleanup_statusResponse> syncCall(SERVICES.OSD,
+                        RPCAuthentication.userService, pw, options, this, it, false, null,
+                        new CallGenerator<emptyRequest, xtreemfs_cleanup_statusResponse>() {
+                            @Override
+                            public RPCResponse<xtreemfs_cleanup_statusResponse> executeCall(
+                                    InetSocketAddress server, Auth authHeader, UserCredentials userCreds,
+                                    emptyRequest input) throws IOException, PosixErrorException {
+                                return osdServiceClient
+                                        .xtreemfs_cleanup_status(server, authHeader, userCreds);
+                            }
+                        });
+        assert (response != null);
+        return response.getStatus();
     }
 
     public List<String> getCleanUpResult(String osdUUID, String password) throws IOException {
-        RPCResponse<xtreemfs_cleanup_get_resultsResponse> r = null;
-        InetSocketAddress osdAddr = null;
-        try {
-            osdAddr = osdUUIDToInetSocketAddress(osdUUID);
-            Auth pw = StringToAuth(password);
-            r = osdServiceClient.xtreemfs_cleanup_get_results(osdAddr, pw, RPCAuthentication.userService);
-            return r.get().getResultsList();
-        } catch (Exception e) {
-            throw new IOException("Cleanup results could not be retrieved, because: " + e.getMessage());
-        } finally {
-            if (r != null) {
-                r.freeBuffers();
-            }
-        }
+        Auth pw = StringToAuth(password);
+        UUIDIterator it = new UUIDIterator();
+        it.addUUID(osdUUID);
+        xtreemfs_cleanup_get_resultsResponse response = RPCCaller
+                .<emptyRequest, xtreemfs_cleanup_get_resultsResponse> syncCall(SERVICES.OSD,
+                        RPCAuthentication.userService, pw, options, this, it, false, null,
+                        new CallGenerator<emptyRequest, xtreemfs_cleanup_get_resultsResponse>() {
+                            @Override
+                            public RPCResponse<xtreemfs_cleanup_get_resultsResponse> executeCall(
+                                    InetSocketAddress server, Auth authHeader, UserCredentials userCreds,
+                                    emptyRequest input) throws IOException, PosixErrorException {
+                                return osdServiceClient.xtreemfs_cleanup_get_results(server, authHeader,
+                                        userCreds);
+                            }
+                        });
+
+        assert (response != null);
+        return response.getResultsList();
     }
 
     public ServiceSet getServiceByType(ServiceType serviceType) throws IOException {
-        try {
-            return dirClient.xtreemfs_service_get_by_type(null, RPCAuthentication.authNone,
-                    RPCAuthentication.userService, serviceType);
-        } catch (Exception ex) {
-            throw new IOException("Services could not be retrieved, because:" + ex.getMessage());
+        serviceGetByTypeRequest request = serviceGetByTypeRequest.newBuilder().setType(serviceType).build();
+
+        ServiceSet sSet = RPCCaller.<serviceGetByTypeRequest, ServiceSet> syncCall(SERVICES.DIR,
+                RPCAuthentication.userService, RPCAuthentication.authNone, options, this,
+                dirServiceAddresses, true, request, new CallGenerator<serviceGetByTypeRequest, ServiceSet>() {
+                    @Override
+                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, serviceGetByTypeRequest input) throws IOException {
+                        return dirServiceClient.xtreemfs_service_get_by_type(server, authHeader, userCreds,
+                                input);
+                    }
+                });
+
+        assert (sSet != null);
+        return sSet;
+    }
+
+    public Service getServiceByUUID(String uuid) throws IOException {
+        serviceGetByUUIDRequest request = serviceGetByUUIDRequest.newBuilder().setName(uuid).build();
+
+        ServiceSet sSet = RPCCaller.<serviceGetByUUIDRequest, ServiceSet> syncCall(SERVICES.DIR,
+                RPCAuthentication.userService, RPCAuthentication.authNone, options, this,
+                dirServiceAddresses, true, request, new CallGenerator<serviceGetByUUIDRequest, ServiceSet>() {
+                    @Override
+                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, serviceGetByUUIDRequest input) throws IOException {
+                        return dirServiceClient.xtreemfs_service_get_by_uuid(server, authHeader, userCreds,
+                                input);
+                    }
+                });
+
+        if (sSet.getServicesCount() == 0) {
+            throw new IOException("No Service with UUID " + uuid + " available");
         }
+        return sSet.getServices(0);
     }
 
     public void setOSDServiceStatus(String osdUUID, ServiceStatus serviceStatus) throws IOException {
         // get OSD services
-        ServiceSet osdServiceSet = null;
-        try {
-            osdServiceSet = dirClient.xtreemfs_service_get_by_uuid(null, RPCAuthentication.authNone,
-                    RPCAuthentication.userService, osdUUID);
-        } catch (Exception e) {
-            throw new IOException("unable to get OSD with UUID " + osdUUID + ", beacuse:" + e.getMessage());
-        }
-        if (osdServiceSet.getServicesCount() == 0) {
-            throw new IOException("No OSD with UUID " + osdUUID + " available");
-        }
-        Service osdService = osdServiceSet.getServices(0);
+        Service osdService = getServiceByUUID(osdUUID);
 
         // change service status
         List<KeyValuePair> data = new LinkedList<KeyValuePair>(osdService.getData().getDataList());
@@ -963,26 +993,23 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         osdService = osdService.toBuilder().setData(dataMap).build();
 
         // sent changed service status to DIR
-        try {
-            dirClient.xtreemfs_service_register(null, RPCAuthentication.authNone,
-                    RPCAuthentication.userService, osdService);
-        } catch (Exception e) {
-            throw new IOException("Cannot set OSD's service status, because: " + e.getMessage());
-        }
+        serviceRegisterRequest request = serviceRegisterRequest.newBuilder().setService(osdService).build();
+        RPCCaller.<serviceRegisterRequest, serviceRegisterResponse> syncCall(SERVICES.DIR,
+                RPCAuthentication.userService, RPCAuthentication.authNone, options, this,
+                dirServiceAddresses, true, request,
+                new CallGenerator<serviceRegisterRequest, serviceRegisterResponse>() {
+                    @Override
+                    public RPCResponse<serviceRegisterResponse> executeCall(InetSocketAddress server,
+                            Auth authHeader, UserCredentials userCreds, serviceRegisterRequest input)
+                            throws IOException {
+                        return dirServiceClient.xtreemfs_service_register(server, RPCAuthentication.authNone,
+                                userCreds, input);
+                    }
+                });
     }
 
     public ServiceStatus getOSDServiceStatus(String osdUUID) throws IOException {
-        ServiceSet osdServiceSet = null;
-        try {
-            osdServiceSet = dirClient.xtreemfs_service_get_by_uuid(null, RPCAuthentication.authNone,
-                    RPCAuthentication.userService, osdUUID);
-        } catch (Exception e) {
-            throw new IOException("unable to get OSD with UUID " + osdUUID + ", because:" + e.getMessage());
-        }
-        if (osdServiceSet.getServicesCount() == 0) {
-            throw new IOException("No OSD with UUID " + osdUUID + " available");
-        }
-        Service osdService = osdServiceSet.getServices(0);
+        Service osdService = getServiceByUUID(osdUUID);
         String hbAttr = KeyValuePairs.getValue(osdService.getData().getDataList(),
                 HeartbeatThread.STATUS_ATTR);
         return ServiceStatus.valueOf(Integer.valueOf(hbAttr));
@@ -992,12 +1019,12 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
 
         Set<String> removedOSDs = new TreeSet<String>();
 
-        String status_removed = Integer.toString(ServiceStatus.SERVICE_STATUS_REMOVED.getNumber());
+        String statusRemoved = Integer.toString(ServiceStatus.SERVICE_STATUS_REMOVED.getNumber());
         ServiceSet servs = getServiceByType(ServiceType.SERVICE_TYPE_OSD);
 
         for (Service serv : servs.getServicesList()) {
             String hbAttr = KeyValuePairs.getValue(serv.getData().getDataList(), HeartbeatThread.STATUS_ATTR);
-            if ((hbAttr != null) && hbAttr.equalsIgnoreCase(status_removed)) {
+            if ((hbAttr != null) && hbAttr.equalsIgnoreCase(statusRemoved)) {
                 removedOSDs.add(serv.getUuid());
             }
         }

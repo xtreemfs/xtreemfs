@@ -53,6 +53,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 //JCIP import net.jcip.annotations.GuardedBy;
@@ -1135,21 +1137,24 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
         for (String osdUUID : replica.getOsdUuidsList()) {
 
-            InetSocketAddress osdAddr = Helper.stringToInetSocketAddress(uuidResolver.uuidToAddress(osdUUID),
-                    32640);
-            RPCResponse<ObjectList> r = osdServiceClient.xtreemfs_internal_get_object_set(osdAddr,
-                    RPCAuthentication.authNone, RPCAuthentication.userService, fcBuilder.build(), fileId);
+            UUIDIterator it = new UUIDIterator();
+            it.addUUID(osdUUID);
 
-            ObjectList ol = null;
-            try {
-                ol = r.get();
-            } catch (InterruptedException e) {
-                if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "comm error: %s", e.toString());
-                throw new IOException("Unable to check if replica is complete", e);
-            } finally {
-                r.freeBuffers();
-            }
+            xtreemfs_internal_get_object_setRequest request = xtreemfs_internal_get_object_setRequest
+                    .newBuilder().setFileId(fileId).setFileCredentials(fcBuilder.build()).build();
+
+            ObjectList ol = RPCCaller.<xtreemfs_internal_get_object_setRequest, ObjectList> syncCall(
+                    SERVICES.OSD, RPCAuthentication.userService, RPCAuthentication.authNone, new Options(),
+                    uuidResolver, it, false, request,
+                    new CallGenerator<xtreemfs_internal_get_object_setRequest, ObjectList>() {
+                        @Override
+                        public RPCResponse<ObjectList> executeCall(InetSocketAddress server, Auth authHeader,
+                                UserCredentials userCreds, xtreemfs_internal_get_object_setRequest input)
+                                throws IOException, PosixErrorException {
+                            return osdServiceClient.xtreemfs_internal_get_object_set(server, authHeader,
+                                    userCreds, input);
+                        }
+                    });
 
             byte[] serializedBitSet = ol.getSet().toByteArray();
             ObjectSet oset = null;
@@ -1197,23 +1202,31 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
             Replica r = getReplica(replicaIndex);
             String objOsd = r.getOsdUuids((int) objectNo % r.getStripingPolicy().getWidth());
-            String osdAddr = uuidResolver.uuidToAddress(objOsd);
-            osdRsp = osdServiceClient.xtreemfs_check_object(Helper.stringToInetSocketAddress(osdAddr, 0),
-                    RPCAuthentication.authNone, RPCAuthentication.userService, fcBuilder.build(), fileId,
-                    objectNo, 0l);
-            od = osdRsp.get();
+
+            UUIDIterator it = new UUIDIterator();
+            it.addUUID(objOsd);
+
+            xtreemfs_check_objectRequest request = xtreemfs_check_objectRequest.newBuilder()
+                    .setFileCredentials(fcBuilder.build()).setFileId(fileId).setObjectNumber(objectNo)
+                    .setObjectVersion(0l).build();
+
+            od = RPCCaller.<xtreemfs_check_objectRequest, ObjectData> syncCall(SERVICES.OSD,
+                    RPCAuthentication.userService, RPCAuthentication.authNone, new Options(), uuidResolver,
+                    it, false, request, new CallGenerator<xtreemfs_check_objectRequest, ObjectData>() {
+                        @Override
+                        public RPCResponse<ObjectData> executeCall(InetSocketAddress server, Auth authHeader,
+                                UserCredentials userCreds, xtreemfs_check_objectRequest input)
+                                throws IOException, PosixErrorException {
+                            return osdServiceClient.xtreemfs_check_object(server, authHeader, userCreds,
+                                    input);
+                        }
+                    });
         } catch (IOException e) {
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "IO error: %s", e.toString());
             throw new IOException("operation aborted", e);
-        } catch (InterruptedException e) {
-            if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "comm error: %s", e.toString());
-            throw new IOException("operation aborted", e);
-        } finally {
-            if (osdRsp != null)
-                osdRsp.freeBuffers();
         }
+
         if (od.getInvalidChecksumOnOsd()) {
             throw new InvalidChecksumException("object " + objectNo + " has an invalid checksum");
         }

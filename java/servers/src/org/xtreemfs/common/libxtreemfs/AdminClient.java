@@ -14,6 +14,7 @@ import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException
 import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
 import org.xtreemfs.foundation.SSLOptions;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
@@ -116,6 +117,15 @@ public interface AdminClient extends Client {
      * @throws IOException
      */
     public ServiceSet getServiceByType(ServiceType serviceType) throws IOException;
+
+    /**
+     * Returns the Service with the given UUID
+     * 
+     * @param uuid
+     *            UUID of the Service
+     * @throws IOException
+     */
+    public Service getServiceByUUID(String uuid) throws IOException;
 
     /**
      * Set the service status of the OSD with UUID "osdUUID" to "serviceStatus".
