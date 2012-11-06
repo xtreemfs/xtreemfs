@@ -152,6 +152,7 @@ void AsyncWriteHandler::ReWrite(AsyncWriteBuffer* write_buffer,
   write_buffer->retry_count_++;
   write_buffer->state_ = AsyncWriteBuffer::PENDING;
   ++pending_writes_;
+  WriteCommon(write_buffer, lock, true);
 }
 
 void AsyncWriteHandler::WriteCommon(AsyncWriteBuffer* write_buffer,
