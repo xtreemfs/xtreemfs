@@ -472,7 +472,8 @@ template <class Derived> class TestRPCServer {
         if (!response_message.get()) {
           Logging::log->getLog(xtreemfs::util::LEVEL_ERROR)
               << "No response was generated. Operation with proc id = "
-              << proc_id << " is probably not implemented?" << std::endl;
+              << proc_id << " is probably not implemented? (interface_id = "
+              << interface_id_ << ")" << std::endl;
           break;
         }
         if (!response_message->IsInitialized()) {
