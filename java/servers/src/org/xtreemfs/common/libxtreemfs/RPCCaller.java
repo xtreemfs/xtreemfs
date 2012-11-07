@@ -13,6 +13,7 @@ import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException
 import org.xtreemfs.common.libxtreemfs.exceptions.InternalServerErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
+import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
@@ -98,6 +99,7 @@ public class RPCCaller {
                     // This is used by the read request.
                     if (buffer != null && r.getData() != null) {
                         buffer.put(r.getData());
+                        BufferPool.free(r.getData());
                     }
                 } catch (PBRPCException pbe) {
                     // handle special redirect
