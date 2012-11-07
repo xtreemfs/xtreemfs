@@ -52,11 +52,6 @@ class FileInfo {
            const std::string& client_uuid);
   ~FileInfo();
 
-  inline int reference_count() {
-    boost::mutex::scoped_lock lock(mutex_);
-    return reference_count_;
-  }
-
   inline void UpdateXLocSetAndRest(const xtreemfs::pbrpc::XLocSet& new_xlocset,
                                    bool replicate_on_close) {
     boost::mutex::scoped_lock lock(xlocset_mutex_);
