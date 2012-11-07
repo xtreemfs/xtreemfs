@@ -130,7 +130,7 @@ public class FileScrubber implements Runnable {
                         fileHandle.checkObjectAndGetSize(r, o);
                     } catch (InvalidChecksumException ex) {
                         printFileErrorMessage("object #" + o + " of replica " + r
-                                + " has an invalid checksum on OSD ");
+                                + " has an invalid checksum on OSD " + replica.getOsdUuids((int) (o % replica.getOsdUuidsCount())));
                         returnStatus.add(ReturnStatus.FAILURE_OBJECTS);
                     } catch (IOException ex) {
                         printFileErrorMessage("unable to check object #" + o + " of replica " + r + ": " + ex);
@@ -207,7 +207,7 @@ public class FileScrubber implements Runnable {
                         }
                     } catch (InvalidChecksumException ex) {
                         printFileErrorMessage("object #" + (nextObjectToScrub - 1) + " of replica " + r
-                                + " has an invalid checksum on OSD ");
+                                + " has an invalid checksum on OSD " + replica.getOsdUuids((int) ((nextObjectToScrub - 1) % replica.getOsdUuidsCount())));
                         checkMrcFileSize = false;
                         returnStatus.add(ReturnStatus.FAILURE_OBJECTS);
                         break;
