@@ -3,7 +3,7 @@
 Name:           xtreemfs
 Version:        _VERSION_
 Release:        %mkrel
-License:        BSD
+License:        BSD-3-Clause
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 Group:          System/Filesystems
 URL:            http://www.XtreemFS.org
