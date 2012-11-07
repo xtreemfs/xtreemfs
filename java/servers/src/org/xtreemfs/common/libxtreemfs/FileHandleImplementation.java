@@ -67,33 +67,33 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
     /**
      * UUID of the Client (needed to distinguish Locks of different clients).
      */
-    private String                            clientUuid;
+    final private String                            clientUuid;
 
     /**
      * UUIDIterator of the MRC.
      */
-    private UUIDIterator                      mrcUuidIterator;
+    final private UUIDIterator                      mrcUuidIterator;
 
     /**
      * UUIDIterator which contains the UUIDs of all replicas.
      */
-    private UUIDIterator                      osdUuidIterator;
+    final private UUIDIterator                      osdUuidIterator;
 
     /**
      * Needed to resolve UUIDs.
      */
-    private UUIDResolver                      uuidResolver;
+    final private UUIDResolver                      uuidResolver;
 
     /**
      * Multiple FileHandle may refer to the same File and therefore unique file properties (e.g. Path, FileId,
      * XlocSet) are stored in a FileInfo object.
      */
-    private FileInfo                          fileInfo;
+    final private FileInfo                          fileInfo;
 
     /**
      * Volume which did open this file.
      */
-    private VolumeImplementation              volume;
+    final private VolumeImplementation              volume;
 
     // TODO(mberlin): Add flags member.
 
@@ -111,7 +111,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
     /**
      * Used to wait for pending XCap renewal callbacks.
      */
-    private Object                            xcapRenewalPendingLock;
+    final private Object                            xcapRenewalPendingLock;
 
     /**
      * Contains a file size update which has to be written back (or NULL).
@@ -121,17 +121,17 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
     /**
      * MRCServiceClient from the VolumeImplemention.
      */
-    private MRCServiceClient                  mrcServiceClient;
+    final private MRCServiceClient                  mrcServiceClient;
 
     /**
      * Pointer to object owned by VolumeImplemention.
      */
-    private OSDServiceClient                  osdServiceClient;
+    final private OSDServiceClient                  osdServiceClient;
 
     /**
      * Stores which {@link StripingPolicyType} corresponds to which {@link StripeTranslator}.
      */
-    Map<StripingPolicyType, StripeTranslator> stripeTranslators;
+    final Map<StripingPolicyType, StripeTranslator> stripeTranslators;
 
     /**
      * Set to true if async writes (max requests > 0, no O_SYNC) are enabled.
@@ -144,26 +144,28 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
      */
     private boolean                           asyncWritesFailed;
 
-    private Options                           volumeOptions;
+    final private Options                           volumeOptions;
 
     /**
      * Auth needed for ServiceClients. Always set to AUTH_NONE by Volume.
      */
-    private Auth                              authBogus;
+    final private Auth                              authBogus;
 
     /**
      * For same reason needed as authBogus. Always set to user "xtreemfs".
      */
-    private UserCredentials                   userCredentialsBogus;
+    final private UserCredentials                   userCredentialsBogus;
 
     /**
      * 
      */
-    public FileHandleImplementation(String clientUuid, FileInfo fileInfo, XCap xcap,
+    public FileHandleImplementation(VolumeImplementation volume,
+            String clientUuid, FileInfo fileInfo, XCap xcap,
             UUIDIterator mrcUuidIterator, UUIDIterator osdUuidIterator, UUIDResolver uuidResolver,
             MRCServiceClient mrcServiceClient, OSDServiceClient osdServiceClient,
             Map<StripingPolicyType, StripeTranslator> stripeTranslators, boolean asyncWritesEnabled,
             Options options, Auth authBogus, UserCredentials userCredentialsBogus) {
+        this.volume = volume;
         this.clientUuid = clientUuid;
         this.fileInfo = fileInfo;
         this.xcap = xcap;
@@ -467,8 +469,8 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     private void throwIfAsyncWritesFailed() throws PosixErrorException {
         if (didAsyncWriteFail()) {
-            String error = "Flush for file " + fileInfo.getPath() + "did not succeed flushing "
-                    + "all pending writes as at least one asynchronous write did fail";
+            String error = "Flush for file " + fileInfo.getPath() + " did not succeed flushing "
+                    + "all pending writes as at least one asynchronous write did fail.";
 
             Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this, error);
             throw new PosixErrorException(POSIXErrno.POSIX_ERROR_EIO, error);
@@ -841,7 +843,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
                 uuidFound = true;
                 // Check replication flags, if it's a full replica.
                 if (xlocs.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)
-                        && ((replica.getReplicationFlags() & REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber()) != 0)) {
+                        && ((replica.getReplicationFlags() & REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber()) == 0)) {
                     // Nothing to do here because the replication does not need to be
                     // triggered for partial replicas.
                     return;
