@@ -472,6 +472,12 @@ public interface Volume {
      * Adds a new replica for the file at "path" and triggers the replication of this replica if it's a full
      * replica.
      * 
+     * Please note, in case of a read-only replica the replication flags of newReplica must contain a
+     * replication strategy flag.
+     * For a partial replica, use {@link REPL_FLAG.REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETCHING}.
+     * If you create a full replica (with the flag {@link REPL_FLAG.REPL_FLAG_FULL_REPLICA}),
+     * use the strategy {@link REPL_FLAG.REPL_FLAG_STRATEGY_RAREST_FIRST}.
+     * 
      * @param userCredentials
      *            Username and groups of the user.
      * @param path
