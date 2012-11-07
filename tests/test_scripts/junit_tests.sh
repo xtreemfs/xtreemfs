@@ -50,40 +50,32 @@ COUNTER=0
 FAILED=0
 JUNIT_TESTS=""
 while read LINE; do
-    
-	if [[ $LINE == *org/xtreemfs/test* ]]; then
-	    
-    	# check if test is located in the package 'org.xtreemfs.test' or a subpackage    
-	    TEST=`echo $LINE | sed -e 's/.*org\/xtreemfs\/test\///;s/\.class//'`
-	    # replace '/' with '.'
-        TEST=org.xtreemfs.test.${TEST//\//\.}
-        
-	elif [[ $LINE == *org/xtreemfs/common* ]]; then
-	    
-	    # check if test is located in the package 'org.xtreemfs.common' or a subpackage
-	    TEST=`echo $LINE | sed -e 's/.*org\/xtreemfs\/common\///;s/\.class//'`
-	    # replace '/' with '.'
-        TEST=org.xtreemfs.common.${TEST//\//\.}
-	    
-	else
-	    # not a valid JUnit test
-	    continue;
-	fi
 
-    # run each JUnit test separately in its own JVM
-    JAVA_CALL="$JAVA_HOME/bin/java -ea -cp $CLASSPATH org.junit.runner.JUnitCore $TEST"
-	
-    echo -n "Running test `expr $COUNTER + 1`: $TEST ... "
-    $JAVA_CALL >>$TEST_DIR/log/junit.log 2>&1
-    RESULT=$?
-    if [ "$RESULT" -ne "0" ]; then
-    	echo "FAILURE"
-    	FAILED=`expr $FAILED + 1`
-	else
-		echo "ok"
-	fi
+  if [[ $LINE == *ExternalIntegrationTest.class ]]
+  then
+      # not a valid JUnit test
+      continue;
+  fi
+
+  # Transform a path of the form "/tmp/xtreemfs-junit/classes/org/xtreemfs/test/mrc/OSDPolicyTest.class" to the form "org.xtreemfs.test.mrc.OSDPolicyTest".
+  TEST=`echo $LINE | sed -r -e 's|^.*(org\/xtreemfs\/.+)\.class\$|\1|'`
+  # replace '/' with '.'
+  TEST=${TEST//\//\.}
+
+  # run each JUnit test separately in its own JVM
+  JAVA_CALL="$JAVA_HOME/bin/java -ea -cp $CLASSPATH org.junit.runner.JUnitCore $TEST"
+
+  echo -n "Running test `expr $COUNTER + 1`: $TEST ... "
+  $JAVA_CALL >>$TEST_DIR/log/junit.log 2>&1
+  RESULT=$?
+  if [ "$RESULT" -ne "0" ]; then
+    echo "FAILURE"
+    FAILED=`expr $FAILED + 1`
+  else
+    echo "ok"
+  fi
     
-    COUNTER=`expr $COUNTER + 1`
+  COUNTER=`expr $COUNTER + 1`
     
 done < <(find $CLASSES_DIR -name *Test.class -type f)
 
