@@ -224,7 +224,7 @@ public class FileInfo {
      */
     FileHandleImplementation createFileHandle(XCap xcap, boolean asyncWritesEnabled,
             boolean usedForPendingFilesizeUpdate) {
-        FileHandleImplementation fileHandleImplementation = new FileHandleImplementation(clientUuid, this,
+        FileHandleImplementation fileHandleImplementation = new FileHandleImplementation(volume, clientUuid, this,
                 xcap, volume.getMrcUuidIterator(), osdUuidIterator, volume.getUUIDResolver(),
                 volume.getMrcServiceClient(), volume.getOsdServiceClient(), volume.getStripeTranslators(),
                 asyncWritesEnabled, volume.getOptions(), volume.getAuthBogus(),
