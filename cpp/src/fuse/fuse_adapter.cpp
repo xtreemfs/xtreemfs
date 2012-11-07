@@ -65,12 +65,7 @@ int CheckIfOperationInterrupted() {
 }
 
 FuseAdapter::FuseAdapter(FuseOptions* options) :
-    options_(options),
-    xctl_("/.xctl$$$") {
-  osd_user_credentials_.set_username("x");
-  osd_user_credentials_.add_groups("x");
-
-  volume_ = NULL;
+    options_(options), xctl_("/.xctl$$$"), volume_(NULL) {
 }
 
 FuseAdapter::~FuseAdapter() {}
@@ -1074,7 +1069,7 @@ int FuseAdapter::write(
                " which was not opened. Path: " << path_str << endl;
         assert(file_handle != NULL);
       }
-      result = file_handle->Write(osd_user_credentials_, buf, size, offset);
+      result = file_handle->Write(buf, size, offset);
     } catch(const PosixErrorException& e) {
       return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
@@ -1138,7 +1133,7 @@ int FuseAdapter::read(const char *path, char *buf, size_t size, off_t offset,
                " which was not opened. Path: " << path_str << endl;
         assert(file_handle != NULL);
       }
-      return file_handle->Read(osd_user_credentials_, buf, size, offset);
+      return file_handle->Read(buf, size, offset);
     } catch(const PosixErrorException& e) {
       return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
@@ -1549,7 +1544,6 @@ int FuseAdapter::lock(const char* path, struct fuse_file_info *fi, int cmd,
     if (cmd == F_GETLK) {
       // Only check if the lock could get acquired.
       boost::scoped_ptr<Lock> checked_lock(file_handle->CheckLock(
-          osd_user_credentials_,
           flock->l_pid,
           flock->l_start,
           flock->l_len,
@@ -1567,15 +1561,13 @@ int FuseAdapter::lock(const char* path, struct fuse_file_info *fi, int cmd,
       // Set the lock (type = F_RDLCK|F_WRLCK) or release it (type = F_UNLCK).
       if (flock->l_type == F_RDLCK || flock->l_type == F_WRLCK) {
         boost::scoped_ptr<Lock> checked_lock(file_handle->AcquireLock(
-            osd_user_credentials_,
             flock->l_pid,
             flock->l_start,
             flock->l_len,
             (flock->l_type == F_WRLCK),
             (cmd == F_SETLKW)));
       } else if (flock->l_type == F_UNLCK) {
-        file_handle->ReleaseLock(osd_user_credentials_,
-                                 flock->l_pid,
+        file_handle->ReleaseLock(flock->l_pid,
                                  flock->l_start,
                                  flock->l_len,
                                  (flock->l_type == F_WRLCK));

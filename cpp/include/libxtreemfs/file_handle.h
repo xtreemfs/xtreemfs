@@ -24,7 +24,6 @@ class FileHandle {
 
   /** Read from a file 'count' bytes starting at 'offset' into 'buf'.
    *
-   * @param user_credentials    Name and Groups of the user.
    * @param buf[out]            Buffer to be filled with read data.
    * @param count               Number of requested bytes.
    * @param offset              Offset in bytes.
@@ -37,7 +36,6 @@ class FileHandle {
    * @return    Number of bytes read.
    */
   virtual int Read(
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
       char *buf,
       size_t count,
       off_t offset) = 0;
@@ -53,7 +51,6 @@ class FileHandle {
    *                In this case, only after calling Flush() or Close() occurred
    *                write errors are returned to the user.
    *
-   * @param user_credentials    Name and Groups of the user.
    * @param buf[in]             Buffer which contains data to be written.
    * @param count               Number of bytes to be written from buf.
    * @param offset              Offset in bytes.
@@ -66,7 +63,6 @@ class FileHandle {
    * @return    Number of bytes written (see @attention above).
    */
   virtual int Write(
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const char *buf,
       size_t count,
       off_t offset) = 0;
@@ -115,7 +111,6 @@ class FileHandle {
    * If the acquisition of the lock fails, PosixErrorException will be thrown
    * and posix_errno() will return POSIX_ERROR_EAGAIN.
    *
-   * @param user_credentials    Name and Groups of the user.
    * @param process_id      ID of the process to which the lock belongs.
    * @param offset          Start of the region to be locked in the file.
    * @param length          Length of the region.
@@ -130,7 +125,6 @@ class FileHandle {
    * @remark Ownership is transferred to the caller.
    */
   virtual xtreemfs::pbrpc::Lock* AcquireLock(
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
       int process_id,
       uint64_t offset,
       uint64_t length,
@@ -141,7 +135,6 @@ class FileHandle {
    *  returned Lock object contains the requested 'process_id' in 'client_pid',
    *  otherwise the Lock object is a copy of the conflicting lock.
    *
-   * @param user_credentials    Name and Groups of the user.
    * @param process_id      ID of the process to which the lock belongs.
    * @param offset          Start of the region to be locked in the file.
    * @param length          Length of the region.
@@ -155,7 +148,6 @@ class FileHandle {
    * @remark Ownership is transferred to the caller.
    */
   virtual xtreemfs::pbrpc::Lock* CheckLock(
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
       int process_id,
       uint64_t offset,
       uint64_t length,
@@ -163,7 +155,6 @@ class FileHandle {
 
   /** Releases "lock".
    *
-   * @param user_credentials    Name and Groups of the user.
    * @param process_id      ID of the process to which the lock belongs.
    * @param offset          Start of the region to be locked in the file.
    * @param length          Length of the region.
@@ -175,7 +166,6 @@ class FileHandle {
    * @throws UnknownAddressSchemeException
    */
   virtual void ReleaseLock(
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
       int process_id,
       uint64_t offset,
       uint64_t length,
@@ -183,7 +173,6 @@ class FileHandle {
 
   /** Releases "lock" (parameters given in Lock object).
    *
-   * @param user_credentials    Name and Groups of the user.
    * @param lock    Lock to be released.
    *
    * @throws AddressToUUIDNotFoundException
@@ -192,7 +181,6 @@ class FileHandle {
    * @throws UnknownAddressSchemeException
    */
   virtual void ReleaseLock(
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const xtreemfs::pbrpc::Lock& lock) = 0;
 
   /** Releases the lock possibly hold by "process_id". Use this before closing
@@ -228,7 +216,6 @@ class FileHandle {
    * @throws UUIDNotInXlocSetException
    */
   virtual void PingReplica(
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& osd_uuid) = 0;
 
   /** Closes the open file handle (flushing any pending data).

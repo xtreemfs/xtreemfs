@@ -127,17 +127,9 @@ class FileHandleImplementation
 
   virtual ~FileHandleImplementation();
 
-  virtual int Read(
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
-      char *buf,
-      size_t count,
-      off_t offset);
+  virtual int Read(char *buf, size_t count, off_t offset);
 
-  virtual int Write(
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
-      const char *buf,
-      size_t count,
-      off_t offset);
+  virtual int Write(const char *buf, size_t count, off_t offset);
 
   virtual void Flush();
 
@@ -153,16 +145,13 @@ class FileHandleImplementation
    * @throws PosixErrorException
    * @throws UnknownAddressSchemeException
    **/
-  void TruncatePhaseTwoAndThree(
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
-      off_t new_file_size);
+  void TruncatePhaseTwoAndThree(off_t new_file_size);
 
   virtual void GetAttr(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       xtreemfs::pbrpc::Stat* stat);
 
   virtual xtreemfs::pbrpc::Lock* AcquireLock(
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
       int process_id,
       uint64_t offset,
       uint64_t length,
@@ -170,31 +159,23 @@ class FileHandleImplementation
       bool wait_for_lock);
 
   virtual xtreemfs::pbrpc::Lock* CheckLock(
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
       int process_id,
       uint64_t offset,
       uint64_t length,
       bool exclusive);
 
   virtual void ReleaseLock(
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
-      const xtreemfs::pbrpc::Lock& lock);
-
-  virtual void ReleaseLock(
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
       int process_id,
       uint64_t offset,
       uint64_t length,
       bool exclusive);
 
-  /** Used by FileInfo object to free active locks. */
+  /** Also used by FileInfo object to free active locks. */
   void ReleaseLock(const xtreemfs::pbrpc::Lock& lock);
 
   virtual void ReleaseLockOfProcess(int process_id);
 
-  virtual void PingReplica(
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
-      const std::string& osd_uuid);
+  virtual void PingReplica(const std::string& osd_uuid);
 
   virtual void Close();
 

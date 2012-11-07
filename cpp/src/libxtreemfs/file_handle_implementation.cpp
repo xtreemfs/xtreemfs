@@ -87,7 +87,6 @@ FileHandleImplementation::FileHandleImplementation(
 FileHandleImplementation::~FileHandleImplementation() {}
 
 int FileHandleImplementation::Read(
-    const xtreemfs::pbrpc::UserCredentials& user_credentials,
     char *buf,
     size_t count,
     off_t offset) {
@@ -160,7 +159,7 @@ int FileHandleImplementation::Read(
                         osd_service_client_,
                         _1,
                         boost::cref(auth_bogus_),
-                        boost::cref(user_credentials),
+                        boost::cref(user_credentials_bogus_),
                         &rq),
             uuid_iterator,
             uuid_resolver_,
@@ -190,7 +189,6 @@ int FileHandleImplementation::Read(
 }
 
 int FileHandleImplementation::Write(
-    const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const char *buf,
     size_t count,
     off_t offset) {
@@ -316,7 +314,7 @@ int FileHandleImplementation::Write(
                   osd_service_client_,
                   _1,
                   boost::cref(auth_bogus_),
-                  boost::cref(user_credentials),
+                  boost::cref(user_credentials_bogus_),
                   &write_request,
                   operations[j].data,
                   operations[j].req_size),
@@ -389,7 +387,7 @@ void FileHandleImplementation::Truncate(
             mrc_service_client_,
             _1,
             boost::cref(auth_bogus_),
-            boost::cref(user_credentials),
+            boost::cref(user_credentials_bogus_),
             &xcap),
         mrc_uuid_iterator_,
         uuid_resolver_,
@@ -403,11 +401,10 @@ void FileHandleImplementation::Truncate(
   xcap_manager_.SetXCap(*updated_xcap);
   response->DeleteBuffers();
 
-  TruncatePhaseTwoAndThree(user_credentials, new_file_size);
+  TruncatePhaseTwoAndThree(new_file_size);
 }
 
 void FileHandleImplementation::TruncatePhaseTwoAndThree(
-    const xtreemfs::pbrpc::UserCredentials& user_credentials,
     off_t new_file_size) {
   // 2. Call truncate at the head OSD.
   truncateRequest truncate_rq;
@@ -424,7 +421,7 @@ void FileHandleImplementation::TruncatePhaseTwoAndThree(
               osd_service_client_,
               _1,
               boost::cref(auth_bogus_),
-              boost::cref(user_credentials),
+              boost::cref(user_credentials_bogus_),
               &truncate_rq),
           osd_uuid_iterator_,
           uuid_resolver_,
@@ -456,7 +453,6 @@ void FileHandleImplementation::GetAttr(
 }
 
 xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
-    const xtreemfs::pbrpc::UserCredentials& user_credentials,
     int process_id,
     uint64_t offset,
     uint64_t length,
@@ -503,7 +499,7 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
             osd_service_client_,
             _1,
             boost::cref(auth_bogus_),
-            boost::cref(user_credentials),
+            boost::cref(user_credentials_bogus_),
             &lock_request),
         osd_uuid_iterator_,
         uuid_resolver_,
@@ -522,7 +518,7 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
                 osd_service_client_,
                 _1,
                 boost::cref(auth_bogus_),
-                boost::cref(user_credentials),
+                boost::cref(user_credentials_bogus_),
                 &lock_request),
             osd_uuid_iterator_,
             uuid_resolver_,
@@ -557,7 +553,6 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
 }
 
 xtreemfs::pbrpc::Lock* FileHandleImplementation::CheckLock(
-    const xtreemfs::pbrpc::UserCredentials& user_credentials,
     int process_id,
     uint64_t offset,
     uint64_t length,
@@ -601,7 +596,7 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::CheckLock(
             osd_service_client_,
             _1,
             boost::cref(auth_bogus_),
-            boost::cref(user_credentials),
+            boost::cref(user_credentials_bogus_),
             &lock_request),
         osd_uuid_iterator_,
         uuid_resolver_,
@@ -617,7 +612,6 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::CheckLock(
 }
 
 void FileHandleImplementation::ReleaseLock(
-    const xtreemfs::pbrpc::UserCredentials& user_credentials,
     int process_id,
     uint64_t offset,
     uint64_t length,
@@ -628,15 +622,10 @@ void FileHandleImplementation::ReleaseLock(
   lock.set_offset(offset);
   lock.set_length(length);
   lock.set_exclusive(exclusive);
-  ReleaseLock(user_credentials, lock);
-}
-
-void FileHandleImplementation::ReleaseLock(const xtreemfs::pbrpc::Lock& lock) {
-  ReleaseLock(user_credentials_bogus_, lock);
+  ReleaseLock(lock);
 }
 
 void FileHandleImplementation::ReleaseLock(
-    const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const xtreemfs::pbrpc::Lock& lock) {
   // Only release locks which are known to this client.
   if (!file_info_->CheckIfProcessHasLocks(lock.client_pid())) {
@@ -663,7 +652,7 @@ void FileHandleImplementation::ReleaseLock(
             osd_service_client_,
             _1,
             boost::cref(auth_bogus_),
-            boost::cref(user_credentials),
+            boost::cref(user_credentials_bogus_),
             &unlock_request),
         osd_uuid_iterator_,
         uuid_resolver_,
@@ -681,7 +670,6 @@ void FileHandleImplementation::ReleaseLockOfProcess(int process_id) {
 }
 
 void FileHandleImplementation::PingReplica(
-    const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& osd_uuid) {
   // Get xlocset. and check if osd_uuid is included.
   readRequest read_request;
@@ -732,7 +720,7 @@ void FileHandleImplementation::PingReplica(
               osd_service_client_,
               _1,
               boost::cref(auth_bogus_),
-              boost::cref(user_credentials),
+              boost::cref(user_credentials_bogus_),
               &read_request),
           &temp_uuid_iterator,
           uuid_resolver_,

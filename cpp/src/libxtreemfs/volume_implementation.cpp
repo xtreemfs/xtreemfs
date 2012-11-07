@@ -412,8 +412,7 @@ FileHandle* VolumeImplementation::OpenFile(
           static_cast<Setattrs>(SETATTR_CTIME | SETATTR_MTIME));
 
       try {
-        file_handle->TruncatePhaseTwoAndThree(user_credentials,
-                                              truncate_new_file_size);
+        file_handle->TruncatePhaseTwoAndThree(truncate_new_file_size);
       } catch(const XtreemFSException&) {
         // Truncate did fail, close file again.
         file_handle->Close();
@@ -1272,7 +1271,7 @@ void VolumeImplementation::AddReplica(
                                      path,
                                      SYSTEM_V_FCNTL_H_O_RDONLY);
   try {
-    file_handle->PingReplica(user_credentials, new_replica.osd_uuids(0));
+    file_handle->PingReplica(new_replica.osd_uuids(0));
   } catch (const exception&) {
     file_handle->Close();  // Cleanup temporary file handle.
     throw;  // Rethrow exception.
