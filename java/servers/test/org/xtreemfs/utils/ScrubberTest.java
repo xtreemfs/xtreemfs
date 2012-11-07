@@ -213,6 +213,8 @@ public class ScrubberTest {
         scrubber.scrub();
 
         // TODO(lukas): add asserts
+        
+        file.close();
 
         // delete volume
         client.deleteVolume(mrc1Address.getHostName() + ":" + mrc1Address.getPort(),
@@ -256,6 +258,8 @@ public class ScrubberTest {
         // file size should be correct from 10 to content.length
         s = file.getAttr(userCredentials);
         assertEquals(content.length, s.getSize());
+        
+        file.close();
 
         // delete volume
         client.deleteVolume(mrc1Address.getHostName() + ":" + mrc1Address.getPort(),
@@ -294,14 +298,15 @@ public class ScrubberTest {
                 RPCAuthentication.authNone, userCredentials, file.getGlobalFileId(),
                 ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY);
         r.get();
+        r.freeBuffers();
 
         // create new replicas
         Replica newRepl = file.getReplica(0).toBuilder().setOsdUuids(0, osdConfig2.getUUID().toString())
-                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber()).build();
+                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber() & REPL_FLAG.REPL_FLAG_STRATEGY_RAREST_FIRST.getNumber()).build();
         volume.addReplica(userCredentials, FILE_NAME, newRepl);
 
         newRepl = file.getReplica(0).toBuilder().setOsdUuids(0, osdConfig3.getUUID().toString())
-                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber()).build();
+                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber() & REPL_FLAG.REPL_FLAG_STRATEGY_RAREST_FIRST.getNumber()).build();
         volume.addReplica(userCredentials, FILE_NAME, newRepl);
 
         // mark OSD3 as removed
@@ -313,6 +318,8 @@ public class ScrubberTest {
 
         // file has still three replicas
         assertEquals(3, file.getReplicasList().size());
+        
+        file.close();
 
         // delete volume
         client.deleteVolume(mrc1Address.getHostName() + ":" + mrc1Address.getPort(),
@@ -353,10 +360,11 @@ public class ScrubberTest {
                 RPCAuthentication.authNone, userCredentials, file.getGlobalFileId(),
                 ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY);
         r.get();
+        r.freeBuffers();
 
         // create new replicas
         Replica newRepl = file.getReplica(0).toBuilder().setOsdUuids(0, osdConfig2.getUUID().toString())
-                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber()).build();
+                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber() & REPL_FLAG.REPL_FLAG_STRATEGY_RAREST_FIRST.getNumber()).build();
         volume.addReplica(userCredentials, FILE_NAME, newRepl);
 
         // modify first Object on OSD
@@ -374,6 +382,8 @@ public class ScrubberTest {
         scrubber.scrub();
 
         // TODO(lukas): add asserts
+        
+        file.close();
 
         // delete volume
         client.deleteVolume(mrc1Address.getHostName() + ":" + mrc1Address.getPort(),
@@ -412,17 +422,18 @@ public class ScrubberTest {
                 RPCAuthentication.authNone, userCredentials, file.getGlobalFileId(),
                 ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE);
         r.get();
+        r.freeBuffers();
 
         // write file
         file.write(userCredentials, content, content.length, 0);
 
         // create new replicas
         Replica newRepl = file.getReplica(0).toBuilder().setOsdUuids(0, osdConfig2.getUUID().toString())
-                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber()).build();
+                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber() & REPL_FLAG.REPL_FLAG_STRATEGY_RAREST_FIRST.getNumber()).build();
         volume.addReplica(userCredentials, FILE_NAME, newRepl);
 
         newRepl = file.getReplica(0).toBuilder().setOsdUuids(0, osdConfig3.getUUID().toString())
-                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber()).build();
+                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber() & REPL_FLAG.REPL_FLAG_STRATEGY_RAREST_FIRST.getNumber()).build();
         volume.addReplica(userCredentials, FILE_NAME, newRepl);
 
         // mark OSD3 as removed
@@ -434,6 +445,8 @@ public class ScrubberTest {
 
         // file has still three replicas
         assertEquals(3, file.getReplicasList().size());
+        
+        file.close();
 
         // delete volume
         client.deleteVolume(mrc1Address.getHostName() + ":" + mrc1Address.getPort(),
@@ -471,13 +484,14 @@ public class ScrubberTest {
                 RPCAuthentication.authNone, userCredentials, file.getGlobalFileId(),
                 ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE);
         r.get();
+        r.freeBuffers();
 
         // write file
         file.write(userCredentials, content, file.getStripingPolicy().getStripeSize() * 1024 - 20, 0);
 
         // create new replicas
         Replica newRepl = file.getReplica(0).toBuilder().setOsdUuids(0, osdConfig2.getUUID().toString())
-                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber()).build();
+                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber() & REPL_FLAG.REPL_FLAG_STRATEGY_RAREST_FIRST.getNumber()).build();
         volume.addReplica(userCredentials, FILE_NAME, newRepl);
 
         // modify first Object on OSD
@@ -495,6 +509,8 @@ public class ScrubberTest {
         scrubber.scrub();
 
         // TODO(lukas): add asserts
+        
+        file.close();
 
         // delete volume
         client.deleteVolume(mrc1Address.getHostName() + ":" + mrc1Address.getPort(),
@@ -530,13 +546,14 @@ public class ScrubberTest {
                 RPCAuthentication.authNone, userCredentials, file.getGlobalFileId(),
                 ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE);
         r.get();
+        r.freeBuffers();
 
         // write file
         file.write(userCredentials, content, content.length, 0);
 
         // create new replicas
         Replica newRepl = file.getReplica(0).toBuilder().setOsdUuids(0, osdConfig2.getUUID().toString())
-                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber()).build();
+                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber() & REPL_FLAG.REPL_FLAG_STRATEGY_RAREST_FIRST.getNumber()).build();
         volume.addReplica(userCredentials, FILE_NAME, newRepl);
 
         Stat s = file.getAttr(userCredentials);
@@ -555,6 +572,8 @@ public class ScrubberTest {
         // file size should be correct from 10 to content.length
         s = file.getAttr(userCredentials);
         assertEquals(content.length, s.getSize());
+        
+        file.close();
 
         // delete volume
         client.deleteVolume(mrc1Address.getHostName() + ":" + mrc1Address.getPort(),
