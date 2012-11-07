@@ -274,7 +274,7 @@ void AsyncWriteHandler::ProcessCallbacks() {
                                  entry.data_length_,
                                  entry.error_,
                                  entry.context_);
-    } catch (const XtreemFSException& e) {
+    } catch (const exception& e) {
       if (Logging::log->loggingActive(LEVEL_DEBUG)) {
         Logging::log->getLog(LEVEL_DEBUG)
             << "AsyncWriteHandler::ProcessCallbacks(): caught unhandled "
