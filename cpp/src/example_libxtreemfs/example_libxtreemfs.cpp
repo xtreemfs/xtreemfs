@@ -76,8 +76,7 @@ int main(int argc, char* argv[]) {
             "\n"
             "to the file example_libxtreemfs.txt..." << endl;
     char write_buf[] = "Accessed XtreemFS through the C++ libxtreemfs.";
-    file->Write(user_credentials,
-                reinterpret_cast<const char*>(&write_buf),
+    file->Write(reinterpret_cast<const char*>(&write_buf),
                 sizeof(write_buf),
                 0);
 
@@ -95,8 +94,7 @@ int main(int argc, char* argv[]) {
     const size_t buffer_size = 128 * 1024;  // 128kB, default object size.
     char read_buf[buffer_size];
     memset(&read_buf, 0, buffer_size);
-    file->Read(user_credentials,
-               reinterpret_cast<char*>(&read_buf),
+    file->Read(reinterpret_cast<char*>(&read_buf),
                buffer_size,  // Length.
                0);  // Offset.
     cout << "\nReading the content of the file example_libxtreemfs.txt:\n\n"
