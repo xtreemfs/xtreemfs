@@ -280,8 +280,9 @@ public class AsyncWriteHandler {
         if (response.hasSizeInBytes()) {
             XCap xcap = writeBuffer.getFileHandle().getXcap();
             fileInfo.tryToUpdateOSDWriteResponse(response, xcap);
-            decreasePendingBytesHelper(writeBuffer);
         }
+
+        decreasePendingBytesHelper(writeBuffer);
     }
 
     /**
