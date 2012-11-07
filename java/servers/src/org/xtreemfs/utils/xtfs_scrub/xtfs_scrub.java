@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.AdminVolume;
@@ -165,8 +166,11 @@ public class xtfs_scrub {
             } catch (InterruptedException ex) {
             }
         }
-        tPool.shutdownNow();
-        volume.close();
+        tPool.shutdown();
+        try {
+            tPool.awaitTermination(1, TimeUnit.HOURS);
+        } catch (InterruptedException e) {
+        }
 
         if (!silent)
             System.out.format("scrubbed %-42s      %15s - total %15s\n\u001b[100D\u001b[A", "all files", "",
