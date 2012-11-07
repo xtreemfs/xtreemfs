@@ -101,14 +101,9 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
     private DIRServiceClient                       dirServiceClient          = null;
 
     /**
-     * A OSDServiceClient is a wrapper for an RPC Client.
+     * An OSDServiceClient is a wrapper for an RPC Client.
      */
     private OSDServiceClient                       osdServiceClient          = null;
-
-    /**
-     * DIRClient for communication between Client and DIR.
-     */
-    private DIRClient                              dirClient                 = null;
 
     /**
      * The RPC Client processes requests from a queue and executes callbacks in its thread.
@@ -179,11 +174,10 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
                     GlobalTypes.PORTS.DIR_PBRPC_PORT_DEFAULT.getNumber());
         }
 
-        dirClient = new DIRClient(this.dirServiceClient, isas, this.options.getMaxTries(),
+        DIRClient dirClient = new DIRClient(this.dirServiceClient, isas, this.options.getMaxTries(),
                 this.options.getRetryDelay_s() * 1000);
 
         this.uuidResolver = org.xtreemfs.common.uuids.UUIDResolver.startNonSingelton(dirClient, 3600, 1000);
-
     }
 
     @Override
@@ -982,17 +976,17 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
     }
 
     public void setOSDServiceStatus(String osdUUID, ServiceStatus serviceStatus) throws IOException {
-        // get OSD services
+        // Get OSD services
         Service osdService = getServiceByUUID(osdUUID);
 
-        // change service status
+        // Change service status
         List<KeyValuePair> data = new LinkedList<KeyValuePair>(osdService.getData().getDataList());
         KeyValuePairs
                 .putValue(data, HeartbeatThread.STATUS_ATTR, Integer.toString(serviceStatus.getNumber()));
         ServiceDataMap dataMap = ServiceDataMap.newBuilder().addAllData(data).build();
         osdService = osdService.toBuilder().setData(dataMap).build();
 
-        // sent changed service status to DIR
+        // Send changed service status to DIR
         serviceRegisterRequest request = serviceRegisterRequest.newBuilder().setService(osdService).build();
         RPCCaller.<serviceRegisterRequest, serviceRegisterResponse> syncCall(SERVICES.DIR,
                 RPCAuthentication.userService, RPCAuthentication.authNone, options, this,

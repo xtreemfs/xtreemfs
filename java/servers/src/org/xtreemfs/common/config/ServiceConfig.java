@@ -30,9 +30,6 @@ public class ServiceConfig extends Config {
 
     final private static Category[] debugCategoryDefault = { Category.all };
 
-    /*
-     * @formatter:off
-     */
     public static enum Parameter {
             /*
              * general configuration parameter
@@ -122,10 +119,6 @@ public class ServiceConfig extends Config {
             VIVALDI_MAX_REQUEST_TIMEOUT_IN_MS("vivaldi.max_request_timeout_ms", 10000, Integer.class, false),
             VIVALDI_TIMER_INTERVAL_IN_MS("vivaldi.timer_interval_ms", 60000, Integer.class, false);
         
-            /*
-             * @formatter:on
-             */
-
         Parameter(String propString, Object defaultValue, Class propClass, Boolean req) {
             propertyString = propString;
             this.defaultValue = defaultValue;
@@ -193,10 +186,6 @@ public class ServiceConfig extends Config {
         }
 
     }
-
-    /*
-     * @formatter:off
-     */
     /**
      * Parameter which are required to connect to the DIR.
      * 
@@ -211,10 +200,6 @@ public class ServiceConfig extends Config {
             Parameter.USE_SSL,
             Parameter.UUID
             };
-    
-    /*
-     * @formatter:on
-     */
 
     /**
      * Checks if there are all required configuration parameter to initialize a connection to the DIR and

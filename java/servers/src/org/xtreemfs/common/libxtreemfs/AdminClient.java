@@ -22,7 +22,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
 public interface AdminClient extends Client {
 
     /**
-     * Open a admin volume and use the returned class to access it.
+     * Open an admin volume and use the returned class to access it.
      * 
      * @throws AddressToUUIDNotFoundException
      * @throws UnknownAddressSchemeException
@@ -33,7 +33,7 @@ public interface AdminClient extends Client {
             throws AddressToUUIDNotFoundException, VolumeNotFoundException, IOException;
 
     /**
-     * starts a CleanUp on the OSD with the given UUID.
+     * Starts a cleanup on the OSD with the given UUID.
      * 
      * @param osdUUID
      *            UUID of the OSD

@@ -14,7 +14,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 
 /**
  * Extends the default Volume with additional functions. An admin volume object can be obtain by opening a
- * volume with a admin client.
+ * volume with an admin client.
  * 
  */
 public interface AdminVolume extends Volume {
@@ -51,7 +51,7 @@ public interface AdminVolume extends Volume {
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
-     * Returns the object number for the file in "path".
+     * Returns the object number for the file at "path".
      * 
      * @param userCredentials
      *            Name and groups of the user.

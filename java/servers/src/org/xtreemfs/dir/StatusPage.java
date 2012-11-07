@@ -51,15 +51,37 @@ public class StatusPage {
 
     private final static String statusPageTemplate;
 
+    /**
+     * Time after a service, which has not send a heartbeat signal, will be displayed as not available
+     * (default: 10 min).
+     */
     private final static int    SERVICE_TIMEOUT = 600000;
 
+    private static StringBuilder dump;
+
+    /*
+     * @formatter: off
+     */
     private enum Vars {
 
-        MAXMEM("<!-- $MAXMEM -->"), FREEMEM("<!-- $FREEMEM -->"), AVAILPROCS("<!-- $AVAILPROCS -->"), BPSTATS(
-                "<!-- $BPSTATS -->"), PORT("<!-- $PORT -->"), DEBUG("<!-- $DEBUG -->"), NUMCON(
-                "<!-- $NUMCON -->"), PINKYQ("<!-- $PINKYQ -->"), NUMREQS("<!-- $NUMREQS -->"), TIME(
-                "<!-- $TIME -->"), TABLEDUMP("<!-- $TABLEDUMP -->"), PROTOVERSION("<!-- $PROTOVERSION -->"), VERSION(
-                "<!-- $VERSION -->"), DBVERSION("<!-- $DBVERSION -->");
+        MAXMEM("<!-- $MAXMEM -->"),
+        FREEMEM("<!-- $FREEMEM -->"),
+        AVAILPROCS("<!-- $AVAILPROCS -->"),
+        BPSTATS("<!-- $BPSTATS -->"),
+        PORT("<!-- $PORT -->"),
+        DEBUG("<!-- $DEBUG -->"),
+        NUMCON("<!-- $NUMCON -->"),
+        PINKYQ("<!-- $PINKYQ -->"),
+        NUMREQS("<!-- $NUMREQS -->"),
+        TIME("<!-- $TIME -->"),
+        TABLEDUMP("<!-- $TABLEDUMP -->"),
+        PROTOVERSION("<!-- $PROTOVERSION -->"),
+        VERSION("<!-- $VERSION -->"),
+        DBVERSION("<!-- $DBVERSION -->");
+
+        /*
+         * @formatter: on
+         */
 
         private String template;
 
@@ -198,7 +220,7 @@ public class StatusPage {
                     ServiceStatus status = ServiceStatus.valueOf(Integer.valueOf(dataEntry.getValue()));
                     switch (status) {
                     case SERVICE_STATUS_AVAIL:
-                        dump.append("online (new files be assigned to it)");
+                        dump.append("online (new files will be assigned to it)");
                         break;
                     case SERVICE_STATUS_TO_BE_REMOVED:
                         dump.append("locked (new files will not be assigned to it)");
@@ -238,21 +260,11 @@ public class StatusPage {
                 Date lastUpdatedDate = new Date(sreg.getLast_updated_s() * 1000);
                 dump.append(lastUpdatedDate);
                 // check timeout only for MRCs and OSDs
-                if (sreg.getType() != ServiceType.SERVICE_TYPE_VOLUME) {
-                    if (lastUpdatedDate.getTime() < System.currentTimeMillis() - SERVICE_TIMEOUT) {
-                        long timeout = System.currentTimeMillis() - lastUpdatedDate.getTime();
-                        dump.append(", that's ");
-                        if (timeout < 3600000) {
-                            dump.append(timeout / 60000);
-                            dump.append(" minutes");
-                        } else if (timeout < 86400000) {
-                            dump.append(timeout / 3600000);
-                            dump.append(" hours");
-                        } else {
-                            dump.append(timeout / 86400000);
-                            dump.append(" days");
-                        }
-                        dump.append(" ago check connectivity of the server");
+                if (sreg.getType() == ServiceType.SERVICE_TYPE_MRC
+                        | sreg.getType() == ServiceType.SERVICE_TYPE_MRC) {
+                    long lastUpdateDateTime = lastUpdatedDate.getTime();
+                    if (lastUpdateDateTime < System.currentTimeMillis() - SERVICE_TIMEOUT) {
+                        printTimeAgo(lastUpdateDateTime);
                     }
                 }
                 dump.append(")");
@@ -341,7 +353,7 @@ public class StatusPage {
     public static String getVivaldiData(DIRRequestDispatcher master, DIRConfig config)
             throws BabuDBException, IOException, InterruptedException {
         final Database database = master.getDirDatabase();
-        StringBuilder dump = new StringBuilder();
+        dump = new StringBuilder();
         ResultSet<byte[], byte[]> iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_SERVREG,
                 new byte[0], null).get();
 
@@ -461,5 +473,21 @@ public class StatusPage {
         sb.append("</BODY></HTML>");
 
         return sb.toString();
+    }
+
+    private static void printTimeAgo(long lastUpdateDateTime) {
+        long timeout = System.currentTimeMillis() - lastUpdateDateTime;
+        dump.append(", that's ");
+        if (timeout < 3600000) {
+            dump.append(timeout / 60000);
+            dump.append(" minutes");
+        } else if (timeout < 86400000) {
+            dump.append(timeout / 3600000);
+            dump.append(" hours");
+        } else {
+            dump.append(timeout / 86400000);
+            dump.append(" days");
+        }
+        dump.append(" ago. Please check connectivity of the server");
     }
 }

@@ -42,6 +42,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replicas;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SERVICES;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries;
@@ -1574,21 +1575,10 @@ public class VolumeImplementation implements Volume, AdminVolume {
     }
 
     public long getNumObjects(UserCredentials userCredentials, String path) throws IOException {
-
-        Stat fStat = this.getAttr(userCredentials, path);
-        long fLength = fStat.getSize();
-
-        if (fLength > 0) {
-            Replica replica = this.listReplicas(userCredentials, path).getReplicas(0);
-            int stripeSize = replica.getStripingPolicy().getStripeSize() * 1024;
-            return ((fLength - 1) / stripeSize) + 1;
-        } else
-            return 0;
-    }
-
-    public String getFileId(UserCredentials userCredentials, String path) throws PosixErrorException,
-            AddressToUUIDNotFoundException, IOException {
-        return this.getXAttr(userCredentials, path, "xtreemfs.file_id");
+        StripingPolicy stripingPolicy = this.listReplicas(userCredentials, path).getReplicas(0)
+                .getStripingPolicy();
+        Stat fileAttr = this.getAttr(userCredentials, path);
+        return Helper.getNumObjects(userCredentials, fileAttr, stripingPolicy);
     }
 
     private ArrayList<String> resolveHostnamesFromUuids(ArrayList<String> uuids)

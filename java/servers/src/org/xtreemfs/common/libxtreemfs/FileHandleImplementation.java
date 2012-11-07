@@ -90,6 +90,11 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
      */
     private FileInfo                          fileInfo;
 
+    /**
+     * Volume which did open this file.
+     */
+    private VolumeImplementation              volume;
+
     // TODO(mberlin): Add flags member.
 
     /**
@@ -451,12 +456,17 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
     protected void flush(boolean closeFile) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException {
         fileInfo.flush(this, closeFile);
-        boolean awf = false;
-        synchronized (this) {
-            awf = asyncWritesFailed;
-        }
-        if (awf) {
+        throwIfAsyncWritesFailed();
+    }
 
+    private boolean didAsyncWriteFail() {
+        synchronized (this) {
+            return this.asyncWritesFailed;
+        }
+    }
+
+    private void throwIfAsyncWritesFailed() throws PosixErrorException {
+        if (didAsyncWriteFail()) {
             String error = "Flush for file " + fileInfo.getPath() + "did not succeed flushing "
                     + "all pending writes as at least one asynchronous write did fail";
 
@@ -522,13 +532,15 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
         OSDWriteResponse response = null;
 
+        XCap xCapCopy = getXcap();
+
         if (!updateOnlyMRC) {
 
             // 2. Call truncate at the head OSD.
             truncateRequest.Builder requestBuilder = truncateRequest.newBuilder();
             FileCredentials.Builder fileCredentialsBuilder = FileCredentials.newBuilder();
             fileCredentialsBuilder.setXlocs(fileInfo.getXLocSet());
-            fileCredentialsBuilder.setXcap(getXcap());
+            fileCredentialsBuilder.setXcap(xCapCopy);
             requestBuilder.setFileId(fileCredentialsBuilder.getXcap().getFileId());
             requestBuilder.setFileCredentials(fileCredentialsBuilder.build());
             requestBuilder.setNewFileSize(newFileSize);
@@ -549,13 +561,13 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
         } else {
 
             // create OSDWriteResponse
-            response = OSDWriteResponse.newBuilder().setTruncateEpoch(xcap.getTruncateEpoch())
+            response = OSDWriteResponse.newBuilder().setTruncateEpoch(xCapCopy.getTruncateEpoch())
                     .setSizeInBytes(newFileSize).build();
 
         }
 
         // register the new OSDWriteResponse to this file's FileInfo.
-        fileInfo.tryToUpdateOSDWriteResponse(response, xcap);
+        fileInfo.tryToUpdateOSDWriteResponse(response, xCapCopy);
 
         // 3. Update the file size at the MRC.
         fileInfo.flushPendingFileSizeUpdate(this);
@@ -571,8 +583,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
     @Override
     public Stat getAttr(UserCredentials userCredentials) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException {
-        return fileInfo.getAttr(userCredentials);
-
+        return volume.getAttr(userCredentials, fileInfo.getPath());
     }
 
     /*
@@ -1004,7 +1015,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
         }
     }
 
-    public XCap getXcap() {
+    protected XCap getXcap() {
         synchronized (this) {
             return xcap.toBuilder().build();
         }
@@ -1019,9 +1030,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
             PosixErrorException, AddressToUUIDNotFoundException {
 
         long fileId = 0;
-        synchronized (this) {
-            fileId = Helper.extractFileIdFromXcap(getXcap());
-        }
+        fileId = Helper.extractFileIdFromXcap(getXcap());
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
                     "WriteBackFileSize: fileId: %s  #bytes: %s  close file?: %s", fileId,
@@ -1107,13 +1116,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
     public long getNumObjects(UserCredentials userCredentials) throws IOException,
             AddressToUUIDNotFoundException, PosixErrorException {
 
-        long fileSize = getAttr(userCredentials).getSize();
-
-        if (fileSize > 0) {
-            int stripeSize = getStripingPolicy().getStripeSize() * 1024;
-            return ((fileSize - 1) / stripeSize) + 1;
-        } else
-            return 0;
+        return Helper.getNumObjects(userCredentials, getAttr(userCredentials), getStripingPolicy());
     }
 
     public boolean checkAndMarkIfReadOnlyReplicaComplete(int replicaIndex, UserCredentials userCredentials)
@@ -1173,11 +1176,12 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
                 }
             }
 
-            // increase osdRelPos for the next stripecolumn(stored on the next OSD)
+            // increase osdRelPos for the next stripecolumn (stored on the next OSD)
             osdRelPos++;
         }
         try {
-            fileInfo.setXAttr(userCredentials, "xtreemfs.mark_replica_complete", replica.getOsdUuids(0),
+            volume.setXAttr(userCredentials, fileInfo.getPath(), "xtreemfs.mark_replica_complete",
+                    replica.getOsdUuids(0),
                     XATTR_FLAGS.XATTR_FLAGS_CREATE);
         } catch (IOException e) {
             // Couldn't mark replica as complete but it is complete, so just log it and ignore exception

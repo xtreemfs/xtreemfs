@@ -31,7 +31,7 @@ public interface Volume {
 
     public static final String XTREEMFS_DEFAULT_RP = "xtreemfs.default_rp";
     
-    public abstract void internalShutdown();
+    public void internalShutdown();
 
     /**
      * Start this volume, e.g. initialize all required things.
@@ -41,7 +41,7 @@ public interface Volume {
     /**
      * Close the volume.
      */
-    public abstract void close();
+    public void close();
 
     /**
      * Returns information about the volume (e.g. used/free space).
@@ -56,7 +56,7 @@ public interface Volume {
      * @throws UnknownAddressSchemeException
      */
     // TODO: Create other Exceptions.
-    public abstract StatVFS statFS(UserCredentials userCredentials) throws IOException, PosixErrorException,
+    public StatVFS statFS(UserCredentials userCredentials) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException;
 
     /**
@@ -75,7 +75,7 @@ public interface Volume {
      * @throws UnknownAddressSchemeException
      */
     // TODO: Create other Exceptions.
-    public abstract String readLink(UserCredentials userCredentials, String path) throws IOException,
+    public String readLink(UserCredentials userCredentials, String path) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -95,7 +95,7 @@ public interface Volume {
      * @throws UnknownAddressSchemeException
      */
     // TODO: Create other Exceptions.
-    public abstract void symlink(UserCredentials userCredentials, String targetPath, String linkPath)
+    public void symlink(UserCredentials userCredentials, String targetPath, String linkPath)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -113,7 +113,7 @@ public interface Volume {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract void link(UserCredentials userCredentials, String targetPath, String linkPath)
+    public void link(UserCredentials userCredentials, String targetPath, String linkPath)
             throws IOException, PosixErrorException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -135,7 +135,7 @@ public interface Volume {
      * @throws UnknownAddressSchemeException
      */
     // TODO: Create other Exceptions.
-    public abstract void access(UserCredentials userCredentials, String path, int flags) throws IOException,
+    public void access(UserCredentials userCredentials, String path, int flags) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -157,7 +157,7 @@ public interface Volume {
      *         destroy the object.
      */
     // TODO: Create other Exceptions.
-    public abstract FileHandle openFile(UserCredentials userCredentials, String path, int flags)
+    public FileHandle openFile(UserCredentials userCredentials, String path, int flags)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -169,7 +169,7 @@ public interface Volume {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract FileHandle openFile(UserCredentials userCredentials, String path, int flags, int mode)
+    public FileHandle openFile(UserCredentials userCredentials, String path, int flags, int mode)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -187,7 +187,7 @@ public interface Volume {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract void truncate(UserCredentials userCredentials, String path, int newFileSize)
+    public void truncate(UserCredentials userCredentials, String path, int newFileSize)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -204,7 +204,7 @@ public interface Volume {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract Stat getAttr(UserCredentials userCredentials, String path) throws IOException,
+    public Stat getAttr(UserCredentials userCredentials, String path) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -227,7 +227,7 @@ public interface Volume {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract void setAttr(UserCredentials userCredentials, String path, Stat stat, int toSet)
+    public void setAttr(UserCredentials userCredentials, String path, Stat stat, int toSet)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -243,7 +243,7 @@ public interface Volume {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract void unlink(UserCredentials userCredentials, String path) throws IOException,
+    public void unlink(UserCredentials userCredentials, String path) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -261,7 +261,7 @@ public interface Volume {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      * */
-    public abstract void rename(UserCredentials userCredentials, String path, String newPath)
+    public void rename(UserCredentials userCredentials, String path, String newPath)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -281,7 +281,7 @@ public interface Volume {
      * @throws PosixErrorException
      * @throws AddressToUUIDNotFoundException
      */
-    public abstract void createDirectory(UserCredentials userCredentials, String path, int mode,
+    public void createDirectory(UserCredentials userCredentials, String path, int mode,
             boolean recursive) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -299,7 +299,7 @@ public interface Volume {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract void createDirectory(UserCredentials userCredentials, String path, int mode)
+    public void createDirectory(UserCredentials userCredentials, String path, int mode)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -315,7 +315,7 @@ public interface Volume {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract void removeDirectory(UserCredentials userCredentials, String path) throws IOException,
+    public void removeDirectory(UserCredentials userCredentials, String path) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -341,7 +341,7 @@ public interface Volume {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract DirectoryEntries readDir(UserCredentials userCredentials, String path, int offset,
+    public DirectoryEntries readDir(UserCredentials userCredentials, String path, int offset,
             int count, boolean namesOnly) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException;
 
@@ -362,7 +362,7 @@ public interface Volume {
      * 
      * @remark Ownership is transferred to the caller.
      */
-    public abstract listxattrResponse listXAttrs(UserCredentials userCredentials, String path)
+    public listxattrResponse listXAttrs(UserCredentials userCredentials, String path)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -383,7 +383,7 @@ public interface Volume {
      * 
      * @remark Ownership is transferred to the caller.
      */
-    public abstract listxattrResponse listXAttrs(UserCredentials userCredentials, String path,
+    public listxattrResponse listXAttrs(UserCredentials userCredentials, String path,
             boolean useCache) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -405,7 +405,7 @@ public interface Volume {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract void setXAttr(UserCredentials userCredentials, String path, String name, String value,
+    public void setXAttr(UserCredentials userCredentials, String path, String name, String value,
             XATTR_FLAGS flags) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -425,7 +425,7 @@ public interface Volume {
      * @throws UnknownAddressSchemeException
      * 
      */
-    public abstract String getXAttr(UserCredentials userCredentials, String path, String name)
+    public String getXAttr(UserCredentials userCredentials, String path, String name)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -447,7 +447,7 @@ public interface Volume {
      * 
      * @return true if the attribute was found.
      */
-    public abstract int getXAttrSize(UserCredentials userCredentials, String path, String name)
+    public int getXAttrSize(UserCredentials userCredentials, String path, String name)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -465,7 +465,7 @@ public interface Volume {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract void removeXAttr(UserCredentials userCredentials, String path, String name)
+    public void removeXAttr(UserCredentials userCredentials, String path, String name)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -483,7 +483,7 @@ public interface Volume {
      * @throws {@link IOException}
      * @throws PosixErrorException
      * */
-    public abstract void addReplica(UserCredentials userCredentials, String path, Replica newReplica)
+    public void addReplica(UserCredentials userCredentials, String path, Replica newReplica)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -500,7 +500,7 @@ public interface Volume {
      * 
      * @remark Ownership is transferred to the caller.
      */
-    public abstract Replicas listReplicas(UserCredentials userCredentials, String path) throws IOException,
+    public Replicas listReplicas(UserCredentials userCredentials, String path) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -519,7 +519,7 @@ public interface Volume {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract void removeReplica(UserCredentials userCredentials, String path, String osdUuid)
+    public void removeReplica(UserCredentials userCredentials, String path, String osdUuid)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -539,7 +539,7 @@ public interface Volume {
      * @throws {@link IOException}
      * @throws PosixErrorException
      */
-    public abstract List<String> getSuitableOSDs(UserCredentials userCredentials, String path,
+    public List<String> getSuitableOSDs(UserCredentials userCredentials, String path,
             int numberOfOsds) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -560,7 +560,7 @@ public interface Volume {
      * @throws {@link IOException}
      * @throws PosixErrorException
      */
-    public abstract void setDefaultReplicationPolicy(UserCredentials userCredentials, String directory,
+    public void setDefaultReplicationPolicy(UserCredentials userCredentials, String directory,
             String replicationPolicy, int replicationFactor, int replicationFlags) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException;
 
@@ -586,22 +586,7 @@ public interface Volume {
      * @throws AddressToUUIDNotFoundException
      */
 
-    /**
-     * Returns the FileID of the file in "path" as a String.
-     * 
-     * @param userCredentials
-     *            Name and groups of the user
-     * @param path
-     *            Path to the file
-     * 
-     * @throws PosixErrorException
-     * @throws AddressToUUIDNotFoundException
-     * @throws IOException
-     */
-    public String getFileId(UserCredentials userCredentials, String path) throws PosixErrorException,
-            AddressToUUIDNotFoundException, IOException;
-
-    public abstract List<StripeLocation> getStripeLocations(UserCredentials userCredentials, String path,
+    public List<StripeLocation> getStripeLocations(UserCredentials userCredentials, String path,
             long startSize, long length) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException;
 
@@ -617,7 +602,7 @@ public interface Volume {
      *          The user to remove access rights
      * @throws IOException
      */
-    public abstract void removeACL(UserCredentials userCreds, String path, String user) throws IOException;
+    public void removeACL(UserCredentials userCreds, String path, String user) throws IOException;
     
     /**
      * Removes all provided users from the ACL stored in path 
@@ -630,7 +615,7 @@ public interface Volume {
      *          The user to remove access rights
      * @throws IOException
      */    
-    public abstract void removeACL(UserCredentials userCreds, String path, Set<String> aclEntries) throws IOException;
+    public void removeACL(UserCredentials userCreds, String path, Set<String> aclEntries) throws IOException;
     
     /**
      * Adds the user to the ACL for the provided path 
@@ -645,7 +630,8 @@ public interface Volume {
      *          The accessrights to be set for the user. I.e. rwx, rx, rw, ...
      * @throws IOException
      */ 
-    public abstract void setACL(UserCredentials userCreds, String path, String user, String accessrights) throws IOException;
+    public void setACL(UserCredentials userCreds, String path, String user, String accessrights)
+            throws IOException;
     
     /**
      * Adds all users to the ACL for the provided path 
@@ -658,7 +644,8 @@ public interface Volume {
      *          The user to remove access rights
      * @throws IOException
      */ 
-    public abstract void setACL(UserCredentials userCreds, String path, Map<String, Object> aclEntries) throws IOException;
+    public void setACL(UserCredentials userCreds, String path, Map<String, Object> aclEntries)
+            throws IOException;
     
     /**
      * Returns all users in the ACL for the provided path 
@@ -671,7 +658,7 @@ public interface Volume {
      *          The user to remove access rights
      * @throws IOException
      */ 
-    public abstract Map<String, Object> listACL(UserCredentials userCreds, String path) throws IOException;
+    public Map<String, Object> listACL(UserCredentials userCreds, String path) throws IOException;
     
     /**
      * Used only for HDFS Interface.

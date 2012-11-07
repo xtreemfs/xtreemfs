@@ -20,12 +20,10 @@ import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.getattrRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
 
@@ -460,28 +458,6 @@ public class FileInfo {
                 osdWriteResponseLock.notifyAll();
             }
         }
-    }
-
-    /**
-     * Passes FileHandle.getAttr() through to Volume.
-     */
-    protected Stat getAttr(UserCredentials userCredentials) throws IOException, PosixErrorException,
-            AddressToUUIDNotFoundException {
-        String path = getPath();
-        return volume.getAttr(userCredentials, path);
-    }
-
-    /**
-     * Passes FileHandle.setXAttr() through to Volume
-     * 
-     * @throws IOException
-     * @throws AddressToUUIDNotFoundException
-     * @throws PosixErrorException
-     */
-    protected void setXAttr(UserCredentials userCredentials, String name, String value, XATTR_FLAGS flags)
-            throws PosixErrorException, AddressToUUIDNotFoundException, IOException {
-        String path = getPath();
-        volume.setXAttr(userCredentials, path, name, value, flags);
     }
 
     /**

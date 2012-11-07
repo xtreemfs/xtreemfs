@@ -81,7 +81,8 @@ public class HeartbeatThread extends LifeCycleThread {
     public static final String    STATUS_ATTR               = STATIC_ATTR_PREFIX + "status";
 
     /**
-     * true if the DIR should set "last updated" , else false
+     * Only set by heartbeat thread. With this attribute the DIR distinguish between service_register
+     * operation called by a hearbeat thread and calls by utils etc.
      */
     public static final String    HB_ATTR                   = STATIC_ATTR_PREFIX + "isHB";
 
@@ -126,7 +127,7 @@ public class HeartbeatThread extends LifeCycleThread {
     public synchronized void shutdown() {
         try {
             if (client.clientIsAlive()) {
-                client.xtreemfs_service_offline(null, authNone, uc, uuid.toString(), 0);
+                client.xtreemfs_service_offline(null, authNone, uc, uuid.toString(), 1);
             }
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_WARN, this, "could not set service offline at DIR");

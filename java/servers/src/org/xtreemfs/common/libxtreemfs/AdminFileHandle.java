@@ -15,7 +15,6 @@ import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
 
 public interface AdminFileHandle extends FileHandle {
 
@@ -34,8 +33,8 @@ public interface AdminFileHandle extends FileHandle {
     public Replica getReplica(int replicaIndex);
 
     /**
-     * Returns the striping policy of the file. Attention: Only use when the file is not replicated or all
-     * replicas have the same striping policy.
+     * Returns the striping policy of the file. If the file is replicated, the striping policy of the first
+     * replica is returned.
      */
     public StripingPolicy getStripingPolicy();
 
@@ -80,7 +79,7 @@ public interface AdminFileHandle extends FileHandle {
     public long getNumObjects(UserCredentials userCredentials) throws IOException;
 
     /**
-     * Checks the object's checksum and returns the total number of bytes(data + sparse data) or throws an
+     * Checks the object's checksum and returns the total number of bytes (data + sparse data) or throws an
      * InvalidChecksumException.
      * 
      * @param replicaIndex
@@ -92,12 +91,6 @@ public interface AdminFileHandle extends FileHandle {
      */
     public int checkObjectAndGetSize(int replicaIndex, long objectNo) throws IOException,
             InvalidChecksumException;
-
-    /**
-     * Returns a copy of the Xcap of the FileHandle.
-     * 
-     */
-    public XCap getXcap();
 
     /**
      * Same as truncate(userCredentials, newFileSize) but with the option to truncate the file only at the

@@ -43,7 +43,7 @@ public class xtfs_cleanup_osd {
      * @throws Exception
      */
     public static void main(String[] args) {
-        Logging.start(Logging.LEVEL_DEBUG);
+        Logging.start(Logging.LEVEL_WARN);
 
         // parse the call arguments
         Map<String, CliOption> options = utils.getDefaultAdminToolOptions(true);

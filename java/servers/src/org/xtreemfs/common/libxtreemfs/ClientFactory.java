@@ -53,7 +53,7 @@ public class ClientFactory {
     }
 
     /**
-     * Returns an instance of a admin client with one DIR Address.
+     * Returns an instance of an admin client with one DIR address.
      * 
      * @param dirServiceAddress
      *            Address of the DIR service (Format: ip-addr:port, e.g. localhost:32638)

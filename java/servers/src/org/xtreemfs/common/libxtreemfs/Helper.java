@@ -6,15 +6,21 @@
  */
 package org.xtreemfs.common.libxtreemfs;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Random;
 
+import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
+import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
 
 /**
@@ -128,6 +134,18 @@ public class Helper {
             path = "/" + path;
         }
         return path;
+    }
+
+    static protected long getNumObjects(UserCredentials userCredentials, Stat fileAttr,
+            StripingPolicy stripingPolicy) throws IOException, AddressToUUIDNotFoundException,
+            PosixErrorException {
+        long fileSize = fileAttr.getSize();
+
+        if (fileSize > 0) {
+            int stripeSize = stripingPolicy.getStripeSize() * 1024;
+            return ((fileSize - 1) / stripeSize) + 1;
+        } else
+            return 0;
     }
 
     static public String getBasename(String path) {
