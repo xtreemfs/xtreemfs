@@ -13,8 +13,9 @@
 #include "libxtreemfs/client.h"
 #include "util/logging.h"
 
+using namespace std;
 using namespace xtreemfs::rpc;
-using xtreemfs::util::Logging;
+using namespace xtreemfs::util;
 
 namespace xtreemfs {
 
@@ -46,20 +47,26 @@ bool TestEnvironment::Start() {
   if (!dir->Start()) {
     return false;
   }
-  Logging::log->getLog(xtreemfs::util::LEVEL_INFO)
-      << "DIR running at: " << dir->GetAddress() << std::endl;
+  if (Logging::log->loggingActive(LEVEL_INFO)) {
+    Logging::log->getLog(LEVEL_INFO)
+        << "DIR running at: " << dir->GetAddress() << endl;
+  }
   if (!mrc->Start()) {
     return false;
   }
-  Logging::log->getLog(xtreemfs::util::LEVEL_INFO)
-      << "MRC running at: " << mrc->GetAddress() << std::endl;
+  if (Logging::log->loggingActive(LEVEL_INFO)) {
+    Logging::log->getLog(LEVEL_INFO)
+        << "MRC running at: " << mrc->GetAddress() << endl;
+  }
   dir->RegisterVolume(volume_name_, mrc->GetAddress());
   for (size_t i = 0; i < osds.size(); i++) {
     if (!osds[i]->Start()) {
       return false;
     }
-    Logging::log->getLog(xtreemfs::util::LEVEL_INFO)
-        << "OSD running at: " << osds[i]->GetAddress() << std::endl;
+    if (Logging::log->loggingActive(LEVEL_INFO)) {
+      Logging::log->getLog(LEVEL_INFO)
+          << "OSD running at: " << osds[i]->GetAddress() << endl;
+    }
     mrc->RegisterOSD(osds[i]->GetAddress());
   }
   // TODO(mberlin): Register OSDs at MRC.
