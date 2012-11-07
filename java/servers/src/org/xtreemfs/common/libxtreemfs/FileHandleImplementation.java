@@ -316,7 +316,6 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
         FileCredentials.Builder fcBuilder = FileCredentials.newBuilder();
         synchronized (this) {
             if (asyncWritesFailed) {
-                assert (asyncWritesEnabled);
                 throw new PosixErrorException(POSIXErrno.POSIX_ERROR_EIO, "A previous asynchronous "
                         + "write did fail. No further writes on this file handle are allowed.");
             }
