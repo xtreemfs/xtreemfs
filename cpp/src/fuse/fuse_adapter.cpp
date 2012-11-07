@@ -65,7 +65,7 @@ int CheckIfOperationInterrupted() {
 }
 
 FuseAdapter::FuseAdapter(FuseOptions* options) :
-    options_(options), xctl_("/.xctl$$$"), volume_(NULL) {
+    options_(options),  volume_(NULL), xctl_("/.xctl$$$") {
 }
 
 FuseAdapter::~FuseAdapter() {}
