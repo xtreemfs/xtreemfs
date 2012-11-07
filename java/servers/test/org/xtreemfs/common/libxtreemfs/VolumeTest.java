@@ -202,11 +202,10 @@ public class VolumeTest {
             fail("failed to create testdirs");
         }
 
-        FileHandle fileHandles[] = new FileHandle[10];
-
-        for (int i = 0; i < fileHandles.length; i++) {
-            fileHandles[i] = volume.openFile(userCredentials, DIR1 + "/" + TESTFILE + i,
+        for (int i = 0; i < 10; i++) {
+            FileHandle fh = volume.openFile(userCredentials, DIR1 + "/" + TESTFILE + i,
                     SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber());
+            fh.close();
         }
 
         // // try to create a file w/o a name
@@ -442,8 +441,9 @@ public class VolumeTest {
         Volume volume = client.openVolume(VOLUME_NAME, null, options);
 
         volume.createDirectory(userCredentials, TESTDIR, TESTMODE);
-        volume.openFile(userCredentials, TESTDIR + "/" + TESTFILE,
+        FileHandle fh = volume.openFile(userCredentials, TESTDIR + "/" + TESTFILE,
                 SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber(), TESTMODE);
+        fh.close();
 
         Stat stat = volume.getAttr(userCredentials, TESTDIR);
         assertEquals(userCredentials.getUsername(), stat.getUserId());
@@ -526,7 +526,8 @@ public class VolumeTest {
         client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
         Volume volume = client.openVolume(VOLUME_NAME, null, options);
 
-        volume.openFile(userCredentials, TESTFILE, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber());
+        FileHandle fh = volume.openFile(userCredentials, TESTFILE, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber());
+        fh.close();
 
         int initialNumberOfXattr = volume.listXAttrs(userCredentials, TESTFILE).getXattrsCount();
 
@@ -574,7 +575,8 @@ public class VolumeTest {
         String fileName = "testfile";
         client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
         Volume volume = client.openVolume(VOLUME_NAME, null, options);
-        volume.openFile(userCredentials, fileName, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber());
+        FileHandle fh = volume.openFile(userCredentials, fileName, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber());
+        fh.close();
         volume.readLink(userCredentials, fileName);
     }
 
@@ -585,8 +587,9 @@ public class VolumeTest {
         String linkName = "linkToFile";
         client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
         Volume volume = client.openVolume(VOLUME_NAME, null, options);
-        volume.openFile(userCredentials, fileName, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
+        FileHandle fh = volume.openFile(userCredentials, fileName, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 0777);
+        fh.close();
         volume.symlink(userCredentials, fileName, linkName);
         assertEquals(fileName, volume.readLink(userCredentials, linkName));
     }
@@ -597,8 +600,9 @@ public class VolumeTest {
         String fileName = "testfile";
         client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
         Volume volume = client.openVolume(VOLUME_NAME, null, options);
-        volume.openFile(userCredentials, fileName, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
+        FileHandle fh = volume.openFile(userCredentials, fileName, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 0000);
+        fh.close();
         volume.access(userCredentials, fileName, 0777);
     }
 
@@ -608,8 +612,9 @@ public class VolumeTest {
         String fileName = "testfile";
         client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
         Volume volume = client.openVolume(VOLUME_NAME, null, options);
-        volume.openFile(userCredentials, fileName, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
+        FileHandle fh = volume.openFile(userCredentials, fileName, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 0753);
+        fh.close();
         volume.access(userCredentials, fileName, 0753);
     }
 
@@ -652,8 +657,9 @@ public class VolumeTest {
         String renamedFileName = "renamed";
         client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
         Volume volume = client.openVolume(VOLUME_NAME, null, options);
-        volume.openFile(userCredentials, fileName, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
+        FileHandle fh = volume.openFile(userCredentials, fileName, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 0777);
+        fh.close();
         // nothing should happen
         volume.rename(userCredentials, fileName, fileName);
         DirectoryEntries dir = volume.readDir(userCredentials, "/", 0, 100, true);
@@ -672,12 +678,13 @@ public class VolumeTest {
         String fileName = "testfile";
         client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
         Volume volume = client.openVolume(VOLUME_NAME, null, options);
-        volume.openFile(
+        FileHandle fh = volume.openFile(
                 userCredentials,
                 fileName,
                 SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                         | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber()
                         | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_SYNC.getNumber(), 0777);
+        fh.close();
         int size = volume.getXAttrSize(userCredentials, fileName, "xtreemfs.set_repl_update_policy");
         assertEquals(0, size);
         size = volume.getXAttrSize(userCredentials, fileName, "xtreemfs.owner");
