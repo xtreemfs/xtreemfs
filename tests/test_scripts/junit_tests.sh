@@ -14,7 +14,7 @@ echo "TEST_DIR: $TEST_DIR"
 XTREEMFS=$1
 if [ -z "$XTREEMFS" ]
 then
-  # Try to guess the path
+  # Try to guess the XtreemFS svn root.
   if [ -d "java/servers" ]; then XTREEMFS="."; fi
 fi
 echo "XTREEMFS=$XTREEMFS"
