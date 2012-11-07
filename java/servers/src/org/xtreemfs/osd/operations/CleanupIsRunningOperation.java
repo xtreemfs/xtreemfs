@@ -32,10 +32,11 @@ public final class CleanupIsRunningOperation extends OSDOperation {
     public void startRequest(final OSDRequest rq) {
 
         Auth authData = rq.getRPCRequest().getHeader().getRequestHeader().getAuthData();
-        if (!authData.hasAuthPasswd()
-                || !authData.getAuthPasswd().getPassword().equals(master.getConfig().getAdminPassword())) {
+        if (master.getConfig().getAdminPassword().length() > 0
+                && (!authData.hasAuthPasswd() || !authData.getAuthPasswd().getPassword()
+                        .equals(master.getConfig().getAdminPassword()))) {
             rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES,
-                    "this operation requires an admin password");
+                    "Invalid admin password.");
             return;
         }
         xtreemfs_cleanup_is_runningResponse response = xtreemfs_cleanup_is_runningResponse.newBuilder()
