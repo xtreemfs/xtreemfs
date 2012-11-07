@@ -454,6 +454,7 @@ public class FileInfo {
             }
             // Always remove the temporary FileHandle.
             pendingFilesizeUpdates.remove(fileHandle);
+            decreaseReferenceCount();
             if (pendingFilesizeUpdates.size() == 0) {
                 osdWriteResponseLock.notifyAll();
             }
