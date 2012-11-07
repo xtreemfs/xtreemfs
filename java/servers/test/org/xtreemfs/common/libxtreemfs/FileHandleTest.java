@@ -66,8 +66,6 @@ public class FileHandleTest {
 
     private static VivaldiCoordinates   defaultCoordinates;
 
-    private static String               VOLUME_NAME = "foobar";
-
     private static StripingPolicy       defaultStripingPolicy;
 
     private static OSD[]                osds;
@@ -84,7 +82,7 @@ public class FileHandleTest {
         System.out.println("TEST: " + VolumeTest.class.getSimpleName());
 
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
-        Logging.start(Logging.LEVEL_DEBUG);
+        Logging.start(Logging.LEVEL_WARN);
 
         dirConfig = SetupUtils.createDIRConfig();
         dir = new DIRRequestDispatcher(dirConfig, SetupUtils.createDIRdbsConfig());
@@ -140,14 +138,14 @@ public class FileHandleTest {
 
     @Test
     public void testTruncate() throws Exception {
-        VOLUME_NAME = "testTruncate";
+        String volumeName = "testTruncate";
         String fileName = "testfile";
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
         Client client = ClientFactory.createClient(dirAddress, userCredentials, null, options);
         client.start();
-        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
-        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+        Volume volume = client.openVolume(volumeName, null, options);
         FileHandle fileHandle = volume.openFile(userCredentials, fileName, flags, 0777);
         fileHandle.close();
 
@@ -161,14 +159,14 @@ public class FileHandleTest {
 
     @Test(expected = PosixErrorException.class)
     public void testAcquireLock() throws Exception {
-        VOLUME_NAME = "testAcquireLock";
+        String volumeName = "testAcquireLock";
         String fileName = "testfile";
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
         Client client = ClientFactory.createClient(dirAddress, userCredentials, null, options);
         client.start();
-        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
-        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+        Volume volume = client.openVolume(volumeName, null, options);
         FileHandle fileHandle = volume.openFile(userCredentials, fileName, flags, 0777);
 
         int processId = 10000;
@@ -205,14 +203,14 @@ public class FileHandleTest {
 
     @Test
     public void testCheckLock() throws Exception {
-        VOLUME_NAME = "testCheckLock";
+        String volumeName = "testCheckLock";
         String fileName = "testfile";
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
         Client client = ClientFactory.createClient(dirAddress, userCredentials, null, options);
         client.start();
-        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
-        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+        Volume volume = client.openVolume(volumeName, null, options);
         FileHandle fileHandle = volume.openFile(userCredentials, fileName, flags, 0777);
 
         int processId = 10000;
@@ -249,14 +247,14 @@ public class FileHandleTest {
 
     @Test
     public void testReleaseLock() throws Exception {
-        VOLUME_NAME = "testReleaseLock";
+        String volumeName = "testReleaseLock";
         String fileName = "testfile";
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
         Client client = ClientFactory.createClient(dirAddress, userCredentials, null, options);
         client.start();
-        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
-        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+        Volume volume = client.openVolume(volumeName, null, options);
         FileHandle fileHandle = volume.openFile(userCredentials, fileName, flags, 0777);
 
         int processId = 10000;
@@ -297,14 +295,14 @@ public class FileHandleTest {
 
     @Test
     public void testAsyncXcapRenewal() throws Exception {
-        VOLUME_NAME = "testAsyncXcapRenewal";
+        String volumeName = "testAsyncXcapRenewal";
         String fileName = "testfile";
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
         Client client = ClientFactory.createClient(dirAddress, userCredentials, null, options);
         client.start();
-        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
-        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+        Volume volume = client.openVolume(volumeName, null, options);
         FileHandleImplementation fileHandle = (FileHandleImplementation) volume.openFile(userCredentials,
                 fileName, flags, 0777);
 
@@ -325,14 +323,14 @@ public class FileHandleTest {
 
     @Test(expected = PosixErrorException.class)
     public void testTruncateWithAsyncWritesFailed() throws Exception {
-        VOLUME_NAME = "testTruncateWithAsyncWritesFailed";
+        String volumeName = "testTruncateWithAsyncWritesFailed";
         String fileName = "testfile";
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
         Client client = ClientFactory.createClient(dirAddress, userCredentials, null, options);
         client.start();
-        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
-        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+        Volume volume = client.openVolume(volumeName, null, options);
         FileHandleImplementation fileHandle = (FileHandleImplementation) volume.openFile(userCredentials,
                 fileName, flags, 0777);
         fileHandle.markAsyncWritesAsFailed();
@@ -341,14 +339,14 @@ public class FileHandleTest {
 
     @Test(expected = PosixErrorException.class)
     public void testFlushWithAsyncWritesFailed() throws Exception {
-        VOLUME_NAME = "testFlushWithAsyncWritesFailed";
+        String volumeName = "testFlushWithAsyncWritesFailed";
         String fileName = "testfile";
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
         Client client = ClientFactory.createClient(dirAddress, userCredentials, null, options);
         client.start();
-        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
-        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+        Volume volume = client.openVolume(volumeName, null, options);
         FileHandleImplementation fileHandle = (FileHandleImplementation) volume.openFile(userCredentials,
                 fileName, flags, 0777);
         fileHandle.markAsyncWritesAsFailed();
@@ -357,14 +355,14 @@ public class FileHandleTest {
 
     @Test(expected = PosixErrorException.class)
     public void testWriteWithAsyncWritesFailed() throws Exception {
-        VOLUME_NAME = "testWriteWithAsyncWritesFailed";
+        String volumeName = "testWriteWithAsyncWritesFailed";
         String fileName = "testfile";
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
         Client client = ClientFactory.createClient(dirAddress, userCredentials, null, options);
         client.start();
-        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
-        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+        Volume volume = client.openVolume(volumeName, null, options);
         FileHandleImplementation fileHandle = (FileHandleImplementation) volume.openFile(userCredentials,
                 fileName, flags, 0777);
         fileHandle.markAsyncWritesAsFailed();
@@ -373,14 +371,14 @@ public class FileHandleTest {
 
     @Test(expected = PosixErrorException.class)
     public void testReadWithAsyncWritesFailed() throws Exception {
-        VOLUME_NAME = "testReadWithAsyncWritesFailed";
+        String volumeName = "testReadWithAsyncWritesFailed";
         String fileName = "testfile";
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
         Client client = ClientFactory.createClient(dirAddress, userCredentials, null, options);
         client.start();
-        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
-        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+        Volume volume = client.openVolume(volumeName, null, options);
         FileHandleImplementation fileHandle = (FileHandleImplementation) volume.openFile(userCredentials,
                 fileName, flags, 0777);
         fileHandle.markAsyncWritesAsFailed();
@@ -389,14 +387,14 @@ public class FileHandleTest {
 
     @Test
     public void testWriteBackFileSize() throws Exception {
-        VOLUME_NAME = "testWriteBackFileSize";
+        String volumeName = "testWriteBackFileSize";
         String fileName = "testfile";
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
         Client client = ClientFactory.createClient(dirAddress, userCredentials, null, options);
         client.start();
-        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
-        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+        Volume volume = client.openVolume(volumeName, null, options);
         FileHandleImplementation fileHandle = (FileHandleImplementation) volume.openFile(userCredentials,
                 fileName, flags, 0777);
 
@@ -406,7 +404,7 @@ public class FileHandleTest {
         OSDWriteResponse response = responseBuilder.build();
         fileHandle.writeBackFileSize(response, false);
 
-        getattrResponse response2 = mrcClient.getattr(null, auth, userCredentials, VOLUME_NAME, fileName, 0l)
+        getattrResponse response2 = mrcClient.getattr(null, auth, userCredentials, volumeName, fileName, 0l)
                 .get();
 
         assertEquals(response.getSizeInBytes(), response2.getStbuf().getSize());
@@ -415,14 +413,14 @@ public class FileHandleTest {
 
     @Test
     public void testWriteBackFileSizeAsync() throws Exception {
-        VOLUME_NAME = "testWriteBackFileSizeAsync";
+        String volumeName = "testWriteBackFileSizeAsync";
         String fileName = "testfile";
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
         Client client = ClientFactory.createClient(dirAddress, userCredentials, null, options);
         client.start();
-        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
-        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+        Volume volume = client.openVolume(volumeName, null, options);
         FileHandleImplementation fileHandle = (FileHandleImplementation) volume.openFile(userCredentials,
                 fileName, flags, 0777);
 
@@ -435,7 +433,7 @@ public class FileHandleTest {
 
         Thread.sleep(2000);
 
-        getattrResponse response2 = mrcClient.getattr(null, auth, userCredentials, VOLUME_NAME, fileName, 0l)
+        getattrResponse response2 = mrcClient.getattr(null, auth, userCredentials, volumeName, fileName, 0l)
                 .get();
 
         assertEquals(response.getSizeInBytes(), response2.getStbuf().getSize());
@@ -444,7 +442,7 @@ public class FileHandleTest {
 
     @Test
     public void testWriteWithMoreThanOneBlock() throws Exception {
-        final String VOLUME_NAME = "testWriteWithMoreThanOneBlock";
+        final String volumeName = "testWriteWithMoreThanOneBlock";
 
         Options options = new Options();
         options.setPeriodicFileSizeUpdatesIntervalS(10);
@@ -457,8 +455,8 @@ public class FileHandleTest {
         client.start();
 
         // Open a volume.
-        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
-        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+        Volume volume = client.openVolume(volumeName, null, options);
 
         // Open a file.
         FileHandle fileHandle = volume.openFile(
@@ -513,7 +511,7 @@ public class FileHandleTest {
 
     @Test
     public void testWriteGreaterThanStripesize() throws Exception {
-        final String VOLUME_NAME = "testWriteGreaterThanStripesize";
+        final String volumeName = "testWriteGreaterThanStripesize";
 
         Options options = new Options();
         options.setPeriodicFileSizeUpdatesIntervalS(10);
@@ -526,8 +524,8 @@ public class FileHandleTest {
         client.start();
 
         // Open a volume.
-        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
-        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+        Volume volume = client.openVolume(volumeName, null, options);
 
         // Open a file.
         FileHandle fileHandle = volume.openFile(
@@ -574,7 +572,7 @@ public class FileHandleTest {
 
     @Test
     public void testReadBytePerByte() throws Exception {
-        final String VOLUME_NAME = "testReadBytePerByte";
+        final String volumeName = "testReadBytePerByte";
 
         Options options = new Options();
         options.setPeriodicFileSizeUpdatesIntervalS(10);
@@ -587,8 +585,8 @@ public class FileHandleTest {
         client.start();
 
         // Open the volume.
-        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
-        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+        Volume volume = client.openVolume(volumeName, null, options);
 
         // Open a file.
         FileHandle fileHandle = volume.openFile(
@@ -629,7 +627,7 @@ public class FileHandleTest {
 
     @Test
     public void readBytePerByteManyTimes() throws Exception {
-        final String VOLUME_NAME = "testReadBytePerByteManyTimes";
+        final String volumeName = "testReadBytePerByteManyTimes";
 
         Options options = new Options();
         options.setPeriodicFileSizeUpdatesIntervalS(10);
@@ -642,8 +640,8 @@ public class FileHandleTest {
         client.start();
 
         // Open the volume.
-        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
-        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+        Volume volume = client.openVolume(volumeName, null, options);
 
         // Open a file.
         FileHandle fileHandle = volume.openFile(
@@ -687,15 +685,15 @@ public class FileHandleTest {
 
     @Test
     public void testMarkReplicaAsComplete() throws Exception {
-        // TODO(lukas): actually failing
+        String volumeName = "testMarkReplicaAsComplete";
 
         // Create admin client.
         AdminClient client = ClientFactory.createAdminClient(dirAddress, userCredentials, null, options);
         client.start();
 
         // Create and open volume.
-        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
-        AdminVolume volume = client.openVolume(VOLUME_NAME, null, options);
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+        AdminVolume volume = client.openVolume(volumeName, null, options);
         volume.start();
 
         // open FileHandle.
@@ -733,7 +731,7 @@ public class FileHandleTest {
 
         // create new replica
         Replica newReplica = replica.toBuilder()
-                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber())
+                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber() | REPL_FLAG.REPL_FLAG_STRATEGY_RAREST_FIRST.getNumber())
                 .setOsdUuids(0, configs[2].getUUID().toString()).build();
 
         volume.addReplica(userCredentials, "/test.txt", newReplica);
@@ -762,14 +760,15 @@ public class FileHandleTest {
 
     @Test
     public void testCheckObjectAndGetSize() throws Exception {
-
+        String volumeName = "testCheckObjectAndGetSize";
+        
         // Create admin client.
         AdminClient client = ClientFactory.createAdminClient(dirAddress, userCredentials, null, options);
         client.start();
 
         // Create and open volume.
-        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
-        AdminVolume volume = client.openVolume(VOLUME_NAME, null, options);
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+        AdminVolume volume = client.openVolume(volumeName, null, options);
         volume.start();
 
         // open FileHandle.
