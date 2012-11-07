@@ -21,6 +21,7 @@ import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
+import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.FSUtils;
@@ -404,11 +405,13 @@ public class FileHandleTest {
         OSDWriteResponse response = responseBuilder.build();
         fileHandle.writeBackFileSize(response, false);
 
-        getattrResponse response2 = mrcClient.getattr(null, auth, userCredentials, volumeName, fileName, 0l)
-                .get();
+        RPCResponse<getattrResponse> r = mrcClient.getattr(null, auth, userCredentials, volumeName, fileName, 0l);
+        getattrResponse response2 = r.get(); 
 
         assertEquals(response.getSizeInBytes(), response2.getStbuf().getSize());
         assertEquals(response.getTruncateEpoch(), response2.getStbuf().getTruncateEpoch());
+        
+        r.freeBuffers();
     }
 
     @Test
@@ -433,11 +436,13 @@ public class FileHandleTest {
 
         Thread.sleep(2000);
 
-        getattrResponse response2 = mrcClient.getattr(null, auth, userCredentials, volumeName, fileName, 0l)
-                .get();
+        RPCResponse<getattrResponse> r = mrcClient.getattr(null, auth, userCredentials, volumeName, fileName, 0l);
+        getattrResponse response2 = r.get();
 
         assertEquals(response.getSizeInBytes(), response2.getStbuf().getSize());
         assertEquals(response.getTruncateEpoch(), response2.getStbuf().getTruncateEpoch());
+        
+        r.freeBuffers();
     }
 
     @Test
