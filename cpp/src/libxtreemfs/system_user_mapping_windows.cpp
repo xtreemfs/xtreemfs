@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2010-2011 by Patrick Schaefer, Zuse Institute Berlin
- *               2011-2012 by Michael Berlin, Zuse Institute Berlin
+ * Copyright (c) 2011-2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -14,7 +13,6 @@
 #include <lm.h>
 
 #include "libxtreemfs/helper.h"
-#include "libxtreemfs/user_mapping.h"
 #include "pbrpc/RPC.pb.h"
 #include "util/logging.h"
 
@@ -43,23 +41,6 @@ void SystemUserMappingWindows::GetUserCredentialsForCurrentUser(
      Logging::log->getLog(LEVEL_ERROR) <<
        "Failed to retrieve the current username and domain name, error"
        " code: " << result << endl;
-  }
-}
-
-void SystemUserMappingWindows::RegisterAdditionalUserMapping(
-    UserMapping* mapping) {
-  additional_user_mapping_.reset(mapping);
-}
-
-void SystemUserMappingWindows::StartAdditionalUserMapping() {
-  if (additional_user_mapping_.get()) {
-    additional_user_mapping_->Start();
-  }
-}
-
-void SystemUserMappingWindows::StopAdditionalUserMapping() {
-  if (additional_user_mapping_.get()) {
-    additional_user_mapping_->Stop();
   }
 }
 

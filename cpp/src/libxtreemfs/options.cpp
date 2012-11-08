@@ -163,10 +163,8 @@ Options::Options()
 
   // NOTE: Deprecated options are no longer needed as members
 
-#ifndef WIN32
-  // User mapping.
-  user_mapping_type = UserMapping::kUnix;
-#endif  // !WIN32
+  // No additional user mapping is used by default.
+  additional_user_mapping_type = UserMapping::kNone;
 
   all_descriptions_initialized_ = false;
 }
@@ -444,13 +442,13 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
         "OR a Unicore gridmap file at the same time.");
   }
   if (grid_auth_mode_globus) {
-    user_mapping_type = UserMapping::kGlobus;
+    additional_user_mapping_type = UserMapping::kGlobus;
     if (grid_gridmap_location.empty()) {
       grid_gridmap_location = grid_gridmap_location_default_globus;
     }
   }
   if (grid_auth_mode_unicore) {
-    user_mapping_type = UserMapping::kUnicore;
+    additional_user_mapping_type = UserMapping::kUnicore;
     if (grid_gridmap_location.empty()) {
       grid_gridmap_location = grid_gridmap_location_default_unicore;
     }

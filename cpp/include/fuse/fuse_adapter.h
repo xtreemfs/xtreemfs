@@ -16,6 +16,7 @@
 #include <list>
 #include <string>
 
+#include "libxtreemfs/system_user_mapping_unix.h"
 #include "xtfsutil/xtfsutil_server.h"
 #include "xtreemfs/GlobalTypes.pb.h"
 
@@ -140,9 +141,8 @@ class FuseAdapter {
   /** Contains all needed options to mount the requested volume. */
   FuseOptions* options_;
 
-  /** The chosen UserMapping provides methods to translate between local and
-   *  remote usernames and groups. */
-  boost::scoped_ptr<UserMapping> user_mapping_;
+  /** Translates between local and remote usernames and groups. */
+  SystemUserMappingUnix system_user_mapping_;
 
   /** Created libxtreemfs Client. */
   boost::scoped_ptr<Client> client_;

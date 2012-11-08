@@ -156,11 +156,6 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
   }
 #endif  // __APPLE__
 
-  // Setup Usermapping.
-  user_mapping_.reset(UserMapping::CreateUserMapping(
-      options_->user_mapping_type, UserMapping::kUnix, *options_));
-  user_mapping_->Start();
-
   // Create new Client.
   UserCredentials client_user_credentials;
   GenerateUserCredentials(NULL, &client_user_credentials);
@@ -179,12 +174,14 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
   xctl_.set_uuid_resolver(client_->GetUUIDResolver());
 
   // Try to access Volume. If it fails, an error will be thrown.
-  Stat stat;
-  volume_->GetAttr(client_user_credentials, "/", &stat);
+  // As a bonus, after this call the root directory will be cached.
+  volume_->ReadDir(client_user_credentials,
+                   "/",
+                   0,
+                   options_->readdir_chunk_size,
+                   false);
 
   // Check the attributes of the Volume.
-  UserMapping::UserMappingType current_user_mapping_type =
-      options_->user_mapping_type;
   boost::scoped_ptr<listxattrResponse> xattrs(
       volume_->ListXAttrs(client_user_credentials, "/", false));
   for (int i = 0; i < xattrs->xattrs_size(); ++i) {
@@ -208,7 +205,7 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
     if (!options_->grid_auth_mode_globus && !options_->grid_auth_mode_unicore) {
       if (xattr.name() == "xtreemfs.volattr.globus_gridmap") {
         options_->grid_auth_mode_globus = true;
-        options_->user_mapping_type = UserMapping::kGlobus;
+        options_->additional_user_mapping_type = UserMapping::kGlobus;
         if (options_->grid_gridmap_location.empty()) {
           options_->grid_gridmap_location =
               options_->grid_gridmap_location_default_globus;
@@ -221,7 +218,7 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
 
       if (xattr.name() == "xtreemfs.volattr.unicore_uudb") {
         options_->grid_auth_mode_unicore = true;
-        options_->user_mapping_type = UserMapping::kUnicore;
+        options_->additional_user_mapping_type = UserMapping::kUnicore;
         if (options_->grid_gridmap_location.empty()) {
           options_->grid_gridmap_location =
               options_->grid_gridmap_location_default_unicore;
@@ -234,14 +231,13 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
     }
   }
 
-  // Reset user mapping if it has to be changed.
-  if (current_user_mapping_type != options_->user_mapping_type) {
-    user_mapping_->Stop();
-    user_mapping_.reset(UserMapping::CreateUserMapping(
-        options_->user_mapping_type,
-        UserMapping::GetUserMappingSystemType(),
-        *options_));
-    user_mapping_->Start();
+  // Register additional user mapping if specified.
+  UserMapping* additional_um = UserMapping::CreateUserMapping(
+      options_->additional_user_mapping_type,
+      *options_);
+  if (additional_um) {
+    system_user_mapping_.RegisterAdditionalUserMapping(additional_um);
+    system_user_mapping_.StartAdditionalUserMapping();
   }
 
   // Also do not enable Fuse's POSIX checks, if the Globus or Unicore
@@ -322,9 +318,7 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
 }
 
 void FuseAdapter::Stop() {
-  if (user_mapping_.get()) {
-    user_mapping_->Stop();
-  }
+  system_user_mapping_.StopAdditionalUserMapping();
 
   // Shutdown() Client. That does also invoke a volume->Close().
   if (client_.get()) {
@@ -351,10 +345,10 @@ void FuseAdapter::GenerateUserCredentials(
     gid_t gid,
     pid_t pid,
     xtreemfs::pbrpc::UserCredentials* user_credentials) {
-  user_credentials->set_username(user_mapping_->UIDToUsername(uid));
+  user_credentials->set_username(system_user_mapping_.UIDToUsername(uid));
 
   list<string> groupnames;
-  user_mapping_->GetGroupnames(uid, gid, pid, &groupnames);
+  system_user_mapping_.GetGroupnames(uid, gid, pid, &groupnames);
   for (list<string>::iterator it = groupnames.begin();
        it != groupnames.end(); ++it) {
     user_credentials->add_groups(*it);
@@ -374,8 +368,8 @@ void FuseAdapter::ConvertXtreemFSStatToFuse(
   fuse_stat->st_nlink = xtreemfs_stat.nlink();
 
   // Map user- and groupnames.
-  fuse_stat->st_uid = user_mapping_->UsernameToUID(xtreemfs_stat.user_id());
-  fuse_stat->st_gid = user_mapping_->GroupnameToGID(xtreemfs_stat.group_id());
+  fuse_stat->st_uid = system_user_mapping_.UsernameToUID(xtreemfs_stat.user_id());
+  fuse_stat->st_gid = system_user_mapping_.GroupnameToGID(xtreemfs_stat.group_id());
 
   fuse_stat->st_size = xtreemfs_stat.size();
 #ifdef __linux
@@ -1402,10 +1396,10 @@ int FuseAdapter::chown(const char *path, uid_t uid, gid_t gid) {
   Stat stat;
   InitializeStat(&stat);
   if ((to_set &  SETATTR_UID)) {
-    stat.set_user_id(user_mapping_->UIDToUsername(uid));
+    stat.set_user_id(system_user_mapping_.UIDToUsername(uid));
   }
   if ((to_set &  SETATTR_GID)) {
-    stat.set_group_id(user_mapping_->GIDToGroupname(gid));
+    stat.set_group_id(system_user_mapping_.GIDToGroupname(gid));
   }
 
   try {

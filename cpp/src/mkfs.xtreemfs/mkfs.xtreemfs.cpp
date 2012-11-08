@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
     system_user_mapping.reset(SystemUserMapping::GetSystemUserMapping());
     // Check if the user specified an additional user mapping in options.
     UserMapping* additional_um = UserMapping::CreateUserMapping(
-        options.user_mapping_type,
+        options.additional_user_mapping_type,
         options);
     if (additional_um) {
       system_user_mapping->RegisterAdditionalUserMapping(additional_um);

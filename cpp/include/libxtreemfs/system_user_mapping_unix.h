@@ -9,38 +9,38 @@
 #define CPP_INCLUDE_LIBXTREEMFS_SYSTEM_USER_MAPPING_UNIX_H_
 
 #ifndef WIN32
+
 #include <list>
 #include <string>
 
-#include "libxtreemfs/user_mapping.h"
+#include "libxtreemfs/system_user_mapping.h"
 
 namespace xtreemfs {
 
-class UserMappingUnix : public UserMapping {
+class SystemUserMappingUnix : public SystemUserMapping {
  public:
-  UserMappingUnix() {}
+  SystemUserMappingUnix() {}
 
-  /** Left unimplemented. */
-  virtual void Start() {}
+  virtual void GetUserCredentialsForCurrentUser(
+      xtreemfs::pbrpc::UserCredentials* user_credentials);
 
-  /** Left unimplemented. */
-  virtual void Stop() {}
+  std::string  UIDToUsername(uid_t uid);
 
-  virtual std::string UIDToUsername(uid_t uid);
+  uid_t        UsernameToUID(const std::string& username);
 
-  virtual uid_t       UsernameToUID(const std::string& username);
+  std::string  GIDToGroupname(gid_t gid);
 
-  virtual std::string GIDToGroupname(gid_t gid);
+  gid_t        GroupnameToGID(const std::string& groupname);
 
-  virtual gid_t       GroupnameToGID(const std::string& groupname);
+  void         GetGroupnames(uid_t uid,
+                             gid_t gid,
+                             pid_t pid,
+                             std::list<std::string>* groupnames);
 
-  virtual void        GetGroupnames(uid_t uid,
-                                    gid_t gid,
-                                    pid_t pid,
-                                    std::list<std::string>* groupnames);
-#endif  // !WIN32
 };
 
 }  // namespace xtreemfs
+
+#endif  // !WIN32
 
 #endif  // CPP_INCLUDE_LIBXTREEMFS_SYSTEM_USER_MAPPING_UNIX_H_

@@ -24,4 +24,20 @@ SystemUserMapping* SystemUserMapping::GetSystemUserMapping() {
 #endif // WIN32
 }
 
+void SystemUserMapping::RegisterAdditionalUserMapping(UserMapping* mapping) {
+  additional_user_mapping_.reset(mapping);
+}
+
+void SystemUserMapping::StartAdditionalUserMapping() {
+  if (additional_user_mapping_.get()) {
+    additional_user_mapping_->Start();
+  }
+}
+
+void SystemUserMapping::StopAdditionalUserMapping() {
+  if (additional_user_mapping_.get()) {
+    additional_user_mapping_->Stop();
+  }
+}
+
 }  // namespace xtreemfs

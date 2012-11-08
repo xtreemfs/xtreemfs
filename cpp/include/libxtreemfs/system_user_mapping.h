@@ -7,14 +7,16 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_SYSTEM_USER_MAPPING_H_
 #define CPP_INCLUDE_LIBXTREEMFS_SYSTEM_USER_MAPPING_H_
 
+#include <boost/scoped_ptr.hpp>
+
+#include "libxtreemfs/user_mapping.h"
+
 namespace xtreemfs {
 namespace pbrpc {
 class UserCredentials;
 }  // namespace pbrpc
 
-class UserMapping;
-
-/** 
+/**
  * Allows to retrieve the UserCredentials for the current system user.
  * Additionally, a UserMapping can be registered to transform local usernames
  * and groupnames e.g., convert a local username into a global name.
@@ -46,13 +48,17 @@ class SystemUserMapping {
    *
    * @remark Ownership is transferred to the caller.
    */
-  virtual void RegisterAdditionalUserMapping(UserMapping* mapping) = 0;
+  void RegisterAdditionalUserMapping(UserMapping* mapping);
 
   /** Executes the Start() method of the registered additional user mapping. */
-  virtual void StartAdditionalUserMapping() = 0;
+  void StartAdditionalUserMapping();
 
   /** Executes the Stop() method of the registered additional user mapping. */
-  virtual void StopAdditionalUserMapping() = 0;
+  void StopAdditionalUserMapping();
+
+ private:
+  /** Used for custom transformation between local and global names. */
+  boost::scoped_ptr<UserMapping> additional_user_mapping_;
 };
 
 }  // namespace xtreemfs

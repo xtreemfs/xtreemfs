@@ -217,7 +217,7 @@ class Options {
 
   // Additional User mapping.
   /** Type of the UserMapping used to translate between local/global names. */
-  UserMapping::UserMappingType user_mapping_type;
+  UserMapping::UserMappingType additional_user_mapping_type;
 
  protected:
   /** Extract volume name and dir service address from dir_volume_url. */

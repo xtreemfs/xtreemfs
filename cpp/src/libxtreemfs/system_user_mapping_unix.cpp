@@ -19,13 +19,20 @@
 #include <iostream>
 
 #include "util/logging.h"
+#include "pbrpc/RPC.pb.h"
 
 using namespace std;
 using namespace xtreemfs::util;
 
 namespace xtreemfs {
 
-std::string UserMappingUnix::UIDToUsername(uid_t uid) {
+void SystemUserMappingUnix::GetUserCredentialsForCurrentUser(
+    xtreemfs::pbrpc::UserCredentials* user_credentials) {
+  user_credentials->set_username(UIDToUsername(geteuid()));
+  user_credentials->add_groups(GIDToGroupname(getegid()));
+}
+
+std::string SystemUserMappingUnix::UIDToUsername(uid_t uid) {
   if (uid == static_cast<uid_t>(-1)) {
     return string("-1");
   }
@@ -67,7 +74,7 @@ std::string UserMappingUnix::UIDToUsername(uid_t uid) {
   return username;
 }
 
-uid_t UserMappingUnix::UsernameToUID(const std::string& username) {
+uid_t SystemUserMappingUnix::UsernameToUID(const std::string& username) {
   uid_t uid = 65534;  // nobody.
 
   // Retrieve uid.
@@ -128,7 +135,7 @@ uid_t UserMappingUnix::UsernameToUID(const std::string& username) {
   return uid;
 }
 
-std::string UserMappingUnix::GIDToGroupname(gid_t gid) {
+std::string SystemUserMappingUnix::GIDToGroupname(gid_t gid) {
   if (gid == static_cast<gid_t>(-1)) {
     return string("-1");
   }
@@ -171,7 +178,7 @@ std::string UserMappingUnix::GIDToGroupname(gid_t gid) {
   return groupname;
 }
 
-gid_t UserMappingUnix::GroupnameToGID(const std::string& groupname) {
+gid_t SystemUserMappingUnix::GroupnameToGID(const std::string& groupname) {
   gid_t gid = 65534;  // nobody.
 
   // Retrieve gid.
@@ -232,10 +239,10 @@ gid_t UserMappingUnix::GroupnameToGID(const std::string& groupname) {
   return gid;
 }
 
-void UserMappingUnix::GetGroupnames(uid_t uid,
-                                    gid_t gid,
-                                    pid_t pid,
-                                    std::list<std::string>* groupnames) {
+void SystemUserMappingUnix::GetGroupnames(uid_t uid,
+                                          gid_t gid,
+                                          pid_t pid,
+                                          std::list<std::string>* groupnames) {
   groupnames->push_back(GIDToGroupname(gid));
 
 #ifdef __linux__
