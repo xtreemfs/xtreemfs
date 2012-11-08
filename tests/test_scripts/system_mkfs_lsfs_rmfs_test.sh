@@ -19,7 +19,7 @@ RESULT=$?
 if [ "$RESULT" -ne "0" ]; then echo "$COMMAND failed"; exit $RESULT; fi
 
 # test rmfs.xtreemfs
-COMMAND="$1/bin/rmfs.xtreemfs $CREDS $3test"
+COMMAND="$1/bin/rmfs.xtreemfs -f $CREDS $3test"
 $COMMAND
 RESULT=$?
 if [ "$RESULT" -ne "0" ]; then echo "$COMMAND failed"; exit $RESULT; fi
