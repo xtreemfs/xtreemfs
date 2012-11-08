@@ -29,6 +29,7 @@ class OSDWriteResponse;
 
 class MetadataCache {
  public:
+  enum GetStatResult { kStatCached, kPathDoesntExist, kStatNotCached };
   // Tags needed to address the different indexes.
   struct IndexList {};
   struct IndexMap {};
@@ -76,7 +77,7 @@ class MetadataCache {
   void RenamePrefix(const std::string& path, const std::string& new_path);
 
   /** Returns true if there is a Stat object for path in cache and fills stat.*/
-  bool GetStat(const std::string& path, xtreemfs::pbrpc::Stat* stat);
+  GetStatResult GetStat(const std::string& path, xtreemfs::pbrpc::Stat* stat);
 
   /** Stores/updates stat in cache for path. */
   void UpdateStat(const std::string& path, const xtreemfs::pbrpc::Stat& stat);
@@ -92,6 +93,12 @@ class MetadataCache {
   void UpdateStatAttributes(const std::string& path,
                             const xtreemfs::pbrpc::Stat& stat,
                             xtreemfs::pbrpc::Setattrs to_set);
+
+  /** Returns the set of attributes which divert from the cached stat entry. */
+  xtreemfs::pbrpc::Setattrs SimulateSetStatAttributes(
+      const std::string& path,
+      const xtreemfs::pbrpc::Stat& stat,
+      xtreemfs::pbrpc::Setattrs to_set);
 
   /** Updates file size and truncate epoch from an OSDWriteResponse. */
   void UpdateStatFromOSDWriteResponse(

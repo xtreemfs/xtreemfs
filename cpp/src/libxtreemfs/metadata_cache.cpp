@@ -7,6 +7,7 @@
 
 #include "libxtreemfs/metadata_cache.h"
 
+#include "libxtreemfs/helper.h"
 #include "util/logging.h"
 #include "xtreemfs/OSD.pb.h"
 
@@ -152,10 +153,11 @@ void MetadataCache::RenamePrefix(const std::string& path,
 }
 
 
-bool MetadataCache::GetStat(const std::string& path,
-                            xtreemfs::pbrpc::Stat* stat) {
+MetadataCache::GetStatResult MetadataCache::GetStat(
+    const std::string& path,
+    xtreemfs::pbrpc::Stat* stat) {
   if (path.empty() || !enabled) {
-    return false;
+    return kStatNotCached;
   }
 
   boost::mutex::scoped_lock lock(mutex_);
@@ -171,9 +173,7 @@ bool MetadataCache::GetStat(const std::string& path,
     if (cache_entry->stat_timeout_s >= current_time_s) {
       if (cache_entry->stat != NULL) {
         stat->CopyFrom(*(cache_entry->stat));
-        return true;
-      } else {
-        return false;
+        return kStatCached;
       }
     } else {
       // Expired => remove from cache.
@@ -190,15 +190,66 @@ bool MetadataCache::GetStat(const std::string& path,
         index.erase(it_hash);
       }
     }
+
+    return kStatNotCached;
   } else {
-    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-      Logging::log->getLog(LEVEL_DEBUG)
-        << "MetadataCache GetStat miss: " << path << " ["
-        << cache_.size() << "]" << endl;
+    // "path" is not cached. Maybe it does not exist at all? Check this by
+    // scanning the parent directory.
+    bool path_probably_exists = true;
+
+    if (path != "/") {
+      string parent_dir = ResolveParentDirectory(path);
+      string basename = GetBasename(path);
+
+      by_hash::iterator it_hash = index.find(parent_dir);
+      if (it_hash != index.end()) {
+        MetadataCacheEntry* cache_entry = *it_hash;
+
+        if (cache_entry->dir_entries != NULL) {
+          boost::uint64_t current_time_s = time(NULL);
+          if (cache_entry->dir_entries_timeout_s >= current_time_s) {
+            // The parent directory is cached - we can find out if path exists.
+            path_probably_exists = false;
+            const DirectoryEntries& cached_dentries =
+                *(cache_entry->dir_entries);
+            for (int i = 0; i < cached_dentries.entries_size(); i++) {
+              const DirectoryEntry& dentry = cached_dentries.entries(i);
+              if (dentry.name() == basename) {
+                path_probably_exists = true;
+                break;
+              }
+            }
+          } else {
+            // Expired => remove from cache.
+            if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+              Logging::log->getLog(LEVEL_DEBUG)
+                  << "MetadataCache GetDirEntries expired: " << path << endl;
+            }
+            // Only delete object, if the maximum timeout is reached.
+            if (cache_entry->timeout_s < current_time_s) {
+              delete *it_hash;
+              index.erase(it_hash);
+            }
+          }
+        }
+      }
+    }
+
+    if (path_probably_exists) {
+      if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+        Logging::log->getLog(LEVEL_DEBUG)
+          << "MetadataCache GetStat miss: " << path << " ["
+          << cache_.size() << "]" << endl;
+      }
+      return kStatNotCached;
+    } else {
+      if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+        Logging::log->getLog(LEVEL_DEBUG) << "MetadataCache GetStat hit"
+            " non-existent path based on cached directory: " << path << endl;
+      }
+      return kPathDoesntExist;
     }
   }
-
-  return false;
 }
 
 void MetadataCache::UpdateStat(const std::string& path,
@@ -262,15 +313,15 @@ void MetadataCache::UpdateStatTime(const std::string& path,
       return;
     }
     uint64_t time_ns = timestamp_s * 1000000000;
-    if ((to_set &  SETATTR_ATIME)
+    if ((to_set & SETATTR_ATIME)
         && time_ns > cached_stat->atime_ns()) {
       cached_stat->set_atime_ns(time_ns);
     }
-    if ((to_set &  SETATTR_MTIME)
+    if ((to_set & SETATTR_MTIME)
         && time_ns > cached_stat->mtime_ns()) {
       cached_stat->set_mtime_ns(time_ns);
     }
-    if ((to_set &  SETATTR_CTIME)
+    if ((to_set & SETATTR_CTIME)
         && time_ns > cached_stat->ctime_ns()) {
       cached_stat->set_ctime_ns(time_ns);
     }
@@ -300,22 +351,22 @@ void MetadataCache::UpdateStatAttributes(const std::string& path,
       return;
     }
 
-    if ((to_set &  SETATTR_ATTRIBUTES)) {
+    if ((to_set & SETATTR_ATTRIBUTES)) {
       cached_stat->set_attributes(stat.attributes());
     }
-    if ((to_set &  SETATTR_MODE)) {
+    if ((to_set & SETATTR_MODE)) {
       // Modify only the last 12 Bits (3 bits for sticky bit, set GID and
       // set UID and 3 * 3 bits for the file access mode).
       cached_stat->set_mode((cached_stat->mode() & 0xFFFFF000) |
           (stat.mode() & 0x00000FFF));
     }
-    if ((to_set &  SETATTR_UID)) {
+    if ((to_set & SETATTR_UID)) {
       cached_stat->set_user_id(stat.user_id());
     }
-    if ((to_set &  SETATTR_GID)) {
+    if ((to_set & SETATTR_GID)) {
       cached_stat->set_group_id(stat.group_id());
     }
-    if ((to_set &  SETATTR_SIZE)) {
+    if ((to_set & SETATTR_SIZE)) {
       if (stat.has_truncate_epoch() &&
           stat.truncate_epoch() > cached_stat->truncate_epoch()) {
         cached_stat->set_size(stat.size());
@@ -332,13 +383,13 @@ void MetadataCache::UpdateStatAttributes(const std::string& path,
             << cached_stat->truncate_epoch() << endl;
       }
     }
-    if ((to_set &  SETATTR_ATIME)) {
+    if ((to_set & SETATTR_ATIME)) {
       cached_stat->set_atime_ns(stat.atime_ns());
     }
-    if ((to_set &  SETATTR_MTIME)) {
+    if ((to_set & SETATTR_MTIME)) {
       cached_stat->set_mtime_ns(stat.mtime_ns());
     }
-    if ((to_set &  SETATTR_CTIME)) {
+    if ((to_set & SETATTR_CTIME)) {
       cached_stat->set_ctime_ns(stat.ctime_ns());
     }
 
@@ -353,6 +404,78 @@ void MetadataCache::UpdateStatAttributes(const std::string& path,
     it_map = index.erase(it_map);
     index.insert(it_map, cache_entry);
   }
+}
+
+xtreemfs::pbrpc::Setattrs MetadataCache::SimulateSetStatAttributes(
+      const std::string& path,
+      const xtreemfs::pbrpc::Stat& stat,
+      xtreemfs::pbrpc::Setattrs to_set) {
+  if (path.empty() || !enabled) {
+    return to_set;
+  }
+
+  int actual_to_set = to_set;  // Will be casted to enum Setattrs at the end.
+  boost::mutex::scoped_lock lock(mutex_);
+
+  by_map& index = cache_.get<IndexMap>();
+  by_map::iterator it_map = index.find(path);
+  if (it_map != index.end()) {
+    MetadataCacheEntry* cache_entry = *it_map;
+    if (cache_entry->stat == NULL) {
+      return to_set;
+    }
+
+    const Stat& cached_stat = *(cache_entry->stat);
+
+    if ((to_set & SETATTR_ATTRIBUTES)) {
+      if (cached_stat.attributes() == stat.attributes()) {
+        actual_to_set &= ~SETATTR_ATTRIBUTES;
+      }
+    }
+    if ((to_set & SETATTR_MODE)) {
+      // Modify only the last 12 Bits (3 bits for sticky bit, set GID and
+      // set UID and 3 * 3 bits for the file access mode).
+      if ((cached_stat.mode() & 0x00000FFF) == (stat.mode() & 0x00000FFF)) {
+        actual_to_set &= ~SETATTR_MODE;
+      }
+    }
+    if ((to_set & SETATTR_UID)) {
+      if (cached_stat.user_id() == stat.user_id()) {
+        actual_to_set &= ~SETATTR_UID;
+      }
+    }
+    if ((to_set & SETATTR_GID)) {
+      if (cached_stat.group_id() == stat.group_id()) {
+        actual_to_set &= ~SETATTR_GID;
+      }
+    }
+    if ((to_set & SETATTR_SIZE)) {
+      if ((stat.has_truncate_epoch() &&
+           stat.truncate_epoch() < cached_stat.truncate_epoch()) ||
+          (stat.has_truncate_epoch() &&
+           stat.truncate_epoch() == cached_stat.truncate_epoch() &&
+           stat.size() == cached_stat.size())) {
+        actual_to_set &= ~SETATTR_SIZE;
+      }
+    }
+    if ((to_set & SETATTR_ATIME)) {
+      if (stat.atime_ns() == cached_stat.atime_ns()) {
+        actual_to_set &= ~SETATTR_ATIME;
+      }
+    }
+    if ((to_set & SETATTR_MTIME)) {
+      if (stat.mtime_ns() == cached_stat.mtime_ns()) {
+        actual_to_set &= ~SETATTR_MTIME;
+      }
+    }
+    if ((to_set & SETATTR_CTIME)) {
+      if (stat.ctime_ns() == cached_stat.ctime_ns()) {
+        actual_to_set &= ~SETATTR_CTIME;
+      }
+    }
+  }
+
+  return static_cast<xtreemfs::pbrpc::Setattrs>(actual_to_set);
 }
 
 // TODO(mberlin): Also update the stat entry in the direntry of the parent dir.
@@ -417,7 +540,8 @@ xtreemfs::pbrpc::DirectoryEntries* MetadataCache::GetDirEntries(
         DirectoryEntries* result = new DirectoryEntries;
 
         // Copy all entries from cache.
-        if (offset == 0 && count >= cached_dentries->entries_size()) {
+        if (offset == 0 && count >=
+                static_cast<uint32_t>(cached_dentries->entries_size())) {
           if (Logging::log->loggingActive(LEVEL_DEBUG)) {
             Logging::log->getLog(LEVEL_DEBUG)
               << "MetadataCache GetDirEntries hit: " << path << " ["
@@ -430,9 +554,15 @@ xtreemfs::pbrpc::DirectoryEntries* MetadataCache::GetDirEntries(
             Logging::log->getLog(LEVEL_DEBUG)
               << "MetadataCache GetDirEntries hit (partial copy): " << path
               << " [" << cache_.size() << "] offset: " << offset
-              << "count: " << count << endl;
+              << " count: " << count << endl;
           }
-          for (uint64_t i = offset; i < offset + count; i++) {
+          // TODO(mberlin): Clearly, this is wrong. The current specification
+          // uses only an int to index all entries while a uint64_t offset is
+          // allowed in the interface.
+          uint32_t offset_in_cached_entries = static_cast<uint32_t>(offset);
+          for (uint32_t i = offset_in_cached_entries;
+               i < offset_in_cached_entries + count;
+               i++) {
             result->add_entries()->CopyFrom(cached_dentries->entries(i));
           }
         }
@@ -729,7 +859,8 @@ void MetadataCache::UpdateXAttr(
     // Don't create a new xattr list for an existing cache entry.
     return;
   }
-  if (cache_entry->xattrs_timeout_s < time(NULL)) {
+  if (cache_entry->xattrs_timeout_s <
+          static_cast<uint64_t>(time(NULL))) {
     return;  // Do not update expired xattrs.
   }
 
@@ -822,7 +953,8 @@ void MetadataCache::InvalidateXAttr(const std::string& path,
     // Don't create a new xattr list for an existing cache entry.
     return;
   }
-  if (cache_entry->xattrs_timeout_s < time(NULL)) {
+  if (cache_entry->xattrs_timeout_s <
+          static_cast<uint64_t>(time(NULL))) {
     return;  // Do not update expired xattrs.
   }
 

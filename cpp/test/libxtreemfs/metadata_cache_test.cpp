@@ -79,10 +79,10 @@ TEST_F(MetadataCacheTestSize2, UpdateStatTimeKeepsSequentialTimeoutOrder) {
   // "b" should be the oldest Stat element now and get evicted.
   metadata_cache_->UpdateStat("/c", c);
   // Was "a" found or did "b" survive?
-  EXPECT_TRUE(metadata_cache_->GetStat("/a", &a));
+  EXPECT_EQ(MetadataCache::kStatCached, metadata_cache_->GetStat("/a", &a));
   EXPECT_EQ(0, a.ino());
   // "c" is also still there.
-  EXPECT_TRUE(metadata_cache_->GetStat("/c", &c));
+  EXPECT_EQ(MetadataCache::kStatCached, metadata_cache_->GetStat("/c", &c));
   EXPECT_EQ(2, c.ino());
 }
 
@@ -104,10 +104,10 @@ TEST_F(MetadataCacheTestSize2, UpdateStatKeepsSequentialTimeoutOrder) {
   // "b" should be the oldest Stat element now and get evicted.
   metadata_cache_->UpdateStat("/c", c);
   // Was "a" found or did "b" survive?
-  EXPECT_TRUE(metadata_cache_->GetStat("/a", &a));
+  EXPECT_EQ(MetadataCache::kStatCached, metadata_cache_->GetStat("/a", &a));
   EXPECT_EQ(0, a.ino());
   // "c" is also still there.
-  EXPECT_TRUE(metadata_cache_->GetStat("/c", &c));
+  EXPECT_EQ(MetadataCache::kStatCached, metadata_cache_->GetStat("/c", &c));
   EXPECT_EQ(2, c.ino());
 }
 
@@ -197,14 +197,18 @@ TEST_F(MetadataCacheTestSize1024, InvalidatePrefix) {
   metadata_cache_->InvalidatePrefix("/dir");
 
   // Invalidate of all matching entries successful?
-  EXPECT_FALSE(metadata_cache_->GetStat("/dir", &a));
-  EXPECT_FALSE(metadata_cache_->GetStat("/dir/file1", &b));
+  EXPECT_EQ(MetadataCache::kStatNotCached,
+            metadata_cache_->GetStat("/dir", &a));
+  EXPECT_EQ(MetadataCache::kStatNotCached,
+            metadata_cache_->GetStat("/dir/file1", &b));
 
   // Similiar entries which do not match the prefix "/dir/" have not been
   // invalidated.
-  EXPECT_TRUE(metadata_cache_->GetStat("/dir.file1", &c));
+  EXPECT_EQ(MetadataCache::kStatCached,
+            metadata_cache_->GetStat("/dir.file1", &c));
   EXPECT_EQ(2, c.ino());
-  EXPECT_TRUE(metadata_cache_->GetStat("/dirZfile1", &d));
+  EXPECT_EQ(MetadataCache::kStatCached,
+            metadata_cache_->GetStat("/dirZfile1", &d));
   EXPECT_EQ(3, d.ino());
 }
 
@@ -231,16 +235,20 @@ TEST_F(MetadataCacheTestSize1024, RenamePrefix) {
   EXPECT_EQ(4, metadata_cache_->Size());
 
   // Rename of all matching entries successful?
-  EXPECT_TRUE(metadata_cache_->GetStat("/newdir", &a));
+  EXPECT_EQ(MetadataCache::kStatCached,
+            metadata_cache_->GetStat("/newdir", &a));
   EXPECT_EQ(0, a.ino());
-  EXPECT_TRUE(metadata_cache_->GetStat("/newdir/file1", &b));
+  EXPECT_EQ(MetadataCache::kStatCached,
+            metadata_cache_->GetStat("/newdir/file1", &b));
   EXPECT_EQ(1, b.ino());
 
   // Similiar entries which do not match the prefix "/dir/" have not been
   // renamed.
-  EXPECT_TRUE(metadata_cache_->GetStat("/dir.file1", &c));
+  EXPECT_EQ(MetadataCache::kStatCached,
+            metadata_cache_->GetStat("/dir.file1", &c));
   EXPECT_EQ(2, c.ino());
-  EXPECT_TRUE(metadata_cache_->GetStat("/dirZfile1", &d));
+  EXPECT_EQ(MetadataCache::kStatCached,
+            metadata_cache_->GetStat("/dirZfile1", &d));
   EXPECT_EQ(3, d.ino());
 }
 
@@ -256,7 +264,7 @@ TEST_F(MetadataCacheTestSize1024, UpdateStatAttributes) {
 
   metadata_cache_->UpdateStat(path, stat);
   EXPECT_EQ(1, metadata_cache_->Size());
-  EXPECT_TRUE(metadata_cache_->GetStat(path, &stat));
+  EXPECT_EQ(MetadataCache::kStatCached, metadata_cache_->GetStat(path, &stat));
   EXPECT_EQ(0, stat.ino());
   EXPECT_EQ(0, stat.mtime_ns());
 
@@ -269,7 +277,7 @@ TEST_F(MetadataCacheTestSize1024, UpdateStatAttributes) {
       update_stat,
       static_cast<Setattrs>(SETATTR_ATIME | SETATTR_MTIME));
   EXPECT_EQ(1, metadata_cache_->Size());
-  EXPECT_TRUE(metadata_cache_->GetStat(path, &stat));
+  EXPECT_EQ(MetadataCache::kStatCached, metadata_cache_->GetStat(path, &stat));
   EXPECT_EQ(0, stat.ino());
   EXPECT_EQ(time, stat.atime_ns());
   EXPECT_EQ(time, stat.mtime_ns());
@@ -286,14 +294,16 @@ TEST_F(MetadataCacheTestSize1024, UpdateStatAttributesPreservesModeBits) {
 
   metadata_cache_->UpdateStat(path, stat);
   EXPECT_EQ(1, metadata_cache_->Size());
-  EXPECT_TRUE(metadata_cache_->GetStat(path, &cached_stat));
+  EXPECT_EQ(MetadataCache::kStatCached,
+            metadata_cache_->GetStat(path, &cached_stat));
   EXPECT_EQ(0, cached_stat.ino());
   EXPECT_EQ(33188, cached_stat.mode());
 
   stat.set_mode(420);  // Octal: 644.
   metadata_cache_->UpdateStatAttributes(path, stat, SETATTR_MODE);
   EXPECT_EQ(1, metadata_cache_->Size());
-  EXPECT_TRUE(metadata_cache_->GetStat(path, &cached_stat));
+  EXPECT_EQ(MetadataCache::kStatCached,
+            metadata_cache_->GetStat(path, &cached_stat));
   EXPECT_EQ(0, cached_stat.ino());
   EXPECT_EQ(33188, cached_stat.mode());
 
@@ -301,14 +311,16 @@ TEST_F(MetadataCacheTestSize1024, UpdateStatAttributesPreservesModeBits) {
 
   metadata_cache_->UpdateStat(path, stat);
   EXPECT_EQ(1, metadata_cache_->Size());
-  EXPECT_TRUE(metadata_cache_->GetStat(path, &cached_stat));
+  EXPECT_EQ(MetadataCache::kStatCached,
+            metadata_cache_->GetStat(path, &cached_stat));
   EXPECT_EQ(0, cached_stat.ino());
   EXPECT_EQ(263076, cached_stat.mode());
 
   stat.set_mode(511);  // Octal: 0777 (no sticky bit + 777).
   metadata_cache_->UpdateStatAttributes(path, stat, SETATTR_MODE);
   EXPECT_EQ(1, metadata_cache_->Size());
-  EXPECT_TRUE(metadata_cache_->GetStat(path, &cached_stat));
+  EXPECT_EQ(MetadataCache::kStatCached,
+            metadata_cache_->GetStat(path, &cached_stat));
   EXPECT_EQ(0, cached_stat.ino());
   EXPECT_EQ(262655, cached_stat.mode());  // Octal: 1000777.
 }
