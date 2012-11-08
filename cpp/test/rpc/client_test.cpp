@@ -31,7 +31,7 @@ namespace rpc {
 class ClientTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
-    initialize_logger(LEVEL_DEBUG);
+    initialize_logger(LEVEL_WARN);
 
     ASSERT_TRUE(test_env.Start());
   }
