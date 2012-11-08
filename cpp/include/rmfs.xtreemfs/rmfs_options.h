@@ -46,6 +46,9 @@ class RmfsOptions : public Options {
    */
   std::string mrc_service_address;
 
+  /** If true, no questions will be asked. */
+  bool force;
+
  private:
   /** Contains all available rmfs options and its descriptions. */
   boost::program_options::options_description rmfs_descriptions_;

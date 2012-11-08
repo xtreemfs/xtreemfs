@@ -25,7 +25,7 @@ namespace style = boost::program_options::command_line_style;
 
 namespace xtreemfs {
 
-RmfsOptions::RmfsOptions() : Options() {
+RmfsOptions::RmfsOptions() : Options(), rmfs_descriptions_("rmfs options") {
   // Modify default options of Options().
   max_tries = 1;
 
@@ -39,17 +39,18 @@ RmfsOptions::RmfsOptions() : Options() {
 
   // Password.
   admin_password = "";
+  force = false;
 
-  po::options_description password_descriptions("Admin Password");
-  password_descriptions.add_options()
+  rmfs_descriptions_.add_options()
       ("admin_password",
         po::value(&admin_password)->default_value(admin_password),
-        "MRC's admin_password (not required if not set at the MRC).");
+        "MRC's admin_password (not required if not set at the MRC).")
+      ("force,f",
+        po::value(&force)->default_value(force)->zero_tokens(),
+        "Never prompt. Overrides safety questions.");
 
   // TODO(mberlin): Add an option to specify the triggering of the cleanup
   //                process to immediately free (now) orphaned objects.
-
-  rmfs_descriptions_.add(password_descriptions);
 }
 
 void RmfsOptions::ParseCommandLine(int argc, char** argv) {
@@ -113,6 +114,7 @@ std::string RmfsOptions::ShowCommandLineHelp() {
   // No help text given in descriptions for positional mount options. Instead
   // the usage is explained here.
   stream << helptext_usage_
+         << endl
          // Descriptions of this class.
          << rmfs_descriptions_
          // Descriptions of the general options.

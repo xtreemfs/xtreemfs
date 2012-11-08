@@ -49,6 +49,20 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  // Safety question
+  if (!options.force) {
+    string answer;
+    cout << "Do you really want to delete the volume: \""
+         << options.xtreemfs_url << "\"?" << endl
+         << "Answer with \"YES\" to proceed: ";
+
+    getline(cin, answer);
+    if (answer != "YES") {
+      return 1;
+    }
+  }
+
+
   bool success = true;
   boost::scoped_ptr<SystemUserMapping> system_user_mapping;
   boost::scoped_ptr<Client> client;
