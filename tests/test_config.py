@@ -123,7 +123,7 @@ Tests = [
         'name': 'Find Grep Tar',
         'file': '05_findgreptar.py',
         'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'nomdcache', 'replicated_wqrq', 'replicated_war1', 'replicated_wqrq_asyncwrites' ],
-        'TestSets': [ 'full', 'short', 'testing' ]
+        'TestSets': [ 'full', 'short' ]
     },
     {
         'name': 'fsx',
