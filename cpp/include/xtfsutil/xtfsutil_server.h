@@ -5,8 +5,11 @@
  *
  */
 
-#ifndef CPP_INCLUDEXTFSUTIL_XTFSUTIL_SERVER_H_
-#define	CPP_INCLUDEXTFSUTIL_XTFSUTIL_SERVER_H_
+#ifndef CPP_INCLUDE_XTFSUTIL_XTFSUTIL_SERVER_H_
+#define CPP_INCLUDE_XTFSUTIL_XTFSUTIL_SERVER_H_
+
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <boost/thread/mutex.hpp>
 #include <map>
@@ -234,4 +237,4 @@ class XtfsUtilServer {
 
 }  // namespace xtreemfs
 
-#endif	// CPP_INCLUDEXTFSUTIL_XTFSUTIL_SERVER_H_
+#endif  // CPP_INCLUDE_XTFSUTIL_XTFSUTIL_SERVER_H_

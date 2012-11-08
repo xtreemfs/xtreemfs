@@ -17,8 +17,6 @@
 #ifndef WIN32
 #include <sys/fcntl.h>
 #endif  // !WIN32
-#include <sys/types.h>
-#include <sys/stat.h>
 
 #include "json/json.h"
 #include "libxtreemfs/uuid_resolver.h"
@@ -29,7 +27,6 @@
 
 using namespace std;
 using namespace xtreemfs::util;
-using namespace xtreemfs::pbrpc;
 
 namespace xtreemfs {
 
@@ -413,9 +410,9 @@ void XtfsUtilServer::OpSetReplicationPolicy(
   if (policy_name == "ronly" || policy_name == "") {
     // Actual permissions of the file probably changed, update cache.
     try {
-      Stat stat;
+      xtreemfs::pbrpc::Stat stat;
       volume_->GetAttr(uc, path, true, &stat);
-    } catch(const exception&) {
+    } catch (const exception&) {
       // Ignore errors.
     }
   }
