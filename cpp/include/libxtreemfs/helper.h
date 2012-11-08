@@ -90,6 +90,34 @@ RPCOptions RPCOptionsFromOptions(const Options& options);
 int GetMacOSXKernelVersion();
 #endif  // __APPLE__
 
+#ifdef WIN32
+/** Convert a Windows Multibyte string (e.g. a path or username) into
+ *  an UTF8 string and returns it.
+ */
+std::string ConvertWindowsToUTF8(const wchar_t* windows_string);
+
+/** Convert a Windows Multibyte string (e.g. a path or username) into
+ *  an UTF8 string and stores it in utf8_string.
+ */
+void ConvertWindowsToUTF8(const wchar_t* windows_string,
+                          std::string* utf8_string);
+
+/** Convert an UTF8 string (e.g. a path or username) into
+ *  a Windows Multibyte string.
+ *
+ * @param buffer_size Size, including the null character.
+ */
+void ConvertUTF8ToWindows(const std::string& utf8,
+                          wchar_t* buf,
+                          int buffer_size);
+
+void ConvertUTF8ToWindows(const std::string& utf8, std::wstring* win);
+
+std::wstring ConvertUTF8ToWindows(const std::string& utf8);
+
+#endif  // WIN32
+
+
 }  // namespace xtreemfs
 
 #endif  // CPP_INCLUDE_LIBXTREEMFS_HELPER_H_

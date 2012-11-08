@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2010-2011 by Patrick Schaefer, Zuse Institute Berlin
- *                    2011 by Michael Berlin, Zuse Institute Berlin
+ *               2011-2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -14,6 +14,11 @@
 #ifdef __APPLE__
 #include <sys/utsname.h>
 #endif  // __APPLE__
+#ifdef WIN32
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif  // WIN32
 
 #include <boost/lexical_cast.hpp>
 #include <string>
@@ -117,7 +122,7 @@ std::string GetOSDUUIDFromXlocSet(const xtreemfs::pbrpc::XLocSet& xlocs,
   if (xlocs.replicas_size() == 0) {
     Logging::log->getLog(LEVEL_ERROR)
        << "GetOSDUUIDFromXlocSet: Empty replicas list in XlocSet: "
-       <<  xlocs.DebugString() << std::endl;
+       <<  xlocs.DebugString() << endl;
     return "";
   }
 
@@ -125,7 +130,7 @@ std::string GetOSDUUIDFromXlocSet(const xtreemfs::pbrpc::XLocSet& xlocs,
   if (replica.osd_uuids_size() == 0) {
     Logging::log->getLog(LEVEL_ERROR)
         << "GetOSDUUIDFromXlocSet: No head OSD available in XlocSet:"
-        <<  xlocs.DebugString() << std::endl;
+        <<  xlocs.DebugString() << endl;
     return "";
   }
 
@@ -146,14 +151,15 @@ std::string GetOSDUUIDFromXlocSet(
 void GenerateVersion4UUID(std::string* result) {
   FILE *urandom = fopen("/dev/urandom", "r");
   if (!urandom) {
-    srand(time(NULL));  // Use rand() instead if /dev/urandom not available.
+    // Use rand() instead if /dev/urandom not available.
+    srand(static_cast<unsigned int>(time(NULL)));
   }
 
   // Base62 characters for UUID generation.
   char set[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
   uint32_t block_length[] = {8, 4, 4, 4, 12};
-  int block_length_count = 5;
+  uint32_t block_length_count = 5;
   char uuid[37];
 
   uint64_t random_value;
@@ -191,7 +197,7 @@ void InitializeStat(xtreemfs::pbrpc::Stat* stat) {
   stat->set_dev(0);
   stat->set_ino(0);
   stat->set_mode(0);
-  // If not set to 1, a assertion in the metadata cache get triggered.
+  // If not set to 1, an assertion in the metadata cache will be triggered.
   stat->set_nlink(1);
   stat->set_user_id("");
   stat->set_group_id("");
@@ -290,5 +296,102 @@ int GetMacOSXKernelVersion() {
   return darwin_kernel_version;
 }
 #endif  // __APPLE__
+
+#ifdef WIN32
+std::string ConvertWindowsToUTF8(const wchar_t* windows_string) {
+  string utf8;
+  ConvertWindowsToUTF8(windows_string, &utf8);
+
+  return utf8;
+}
+
+void ConvertWindowsToUTF8(const wchar_t* from,
+                          std::string* utf8) {
+  // Assume that most strings will fit into a kDefaultBufferSize sized buffer.
+  // If not, the buffer will be increased.
+  const size_t kDefaultBufferSize = 1024;
+  // resize() does not count the null-terminating char, WideCharTo... does.
+  utf8->resize(kDefaultBufferSize - 1);
+
+  int r = WideCharToMultiByte(CP_UTF8,
+                              0,
+                              from,
+                              -1,
+                              &((*utf8)[0]),
+                              kDefaultBufferSize,
+                              0,
+                              0);
+
+  if (r == 0) {
+    throw XtreemFSException("Failed to convert a UTF-16"
+        " (wide character) string to an UTF8 string."
+        " Error code: "
+        + boost::lexical_cast<string>(::GetLastError()));
+  }
+
+  utf8->resize(r - 1);
+  if (r > kDefaultBufferSize) {
+    int r2 = WideCharToMultiByte(CP_UTF8, 0, from, -1, &((*utf8)[0]), r, 0, 0);
+    if (r != r2 || r2 == 0) {
+      throw XtreemFSException("Failed to convert a UTF-16"
+         " (wide character) string to an UTF8 string."
+         " Error code: "
+         + boost::lexical_cast<string>(::GetLastError()));
+    }
+  }
+}
+
+void ConvertUTF8ToWindows(const std::string& utf8,
+                          wchar_t* buf,
+                          int buffer_size) {
+  int r = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, buf, buffer_size);
+  if (r == 0) {
+    throw XtreemFSException("Failed to convert this UTF8 string to a UTF-16"
+        " (wide character) string: " + utf8
+        + " Error code: "
+        + boost::lexical_cast<string>(::GetLastError()));
+  }
+}
+
+std::wstring ConvertUTF8ToWindows(const std::string& utf8) {
+  wstring win; 
+  ConvertUTF8ToWindows(utf8, &win);
+  return win;
+}
+
+void ConvertUTF8ToWindows(const std::string& utf8,
+                          std::wstring* win) {
+  // Assume that most strings will fit into a kDefaultBufferSize sized buffer.
+  // If not, the buffer will be increased.
+  const size_t kDefaultBufferSize = 1024;
+  // resize() does not count the null-terminating char, MultiByteToWide... does.
+  win->resize(kDefaultBufferSize - 1);
+
+  int r = MultiByteToWideChar(CP_UTF8,
+                              0,
+                              utf8.c_str(),
+                              -1,
+                              &((*win)[0]),
+                              kDefaultBufferSize);
+
+  if (r == 0) {
+    throw XtreemFSException("Failed to convert a UTF-8"
+        " string to an UTF16 string (wide character)."
+        " Error code: "
+        + boost::lexical_cast<string>(::GetLastError()));
+  }
+
+  win->resize(r - 1);
+  if (r > kDefaultBufferSize) {
+    int r2 = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, &((*win)[0]), r);
+    if (r != r2 || r2 == 0) {
+      throw XtreemFSException("Failed to convert a UTF-8"
+         " string to an UTF16 string (wide character)."
+         " Error code: "
+         + boost::lexical_cast<string>(::GetLastError()));
+    }
+  }
+}
+#endif  // WIN32
 
 }  // namespace xtreemfs
