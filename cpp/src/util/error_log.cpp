@@ -16,7 +16,7 @@
 namespace xtreemfs {
 namespace util {
 
-void initialize_error_log(int max_enries) {
+void initialize_error_log(int max_entries) {
   ErrorLog::error_log = new ErrorLog(max_entries);
 }
 
