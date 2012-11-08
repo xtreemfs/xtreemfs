@@ -65,7 +65,4 @@ void shutdown_logger();
 }  // namespace util
 }  // namespace xtreemfs
 
-#define GET_LOG(level) Logging::log->getLog(level, __FILE__, __LINE__)
-
 #endif  // CPP_INCLUDE_UTIL_LOGGING_H_
-
