@@ -8,6 +8,7 @@
 #include <gtest/gtest.h>
 
 #include <boost/scoped_ptr.hpp>
+#include <boost/thread/thread.hpp>
 #include <cstdlib>
 #include <cstdio>
 #include <cctype>
@@ -25,12 +26,9 @@
 #include "xtreemfs/MRC.pb.h"
 #include "xtreemfs/OSD.pb.h"
 
-#ifdef WIN32 
+#ifdef WIN32
 #define snprintf _snprintf
-void sleep(int seconds) {
-  Sleep(1000 * seconds);
-}
-#endif
+#endif  // WIN32
 
 /** Assumes a running XtreemFS installation listing to localhost at the default
  *  ports.
@@ -46,11 +44,13 @@ using namespace xtreemfs::util;
 namespace xtreemfs {
 
 std::string RandomVolumeName(const int length) {
-#ifndef WIN32
+#ifdef WIN32
+  srand(GetTickCount());
+#else
   struct timeval time;
   gettimeofday(&time, NULL);
   srand((time.tv_sec * 1000) + (time.tv_usec / 1000));
-#endif
+#endif  // WIN32
 
   std::string result = "volume_implementation_test_";
   char c;
@@ -246,10 +246,7 @@ TEST_F(VolumeImplementationTestNoMetadataCache,
     EXPECT_EQ(0, stat.size());
 
     const char* buf = "a";
-    EXPECT_EQ(strlen(buf), file_handle->Write(user_credentials_,
-                                              buf,
-                                              strlen(buf),
-                                              0));
+    EXPECT_EQ(strlen(buf), file_handle->Write(buf, strlen(buf), 0));
     file_handle->Close();
 
     // File has a size of 1 bytes.
@@ -278,19 +275,16 @@ TEST_F(VolumeImplementationTestFastPeriodicFileSizeUpdate,
     EXPECT_EQ(0, stat.size());
 
     const char* buf = "a";
-    EXPECT_EQ(strlen(buf), file_handle->Write(user_credentials_,
-                                              buf,
-                                              strlen(buf),
-                                              0));
+    EXPECT_EQ(strlen(buf), file_handle->Write(buf, strlen(buf), 0));
     // The resulting OSDWriteResponse has not been written back yet (kDirty)
     // or the periodic thread did already pick it up and and initiated a
     // file size update (kDirtyAndAsyncPending).
     // kClean == kDirty || kDirtyAndAsyncPending
-    EXPECT_NE(kClean, dynamic_cast<FileHandleImplementation*>(file_handle)
+    EXPECT_NE(kClean, static_cast<FileHandleImplementation*>(file_handle)
         ->file_info_->osd_write_response_status_);
     // Wait for the periodic file size update thread.
-    sleep(2);
-    EXPECT_EQ(kClean, dynamic_cast<FileHandleImplementation*>(file_handle)
+    boost::this_thread::sleep(boost::posix_time::seconds(2));
+    EXPECT_EQ(kClean, static_cast<FileHandleImplementation*>(file_handle)
         ->file_info_->osd_write_response_status_);
     file_handle->Close();
 
@@ -315,7 +309,7 @@ TEST_F(VolumeImplementationTestFastPeriodicXCapRenewal,
     // Wait for the periodic xcap renewal thread.
     xtreemfs::pbrpc::XCap xcap_one;
     static_cast<FileHandleImplementation*>(file_handle)->GetXCap(&xcap_one);
-    sleep(2);
+    boost::this_thread::sleep(boost::posix_time::seconds(2));
     xtreemfs::pbrpc::XCap xcap_two;
     static_cast<FileHandleImplementation*>(file_handle)->GetXCap(&xcap_two);
     EXPECT_LT(xcap_one.expire_time_s(), xcap_two.expire_time_s());
@@ -343,19 +337,16 @@ TEST_F(VolumeImplementationTest, FileSizeUpdateAfterFlush) {
     EXPECT_EQ(0, stat.size());
 
     const char* buf = "a";
-    EXPECT_EQ(strlen(buf), file_handle->Write(user_credentials_,
-                                              buf,
-                                              strlen(buf),
-                                              0));
+    EXPECT_EQ(strlen(buf), file_handle->Write(buf, strlen(buf), 0));
     // The resulting OSDWriteResponse has not been written back yet (kDirty)
     // or the periodic thread did already pick it up and and initiated a
     // file size update (kDirtyAndAsyncPending).
     // kClean == kDirty || kDirtyAndAsyncPending
-    EXPECT_NE(kClean, dynamic_cast<FileHandleImplementation*>(file_handle)
+    EXPECT_NE(kClean, static_cast<FileHandleImplementation*>(file_handle)
         ->file_info_->osd_write_response_status_);
     // Flush has to block until the file size update has been written back.
     file_handle->Flush();
-    EXPECT_EQ(kClean, dynamic_cast<FileHandleImplementation*>(file_handle)
+    EXPECT_EQ(kClean, static_cast<FileHandleImplementation*>(file_handle)
         ->file_info_->osd_write_response_status_);
     file_handle->Close();
 
@@ -385,23 +376,20 @@ TEST_F(VolumeImplementationTestFastPeriodicFileSizeUpdate,
     EXPECT_EQ(0, stat.size());
 
     const char* buf = "a";
-    EXPECT_EQ(strlen(buf), file_handle->Write(user_credentials_,
-                                              buf,
-                                              strlen(buf),
-                                              0));
+    EXPECT_EQ(strlen(buf), file_handle->Write(buf, strlen(buf), 0));
     // The resulting OSDWriteResponse has not been written back yet (kDirty)
     // or the periodic thread did already pick it up and and initiated a
     // file size update (kDirtyAndAsyncPending).
     // kClean == kDirty || kDirtyAndAsyncPending
-    EXPECT_NE(kClean, dynamic_cast<FileHandleImplementation*>(file_handle)
+    EXPECT_NE(kClean, static_cast<FileHandleImplementation*>(file_handle)
         ->file_info_->osd_write_response_status_);
-    while (dynamic_cast<FileHandleImplementation*>(file_handle)
+    while (static_cast<FileHandleImplementation*>(file_handle)
                ->file_info_->osd_write_response_status_ == kDirty) {
       boost::posix_time::milliseconds wait_time(1);
       boost::this_thread::sleep(wait_time);
     }
     file_handle->Flush();
-    EXPECT_EQ(kClean, dynamic_cast<FileHandleImplementation*>(file_handle)
+    EXPECT_EQ(kClean, static_cast<FileHandleImplementation*>(file_handle)
         ->file_info_->osd_write_response_status_);
     file_handle->Close();
 
@@ -430,10 +418,7 @@ TEST_F(VolumeImplementationTest, GetAttrMergesPendingFileSizeUpdates) {
     EXPECT_EQ(0, stat.size());
 
     const char* buf = "a";
-    EXPECT_EQ(strlen(buf), file_handle->Write(user_credentials_,
-                                              buf,
-                                              strlen(buf),
-                                              0));
+    EXPECT_EQ(strlen(buf), file_handle->Write(buf, strlen(buf), 0));
     // File has a size of 1 bytes (file size update was not written back yet as
     // the thread does wake up only 60 seconds by default).
     volume_->GetAttr(user_credentials_, path_to_file, &stat);
@@ -462,10 +447,7 @@ TEST_F(VolumeImplementationTestFastPeriodicFileSizeUpdate,
     EXPECT_EQ(0, stat.size());
 
     const char* buf = "a";
-    EXPECT_EQ(strlen(buf), file_handle->Write(user_credentials_,
-                                              buf,
-                                              strlen(buf),
-                                              0));
+    EXPECT_EQ(strlen(buf), file_handle->Write(buf, strlen(buf), 0));
     file_handle->Close();
 
     // File has a size of 1 bytes.
@@ -492,22 +474,21 @@ TEST_F(VolumeImplementationTest,
     // File has a size of 0 bytes.
     volume_->GetAttr(user_credentials_, old_path, &stat);
     EXPECT_EQ(0, stat.size());
-    EXPECT_EQ(1, dynamic_cast<VolumeImplementation*>(volume_)->
+    EXPECT_EQ(1, static_cast<VolumeImplementation*>(volume_)->
         metadata_cache_.Size());
-    EXPECT_TRUE(dynamic_cast<VolumeImplementation*>(volume_)->
-        metadata_cache_.GetStat(old_path, &stat));
+    EXPECT_EQ(MetadataCache::kStatCached,
+              static_cast<VolumeImplementation*>(volume_)->metadata_cache_.
+                  GetStat(old_path, &stat));
 
     volume_->Rename(user_credentials_, old_path, new_path);
-    EXPECT_EQ(1, dynamic_cast<VolumeImplementation*>(volume_)->
+    EXPECT_EQ(1, static_cast<VolumeImplementation*>(volume_)->
         metadata_cache_.Size());
-    EXPECT_TRUE(dynamic_cast<VolumeImplementation*>(volume_)->
-        metadata_cache_.GetStat(new_path, &stat));
+    EXPECT_EQ(MetadataCache::kStatCached,
+        static_cast<VolumeImplementation*>(volume_)->metadata_cache_.
+            GetStat(new_path, &stat));
 
     const char* buf = "a";
-    EXPECT_EQ(strlen(buf), file_handle->Write(user_credentials_,
-                                              buf,
-                                              strlen(buf),
-                                              0));
+    EXPECT_EQ(strlen(buf), file_handle->Write(buf, strlen(buf), 0));
     file_handle->Close();
 
     // File has a size of 1 bytes.
@@ -536,8 +517,7 @@ TEST_F(VolumeImplementationTest, FilesLocking) {
                                     SYSTEM_V_FCNTL_H_O_CREAT,
                                     448);  // octal 700.
     // Lock file for writing.
-    lock1.reset(file_handle->AcquireLock(user_credentials_,
-                                         1,  // PID.
+    lock1.reset(file_handle->AcquireLock(1,  // PID.
                                          0,
                                          1,  // Range in bytes: [0, 0]
                                          true,
@@ -550,8 +530,7 @@ TEST_F(VolumeImplementationTest, FilesLocking) {
 
   // CheckLock should indicate the previously acquired lock.
   ASSERT_NO_THROW({
-    lock2.reset(file_handle2->CheckLock(user_credentials_,
-                                        2,  // PID.
+    lock2.reset(file_handle2->CheckLock(2,  // PID.
                                         0,
                                         0,  // Range in bytes: [0, EOF]
                                         false));
@@ -563,8 +542,7 @@ TEST_F(VolumeImplementationTest, FilesLocking) {
 
   // The previous lock may be overridden by the same process.
   ASSERT_NO_THROW({
-    lock1.reset(file_handle->CheckLock(user_credentials_,
-                                       1,  // PID.
+    lock1.reset(file_handle->CheckLock(1,  // PID.
                                        0,
                                        2,  // Range in bytes: [0, 1]
                                        true));
@@ -576,8 +554,7 @@ TEST_F(VolumeImplementationTest, FilesLocking) {
 
   // AcquireLock of another process must fail.
   EXPECT_THROW({
-    lock2.reset(file_handle2->AcquireLock(user_credentials_,
-                                          2,  // PID.
+    lock2.reset(file_handle2->AcquireLock(2,  // PID.
                                           0,
                                           2,
                                           true,
@@ -586,8 +563,7 @@ TEST_F(VolumeImplementationTest, FilesLocking) {
 
   // Acquiring a non-conflicting lock must succeed.
   ASSERT_NO_THROW({
-    lock2.reset(file_handle2->AcquireLock(user_credentials_,
-                                          2,  // PID.
+    lock2.reset(file_handle2->AcquireLock(2,  // PID.
                                           2,
                                           2,  // Range in bytes: [2, 3]
                                           false,
@@ -600,8 +576,7 @@ TEST_F(VolumeImplementationTest, FilesLocking) {
 
   // Read locks can be acquired on the same range.
   ASSERT_NO_THROW({
-    lock3.reset(file_handle->AcquireLock(user_credentials_,
-                                         3,  // PID.
+    lock3.reset(file_handle->AcquireLock(3,  // PID.
                                          4,
                                          4,  // Range in bytes: [4, 7]
                                          false,
@@ -610,8 +585,7 @@ TEST_F(VolumeImplementationTest, FilesLocking) {
     EXPECT_EQ(4, lock3->offset());
     EXPECT_EQ(4, lock3->length());
     EXPECT_FALSE(lock3->exclusive());
-    lock4.reset(file_handle2->AcquireLock(user_credentials_,
-                                          4,  // PID.
+    lock4.reset(file_handle2->AcquireLock(4,  // PID.
                                           5,
                                           2,  // Range in bytes: [5, 6]
                                           false,
@@ -643,14 +617,13 @@ TEST_F(VolumeImplementationTest, FilesLockingReleaseNonExistantLock) {
                                     path,
                                     SYSTEM_V_FCNTL_H_O_CREAT,
                                     448);  // octal 700.
-    EXPECT_EQ(0, dynamic_cast<FileHandleImplementation*>(file_handle)
+    EXPECT_EQ(0, static_cast<FileHandleImplementation*>(file_handle)
         ->file_info_->active_locks_.size());
-    file_handle->ReleaseLock(user_credentials_,
-                             23,
+    file_handle->ReleaseLock(23,
                              0,
                              0,
                              true);
-    EXPECT_EQ(0, dynamic_cast<FileHandleImplementation*>(file_handle)
+    EXPECT_EQ(0, static_cast<FileHandleImplementation*>(file_handle)
             ->file_info_->active_locks_.size());
     file_handle->Close();
     volume_->Unlink(user_credentials_, path);
@@ -670,24 +643,22 @@ TEST_F(VolumeImplementationTest, FilesLockingReleaseExistantLock) {
                                     path,
                                     SYSTEM_V_FCNTL_H_O_CREAT,
                                     448);  // octal 700.
-    EXPECT_EQ(0, dynamic_cast<FileHandleImplementation*>(file_handle)
+    EXPECT_EQ(0, static_cast<FileHandleImplementation*>(file_handle)
         ->file_info_->active_locks_.size());
 
-    lock.reset(file_handle->AcquireLock(user_credentials_,
-                                         1,  // PID.
-                                         0,
-                                         1,  // Range in bytes: [0, 1]
-                                         true,
-                                         false));
-    EXPECT_EQ(1, dynamic_cast<FileHandleImplementation*>(file_handle)
+    lock.reset(file_handle->AcquireLock(1,  // PID.
+                                        0,
+                                        1,  // Range in bytes: [0, 1]
+                                        true,
+                                        false));
+    EXPECT_EQ(1, static_cast<FileHandleImplementation*>(file_handle)
         ->file_info_->active_locks_.size());
 
-    file_handle->ReleaseLock(user_credentials_,
-                             1,
+    file_handle->ReleaseLock(1,
                              0,
                              0,
                              true);
-    EXPECT_EQ(0, dynamic_cast<FileHandleImplementation*>(file_handle)
+    EXPECT_EQ(0, static_cast<FileHandleImplementation*>(file_handle)
             ->file_info_->active_locks_.size());
     file_handle->Close();
 
@@ -696,8 +667,7 @@ TEST_F(VolumeImplementationTest, FilesLockingReleaseExistantLock) {
                                     path,
                                     SYSTEM_V_FCNTL_H_O_CREAT);
     // Make sure there are no locks for the file at the OSD.
-    lock.reset(file_handle->CheckLock(user_credentials_,
-                                      3,  // PID.
+    lock.reset(file_handle->CheckLock(3,  // PID.
                                       0,
                                       0,  // Range in bytes: [0, EOF]
                                       true));
@@ -726,17 +696,16 @@ TEST_F(VolumeImplementationTest, FilesLockingLastCloseReleasesAllLocks) {
                                     448);  // octal 700.
 
     // No locks yet.
-    EXPECT_EQ(0, dynamic_cast<FileHandleImplementation*>(file_handle)
+    EXPECT_EQ(0, static_cast<FileHandleImplementation*>(file_handle)
         ->file_info_->active_locks_.size());
 
     // Lock first file for writing.
-    lock1.reset(file_handle->AcquireLock(user_credentials_,
-                                         1,  // PID.
+    lock1.reset(file_handle->AcquireLock(1,  // PID.
                                          0,
                                          1,  // Range in bytes: [0, 1]
                                          true,
                                          false));
-    EXPECT_EQ(1, dynamic_cast<FileHandleImplementation*>(file_handle)
+    EXPECT_EQ(1, static_cast<FileHandleImplementation*>(file_handle)
           ->file_info_->active_locks_.size());
 
     // Open second file.
@@ -744,19 +713,18 @@ TEST_F(VolumeImplementationTest, FilesLockingLastCloseReleasesAllLocks) {
                                      path,
                                      SYSTEM_V_FCNTL_H_O_RDWR);
     // Obtain a second lock.
-    lock2.reset(file_handle2->AcquireLock(user_credentials_,
-                                          2,  // PID.
+    lock2.reset(file_handle2->AcquireLock(2,  // PID.
                                           2,
                                           1,  // Range in bytes: [2, 3]
                                           true,
                                           false));
-    EXPECT_EQ(2, dynamic_cast<FileHandleImplementation*>(file_handle)
+    EXPECT_EQ(2, static_cast<FileHandleImplementation*>(file_handle)
           ->file_info_->active_locks_.size());
 
     file_handle2->Close();
     // Still two locks reaming as we did not explicitly call
     // file_handle->ReleaseLockOfProcess().
-    EXPECT_EQ(2, dynamic_cast<FileHandleImplementation*>(file_handle)
+    EXPECT_EQ(2, static_cast<FileHandleImplementation*>(file_handle)
             ->file_info_->active_locks_.size());
     file_handle->Close();
 
@@ -765,8 +733,7 @@ TEST_F(VolumeImplementationTest, FilesLockingLastCloseReleasesAllLocks) {
                                     path,
                                     SYSTEM_V_FCNTL_H_O_CREAT);
     // Make sure there are no locks for the file at the OSD.
-    lock1.reset(file_handle->CheckLock(user_credentials_,
-                                       3,  // PID.
+    lock1.reset(file_handle->CheckLock(3,  // PID.
                                        0,
                                        0,  // Range in bytes: [0, EOF]
                                        true));
@@ -795,17 +762,16 @@ TEST_F(VolumeImplementationTest, FilesLockingReleaseLockOfProcess) {
                                     448);  // octal 700.
 
     // No locks yet.
-    EXPECT_EQ(0, dynamic_cast<FileHandleImplementation*>(file_handle)
+    EXPECT_EQ(0, static_cast<FileHandleImplementation*>(file_handle)
         ->file_info_->active_locks_.size());
 
     // Lock first file for writing.
-    lock1.reset(file_handle->AcquireLock(user_credentials_,
-                                         1,  // PID.
+    lock1.reset(file_handle->AcquireLock(1,  // PID.
                                          0,
                                          1,  // Range in bytes: [0, 1]
                                          true,
                                          false));
-    EXPECT_EQ(1, dynamic_cast<FileHandleImplementation*>(file_handle)
+    EXPECT_EQ(1, static_cast<FileHandleImplementation*>(file_handle)
           ->file_info_->active_locks_.size());
 
     // Open second file.
@@ -813,25 +779,24 @@ TEST_F(VolumeImplementationTest, FilesLockingReleaseLockOfProcess) {
                                      path,
                                      SYSTEM_V_FCNTL_H_O_RDWR);
     // Obtain a second lock.
-    lock2.reset(file_handle2->AcquireLock(user_credentials_,
-                                          2,  // PID.
+    lock2.reset(file_handle2->AcquireLock(2,  // PID.
                                           2,
                                           1,  // Range in bytes: [2, 3]
                                           true,
                                           false));
-    EXPECT_EQ(2, dynamic_cast<FileHandleImplementation*>(file_handle)
+    EXPECT_EQ(2, static_cast<FileHandleImplementation*>(file_handle)
           ->file_info_->active_locks_.size());
 
     // Explicitly call file_handle->ReleaseLockOfProcess().
     file_handle2->ReleaseLockOfProcess(2);
-    EXPECT_EQ(1, dynamic_cast<FileHandleImplementation*>(file_handle)
+    EXPECT_EQ(1, static_cast<FileHandleImplementation*>(file_handle)
             ->file_info_->active_locks_.size());
     file_handle2->Close();
-    EXPECT_EQ(1, dynamic_cast<FileHandleImplementation*>(file_handle)
+    EXPECT_EQ(1, static_cast<FileHandleImplementation*>(file_handle)
                 ->file_info_->active_locks_.size());
 
     file_handle->ReleaseLockOfProcess(1);
-    EXPECT_EQ(0, dynamic_cast<FileHandleImplementation*>(file_handle)
+    EXPECT_EQ(0, static_cast<FileHandleImplementation*>(file_handle)
                 ->file_info_->active_locks_.size());
     file_handle->Close();
 
@@ -840,8 +805,7 @@ TEST_F(VolumeImplementationTest, FilesLockingReleaseLockOfProcess) {
                                     path,
                                     SYSTEM_V_FCNTL_H_O_CREAT);
     // Make sure there are no locks for the file at the OSD.
-    lock1.reset(file_handle->CheckLock(user_credentials_,
-                                       3,  // PID.
+    lock1.reset(file_handle->CheckLock(3,  // PID.
                                        0,
                                        0,  // Range in bytes: [0, EOF]
                                        true));
@@ -944,10 +908,7 @@ TEST_F(VolumeImplementationTest, GetAttrAfterWriteAsync) {
     EXPECT_EQ(0, stat.size());
 
     const char* buf = "a";
-    file_handle->Write(user_credentials_,
-                       buf,
-                       strlen(buf),
-                       0);
+    file_handle->Write(buf, strlen(buf), 0);
 
     // File has a size of 1 bytes.
     volume_->GetAttr(user_credentials_, path_to_file, &stat);
@@ -994,10 +955,7 @@ TEST_F(VolumeImplementationTest, ConcurrentGetAttrAndWriteAsyncPlusClose) {
       EXPECT_EQ(strlen(buf) - 1, stat.size());
 
       // File was not opend with O_SYNC, so async writes *should* be used.
-      file_handle->Write(user_credentials_,
-                         buf,
-                         strlen(buf),
-                         0);
+      file_handle->Write(buf, strlen(buf), 0);
       boost::thread concurrent_getattr(boost::bind(
           &xtreemfs::VolumeImplementationTest::CheckFileSize,
           this,
