@@ -77,7 +77,7 @@ class ClientConnection {
   void AddRequest(ClientRequest *request);
   void Close(const std::string& error);
   void SendError(xtreemfs::pbrpc::POSIXErrno posix_errno,
-                 const std::string &error_message);
+                 const std::string& error_message);
   void Reset();
 
   boost::posix_time::ptime last_used() const {
