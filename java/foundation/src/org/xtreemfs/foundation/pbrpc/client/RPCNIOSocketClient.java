@@ -132,7 +132,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         transactionId = new AtomicInteger((int) (Math.random() * 1e6 + 1.0));
         toBeEstablished = new ConcurrentLinkedQueue<RPCClientConnection>();
         
-        if (Logging.isDebug()) {
+        if (this.localBindPoint != null && Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
                     "RPC Client '%s': Using the following address for outgoing connections: %s", threadName, this.localBindPoint);
         }
