@@ -487,7 +487,7 @@ public class VivaldiStage extends Stage {
         for (InetSocketAddress reqKey : sentRequests.keySet()) {
             if (localNow >= sentRequests.get(reqKey).getLocalTime() + MAX_REQUEST_TIMEOUT_IN_MS) {
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "OSD times out:" + reqKey.getHostName());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "OSD times out: " + reqKey.getHostName());
                 }
                 removedRequests.add(reqKey);
             }
@@ -590,11 +590,11 @@ public class VivaldiStage extends Stage {
             }
 
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "Updating list of known OSDs (size:" + knownOSDs.size() + ")");
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "Updating list of known OSDs (size: " + knownOSDs.size() + ")");
             }
 
         } catch (Exception exc) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this, "Error while updating known OSDs:" + exc);
+            Logging.logMessage(Logging.LEVEL_ERROR, this, "Error while updating known OSDs: " + exc);
             //Create an empty OSDs set
             knownOSDs = new LinkedList<KnownOSD>();
         } finally {
@@ -632,7 +632,7 @@ public class VivaldiStage extends Stage {
                     if (!toBeRetried.get(addr).hasBeenRetried()) {
 
                         if (Logging.isDebug()) {
-                            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Retrying:" + addr.getHostName());
+                            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Retrying: " + addr.getHostName());
                         }
 
                         sendVivaldiRequest(addr, vNode.getCoordinates());
@@ -666,7 +666,7 @@ public class VivaldiStage extends Stage {
                             osdAddr = serviceMappings[mapIt].resolvedAddr;
 
                             if (Logging.isDebug()) {
-                                Logging.logMessage(Logging.LEVEL_DEBUG, this, "Recalculating against:" + chosenOSD.getUUID());
+                                Logging.logMessage(Logging.LEVEL_DEBUG, this, "Recalculating against: " + chosenOSD.getUUID());
                             }
 
                             //Only at this point we known which InetAddress corresponds with which UUID
@@ -681,7 +681,7 @@ public class VivaldiStage extends Stage {
                     }
 
                 } catch (UnknownUUIDException unke) {
-                    Logging.logMessage(Logging.LEVEL_ERROR, this, "Unknown UUID:" + chosenOSD.getUUID());
+                    Logging.logMessage(Logging.LEVEL_ERROR, this, "Unknown UUID: " + chosenOSD.getUUID());
                 } catch (Exception e) {
                     Logging.logMessage(Logging.LEVEL_ERROR, this, "Error detected while iterating Vivaldi");
                 }
@@ -718,7 +718,7 @@ public class VivaldiStage extends Stage {
             } catch (InterruptedException ex) {
                 break;
             } catch (Throwable ex) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, "Error detected:" + ex);
+                Logging.logMessage(Logging.LEVEL_ERROR, this, "Error detected: " + ex);
                 notifyCrashed(ex);
                 break;
             }
