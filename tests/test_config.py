@@ -195,7 +195,7 @@ Tests = [
         'name': 'POSIX Test Suite (root required)',
         'file': 'posix_test_suite.sh',
         'VolumeConfigs': ['regular', 'nomdcache'],
-        'TestSets': [ 'full', 'short', 'short-ssl' ]
+        'TestSets': [ 'short', 'short-ssl' ]
     },
     # SYSTEM TESTS
     {
