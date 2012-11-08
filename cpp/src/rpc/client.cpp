@@ -46,6 +46,12 @@ using boost::interprocess::detail::atomic_inc32;
 using boost::interprocess::ipcdetail::atomic_inc32;
 #endif  // BOOST_VERSION < 104800
 
+#ifdef _MSC_VER
+// Disable "warning C4996: 'strdup': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _strdup.  // NOLINT
+#pragma warning(push)
+#pragma warning(disable:4996)
+#endif  // _MSC_VER
+
 namespace xtreemfs {
 namespace rpc {
 
@@ -325,7 +331,7 @@ void Client::sendInternalRequest() {
       // New connection.
 
       const std::string &addr = rq->address();
-      int colonpos = addr.find(":");
+      int colonpos = addr.find_last_of(":");
       if (colonpos < 0) {
         RPCHeader::ErrorResponse* err = new RPCHeader::ErrorResponse();
         err->set_error_message(std::string("invalid address: ") + addr);
@@ -596,6 +602,10 @@ Client::~Client() {
   delete ssl_options;
   delete ssl_context_;
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif  // _MSC_VER
 
 }  // namespace rpc
 }  // namespace xtreemfs
