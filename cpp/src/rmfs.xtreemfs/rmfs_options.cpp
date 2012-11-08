@@ -25,7 +25,8 @@ namespace style = boost::program_options::command_line_style;
 
 namespace xtreemfs {
 
-RmfsOptions::RmfsOptions() : Options(), rmfs_descriptions_("rmfs options") {
+RmfsOptions::RmfsOptions() : Options(),
+                             rmfs_descriptions_("rmfs.xtreemfs Options") {
   // Modify default options of Options().
   max_tries = 1;
 
