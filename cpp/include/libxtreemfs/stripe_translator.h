@@ -8,6 +8,8 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_STRIPE_TRANSLATOR_H_
 #define CPP_INCLUDE_LIBXTREEMFS_STRIPE_TRANSLATOR_H_
 
+#include <stdint.h>
+
 #include <list>
 #include <vector>
 
@@ -61,14 +63,14 @@ class StripeTranslator {
   virtual void TranslateWriteRequest(
       const char *buf,
       size_t size,
-      off_t offset,
+      int64_t offset,
       PolicyContainer policies,
       std::vector<WriteOperation>* operations) const = 0;
 
   virtual void TranslateReadRequest(
       char *buf,
       size_t size,
-      off_t offset,
+      int64_t offset,
       PolicyContainer policies,
       std::vector<ReadOperation>* operations) const = 0;
 };
@@ -78,14 +80,14 @@ class StripeTranslatorRaid0 : public StripeTranslator {
   virtual void TranslateWriteRequest(
       const char *buf,
       size_t size,
-      off_t offset,
+      int64_t offset,
       PolicyContainer policies,
       std::vector<WriteOperation>* operations) const;
 
   virtual void TranslateReadRequest(
       char *buf,
       size_t size,
-      off_t offset,
+      int64_t offset,
       PolicyContainer policies,
       std::vector<ReadOperation>* operations) const;
 };

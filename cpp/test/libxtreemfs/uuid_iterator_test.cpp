@@ -317,7 +317,7 @@ TEST_F(ContainerUUIDIteratorTest, CreateContainerAndGetUUID) {
 
   // get all striping policies
   StripeTranslator::PolicyContainer striping_policies;
-  for (uint32_t i = 0; i < xlocs.replicas_size(); ++i) {
+  for (int i = 0; i < xlocs.replicas_size(); ++i) {
     striping_policies.push_back(&(xlocs.replicas(i).striping_policy()));
   }
 

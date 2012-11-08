@@ -39,7 +39,7 @@ void PBRPCURL::ParseURL(const std::string& original_url,
   // At last, read the optional volume name from the last address.
   vector<string> addresses;
   boost::split(addresses, url, boost::is_any_of(","));
-  for (int i = 0; i < addresses.size(); i++) {
+  for (size_t i = 0; i < addresses.size(); i++) {
     const string& address = addresses[i];
     size_t address_pos = 0;
 

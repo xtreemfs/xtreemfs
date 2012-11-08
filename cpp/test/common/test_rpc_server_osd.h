@@ -67,7 +67,7 @@ class TestRPCServerOSD : public TestRPCServer<TestRPCServerOSD> {
   mutable boost::mutex mutex_;
 
   /** A single file size is remembered between requests. */
-  size_t file_size_;
+  uint64_t file_size_;
 
   /** A list of received write requests that can be used to check against an
    *  expected result.

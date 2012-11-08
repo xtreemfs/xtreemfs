@@ -10,6 +10,8 @@
 
 #include "common/test_rpc_server.h"
 
+#include <stdint.h>
+
 #include <boost/thread/mutex.hpp>
 
 namespace google {
@@ -54,7 +56,7 @@ class TestRPCServerMRC : public TestRPCServer<TestRPCServerMRC> {
   boost::mutex mutex_;
 
   /** Default file size reported by the MRC for every file requested. */
-  size_t file_size_;
+  uint64_t file_size_;
 
   std::vector<std::string> osd_uuids_;
 };

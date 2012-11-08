@@ -18,11 +18,11 @@ bool Interruptibilizer::WasInterrupted(InterruptedCallback cb) {
   return cb == NULL ? false : cb() == 1;
 }
 
-void Interruptibilizer::SleepInterruptible(int rel_time_ms,
+void Interruptibilizer::SleepInterruptible(int64_t rel_time_ms,
                                            InterruptedCallback cb) {
   const int sleep_interval_ms = 2000;
 
-  int wait_time;
+  int64_t wait_time;
   while (rel_time_ms > 0 && !Interruptibilizer::WasInterrupted(cb)) {
     wait_time = rel_time_ms > sleep_interval_ms ? sleep_interval_ms
                                                 : rel_time_ms;

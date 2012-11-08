@@ -89,7 +89,7 @@ FileHandleImplementation::~FileHandleImplementation() {}
 int FileHandleImplementation::Read(
     char *buf,
     size_t count,
-    off_t offset) {
+    int64_t offset) {
   file_info_->WaitForPendingAsyncWrites();
   ThrowIfAsyncWritesFailed();
 
@@ -191,7 +191,7 @@ int FileHandleImplementation::Read(
 int FileHandleImplementation::Write(
     const char *buf,
     size_t count,
-    off_t offset) {
+    int64_t offset) {
   ThrowIfAsyncWritesFailed();
 
   // Create copies of required data.
@@ -372,7 +372,7 @@ void FileHandleImplementation::Flush(bool close_file) {
 
 void FileHandleImplementation::Truncate(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
-    off_t new_file_size) {
+    int64_t new_file_size) {
   file_info_->WaitForPendingAsyncWrites();
   ThrowIfAsyncWritesFailed();
 
@@ -405,7 +405,7 @@ void FileHandleImplementation::Truncate(
 }
 
 void FileHandleImplementation::TruncatePhaseTwoAndThree(
-    off_t new_file_size) {
+    int64_t new_file_size) {
   // 2. Call truncate at the head OSD.
   truncateRequest truncate_rq;
   file_info_->GetXLocSet(

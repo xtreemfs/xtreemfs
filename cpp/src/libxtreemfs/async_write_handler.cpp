@@ -108,7 +108,7 @@ AsyncWriteHandler::~AsyncWriteHandler() {
 void AsyncWriteHandler::Write(AsyncWriteBuffer* write_buffer) {
   assert(write_buffer);
 
-  if (write_buffer->data_length > max_writeahead_) {
+  if (write_buffer->data_length > static_cast<size_t>(max_writeahead_)) {
     throw XtreemFSException("The maximum allowed writeahead size: "
         + boost::lexical_cast<string>(max_writeahead_)
         + " is smaller than the size of this write request: "
@@ -120,13 +120,15 @@ void AsyncWriteHandler::Write(AsyncWriteBuffer* write_buffer) {
     boost::mutex::scoped_lock lock(mutex_);
 
     while ((state_ != FINALLY_FAILED) && (writing_paused_ ||
-           (pending_bytes_ + write_buffer->data_length) > max_writeahead_ ||
+           (pending_bytes_ + write_buffer->data_length) >
+                static_cast<size_t>(max_writeahead_) ||
             writes_in_flight_.size() == max_writeahead_requests_)) {
       // TODO(mberlin): Allow interruption and set the write status of the
       //                FileHandle of the interrupted write to an error state.
       pending_bytes_were_decreased_.wait(lock);
     }
-    assert(writes_in_flight_.size() <= max_writeahead_requests_);
+    assert(writes_in_flight_.size() <=
+              static_cast<size_t>(max_writeahead_requests_));
 
     // NOTE: the following is done here to reach all threads that started
     //       waiting before the final failure
@@ -541,7 +543,8 @@ void AsyncWriteHandler::IncreasePendingBytesHelper(
 
   pending_bytes_ += write_buffer->data_length;
   writes_in_flight_.push_back(write_buffer);
-  assert(writes_in_flight_.size() <= max_writeahead_requests_);
+  assert(writes_in_flight_.size() <=
+             static_cast<size_t>(max_writeahead_requests_));
 
   state_ = WRITES_PENDING;
 }

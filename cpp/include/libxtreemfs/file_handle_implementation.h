@@ -127,15 +127,15 @@ class FileHandleImplementation
 
   virtual ~FileHandleImplementation();
 
-  virtual int Read(char *buf, size_t count, off_t offset);
+  virtual int Read(char *buf, size_t count, int64_t offset);
 
-  virtual int Write(const char *buf, size_t count, off_t offset);
+  virtual int Write(const char *buf, size_t count, int64_t offset);
 
   virtual void Flush();
 
   virtual void Truncate(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
-      off_t new_file_size);
+      int64_t new_file_size);
 
   /** Used by Truncate() and Volume->OpenFile() to truncate the file to
    *  "new_file_size" on the OSD and update the file size at the MRC.
@@ -145,7 +145,7 @@ class FileHandleImplementation
    * @throws PosixErrorException
    * @throws UnknownAddressSchemeException
    **/
-  void TruncatePhaseTwoAndThree(off_t new_file_size);
+  void TruncatePhaseTwoAndThree(int64_t new_file_size);
 
   virtual void GetAttr(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,

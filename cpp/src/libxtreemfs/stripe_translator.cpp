@@ -17,7 +17,7 @@ namespace xtreemfs {
 void StripeTranslatorRaid0::TranslateWriteRequest(
     const char *buf,
     size_t size,
-    off_t offset,
+    int64_t offset,
     PolicyContainer policies,
     std::vector<WriteOperation>* operations) const {
   // stripe size is stored in kB
@@ -25,7 +25,7 @@ void StripeTranslatorRaid0::TranslateWriteRequest(
 
   size_t start = 0;
   while (start < size) {
-    size_t obj_number = (start + offset) / stripe_size;
+    size_t obj_number = static_cast<size_t>(start + offset) / stripe_size;
     size_t req_offset = (start + offset) % stripe_size;
     size_t req_size
       = min(size - start, static_cast<size_t>(stripe_size - req_offset));
@@ -47,7 +47,7 @@ void StripeTranslatorRaid0::TranslateWriteRequest(
 void StripeTranslatorRaid0::TranslateReadRequest(
     char *buf,
     size_t size,
-    off_t offset,
+    int64_t offset,
     PolicyContainer policies,
     std::vector<ReadOperation>* operations) const {
   // stripe size is stored in kB
@@ -55,8 +55,8 @@ void StripeTranslatorRaid0::TranslateReadRequest(
 
   size_t start = 0;
   while (start < size) {
-    size_t obj_number = (start + offset) / stripe_size;
-    off_t req_offset = (start + offset) % stripe_size;
+    size_t obj_number = static_cast<size_t>(start + offset) / stripe_size;
+    size_t req_offset = (start + offset) % stripe_size;
     size_t req_size
       = min(size - start, static_cast<size_t>(stripe_size - req_offset));
 

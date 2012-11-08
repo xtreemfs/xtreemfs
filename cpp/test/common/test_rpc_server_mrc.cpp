@@ -106,7 +106,7 @@ google::protobuf::Message* TestRPCServerMRC::UpdateFileSizeOperation(
   return response;
 }
 
-void TestRPCServerMRC::SetFileSize(boost::uint64_t size) {
+void TestRPCServerMRC::SetFileSize(uint64_t size) {
   boost::mutex::scoped_lock lock(mutex_);
   file_size_ = size;
 }

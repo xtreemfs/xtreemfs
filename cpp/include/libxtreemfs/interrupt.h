@@ -8,6 +8,8 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_INTERRUPT_H_
 #define CPP_INCLUDE_LIBXTREEMFS_INTERRUPT_H_
 
+#include <stdint.h>
+
 #include <boost/function.hpp>
 
 namespace xtreemfs {
@@ -26,7 +28,7 @@ class Interruptibilizer {
    * @remarks this function contains a boost::thread interruption point and
    *          thus might throw boost::thread_interrupted.
    */
-  static void SleepInterruptible(int rel_time_ms, InterruptedCallback cb);
+  static void SleepInterruptible(int64_t rel_time_ms, InterruptedCallback cb);
 };
 
 }  // namespace xtreemfs

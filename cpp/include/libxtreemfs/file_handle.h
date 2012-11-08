@@ -38,7 +38,7 @@ class FileHandle {
   virtual int Read(
       char *buf,
       size_t count,
-      off_t offset) = 0;
+      int64_t offset) = 0;
 
   /** Write to a file 'count' bytes at file offset 'offset' from 'buf'.
    *
@@ -65,7 +65,7 @@ class FileHandle {
   virtual int Write(
       const char *buf,
       size_t count,
-      off_t offset) = 0;
+      int64_t offset) = 0;
 
   /** Flushes pending writes and file size updates (corresponds to a fsync()
    *  system call).
@@ -80,7 +80,7 @@ class FileHandle {
   /** Truncates the file to "new_file_size_ bytes".
    *
    * @param user_credentials    Name and Groups of the user.
-   * @param off_t               New size of the file.
+   * @param new_file_size       New size of the file.
    *
    * @throws AddressToUUIDNotFoundException
    * @throws IOException
@@ -89,7 +89,7 @@ class FileHandle {
    **/
   virtual void Truncate(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
-      off_t new_file_size) = 0;
+      int64_t new_file_size) = 0;
 
   /** Retrieve the attributes of this file and writes the result in "stat".
    *
