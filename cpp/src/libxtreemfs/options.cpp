@@ -67,6 +67,7 @@ Options::Options()
   max_writeahead = 0; // 10 * 128 * 1024;  // 10 default objects = 1280kB = 1.25MB.
   max_writeahead_requests = 10;  // Only 10 pending requests allowed by default.
   readdir_chunk_size = 1024;
+  enable_atime = false;
 
   // Error Handling options.
   // Depending on the values max{_read|_write}_tries and and (retry_delay_s or
@@ -111,14 +112,12 @@ Options::Options()
 
   // Grid Support options.
   grid_ssl = false;
-#ifndef WIN32
   grid_auth_mode_globus = false;
   grid_auth_mode_unicore = false;
   grid_gridmap_location = "";
   grid_gridmap_location_default_globus = "/etc/grid-security/grid-mapfile";
   grid_gridmap_location_default_unicore = "/etc/grid-security/d-grid_uudb";
   grid_gridmap_reload_interval_m = 60;  // 60 Minutes = 1 Hour.
-#endif  // !WIN32
 
   // Vivaldi Options
   vivaldi_enable = false;
@@ -273,9 +272,6 @@ void Options::GenerateProgramOptionsDescriptions() {
         po::value(&grid_ssl)->zero_tokens(),
         "Explicitily use the XtreemFS Grid-SSL mode. Same as specifying "
         "pbrpcg:// in the volume URL.")
-#ifdef WIN32
-        ;
-#else
     ("globus-gridmap",
         po::value(&grid_auth_mode_globus)->zero_tokens(),
         "Authorize using globus gridmap file.")
@@ -292,7 +288,6 @@ void Options::GenerateProgramOptionsDescriptions() {
             ->default_value(grid_gridmap_reload_interval_m),
         "Interval (in minutes) after which the gridmap file will be checked for"
         " changes and reloaded if necessary.");
-#endif  // WIN32
 
   vivaldi_options_.add_options()
       ("vivaldi-enable",
@@ -343,7 +338,10 @@ void Options::GenerateProgramOptionsDescriptions() {
     ("vivaldi-zipf-generator-skew",
         po::value(&vivaldi_zipf_generator_skew)
           ->default_value(vivaldi_zipf_generator_skew),
-        "Skewness of the Zipf distribution used for vivaldi OSD selection");
+        "Skewness of the Zipf distribution used for vivaldi OSD selection.")
+    ("enable-atime",
+        po::value(&enable_atime)->default_value(enable_atime)->zero_tokens(),
+        "Enable updates of atime attribute in Fuse and metadata cache.");
 
   deprecated_options_.add_options()
     ("interrupt-signal",
@@ -441,7 +439,6 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
     empty_arguments_list = true;
   }
 
-#ifndef WIN32
   if (grid_auth_mode_globus && grid_auth_mode_unicore) {
     throw InvalidCommandLineParametersException("You can only use a Globus "
         "OR a Unicore gridmap file at the same time.");
@@ -458,7 +455,6 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
       grid_gridmap_location = grid_gridmap_location_default_unicore;
     }
   }
-#endif  // !WIN32
 
   // PEM certificate _and_ private key are both required.
   if ((!ssl_pem_cert_path.empty() && ssl_pem_key_path.empty()) ||

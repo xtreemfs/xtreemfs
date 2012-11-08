@@ -135,6 +135,8 @@ class Options {
   int max_writeahead_requests;
   /** Number of retrieved entries per readdir request. */
   int readdir_chunk_size;
+  /** True, if atime requests are enabled in Fuse/not ignored by the library. */
+  bool enable_atime;
 
   // Error Handling options.
   /** How often shall a failed operation get retried? */
@@ -165,7 +167,6 @@ class Options {
    *  data itself) shall be used. */
   bool grid_ssl;
   /** True if the Globus user mapping shall be used. */
-#ifndef WIN32
   bool grid_auth_mode_globus;
   /** True if the Unicore user mapping shall be used. */
   bool grid_auth_mode_unicore;
@@ -177,7 +178,6 @@ class Options {
   std::string grid_gridmap_location_default_unicore;
   /** Periodic interval after which the gridmap file will be reloaded. */
   int grid_gridmap_reload_interval_m;
-#endif  // !WIN32
 
   // Vivaldi Options
   /** Enables the vivaldi coordinate calculation for the client. */
@@ -191,15 +191,15 @@ class Options {
   std::string vivaldi_filename;
   /** The interval between coordinate recalculations. Also see
    *  vivaldi_recalculation_epsilon_s. */
-  unsigned int vivaldi_recalculation_interval_s;
+  int vivaldi_recalculation_interval_s;
   /** The recalculation interval will be randomly chosen from
    *  vivaldi_recalculation_inverval_s +/- vivaldi_recalculation_epsilon_s */
-  unsigned int vivaldi_recalculation_epsilon_s;
+  int vivaldi_recalculation_epsilon_s;
   /** Number of coordinate recalculations before updating the list of OSDs. */
-  unsigned int vivaldi_max_iterations_before_updating;
+  int vivaldi_max_iterations_before_updating;
   /** Maximal number of retries when requesting coordinates from another
    *  vivaldi node. */
-  unsigned int vivaldi_max_request_retries;
+  int vivaldi_max_request_retries;
 
   // Advanced XtreemFS options.
   /** Interval for periodic file size updates in seconds. */
@@ -215,11 +215,9 @@ class Options {
 
   // NOTE: Deprecated options are no longer needed as members
 
-#ifndef WIN32
-  // User mapping.
-  /** Type of the UserMapping used to resolve user and group IDs to names. */
+  // Additional User mapping.
+  /** Type of the UserMapping used to translate between local/global names. */
   UserMapping::UserMappingType user_mapping_type;
-#endif  // !WIN32
 
  protected:
   /** Extract volume name and dir service address from dir_volume_url. */
