@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2010-2011 by Patrick Schaefer, Zuse Institute Berlin
- *                    2011 by Michael Berlin, Zuse Institute Berlin
+ *               2011-2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -20,9 +20,8 @@ namespace xtreemfs {
 
 class UserMappingGridmapUnicore : public UserMappingGridmap {
  public:
-  UserMappingGridmapUnicore(UserMappingType user_mapping_type_system,
-                           const std::string& gridmap_file,
-                           int gridmap_reload_interval_s);
+  UserMappingGridmapUnicore(const std::string& gridmap_file,
+                            int gridmap_reload_interval_s);
 
  protected:
   virtual void ReadGridmapFile();

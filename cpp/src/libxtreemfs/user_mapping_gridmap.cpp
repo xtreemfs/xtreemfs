@@ -1,14 +1,12 @@
 /*
  * Copyright (c) 2010-2011 by Patrick Schaefer, Zuse Institute Berlin
- *                    2011 by Michael Berlin, Zuse Institute Berlin
+ *               2011-2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
  */
 
 #include "libxtreemfs/user_mapping_gridmap.h"
-
-#ifndef WIN32
 
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/tokenizer.hpp>
@@ -24,36 +22,27 @@ using namespace std;
 using namespace xtreemfs::util;
 
 namespace xtreemfs {
-UserMappingGridmap::UserMappingGridmap(UserMappingType user_mapping_type_system,
-                                       const std::string& gridmap_file,
+UserMappingGridmap::UserMappingGridmap(const std::string& gridmap_file,
                                        int gridmap_reload_interval_m)
     : gridmap_file_(gridmap_file),
-      gridmap_reload_interval_s_(gridmap_reload_interval_m) {
-  // Initialize required base usermapping to retrieve IDs or names
-  // from the system.
-  system_user_mapping_.reset(
-      UserMapping::CreateUserMapping(user_mapping_type_system));
-}
+      gridmap_reload_interval_s_(gridmap_reload_interval_m) {}
 
-std::string UserMappingGridmap::UIDToUsername(uid_t uid) {
-  // map uid to username
-  std::string username = system_user_mapping_->UIDToUsername(uid);
-
+void UserMappingGridmap::LocalToGlobalUsername(
+    const std::string& username_local,
+    std::string* username_global) {
   // map username to dn using the gridmap-file
-  std::string dn = UsernameToDN(username);
+  *username_global = UsernameToDN(username_local);
 
-  if (dn.empty()) {
+  if (username_global->empty()) {
     if (Logging::log->loggingActive(LEVEL_DEBUG)) {
       Logging::log->getLog(LEVEL_DEBUG)
-          << "gridmap: no mapping for username " << username << std::endl;
+          << "gridmap: no mapping for username " << username_local << endl;
     }
-    return username;
+    *username_global = username_local;
   }
-
-  return dn;
 }
 
-std::string UserMappingGridmap::UsernameToDN(std::string username) {
+std::string UserMappingGridmap::UsernameToDN(const std::string& username) {
   boost::mutex::scoped_lock lock(mutex);
   boost::bimap< std::string, std::string >::right_const_iterator iter
     = dn_username.right.find(username);
@@ -63,28 +52,25 @@ std::string UserMappingGridmap::UsernameToDN(std::string username) {
   return "";
 }
 
-uid_t UserMappingGridmap::UsernameToUID(const std::string& username) {
+void UserMappingGridmap::GlobalToLocalUsername(
+    const std::string& username_global,
+    std::string* username_local) {
   // The username is actually a DN.
-  const string& dn = username;
+  const string& dn = username_global;
 
   // map dn to username using the gridmap-file
-  std::string grid_username = DNToUsername(dn);
+  *username_local = DNToUsername(dn);
 
-  if (grid_username.empty()) {
+  if (username_local->empty()) {
     if (Logging::log->loggingActive(LEVEL_DEBUG)) {
       Logging::log->getLog(LEVEL_DEBUG)
           << "gridmap: no mapping for dn " << dn << std::endl;
     }
-    grid_username = dn;
+    *username_local = dn;
   }
-
-  // map username to id
-  uid_t uid = system_user_mapping_->UsernameToUID(grid_username);
-
-  return uid;
 }
 
-std::string UserMappingGridmap::DNToUsername(std::string dn) {
+std::string UserMappingGridmap::DNToUsername(const std::string& dn) {
   boost::mutex::scoped_lock lock(mutex);
   boost::bimap< std::string, std::string >::left_const_iterator iter
     = dn_username.left.find(dn);
@@ -94,28 +80,34 @@ std::string UserMappingGridmap::DNToUsername(std::string dn) {
   return "";
 }
 
-/** It is currently not possible to map the OU-entries to local groups. */
-std::string UserMappingGridmap::GIDToGroupname(gid_t gid) {
-  return "root";
+/** It is currently not possible to map between OU-entries and local groups. */
+void UserMappingGridmap::LocalToGlobalGroupname(
+    const std::string& groupname_local,
+    std::string* groupname_global) {
+  *groupname_global = "root";
 }
 
-/** It is currently not possible to map the OU-entries to local groups. */
-gid_t UserMappingGridmap::GroupnameToGID(const std::string& groupname) {
-  return 0;
+/** It is currently not possible to map between OU-entries and local groups. */
+void UserMappingGridmap::GlobalToLocalGroupname(
+    const std::string& groupname_global,
+    std::string* groupname_local) {
+  *groupname_local = "root";
 }
 
-void UserMappingGridmap::GetGroupnames(uid_t uid,
-                                      gid_t gid,
-                                      pid_t pid,
-                                      std::list<std::string>* groupnames) {
+void UserMappingGridmap::GetGroupnames(
+    const std::string& username_local,
+    xtreemfs::pbrpc::UserCredentials* user_credentials) {
   // obtain dn of current process
-  std::string dn = UIDToUsername(uid);
+  string dn;
+  LocalToGlobalUsername(username_local, &dn);
 
   // map username to ou using gridmap-file
-  DNToOUs(dn, groupnames);
+  DNToOUs(dn, user_credentials);
 }
 
-void UserMappingGridmap::DNToOUs(std::string dn, std::list<std::string>* ous) {
+void UserMappingGridmap::DNToOUs(
+    const std::string& dn,
+    xtreemfs::pbrpc::UserCredentials* user_credentials) {
   // find groups for current user
 
   boost::mutex::scoped_lock lock(mutex);
@@ -128,7 +120,7 @@ void UserMappingGridmap::DNToOUs(std::string dn, std::list<std::string>* ous) {
   for (iter = range.first;  iter != range.second;  ++iter) {
 //        Logging::log->getLog(LEVEL_DEBUG)
 //            << "group: " << iter->second << std::endl;
-    ous->push_back(iter->second);
+    user_credentials->add_groups(iter->second);
   }
 }
 
@@ -161,13 +153,13 @@ void UserMappingGridmap::PeriodicGridmapFileReload() {
   if (ierr != 0) {
     throw XtreemFSException("Failed to open gridmap file: " + gridmap_file_);
   }
-  int date = st.st_mtime;
+  time_t date = st.st_mtime;
 
   // monitor changes to the gridmap file
   while (true) {
     // send thread to sleep for user_group_monitor_m minutes
-    boost::posix_time::seconds workTime(gridmap_reload_interval_s_);
-    boost::this_thread::sleep(workTime);
+    boost::posix_time::seconds sleep_time(gridmap_reload_interval_s_);
+    boost::this_thread::sleep(sleep_time);
 
     ierr = stat(gridmap_file_.c_str(), &st);
     if (st.st_mtime != date) {
@@ -191,7 +183,7 @@ void UserMappingGridmap::Store(
   escaped_list_separator<char> els2("", user_seperator.c_str(), "");
   tokenizer< escaped_list_separator<char> > tok_user(users, els2);
   tokenizer< escaped_list_separator<char> >::iterator first_username
-    = tok_user.begin();
+      = tok_user.begin();
   std::string user = std::string(*first_username);
 
 //      cout << "gridmap: dn: '" << dn << "'" << std::endl;
@@ -216,4 +208,3 @@ void UserMappingGridmap::Store(
 }
 
 }  // namespace xtreemfs
-#endif // !WIN32
