@@ -33,7 +33,7 @@ using namespace std;
 using namespace xtreemfs::util;
 using namespace xtreemfs::pbrpc;
 
-// Fix ambigiuous map error on Solaris (see
+// Fix ambiguous map error on Solaris (see
 // http://groups.google.com/group/xtreemfs/msg/b44605dbbd7b6d0f)
 using std::map;
 
@@ -297,7 +297,7 @@ FileHandle* VolumeImplementation::OpenFile(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path,
     const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags) {
-  return OpenFile(user_credentials, path, flags, 0, 0);
+  return OpenFile(user_credentials, path, flags, 0, 0, 0);
 }
 
 FileHandle* VolumeImplementation::OpenFile(
@@ -305,7 +305,16 @@ FileHandle* VolumeImplementation::OpenFile(
     const std::string& path,
     const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
     uint32_t mode) {
-  return OpenFile(user_credentials, path, flags, mode, 0);
+  return OpenFile(user_credentials, path, flags, mode, 0, 0);
+}
+
+FileHandle* VolumeImplementation::OpenFile(
+    const xtreemfs::pbrpc::UserCredentials& user_credentials,
+    const std::string& path,
+    const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
+    boost::uint32_t mode,
+    boost::uint32_t attributes) {
+  return OpenFile(user_credentials, path, flags, mode, attributes, 0);
 }
 
 /**
@@ -316,6 +325,7 @@ FileHandle* VolumeImplementation::OpenFile(
     const std::string& path,
     const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
     uint32_t mode,
+    boost::uint32_t attributes,
     int truncate_new_file_size) {
   bool async_writes_enabled = (volume_options_.max_writeahead > 0);
 
@@ -332,7 +342,7 @@ FileHandle* VolumeImplementation::OpenFile(
   rq.set_path(path);
   rq.set_flags(flags);
   rq.set_mode(mode);
-  rq.set_attributes(0);
+  rq.set_attributes(attributes);
 
   // set vivaldi coordinates if vivaldi is enabled
   if (volume_options_.vivaldi_enable) {
@@ -405,19 +415,19 @@ FileHandle* VolumeImplementation::OpenFile(
           << "open called with O_TRUNC." << endl;
     }
 
-      // Update mtime and ctime of the file if O_TRUNC was set.
-      metadata_cache_.UpdateStatTime(
-          path,
-          timestamp_s,
-          static_cast<Setattrs>(SETATTR_CTIME | SETATTR_MTIME));
+    // Update mtime and ctime of the file if O_TRUNC was set.
+    metadata_cache_.UpdateStatTime(
+        path,
+        timestamp_s,
+        static_cast<Setattrs>(SETATTR_CTIME | SETATTR_MTIME));
 
-      try {
-        file_handle->TruncatePhaseTwoAndThree(truncate_new_file_size);
-      } catch(const XtreemFSException&) {
-        // Truncate did fail, close file again.
-        file_handle->Close();
-        throw;  // Rethrow error.
-      }
+    try {
+      file_handle->TruncatePhaseTwoAndThree(truncate_new_file_size);
+    } catch(const XtreemFSException&) {
+      // Truncate did fail, close file again.
+      file_handle->Close();
+      throw;  // Rethrow error.
+    }
   }
 
   return file_handle;
@@ -496,45 +506,55 @@ void VolumeImplementation::GetAttrHelper(
     const std::string& path,
     bool ignore_metadata_cache,
     xtreemfs::pbrpc::Stat* stat_buffer) {
-  // Check if the information was cached.
-  if (!ignore_metadata_cache && metadata_cache_.GetStat(path, stat_buffer)) {
-    // Found in StatCache.
-    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-      Logging::log->getLog(LEVEL_DEBUG)
-          << "getattr: serving from stat-cache " << path
-          << " " << stat_buffer->size() << endl;
+  if (!ignore_metadata_cache) {
+    // Check if the information was cached.
+    MetadataCache::GetStatResult stat_cached =
+        metadata_cache_.GetStat(path, stat_buffer);
+
+    if (stat_cached == MetadataCache::kStatCached) {
+      // Found in StatCache.
+      if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+        Logging::log->getLog(LEVEL_DEBUG)
+            << "getattr: serving from stat-cache " << path
+            << " " << stat_buffer->size() << endl;
+      }
+      return;
+    } else if (stat_cached == MetadataCache::kPathDoesntExist) {
+      throw PosixErrorException(
+          POSIX_ERROR_ENOENT,
+          "Path was not found in the cached parent directory. Path: " + path);
     }
-  } else {
-    // Not found in StatCache, retrieve from MRC.
-    getattrRequest rq;
-    rq.set_volume_name(volume_name_);
-    rq.set_path(path);
-    rq.set_known_etag(0);
-
-    boost::scoped_ptr<rpc::SyncCallbackBase> response(
-        ExecuteSyncRequest(
-            boost::bind(
-                &xtreemfs::pbrpc::MRCServiceClient::getattr_sync,
-                mrc_service_client_.get(),
-                _1,
-                boost::cref(auth_bogus_),
-                boost::cref(user_credentials),
-                &rq),
-            mrc_uuid_iterator_.get(),
-            uuid_resolver_,
-            RPCOptionsFromOptions(volume_options_)));
-    getattrResponse* getattr = static_cast<getattrResponse*>(
-        response->response());
-
-    stat_buffer->CopyFrom(getattr->stbuf());
-    if (stat_buffer->nlink() > 1) {  // Do not cache hard links.
-      metadata_cache_.Invalidate(path);
-    } else {
-      metadata_cache_.UpdateStat(path, *stat_buffer);
-    }
-
-    response->DeleteBuffers();
   }
+
+  // Not found in StatCache, retrieve from MRC.
+  getattrRequest rq;
+  rq.set_volume_name(volume_name_);
+  rq.set_path(path);
+  rq.set_known_etag(0);
+
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
+          boost::bind(
+              &xtreemfs::pbrpc::MRCServiceClient::getattr_sync,
+              mrc_service_client_.get(),
+              _1,
+              boost::cref(auth_bogus_),
+              boost::cref(user_credentials),
+              &rq),
+          mrc_uuid_iterator_.get(),
+          uuid_resolver_,
+          RPCOptionsFromOptions(volume_options_)));
+  getattrResponse* getattr = static_cast<getattrResponse*>(
+      response->response());
+
+  stat_buffer->CopyFrom(getattr->stbuf());
+  if (stat_buffer->nlink() > 1) {  // Do not cache hard links.
+    metadata_cache_.Invalidate(path);
+  } else {
+    metadata_cache_.UpdateStat(path, *stat_buffer);
+  }
+
+  response->DeleteBuffers();
 }
 
 void VolumeImplementation::GetAttr(
@@ -614,6 +634,28 @@ void VolumeImplementation::SetAttr(
     const std::string& path,
     const xtreemfs::pbrpc::Stat& stat,
     xtreemfs::pbrpc::Setattrs to_set) {
+  // Based on possibly cached stat, find out which attributes actually have
+  // to be updated.
+  Setattrs actual_to_set = metadata_cache_.SimulateSetStatAttributes(path,
+                                                                     stat,
+                                                                     to_set);
+  if (actual_to_set == 0) {
+    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+      Logging::log->getLog(LEVEL_DEBUG) << "Skipped setting attributes since"
+          " the to be changed attributes are identical to the cached ones."
+          "Path: " << path << endl;
+    }
+    return;
+  }
+  if (!volume_options_.enable_atime && actual_to_set == SETATTR_ATIME) {
+    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+      Logging::log->getLog(LEVEL_DEBUG) << "Skipped setting attributes since"
+          " the only changed attribute would have been atime and atime updates"
+          " are currently ignored. Path: " << path << endl;
+    }
+    return;
+  }
+
   setattrRequest rq;
   rq.set_volume_name(volume_name_);
   rq.set_path(path);
@@ -643,7 +685,7 @@ void VolumeImplementation::SetAttr(
         ts_response->timestamp_s()) * 1000000000);
   }
 
-  // Do not cache hardlinks or chmod operations which try to set the SGID bit
+  // Do not cache hard links or chmod operations which try to set the SGID bit
   // as it might get cleared by the MRC.
   if (rq.stbuf().nlink() > 1 ||
       ((to_set & SETATTR_MODE) && (rq.stbuf().mode() & (1 << 10)))) {
@@ -924,8 +966,9 @@ xtreemfs::pbrpc::DirectoryEntries* VolumeImplementation::ReadDir(
        current_offset += volume_options_.readdir_chunk_size) {
     rq.set_seen_directory_entries_count(current_offset);
     // Read complete chunk or only remaining rest.
-    rq.set_limit_directory_entries_count(current_offset > offset + count ?
-        current_offset - offset - count : volume_options_.readdir_chunk_size);
+    rq.set_limit_directory_entries_count(static_cast<uint32_t>(
+        current_offset > offset + count ?
+        current_offset - offset - count : volume_options_.readdir_chunk_size));
 
     boost::scoped_ptr<rpc::SyncCallbackBase> response(
         ExecuteSyncRequest(
@@ -973,13 +1016,19 @@ xtreemfs::pbrpc::DirectoryEntries* VolumeImplementation::ReadDir(
        i < min(volume_options_.metadata_cache_size,
                static_cast<uint64_t>(result->entries_size()));
        i++) {
-    if (result->entries(i).has_stbuf()) {
-      if (result->entries(i).stbuf().nlink() > 1) {  // Do not cache hard links.
+    const DirectoryEntry& dentry = result->entries(i);
+    if (dentry.has_stbuf()) {
+      if (dentry.name() == ".") {
+        metadata_cache_.UpdateStat(path, dentry.stbuf());
+      } else if (dentry.name() == ".." && path != "/") {
+        string parent_dir = ResolveParentDirectory(path);
+        metadata_cache_.UpdateStat(parent_dir, dentry.stbuf());
+      } else if (dentry.stbuf().nlink() > 1) {  // Do not cache hard links.
         metadata_cache_.Invalidate(path);
       } else {
         metadata_cache_.UpdateStat(
-            ConcatenatePath(path, result->entries(i).name()),
-            result->entries(i).stbuf());
+            ConcatenatePath(path, dentry.name()),
+            dentry.stbuf());
       }
     }
   }
@@ -990,7 +1039,9 @@ xtreemfs::pbrpc::DirectoryEntries* VolumeImplementation::ReadDir(
   // TODO(mberlin): Cache only names and no stat entries and remove names_only
   //                condition.
   // TODO(mberlin): Set an upper bound of dentries, otherwise don't cache it.
-  if (offset == 0 && result->entries_size() < count && !names_only) {
+  if (offset == 0 &&
+      static_cast<uint32_t>(result->entries_size()) < count &&
+      !names_only) {
     metadata_cache_.UpdateDirEntries(path, *result);
   }
 

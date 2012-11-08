@@ -146,10 +146,27 @@ class Volume {
    * @throws UnknownAddressSchemeException
    */
   virtual FileHandle* OpenFile(
-        const xtreemfs::pbrpc::UserCredentials& user_credentials,
-        const std::string& path,
-        const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
-        uint32_t mode) = 0;
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      const std::string& path,
+      const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
+      uint32_t mode) = 0;
+
+  /** Same as previous OpenFile() except for the additional parameter
+   *  "attributes" which also stores Windows FileAttributes on the MRC
+   *  when creating a file. See the MSDN article "File Attribute Constants" for
+   *  the list of possible  *  values e.g., here: http://msdn.microsoft.com/en-us/library/windows/desktop/gg258117%28v=vs.85%29.aspx  // NOLINT
+   *
+   * @throws AddressToUUIDNotFoundException
+   * @throws IOException
+   * @throws PosixErrorException
+   * @throws UnknownAddressSchemeException
+   */
+  virtual FileHandle* OpenFile(
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      const std::string& path,
+      const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
+      uint32_t mode,
+      uint32_t attributes) = 0;
 
   /** Truncates the file to "new_file_size_ bytes.
    *

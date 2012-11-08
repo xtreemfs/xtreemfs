@@ -100,12 +100,20 @@ class VolumeImplementation : public Volume {
       const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
       uint32_t mode);
 
+  virtual FileHandle* OpenFile(
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      const std::string& path,
+      const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
+      uint32_t mode,
+      uint32_t attributes);
+
   /** Used by Volume->Truncate(). Otherwise truncate_new_file_size = 0. */
   FileHandle* OpenFile(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& path,
       const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
       uint32_t mode,
+      uint32_t attributes,
       int truncate_new_file_size);
 
   virtual void Truncate(
@@ -350,7 +358,7 @@ class VolumeImplementation : public Volume {
   /** The PBRPC protocol requires an Auth & UserCredentials object in every
    *  request. However there are many operations which do not check the content
    *  of this operation and therefore we use bogus objects then.
-   *  user_credentials_bogus will only contain a user "xtreems".
+   *  user_credentials_bogus will only contain a user "xtreemfs".
    *
    *  @remark Cannot be set to const because it's modified inside the
    *          constructor VolumeImplementation(). */
