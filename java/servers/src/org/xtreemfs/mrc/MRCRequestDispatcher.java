@@ -158,10 +158,9 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 config.mergeConfig(remoteConfig);
                 // TODO(mberlin): Also add support for remote BabuDB configurations.
             } catch (Exception e) {
-                e.printStackTrace();
-                Logging.logMessage(Logging.LEVEL_WARN, config.getUUID(),
-                        "couldn't fetch configuration file from DIR");
-                Logging.logError(Logging.LEVEL_DEBUG, config.getUUID(), e);
+                Logging.logMessage(Logging.LEVEL_WARN, this,
+                        "Couldn't fetch configuration from DIR. Reason: " + e.getMessage());
+                Logging.logError(Logging.LEVEL_DEBUG, this, e);
             }
         }
         

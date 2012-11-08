@@ -214,9 +214,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 ServiceConfig remoteConfig = RemoteConfigHelper.getConfigurationFromDIR(config);
                 config.mergeConfig(remoteConfig);
             } catch (Exception e) {
-                e.printStackTrace();
-                Logging.logMessage(Logging.LEVEL_WARN, config.getUUID(),
-                        "couldn't fetch configuration file from DIR");
+                Logging.logMessage(Logging.LEVEL_WARN, this,
+                        "Couldn't fetch configuration from DIR. Reason: " + e.getMessage());
                 Logging.logError(Logging.LEVEL_DEBUG, config.getUUID(), e);
             }
         }
