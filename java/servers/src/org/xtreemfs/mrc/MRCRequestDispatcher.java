@@ -792,8 +792,10 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         final RPCHeader.RequestHeader rqHdr = hdr.getRequestHeader();
         
         if (rqHdr.getInterfaceId() != MRCServiceConstants.INTERFACE_ID) {
-            rq.sendError(ErrorType.INVALID_INTERFACE_ID, POSIXErrno.POSIX_ERROR_EIO,
-                    "invalid interface id. Maybe wrong service address/port configured?");
+            rq.sendError(
+                    ErrorType.INVALID_INTERFACE_ID,
+                    POSIXErrno.POSIX_ERROR_EIO,
+                    "Invalid interface id. This is a MRC service. You probably wanted to contact another service. Check the used address and port.");
             return;
         }
         
