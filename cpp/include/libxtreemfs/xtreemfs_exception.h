@@ -38,7 +38,7 @@ class PosixErrorException : public XtreemFSException {
  *  side. */
 class IOException : public XtreemFSException {
  public:
-  IOException() : XtreemFSException("IOError occured.") {}
+  IOException() : XtreemFSException("IOError occurred.") {}
   explicit IOException(const std::string& msg)
     : XtreemFSException(msg) {}
 };
