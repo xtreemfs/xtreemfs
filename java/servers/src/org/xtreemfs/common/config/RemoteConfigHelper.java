@@ -24,54 +24,59 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 
 public class RemoteConfigHelper {
     public static ServiceConfig getConfigurationFromDIR(ServiceConfig config) throws Exception {
-        final int WAIT_BETWEEN_RETRIES = 1000;
-        int retries = config.getWaitForDIR() * 1000 / WAIT_BETWEEN_RETRIES;
-        if (retries <= 0) {
-            retries = 1;
-        }
-        Logging.logMessage(Logging.LEVEL_INFO, null, "Loading configuration from DIR (will retry up to %d times)", retries);
-
-        SSLOptions sslOptions = config.isUsingSSL() ? new SSLOptions(new FileInputStream(
-                config.getServiceCredsFile()), config.getServiceCredsPassphrase(),
-                config.getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()),
-                config.getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false,
-                config.isGRIDSSLmode(), new PolicyContainer(config).getTrustManager()) : null;
-
-        RPCNIOSocketClient clientStage = new RPCNIOSocketClient(sslOptions, 1000, 60 * 1000, "RemoteConfigHelper");
-        DIRServiceClient dirRPCClient = new DIRServiceClient(clientStage, config.getDirectoryService());
-        DIRClient dirClient = new DIRClient(dirRPCClient, config.getDirectoryServices(), retries,
-                WAIT_BETWEEN_RETRIES);
-
-        clientStage.start();
-        clientStage.waitForStartup();
-
         TimeSync ts = null;
-        boolean timeSyncAlreadyRunning = TimeSync.isInitialized();
-        if (!timeSyncAlreadyRunning) {
-            ts = TimeSync.initializeLocal(50);
-            ts.waitForStartup();
+        boolean timeSyncAlreadyRunning = true;
+
+        try {
+            final int WAIT_BETWEEN_RETRIES = 1000;
+            int retries = config.getWaitForDIR() * 1000 / WAIT_BETWEEN_RETRIES;
+            if (retries <= 0) {
+                retries = 1;
+            }
+            Logging.logMessage(Logging.LEVEL_INFO, null, "Loading configuration from DIR (will retry up to %d times)", retries);
+    
+            SSLOptions sslOptions;
+            sslOptions = config.isUsingSSL() ? new SSLOptions(new FileInputStream(
+                    config.getServiceCredsFile()), config.getServiceCredsPassphrase(),
+                    config.getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()),
+                    config.getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false,
+                    config.isGRIDSSLmode(), new PolicyContainer(config).getTrustManager()) : null;
+    
+            RPCNIOSocketClient clientStage = new RPCNIOSocketClient(sslOptions, 1000, 60 * 1000, "RemoteConfigHelper");
+            DIRServiceClient dirRPCClient = new DIRServiceClient(clientStage, config.getDirectoryService());
+            DIRClient dirClient = new DIRClient(dirRPCClient, config.getDirectoryServices(), retries,
+                    WAIT_BETWEEN_RETRIES);
+    
+            clientStage.start();
+            clientStage.waitForStartup();
+    
+            timeSyncAlreadyRunning = TimeSync.isInitialized();
+            if (!timeSyncAlreadyRunning) {
+                ts = TimeSync.initializeLocal(50);
+                ts.waitForStartup();
+            }
+    
+            Auth authNone = Auth.newBuilder().setAuthType(AuthType.AUTH_NONE).build();
+            UserCredentials uc = UserCredentials.newBuilder().setUsername("main-method")
+                    .addGroups("xtreemfs-services").build();
+    
+            Configuration conf = dirClient.xtreemfs_configuration_get(null, authNone, uc, config.getUUID()
+                    .toString());
+    
+            clientStage.shutdown();
+            clientStage.waitForShutdown();
+    
+            HashMap<String, String> returnMap = new HashMap<String, String>();
+    
+            for (KeyValuePair kvp : conf.getParameterList()) {
+                returnMap.put(kvp.getKey(), kvp.getValue());
+            }
+    
+            return new ServiceConfig(returnMap);
+        } finally {
+            if (!timeSyncAlreadyRunning && ts != null) {
+                ts.close();
+            }
         }
-
-        Auth authNone = Auth.newBuilder().setAuthType(AuthType.AUTH_NONE).build();
-        UserCredentials uc = UserCredentials.newBuilder().setUsername("main-method")
-                .addGroups("xtreemfs-services").build();
-
-        Configuration conf = dirClient.xtreemfs_configuration_get(null, authNone, uc, config.getUUID()
-                .toString());
-
-        clientStage.shutdown();
-        clientStage.waitForShutdown();
-
-        HashMap<String, String> returnMap = new HashMap<String, String>();
-
-        for (KeyValuePair kvp : conf.getParameterList()) {
-            returnMap.put(kvp.getKey(), kvp.getValue());
-        }
-
-        if (!timeSyncAlreadyRunning) {
-            ts.close();
-        }
-
-        return new ServiceConfig(returnMap);
     };
 }
