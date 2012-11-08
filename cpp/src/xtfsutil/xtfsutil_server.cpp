@@ -5,6 +5,8 @@
  *
  */
 
+#include "xtfsutil/xtfsutil_server.h"
+
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -14,7 +16,7 @@
 #include <list>
 #ifndef WIN32
 #include <sys/fcntl.h>
-#endif
+#endif  // !WIN32
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -24,7 +26,6 @@
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "util/error_log.h"
 #include "util/logging.h"
-#include "xtfsutil/xtfsutil_server.h"
 
 using namespace std;
 using namespace xtreemfs::util;
@@ -414,7 +415,7 @@ void XtfsUtilServer::OpSetReplicationPolicy(
     try {
       Stat stat;
       volume_->GetAttr(uc, path, true, &stat);
-    } catch(const exception& e) {
+    } catch(const exception&) {
       // Ignore errors.
     }
   }
@@ -526,7 +527,7 @@ void XtfsUtilServer::OpGetSuitableOSDs(
     try {
       // Try to resolve the UUID to hostname and port.
       uuid_resolver_->UUIDToAddress(*iter, &address);
-    } catch(const XtreemFSException &e) {
+    } catch(const XtreemFSException&) {
       // Ignore errors if the address could not be obtained successfully.
     }
     if (address.empty()) {
@@ -684,7 +685,7 @@ int XtfsUtilServer::read(uid_t uid,
   if (!file) {
     return -1 * ENOENT;
   }
-  const int length = file->last_result().size();
+  const size_t length = file->last_result().size();
   if (size < length) {
     return -1 * EINVAL;
   }
@@ -710,6 +711,7 @@ int XtfsUtilServer::write(uid_t uid,
   return size;
 }
 
+// TODO(mberlin): Fix for WIN32.
 int XtfsUtilServer::getattr(uid_t uid,
                             gid_t gid,
                             const std::string& path,
@@ -735,6 +737,7 @@ int XtfsUtilServer::getattr(uid_t uid,
   st_buf->st_mtimespec.tv_nsec = 0;
 #endif
 
+#ifndef WIN32
   st_buf->st_blksize = 1024;
   st_buf->st_blocks = 0;
   st_buf->st_dev = 0;
@@ -745,6 +748,7 @@ int XtfsUtilServer::getattr(uid_t uid,
   st_buf->st_rdev = 0;
   st_buf->st_uid = file->get_uid();
   st_buf->st_size = file->last_result().size();
+#endif  // !WIN32
   return 0;
 }
 
