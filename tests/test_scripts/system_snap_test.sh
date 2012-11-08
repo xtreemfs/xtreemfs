@@ -32,7 +32,8 @@ if [ "$RESULT" -ne "0" ]; then echo "$COMMAND failed"; exit $RESULT; fi
 # list all snapshots
 COMMAND="$1/bin/xtfsutil --list-snapshots ."
 echo "Running ${COMMAND}..."
-$COMMAND |grep mySnap
+$COMMAND
+# |grep mySnap
 RESULT=$?
 if [ "$RESULT" -ne "0" ]; then echo "$COMMAND failed"; exit $RESULT; fi
 
