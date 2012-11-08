@@ -160,7 +160,8 @@ void ClientConnection::Connect() {
 }
 
 void ClientConnection::OnConnectTimeout(const boost::system::error_code& err) {
-  if (err == asio::error::operation_aborted || connection_state_ == CLOSED) {
+  if (err == asio::error::operation_aborted || err == asio::error::eof
+      || connection_state_ == CLOSED) {
     return;
   }
   Reset();
@@ -171,7 +172,8 @@ void ClientConnection::OnConnectTimeout(const boost::system::error_code& err) {
 
 void ClientConnection::PostResolve(const boost::system::error_code& err,
                                    tcp::resolver::iterator endpoint_iterator) {
-  if (err == asio::error::operation_aborted || connection_state_ == CLOSED) {
+  if (err == asio::error::operation_aborted || err == asio::error::eof
+      || connection_state_ == CLOSED) {
     return;
   }
   if (err) {
@@ -205,7 +207,8 @@ void ClientConnection::PostResolve(const boost::system::error_code& err,
 
 void ClientConnection::PostConnect(const boost::system::error_code& err,
                                    tcp::resolver::iterator endpoint_iterator) {
-  if (err == asio::error::operation_aborted || connection_state_ == CLOSED) {
+  if (err == asio::error::operation_aborted || err == asio::error::eof
+      || connection_state_ == CLOSED) {
     return;
   }
   timer_.cancel();
@@ -358,7 +361,8 @@ void ClientConnection::Close(const std::string& error) {
 
 void ClientConnection::PostWrite(const boost::system::error_code& err,
                                  size_t bytes_written) {
-  if (err == asio::error::operation_aborted || connection_state_ == CLOSED) {
+  if (err == asio::error::operation_aborted || err == asio::error::eof
+      || connection_state_ == CLOSED) {
     return;
   }
   if (err) {
@@ -381,7 +385,8 @@ void ClientConnection::PostWrite(const boost::system::error_code& err,
 
 void ClientConnection::PostReadRecordMarker(
     const boost::system::error_code& err) {
-  if (err == asio::error::operation_aborted || connection_state_ == CLOSED) {
+  if (err == asio::error::operation_aborted || err == asio::error::eof
+      || connection_state_ == CLOSED) {
     return;
   }
   if (err) {
@@ -419,7 +424,8 @@ void ClientConnection::PostReadRecordMarker(
 }
 
 void ClientConnection::PostReadMessage(const boost::system::error_code& err) {
-  if (err == asio::error::operation_aborted || connection_state_ == CLOSED) {
+  if (err == asio::error::operation_aborted || err == asio::error::eof
+      || connection_state_ == CLOSED) {
     return;
   }
   if (err) {
