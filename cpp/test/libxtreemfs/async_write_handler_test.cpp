@@ -81,12 +81,11 @@ TEST_F(AsyncWriteHandlerTest, NormalWrite) {
   boost::scoped_array<char> write_buf(new char[buffer_size]);
 
   vector<WriteEntry> expected(blocks);
-  for (int i = 0; i < blocks; ++i) {
+  for (size_t i = 0; i < blocks; ++i) {
     expected[i] = WriteEntry(i, 0, BLOCK_SIZE);
   }
 
-  file->Write(test_env.user_credentials,
-              write_buf.get(),
+  file->Write(write_buf.get(),
               buffer_size,
               0);
 
@@ -108,14 +107,14 @@ TEST_F(AsyncWriteHandlerTest, FirstWriteFail) {
   boost::scoped_array<char> write_buf(new char[buffer_size]);
 
   vector<WriteEntry> expected_tail(blocks);
-  for (int i = 0; i < blocks; ++i) {
+  for (size_t i = 0; i < blocks; ++i) {
     expected_tail[i] = WriteEntry(i, 0, BLOCK_SIZE);
   }
 
   test_env.osds[0]->AddDropRule(
       new ProcIDFilterRule(xtreemfs::pbrpc::PROC_ID_WRITE, new DropNRule(1)));
 
-  file->Write(test_env.user_credentials, write_buf.get(), buffer_size, 0);
+  file->Write(write_buf.get(), buffer_size, 0);
 
   boost::this_thread::sleep(boost::posix_time::seconds(
       test_env.options.connect_timeout_s +
@@ -137,7 +136,7 @@ TEST_F(AsyncWriteHandlerTest, LastWriteFail) {
 
   vector<WriteEntry> expected_front(blocks - 1);
   vector<WriteEntry> expected_tail(1);
-  for (int i = 0; i < blocks - 1; ++i) {
+  for (size_t i = 0; i < blocks - 1; ++i) {
     expected_front[i] = WriteEntry(i, 0, BLOCK_SIZE);
   }
 
@@ -147,7 +146,7 @@ TEST_F(AsyncWriteHandlerTest, LastWriteFail) {
       new ProcIDFilterRule(xtreemfs::pbrpc::PROC_ID_WRITE,
                            new SkipMDropNRule(blocks - 1, 1)));
 
-  file->Write(test_env.user_credentials, write_buf.get(), buffer_size, 0);
+  file->Write(write_buf.get(), buffer_size, 0);
 
   boost::this_thread::sleep(boost::posix_time::seconds(
       test_env.options.connect_timeout_s +
@@ -176,11 +175,11 @@ TEST_F(AsyncWriteHandlerTest, IntermediateWriteFail) {
 
   vector<WriteEntry> expected_front(middle);
   vector<WriteEntry> expected_tail(blocks - middle);
-  for (int i = 0; i < middle; ++i) {
+  for (size_t i = 0; i < middle; ++i) {
     expected_front[i] = WriteEntry(i, 0, BLOCK_SIZE);
   }
 
-  for (int i = middle; i < blocks; ++i) {
+  for (size_t i = middle; i < blocks; ++i) {
     expected_tail[i - middle] = WriteEntry(i, 0, BLOCK_SIZE);
   }
 
@@ -188,7 +187,7 @@ TEST_F(AsyncWriteHandlerTest, IntermediateWriteFail) {
       new ProcIDFilterRule(xtreemfs::pbrpc::PROC_ID_WRITE,
                            new SkipMDropNRule(middle, 1)));
 
-  file->Write(test_env.user_credentials, write_buf.get(), buffer_size, 0);
+  file->Write(write_buf.get(), buffer_size, 0);
 
   boost::this_thread::sleep(boost::posix_time::seconds(
       test_env.options.connect_timeout_s +
@@ -215,7 +214,7 @@ TEST_F(AsyncWriteHandlerTest, AllWritesFail) {
   boost::scoped_array<char> write_buf(new char[buffer_size]);
 
   vector<WriteEntry> expected_tail(blocks);
-  for (int i = 0; i < blocks; ++i) {
+  for (size_t i = 0; i < blocks; ++i) {
     expected_tail[i] = WriteEntry(i, 0, BLOCK_SIZE);
   }
 
@@ -223,7 +222,7 @@ TEST_F(AsyncWriteHandlerTest, AllWritesFail) {
       new ProcIDFilterRule(xtreemfs::pbrpc::PROC_ID_WRITE,
                            new DropNRule(blocks)));
 
-  file->Write(test_env.user_credentials, write_buf.get(), buffer_size, 0);
+  file->Write(write_buf.get(), buffer_size, 0);
 
   boost::this_thread::sleep(boost::posix_time::seconds(
       test_env.options.connect_timeout_s +
@@ -248,14 +247,14 @@ TEST_F(AsyncWriteHandlerTest, FirstWriteFailLong) {
   boost::scoped_array<char> write_buf(new char[buffer_size]);
 
   vector<WriteEntry> expected_tail(blocks);
-  for (int i = 0; i < blocks; ++i) {
+  for (size_t i = 0; i < blocks; ++i) {
     expected_tail[i] = WriteEntry(i, 0, BLOCK_SIZE);
   }
 
   test_env.osds[0]->AddDropRule(
       new ProcIDFilterRule(xtreemfs::pbrpc::PROC_ID_WRITE, new DropNRule(1)));
 
-  file->Write(test_env.user_credentials, write_buf.get(), buffer_size, 0);
+  file->Write(write_buf.get(), buffer_size, 0);
 
   boost::this_thread::sleep(boost::posix_time::seconds(
       test_env.options.connect_timeout_s +
