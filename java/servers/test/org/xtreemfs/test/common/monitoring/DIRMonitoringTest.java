@@ -53,10 +53,9 @@ public class DIRMonitoringTest extends TestCase {
     SnmpSession          session;
 
     public DIRMonitoringTest() throws IOException {
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
 
         dirConfig = SetupUtils.createDIRConfig();
-        Logging.start(Logging.LEVEL_DEBUG);
-
     }
 
     @Before

@@ -59,7 +59,7 @@ public class UUIDResolverTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
 
-        Logging.start(Logging.LEVEL_DEBUG);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
 
         // cleanup

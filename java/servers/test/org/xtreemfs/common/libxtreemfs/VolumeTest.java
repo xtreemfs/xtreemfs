@@ -94,7 +94,8 @@ public class VolumeTest {
         System.out.println("TEST: " + VolumeTest.class.getSimpleName());
 
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
-        Logging.start(Logging.LEVEL_DEBUG);
+
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
 
         dirConfig = SetupUtils.createDIRConfig();
         dir = new DIRRequestDispatcher(dirConfig, SetupUtils.createDIRdbsConfig());

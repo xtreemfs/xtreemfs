@@ -137,7 +137,7 @@ public class StripingTest extends TestCase {
     /** Creates a new instance of StripingTest */
     public StripingTest(String testName) throws IOException {
         super(testName);
-        Logging.start(Logging.LEVEL_DEBUG);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
         
         osdCfg1 = SetupUtils.createOSD1Config();
         osdCfg2 = SetupUtils.createOSD2Config();

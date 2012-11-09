@@ -62,9 +62,10 @@ public class DIRTest extends TestCase {
     TestEnvironment      testEnv;
 
     public DIRTest() throws IOException {
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
+
         config = SetupUtils.createDIRConfig();
         dbsConfig = SetupUtils.createDIRdbsConfig();
-        Logging.start(Logging.LEVEL_DEBUG);
     }
 
     @Before

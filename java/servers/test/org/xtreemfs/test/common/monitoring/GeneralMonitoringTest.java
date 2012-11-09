@@ -56,10 +56,9 @@ public class GeneralMonitoringTest extends TestCase {
     private SnmpSession          session;
     
     public GeneralMonitoringTest() throws IOException {
-        
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
+
         dirConfig = SetupUtils.createDIRConfig();
-        Logging.start(Logging.LEVEL_DEBUG);
-        
     }
     
     @Before

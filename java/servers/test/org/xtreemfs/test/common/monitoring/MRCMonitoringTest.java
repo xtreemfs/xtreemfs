@@ -56,9 +56,9 @@ public class MRCMonitoringTest extends TestCase {
     private SnmpSession          session;
 
     public MRCMonitoringTest() throws IOException {
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
 
         dirConfig = SetupUtils.createDIRConfig();
-        Logging.start(Logging.LEVEL_DEBUG);
     }
 
     @Before

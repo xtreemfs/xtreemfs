@@ -61,7 +61,7 @@ public class AdvisoryLocksTest extends TestCase {
     public AdvisoryLocksTest(String testName) throws Exception {
         super(testName);
 
-        Logging.start(Logging.LEVEL_DEBUG);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
 
         osdConfig = SetupUtils.createOSD1Config();
         serverID = SetupUtils.getOSD1UUID();

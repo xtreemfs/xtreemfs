@@ -83,7 +83,7 @@ public class OSDDrainTest extends TestCase {
 
     public OSDDrainTest(String testName) throws IOException {
         super(testName);
-        Logging.start(Logging.LEVEL_DEBUG);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
 
         osdConfig1 = SetupUtils.createOSD1Config();
         osdConfig2 = SetupUtils.createOSD2Config();

@@ -99,7 +99,7 @@ public class DIRClientTest extends TestCase {
     }
     
     public DIRClientTest() {
-        Logging.start(Logging.LEVEL_DEBUG, Category.all);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
     }
     
     @Before

@@ -63,7 +63,7 @@ public class RWReplicationTest extends TestCase {
 
     public RWReplicationTest() {
         super();
-        Logging.start(Logging.LEVEL_DEBUG, Category.all);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
     }
 
 

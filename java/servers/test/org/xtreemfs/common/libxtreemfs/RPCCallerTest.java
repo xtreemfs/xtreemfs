@@ -65,8 +65,9 @@ public class RPCCallerTest {
     public static void initializeTest() throws Exception {
         System.out.println("TEST: " + RPCCallerTest.class.getSimpleName());
 
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
+
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
-        Logging.start(Logging.LEVEL_DEBUG, Category.all);
 
         dirConfig = SetupUtils.createDIRConfig();
         dir = new DIRRequestDispatcher(dirConfig, SetupUtils.createDIRdbsConfig());

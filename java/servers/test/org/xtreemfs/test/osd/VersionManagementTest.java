@@ -61,7 +61,7 @@ public class VersionManagementTest extends TestCase {
     public VersionManagementTest(String testName) throws IOException {
         
         super(testName);
-        Logging.start(Logging.LEVEL_DEBUG);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
         
         osdCfg = SetupUtils.createOSD1Config();
         capSecret = osdCfg.getCapabilitySecret();
