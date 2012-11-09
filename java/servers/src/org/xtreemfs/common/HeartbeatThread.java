@@ -76,18 +76,20 @@ public class HeartbeatThread extends LifeCycleThread {
 
     private final UserCredentials uc;
 
-    public static final String    STATIC_ATTR_PREFIX        = "static.";
+    private static final String   STATIC_ATTR_PREFIX        = "static.";
 
     public static final String    STATUS_ATTR               = STATIC_ATTR_PREFIX + "status";
 
     /**
-     * Only set by heartbeat thread. With this attribute the DIR distinguish between service_register
-     * operation called by a hearbeat thread and calls by utils etc.
+     * If set to true, a RegisterService call (which is the call used by this
+     * thread to regularly report at the DIR) will not update the
+     * last_updated_s field for the service.
+     * Used by tools like xtfs_chstatus.
      */
-    public static final String    HB_ATTR                   = STATIC_ATTR_PREFIX + "isHB";
+    public static final String    DO_NOT_SET_LAST_UPDATED   = STATIC_ATTR_PREFIX + "do_not_set_last_updated";
 
     /**
-     * Timestamp when the last heartbeat was send.
+     * Timestamp when the last heartbeat was sent.
      */
     private long                  lastHeartbeat;
 
@@ -353,8 +355,6 @@ public class HeartbeatThread extends LifeCycleThread {
             if (!staticAttrs.containsKey(STATUS_ATTR))
                 staticAttrs.put(STATUS_ATTR,
                         Integer.toString(DIR.ServiceStatus.SERVICE_STATUS_AVAIL.getNumber()));
-
-            staticAttrs.put(HB_ATTR, Boolean.toString(true));
 
             Service.Builder builder = reg.toBuilder();
             builder.setVersion(currentVersion);

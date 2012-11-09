@@ -178,7 +178,6 @@ public class TestEnvironment {
                 dmap.put("totalRAM", "1000000000");
                 dmap.put("usedRAM", "0");
                 dmap.put("proto_version", "" + OSDServiceConstants.INTERFACE_ID);
-                dmap.put(HeartbeatThread.HB_ATTR, "true");
                 Service reg = Service.newBuilder().setType(ServiceType.SERVICE_TYPE_OSD).setName("mockUpOSD")
                         .setUuid("mockUpOSD").setVersion(0).setLastUpdatedS(0)
                         .setData(ServiceDataMap.newBuilder().addAllData(KeyValuePairs.fromMap(dmap))).build();
@@ -198,7 +197,6 @@ public class TestEnvironment {
                 dmap.put("totalRAM", "1000000000");
                 dmap.put("usedRAM", "0");
                 dmap.put("proto_version", "" + OSDServiceConstants.INTERFACE_ID);
-                dmap.put(HeartbeatThread.HB_ATTR, "true");
                 Service reg = Service.newBuilder().setType(ServiceType.SERVICE_TYPE_OSD).setName("mockUpOSD2")
                         .setUuid("mockUpOSD2").setVersion(0).setLastUpdatedS(0)
                         .setData(ServiceDataMap.newBuilder().addAllData(KeyValuePairs.fromMap(dmap))).build();
@@ -218,7 +216,6 @@ public class TestEnvironment {
                 dmap.put("totalRAM", "1000000000");
                 dmap.put("usedRAM", "0");
                 dmap.put("proto_version", "" + OSDServiceConstants.INTERFACE_ID);
-                dmap.put(HeartbeatThread.HB_ATTR, "true");
                 Service reg = Service.newBuilder().setType(ServiceType.SERVICE_TYPE_OSD).setName("mockUpOSD3")
                         .setUuid("mockUpOSD3").setVersion(0).setLastUpdatedS(0)
                         .setData(ServiceDataMap.newBuilder().addAllData(KeyValuePairs.fromMap(dmap))).build();

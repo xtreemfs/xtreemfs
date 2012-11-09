@@ -981,8 +981,8 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
 
         // Change service status
         List<KeyValuePair> data = new LinkedList<KeyValuePair>(osdService.getData().getDataList());
-        KeyValuePairs
-                .putValue(data, HeartbeatThread.STATUS_ATTR, Integer.toString(serviceStatus.getNumber()));
+        KeyValuePairs.putValue(data, HeartbeatThread.STATUS_ATTR, Integer.toString(serviceStatus.getNumber()));
+        KeyValuePairs.putValue(data, HeartbeatThread.DO_NOT_SET_LAST_UPDATED, Boolean.toString(true));
         ServiceDataMap dataMap = ServiceDataMap.newBuilder().addAllData(data).build();
         osdService = osdService.toBuilder().setData(dataMap).build();
 
@@ -1004,9 +1004,9 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
 
     public ServiceStatus getOSDServiceStatus(String osdUUID) throws IOException {
         Service osdService = getServiceByUUID(osdUUID);
-        String hbAttr = KeyValuePairs.getValue(osdService.getData().getDataList(),
+        String serviceStatus = KeyValuePairs.getValue(osdService.getData().getDataList(),
                 HeartbeatThread.STATUS_ATTR);
-        return ServiceStatus.valueOf(Integer.valueOf(hbAttr));
+        return ServiceStatus.valueOf(Integer.valueOf(serviceStatus));
     }
 
     public Set<String> getRemovedOsds() throws IOException {
@@ -1018,7 +1018,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
 
         for (Service serv : servs.getServicesList()) {
             String hbAttr = KeyValuePairs.getValue(serv.getData().getDataList(), HeartbeatThread.STATUS_ATTR);
-            if ((hbAttr != null) && hbAttr.equalsIgnoreCase(statusRemoved)) {
+            if (hbAttr != null && hbAttr.equalsIgnoreCase(statusRemoved)) {
                 removedOSDs.add(serv.getUuid());
             }
         }

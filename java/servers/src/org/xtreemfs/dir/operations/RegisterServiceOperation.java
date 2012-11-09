@@ -57,9 +57,11 @@ public class RegisterServiceOperation extends DIROperation {
                         long currentVersion = 0;
                         ServiceRecord sRec = new ServiceRecord(request.getService().toBuilder().build());
 
-                        // get HB_ATTR(false if HB_ATTR is not set)
-                        Boolean setLastUpdateS = Boolean.parseBoolean(sRec.getData().get(
-                                HeartbeatThread.HB_ATTR));
+                        // If this request comes from a tool like xtfs_chstatus, this value will be set to
+                        // "true" and the last updated time must not be set to the current time. If it does
+                        // not exist, it will be set to false.
+                        boolean doNotSetLastUpdated = Boolean.parseBoolean(sRec.getData().get(
+                                HeartbeatThread.DO_NOT_SET_LAST_UPDATED));
 
                         if (result != null) {
                             ReusableBuffer buf = ReusableBuffer.wrap(result);
@@ -121,15 +123,15 @@ public class RegisterServiceOperation extends DIROperation {
                         final long version = ++currentVersion;
 
                         reg.setVersion(currentVersion);
-                        if (setLastUpdateS) {
+                        if (!doNotSetLastUpdated) {
                             reg.setLastUpdatedS(System.currentTimeMillis() / 1000l);
                         }
 
                         ServiceRecord newRec = new ServiceRecord(reg.build());
 
-                        // remove HB_ATTR(not needed anymore)
                         Map<String, String> newRecData = newRec.getData();
-                        newRecData.remove(HeartbeatThread.HB_ATTR);
+                        // Remove attributes which must not be stored.
+                        newRecData.remove(HeartbeatThread.DO_NOT_SET_LAST_UPDATED);
                         newRec.setData(newRecData);
 
                         byte[] newData = new byte[newRec.getSize()];

@@ -234,7 +234,7 @@ public class OSDDrain {
                 HeartbeatThread.STATUS_ATTR);
 
         if (serviceStatus == null) {
-            System.out.println("Service " + this.osdUUID + " is not registred at DIR.");
+            System.out.println("Service " + this.osdUUID + " is not registered at DIR.");
             System.exit(3);
         }
 
@@ -255,6 +255,7 @@ public class OSDDrain {
         }
 
         KeyValuePairs.putValue(data2, HeartbeatThread.STATUS_ATTR, Integer.toString(status.ordinal()));
+        KeyValuePairs.putValue(data2, HeartbeatThread.DO_NOT_SET_LAST_UPDATED, Boolean.toString(true));
 
         ServiceDataMap dataMap = ServiceDataMap.newBuilder().addAllData(data2).build();
 
