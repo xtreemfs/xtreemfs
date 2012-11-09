@@ -87,7 +87,7 @@ VolumeConfigs = {
                     'stripe_width': 1,
                     'rwr_factor': 3,
                     'ronly_factor': 0,
-                    'mount_options': [ '--max-writeahead=1310720' ]
+                    'mount_options': [ '--enable-async-writes' ]
                 },
     'replicated_war1' : {
                     'stripe_size': 128,
