@@ -382,13 +382,13 @@ public class StatusPage {
             String statusString = "unknown value";
             switch (status) {
             case SERVICE_STATUS_AVAIL:
-                dump.append("online (new files be assigned to it)");
+                statusString = "online";
                 break;
             case SERVICE_STATUS_TO_BE_REMOVED:
-                dump.append("locked (new files will not be assigned to it)");
+                statusString = "locked";
                 break;
             case SERVICE_STATUS_REMOVED:
-                dump.append("removed (replicas assigned to this OSD will be replaced)");
+                statusString = "removed";
                 break;
             }
 
