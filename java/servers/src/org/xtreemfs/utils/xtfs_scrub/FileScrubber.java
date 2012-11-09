@@ -30,9 +30,8 @@ public class FileScrubber implements Runnable {
 
     private long                       nextObjectToScrub;
 
+    /** Size of the file on the OSD(s). */
     private long                       byteCounter;
-
-    private long                       osdFileSize;
 
     private final Set<String>          removedOSDs;
 
@@ -62,7 +61,6 @@ public class FileScrubber implements Runnable {
 
         nextObjectToScrub = 0;
         byteCounter = 0;
-        osdFileSize = 0;
         this.removedOSDs = removedOSDs;
         this.repair = repair;
         this.delete = delete;
@@ -237,10 +235,10 @@ public class FileScrubber implements Runnable {
                 // get file size on the MRC
                 long mrcFileSize = volume.getAttr(xtfs_scrub.credentials, fileName).getSize();
 
-                if ((osdFileSize != mrcFileSize)) {
+                if (byteCounter != mrcFileSize) {
                     if (repair) {
                         // truncate file
-                        fileHandle.truncate(xtfs_scrub.credentials, (int) byteCounter, true);
+                        fileHandle.truncate(xtfs_scrub.credentials, byteCounter, true);
                         printFileErrorMessage("corrected file size from " + mrcFileSize + " to "
                                 + byteCounter + " bytes");
                     } else {
