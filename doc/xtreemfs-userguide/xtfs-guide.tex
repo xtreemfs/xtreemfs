@@ -2592,7 +2592,7 @@ will only cause the former OSD to be regarded as eligible for new files and repl
 \subsection{Vivaldi}
 \label{sec:vivaldi}
 
-Vivaldi network coordinates are calculated between all OSDs. 
+Vivaldi network coordinates are calculated between all OSDs. Clients optionally calculate their coordinates against the available OSDs.
 In order to take advantage of them, two things are necessary.
 \begin{enumerate}
 \item The vivaldi replica and OSD selection policies must be set at the MRC for the volume(s) (see section~\ref{sec:osd_select_policy} for details).
@@ -2608,7 +2608,15 @@ The latter is done by passing some arguments to the mount command. In most cases
 All client options and their descriptions are available on the help screen of the mount command.
 The server options are listed in the config files \texttt{dirconfig.properties} and \texttt{osdconfig.properties}.
 
-There is a built-in visualization for the vivaldi coordinates.
+\begin{figure}[h]
+ \centering
+ \includegraphics[width=\linewidth]{images/screenshot_vivaldi.png}
+ % screenshot_vivaldi.png: 795x580 pixel, 72dpi, 28.82x29.88 cm, bb=0 0 783 444
+ \caption{Vivaldi visualization showing two OSDs and one client.}
+ \label{fig:screenshot_vivaldi}
+\end{figure}
+
+There is a built-in visualization for the vivaldi coordinates (Fig.~\ref{fig:screenshot_vivaldi}).
 It is accessible from the DIR status page or directly via \href{http://localhost:30638/vivaldi}{http://localhost:30638/vivaldi}.
 Per default, only the OSDs are shown.
 Clients can also be told to send their coordinates to the DIR by adding \verb+--vivaldi--enable-dir-updates+ to the mount command.
