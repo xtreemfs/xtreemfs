@@ -494,7 +494,7 @@ int FuseAdapter::statfs(const char *path, struct statvfs *statv) {
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
-    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
         + string(string(e.what())));
     return -1 * EIO;
   }
@@ -516,7 +516,7 @@ int FuseAdapter::getattr(const char *path, struct stat *statbuf) {
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
-      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
           + string(e.what()));
       return -1 * EIO;
     }
@@ -579,7 +579,7 @@ int FuseAdapter::getxattr(
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
-    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
               + string(e.what()));
     return -1 * EIO;
   }
@@ -607,7 +607,7 @@ int FuseAdapter::opendir(const char *path, struct fuse_file_info *fi) {
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
-      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
                 + string(e.what()));
       return -1 * EIO;
     }
@@ -691,7 +691,7 @@ int FuseAdapter::readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
-      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
                 + string(e.what()));
       return -1 * EIO;
     }
@@ -798,7 +798,7 @@ int FuseAdapter::utime(const char *path, struct utimbuf *ubuf) {
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
-    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
               + string(e.what()));
     return -1 * EIO;
   }
@@ -833,7 +833,7 @@ int FuseAdapter::utimens(const char *path, const struct timespec tv[2]) {
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
-    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
               + string(e.what()));
     return -1 * EIO;
   }
@@ -855,7 +855,7 @@ int FuseAdapter::access(const char *path, int mask) {
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
-      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
                 + string(e.what()));
       return -1 * EIO;
     }
@@ -897,7 +897,7 @@ int FuseAdapter::create(const char *path, mode_t mode,
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
-      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
                 + string(e.what()));
       return -1 * EIO;
     }
@@ -929,7 +929,7 @@ int FuseAdapter::mknod(const char *path, mode_t mode, dev_t device) {
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
-      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
                 + string(e.what()));
       return -1 * EIO;
     }
@@ -952,7 +952,7 @@ int FuseAdapter::mkdir(const char *path, mode_t mode) {
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
-    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
               + string(e.what()));
     return -1 * EIO;
   }
@@ -991,7 +991,7 @@ int FuseAdapter::open(const char *path, struct fuse_file_info *fi) {
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
-    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
               + string(e.what()));
     return -1 * EIO;
   }
@@ -1010,7 +1010,7 @@ int FuseAdapter::truncate(const char *path, off_t new_file_size) {
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
-    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
               + string(e.what()));
     return -1 * EIO;
   }
@@ -1040,7 +1040,7 @@ int FuseAdapter::ftruncate(const char *path,
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
-      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
                 + string(e.what()));
       return -1 * EIO;
     }
@@ -1070,7 +1070,7 @@ int FuseAdapter::write(
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
-      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
                 + string(e.what()));
       return -1 * EIO;
     }
@@ -1107,7 +1107,7 @@ int FuseAdapter::flush(const char *path, struct fuse_file_info *fi) {
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
-      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
                 + string(e.what()));
       return -1 * EIO;
     }
@@ -1134,7 +1134,7 @@ int FuseAdapter::read(const char *path, char *buf, size_t size, off_t offset,
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
-      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
                 + string(e.what()));
       return -1 * EIO;
     }
@@ -1163,7 +1163,7 @@ int FuseAdapter::unlink(const char *path) {
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
-      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
                 + string(e.what()));
       return -1 * EIO;
     }
@@ -1197,7 +1197,7 @@ int FuseAdapter::fgetattr(
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
-      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
                 + string(e.what()));
       return -1 * EIO;
     }
@@ -1225,7 +1225,7 @@ int FuseAdapter::release(const char *path, struct fuse_file_info *fi) {
     try {
       file_handle->ReleaseLockOfProcess(fuse_get_context()->pid);
     } catch(const XtreemFSException& e) {
-      // We dont care if errors occured.
+      // We dont care if errors occurred.
     }
 
     try {
@@ -1237,7 +1237,7 @@ int FuseAdapter::release(const char *path, struct fuse_file_info *fi) {
       fi->fh = static_cast<uint64_t>(NULL);
       return -1 * EIO;
     } catch(const exception& e) {
-      ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+      ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
                 + string(e.what()));
       fi->fh = static_cast<uint64_t>(NULL);
       return -1 * EIO;
@@ -1263,7 +1263,7 @@ int FuseAdapter::readlink(const char *path, char *buf, size_t size) {
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
-    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
               + string(e.what()));
     return -1 * EIO;
   }
@@ -1282,7 +1282,7 @@ int FuseAdapter::rmdir(const char *path) {
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
-    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
               + string(e.what()));
     return -1 * EIO;
   }
@@ -1301,7 +1301,7 @@ int FuseAdapter::symlink(const char *path, const char *link) {
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
-    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
               + string(e.what()));
     return -1 * EIO;
   }
@@ -1320,7 +1320,7 @@ int FuseAdapter::rename(const char *path, const char *newpath) {
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
-    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
               + string(e.what()));
     return -1 * EIO;
   }
@@ -1339,7 +1339,7 @@ int FuseAdapter::link(const char *path, const char *newpath) {
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
-    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
               + string(e.what()));
     return -1 * EIO;
   }
@@ -1363,7 +1363,7 @@ int FuseAdapter::chmod(const char *path, mode_t mode) {
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
-    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
               + string(e.what()));
     return -1 * EIO;
   }
@@ -1410,7 +1410,7 @@ int FuseAdapter::chown(const char *path, uid_t uid, gid_t gid) {
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
-    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
               + string(e.what()));
     return -1 * EIO;
   }
@@ -1442,7 +1442,7 @@ int FuseAdapter::setxattr(
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
-    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
               + string(e.what()));
     return -1 * EIO;
   }
@@ -1486,7 +1486,7 @@ int FuseAdapter::listxattr(const char *path, char *list, size_t size) {
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
-    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
               + string(e.what()));
     return -1 * EIO;
   }
@@ -1510,7 +1510,7 @@ int FuseAdapter::removexattr(const char *path, const char *name) {
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
-    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
               + string(e.what()));
     return -1 * EIO;
   }
@@ -1577,7 +1577,7 @@ int FuseAdapter::lock(const char* path, struct fuse_file_info *fi, int cmd,
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
-    ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
+    ErrorLog::error_log->AppendError("A non-XtreemFS exception occurred: "
               + string(e.what()));
     return -1 * EIO;
   }

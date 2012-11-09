@@ -100,7 +100,7 @@
 //
 //                try {
 //
-//                    // check if an exception has occured
+//                    // check if an exception has occurred
 //                    response.waitForResponse();
 //
 //                    Object[] context = (Object[]) response.getAttachment();

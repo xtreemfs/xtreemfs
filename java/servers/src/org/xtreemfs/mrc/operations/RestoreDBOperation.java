@@ -174,7 +174,7 @@ public class RestoreDBOperation extends MRCOperation {
             
         } catch (SAXException exc) {
             finishRequest(rq, new ErrorRecord(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_NONE, exc
-                    .getException().getMessage() == null ? "an error has occured" : exc.getException()
+                    .getException().getMessage() == null ? "an error has occurred" : exc.getException()
                     .getMessage(), exc.getException()));
         }
     }

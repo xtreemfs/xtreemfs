@@ -33,7 +33,7 @@ then
   done
 
   echo
-  echo "Processed all XtreemFS files and directories. If no errors occured, all files were successfully deleted."
+  echo "Processed all XtreemFS files and directories. If no errors occurred, all files were successfully deleted."
   echo "Please delete this script manually: sudo rm /usr/local/bin/uninstall_xtreemfs.sh"
 else
   echo "XtreemFS uninstallation aborted."

@@ -13,7 +13,7 @@ import org.xtreemfs.foundation.logging.Logging.Category;
 
 /**
  * A base class for threads representing a life cycle. It offers methods for
- * blocking other threads until a certain life cycle event has occured. It
+ * blocking other threads until a certain life cycle event has occurred. It
  * currently supports two life cycle-related events: startup and shutdown.
  * 
  * @author stender

@@ -34,7 +34,7 @@ class SyncCallbackBase : public ClientRequestCallbackInterface {
   /**
    * Returns true if the request has failed. Blocks until
    * response is available.
-   * @return true if an error occured
+   * @return true if an error occurred
    */
   bool HasFailed();
 
