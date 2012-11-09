@@ -206,7 +206,7 @@ MetadataCache::GetStatResult MetadataCache::GetStat(
         MetadataCacheEntry* cache_entry = *it_hash;
 
         if (cache_entry->dir_entries != NULL) {
-          boost::uint64_t current_time_s = time(NULL);
+          uint64_t current_time_s = time(NULL);
           if (cache_entry->dir_entries_timeout_s >= current_time_s) {
             // The parent directory is cached - we can find out if path exists.
             path_probably_exists = false;

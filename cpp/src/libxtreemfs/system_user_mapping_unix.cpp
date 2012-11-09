@@ -117,8 +117,7 @@ uid_t SystemUserMappingUnix::UsernameToUID(const std::string& username) {
           // It's needed to use a 64 bit signed integer to detect a -(2^31)-1
           // as a negative value and not as an overflowed unsigned integer of
           // value 2^32-1.
-          boost::int64_t uid_signed =
-              boost::lexical_cast<boost::int64_t>(username);
+          int64_t uid_signed = boost::lexical_cast<int64_t>(username);
           if (uid_signed < 0) {
             uid = 65534;  // nobody.
           }
@@ -221,8 +220,7 @@ gid_t SystemUserMappingUnix::GroupnameToGID(const std::string& groupname) {
           // It's needed to use a 64 bit signed integer to detect a -(2^31)-1
           // as a negative value and not as an overflowed unsigned integer of
           // value 2^32-1.
-          boost::int64_t gid_signed =
-              boost::lexical_cast<boost::int64_t>(groupname);
+          int64_t gid_signed = boost::lexical_cast<int64_t>(groupname);
           if (gid_signed < 0) {
             gid = 65534;  // nobody.
           }
