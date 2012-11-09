@@ -261,9 +261,9 @@ public class StatusPage {
                 dump.append(lastUpdatedDate);
                 // check timeout only for MRCs and OSDs
                 if (sreg.getType() == ServiceType.SERVICE_TYPE_MRC
-                        | sreg.getType() == ServiceType.SERVICE_TYPE_MRC) {
+                        || sreg.getType() == ServiceType.SERVICE_TYPE_OSD) {
                     long lastUpdateDateTime = lastUpdatedDate.getTime();
-                    if (lastUpdateDateTime < System.currentTimeMillis() - SERVICE_TIMEOUT) {
+                    if (lastUpdateDateTime < (System.currentTimeMillis() - SERVICE_TIMEOUT)) {
                         printTimeAgo(lastUpdateDateTime);
                     }
                 }
