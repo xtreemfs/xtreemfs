@@ -108,7 +108,7 @@ class VolumeImplementation : public Volume {
       uint32_t attributes);
 
   /** Used by Volume->Truncate(). Otherwise truncate_new_file_size = 0. */
-  FileHandle* OpenFile(
+  FileHandle* OpenFileWithTruncateSize(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& path,
       const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,

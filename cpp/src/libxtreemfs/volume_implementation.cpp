@@ -297,7 +297,7 @@ FileHandle* VolumeImplementation::OpenFile(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path,
     const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags) {
-  return OpenFile(user_credentials, path, flags, 0, 0, 0);
+  return OpenFileWithTruncateSize(user_credentials, path, flags, 0, 0, 0);
 }
 
 FileHandle* VolumeImplementation::OpenFile(
@@ -305,27 +305,27 @@ FileHandle* VolumeImplementation::OpenFile(
     const std::string& path,
     const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
     uint32_t mode) {
-  return OpenFile(user_credentials, path, flags, mode, 0, 0);
+  return OpenFileWithTruncateSize(user_credentials, path, flags, mode, 0, 0);
 }
 
-FileHandle* VolumeImplementation::OpenFile(
-    const xtreemfs::pbrpc::UserCredentials& user_credentials,
-    const std::string& path,
-    const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
-    boost::uint32_t mode,
-    boost::uint32_t attributes) {
-  return OpenFile(user_credentials, path, flags, mode, attributes, 0);
-}
-
-/**
- * @throws IOException
- */
 FileHandle* VolumeImplementation::OpenFile(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path,
     const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
     uint32_t mode,
-    boost::uint32_t attributes,
+    uint32_t attributes) {
+  return OpenFileWithTruncateSize(user_credentials, path, flags, mode, attributes, 0);
+}
+
+/**
+ * @throws IOException
+ */
+FileHandle* VolumeImplementation::OpenFileWithTruncateSize(
+    const xtreemfs::pbrpc::UserCredentials& user_credentials,
+    const std::string& path,
+    const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
+    uint32_t mode,
+    uint32_t attributes,
     int truncate_new_file_size) {
   bool async_writes_enabled = volume_options_.enable_async_writes;
 
@@ -440,8 +440,12 @@ void VolumeImplementation::Truncate(
   // Open file with O_TRUNC.
   const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags = static_cast<SYSTEM_V_FCNTL>(
       SYSTEM_V_FCNTL_H_O_TRUNC | SYSTEM_V_FCNTL_H_O_WRONLY);
-  FileHandle* file_handle
-      = OpenFile(user_credentials, path, flags, 0, new_file_size);
+  FileHandle* file_handle = OpenFileWithTruncateSize(user_credentials,
+                                                     path,
+                                                     flags,
+                                                     0,
+                                                     0,
+                                                     new_file_size);
 
   // Close file.
   file_handle->Close();
