@@ -155,7 +155,7 @@ public class xtfs_chstatus {
             System.out.println("online");
             break;
         case SERVICE_STATUS_TO_BE_REMOVED:
-            System.out.println("locked(read-only)");
+            System.out.println("locked (read-only)");
             break;
         case SERVICE_STATUS_REMOVED:
             System.out.println("removed");
@@ -169,7 +169,7 @@ public class xtfs_chstatus {
                 newStatus = ServiceStatus.SERVICE_STATUS_AVAIL;
             } else if (newStatusName.equalsIgnoreCase("locked")) {
                 newStatus = ServiceStatus.SERVICE_STATUS_TO_BE_REMOVED;
-                newStatusName = "locked(read-only)";
+                newStatusName = "locked (read-only)";
             } else if (newStatusName.equalsIgnoreCase("removed")) {
                 newStatus = ServiceStatus.SERVICE_STATUS_REMOVED;
             } else {
@@ -200,12 +200,11 @@ public class xtfs_chstatus {
 
         System.out.println("usage: xtfs_chstatus [options] <OSD UUID> [online|locked|removed]");
         System.out.println("<OSD UUID> the registered UUID for which the status is supposed to be changed");
-        System.out.println(" online - marks the OSD as online");
-        System.out
-                .println(" locked - marks the OSD as locked (locked OSDs will not be assigned to new files)");
-        System.out.println("removed - marks the OSD as no longer available\n");
-
-        System.out.println("options:");
+        System.out.println(" online - Marks the OSD as online.");
+        System.out.println(" locked - Marks the OSD as locked (locked OSDs will not be assigned to new files).");
+        System.out.println("removed - Marks the OSD as no longer available. Replicas on this OSD can be replaced by xtfs_scrub.");
+        System.out.println();
+        System.out.println("Options:");
         utils.printOptions(options);
     }
 
