@@ -40,8 +40,9 @@ class AsyncWriteHandlerTest : public ::testing::Test {
     test_env.options.connect_timeout_s = 15;
     test_env.options.request_timeout_s = 5;
     test_env.options.retry_delay_s = 5;
-    test_env.options.max_writeahead = 1024 * 128 * 8;
-    test_env.options.max_writeahead_requests = 8;
+    test_env.options.enable_async_writes = true;
+    test_env.options.async_writes_max_request_size_kB = 128;
+    test_env.options.async_writes_max_requests = 8;
 
     test_env.options.periodic_xcap_renewal_interval_s = 2;
     test_env.Start();
@@ -242,7 +243,7 @@ TEST_F(AsyncWriteHandlerTest, AllWritesFail) {
 /** Let the first write request fail when there are more writes than
  *  writeahead allows.  The write should be retried and finally succeed. */
 TEST_F(AsyncWriteHandlerTest, FirstWriteFailLong) {
-  size_t blocks = 2 * test_env.options.max_writeahead_requests;
+  size_t blocks = 2 * test_env.options.async_writes_max_requests;
   size_t buffer_size = BLOCK_SIZE * blocks;
   boost::scoped_array<char> write_buf(new char[buffer_size]);
 

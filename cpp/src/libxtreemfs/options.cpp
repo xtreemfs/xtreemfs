@@ -63,9 +63,9 @@ Options::Options()
   // Optimizations.
   metadata_cache_size = 100000;
   metadata_cache_ttl_s = 120;
-  //TODO(mberlin): Reenable async writes when retry support is completed.
-  max_writeahead = 0; // 10 * 128 * 1024;  // 10 default objects = 1280kB = 1.25MB.
-  max_writeahead_requests = 10;  // Only 10 pending requests allowed by default.
+  enable_async_writes = false;
+  async_writes_max_request_size_kB = 128; // default object size in kB
+  async_writes_max_requests = 10;  // Only 10 pending requests allowed by default.
   readdir_chunk_size = 1024;
   enable_atime = false;
 
@@ -197,15 +197,15 @@ void Options::GenerateProgramOptionsDescriptions() {
     ("metadata-cache-ttl-s",
         po::value(&metadata_cache_ttl_s)->default_value(metadata_cache_ttl_s),
         "Time to live after which cached entries will expire.")
-    ("max-writeahead",
-        po::value(&max_writeahead)->default_value(max_writeahead),
-        "Maximum number of pending written bytes per file. Set this to 0"
-        " to completely disable asynchronous writes)")
-    ("max-writeahead-requests",
-        po::value(&max_writeahead_requests)
-            ->default_value(max_writeahead_requests),
-        "Maximum number of pending write requests per file (Asynchronous writes"
-        " will block if this or max-writeahead is reached first).")
+    ("enable-async-writes",
+        po::value(&enable_async_writes)
+          ->default_value(enable_async_writes)->zero_tokens(),
+        "Enables asynchronous writes.")
+    ("async-writes-max-reqs",
+        po::value(&async_writes_max_requests)
+            ->default_value(async_writes_max_requests),
+        "Maximum number of pending write requests per file. Asynchronous writes"
+        " will block if this limit is reached first.")
     ("readdir-chunk-size",
         po::value(&readdir_chunk_size)->default_value(readdir_chunk_size),
         "Number of entries requested per readdir.");
@@ -333,6 +333,11 @@ void Options::GenerateProgramOptionsDescriptions() {
         po::value(&periodic_xcap_renewal_interval_s),
         "Pause time (in seconds) between two invocations of the thread which "
         "renews the XCap of all open file handles.")
+    ("async-writes-max-reqsize-kB",
+        po::value(&async_writes_max_request_size_kB)
+            ->default_value(async_writes_max_request_size_kB),
+        "Maximum size per write request in kB (1024 byte). Usually the object"
+        " size or another system specific upper bound.")
     ("vivaldi-zipf-generator-skew",
         po::value(&vivaldi_zipf_generator_skew)
           ->default_value(vivaldi_zipf_generator_skew),
@@ -392,44 +397,16 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
          << endl << endl;
   }
 
-  if (max_writeahead_requests < 1) {
+  if (async_writes_max_requests < 1) {
     throw InvalidCommandLineParametersException("The maximum number of pending"
-        " asynchronous writes (max-writeahead-requests) must be greater or"
-        " equal 1. If you want to completely disable asynchronous writes,"
-        " please set max-writeahead to 0. The value of max-writeahead-requests"
-        " will be ignored then.");
+        " asynchronous writes (async-writes-max-reqs) must be greater 0.");
   }
 
-  if (max_writeahead != 0 && max_writeahead < 128 * 1024) {
-    throw InvalidCommandLineParametersException("Please specify a writeahead"
-        " size which is at least as high as the default object size of"
-        " 131072 byes (128 kB).");
-  }
 
-  if (max_writeahead != 0 &&
-      (max_writeahead_requests * 128 * 1024 > max_writeahead)) {
-    cerr << "Information: The value max-writeahead-requests may be ineffective"
-            " if you are writing buffers of a multiple of the object size"
-            " (default 128kB), as it does currently limit the number of"
-            " requests to:\n\t"
-         << max_writeahead << " / " << " 128kB default object size = "
-         << (max_writeahead / 128 / 1024) << "\n\t(which is lower than the set"
-            " maximum number of requests: " << max_writeahead_requests << ").\n"
-         << "The recommended max-writeahead for the current maximum number of"
-            " pending writes is: " << (max_writeahead_requests * 128 * 1024)
-         << endl << endl;
-  }
-  if (max_writeahead != 0 &&
-      (max_writeahead > max_writeahead_requests * 128 * 1024)) {
-    cerr << "Information: The value max-writeahead may be ineffective as the"
-            " allowed maximum number of pending writes (max-writeahead-requests"
-            " = " << max_writeahead_requests << ") does limit the maximum"
-            " writeahead considering the default object size 128kB:\n\t"
-         << "max write ahead of " << max_writeahead << " > " << "128kB default"
-            " object size * " << max_writeahead_requests << " max write"
-            " requests (= " << (128 * 1024 * max_writeahead_requests) <<
-            " effective writeahead)."
-         << endl << endl;
+  if (!enable_async_writes && (vm.count("async-writes-max-reqsize-kB") ||
+      vm.count("async-writes-max-reqs"))) {
+    throw InvalidCommandLineParametersException("You specified async-writes-*"
+        " options but did not set enable-async-writes.");
   }
 
   // Show help if no arguments given.

@@ -58,8 +58,9 @@ AsyncWriteHandler::AsyncWriteHandler(
       auth_bogus_(auth_bogus),
       user_credentials_bogus_(user_credentials_bogus),
       volume_options_(volume_options),
-      max_writeahead_(volume_options.max_writeahead),
-      max_writeahead_requests_(volume_options.max_writeahead_requests),
+      max_writeahead_(volume_options.async_writes_max_requests *
+          volume_options.async_writes_max_request_size_kB * 1024),
+      max_requests_(volume_options.async_writes_max_requests),
       max_write_tries_(volume_options.max_write_tries),
       redirected_(false),
       fast_redirect_(false),
@@ -122,13 +123,12 @@ void AsyncWriteHandler::Write(AsyncWriteBuffer* write_buffer) {
     while ((state_ != FINALLY_FAILED) && (writing_paused_ ||
            (pending_bytes_ + write_buffer->data_length) >
                 static_cast<size_t>(max_writeahead_) ||
-            writes_in_flight_.size() == max_writeahead_requests_)) {
+            writes_in_flight_.size() == max_requests_)) {
       // TODO(mberlin): Allow interruption and set the write status of the
       //                FileHandle of the interrupted write to an error state.
       pending_bytes_were_decreased_.wait(lock);
     }
-    assert(writes_in_flight_.size() <=
-              static_cast<size_t>(max_writeahead_requests_));
+    assert(writes_in_flight_.size() <= static_cast<size_t>(max_requests_));
 
     // NOTE: the following is done here to reach all threads that started
     //       waiting before the final failure
@@ -219,7 +219,6 @@ void AsyncWriteHandler::WriteCommon(AsyncWriteBuffer* write_buffer,
                              reinterpret_cast<void*>(write_buffer));
 }
 
-
 void AsyncWriteHandler::WaitForPendingWrites() {
   boost::mutex::scoped_lock lock(mutex_);
   if (pending_writes_ > 0) {
@@ -264,7 +263,6 @@ bool AsyncWriteHandler::WaitForPendingWritesNonBlocking(
     return false;
   }
 }
-
 
 void AsyncWriteHandler::ProcessCallbacks() {
   while (!(boost::this_thread::interruption_requested() &&
@@ -543,8 +541,7 @@ void AsyncWriteHandler::IncreasePendingBytesHelper(
 
   pending_bytes_ += write_buffer->data_length;
   writes_in_flight_.push_back(write_buffer);
-  assert(writes_in_flight_.size() <=
-             static_cast<size_t>(max_writeahead_requests_));
+  assert(writes_in_flight_.size() <= static_cast<size_t>(max_requests_));
 
   state_ = WRITES_PENDING;
 }

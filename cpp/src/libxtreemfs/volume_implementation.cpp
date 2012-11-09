@@ -327,7 +327,7 @@ FileHandle* VolumeImplementation::OpenFile(
     uint32_t mode,
     boost::uint32_t attributes,
     int truncate_new_file_size) {
-  bool async_writes_enabled = (volume_options_.max_writeahead > 0);
+  bool async_writes_enabled = volume_options_.enable_async_writes;
 
   if (flags & SYSTEM_V_FCNTL_H_O_SYNC) {
     if (Logging::log->loggingActive(LEVEL_DEBUG)) {

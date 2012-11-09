@@ -36,6 +36,8 @@ FuseOptions::FuseOptions() : Options(), fuse_descriptions_("Fuse Options") {
   max_tries = 0;
   max_write_tries = 0;
 
+  async_writes_max_request_size_kB = 128; // FUSE specific limit
+
   // Default Fuse options.
 #ifdef __APPLE__
   // We assume that the MacFuse default timeout is 60 seconds on Leopard.

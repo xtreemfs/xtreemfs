@@ -271,7 +271,7 @@ class AsyncWriteHandler
   const int max_writeahead_;
 
   /** Maximum number of pending write requests. */
-  const int max_writeahead_requests_;
+  const int max_requests_;
 
   /** Maximum number of attempts a write will be tried. */
   const int max_write_tries_;
