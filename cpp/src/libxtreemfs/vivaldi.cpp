@@ -176,7 +176,8 @@ void Vivaldi::Run() {
 
         if (Logging::log->loggingActive(LEVEL_DEBUG)) {
           Logging::log->getLog(LEVEL_DEBUG)
-              << "Vivaldi: ping response received." << endl;
+              << "Vivaldi: ping response received. Measured time: "
+              << measured_rtt << " ms" << endl;
         }
 
         // Recalculate coordinates here
