@@ -310,8 +310,9 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
   required_fuse_options->push_back(
       strdup("-ouse_ino,readdir_ino"));
   #ifndef __sun
-  // TODO(mberlin): Respect options_->enable_atime.
+  if (!options_->enable_atime) {
     required_fuse_options->push_back(strdup("-onoatime"));
+  }
   #endif
   required_fuse_options->push_back(strdup(
       (string("-ofsname=xtreemfs@") + options_->xtreemfs_url).c_str()));
