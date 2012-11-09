@@ -301,7 +301,7 @@ public class HeartbeatThread extends LifeCycleThread {
                                         UPDATE_INTERVAL);
                         } else
                             Logging.logMessage(Logging.LEVEL_ERROR, this,
-                                    "An error occured during the periodic registration at the DIR:");
+                                    "An error occurred during the periodic registration at the DIR:");
                         Logging.logError(Logging.LEVEL_ERROR, this, ex);
                     } catch (IOException ex) {
                         Logging.logMessage(Logging.LEVEL_ERROR, this,

@@ -931,7 +931,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
                 } catch (Exception e) {
                     if (Logging.isDebug()) {
                         Logging.logMessage(Logging.LEVEL_DEBUG, this, "renewXcapAsync: The following "
-                                + "error occured during the async all: ", e.getMessage());
+                                + "error occurred during the async all: ", e.getMessage());
                     }
                     fileInfo.asyncFileSizeUpdateResponseHandler(osdWriteResponseForAsyncWriteBack,
                             fileHandle, false);
