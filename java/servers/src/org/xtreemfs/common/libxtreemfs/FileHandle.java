@@ -39,7 +39,7 @@ public interface FileHandle {
      * 
      * @return Number of bytes read.
      */
-    public abstract int read(UserCredentials userCredentials, byte[] data, int count, long offset)
+    public int read(UserCredentials userCredentials, byte[] data, int count, long offset)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -68,7 +68,7 @@ public interface FileHandle {
      * 
      * @return Number of bytes written (see @attention above).
      */
-    public abstract int write(UserCredentials userCredentials, byte[] data, int count, long offset)
+    public int write(UserCredentials userCredentials, byte[] data, int count, long offset)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -100,7 +100,7 @@ public interface FileHandle {
      * 
      * @return Number of bytes written (see @attention above).
      */
-    public abstract int write(UserCredentials userCredentials, byte[] data, int dataOffset, int count,
+    public int write(UserCredentials userCredentials, byte[] data, int dataOffset, int count,
             long offset) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -111,7 +111,7 @@ public interface FileHandle {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract void flush() throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
+    public void flush() throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
      * Truncates the file to "newFileSize_ bytes".
@@ -126,7 +126,7 @@ public interface FileHandle {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      **/
-    public abstract void truncate(UserCredentials userCredentials, long newFileSize) throws IOException,
+    public void truncate(UserCredentials userCredentials, long newFileSize) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -142,7 +142,7 @@ public interface FileHandle {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract Stat getAttr(UserCredentials userCredentials) throws IOException, PosixErrorException,
+    public Stat getAttr(UserCredentials userCredentials) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException;
 
     /**
@@ -171,7 +171,7 @@ public interface FileHandle {
      * 
      * @remark Ownership is transferred to the caller.
      */
-    public abstract Lock acquireLock(UserCredentials userCredentials, int processId, long offset,
+    public Lock acquireLock(UserCredentials userCredentials, int processId, long offset,
             long length, boolean exclusive, boolean waitForLock) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException;
 
@@ -198,7 +198,7 @@ public interface FileHandle {
      * 
      * @remark Ownership is transferred to the caller.
      */
-    public abstract Lock checkLock(UserCredentials userCredentials, int processId, long offset, long length,
+    public Lock checkLock(UserCredentials userCredentials, int processId, long offset, long length,
             boolean exclusive) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -220,7 +220,7 @@ public interface FileHandle {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract void releaseLock(UserCredentials userCredentials, int processId, long offset,
+    public void releaseLock(UserCredentials userCredentials, int processId, long offset,
             long length, boolean exclusive) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException;
 
@@ -237,7 +237,7 @@ public interface FileHandle {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract void releaseLock(UserCredentials userCredentials, Lock lock) throws IOException,
+    public void releaseLock(UserCredentials userCredentials, Lock lock) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -257,7 +257,7 @@ public interface FileHandle {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract void releaseLockOfProcess(int processId) throws IOException, PosixErrorException,
+    public void releaseLockOfProcess(int processId) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException;
 
     /**
@@ -277,7 +277,7 @@ public interface FileHandle {
      * @throws UnknownAddressSchemeException
      * @throws UUIDNotInXlocSetException
      */
-    public abstract void pingReplica(UserCredentials userCredentials, String osdUuid) throws IOException,
+    public void pingReplica(UserCredentials userCredentials, String osdUuid) throws IOException,
             AddressToUUIDNotFoundException;
 
     /**
@@ -297,5 +297,5 @@ public interface FileHandle {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract void close() throws IOException;
+    public void close() throws IOException;
 }

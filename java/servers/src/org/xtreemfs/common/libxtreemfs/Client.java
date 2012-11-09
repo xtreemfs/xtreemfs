@@ -153,7 +153,7 @@ public interface Client {
      * @throws IOException
      * @throws PosixErrorException
      */
-    public abstract void createVolume(String mrcAddress, Auth auth, UserCredentials userCredentials,
+    public void createVolume(String mrcAddress, Auth auth, UserCredentials userCredentials,
             String volumeName, int mode, String ownerUsername, String ownerGroupname,
             AccessControlPolicyType accessPolicyType, StripingPolicyType defaultStripingPolicyType,
             int defaultStripeSize, int defaultStripeWidth, List<KeyValuePair> volumeAttributes)
