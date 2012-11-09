@@ -59,5 +59,5 @@ then
 fi
 
 # Create fstest binary first.
-make -C "$PJD_POSIX_TEST_SUITE"
-$SUDO_CMD prove -r "$PJD_POSIX_TEST_SUITE/tests"
+make -C "$PJD_POSIX_TEST_SUITE" >/dev/null
+$SUDO_CMD prove -r "$PJD_POSIX_TEST_SUITE/tests" 2>/dev/null
