@@ -135,7 +135,7 @@ class Options {
    *  upper bound in the system (e.g. an object size, or the FUSE limit). */
   int async_writes_max_requests;
   /** Number of retrieved entries per readdir request. */
-  int async_writes_max_request_size_kB;
+  int async_writes_max_request_size_kb;
   /** Maximum number of pending async write requests per file. */
   int readdir_chunk_size;
   /** True, if atime requests are enabled in Fuse/not ignored by the library. */

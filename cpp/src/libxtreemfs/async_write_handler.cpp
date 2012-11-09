@@ -59,7 +59,7 @@ AsyncWriteHandler::AsyncWriteHandler(
       user_credentials_bogus_(user_credentials_bogus),
       volume_options_(volume_options),
       max_writeahead_(volume_options.async_writes_max_requests *
-          volume_options.async_writes_max_request_size_kB * 1024),
+          volume_options.async_writes_max_request_size_kb * 1024),
       max_requests_(volume_options.async_writes_max_requests),
       max_write_tries_(volume_options.max_write_tries),
       redirected_(false),

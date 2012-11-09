@@ -41,7 +41,7 @@ class AsyncWriteHandlerTest : public ::testing::Test {
     test_env.options.request_timeout_s = 5;
     test_env.options.retry_delay_s = 5;
     test_env.options.enable_async_writes = true;
-    test_env.options.async_writes_max_request_size_kB = 128;
+    test_env.options.async_writes_max_request_size_kb = 128;
     test_env.options.async_writes_max_requests = 8;
 
     test_env.options.periodic_xcap_renewal_interval_s = 2;

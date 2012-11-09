@@ -64,7 +64,7 @@ Options::Options()
   metadata_cache_size = 100000;
   metadata_cache_ttl_s = 120;
   enable_async_writes = false;
-  async_writes_max_request_size_kB = 128; // default object size in kB
+  async_writes_max_request_size_kb = 128;  // default object size in kB.
   async_writes_max_requests = 10;  // Only 10 pending requests allowed by default.
   readdir_chunk_size = 1024;
   enable_atime = false;
@@ -203,7 +203,7 @@ void Options::GenerateProgramOptionsDescriptions() {
         "Enables asynchronous writes.")
     ("async-writes-max-reqs",
         po::value(&async_writes_max_requests)
-            ->default_value(async_writes_max_requests),
+            ->implicit_value(async_writes_max_requests),
         "Maximum number of pending write requests per file. Asynchronous writes"
         " will block if this limit is reached first.")
     ("readdir-chunk-size",
@@ -333,11 +333,11 @@ void Options::GenerateProgramOptionsDescriptions() {
         po::value(&periodic_xcap_renewal_interval_s),
         "Pause time (in seconds) between two invocations of the thread which "
         "renews the XCap of all open file handles.")
-    ("async-writes-max-reqsize-kB",
-        po::value(&async_writes_max_request_size_kB)
-            ->default_value(async_writes_max_request_size_kB),
-        "Maximum size per write request in kB (1024 byte). Usually the object"
-        " size or another system specific upper bound.")
+    ("async-writes-max-reqsize-kb",
+        po::value(&async_writes_max_request_size_kb)
+            ->implicit_value(async_writes_max_request_size_kb),
+        "Maximum size per write request in kB (1 kB = 1024 bytes). Usually the"
+        "object size or another system specific upper bound.")
     ("vivaldi-zipf-generator-skew",
         po::value(&vivaldi_zipf_generator_skew)
           ->default_value(vivaldi_zipf_generator_skew),
@@ -403,7 +403,7 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
   }
 
 
-  if (!enable_async_writes && (vm.count("async-writes-max-reqsize-kB") ||
+  if (!enable_async_writes && (vm.count("async-writes-max-reqsize-kb") ||
       vm.count("async-writes-max-reqs"))) {
     throw InvalidCommandLineParametersException("You specified async-writes-*"
         " options but did not set enable-async-writes.");
