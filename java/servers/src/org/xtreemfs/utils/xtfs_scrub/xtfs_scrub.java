@@ -179,18 +179,13 @@ public class xtfs_scrub {
         System.out.println("\n\nsummary:");
         System.out.println("files checked                                                   : " + numFiles);
         System.out.println("  files ok                                                      : " + numFileOk);
-        System.out.println("  files corrupted                                               : "
-                + (numFiles - numFileOk));
-        System.out.println("    of which had lost replicas(caused by removed OSDs)          : "
-                + numReplicaFailure);
-        System.out.println("    of which had corrupted objects(caused by invalid checksums) : "
-                + numObjectFailure);
+        System.out.println("  files corrupted                                               : " + (numFiles - numFileOk));
+        System.out.println("    of which had lost replicas (caused by removed OSDs)         : " + numReplicaFailure);
+        System.out.println("    of which had corrupted objects (caused by invalid checksums): " + numObjectFailure);
         System.out.println("    of which had a wrong file size                              : " + numWrongFS);
-        System.out.println("    of which are lost(unrecoverable)                            : " + numDead);
-        System.out.println("    of which are unreachable(caused by communication errors)    : "
-                + numUnreachable);
-        System.out.println("bytes checked                                                   : "
-                + OutputUtils.formatBytes(lastBytesScrubbed));
+        System.out.println("    of which are lost (unrecoverable)                           : " + numDead);
+        System.out.println("    of which are unreachable (caused by communication errors)   : " + numUnreachable);
+        System.out.println("bytes checked                                                   : " + OutputUtils.formatBytes(lastBytesScrubbed));
 
         return returnCode;
     }
