@@ -91,24 +91,29 @@ IF(WIN32)
   SET(Boost_USE_STATIC_LIBS true)
   LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
   
-  ## Find dokan
-  #  DOKAN_ROOT        - Input variable: Set to 
-  #  DOKAN_FOUND       - Output variable: Dokan was found.
-  #  DOKAN_INCLUDE_DIR - Output variable: Directory which contains the dokan.h file.
-  #  DOKAN_LIBRARIES   - Output variable: Will be set to dokan.lib location.
-  find_path(DOKAN_INCLUDE_DIR dokan.h PATHS $ENV{ProgramFiles}/Dokan/DokanLibrary ${DOKAN_ROOT})
-  find_library(DOKAN_LIBRARY dokan $ENV{ProgramFiles}/Dokan/DokanLibrary ${DOKAN_ROOT})
-
-  include(FindPackageHandleStandardArgs)
-  FIND_PACKAGE_HANDLE_STANDARD_ARGS(DOKAN DEFAULT_MSG DOKAN_LIBRARY DOKAN_INCLUDE_DIR)
-
-  if (DOKAN_FOUND)
-    set(DOKAN_LIBRARIES ${DOKAN_LIBRARY})
-    include_directories(${DOKAN_INCLUDE_DIR})
-  else(DOKAN_FOUND)
-    message(FATAL_ERROR "The required library 'dokan' was not found. Please install it from http://dokan-dev.net/ first. If you installed it to a non-default location, please set DOKAN_ROOT to the directory which contains the dokan.h and dokan.lib files.")
-  endif (DOKAN_FOUND)
-  mark_as_advanced(DOKAN_LIBRARY)
+  SET(CBFS_LICENSE "include/cbfs/cbfs_license.h")
+  IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${CBFS_LICENSE}")
+    ## Find CbFS
+    #  CBFS_ROOT        - Input variable: Set to 
+    #  CBFS_FOUND       - Output variable: CBFS was found.
+    #  CBFS_INCLUDE_DIR - Output variable: Directory which contains the CbFS.h file.
+    #  CBFS_LIBRARIES   - Output variable: Will be set to CbFS.lib location.
+    find_path(CBFS_INCLUDE_DIR CbFS.h PATHS "$ENV{ProgramFiles}/EldoS/Callback File System/CPP/VC2010/32bit/dynamic_runtime(MD)" ${CBFS_ROOT})
+    find_library(CBFS_LIBRARY CbFS "$ENV{ProgramFiles}/EldoS/Callback File System/CPP/VC2010/32bit/dynamic_runtime(MD)" ${CBFS_ROOT})
+  
+    include(FindPackageHandleStandardArgs)
+    FIND_PACKAGE_HANDLE_STANDARD_ARGS(CBFS DEFAULT_MSG CBFS_LIBRARY CBFS_INCLUDE_DIR)
+  
+    if (CBFS_FOUND)
+      set(CBFS_LIBRARIES ${CBFS_LIBRARY})
+      include_directories(${CBFS_INCLUDE_DIR})
+    else(CBFS_FOUND)
+      message(FATAL_ERROR "The required library 'CbFS' was not found.")
+    endif (CBFS_FOUND)
+    mark_as_advanced(CBFS_LIBRARY)
+  ELSE()
+    message(STATUS "File ${CBFS_LICENSE} was not found. Compilation of the CbFSAdapter, which allows to mount XtreemFS volumes as network drive, will be skipped.\n\nPlease note: it is not possible to build the CbFSAdapter on your own unless you have a license for the CbFS library. The XtreemFS open-source project was granted a non-commercial license and therefore we can compile the CbFSAdapter and distribute binaries of it.\n")
+  ENDIF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${CBFS_LICENSE}")
 ENDIF(WIN32)
 
 # Set required thirdparty libraries.
@@ -227,17 +232,17 @@ if (NOT WIN32)
   ADD_EXECUTABLE(xtfsutil src/xtfsutil/xtfsutil.cpp ${SRCS_JSONCPP})
   TARGET_LINK_LIBRARIES(xtfsutil ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_REGEX_LIBRARY} ${LIBATTR})
 
-  set(UNITTESTS_SKIP_dokan true)
+  set(UNITTESTS_SKIP_cbfs true)
   set(UNITTESTS_REQUIRED_SOURCES_fuse ${SRCS_FUSE_ADAPTER} ${SRCS_XTFS_UTIL} ${SRCS_JSONCPP})
   set(UNITTESTS_REQUIRED_LIBRARIES_fuse ${LIBFUSE})
 endif(NOT WIN32)
-if(WIN32)
-  file(GLOB_RECURSE SRCS_DOKAN_ADAPTER src/dokan/*.cpp)
-  ADD_EXECUTABLE(mount.xtreemfs ${SRCS_DOKAN_ADAPTER} ${SRCS_XTFS_UTIL} ${SRCS_JSONCPP})
-  TARGET_LINK_LIBRARIES(mount.xtreemfs xtreemfs ${DOKAN_LIBRARIES})
+if(WIN32 AND CBFS_FOUND)
+  file(GLOB_RECURSE SRCS_CBFS_ADAPTER src/cbfs/*.cpp)
+  ADD_EXECUTABLE(mount.xtreemfs ${SRCS_CBFS_ADAPTER} ${SRCS_XTFS_UTIL} ${SRCS_JSONCPP})
+  TARGET_LINK_LIBRARIES(mount.xtreemfs xtreemfs ${CBFS_LIBRARIES})
 
   set(UNITTESTS_SKIP_fuse true)
-endif(WIN32)
+endif(WIN32 AND CBFS_FOUND)
 
 ################################################################################
 # Define building of unittests.
