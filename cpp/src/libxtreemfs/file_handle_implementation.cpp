@@ -79,8 +79,11 @@ FileHandleImplementation::FileHandleImplementation(
       volume_options_(options),
       auth_bogus_(auth_bogus),
       user_credentials_bogus_(user_credentials_bogus),
-      xcap_manager_(xcap, mrc_service_client, uuid_resolver,
-                    mrc_uuid_iterator, auth_bogus_,
+      xcap_manager_(xcap,
+                    mrc_service_client,
+                    uuid_resolver,
+                    mrc_uuid_iterator,
+                    auth_bogus_,
                     user_credentials_bogus_) {
 }
 
@@ -588,7 +591,7 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::CheckLock(
       lock_request.mutable_file_credentials()->mutable_xlocs());
   xcap_manager_.GetXCap(
       lock_request.mutable_file_credentials()->mutable_xcap());
-    
+
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
     ExecuteSyncRequest(
         boost::bind(
@@ -973,6 +976,7 @@ void XCapManager::RenewXCapAsync(const RPCOptions& options) {
       }
       return;
     }
+
     xcap_renewal_pending_ = true;
   }
 
@@ -982,7 +986,7 @@ void XCapManager::RenewXCapAsync(const RPCOptions& options) {
         << " Expiration in: " << (xcap_.expire_time_s() - time(NULL))
         << endl;
   }
-  
+
   XCap xcap;
   GetXCap(&xcap);
 
