@@ -128,7 +128,7 @@ Tests = [
     {
         'name': 'fsx',
         'file': 'fsx.sh',
-        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'nomdcache', 'replicated_wqrq', 'replicated_war1', 'replicated_wqrq_asyncwrites' ],
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'nomdcache', 'replicated_wqrq', 'replicated_wqrq_asyncwrites' ],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
     },
     {
