@@ -42,7 +42,7 @@ google::protobuf::Message* TestRPCServerMRC::OpenOperation(
   xcap->set_access_mode(rq->flags());
   xcap->set_client_identity("client_identity");
   xcap->set_expire_time_s(3600);
-  xcap->set_expire_timeout_s(time(0) + 3600);
+  xcap->set_expire_timeout_s(static_cast<uint32_t>(time(0)) + 3600);
   xcap->set_file_id(rq->volume_name() + ":0");
   xcap->set_replicate_on_close(false);
   xcap->set_server_signature("signature");
@@ -69,7 +69,7 @@ google::protobuf::Message* TestRPCServerMRC::OpenOperation(
   replica->mutable_striping_policy()->set_stripe_size(128);
   replica->mutable_striping_policy()->set_width(1);
 
-  response->set_timestamp_s(time(0));
+  response->set_timestamp_s(static_cast<uint32_t>(time(0)));
 
   return response;
 }
@@ -101,7 +101,7 @@ google::protobuf::Message* TestRPCServerMRC::UpdateFileSizeOperation(
 
   timestampResponse* response = new timestampResponse();
 
-  response->set_timestamp_s(time(0));
+  response->set_timestamp_s(static_cast<uint32_t>(time(0)));
 
   return response;
 }
