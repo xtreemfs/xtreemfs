@@ -675,8 +675,9 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "volumeNameToMRCUUID: "
                         + "couldn't resolve mrc UUID for volumeName %s Reason: %s", volumeName,
                         e.getMessage());
-                throw new VolumeNotFoundException(parsedVolumeName);
             }
+
+            throw new VolumeNotFoundException(parsedVolumeName);
         }
 
         // check if there is an service which is a VOLUME and then filter the
@@ -751,8 +752,9 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "volumeNameToMRCUUID: "
                         + "couldn't resolve mrc UUID for volumeName %s Reason: %s", volumeName,
                         e.getMessage());
-                throw new VolumeNotFoundException(parsedVolumeName);
             }
+
+            throw new VolumeNotFoundException(parsedVolumeName);
         }
 
         // Iterate over ServiceSet to find an appropriate MRC
