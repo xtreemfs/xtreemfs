@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 by Michael Berlin, Zuse Institute Berlin
+ * Copyright (c) 2011-2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -57,21 +57,25 @@ void DelayNextRetry(const RPCOptions& options,
       (boost::posix_time::microsec_clock::local_time() -   // current time
        request_sent_time);
 
-  if (!delay_time_left.is_negative()) {
+  string msg = delay_error;
+  if (!delay_time_left.is_negative() && !msg.empty()) {
     // Append time left to error message.
-    if (!delay_error.empty()) {
-      string msg = delay_error + ", waiting "
-          + boost::str(boost::format("%.1f") % (std::max(
+    msg += ", waiting "
+        + boost::str(boost::format("%.1f") % (std::max(
               0.0,
               static_cast<double>(
                   delay_time_left.total_milliseconds()) / 1000)))
-          + " more seconds till next attempt.";
-      if (Logging::log->loggingActive(level)) {
-        Logging::log->getLog(level) << msg << endl;
-      }
-      ErrorLog::error_log->AppendError(msg);
-    }
+        + " more seconds till next attempt.";
+  }
 
+  if (!msg.empty()) {
+    if (Logging::log->loggingActive(level)) {
+      Logging::log->getLog(level) << msg << endl;
+    }
+    ErrorLog::error_log->AppendError(msg);
+  }
+
+  if (!delay_time_left.is_negative()) {
     try {
       Interruptibilizer::SleepInterruptible(
           static_cast<int>(delay_time_left.total_milliseconds()),
