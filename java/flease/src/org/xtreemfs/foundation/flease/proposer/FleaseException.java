@@ -11,6 +11,8 @@ package org.xtreemfs.foundation.flease.proposer;
  * @author bjko
  */
 public class FleaseException extends Exception {
+    
+    private String fleaseCellDebugString = null;
 
     public FleaseException(String message) {
         super(message);
@@ -20,4 +22,11 @@ public class FleaseException extends Exception {
         super(message, cause);
     }
 
+    public void addFleaseCellDebugString(String fleaseCellDebugString) {
+        this.fleaseCellDebugString = fleaseCellDebugString;
+    }
+
+    public String getFleaseCellDebugString() {
+        return fleaseCellDebugString;
+    }
 }

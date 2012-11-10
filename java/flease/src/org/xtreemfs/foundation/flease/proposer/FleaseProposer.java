@@ -1148,6 +1148,7 @@ public class FleaseProposer {
             FleaseException error;
             try {
                 error = (FleaseException) reason;
+                error.addFleaseCellDebugString(cell.toString());
             } catch (ClassCastException ex) {
                 error = new FleaseException("internal flease error", reason);
             }
