@@ -976,7 +976,7 @@ void XCapManager::RenewXCapAsync(const RPCOptions& options) {
     xcap_renewal_pending_ = true;
   }
 
-    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
     Logging::log->getLog(LEVEL_DEBUG)
         << "Renew XCap for file_id: " << GetFileId()
         << " Expiration in: " << (xcap_.expire_time_s() - time(NULL))
