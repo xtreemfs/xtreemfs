@@ -961,15 +961,26 @@ uint64_t XCapManager::GetFileId() {
 void XCapManager::RenewXCapAsync(const RPCOptions& options) {
   // TODO(mberlin): Only renew after some time has elapsed.
   // TODO(mberlin): Cope with local clocks which have a high clock skew.
-  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+  {
+    boost::mutex::scoped_lock lock(mutex_);
+    if (xcap_renewal_pending_) {
+      if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+        Logging::log->getLog(LEVEL_DEBUG)
+            << "XCap renew already in progress, ignoring. file_id: "
+            << GetFileId() << " Expiration in: "
+            << (xcap_.expire_time_s() - time(NULL))
+            << endl;
+      }
+      return;
+    }
+    xcap_renewal_pending_ = true;
+  }
+
+    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
     Logging::log->getLog(LEVEL_DEBUG)
         << "Renew XCap for file_id: " << GetFileId()
         << " Expiration in: " << (xcap_.expire_time_s() - time(NULL))
         << endl;
-  }
-  {
-    boost::mutex::scoped_lock lock(mutex_);
-    xcap_renewal_pending_ = true;
   }
   
   XCap xcap;
