@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 by Michael Berlin, Zuse Institute Berlin
+ * Copyright (c) 2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -24,15 +24,19 @@ namespace style = boost::program_options::command_line_style;
 namespace xtreemfs {
 
 CbFSOptions::CbFSOptions() : Options(), cbfs_descriptions_("CbFS Options") {
+  // Windows Explorer copies files in 1 MB chunks and therefore more than
+  // the default 128 kB.
+  async_writes_max_request_size_kb = 1024 * 1024;
+
   // CbFS options.
   helptext_usage_ =
       "mount.xtreemfs: Mounts an XtreemFS Volume.\n"
       "\n"
       "Usage: \n"
-      "\tmount.xtreemfs [options] [pbrpc[g|s]://]<dir-host>[:port]/<volume-name>"
-          " <mount point>\n"
+      "\tmount.xtreemfs [options] [pbrpc[g|s]://]<dir-host>[:port]"
+          "/<volume-name> <drive letter>\n"
       "\n"
-      "  Example: mount.xtreemfs localhost/myVolume ~/xtreemfs\n";
+      "  Example: mount.xtreemfs localhost/myVolume X:\n";
 }
 
 void CbFSOptions::ParseCommandLine(int argc, char** argv) {
