@@ -1862,7 +1862,7 @@ to complete the installation. Note that this will also install the XtreemFS clie
 
 This section describes the tools that support administrators in maintaining an XtreemFS installation.
 
-\subsection{MRC Database Conversion}
+\subsection{MRC Database Backups and Conversion}
 \label{sec:mrcdbtools}
 
 The database format in which the MRC stores its file system metadata on disk may change with future XtreemFS versions, even though we attempt to keep it as stable as possible. To ensure that XtreemFS server components may be updated without having to create and restore a backup of the entire installation, it is possible to convert an MRC database to a newer version by means of a version-independent XML representation.
@@ -1897,17 +1897,26 @@ Please be aware that dumping and restoring databases may both require privileged
 \subsection{Scrubbing and Cleanup}
 \label{sec:scrubber_cleanup}
 
-In real-world environments, errors occur in the course of creating, modifying or deleting files. This can cause corruptions of file data or metadata. Such things happen e.g.\ if the client is suddenly terminated, or loses connection with a server component. There are several such scenarios: if a client writes to a file but does not report file sizes received from the OSD back to the MRC, inconsistencies between the file size stored in the MRC and the actual size of all objects in the OSD will occur. If a client deletes a file from the directory tree, but cannot reach the OSD, orphaned objects will remain on the OSD. If an OSD is terminated during an ongoing write operation, file content will become corrupted.
+In real-world environments, errors occur in the course of creating, modifying or deleting files. This can cause corruptions of file data or metadata. Such things happen e.g., if the client is suddenly terminated, or loses connection with a server component. There are several such scenarios: if a client writes to a file but does not report file sizes received from the OSD back to the MRC, inconsistencies between the file size stored in the MRC and the actual size of all objects in the OSD will occur. If a client deletes a file from the directory tree, but cannot reach the OSD, orphaned objects will remain on the OSD. If an OSD is terminated during an ongoing write operation, file content will become corrupted.
 
-In order to detect and, if possible, resolve such inconsistencies, tools for scrubbing and OSD cleanup exist. To check the consistency of file sizes and checksums, the following command can be executed:
+Besides, if files are replicated, it is essential to ensure that all replicas remain accessible in the long term. Unless all of a file's replicas are checked periodically, it may happen that they silently become unavailable over time, thus making the file unavailable despite having multiple replicas.
+
+In order to fix inconsistencies and to restore lost replicas of files, tools for scrubbing and OSD cleanup exist. To check the consistency of file sizes and checksums, the following command can be executed:
 
 \begin{verbatim}
-$> xtfs_scrub -dir pbrpc://my-dir-host.com:32638 myVolume
+$> xtfs_scrub -dir pbrpc://my-dir-host.com:32638 -repair myVolume
 \end{verbatim}
 
-This will scrub each file in the volume \texttt{myVolume}, i.e.\ check file size consistency and set the correct file size on the MRC, if necessary, and check whether an invalid checksum in the OSD indicates a corrupted file content. The \texttt{-dir} argument specifies the directory service that will be used to resolve service UUIDs. Please see \texttt{man xtfs\_scrub} for further details.
+This will scrub each file in the volume \texttt{myVolume} and attempt to correct any error if necessary. Scrubbing a file takes the following steps:
+\begin{itemize}
+ \item ensure that the file size stored with the metadata reflects the actual file size on the OSD(s),
+ \item check whether an invalid checksum in the OSD indicates a corrupted file content,
+ \item check if one or more replicas are unavailable and restore the desired numbers of replicas by adding new replicas, if necessary
+\end{itemize}
 
-A second tool scans an OSD for orphaned objects, which can be used as follows:
+The \texttt{-dir} argument specifies the directory service that will be used to resolve service UUIDs. The \texttt{-repair} argument ensures that errors are corrected; without this argument, they are only detected. Please see \texttt{man xtfs\_scrub} for further details.
+
+A second tool scans an OSD for orphaned objects. It can be used as follows:
 
 \begin{verbatim}
 $> xtfs_cleanup -dir pbrpc://localhost:32638 \
