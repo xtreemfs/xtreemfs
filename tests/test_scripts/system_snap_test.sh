@@ -14,7 +14,7 @@ fi
 
 # enable snapshots
 COMMAND="$1/bin/xtfsutil --enable-snapshots .."
-echo "Running ${COMMAND}..."
+echo "Running ${COMMAND}"
 $COMMAND
 RESULT=$?
 if [ "$RESULT" -ne "0" ]; then echo "$COMMAND failed"; exit $RESULT; fi
@@ -24,16 +24,15 @@ mkdir ./newdir
 
 # take a snapshot
 COMMAND="$1/bin/xtfsutil --create-snapshot mySnap ."
-echo "Running ${COMMAND}..."
+echo "Running ${COMMAND}"
 $COMMAND
 RESULT=$?
 if [ "$RESULT" -ne "0" ]; then echo "$COMMAND failed"; exit $RESULT; fi
 
 # list all snapshots
-COMMAND="$1/bin/xtfsutil --list-snapshots ."
-echo "Running ${COMMAND}..."
-$COMMAND
-# |grep mySnap
+COMMAND="$1/bin/xtfsutil --list-snapshots .."
+echo "Running ${COMMAND}"
+$COMMAND |grep mySnap
 RESULT=$?
 if [ "$RESULT" -ne "0" ]; then echo "$COMMAND failed"; exit $RESULT; fi
 
@@ -44,7 +43,7 @@ echo "test" > file.txt
 
 # delete a snapshot
 COMMAND="$1/bin/xtfsutil --delete-snapshot mySnap ."
-echo "Running ${COMMAND}..."
+echo "Running ${COMMAND} ..."
 $COMMAND
 RESULT=$?
 if [ "$RESULT" -ne "0" ]; then echo "$COMMAND failed"; exit $RESULT; fi
