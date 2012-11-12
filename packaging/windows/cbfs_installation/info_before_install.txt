@@ -1,0 +1,3 @@
+The xtreemFS Windows Client requires the driver for the Callback File System by EldoS.
+
+Therefore you may be prompted during the installation to install the driver "EldoS Corporation StorLib devices". Please confirm this by clicking on "Install".
