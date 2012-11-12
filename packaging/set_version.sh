@@ -169,7 +169,7 @@ function find_releasename() {
 function check_version_format() {
   local version="$1"
 
-  echo "$version" | grep -E "^[1-9]\.([0-9]|[1-9][0-9]+)\.([0-9]|[1-9][0-9]+)(\.([89][0-9]))?$" >> /dev/null
+  echo "$version" | grep -E "^[1-9]\.([0-9]|[1-9][0-9]+)(\.([0-9]|[1-9][0-9]+))?(\.([89][0-9]))?$" >> /dev/null
   if [ $? -ne 0 ]
   then
     echo "Invalid version entered: $version"
