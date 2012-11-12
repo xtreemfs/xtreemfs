@@ -255,9 +255,13 @@ client: check_client client_thirdparty set_version
 
 client_clean: check_client client_thirdparty_clean
 	@rm -rf $(XTREEMFS_CLIENT_BUILD_DIR)
+	@rm     $(XTREEMFS_BINARIES_DIR)/*.xtreemfs
+	@rm     $(XTREEMFS_BINARIES_DIR)/xtfsutil
 
 client_distclean: check_client client_thirdparty_distclean
 	@rm -rf $(XTREEMFS_CLIENT_BUILD_DIR)
+	@rm     $(XTREEMFS_BINARIES_DIR)/*.xtreemfs
+	@rm     $(XTREEMFS_BINARIES_DIR)/xtfsutil
 
 CLIENT_PACKAGE_MACOSX_OUTPUT_DIR = XtreemFS_Client_MacOSX.mpkg
 CLIENT_PACKAGE_MACOSX_OUTPUT_FILE = XtreemFS_Client_MacOSX_installer.dmg
