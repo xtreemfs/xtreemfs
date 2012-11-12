@@ -33,9 +33,9 @@ if [ ! -d $XTREEMFS_HOME ]; then
     [ $VERBOSE -eq 1 ] && echo "user $XTREEMFS_USER exists but data directory $XTREEMFS_HOME had to be created"
 fi
 owner=`stat -c %U $XTREEMFS_HOME`
-if [ $owner != $XTREEMFS_USER ]; then
-    [ $VERBOSE -eq 1 ] && echo "directory $XTREEMFS_HOME is not owned by $XTREEMFS_USER, executing chown (may take some time)"
-    chown -R $XTREEMFS_USER $XTREEMFS_HOME
+if [ "$owner" != "$XTREEMFS_USER" ]; then
+    [ $VERBOSE -eq 1 ] && echo "directory $XTREEMFS_HOME is not owned by $XTREEMFS_USER, executing chown"
+    chown $XTREEMFS_USER $XTREEMFS_HOME
 fi
 
 if [ ! -e $XTREEMFS_LOG_DIR ]; then
