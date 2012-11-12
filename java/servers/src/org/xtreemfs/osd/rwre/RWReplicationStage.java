@@ -305,7 +305,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) lease change event: %s, %s",localID, cellId, lease);
                 }
             } else {
-                Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"(R:%s) lease error in cell %s: %s cell debug: %s",localID, cellId, error, error.getFleaseCellDebugString());
+//                Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"(R:%s) lease error in cell %s: %s cell debug: %s",localID, cellId, error, error.getFleaseCellDebugString());
+                Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"(R:%s) lease error in cell %s: %s",localID, cellId, error);
             }
 
             final String fileId = cellToFileId.get(cellId);
