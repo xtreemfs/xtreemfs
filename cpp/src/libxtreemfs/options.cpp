@@ -148,8 +148,8 @@ Options::Options()
 #else
   vivaldi_filename = ".xtreemfs_vivaldi_coordinates";
 #endif
-  vivaldi_recalculation_interval_s = 1000 * 300; // in ms
-  vivaldi_recalculation_epsilon_s = 1000 * 30; // in ms
+  vivaldi_recalculation_interval_s = 300;
+  vivaldi_recalculation_epsilon_s = 30;
   vivaldi_max_iterations_before_updating = 12;
   vivaldi_max_request_retries = 2;
 
@@ -296,7 +296,7 @@ void Options::GenerateProgramOptionsDescriptions() {
           po::value(&vivaldi_enable_dir_updates)
             ->default_value(vivaldi_enable_dir_updates)->zero_tokens(),
           "Enables sending the coordinates to the DIR after each recalculation."
-          " This is only needed to add the clients to the vivaldi visualisation"
+          " This is only needed to add the clients to the vivaldi visualization"
           " at the cost of some additional traffic between client and DIR.")
       ("vivaldi-filename",
           po::value(&vivaldi_filename)->default_value(vivaldi_filename),
@@ -306,8 +306,7 @@ void Options::GenerateProgramOptionsDescriptions() {
           po::value(&vivaldi_recalculation_interval_s)
             ->default_value(vivaldi_recalculation_interval_s),
           "The interval between coordinate recalculations in seconds. "
-          "Also see vivaldi-"
-          "recalculation-epsilon.")
+          "Also see vivaldi-recalculation-epsilon.")
       ("vivaldi-recalculation-epsilon",
           po::value(&vivaldi_recalculation_epsilon_s)
             ->default_value(vivaldi_recalculation_epsilon_s),

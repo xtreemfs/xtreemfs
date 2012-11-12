@@ -186,7 +186,7 @@ class Options {
   /** Enables the vivaldi coordinate calculation for the client. */
   bool vivaldi_enable;
   /** Enables sending the coordinates to the DIR after each recalculation. This
-   *  is only needed to add the clients to the vivaldi visualisation at the cost
+   *  is only needed to add the clients to the vivaldi visualization at the cost
    *  of some additional traffic between client and DIR.") */
   bool vivaldi_enable_dir_updates;
   /** The file where the vivaldi coordinates should be saved after each
