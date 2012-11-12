@@ -135,6 +135,8 @@ rmdir $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-server
 rm $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-tools/LICENSE
 rmdir $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-tools
 
+rm $RPM_BUILD_ROOT/etc/xos/xtreemfs/postinstall_setup.sh
+
 %pre server
 /usr/sbin/groupadd xtreemfs 2>/dev/null || :
 /usr/sbin/useradd -r --home /var/lib/xtreemfs -g xtreemfs xtreemfs 2>/dev/null || :

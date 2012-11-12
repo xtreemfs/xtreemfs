@@ -61,6 +61,8 @@ install: build
 	rmdir $(BUILD_DIR)/usr/share/doc/xtreemfs-server
 	rmdir $(BUILD_DIR)/usr/share/doc/xtreemfs-tools
 	
+	rm $(BUILD_DIR)/etc/xos/xtreemfs/postinstall_setup.sh
+	
 	# --- end custom part for installing
 	
 	# move files of the xtreemfs-client package
