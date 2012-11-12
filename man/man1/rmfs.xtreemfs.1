@@ -22,10 +22,13 @@ Delete the volume "MyVolume" which is stored at the MRC server "remote.mrc.machi
 .SH OPTIONS
 
 .TP
-Admin Password:
+rmfs.xtreemfs Options:
 .TP
 .BI "--admin_password " password
 MRC's admin_password (not required if not set at the MRC).
+.TP
+.BI "-f, --force"
+Never prompt. Overrides safety questions.
 
 .TP
 General Options:
@@ -38,6 +41,9 @@ Print help and exit.
 .TP
 .BI "-l, --log-file-path " log_file_path
 Path to log file.
+.TP
+.BI "-V, --version"
+Shows the version number.
 
 .TP
 SSL Options:

@@ -48,6 +48,9 @@ Print help and exit.
 .TP
 .BI "-l, --log-file-path " log_file_path
 Path to log file.
+.TP
+.BI "-V, --version"
+Shows the version number.
 
 .TP
 Optimizations:
@@ -57,6 +60,12 @@ Number of entries which will be cached. (Set to 0 to disable the cache.)
 .TP
 .BI "--metadata-cache-ttl-s " ttl
 Time to live after which cached entries will expire.
+.TP
+.BI "--enable-async-writes"
+Enables asynchronous writes.
+.TP
+.BI "--async-writes-max-reqs " count
+Maximum number of pending write requests per file. Asynchronous writes will block if this limit is reached first.
 .TP
 .BI "--readdir-chunk-size " size
 Number of directory entries which will be fetched from the MRC per readdir request. Do not set this value too high - otherwise the MRC will spent too much time generating the response containing thousands of directory entries. In general, you should not have directories with multiple thousands of entries. If you stick to this, all directory entries are fetched with one request as long as this value is lower than the number of entries.
@@ -69,13 +78,22 @@ Maximum number of
 .I attempts
 to send a request (0 means infinite).
 .TP
+.BI "--max-read-tries " attempts
+Maximum number of
+.I attempts
+to send a
+.I read
+request (0 means infinite).
+.TP
+.BI "--max-write-tries " attempts
+Maximum number of
+.I attempts
+to send a
+.I write
+request (0 means infinite).
+.TP
 .BI "--retry-delay " delay
 Wait time after a request failed until next attempt (in seconds).
-.TP
-.BI "--interrupt-signal "signo
-Retry of a request is interrupted if this signal is sent (set to 0 to disable it). (In case of Fuse under Linux,
-.I signo
-is set to 10 (SIGUSR1) and -o intr and -o intr_signal=10 (=SIGUSR1) will be passed to Fuse.)
 .TP
 .BI "--connect-timeout " connection-timeout
 Timeout after which a connection attempt will be retried (in seconds).
@@ -125,6 +143,30 @@ Globus default: /etc/grid-security/grid-mapfile
 .TP
 .BI "--gridmap-reload-interval-m " interval
 Interval (in minutes) after which the gridmap file will be checked for changes and reloaded if necessary. 60 minutes by default.
+
+.TP
+Vivaldi options:
+.TP
+.B "--vivaldi-enable"
+Enables the vivaldi coordinate calculation for the client.
+.TP
+.B "--vivaldi-enable-dir-updates"
+Enables sending the coordinates to the DIR after each recalculation. This is only needed to add the clients to the vivaldi visualization at the cost of some additional traffic between client and DIR.
+.TP
+.B "--vivaldi-filename " path
+The file where the vivaldi coordinates should be saved after each recalculation.
+.TP
+.BI "--vivaldi-recalculation-interval " seconds
+The interval between coordinate recalculations in seconds. Also see vivaldi-recalculation-epsilon.
+.TP
+.BI "--vivaldi-recalculation-epsilon " seconds
+The recalculation interval will be randomly chosen from vivaldi-recalculation-inverval +/- vivaldi-recalculation-epsilon.
+.TP
+.BI "--vivaldi-max-iterations-before-updating " count
+Number of coordinate recalculations before updating the list of OSDs.
+.TP
+.BI "--vivaldi-max-request-retries " retries
+Maximal number of retries when requesting coordinates from another vivaldi node.
 
 .SH "SEE ALSO"
 .BR lsfs.xtreemfs (1),
