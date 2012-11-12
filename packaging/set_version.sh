@@ -18,6 +18,7 @@ xtreemfs_version_management_files="../java/foundation/src/org/xtreemfs/foundatio
 
 xtreemfs_release_names="
 1.3|Tasty Tartlet
+1.4|Salty Sticks
 "
 
 function display_usage() {
