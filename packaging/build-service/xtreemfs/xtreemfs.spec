@@ -244,8 +244,8 @@ rm -rf $RPM_BUILD_ROOT
 %dir /etc/xos/xtreemfs/server-repl-plugin/
 %config(noreplace) %attr(0640,root,xtreemfs) /etc/xos/xtreemfs/server-repl-plugin/dir.properties
 %config(noreplace) %attr(0640,root,xtreemfs) /etc/xos/xtreemfs/server-repl-plugin/mrc.properties
-%dir %attr(0750,root,xtreemfs) /var/lib/xtreemfs
-%dir %attr(0750,root,xtreemfs) /var/lib/xtreemfs/policies
+%dir %attr(0750,xtreemfs,root) /var/lib/xtreemfs
+%dir %attr(0750,xtreemfs,root) /var/lib/xtreemfs/policies
 %dir %attr(0750,xtreemfs,xtreemfs) /var/log/xtreemfs
 %doc LICENSE
 
