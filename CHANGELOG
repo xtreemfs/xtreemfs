@@ -1,11 +1,29 @@
-10-AUG-2011: release 1.3.0
-    * added new features: full read-write replication of files, snapshots
-    * completely re-wrote the client
-      - it now supports metadata caching and automatic fail-over for replicated files
-      - a client library 'libxtreemfs' separates the client logic from platform-specific bindings (e.g. FUSE, Dokan)
-    * added first prototypes of metadata (MRC and DIR) replication
-    * merged all user tools into a new general-purpose tool 'xtfsutil'
-    * changed license from GPL to BSD
+12-NOV-2012: release 1.4 (Salty Sticks)
+
+  Changes:
+    * Improved stability: Fixed client crashes when timeouts occurred; fixed server crashes and issues with the R/W replication.
+    * Full support for asynchronous writes: If a client is started with "--enable-async-writes", write() requests will be immediately acknowledged by the client and executed in the background. Outstanding writes are always flushed at close() or fsync*() events. This improves the write throughput, especially in case of connections with high latency.
+    * Added Windows Client Beta which uses Eldos' Callback File System product instead of Dokan.
+    * Re-wrote HDFS interface implementation: Use XtreemFS as replacement for HDFS in your Hadoop setup.
+    * libxtreemfs for Java: Access XtreemFS directly from your Java application. See source files org.xtreemfs.common.libxtreemfs.{Client,Volume,FileHandle}.java for the interface.
+    * Re-added Vivaldi support and added/improved its functionality:
+      * Vivaldi is directly integrated in the client now and can be enabled with '--vivaldi-enable'.
+      * Added Vivaldi visualization: see '/vivaldi' subpage on DIR. Have a look at our demo server to get an impressium: http://demo.xtreemfs.org:30638/vivaldi
+      * Coordinates of clients can be also visualized if clients reporting was enabled with '--vivaldi-enable-dir-updates'.
+    * Added support for OSD Selection based on Custom Attributes. For example, assign a country code to every OSD as custom attribute and limit the placement of files on OSDs based on the attribute.
+
+    * Rewrote xtfs_scrub tool and fixed support for read-only replicated files and checksums. R/W replicas will be supported in the next release.
+    * Certificate password provided on command line no longer visible in process listing output. Additionally, the password can be entered on stdin now. (Issue 251)
+    * Support for binary extended attributes (allows to preserve POSIX ACLs when copying data to XtreemFS; however they are not evaluated - use the XtreemFS ACLs therefore).
+    * Fixed several client issues (e.g., 231, 234, 237).
+    * Fixed clock synchronization problems which impaired the DIR/MRC replication. This also fixed issue 236.
+    * Client: Added DIR fail over support. Specify multiple DIR replicas when mounting as follows: mount.xtreemfs dir1,dir2,dir3/volume. However, please note that the DIR/MRC replication is still experimental and not officially supported yet.
+    * MacOSX Client: Fixed wrong df output (issue 247). Fixed failed installer if XtreemFS is already installed (issue 239). Fixed installer check if FUSE is installed (also works for OSXFUSE now) (issue 197).
+    * Volume Snapshots Tools: Functionality was moved from "xtfs_snap" tool to "xtfsutil".
+    * Various minor fixes.
+
+    * MRC: To prevent confusion, global policy attributes are no longer allowed and always have to be prefixed by the policy id e.g., "1002.uuids".
+    * init.d scripts no longer store a lock file in /var/lock/subsys. You can remove this directory now.
 
 03-NOV-2011: release 1.3.1
     * Added 'xtfs_remove_osd' utility to remove OSDs from an XtreemFS installation. All files on the OSD to be removed will be relocated to different OSDs.
@@ -22,3 +40,12 @@
     * fixed a wide range of issues w/ read-only and read-write replication of files
     * fixed issues w/ several MRC calls when admin passwords were specified (a consequence of this is that an XtreemFS 1.3.0 client can no longer mount admin_password protected MRCs; upgrade the client to 1.3.1 to fix this)
     * fixed various client issues, such as deadlocks and memory leaks
+
+10-AUG-2011: release 1.3.0 (Tasty Tartlet)
+    * added new features: full read-write replication of files, snapshots
+    * completely re-wrote the client
+      - it now supports metadata caching and automatic fail-over for replicated files
+      - a client library 'libxtreemfs' separates the client logic from platform-specific bindings (e.g. FUSE, Dokan)
+    * added first prototypes of metadata (MRC and DIR) replication
+    * merged all user tools into a new general-purpose tool 'xtfsutil'
+    * changed license from GPL to BSD
