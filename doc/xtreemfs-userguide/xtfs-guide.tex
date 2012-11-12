@@ -32,7 +32,7 @@
 \begin{flushleft}
 \sffamily \begin{LARGE}The XtreemFS Installation and User Guide\end{LARGE}
 
-Version 1.3.x
+Version 1.4.x
 \end{flushleft}
 
 
@@ -47,15 +47,21 @@ This document is \copyright{} 2009-2011 by Bj\"orn Kolbeck, Jan Stender, Michael
 \tableofcontents
 
 \chapter*{Changes}
-Summary of important changes in release 1.3.2:
+Summary of important changes in release 1.4:
 
 \begin{itemize}
- \item \textbf{Re-added and improved Vivaldi support}\\
-    Vivaldi is directly integrated in the client now and there's a visualization of the coordinates available, even of the client coordinates. See section~\ref{sec:vivaldi}.
- \item \textbf{libxtreemfs for Java}\\
-    Access XtreemFS directly from your Java application. See section~\ref{sec:libxtreemfs_for_java} how to use it.
+ \item \textbf{Improved Stability}\\
+    Fixed client crashes when timeouts occurred. Fixed server crashes and issues with the R/W replication.
+ \item \textbf{Full support for asynchronous writes}\\
+    If enabled, write() requests will be immediately acknowledged by the client and executed in the background. Outstanding writes are always flushed at close() or fsync*() events. This improves the write throughput, especially in case of connections with high latency. See section~\ref{sec:async_writes} for more information.
+ \item \textbf{Windows Client (Beta)}\\
+    Rewrite of Windows Client (based on C++ libxtreemfs) which uses Eldos' Callback File System product instead of Dokan.
  \item \textbf{Re-wrote HDFS interface implementation}\\
     Use XtreemFS as replacement for HDFS in your Hadoop setup. See section~\ref{sec:hadoop_integration} how to use it.
+ \item \textbf{libxtreemfs for Java}\\
+    Access XtreemFS directly from your Java application. See section~\ref{sec:libxtreemfs_for_java} how to use it.
+ \item \textbf{Re-added and improved Vivaldi support}\\
+    Vivaldi is directly integrated in the client now and there's a visualization of the coordinates available, even of the client coordinates. See section~\ref{sec:vivaldi}.
  \item \textbf{Support for custom attributes in the OSD Selection policies}\\
     Added support for OSD Selection based on Custom Attributes e.g., assign a country code to every OSD as custom attribute and limit the placement of files on OSDs based on the attribute (see \ref{sec:customOSDSelection}).
 \end{itemize}
@@ -977,8 +983,16 @@ Note that it is possible to specify multiple categories by means of a comma or s
 \begin{tabular}{lp{10cm}}
  Services & MRC, OSD\\
  Values   & milliseconds \\
- Default  & 50\\
- Description & Reading the system clock is a slow operation on some systems (e.g. Linux) as it is a system call. To increase performance, XtreemFS services use a local variable which is only updated every \texttt{local\_clock\_renewal} milliseconds.
+ Default  & 0\\
+ Description & Reading the system clock is a slow operation on some systems (e.g. Linux) as it is a system call. To increase performance, XtreemFS services use a local variable which is only updated every \texttt{local\_clock\_renewal} milliseconds. As of XtreemFS 1.4, this optimization is disabled.
+\end{tabular}
+
+\subsubsection{\texttt{max\_client\_queue}}
+\begin{tabular}{lp{10cm}}
+ Services & OSD\\
+ Values   & 1 .. N\\
+ Default  & 100\\
+ Description & To avoid overloading the server by a single client, the maximum number of pending requests per client is limited. Usually, this limit should not be exceeded unless you use Read/Write file replication in connection with asynchronous writes and a large number of allowed pending writes on the client side (see section~\ref{sec:async_writes}).
 \end{tabular}
 
 \subsubsection{\texttt{monitoring.enabled}}
@@ -1734,6 +1748,17 @@ Access to a FUSE mount is usually restricted to the user who mounted the volume.
 
 By default, the local system cache on the client machine will be used to speed up read access to XtreemFS. In particular, using the cache as a local buffer is necessary to support the \texttt{mmap} system call, which - amongst others - is required to execute applications on Linux. Additionally, it enables the read-ahead functionality of Fuse and does speed up sequential reads, especially in presence of high latencies. If the local system cache is not disabled, the consistency model of client caches is limited to ``close-to-open'', which is similar to the model provided by NFS. Buffered I/O can be switched off by adding the \texttt{-o direct\_io} parameter. The parameter effects that all read and write operations are directed to their OSDs instead of being served from local caches. Enabling \texttt{-o direct\_io} might be also necessary if you rely on interruption support of read requests in Linux. Please see \href{http://code.google.com/p/xtreemfs/issues/detail?id=229}{issue 229} for more details.
 
+\subsection{Asynchronous Writes Support}
+\label{sec:async_writes}
+
+By default, all file system operations are synchronous i.e., they will block until a response was received. This will result in a low throughput, especially when reading or writing data over high latency links, because the pause where the client waits for a response remains unused. For reading data, this is mitigated by the read-ahead functionality of FUSE. For writing data, we added support for asynchronous writes i.e., the client will acknowledge a write() command to the application before it received the response from the OSD. This behavior is similar to that of local file systems which also acknowledge written data while they write it to disk in the background. Effectively, this allows to pipeline requests and reach the maximum throughput of the system (assuming buffer sizes are chosen high enough). If asynchronous writes are enabled, the client will wait for pending write()s if the file handle is closed or flushed by the application.
+
+Asynchronous writes can be enabled with the command line option \texttt{----enable-async-writes}. The asynchronous writes buffer of each open file is limited by two factors:
+\begin{itemize}
+ \item Maximum number of pending requests. This can be configured with the option \texttt{----async-writes-max-reqs}. Do not set this value above 100 or increase the OSD configuration parameter \texttt{max\_client\_queue} accordingly.
+ \item Maximum buffer size. The buffer size is determined as product of the number of pending requests and the assumed maximum request size. On Linux, the assumed maximum request size is set to 128 kB i.e., the default buffer size on Linux is 1280 kB (10 * 128 kB). If you like, you can change the assumed maximum request size with the hidden client option \texttt{----async-writes-max-reqsize-kb}. However, note that FUSE on Linux does not support write() requests larger than 128 kB.
+\end{itemize}
+If one of these limits is reached, subsequent write() requests will block.
 
 \section{Troubleshooting}
 
@@ -1911,7 +1936,7 @@ This will scrub each file in the volume \texttt{myVolume} and attempt to correct
 \begin{itemize}
  \item ensure that the file size stored with the metadata reflects the actual file size on the OSD(s),
  \item check whether an invalid checksum in the OSD indicates a corrupted file content,
- \item check if one or more replicas are unavailable and restore the desired numbers of replicas by adding new replicas, if necessary
+ \item check if one or more read-only replicated replicas are on an OSD marked as ``removed'' (which can be done with the \texttt{xtfs\_chstatus} tool) and restore the desired numbers of replicas by adding new replicas, if necessary
 \end{itemize}
 
 The \texttt{-dir} argument specifies the directory service that will be used to resolve service UUIDs. The \texttt{-repair} argument ensures that errors are corrected; without this argument, they are only detected. Please see \texttt{man xtfs\_scrub} for further details.
@@ -1930,7 +1955,7 @@ interactive mode. For further information see \texttt{man xtfs\_cleanup}.
 
 \subsection{Setting the OSD Status}
 
-The OSD's status field is shown in the service status page as \texttt{static.status}. The status can be online (new files be assigned to it), locked (new files will not be assigned to it) and removed (replicas assigned to this OSD will be replaced). Status online is the regular status for all services, even if they are temporarily offline. Status removed marks an OSD as permanently failed and the scrubber will removed replicas and files from these OSDs. Status locked is for future use.
+The OSD's status field is shown in the service status page as \texttt{static.status}. The status can be online (new files be assigned to it), locked (new files will not be assigned to it) and removed (replicas assigned to this OSD will be replaced). Status online is the regular status for all services, even if they are temporarily offline. Status removed marks an OSD as permanently failed and the scrubber will removed replicas and files from these OSDs. Status locked will effectively set an OSD to ``read-only`` since no new files are placed on it.
 
 The status can be set with the \texttt{xtfs\_chstatus} tool:
 
