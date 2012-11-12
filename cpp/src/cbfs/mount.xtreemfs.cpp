@@ -41,10 +41,30 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
   }
   
   CbFSOptions cbfs_options;
-  cbfs_options.ParseCommandLine(argv_utf8.size(), &argv_utf8[0]);
-
+  bool invalid_commandline_parameters = false;
+  try {
+    cbfs_options.ParseCommandLine(argv_utf8.size(), &argv_utf8[0]);
+  } catch(const xtreemfs::XtreemFSException& e) {
+    cout << "Invalid parameters found, error: " << e.what() << endl << endl;
+    invalid_commandline_parameters = true;
+  }
   for (size_t i = 0; i < argv_utf8.size(); i++) {
     delete[] argv_utf8[i];
+  }
+
+  // Display help if needed.
+  if (cbfs_options.empty_arguments_list || invalid_commandline_parameters) {
+    cout << cbfs_options.ShowCommandLineUsage() << endl;
+    return 1;
+  }
+  if (cbfs_options.show_help) {
+    cout << cbfs_options.ShowCommandLineHelp() << endl;
+    return 1;
+  }
+  // Show only the version.
+  if (cbfs_options.show_version) {
+    cout << cbfs_options.ShowVersion("mount.xtreemfs") << endl;
+    return 1;
   }
 
   boost::scoped_ptr<CbFSAdapter> cbfs_adapter(new CbFSAdapter(&cbfs_options));
