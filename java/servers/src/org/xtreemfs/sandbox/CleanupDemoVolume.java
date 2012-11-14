@@ -139,10 +139,11 @@ public class CleanupDemoVolume {
                                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber());
                 byte[] buffer = new byte[128 * 1024];
-                int bytesRead;
-
+                int bytesRead = 0;
+                long bytewritten = 0;
                 while ((bytesRead = source.read(buffer)) != -1) {
-                    target.write(userCredentials, buffer, bytesRead, 0);
+                    target.write(userCredentials, buffer, bytesRead, bytewritten);
+                    bytewritten += bytesRead;
                 }
             } catch (FileNotFoundException e) {
                 System.out.println("File " + filename + " does not exist.");
