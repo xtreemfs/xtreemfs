@@ -134,6 +134,8 @@ class ClientImplementation : public Client {
 
   virtual UUIDResolver* GetUUIDResolver();
 
+  virtual std::string UUIDToAddress(const std::string& uuid);
+
   const pbrpc::VivaldiCoordinates& GetVivaldiCoordinates() const;
 
  private:

@@ -25,7 +25,7 @@ typedef unsigned int gid_t;
 
 namespace xtreemfs {
 
-class UUIDResolver;
+class Client;
 class Volume;
 
 /** Handle for a xcntl pseudo file used to communicate with
@@ -91,8 +91,8 @@ class XtfsUtilServer {
   /** Sets the volume to be used. */
   void set_volume(Volume* volume);
 
-  /** Sets the UUIDResolver to be used. */
-  void set_uuid_resolver(UUIDResolver* uuid_resolver);
+  /** Sets the Client to be used. */
+  void set_client(Client* uuid_resolver);
 
   /** Returns true, if the path points to a xctl pseudo file. */
   bool checkXctlFile(const std::string& path);
@@ -229,8 +229,8 @@ class XtfsUtilServer {
   std::string prefix_;
   /** Volume on which to execute operations. */
   Volume* volume_;
-  /** UUIDResolver to resolve UUIDs to addresses. */
-  UUIDResolver* uuid_resolver_;
+  /** Client to resolve UUIDs to addresses. */
+  Client* uuid_resolver_;
   /** XAttr prefix used for Policy Attribute names by the MRC. */
   const std::string xtreemfs_policies_prefix_;
 };

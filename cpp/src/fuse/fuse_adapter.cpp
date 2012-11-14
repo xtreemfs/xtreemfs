@@ -171,7 +171,7 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
                                 *options_);
 
   xctl_.set_volume(volume_);
-  xctl_.set_uuid_resolver(client_->GetUUIDResolver());
+  xctl_.set_client(client_);
 
   // Try to access Volume. If it fails, an error will be thrown.
   // As a bonus, after this call the root directory will be cached.

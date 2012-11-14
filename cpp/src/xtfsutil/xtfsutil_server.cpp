@@ -33,7 +33,7 @@ namespace xtreemfs {
 XtfsUtilServer::XtfsUtilServer(const string& prefix)
     : prefix_(prefix),
       volume_(NULL),
-      uuid_resolver_(NULL),
+      client_(NULL),
       xtreemfs_policies_prefix_("xtreemfs.policies.") {
 }
 
@@ -49,8 +49,8 @@ void XtfsUtilServer::set_volume(Volume* volume) {
   volume_ = volume;
 }
 
-void XtfsUtilServer::set_uuid_resolver(UUIDResolver* uuid_resolver) {
-  uuid_resolver_ = uuid_resolver;
+void XtfsUtilServer::set_client(Client* client) {
+  client_ = client;
 }
 
 void XtfsUtilServer::ParseAndExecute(const xtreemfs::pbrpc::UserCredentials& uc,
@@ -517,20 +517,15 @@ void XtfsUtilServer::OpGetSuitableOSDs(
 
   (*output)["result"] = Json::Value(Json::objectValue);
   (*output)["result"]["osds"] = Json::Value(Json::arrayValue);
-  string address;
   for (list<string>::iterator iter = osds.begin();
        iter != osds.end(); ++iter) {
-    address = "";
     try {
       // Try to resolve the UUID to hostname and port.
-      uuid_resolver_->UUIDToAddress(*iter, &address);
+      string address = client_->UUIDToAddress(*iter);
+      (*output)["result"]["osds"].append(*iter + " (" + address+ ")");
     } catch(const XtreemFSException&) {
       // Ignore errors if the address could not be obtained successfully.
-    }
-    if (address.empty()) {
       (*output)["result"]["osds"].append(*iter);
-    } else {
-      (*output)["result"]["osds"].append(*iter + " (" + address+ ")");
     }
   }
 }

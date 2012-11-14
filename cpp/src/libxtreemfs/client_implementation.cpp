@@ -542,6 +542,12 @@ UUIDResolver* ClientImplementation::GetUUIDResolver() {
   return &uuid_resolver_;
 }
 
+std::string ClientImplementation::UUIDToAddress(const std::string& uuid) {
+  std::string result;
+  uuid_resolver_.UUIDToAddress(uuid, &result);
+  return result;
+}
+
 const VivaldiCoordinates& ClientImplementation::GetVivaldiCoordinates() const {
   return vivaldi_->GetVivaldiCoordinates();
 }

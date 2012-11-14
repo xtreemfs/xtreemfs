@@ -191,6 +191,13 @@ class Client {
   virtual xtreemfs::pbrpc::Volumes* ListVolumes(
       const ServiceAddresses& mrc_addresses,
       const xtreemfs::pbrpc::Auth& auth) = 0;
+
+  /** Resolves the address (ip-address:port) for a given UUID.
+   *
+   * @throws AddressToUUIDNotFoundException
+   * @throws UnknownAddressSchemeException
+   */
+  virtual std::string UUIDToAddress(const std::string& uuid) = 0;
 };
 
 }  // namespace xtreemfs
