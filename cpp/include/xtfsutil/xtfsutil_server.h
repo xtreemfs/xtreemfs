@@ -230,7 +230,7 @@ class XtfsUtilServer {
   /** Volume on which to execute operations. */
   Volume* volume_;
   /** Client to resolve UUIDs to addresses. */
-  Client* uuid_resolver_;
+  Client* client_;
   /** XAttr prefix used for Policy Attribute names by the MRC. */
   const std::string xtreemfs_policies_prefix_;
 };

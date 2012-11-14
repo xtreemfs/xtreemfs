@@ -19,7 +19,7 @@
 #endif  // !WIN32
 
 #include "json/json.h"
-#include "libxtreemfs/uuid_resolver.h"
+#include "libxtreemfs/client.h"
 #include "libxtreemfs/volume.h"
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "util/error_log.h"
