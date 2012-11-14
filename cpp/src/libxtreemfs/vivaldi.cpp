@@ -34,19 +34,23 @@ using namespace xtreemfs::pbrpc;
 using namespace xtreemfs::util;
 
 namespace xtreemfs {
+    
+static void AddAddresses(const ServiceAddresses& dir_service_addresses,
+                         SimpleUUIDIterator* uuid_iterator) {
+  for (ServiceAddresses::const_iterator iter
+           = dir_service_addresses.begin();
+       iter != dir_service_addresses.end();
+       ++iter) {
+    uuid_iterator->AddUUID(*iter);
+  }
+}
 
 Vivaldi::Vivaldi(
-    xtreemfs::rpc::Client* rpc_client,
-    DIRServiceClient* dir_client,
-    UUIDIterator* dir_service_addresses,
+    const ServiceAddresses& dir_addresses,
     UUIDResolver* uuid_resolver,
     const Options& options)
-  : rpc_client_(rpc_client),
-    dir_client_(dir_client),
-    osd_client_(rpc_client),
-    dir_service_addresses_(dir_service_addresses),
-    uuid_resolver_(uuid_resolver),
-    vivaldi_options_(options) {
+    : uuid_resolver_(uuid_resolver),
+      vivaldi_options_(options) {
   srand(static_cast<unsigned int>(time(NULL)));
   // Set AuthType to AUTH_NONE as it's currently not used.
   auth_bogus_.set_auth_type(AUTH_NONE);
@@ -56,6 +60,14 @@ Vivaldi::Vivaldi(
   // Vivaldi requests do not have to be retried nor interrupted.
   vivaldi_options_.max_tries = 1;
   vivaldi_options_.was_interrupted_function = NULL;
+
+  dir_service_addresses_.reset(new SimpleUUIDIterator());
+  AddAddresses(dir_addresses, dir_service_addresses_.get());
+}
+
+void Vivaldi::Initialize(rpc::Client* rpc_client) {
+  dir_client_.reset(new pbrpc::DIRServiceClient(rpc_client));
+  osd_client_.reset(new pbrpc::OSDServiceClient(rpc_client));
 }
 
 void Vivaldi::Run() {
@@ -154,7 +166,7 @@ void Vivaldi::Run() {
             ExecuteSyncRequest(
                 boost::bind(
                     &xtreemfs::pbrpc::OSDServiceClient::xtreemfs_ping_sync,
-                    osd_client_,
+                    osd_client_.get(),
                     _1,
                     boost::cref(auth_bogus_),
                     boost::cref(user_credentials_bogus_),
@@ -248,12 +260,12 @@ void Vivaldi::Run() {
                     boost::bind(
                         &xtreemfs::pbrpc::DIRServiceClient
                             ::xtreemfs_vivaldi_client_update_sync,
-                        dir_client_,
+                        dir_client_.get(),
                         _1,
                         boost::cref(auth_bogus_),
                         boost::cref(user_credentials_bogus_),
                         own_node.GetCoordinates()),
-                    dir_service_addresses_,
+                    dir_service_addresses_.get(),
                     NULL,
                     RPCOptionsFromOptions(vivaldi_options_),
                     true));
@@ -399,12 +411,12 @@ bool Vivaldi::UpdateKnownOSDs(list<KnownOSD>* updated_osds,
         boost::bind(
             &xtreemfs::pbrpc::DIRServiceClient
                 ::xtreemfs_service_get_by_type_sync,
-            dir_client_,
+            dir_client_.get(),
             _1,
             boost::cref(auth_bogus_),
             boost::cref(user_credentials_bogus_),
             &request),
-        dir_service_addresses_,
+        dir_service_addresses_.get(),
         NULL,
         RPCOptionsFromOptions(vivaldi_options_),
         true));

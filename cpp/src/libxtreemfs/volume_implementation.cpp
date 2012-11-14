@@ -47,7 +47,7 @@ VolumeImplementation::VolumeImplementation(
     const xtreemfs::rpc::SSLOptions* ssl_options,
     const Options& options)
     : client_(client),
-      uuid_resolver_(client),
+      uuid_resolver_(client->GetUUIDResolver()),
       client_uuid_(client_uuid),
       volume_name_(volume_name),
       volume_ssl_options_(ssl_options),

@@ -19,7 +19,6 @@
 #include "libxtreemfs/simple_uuid_iterator.h"
 #include "libxtreemfs/typedefs.h"
 #include "libxtreemfs/uuid_resolver.h"
-#include "libxtreemfs/vivaldi.h"
 
 namespace boost {
 class thread;
@@ -29,6 +28,7 @@ namespace xtreemfs {
 
 class Options;
 class UUIDIterator;
+class Vivaldi;
 class Volume;
 class VolumeImplementation;
 
@@ -44,56 +44,15 @@ class ClientTestFastLingerTimeout_LingerTests_Test;  // see FRIEND_TEST @bottom.
 class ClientTestFastLingerTimeoutConnectTimeout_LingerTests_Test;
 }  // namespace rpc
 
-/**
- * Default Implementation of the XtreemFS C++ client interfaces.
- */
-class ClientImplementation : public Client, public UUIDResolver {
+class DIRUUIDResolver : public UUIDResolver {
  public:
-  ClientImplementation(
+  DIRUUIDResolver(
       const ServiceAddresses& dir_service_addresses,
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
-      const xtreemfs::rpc::SSLOptions* ssl_options,
-      const Options& options);
-  virtual ~ClientImplementation();
+      const pbrpc::UserCredentials& user_credentials,
+      const Options& options
+      );
 
-  virtual void Start();
-  virtual void Shutdown();
-
-  virtual Volume* OpenVolume(
-      const std::string& volume_name,
-      const xtreemfs::rpc::SSLOptions* ssl_options,
-      const Options& options);
-  virtual void CloseVolume(xtreemfs::Volume* volume);
-
-  virtual void CreateVolume(
-      const std::string& mrc_address,
-      const xtreemfs::pbrpc::Auth& auth,
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
-      const std::string& volume_name,
-      int mode,
-      const std::string& owner_username,
-      const std::string& owner_groupname,
-      const xtreemfs::pbrpc::AccessControlPolicyType& access_policy,
-      const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
-      int default_stripe_size,
-      int default_stripe_width,
-      const std::list<xtreemfs::pbrpc::KeyValuePair*>& volume_attributes);
-
-  virtual void DeleteVolume(
-      const std::string& mrc_address,
-      const xtreemfs::pbrpc::Auth& auth,
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
-      const std::string& volume_name);
-
-  virtual xtreemfs::pbrpc::Volumes* ListVolumes(
-      const std::string& mrc_address,
-      const xtreemfs::pbrpc::Auth& auth);
-
-  virtual xtreemfs::pbrpc::Volumes* ListVolumes(
-      UUIDIterator* uuid_iterator_with_mrc_addresses,
-      const xtreemfs::pbrpc::Auth& auth);
-
-  virtual UUIDResolver* GetUUIDResolver();
+  void Initialize(rpc::Client* network_client);
 
   virtual void UUIDToAddress(const std::string& uuid, std::string* address);
   virtual void UUIDToAddressWithOptions(const std::string& uuid,
@@ -104,7 +63,78 @@ class ClientImplementation : public Client, public UUIDResolver {
   virtual void VolumeNameToMRCUUID(const std::string& volume_name,
                                    SimpleUUIDIterator* uuid_iterator);
 
-  const xtreemfs::pbrpc::VivaldiCoordinates& GetVivaldiCoordinates() const;
+ private:
+  SimpleUUIDIterator dir_service_addresses_;
+
+  /** The auth_type of this object will always be set to AUTH_NONE. */
+  // TODO(mberlin): change this when the DIR service supports real auth.
+  pbrpc::Auth dir_service_auth_;
+
+  /** These credentials will be used for messages to the DIR service. */
+  const pbrpc::UserCredentials dir_service_user_credentials_;
+
+  /** A DIRServiceClient is a wrapper for an RPC Client. */
+  boost::scoped_ptr<pbrpc::DIRServiceClient> dir_service_client_;
+
+  /** Caches service UUIDs -> (address, port, TTL). */
+  UUIDCache uuid_cache_;
+
+  /** Options class which contains the log_level string and logfile path. */
+  const Options& options_;
+};
+
+/**
+ * Default Implementation of the XtreemFS C++ client interfaces.
+ */
+class ClientImplementation : public Client {
+ public:
+  ClientImplementation(
+      const ServiceAddresses& dir_service_addresses,
+      const pbrpc::UserCredentials& user_credentials,
+      const rpc::SSLOptions* ssl_options,
+      const Options& options);
+  virtual ~ClientImplementation();
+
+  virtual void Start();
+  virtual void Shutdown();
+
+  virtual Volume* OpenVolume(
+      const std::string& volume_name,
+      const rpc::SSLOptions* ssl_options,
+      const Options& options);
+  virtual void CloseVolume(xtreemfs::Volume* volume);
+
+  virtual void CreateVolume(
+      const std::string& mrc_address,
+      const pbrpc::Auth& auth,
+      const pbrpc::UserCredentials& user_credentials,
+      const std::string& volume_name,
+      int mode,
+      const std::string& owner_username,
+      const std::string& owner_groupname,
+      const pbrpc::AccessControlPolicyType& access_policy,
+      const pbrpc::StripingPolicyType& default_striping_policy_type,
+      int default_stripe_size,
+      int default_stripe_width,
+      const std::list<pbrpc::KeyValuePair*>& volume_attributes);
+
+  virtual void DeleteVolume(
+      const std::string& mrc_address,
+      const pbrpc::Auth& auth,
+      const pbrpc::UserCredentials& user_credentials,
+      const std::string& volume_name);
+
+  virtual pbrpc::Volumes* ListVolumes(
+      const std::string& mrc_address,
+      const xtreemfs::pbrpc::Auth& auth);
+
+  virtual pbrpc::Volumes* ListVolumes(
+      const ServiceAddresses& mrc_addresses,
+      const pbrpc::Auth& auth);
+
+  virtual UUIDResolver* GetUUIDResolver();
+
+  const pbrpc::VivaldiCoordinates& GetVivaldiCoordinates() const;
 
  private:
   /** True if Shutdown() was executed. */
@@ -114,47 +144,34 @@ class ClientImplementation : public Client, public UUIDResolver {
    *  check the authentication data (except Create, Delete, ListVolume(s)). */
   xtreemfs::pbrpc::Auth auth_bogus_;
 
-  SimpleUUIDIterator dir_service_addresses_;
-
-  /** The auth_type of this object will always be set to AUTH_NONE. */
-  // TODO(mberlin): change this when the DIR service supports real auth.
-  xtreemfs::pbrpc::Auth dir_service_auth_;
-
-  /** These credentials will be used for messages to the DIR service. */
-  const xtreemfs::pbrpc::UserCredentials dir_service_user_credentials_;
-
-  const xtreemfs::rpc::SSLOptions* dir_service_ssl_options_;
-
   /** Options class which contains the log_level string and logfile path. */
   const xtreemfs::Options& options_;
 
   std::list<VolumeImplementation*> list_open_volumes_;
   boost::mutex list_open_volumes_mutex_;
 
-  /** Caches service UUIDs -> (address, port, TTL). */
-  UUIDCache uuid_cache_;
+  const rpc::SSLOptions* dir_service_ssl_options_;
 
   /** The RPC Client processes requests from a queue and executes callbacks in
    * its thread. */
-  boost::scoped_ptr<xtreemfs::rpc::Client> network_client_;
+  boost::scoped_ptr<rpc::Client> network_client_;
   boost::scoped_ptr<boost::thread> network_client_thread_;
 
-  /** A DIRServiceClient is a wrapper for an RPC Client. */
-  boost::scoped_ptr<xtreemfs::pbrpc::DIRServiceClient> dir_service_client_;
+  DIRUUIDResolver uuid_resolver_;
 
   /** Random, non-persistent UUID to distinguish locks of different clients. */
   std::string client_uuid_;
 
   /** Vivaldi thread, periodically updates vivaldi-coordinates. */
   boost::scoped_ptr<boost::thread> vivaldi_thread_;
-  boost::scoped_ptr<xtreemfs::Vivaldi> vivaldi_;
-  boost::scoped_ptr<xtreemfs::pbrpc::OSDServiceClient> osd_service_client_;
+  boost::scoped_ptr<Vivaldi> vivaldi_;
+  boost::scoped_ptr<pbrpc::OSDServiceClient> osd_service_client_;
 
   /** Thread that handles the callbacks for asynchronous writes. */
   boost::scoped_ptr<boost::thread> async_write_callback_thread_;
 
-  FRIEND_TEST(xtreemfs::rpc::ClientTestFastLingerTimeout, LingerTests);
-  FRIEND_TEST(xtreemfs::rpc::ClientTestFastLingerTimeoutConnectTimeout, LingerTests);
+  FRIEND_TEST(rpc::ClientTestFastLingerTimeout, LingerTests);
+  FRIEND_TEST(rpc::ClientTestFastLingerTimeoutConnectTimeout, LingerTests);
 };
 
 }  // namespace xtreemfs

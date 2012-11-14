@@ -85,8 +85,7 @@ class Client {
       const xtreemfs::rpc::SSLOptions* ssl_options,
       const Options& options) = 0;
 
-  // TODO(mberlin): Also provide a method which accepts a list of MRC addresses
-  //                or an UUID Iterator object which contains all addresses.
+  // TODO(mberlin): Also provide a method which accepts a list of MRC addresses.
   /** Creates a volume on the MRC at mrc_address using certain default values (
    *  POSIX access policy type, striping size = 128k and width = 1 (i.e. no
    *  striping), mode = 777 and owner username and groupname retrieved from the
@@ -107,8 +106,7 @@ class Client {
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& volume_name);
 
-  // TODO(mberlin): Also provide a method which accepts a list of MRC addresses
-  //                or an UUID Iterator object which contains all addresses.
+  // TODO(mberlin): Also provide a method which accepts a list of MRC addresses.
   /** Creates a volume on the MRC at mrc_address.
    *
    * @param mrc_address     String of the form "hostname:port".
@@ -146,8 +144,7 @@ class Client {
       int default_stripe_width,
       const std::list<xtreemfs::pbrpc::KeyValuePair*>& volume_attributes) = 0;
 
-  // TODO(mberlin): Also provide a method which accepts a list of MRC addresses
-  //                or an UUID Iterator object which contains all addresses.
+  // TODO(mberlin): Also provide a method which accepts a list of MRC addresses.
   /** Deletes the volume "volume_name" at the MRC "mrc_address".
    *
    * @param mrc_address     String of the form "hostname:port".
@@ -181,7 +178,7 @@ class Client {
 
   /** Returns the available volumes on a MRC.
    *
-   * @param uuid_iterator_with_mrc_addresses    UUIDIterator object which
+   * @param mrc_addresses                       ServiceAddresses object which
    *                                            contains MRC addresses of the
    *                                            form "hostname:port".
    * @param auth    Authentication data, e.g. of type AUTH_PASSWORD.
@@ -192,15 +189,8 @@ class Client {
    *
    * @remark Ownership of the return value is transferred to the caller. */
   virtual xtreemfs::pbrpc::Volumes* ListVolumes(
-      UUIDIterator* uuid_iterator_with_mrc_addresses,
+      const ServiceAddresses& mrc_addresses,
       const xtreemfs::pbrpc::Auth& auth) = 0;
-
-  /** Returns a pointer to a UUIDResolver object, which provides functions to
-   *  resolve UUIDs to IP-Addresses and Ports.
-   *
-   *  @remark Ownership is NOT transferred to the caller.
-   */
-  virtual UUIDResolver* GetUUIDResolver() = 0;
 };
 
 }  // namespace xtreemfs

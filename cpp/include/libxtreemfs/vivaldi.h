@@ -10,6 +10,7 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_VIVALDI_H_
 #define CPP_INCLUDE_LIBXTREEMFS_VIVALDI_H_
 
+#include <boost/scoped_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 #include <list>
 #include <string>
@@ -17,19 +18,19 @@
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/vivaldi_node.h"
 #include "xtreemfs/GlobalTypes.pb.h"
-#include "xtreemfs/OSDServiceClient.h"
 
 namespace xtreemfs {
 
 namespace pbrpc {
 class DIRServiceClient;
+class OSDServiceClient;
 }  // namespace pbrpc
 
 namespace rpc {
 class Client;
 }  // namespace rpc
 
-class UUIDIterator;
+class SimpleUUIDIterator;
 class UUIDResolver;
 
 class KnownOSD {
@@ -55,38 +56,35 @@ class KnownOSD {
     return uuid;
   }
 
-  void SetCoordinates(const xtreemfs::pbrpc::VivaldiCoordinates& new_coords) {
+  void SetCoordinates(const pbrpc::VivaldiCoordinates& new_coords) {
     coordinates = new_coords;
   }
  private:
   std::string uuid;
-  xtreemfs::pbrpc::VivaldiCoordinates coordinates;
+  pbrpc::VivaldiCoordinates coordinates;
 };
-
 
 class Vivaldi {
  public:
   /**
    * @remarks   Ownership is not transferred.
    */
-  Vivaldi(xtreemfs::rpc::Client* rpc_client,
-          xtreemfs::pbrpc::DIRServiceClient* dir_client,
-          UUIDIterator* dir_service_addresses,
+  Vivaldi(const ServiceAddresses& dir_addresses,
           UUIDResolver* uuid_resolver,
           const Options& options);
-
+  
+  void Initialize(rpc::Client* network_client);
   void Run();
 
   const xtreemfs::pbrpc::VivaldiCoordinates& GetVivaldiCoordinates() const;
 
  private:
   bool UpdateKnownOSDs(std::list<KnownOSD>* updated_osds,
-                         const VivaldiNode& own_node);
+                       const VivaldiNode& own_node);
 
-  xtreemfs::rpc::Client* rpc_client_;
-  xtreemfs::pbrpc::DIRServiceClient* dir_client_;
-  xtreemfs::pbrpc::OSDServiceClient osd_client_;
-  UUIDIterator* dir_service_addresses_;
+  boost::scoped_ptr<pbrpc::DIRServiceClient> dir_client_;
+  boost::scoped_ptr<pbrpc::OSDServiceClient> osd_client_;
+  boost::scoped_ptr<SimpleUUIDIterator> dir_service_addresses_;
   UUIDResolver* uuid_resolver_;
 
   /** Shallow copy of the Client's options, with disabled retry and interrupt
@@ -100,7 +98,7 @@ class Vivaldi {
    *
    *  @remark Cannot be set to const because it's modified inside the
    *          constructor VolumeImplementation(). */
-  xtreemfs::pbrpc::Auth auth_bogus_;
+  pbrpc::Auth auth_bogus_;
 
   /** The PBRPC protocol requires an Auth & UserCredentials object in every
    *  request. However there are many operations which do not check the content
@@ -109,13 +107,13 @@ class Vivaldi {
    *
    *  @remark Cannot be set to const because it's modified inside the
    *          constructor VolumeImplementation(). */
-  xtreemfs::pbrpc::UserCredentials user_credentials_bogus_;
+  pbrpc::UserCredentials user_credentials_bogus_;
 
   /** Mutex to serialise concurrent read and write access to
    *  my_vivaldi_coordinates_. */
   mutable boost::mutex coordinate_mutex_;
 
-  xtreemfs::pbrpc::VivaldiCoordinates my_vivaldi_coordinates_;
+  pbrpc::VivaldiCoordinates my_vivaldi_coordinates_;
 };
 
 }  // namespace xtreemfs
