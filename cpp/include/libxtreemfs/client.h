@@ -91,7 +91,7 @@ class Client {
    *  striping), mode = 777 and owner username and groupname retrieved from the
    *  user_credentials.
    *
-   * @param mrc_address     String of the form "hostname:port".
+   * @param mrc_address     One or several addresses of the form "hostname:port".
    * @param auth            Authentication data, e.g. of type AUTH_PASSWORD.
    * @param user_credentials    Username and groups of the user who executes
    *                        CreateVolume(). Not checked so far?
@@ -101,7 +101,7 @@ class Client {
    * @throws PosixErrorException
    */
   void CreateVolume(
-      const std::string& mrc_address,
+      const ServiceAddresses& mrc_address,
       const xtreemfs::pbrpc::Auth& auth,
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& volume_name);
@@ -131,7 +131,7 @@ class Client {
    * @throws PosixErrorException
    */
   virtual void CreateVolume(
-      const std::string& mrc_address,
+      const ServiceAddresses& mrc_address,
       const xtreemfs::pbrpc::Auth& auth,
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& volume_name,
@@ -157,24 +157,10 @@ class Client {
    * @throws PosixErrorException
    */
   virtual void DeleteVolume(
-      const std::string& mrc_address,
+      const ServiceAddresses& mrc_address,
       const xtreemfs::pbrpc::Auth& auth,
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& volume_name) = 0;
-
-  /** Returns the available volumes on a MRC.
-   *
-   * @param mrc_address     String of the form "hostname:port".
-   * @param auth            Authentication data, e.g. of type AUTH_PASSWORD.
-   *
-   * @throws AddressToUUIDNotFoundException
-   * @throws IOException
-   * @throws PosixErrorException
-   *
-   * @remark Ownership is transferred to the caller. */
-  virtual xtreemfs::pbrpc::Volumes* ListVolumes(
-      const std::string& mrc_address,
-      const xtreemfs::pbrpc::Auth& auth) = 0;
 
   /** Returns the available volumes on a MRC.
    *

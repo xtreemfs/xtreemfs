@@ -502,7 +502,7 @@ void Options::ParseURL(XtreemFSServiceType service_type) {
   PBRPCURL url_parser;
   url_parser.ParseURL(xtreemfs_url, PBRPCURL::SCHEME_PBRPC, default_port);
   volume_name = url_parser.volume();
-  url_parser.GetAddresses(&service_addresses);
+  service_addresses = url_parser.GetAddresses();
   protocol = url_parser.scheme();
 }
 

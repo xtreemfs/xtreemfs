@@ -44,7 +44,7 @@ Client* Client::CreateClient(
 }
 
 void Client::CreateVolume(
-      const std::string& mrc_address,
+      const ServiceAddresses& mrc_address,
       const xtreemfs::pbrpc::Auth& auth,
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& volume_name) {

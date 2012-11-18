@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
 
   // Create a new client and start it.
   boost::scoped_ptr<Client> client(Client::CreateClient(
-      ServiceAddresses(1, "DIR-host-not-required-for-lsfs"),  // Using a bogus value as DIR address.  // NOLINT
+      "DIR-host-not-required-for-lsfs",  // Using a bogus value as DIR address.  // NOLINT
       user_credentials,
       options.GenerateSSLOptions(),
       options));

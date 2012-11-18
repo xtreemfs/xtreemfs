@@ -103,19 +103,20 @@ void PBRPCURL::ParseURL(const std::string& original_url,
   } // for
 }
 
-void PBRPCURL::GetAddresses(ServiceAddresses* addresses) const {
+ServiceAddresses PBRPCURL::GetAddresses() const {
+  ServiceAddresses addresses;
   ostringstream host;
   assert(servers_.size() == ports_.size());
-  addresses->clear();
 
   ServerList::const_iterator servers_it = servers_.begin();
   PortList::const_iterator ports_it = ports_.begin();
 
   for (; servers_it != servers_.end(); ++servers_it, ++ports_it) {
     host << *servers_it << ":" << *ports_it;
-    addresses->push_back(host.str());
+    addresses.Add(host.str());
     host.str("");
   }
+  return addresses;
 }
 
 }  // namespace xtreemfs

@@ -49,8 +49,7 @@ class DIRUUIDResolver : public UUIDResolver {
   DIRUUIDResolver(
       const ServiceAddresses& dir_service_addresses,
       const pbrpc::UserCredentials& user_credentials,
-      const Options& options
-      );
+      const Options& options);
 
   void Initialize(rpc::Client* network_client);
 
@@ -105,7 +104,7 @@ class ClientImplementation : public Client {
   virtual void CloseVolume(xtreemfs::Volume* volume);
 
   virtual void CreateVolume(
-      const std::string& mrc_address,
+      const ServiceAddresses& mrc_address,
       const pbrpc::Auth& auth,
       const pbrpc::UserCredentials& user_credentials,
       const std::string& volume_name,
@@ -119,14 +118,10 @@ class ClientImplementation : public Client {
       const std::list<pbrpc::KeyValuePair*>& volume_attributes);
 
   virtual void DeleteVolume(
-      const std::string& mrc_address,
+      const ServiceAddresses& mrc_address,
       const pbrpc::Auth& auth,
       const pbrpc::UserCredentials& user_credentials,
       const std::string& volume_name);
-
-  virtual pbrpc::Volumes* ListVolumes(
-      const std::string& mrc_address,
-      const xtreemfs::pbrpc::Auth& auth);
 
   virtual pbrpc::Volumes* ListVolumes(
       const ServiceAddresses& mrc_addresses,

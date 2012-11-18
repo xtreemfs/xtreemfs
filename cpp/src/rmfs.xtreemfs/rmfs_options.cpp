@@ -92,11 +92,11 @@ void RmfsOptions::ParseCommandLine(int argc, char** argv) {
   // Check for MRC host
   if(service_addresses.empty()) {
     throw InvalidCommandLineParametersException("missing MRC host.");
-  } else if (service_addresses.size() > 1) {
+  } else if (service_addresses.IsAddressList()) {
     throw InvalidCommandLineParametersException(
         "more than one MRC host was specified.");
   } else {
-    mrc_service_address = service_addresses.front();
+    mrc_service_address = service_addresses.GetAddresses().front();
   }
 
   // Check for required parameters.

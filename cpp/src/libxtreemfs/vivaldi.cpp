@@ -35,12 +35,11 @@ using namespace xtreemfs::util;
 
 namespace xtreemfs {
     
-static void AddAddresses(const ServiceAddresses& dir_service_addresses,
+static void AddAddresses(const ServiceAddresses& service_addresses,
                          SimpleUUIDIterator* uuid_iterator) {
-  for (ServiceAddresses::const_iterator iter
-           = dir_service_addresses.begin();
-       iter != dir_service_addresses.end();
-       ++iter) {
+  ServiceAddresses::Addresses as_list = service_addresses.GetAddresses();
+  for (ServiceAddresses::Addresses::const_iterator iter = as_list.begin();
+       iter != as_list.end(); ++iter) {
     uuid_iterator->AddUUID(*iter);
   }
 }
@@ -71,6 +70,9 @@ void Vivaldi::Initialize(rpc::Client* rpc_client) {
 }
 
 void Vivaldi::Run() {
+  assert(dir_client_.get() != NULL);
+  assert(osd_client_.get() != NULL);
+
   // Initialized to (0,0) by default
   my_vivaldi_coordinates_.set_local_error(0.0);
   my_vivaldi_coordinates_.set_x_coordinate(0.0);

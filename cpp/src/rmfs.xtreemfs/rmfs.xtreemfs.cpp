@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
 
     // Create a new client and start it.
     client.reset(Client::CreateClient(
-        ServiceAddresses(1, "DIR-host-not-required-for-rmfs"),  // Using a bogus value as DIR address.  // NOLINT
+        "DIR-host-not-required-for-rmfs",  // Using a bogus value as DIR address.  // NOLINT
         user_credentials,
         options.GenerateSSLOptions(),
         options));

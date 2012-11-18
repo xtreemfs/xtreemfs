@@ -48,7 +48,7 @@ class PBRPCURL {
     return volume_;
   }
 
-  void GetAddresses(ServiceAddresses* addresses) const;
+  ServiceAddresses GetAddresses() const;
 
  private:
   /** List of servers (hostnames only) */

@@ -35,12 +35,11 @@ using namespace xtreemfs::util;
 
 namespace xtreemfs {
   
-static void AddAddresses(const ServiceAddresses& dir_service_addresses,
+static void AddAddresses(const ServiceAddresses& service_addresses,
                          SimpleUUIDIterator* uuid_iterator) {
-  for (ServiceAddresses::const_iterator iter
-           = dir_service_addresses.begin();
-       iter != dir_service_addresses.end();
-       ++iter) {
+  ServiceAddresses::Addresses as_list = service_addresses.GetAddresses();
+  for (ServiceAddresses::Addresses::const_iterator iter = as_list.begin();
+       iter != as_list.end(); ++iter) {
     uuid_iterator->AddUUID(*iter);
   }
 }
@@ -131,7 +130,7 @@ void DIRUUIDResolver::UUIDToAddressWithOptions(const std::string& uuid,
 }
 
 void DIRUUIDResolver::VolumeNameToMRCUUID(const std::string& volume_name,
-                                               std::string* mrc_uuid) {
+                                          std::string* mrc_uuid) {
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
      Logging::log->getLog(LEVEL_DEBUG)
          << "MRC: searching volume on MRC: " << volume_name << endl;
@@ -188,7 +187,7 @@ void DIRUUIDResolver::VolumeNameToMRCUUID(const std::string& volume_name,
 }
 
 void DIRUUIDResolver::VolumeNameToMRCUUID(const std::string& volume_name,
-                                               SimpleUUIDIterator* uuid_iterator) {
+                                          SimpleUUIDIterator* uuid_iterator) {
   assert(uuid_iterator);
 
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
@@ -272,10 +271,6 @@ ClientImplementation::ClientImplementation(
   initialize_error_log(20);
   
   if (options_.vivaldi_enable) {
-    if (Logging::log->loggingActive(LEVEL_INFO)) {
-      Logging::log->getLog(LEVEL_INFO)
-          << "Starting vivaldi..." << endl;
-    }
     vivaldi_.reset(new Vivaldi(dir_service_addresses,
                                GetUUIDResolver(),
                                options_));
@@ -411,7 +406,7 @@ void ClientImplementation::CloseVolume(xtreemfs::Volume* volume) {
 }
 
 void ClientImplementation::CreateVolume(
-    const std::string& mrc_address,
+    const ServiceAddresses& mrc_address,
     const xtreemfs::pbrpc::Auth& auth,
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& volume_name,
@@ -447,7 +442,7 @@ void ClientImplementation::CreateVolume(
   }
 
   SimpleUUIDIterator temp_uuid_iterator_with_addresses;
-  temp_uuid_iterator_with_addresses.AddUUID(mrc_address);
+  AddAddresses(mrc_address, &temp_uuid_iterator_with_addresses);
 
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
@@ -466,7 +461,7 @@ void ClientImplementation::CreateVolume(
 }
 
 void ClientImplementation::DeleteVolume(
-    const std::string& mrc_address,
+    const ServiceAddresses& mrc_address,
     const xtreemfs::pbrpc::Auth& auth,
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& volume_name) {
@@ -476,7 +471,7 @@ void ClientImplementation::DeleteVolume(
   rmvol_request.set_volume_name(volume_name);
 
   SimpleUUIDIterator temp_uuid_iterator_with_addresses;
-  temp_uuid_iterator_with_addresses.AddUUID(mrc_address);
+  AddAddresses(mrc_address, &temp_uuid_iterator_with_addresses);
 
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
@@ -495,15 +490,7 @@ void ClientImplementation::DeleteVolume(
 }
 
 xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(
-    const std::string& mrc_address,
-    const xtreemfs::pbrpc::Auth& auth) {
-  ServiceAddresses address;
-  address.push_back(mrc_address);
-  return ListVolumes(address, auth);
-}
-
-xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(
-      const ServiceAddresses& mrc_addresses,
+    const ServiceAddresses& mrc_addresses,
     const xtreemfs::pbrpc::Auth& auth) {
   // Create a MRCServiceClient
   MRCServiceClient mrc_service_client(network_client_.get());
