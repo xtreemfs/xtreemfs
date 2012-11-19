@@ -476,16 +476,19 @@ public class StatusPage {
     }
 
     private static void printTimeAgo(long lastUpdateDateTime) {
-        long timeout = System.currentTimeMillis() - lastUpdateDateTime;
+        final long timeout = (System.currentTimeMillis() - lastUpdateDateTime) / 1000;
         dump.append(", that's ");
-        if (timeout < 3600000) {
-            dump.append(timeout / 60000);
+        if (timeout < 3600) {
+            // timeout less than one hour
+            dump.append(timeout / 60);
             dump.append(" minutes");
-        } else if (timeout < 86400000) {
-            dump.append(timeout / 3600000);
+        } else if (timeout < 86400) {
+            // timeout less than one day
+            dump.append(timeout / 3600);
             dump.append(" hours");
         } else {
-            dump.append(timeout / 86400000);
+            // timeout equals or longer than one day
+            dump.append(timeout / 86400);
             dump.append(" days");
         }
         dump.append(" ago. Please check connectivity of the server");
