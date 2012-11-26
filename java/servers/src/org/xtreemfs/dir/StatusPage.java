@@ -49,13 +49,13 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
  */
 public class StatusPage {
 
-    private final static String statusPageTemplate;
+    private final static String  statusPageTemplate;
 
     /**
      * Time after a service, which has not send a heartbeat signal, will be displayed as not available
      * (default: 10 min).
      */
-    private final static int    SERVICE_TIMEOUT = 600000;
+    private final static int     SERVICE_TIMEOUT = 600000;
 
     private static StringBuilder dump;
 
@@ -64,20 +64,11 @@ public class StatusPage {
      */
     private enum Vars {
 
-        MAXMEM("<!-- $MAXMEM -->"),
-        FREEMEM("<!-- $FREEMEM -->"),
-        AVAILPROCS("<!-- $AVAILPROCS -->"),
-        BPSTATS("<!-- $BPSTATS -->"),
-        PORT("<!-- $PORT -->"),
-        DEBUG("<!-- $DEBUG -->"),
-        NUMCON("<!-- $NUMCON -->"),
-        PINKYQ("<!-- $PINKYQ -->"),
-        NUMREQS("<!-- $NUMREQS -->"),
-        TIME("<!-- $TIME -->"),
-        TABLEDUMP("<!-- $TABLEDUMP -->"),
-        PROTOVERSION("<!-- $PROTOVERSION -->"),
-        VERSION("<!-- $VERSION -->"),
-        DBVERSION("<!-- $DBVERSION -->");
+        MAXMEM("<!-- $MAXMEM -->"), FREEMEM("<!-- $FREEMEM -->"), AVAILPROCS("<!-- $AVAILPROCS -->"), BPSTATS(
+                "<!-- $BPSTATS -->"), PORT("<!-- $PORT -->"), DEBUG("<!-- $DEBUG -->"), NUMCON(
+                "<!-- $NUMCON -->"), PINKYQ("<!-- $PINKYQ -->"), NUMREQS("<!-- $NUMREQS -->"), TIME(
+                "<!-- $TIME -->"), TABLEDUMP("<!-- $TABLEDUMP -->"), PROTOVERSION("<!-- $PROTOVERSION -->"), VERSION(
+                "<!-- $VERSION -->"), DBVERSION("<!-- $DBVERSION -->");
 
         /*
          * @formatter: on
@@ -264,7 +255,9 @@ public class StatusPage {
                         || sreg.getType() == ServiceType.SERVICE_TYPE_OSD) {
                     long lastUpdateDateTime = lastUpdatedDate.getTime();
                     if (lastUpdateDateTime < (System.currentTimeMillis() - SERVICE_TIMEOUT)) {
-                        printTimeAgo(lastUpdateDateTime);
+                        dump.append(", that's ");
+                        dump.append(OutputUtils.SecondsToString((System.currentTimeMillis() - lastUpdateDateTime) / 1000));
+                        dump.append(" ago. Please check connectivity of the server");
                     }
                 }
                 dump.append(")");
@@ -473,24 +466,5 @@ public class StatusPage {
         sb.append("</BODY></HTML>");
 
         return sb.toString();
-    }
-
-    private static void printTimeAgo(long lastUpdateDateTime) {
-        final long timeout = (System.currentTimeMillis() - lastUpdateDateTime) / 1000;
-        dump.append(", that's ");
-        if (timeout < 3600) {
-            // timeout less than one hour
-            dump.append(timeout / 60);
-            dump.append(" minutes");
-        } else if (timeout < 86400) {
-            // timeout less than one day
-            dump.append(timeout / 3600);
-            dump.append(" hours");
-        } else {
-            // timeout equals or longer than one day
-            dump.append(timeout / 86400);
-            dump.append(" days");
-        }
-        dump.append(" ago. Please check connectivity of the server");
     }
 }

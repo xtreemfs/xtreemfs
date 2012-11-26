@@ -236,4 +236,29 @@ public final class OutputUtils {
         return sb.toString();
     }
 
+    /**
+     * Formats number of seconds to a string consists of number of seconds, minutes, hours or days and the
+     * corresponding entity (e.g. "3 minutes" if seconds is between 180 and 239).
+     * 
+     * @param seconds
+     * @return
+     */
+    public static String SecondsToString(long seconds) {
+        String timeString = null;
+        if (seconds < 60) {
+            // seconds less than one minute
+            timeString = seconds + " seconds";
+        } else if (seconds < 3600) {
+            // seconds less than one hour
+            timeString = (seconds / 60) + " minutes";
+        } else if (seconds < 86400) {
+            // seconds less than one day
+            timeString = (seconds / 3600) + " hours";
+        } else {
+            // seconds equals or longer than one day
+            timeString = (seconds / 86400) + " days";
+        }
+        return timeString;
+    }
+
 }
