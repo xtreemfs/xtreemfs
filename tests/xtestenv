@@ -31,7 +31,7 @@ class TestEnvironment:
 
     def start(self):
         try:
-            print 'xtestenv: Starting test enivornment for the following configuration...'
+            print 'xtestenv: Starting test environment for the following configuration...'
             self.__config.printConfig()
 
             # find out how many OSDs we need
