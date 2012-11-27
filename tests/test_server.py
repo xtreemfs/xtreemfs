@@ -161,11 +161,22 @@ class Server:
                              os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "jdmkrt.jar")),
                              os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "commons-codec-1.3.jar")),
                              )
-                if sys.platform.startswith("win"):
-                    classpath = ";".join(classpath)
-                else:
-                    classpath = ":".join(classpath)
-                java_args.extend(("-cp", classpath))
+            else:
+                classpath = (
+                             os.path.join("/usr/share/java", "XtreemFS.jar"),
+                             os.path.join("/usr/share/java", "BabuDB.jar"),
+                             os.path.join("/usr/share/java", "protobuf-java-2.3.0.jar"),
+                             os.path.join("/usr/share/java", "Flease.jar"),
+                             os.path.join("/usr/share/java", "Foundation.jar"),
+                             os.path.join("/usr/share/java", "jdmkrt.jar"),
+                             os.path.join("/usr/share/java", "commons-codec-1.3.jar"),
+                             )
+
+            if sys.platform.startswith("win"):
+                classpath = ";".join(classpath)
+            else:
+                classpath = ":".join(classpath)
+            java_args.extend(("-cp", classpath))
 
             # Name of the class to start
             java_args.append("org.xtreemfs." + self.__class__.__name__.lower() + "." + self.__class__.__name__.upper())

@@ -72,6 +72,10 @@ class Volume:
         return self.__name
 
     def mount(self, log_file_path):
+        xtfsutil_file_path = os.path.abspath(os.path.join(self.__xtreemfs_dir, "bin", "xtfsutil"))
+        if not os.path.exists(xtfsutil_file_path):
+            xtfsutil_file_path = "xtfsutil" # Assume it's in the global path
+        
         try: os.mkdir(self.__mount_point_dir_path)
         except: pass
 
@@ -117,7 +121,7 @@ class Volume:
 
         # enable replication
         if self.__rwr_factor > 0:
-            command = (self.__xtreemfs_dir + "/bin/xtfsutil " +
+            command = (xtfsutil_file_path + " " +
                        "--set-drp " +
                        "--replication-policy="+self.__rwr_policy + " " +
                        "--replication-factor="+str(self.__rwr_factor) + " " +
@@ -126,20 +130,20 @@ class Volume:
             if retcode != 0:
                 raise RuntimeError("Failed to enable read-write replication on volume: " + self.__name
                     + " xtfsutil return value: " + str(retcode)
-                    + " Executed command: " + self.__xtreemfs_dir + "/bin/xtfsutil " + "--set-drp " + "--replication-policy=" + self.__rwr_policy + " " + "--replication-factor="+str(self.__rwr_factor) + " " + self.__mount_point_dir_path)
+                    + " Executed command: " + command)
 
         # enable replicate on close for ronly replication
         if self.__ronly_factor > 0:
-            for setfattr_command in \
-                ("/usr/bin/setfattr -n xtreemfs.repl_factor -v " +
-                 str(self.__ronly_factor) + " " + self.get_mount_point_dir_path(),
-                 "/usr/bin/setfattr -n xtreemfs.rsel_policy -v 3000 " +
-                 self.get_mount_point_dir_path()):
-                    print "xtestenv: calling setfattr to enable replication:", setfattr_command
-                    retcode = subprocess.call(setfattr_command, shell=True)
-                    if retcode != 0:
-                        raise RuntimeError("Failed to enable read-only replicaton on volume: " + self.__name + " xtfsutil return value: " + str(retcode))
-
+            command = (xtfsutil_file_path + " " +
+                       "--set-drp " +
+                       "--replication-policy=readonly " +
+                       "--replication-factor="+str(self.__rwr_factor) + " " +
+                       self.__mount_point_dir_path)
+            retcode = subprocess.call(command, shell=True)
+            if retcode != 0:
+                raise RuntimeError("Failed to enable read/only replication on volume: " + self.__name
+                    + " xtfsutil return value: " + str(retcode)
+                    + " Executed command: " + command)
 
     def unmount(self):
         for mounts_line in open("/proc/mounts").readlines():
