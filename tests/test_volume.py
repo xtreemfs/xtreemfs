@@ -63,7 +63,7 @@ class Volume:
 
         retcode = subprocess.call(mkfs_xtreemfs_args, shell=True)
         if retcode != 0:
-            raise RuntimeError("Failed to create volume: " + self.__name + " You can use the option --clean-test-dir to clean previous data from the test dir. mkfs.xtreemfs return value: " + str(retcode))
+            raise RuntimeError("Failed to create volume: " + self.__name + " You can use the option --clean-test-dir to clean previous data from the test dir. mkfs.xtreemfs return value: " + str(retcode) + " Executed command: " + mkfs_xtreemfs_args)
 
     def get_mount_point_dir_path(self):
         return self.__mount_point_dir_path
