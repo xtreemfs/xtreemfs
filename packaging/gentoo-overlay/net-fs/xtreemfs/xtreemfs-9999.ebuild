@@ -10,7 +10,7 @@ ESVN_PROJECT=${ESVN_REPO_URI##*/svnroot/}
 ESVN_PROJECT=${ESVN_PROJECT%/*}
 if [[ ${PV} == "9999" ]] ; then
   inherit java-pkg-2 java-ant-2 subversion
-else if [[ ${PV} == "8888_beta" ]] ; then
+elif [[ ${PV} == "8888_beta" ]] ; then
   inherit java-pkg-2 java-ant-2 subversion
   ESVN_REPO_URI=${XTREEMFS_ESVN_REPO_URI:-http://xtreemfs.googlecode.com/svn/tags/XtreemFS-unstable}
   ESVN_PROJECT=${ESVN_REPO_URI##*/svnroot/}
