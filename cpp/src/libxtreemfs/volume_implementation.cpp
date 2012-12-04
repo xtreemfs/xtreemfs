@@ -748,13 +748,11 @@ void VolumeImplementation::UnlinkAtOSD(const FileCredentials& fc,
   rq_osd.mutable_file_credentials()->CopyFrom(fc);
   rq_osd.set_file_id(fc.xcap().file_id());
 
-  SimpleUUIDIterator osd_uuid_iterator;
 
   // Remove _all_ replicas.
   for (int k = 0; k < xlocs.replicas_size(); k++) {
-    osd_uuid_iterator.ClearAndAddUUID(GetOSDUUIDFromXlocSet(xlocs,
-                                                            k,
-                                                            0));
+    SimpleUUIDIterator osd_uuid_iterator;
+    osd_uuid_iterator.AddUUID(GetOSDUUIDFromXlocSet(xlocs, k, 0));
 
     boost::scoped_ptr<rpc::SyncCallbackBase> response(
         ExecuteSyncRequest(

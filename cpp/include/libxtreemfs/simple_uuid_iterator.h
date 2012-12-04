@@ -27,10 +27,7 @@ class SimpleUUIDIterator : public UUIDIterator {
   virtual void Clear();
   /** Appends "uuid" to the list of UUIDs. Does not change the current UUID. */
   virtual void AddUUID(const std::string& uuid);
-  /** Atomically clears the list and adds "uuid" to avoid an empty list. */
-  virtual void ClearAndAddUUID(const std::string& uuid);
 
-  FRIEND_TEST(SimpleUUIDIteratorTest, ClearAndAddUUID);
   FRIEND_TEST(SimpleUUIDIteratorTest, ConcurrentSetAndMarkAsFailed);
 };
 

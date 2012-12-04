@@ -279,7 +279,6 @@ int FileHandleImplementation::Write(
     }
   } else {
     // Synchronous writes.
-    SimpleUUIDIterator temp_uuid_iterator_for_striping;
     string osd_uuid = "";
     writeRequest write_request;
     write_request.mutable_file_credentials()->CopyFrom(file_credentials);
@@ -296,14 +295,15 @@ int FileHandleImplementation::Write(
       data->set_invalid_checksum_on_osd(false);
       data->set_zero_padding(0);
 
-      // Differ between striping and the rest.
-      UUIDIterator* uuid_iterator;
+      // Differentiate between striping and the rest.
+      UUIDIterator* uuid_iterator = NULL;
+      SimpleUUIDIterator temp_uuid_iterator_for_striping;
       if (xlocs.replicas(0).osd_uuids_size() > 1) {
         // Replica is striped. Pick UUID from xlocset.
         osd_uuid = GetOSDUUIDFromXlocSet(xlocs,
                                          0,  // Use first and only replica.
                                          operations[j].osd_offsets[0]);
-        temp_uuid_iterator_for_striping.ClearAndAddUUID(osd_uuid);
+        temp_uuid_iterator_for_striping.AddUUID(osd_uuid);
         uuid_iterator = &temp_uuid_iterator_for_striping;
       } else {
         // TODO(mberlin): Enhance UUIDIterator to read from different replicas.

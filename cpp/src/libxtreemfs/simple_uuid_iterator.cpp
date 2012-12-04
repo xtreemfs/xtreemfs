@@ -49,23 +49,6 @@ void SimpleUUIDIterator::Clear() {
   current_uuid_ = uuids_.end();
 }
 
-void SimpleUUIDIterator::ClearAndAddUUID(const std::string& uuid) {
-  boost::mutex::scoped_lock lock(mutex_);
-
-  for (list<UUIDItem*>::iterator it = uuids_.begin();
-       it != uuids_.end();
-       ++it) {
-    delete (*it);
-  }
-  uuids_.clear();
-
-  UUIDItem* entry = new UUIDItem(uuid);
-  uuids_.push_back(entry);
-
-  // Set the current UUID to the first element.
-  current_uuid_ = uuids_.begin();
-}
-
 void SimpleUUIDIterator::SetCurrentUUID(const std::string& uuid) {
   boost::mutex::scoped_lock lock(mutex_);
 

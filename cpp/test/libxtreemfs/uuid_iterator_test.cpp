@@ -254,7 +254,6 @@ TEST_F(SimpleUUIDIteratorTest, LaterAddsDoNotBreakIterator) {
   EXPECT_EQ(uuid1, current_uuid);
 }
 
-
 TEST_F(SimpleUUIDIteratorTest, SetCurrentUUIDAddsUnknownUUID) {
   string uuid1 = "uuid1";
   string current_uuid;
@@ -263,30 +262,6 @@ TEST_F(SimpleUUIDIteratorTest, SetCurrentUUIDAddsUnknownUUID) {
   uuid_iterator_->SetCurrentUUID(uuid1);
   uuid_iterator_->GetUUID(&current_uuid);
   EXPECT_EQ(uuid1, current_uuid);
-}
-
-TEST_F(SimpleUUIDIteratorTest, ClearAndAddUUID) {
-  string uuid1 = "uuid1";
-  string uuid2 = "uuid2";
-  string uuid3 = "uuid3";
-  string current_uuid;
-
-  EXPECT_EQ(0, simple_uuid_iterator_->uuids_.size());
-
-  simple_uuid_iterator_->ClearAndAddUUID(uuid1);
-  simple_uuid_iterator_->GetUUID(&current_uuid);
-  EXPECT_EQ(uuid1, current_uuid);
-  EXPECT_EQ(1, simple_uuid_iterator_->uuids_.size());
-
-  simple_uuid_iterator_->ClearAndAddUUID(uuid2);
-  simple_uuid_iterator_->GetUUID(&current_uuid);
-  EXPECT_EQ(uuid2, current_uuid);
-  EXPECT_EQ(1, simple_uuid_iterator_->uuids_.size());
-
-  simple_uuid_iterator_->ClearAndAddUUID(uuid3);
-  simple_uuid_iterator_->GetUUID(&current_uuid);
-  EXPECT_EQ(uuid3, current_uuid);
-  EXPECT_EQ(1, simple_uuid_iterator_->uuids_.size());
 }
 
 // Tests for ContainerUUIDIterator
