@@ -30,12 +30,21 @@ void SystemUserMappingWindows::GetUserCredentialsForCurrentUser(
       reinterpret_cast<LPBYTE*>(&user_info));
   if (result == NERR_Success) {
     if (user_info != NULL) {
-      ConvertWindowsToUTF8(user_info->wkui1_username,
-                           user_credentials->mutable_username());
-      ConvertWindowsToUTF8(user_info->wkui1_logon_domain,
-                           user_credentials->add_groups());
-
+      string username = ConvertWindowsToUTF8(user_info->wkui1_username);
+      string groupname = ConvertWindowsToUTF8(user_info->wkui1_logon_domain);
       NetApiBufferFree(user_info);
+
+      if (additional_user_mapping_.get()) {
+        string local_username(username);
+        string local_groupname(groupname);
+        additional_user_mapping_->LocalToGlobalUsername(local_username,
+                                                        &username);
+        additional_user_mapping_->LocalToGlobalGroupname(local_groupname,
+                                                         &groupname);
+      }
+
+      user_credentials->set_username(username);
+      user_credentials->add_groups(groupname);
     }
   } else {
      Logging::log->getLog(LEVEL_ERROR) <<

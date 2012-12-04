@@ -71,10 +71,20 @@ std::string SystemUserMappingUnix::UIDToUsername(uid_t uid) {
   }
   delete[] buf;
 
+  if (additional_user_mapping_.get()) {
+    string username_local(username);
+    additional_user_mapping_->LocalToGlobalUsername(username_local, &username);
+  }
+
   return username;
 }
 
 uid_t SystemUserMappingUnix::UsernameToUID(const std::string& username) {
+  string local_username = username;
+  if (additional_user_mapping_.get()) {
+    additional_user_mapping_->GlobalToLocalUsername(username, &local_username);
+  }
+
   uid_t uid = 65534;  // nobody.
 
   // Retrieve uid.
@@ -86,27 +96,27 @@ uid_t SystemUserMappingUnix::UsernameToUID(const std::string& username) {
   char* buf = new char[bufsize];
   struct passwd pwd;
   struct passwd* result = NULL;
-  int s = getpwnam_r(username.c_str(), &pwd, buf, bufsize, &result);
+  int s = getpwnam_r(local_username.c_str(), &pwd, buf, bufsize, &result);
   if (result == NULL) {
     if (s == 0) {
       if (Logging::log->loggingActive(LEVEL_INFO)) {
         Logging::log->getLog(LEVEL_INFO)
-            << "no mapping for username: " << username << endl;
+            << "no mapping for username: " << local_username << endl;
       }
     } else {
       Logging::log->getLog(LEVEL_ERROR)
           << "failed to retrieve passwd entry for username: "
-          << username<< endl;
+          << local_username<< endl;
     }
     // Map reserved value -1 to nobody.
-    if (username == "-1") {
+    if (local_username == "-1") {
       uid = 65534;  // nobody.
     } else {
       // Try to convert the username into an integer. (Needed if an integer was
       // stored in the first place because there was no username found for the
       // uid at the creation of the file.)
       try {
-        uid = boost::lexical_cast<uid_t>(username);
+        uid = boost::lexical_cast<uid_t>(local_username);
       } catch(const boost::bad_lexical_cast&) {
         uid = 65534;  // nobody.
       }
@@ -117,7 +127,7 @@ uid_t SystemUserMappingUnix::UsernameToUID(const std::string& username) {
           // It's needed to use a 64 bit signed integer to detect a -(2^31)-1
           // as a negative value and not as an overflowed unsigned integer of
           // value 2^32-1.
-          int64_t uid_signed = boost::lexical_cast<int64_t>(username);
+          int64_t uid_signed = boost::lexical_cast<int64_t>(local_username);
           if (uid_signed < 0) {
             uid = 65534;  // nobody.
           }
@@ -174,10 +184,22 @@ std::string SystemUserMappingUnix::GIDToGroupname(gid_t gid) {
   }
   delete[] buf;
 
+  if (additional_user_mapping_.get()) {
+    string local_groupname(groupname);
+    additional_user_mapping_->LocalToGlobalGroupname(local_groupname,
+                                                     &groupname);
+  }
+
   return groupname;
 }
 
 gid_t SystemUserMappingUnix::GroupnameToGID(const std::string& groupname) {
+  string local_groupname;
+  if (additional_user_mapping_.get()) {
+    additional_user_mapping_->GlobalToLocalGroupname(groupname,
+                                                     &local_groupname);
+  }
+
   gid_t gid = 65534;  // nobody.
 
   // Retrieve gid.
@@ -189,27 +211,27 @@ gid_t SystemUserMappingUnix::GroupnameToGID(const std::string& groupname) {
   char* buf = new char[bufsize];
   struct group grp;
   struct group* result = NULL;
-  int s = getgrnam_r(groupname.c_str(), &grp, buf, bufsize, &result);
+  int s = getgrnam_r(local_groupname.c_str(), &grp, buf, bufsize, &result);
   if (result == NULL) {
     if (s == 0) {
       if (Logging::log->loggingActive(LEVEL_INFO)) {
         Logging::log->getLog(LEVEL_INFO)
-            << "no mapping for groupname: " << groupname << endl;
+            << "no mapping for groupname: " << local_groupname << endl;
       }
     } else {
       Logging::log->getLog(LEVEL_ERROR)
           << "failed to retrieve passwd entry for groupname: "
-          << groupname<< endl;
+          << local_groupname<< endl;
     }
     // Map reserved value -1 to nobody.
-    if (groupname == "-1") {
+    if (local_groupname == "-1") {
       gid = 65534;  // nobody.
     } else {
       // Try to convert the groupname into an integer. (Needed if an integer was
       // stored in the first place because there was no groupname found for the
       // gid at the creation of the file.)
       try {
-        gid = boost::lexical_cast<gid_t>(groupname);
+        gid = boost::lexical_cast<gid_t>(local_groupname);
       } catch(const boost::bad_lexical_cast&) {
         gid = 65534;  // nobody.
       }
@@ -220,7 +242,7 @@ gid_t SystemUserMappingUnix::GroupnameToGID(const std::string& groupname) {
           // It's needed to use a 64 bit signed integer to detect a -(2^31)-1
           // as a negative value and not as an overflowed unsigned integer of
           // value 2^32-1.
-          int64_t gid_signed = boost::lexical_cast<int64_t>(groupname);
+          int64_t gid_signed = boost::lexical_cast<int64_t>(local_groupname);
           if (gid_signed < 0) {
             gid = 65534;  // nobody.
           }

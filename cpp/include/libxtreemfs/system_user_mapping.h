@@ -56,7 +56,7 @@ class SystemUserMapping {
   /** Executes the Stop() method of the registered additional user mapping. */
   void StopAdditionalUserMapping();
 
- private:
+ protected:
   /** Used for custom transformation between local and global names. */
   boost::scoped_ptr<UserMapping> additional_user_mapping_;
 };
