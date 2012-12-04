@@ -34,7 +34,7 @@ using namespace xtreemfs::pbrpc;
 using namespace xtreemfs::util;
 
 namespace xtreemfs {
-  
+
 static void AddAddresses(const ServiceAddresses& service_addresses,
                          SimpleUUIDIterator* uuid_iterator) {
   ServiceAddresses::Addresses as_list = service_addresses.GetAddresses();
@@ -47,14 +47,14 @@ static void AddAddresses(const ServiceAddresses& service_addresses,
 DIRUUIDResolver::DIRUUIDResolver(
     const ServiceAddresses& dir_addresses,
     const pbrpc::UserCredentials& user_credentials,
-    const Options& options) 
+    const Options& options)
     : dir_service_user_credentials_(user_credentials),
       options_(options) {
   AddAddresses(dir_addresses, &dir_service_addresses_);
   // Currently no AUTH is needed to access the DIR.
   dir_service_auth_.set_auth_type(AUTH_NONE);
 }
-  
+
 void DIRUUIDResolver::Initialize(xtreemfs::rpc::Client* network_client) {
   dir_service_client_.reset(new DIRServiceClient(network_client));
 }
@@ -256,11 +256,11 @@ ClientImplementation::ClientImplementation(
     const rpc::SSLOptions* ssl_options,
     const Options& options)
     : was_shutdown_(false),
+      options_(options),
       dir_service_ssl_options_(ssl_options),
-      uuid_resolver_(dir_service_addresses, 
+      uuid_resolver_(dir_service_addresses,
                      user_credentials,
-                     options),
-      options_(options) {
+                     options) {
 
   // Set bogus auth object.
   auth_bogus_.set_auth_type(AUTH_NONE);
@@ -269,7 +269,7 @@ ClientImplementation::ClientImplementation(
                     options.log_file_path,
                     LEVEL_WARN);
   initialize_error_log(20);
-  
+
   if (options_.vivaldi_enable) {
     vivaldi_.reset(new Vivaldi(dir_service_addresses,
                                GetUUIDResolver(),
@@ -497,7 +497,7 @@ xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(
   // Use bogus user_credentials;
   UserCredentials user_credentials;
   user_credentials.set_username("xtreemfs");
-  
+
   SimpleUUIDIterator mrc_service_addresses_;
   AddAddresses(mrc_addresses, &mrc_service_addresses_);
 
