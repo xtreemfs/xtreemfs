@@ -40,6 +40,9 @@ class ServiceAddresses {
   bool empty() const {
     return addresses_.empty();
   }
+  size_t size() const {
+    return addresses_.size();
+  }
   bool IsAddressList() const {
     return addresses_.size() > 1;
   }

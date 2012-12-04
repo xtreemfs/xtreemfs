@@ -62,16 +62,15 @@ TEST_F(PBRPCURLTest, URLWithOneAddressAndVolume) {
   url_to_parse << servers.front() << '/' << volume_name;
   pbrpc_url_->ParseURL(url_to_parse.str(), default_scheme, default_port);
 
-  ServiceAddresses addresses;
-  pbrpc_url_->GetAddresses(&addresses);
+  ServiceAddresses addresses = pbrpc_url_->GetAddresses();
 
-  EXPECT_EQ(1, addresses.size());
+  EXPECT_FALSE(addresses.empty());
   EXPECT_EQ(volume_name, pbrpc_url_->volume());
   EXPECT_EQ(PBRPCURL::SCHEME_PBRPC, pbrpc_url_->scheme());
 
   stringstream expected_address;
   expected_address << "localhost:" << DIR_PBRPC_PORT_DEFAULT;
-  EXPECT_EQ(expected_address.str(), addresses.front());
+  EXPECT_EQ(expected_address.str(), addresses.GetAddresses().front());
 }
 
 TEST_F(PBRPCURLTest, URLWithMultipleAddressesAndVolume) {
@@ -89,8 +88,7 @@ TEST_F(PBRPCURLTest, URLWithMultipleAddressesAndVolume) {
 
   // Parse URL and get addresses
   pbrpc_url_->ParseURL(url_to_parse.str(), default_scheme, default_port);
-  ServiceAddresses addresses;
-  pbrpc_url_->GetAddresses(&addresses);
+  ServiceAddresses addresses = pbrpc_url_->GetAddresses();
 
   // Check expectations
   EXPECT_EQ(servers.size(), addresses.size());
@@ -99,8 +97,9 @@ TEST_F(PBRPCURLTest, URLWithMultipleAddressesAndVolume) {
 
   servers_it = servers.begin();
   stringstream expected_address;
-  for(ServiceAddresses::iterator it = addresses.begin();
-      it != addresses.end();
+  ServiceAddresses::Addresses services = addresses.GetAddresses();
+  for(ServiceAddresses::Addresses::iterator it = services.begin();
+      it != services.end();
       ++it, ++servers_it) {
     expected_address.str("");
     expected_address << *servers_it << ':' << default_port;
@@ -124,8 +123,7 @@ TEST_F(PBRPCURLTest, URLWithMultipleAddressesPortsAndVolume) {
 
   // Parse URL and get addresses
   pbrpc_url_->ParseURL(url_to_parse.str(), default_scheme, default_port);
-  ServiceAddresses addresses;
-  pbrpc_url_->GetAddresses(&addresses);
+  ServiceAddresses addresses = pbrpc_url_->GetAddresses();
 
   // Check expectations
   EXPECT_EQ(servers.size(), addresses.size());
@@ -135,8 +133,9 @@ TEST_F(PBRPCURLTest, URLWithMultipleAddressesPortsAndVolume) {
   servers_it = servers.begin();
   ports_it = ports.begin();
   stringstream expected_address;
-  for(ServiceAddresses::iterator it = addresses.begin();
-      it != addresses.end();
+  ServiceAddresses::Addresses services = addresses.GetAddresses();
+  for(ServiceAddresses::Addresses::iterator it = services.begin();
+      it != services.end();
       ++it, ++servers_it, ++ports_it) {
     expected_address.str("");
     expected_address << *servers_it << ':' << *ports_it;
@@ -159,8 +158,7 @@ TEST_F(PBRPCURLTest, URLWithMultipleAddressesProtocolsPortsAndVolume) {
   url_to_parse << '/' << volume_name;
   // Parse URL and get addresses
   pbrpc_url_->ParseURL(url_to_parse.str(), default_scheme, default_port);
-  ServiceAddresses addresses;
-  pbrpc_url_->GetAddresses(&addresses);
+  ServiceAddresses addresses = pbrpc_url_->GetAddresses();
 
   // Check expectations
   EXPECT_EQ(servers.size(), addresses.size());
@@ -170,8 +168,9 @@ TEST_F(PBRPCURLTest, URLWithMultipleAddressesProtocolsPortsAndVolume) {
   servers_it = servers.begin();
   ports_it = ports.begin();
   stringstream expected_address;
-  for(ServiceAddresses::iterator it = addresses.begin();
-      it != addresses.end();
+  ServiceAddresses::Addresses services = addresses.GetAddresses();
+  for(ServiceAddresses::Addresses::iterator it = services.begin();
+      it != services.end();
       ++it, ++servers_it, ++ports_it) {
     expected_address.str("");
     expected_address << *servers_it << ':' << *ports_it;
@@ -193,8 +192,7 @@ TEST_F(PBRPCURLTest, URLWithMultipleAddressesProtocolsAndVolume) {
   url_to_parse << '/' << volume_name;
   // Parse URL and get addresses
   pbrpc_url_->ParseURL(url_to_parse.str(), default_scheme, default_port);
-  ServiceAddresses addresses;
-  pbrpc_url_->GetAddresses(&addresses);
+  ServiceAddresses addresses = pbrpc_url_->GetAddresses();
 
   // Check expectations
   EXPECT_EQ(servers.size(), addresses.size());
@@ -203,8 +201,9 @@ TEST_F(PBRPCURLTest, URLWithMultipleAddressesProtocolsAndVolume) {
 
   servers_it = servers.begin();
   stringstream expected_address;
-  for(ServiceAddresses::iterator it = addresses.begin();
-      it != addresses.end();
+  ServiceAddresses::Addresses services = addresses.GetAddresses();
+  for(ServiceAddresses::Addresses::iterator it = services.begin();
+      it != services.end();
       ++it, ++servers_it) {
     expected_address.str("");
     expected_address << *servers_it << ':' << default_port;

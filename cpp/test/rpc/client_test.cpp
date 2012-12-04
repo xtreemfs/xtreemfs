@@ -62,8 +62,7 @@ class ClientTestFastLingerTimeoutConnectTimeout : public ClientTest {
     test_env.options.max_tries = 1;
 
     // We set an address which definitely won't work.
-    test_env.options.service_addresses.clear();
-    test_env.options.service_addresses.push_back("130.73.78.254:80");
+    test_env.options.service_addresses.Add("130.73.78.254:80");
 
     ClientTest::SetUp();
   }
@@ -94,13 +93,16 @@ class ClientTestDropConnection : public ClientTest {
 
 /** Is a timed out request successfully aborted? */
 TEST_F(ClientTestFastTimeout, TimeoutHandling) {
+  xtreemfs::ClientImplementation* impl = 
+      dynamic_cast<xtreemfs::ClientImplementation*>(test_env.client.get());
+  ASSERT_TRUE(impl != NULL);
   test_env.dir->AddDropRule(new DropNRule(1));
 
   EXPECT_NO_THROW({
     string exception_text;
     try {
       string unused_string;
-      test_env.client->GetUUIDResolver()->
+      impl->GetUUIDResolver()->
           VolumeNameToMRCUUID("test", &unused_string);
     } catch (const IOException& exception) {
       exception_text = exception.what();
@@ -112,11 +114,14 @@ TEST_F(ClientTestFastTimeout, TimeoutHandling) {
 
 /** A request fails if the connection attempt was dropped. */
 TEST_F(ClientTestDropConnection, ConnectionTimeout) {
+  xtreemfs::ClientImplementation* impl = 
+      dynamic_cast<xtreemfs::ClientImplementation*>(test_env.client.get());
+  ASSERT_TRUE(impl != NULL);
   EXPECT_NO_THROW({
     string exception_text;
     try {
       string unused_string;
-      test_env.client->GetUUIDResolver()->
+      impl->GetUUIDResolver()->
           VolumeNameToMRCUUID("test", &unused_string);
     } catch (const IOException& exception) {
       exception_text = exception.what();
@@ -128,24 +133,28 @@ TEST_F(ClientTestDropConnection, ConnectionTimeout) {
 
 /** Inactive connections shall be successfully closed. */
 TEST_F(ClientTestFastLingerTimeout, LingerTests) {
+  xtreemfs::ClientImplementation* impl = 
+      dynamic_cast<xtreemfs::ClientImplementation*>(test_env.client.get());
+  ASSERT_TRUE(impl != NULL);
   string unused_string;
-  test_env.client->GetUUIDResolver()->
+  impl->GetUUIDResolver()->
       VolumeNameToMRCUUID("test", &unused_string);
 
   boost::this_thread::sleep(boost::posix_time::seconds(2));
 
-  EXPECT_EQ(0,
-            dynamic_cast<xtreemfs::ClientImplementation*>(
-                test_env.client.get())->network_client_->connections_.size());
+  EXPECT_EQ(0, impl->network_client_->connections_.size());
 }
 
 /** Connect timeout callbacks executed after deleting
  *  a xtreemfs::rpc::ClientConnection object due to an expired
  *  linger timeout do not result in a segmentation fault. */
 TEST_F(ClientTestFastLingerTimeoutConnectTimeout, LingerTests) {
+  xtreemfs::ClientImplementation* impl = 
+      dynamic_cast<xtreemfs::ClientImplementation*>(test_env.client.get());
+  ASSERT_TRUE(impl != NULL);
   EXPECT_THROW({
     string unused_string;
-    test_env.client->GetUUIDResolver()->
+    impl->GetUUIDResolver()->
         VolumeNameToMRCUUID("test", &unused_string);
   }, IOException);
 
@@ -155,9 +164,7 @@ TEST_F(ClientTestFastLingerTimeoutConnectTimeout, LingerTests) {
 
   // At this point the connection must have been deleted
   // due to the very low linger timeout.
-  EXPECT_EQ(0,
-            dynamic_cast<xtreemfs::ClientImplementation*>(
-                test_env.client.get())->network_client_->connections_.size());
+  EXPECT_EQ(0, impl->network_client_->connections_.size());
 }
 
 }  // namespace rpc

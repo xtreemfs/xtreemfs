@@ -74,7 +74,7 @@ bool TestEnvironment::Start() {
   // If the DIR server address was not explicitly overridden, set it to the
   // started test DIR server.
   if (options.service_addresses.empty()) {
-    options.service_addresses.push_back(dir->GetAddress());
+    options.service_addresses.Add(dir->GetAddress());
   }
 
   client.reset(Client::CreateClient(

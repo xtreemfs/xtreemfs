@@ -27,6 +27,7 @@
 #include "xtreemfs/OSD.pb.h"
 
 #ifdef WIN32
+#include <windows.h>  // For GetTickCount
 #define snprintf _snprintf
 #endif  // WIN32
 
@@ -82,7 +83,7 @@ class VolumeImplementationTest : public ::testing::Test {
     // at port 32638 using the default implementation.
     options_.log_level_string = "WARN";
     client_ = Client::CreateClient(
-        ServiceAddresses(1, "localhost:32638"),
+        ServiceAddresses("localhost:32638"),
         user_credentials_,
         NULL,  // No SSL options.
         options_);
