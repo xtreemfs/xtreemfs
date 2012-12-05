@@ -49,6 +49,10 @@ cd $DIR
 if [ $CMD = "unstable" -o $CMD = "testing" ]; then
   SELECTED_PROJECT=$HOME_PROJECT_PREFIX":"$CMD
   SELECTED_PACKAGE="xtreemfs-testing"
+else
+  SELECTED_PROJECT=$HOME_PROJECT_PREFIX:"1.4.x"
+  SELECTED_PACKAGE="xtreemfs"
+fi
 
   # create a tmp dir, check out current build files, delete all files
   mkdir -p $TMP_DIR
@@ -65,8 +69,9 @@ if [ $CMD = "unstable" -o $CMD = "testing" ]; then
   
     rm -rf $TMP_DIR
   fi
+
   
-elif [ $CMD = "stable" ]; then
+if [ $CMD = "DISABLEDstable" ]; then
   # Determine subproject for given version number
   subproject=$(echo "$VER" | awk -F. '{ if (NF == 3) print $1"."$2".x"; else print "no_stable_version" }')
   if [ "$subproject" = "no_stable_version" ]; then
