@@ -105,6 +105,6 @@ babudb.checkInterval = 300
 babudb.pseudoSyncWait = 200
 
 # replication configuration
-babudb.plugin.0 = contrib/server-repl-plugin/config/dir-test1.properties
+#babudb.plugin.0 = contrib/server-repl-plugin/config/dir-test1.properties
 
 uuid = test-localhost-DIR
