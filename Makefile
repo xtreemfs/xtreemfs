@@ -254,11 +254,11 @@ client: check_client client_thirdparty set_version
 	@cp   -p $(XTREEMFS_CLIENT_BUILD_DIR)/xtfsutil $(XTREEMFS_BINARIES_DIR)
 
 client_clean: check_client client_thirdparty_clean
-	@cd $(XTREEMFS_CLIENT_BUILD_DIR); for i in *.xtreemfs xtfsutil; do [ -f $(XTREEMFS_BINARIES_DIR)/$$i ] && rm -f $(XTREEMFS_BINARIES_DIR)/$$i; done; true
+	@cd $(XTREEMFS_CLIENT_BUILD_DIR) &>/dev/null && { for i in *.xtreemfs xtfsutil; do [ -f $(XTREEMFS_BINARIES_DIR)/$$i ] && rm -f $(XTREEMFS_BINARIES_DIR)/$$i; done }; true
 	@rm -rf $(XTREEMFS_CLIENT_BUILD_DIR)
 
 client_distclean: check_client client_thirdparty_distclean
-	@cd $(XTREEMFS_CLIENT_BUILD_DIR); for i in *.xtreemfs xtfsutil; do [ -f $(XTREEMFS_BINARIES_DIR)/$$i ] && rm -f $(XTREEMFS_BINARIES_DIR)/$$i; done; true
+	@cd $(XTREEMFS_CLIENT_BUILD_DIR) &>/dev/null && { for i in *.xtreemfs xtfsutil; do [ -f $(XTREEMFS_BINARIES_DIR)/$$i ] && rm -f $(XTREEMFS_BINARIES_DIR)/$$i; done }; true
 	@rm -rf $(XTREEMFS_CLIENT_BUILD_DIR)
 
 CLIENT_PACKAGE_MACOSX_OUTPUT_DIR = XtreemFS_Client_MacOSX.mpkg
