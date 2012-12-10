@@ -314,8 +314,11 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
     required_fuse_options->push_back(strdup("-onoatime"));
   }
   #endif
+  string fuse_fsname = options_->xtreemfs_url;
+  // Fuse does not like commas within an option.
+  replace(fuse_fsname.begin(), fuse_fsname.end(), ',', '|');
   required_fuse_options->push_back(strdup(
-      (string("-ofsname=xtreemfs@") + options_->xtreemfs_url).c_str()));
+      (string("-ofsname=xtreemfs@") + fuse_fsname).c_str()));
 }
 
 void FuseAdapter::Stop() {
