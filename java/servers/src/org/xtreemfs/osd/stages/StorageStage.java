@@ -265,7 +265,11 @@ public class StorageStage extends Stage {
         // calculate a hash value from the file ID and return the responsible
         // thread
         assert (fileId != null);
-        int key = Math.abs(fileId.hashCode());
+        int hash = fileId.hashCode();
+        if (hash == Integer.MIN_VALUE) {
+            return 0;
+        }
+        int key = Math.abs(hash);
         int index = (key % storageThreads.length);
         
         // String objId = rq.getDetails().getFileId()
