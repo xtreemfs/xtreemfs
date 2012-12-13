@@ -99,7 +99,7 @@ public class MonitoringThread extends LifeCycleThread {
 
                 }
 
-                if ( sendWarning & (cfg.getAdminEmail().length() > 0)) {
+                if ( sendWarning && (cfg.getAdminEmail().length() > 0)) {
                     //send warning email
                     StringBuilder sendmailData = new StringBuilder();
                     sendmailData.append("To: "+cfg.getAdminEmail());
