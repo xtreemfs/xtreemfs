@@ -8,8 +8,15 @@ depend() {
 	need net
 }
 
+
+mkdir_xtreemfspiddir() {
+  XTREEMFS_PIDDIR=$(dirname ${XTREEMFS_MRC_PIDFILE})
+  [ -d ${XTREEMFS_PIDDIR} ] || mkdir -p ${XTREEMFS_PIDDIR}
+}
+
 start() {
 	ebegin "Starting XtreemFS Metadata and Replica Catalog (MRC)"
+	mkdir_xtreemfspiddir
 	start-stop-daemon --start \
 		--user xtreemfs \
 		--background \

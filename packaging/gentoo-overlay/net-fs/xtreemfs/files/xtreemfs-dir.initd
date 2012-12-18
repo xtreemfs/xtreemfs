@@ -8,8 +8,14 @@ depend() {
 	need net
 }
 
+mkdir_xtreemfspiddir() {
+  XTREEMFS_PIDDIR=$(dirname ${XTREEMFS_DIR_PIDFILE})
+  [ -d ${XTREEMFS_PIDDIR} ] || mkdir -p ${XTREEMFS_PIDDIR}
+}
+
 start() {
 	ebegin "Starting XtreemFS Directory Service (DIR)"
+	mkdir_xtreemfspiddir
 	start-stop-daemon --start \
 		--user xtreemfs \
 		--background \
