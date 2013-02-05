@@ -15,21 +15,21 @@ package org.xtreemfs.sandbox.benchmarkOSDPerformance;
  */
 public class BenchmarkResult {
 
-    final static int MB_IN_BYTES = 1024 * 1024;
-    final static int GB_IN_BYTES = 1024 * 1024 * 1024;
+    final static int MiB_IN_BYTES = 1024 * 1024;
+    final static int GiB_IN_BYTES = 1024 * 1024 * 1024;
 
     BenchmarkType    benchmarkType;
     int              numberOfReadersOrWriters;
     double           timeInSec;
-    double           speedInMbProSec;
+    double           speedInMiBProSec;
     long             dataWrittenInBytes;
     long             threadID;
     long             byteCount;
 
-    public BenchmarkResult(double timeInSec, double speedInMbProSec, long dataWrittenInBytes, long threadID,
+    public BenchmarkResult(double timeInSec, double speedInMiBProSec, long dataWrittenInBytes, long threadID,
             long byteCount) {
         this.timeInSec = timeInSec;
-        this.speedInMbProSec = speedInMbProSec;
+        this.speedInMiBProSec = speedInMiBProSec;
         this.dataWrittenInBytes = dataWrittenInBytes;
         this.threadID = threadID;
         this.byteCount = byteCount;
@@ -38,8 +38,8 @@ public class BenchmarkResult {
     @Override
     public String toString() {
 
-        String dataWritten = dataWrittenInBytes >= GB_IN_BYTES ? dataWrittenInBytes / GB_IN_BYTES + " GB ["
-                : dataWrittenInBytes / MB_IN_BYTES + " MB [";
+        String dataWritten = dataWrittenInBytes >= GiB_IN_BYTES ? dataWrittenInBytes / GiB_IN_BYTES + " GiB ["
+                : dataWrittenInBytes / MiB_IN_BYTES + " MiB [";
         String readersOrWriters;
 
         if (benchmarkType == BenchmarkType.SEQUENTIAL_SINGLE_WRITE
@@ -53,7 +53,7 @@ public class BenchmarkResult {
         }
 
         return "{\n\tBenchmarkType: " + benchmarkType + "\n" + readersOrWriters + "\tThreadID: " + threadID + "\n"
-                + "\tTime: " + timeInSec + " Sec\n" + "\tSpeed: " + speedInMbProSec + " MB/s\n" + "\tData written: "
+                + "\tTime: " + timeInSec + " Sec\n" + "\tSpeed: " + speedInMiBProSec + " MiB/s\n" + "\tData written: "
                 + dataWritten + dataWrittenInBytes + " Bytes]\n" + "\tByteCount: " + byteCount + " Bytes\n" + "}";
     }
 

@@ -8,15 +8,16 @@
 
 package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 
+import java.io.IOException;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 import org.xtreemfs.common.libxtreemfs.FileHandle;
 import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
-import java.io.IOException;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 
 /**
  * Class implementing a sequential read benchmark.
@@ -89,7 +90,7 @@ public class ReadBenchmarkOSDPerformance extends BenchmarkOSDPerformance {
         /* start the benchmark threads */
         for (int i = 0; i < numberOfReaders; i++) {
             BenchmarkOSDPerformance benchmark = new ReadBenchmarkOSDPerformance(dirAddress, mrcAddress,
-                    userCredentials, auth, sslOptions, "performanceTest" + i);
+                    userCredentials, auth, sslOptions, VOLUME_BASE_NAME + i);
             benchmark.startBenchThread(sizeInBytes, results, threads);
         }
 
@@ -113,16 +114,16 @@ public class ReadBenchmarkOSDPerformance extends BenchmarkOSDPerformance {
 
         Logging.start(Logging.LEVEL_ALERT, Logging.Category.tool);
 
-        BenchmarkOSDPerformance rBench = new ReadBenchmarkOSDPerformance();
+        BenchmarkOSDPerformance readBench = new ReadBenchmarkOSDPerformance();
         int numberOfReaders = 1;
-        long sizeInBytes = (long) 3 * GB_IN_BYTES;
+        long sizeInBytes = (long) 3 * GiB_IN_BYTES;
 
-        ConcurrentLinkedQueue<BenchmarkResult> results = scheduleBenchmarks(rBench.dirAddress, rBench.mrcAddress,
-                rBench.userCredentials, rBench.auth, rBench.sslOptions, numberOfReaders, sizeInBytes);
+        ConcurrentLinkedQueue<BenchmarkResult> results = scheduleBenchmarks(readBench.dirAddress, readBench.mrcAddress,
+                readBench.userCredentials, readBench.auth, readBench.sslOptions, numberOfReaders, sizeInBytes);
 
         /* cleaning up */
         for (int i = 0; i < numberOfReaders; i++)
-            rBench.deleteVolumeIfExisting("performanceTest" + i);
+            readBench.deleteVolumeIfExisting(VOLUME_BASE_NAME + i);
 
         scrub("47c551e1-2f30-42da-be3f-8c91c51dd15b", "");
 

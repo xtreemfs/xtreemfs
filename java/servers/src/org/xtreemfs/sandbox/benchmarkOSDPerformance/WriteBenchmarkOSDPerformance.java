@@ -8,17 +8,19 @@
 
 package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 
-import org.xtreemfs.common.libxtreemfs.*;
+import java.io.IOException;
+import java.util.Random;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+import org.xtreemfs.common.libxtreemfs.FileHandle;
+import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
-import java.io.IOException;
-import java.util.Random;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 
 /**
  * Class implementing a sequential write benchmark.
@@ -47,7 +49,7 @@ public class WriteBenchmarkOSDPerformance extends BenchmarkOSDPerformance {
         int flags = GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
-        FileHandle fileHandle = volume.openFile(userCredentials, FILE_NAME, flags, 777);
+        FileHandle fileHandle = volume.openFile(userCredentials, BENCHMARK_FILENAME, flags, 777);
         long byteCounter = 0;
         for (long j = 0; j < numberOfBlocks; j++) {
             random.nextBytes(data);
@@ -99,7 +101,7 @@ public class WriteBenchmarkOSDPerformance extends BenchmarkOSDPerformance {
         /* start the benchmark threads */
         for (int i = 0; i < numberOfWriters; i++) {
             BenchmarkOSDPerformance benchmark = new WriteBenchmarkOSDPerformance(dirAddress, mrcAddress,
-                    userCredentials, auth, sslOptions, "performanceTest" + i);
+                    userCredentials, auth, sslOptions, VOLUME_BASE_NAME + i);
             benchmark.startBenchThread(sizeInBytes, results, threads);
         }
 
@@ -125,16 +127,16 @@ public class WriteBenchmarkOSDPerformance extends BenchmarkOSDPerformance {
 
         BenchmarkOSDPerformance wBench = new WriteBenchmarkOSDPerformance();
         int numberOfWriters = 1;
-        long sizeInBytes = (long) 3 * GB_IN_BYTES;
+        long sizeInBytes = (long) 3 * GiB_IN_BYTES;
 
         ConcurrentLinkedQueue<BenchmarkResult> results = scheduleBenchmarks(wBench.dirAddress, wBench.mrcAddress,
                 wBench.userCredentials, wBench.auth, wBench.sslOptions, numberOfWriters, sizeInBytes);
 
-        /* Cleaning up. Does prevent subsequent read benchmark */
-        // for (int i = 0; i < numberOfWriters; i++)
-        // wBench.deleteVolumeIfExisting("performanceTest" + i);
+        /* Cleaning up (Does prevent subsequent read benchmark) */
+        for (int i = 0; i < numberOfWriters; i++)
+            wBench.deleteVolumeIfExisting(VOLUME_BASE_NAME + i);
 
-        // scrub("47c551e1-2f30-42da-be3f-8c91c51dd15b", "");
+        scrub("47c551e1-2f30-42da-be3f-8c91c51dd15b", "");
 
         /* print the results */
         for (BenchmarkResult res : results) {

@@ -8,6 +8,11 @@
 
 package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.Options;
@@ -17,25 +22,22 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
 /**
- * Benchmark library for measuring read- and write performance of a OSD. 
- * 
- * @author jensvfischer 
- * 
- * TODO Use XtreemFS-Threads (?) 
- * TODO ErrorHandling
+ * Benchmarklibrary for measuring read- and writeperformance of a OSD. 
+ *     TODO Use XtreemFS-Threads (?) 
+ *     TODO ErrorHandling 
+ *     TODO Move Cleanup to the scheduleBenchmark-methods (needs clarification whether Benchmarks should be  
+ *         performed via libxtreemfs of directly on the OSD)
+ *         
+ *  @author jensvfischer 
  */
 public abstract class BenchmarkOSDPerformance {
 
-    static final int      MB_IN_BYTES                  = 1024 * 1024;
-    static final int      GB_IN_BYTES                  = 1024 * 1024 * 1024;
-    static final int      XTREEMFS_BLOCK_SIZE_IN_BYTES = 128 * 1024;        // 128 KB
-    static final String   FILE_NAME                    = "testfile";
+    static final int      MiB_IN_BYTES                 = 1024 * 1024;
+    static final int      GiB_IN_BYTES                 = 1024 * 1024 * 1024;
+    static final int      XTREEMFS_BLOCK_SIZE_IN_BYTES = 128 * 1024;        // 128 KiB
+    static final String   BENCHMARK_FILENAME           = "benchmarkFile";
+    static final String   VOLUME_BASE_NAME             = "performanceTest";
 
     final String          dirAddress;
     final String          mrcAddress;
@@ -48,7 +50,7 @@ public abstract class BenchmarkOSDPerformance {
 
     /* Convenience constructor with various default values for local setup. */
     BenchmarkOSDPerformance() throws Exception {
-        this("performanceTest");
+        this(VOLUME_BASE_NAME);
     }
 
     /* Convenience constructor with various default values for local setup. */
@@ -106,9 +108,9 @@ public abstract class BenchmarkOSDPerformance {
 
         /* Calculate and return results */
         double timeinSec = (after - before) / 1000.;
-        double speedMBPerSec = round((byteCounter / MB_IN_BYTES) / timeinSec, 2);
+        double speedMiBPerSec = round((byteCounter / MiB_IN_BYTES) / timeinSec, 2);
 
-        BenchmarkResult result = new BenchmarkResult(timeinSec, speedMBPerSec, sizeInBytes, Thread.currentThread()
+        BenchmarkResult result = new BenchmarkResult(timeinSec, speedMiBPerSec, sizeInBytes, Thread.currentThread()
                 .getId(), byteCounter);
         results.add(result);
 
@@ -135,9 +137,7 @@ public abstract class BenchmarkOSDPerformance {
         client.shutdown();
     }
 
-    /*
-     * Performs cleanup on a OSD (because deleting the volume does not delete the files in the volume)
-     */
+    /* Performs cleanup on a OSD (because deleting the volume does not delete the files in the volume) */
     static void scrub(String osd, String pwd) throws Exception {
 
         ReadBenchmarkOSDPerformance benchmark = new ReadBenchmarkOSDPerformance();
@@ -208,25 +208,23 @@ public abstract class BenchmarkOSDPerformance {
         return resultsRWBench;
     }
 
-    /*
-     * Only runs with previous write benchmark, because it reads the data written by the write benchmark
-     */
+    /* Only runs with previous write benchmark, because it reads the data written by the write benchmark */
     public static void main(String[] args) throws Exception {
 
         Logging.start(Logging.LEVEL_INFO, Logging.Category.tool);
 
-        /* using the default values for the local setup */
-        BenchmarkOSDPerformance wBench = new WriteBenchmarkOSDPerformance();
+        BenchmarkOSDPerformance wBench = new WriteBenchmarkOSDPerformance(); // using the default values for
+                                                                             // the local setup
 
         int numberOfWriters = 3;
-        long sizeInBytes = (long) 300 * MB_IN_BYTES;
+        long sizeInBytes = (long) 3 * GiB_IN_BYTES;
 
         ConcurrentLinkedQueue<BenchmarkResult> results = scheduleReadWriteBenchmarks(wBench.dirAddress,
                 wBench.mrcAddress, wBench.userCredentials, wBench.auth, wBench.sslOptions, numberOfWriters, sizeInBytes);
 
         /* cleaning up */
         for (int i = 0; i < numberOfWriters; i++)
-            wBench.deleteVolumeIfExisting("performanceTest" + i);
+            wBench.deleteVolumeIfExisting(VOLUME_BASE_NAME + i);
 
         scrub("47c551e1-2f30-42da-be3f-8c91c51dd15b", "");
 
