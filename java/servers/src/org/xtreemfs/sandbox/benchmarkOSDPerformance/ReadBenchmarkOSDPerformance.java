@@ -42,7 +42,7 @@ public class ReadBenchmarkOSDPerformance extends BenchmarkOSDPerformance {
     @Override
     long writeOrReadData(byte[] data, long numberOfBlocks) throws IOException {
         Volume volume = client.openVolume(volumeName, sslOptions, options);
-        FileHandle fileHandle = volume.openFile(userCredentials, "testfile",
+        FileHandle fileHandle = volume.openFile(userCredentials, BENCHMARK_FILENAME,
                 GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
         long byteCounter = 0;
         for (long j = 0; j < numberOfBlocks; j++) {

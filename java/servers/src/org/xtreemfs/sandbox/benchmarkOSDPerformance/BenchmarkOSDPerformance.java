@@ -217,7 +217,7 @@ public abstract class BenchmarkOSDPerformance {
                                                                              // the local setup
 
         int numberOfWriters = 3;
-        long sizeInBytes = (long) 3 * GiB_IN_BYTES;
+        long sizeInBytes = (long) 200 * MiB_IN_BYTES;
 
         ConcurrentLinkedQueue<BenchmarkResult> results = scheduleReadWriteBenchmarks(wBench.dirAddress,
                 wBench.mrcAddress, wBench.userCredentials, wBench.auth, wBench.sslOptions, numberOfWriters, sizeInBytes);
