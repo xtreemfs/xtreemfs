@@ -30,6 +30,7 @@ KEYWORDS="~amd64 ~x86"
 IUSE=""
 
 DEPEND=">=virtual/jdk-1.6.0
+	>=dev-util/cmake-2.6
 	sys-fs/fuse
 	sys-fs/e2fsprogs
 	dev-java/ant-core
