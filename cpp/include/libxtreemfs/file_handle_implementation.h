@@ -27,13 +27,20 @@
 
 namespace xtreemfs {
 
+namespace rpc {
+class SyncCallbackBase;
+}  // namespace rpc
+
 namespace pbrpc {
 class Lock;
 class MRCServiceClient;
 class OSDServiceClient;
+class readRequest;
+class writeRequest;
 }  // namespace pbrpc
 
 class FileInfo;
+class ObjectCache;
 class Options;
 class StripeTranslator;
 class UUIDIterator;
@@ -121,6 +128,7 @@ class FileHandleImplementation
       const std::map<xtreemfs::pbrpc::StripingPolicyType,
                      StripeTranslator*>& stripe_translators,
       bool async_writes_enabled,
+      ObjectCache* object_cache,
       const Options& options,
       const xtreemfs::pbrpc::Auth& auth_bogus,
       const xtreemfs::pbrpc::UserCredentials& user_credentials_bogus);
@@ -237,6 +245,19 @@ class FileHandleImplementation
       const xtreemfs::pbrpc::Lock& lock,
       boost::mutex::scoped_lock* active_locks_mutex_lock);
 
+  rpc::SyncCallbackBase* FileHandleImplementation::ReadFromOSD(
+      UUIDIterator* uuid_iterator,
+      pbrpc::readRequest* rq,
+      int object_no, int offset_in_object, int bytes_to_read);
+
+  rpc::SyncCallbackBase* FileHandleImplementation::WriteToOSD(
+    UUIDIterator* uuid_iterator,
+    pbrpc::writeRequest* write_request,
+    int object_no, int offset_in_object, const char* buffer,
+    int bytes_to_write);
+
+  bool IsReplicaStriped();
+
   /** Any modification to the object must obtain a lock first. */
   boost::mutex mutex_;
 
@@ -283,6 +304,9 @@ class FileHandleImplementation
    *  file_handle is broken and no further writes/reads/truncates are possible.
    */
   bool async_writes_failed_;
+
+  /** The object cache, or NULL if not enabled. */
+  ObjectCache* object_cache_;
 
   const Options& volume_options_;
 

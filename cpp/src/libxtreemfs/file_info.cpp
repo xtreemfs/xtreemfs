@@ -54,7 +54,8 @@ FileInfo::FileInfo(
                            volume->osd_service_client(),
                            volume->auth_bogus(),
                            volume->user_credentials_bogus(),
-                           volume->volume_options()) {
+                           volume->volume_options()),
+      object_cache_(200, 128 * 1024) {
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif  // _MSC_VER
@@ -91,6 +92,7 @@ FileHandleImplementation* FileInfo::CreateFileHandle(
       volume_->osd_service_client(),
       volume_->stripe_translators(),
       async_writes_enabled,
+      &object_cache_,
       volume_->volume_options(),
       volume_->auth_bogus(),
       volume_->user_credentials_bogus());
