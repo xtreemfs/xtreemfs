@@ -20,9 +20,9 @@ static uint64_t Now() {
   return time(NULL);
 }
 
-CachedObject::CachedObject(int object_no, int object_size) 
+CachedObject::CachedObject(int object_no, int object_size)
     : object_no_(object_no), object_size_(object_size),
-      data_(NULL), actual_size_(0), is_dirty_(false), 
+      data_(NULL), actual_size_(0), is_dirty_(false),
       last_access_(Now()) {}
 CachedObject::~CachedObject() {
   delete [] data_;
@@ -37,7 +37,7 @@ void CachedObject::Erase(ObjectWriter* writer) {
     actual_size_ = 0;
     delete [] data_;
     data_ = NULL;
-    lock.unlock(); 
+    lock.unlock();
   }
 }
 
@@ -51,7 +51,7 @@ int CachedObject::Read(int offset_in_object, char* buffer, int bytes_to_read,
   return actual_bytes;
 }
 
-void CachedObject::Write(int offset_in_object, const char* buffer, 
+void CachedObject::Write(int offset_in_object, const char* buffer,
                          int bytes_to_write, ObjectReader* reader) {
   boost::unique_lock<boost::mutex> lock(mutex_);
   ReadInternal(lock, reader);
@@ -71,7 +71,7 @@ void CachedObject::Flush(ObjectWriter* writer) {
     // Other threads can continue to work with the buffer.
     // Another flush can happen in the meantime.
   }
-  lock.unlock(); 
+  lock.unlock();
 }
 
 void CachedObject::Truncate(int new_object_size) {
@@ -101,7 +101,7 @@ void CachedObject::ReadInternal(boost::unique_lock<boost::mutex>& lock,
       delete v;  // has been dequeued already by our predecessor
     }
   }
-    
+
   // We are done, next in line please.
   // It will enter when we release the lock, and wake up its successor.
   if (read_queue_.size() > 0) {
@@ -111,13 +111,13 @@ void CachedObject::ReadInternal(boost::unique_lock<boost::mutex>& lock,
   }
 }
 
-void CachedObject::ReadObjectFromOSD(boost::unique_lock<boost::mutex>& lock, 
+void CachedObject::ReadObjectFromOSD(boost::unique_lock<boost::mutex>& lock,
                                      ObjectReader* reader) {
   lock.unlock();
   char* data = new char[object_size_];
   int read = (*reader)(object_no_, data);
   lock.lock();
-        
+
   data_ = data;
   actual_size_ = read;
 }
@@ -125,28 +125,29 @@ void CachedObject::ReadObjectFromOSD(boost::unique_lock<boost::mutex>& lock,
 void CachedObject::WriteObjectToOSD(ObjectWriter* writer) {
   (*writer)(object_no_, data_, actual_size_);
 }
-    
+
 bool CachedObject::ReadPending() {
   return data_ == NULL;
 }
 
-ObjectCache::ObjectCache(size_t max_objects, int object_size) 
+ObjectCache::ObjectCache(size_t max_objects, int object_size)
   : max_objects_(max_objects), object_size_(object_size) {
 }
+
 ObjectCache::~ObjectCache() {
   for (Cache::iterator i = cache_.begin(); i != cache_.end(); ++i) {
     delete i->second;
   }
 }
-  
-int ObjectCache::Read(int object_no, int offset_in_object, 
+
+int ObjectCache::Read(int object_no, int offset_in_object,
                       char* buffer, int bytes_to_read,
                       ObjectReader* reader) {
   CachedObject* object = LookupObject(object_no);
   return object->Read(offset_in_object, buffer, bytes_to_read, reader);
 }
 
-void ObjectCache::Write(int object_no, int offset_in_object, 
+void ObjectCache::Write(int object_no, int offset_in_object,
                         const char* buffer, int bytes_to_write,
                         ObjectReader* reader) {
   CachedObject* object = LookupObject(object_no);
@@ -179,7 +180,7 @@ void ObjectCache::Truncate(int new_size) {
       i->second->Truncate(new_size % object_size_);
     } else if (i->first > object_to_cut) {
       delete i->second;
-      i = cache_.erase(i);
+      cache_.erase(i++);
       continue;
     }
     ++i;
