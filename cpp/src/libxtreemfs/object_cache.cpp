@@ -34,6 +34,7 @@ void CachedObject::Erase(ObjectWriter* writer) {
   if (is_dirty_) {
     WriteObjectToOSD(writer);
     is_dirty_ = false;
+    actual_size_ = 0;
     delete [] data_;
     data_ = NULL;
     lock.unlock(); 
@@ -46,6 +47,7 @@ int CachedObject::Read(int offset_in_object, char* buffer, int bytes_to_read,
   ReadInternal(lock, reader);
   int actual_bytes = std::min(bytes_to_read, actual_size_ - offset_in_object);
   memcpy(buffer, &data_[offset_in_object], actual_bytes);
+  last_access_ = Now();
   return actual_bytes;
 }
 
@@ -57,6 +59,7 @@ void CachedObject::Write(int offset_in_object, const char* buffer,
   memcpy(data_, &buffer[offset_in_object], bytes_to_write);
   actual_size_ = std::max(actual_size_, offset_in_object + bytes_to_write);
   is_dirty_ = true;
+  last_access_ = Now();
 }
 
 void CachedObject::Flush(ObjectWriter* writer) {
@@ -106,7 +109,6 @@ void CachedObject::ReadInternal(boost::unique_lock<boost::mutex>& lock,
     read_queue_.pop_front();
     v->notify_one();
   }
-  last_access_ = Now();
 }
 
 void CachedObject::ReadObjectFromOSD(boost::unique_lock<boost::mutex>& lock, 
