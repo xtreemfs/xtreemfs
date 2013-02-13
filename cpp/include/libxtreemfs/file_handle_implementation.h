@@ -245,16 +245,17 @@ class FileHandleImplementation
       const xtreemfs::pbrpc::Lock& lock,
       boost::mutex::scoped_lock* active_locks_mutex_lock);
 
-  rpc::SyncCallbackBase* FileHandleImplementation::ReadFromOSD(
+  int ReadFromOSD(
       UUIDIterator* uuid_iterator,
       pbrpc::readRequest* rq,
-      int object_no, int offset_in_object, int bytes_to_read);
+      int object_no, char* buffer, 
+      int offset_in_object, int bytes_to_read);
 
-  rpc::SyncCallbackBase* FileHandleImplementation::WriteToOSD(
-    UUIDIterator* uuid_iterator,
-    pbrpc::writeRequest* write_request,
-    int object_no, int offset_in_object, const char* buffer,
-    int bytes_to_write);
+  void WriteToOSD(
+      UUIDIterator* uuid_iterator,
+      pbrpc::writeRequest* write_request,
+      int object_no, int offset_in_object, const char* buffer,
+      int bytes_to_write);
 
   bool IsReplicaStriped();
 

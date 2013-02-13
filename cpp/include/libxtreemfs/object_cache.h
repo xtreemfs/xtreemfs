@@ -12,13 +12,9 @@
 #include <map>
 
 namespace xtreemfs {
-  
-namespace rpc {
-class SyncCallbackBase;
-}
 
-typedef boost::function<rpc::SyncCallbackBase* (int object_no)> ObjectReader;
-typedef boost::function<rpc::SyncCallbackBase* (int object_no, const char* data)> ObjectWriter;
+typedef boost::function<int (int object_no, char* data)> ObjectReader;
+typedef boost::function<void (int object_no, const char* data, int size)> ObjectWriter;
 
 class CachedObject {
  public:
@@ -36,14 +32,16 @@ class CachedObject {
              int bytes_to_write, ObjectReader* reader);
 
   void Flush(ObjectWriter* writer);
+  
+  void Truncate(int new_object_size);
 
   uint64_t last_access() const;
 
   bool is_dirty() const;
 
  private:
-  int ReadInternal(boost::unique_lock<boost::mutex>& lock,
-                   ObjectReader* reader);
+  void ReadInternal(boost::unique_lock<boost::mutex>& lock,
+                    ObjectReader* reader);
 
   void ReadObjectFromOSD(boost::unique_lock<boost::mutex>& lock, 
                          ObjectReader* reader);
@@ -57,8 +55,10 @@ class CachedObject {
 
   const int object_no_;
   const int object_size_;
+  // Our buffer, always object_size_ large.
   char* data_;
-  int size_;
+  // The last object has fewer bytes than object_size_;
+  int actual_size_;
   bool is_dirty_;
   uint64_t last_access_;
 };
@@ -77,6 +77,10 @@ class ObjectCache {
              ObjectReader* reader);
 
   void Flush(ObjectWriter* writer);
+
+  void Truncate(int new_size);
+
+  int object_size() const;
 
  private:
   CachedObject* LookupObject(int object_no);

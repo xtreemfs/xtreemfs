@@ -299,7 +299,7 @@ class FileInfo {
    *  WaitForPendingWrites() method for barrier operations like read. */
   AsyncWriteHandler async_write_handler_;
 
-  ObjectCache object_cache_;
+  boost::scoped_ptr<ObjectCache> object_cache_;
 
   FRIEND_TEST(VolumeImplementationTestFastPeriodicFileSizeUpdate,
               WorkingPendingFileSizeUpdates);

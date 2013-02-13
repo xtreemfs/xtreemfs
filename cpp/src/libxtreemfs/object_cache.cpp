@@ -22,7 +22,7 @@ static uint64_t Now() {
 
 CachedObject::CachedObject(int object_no, int object_size) 
     : object_no_(object_no), object_size_(object_size),
-      data_(NULL), size_(0), is_dirty_(false), 
+      data_(NULL), actual_size_(0), is_dirty_(false), 
       last_access_(Now()) {}
 CachedObject::~CachedObject() {
   delete [] data_;
@@ -41,18 +41,22 @@ void CachedObject::Erase(ObjectWriter* writer) {
 }
 
 int CachedObject::Read(int offset_in_object, char* buffer, int bytes_to_read,
-          ObjectReader* reader) {
+                       ObjectReader* reader) {
   boost::unique_lock<boost::mutex> lock(mutex_);
-  int read = ReadInternal(lock, reader);
-  memcpy(buffer, &data_[offset_in_object], bytes_to_read);
-  return read;
+  ReadInternal(lock, reader);
+  int actual_bytes = std::min(bytes_to_read, actual_size_ - offset_in_object);
+  memcpy(buffer, &data_[offset_in_object], actual_bytes);
+  return actual_bytes;
 }
 
 void CachedObject::Write(int offset_in_object, const char* buffer, 
-            int bytes_to_write, ObjectReader* reader) {
+                         int bytes_to_write, ObjectReader* reader) {
   boost::unique_lock<boost::mutex> lock(mutex_);
   ReadInternal(lock, reader);
-  memcpy(data_, buffer, bytes_to_write);
+  assert(bytes_to_write + offset_in_object < object_size_);
+  memcpy(data_, &buffer[offset_in_object], bytes_to_write);
+  actual_size_ = std::max(actual_size_, offset_in_object + bytes_to_write);
+  is_dirty_ = true;
 }
 
 void CachedObject::Flush(ObjectWriter* writer) {
@@ -67,6 +71,11 @@ void CachedObject::Flush(ObjectWriter* writer) {
   lock.unlock(); 
 }
 
+void CachedObject::Truncate(int new_object_size) {
+  // TODO: fill up with zeros if extending?
+  actual_size_ = new_object_size;
+}
+
 uint64_t CachedObject::last_access() const {
   return last_access_;
 }
@@ -75,8 +84,8 @@ bool CachedObject::is_dirty() const {
   return is_dirty_;
 }
 
-int CachedObject::ReadInternal(boost::unique_lock<boost::mutex>& lock,
-                  ObjectReader* reader) {
+void CachedObject::ReadInternal(boost::unique_lock<boost::mutex>& lock,
+                               ObjectReader* reader) {
   if (ReadPending()) {
     if (read_queue_.size() == 0) {
       // Initial read
@@ -98,32 +107,21 @@ int CachedObject::ReadInternal(boost::unique_lock<boost::mutex>& lock,
     v->notify_one();
   }
   last_access_ = Now();
-  return 0;  // TODO
 }
 
 void CachedObject::ReadObjectFromOSD(boost::unique_lock<boost::mutex>& lock, 
-                        ObjectReader* reader) {
+                                     ObjectReader* reader) {
   lock.unlock();
-  boost::scoped_ptr<rpc::SyncCallbackBase> response((*reader)(object_no_));
+  char* data = new char[object_size_];
+  int read = (*reader)(object_no_, data);
   lock.lock();
-  xtreemfs::pbrpc::ObjectData* data =
-      static_cast<xtreemfs::pbrpc::ObjectData*>(response->response());
         
-  data_ = new char[object_size_];
-  size_ = object_size_;
-  int data_length = response->data_length();
-  memcpy(data_, response->data(), data_length);
-  // If zero_padding() > 0, the gap has to be filled with zeroes.
-  memset(data_ + data_length, 0, data->zero_padding());
-
-  response->DeleteBuffers();
+  data_ = data;
+  actual_size_ = read;
 }
 
 void CachedObject::WriteObjectToOSD(ObjectWriter* writer) {
-  boost::scoped_ptr<rpc::SyncCallbackBase> response((*writer)(object_no_, data_));
-  xtreemfs::pbrpc::OSDWriteResponse* write_response =
-      static_cast<xtreemfs::pbrpc::OSDWriteResponse*>(response->response());
-  response->DeleteBuffers();
+  (*writer)(object_no_, data_, actual_size_);
 }
     
 bool CachedObject::ReadPending() {
@@ -140,15 +138,15 @@ ObjectCache::~ObjectCache() {
 }
   
 int ObjectCache::Read(int object_no, int offset_in_object, 
-          char* buffer, int bytes_to_read,
-          ObjectReader* reader) {
+                      char* buffer, int bytes_to_read,
+                      ObjectReader* reader) {
   CachedObject* object = LookupObject(object_no);
   return object->Read(offset_in_object, buffer, bytes_to_read, reader);
 }
 
 void ObjectCache::Write(int object_no, int offset_in_object, 
-            const char* buffer, int bytes_to_write,
-            ObjectReader* reader) {
+                        const char* buffer, int bytes_to_write,
+                        ObjectReader* reader) {
   CachedObject* object = LookupObject(object_no);
   object->Write(offset_in_object, buffer, bytes_to_write, reader);
 }
@@ -171,6 +169,21 @@ void ObjectCache::Flush(ObjectWriter* writer) {
   }
 }
 
+void ObjectCache::Truncate(int new_size) {
+  boost::unique_lock<boost::mutex> lock(mutex_);
+  int object_to_cut = new_size / object_size_;
+  for (Cache::iterator i = cache_.begin(); i != cache_.end(); ) {
+    if (i->first == object_to_cut) {
+      i->second->Truncate(new_size % object_size_);
+    } else if (i->first > object_to_cut) {
+      delete i->second;
+      i = cache_.erase(i);
+      continue;
+    }
+    ++i;
+  }
+}
+
 CachedObject* ObjectCache::LookupObject(int object_no) {
   boost::unique_lock<boost::mutex> lock(mutex_);
   Cache::iterator i = cache_.find(object_no);
@@ -182,9 +195,13 @@ CachedObject* ObjectCache::LookupObject(int object_no) {
     }
   }
   return cache_[object_no];
-  }
+}
 
 void ObjectCache::CollectLeasedObject() {
+}
+
+int ObjectCache::object_size() const {
+  return object_size_;
 }
 
 }  // namespace xtreemfs
