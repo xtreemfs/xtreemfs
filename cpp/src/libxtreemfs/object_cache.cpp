@@ -24,6 +24,7 @@ CachedObject::CachedObject(int object_no, int object_size)
     : object_no_(object_no), object_size_(object_size),
       data_(NULL), actual_size_(0), is_dirty_(false),
       last_access_(Now()) {}
+
 CachedObject::~CachedObject() {
   delete [] data_;
 }
@@ -33,12 +34,20 @@ void CachedObject::Erase(const ObjectWriterCb& writer) {
   boost::unique_lock<boost::mutex> lock(mutex_);
   if (is_dirty_) {
     WriteObjectToOSD(writer);
-    is_dirty_ = false;
-    actual_size_ = 0;
-    delete [] data_;
-    data_ = NULL;
-    lock.unlock();
+    DropLocked();
   }
+}
+
+void CachedObject::Drop() {
+  boost::unique_lock<boost::mutex> lock(mutex_);
+  DropLocked();
+}
+
+void CachedObject::DropLocked() {
+  is_dirty_ = false;
+  actual_size_ = 0;
+  delete [] data_;
+  data_ = NULL;
 }
 
 int CachedObject::Read(int offset_in_object, char* buffer, int bytes_to_read,
@@ -70,10 +79,10 @@ void CachedObject::Flush(const ObjectWriterCb& writer) {
     // Other threads can continue to work with the buffer.
     // Another flush can happen in the meantime.
   }
-  lock.unlock();
 }
 
 void CachedObject::Truncate(int new_object_size) {
+  boost::unique_lock<boost::mutex> lock(mutex_);
   if (actual_size_ == new_object_size) {
     return;
   }
@@ -84,11 +93,13 @@ void CachedObject::Truncate(int new_object_size) {
   is_dirty_ = true;
 }
 
-uint64_t CachedObject::last_access() const {
+uint64_t CachedObject::last_access() {
+  boost::unique_lock<boost::mutex> lock(mutex_);
   return last_access_;
 }
 
-bool CachedObject::is_dirty() const {
+bool CachedObject::is_dirty() {
+  boost::unique_lock<boost::mutex> lock(mutex_);
   return is_dirty_;
 }
 
@@ -184,17 +195,14 @@ void ObjectCache::Flush(const ObjectWriterCb& writer) {
 void ObjectCache::Truncate(int64_t new_size) {
   boost::unique_lock<boost::mutex> lock(mutex_);
   int object_to_cut = static_cast<int>(new_size / object_size_);
-  for (Cache::iterator i = cache_.begin(); i != cache_.end(); ) {
+  for (Cache::iterator i = cache_.begin(); i != cache_.end(); ++i) {
     if (i->first == object_to_cut) {
       i->second->Truncate(new_size % object_size_);
     } else if (i->first < object_to_cut) {
       i->second->Truncate(object_size_);
     } else if (i->first > object_to_cut) {
-      delete i->second;
-      cache_.erase(i++);
-      continue;
+      i->second->Drop();
     }
-    ++i;
   }
 }
 

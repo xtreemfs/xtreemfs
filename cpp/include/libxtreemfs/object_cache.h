@@ -22,8 +22,11 @@ class CachedObject {
   CachedObject(int object_no, int object_size);
   ~CachedObject();
 
-  // Flush data and free memory
+  // Flush data and free memory.
   void Erase(const ObjectWriterCb& writer);
+
+  // Free memory without flushing to storage.
+  void Drop();
 
   int Read(int offset_in_object, char* buffer, int bytes_to_read,
            const ObjectReaderCb& reader);
@@ -35,11 +38,12 @@ class CachedObject {
   
   void Truncate(int new_object_size);
 
-  uint64_t last_access() const;
+  uint64_t last_access();
 
-  bool is_dirty() const;
+  bool is_dirty();
 
  private:
+  void DropLocked();
   void ReadInternal(boost::unique_lock<boost::mutex>& lock,
                     const ObjectReaderCb& reader);
 
