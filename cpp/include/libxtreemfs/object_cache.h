@@ -68,17 +68,19 @@ class ObjectCache {
   ObjectCache(size_t max_objects, int object_size);
   ~ObjectCache();
   
+  // Read within a specific object
   int Read(int object_no, int offset_in_object, 
            char* buffer, int bytes_to_read,
            ObjectReader* reader);
 
+  // Write within a specific object
   void Write(int object_no, int offset_in_object, 
              const char* buffer, int bytes_to_write,
              ObjectReader* reader);
 
   void Flush(ObjectWriter* writer);
 
-  void Truncate(int new_size);
+  void Truncate(int64_t new_size);
 
   int object_size() const;
 

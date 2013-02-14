@@ -55,7 +55,6 @@ void CachedObject::Write(int offset_in_object, const char* buffer,
                          int bytes_to_write, ObjectReader* reader) {
   boost::unique_lock<boost::mutex> lock(mutex_);
   ReadInternal(lock, reader);
-  assert(bytes_to_write + offset_in_object < object_size_);
   memcpy(data_, &buffer[offset_in_object], bytes_to_write);
   actual_size_ = std::max(actual_size_, offset_in_object + bytes_to_write);
   is_dirty_ = true;
@@ -75,8 +74,14 @@ void CachedObject::Flush(ObjectWriter* writer) {
 }
 
 void CachedObject::Truncate(int new_object_size) {
-  // TODO: fill up with zeros if extending?
+  if (actual_size_ == new_object_size) {
+    return;
+  }
+  if (actual_size_ < new_object_size) {
+    memset(&data_[actual_size_], 0, new_object_size - actual_size_);
+  }
   actual_size_ = new_object_size;
+  is_dirty_ = true;
 }
 
 uint64_t CachedObject::last_access() const {
@@ -143,6 +148,7 @@ ObjectCache::~ObjectCache() {
 int ObjectCache::Read(int object_no, int offset_in_object,
                       char* buffer, int bytes_to_read,
                       ObjectReader* reader) {
+  assert(bytes_to_read + offset_in_object <= object_size_);
   CachedObject* object = LookupObject(object_no);
   return object->Read(offset_in_object, buffer, bytes_to_read, reader);
 }
@@ -150,6 +156,7 @@ int ObjectCache::Read(int object_no, int offset_in_object,
 void ObjectCache::Write(int object_no, int offset_in_object,
                         const char* buffer, int bytes_to_write,
                         ObjectReader* reader) {
+  assert(bytes_to_write + offset_in_object <= object_size_);
   CachedObject* object = LookupObject(object_no);
   object->Write(offset_in_object, buffer, bytes_to_write, reader);
 }
@@ -172,12 +179,14 @@ void ObjectCache::Flush(ObjectWriter* writer) {
   }
 }
 
-void ObjectCache::Truncate(int new_size) {
+void ObjectCache::Truncate(int64_t new_size) {
   boost::unique_lock<boost::mutex> lock(mutex_);
-  int object_to_cut = new_size / object_size_;
+  int object_to_cut = static_cast<int>(new_size / object_size_);
   for (Cache::iterator i = cache_.begin(); i != cache_.end(); ) {
     if (i->first == object_to_cut) {
       i->second->Truncate(new_size % object_size_);
+    } else if (i->first < object_to_cut) {
+      i->second->Truncate(object_size_);
     } else if (i->first > object_to_cut) {
       delete i->second;
       cache_.erase(i++);

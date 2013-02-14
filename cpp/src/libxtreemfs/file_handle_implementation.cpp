@@ -529,6 +529,10 @@ void FileHandleImplementation::TruncatePhaseTwoAndThree(
   xcap_manager_.GetXCap(&xcap);
   file_info_->TryToUpdateOSDWriteResponse(write_response, xcap);
 
+  if (object_cache_ != NULL) {
+    object_cache_->Truncate(new_file_size);
+  }
+
   // 3. Update the file size at the MRC.
   file_info_->FlushPendingFileSizeUpdate(this);
 }
