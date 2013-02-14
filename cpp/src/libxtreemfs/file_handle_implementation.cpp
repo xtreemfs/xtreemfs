@@ -104,12 +104,11 @@ int FileHandleImplementation::Read(
   }
 
   // Prepare request object.
-  readRequest rq;
-  xcap_manager_.GetXCap(rq.mutable_file_credentials()->mutable_xcap());
-  rq.set_file_id(rq.file_credentials().xcap().file_id());
-  file_info_->GetXLocSet(rq.mutable_file_credentials()->mutable_xlocs());
+  FileCredentials file_credentials;
+  xcap_manager_.GetXCap(file_credentials.mutable_xcap());
+  file_info_->GetXLocSet(file_credentials.mutable_xlocs());
   // Use a reference for shorter code.
-  const XLocSet& xlocs = rq.file_credentials().xlocs();
+  const XLocSet& xlocs = file_credentials.xlocs();
 
   size_t received_data = 0;
 
@@ -158,24 +157,30 @@ int FileHandleImplementation::Read(
     }
 
     if (object_cache_) {
-      ObjectReader reader = boost::bind(&FileHandleImplementation::ReadFromOSD,
-                                        this,
-                                        uuid_iterator,
-                                        &rq,
-                                        _1, _2, 0, object_cache_->object_size());
-      received_data= object_cache_->Read(
+      ObjectReaderCb reader = boost::bind(
+         &FileHandleImplementation::ReadFromOSD,
+          this,
+          uuid_iterator,
+          file_credentials,
+          _1, _2, 0, object_cache_->object_size());
+      ObjectWriterCb writer = boost::bind(
+          &FileHandleImplementation::WriteToOSD,
+          this,
+          osd_uuid_iterator_,
+          file_credentials,
+          _1, 0, _2, _3);
+      received_data += object_cache_->Read(
           operations[j].obj_number, 
           operations[j].req_offset,
           operations[j].data,
           operations[j].req_size,
-          &reader);
+          reader, writer);
     } else {
       // TODO(mberlin): Update xloc list if newer version found (on OSD?).
-      received_data = 
-          ReadFromOSD(uuid_iterator, &rq, operations[j].obj_number, 
+      received_data += 
+          ReadFromOSD(uuid_iterator, file_credentials, operations[j].obj_number, 
           operations[j].data, operations[j].req_offset,
           operations[j].req_size);
-
     }
   }
 
@@ -184,22 +189,28 @@ int FileHandleImplementation::Read(
 
 int FileHandleImplementation::ReadFromOSD(
     UUIDIterator* uuid_iterator,
-    readRequest* rq,
+    const FileCredentials& file_credentials,
     int object_no, char* buffer, int offset_in_object,
     int bytes_to_read) {
-  rq->set_object_number(object_no);
-  rq->set_object_version(0);
-  rq->set_offset(offset_in_object);
-  rq->set_length(bytes_to_read);
+  readRequest rq;
+  rq.set_file_id(file_credentials.xcap().file_id());
+  rq.mutable_file_credentials()->CopyFrom(file_credentials);
+  rq.set_object_number(object_no);
+  rq.set_object_version(0);
+  rq.set_offset(offset_in_object);
+  rq.set_length(bytes_to_read);
+
+  xcap_manager_.GetXCap(rq.mutable_file_credentials()->mutable_xcap());
+  file_info_->GetXLocSet(rq.mutable_file_credentials()->mutable_xlocs());
         
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
-    boost::bind(&xtreemfs::pbrpc::OSDServiceClient::read_sync,
-                osd_service_client_,
-                _1,
-                boost::cref(auth_bogus_),
-                boost::cref(user_credentials_bogus_),
-                rq),
+          boost::bind(&xtreemfs::pbrpc::OSDServiceClient::read_sync,
+                      osd_service_client_,
+                      _1,
+                      boost::cref(auth_bogus_),
+                      boost::cref(user_credentials_bogus_),
+                      &rq),
     uuid_iterator,
     uuid_resolver_,
     RPCOptions(volume_options_.max_read_tries,
@@ -208,7 +219,7 @@ int FileHandleImplementation::ReadFromOSD(
                volume_options_.was_interrupted_function),
     false,
     &xcap_manager_,
-    rq->mutable_file_credentials()->mutable_xcap()));
+    rq.mutable_file_credentials()->mutable_xcap()));
 
   xtreemfs::pbrpc::ObjectData* data =
       static_cast<xtreemfs::pbrpc::ObjectData*>(response->response());
@@ -320,13 +331,6 @@ int FileHandleImplementation::Write(
   } else {
     // Synchronous writes.
     string osd_uuid = "";
-    writeRequest write_request;
-    write_request.mutable_file_credentials()->CopyFrom(file_credentials);
-    write_request.set_file_id(global_file_id);
-    ObjectData *data = write_request.mutable_object_data();
-    data->set_checksum(0);
-    data->set_invalid_checksum_on_osd(false);
-    data->set_zero_padding(0);
     // Write all objects.
     for (size_t j = 0; j < operations.size(); j++) {
       // Differentiate between striping and the rest.
@@ -345,21 +349,25 @@ int FileHandleImplementation::Write(
       }
 
       if (object_cache_ != NULL) {
-        readRequest rq;
-        rq.set_file_id(write_request.file_id());
-        rq.mutable_file_credentials()->CopyFrom(write_request.file_credentials());
-        ObjectReader reader = boost::bind(&FileHandleImplementation::ReadFromOSD,
-                                          this,
-                                          uuid_iterator,
-                                          &rq,
-                                          _1, _2, 0, object_cache_->object_size());
+        ObjectReaderCb reader = boost::bind(
+            &FileHandleImplementation::ReadFromOSD,
+            this,
+            uuid_iterator,
+            file_credentials,
+            _1, _2, 0, object_cache_->object_size());
+        ObjectWriterCb writer = boost::bind(
+            &FileHandleImplementation::WriteToOSD,
+            this,
+            osd_uuid_iterator_,
+            file_credentials,
+            _1, 0, _2, _3);
         object_cache_->Write(operations[j].obj_number, 
                              operations[j].req_offset,
                              operations[j].data,
                              operations[j].req_size,
-                             &reader);
+                             reader, writer);
       } else {
-            WriteToOSD(uuid_iterator, &write_request, 
+            WriteToOSD(uuid_iterator, file_credentials, 
                        operations[j].obj_number, operations[j].req_offset,
                        operations[j].data, operations[j].req_size);
       }
@@ -371,13 +379,21 @@ int FileHandleImplementation::Write(
 
 void FileHandleImplementation::WriteToOSD(
     UUIDIterator* uuid_iterator,
-    writeRequest* write_request,
+    const FileCredentials& file_credentials,
     int object_no, int offset_in_object, const char* buffer,
     int bytes_to_write) {
-  write_request->set_object_number(object_no);
-  write_request->set_object_version(0);
-  write_request->set_offset(offset_in_object);
-  write_request->set_lease_timeout(0);
+  writeRequest write_request;
+  write_request.mutable_file_credentials()->CopyFrom(file_credentials);
+  write_request.set_file_id(file_credentials.xcap().file_id());
+  write_request.set_object_number(object_no);
+  write_request.set_object_version(0);
+  write_request.set_offset(offset_in_object);
+  write_request.set_lease_timeout(0);
+
+  ObjectData *data = write_request.mutable_object_data();
+  data->set_checksum(0);
+  data->set_invalid_checksum_on_osd(false);
+  data->set_zero_padding(0);
   
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
@@ -387,7 +403,7 @@ void FileHandleImplementation::WriteToOSD(
               _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials_bogus_),
-              write_request,
+              &write_request,
               buffer,
               bytes_to_write),
           uuid_iterator,
@@ -398,7 +414,7 @@ void FileHandleImplementation::WriteToOSD(
                       volume_options_.was_interrupted_function),
           false,
           &xcap_manager_,
-          write_request->mutable_file_credentials()->mutable_xcap()));
+          write_request.mutable_file_credentials()->mutable_xcap()));
 
   xtreemfs::pbrpc::OSDWriteResponse* write_response =
       static_cast<xtreemfs::pbrpc::OSDWriteResponse*>(response->response());
@@ -429,18 +445,13 @@ void FileHandleImplementation::Flush(bool close_file) {
     FileCredentials file_credentials;
     xcap_manager_.GetXCap(file_credentials.mutable_xcap());
     file_info_->GetXLocSet(file_credentials.mutable_xlocs());
-    // Use references for shorter code.
-    const string& global_file_id = file_credentials.xcap().file_id();
-
-    writeRequest write_request;
-    write_request.mutable_file_credentials()->CopyFrom(file_credentials);
-    write_request.set_file_id(global_file_id);
-    ObjectWriter writer = boost::bind(&FileHandleImplementation::WriteToOSD,
-                                      this,
-                                      osd_uuid_iterator_,
-                                      &write_request,
-                                      _1, 0, _2, _3);
-    object_cache_->Flush(&writer);
+    ObjectWriterCb writer = boost::bind(
+        &FileHandleImplementation::WriteToOSD,
+        this,
+        osd_uuid_iterator_,
+        file_credentials,
+        _1, 0, _2, _3);
+    object_cache_->Flush(writer);
   }
 
   file_info_->Flush(this, close_file);

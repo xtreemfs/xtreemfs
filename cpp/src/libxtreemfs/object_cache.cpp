@@ -29,7 +29,7 @@ CachedObject::~CachedObject() {
 }
 
 // Flush data and free memory
-void CachedObject::Erase(ObjectWriter* writer) {
+void CachedObject::Erase(const ObjectWriterCb& writer) {
   boost::unique_lock<boost::mutex> lock(mutex_);
   if (is_dirty_) {
     WriteObjectToOSD(writer);
@@ -42,7 +42,7 @@ void CachedObject::Erase(ObjectWriter* writer) {
 }
 
 int CachedObject::Read(int offset_in_object, char* buffer, int bytes_to_read,
-                       ObjectReader* reader) {
+                       const ObjectReaderCb& reader) {
   boost::unique_lock<boost::mutex> lock(mutex_);
   ReadInternal(lock, reader);
   int actual_bytes = std::min(bytes_to_read, actual_size_ - offset_in_object);
@@ -52,7 +52,7 @@ int CachedObject::Read(int offset_in_object, char* buffer, int bytes_to_read,
 }
 
 void CachedObject::Write(int offset_in_object, const char* buffer,
-                         int bytes_to_write, ObjectReader* reader) {
+                         int bytes_to_write, const ObjectReaderCb& reader) {
   boost::unique_lock<boost::mutex> lock(mutex_);
   ReadInternal(lock, reader);
   memcpy(data_, &buffer[offset_in_object], bytes_to_write);
@@ -61,7 +61,7 @@ void CachedObject::Write(int offset_in_object, const char* buffer,
   last_access_ = Now();
 }
 
-void CachedObject::Flush(ObjectWriter* writer) {
+void CachedObject::Flush(const ObjectWriterCb& writer) {
   boost::unique_lock<boost::mutex> lock(mutex_);
   if (is_dirty_) {
     // Write out a copy of the data asynchronously.
@@ -93,7 +93,7 @@ bool CachedObject::is_dirty() const {
 }
 
 void CachedObject::ReadInternal(boost::unique_lock<boost::mutex>& lock,
-                               ObjectReader* reader) {
+                               const ObjectReaderCb& reader) {
   if (ReadPending()) {
     if (read_queue_.size() == 0) {
       // Initial read
@@ -117,18 +117,18 @@ void CachedObject::ReadInternal(boost::unique_lock<boost::mutex>& lock,
 }
 
 void CachedObject::ReadObjectFromOSD(boost::unique_lock<boost::mutex>& lock,
-                                     ObjectReader* reader) {
+                                     const ObjectReaderCb& reader) {
   lock.unlock();
   char* data = new char[object_size_];
-  int read = (*reader)(object_no_, data);
+  int read = reader(object_no_, data);
   lock.lock();
 
   data_ = data;
   actual_size_ = read;
 }
 
-void CachedObject::WriteObjectToOSD(ObjectWriter* writer) {
-  (*writer)(object_no_, data_, actual_size_);
+void CachedObject::WriteObjectToOSD(const ObjectWriterCb& writer) {
+  writer(object_no_, data_, actual_size_);
 }
 
 bool CachedObject::ReadPending() {
@@ -147,21 +147,23 @@ ObjectCache::~ObjectCache() {
 
 int ObjectCache::Read(int object_no, int offset_in_object,
                       char* buffer, int bytes_to_read,
-                      ObjectReader* reader) {
+                      const ObjectReaderCb& reader,
+                      const ObjectWriterCb& writer) {
   assert(bytes_to_read + offset_in_object <= object_size_);
-  CachedObject* object = LookupObject(object_no);
+  CachedObject* object = LookupObject(object_no, writer);
   return object->Read(offset_in_object, buffer, bytes_to_read, reader);
 }
 
 void ObjectCache::Write(int object_no, int offset_in_object,
                         const char* buffer, int bytes_to_write,
-                        ObjectReader* reader) {
+                        const ObjectReaderCb& reader,
+                        const ObjectWriterCb& writer) {
   assert(bytes_to_write + offset_in_object <= object_size_);
-  CachedObject* object = LookupObject(object_no);
+  CachedObject* object = LookupObject(object_no, writer);
   object->Write(offset_in_object, buffer, bytes_to_write, reader);
 }
 
-void ObjectCache::Flush(ObjectWriter* writer) {
+void ObjectCache::Flush(const ObjectWriterCb& writer) {
   while (true) {
     boost::unique_lock<boost::mutex> lock(mutex_);
     Cache::iterator i;
@@ -196,20 +198,31 @@ void ObjectCache::Truncate(int64_t new_size) {
   }
 }
 
-CachedObject* ObjectCache::LookupObject(int object_no) {
+CachedObject* ObjectCache::LookupObject(int object_no,
+                                        const ObjectWriterCb& writer) {
   boost::unique_lock<boost::mutex> lock(mutex_);
   Cache::iterator i = cache_.find(object_no);
   if (i == cache_.end()) {
     cache_[object_no] = new CachedObject(object_no, object_size_);
 
     if (cache_.size() > max_objects_) {
-      CollectLeasedObject();
+      CollectLeasedObject(writer);
     }
   }
   return cache_[object_no];
 }
 
-void ObjectCache::CollectLeasedObject() {
+void ObjectCache::CollectLeasedObject(const ObjectWriterCb& writer) {
+  uint64_t minimum_atime = UINT64_MAX;
+  Cache::iterator min;
+  for (Cache::iterator i = cache_.begin(); i != cache_.end(); ++i) {
+    if (minimum_atime > i->second->last_access()) {
+      min = i;
+      minimum_atime = i->second->last_access();
+    }
+  }
+  assert(min != cache_.end());
+  min->second->Erase(writer);
 }
 
 int ObjectCache::object_size() const {

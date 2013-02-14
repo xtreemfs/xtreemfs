@@ -32,6 +32,7 @@ class SyncCallbackBase;
 }  // namespace rpc
 
 namespace pbrpc {
+class FileCredentials;
 class Lock;
 class MRCServiceClient;
 class OSDServiceClient;
@@ -49,16 +50,16 @@ class Volume;
 class XCapManager;
 
 class XCapManager :
-    public xtreemfs::rpc::CallbackInterface<xtreemfs::pbrpc::XCap>,
+    public rpc::CallbackInterface<xtreemfs::pbrpc::XCap>,
     public XCapHandler {
  public:
   XCapManager(
       const xtreemfs::pbrpc::XCap& xcap,
-      xtreemfs::pbrpc::MRCServiceClient* mrc_service_client,
+      pbrpc::MRCServiceClient* mrc_service_client,
       UUIDResolver* uuid_resolver,
       UUIDIterator* mrc_uuid_iterator,
-      const xtreemfs::pbrpc::Auth& auth_bogus,
-      const xtreemfs::pbrpc::UserCredentials& user_credentials_bogus);
+      const pbrpc::Auth& auth_bogus,
+      const pbrpc::UserCredentials& user_credentials_bogus);
    
   /** Renew xcap_ asynchronously. */
   void RenewXCapAsync(const RPCOptions& options);
@@ -80,7 +81,7 @@ class XCapManager :
   virtual void CallFinished(xtreemfs::pbrpc::XCap* new_xcap,
                             char* data,
                             uint32_t data_length,
-                            xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
+                            pbrpc::RPCHeader::ErrorResponse* error,
                             void* context);
   
   /** Any modification to the object must obtain a lock first. */
@@ -96,42 +97,42 @@ class XCapManager :
   boost::condition xcap_renewal_pending_cond_;
 
   /** UUIDIterator of the MRC. */
-  xtreemfs::pbrpc::MRCServiceClient* mrc_service_client_;
+  pbrpc::MRCServiceClient* mrc_service_client_;
   UUIDResolver* uuid_resolver_;
   UUIDIterator* mrc_uuid_iterator_;
   
   /** Auth needed for ServiceClients. Always set to AUTH_NONE by Volume. */
-  const xtreemfs::pbrpc::Auth auth_bogus_;
+  const pbrpc::Auth auth_bogus_;
 
   /** For same reason needed as auth_bogus_. Always set to user "xtreemfs". */
-  const xtreemfs::pbrpc::UserCredentials user_credentials_bogus_;
+  const pbrpc::UserCredentials user_credentials_bogus_;
 };
 
 /** Default implementation of the FileHandle Interface. */
 class FileHandleImplementation
     : public FileHandle, 
       public XCapHandler,
-      public xtreemfs::rpc::CallbackInterface<
-          xtreemfs::pbrpc::timestampResponse> {
+      public rpc::CallbackInterface<
+          pbrpc::timestampResponse> {
  public:
   FileHandleImplementation(
       ClientImplementation* client,
       const std::string& client_uuid,
       FileInfo* file_info,
-      const xtreemfs::pbrpc::XCap& xcap,
+      const pbrpc::XCap& xcap,
       UUIDIterator* mrc_uuid_iterator,
       UUIDIterator* osd_uuid_iterator,
       UUIDContainer* osd_uuid_container,
       UUIDResolver* uuid_resolver,
-      xtreemfs::pbrpc::MRCServiceClient* mrc_service_client,
-      xtreemfs::pbrpc::OSDServiceClient* osd_service_client,
-      const std::map<xtreemfs::pbrpc::StripingPolicyType,
+      pbrpc::MRCServiceClient* mrc_service_client,
+      pbrpc::OSDServiceClient* osd_service_client,
+      const std::map<pbrpc::StripingPolicyType,
                      StripeTranslator*>& stripe_translators,
       bool async_writes_enabled,
       ObjectCache* object_cache,
       const Options& options,
-      const xtreemfs::pbrpc::Auth& auth_bogus,
-      const xtreemfs::pbrpc::UserCredentials& user_credentials_bogus);
+      const pbrpc::Auth& auth_bogus,
+      const pbrpc::UserCredentials& user_credentials_bogus);
 
   virtual ~FileHandleImplementation();
 
@@ -142,7 +143,7 @@ class FileHandleImplementation
   virtual void Flush();
 
   virtual void Truncate(
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      const pbrpc::UserCredentials& user_credentials,
       int64_t new_file_size);
 
   /** Used by Truncate() and Volume->OpenFile() to truncate the file to
@@ -156,8 +157,8 @@ class FileHandleImplementation
   void TruncatePhaseTwoAndThree(int64_t new_file_size);
 
   virtual void GetAttr(
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
-      xtreemfs::pbrpc::Stat* stat);
+      const pbrpc::UserCredentials& user_credentials,
+      pbrpc::Stat* stat);
 
   virtual xtreemfs::pbrpc::Lock* AcquireLock(
       int process_id,
@@ -179,7 +180,7 @@ class FileHandleImplementation
       bool exclusive);
 
   /** Also used by FileInfo object to free active locks. */
-  void ReleaseLock(const xtreemfs::pbrpc::Lock& lock);
+  void ReleaseLock(const pbrpc::Lock& lock);
 
   virtual void ReleaseLockOfProcess(int process_id);
 
@@ -192,7 +193,7 @@ class FileHandleImplementation
    *  @remark Ownership is NOT transferred to the caller.
    */
   const StripeTranslator* GetStripeTranslator(
-      xtreemfs::pbrpc::StripingPolicyType type);
+      pbrpc::StripingPolicyType type);
 
   /** Sets async_writes_failed_ to true. */
   void MarkAsyncWritesAsFailed();
@@ -208,7 +209,7 @@ class FileHandleImplementation
    * @throws PosixErrorException
    * @throws UnknownAddressSchemeException
    */
-  void WriteBackFileSize(const xtreemfs::pbrpc::OSDWriteResponse& owr,
+  void WriteBackFileSize(const pbrpc::OSDWriteResponse& owr,
                          bool close_file);
 
   /** Sends osd_write_response_for_async_write_back_ asynchronously. */
@@ -216,7 +217,7 @@ class FileHandleImplementation
 
   /** Overwrites the current osd_write_response_ with "owr". */
   void set_osd_write_response_for_async_write_back(
-      const xtreemfs::pbrpc::OSDWriteResponse& owr);
+      const pbrpc::OSDWriteResponse& owr);
 
   /** Wait for all asyncronous operations to finish */
   void WaitForAsyncOperations();
@@ -230,10 +231,10 @@ class FileHandleImplementation
  private:
   /** Implements callback for an async xtreemfs_update_file_size request. */
   virtual void CallFinished(
-      xtreemfs::pbrpc::timestampResponse* response_message,
+      pbrpc::timestampResponse* response_message,
       char* data,
       uint32_t data_length,
-      xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
+      pbrpc::RPCHeader::ErrorResponse* error,
       void* context);
 
   /** Same as Flush(), takes special actions if called by Close(). */
@@ -241,19 +242,19 @@ class FileHandleImplementation
 
   /** Actual implementation of ReleaseLock(). */
   void ReleaseLock(
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
-      const xtreemfs::pbrpc::Lock& lock,
+      const pbrpc::UserCredentials& user_credentials,
+      const pbrpc::Lock& lock,
       boost::mutex::scoped_lock* active_locks_mutex_lock);
 
   int ReadFromOSD(
       UUIDIterator* uuid_iterator,
-      pbrpc::readRequest* rq,
+      const pbrpc::FileCredentials& file_credentials,
       int object_no, char* buffer, 
       int offset_in_object, int bytes_to_read);
 
   void WriteToOSD(
       UUIDIterator* uuid_iterator,
-      pbrpc::writeRequest* write_request,
+      const pbrpc::FileCredentials& file_credentials,
       int object_no, int offset_in_object, const char* buffer,
       int bytes_to_write);
 
@@ -286,16 +287,16 @@ class FileHandleImplementation
   // TODO(mberlin): Add flags member.
 
   /** Contains a file size update which has to be written back (or NULL). */
-  boost::scoped_ptr<xtreemfs::pbrpc::OSDWriteResponse>
+  boost::scoped_ptr<pbrpc::OSDWriteResponse>
       osd_write_response_for_async_write_back_;
 
   /** Pointer to object owned by VolumeImplemention */
-  xtreemfs::pbrpc::MRCServiceClient* mrc_service_client_;
+  pbrpc::MRCServiceClient* mrc_service_client_;
 
   /** Pointer to object owned by VolumeImplemention */
-  xtreemfs::pbrpc::OSDServiceClient* osd_service_client_;
+  pbrpc::OSDServiceClient* osd_service_client_;
 
-  const std::map<xtreemfs::pbrpc::StripingPolicyType,
+  const std::map<pbrpc::StripingPolicyType,
                  StripeTranslator*>& stripe_translators_;
 
   /** Set to true if async writes (max requests > 0, no O_SYNC) are enabled. */
@@ -312,10 +313,10 @@ class FileHandleImplementation
   const Options& volume_options_;
 
   /** Auth needed for ServiceClients. Always set to AUTH_NONE by Volume. */
-  const xtreemfs::pbrpc::Auth& auth_bogus_;
+  const pbrpc::Auth& auth_bogus_;
 
   /** For same reason needed as auth_bogus_. Always set to user "xtreemfs". */
-  const xtreemfs::pbrpc::UserCredentials& user_credentials_bogus_;
+  const pbrpc::UserCredentials& user_credentials_bogus_;
 
   XCapManager xcap_manager_;
 

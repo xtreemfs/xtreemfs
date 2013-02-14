@@ -13,8 +13,8 @@
 
 namespace xtreemfs {
 
-typedef boost::function<int (int object_no, char* data)> ObjectReader;
-typedef boost::function<void (int object_no, const char* data, int size)> ObjectWriter;
+typedef boost::function<int (int object_no, char* data)> ObjectReaderCb;
+typedef boost::function<void (int object_no, const char* data, int size)> ObjectWriterCb;
 
 class CachedObject {
  public:
@@ -23,15 +23,15 @@ class CachedObject {
   ~CachedObject();
 
   // Flush data and free memory
-  void Erase(ObjectWriter* writer);
+  void Erase(const ObjectWriterCb& writer);
 
   int Read(int offset_in_object, char* buffer, int bytes_to_read,
-           ObjectReader* reader);
+           const ObjectReaderCb& reader);
 
   void Write(int offset_in_object, const char* buffer, 
-             int bytes_to_write, ObjectReader* reader);
+             int bytes_to_write, const ObjectReaderCb& reader);
 
-  void Flush(ObjectWriter* writer);
+  void Flush(const ObjectWriterCb& writer);
   
   void Truncate(int new_object_size);
 
@@ -41,12 +41,12 @@ class CachedObject {
 
  private:
   void ReadInternal(boost::unique_lock<boost::mutex>& lock,
-                    ObjectReader* reader);
+                    const ObjectReaderCb& reader);
 
   void ReadObjectFromOSD(boost::unique_lock<boost::mutex>& lock, 
-                         ObjectReader* reader);
+                         const ObjectReaderCb& reader);
 
-  void WriteObjectToOSD(ObjectWriter* writer);
+  void WriteObjectToOSD(const ObjectWriterCb& writer);
     
   bool ReadPending();
 
@@ -71,23 +71,26 @@ class ObjectCache {
   // Read within a specific object
   int Read(int object_no, int offset_in_object, 
            char* buffer, int bytes_to_read,
-           ObjectReader* reader);
+           const ObjectReaderCb& reader,
+           const ObjectWriterCb& writer);
 
   // Write within a specific object
   void Write(int object_no, int offset_in_object, 
              const char* buffer, int bytes_to_write,
-             ObjectReader* reader);
+             const ObjectReaderCb& reader,
+             const ObjectWriterCb& writer);
 
-  void Flush(ObjectWriter* writer);
+  void Flush(const ObjectWriterCb& writer);
 
   void Truncate(int64_t new_size);
 
   int object_size() const;
 
  private:
-  CachedObject* LookupObject(int object_no);
+  CachedObject* LookupObject(int object_no,
+                             const ObjectWriterCb& writer);
 
-  void CollectLeasedObject();
+  void CollectLeasedObject(const ObjectWriterCb& writer);
 
   boost::mutex mutex_;
   typedef std::map<uint64_t, CachedObject*> Cache;
