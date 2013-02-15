@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>xtreemfs_trunk_flease</name>
+	<name>xtreemfs_flease</name>
 	<comment></comment>
 	<projects>
-		<project>xtreemfs_trunk_foundation</project>
+		<project>xtreemfs_foundation</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
