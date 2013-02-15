@@ -8,6 +8,8 @@
  
 package org.xtreemfs.test.osd.replication;
 
+import static org.junit.Assert.*;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,7 +56,7 @@ import org.xtreemfs.test.TestEnvironment;
  * 
  * @author clorenz
  */
-public class ReplicationTest extends TestCase {
+public class ReplicationTest {
     OSD[] osds;
     OSDConfig[] configs;
     OSDServiceClient client;
@@ -71,7 +73,6 @@ public class ReplicationTest extends TestCase {
     private TestEnvironment testEnv;
 
     public ReplicationTest() {
-        super();
         // Auto-generated constructor stub
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
     }
@@ -81,7 +82,7 @@ public class ReplicationTest extends TestCase {
      */
     @Before
     public void setUp() throws Exception {
-        System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
+//        System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
 
         this.stripeSize = 128 * 1024; // byte
         this.data = SetupUtils.generateData(stripeSize);
@@ -556,9 +557,5 @@ public class ReplicationTest extends TestCase {
         list = new ObjectSet(objectList.getStripeWidth(), objectList.getFirst(), objectList.getSet().toByteArray());
         assertEquals(1, list.size());
         assertTrue(list.contains(objectNo + 2));
-    }
-    
-    public static void main(String[] args) {
-        TestRunner.run(ReplicationTest.class);
     }
 }
