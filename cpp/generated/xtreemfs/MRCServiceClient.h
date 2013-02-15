@@ -1,5 +1,5 @@
-//automatically generated from MRC.proto at Wed Oct 24 12:53:13 CEST 2012
-//(c) 2012. See LICENSE file for details.
+//automatically generated from MRC.proto at Fri Feb 15 16:07:03 CET 2013
+//(c) 2013. See LICENSE file for details.
 
 #ifndef MRCSERVICECLIENT_H
 #define MRCSERVICECLIENT_H
