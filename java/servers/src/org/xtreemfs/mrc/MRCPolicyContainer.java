@@ -30,6 +30,7 @@ import org.xtreemfs.mrc.osdselection.OSDSelectionPolicy;
 import org.xtreemfs.mrc.osdselection.SortDCMapPolicy;
 import org.xtreemfs.mrc.osdselection.SortFQDNPolicy;
 import org.xtreemfs.mrc.osdselection.SortRandomPolicy;
+import org.xtreemfs.mrc.osdselection.SortReversePolicy;
 import org.xtreemfs.mrc.osdselection.SortVivaldiPolicy;
 
 public class MRCPolicyContainer extends PolicyContainer {
@@ -42,7 +43,7 @@ public class MRCPolicyContainer extends PolicyContainer {
         FilterDefaultPolicy.class.getName(), FilterFQDNPolicy.class.getName(),
         FilterUUIDPolicy.class.getName(), GroupDCMapPolicy.class.getName(), GroupFQDNPolicy.class.getName(),
         SortDCMapPolicy.class.getName(), SortFQDNPolicy.class.getName(), SortRandomPolicy.class.getName(),
-        SortVivaldiPolicy.class.getName()          };
+        SortVivaldiPolicy.class.getName(), SortReversePolicy.class.getName() };
     
     private MRCConfig             config;
     
