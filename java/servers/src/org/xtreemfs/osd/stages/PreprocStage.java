@@ -32,6 +32,7 @@ import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.OpenFileTable;
 import org.xtreemfs.osd.OpenFileTable.OpenFileTableEntry;
+import org.xtreemfs.osd.operations.DeleteOperation;
 import org.xtreemfs.osd.operations.EventCloseFile;
 import org.xtreemfs.osd.operations.EventCreateFileVersion;
 import org.xtreemfs.osd.operations.OSDOperation;
@@ -146,30 +147,33 @@ public class PreprocStage extends Stage {
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "STAGEOP OPEN");
             
-            // check if snasphots are enabled and a write operation is executed;
-            // this is required to create new snapshots when files open for
-            // writing are closed, even if the same files are still open for
-            // reading
-            boolean write = request.getCapability() != null
-                && request.getCapability().getSnapConfig() != SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
-                && ((SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber() | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
-                | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY.getNumber()) & request
-                        .getCapability().getAccessMode()) > 0;
-            
-            CowPolicy cowPolicy;
-            if (oft.contains(fileId)) {
-                cowPolicy = oft.refresh(fileId, TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, write);
-            } else {
+            CowPolicy cowPolicy = CowPolicy.PolicyNoCow;
+            // Open file unless it is a DeleteOperation.
+            if (!(request.getOperation() instanceof DeleteOperation)) {
+                // check if snasphots are enabled and a write operation is executed;
+                // this is required to create new snapshots when files open for
+                // writing are closed, even if the same files are still open for
+                // reading
+                boolean write = request.getCapability() != null
+                        && request.getCapability().getSnapConfig() != SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
+                        && ((SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber()
+                                | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber() | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY
+                                    .getNumber()) & request.getCapability().getAccessMode()) > 0;
                 
-                // find out which COW mode to use, depending on the capability
-                if (request.getCapability() == null
-                    || request.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_SNAPS_DISABLED)
-                    cowPolicy = CowPolicy.PolicyNoCow;
-                else
-                    cowPolicy = new CowPolicy(cowMode.COW_ONCE);
-                
-                oft.openFile(fileId, TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, cowPolicy, write);
-                request.setFileOpen(true);
+                if (oft.contains(fileId)) {
+                    cowPolicy = oft.refresh(fileId, TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, write);
+                } else {
+
+                    // find out which COW mode to use, depending on the capability
+                    if (request.getCapability() == null
+                            || request.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_SNAPS_DISABLED)
+                        cowPolicy = CowPolicy.PolicyNoCow;
+                    else
+                        cowPolicy = new CowPolicy(cowMode.COW_ONCE);
+
+                    oft.openFile(fileId, TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, cowPolicy, write);
+                    request.setFileOpen(true);
+                }
             }
             request.setCowPolicy(cowPolicy);
         }
@@ -389,6 +393,7 @@ public class PreprocStage extends Stage {
         lastOFTcheck = TimeSync.getLocalSystemTime();
     }
     
+    @Override
     protected void processMethod(StageRequest m) {
         
         final int requestedMethod = m.getStageMethod();
