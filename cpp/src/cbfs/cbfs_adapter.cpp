@@ -957,7 +957,6 @@ void CbFSAdapter::Start() {
                                 *options_);
 
   xctl_.set_volume(volume_);
-  xctl_.set_uuid_resolver(client_->GetUUIDResolver());
 
   // Try to access Volume. If it fails, an error will be thrown.
   delete volume_->ReadDir(user_credentials_,
@@ -1025,7 +1024,8 @@ void CbFSAdapter::Start() {
                                 options_->connect_timeout_s));
 
     // TODO(mberlin): Set XtreemFS logo as icon.
-    const string first_dir_replica = options_->service_addresses.front();
+    const string first_dir_replica = 
+        options_->service_addresses.GetAddresses().front();
     cbfs_.AddMountingPoint(ConvertUTF8ToWindows(
         options_->mount_point
             + ";"
