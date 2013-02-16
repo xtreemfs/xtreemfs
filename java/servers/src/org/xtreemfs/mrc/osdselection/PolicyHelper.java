@@ -73,5 +73,13 @@ public class PolicyHelper {
         
         return ServiceSet.newBuilder().addAllServices(list);
     }
-    
+
+    public static ServiceSet.Builder reverseServiceSet(ServiceSet.Builder set) {
+
+        List<Service> immutableList = set.getServicesList();
+        List<Service> list = new ArrayList<Service>(immutableList);
+        Collections.reverse(list);
+
+        return ServiceSet.newBuilder().addAllServices(list);
+    }
 }
