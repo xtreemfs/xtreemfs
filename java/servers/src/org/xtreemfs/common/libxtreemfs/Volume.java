@@ -11,10 +11,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
+import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
-import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.REPL_FLAG;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replicas;
@@ -29,8 +30,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrResponse;
  */
 public interface Volume {
 
-    public static final String XTREEMFS_DEFAULT_RP = "xtreemfs.default_rp";
-    
     public void internalShutdown();
 
     /**
@@ -556,11 +555,12 @@ public interface Volume {
      * @param directory
      *            Path of the directory.
      * @param replicationPolicy
-     *            Replication policy which is defined in {@link ReplicationPolicy}
+     *            Replication policy which is defined in {@link ReplicaUpdatePolicies}
      * @param replicationFactor
      *            Number of replicas that should be assigned to new files.
      * @param replicationFlags
      *            Replication flags as number. Defined in {@link REPL_FLAG}.
+     *            Use the helper functions available in {@link ReplicationFlags}.
      * 
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
@@ -666,6 +666,52 @@ public interface Volume {
      */ 
     public Map<String, Object> listACL(UserCredentials userCreds, String path) throws IOException;
     
+    /** Get the OSD selection policies of the volume (replica placement).
+     * 
+     * @param userCreds Username and groups of the user.
+     * 
+     * @return List of policies as comma separated string.
+     * @throws IOException
+     */
+    public String getOSDSelectionPolicy(UserCredentials userCreds) throws IOException;
+    
+    /** Set the OSD selection policies for the volume (replica placement).
+     * 
+     * @param userCreds Username and groups of the user.
+     * @param List of policies as comma separated string.
+     * @throws IOException
+     */
+    public void setOSDSelectionPolicy(UserCredentials userCreds, String policies) throws IOException;
+    
+    /** Get the Replica selection policies of the volume (replica selection).
+     * 
+     * 
+     * @param userCreds Username and groups of the user.
+     * 
+     * @return List of policies as comma separated string.
+     * @throws IOException
+     */
+    public String getReplicaSelectionPolicy(UserCredentials userCreds) throws IOException;
+    
+    /** Set the Replica selection policies for the volume (replica selection).
+     * 
+     * @param userCreds Username and groups of the user.
+     * @param List of policies as comma separated string.
+     * @throws IOException
+     */
+    public void setReplicaSelectionPolicy(UserCredentials userCreds, String policies) throws IOException;
+    
+    
+    /** Set attribute of a policy to further customize replica placement and
+     *  selection. See the user guide for more information.
+     * 
+     * @param userCreds Username and groups of the user.
+     * @param Format: <policy id>.<attribute name> e.g., "1001.domains"
+     * @param Value of the attribute.
+     * @throws IOException
+     */
+    public void setPolicyAttribute(UserCredentials userCreds, String attribute, String value) throws IOException;
+    
     /**
      * Used only for HDFS Interface.
      * 
@@ -675,7 +721,6 @@ public interface Volume {
      * resolved hostname of registred IP address at the DIR.
      * 
      */
-
     public class StripeLocation {
         private long     startSize;
         private long     length;

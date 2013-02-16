@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>xtreemfs_trunk_server</name>
+	<name>xtreemfs_server</name>
 	<comment></comment>
 	<projects>
-		<project>xtreemfs_trunk_foundation</project>
-		<project>xtreemfs_trunk_flease</project>
+		<project>xtreemfs_foundation</project>
+		<project>xtreemfs_flease</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

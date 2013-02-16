@@ -76,11 +76,12 @@ enum OSDSelectionPolicyType {
   OSD_SELECTION_POLICY_SORT_DCMAP = 3000,
   OSD_SELECTION_POLICY_SORT_FQDN = 3001,
   OSD_SELECTION_POLICY_SORT_RANDOM = 3002,
-  OSD_SELECTION_POLICY_SORT_VIVALDI = 3003
+  OSD_SELECTION_POLICY_SORT_VIVALDI = 3003,
+  OSD_SELECTION_POLICY_SORT_REVERSE = 3999
 };
 bool OSDSelectionPolicyType_IsValid(int value);
 const OSDSelectionPolicyType OSDSelectionPolicyType_MIN = OSD_SELECTION_POLICY_FILTER_DEFAULT;
-const OSDSelectionPolicyType OSDSelectionPolicyType_MAX = OSD_SELECTION_POLICY_SORT_VIVALDI;
+const OSDSelectionPolicyType OSDSelectionPolicyType_MAX = OSD_SELECTION_POLICY_SORT_REVERSE;
 const int OSDSelectionPolicyType_ARRAYSIZE = OSDSelectionPolicyType_MAX + 1;
 
 const ::google::protobuf::EnumDescriptor* OSDSelectionPolicyType_descriptor();

@@ -370,7 +370,7 @@ void protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto() {
     "*|\n\027AccessControlPolicyType\022\036\n\032ACCESS_CO"
     "NTROL_POLICY_NULL\020\001\022\037\n\033ACCESS_CONTROL_PO"
     "LICY_POSIX\020\002\022 \n\034ACCESS_CONTROL_POLICY_VO"
-    "LUME\020\003*\367\002\n\026OSDSelectionPolicyType\022(\n#OSD"
+    "LUME\020\003*\237\003\n\026OSDSelectionPolicyType\022(\n#OSD"
     "_SELECTION_POLICY_FILTER_DEFAULT\020\350\007\022%\n O"
     "SD_SELECTION_POLICY_FILTER_FQDN\020\351\007\022%\n OS"
     "D_SELECTION_POLICY_FILTER_UUID\020\352\007\022%\n OSD"
@@ -379,7 +379,8 @@ void protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto() {
     "LECTION_POLICY_SORT_DCMAP\020\270\027\022#\n\036OSD_SELE"
     "CTION_POLICY_SORT_FQDN\020\271\027\022%\n OSD_SELECTI"
     "ON_POLICY_SORT_RANDOM\020\272\027\022&\n!OSD_SELECTIO"
-    "N_POLICY_SORT_VIVALDI\020\273\027*A\n\032ReplicaSelec"
+    "N_POLICY_SORT_VIVALDI\020\273\027\022&\n!OSD_SELECTIO"
+    "N_POLICY_SORT_REVERSE\020\237\037*A\n\032ReplicaSelec"
     "tionPolicyType\022#\n\037REPLICA_SELECTION_POLI"
     "CY_SIMPLE\020\001*i\n\nSnapConfig\022\036\n\032SNAP_CONFIG"
     "_SNAPS_DISABLED\020\000\022\036\n\032SNAP_CONFIG_ACCESS_"
@@ -408,7 +409,7 @@ void protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto() {
     "\022-\n)REPL_FLAG_STRATEGY_SEQUENTIAL_PREFET"
     "CHING\020 *%\n\010SERVICES\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n"
     "\003OSD\020\003B(\n&org.xtreemfs.pbrpc.generatedin"
-    "terfaces", 2848);
+    "terfaces", 2888);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "xtreemfs/GlobalTypes.proto", &protobuf_RegisterTypes);
   NewFileSize::default_instance_ = new NewFileSize();
@@ -473,6 +474,7 @@ bool OSDSelectionPolicyType_IsValid(int value) {
     case 3001:
     case 3002:
     case 3003:
+    case 3999:
       return true;
     default:
       return false;
