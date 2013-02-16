@@ -221,7 +221,7 @@ CachedObject* ObjectCache::LookupObject(int object_no,
 }
 
 void ObjectCache::CollectLeasedObject(const ObjectWriterCb& writer) {
-  uint64_t minimum_atime = UINT64_MAX;
+  uint64_t minimum_atime = std::numeric_limits<uint64_t>::max();
   Cache::iterator min;
   for (Cache::iterator i = cache_.begin(); i != cache_.end(); ++i) {
     if (minimum_atime > i->second->last_access()) {
