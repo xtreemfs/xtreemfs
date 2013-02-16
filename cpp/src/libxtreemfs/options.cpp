@@ -68,6 +68,7 @@ Options::Options()
   async_writes_max_requests = 10;  // Only 10 pending requests allowed by default.
   readdir_chunk_size = 1024;
   enable_atime = false;
+  object_cache_size = 0;
 
   // Error Handling options.
   // Depending on the values max{_read|_write}_tries and and (retry_delay_s or
@@ -208,7 +209,10 @@ void Options::GenerateProgramOptionsDescriptions() {
         " will block if this limit is reached first.")
     ("readdir-chunk-size",
         po::value(&readdir_chunk_size)->default_value(readdir_chunk_size),
-        "Number of entries requested per readdir.");
+        "Number of entries requested per readdir.")
+    ("object-cache-size",
+        po::value(&object_cache_size)->default_value(object_cache_size),
+        "Number of cached objects per file.");
 
   error_handling_.add_options()
     ("max-tries",
@@ -268,7 +272,7 @@ void Options::GenerateProgramOptionsDescriptions() {
   grid_options_.add_options()
     ("grid-ssl",
         po::value(&grid_ssl)->zero_tokens(),
-        "Explicitily use the XtreemFS Grid-SSL mode. Same as specifying "
+        "Explicitly use the XtreemFS Grid-SSL mode. Same as specifying "
         "pbrpcg:// in the volume URL.")
     ("globus-gridmap",
         po::value(&grid_auth_mode_globus)->zero_tokens(),
@@ -401,11 +405,15 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
         " asynchronous writes (async-writes-max-reqs) must be greater 0.");
   }
 
-
   if (!enable_async_writes && (vm.count("async-writes-max-reqsize-kb") ||
       vm.count("async-writes-max-reqs"))) {
     throw InvalidCommandLineParametersException("You specified async-writes-*"
         " options but did not set enable-async-writes.");
+  }
+
+  if (enable_async_writes && object_cache_size > 0) {
+    throw InvalidCommandLineParametersException(
+        "Only one of async. writes and the object cache may be enabled.");
   }
 
   // Show help if no arguments given.

@@ -62,8 +62,13 @@ FileInfo::FileInfo(
   for (int i = 0; i < xlocset_.replicas_size(); i++) {
     osd_uuid_iterator_.AddUUID(xlocset_.replicas(i).osd_uuids(0));
   }
-  const int object_size = xlocset_.replicas(0).striping_policy().stripe_size();
-  object_cache_.reset(new ObjectCache(200, object_size));
+  if (volume->volume_options().object_cache_size > 0) {
+    const int object_size = 
+        xlocset_.replicas(0).striping_policy().stripe_size();
+    object_cache_.reset(
+        new ObjectCache(volume->volume_options().object_cache_size,
+                        object_size));
+  }
 }
 
 FileInfo::~FileInfo() {
