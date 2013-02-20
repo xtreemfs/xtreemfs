@@ -94,6 +94,49 @@ public class MRCTest extends TestCase {
         Logging.logMessage(Logging.LEVEL_DEBUG, this, BufferPool.getStatus());
     }
     
+    public void testReCreateVolumes() throws Exception {
+        final String uid = "userXY";
+        final List<String> gids = createGIDs("groupZ");
+    	final UserCredentials uc = createUserCredentials(uid, gids);
+    	
+    	// Using a large number of volumes to generate load while creation
+    	for(int i = 25; i <= 30; i++) {
+    		// Create volumes
+    		for(int j = 0; j < i; j++) {
+    			String name = "vol-" + j;
+	            invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
+	            		AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, getDefaultStripingPolicy(), "", 0775,
+	            		name, "", "", getKVList("bla", "blub")));
+    		}
+    		
+    		// Check number of created volumes
+    		Volumes vols = invokeSync(client.xtreemfs_lsvol(mrcAddress, RPCAuthentication.authNone, uc));
+    		assertEquals(vols.getVolumesCount(), i);
+    		
+    		// Try to create existing volumes
+    		for(int j = 0; j < i; j++) {
+    			String name = "vol-" + j;
+    			try {
+    				invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
+    						AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, getDefaultStripingPolicy(), "", 0775,
+    						name, "", "", getKVList("bla", "blub")));
+    				fail();
+    			} catch(Exception ex) {
+    				vols = invokeSync(client.xtreemfs_lsvol(mrcAddress, RPCAuthentication.authNone, uc));
+    	    		assertEquals(vols.getVolumesCount(), i);
+    			}
+    		}
+    		
+    		// Delete created volumes
+    		for(int j = 0; j < i; j++) {
+                String volName = "vol-" + j;
+                invokeSync(client.xtreemfs_rmvol(mrcAddress, RPCAuthentication.authNone, uc, volName));
+    		}
+    		vols = invokeSync(client.xtreemfs_lsvol(mrcAddress, RPCAuthentication.authNone, uc));
+    		assertEquals(vols.getVolumesCount(), 0);
+    	}
+    }
+    
     public void testCreateDeleteListVolumes() throws Exception {
         
         final int numVols = 10;
