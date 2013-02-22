@@ -133,7 +133,9 @@ TEST_F(ObjectCacheTest, Truncate) {
 
   cache_->Flush(writer_);
   EXPECT_EQ(2, osd_file_.reads_);
-  EXPECT_EQ(3, osd_file_.writes_);
+  // We need not to flush out shrunk objects as the layer above us will
+  // take care of it by sending a truncate to the OSD.
+  EXPECT_EQ(2, osd_file_.writes_);
   EXPECT_EQ(20, osd_file_.size_);
 }
 

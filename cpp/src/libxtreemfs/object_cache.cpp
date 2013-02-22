@@ -23,15 +23,14 @@
 
 namespace xtreemfs {
 
-// TODO: make it injectable for unit tests of cache eviction.
 static uint64_t Now() {
   return time(NULL);
 }
 
 CachedObject::CachedObject(int object_no, int object_size)
     : object_no_(object_no), object_size_(object_size),
-      actual_size_(0), is_dirty_(false),
-      last_access_(Now()) {}
+      actual_size_(-1), is_dirty_(false), last_access_(Now()) {
+}
 
 CachedObject::~CachedObject() {
 }
@@ -52,7 +51,7 @@ void CachedObject::Drop() {
 
 void CachedObject::DropLocked() {
   is_dirty_ = false;
-  actual_size_ = 0;
+  actual_size_ = -1;
   data_.reset(NULL);
 }
 
@@ -97,12 +96,13 @@ void CachedObject::Truncate(int new_object_size) {
   boost::unique_lock<boost::mutex> lock(mutex_);
   if (actual_size_ == new_object_size) {
     return;
-  }
-  if (actual_size_ < new_object_size) {
+  } else if (actual_size_ < new_object_size) {
     // Zero out extra data, because we might truncate-extend the file
-    // again without getting back to the OSD.
+    // again and we do not zero-out data when shrinking.
     memset(&data_[actual_size_], 0, new_object_size - actual_size_);
   }
+  // Nothing to do if actual_size_ > new_object_size, because we won't
+  // read beyond the end of the data.
   actual_size_ = new_object_size;
 }
 
@@ -117,12 +117,13 @@ bool CachedObject::is_dirty() {
 }
 
 void CachedObject::ReadInternal(boost::unique_lock<boost::mutex>& lock,
-                               const ObjectReaderFunction& reader) {
+                                const ObjectReaderFunction& reader) {
   // We hold the lock here, so no other thread is modifying the current
   // state. However, another thread might already be requesting the data
   // from the OSD.
-  if (data_.get() == NULL) {
-    if (read_queue_.size() == 0) {
+  if (actual_size_ == -1) {
+    // We don't have valid data yet.
+    if (data_.get() == NULL) {
       // Initial read. No other thread is retrieving the object.
       ReadObjectFromOSD(lock, reader);  // unlocked synchronous read.
     } else {
@@ -147,12 +148,10 @@ void CachedObject::ReadInternal(boost::unique_lock<boost::mutex>& lock,
 
 void CachedObject::ReadObjectFromOSD(boost::unique_lock<boost::mutex>& lock,
                                      const ObjectReaderFunction& reader) {
+  data_.reset(new char[object_size_]);
   lock.unlock();
-  boost::scoped_array<char> data(new char[object_size_]);
   int read_bytes = reader(object_no_, data.get());
   lock.lock();
-
-  data_.swap(data);
   actual_size_ = read_bytes;
 }
 

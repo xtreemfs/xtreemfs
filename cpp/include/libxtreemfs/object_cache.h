@@ -17,7 +17,7 @@
 #include <deque>
 #include <map>
 
-// TODO: define annotations for clang and move them to a separate file
+// TODO(fhupfeld): define annotations for clang and move them to a separate file
 #define GUARDED_BY(x)
 #define EXCLUSIVE_LOCKS_REQUIRED(x)
 #define LOCKS_EXCLUDED(x)
@@ -29,7 +29,7 @@ class condition_variable;
 namespace xtreemfs {
 
 /** These are injected functions that provide object read and write
-  * functionality for complete objects.. */
+  * functionality for complete objects. */
 typedef boost::function<int (int object_no, char* data)>
     ObjectReaderFunction;
 typedef boost::function<void (int object_no, const char* data, int size)>
@@ -95,7 +95,9 @@ class CachedObject {
   const int object_size_;
   /** Our buffer, always object_size_ large. */
   boost::scoped_array<char> data_ GUARDED_BY(mutex_);
-  /** The last object has fewer bytes than object_size_. */
+  /** The last object has fewer bytes than object_size_. If data has not been
+      fetched from the OSD yet, actual_size is -1.
+  */
   int actual_size_ GUARDED_BY(mutex_);
   /** Data is dirty and must be written back. */
   bool is_dirty_ GUARDED_BY(mutex_);
@@ -108,14 +110,14 @@ class ObjectCache {
   ObjectCache(size_t max_objects, int object_size);
   ~ObjectCache();
 
-  /* Read within a specific object */
+  /** Read within a specific object */
   int Read(int object_no, int offset_in_object,
            char* buffer, int bytes_to_read,
            const ObjectReaderFunction& reader,
            const ObjectWriterFunction& writer)
       LOCKS_EXCLUDED(mutex_);
 
-  /* Write within a specific object */
+  /** Write within a specific object */
   void Write(int object_no, int offset_in_object,
              const char* buffer, int bytes_to_write,
              const ObjectReaderFunction& reader,
