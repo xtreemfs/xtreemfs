@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2013 by Felix Hupfeld.
+ *
+ * Licensed under the BSD License, see LICENSE file for details.
+ *
+ */
+
 #include <gtest/gtest.h>
 
 #include <stdint.h>
@@ -8,8 +15,8 @@
 
 #include "libxtreemfs/object_cache.h"
 #include "libxtreemfs/helper.h"
-#include "util/logging.h"
 #include "rpc/sync_callback.h"
+#include "util/logging.h"
 
 namespace xtreemfs {
 
@@ -58,8 +65,8 @@ class ObjectCacheTest : public ::testing::Test {
 
   FakeOsdFile osd_file_;
   boost::scoped_ptr<ObjectCache> cache_;
-  ObjectReaderCb reader_;
-  ObjectWriterCb writer_;
+  ObjectReaderFunction reader_;
+  ObjectWriterFunction writer_;
 };
 
 TEST_F(ObjectCacheTest, BasicUse) {

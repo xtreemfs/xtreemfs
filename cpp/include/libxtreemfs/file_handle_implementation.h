@@ -60,7 +60,7 @@ class XCapManager :
       UUIDIterator* mrc_uuid_iterator,
       const pbrpc::Auth& auth_bogus,
       const pbrpc::UserCredentials& user_credentials_bogus);
-   
+
   /** Renew xcap_ asynchronously. */
   void RenewXCapAsync(const RPCOptions& options);
 
@@ -69,7 +69,7 @@ class XCapManager :
 
   /** XCapHandler: Get current capability.*/
   virtual void GetXCap(xtreemfs::pbrpc::XCap* xcap);
-  
+
   /** Update the capability with the provided one. */
   void SetXCap(const xtreemfs::pbrpc::XCap& xcap);
 
@@ -83,7 +83,7 @@ class XCapManager :
                             uint32_t data_length,
                             pbrpc::RPCHeader::ErrorResponse* error,
                             void* context);
-  
+
   /** Any modification to the object must obtain a lock first. */
   boost::mutex mutex_;
 
@@ -100,7 +100,7 @@ class XCapManager :
   pbrpc::MRCServiceClient* mrc_service_client_;
   UUIDResolver* uuid_resolver_;
   UUIDIterator* mrc_uuid_iterator_;
-  
+
   /** Auth needed for ServiceClients. Always set to AUTH_NONE by Volume. */
   const pbrpc::Auth auth_bogus_;
 
@@ -110,10 +110,9 @@ class XCapManager :
 
 /** Default implementation of the FileHandle Interface. */
 class FileHandleImplementation
-    : public FileHandle, 
+    : public FileHandle,
       public XCapHandler,
-      public rpc::CallbackInterface<
-          pbrpc::timestampResponse> {
+      public rpc::CallbackInterface<pbrpc::timestampResponse> {
  public:
   FileHandleImplementation(
       ClientImplementation* client,
@@ -129,7 +128,7 @@ class FileHandleImplementation
       const std::map<pbrpc::StripingPolicyType,
                      StripeTranslator*>& stripe_translators,
       bool async_writes_enabled,
-      ObjectCache* object_cache,
+      ObjectCache* object_cache,  // owned by the caller
       const Options& options,
       const pbrpc::Auth& auth_bogus,
       const pbrpc::UserCredentials& user_credentials_bogus);
@@ -246,16 +245,22 @@ class FileHandleImplementation
       const pbrpc::Lock& lock,
       boost::mutex::scoped_lock* active_locks_mutex_lock);
 
+  /** Read data from the OSD. Objects owned by the caller. */
   int ReadFromOSD(
       UUIDIterator* uuid_iterator,
       const pbrpc::FileCredentials& file_credentials,
-      int object_no, char* buffer, 
-      int offset_in_object, int bytes_to_read);
+      int object_no,
+      char* buffer,
+      int offset_in_object,
+      int bytes_to_read);
 
+  /** Write data to the OSD. Objects owned by the caller. */
   void WriteToOSD(
       UUIDIterator* uuid_iterator,
       const pbrpc::FileCredentials& file_credentials,
-      int object_no, int offset_in_object, const char* buffer,
+      int object_no,
+      int offset_in_object,
+      const char* buffer,
       int bytes_to_write);
 
   bool IsReplicaStriped();
