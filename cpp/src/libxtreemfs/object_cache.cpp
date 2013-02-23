@@ -149,8 +149,10 @@ void CachedObject::ReadInternal(boost::unique_lock<boost::mutex>& lock,
 void CachedObject::ReadObjectFromOSD(boost::unique_lock<boost::mutex>& lock,
                                      const ObjectReaderFunction& reader) {
   data_.reset(new char[object_size_]);
+  // No other thread will access the buffer concurrently.
+  char* buffer_ptr = data_.get();
   lock.unlock();
-  int read_bytes = reader(object_no_, data.get());
+  int read_bytes = reader(object_no_, buffer_ptr);
   lock.lock();
   actual_size_ = read_bytes;
 }
