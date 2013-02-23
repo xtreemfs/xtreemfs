@@ -64,7 +64,7 @@ FileInfo::FileInfo(
   }
   if (volume->volume_options().object_cache_size > 0) {
     const int object_size = 
-        xlocset_.replicas(0).striping_policy().stripe_size();
+        xlocset_.replicas(0).striping_policy().stripe_size() * 1024;
     object_cache_.reset(
         new ObjectCache(volume->volume_options().object_cache_size,
                         object_size));

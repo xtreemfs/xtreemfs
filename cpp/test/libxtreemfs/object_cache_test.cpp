@@ -13,10 +13,21 @@
 #include <boost/scoped_ptr.hpp>
 #include <string>
 
-#include "libxtreemfs/object_cache.h"
+#include "common/test_environment.h"
+#include "common/test_rpc_server_dir.h"
+#include "common/test_rpc_server_mrc.h"
+#include "common/test_rpc_server_osd.h"
+#include "libxtreemfs/client.h"
+#include "libxtreemfs/file_handle.h"
 #include "libxtreemfs/helper.h"
+#include "libxtreemfs/object_cache.h"
+#include "libxtreemfs/options.h"
+#include "libxtreemfs/volume.h"
+#include "libxtreemfs/xtreemfs_exception.h"
+#include "rpc/client.h"
 #include "rpc/sync_callback.h"
 #include "util/logging.h"
+#include "xtreemfs/OSDServiceConstants.h"
 
 namespace xtreemfs {
 
@@ -29,8 +40,8 @@ class FakeOsdFile {
   }
   int Read(int object_no, char* buffer) {
     reads_++;
-    int offset = object_no * kObjectSize;
-    int bytes_to_read = std::min(kObjectSize, size_ - offset);
+    const int offset = object_no * kObjectSize;
+    const int bytes_to_read = std::min(kObjectSize, size_ - offset);
     if (bytes_to_read <= 0) {
       return 0;
     }
@@ -39,7 +50,7 @@ class FakeOsdFile {
   }
   void Write(int object_no, const char* data, int bytes_to_write) {
     writes_++;
-    int offset = object_no * kObjectSize;
+    const int offset = object_no * kObjectSize;
     memcpy(&data_[offset], data, bytes_to_write);
     size_ = std::max(size_, offset  + bytes_to_write);
   }
@@ -172,6 +183,74 @@ TEST_F(ObjectCacheTest, WriteBack) {
   EXPECT_EQ(4, osd_file_.reads_);
   EXPECT_EQ(3, osd_file_.writes_);
   EXPECT_EQ(29, osd_file_.size_);
+}
+
+class ObjectCacheEndToEndTest : public ::testing::Test {
+ protected:
+  static const int BLOCK_SIZE = 1024 * 128;
+
+  virtual void SetUp() {
+    util::initialize_logger(util::LEVEL_WARN);
+    test_env.options.connect_timeout_s = 15;
+    test_env.options.request_timeout_s = 5;
+    test_env.options.retry_delay_s = 5;
+    test_env.options.object_cache_size = 2;
+
+    test_env.options.periodic_xcap_renewal_interval_s = 2;
+    ASSERT_TRUE(test_env.Start());
+
+    // Open a volume
+    volume = test_env.client->OpenVolume(
+        test_env.volume_name_,
+        NULL,  // No SSL options.
+        test_env.options);
+
+    // Open a file.
+    file = volume->OpenFile(
+        test_env.user_credentials,
+        "/test_file",
+        static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(
+            xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_CREAT |
+            xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_TRUNC |
+            xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR));
+  }
+
+  virtual void TearDown() {
+    //volume->Close();
+    test_env.Stop();
+  }
+
+  TestEnvironment test_env;
+  Volume* volume;
+  FileHandle* file;
+};
+
+TEST_F(ObjectCacheEndToEndTest, NormalWrite) {
+  size_t blocks = 5;
+  size_t buffer_size = BLOCK_SIZE * blocks;
+  boost::scoped_array<char> write_buf(new char[buffer_size]);
+
+  std::vector<rpc::WriteEntry> expected(blocks);
+  for (size_t i = 0; i < blocks; ++i) {
+    expected[i] = rpc::WriteEntry(i, 0, BLOCK_SIZE);
+  }
+
+  EXPECT_EQ(0, file->Read(write_buf.get(), buffer_size, 0));
+
+  file->Write(write_buf.get(), buffer_size, 0);
+
+  EXPECT_EQ(buffer_size, file->Read(write_buf.get(), buffer_size + 5, 0));
+
+  file->Flush();
+
+  boost::this_thread::sleep(boost::posix_time::seconds(
+      2 * test_env.options.request_timeout_s));
+
+  EXPECT_TRUE(equal(expected.begin(),
+                    expected.end(),
+                    test_env.osds[0]->GetReceivedWrites().end() - blocks));
+
+  ASSERT_NO_THROW(file->Close());
 }
 
 }  // namespace xtreemfs

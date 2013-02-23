@@ -33,7 +33,9 @@ google::protobuf::Message* TestRPCServerMRC::OpenOperation(
     const pbrpc::UserCredentials& user_credentials,
     const google::protobuf::Message& request,
     const char* data,
-    uint32_t data_len) {
+    uint32_t data_len,
+    boost::scoped_array<char>* response_data,
+    uint32_t* response_data_len) {
   const openRequest* rq = reinterpret_cast<const openRequest*>(&request);
 
   openResponse* response = new openResponse();
@@ -79,7 +81,9 @@ google::protobuf::Message* TestRPCServerMRC::RenewCapabilityOperation(
     const pbrpc::UserCredentials& user_credentials,
     const google::protobuf::Message& request,
     const char* data,
-    uint32_t data_len) {
+    uint32_t data_len,
+    boost::scoped_array<char>* response_data,
+    uint32_t* response_data_len) {
   const XCap* rq = reinterpret_cast<const XCap*>(&request);
 
   XCap* response = new XCap(*rq);
@@ -95,7 +99,9 @@ google::protobuf::Message* TestRPCServerMRC::UpdateFileSizeOperation(
     const pbrpc::UserCredentials& user_credentials,
     const google::protobuf::Message& request,
     const char* data,
-    uint32_t data_len) {
+    uint32_t data_len,
+    boost::scoped_array<char>* response_data,
+    uint32_t* response_data_len) {
   //const xtreemfs_update_file_sizeRequest* rq =
   //    reinterpret_cast<const xtreemfs_update_file_sizeRequest*>(&request);
 

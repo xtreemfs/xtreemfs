@@ -31,21 +31,19 @@ namespace rpc {
 
 class AsyncWriteHandlerTest : public ::testing::Test {
  protected:
-  enum {
-    BLOCK_SIZE = 1024 * 128
-  };
+  static const int BLOCK_SIZE = 1024 * 128;
 
   virtual void SetUp() {
     initialize_logger(LEVEL_WARN);
-    test_env.options.connect_timeout_s = 15;
-    test_env.options.request_timeout_s = 5;
-    test_env.options.retry_delay_s = 5;
+    test_env.options.connect_timeout_s = 5;
+    test_env.options.request_timeout_s = 3;
+    test_env.options.retry_delay_s = 1;
     test_env.options.enable_async_writes = true;
     test_env.options.async_writes_max_request_size_kb = 128;
     test_env.options.async_writes_max_requests = 8;
 
     test_env.options.periodic_xcap_renewal_interval_s = 2;
-    test_env.Start();
+    ASSERT_TRUE(test_env.Start());
 
     // Open a volume
     volume = test_env.client->OpenVolume(
@@ -61,7 +59,6 @@ class AsyncWriteHandlerTest : public ::testing::Test {
             xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_CREAT |
             xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_TRUNC |
             xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR));
-
   }
 
   virtual void TearDown() {

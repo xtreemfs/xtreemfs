@@ -189,7 +189,9 @@ template <class Derived> class TestRPCServer {
       const pbrpc::UserCredentials& user_credentials,
       const google::protobuf::Message& request,
       const char* data,
-      uint32_t data_len);
+      uint32_t data_len,
+      boost::scoped_array<char>* response_data,
+      uint32_t* response_data_len);
 
   struct Op {
     Op() {}
@@ -254,7 +256,9 @@ template <class Derived> class TestRPCServer {
       const pbrpc::UserCredentials& user_credentials,
       const google::protobuf::Message& request,
       const char* data,
-      uint32_t data_len) {
+      uint32_t data_len,
+      boost::scoped_array<char>* response_data,
+      uint32_t* response_data_len) {
     typename std::map<uint32_t, Op>::iterator iter
         = operations_.find(proc_id);
     if (iter == operations_.end()) {
@@ -263,7 +267,8 @@ template <class Derived> class TestRPCServer {
 
     Op& entry = iter->second;
     return (entry.server->*(entry.op))
-        (auth, user_credentials, request, data, data_len);
+        (auth, user_credentials, request, data, data_len,
+        response_data, response_data_len);
   }
 
   /** Daemon function which accepts new connections. */
@@ -462,13 +467,17 @@ template <class Derived> class TestRPCServer {
         }
 
         // Process request.
+        boost::scoped_array<char> response_data;
+        uint32_t response_data_len = 0;
         boost::scoped_ptr<google::protobuf::Message> response_message(
             ExecuteOperation(proc_id,
                 request_rpc_header.request_header().auth_data(),
                 request_rpc_header.request_header().user_creds(),
                 *request_message,
                 data_buffer.get(),
-                request_rm->data_len()));
+                request_rm->data_len(),
+                &response_data,
+                &response_data_len));
         if (!response_message.get()) {
           Logging::log->getLog(xtreemfs::util::LEVEL_ERROR)
               << "No response was generated. Operation with proc id = "
@@ -486,9 +495,10 @@ template <class Derived> class TestRPCServer {
 
         // Send response.
         xtreemfs::pbrpc::RPCHeader response_header(request_rpc_header);
-        xtreemfs::rpc::RecordMarker response_rm(response_header.ByteSize(),
-                                 response_message->ByteSize(),
-                                 0);  // TODO(mberlin): Also add "data".
+        xtreemfs::rpc::RecordMarker response_rm(
+            response_header.ByteSize(),
+            response_message->ByteSize(),
+            response_data_len);
 
         size_t response_bytes_size = xtreemfs::rpc::RecordMarker::get_size()
                                      + response_rm.header_len()
@@ -499,6 +509,7 @@ template <class Derived> class TestRPCServer {
         response_rm.serialize(response);
         response += xtreemfs::rpc::RecordMarker::get_size();
 
+        response_header.CheckInitialized();
         if (!response_header.SerializeToArray(response, response_rm.header_len())) {
             Logging::log->getLog(xtreemfs::util::LEVEL_ERROR)
                 << "Failed to serialize header" << std::endl;
@@ -506,17 +517,23 @@ template <class Derived> class TestRPCServer {
         }
         response += response_rm.header_len();
 
+        response_message->CheckInitialized();
         if (!response_message->SerializeToArray(response, response_rm.message_len())) {
             Logging::log->getLog(xtreemfs::util::LEVEL_ERROR)
                 << "Failed to serialize message" << std::endl;
             break;
         }
 
+        response += response_rm.message_len();
+
+        if (response_data.get() != NULL) {
+          memcpy(response, response_data.get(), response_data_len);
+        }
+
         std::vector<boost::asio::mutable_buffer> write_bufs;
         write_bufs.push_back(
-            boost::asio::buffer(reinterpret_cast<void*> (response_bytes.get()),
+            boost::asio::buffer(reinterpret_cast<void*>(response_bytes.get()),
             response_bytes_size));
-        // TODO(mberlin): Also add "data" here.
 
         boost::asio::write(*sock, write_bufs);
       }

@@ -46,7 +46,7 @@ class WriteEntry {
 class TestRPCServerOSD : public TestRPCServer<TestRPCServerOSD> {
  public:
   TestRPCServerOSD();
-  const std::vector<WriteEntry>& GetReceivedWrites() const;
+  const std::vector<WriteEntry> GetReceivedWrites() const;
 
  private:
   google::protobuf::Message* TruncateOperation(
@@ -54,20 +54,36 @@ class TestRPCServerOSD : public TestRPCServer<TestRPCServerOSD> {
       const pbrpc::UserCredentials& user_credentials,
       const google::protobuf::Message& request,
       const char* data,
-      uint32_t data_len);
+      uint32_t data_len,
+      boost::scoped_array<char>* response_data,
+      uint32_t* response_data_len);
+
+  google::protobuf::Message* ReadOperation(
+      const pbrpc::Auth& auth,
+      const pbrpc::UserCredentials& user_credentials,
+      const google::protobuf::Message& request,
+      const char* data,
+      uint32_t data_len,
+      boost::scoped_array<char>* response_data,
+      uint32_t* response_data_len);
 
   google::protobuf::Message* WriteOperation(
       const pbrpc::Auth& auth,
       const pbrpc::UserCredentials& user_credentials,
       const google::protobuf::Message& request,
       const char* data,
-      uint32_t data_len);
+      uint32_t data_len,
+      boost::scoped_array<char>* response_data,
+      uint32_t* response_data_len);
 
   /** Mutex used to protect all member variables from concurrent access. */
   mutable boost::mutex mutex_;
 
   /** A single file size is remembered between requests. */
   uint64_t file_size_;
+
+  /** The file data. */
+  boost::scoped_array<char> data_;
 
   /** A list of received write requests that can be used to check against an
    *  expected result.

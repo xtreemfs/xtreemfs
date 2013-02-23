@@ -125,7 +125,13 @@ void CachedObject::ReadInternal(boost::unique_lock<boost::mutex>& lock,
     // We don't have valid data yet.
     if (data_.get() == NULL) {
       // Initial read. No other thread is retrieving the object.
-      ReadObjectFromOSD(lock, reader);  // unlocked synchronous read.
+      data_.reset(new char[object_size_]);
+      // No other thread will access the buffer concurrently.
+      char* buffer_ptr = data_.get();
+      lock.unlock();
+      int read_bytes = reader(object_no_, buffer_ptr);
+      lock.lock();
+      actual_size_ = read_bytes;
     } else {
       // Read already initiated by another thread. Enqueue us as waiting
       // for the data. Our predecessor will dequeue us and wake us up.
@@ -144,17 +150,6 @@ void CachedObject::ReadInternal(boost::unique_lock<boost::mutex>& lock,
     read_queue_.pop_front();
     v->notify_one();
   }
-}
-
-void CachedObject::ReadObjectFromOSD(boost::unique_lock<boost::mutex>& lock,
-                                     const ObjectReaderFunction& reader) {
-  data_.reset(new char[object_size_]);
-  // No other thread will access the buffer concurrently.
-  char* buffer_ptr = data_.get();
-  lock.unlock();
-  int read_bytes = reader(object_no_, buffer_ptr);
-  lock.lock();
-  actual_size_ = read_bytes;
 }
 
 void CachedObject::WriteObjectToOSD(const ObjectWriterFunction& writer) {

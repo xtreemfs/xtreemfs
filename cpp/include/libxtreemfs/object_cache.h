@@ -79,10 +79,6 @@ class CachedObject {
                     const ObjectReaderFunction& reader)
      EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
-  void ReadObjectFromOSD(boost::unique_lock<boost::mutex>& lock,
-                         const ObjectReaderFunction& reader)
-     EXCLUSIVE_LOCKS_REQUIRED(mutex_);
-
   void WriteObjectToOSD(const ObjectWriterFunction& writer)
      EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
