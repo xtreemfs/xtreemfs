@@ -43,6 +43,9 @@ class FakeOsdFile {
     memcpy(&data_[offset], data, bytes_to_write);
     size_ = std::max(size_, offset  + bytes_to_write);
   }
+  void Truncate(int new_size) {
+    size_ = new_size;
+  }
   boost::scoped_array<char> data_;
   int size_;
   int reads_;
@@ -102,16 +105,17 @@ TEST_F(ObjectCacheTest, Truncate) {
 
   // Shrink
   cache_->Truncate(12);
+  osd_file_.Truncate(12);
   EXPECT_EQ(2, osd_file_.reads_);
   EXPECT_EQ(0, osd_file_.writes_);
-  EXPECT_EQ(0, osd_file_.size_);
+  EXPECT_EQ(12, osd_file_.size_);
 
   char buffer[17];
   EXPECT_EQ(2, cache_->Read(1, 0, buffer, 10, reader_, writer_));
   EXPECT_EQ(0, strncmp(buffer, "st", 2));
   EXPECT_EQ(2, osd_file_.reads_);
   EXPECT_EQ(0, osd_file_.writes_);
-  EXPECT_EQ(0, osd_file_.size_);
+  EXPECT_EQ(12, osd_file_.size_);
 
   cache_->Flush(writer_);
   EXPECT_EQ(2, osd_file_.reads_);
@@ -120,16 +124,17 @@ TEST_F(ObjectCacheTest, Truncate) {
 
   // Extend
   cache_->Truncate(20);
+  osd_file_.Truncate(20);
   EXPECT_EQ(2, osd_file_.reads_);
   EXPECT_EQ(2, osd_file_.writes_);
-  EXPECT_EQ(12, osd_file_.size_);
+  EXPECT_EQ(20, osd_file_.size_);
 
   char buffer2[10];
   EXPECT_EQ(10, cache_->Read(1, 0, buffer2, 10, reader_, writer_));
   EXPECT_EQ(0, strncmp(buffer2, "st\0\0\0\0\0\0", 10));
   EXPECT_EQ(2, osd_file_.reads_);
   EXPECT_EQ(2, osd_file_.writes_);
-  EXPECT_EQ(12, osd_file_.size_);
+  EXPECT_EQ(20, osd_file_.size_);
 
   cache_->Flush(writer_);
   EXPECT_EQ(2, osd_file_.reads_);
