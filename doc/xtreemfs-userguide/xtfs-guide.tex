@@ -1760,6 +1760,12 @@ Asynchronous writes can be enabled with the command line option \texttt{----enab
 \end{itemize}
 If one of these limits is reached, subsequent write() requests will block.
 
+\subsection{Object Cache}
+\label{sec:object_cache}
+The client supports a per-file write-back object cache with LRU policy. This cache is enabled with \texttt{----object-cache-size=<N>} where N is the maximum number of objects it may cache. The cache is currently mutually exclusive with async. writes and disables itself for striped files.
+
+We recommend enabling the cache for most workloads.
+
 \section{Troubleshooting}
 
 Different kinds of problems may occur when trying to create, mount or access files in a volume. By default errors are logged to the console. Once \texttt{mount.xtreemfs} moved into background, use \texttt{xtfsutil ----errors <mount point>} to print the last 20 errors for a mounted volume. Additionally, the tools \texttt{mkfs.xtreemfs}, \texttt{rmfs.xtreemfs}, \texttt{lsfs.xtreemfs} and \texttt{mount.xtreemfs} allow to log error messages to a logfile which has to be specified by the \texttt{--l} option. Use the \texttt{--d} option to specify the minimum severity of to be logged events.
