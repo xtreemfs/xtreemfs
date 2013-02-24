@@ -228,7 +228,6 @@ CachedObject* ObjectCache::LookupObject(int object_no,
   return cache_[object_no];
 }
 
-// This function could evict more than one object.
 void ObjectCache::EvictObjects(const ObjectWriterFunction& writer) {
   uint64_t minimum_atime = std::numeric_limits<uint64_t>::max();
   Cache::iterator min;

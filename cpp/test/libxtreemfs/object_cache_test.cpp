@@ -242,7 +242,7 @@ class ObjectCacheEndToEndTest : public ::testing::Test {
 
 TEST_F(ObjectCacheEndToEndTest, Persistence) {
   const size_t blocks = 5;
-  size_t buffer_size = BLOCK_SIZE * blocks;
+  const size_t buffer_size = BLOCK_SIZE * blocks;
   boost::scoped_array<char> write_buf(new char[buffer_size]);
   FillData(write_buf.get(), buffer_size);
 
@@ -263,35 +263,18 @@ TEST_F(ObjectCacheEndToEndTest, Persistence) {
 
 TEST_F(ObjectCacheEndToEndTest, NormalWrite) {
   const size_t blocks = 5;
-  size_t buffer_size = BLOCK_SIZE * blocks;
+  const size_t buffer_size = BLOCK_SIZE * blocks;
   boost::scoped_array<char> write_buf(new char[buffer_size]);
   FillData(write_buf.get(), buffer_size);
 
-  std::vector<rpc::WriteEntry> expected(blocks);
-  for (size_t i = 0; i < blocks; ++i) {
-    expected[i] = rpc::WriteEntry(i, 0, BLOCK_SIZE);
-  }
-
   EXPECT_EQ(0, file->Read(write_buf.get(), buffer_size, 0));
 
-  file->Write(write_buf.get(), buffer_size, 0);
-
-  boost::this_thread::sleep(boost::posix_time::seconds(
-      2 * test_env.options.request_timeout_s));
-
-  EXPECT_EQ(3, test_env.osds[0]->GetReceivedWrites().size());
+  EXPECT_EQ(buffer_size, file->Write(write_buf.get(), buffer_size, 0));
 
   EXPECT_EQ(buffer_size, file->Read(write_buf.get(), buffer_size + 5, 0));
   CheckData(write_buf.get(), buffer_size);
 
   ASSERT_NO_THROW(file->Flush());
-
-  boost::this_thread::sleep(boost::posix_time::seconds(
-      2 * test_env.options.request_timeout_s));
-
-  EXPECT_TRUE(equal(expected.begin(),
-                    expected.end(),
-                    test_env.osds[0]->GetReceivedWrites().end() - blocks));
 
   ASSERT_NO_THROW(file->Truncate(test_env.user_credentials, 0));
   EXPECT_EQ(0, file->Read(write_buf.get(), buffer_size, 0));
@@ -303,6 +286,8 @@ TEST_F(ObjectCacheEndToEndTest, NormalWrite) {
   file->Write(write_buf.get(), buffer_size, 0);
   ASSERT_NO_THROW(file->Close());
 
+  boost::this_thread::sleep(boost::posix_time::seconds(
+      2 * test_env.options.request_timeout_s));
   EXPECT_EQ(5 + 5, test_env.osds[0]->GetReceivedWrites().size());
 }
 
