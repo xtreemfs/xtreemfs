@@ -16,10 +16,7 @@
 #include <deque>
 #include <map>
 
-// TODO(fhupfeld): define annotations for clang and move them to a separate file
-#define GUARDED_BY(x)
-#define EXCLUSIVE_LOCKS_REQUIRED(x)
-#define LOCKS_EXCLUDED(x)
+#include "util/annotations.h"
 
 namespace boost {
 class condition_variable;
