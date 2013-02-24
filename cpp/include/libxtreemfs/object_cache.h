@@ -11,7 +11,6 @@
 #include <stdint.h>
 
 #include <boost/scoped_array.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/function.hpp>
 #include <deque>

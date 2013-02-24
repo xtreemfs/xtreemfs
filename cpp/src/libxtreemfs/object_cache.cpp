@@ -9,13 +9,10 @@
 
 #include <stdint.h>
 
-#include <boost/optional.hpp>
-#include <boost/scoped_ptr.hpp>
+#include <boost/scoped_array.hpp>
 #include <boost/thread/condition.hpp>
 #include <boost/thread/mutex.hpp>
-#include <list>
 #include <map>
-#include <string>
 
 namespace xtreemfs {
 
