@@ -24,7 +24,7 @@ static uint64_t Now() {
 
 CachedObject::CachedObject(int object_no, int object_size)
     : object_no_(object_no), object_size_(object_size), actual_size_(-1),
-      is_dirty_(false), last_access_(Now()), read_has_failed_(true) {
+      is_dirty_(false), last_access_(Now()), read_has_failed_(false) {
 }
 
 CachedObject::~CachedObject() {
