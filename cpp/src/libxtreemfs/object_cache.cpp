@@ -153,10 +153,6 @@ void CachedObject::ReadInternal(boost::unique_lock<boost::mutex>& lock,
     }
   }
 
-  if (read_has_failed_) {
-    throw IOException();
-  }
-
   // We are done, next in line please.
   if (read_queue_.size() > 0) {
     // Wake up our successor in the queue. It will make progress when
@@ -164,6 +160,10 @@ void CachedObject::ReadInternal(boost::unique_lock<boost::mutex>& lock,
     boost::condition_variable* v = read_queue_.front();
     read_queue_.pop_front();
     v->notify_one();
+  }
+
+  if (read_has_failed_) {
+    throw IOException();
   }
 }
 
