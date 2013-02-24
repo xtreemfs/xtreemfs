@@ -187,7 +187,7 @@ TEST_F(ObjectCacheTest, WriteBack) {
 
 class ObjectCacheEndToEndTest : public ::testing::Test {
  protected:
-  static const int BLOCK_SIZE = 1024 * 128;
+  static const int kBlockSize = 1024 * 128;
 
   virtual void SetUp() {
     util::initialize_logger(util::LEVEL_WARN);
@@ -242,7 +242,7 @@ class ObjectCacheEndToEndTest : public ::testing::Test {
 
 TEST_F(ObjectCacheEndToEndTest, Persistence) {
   const size_t blocks = 5;
-  const size_t buffer_size = BLOCK_SIZE * blocks;
+  const size_t buffer_size = kBlockSize * blocks;
   boost::scoped_array<char> write_buf(new char[buffer_size]);
   FillData(write_buf.get(), buffer_size);
 
@@ -263,7 +263,7 @@ TEST_F(ObjectCacheEndToEndTest, Persistence) {
 
 TEST_F(ObjectCacheEndToEndTest, NormalWrite) {
   const size_t blocks = 5;
-  const size_t buffer_size = BLOCK_SIZE * blocks;
+  const size_t buffer_size = kBlockSize * blocks;
   boost::scoped_array<char> write_buf(new char[buffer_size]);
   FillData(write_buf.get(), buffer_size);
 
@@ -286,8 +286,6 @@ TEST_F(ObjectCacheEndToEndTest, NormalWrite) {
   file->Write(write_buf.get(), buffer_size, 0);
   ASSERT_NO_THROW(file->Close());
 
-  boost::this_thread::sleep(boost::posix_time::seconds(
-      2 * test_env.options.request_timeout_s));
   EXPECT_EQ(5 + 5, test_env.osds[0]->GetReceivedWrites().size());
 }
 

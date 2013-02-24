@@ -98,6 +98,8 @@ class CachedObject {
   bool is_dirty_ GUARDED_BY(mutex_);
   /** Timestamp of last access, for LRU expunge policy. */
   uint64_t last_access_ GUARDED_BY(mutex_);
+  /** Reading the data has failed */
+  bool read_has_failed_ GUARDED_BY(mutex_);
 };
 
 class ObjectCache {

@@ -14,6 +14,8 @@
 #include <boost/thread/mutex.hpp>
 #include <map>
 
+#include "libxtreemfs/xtreemfs_exception.h"
+
 namespace xtreemfs {
 
 static uint64_t Now() {
@@ -21,8 +23,8 @@ static uint64_t Now() {
 }
 
 CachedObject::CachedObject(int object_no, int object_size)
-    : object_no_(object_no), object_size_(object_size),
-      actual_size_(-1), is_dirty_(false), last_access_(Now()) {
+    : object_no_(object_no), object_size_(object_size), actual_size_(-1),
+      is_dirty_(false), last_access_(Now()), read_has_failed_(true) {
 }
 
 CachedObject::~CachedObject() {
@@ -131,9 +133,15 @@ void CachedObject::ReadInternal(boost::unique_lock<boost::mutex>& lock,
       memset(data_.get(), 0, object_size_);
       // No other thread will access the buffer concurrently.
       char* buffer_ptr = data_.get();
-      lock.unlock();
-      int read_bytes = reader(object_no_, buffer_ptr);
-      lock.lock();
+      int read_bytes = -1;
+      try {
+        lock.unlock();
+        read_bytes = reader(object_no_, buffer_ptr);
+        lock.lock();
+      } catch(const XtreemFSException& e) {
+        lock.lock();
+        read_has_failed_ = true;
+      }
       actual_size_ = read_bytes;
     } else {
       // Read already initiated by another thread. Enqueue us as waiting
@@ -145,10 +153,14 @@ void CachedObject::ReadInternal(boost::unique_lock<boost::mutex>& lock,
     }
   }
 
+  if (read_has_failed_) {
+    throw IOException();
+  }
+
   // We are done, next in line please.
   if (read_queue_.size() > 0) {
     // Wake up our successor in the queue. It will make progress when
-    // we release the lock.
+    // we release the lock. The variable still belongs to the thread that enqueued it.
     boost::condition_variable* v = read_queue_.front();
     read_queue_.pop_front();
     v->notify_one();
@@ -227,23 +239,28 @@ CachedObject* ObjectCache::LookupObject(int object_no,
 
 void ObjectCache::EvictObjects(const ObjectWriterFunction& writer) {
   uint64_t minimum_atime = std::numeric_limits<uint64_t>::max();
-  Cache::iterator min;
-  int objects_with_data = 0;
-  for (Cache::iterator i = cache_.begin(); i != cache_.end(); ++i) {
-    if (!i->second->has_data()) {
-      continue;
+  Cache::iterator entry_with_minimum_atime;
+  {
+    boost::unique_lock<boost::mutex> lock(mutex_);
+    int objects_with_data = 0;
+    for (Cache::iterator i = cache_.begin(); i != cache_.end(); ++i) {
+      if (!i->second->has_data()) {
+        continue;
+      }
+      ++objects_with_data;
+      if (minimum_atime > i->second->last_access()) {
+        entry_with_minimum_atime = i;
+        minimum_atime = i->second->last_access();
+      }
     }
-    ++objects_with_data;
-    if (minimum_atime > i->second->last_access()) {
-      min = i;
-      minimum_atime = i->second->last_access();
+    if (objects_with_data <= max_objects_) {
+      return;
     }
+    assert(entry_with_minimum_atime != cache_.end());
   }
-  if (objects_with_data <= max_objects_) {
-    return;
-  }
-  assert(min != cache_.end());
-  min->second->FlushAndErase(writer);
+  // We only free the object's data, not its container in order to simplify
+  // concurrency handling.
+  entry_with_minimum_atime->second->FlushAndErase(writer);
 }
 
 int ObjectCache::object_size() const {

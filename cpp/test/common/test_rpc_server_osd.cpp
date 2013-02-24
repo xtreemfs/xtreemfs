@@ -73,7 +73,7 @@ google::protobuf::Message* TestRPCServerOSD::ReadOperation(
 
   const int64_t object_size =
       rq->file_credentials().xlocs().replicas(0).
-      striping_policy().stripe_size() * 1024;
+          striping_policy().stripe_size() * 1024;
   const int64_t offset = rq->object_number() * object_size +
                           rq->offset();
   const int64_t bytes_to_read =
@@ -127,7 +127,7 @@ google::protobuf::Message* TestRPCServerOSD::WriteOperation(
 
   const uint64_t object_size =
       rq->file_credentials().xlocs().replicas(0).
-      striping_policy().stripe_size() * 1024;
+          striping_policy().stripe_size() * 1024;
   const uint64_t offset = rq->object_number() * object_size + rq->offset();
 
   file_size_ = offset + data_len;
