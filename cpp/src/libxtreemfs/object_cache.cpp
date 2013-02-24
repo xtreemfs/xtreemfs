@@ -138,7 +138,7 @@ void CachedObject::ReadInternal(boost::unique_lock<boost::mutex>& lock,
         lock.unlock();
         read_bytes = reader(object_no_, buffer_ptr);
         lock.lock();
-      } catch(const XtreemFSException& e) {
+      } catch(const XtreemFSException&) {
         lock.lock();
         read_has_failed_ = true;
       }
@@ -163,7 +163,8 @@ void CachedObject::ReadInternal(boost::unique_lock<boost::mutex>& lock,
   }
 
   if (read_has_failed_) {
-    throw IOException();
+    throw IOException("The object cache failed to read the object. "
+        "Please re-open the file and try again.");
   }
 }
 
