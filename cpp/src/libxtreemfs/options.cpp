@@ -201,7 +201,7 @@ void Options::GenerateProgramOptionsDescriptions() {
     ("enable-async-writes",
         po::value(&enable_async_writes)
           ->default_value(enable_async_writes)->zero_tokens(),
-        "Enables asynchronous writes.")
+        "xx Enables asynchronous writes.")
     ("async-writes-max-reqs",
         po::value(&async_writes_max_requests)
             ->implicit_value(async_writes_max_requests),

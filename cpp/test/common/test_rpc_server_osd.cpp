@@ -7,6 +7,7 @@
 
 #include "common/test_rpc_server_osd.h"
 
+#include "util/logging.h"
 #include "xtreemfs/OSD.pb.h"
 #include "xtreemfs/OSDServiceConstants.h"
 
@@ -70,14 +71,13 @@ google::protobuf::Message* TestRPCServerOSD::ReadOperation(
   const readRequest* rq
       = static_cast<const readRequest*>(&request);
 
-  const uint64_t object_size =
+  const int64_t object_size =
       rq->file_credentials().xlocs().replicas(0).
       striping_policy().stripe_size() * 1024;
   const int64_t offset = rq->object_number() * object_size +
                           rq->offset();
   const int64_t bytes_to_read =
-      std::min(static_cast<int64_t>(rq->length()),
-               static_cast<int64_t>(file_size_) - offset);
+      std::min(static_cast<int64_t>(rq->length()), file_size_ - offset);
 
   if (Logging::log->loggingActive(xtreemfs::util::LEVEL_DEBUG)) {
     Logging::log->getLog(xtreemfs::util::LEVEL_DEBUG)

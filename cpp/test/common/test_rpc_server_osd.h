@@ -80,7 +80,7 @@ class TestRPCServerOSD : public TestRPCServer<TestRPCServerOSD> {
   mutable boost::mutex mutex_;
 
   /** A single file size is remembered between requests. */
-  uint64_t file_size_;
+  int64_t file_size_;
 
   /** The file data. */
   boost::scoped_array<char> data_;

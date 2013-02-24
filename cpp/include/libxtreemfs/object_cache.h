@@ -72,6 +72,9 @@ class CachedObject {
   bool is_dirty()
       LOCKS_EXCLUDED(mutex_);
 
+  bool has_data()
+      LOCKS_EXCLUDED(mutex_);
+
  private:
   /** Caller must hold mutex_ */
   void DropLocked() EXCLUSIVE_LOCKS_REQUIRED(mutex_);
@@ -139,7 +142,7 @@ class ObjectCache {
   /** Protects all non-const members of this class. */
   boost::mutex mutex_;
   /** Map of object number to cached object. */
-  typedef std::map<uint64_t, CachedObject*> Cache;
+  typedef std::map<int64_t, CachedObject*> Cache;
   Cache cache_ GUARDED_BY(mutex_);
   /** Maximum number of objects to cache. */
   const size_t max_objects_;

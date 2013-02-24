@@ -190,7 +190,7 @@ class ObjectCacheEndToEndTest : public ::testing::Test {
   static const int BLOCK_SIZE = 1024 * 128;
 
   virtual void SetUp() {
-    util::initialize_logger(util::LEVEL_WARN);
+    util::initialize_logger(util::LEVEL_DEBUG);
     test_env.options.connect_timeout_s = 15;
     test_env.options.request_timeout_s = 5;
     test_env.options.retry_delay_s = 5;
@@ -220,15 +220,52 @@ class ObjectCacheEndToEndTest : public ::testing::Test {
     test_env.Stop();
   }
 
+  void CheckData(char* data, int buffer_size) {
+    for (int i = 0; i < buffer_size; ++i) {
+      ASSERT_EQ('0' + (i % 3), data[i]);
+    }
+  }
+  void CheckDataIsNull(char* data, int buffer_size) {
+    for (int i = 0; i < buffer_size; ++i) {
+      ASSERT_EQ(0, data[i]);
+    }
+  }
+  void FillData(char* data, int buffer_size) {
+    for (int i = 0; i < buffer_size; ++i) {
+      data[i] = '0' + (i % 3);
+    }
+  }
   TestEnvironment test_env;
   Volume* volume;
   FileHandle* file;
 };
 
-TEST_F(ObjectCacheEndToEndTest, NormalWrite) {
-  size_t blocks = 5;
+TEST_F(ObjectCacheEndToEndTest, Persistence) {
+  const size_t blocks = 5;
   size_t buffer_size = BLOCK_SIZE * blocks;
   boost::scoped_array<char> write_buf(new char[buffer_size]);
+  FillData(write_buf.get(), buffer_size);
+
+  EXPECT_EQ(buffer_size, file->Write(write_buf.get(), buffer_size, 0));
+  ASSERT_NO_THROW(file->Close());
+
+  file = volume->OpenFile(
+      test_env.user_credentials,
+      "/test_file",
+      static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(
+          xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_CREAT |
+          xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDONLY));
+  memset(write_buf.get(), 0, buffer_size);
+  EXPECT_EQ(buffer_size, file->Read(write_buf.get(), buffer_size, 0));
+  CheckData(write_buf.get(), buffer_size);
+  ASSERT_NO_THROW(file->Close());
+}
+
+TEST_F(ObjectCacheEndToEndTest, NormalWrite) {
+  const size_t blocks = 5;
+  size_t buffer_size = BLOCK_SIZE * blocks;
+  boost::scoped_array<char> write_buf(new char[buffer_size]);
+  FillData(write_buf.get(), buffer_size);
 
   std::vector<rpc::WriteEntry> expected(blocks);
   for (size_t i = 0; i < blocks; ++i) {
@@ -239,9 +276,15 @@ TEST_F(ObjectCacheEndToEndTest, NormalWrite) {
 
   file->Write(write_buf.get(), buffer_size, 0);
 
-  EXPECT_EQ(buffer_size, file->Read(write_buf.get(), buffer_size + 5, 0));
+  boost::this_thread::sleep(boost::posix_time::seconds(
+      2 * test_env.options.request_timeout_s));
 
-  file->Flush();
+  EXPECT_EQ(3, test_env.osds[0]->GetReceivedWrites().size());
+
+  EXPECT_EQ(buffer_size, file->Read(write_buf.get(), buffer_size + 5, 0));
+  CheckData(write_buf.get(), buffer_size);
+
+  ASSERT_NO_THROW(file->Flush());
 
   boost::this_thread::sleep(boost::posix_time::seconds(
       2 * test_env.options.request_timeout_s));
@@ -250,7 +293,17 @@ TEST_F(ObjectCacheEndToEndTest, NormalWrite) {
                     expected.end(),
                     test_env.osds[0]->GetReceivedWrites().end() - blocks));
 
+  ASSERT_NO_THROW(file->Truncate(test_env.user_credentials, 0));
+  EXPECT_EQ(0, file->Read(write_buf.get(), buffer_size, 0));
+
+  ASSERT_NO_THROW(file->Truncate(test_env.user_credentials, buffer_size));
+  EXPECT_EQ(buffer_size, file->Read(write_buf.get(), buffer_size, 0));
+  CheckDataIsNull(write_buf.get(), buffer_size);
+
+  file->Write(write_buf.get(), buffer_size, 0);
   ASSERT_NO_THROW(file->Close());
+
+  EXPECT_EQ(5 + 5, test_env.osds[0]->GetReceivedWrites().size());
 }
 
 }  // namespace xtreemfs
