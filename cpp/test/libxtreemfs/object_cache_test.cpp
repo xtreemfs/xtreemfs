@@ -190,7 +190,7 @@ class ObjectCacheEndToEndTest : public ::testing::Test {
   static const int BLOCK_SIZE = 1024 * 128;
 
   virtual void SetUp() {
-    util::initialize_logger(util::LEVEL_DEBUG);
+    util::initialize_logger(util::LEVEL_WARN);
     test_env.options.connect_timeout_s = 15;
     test_env.options.request_timeout_s = 5;
     test_env.options.retry_delay_s = 5;
