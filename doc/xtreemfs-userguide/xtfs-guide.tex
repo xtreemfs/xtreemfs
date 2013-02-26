@@ -1762,7 +1762,7 @@ If one of these limits is reached, subsequent write() requests will block.
 
 \subsection{Object Cache}
 \label{sec:object_cache}
-The client supports a per-file write-back object cache with LRU policy. This cache is enabled with \texttt{----object-cache-size=<N>} where N is the maximum number of objects it may cache. The cache is currently mutually exclusive with async. writes and disables itself for striped files.
+The client supports a per-file write-back object cache with LRU policy. This cache is enabled with \texttt{----object-cache-size=<N>} where N is the maximum number of objects it may cache. The cache is currently mutually exclusive with async. writes.
 
 We recommend enabling the cache for most workloads.
 

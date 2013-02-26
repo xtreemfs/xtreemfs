@@ -263,8 +263,6 @@ class FileHandleImplementation
       const char* buffer,
       int bytes_to_write);
 
-  bool IsReplicaStriped();
-
   /** Any modification to the object must obtain a lock first. */
   boost::mutex mutex_;
 

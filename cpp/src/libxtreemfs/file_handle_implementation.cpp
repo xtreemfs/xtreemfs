@@ -87,7 +87,7 @@ FileHandleImplementation::FileHandleImplementation(
                     mrc_uuid_iterator,
                     auth_bogus_,
                     user_credentials_bogus_) {
-  if (IsReplicaStriped() || async_writes_enabled_) {
+  if (async_writes_enabled_) {
     object_cache_ = NULL;
   }
 }
@@ -158,7 +158,7 @@ int FileHandleImplementation::Read(
 
     if (object_cache_) {
       ObjectReaderFunction reader = boost::bind(
-         &FileHandleImplementation::ReadFromOSD,
+          &FileHandleImplementation::ReadFromOSD,
           this,
           uuid_iterator,
           file_credentials,
@@ -229,13 +229,6 @@ int FileHandleImplementation::ReadFromOSD(
   int received_data = response->data_length() + data->zero_padding();
   response->DeleteBuffers();
   return received_data;
-}
-
-bool FileHandleImplementation::IsReplicaStriped() {
-  FileCredentials file_credentials;
-  file_info_->GetXLocSet(file_credentials.mutable_xlocs());
-  const XLocSet& xlocs = file_credentials.xlocs();
-  return xlocs.replicas(0).osd_uuids_size() > 1;
 }
 
 int FileHandleImplementation::Write(
