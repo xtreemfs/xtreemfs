@@ -26,6 +26,8 @@ TestRPCServerMRC::TestRPCServerMRC() : file_size_(1024 * 1024) {
       Op(this, &TestRPCServerMRC::RenewCapabilityOperation);
   operations_[PROC_ID_XTREEMFS_UPDATE_FILE_SIZE] =
       Op(this, &TestRPCServerMRC::UpdateFileSizeOperation);
+  operations_[PROC_ID_FTRUNCATE] =
+      Op(this, &TestRPCServerMRC::FTruncate);
 }
 
 google::protobuf::Message* TestRPCServerMRC::OpenOperation(
@@ -33,7 +35,9 @@ google::protobuf::Message* TestRPCServerMRC::OpenOperation(
     const pbrpc::UserCredentials& user_credentials,
     const google::protobuf::Message& request,
     const char* data,
-    uint32_t data_len) {
+    uint32_t data_len,
+    boost::scoped_array<char>* response_data,
+    uint32_t* response_data_len) {
   const openRequest* rq = reinterpret_cast<const openRequest*>(&request);
 
   openResponse* response = new openResponse();
@@ -79,7 +83,9 @@ google::protobuf::Message* TestRPCServerMRC::RenewCapabilityOperation(
     const pbrpc::UserCredentials& user_credentials,
     const google::protobuf::Message& request,
     const char* data,
-    uint32_t data_len) {
+    uint32_t data_len,
+    boost::scoped_array<char>* response_data,
+    uint32_t* response_data_len) {
   const XCap* rq = reinterpret_cast<const XCap*>(&request);
 
   XCap* response = new XCap(*rq);
@@ -95,7 +101,9 @@ google::protobuf::Message* TestRPCServerMRC::UpdateFileSizeOperation(
     const pbrpc::UserCredentials& user_credentials,
     const google::protobuf::Message& request,
     const char* data,
-    uint32_t data_len) {
+    uint32_t data_len,
+    boost::scoped_array<char>* response_data,
+    uint32_t* response_data_len) {
   //const xtreemfs_update_file_sizeRequest* rq =
   //    reinterpret_cast<const xtreemfs_update_file_sizeRequest*>(&request);
 
@@ -105,6 +113,24 @@ google::protobuf::Message* TestRPCServerMRC::UpdateFileSizeOperation(
 
   return response;
 }
+
+google::protobuf::Message* TestRPCServerMRC::FTruncate(
+    const pbrpc::Auth& auth,
+    const pbrpc::UserCredentials& user_credentials,
+    const google::protobuf::Message& request,
+    const char* data,
+    uint32_t data_len,
+    boost::scoped_array<char>* response_data,
+    uint32_t* response_data_len) {
+  const XCap* rq = reinterpret_cast<const XCap*>(&request);
+
+  XCap* response = new XCap(*rq);
+  response->set_expire_time_s(time(0) + 3600);
+  response->set_expire_timeout_s(3600);
+
+  return response;
+}
+
 
 void TestRPCServerMRC::SetFileSize(uint64_t size) {
   boost::mutex::scoped_lock lock(mutex_);

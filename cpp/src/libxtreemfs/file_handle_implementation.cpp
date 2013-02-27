@@ -60,6 +60,7 @@ FileHandleImplementation::FileHandleImplementation(
     const std::map<xtreemfs::pbrpc::StripingPolicyType,
                    StripeTranslator*>& stripe_translators,
     bool async_writes_enabled,
+    ObjectCache* object_cache,
     const Options& options,
     const xtreemfs::pbrpc::Auth& auth_bogus,
     const xtreemfs::pbrpc::UserCredentials& user_credentials_bogus)
@@ -76,6 +77,7 @@ FileHandleImplementation::FileHandleImplementation(
       stripe_translators_(stripe_translators),
       async_writes_enabled_(async_writes_enabled),
       async_writes_failed_(false),
+      object_cache_(object_cache),
       volume_options_(options),
       auth_bogus_(auth_bogus),
       user_credentials_bogus_(user_credentials_bogus),
@@ -85,6 +87,9 @@ FileHandleImplementation::FileHandleImplementation(
                     mrc_uuid_iterator,
                     auth_bogus_,
                     user_credentials_bogus_) {
+  if (async_writes_enabled_) {
+    object_cache_ = NULL;
+  }
 }
 
 FileHandleImplementation::~FileHandleImplementation() {}
@@ -93,16 +98,17 @@ int FileHandleImplementation::Read(
     char *buf,
     size_t count,
     int64_t offset) {
-  file_info_->WaitForPendingAsyncWrites();
-  ThrowIfAsyncWritesFailed();
+  if (async_writes_enabled_) {
+    file_info_->WaitForPendingAsyncWrites();
+    ThrowIfAsyncWritesFailed();
+  }
 
   // Prepare request object.
-  readRequest rq;
-  xcap_manager_.GetXCap(rq.mutable_file_credentials()->mutable_xcap());
-  rq.set_file_id(rq.file_credentials().xcap().file_id());
-  file_info_->GetXLocSet(rq.mutable_file_credentials()->mutable_xlocs());
+  FileCredentials file_credentials;
+  xcap_manager_.GetXCap(file_credentials.mutable_xcap());
+  file_info_->GetXLocSet(file_credentials.mutable_xlocs());
   // Use a reference for shorter code.
-  const XLocSet& xlocs = rq.file_credentials().xlocs();
+  const XLocSet& xlocs = file_credentials.xlocs();
 
   size_t received_data = 0;
 
@@ -137,11 +143,6 @@ int FileHandleImplementation::Read(
 
   // Read all objects.
   for (size_t j = 0; j < operations.size(); j++) {
-    rq.set_object_number(operations[j].obj_number);
-    rq.set_object_version(0);
-    rq.set_offset(operations[j].req_offset);
-    rq.set_length(operations[j].req_size);
-
     // Differ between striping and the rest (replication, no replication).
     UUIDIterator* uuid_iterator;
     if (xlocs.replicas(0).osd_uuids_size() > 1) {
@@ -155,39 +156,78 @@ int FileHandleImplementation::Read(
       uuid_iterator = osd_uuid_iterator_;
     }
 
-    // TODO(mberlin): Update xloc list if newer version found (on OSD?).
-    boost::scoped_ptr<rpc::SyncCallbackBase> response(
-        ExecuteSyncRequest(
-            boost::bind(&xtreemfs::pbrpc::OSDServiceClient::read_sync,
-                        osd_service_client_,
-                        _1,
-                        boost::cref(auth_bogus_),
-                        boost::cref(user_credentials_bogus_),
-                        &rq),
-            uuid_iterator,
-            uuid_resolver_,
-            RPCOptions(volume_options_.max_read_tries,
-                       volume_options_.retry_delay_s,
-                       false,
-                       volume_options_.was_interrupted_function),
-            false,
-            &xcap_manager_,
-            rq.mutable_file_credentials()->mutable_xcap()));
-    xtreemfs::pbrpc::ObjectData* data =
-        static_cast<xtreemfs::pbrpc::ObjectData*>(response->response());
-    // Insert data into read-buffer
-    int data_length = response->data_length();
-    memcpy(operations[j].data, response->data(), data_length);
-    // If zero_padding() > 0, the gap has to be filled with zeroes.
-    memset(operations[j].data + data_length,
-           0,
-           data->zero_padding());
-
-    received_data += response->data_length() +
-                     data->zero_padding();
-    response->DeleteBuffers();
+    if (object_cache_) {
+      ObjectReaderFunction reader = boost::bind(
+          &FileHandleImplementation::ReadFromOSD,
+          this,
+          uuid_iterator,
+          file_credentials,
+          _1, _2, 0, object_cache_->object_size());
+      ObjectWriterFunction writer = boost::bind(
+          &FileHandleImplementation::WriteToOSD,
+          this,
+          osd_uuid_iterator_,
+          file_credentials,
+          _1, 0, _2, _3);
+      received_data += object_cache_->Read(
+          operations[j].obj_number,
+          operations[j].req_offset,
+          operations[j].data,
+          operations[j].req_size,
+          reader, writer);
+    } else {
+      // TODO(mberlin): Update xloc list if newer version found (on OSD?).
+      received_data +=
+          ReadFromOSD(uuid_iterator, file_credentials, operations[j].obj_number,
+          operations[j].data, operations[j].req_offset,
+          operations[j].req_size);
+    }
   }
 
+  return received_data;
+}
+
+int FileHandleImplementation::ReadFromOSD(
+    UUIDIterator* uuid_iterator,
+    const FileCredentials& file_credentials,
+    int object_no, char* buffer, int offset_in_object,
+    int bytes_to_read) {
+  readRequest rq;
+  rq.set_file_id(file_credentials.xcap().file_id());
+  rq.mutable_file_credentials()->CopyFrom(file_credentials);
+  rq.set_object_number(object_no);
+  rq.set_object_version(0);
+  rq.set_offset(offset_in_object);
+  rq.set_length(bytes_to_read);
+
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
+          boost::bind(&xtreemfs::pbrpc::OSDServiceClient::read_sync,
+                      osd_service_client_,
+                      _1,
+                      boost::cref(auth_bogus_),
+                      boost::cref(user_credentials_bogus_),
+                      &rq),
+    uuid_iterator,
+    uuid_resolver_,
+    RPCOptions(volume_options_.max_read_tries,
+               volume_options_.retry_delay_s,
+               false,
+               volume_options_.was_interrupted_function),
+    false,
+    &xcap_manager_,
+    rq.mutable_file_credentials()->mutable_xcap()));
+
+  xtreemfs::pbrpc::ObjectData* data =
+      static_cast<xtreemfs::pbrpc::ObjectData*>(response->response());
+  // Insert data into read-buffer
+  int data_length = response->data_length();
+  memcpy(buffer, response->data(), data_length);
+  // If zero_padding() > 0, the gap has to be filled with zeroes.
+  memset(buffer + data_length, 0, data->zero_padding());
+
+  int received_data = response->data_length() + data->zero_padding();
+  response->DeleteBuffers();
   return received_data;
 }
 
@@ -195,8 +235,9 @@ int FileHandleImplementation::Write(
     const char *buf,
     size_t count,
     int64_t offset) {
-  ThrowIfAsyncWritesFailed();
-
+  if (async_writes_enabled_) {
+    ThrowIfAsyncWritesFailed();
+  }
   // Create copies of required data.
   FileCredentials file_credentials;
   xcap_manager_.GetXCap(file_credentials.mutable_xcap());
@@ -280,21 +321,8 @@ int FileHandleImplementation::Write(
   } else {
     // Synchronous writes.
     string osd_uuid = "";
-    writeRequest write_request;
-    write_request.mutable_file_credentials()->CopyFrom(file_credentials);
-    write_request.set_file_id(global_file_id);
     // Write all objects.
     for (size_t j = 0; j < operations.size(); j++) {
-      write_request.set_object_number(operations[j].obj_number);
-      write_request.set_object_version(0);
-      write_request.set_offset(operations[j].req_offset);
-      write_request.set_lease_timeout(0);
-
-      ObjectData *data = write_request.mutable_object_data();
-      data->set_checksum(0);
-      data->set_invalid_checksum_on_osd(false);
-      data->set_zero_padding(0);
-
       // Differentiate between striping and the rest.
       UUIDIterator* uuid_iterator = NULL;
       SimpleUUIDIterator temp_uuid_iterator_for_striping;
@@ -310,55 +338,112 @@ int FileHandleImplementation::Write(
         uuid_iterator = osd_uuid_iterator_;
       }
 
-      boost::scoped_ptr<rpc::SyncCallbackBase> response(
-          ExecuteSyncRequest(
-              boost::bind(
-                  &xtreemfs::pbrpc::OSDServiceClient::write_sync,
-                  osd_service_client_,
-                  _1,
-                  boost::cref(auth_bogus_),
-                  boost::cref(user_credentials_bogus_),
-                  &write_request,
-                  operations[j].data,
-                  operations[j].req_size),
-              uuid_iterator,
-              uuid_resolver_,
-              RPCOptions(volume_options_.max_write_tries,
-                         volume_options_.retry_delay_s,
-                         false,
-                         volume_options_.was_interrupted_function),
-              false,
-              &xcap_manager_,
-              write_request.mutable_file_credentials()->mutable_xcap()));
-      xtreemfs::pbrpc::OSDWriteResponse* write_response =
-          static_cast<xtreemfs::pbrpc::OSDWriteResponse*>(response->response());
-      // If the filesize has changed, remember OSDWriteResponse for later file
-      // size update towards the MRC (executed by
-      // VolumeImplementation::PeriodicFileSizeUpdate).
-      if (write_response->has_size_in_bytes()) {
-        XCap xcap;
-        xcap_manager_.GetXCap(&xcap);
-        if (file_info_->TryToUpdateOSDWriteResponse(write_response, xcap)) {
-          // Free everything except the response.
-          delete [] response->data();
-          delete response->error();
-        } else {
-          response->DeleteBuffers();
-        }
+      if (object_cache_ != NULL) {
+        ObjectReaderFunction reader = boost::bind(
+            &FileHandleImplementation::ReadFromOSD,
+            this,
+            uuid_iterator,
+            file_credentials,
+            _1, _2, 0, object_cache_->object_size());
+        ObjectWriterFunction writer = boost::bind(
+            &FileHandleImplementation::WriteToOSD,
+            this,
+            osd_uuid_iterator_,
+            file_credentials,
+            _1, 0, _2, _3);
+        object_cache_->Write(operations[j].obj_number,
+                             operations[j].req_offset,
+                             operations[j].data,
+                             operations[j].req_size,
+                             reader, writer);
       } else {
-        response->DeleteBuffers();
+            WriteToOSD(uuid_iterator, file_credentials,
+                       operations[j].obj_number, operations[j].req_offset,
+                       operations[j].data, operations[j].req_size);
       }
-    }  // objects loop.
+    }
   }
 
   return count;
 }
+
+void FileHandleImplementation::WriteToOSD(
+    UUIDIterator* uuid_iterator,
+    const FileCredentials& file_credentials,
+    int object_no, int offset_in_object, const char* buffer,
+    int bytes_to_write) {
+  writeRequest write_request;
+  write_request.mutable_file_credentials()->CopyFrom(file_credentials);
+  write_request.set_file_id(file_credentials.xcap().file_id());
+  write_request.set_object_number(object_no);
+  write_request.set_object_version(0);
+  write_request.set_offset(offset_in_object);
+  write_request.set_lease_timeout(0);
+
+  ObjectData *data = write_request.mutable_object_data();
+  data->set_checksum(0);
+  data->set_invalid_checksum_on_osd(false);
+  data->set_zero_padding(0);
+
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
+          boost::bind(
+              &xtreemfs::pbrpc::OSDServiceClient::write_sync,
+              osd_service_client_,
+              _1,
+              boost::cref(auth_bogus_),
+              boost::cref(user_credentials_bogus_),
+              &write_request,
+              buffer,
+              bytes_to_write),
+          uuid_iterator,
+          uuid_resolver_,
+          RPCOptions(volume_options_.max_write_tries,
+                      volume_options_.retry_delay_s,
+                      false,
+                      volume_options_.was_interrupted_function),
+          false,
+          &xcap_manager_,
+          write_request.mutable_file_credentials()->mutable_xcap()));
+
+  xtreemfs::pbrpc::OSDWriteResponse* write_response =
+      static_cast<xtreemfs::pbrpc::OSDWriteResponse*>(response->response());
+  // If the filesize has changed, remember OSDWriteResponse for later file
+  // size update towards the MRC (executed by
+  // VolumeImplementation::PeriodicFileSizeUpdate).
+  if (write_response->has_size_in_bytes()) {
+    XCap xcap;
+    xcap_manager_.GetXCap(&xcap);
+    if (file_info_->TryToUpdateOSDWriteResponse(write_response, xcap)) {
+      // Free everything except the response.
+      delete [] response->data();
+      delete response->error();
+    } else {
+      response->DeleteBuffers();
+    }
+  } else {
+    response->DeleteBuffers();
+  }
+} 
 
 void FileHandleImplementation::Flush() {
   Flush(false);
 }
 
 void FileHandleImplementation::Flush(bool close_file) {
+  if (object_cache_ != NULL) {
+    FileCredentials file_credentials;
+    xcap_manager_.GetXCap(file_credentials.mutable_xcap());
+    file_info_->GetXLocSet(file_credentials.mutable_xlocs());
+    ObjectWriterFunction writer = boost::bind(
+        &FileHandleImplementation::WriteToOSD,
+        this,
+        osd_uuid_iterator_,
+        file_credentials,
+        _1, 0, _2, _3);
+    object_cache_->Flush(writer);
+  }
+
   file_info_->Flush(this, close_file);
 
   if (DidAsyncWritesFail()) {
@@ -444,6 +529,10 @@ void FileHandleImplementation::TruncatePhaseTwoAndThree(
   XCap xcap;
   xcap_manager_.GetXCap(&xcap);
   file_info_->TryToUpdateOSDWriteResponse(write_response, xcap);
+
+  if (object_cache_ != NULL) {
+    object_cache_->Truncate(new_file_size);
+  }
 
   // 3. Update the file size at the MRC.
   file_info_->FlushPendingFileSizeUpdate(this);

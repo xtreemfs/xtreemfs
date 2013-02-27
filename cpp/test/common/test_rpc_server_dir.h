@@ -36,21 +36,27 @@ class TestRPCServerDIR : public TestRPCServer<TestRPCServerDIR> {
       const pbrpc::UserCredentials& user_credentials,
       const google::protobuf::Message& request,
       const char* data,
-      uint32_t data_len);
+      uint32_t data_len,
+      boost::scoped_array<char>* response_data,
+      uint32_t* response_data_len);
 
   google::protobuf::Message* GetServiceByUUIDOperation(
       const pbrpc::Auth& auth,
       const pbrpc::UserCredentials& user_credentials,
       const google::protobuf::Message& request,
       const char* data,
-      uint32_t data_len);
+      uint32_t data_len,
+      boost::scoped_array<char>* response_data,
+      uint32_t* response_data_len);
 
   google::protobuf::Message* GetAddressMappingOperation(
       const pbrpc::Auth& auth,
       const pbrpc::UserCredentials& user_credentials,
       const google::protobuf::Message& request,
       const char* data,
-      uint32_t data_len);
+      uint32_t data_len,
+      boost::scoped_array<char>* response_data,
+      uint32_t* response_data_len);
 
   /** Guards access to known_volumes_. */
   boost::mutex mutex_;

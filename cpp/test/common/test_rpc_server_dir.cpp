@@ -41,7 +41,9 @@ google::protobuf::Message* TestRPCServerDIR::GetServiceByNameOperation(
     const pbrpc::UserCredentials& user_credentials,
     const google::protobuf::Message& request,
     const char* data,
-    uint32_t data_len) {
+    uint32_t data_len,
+    boost::scoped_array<char>* response_data,
+    uint32_t* response_data_len) {
   const serviceGetByNameRequest* rq
       = reinterpret_cast<const serviceGetByNameRequest*>(&request);
 
@@ -74,7 +76,9 @@ google::protobuf::Message* TestRPCServerDIR::GetServiceByUUIDOperation(
     const pbrpc::UserCredentials& user_credentials,
     const google::protobuf::Message& request,
     const char* data,
-    uint32_t data_len) {
+    uint32_t data_len,
+    boost::scoped_array<char>* response_data,
+    uint32_t* response_data_len) {
   const serviceGetByUUIDRequest* rq
       = reinterpret_cast<const serviceGetByUUIDRequest*>(&request);
 
@@ -113,7 +117,9 @@ google::protobuf::Message* TestRPCServerDIR::GetAddressMappingOperation(
     const pbrpc::UserCredentials& user_credentials,
     const google::protobuf::Message& request,
     const char* data,
-    uint32_t data_len) {
+    uint32_t data_len,
+    boost::scoped_array<char>* response_data,
+    uint32_t* response_data_len) {
   const addressMappingGetRequest* rq
       = reinterpret_cast<const addressMappingGetRequest*>(&request);
 
