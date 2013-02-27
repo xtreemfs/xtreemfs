@@ -13,7 +13,7 @@ hostStatusLock = threading.Lock()
 runThread = True
 
 def isReachable(host):
-    ret = subprocess.call("ping -w 1 -c 1 %s" % host, 
+    ret = subprocess.call("fping -t 100 %s" % host, 
         shell=True, 
         stdout=open('/dev/null', 'w'), 
         stderr=subprocess.STDOUT)
@@ -34,7 +34,7 @@ class MonitoringThread(threading.Thread):
                 hostStatusLock.acquire()
                 hostStatus[host] = reachable
                 hostStatusLock.release()
-            time.sleep(0.5)
+            time.sleep(0.1)
 
 class StatusHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def generateStatusOutput(self):
