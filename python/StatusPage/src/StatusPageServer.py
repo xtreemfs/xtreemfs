@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+#
+# Copyright (c) 2013 by Christoph Kleineweber,
+#               Zuse Institute Berlin
+#
+# Licensed under the BSD License, see LICENSE file for details.
+
 import subprocess, threading, sys, time, BaseHTTPServer
 
 hosts = ["localhost", "www.google.de", "asdf"]
