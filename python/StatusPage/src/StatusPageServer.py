@@ -7,10 +7,9 @@
 
 import subprocess, threading, sys, time, BaseHTTPServer
 
-hosts = ["localhost", "www.google.de", "asdf"]
+hosts = ["tick.zib.de", "trick.zib.de", "track.zib.de"]
 hostStatus = {}
 hostStatusLock = threading.Lock()
-runThread = True
 
 def isReachable(host):
     ret = subprocess.call("fping -t 100 %s" % host, 
@@ -26,15 +25,19 @@ class MonitoringThread(threading.Thread):
     def __init__(self, hosts):
         threading.Thread.__init__(self)
         self.hosts = hosts
-
+        self.runThread = True
+        
     def run(self):
-        while runThread:
+        while self.runThread:
             for host in self.hosts:
                 reachable = isReachable(host)
                 hostStatusLock.acquire()
                 hostStatus[host] = reachable
                 hostStatusLock.release()
             time.sleep(0.1)
+            
+    def stop(self):
+        self.runThread = False
 
 class StatusHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def generateStatusOutput(self):
@@ -108,7 +111,7 @@ def main():
         print 'starting webserver'
         webserver.serve_forever()
     except KeyboardInterrupt:
-        runThread = False
+        monitoringThread.stop()
         webserver.socket.close()
         sys.exit(0)
 
