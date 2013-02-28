@@ -46,8 +46,11 @@ public class ReadBenchmarkOSDPerformance extends BenchmarkOSDPerformance {
                 GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
         long byteCounter = 0;
         for (long j = 0; j < numberOfBlocks; j++) {
-            byteCounter += fileHandle.read(userCredentials, data, XTREEMFS_BLOCK_SIZE_IN_BYTES, j
-                    * XTREEMFS_BLOCK_SIZE_IN_BYTES);
+            long nextOffset = j * XTREEMFS_BLOCK_SIZE_IN_BYTES;
+            assert nextOffset >= 0 : "Offset < 0 not allowed";
+            if (nextOffset > Integer.MAX_VALUE)
+                System.out.println(nextOffset + " [nextOffset > maxInt]");
+            byteCounter += fileHandle.read(userCredentials, data, XTREEMFS_BLOCK_SIZE_IN_BYTES, nextOffset);
         }
         fileHandle.close();
         return byteCounter;

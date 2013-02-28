@@ -52,9 +52,10 @@ public class WriteBenchmarkOSDPerformance extends BenchmarkOSDPerformance {
         FileHandle fileHandle = volume.openFile(userCredentials, BENCHMARK_FILENAME, flags, 777);
         long byteCounter = 0;
         for (long j = 0; j < numberOfBlocks; j++) {
+            long nextOffset = j * XTREEMFS_BLOCK_SIZE_IN_BYTES;
+            assert nextOffset >= 0 : "Offset < 0 not allowed";
             random.nextBytes(data);
-            byteCounter += fileHandle.write(userCredentials, data, XTREEMFS_BLOCK_SIZE_IN_BYTES, j
-                    * XTREEMFS_BLOCK_SIZE_IN_BYTES);
+            byteCounter += fileHandle.write(userCredentials, data, XTREEMFS_BLOCK_SIZE_IN_BYTES, nextOffset);
         }
         fileHandle.close();
         return byteCounter;
@@ -127,16 +128,16 @@ public class WriteBenchmarkOSDPerformance extends BenchmarkOSDPerformance {
 
         BenchmarkOSDPerformance wBench = new WriteBenchmarkOSDPerformance();
         int numberOfWriters = 1;
-        long sizeInBytes = (long) 3 * GiB_IN_BYTES;
+        long sizeInBytes = 3L * GiB_IN_BYTES;
 
         ConcurrentLinkedQueue<BenchmarkResult> results = scheduleBenchmarks(wBench.dirAddress, wBench.mrcAddress,
                 wBench.userCredentials, wBench.auth, wBench.sslOptions, numberOfWriters, sizeInBytes);
 
-        /* Cleaning up (Does prevent subsequent read benchmark) */
-        for (int i = 0; i < numberOfWriters; i++)
-            wBench.deleteVolumeIfExisting(VOLUME_BASE_NAME + i);
-
-        scrub("47c551e1-2f30-42da-be3f-8c91c51dd15b", "");
+        // /* Cleaning up (Does prevent subsequent read benchmark) */
+        // for (int i = 0; i < numberOfWriters; i++)
+        // wBench.deleteVolumeIfExisting(VOLUME_BASE_NAME + i);
+        //
+        // scrub("47c551e1-2f30-42da-be3f-8c91c51dd15b", "");
 
         /* print the results */
         for (BenchmarkResult res : results) {
