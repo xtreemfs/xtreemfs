@@ -3,3 +3,4 @@
 /.googletest_library_already_built
 .classpath
 .project
+bin/
