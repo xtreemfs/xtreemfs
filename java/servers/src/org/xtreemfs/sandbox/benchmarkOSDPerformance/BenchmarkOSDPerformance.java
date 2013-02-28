@@ -23,13 +23,12 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 
 /**
- * Benchmarklibrary for measuring read- and writeperformance of a OSD. 
- *     TODO Use XtreemFS-Threads (?) 
- *     TODO ErrorHandling 
- *     TODO Move Cleanup to the scheduleBenchmark-methods (needs clarification whether Benchmarks should be  
+ * Benchmarklibrary for measuring read- and writeperformance of a OSD.
+ *     TODO ErrorHandling
+ *     TODO Move Cleanup to the scheduleBenchmark-methods (needs clarification whether Benchmarks should be
  *         performed via libxtreemfs of directly on the OSD)
- *         
- *  @author jensvfischer 
+ *
+ *  @author jensvfischer
  */
 public abstract class BenchmarkOSDPerformance {
 
@@ -107,10 +106,10 @@ public abstract class BenchmarkOSDPerformance {
         long after = System.currentTimeMillis();
 
         /* Calculate and return results */
-        double timeinSec = (after - before) / 1000.;
-        double speedMiBPerSec = round((byteCounter / MiB_IN_BYTES) / timeinSec, 2);
+        double timeInSec = (after - before) / 1000.;
+        double speedMiBPerSec = round((byteCounter / MiB_IN_BYTES) / timeInSec, 2);
 
-        BenchmarkResult result = new BenchmarkResult(timeinSec, speedMiBPerSec, sizeInBytes, Thread.currentThread()
+        BenchmarkResult result = new BenchmarkResult(timeInSec, speedMiBPerSec, sizeInBytes, Thread.currentThread()
                 .getId(), byteCounter);
         results.add(result);
 
@@ -217,7 +216,7 @@ public abstract class BenchmarkOSDPerformance {
                                                                              // the local setup
 
         int numberOfWriters = 3;
-        long sizeInBytes = (long) 200 * MiB_IN_BYTES;
+        long sizeInBytes = (long) 3 * GiB_IN_BYTES;
 
         ConcurrentLinkedQueue<BenchmarkResult> results = scheduleReadWriteBenchmarks(wBench.dirAddress,
                 wBench.mrcAddress, wBench.userCredentials, wBench.auth, wBench.sslOptions, numberOfWriters, sizeInBytes);
