@@ -35,6 +35,7 @@ import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
@@ -175,6 +176,11 @@ public class VolumeImplementation implements Volume, AdminVolume {
      * Maps a StripingPolicyType to a StripeTranslator. Should be filled with all possible StripingPolicys.
      */
     private Map<StripingPolicyType, StripeTranslator> stripeTranslators;
+
+    private static final String XTREEMFS_DEFAULT_RP = "xtreemfs.default_rp";
+    
+    private static final String OSD_SELECTION_POLICY = "xtreemfs.osel_policy";
+    private static final String REPLICA_SELECTION_POLICY = "xtreemfs.rsel_policy";
 
     /**
      * 
@@ -1382,6 +1388,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
                     XATTR_FLAGS.XATTR_FLAGS_REPLACE);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Map<String, Object> listACL(UserCredentials userCreds, String path) throws IOException {
         try {
@@ -1633,4 +1640,28 @@ public class VolumeImplementation implements Volume, AdminVolume {
         return pattern.matcher(hostname).matches();
     }
 
+    @Override
+    public String getOSDSelectionPolicy(UserCredentials userCreds) throws IOException {
+        return getXAttr(userCreds, "/", OSD_SELECTION_POLICY);
+    }
+
+    @Override
+    public void setOSDSelectionPolicy(UserCredentials userCreds, String policies) throws IOException {
+        setXAttr(userCreds, "/", OSD_SELECTION_POLICY, policies, XATTR_FLAGS.XATTR_FLAGS_REPLACE);
+    }
+
+    @Override
+    public String getReplicaSelectionPolicy(UserCredentials userCreds) throws IOException {
+        return getXAttr(userCreds, "/", REPLICA_SELECTION_POLICY);
+    }
+
+    @Override
+    public void setReplicaSelectionPolicy(UserCredentials userCreds, String policies) throws IOException {
+        setXAttr(userCreds, "/", REPLICA_SELECTION_POLICY, policies, XATTR_FLAGS.XATTR_FLAGS_REPLACE);
+    }
+
+    @Override
+    public void setPolicyAttribute(UserCredentials userCreds, String attribute, String value) throws IOException {
+        setXAttr(userCreds, "/", MRCHelper.XTREEMFS_POLICY_ATTR_PREFIX + attribute, value, XATTR_FLAGS.XATTR_FLAGS_REPLACE);
+    }
 }

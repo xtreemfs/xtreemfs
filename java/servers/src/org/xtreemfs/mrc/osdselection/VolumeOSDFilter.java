@@ -37,7 +37,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
  */
 public class VolumeOSDFilter {
 
-    private MRCRequestDispatcher           master;
+    private final MRCRequestDispatcher           master;
 
     /**
      * volume ID
@@ -62,7 +62,7 @@ public class VolumeOSDFilter {
     /**
      * map containing all known OSDs
      */
-    private Map<String, Service>           knownOSDMap;
+    private final Map<String, Service>           knownOSDMap;
 
     public VolumeOSDFilter(MRCRequestDispatcher master, Map<String, Service> knownOSDMap) {
         this.master = master;
@@ -159,8 +159,8 @@ public class VolumeOSDFilter {
             OSDSelectionPolicy policy = policyMap.get(id);
             if (policy == null) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.proc, this,
-                        "could not find OSD selection policy with ID=%d", id);
-                return result;
+                        "could not find OSD selection policy with ID=%d, will be ignored", id);
+                continue;
             }
             try {
                 result = policy.getOSDs(result, clientIP, clientCoords, currentXLoc, numOSDs);
@@ -225,7 +225,15 @@ public class VolumeOSDFilter {
 
         // sort the list of head OSDs according to the policy
         for (short id : replPolicy) {
-            headOSDServiceSetBuilder = policyMap.get(id).getOSDs(headOSDServiceSetBuilder, clientIP, clientCoords,
+            OSDSelectionPolicy policy = policyMap.get(id);
+
+            if (policy == null) {
+                Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
+                        "could not find Replica selection policy with ID %d, will be ignored", id);
+                continue;
+            }
+
+            headOSDServiceSetBuilder = policy.getOSDs(headOSDServiceSetBuilder, clientIP, clientCoords,
                     xLocList, headOSDServiceSetBuilder.getServicesCount());
         }
 

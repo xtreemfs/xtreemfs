@@ -345,14 +345,14 @@ class ReplicatingFile {
     /**
      * key: objectNo
      */
-    private HashMap<Long, ReplicatingObject> objectsInProgress;
+    private final HashMap<Long, ReplicatingObject> objectsInProgress;
     
     /**
      * contains all requests which are waiting for an object, where the
      * replication of the object has been not started so far <br>
      * key: objectNo
      */
-    private HashMap<Long, ReplicatingObject> waitingRequests;
+    private final HashMap<Long, ReplicatingObject> waitingRequests;
     
     public ReplicatingFile(String fileID, XLocations xLoc, Capability cap, CowPolicy cow,
         OSDRequestDispatcher master) {
@@ -450,14 +450,20 @@ class ReplicatingFile {
         
         ReplicatingObject info = objectsInProgress.get(objectNo);
         if (info == null) { // object is currently not replicating
-            info = new ReplicatingObject(objectNo);
-            info.getWaitingRequests().add(rq);
-            waitingRequests.put(objectNo, info);
-            // add to strategy
-            strategy.addObject(objectNo, true);
-        } else {
-            info.getWaitingRequests().add(rq);
+            // But it may be already queued in waitingRequests.
+            info = waitingRequests.get(objectNo);
+
+            if (info == null) {
+                // Neither queued in objectsInProgress nor waitingRequests.
+                info = new ReplicatingObject(objectNo);
+                waitingRequests.put(objectNo, info);
+                // add to strategy
+                strategy.addObject(objectNo, true);
+            }
         }
+
+        info.getWaitingRequests().add(rq);
+
         return true;
     }
     
