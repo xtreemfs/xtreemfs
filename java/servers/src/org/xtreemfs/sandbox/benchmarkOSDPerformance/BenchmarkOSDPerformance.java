@@ -9,16 +9,11 @@
 package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.common.libxtreemfs.AdminClient;
-import org.xtreemfs.common.libxtreemfs.ClientFactory;
-import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 
@@ -38,44 +33,16 @@ public abstract class BenchmarkOSDPerformance {
     static final String   BENCHMARK_FILENAME           = "benchmarkFile";
     static final String   VOLUME_BASE_NAME             = "performanceTest";
 
-    final String          dirAddress;
-    final String          mrcAddress;
-    final UserCredentials userCredentials;
-    final Auth            auth;
-    final SSLOptions      sslOptions;
     final String          volumeName;
-    final Options         options;
     final AdminClient     client;
+    final ConnectionData connection;
 
-    /* Convenience constructor with various default values for local setup. */
-    BenchmarkOSDPerformance() throws Exception {
-        this(VOLUME_BASE_NAME);
-    }
-
-    /* Convenience constructor with various default values for local setup. */
-    BenchmarkOSDPerformance(String volumeName) throws Exception {
-        dirAddress = "127.0.0.1:32638";
-        mrcAddress = "127.0.0.1:32636";
-        userCredentials = UserCredentials.newBuilder().setUsername("testUser").addGroups("benchmark").build();
-        auth = RPCAuthentication.authNone;
-        sslOptions = null;
-        options = new Options();
-        client = ClientFactory.createAdminClient(dirAddress, userCredentials, sslOptions, options);
+    BenchmarkOSDPerformance(String volumeName, ConnectionData connection) throws Exception {
+        client = Controller.getClient(connection);
         this.volumeName = volumeName;
+        this.connection = connection;
     }
 
-    /* Creates a benchmark object with the specified arguments. */
-    BenchmarkOSDPerformance(String dirAddress, String mrcAddress, UserCredentials userCredentials, Auth auth,
-            SSLOptions sslOptions, String volumeName) {
-        this.dirAddress = dirAddress;
-        this.mrcAddress = mrcAddress;
-        this.userCredentials = userCredentials;
-        this.auth = auth;
-        this.sslOptions = sslOptions;
-        this.volumeName = volumeName;
-        this.options = new Options();
-        client = ClientFactory.createAdminClient(dirAddress, userCredentials, sslOptions, options);
-    }
 
     /*
      * Writes or reads the specified amount of data to/from the volume specified in the object initialization.
@@ -94,7 +61,6 @@ public abstract class BenchmarkOSDPerformance {
         Logging.logMessage(Logging.LEVEL_INFO, this, "Starting %s", shortClassname, Logging.Category.tool);
 
         // Setting up
-        client.start();
         byte[] data = new byte[XTREEMFS_BLOCK_SIZE_IN_BYTES];
 
         long numberOfBlocks = sizeInBytes / XTREEMFS_BLOCK_SIZE_IN_BYTES;
@@ -114,7 +80,6 @@ public abstract class BenchmarkOSDPerformance {
         results.add(result);
 
         /* shutdown */
-        client.shutdown();
 
         Logging.logMessage(Logging.LEVEL_INFO, this, "Finished %s", shortClassname, Logging.Category.tool);
     }
@@ -127,34 +92,6 @@ public abstract class BenchmarkOSDPerformance {
         benchThread.start();
     }
 
-    void deleteVolumeIfExisting(String volumeName) throws Exception {
-        client.start();
-        if (new ArrayList<String>(Arrays.asList(client.listVolumeNames())).contains(volumeName)) {
-            client.deleteVolume(auth, userCredentials, volumeName);
-            Logging.logMessage(Logging.LEVEL_INFO, this, "Deleting volume %s", volumeName, Logging.Category.tool);
-        }
-        client.shutdown();
-    }
-
-    /* Performs cleanup on a OSD (because deleting the volume does not delete the files in the volume) */
-    static void scrub(String osd, String pwd) throws Exception {
-
-        ReadBenchmarkOSDPerformance benchmark = new ReadBenchmarkOSDPerformance();
-
-        Logging.logMessage(Logging.LEVEL_INFO, benchmark, "Starting cleanup of osd %s", osd, Logging.Category.tool);
-
-        benchmark.client.start();
-        benchmark.client.startCleanUp(osd, pwd, true, true, true);
-        while (benchmark.client.isRunningCleanUp(osd, pwd)) {
-            Thread.sleep(1000);
-        }
-
-        Logging.logMessage(Logging.LEVEL_DEBUG, benchmark, "Cleanup Result: %s",
-                benchmark.client.getCleanUpResult(osd, pwd), Logging.Category.tool);
-        Logging.logMessage(Logging.LEVEL_INFO, benchmark, "Finished cleanup of %s", osd, Logging.Category.tool);
-
-        benchmark.client.shutdown();
-    }
 
     /* Round doubles to specified number of decimals */
     static double round(double value, int places) {
@@ -189,49 +126,49 @@ public abstract class BenchmarkOSDPerformance {
      * @return results of the benchmarks
      * @throws Exception
      */
-    public static ConcurrentLinkedQueue<BenchmarkResult> scheduleReadWriteBenchmarks(String dirAddress,
-            String mrcAddress, UserCredentials userCredentials, Auth auth, SSLOptions sslOptions, int numberOfWriters,
-            long sizeInBytes) throws Exception {
+//    public static ConcurrentLinkedQueue<BenchmarkResult> scheduleReadWriteBenchmarks(String dirAddress,
+//            String mrcAddress, UserCredentials userCredentials, Auth auth, SSLOptions sslOptions, int numberOfWriters,
+//            long sizeInBytes) throws Exception {
+//
+//        ConnectionData connection=new ConnectionData();
+//
+//        ConcurrentLinkedQueue<BenchmarkResult> resultsWriteBench = Controller.startWriteBenchmarks( numberOfWriters, sizeInBytes);
+//        ConcurrentLinkedQueue<BenchmarkResult> resultsReadBench = Controller.startReadBenchmarks(numberOfWriters, sizeInBytes);
+//
+//        ConcurrentLinkedQueue<BenchmarkResult> resultsRWBench = new ConcurrentLinkedQueue<BenchmarkResult>(
+//                resultsWriteBench);
+//
+//        for (BenchmarkResult result : resultsReadBench)
+//            resultsRWBench.add(result);
+//
+//        return resultsRWBench;
+//    }
 
-        ConcurrentLinkedQueue<BenchmarkResult> resultsWriteBench = WriteBenchmarkOSDPerformance.scheduleBenchmarks(
-                dirAddress, mrcAddress, userCredentials, auth, sslOptions, numberOfWriters, sizeInBytes);
-        ConcurrentLinkedQueue<BenchmarkResult> resultsReadBench = ReadBenchmarkOSDPerformance.scheduleBenchmarks(
-                dirAddress, mrcAddress, userCredentials, auth, sslOptions, numberOfWriters, sizeInBytes);
-
-        ConcurrentLinkedQueue<BenchmarkResult> resultsRWBench = new ConcurrentLinkedQueue<BenchmarkResult>(
-                resultsWriteBench);
-
-        for (BenchmarkResult result : resultsReadBench)
-            resultsRWBench.add(result);
-
-        return resultsRWBench;
-    }
-
-    /* Only runs with previous write benchmark, because it reads the data written by the write benchmark */
-    public static void main(String[] args) throws Exception {
-
-        Logging.start(Logging.LEVEL_INFO, Logging.Category.tool);
-
-        BenchmarkOSDPerformance wBench = new WriteBenchmarkOSDPerformance(); // using the default values for
-                                                                             // the local setup
-
-        int numberOfWriters = 3;
-        long sizeInBytes = (long) 3 * GiB_IN_BYTES;
-
-        ConcurrentLinkedQueue<BenchmarkResult> results = scheduleReadWriteBenchmarks(wBench.dirAddress,
-                wBench.mrcAddress, wBench.userCredentials, wBench.auth, wBench.sslOptions, numberOfWriters, sizeInBytes);
-
-        /* cleaning up */
-        for (int i = 0; i < numberOfWriters; i++)
-            wBench.deleteVolumeIfExisting(VOLUME_BASE_NAME + i);
-
-        scrub("47c551e1-2f30-42da-be3f-8c91c51dd15b", "");
-
-        /* print the results */
-        for (BenchmarkResult res : results) {
-            System.out.println(res);
-        }
-
-    }
+//    /* Only runs with previous write benchmark, because it reads the data written by the write benchmark */
+//    public static void main(String[] args) throws Exception {
+//
+//        Logging.start(Logging.LEVEL_INFO, Logging.Category.tool);
+//
+//        ConnectionData connection = new ConnectionData(); // using the default values for
+//                                                                             // the local setup
+//
+//        int numberOfWriters = 3;
+//        long sizeInBytes = (long) 3 * GiB_IN_BYTES;
+//
+//        ConcurrentLinkedQueue<BenchmarkResult> results = scheduleReadWriteBenchmarks(connection.dirAddress,
+//                connection.mrcAddress, connection.userCredentials, connection.auth, connection.sslOptions, numberOfWriters, sizeInBytes);
+//
+//        /* cleaning up */
+////        for (int i = 0; i < numberOfWriters; i++)
+////            connection.deleteVolumeIfExisting(VOLUME_BASE_NAME + i);
+//
+//        Controller.scrub("47c551e1-2f30-42da-be3f-8c91c51dd15b", "");
+//
+//        /* print the results */
+//        for (BenchmarkResult res : results) {
+//            System.out.println(res);
+//        }
+//
+//    }
 
 }
