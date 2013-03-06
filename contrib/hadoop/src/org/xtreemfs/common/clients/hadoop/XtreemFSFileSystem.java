@@ -25,6 +25,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.util.Progressable;
 import org.xtreemfs.common.libxtreemfs.Client;
+import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.FileHandle;
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.common.libxtreemfs.Volume;
@@ -33,7 +34,6 @@ import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
-import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
@@ -59,7 +59,6 @@ public class XtreemFSFileSystem extends FileSystem {
     public void initialize(URI uri, Configuration conf) throws IOException {
         super.initialize(uri, conf);
 
-        TimeSync.initializeLocal(1000, 100);
         int logLevel = Logging.LEVEL_WARN;
         if (conf.getBoolean("xtreemfs.client.debug", true)) {
             logLevel = Logging.LEVEL_DEBUG;
@@ -97,7 +96,7 @@ public class XtreemFSFileSystem extends FileSystem {
         Options xtreemfsOptions = new Options();
         xtreemfsOptions.setMetadataCacheSize(0);
         xtreemfsClient =
-                Client.createClient(uri.getHost() + ":" + uri.getPort(), userCredentials,
+                ClientFactory.createClient(uri.getHost() + ":" + uri.getPort(), userCredentials,
                         xtreemfsOptions.generateSSLOptions(), xtreemfsOptions);
         try {
             // TODO: Fix stupid Exception in libxtreemfs
