@@ -43,7 +43,7 @@ public class StripeTranslatorRaid0 implements StripeTranslator {
         while (start < size) {
             long objNumber = (start + offset) / stripeSize;
             int osdOffset = (int) (objNumber % osdCount);
-            int reqOffset = (int) (start + offset) % stripeSize;
+            int reqOffset = (int) ((start + offset) % stripeSize);
             int reqSize = Math.min(size - start, stripeSize - reqOffset);
             
             operations.add(new ReadOperation(objNumber, osdOffset, reqSize, reqOffset, start));
