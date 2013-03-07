@@ -8,38 +8,39 @@
 
 package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 
-import org.xtreemfs.common.libxtreemfs.ClientFactory;
+import static org.xtreemfs.foundation.pbrpc.client.RPCAuthentication.authNone;
+
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.foundation.SSLOptions;
-import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
-
-import static org.xtreemfs.foundation.pbrpc.client.RPCAuthentication.authNone;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 
 /**
  * @author jensvfischer
  */
 public class ConnectionData {
-    final String userName;
-    final String group;
-    final String dirAddress;
-    final String mrcAddress;
+
+    final String          userName;
+    final String          group;
+    final String          osdPassword;
+    final String          dirAddress;
+    final String          mrcAddress;
     final UserCredentials userCredentials;
-    final Auth auth;
-    final SSLOptions sslOptions;
-    final Options options;
+    final Auth            auth;
+    final SSLOptions      sslOptions;
+    final Options         options;
 
     /* Convenience constructor with various default values for local setup. */
-    ConnectionData() throws Exception {
-        userName = "testUser";
-        group = "benchmark";
-        dirAddress = "127.0.0.1:32638";
-        mrcAddress = "127.0.0.1:32636";
-        userCredentials = UserCredentials.newBuilder().setUsername(userName).addGroups(group).build();
-        auth = authNone;
-        sslOptions = null;
-        options = new Options();
+    ConnectionData() {
+        this.userName = "testUser";
+        this.group = "benchmark";
+        this.osdPassword = "";
+        this.dirAddress = "127.0.0.1:32638";
+        this.mrcAddress = "127.0.0.1:32636";
+        this.userCredentials = UserCredentials.newBuilder().setUsername(userName).addGroups(group).build();
+        this.auth = authNone;
+        this.sslOptions = null;
+        this.options = new Options();
     }
 
 }
