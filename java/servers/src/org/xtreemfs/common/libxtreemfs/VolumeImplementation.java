@@ -1664,4 +1664,8 @@ public class VolumeImplementation implements Volume, AdminVolume {
     public void setPolicyAttribute(UserCredentials userCreds, String attribute, String value) throws IOException {
         setXAttr(userCreds, "/", MRCHelper.XTREEMFS_POLICY_ATTR_PREFIX + attribute, value, XATTR_FLAGS.XATTR_FLAGS_REPLACE);
     }
+
+    public String getVolumeName() {
+        return volumeName;
+    }
 }
