@@ -19,10 +19,10 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  * 
  * @author jensvfischer
  */
-public class ReadBenchmarkOSDPerformance extends BenchmarkOSDPerformance {
+public class ReadOSDBenchmark extends OSDBenchmark {
 
 
-    ReadBenchmarkOSDPerformance(Volume volume, ConnectionData connection) throws Exception {
+    ReadOSDBenchmark(Volume volume, ConnectionData connection) throws Exception {
         super(volume, connection);
     }
 

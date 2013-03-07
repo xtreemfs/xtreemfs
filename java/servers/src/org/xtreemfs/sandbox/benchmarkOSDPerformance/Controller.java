@@ -78,7 +78,7 @@ public class Controller {
 
         /* start the benchmark threads */
         for (int i = 0; i < numberOfWriters; i++) {
-            BenchmarkOSDPerformance benchmark = new WriteBenchmarkOSDPerformance(VolumeManager.getInstance()
+            OSDBenchmark benchmark = new WriteOSDBenchmark(VolumeManager.getInstance()
                     .getNextVolume(), connection);
             benchmark.startBenchThread(sizeInBytes, results, threads);
         }
@@ -89,7 +89,7 @@ public class Controller {
     /**
      * Starts a benchmark run with the specified amount of read benchmarks in parallel. Every benchmark is
      * started within its own thread. The method waits for all threads to finish. Requires a
-     * {@link org.xtreemfs.sandbox.benchmarkOSDPerformance.WriteBenchmarkOSDPerformance} first (because the
+     * {@link WriteOSDBenchmark} first (because the
      * ReadBench reads the files written by the WriteBench).
      * 
      * @param numberOfReaders
@@ -107,7 +107,7 @@ public class Controller {
 
         /* start the benchmark threads */
         for (int i = 0; i < numberOfReaders; i++) {
-            BenchmarkOSDPerformance benchmark = new ReadBenchmarkOSDPerformance(VolumeManager.getInstance()
+            OSDBenchmark benchmark = new ReadOSDBenchmark(VolumeManager.getInstance()
                     .getNextVolume(), connection);
             benchmark.startBenchThread(sizeInBytes, results, threads);
         }
@@ -121,7 +121,7 @@ public class Controller {
 
         /* start the benchmark threads */
         for (int i = 0; i < numberOfReaders; i++) {
-            RandomReadBenchmarkOSDPerformance benchmark = new RandomReadBenchmarkOSDPerformance(VolumeManager
+            RandomReadOSDBenchmark benchmark = new RandomReadOSDBenchmark(VolumeManager
                     .getInstance().getNextVolume(), connection);
             benchmark.prepareBenchmark();
             benchmark.startBenchThread(sizeInBytes, results, threads);
@@ -132,7 +132,7 @@ public class Controller {
     static ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(BenchmarkType benchmarkType, int numberOfThreads,
             long sizeInBytes) throws Exception {
 
-        if (sizeInBytes % BenchmarkOSDPerformance.XTREEMFS_BLOCK_SIZE_IN_BYTES != 0)
+        if (sizeInBytes % OSDBenchmark.XTREEMFS_BLOCK_SIZE_IN_BYTES != 0)
             throw new IllegalArgumentException("Size must be in alignment with (i.e. divisible through) the block size");
 
         ConcurrentLinkedQueue<BenchmarkResult> results = null;

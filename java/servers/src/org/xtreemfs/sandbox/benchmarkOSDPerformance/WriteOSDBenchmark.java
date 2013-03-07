@@ -13,8 +13,6 @@ import java.util.Random;
 
 import org.xtreemfs.common.libxtreemfs.FileHandle;
 import org.xtreemfs.common.libxtreemfs.Volume;
-import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
-import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 
 /**
@@ -22,10 +20,10 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  * 
  * @author jensvfischer
  */
-public class WriteBenchmarkOSDPerformance extends BenchmarkOSDPerformance {
+public class WriteOSDBenchmark extends OSDBenchmark {
 
 
-    WriteBenchmarkOSDPerformance(Volume volume, ConnectionData connection) throws Exception {
+    WriteOSDBenchmark(Volume volume, ConnectionData connection) throws Exception {
         super(volume, connection);
     }
 

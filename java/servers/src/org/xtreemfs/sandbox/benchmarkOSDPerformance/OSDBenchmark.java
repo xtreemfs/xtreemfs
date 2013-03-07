@@ -22,7 +22,7 @@ import org.xtreemfs.foundation.logging.Logging;
  * 
  * @author jensvfischer
  */
-public abstract class BenchmarkOSDPerformance {
+public abstract class OSDBenchmark {
 
 
     static final int     MiB_IN_BYTES                 = 1024 * 1024;
@@ -34,7 +34,7 @@ public abstract class BenchmarkOSDPerformance {
     final AdminClient    client;
     final ConnectionData connection;
 
-    BenchmarkOSDPerformance(Volume volume, ConnectionData connection) throws Exception {
+    OSDBenchmark(Volume volume, ConnectionData connection) throws Exception {
         client = Controller.getClient();
         this.volume = volume;
         this.connection = connection;

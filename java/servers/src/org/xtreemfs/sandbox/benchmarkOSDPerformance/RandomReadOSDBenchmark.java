@@ -20,12 +20,12 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  * 
  * @author jensvfischer
  */
-public class RandomReadBenchmarkOSDPerformance extends BenchmarkOSDPerformance {
+public class RandomReadOSDBenchmark extends OSDBenchmark {
 
     final static int RANDOM_IO_BLOCKSIZE = 1024 * 4; // 4 KiB
     final static long      sizeOfBasefile = 3L * (long) GiB_IN_BYTES;
 
-    RandomReadBenchmarkOSDPerformance(Volume volume, ConnectionData connection) throws Exception {
+    RandomReadOSDBenchmark(Volume volume, ConnectionData connection) throws Exception {
         super(volume, connection);
     }
 

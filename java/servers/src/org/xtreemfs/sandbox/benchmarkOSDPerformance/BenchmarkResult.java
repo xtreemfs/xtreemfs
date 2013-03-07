@@ -9,7 +9,7 @@
 package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 
 /**
- * Result objects for {@link BenchmarkOSDPerformance}.
+ * Result objects for {@link OSDBenchmark}.
  * 
  * @author jensvfischer
  */
