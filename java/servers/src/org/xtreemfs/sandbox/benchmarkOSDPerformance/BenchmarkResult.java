@@ -8,6 +8,10 @@
 
 package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 
+import org.xtreemfs.common.libxtreemfs.Volume;
+
+import java.util.LinkedList;
+
 /**
  * Result objects for {@link OSDBenchmark}.
  * 
@@ -25,14 +29,16 @@ public class BenchmarkResult {
     long             dataWrittenInBytes;
     long             threadID;
     long             byteCount;
+    KeyValuePair<Volume, LinkedList<String>> volumeWithFiles;
 
     public BenchmarkResult(double timeInSec, double speedInMiBProSec, long dataWrittenInBytes, long threadID,
-            long byteCount) {
+            long byteCount, KeyValuePair<Volume, LinkedList<String>> volumeWithFiles) {
         this.timeInSec = timeInSec;
         this.speedInMiBProSec = speedInMiBProSec;
         this.dataWrittenInBytes = dataWrittenInBytes;
         this.threadID = threadID;
         this.byteCount = byteCount;
+        this.volumeWithFiles = volumeWithFiles;
     }
 
     @Override
@@ -56,5 +62,6 @@ public class BenchmarkResult {
                 + "\tTime: " + timeInSec + " Sec\n" + "\tSpeed: " + speedInMiBProSec + " MiB/s\n" + "\tData written: "
                 + dataWritten + dataWrittenInBytes + " Bytes]\n" + "\tByteCount: " + byteCount + " Bytes\n" + "}";
     }
+
 
 }

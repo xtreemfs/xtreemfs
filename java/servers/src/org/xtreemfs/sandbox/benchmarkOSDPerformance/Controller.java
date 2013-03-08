@@ -11,9 +11,11 @@ package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.common.libxtreemfs.AdminClient;
+import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 
@@ -22,19 +24,20 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
  */
 public class Controller {
 
-    static final int               MiB_IN_BYTES = 1024 * 1024;
-    static final int               GiB_IN_BYTES = 1024 * 1024 * 1024;
-    static ConnectionData          connection;
+    static final int      MiB_IN_BYTES = 1024 * 1024;
+    static final int      GiB_IN_BYTES = 1024 * 1024 * 1024;
+    static ConnectionData connection;
 
     static void tryConnection() throws Exception {
         try {
             BenchmarkClientFactory.getNewClient(connection).getServiceByType(DIR.ServiceType.SERVICE_TYPE_OSD);
         } catch (IOException e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, Controller.class, "Failed to establish connection to servers. Errormessage: %s", e.getMessage());
+            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, Controller.class,
+                    "Failed to establish connection to servers. Errormessage: %s", e.getMessage());
             Thread.yield(); // allows the logger to catch up
             e.printStackTrace();
             System.exit(42);
-    } catch (Exception e) {
+        } catch (Exception e) {
             Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, Controller.class, e.getMessage());
             e.printStackTrace();
             throw e;
@@ -143,6 +146,9 @@ public class Controller {
         case RANDOM_IO:
             results = startRandomBenchmarks(numberOfThreads, sizeInBytes, threads);
             break;
+        case RANDOM_IO_WRITE:
+            results = startRandomFilebasedWriteBenchmarks(numberOfThreads, sizeInBytes, threads);
+            break;
         }
 
         /* wait for all threads to finish */
@@ -154,6 +160,45 @@ public class Controller {
         for (BenchmarkResult res : results) {
             res.benchmarkType = benchmarkType;
             res.numberOfReadersOrWriters = numberOfThreads;
+        }
+        return results;
+    }
+
+    static ConcurrentLinkedQueue<BenchmarkResult> startRandomFilebasedReadBenchmarks(BenchmarkType benchmarkType,
+            long sizeInBytes, KeyValuePair<Volume, LinkedList<String>> volumeWithFiles) throws Exception {
+
+        if (sizeInBytes % RandomReadFilebasedOSDBenchmark.RANDOM_IO_BLOCKSIZE != 0)
+            throw new IllegalArgumentException("Size must be in alignment with (i.e. divisible through) the block size");
+
+        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
+        ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
+
+        OSDBenchmark benchmark = new RandomReadFilebasedOSDBenchmark(connection, volumeWithFiles);
+        benchmark.startBenchThread(sizeInBytes, results, threads);
+
+        /* wait for all threads to finish */
+        for (Thread thread : threads) {
+            thread.join();
+        }
+
+        /* Set BenchmarkResult Type */
+        for (BenchmarkResult res : results) {
+            res.benchmarkType = benchmarkType;
+            res.numberOfReadersOrWriters = 1;
+        }
+        return results;
+    }
+
+    private static ConcurrentLinkedQueue<BenchmarkResult> startRandomFilebasedWriteBenchmarks(int numberOfWriters,
+            long sizeInBytes, ConcurrentLinkedQueue<Thread> threads) throws Exception {
+
+        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
+
+        /* start the benchmark threads */
+        for (int i = 0; i < numberOfWriters; i++) {
+            OSDBenchmark benchmark = new RandomWriteFilebasedOSDBenchmark(VolumeManager.getInstance().getNextVolume(),
+                    connection);
+            benchmark.startBenchThread(sizeInBytes, results, threads);
         }
         return results;
     }
@@ -174,27 +219,33 @@ public class Controller {
 
         volumeManager.createDefaultVolumes(numberOfThreads);
 
-        ConcurrentLinkedQueue<BenchmarkResult> wResults = startBenchmarks(BenchmarkType.WRITE, numberOfThreads,
-                sizeInBytes);
-        printResults(wResults);
-
-        volumeManager.createDefaultVolumes(numberOfThreads);
-
-        ConcurrentLinkedQueue<BenchmarkResult> rResults = startBenchmarks(BenchmarkType.READ, numberOfThreads,
-                sizeInBytes);
-        printResults(rResults);
+        // ConcurrentLinkedQueue<BenchmarkResult> wResults = startBenchmarks(BenchmarkType.WRITE,
+        // numberOfThreads,
+        // sizeInBytes);
+        // printResults(wResults);
+        //
+        // volumeManager.createDefaultVolumes(numberOfThreads);
+        //
+        // ConcurrentLinkedQueue<BenchmarkResult> rResults = startBenchmarks(BenchmarkType.READ,
+        // numberOfThreads,
+        // sizeInBytes);
+        // printResults(rResults);
 
         // volumeManager.createDefaultVolumes(numberOfThreads);
         //
-        // ConcurrentLinkedQueue<BenchmarkResult> randResults = startBenchmarks(BenchmarkType.RANDOM_IO,
-        // numberOfThreads,
-        // 10L * (long) MiB_IN_BYTES);
-        // printResults(randResults);
+
+        ConcurrentLinkedQueue<BenchmarkResult> randResults = startBenchmarks(BenchmarkType.RANDOM_IO_WRITE, numberOfThreads,
+                10L * (long) MiB_IN_BYTES);
+        printResults(randResults);
+
+        ConcurrentLinkedQueue<BenchmarkResult> randReadResults = startRandomFilebasedReadBenchmarks(
+                BenchmarkType.RANDOM_IO_READ, sizeInBytes, randResults.poll().volumeWithFiles);
+        printResults(randReadResults);
 
         volumeManager.deleteCreatedVolumes();
         volumeManager.scrub();
 
-//        BenchmarkClientFactory.shutdownClients();
+        // BenchmarkClientFactory.shutdownClients();
         System.exit(0);
 
     }

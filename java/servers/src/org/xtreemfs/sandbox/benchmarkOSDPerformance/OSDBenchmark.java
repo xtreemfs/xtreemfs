@@ -9,6 +9,7 @@
 package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 
 import java.io.IOException;
+import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.common.libxtreemfs.AdminClient;
@@ -33,6 +34,7 @@ public abstract class OSDBenchmark {
     final Volume         volume;
     final AdminClient    client;
     final ConnectionData connection;
+    LinkedList<String> filenames = new LinkedList<String>();
 
     OSDBenchmark(Volume volume, ConnectionData connection) throws Exception {
         client = BenchmarkClientFactory.getNewClient(connection);
@@ -40,11 +42,18 @@ public abstract class OSDBenchmark {
         this.connection = connection;
     }
 
+    protected OSDBenchmark(Volume volume, ConnectionData connection, LinkedList<String> filenames) {
+        client = BenchmarkClientFactory.getNewClient(connection);
+        this.volume = volume;
+        this.connection = connection;
+        this.filenames = filenames;
+    }
+
     /*
-     * Performs a single sequential read- or write-benchmark. Whether a read- or write-benchmark is performed
-     * depends on which subclass is instantiated. This method is supposed to be called within its own thread
-     * to run a benchmark.
-     */
+         * Performs a single sequential read- or write-benchmark. Whether a read- or write-benchmark is performed
+         * depends on which subclass is instantiated. This method is supposed to be called within its own thread
+         * to run a benchmark.
+         */
     void benchmark(long sizeInBytes, ConcurrentLinkedQueue<BenchmarkResult> results) {
 
         String shortClassname = this.getClass().getName().substring(this.getClass().getName().lastIndexOf('.') + 1);
@@ -65,8 +74,10 @@ public abstract class OSDBenchmark {
         double timeInSec = (after - before) / 1000.;
         double speedMiBPerSec = round((byteCounter / MiB_IN_BYTES) / timeInSec, 2);
 
+        KeyValuePair<Volume, LinkedList<String>> volumeWithFiles = new KeyValuePair<Volume, LinkedList<String>>(volume,filenames);
+
         BenchmarkResult result = new BenchmarkResult(timeInSec, speedMiBPerSec, sizeInBytes, Thread.currentThread()
-                .getId(), byteCounter);
+                .getId(), byteCounter, volumeWithFiles);
         results.add(result);
 
         /* shutdown */
