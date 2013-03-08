@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.Volume;
+import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.foundation.logging.Logging;
 
 /**
@@ -24,34 +25,27 @@ import org.xtreemfs.foundation.logging.Logging;
  */
 public abstract class OSDBenchmark {
 
-
     static final int     MiB_IN_BYTES                 = 1024 * 1024;
     static final int     GiB_IN_BYTES                 = 1024 * 1024 * 1024;
     static final int     XTREEMFS_BLOCK_SIZE_IN_BYTES = 128 * 1024;        // 128 KiB
     static final String  BENCHMARK_FILENAME           = "benchmarkFile";
 
-    final Volume volume;
+    final Volume         volume;
     final AdminClient    client;
     final ConnectionData connection;
 
     OSDBenchmark(Volume volume, ConnectionData connection) throws Exception {
-        client = Controller.getClient();
+        client = BenchmarkClientFactory.getNewClient(connection);
         this.volume = volume;
         this.connection = connection;
     }
-
-    /*
-     * Writes or reads the specified amount of data to/from the volume specified in the object initialization.
-     * Called within the benchmark method.
-     */
-    abstract long performIO(byte[] data, long numberOfBlocks) throws IOException;
 
     /*
      * Performs a single sequential read- or write-benchmark. Whether a read- or write-benchmark is performed
      * depends on which subclass is instantiated. This method is supposed to be called within its own thread
      * to run a benchmark.
      */
-    void benchmark(long sizeInBytes, ConcurrentLinkedQueue<BenchmarkResult> results) throws Exception {
+    void benchmark(long sizeInBytes, ConcurrentLinkedQueue<BenchmarkResult> results) {
 
         String shortClassname = this.getClass().getName().substring(this.getClass().getName().lastIndexOf('.') + 1);
         Logging.logMessage(Logging.LEVEL_INFO, this, "Starting %s", shortClassname, Logging.Category.tool);
@@ -64,7 +58,7 @@ public abstract class OSDBenchmark {
 
         /* Run the Benchmark */
         long before = System.currentTimeMillis();
-        byteCounter = performIO(data, numberOfBlocks);
+        byteCounter = tryPerformIO(data, numberOfBlocks);
         long after = System.currentTimeMillis();
 
         /* Calculate and return results */
@@ -79,6 +73,30 @@ public abstract class OSDBenchmark {
 
         Logging.logMessage(Logging.LEVEL_INFO, this, "Finished %s", shortClassname, Logging.Category.tool);
     }
+
+    /* Error handling for 'performIO()' */
+    long tryPerformIO(byte[] data, long numberOfBlocks) {
+        long byteCounter;
+        try {
+            byteCounter = performIO(data, numberOfBlocks);
+        } catch (PosixErrorException e) {
+            byteCounter = 0;
+            e.printStackTrace();
+            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this,
+                    "POSIX Error while trying to perform IO: %s", e.getPosixError());
+        } catch (IOException e) {
+            byteCounter = 0;
+            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this, e.getMessage());
+        }
+        return byteCounter;
+    }
+
+    /*
+     * Writes or reads the specified amount of data to/from the volume specified in the object initialization.
+     * Called within the benchmark method.
+     */
+    abstract long performIO(byte[] data, long numberOfBlocks) throws IOException;
+
 
     /* Starts a benchmark in its own thread. */
     public void startBenchThread(long sizeInBytes, ConcurrentLinkedQueue<BenchmarkResult> results,

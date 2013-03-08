@@ -35,7 +35,7 @@ public class VolumeManager {
 
     private VolumeManager() throws Exception {
         this.connection = Controller.getConnectionData();
-        this.client = Controller.getClient();
+        this.client = BenchmarkClientFactory.getNewClient(connection);
         this.volumes = new LinkedList<Volume>();
         this.createdVolumes = new LinkedList<Volume>();
     }
