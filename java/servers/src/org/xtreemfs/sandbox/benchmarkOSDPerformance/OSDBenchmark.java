@@ -44,7 +44,7 @@ public abstract class OSDBenchmark {
      * Writes or reads the specified amount of data to/from the volume specified in the object initialization.
      * Called within the benchmark method.
      */
-    abstract long writeOrReadData(byte[] data, long numberOfBlocks) throws IOException;
+    abstract long performIO(byte[] data, long numberOfBlocks) throws IOException;
 
     /*
      * Performs a single sequential read- or write-benchmark. Whether a read- or write-benchmark is performed
@@ -64,7 +64,7 @@ public abstract class OSDBenchmark {
 
         /* Run the Benchmark */
         long before = System.currentTimeMillis();
-        byteCounter = writeOrReadData(data, numberOfBlocks);
+        byteCounter = performIO(data, numberOfBlocks);
         long after = System.currentTimeMillis();
 
         /* Calculate and return results */

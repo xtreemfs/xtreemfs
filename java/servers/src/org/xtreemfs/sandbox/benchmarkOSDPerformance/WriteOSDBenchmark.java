@@ -29,7 +29,7 @@ public class WriteOSDBenchmark extends OSDBenchmark {
 
     /* Called within the benchmark method. Performs the actual writing of data to the volume. */
     @Override
-    long writeOrReadData(byte[] data, long numberOfBlocks) throws IOException {
+    long performIO(byte[] data, long numberOfBlocks) throws IOException {
         Random random = new Random();
         int flags = GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()

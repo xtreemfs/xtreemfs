@@ -31,7 +31,7 @@ public class RandomReadOSDBenchmark extends OSDBenchmark {
 
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */
     @Override
-    long writeOrReadData(byte[] data, long numberOfBlocks) throws IOException {
+    long performIO(byte[] data, long numberOfBlocks) throws IOException {
 
         numberOfBlocks = convertTo4KiBBlocks(numberOfBlocks);
         long byteCounter = 0;

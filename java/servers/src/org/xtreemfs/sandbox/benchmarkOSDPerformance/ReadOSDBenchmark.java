@@ -28,7 +28,7 @@ public class ReadOSDBenchmark extends OSDBenchmark {
 
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */
     @Override
-    long writeOrReadData(byte[] data, long numberOfBlocks) throws IOException {
+    long performIO(byte[] data, long numberOfBlocks) throws IOException {
         FileHandle fileHandle = volume.openFile(connection.userCredentials, BENCHMARK_FILENAME,
                 GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
         long byteCounter = 0;
