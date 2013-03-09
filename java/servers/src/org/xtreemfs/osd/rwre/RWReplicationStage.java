@@ -203,6 +203,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         super.waitForStartup();
     }
 
+    @Override
     public void waitForShutdown() throws Exception {
         client.waitForShutdown();
         fleaseClient.waitForShutdown();
@@ -522,7 +523,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             ReplicatedFileState state = files.get(fileId);
             if (state != null) {
 
-                if (error != null) {
+                // data is null if object was deleted meanwhile.
+                if (error != null || data.getData() == null) {
                     numObjsInFlight--;
                     fetchObjects();
                     failed(state, error, "processObjectFetched");
