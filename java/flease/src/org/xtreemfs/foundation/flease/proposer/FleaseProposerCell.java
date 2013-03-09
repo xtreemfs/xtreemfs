@@ -133,15 +133,15 @@ public class FleaseProposerCell {
 
     private List<InetSocketAddress> acceptors;
 
-    private List<FleaseListener> listeners;
+    private final List<FleaseListener> listeners;
 
-    private List<FleaseMessage>      responses;
+    private final List<FleaseMessage>      responses;
 
     private State cellState;
 
     private int   numFailures;
 
-    private int   majority;
+    private final int   majority;
 
     private long  lastPrepateTimestamp_ms;
 
@@ -173,7 +173,7 @@ public class FleaseProposerCell {
         this.responses = new ArrayList(acceptors.size()+1);
         this.listeners = new ArrayList(5);
         this.ballotNo = new ProposalNumber(TimeSync.getGlobalTime(),senderId);
-        this.majority = (int) Math.floor((double)(acceptors.size()+1.0)/ 2.0) + 1;
+        this.majority = (int) Math.floor((acceptors.size()+1.0)/ 2.0) + 1;
         this.prevLease = Flease.EMPTY_LEASE;
         this.markedClose = false;
         this.handoverTo = null;
@@ -286,6 +286,7 @@ public class FleaseProposerCell {
         this.handoverTo = handoverTo;
     }
 
+    @Override
     public String toString() {
         StringBuilder text = new StringBuilder();
         text.append(getClass().getSimpleName());
@@ -316,6 +317,11 @@ public class FleaseProposerCell {
         text.append(requestMasteEpoch);
         text.append(" msgSent:");
         text.append(messageSent);
+        text.append(" responses:");
+        for (FleaseMessage r : responses) {
+            text.append(r);
+            text.append(",");
+        }
         text.append(" actions:");
         text.append(actions);
         text.append("}");
