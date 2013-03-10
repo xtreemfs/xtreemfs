@@ -40,6 +40,7 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
@@ -523,11 +524,18 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             ReplicatedFileState state = files.get(fileId);
             if (state != null) {
 
-                // data is null if object was deleted meanwhile.
-                if (error != null || data.getData() == null) {
+                if (error != null) {
                     numObjsInFlight--;
                     fetchObjects();
+
                     failed(state, error, "processObjectFetched");
+                } else if (data.getData() == null) {
+                    // data is null if object was deleted meanwhile.
+                    numObjsInFlight--;
+                    fetchObjects();
+
+                    ErrorResponse generatedError = ErrorResponse.newBuilder().setErrorType(RPC.ErrorType.INTERNAL_SERVER_ERROR).setErrorMessage("Fetching a missing object failed because no data was returned. The object was probably deleted meanwhile.").build();
+                    failed(state, generatedError, "processObjectFetched");
                 } else {
                     final int bytes = data.getData().remaining();
                     master.getStorageStage().writeObjectWithoutGMax(fileId, record.getObjectNumber(),
