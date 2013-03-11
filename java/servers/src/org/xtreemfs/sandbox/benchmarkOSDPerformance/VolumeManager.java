@@ -108,6 +108,8 @@ public class VolumeManager {
     }
 
     void createDefaultVolumes(int numberOfVolumes) throws IOException {
+        /* 'volumes' needs to be resetted  */
+        volumes = new LinkedList<Volume>();
         for (int i = 0; i < numberOfVolumes; i++) {
             volumes.add(createAndOpenVolume(VOLUME_BASE_NAME + i));
         }
