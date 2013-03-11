@@ -21,12 +21,14 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  * 
  * @author jensvfischer
  */
-public class RandomWriteFilebasedOSDBenchmark extends OSDBenchmark {
+public class FilebasedRandomReadOSDBenchmark extends OSDBenchmark {
 
-    final static int RANDOM_IO_BLOCKSIZE = 1024 * 4; // 4 KiB
+    final static int           RANDOM_IO_BLOCKSIZE = 1024 * 4; // 4 KiB
 
-    RandomWriteFilebasedOSDBenchmark(Volume volume, ConnectionData connection) throws Exception {
-        super(volume, connection, new LinkedList<String>());
+    FilebasedRandomReadOSDBenchmark(ConnectionData connection, KeyValuePair<Volume, LinkedList<String>> volumeWithFiles)
+            throws Exception {
+        super(volumeWithFiles.key, connection);
+        this.filenames = volumeWithFiles.value;
     }
 
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */
@@ -37,15 +39,13 @@ public class RandomWriteFilebasedOSDBenchmark extends OSDBenchmark {
         long byteCounter = 0;
         Random random = new Random();
 
-        int flags = GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
-                | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
-                | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
+        int flags = GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber();
 
-        for (long j = 0; j < numberOfFiles; j++) {
-            FileHandle fileHandle = volume.openFile(connection.userCredentials, BENCHMARK_FILENAME + j, flags, 511);
-            this.filenames.add(BENCHMARK_FILENAME+j);
-            random.nextBytes(data);
-            byteCounter += fileHandle.write(connection.userCredentials, data, RANDOM_IO_BLOCKSIZE, 0);
+        for (long i = 0; i < numberOfFiles; i++) {
+//        for (String filename : filenames) {
+        String filename = filenames.get(random.nextInt(filenames.size()));
+            FileHandle fileHandle = volume.openFile(connection.userCredentials, filename, flags);
+            byteCounter += fileHandle.read(connection.userCredentials, data, RANDOM_IO_BLOCKSIZE, 0);
             fileHandle.close();
         }
         return byteCounter;
