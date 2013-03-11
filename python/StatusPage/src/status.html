@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<!-- 
+Copyright (c) 2013 Matthias Noack, Zuse Institute Berlin 
+
+Licensed under the BSD License, see LICENSE file for details.
+-->
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>Server Status</title>
+		<style type="text/css">
+			td.title { border-top:1px solid black;
+				border-bottom: 1px solid black;
+				background-color:#EEEEEE;
+				font-weight:bold;
+			}
+			td.subtitle { text-align:right;
+				border-right:10px solid white;
+			}
+			body {
+				font-family: Verdana, Arial, Sans-Serif;
+			}
+			td {
+				text-align: left;
+			}
+			td.dump {
+				border-top:1px solid black; border-bottom: 1px solid black;
+				border-left: 1px solid black; border-right: 1px solid black;
+		   	}
+			td.dumptitle {
+				border-top:1px solid black; border-bottom: 1px solid black;
+				border-left: 1px solid black; border-right: 1px solid black;
+				background-color:#EEEFFF; font-weight:bold;
+			}
+			td.mapping {
+				text-align:left;
+			}
+			td.version {
+				text-align:right; font-size:small;
+			}
+			td.heading {
+				text-align:left; font-weight:bold;
+			}
+			td.uuid {
+				border-top:1px solid black; border-bottom: 1px solid black;
+				border-left: 1px solid black; border-right: 1px solid black;
+				text-align:center; font-weight:bold; width:30%;
+			}
+			#help { 
+				color:#aaaaaa;
+				font-size:x-small;
+			}
+		</style>
+		<script type="text/javascript" src="/d3.v3.js"></script>
+		<script type="text/javascript">//<![CDATA[
+
+// configuration
+var conf = new Object();
+conf.bgColour = "#ffffff";
+conf.hostColourOnline = "#009900";
+conf.hostColourOffline = "#990000";
+conf.strokeColour = "#333333";
+conf.strokeWidth = "1";
+conf.textColour = "#dddddd";
+conf.fontSize = "medium"; // xx-small, x-small, small, medium, large, x-large, xx-large
+conf.statusTextColour = "#555555";
+conf.canvasFrame = 25;
+conf.hostRadius = 50;
+conf.hostSpace = 25;
+conf.minCanvasWidth = 2*conf.hostRadius + 2*conf.canvasFrame;
+conf.hostEnterDuration = 1000; // ms
+conf.hostUpdateDuration = conf.hostEnterDuration;
+conf.hostExitDuration = conf.hostEnterDuration;
+conf.reloadInterval = 2000; // in ms
+
+// globals
+var hosts = []; // coordinate data
+var paused = false;
+var intervalID = 0; // for periodic data fetch via GET
+var vis; // d3 svg element
+var svgElement; // svg element
+var host_g; // hosts element group in svg
+var text_g; // text element group in svg
+
+// canvas dimensions available for rendering
+var realCanvasWidth;
+var canvasWidth;
+var hostsPerRow;
+var realCanvasHeight;
+var canvasHeight;
+
+function setupCanvas() {
+	realCanvasWidth = 1.0 * window.innerWidth - 30;
+	if(realCanvasWidth < conf.minCanvasWidth)
+		realCanvasWidth = conf.minCanvasWidth;
+	canvasWidth = realCanvasWidth - 2 * conf.canvasFrame;
+	hostsPerRow = Math.floor((canvasWidth + conf.hostSpace) / (2*conf.hostRadius + conf.hostSpace));
+	//realCanvasHeight = 1.0 * window.innerHeight - 200; 
+	//canvasHeight = realCanvasHeight - 2 * conf.canvasFrame;
+}
+
+
+// init code
+window.onload = function() {
+	setupCanvas();
+
+	// insert svg as canvas
+	vis = d3.select("#canvas")
+			.append("svg")
+			.attr("id", "vis")
+			.attr("width", realCanvasWidth)
+	        .style("min-width", conf.minCanvasWidth + "px")
+			//.attr("height", realCanvasHeight)
+			;
+
+	// add two groups
+	host_g = vis.append("g");	
+	text_g = vis.append("g");
+
+	// add status text element
+	text_g.insert("text")
+	      .attr("class", "statusText")
+	      .attr("x", realCanvasWidth * 0.5)
+	      .attr("y", realCanvasHeight * 0.5)
+	      .attr("fill", conf.textColour)
+	      .attr("text-anchor", "middle")
+	      .style("font-size", "small")
+	      .text("Loading…")
+	;
+
+	svgElement = document.getElementById("vis");
+
+	loadData();
+	intervalID = setInterval('loadData()', conf.reloadInterval); // execute loadData every 2000 ms
+	paused = false;
+}
+
+// re-init code		
+window.onresize = function() {
+	setupCanvas();
+	
+	d3.select("#canvas").selectAll("svg")
+	  .attr("width", realCanvasWidth)
+//	  .attr("height", realCanvasHeight)
+	  ;
+
+	text_g.selectAll("text.statusText")
+	      .attr("x", realCanvasWidth * 0.5)
+	      .attr("y", realCanvasHeight * 0.5)
+	      ;
+
+	drawData();
+}
+
+// convert screen to svg coordinates
+function screenToSVG(event) {
+    var p = svgElement.createSVGPoint();
+    p.x = d3.event.clientX;
+    p.y = d3.event.clientY;
+    var matrix = svgElement.getScreenCTM();
+	return p.matrixTransform(matrix.inverse());
+}
+
+// load data from server
+function loadData() {
+	var req = new XMLHttpRequest();
+	req.open('GET', '/status', true);
+	req.onreadystatechange = function() {
+		if (req.readyState == 4) {
+			parseData(req.responseText)
+			drawData();
+		}
+	};
+	req.send(null);
+}
+
+function pauseButtonHandler() {
+	if (paused) {
+		loadData();
+		intervalID = setInterval('loadData()', conf.reloadInterval); // execute loadData every 2000 ms
+		paused = false;
+		document.getElementById("pauseButton").innerHTML="Disable Auto Reload";
+	} else {
+		clearInterval(intervalID);
+		paused = true;
+		document.getElementById("pauseButton").innerHTML="Enable Auto Reload";
+	}
+}
+
+// parse data into global array (called by reloadData)
+function parseData(data) {
+	hosts = [];
+	var dataArray = [[]];
+
+	// parse data
+	var lineArray = data.split('\n');
+	// NOTE: table header (first line) is skipped
+	for (var i = 1; i < lineArray.length; i++) {
+		dataArray[i-1] = lineArray[i].split('\t')
+	}
+
+	// create data set
+	for (i = 0; (i < dataArray.length) && (dataArray[i].length >= 2); i++) {
+		hosts.push({"hostname": dataArray[i][0].toString(), "status": dataArray[i][1].toString(), "nr": i});
+	}
+}
+
+// visualise the data set stored in hosts
+function drawData() {
+	rows = Math.floor(hosts.length / hostsPerRow) + (((hosts.length % hostsPerRow) > 0) ? 1 : 0);
+	realCanvasHeight = rows * (2*conf.hostRadius) + (rows-1)*(conf.hostSpace) + 2*conf.canvasFrame;
+	d3.select("#canvas").selectAll("svg")
+	  .attr("height", realCanvasHeight)
+	  ;
+
+
+	// show status text if there is no data
+	if (hosts.length == 0) {
+		text_g.selectAll("text.statusText").text("No data available...");
+	} else {
+		text_g.selectAll("text.statusText").text("");
+	}
+	
+	// helper functions
+	var xFunc = function(d) { return conf.canvasFrame + conf.hostRadius + (d.nr % hostsPerRow) * (2*conf.hostRadius + conf.hostSpace); }
+	var yFunc = function(d) { return conf.canvasFrame + conf.hostRadius + Math.floor(d.nr / hostsPerRow) * (2*conf.hostRadius + conf.hostSpace); }
+	var fillFunc = function(d) { return d.status == "online" ? conf.hostColourOnline : conf.hostColourOffline; }
+	var textFunc = function(d) { return d.hostname; }
+
+	// ***** draw nodes ***** //
+	
+	// data join by hostname
+	var circles = host_g.selectAll("circle").data(hosts, function(d) { return d.hostname; });
+
+	// update
+	circles.transition().duration(conf.hostUpdateDuration)
+		.attr("cx", xFunc)
+		.attr("cy", yFunc)
+		.attr("fill", fillFunc)
+	    ;
+
+	// enter
+	circles.enter().append("circle")
+		.attr("cx", xFunc)
+		.attr("cy", yFunc)
+		.attr("r", conf.hostRadius)
+		.attr("fill", conf.bgColour)
+		.transition()
+		.duration(conf.hostEnterDuration)
+	    .attr("stroke", conf.strokeColour)
+	    .attr("stroke-width", conf.strokeWidth)
+		.attr("fill", fillFunc)
+		;
+	
+	// exit
+	circles.exit()
+		.transition()
+		.duration(conf.hostExitDuration)
+		.attr("r", 0)
+		.attr("fill", conf.bgColour)
+		.remove();
+
+
+	// ***** draw text ***** //
+	
+	// data join by hostname
+	var texts = host_g.selectAll("text").data(hosts, function(d) { return d.hostname; });
+
+	// update
+	texts.transition().duration(conf.hostUpdateDuration)
+		.attr("x", xFunc)
+		.attr("y", yFunc);
+
+	// enter
+	texts.enter().append("text")
+		.attr("x", xFunc)
+		.attr("y", yFunc)
+		.attr("fill", conf.bgColour)
+		.transition()
+		.duration(conf.hostEnterDuration)
+		.attr("fill", conf.textColour)
+		.style("font-size", conf.fontSize)
+		.style("font-weight", "bold")
+		.attr("text-anchor", "middle")
+		.attr("dominant-baseline", "central")
+		//.attr("transform", "rotate(30 20,40)") // NOTE: dont use with x and y attr, use translate instead
+		.text(textFunc)
+		;
+	
+	// exit
+	texts.exit()
+		.transition()
+		.duration(conf.hostExitDuration)
+		.attr("fill", conf.bgColour)
+		.remove();
+
+
+}
+//]]></script>
+	</head>
+	<body>
+		<h1><a href="http://www.XtreemFS.org"><img src="http://www.xtreemfs.com/imgs/Logo_200px.jpg" alt="XtreemFS Logo"/></a> Server Status</h1>
+		<div class="body" id="controls">
+			<button onclick="loadData()">Reload</button>
+			<button type="button" id="pauseButton" onclick="pauseButtonHandler()">Disable Auto Reload</button>
+		</div>
+		<div class="body" id="canvas"></div>
+	</body>
+</html>

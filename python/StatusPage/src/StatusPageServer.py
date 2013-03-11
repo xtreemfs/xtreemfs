@@ -42,63 +42,40 @@ class MonitoringThread(threading.Thread):
 class StatusHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def generateStatusOutput(self):
         hostStatusLock.acquire()
-        result = "<table>"
+        result = "# hostname status\n"
 
         for key in hostStatus.keys():
+            result += key + "\t"
             if hostStatus[key] == True:
-                color = "green"
+                result += "online"
             else:
-                color = "red"
-            result = result + "<tr><td bgcolor=" + color + ">" + key + "</td></tr>"
+                result += "offline"
+            result += "\n"
 
-        result = result + "</table>"
         hostStatusLock.release()
         return result
 
     def do_GET(self):
         try:
-            if(self.path.endswith("status")):
+            if(self.path == "/status"):
                 self.send_response(200)
-                self.send_header('Content-type', 'text/html')
+                self.send_header('Content-type', 'text/plain; charset=utf-8')
                 self.end_headers()
                 self.wfile.write(self.generateStatusOutput())
                 return
+            elif(self.path == "/d3.v3.js"):
+                self.send_response(200)
+                self.send_header('Content-type', 'text/plain; charset=utf-8')
+                self.end_headers()
+                f = open('.' + self.path, "r")
+                self.wfile.write(f.read())
+                return
             else:
                 self.send_response(200)
-                self.send_header('Content-type', 'text/html')
+                self.send_header('Content-type', 'text/html; charset=utf-8')
                 self.end_headers()
-                self.wfile.write("""
-                        <html>
-                            <head>
-                                <title>Host Status</title>
-                            </head>
-                            <script>
-                                function updateStatus() {
-                                    var ajaxRequest;
-
-                                    try {
-                                        ajaxRequest = new XMLHttpRequest();
-                                    } catch(e) {
-                                        console.log(e);
-                                    }
-                                    ajaxRequest.open('GET', 'status', true);
-                                    ajaxRequest.onreadystatechange = function() {
-                                        if (ajaxRequest.readyState == 4) {
-                                            var statusData = ajaxRequest.responseText;
-                                            var txt = document.getElementById("status");
-                                            txt.innerHTML = statusData;
-                                        }
-                                    };
-                                    ajaxRequest.send(null);
-                                    window.setTimeout(updateStatus, 1000);
-                                }
-                                updateStatus();
-                            </script>
-                            <body>
-                                <div id=status></div>
-                            </body>
-                        </html>
-                    """)
+                f = open("status.html", "r")
+                self.wfile.write(f.read())
                 return
         except IOError:
             self.send_error(404, 'Error')
