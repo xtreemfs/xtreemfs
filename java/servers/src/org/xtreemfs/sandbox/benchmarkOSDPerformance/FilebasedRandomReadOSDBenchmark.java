@@ -11,9 +11,11 @@ package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Random;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.common.libxtreemfs.FileHandle;
 import org.xtreemfs.common.libxtreemfs.Volume;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 
 /**
@@ -23,12 +25,27 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  */
 public class FilebasedRandomReadOSDBenchmark extends OSDBenchmark {
 
-    final static int           RANDOM_IO_BLOCKSIZE = 1024 * 4; // 4 KiB
+    final static int RANDOM_IO_BLOCKSIZE = 1024 * 4; // 4 KiB
 
     FilebasedRandomReadOSDBenchmark(ConnectionData connection, KeyValuePair<Volume, LinkedList<String>> volumeWithFiles)
             throws Exception {
         super(volumeWithFiles.key, connection);
         this.filenames = volumeWithFiles.value;
+    }
+
+    static ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(int numberOfThreads, long sizeInBytes,
+            ConcurrentLinkedQueue<Thread> threads, KeyValuePair<Volume, LinkedList<String>> volumeWithFiles)
+            throws Exception {
+
+        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
+
+        /* start the benchmark threads */
+        for (int i = 0; i < numberOfThreads; i++) {
+            OSDBenchmark benchmark = new FilebasedRandomReadOSDBenchmark(Controller.connection, volumeWithFiles);
+            benchmark.startBenchThread(sizeInBytes, results, threads);
+        }
+
+        return results;
     }
 
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */
@@ -42,8 +59,9 @@ public class FilebasedRandomReadOSDBenchmark extends OSDBenchmark {
         int flags = GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber();
 
         for (long i = 0; i < numberOfFiles; i++) {
-//        for (String filename : filenames) {
-        String filename = filenames.get(random.nextInt(filenames.size()));
+            // for (String filename : filenames) {
+            String filename = filenames.get(random.nextInt(filenames.size()));
+            Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.tool, this, "File to be read: %s", filename);
             FileHandle fileHandle = volume.openFile(connection.userCredentials, filename, flags);
             byteCounter += fileHandle.read(connection.userCredentials, data, RANDOM_IO_BLOCKSIZE, 0);
             fileHandle.close();

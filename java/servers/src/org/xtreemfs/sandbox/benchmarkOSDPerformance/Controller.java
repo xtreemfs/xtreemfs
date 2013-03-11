@@ -60,75 +60,14 @@ public class Controller {
         }
     }
 
-    /**
-     * Starts a benchmark run with the specified amount of write benchmarks in parallel. Every benchmark is
-     * started within its own thread. The method waits for all threads to finish.
-     * 
-     * @param numberOfWriters
-     *            number of write benchmarks run in parallel
-     * @param sizeInBytes
-     *            Size of the benchmark in bytes. Must be in alignment with (i.e. divisible through) the block
-     *            size (128 KiB).
-     * @return results of the benchmarks
-     * @throws Exception
-     */
-    private static ConcurrentLinkedQueue<BenchmarkResult> startWriteBenchmarks(int numberOfWriters, long sizeInBytes,
-            ConcurrentLinkedQueue<Thread> threads) throws Exception {
-
-        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
-
-        /* start the benchmark threads */
-        for (int i = 0; i < numberOfWriters; i++) {
-            OSDBenchmark benchmark = new WriteOSDBenchmark(VolumeManager.getInstance().getNextVolume(), connection);
-            benchmark.startBenchThread(sizeInBytes, results, threads);
-        }
-
-        return results;
-    }
-
-    /**
-     * Starts a benchmark run with the specified amount of read benchmarks in parallel. Every benchmark is
-     * started within its own thread. The method waits for all threads to finish. Requires a
-     * {@link WriteOSDBenchmark} first (because the ReadBench reads the files written by the WriteBench).
-     * 
-     * @param numberOfReaders
-     *            number of read benchmarks run in parallel
-     * @param sizeInBytes
-     *            Size of the benchmark in bytes. Must be in alignment with (i.e. divisible through) the block
-     *            size (128 KiB).
-     * @return results of the benchmarks
-     * @throws Exception
-     */
-    private static ConcurrentLinkedQueue<BenchmarkResult> startReadBenchmarks(int numberOfReaders, long sizeInBytes,
-            ConcurrentLinkedQueue<Thread> threads) throws Exception {
-
-        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
-
-        /* start the benchmark threads */
-        for (int i = 0; i < numberOfReaders; i++) {
-            OSDBenchmark benchmark = new ReadOSDBenchmark(VolumeManager.getInstance().getNextVolume(), connection);
-            benchmark.startBenchThread(sizeInBytes, results, threads);
-        }
-        return results;
-    }
-
-    private static ConcurrentLinkedQueue<BenchmarkResult> startRandomBenchmarks(int numberOfReaders, long sizeInBytes,
-            ConcurrentLinkedQueue<Thread> threads) throws Exception {
-
-        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
-
-        /* start the benchmark threads */
-        for (int i = 0; i < numberOfReaders; i++) {
-            RandomReadOSDBenchmark benchmark = new RandomReadOSDBenchmark(VolumeManager.getInstance().getNextVolume(),
-                    connection);
-            benchmark.prepareBenchmark();
-            benchmark.startBenchThread(sizeInBytes, results, threads);
-        }
-        return results;
+    static ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(BenchmarkType benchmarkType, int numberOfThreads,
+            long sizeInBytes) throws Exception {
+        return startBenchmarks(benchmarkType, numberOfThreads, sizeInBytes,
+                new KeyValuePair<Volume, LinkedList<String>>());
     }
 
     static ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(BenchmarkType benchmarkType, int numberOfThreads,
-            long sizeInBytes) throws Exception {
+            long sizeInBytes, KeyValuePair<Volume, LinkedList<String>> volumeWithFiles) throws Exception {
 
         if (sizeInBytes % OSDBenchmark.XTREEMFS_BLOCK_SIZE_IN_BYTES != 0)
             throw new IllegalArgumentException("Size must be in alignment with (i.e. divisible through) the block size");
@@ -137,18 +76,26 @@ public class Controller {
         ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
 
         switch (benchmarkType) {
-        case READ:
-            results = startReadBenchmarks(numberOfThreads, sizeInBytes, threads);
-            break;
         case WRITE:
-            results = startWriteBenchmarks(numberOfThreads, sizeInBytes, threads);
+            results = WriteOSDBenchmark.startWriteBenchmarks(numberOfThreads, sizeInBytes, threads);
             break;
-        case RANDOM_IO:
-            results = startRandomBenchmarks(numberOfThreads, sizeInBytes, threads);
+        case READ:
+            results = ReadOSDBenchmark.startReadBenchmarks(numberOfThreads, sizeInBytes, threads);
             break;
         case RANDOM_IO_WRITE:
-            results = startRandomFilebasedWriteBenchmarks(numberOfThreads, sizeInBytes, threads);
             break;
+        case RANDOM_IO_READ:
+            results = RandomReadOSDBenchmark.startBenchmarks(numberOfThreads, sizeInBytes, threads);
+            break;
+        case RANDOM_IO_WRITE_FILEBASED:
+            results = FilebasedRandomWriteOSDBenchmark.startBenchmarks(numberOfThreads,
+                    sizeInBytes, threads);
+            break;
+        case RANDOM_IO_READ_FILEBASED:
+            results = FilebasedRandomReadOSDBenchmark.startBenchmarks(numberOfThreads, sizeInBytes,
+                    threads, volumeWithFiles);
+            break;
+
         }
 
         /* wait for all threads to finish */
@@ -164,58 +111,19 @@ public class Controller {
         return results;
     }
 
-    static ConcurrentLinkedQueue<BenchmarkResult> startRandomFilebasedReadBenchmarks(BenchmarkType benchmarkType,
-            long sizeInBytes, KeyValuePair<Volume, LinkedList<String>> volumeWithFiles) throws Exception {
-
-        if (sizeInBytes % RandomReadFilebasedOSDBenchmark.RANDOM_IO_BLOCKSIZE != 0)
-            throw new IllegalArgumentException("Size must be in alignment with (i.e. divisible through) the block size");
-
-        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
-        ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
-
-        OSDBenchmark benchmark = new RandomReadFilebasedOSDBenchmark(connection, volumeWithFiles);
-        benchmark.startBenchThread(sizeInBytes, results, threads);
-
-        /* wait for all threads to finish */
-        for (Thread thread : threads) {
-            thread.join();
-        }
-
-        /* Set BenchmarkResult Type */
-        for (BenchmarkResult res : results) {
-            res.benchmarkType = benchmarkType;
-            res.numberOfReadersOrWriters = 1;
-        }
-        return results;
-    }
-
-    private static ConcurrentLinkedQueue<BenchmarkResult> startRandomFilebasedWriteBenchmarks(int numberOfWriters,
-            long sizeInBytes, ConcurrentLinkedQueue<Thread> threads) throws Exception {
-
-        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
-
-        /* start the benchmark threads */
-        for (int i = 0; i < numberOfWriters; i++) {
-            OSDBenchmark benchmark = new RandomWriteFilebasedOSDBenchmark(VolumeManager.getInstance().getNextVolume(),
-                    connection);
-            benchmark.startBenchThread(sizeInBytes, results, threads);
-        }
-        return results;
-    }
-
     static ConnectionData getConnectionData() {
         return connection;
     }
 
     public static void main(String[] args) throws Exception {
-        Logging.start(Logging.LEVEL_INFO, Logging.Category.tool);
+        Logging.start(Logging.LEVEL_DEBUG, Logging.Category.tool);
         connection = new ConnectionData();
         tryConnection();
 
         VolumeManager volumeManager = VolumeManager.getInstance();
 
         int numberOfThreads = 1;
-        long sizeInBytes = 3L * (long) MiB_IN_BYTES;
+        long sizeInBytes = 10L * (long) MiB_IN_BYTES;
 
         volumeManager.createDefaultVolumes(numberOfThreads);
 
@@ -233,14 +141,35 @@ public class Controller {
 
         // volumeManager.createDefaultVolumes(numberOfThreads);
         //
+        // ConcurrentLinkedQueue<BenchmarkResult> randResults = startBenchmarks(BenchmarkType.RANDOM_IO_READ,
+        // numberOfThreads, sizeInBytes);
+        // printResults(randResults);
 
-        ConcurrentLinkedQueue<BenchmarkResult> randResults = startBenchmarks(BenchmarkType.RANDOM_IO_WRITE, numberOfThreads,
-                10L * (long) MiB_IN_BYTES);
-        printResults(randResults);
+        for (int i = 0; i < 1; i++) {
+            ConcurrentLinkedQueue<BenchmarkResult> randResults = startBenchmarks(
+                    BenchmarkType.RANDOM_IO_WRITE_FILEBASED, numberOfThreads, sizeInBytes);
+            printResults(randResults);
 
-        ConcurrentLinkedQueue<BenchmarkResult> randReadResults = startRandomFilebasedReadBenchmarks(
-                BenchmarkType.RANDOM_IO_READ, sizeInBytes, randResults.poll().volumeWithFiles);
-        printResults(randReadResults);
+            ConcurrentLinkedQueue<BenchmarkResult> randReadResults = startBenchmarks(
+                    BenchmarkType.RANDOM_IO_READ_FILEBASED, numberOfThreads, sizeInBytes,
+                    randResults.poll().volumeWithFiles);
+            printResults(randReadResults);
+
+        }
+//
+//        sizeInBytes = 10L * (long) MiB_IN_BYTES;
+//
+//        for (int i = 0; i < 5; i++) {
+//            ConcurrentLinkedQueue<BenchmarkResult> randResults = startBenchmarks(
+//                    BenchmarkType.RANDOM_IO_WRITE_FILEBASED, numberOfThreads, sizeInBytes);
+//            printResults(randResults);
+//
+//            ConcurrentLinkedQueue<BenchmarkResult> randReadResults = startBenchmarks(
+//                    BenchmarkType.RANDOM_IO_READ_FILEBASED, numberOfThreads, sizeInBytes,
+//                    randResults.poll().volumeWithFiles);
+//            printResults(randReadResults);
+//
+//        }
 
         volumeManager.deleteCreatedVolumes();
         volumeManager.scrub();

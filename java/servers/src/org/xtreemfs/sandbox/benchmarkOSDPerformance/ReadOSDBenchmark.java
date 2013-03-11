@@ -9,6 +9,7 @@
 package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 
 import java.io.IOException;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.common.libxtreemfs.FileHandle;
 import org.xtreemfs.common.libxtreemfs.Volume;
@@ -24,6 +25,32 @@ public class ReadOSDBenchmark extends OSDBenchmark {
 
     ReadOSDBenchmark(Volume volume, ConnectionData connection) throws Exception {
         super(volume, connection);
+    }
+
+    /**
+     * Starts a benchmark run with the specified amount of read benchmarks in parallel. Every benchmark is
+     * started within its own thread. The method waits for all threads to finish. Requires a
+     * {@link org.xtreemfs.sandbox.benchmarkOSDPerformance.WriteOSDBenchmark} first (because the ReadBench reads the files written by the WriteBench).
+     *
+     * @param numberOfReaders
+     *            number of read benchmarks run in parallel
+     * @param sizeInBytes
+     *            Size of the benchmark in bytes. Must be in alignment with (i.e. divisible through) the block
+     *            size (128 KiB).
+     * @return results of the benchmarks
+     * @throws Exception
+     */
+    static ConcurrentLinkedQueue<BenchmarkResult> startReadBenchmarks(int numberOfReaders, long sizeInBytes,
+                                                                      ConcurrentLinkedQueue<Thread> threads) throws Exception {
+
+        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
+
+        /* start the benchmark threads */
+        for (int i = 0; i < numberOfReaders; i++) {
+            OSDBenchmark benchmark = new ReadOSDBenchmark(VolumeManager.getInstance().getNextVolume(), Controller.connection);
+            benchmark.startBenchThread(sizeInBytes, results, threads);
+        }
+        return results;
     }
 
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */
