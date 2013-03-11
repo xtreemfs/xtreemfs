@@ -20,8 +20,7 @@ import org.xtreemfs.foundation.logging.Logging;
  */
 public class BenchmarkClientFactory {
 
-    private static ConcurrentLinkedQueue<AdminClient> clients       = new ConcurrentLinkedQueue<AdminClient>();
-    private static AtomicBoolean                      isFirstClient = new AtomicBoolean(true);
+    private static ConcurrentLinkedQueue<AdminClient> clients;
 
     /**
      * Create a AdminClient. The starting and shutdown of the client is managed by the BenchmarkClientFactory
@@ -33,6 +32,11 @@ public class BenchmarkClientFactory {
      */
     static AdminClient getNewClient(ConnectionData connection) {
           return tryCreateClient(connection);
+    }
+
+    static {
+        clients       = new ConcurrentLinkedQueue<AdminClient>();
+        addShutdownHook();
     }
 
     /* error handling for 'createNewClient()" */
@@ -50,8 +54,6 @@ public class BenchmarkClientFactory {
     }
 
     private static AdminClient createNewClient(ConnectionData connection) throws Exception {
-        if (isFirstClient.getAndSet(false))
-            addShutdownHook();
         AdminClient client = ClientFactory.createAdminClient(connection.dirAddress, connection.userCredentials,
                 connection.sslOptions, connection.options);
         clients.add(client);
