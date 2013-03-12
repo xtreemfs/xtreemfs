@@ -69,7 +69,7 @@ public class Controller {
     static ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(BenchmarkType benchmarkType, int numberOfThreads,
             long sizeInBytes, KeyValuePair<Volume, LinkedList<String>> volumeWithFiles) throws Exception {
 
-        if (sizeInBytes % OSDBenchmark.XTREEMFS_BLOCK_SIZE_IN_BYTES != 0)
+        if (sizeInBytes % Benchmark.XTREEMFS_BLOCK_SIZE_IN_BYTES != 0)
             throw new IllegalArgumentException("Size must be in alignment with (i.e. divisible through) the block size");
 
         ConcurrentLinkedQueue<BenchmarkResult> results = null;
@@ -77,22 +77,22 @@ public class Controller {
 
         switch (benchmarkType) {
         case WRITE:
-            results = WriteOSDBenchmark.startWriteBenchmarks(numberOfThreads, sizeInBytes, threads);
+            results = WriteBenchmark.startWriteBenchmarks(numberOfThreads, sizeInBytes, threads);
             break;
         case READ:
-            results = ReadOSDBenchmark.startReadBenchmarks(numberOfThreads, sizeInBytes, threads);
+            results = ReadBenchmark.startReadBenchmarks(numberOfThreads, sizeInBytes, threads);
             break;
         case RANDOM_IO_WRITE:
             break;
         case RANDOM_IO_READ:
-            results = RandomReadOSDBenchmark.startBenchmarks(numberOfThreads, sizeInBytes, threads);
+            results = RandomReadBenchmark.startBenchmarks(numberOfThreads, sizeInBytes, threads);
             break;
         case RANDOM_IO_WRITE_FILEBASED:
-            results = FilebasedRandomWriteOSDBenchmark.startBenchmarks(numberOfThreads,
+            results = FilebasedRandomWriteBenchmark.startBenchmarks(numberOfThreads,
                     sizeInBytes, threads);
             break;
         case RANDOM_IO_READ_FILEBASED:
-            results = FilebasedRandomReadOSDBenchmark.startBenchmarks(numberOfThreads, sizeInBytes,
+            results = FilebasedRandomReadBenchmark.startBenchmarks(numberOfThreads, sizeInBytes,
                     threads, volumeWithFiles);
             break;
 

@@ -20,17 +20,17 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  * 
  * @author jensvfischer
  */
-public class ReadOSDBenchmark extends OSDBenchmark {
+public class ReadBenchmark extends Benchmark {
 
 
-    ReadOSDBenchmark(Volume volume, ConnectionData connection) throws Exception {
+    ReadBenchmark(Volume volume, ConnectionData connection) throws Exception {
         super(volume, connection);
     }
 
     /**
      * Starts a benchmark run with the specified amount of read benchmarks in parallel. Every benchmark is
      * started within its own thread. The method waits for all threads to finish. Requires a
-     * {@link org.xtreemfs.sandbox.benchmarkOSDPerformance.WriteOSDBenchmark} first (because the ReadBench reads the files written by the WriteBench).
+     * {@link WriteBenchmark} first (because the ReadBench reads the files written by the WriteBench).
      *
      * @param numberOfReaders
      *            number of read benchmarks run in parallel
@@ -47,7 +47,7 @@ public class ReadOSDBenchmark extends OSDBenchmark {
 
         /* start the benchmark threads */
         for (int i = 0; i < numberOfReaders; i++) {
-            OSDBenchmark benchmark = new ReadOSDBenchmark(VolumeManager.getInstance().getNextVolume(), Controller.connection);
+            Benchmark benchmark = new ReadBenchmark(VolumeManager.getInstance().getNextVolume(), Controller.connection);
             benchmark.startBenchThread(sizeInBytes, results, threads);
         }
         return results;

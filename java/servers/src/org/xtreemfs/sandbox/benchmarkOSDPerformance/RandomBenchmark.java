@@ -19,11 +19,11 @@ import java.util.Random;
 /**
  * @author jensvfischer
  */
-public abstract class RandomOSDBenchmark extends OSDBenchmark {
+public abstract class RandomBenchmark extends Benchmark {
     final static int  RANDOM_IO_BLOCKSIZE = 1024 * 4;                 // 4 KiB
     final static long sizeOfBasefile      = 3L * (long) GiB_IN_BYTES;
 
-    public RandomOSDBenchmark(Volume volume, ConnectionData connection) throws Exception {
+    public RandomBenchmark(Volume volume, ConnectionData connection) throws Exception {
         super(volume, connection);
     }
 

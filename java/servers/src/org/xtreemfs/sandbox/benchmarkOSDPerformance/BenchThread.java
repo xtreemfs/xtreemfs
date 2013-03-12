@@ -11,8 +11,8 @@ package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * Thread for a {@link OSDBenchmark}. Starts
- * {@link OSDBenchmark#benchmark(long, java.util.concurrent.ConcurrentLinkedQueue)} as run method.
+ * Thread for a {@link Benchmark}. Starts
+ * {@link Benchmark#benchmark(long, java.util.concurrent.ConcurrentLinkedQueue)} as run method.
  * 
  * @author jensvfischer
  */
@@ -20,10 +20,10 @@ public class BenchThread implements Runnable {
 
     private final long                             sizeInBytes;
     private ConcurrentLinkedQueue<BenchmarkResult> results;
-    private OSDBenchmark                           osdBenchmark;
+    private Benchmark benchmark;
 
-    public BenchThread(OSDBenchmark osdBenchmark, long sizeInBytes, ConcurrentLinkedQueue<BenchmarkResult> results) {
-        this.osdBenchmark = osdBenchmark;
+    public BenchThread(Benchmark benchmark, long sizeInBytes, ConcurrentLinkedQueue<BenchmarkResult> results) {
+        this.benchmark = benchmark;
         this.sizeInBytes = sizeInBytes;
         this.results = results;
     }
@@ -31,7 +31,7 @@ public class BenchThread implements Runnable {
     @Override
     public void run() {
         try {
-            osdBenchmark.benchmark(sizeInBytes, results);
+            benchmark.benchmark(sizeInBytes, results);
         } catch (Exception e) {
             e.printStackTrace();
         }

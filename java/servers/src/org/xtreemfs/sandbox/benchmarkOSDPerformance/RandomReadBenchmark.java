@@ -9,13 +9,10 @@
 package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 
 import java.io.IOException;
-import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.common.libxtreemfs.FileHandle;
 import org.xtreemfs.common.libxtreemfs.Volume;
-import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
-import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 
 /**
@@ -23,9 +20,9 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  * 
  * @author jensvfischer
  */
-public class RandomReadOSDBenchmark extends RandomOSDBenchmark {
+public class RandomReadBenchmark extends RandomBenchmark {
 
-    RandomReadOSDBenchmark(Volume volume, ConnectionData connection) throws Exception {
+    RandomReadBenchmark(Volume volume, ConnectionData connection) throws Exception {
         super(volume, connection);
     }
 
@@ -36,7 +33,7 @@ public class RandomReadOSDBenchmark extends RandomOSDBenchmark {
 
         /* start the benchmark threads */
         for (int i = 0; i < numberOfReaders; i++) {
-            RandomReadOSDBenchmark benchmark = new RandomReadOSDBenchmark(VolumeManager.getInstance().getNextVolume(),
+            RandomReadBenchmark benchmark = new RandomReadBenchmark(VolumeManager.getInstance().getNextVolume(),
                     Controller.connection);
             benchmark.prepareBenchmark();
             benchmark.startBenchThread(sizeInBytes, results, threads);

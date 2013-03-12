@@ -24,7 +24,7 @@ import org.xtreemfs.foundation.logging.Logging;
  * 
  * @author jensvfischer
  */
-public abstract class OSDBenchmark {
+public abstract class Benchmark {
 
     static final int     MiB_IN_BYTES                 = 1024 * 1024;
     static final int     GiB_IN_BYTES                 = 1024 * 1024 * 1024;
@@ -36,13 +36,13 @@ public abstract class OSDBenchmark {
     final ConnectionData connection;
     LinkedList<String> filenames = new LinkedList<String>();
 
-    OSDBenchmark(Volume volume, ConnectionData connection) throws Exception {
+    Benchmark(Volume volume, ConnectionData connection) throws Exception {
         client = BenchmarkClientFactory.getNewClient(connection);
         this.volume = volume;
         this.connection = connection;
     }
 
-    protected OSDBenchmark(Volume volume, ConnectionData connection, LinkedList<String> filenames) {
+    protected Benchmark(Volume volume, ConnectionData connection, LinkedList<String> filenames) {
         client = BenchmarkClientFactory.getNewClient(connection);
         this.volume = volume;
         this.connection = connection;

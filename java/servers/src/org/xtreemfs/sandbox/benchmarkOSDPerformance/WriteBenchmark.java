@@ -21,10 +21,10 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  * 
  * @author jensvfischer
  */
-public class WriteOSDBenchmark extends OSDBenchmark {
+public class WriteBenchmark extends Benchmark {
 
 
-    WriteOSDBenchmark(Volume volume, ConnectionData connection) throws Exception {
+    WriteBenchmark(Volume volume, ConnectionData connection) throws Exception {
         super(volume, connection);
     }
 
@@ -47,7 +47,7 @@ public class WriteOSDBenchmark extends OSDBenchmark {
 
         /* start the benchmark threads */
         for (int i = 0; i < numberOfWriters; i++) {
-            OSDBenchmark benchmark = new WriteOSDBenchmark(VolumeManager.getInstance().getNextVolume(), Controller.connection);
+            Benchmark benchmark = new WriteBenchmark(VolumeManager.getInstance().getNextVolume(), Controller.connection);
             benchmark.startBenchThread(sizeInBytes, results, threads);
         }
 

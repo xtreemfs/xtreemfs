@@ -13,7 +13,7 @@ import org.xtreemfs.common.libxtreemfs.Volume;
 import java.util.LinkedList;
 
 /**
- * Result objects for {@link OSDBenchmark}.
+ * Result objects for {@link Benchmark}.
  * 
  * @author jensvfischer
  */

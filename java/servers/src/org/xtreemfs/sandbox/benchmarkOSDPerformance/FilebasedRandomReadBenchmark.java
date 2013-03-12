@@ -23,11 +23,11 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  * 
  * @author jensvfischer
  */
-public class FilebasedRandomReadOSDBenchmark extends OSDBenchmark {
+public class FilebasedRandomReadBenchmark extends Benchmark {
 
     final static int RANDOM_IO_BLOCKSIZE = 1024 * 4; // 4 KiB
 
-    FilebasedRandomReadOSDBenchmark(ConnectionData connection, KeyValuePair<Volume, LinkedList<String>> volumeWithFiles)
+    FilebasedRandomReadBenchmark(ConnectionData connection, KeyValuePair<Volume, LinkedList<String>> volumeWithFiles)
             throws Exception {
         super(volumeWithFiles.key, connection);
         this.filenames = volumeWithFiles.value;
@@ -41,7 +41,7 @@ public class FilebasedRandomReadOSDBenchmark extends OSDBenchmark {
 
         /* start the benchmark threads */
         for (int i = 0; i < numberOfThreads; i++) {
-            OSDBenchmark benchmark = new FilebasedRandomReadOSDBenchmark(Controller.connection, volumeWithFiles);
+            Benchmark benchmark = new FilebasedRandomReadBenchmark(Controller.connection, volumeWithFiles);
             benchmark.startBenchThread(sizeInBytes, results, threads);
         }
 
