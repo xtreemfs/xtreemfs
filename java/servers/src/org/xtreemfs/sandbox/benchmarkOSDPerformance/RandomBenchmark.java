@@ -27,6 +27,17 @@ public abstract class RandomBenchmark extends Benchmark {
         super(volume, connection);
     }
 
+    @Override
+    void prepareBenchmark() throws Exception {
+        /* create file to read from if not existing */
+        if (basefileDoesNotExists()) {
+            createBasefile();
+        }
+    }
+
+    @Override
+    void finalizeBenchmark(){}
+
     /* convert to 4 KiB Blocks */
     protected static long convertTo4KiBBlocks(long numberOfBlocks) {
         return (numberOfBlocks * (long) XTREEMFS_BLOCK_SIZE_IN_BYTES) / (long) RANDOM_IO_BLOCKSIZE;
@@ -49,8 +60,6 @@ public abstract class RandomBenchmark extends Benchmark {
             return sizeOfBasefile != fileSizeInBytes;
         } catch (PosixErrorException e) {
             Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Could not find a basefile. Errormessage: %s", e.getMessage());
-            System.out.println("e.getMessage: "+e.getMessage());
-            System.out.println("e.getPosixError: "+e.getPosixError());
             return true;
         }
     }
@@ -78,10 +87,5 @@ public abstract class RandomBenchmark extends Benchmark {
 
     }
 
-    void prepareBenchmark() throws Exception {
-        /* create file to read from if not existing */
-        if (basefileDoesNotExists()) {
-            createBasefile();
-        }
-    }
+
 }

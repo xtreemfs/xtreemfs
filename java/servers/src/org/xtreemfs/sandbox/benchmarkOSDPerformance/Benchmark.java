@@ -28,13 +28,12 @@ public abstract class Benchmark {
 
     static final int     MiB_IN_BYTES                 = 1024 * 1024;
     static final int     GiB_IN_BYTES                 = 1024 * 1024 * 1024;
-    static final int     XTREEMFS_BLOCK_SIZE_IN_BYTES = 128 * 1024;        // 128 KiB
+    static final int     XTREEMFS_BLOCK_SIZE_IN_BYTES = 128 * 1024;              // 128 KiB
     static final String  BENCHMARK_FILENAME           = "benchmarkFile";
 
     final Volume         volume;
     final AdminClient    client;
     final ConnectionData connection;
-    LinkedList<String> filenames = new LinkedList<String>();
 
     Benchmark(Volume volume, ConnectionData connection) throws Exception {
         client = BenchmarkClientFactory.getNewClient(connection);
@@ -42,19 +41,14 @@ public abstract class Benchmark {
         this.connection = connection;
     }
 
-    protected Benchmark(Volume volume, ConnectionData connection, LinkedList<String> filenames) {
-        client = BenchmarkClientFactory.getNewClient(connection);
-        this.volume = volume;
-        this.connection = connection;
-        this.filenames = filenames;
-    }
-
     /*
-         * Performs a single sequential read- or write-benchmark. Whether a read- or write-benchmark is performed
-         * depends on which subclass is instantiated. This method is supposed to be called within its own thread
-         * to run a benchmark.
-         */
-    void benchmark(long sizeInBytes, ConcurrentLinkedQueue<BenchmarkResult> results) {
+     * Performs a single sequential read- or write-benchmark. Whether a read- or write-benchmark is performed
+     * depends on which subclass is instantiated. This method is supposed to be called within its own thread
+     * to run a benchmark.
+     */
+    void benchmark(long sizeInBytes, ConcurrentLinkedQueue<BenchmarkResult> results) throws Exception {
+
+        prepareBenchmark();
 
         String shortClassname = this.getClass().getName().substring(this.getClass().getName().lastIndexOf('.') + 1);
         Logging.logMessage(Logging.LEVEL_INFO, this, "Starting %s", shortClassname, Logging.Category.tool);
@@ -74,16 +68,18 @@ public abstract class Benchmark {
         double timeInSec = (after - before) / 1000.;
         double speedMiBPerSec = round((byteCounter / MiB_IN_BYTES) / timeInSec, 2);
 
-        KeyValuePair<Volume, LinkedList<String>> volumeWithFiles = new KeyValuePair<Volume, LinkedList<String>>(volume,filenames);
 
         BenchmarkResult result = new BenchmarkResult(timeInSec, speedMiBPerSec, sizeInBytes, Thread.currentThread()
-                .getId(), byteCounter, volumeWithFiles);
+                .getId(), byteCounter);
         results.add(result);
 
-        /* shutdown */
+        finalizeBenchmark();
 
         Logging.logMessage(Logging.LEVEL_INFO, this, "Finished %s", shortClassname, Logging.Category.tool);
     }
+
+    /* called before a benchmark thread is started */
+    abstract void prepareBenchmark() throws Exception;
 
     /* Error handling for 'performIO()' */
     long tryPerformIO(byte[] data, long numberOfBlocks) {
@@ -108,10 +104,13 @@ public abstract class Benchmark {
      */
     abstract long performIO(byte[] data, long numberOfBlocks) throws IOException;
 
+    /* called at the end of every benchmark */
+    abstract void finalizeBenchmark() throws Exception ;
 
     /* Starts a benchmark in its own thread. */
     public void startBenchmark(long sizeInBytes, ConcurrentLinkedQueue<BenchmarkResult> results,
-                               ConcurrentLinkedQueue<Thread> threads) throws Exception {
+            ConcurrentLinkedQueue<Thread> threads) throws Exception {
+        prepareBenchmark();
         Thread benchThread = new Thread(new BenchThread(this, sizeInBytes, results));
         threads.add(benchThread);
         benchThread.start();

@@ -29,16 +29,14 @@ public class BenchmarkResult {
     long             dataWrittenInBytes;
     long             threadID;
     long             byteCount;
-    KeyValuePair<Volume, LinkedList<String>> volumeWithFiles;
 
     public BenchmarkResult(double timeInSec, double speedInMiBProSec, long dataWrittenInBytes, long threadID,
-            long byteCount, KeyValuePair<Volume, LinkedList<String>> volumeWithFiles) {
+            long byteCount) {
         this.timeInSec = timeInSec;
         this.speedInMiBProSec = speedInMiBProSec;
         this.dataWrittenInBytes = dataWrittenInBytes;
         this.threadID = threadID;
         this.byteCount = byteCount;
-        this.volumeWithFiles = volumeWithFiles;
     }
 
     @Override

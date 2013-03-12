@@ -43,14 +43,5 @@ public class RandomReadBenchmark extends RandomBenchmark {
         return byteCounter;
     }
 
-    /* Starts a benchmark in its own thread. */
-    @Override
-    public void startBenchmark(long sizeInBytes, ConcurrentLinkedQueue<BenchmarkResult> results,
-                               ConcurrentLinkedQueue<Thread> threads) throws Exception {
-        prepareBenchmark();
-        Thread benchThread = new Thread(new BenchThread(this, sizeInBytes, results));
-        threads.add(benchThread);
-        benchThread.start();
-    }
 
 }

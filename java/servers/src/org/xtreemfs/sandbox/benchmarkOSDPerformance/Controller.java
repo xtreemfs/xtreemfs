@@ -53,15 +53,6 @@ public class Controller {
         }
     }
 
-    static void deleteVolumeIfExisting(String volumeName) throws Exception {
-        AdminClient client = BenchmarkClientFactory.getNewClient(connection);
-        if (new ArrayList<String>(Arrays.asList(client.listVolumeNames())).contains(volumeName)) {
-            client.deleteVolume(connection.auth, connection.userCredentials, volumeName);
-            Logging.logMessage(Logging.LEVEL_INFO, Controller.class, "Deleting volume %s", volumeName,
-                    Logging.Category.tool);
-        }
-    }
-
     static ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(BenchmarkType benchmarkType, int numberOfThreads,
             long sizeInBytes) throws Exception {
         return startBenchmarks(benchmarkType, numberOfThreads, sizeInBytes,
@@ -93,7 +84,7 @@ public class Controller {
 
         for (int i = 0; i < numberOfThreads; i++) {
             Benchmark benchmark = BenchmarkFactory.createBenchmark(benchmarkType, VolumeManager.getInstance()
-                    .getNextVolume(), connection, volumeWithFiles);
+                    .getNextVolume(), connection);
             benchmark.startBenchmark(sizeInBytes, results, threads);
         }
 
@@ -121,25 +112,27 @@ public class Controller {
 
         VolumeManager volumeManager = VolumeManager.getInstance();
 
-        int numberOfThreads = 3;
+        int numberOfThreads = 1;
         long sizeInBytes = 10L * (long) MiB_IN_BYTES;
 
         volumeManager.createDefaultVolumes(numberOfThreads);
-
-        ConcurrentLinkedQueue<BenchmarkResult> wResults = startBenchmarks(WRITE, numberOfThreads, sizeInBytes);
-        printResults(wResults);
-
-
-        ConcurrentLinkedQueue<BenchmarkResult> rResults = startBenchmarks(READ, numberOfThreads, sizeInBytes);
-        printResults(rResults);
+//
+//        ConcurrentLinkedQueue<BenchmarkResult> wResults = startBenchmarks(WRITE, numberOfThreads, sizeInBytes);
+//        printResults(wResults);
+//
+//
+//        ConcurrentLinkedQueue<BenchmarkResult> rResults = startBenchmarks(READ, numberOfThreads, sizeInBytes);
+//        printResults(rResults);
+//
+//
+//        numberOfThreads = 1;
+//
+//        ConcurrentLinkedQueue<BenchmarkResult> randResults = startBenchmarks(RANDOM_IO_READ, numberOfThreads,
+//                sizeInBytes);
+//        printResults(randResults);
 
 
         numberOfThreads = 1;
-
-        ConcurrentLinkedQueue<BenchmarkResult> randResults = startBenchmarks(RANDOM_IO_READ, numberOfThreads,
-                sizeInBytes);
-        printResults(randResults);
-
 
         ConcurrentLinkedQueue<BenchmarkResult> randWriteResults = startBenchmarks(RANDOM_IO_WRITE_FILEBASED,
                 numberOfThreads, sizeInBytes);
@@ -147,7 +140,7 @@ public class Controller {
 
 
         ConcurrentLinkedQueue<BenchmarkResult> randReadResults = startBenchmarks(RANDOM_IO_READ_FILEBASED,
-                numberOfThreads, sizeInBytes, randWriteResults.poll().volumeWithFiles);
+                numberOfThreads, sizeInBytes);
         printResults(randReadResults);
 
         // for (int i = 0; i < 1; i++) {

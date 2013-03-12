@@ -10,7 +10,6 @@ package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 
 import java.io.IOException;
 import java.util.Random;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.common.libxtreemfs.FileHandle;
 import org.xtreemfs.common.libxtreemfs.Volume;
@@ -23,11 +22,13 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  */
 public class WriteBenchmark extends Benchmark {
 
-
     WriteBenchmark(Volume volume, ConnectionData connection) throws Exception {
         super(volume, connection);
     }
 
+    @Override
+    void prepareBenchmark() throws Exception {
+    }
 
     /* Called within the benchmark method. Performs the actual writing of data to the volume. */
     @Override
@@ -46,6 +47,10 @@ public class WriteBenchmark extends Benchmark {
         }
         fileHandle.close();
         return byteCounter;
+    }
+
+    @Override
+    void finalizeBenchmark() throws Exception {
     }
 
 }

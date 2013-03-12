@@ -27,6 +27,9 @@ public class ReadBenchmark extends Benchmark {
         super(volume, connection);
     }
 
+    @Override
+    void prepareBenchmark() throws Exception {}
+
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */
     @Override
     long performIO(byte[] data, long numberOfBlocks) throws IOException {
@@ -41,5 +44,8 @@ public class ReadBenchmark extends Benchmark {
         fileHandle.close();
         return byteCounter;
     }
+
+    @Override
+    void finalizeBenchmark() throws Exception {}
 
 }

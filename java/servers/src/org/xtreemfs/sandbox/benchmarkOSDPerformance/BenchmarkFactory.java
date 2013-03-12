@@ -17,8 +17,7 @@ import org.xtreemfs.common.libxtreemfs.Volume;
  */
 public class BenchmarkFactory {
 
-    public static Benchmark createBenchmark(BenchmarkType benchmarkType, Volume volume, ConnectionData connection,
-            KeyValuePair<Volume, LinkedList<String>> volumeWithFiles) throws Exception {
+    public static Benchmark createBenchmark(BenchmarkType benchmarkType, Volume volume, ConnectionData connection) throws Exception {
 
         Benchmark benchmark = null;
 
@@ -38,7 +37,7 @@ public class BenchmarkFactory {
             benchmark = new FilebasedRandomWriteBenchmark(volume, connection);
             break;
         case RANDOM_IO_READ_FILEBASED:
-            benchmark = new FilebasedRandomReadBenchmark(connection, volumeWithFiles);
+            benchmark = new FilebasedRandomReadBenchmark(volume, connection);
             break;
         }
         return benchmark;

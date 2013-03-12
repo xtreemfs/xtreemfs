@@ -11,6 +11,7 @@ package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 
 import org.xtreemfs.common.libxtreemfs.AdminClient;
@@ -35,6 +36,7 @@ public class VolumeManager {
     int                          currentPosition;
     LinkedList<Volume>           volumes;
     LinkedList<Volume>           createdVolumes;
+    HashMap<Volume, String[]>    filelists;
 
     public static void init(ConnectionData connection) throws Exception {
         if (volumeManager == null) {
@@ -54,6 +56,7 @@ public class VolumeManager {
         this.client = BenchmarkClientFactory.getNewClient(connection);
         this.volumes = new LinkedList<Volume>();
         this.createdVolumes = new LinkedList<Volume>();
+        this.filelists = new HashMap<Volume, String[]>(5);
     }
 
     Volume getNextVolume() {
@@ -72,8 +75,8 @@ public class VolumeManager {
         }
     }
 
-    private void addToVolumes(Volume volume){
-        if ( ! volumes.contains(volume) )
+    private void addToVolumes(Volume volume) {
+        if (!volumes.contains(volume))
             volumes.add(volume);
     }
 
@@ -96,6 +99,17 @@ public class VolumeManager {
             }
         }
         return volume;
+    }
+
+    void setFilelistForVolume(Volume volume, LinkedList<String> filelist) {
+        String[] files = new String[filelist.size()];
+        synchronized (this) {
+            filelists.put(volume, filelist.toArray(files));
+        }
+    }
+
+    synchronized String[] getFilelistForVolume(Volume volume) {
+        return filelists.get(volume);
     }
 
     void deleteCreatedVolumes() throws IOException {
