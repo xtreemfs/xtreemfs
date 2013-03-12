@@ -102,6 +102,9 @@ public class Controller {
             thread.join();
         }
 
+        /* reset VolumeManager to prepare for possible consecutive benchmarks */
+        VolumeManager.getInstance().reset();
+
         /* Set BenchmarkResult Type */
         for (BenchmarkResult res : results) {
             res.benchmarkType = benchmarkType;
@@ -110,14 +113,11 @@ public class Controller {
         return results;
     }
 
-    static ConnectionData getConnectionData() {
-        return connection;
-    }
-
     public static void main(String[] args) throws Exception {
         Logging.start(Logging.LEVEL_INFO, Logging.Category.tool);
         connection = new ConnectionData();
         tryConnection();
+        VolumeManager.init(connection);
 
         VolumeManager volumeManager = VolumeManager.getInstance();
 
@@ -129,12 +129,10 @@ public class Controller {
         ConcurrentLinkedQueue<BenchmarkResult> wResults = startBenchmarks(WRITE, numberOfThreads, sizeInBytes);
         printResults(wResults);
 
-        volumeManager.createDefaultVolumes(numberOfThreads);
 
         ConcurrentLinkedQueue<BenchmarkResult> rResults = startBenchmarks(READ, numberOfThreads, sizeInBytes);
         printResults(rResults);
 
-        volumeManager.createDefaultVolumes(numberOfThreads);
 
         numberOfThreads = 1;
 
@@ -142,13 +140,11 @@ public class Controller {
                 sizeInBytes);
         printResults(randResults);
 
-        volumeManager.createDefaultVolumes(numberOfThreads);
 
         ConcurrentLinkedQueue<BenchmarkResult> randWriteResults = startBenchmarks(RANDOM_IO_WRITE_FILEBASED,
                 numberOfThreads, sizeInBytes);
         printResults(randWriteResults);
 
-        volumeManager.createDefaultVolumes(numberOfThreads);
 
         ConcurrentLinkedQueue<BenchmarkResult> randReadResults = startBenchmarks(RANDOM_IO_READ_FILEBASED,
                 numberOfThreads, sizeInBytes, randWriteResults.poll().volumeWithFiles);
@@ -183,7 +179,6 @@ public class Controller {
         volumeManager.deleteCreatedVolumes();
         volumeManager.scrub();
 
-        // BenchmarkClientFactory.shutdownClients();
         System.exit(0);
 
     }
