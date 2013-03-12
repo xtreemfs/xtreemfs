@@ -55,7 +55,7 @@ public class VolumeManager {
         LinkedList<String> uuids = getOSDUUIDs();
 
         for (String osd : uuids) {
-            Logging.logMessage(Logging.LEVEL_INFO, this, "Starting cleanup of osd %s", osd, Logging.Category.tool);
+            Logging.logMessage(Logging.LEVEL_INFO, this, "Starting cleanup of OSD with UUID %s", osd, Logging.Category.tool);
             client.startCleanUp(osd, pwd, true, true, true);
         }
 
@@ -71,7 +71,7 @@ public class VolumeManager {
         for (String osd : uuids) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "Cleanup Result: %s", client.getCleanUpResult(osd, pwd),
                     Logging.Category.tool);
-            Logging.logMessage(Logging.LEVEL_INFO, this, "Finished cleanup of %s", osd, Logging.Category.tool);
+            Logging.logMessage(Logging.LEVEL_INFO, this, "Finished cleanup of OSD with UUID %s", osd, Logging.Category.tool);
         }
 
     }

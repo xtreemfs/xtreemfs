@@ -30,20 +30,6 @@ public class FilebasedRandomWriteBenchmark extends Benchmark {
         super(volume, connection, new LinkedList<String>());
     }
 
-    static ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(int numberOfWriters, long sizeInBytes,
-            ConcurrentLinkedQueue<Thread> threads) throws Exception {
-
-        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
-
-        /* start the benchmark threads */
-        for (int i = 0; i < numberOfWriters; i++) {
-            Benchmark benchmark = new FilebasedRandomWriteBenchmark(VolumeManager.getInstance().getNextVolume(),
-                    Controller.connection);
-            benchmark.startBenchThread(sizeInBytes, results, threads);
-        }
-        return results;
-    }
-
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */
     @Override
     long performIO(byte[] data, long numberOfBlocks) throws IOException {

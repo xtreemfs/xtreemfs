@@ -27,32 +27,6 @@ public class ReadBenchmark extends Benchmark {
         super(volume, connection);
     }
 
-    /**
-     * Starts a benchmark run with the specified amount of read benchmarks in parallel. Every benchmark is
-     * started within its own thread. The method waits for all threads to finish. Requires a
-     * {@link WriteBenchmark} first (because the ReadBench reads the files written by the WriteBench).
-     *
-     * @param numberOfReaders
-     *            number of read benchmarks run in parallel
-     * @param sizeInBytes
-     *            Size of the benchmark in bytes. Must be in alignment with (i.e. divisible through) the block
-     *            size (128 KiB).
-     * @return results of the benchmarks
-     * @throws Exception
-     */
-    static ConcurrentLinkedQueue<BenchmarkResult> startReadBenchmarks(int numberOfReaders, long sizeInBytes,
-                                                                      ConcurrentLinkedQueue<Thread> threads) throws Exception {
-
-        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
-
-        /* start the benchmark threads */
-        for (int i = 0; i < numberOfReaders; i++) {
-            Benchmark benchmark = new ReadBenchmark(VolumeManager.getInstance().getNextVolume(), Controller.connection);
-            benchmark.startBenchThread(sizeInBytes, results, threads);
-        }
-        return results;
-    }
-
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */
     @Override
     long performIO(byte[] data, long numberOfBlocks) throws IOException {

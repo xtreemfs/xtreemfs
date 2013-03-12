@@ -110,8 +110,8 @@ public abstract class Benchmark {
 
 
     /* Starts a benchmark in its own thread. */
-    public void startBenchThread(long sizeInBytes, ConcurrentLinkedQueue<BenchmarkResult> results,
-            ConcurrentLinkedQueue<Thread> threads) throws Exception {
+    public void startBenchmark(long sizeInBytes, ConcurrentLinkedQueue<BenchmarkResult> results,
+                               ConcurrentLinkedQueue<Thread> threads) throws Exception {
         Thread benchThread = new Thread(new BenchThread(this, sizeInBytes, results));
         threads.add(benchThread);
         benchThread.start();

@@ -26,21 +26,6 @@ public class RandomReadBenchmark extends RandomBenchmark {
         super(volume, connection);
     }
 
-    static ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(int numberOfReaders, long sizeInBytes,
-                                                                  ConcurrentLinkedQueue<Thread> threads) throws Exception {
-
-        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
-
-        /* start the benchmark threads */
-        for (int i = 0; i < numberOfReaders; i++) {
-            RandomReadBenchmark benchmark = new RandomReadBenchmark(VolumeManager.getInstance().getNextVolume(),
-                    Controller.connection);
-            benchmark.prepareBenchmark();
-            benchmark.startBenchThread(sizeInBytes, results, threads);
-        }
-        return results;
-    }
-
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */
     @Override
     long performIO(byte[] data, long numberOfBlocks) throws IOException {
@@ -56,6 +41,16 @@ public class RandomReadBenchmark extends RandomBenchmark {
             fileHandle.close();
         }
         return byteCounter;
+    }
+
+    /* Starts a benchmark in its own thread. */
+    @Override
+    public void startBenchmark(long sizeInBytes, ConcurrentLinkedQueue<BenchmarkResult> results,
+                               ConcurrentLinkedQueue<Thread> threads) throws Exception {
+        prepareBenchmark();
+        Thread benchThread = new Thread(new BenchThread(this, sizeInBytes, results));
+        threads.add(benchThread);
+        benchThread.start();
     }
 
 }

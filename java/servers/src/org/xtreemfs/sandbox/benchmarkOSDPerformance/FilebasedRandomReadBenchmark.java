@@ -33,20 +33,6 @@ public class FilebasedRandomReadBenchmark extends Benchmark {
         this.filenames = volumeWithFiles.value;
     }
 
-    static ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(int numberOfThreads, long sizeInBytes,
-            ConcurrentLinkedQueue<Thread> threads, KeyValuePair<Volume, LinkedList<String>> volumeWithFiles)
-            throws Exception {
-
-        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
-
-        /* start the benchmark threads */
-        for (int i = 0; i < numberOfThreads; i++) {
-            Benchmark benchmark = new FilebasedRandomReadBenchmark(Controller.connection, volumeWithFiles);
-            benchmark.startBenchThread(sizeInBytes, results, threads);
-        }
-
-        return results;
-    }
 
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */
     @Override

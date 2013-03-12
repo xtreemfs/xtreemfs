@@ -74,7 +74,6 @@ public abstract class RandomBenchmark extends Benchmark {
         }
         fileHandle.close();
         assert byteCounter == sizeOfBasefile : " Error while writing the basefile for the random io benchmark";
-        System.out.println("Basefile written. Size " + byteCounter + " Bytes");
         Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this,"Basefile written. Size %s Bytes.", byteCounter);
 
     }

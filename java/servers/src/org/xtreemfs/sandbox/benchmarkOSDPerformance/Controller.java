@@ -8,6 +8,8 @@
 
 package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 
+import static org.xtreemfs.sandbox.benchmarkOSDPerformance.BenchmarkType.*;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,36 +68,33 @@ public class Controller {
                 new KeyValuePair<Volume, LinkedList<String>>());
     }
 
+    /**
+     * Starts the specified amount of benchmarks in parallel. Every benchmark is started within its own
+     * thread. The method waits for all threads to finish.
+     * 
+     * @param benchmarkType
+     * @param numberOfThreads
+     *            number of benchmarks run in parallel
+     * @param sizeInBytes
+     *            Size of the benchmark in bytes. Must be in alignment with (i.e. divisible through) the block
+     *            size (128 KiB).
+     * @param volumeWithFiles
+     * @return
+     * @throws Exception
+     */
     static ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(BenchmarkType benchmarkType, int numberOfThreads,
             long sizeInBytes, KeyValuePair<Volume, LinkedList<String>> volumeWithFiles) throws Exception {
 
         if (sizeInBytes % Benchmark.XTREEMFS_BLOCK_SIZE_IN_BYTES != 0)
             throw new IllegalArgumentException("Size must be in alignment with (i.e. divisible through) the block size");
 
-        ConcurrentLinkedQueue<BenchmarkResult> results = null;
+        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
         ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
 
-        switch (benchmarkType) {
-        case WRITE:
-            results = WriteBenchmark.startWriteBenchmarks(numberOfThreads, sizeInBytes, threads);
-            break;
-        case READ:
-            results = ReadBenchmark.startReadBenchmarks(numberOfThreads, sizeInBytes, threads);
-            break;
-        case RANDOM_IO_WRITE:
-            break;
-        case RANDOM_IO_READ:
-            results = RandomReadBenchmark.startBenchmarks(numberOfThreads, sizeInBytes, threads);
-            break;
-        case RANDOM_IO_WRITE_FILEBASED:
-            results = FilebasedRandomWriteBenchmark.startBenchmarks(numberOfThreads,
-                    sizeInBytes, threads);
-            break;
-        case RANDOM_IO_READ_FILEBASED:
-            results = FilebasedRandomReadBenchmark.startBenchmarks(numberOfThreads, sizeInBytes,
-                    threads, volumeWithFiles);
-            break;
-
+        for (int i = 0; i < numberOfThreads; i++) {
+            Benchmark benchmark = BenchmarkFactory.createBenchmark(benchmarkType, VolumeManager.getInstance()
+                    .getNextVolume(), connection, volumeWithFiles);
+            benchmark.startBenchmark(sizeInBytes, results, threads);
         }
 
         /* wait for all threads to finish */
@@ -116,60 +115,70 @@ public class Controller {
     }
 
     public static void main(String[] args) throws Exception {
-        Logging.start(Logging.LEVEL_DEBUG, Logging.Category.tool);
+        Logging.start(Logging.LEVEL_INFO, Logging.Category.tool);
         connection = new ConnectionData();
         tryConnection();
 
         VolumeManager volumeManager = VolumeManager.getInstance();
 
-        int numberOfThreads = 1;
+        int numberOfThreads = 3;
         long sizeInBytes = 10L * (long) MiB_IN_BYTES;
 
         volumeManager.createDefaultVolumes(numberOfThreads);
 
-        // ConcurrentLinkedQueue<BenchmarkResult> wResults = startBenchmarks(BenchmarkType.WRITE,
-        // numberOfThreads,
-        // sizeInBytes);
-        // printResults(wResults);
-        //
-        // volumeManager.createDefaultVolumes(numberOfThreads);
-        //
-        // ConcurrentLinkedQueue<BenchmarkResult> rResults = startBenchmarks(BenchmarkType.READ,
-        // numberOfThreads,
-        // sizeInBytes);
-        // printResults(rResults);
+        ConcurrentLinkedQueue<BenchmarkResult> wResults = startBenchmarks(WRITE, numberOfThreads, sizeInBytes);
+        printResults(wResults);
 
-        // volumeManager.createDefaultVolumes(numberOfThreads);
-        //
-        // ConcurrentLinkedQueue<BenchmarkResult> randResults = startBenchmarks(BenchmarkType.RANDOM_IO_READ,
-        // numberOfThreads, sizeInBytes);
+        volumeManager.createDefaultVolumes(numberOfThreads);
+
+        ConcurrentLinkedQueue<BenchmarkResult> rResults = startBenchmarks(READ, numberOfThreads, sizeInBytes);
+        printResults(rResults);
+
+        volumeManager.createDefaultVolumes(numberOfThreads);
+
+        numberOfThreads = 1;
+
+        ConcurrentLinkedQueue<BenchmarkResult> randResults = startBenchmarks(RANDOM_IO_READ, numberOfThreads,
+                sizeInBytes);
+        printResults(randResults);
+
+        volumeManager.createDefaultVolumes(numberOfThreads);
+
+        ConcurrentLinkedQueue<BenchmarkResult> randWriteResults = startBenchmarks(RANDOM_IO_WRITE_FILEBASED,
+                numberOfThreads, sizeInBytes);
+        printResults(randWriteResults);
+
+        volumeManager.createDefaultVolumes(numberOfThreads);
+
+        ConcurrentLinkedQueue<BenchmarkResult> randReadResults = startBenchmarks(RANDOM_IO_READ_FILEBASED,
+                numberOfThreads, sizeInBytes, randWriteResults.poll().volumeWithFiles);
+        printResults(randReadResults);
+
+        // for (int i = 0; i < 1; i++) {
+        // ConcurrentLinkedQueue<BenchmarkResult> randResults = startBenchmarks(
+        // BenchmarkType.RANDOM_IO_WRITE_FILEBASED, numberOfThreads, sizeInBytes);
         // printResults(randResults);
-
-        for (int i = 0; i < 1; i++) {
-            ConcurrentLinkedQueue<BenchmarkResult> randResults = startBenchmarks(
-                    BenchmarkType.RANDOM_IO_WRITE_FILEBASED, numberOfThreads, sizeInBytes);
-            printResults(randResults);
-
-            ConcurrentLinkedQueue<BenchmarkResult> randReadResults = startBenchmarks(
-                    BenchmarkType.RANDOM_IO_READ_FILEBASED, numberOfThreads, sizeInBytes,
-                    randResults.poll().volumeWithFiles);
-            printResults(randReadResults);
-
-        }
-//
-//        sizeInBytes = 10L * (long) MiB_IN_BYTES;
-//
-//        for (int i = 0; i < 5; i++) {
-//            ConcurrentLinkedQueue<BenchmarkResult> randResults = startBenchmarks(
-//                    BenchmarkType.RANDOM_IO_WRITE_FILEBASED, numberOfThreads, sizeInBytes);
-//            printResults(randResults);
-//
-//            ConcurrentLinkedQueue<BenchmarkResult> randReadResults = startBenchmarks(
-//                    BenchmarkType.RANDOM_IO_READ_FILEBASED, numberOfThreads, sizeInBytes,
-//                    randResults.poll().volumeWithFiles);
-//            printResults(randReadResults);
-//
-//        }
+        //
+        // ConcurrentLinkedQueue<BenchmarkResult> randReadResults = startBenchmarks(
+        // BenchmarkType.RANDOM_IO_READ_FILEBASED, numberOfThreads, sizeInBytes,
+        // randResults.poll().volumeWithFiles);
+        // printResults(randReadResults);
+        //
+        // }
+        // //
+        // sizeInBytes = 10L * (long) MiB_IN_BYTES;
+        //
+        // for (int i = 0; i < 5; i++) {
+        // ConcurrentLinkedQueue<BenchmarkResult> randResults = startBenchmarks(
+        // BenchmarkType.RANDOM_IO_WRITE_FILEBASED, numberOfThreads, sizeInBytes);
+        // printResults(randResults);
+        //
+        // ConcurrentLinkedQueue<BenchmarkResult> randReadResults = startBenchmarks(
+        // BenchmarkType.RANDOM_IO_READ_FILEBASED, numberOfThreads, sizeInBytes,
+        // randResults.poll().volumeWithFiles);
+        // printResults(randReadResults);
+        //
+        // }
 
         volumeManager.deleteCreatedVolumes();
         volumeManager.scrub();
