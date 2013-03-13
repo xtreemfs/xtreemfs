@@ -103,8 +103,7 @@ Client::Client(int32_t connect_timeout_s,
       char tmplate1[] = "/tmp/pmXXXXXX";
       char tmplate2[] = "/tmp/ctXXXXXX";
 
-      const char* fp = options->pkcs12_file_name().c_str();
-      FILE *p12_file = fopen(fp, "rb");
+      FILE *p12_file = fopen(options->pkcs12_file_name().c_str(), "rb");
 
       // read the pkcs12 file
       if (!p12_file) {
