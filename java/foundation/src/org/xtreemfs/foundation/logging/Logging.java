@@ -136,7 +136,8 @@ public class Logging {
     }
     
     public static void logMessage(int level, Category cat, Object me, String formatPattern, Object... args) {
-        
+        checkIfInitializedOrThrow();
+
         // if the level is appropriate as well as the category, or the category
         // is 'all', log the message
         if (level <= instance.level && (cat == Category.all || (2 << cat.ordinal() & instance.catMask) > 0)) {
@@ -151,13 +152,21 @@ public class Logging {
                     String.format(formatPattern, args)));
         }
     }
+
+    private static void checkIfInitializedOrThrow() {
+        if (instance == null) {
+            throw new RuntimeException(
+                    "Cannot log message because the logging is not initialized yet. Did you forget to call Logging.start(...) in your code?");
+        }
+    }
     
     public static void logMessage(int level, Object me, String formatPattern, Object... args) {
         logMessage(level, Category.all, me, formatPattern, args);
     }
     
     public static void logError(int level, Object me, Throwable msg) {
-        
+        checkIfInitializedOrThrow();
+
         // if the level is appropriate, log the message
         if (level <= instance.level) {
             
@@ -181,7 +190,8 @@ public class Logging {
     }
     
     public static void logUserError(int level, Category cat, Object me, Throwable msg) {
-        
+        checkIfInitializedOrThrow();
+
         // if the level is appropriate as well as the category, or the category
         // is 'all', log the message
         if (level <= instance.level && (cat == Category.all || (2 << cat.ordinal() & instance.catMask) > 0)) {
