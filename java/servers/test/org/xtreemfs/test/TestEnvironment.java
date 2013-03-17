@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.KeyValuePairs;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
@@ -262,16 +261,15 @@ public class TestEnvironment {
     public void shutdown() {
         Logging.logMessage(Logging.LEVEL_DEBUG, this, "shutting down testEnv...");
         
-        if (enabledServs.contains(Services.MRC)) {
+        if (enabledServs.contains(Services.MRC) && mrc != null) {
             try {
-                if (mrc != null)
-                    mrc.shutdown();
+                mrc.shutdown();
             } catch (Throwable th) {
                 th.printStackTrace();
             }
         }
         
-        if (enabledServs.contains(Services.OSD)) {
+        if (enabledServs.contains(Services.OSD) && osds != null) {
             try {
                 for (OSDRequestDispatcher osd : osds) {
                     osd.shutdown();
@@ -288,7 +286,7 @@ public class TestEnvironment {
             }
         }
         
-        if (enabledServs.contains(Services.DIR_SERVICE)) {
+        if (enabledServs.contains(Services.DIR_SERVICE) && dirService != null) {
             try {
                 dirService.shutdown();
                 dirService.waitForShutdown();
@@ -307,8 +305,10 @@ public class TestEnvironment {
         if (enabledServs.contains(Services.TIME_SYNC)) {
             try {
                 tsInstance = TimeSync.getInstance();
-                tsInstance.shutdown();
-                tsInstance.waitForShutdown();
+                if (tsInstance != null) {
+                    tsInstance.shutdown();
+                    tsInstance.waitForShutdown();
+                }
             } catch (Throwable th) {
             }
         }
