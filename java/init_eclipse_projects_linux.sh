@@ -20,5 +20,6 @@ do
   done
 done
 
+echo Finished.
 echo Press any key to continue...
 read

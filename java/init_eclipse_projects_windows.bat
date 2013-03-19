@@ -18,4 +18,5 @@ FOR %%p IN (flease foundation pbrpcgen servers) DO (
   )
 )
 
+echo Finished.
 pause
