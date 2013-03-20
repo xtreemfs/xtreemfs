@@ -45,7 +45,6 @@ public class BenchmarkClientFactory {
 
     static {
         clients = new ConcurrentLinkedQueue<AdminClient>();
-        addShutdownHook();
     }
 
     /* error handling for 'createNewClient()" */
@@ -72,16 +71,13 @@ public class BenchmarkClientFactory {
         return client;
     }
 
-    /* shutdown all clients add exit */
-    private static void addShutdownHook() {
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            public void run() {
-                for (AdminClient client : clients) {
-                    client.shutdown();
-                }
-                Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, Runtime.getRuntime(),
-                        "Shutting down %s clients", clients.size());
-            }
-        });
+    /* shutdown all clients */
+    static void shutdownClients() {
+        for (AdminClient client : clients) {
+            client.shutdown();
+        }
+        Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, Runtime.getRuntime(), "Shutting down %s clients",
+                clients.size());
     }
+
 }
