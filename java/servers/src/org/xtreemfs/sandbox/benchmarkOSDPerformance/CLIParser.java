@@ -18,12 +18,11 @@ import org.xtreemfs.common.libxtreemfs.UUIDResolver;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
-import org.xtreemfs.foundation.util.CLIParser;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 import org.xtreemfs.utils.DefaultDirConfig;
 import org.xtreemfs.utils.utils;
 
-public class Params {
+public class CLIParser {
     static final int                 KiB_IN_BYTES           = 1024;
     static final int                 MiB_IN_BYTES           = 1024 * 1024;
     static final int                 GiB_IN_BYTES           = 1024 * 1024 * 1024;
@@ -38,10 +37,10 @@ public class Params {
     static long                      basefileSizeInBytesDefault;
     static long                      fileSizeInBytesDefault;
     static String                    userNameDefault        = "testUser";
-    Map<String, CLIParser.CliOption> options;
+    Map<String, org.xtreemfs.foundation.util.CLIParser.CliOption> options;
     List<String>                     arguments;
 
-    public Params() {
+    public CLIParser() {
         this.sequentialSizeInBytesDefault = 10L * (long) MiB_IN_BYTES;
         this.randomSizeInBytesDefault = 10L * (long) MiB_IN_BYTES;
         this.basefileSizeInBytesDefault = 3L * (long) GiB_IN_BYTES;
@@ -51,7 +50,7 @@ public class Params {
     public void parseCLIOptions(String[] args) {
         initOptions();
         this.arguments = new ArrayList<String>(5);
-        CLIParser.parseCLI(args, options, arguments);
+        org.xtreemfs.foundation.util.CLIParser.parseCLI(args, options, arguments);
     }
 
     public ConnectionData getConnectionData() {
@@ -110,40 +109,40 @@ public class Params {
 
         /* -sw -sr -rw -p -rr -rfr -rfw -ssize -rsize -file-size -basefile-size -no-cleanup volume1 volume2 */
 
-        Map<String, CLIParser.CliOption> options = utils.getDefaultAdminToolOptions(true);
+        Map<String, org.xtreemfs.foundation.util.CLIParser.CliOption> options = utils.getDefaultAdminToolOptions(true);
         List<String> arguments = new ArrayList<String>(1);
 
         /* Connection Data */
-        options.put("-dir-address", new CLIParser.CliOption(STRING,
+        options.put("-dir-address", new org.xtreemfs.foundation.util.CLIParser.CliOption(STRING,
                 "directory service to use (e.g. 'localhost:32638'). If no URI is specified, URI and security settings are taken from '"
                         + DefaultDirConfig.DEFAULT_DIR_CONFIG + "'", "<uri>"));
-        options.put("-username", new CLIParser.CliOption(STRING, "username to use", "<username>"));
+        options.put("-username", new org.xtreemfs.foundation.util.CLIParser.CliOption(STRING, "username to use", "<username>"));
 
         /* benchmark switches */
-        options.put("sw", new CLIParser.CliOption(SWITCH, "sequential write benchmark", ""));
-        options.put("sr", new CLIParser.CliOption(SWITCH, "sequential read benchmark", ""));
-        options.put("rw", new CLIParser.CliOption(SWITCH, "random write benchmark", ""));
-        options.put("rr", new CLIParser.CliOption(SWITCH, "random read benchmark", ""));
-        options.put("rfw", new CLIParser.CliOption(SWITCH, "random filebased write benchmark", ""));
-        options.put("rfr", new CLIParser.CliOption(SWITCH, "random filebased read benchmark", ""));
+        options.put("sw", new org.xtreemfs.foundation.util.CLIParser.CliOption(SWITCH, "sequential write benchmark", ""));
+        options.put("sr", new org.xtreemfs.foundation.util.CLIParser.CliOption(SWITCH, "sequential read benchmark", ""));
+        options.put("rw", new org.xtreemfs.foundation.util.CLIParser.CliOption(SWITCH, "random write benchmark", ""));
+        options.put("rr", new org.xtreemfs.foundation.util.CLIParser.CliOption(SWITCH, "random read benchmark", ""));
+        options.put("rfw", new org.xtreemfs.foundation.util.CLIParser.CliOption(SWITCH, "random filebased write benchmark", ""));
+        options.put("rfr", new org.xtreemfs.foundation.util.CLIParser.CliOption(SWITCH, "random filebased read benchmark", ""));
 
-        options.put("p", new CLIParser.CliOption(STRING, "number of benchmarks to be started in parallel. default: 1",
+        options.put("p", new org.xtreemfs.foundation.util.CLIParser.CliOption(STRING, "number of benchmarks to be started in parallel. default: 1",
                 "<number>"));
 
         /* sizes */
-        options.put("ssize", new CLIParser.CliOption(STRING,
+        options.put("ssize", new org.xtreemfs.foundation.util.CLIParser.CliOption(STRING,
                 "size for sequential benchmarks in [B|K|M|G] (no modifier assumes bytes)", "<size>"));
-        options.put("rsize", new CLIParser.CliOption(STRING,
+        options.put("rsize", new org.xtreemfs.foundation.util.CLIParser.CliOption(STRING,
                 "size for random benchmarks in [B|K|M|G] (no modifier assumes bytes)", "<size>"));
-        options.put("-basefile-size", new CLIParser.CliOption(STRING,
+        options.put("-basefile-size", new org.xtreemfs.foundation.util.CLIParser.CliOption(STRING,
                 "size of the basefile for random benchmarks in [B|K|M|G] (no modifier assumes bytes)", "<size>"));
-        options.put("-file-size", new CLIParser.CliOption(STRING,
+        options.put("-file-size", new org.xtreemfs.foundation.util.CLIParser.CliOption(STRING,
                 "size of the files for random filebased benchmarks in [B|K|M|G] (no modifier assumes bytes)", "<size>"));
 
         /* deletion options */
-        options.put("-no-cleanup", new CLIParser.CliOption(SWITCH, "do not delete created volumes and files", ""));
-        options.put("-no-cleanup-volumes", new CLIParser.CliOption(SWITCH, "do not delete created volumes", ""));
-        options.put("-no-cleanup-files", new CLIParser.CliOption(SWITCH, "do not delete created files", ""));
+        options.put("-no-cleanup", new org.xtreemfs.foundation.util.CLIParser.CliOption(SWITCH, "do not delete created volumes and files", ""));
+        options.put("-no-cleanup-volumes", new org.xtreemfs.foundation.util.CLIParser.CliOption(SWITCH, "do not delete created volumes", ""));
+        options.put("-no-cleanup-files", new org.xtreemfs.foundation.util.CLIParser.CliOption(SWITCH, "do not delete created files", ""));
 
         this.options = options;
     }
@@ -262,7 +261,7 @@ public class Params {
         try {
             cfg = new DefaultDirConfig();
         } catch (IOException e) {
-            logMessage(LEVEL_ERROR, Category.tool, Params.class,
+            logMessage(LEVEL_ERROR, Category.tool, CLIParser.class,
                     "Could not read Default DIR Config in %s. Errormessage: %s", DefaultDirConfig.DEFAULT_DIR_CONFIG,
                     e.getMessage());
             e.printStackTrace();
