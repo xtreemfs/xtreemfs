@@ -8,27 +8,29 @@
 
 package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 
-import static org.xtreemfs.sandbox.benchmarkOSDPerformance.BenchmarkType.*;
-
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.xtreemfs.common.libxtreemfs.AdminClient;
-import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.util.CLIParser;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
+import org.xtreemfs.utils.utils;
 
 /**
+ * Todo Zusammenspiel von sw und rr verbessern (kleiner sw sollte den das basefile nicht jedes mal killen)
+ * 
  * @author jensvfischer
+ * 
  */
 public class Controller {
 
-    static final int      MiB_IN_BYTES = 1024 * 1024;
-    static final int      GiB_IN_BYTES = 1024 * 1024 * 1024;
-    static ConnectionData connection;
+    static final int                                KiB_IN_BYTES                 = 1024;
+    static final int                                MiB_IN_BYTES                 = 1024 * 1024;
+    static final int                                GiB_IN_BYTES                 = 1024 * 1024 * 1024;
+    static ConnectionData                           connection;
+    private static Map<String, CLIParser.CliOption> options;
 
     static void tryConnection() throws Exception {
         try {
@@ -53,12 +55,6 @@ public class Controller {
         }
     }
 
-    static ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(BenchmarkType benchmarkType, int numberOfThreads,
-            long sizeInBytes) throws Exception {
-        return startBenchmarks(benchmarkType, numberOfThreads, sizeInBytes,
-                new KeyValuePair<Volume, LinkedList<String>>());
-    }
-
     /**
      * Starts the specified amount of benchmarks in parallel. Every benchmark is started within its own
      * thread. The method waits for all threads to finish.
@@ -69,12 +65,11 @@ public class Controller {
      * @param sizeInBytes
      *            Size of the benchmark in bytes. Must be in alignment with (i.e. divisible through) the block
      *            size (128 KiB).
-     * @param volumeWithFiles
      * @return
      * @throws Exception
      */
     static ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(BenchmarkType benchmarkType, int numberOfThreads,
-            long sizeInBytes, KeyValuePair<Volume, LinkedList<String>> volumeWithFiles) throws Exception {
+            long sizeInBytes) throws Exception {
 
         if (sizeInBytes % Benchmark.XTREEMFS_BLOCK_SIZE_IN_BYTES != 0)
             throw new IllegalArgumentException("Size must be in alignment with (i.e. divisible through) the block size");
@@ -106,74 +101,77 @@ public class Controller {
 
     public static void main(String[] args) throws Exception {
         Logging.start(Logging.LEVEL_INFO, Logging.Category.tool);
-        connection = new ConnectionData();
+        Params params = new Params();
+        params.parseCLIOptions(args);
+
+        displayUsageIfSet(params);
+
+        connection = params.getConnectionData();
         tryConnection();
-        VolumeManager.init(connection);
 
-        VolumeManager volumeManager = VolumeManager.getInstance();
+        setupVolumes(params);
 
-        int numberOfThreads = 1;
-        long sizeInBytes = 10L * (long) MiB_IN_BYTES;
+        runBenchmarks(params);
 
-        volumeManager.createDefaultVolumes(numberOfThreads);
-//
-//        ConcurrentLinkedQueue<BenchmarkResult> wResults = startBenchmarks(WRITE, numberOfThreads, sizeInBytes);
-//        printResults(wResults);
-//
-//
-//        ConcurrentLinkedQueue<BenchmarkResult> rResults = startBenchmarks(READ, numberOfThreads, sizeInBytes);
-//        printResults(rResults);
-//
-//
-//        numberOfThreads = 1;
-//
-//        ConcurrentLinkedQueue<BenchmarkResult> randResults = startBenchmarks(RANDOM_IO_READ, numberOfThreads,
-//                sizeInBytes);
-//        printResults(randResults);
-
-
-        numberOfThreads = 1;
-
-        ConcurrentLinkedQueue<BenchmarkResult> randWriteResults = startBenchmarks(RANDOM_IO_WRITE_FILEBASED,
-                numberOfThreads, sizeInBytes);
-        printResults(randWriteResults);
-
-
-        ConcurrentLinkedQueue<BenchmarkResult> randReadResults = startBenchmarks(RANDOM_IO_READ_FILEBASED,
-                numberOfThreads, sizeInBytes);
-        printResults(randReadResults);
-
-        // for (int i = 0; i < 1; i++) {
-        // ConcurrentLinkedQueue<BenchmarkResult> randResults = startBenchmarks(
-        // BenchmarkType.RANDOM_IO_WRITE_FILEBASED, numberOfThreads, sizeInBytes);
-        // printResults(randResults);
-        //
-        // ConcurrentLinkedQueue<BenchmarkResult> randReadResults = startBenchmarks(
-        // BenchmarkType.RANDOM_IO_READ_FILEBASED, numberOfThreads, sizeInBytes,
-        // randResults.poll().volumeWithFiles);
-        // printResults(randReadResults);
-        //
-        // }
-        // //
-        // sizeInBytes = 10L * (long) MiB_IN_BYTES;
-        //
-        // for (int i = 0; i < 5; i++) {
-        // ConcurrentLinkedQueue<BenchmarkResult> randResults = startBenchmarks(
-        // BenchmarkType.RANDOM_IO_WRITE_FILEBASED, numberOfThreads, sizeInBytes);
-        // printResults(randResults);
-        //
-        // ConcurrentLinkedQueue<BenchmarkResult> randReadResults = startBenchmarks(
-        // BenchmarkType.RANDOM_IO_READ_FILEBASED, numberOfThreads, sizeInBytes,
-        // randResults.poll().volumeWithFiles);
-        // printResults(randReadResults);
-        //
-        // }
-
-        volumeManager.deleteCreatedVolumes();
-        volumeManager.scrub();
+        // volumeManager.deleteCreatedVolumes();
+        // volumeManager.scrub();
 
         System.exit(0);
 
+    }
+
+    private static void setupVolumes(Params params) throws Exception {
+        VolumeManager.init(connection);
+        VolumeManager volumeManager = VolumeManager.getInstance();
+        List<String> arguments = params.getArguments();
+
+        if (arguments.size() == 0)
+            volumeManager.createDefaultVolumes(params.getNumberOfThreads());
+        else {
+            // ToDo add check to verify that the number of volumes is in accordence with the number of threads
+            String[] volumes = arguments.toArray(new String[arguments.size()]);
+            volumeManager.openVolumes(volumes);
+        }
+    }
+
+    private static void displayUsageIfSet(Params params){
+        if (params.usageIsSet())
+            params.usage();
+    }
+
+    private static void runBenchmarks(Params params) throws Exception {
+
+        ConcurrentLinkedQueue<BenchmarkResult> result;
+        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
+
+        VolumeManager volumeManager = VolumeManager.getInstance();
+
+        if (params.sequentialReadBenchmarkIsSet()) {
+            result = startBenchmarks(BenchmarkType.WRITE, params.getNumberOfThreads(), params.getSequentialSizeInBytes());
+            results.addAll(result);
+        }
+
+        if (params.sequentialWriteBenchmarkIsSet()) {
+            result = startBenchmarks(BenchmarkType.READ, params.getNumberOfThreads(), params.getSequentialSizeInBytes());
+            results.addAll(result);
+        }
+
+        if (params.randomReadBenchmarkIsSet()) {
+            result = startBenchmarks(BenchmarkType.RANDOM_IO_READ, 1, params.getRandomSizeInBytes());
+            results.addAll(result);
+        }
+
+        if (params.randomFilebasedWriteBenchmarkIsSet()) {
+            result = startBenchmarks(BenchmarkType.RANDOM_IO_WRITE_FILEBASED, 1, params.getRandomSizeInBytes());
+            results.addAll(result);
+        }
+
+        if (params.randomFilebasedReadBenchmarkIsSet()) {
+            result = startBenchmarks(BenchmarkType.RANDOM_IO_READ_FILEBASED, 1, params.getRandomSizeInBytes());
+            results.addAll(result);
+        }
+
+        printResults(results);
     }
 
 }

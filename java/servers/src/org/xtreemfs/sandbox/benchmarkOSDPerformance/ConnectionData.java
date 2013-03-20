@@ -43,4 +43,16 @@ public class ConnectionData {
         this.options = new Options();
     }
 
+    public ConnectionData(String userName, String group, String osdPassword, String dirAddress, String mrcAddress,
+            UserCredentials userCredentials, Auth auth, SSLOptions sslOptions, Options options) {
+        this.userName = userName;
+        this.group = group;
+        this.osdPassword = osdPassword;
+        this.dirAddress = dirAddress;
+        this.mrcAddress = mrcAddress;
+        this.userCredentials = userCredentials;
+        this.auth = auth;
+        this.sslOptions = sslOptions;
+        this.options = options;
+    }
 }

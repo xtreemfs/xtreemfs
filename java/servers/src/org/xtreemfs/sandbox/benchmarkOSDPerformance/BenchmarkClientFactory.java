@@ -9,11 +9,13 @@
 package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
+import org.xtreemfs.common.libxtreemfs.Options;
+import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 
 /**
  * @author jensvfischer
@@ -26,26 +28,35 @@ public class BenchmarkClientFactory {
      * Create a AdminClient. The starting and shutdown of the client is managed by the BenchmarkClientFactory
      * (no need to call Client.start() and Client.shutdown())
      * 
-     * @param connection the connection data
+     * @param connection
+     *            the connection data
      * @return a started AdminClient instance
      * @throws Exception
      */
     static AdminClient getNewClient(ConnectionData connection) {
-          return tryCreateClient(connection);
+        return tryCreateClient(connection.dirAddress, connection.userCredentials, connection.sslOptions,
+                connection.options);
+    }
+
+    static AdminClient getNewClient(String dirAddress, RPC.UserCredentials userCredentials, SSLOptions sslOptions,
+            Options options) {
+        return tryCreateClient(dirAddress, userCredentials, sslOptions, options);
     }
 
     static {
-        clients       = new ConcurrentLinkedQueue<AdminClient>();
+        clients = new ConcurrentLinkedQueue<AdminClient>();
         addShutdownHook();
     }
 
     /* error handling for 'createNewClient()" */
-    private static AdminClient tryCreateClient(ConnectionData connection) {
+    private static AdminClient tryCreateClient(String dirAddress, RPC.UserCredentials userCredentials,
+            SSLOptions sslOptions, Options options) {
         AdminClient client = null;
         try {
-            client = createNewClient(connection);
+            client = createNewClient(dirAddress, userCredentials, sslOptions, options);
         } catch (Exception e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, BenchmarkClientFactory.class, "Could not create new AdminClient. Errormessage: %s", e.getMessage());
+            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, BenchmarkClientFactory.class,
+                    "Could not create new AdminClient. Errormessage: %s", e.getMessage());
             Thread.yield(); // allow logger to catch up
             e.printStackTrace();
             System.exit(42);
@@ -53,9 +64,9 @@ public class BenchmarkClientFactory {
         return client;
     }
 
-    private static AdminClient createNewClient(ConnectionData connection) throws Exception {
-        AdminClient client = ClientFactory.createAdminClient(connection.dirAddress, connection.userCredentials,
-                connection.sslOptions, connection.options);
+    private static AdminClient createNewClient(String dirAddress, RPC.UserCredentials userCredentials,
+            SSLOptions sslOptions, Options options) throws Exception {
+        AdminClient client = ClientFactory.createAdminClient(dirAddress, userCredentials, sslOptions, options);
         clients.add(client);
         client.start();
         return client;
