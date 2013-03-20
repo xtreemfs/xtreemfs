@@ -1,0 +1,110 @@
+/*
+ * Copyright (c) 2012-2013 by Jens V. Fischer, Zuse Institute Berlin
+ *               
+ *
+ * Licensed under the BSD License, see LICENSE file for details.
+ *
+ */
+
+package org.xtreemfs.sandbox.benchmarkOSDPerformance;
+
+import org.xtreemfs.common.libxtreemfs.Options;
+import org.xtreemfs.foundation.SSLOptions;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
+
+/**
+ * Use like this: <br>
+ * 1) <br>
+ * ParamsBuilder builder = new ParamsBuilder();<br>
+ * builder.setX("x"); <br>
+ * builder.setY("y"); <br>
+ * Params params = builder.build(); <br>
+ * 
+ * 2) <br>
+ * Params params  = new ParamsBuilder().setX("x").setY("y").build();<br>
+ *
+ * @author jensvfischer
+ */
+public class ParamsBuilder {
+
+    int        numberOfThreads       = DefaultParams.numberOfThreads;
+    long       sequentialSizeInBytes = DefaultParams.sequentialSizeInBytes;
+    long       randomSizeInBytes     = DefaultParams.randomSizeInBytes;
+    long       basefileSizeInBytes   = DefaultParams.basefileSizeInBytes;
+    long       fileSizeInBytes       = DefaultParams.fileSizeInBytes;
+    String     userName              = DefaultParams.userName;
+    String     group                 = DefaultParams.group;
+    String     osdPassword           = DefaultParams.osdPassword;
+    String     dirAddress            = DefaultParams.dirAddress;
+    RPC.Auth   auth                  = DefaultParams.auth;
+    SSLOptions sslOptions            = DefaultParams.sslOptions;
+    Options    options               = DefaultParams.options;
+
+    public ParamsBuilder() {
+    }
+
+    public ParamsBuilder setNumberOfThreads(int numberOfThreads) {
+        this.numberOfThreads = numberOfThreads;
+        return this;
+    }
+
+    public ParamsBuilder setSequentialSizeInBytes(long sequentialSizeInBytes) {
+        this.sequentialSizeInBytes = sequentialSizeInBytes;
+        return this;
+    }
+
+    public ParamsBuilder setRandomSizeInBytes(long randomSizeInBytes) {
+        this.randomSizeInBytes = randomSizeInBytes;
+        return this;
+    }
+
+    public ParamsBuilder setBasefileSizeInBytes(long basefileSizeInBytes) {
+        this.basefileSizeInBytes = basefileSizeInBytes;
+        return this;
+    }
+
+    public ParamsBuilder setFileSizeInBytes(long fileSizeInBytes) {
+        this.fileSizeInBytes = fileSizeInBytes;
+        return this;
+    }
+
+    public ParamsBuilder setUserName(String userName) {
+        this.userName = userName;
+        return this;
+    }
+
+    public ParamsBuilder setGroup(String group) {
+        this.group = group;
+        return this;
+    }
+
+    public ParamsBuilder setOsdPassword(String osdPassword) {
+        this.osdPassword = osdPassword;
+        return this;
+    }
+
+    public ParamsBuilder setDirAddress(String dirAddress) {
+        this.dirAddress = dirAddress;
+        return this;
+    }
+
+    public ParamsBuilder setAuth(RPC.Auth auth) {
+        this.auth = auth;
+        return this;
+    }
+
+    public ParamsBuilder setSslOptions(SSLOptions sslOptions) {
+        this.sslOptions = sslOptions;
+        return this;
+    }
+
+    public ParamsBuilder setOptions(Options options) {
+        this.options = options;
+        return this;
+    }
+
+    public Params build() {
+        return new Params(this);
+    }
+
+}
