@@ -15,17 +15,17 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 
 /**
- * Todo Zusammenspiel von sw und rr verbessern (kleiner sw sollte das basefile nicht jedes mal killen)
+ * TODO (jvf) Zusammenspiel von sw und rr verbessern (kleiner sw sollte das basefile nicht jedes mal killen)
  * 
  * @author jensvfischer
  * 
  */
 public class Controller {
 
-    static final int       KiB_IN_BYTES = 1024;
-    static final int       MiB_IN_BYTES = 1024 * 1024;
-    static final int       GiB_IN_BYTES = 1024 * 1024 * 1024;
-    private Params         params;
+    static final int KiB_IN_BYTES = 1024;
+    static final int MiB_IN_BYTES = 1024 * 1024;
+    static final int GiB_IN_BYTES = 1024 * 1024 * 1024;
+    private Params   params;
 
     public Controller(Params params) {
         this.params = params;
@@ -41,17 +41,16 @@ public class Controller {
      * @param benchmarkType
      * @param numberOfThreads
      *            number of benchmarks run in parallel
-     * @param sizeInBytes
      *            Size of the benchmark in bytes. Must be in alignment with (i.e. divisible through) the block
      *            size (128 KiB).
      * @return
      * @throws Exception
      */
-    ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(BenchmarkType benchmarkType, int numberOfThreads,
-            long sizeInBytes) throws Exception {
+    ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(BenchmarkType benchmarkType, int numberOfThreads) throws Exception {
 
-        if (sizeInBytes % Benchmark.XTREEMFS_BLOCK_SIZE_IN_BYTES != 0)
-            throw new IllegalArgumentException("Size must be in alignment with (i.e. divisible through) the block size");
+//        TODO (jvf) Check für benchmarksize % blocksize an anderer Stelle einbauen
+//        if (sizeInBytes % Benchmark.XTREEMFS_BLOCK_SIZE_IN_BYTES != 0)
+//            throw new IllegalArgumentException("Size must be in alignment with (i.e. divisible through) the block size");
 
         ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
         ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
@@ -59,7 +58,7 @@ public class Controller {
         for (int i = 0; i < numberOfThreads; i++) {
             Benchmark benchmark = BenchmarkFactory.createBenchmark(benchmarkType, VolumeManager.getInstance()
                     .getNextVolume(), params);
-            benchmark.startBenchmark(sizeInBytes, results, threads);
+            benchmark.startBenchmark(results, threads);
         }
 
         /* wait for all threads to finish */
@@ -129,7 +128,7 @@ public class Controller {
         Controller controller = new Controller(params);
         controller.tryConnection();
         controller.setupVolumes();
-        ConcurrentLinkedQueue results = controller.startBenchmarks(BenchmarkType.WRITE, 1, 10L*MiB_IN_BYTES);
+        ConcurrentLinkedQueue results = controller.startBenchmarks(BenchmarkType.WRITE, 1);
         printResults(results);
         controller.teardown();
     }

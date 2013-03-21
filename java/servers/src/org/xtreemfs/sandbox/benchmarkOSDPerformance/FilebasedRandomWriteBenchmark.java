@@ -21,9 +21,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  * 
  * @author jensvfischer
  */
-public class FilebasedRandomWriteBenchmark extends Benchmark {
+public class FilebasedRandomWriteBenchmark extends FilebasedRandomBenchmark {
 
-    final static int RANDOM_IO_BLOCKSIZE = 1024 * 4; // 4 KiB
     private LinkedList<String> filenames;
 
     FilebasedRandomWriteBenchmark(Volume volume, Params params) throws Exception {
@@ -50,7 +49,7 @@ public class FilebasedRandomWriteBenchmark extends Benchmark {
             FileHandle fileHandle = volume.openFile(params.userCredentials, BENCHMARK_FILENAME + j, flags, 511);
             this.filenames.add(BENCHMARK_FILENAME + j);
             random.nextBytes(data);
-            byteCounter += fileHandle.write(params.userCredentials, data, RANDOM_IO_BLOCKSIZE, 0);
+            byteCounter += fileHandle.write(params.userCredentials, data, randomIOFilesize, 0);
             fileHandle.close();
         }
         return byteCounter;
@@ -60,11 +59,6 @@ public class FilebasedRandomWriteBenchmark extends Benchmark {
     void finalizeBenchmark() throws Exception {
         VolumeManager.getInstance().setFilelistForVolume(volume, filenames);
         // ToDo if no FilebasedRandomReadBenchmark follows delete written files
-    }
-
-    /* convert to 4 KiB Blocks */
-    private static long convertTo4KiBBlocks(long numberOfBlocks) {
-        return (numberOfBlocks * (long) XTREEMFS_BLOCK_SIZE_IN_BYTES) / (long) RANDOM_IO_BLOCKSIZE;
     }
 
 }

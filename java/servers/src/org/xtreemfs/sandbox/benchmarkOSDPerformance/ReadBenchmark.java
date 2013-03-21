@@ -19,15 +19,12 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  * 
  * @author jensvfischer
  */
-public class ReadBenchmark extends Benchmark {
+public class ReadBenchmark extends SequentialBenchmark {
 
 
     ReadBenchmark(Volume volume, Params params) throws Exception {
         super(volume, params);
     }
-
-    @Override
-    void prepareBenchmark() throws Exception {}
 
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */
     @Override
@@ -43,8 +40,5 @@ public class ReadBenchmark extends Benchmark {
         fileHandle.close();
         return byteCounter;
     }
-
-    @Override
-    void finalizeBenchmark() throws Exception {}
 
 }

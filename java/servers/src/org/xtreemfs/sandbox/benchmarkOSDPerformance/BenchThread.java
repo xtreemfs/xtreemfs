@@ -12,26 +12,24 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Thread for a {@link Benchmark}. Starts
- * {@link Benchmark#benchmark(long, java.util.concurrent.ConcurrentLinkedQueue)} as run method.
+ * {@link Benchmark#benchmark(java.util.concurrent.ConcurrentLinkedQueue)} as run method.
  * 
  * @author jensvfischer
  */
 public class BenchThread implements Runnable {
 
-    private final long                             sizeInBytes;
     private ConcurrentLinkedQueue<BenchmarkResult> results;
     private Benchmark benchmark;
 
-    public BenchThread(Benchmark benchmark, long sizeInBytes, ConcurrentLinkedQueue<BenchmarkResult> results) {
+    public BenchThread(Benchmark benchmark, ConcurrentLinkedQueue<BenchmarkResult> results) {
         this.benchmark = benchmark;
-        this.sizeInBytes = sizeInBytes;
         this.results = results;
     }
 
     @Override
     public void run() {
         try {
-            benchmark.benchmark(sizeInBytes, results);
+            benchmark.benchmark(results);
         } catch (Exception e) {
             e.printStackTrace();
         }

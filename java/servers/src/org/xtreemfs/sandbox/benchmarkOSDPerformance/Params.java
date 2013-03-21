@@ -26,7 +26,7 @@ public class Params {
     final long                sequentialSizeInBytes;
     final long                randomSizeInBytes;
     final long                basefileSizeInBytes;
-    final long                fileSizeInBytes;
+    final int                 randomIOFilesize;
     final String              userName;
     final String              group;
     final String              osdPassword;
@@ -42,12 +42,13 @@ public class Params {
         this.sequentialSizeInBytes = builder.sequentialSizeInBytes;
         this.randomSizeInBytes = builder.randomSizeInBytes;
         this.basefileSizeInBytes = builder.basefileSizeInBytes;
-        this.fileSizeInBytes = builder.fileSizeInBytes;
+        this.randomIOFilesize = builder.randomIOFilesize;
         this.userName = builder.userName;
         this.group = builder.group;
         this.osdPassword = builder.osdPassword;
         this.dirAddress = builder.dirAddress;
-        this.userCredentials = RPC.UserCredentials.newBuilder().setUsername(builder.userName).addGroups(builder.group).build();
+        this.userCredentials = RPC.UserCredentials.newBuilder().setUsername(builder.userName).addGroups(builder.group)
+                .build();
         this.sslOptions = builder.sslOptions;
         this.options = builder.options;
         this.mrcAddress = getMRCAddress(dirAddress, userCredentials, sslOptions, options);

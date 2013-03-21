@@ -20,14 +20,10 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  * 
  * @author jensvfischer
  */
-public class WriteBenchmark extends Benchmark {
+public class WriteBenchmark extends SequentialBenchmark {
 
     WriteBenchmark(Volume volume, Params params) throws Exception {
         super(volume, params);
-    }
-
-    @Override
-    void prepareBenchmark() throws Exception {
     }
 
     /* Called within the benchmark method. Performs the actual writing of data to the volume. */
@@ -47,10 +43,6 @@ public class WriteBenchmark extends Benchmark {
         }
         fileHandle.close();
         return byteCounter;
-    }
-
-    @Override
-    void finalizeBenchmark() throws Exception {
     }
 
 }

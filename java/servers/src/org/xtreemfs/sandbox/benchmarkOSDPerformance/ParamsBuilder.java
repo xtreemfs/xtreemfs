@@ -21,8 +21,8 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
  * Params params = builder.build(); <br>
  * 
  * 2) <br>
- * Params params  = new ParamsBuilder().setX("x").setY("y").build();<br>
- *
+ * Params params = new ParamsBuilder().setX("x").setY("y").build();<br>
+ * 
  * @author jensvfischer
  */
 public class ParamsBuilder {
@@ -31,7 +31,7 @@ public class ParamsBuilder {
     long       sequentialSizeInBytes = DefaultParams.sequentialSizeInBytes;
     long       randomSizeInBytes     = DefaultParams.randomSizeInBytes;
     long       basefileSizeInBytes   = DefaultParams.basefileSizeInBytes;
-    long       fileSizeInBytes       = DefaultParams.fileSizeInBytes;
+    int        randomIOFilesize      = DefaultParams.randomIOFilesize;
     String     userName              = DefaultParams.userName;
     String     group                 = DefaultParams.group;
     String     osdPassword           = DefaultParams.osdPassword;
@@ -63,8 +63,8 @@ public class ParamsBuilder {
         return this;
     }
 
-    public ParamsBuilder setFileSizeInBytes(long fileSizeInBytes) {
-        this.fileSizeInBytes = fileSizeInBytes;
+    public ParamsBuilder setRandomIOFilesize(int randomIOFilesize) {
+        this.randomIOFilesize = randomIOFilesize;
         return this;
     }
 

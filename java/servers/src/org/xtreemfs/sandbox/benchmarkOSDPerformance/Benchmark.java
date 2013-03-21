@@ -25,17 +25,19 @@ import org.xtreemfs.foundation.logging.Logging;
  */
 public abstract class Benchmark {
 
-    static final int     MiB_IN_BYTES                 = 1024 * 1024;
-    static final int     GiB_IN_BYTES                 = 1024 * 1024 * 1024;
-    static final int     XTREEMFS_BLOCK_SIZE_IN_BYTES = 128 * 1024;              // 128 KiB
-    static final String  BENCHMARK_FILENAME           = "benchmarkFile";
+    static final int    MiB_IN_BYTES                 = 1024 * 1024;
+    static final int    GiB_IN_BYTES                 = 1024 * 1024 * 1024;
+    static final int    XTREEMFS_BLOCK_SIZE_IN_BYTES = 128 * 1024;        // 128 KiB
+    static final String BENCHMARK_FILENAME           = "benchmarkFile";
 
-    final Volume         volume;
-    final AdminClient    client;
-    final Params params;
+    final long          benchmarkSizeInBytes;
+    final Volume        volume;
+    final AdminClient   client;
+    final Params        params;
 
-    Benchmark(Volume volume, Params params) throws Exception {
+    Benchmark(long benchmarkSizeInBytes, Volume volume, Params params) throws Exception {
         client = BenchmarkClientFactory.getNewClient(params);
+        this.benchmarkSizeInBytes = benchmarkSizeInBytes;
         this.volume = volume;
         this.params = params;
     }
@@ -45,9 +47,7 @@ public abstract class Benchmark {
      * depends on which subclass is instantiated. This method is supposed to be called within its own thread
      * to run a benchmark.
      */
-    void benchmark(long sizeInBytes, ConcurrentLinkedQueue<BenchmarkResult> results) throws Exception {
-
-        prepareBenchmark();
+    void benchmark(ConcurrentLinkedQueue<BenchmarkResult> results) throws Exception {
 
         String shortClassname = this.getClass().getName().substring(this.getClass().getName().lastIndexOf('.') + 1);
         Logging.logMessage(Logging.LEVEL_INFO, this, "Starting %s", shortClassname, Logging.Category.tool);
@@ -55,7 +55,7 @@ public abstract class Benchmark {
         // Setting up
         byte[] data = new byte[XTREEMFS_BLOCK_SIZE_IN_BYTES];
 
-        long numberOfBlocks = sizeInBytes / XTREEMFS_BLOCK_SIZE_IN_BYTES;
+        long numberOfBlocks = benchmarkSizeInBytes / XTREEMFS_BLOCK_SIZE_IN_BYTES;
         long byteCounter = 0;
 
         /* Run the Benchmark */
@@ -67,8 +67,7 @@ public abstract class Benchmark {
         double timeInSec = (after - before) / 1000.;
         double speedMiBPerSec = round((byteCounter / MiB_IN_BYTES) / timeInSec, 2);
 
-
-        BenchmarkResult result = new BenchmarkResult(timeInSec, speedMiBPerSec, sizeInBytes, Thread.currentThread()
+        BenchmarkResult result = new BenchmarkResult(timeInSec, speedMiBPerSec, benchmarkSizeInBytes, Thread.currentThread()
                 .getId(), byteCounter);
         results.add(result);
 
@@ -104,13 +103,13 @@ public abstract class Benchmark {
     abstract long performIO(byte[] data, long numberOfBlocks) throws IOException;
 
     /* called at the end of every benchmark */
-    abstract void finalizeBenchmark() throws Exception ;
+    abstract void finalizeBenchmark() throws Exception;
 
     /* Starts a benchmark in its own thread. */
-    public void startBenchmark(long sizeInBytes, ConcurrentLinkedQueue<BenchmarkResult> results,
+    public void startBenchmark(ConcurrentLinkedQueue<BenchmarkResult> results,
             ConcurrentLinkedQueue<Thread> threads) throws Exception {
         prepareBenchmark();
-        Thread benchThread = new Thread(new BenchThread(this, sizeInBytes, results));
+        Thread benchThread = new Thread(new BenchThread(this, results));
         threads.add(benchThread);
         benchThread.start();
     }
