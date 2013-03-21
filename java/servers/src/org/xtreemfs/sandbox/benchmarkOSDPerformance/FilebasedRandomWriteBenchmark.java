@@ -11,7 +11,6 @@ package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Random;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.common.libxtreemfs.FileHandle;
 import org.xtreemfs.common.libxtreemfs.Volume;
@@ -27,8 +26,8 @@ public class FilebasedRandomWriteBenchmark extends Benchmark {
     final static int RANDOM_IO_BLOCKSIZE = 1024 * 4; // 4 KiB
     private LinkedList<String> filenames;
 
-    FilebasedRandomWriteBenchmark(Volume volume, ConnectionData connection) throws Exception {
-        super(volume, connection);
+    FilebasedRandomWriteBenchmark(Volume volume, Params params) throws Exception {
+        super(volume, params);
         filenames = new LinkedList<String>();
     }
 
@@ -48,10 +47,10 @@ public class FilebasedRandomWriteBenchmark extends Benchmark {
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
 
         for (long j = 0; j < numberOfFiles; j++) {
-            FileHandle fileHandle = volume.openFile(connection.userCredentials, BENCHMARK_FILENAME + j, flags, 511);
+            FileHandle fileHandle = volume.openFile(params.userCredentials, BENCHMARK_FILENAME + j, flags, 511);
             this.filenames.add(BENCHMARK_FILENAME + j);
             random.nextBytes(data);
-            byteCounter += fileHandle.write(connection.userCredentials, data, RANDOM_IO_BLOCKSIZE, 0);
+            byteCounter += fileHandle.write(params.userCredentials, data, RANDOM_IO_BLOCKSIZE, 0);
             fileHandle.close();
         }
         return byteCounter;

@@ -27,8 +27,8 @@ public class FilebasedRandomReadBenchmark extends Benchmark {
     final static int RANDOM_IO_BLOCKSIZE = 1024 * 4; // 4 KiB
     private String[] filenames;
 
-    FilebasedRandomReadBenchmark(Volume volume, ConnectionData connection) throws Exception {
-        super(volume, connection);
+    FilebasedRandomReadBenchmark(Volume volume, Params params) throws Exception {
+        super(volume, params);
     }
 
     @Override
@@ -49,8 +49,8 @@ public class FilebasedRandomReadBenchmark extends Benchmark {
 
         for (long i = 0; i < numberOfFilesToRead; i++) {
             String filename = filenames[random.nextInt(filenamesSize)];
-            FileHandle fileHandle = volume.openFile(connection.userCredentials, filename, flags);
-            byteCounter += fileHandle.read(connection.userCredentials, data, RANDOM_IO_BLOCKSIZE, 0);
+            FileHandle fileHandle = volume.openFile(params.userCredentials, filename, flags);
+            byteCounter += fileHandle.read(params.userCredentials, data, RANDOM_IO_BLOCKSIZE, 0);
             fileHandle.close();
         }
         return byteCounter;
@@ -61,7 +61,7 @@ public class FilebasedRandomReadBenchmark extends Benchmark {
         Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this,
                 "Deleting the %s files used for the FilebasedRandomReadBenchmark", filenames.length);
         for (String filename : filenames) {
-            volume.unlink(connection.userCredentials, filename);
+            volume.unlink(params.userCredentials, filename);
         }
         Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this,
                 "Finished deleting the files used for the FilebasedRandomReadBenchmark");

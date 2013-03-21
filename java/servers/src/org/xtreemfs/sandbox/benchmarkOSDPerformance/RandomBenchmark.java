@@ -23,8 +23,8 @@ public abstract class RandomBenchmark extends Benchmark {
     final static int  RANDOM_IO_BLOCKSIZE = 1024 * 4;                 // 4 KiB
     final static long sizeOfBasefile      = 3L * (long) GiB_IN_BYTES;
 
-    public RandomBenchmark(Volume volume, ConnectionData connection) throws Exception {
-        super(volume, connection);
+    public RandomBenchmark(Volume volume, Params params) throws Exception {
+        super(volume, params);
     }
 
     @Override
@@ -53,9 +53,9 @@ public abstract class RandomBenchmark extends Benchmark {
     /* check if a basefile to read from exists and if it has the right size */
     boolean basefileDoesNotExists() throws Exception {
         try {
-            FileHandle fileHandle = volume.openFile(connection.userCredentials, BENCHMARK_FILENAME,
+            FileHandle fileHandle = volume.openFile(params.userCredentials, BENCHMARK_FILENAME,
                     GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
-            long fileSizeInBytes = fileHandle.getAttr(connection.userCredentials).getSize();
+            long fileSizeInBytes = fileHandle.getAttr(params.userCredentials).getSize();
             fileHandle.close();
             return sizeOfBasefile != fileSizeInBytes;
         } catch (PosixErrorException e) {
@@ -72,14 +72,14 @@ public abstract class RandomBenchmark extends Benchmark {
         int flags = GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
-        FileHandle fileHandle = volume.openFile(connection.userCredentials, BENCHMARK_FILENAME, flags, 511);
+        FileHandle fileHandle = volume.openFile(params.userCredentials, BENCHMARK_FILENAME, flags, 511);
         long byteCounter = 0;
         byte[] data = new byte[XTREEMFS_BLOCK_SIZE_IN_BYTES];
         for (long j = 0; j < numberOfBlocks; j++) {
             long nextOffset = j * XTREEMFS_BLOCK_SIZE_IN_BYTES;
             assert nextOffset >= 0 : "Offset < 0 not allowed";
             random.nextBytes(data);
-            byteCounter += fileHandle.write(connection.userCredentials, data, XTREEMFS_BLOCK_SIZE_IN_BYTES, nextOffset);
+            byteCounter += fileHandle.write(params.userCredentials, data, XTREEMFS_BLOCK_SIZE_IN_BYTES, nextOffset);
         }
         fileHandle.close();
         assert byteCounter == sizeOfBasefile : " Error while writing the basefile for the random io benchmark";

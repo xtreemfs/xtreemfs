@@ -17,27 +17,27 @@ import org.xtreemfs.common.libxtreemfs.Volume;
  */
 public class BenchmarkFactory {
 
-    public static Benchmark createBenchmark(BenchmarkType benchmarkType, Volume volume, ConnectionData connection) throws Exception {
+    public static Benchmark createBenchmark(BenchmarkType benchmarkType, Volume volume, Params params) throws Exception {
 
         Benchmark benchmark = null;
 
         switch (benchmarkType) {
         case WRITE:
-            benchmark = new WriteBenchmark(volume, connection);
+            benchmark = new WriteBenchmark(volume, params);
             break;
         case READ:
-            benchmark = new ReadBenchmark(volume, connection);
+            benchmark = new ReadBenchmark(volume, params);
             break;
         case RANDOM_IO_WRITE:
             break;
         case RANDOM_IO_READ:
-            benchmark = new RandomReadBenchmark(volume, connection);
+            benchmark = new RandomReadBenchmark(volume, params);
             break;
         case RANDOM_IO_WRITE_FILEBASED:
-            benchmark = new FilebasedRandomWriteBenchmark(volume, connection);
+            benchmark = new FilebasedRandomWriteBenchmark(volume, params);
             break;
         case RANDOM_IO_READ_FILEBASED:
-            benchmark = new FilebasedRandomReadBenchmark(volume, connection);
+            benchmark = new FilebasedRandomReadBenchmark(volume, params);
             break;
         }
         return benchmark;

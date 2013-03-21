@@ -22,8 +22,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  */
 public class WriteBenchmark extends Benchmark {
 
-    WriteBenchmark(Volume volume, ConnectionData connection) throws Exception {
-        super(volume, connection);
+    WriteBenchmark(Volume volume, Params params) throws Exception {
+        super(volume, params);
     }
 
     @Override
@@ -37,13 +37,13 @@ public class WriteBenchmark extends Benchmark {
         int flags = GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
-        FileHandle fileHandle = volume.openFile(connection.userCredentials, BENCHMARK_FILENAME, flags, 511);
+        FileHandle fileHandle = volume.openFile(params.userCredentials, BENCHMARK_FILENAME, flags, 511);
         long byteCounter = 0;
         for (long j = 0; j < numberOfBlocks; j++) {
             long nextOffset = j * XTREEMFS_BLOCK_SIZE_IN_BYTES;
             assert nextOffset >= 0 : "Offset < 0 not allowed";
             random.nextBytes(data);
-            byteCounter += fileHandle.write(connection.userCredentials, data, XTREEMFS_BLOCK_SIZE_IN_BYTES, nextOffset);
+            byteCounter += fileHandle.write(params.userCredentials, data, XTREEMFS_BLOCK_SIZE_IN_BYTES, nextOffset);
         }
         fileHandle.close();
         return byteCounter;

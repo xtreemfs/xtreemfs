@@ -28,14 +28,14 @@ public class BenchmarkClientFactory {
      * Create a AdminClient. The starting and shutdown of the client is managed by the BenchmarkClientFactory
      * (no need to call Client.start() and Client.shutdown())
      * 
-     * @param connection
-     *            the connection data
+     * @param params
+     *            the params data
      * @return a started AdminClient instance
      * @throws Exception
      */
-    static AdminClient getNewClient(ConnectionData connection) {
-        return tryCreateClient(connection.dirAddress, connection.userCredentials, connection.sslOptions,
-                connection.options);
+    static AdminClient getNewClient(Params params) {
+        return tryCreateClient(params.dirAddress, params.userCredentials, params.sslOptions,
+                params.options);
     }
 
     static AdminClient getNewClient(String dirAddress, RPC.UserCredentials userCredentials, SSLOptions sslOptions,

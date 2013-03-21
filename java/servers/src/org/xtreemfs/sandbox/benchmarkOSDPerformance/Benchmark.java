@@ -9,7 +9,6 @@
 package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 
 import java.io.IOException;
-import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.common.libxtreemfs.AdminClient;
@@ -33,12 +32,12 @@ public abstract class Benchmark {
 
     final Volume         volume;
     final AdminClient    client;
-    final ConnectionData connection;
+    final Params params;
 
-    Benchmark(Volume volume, ConnectionData connection) throws Exception {
-        client = BenchmarkClientFactory.getNewClient(connection);
+    Benchmark(Volume volume, Params params) throws Exception {
+        client = BenchmarkClientFactory.getNewClient(params);
         this.volume = volume;
-        this.connection = connection;
+        this.params = params;
     }
 
     /*

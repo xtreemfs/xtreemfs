@@ -31,16 +31,16 @@ public class VolumeManager {
     static final String          VOLUME_BASE_NAME = "performanceTest";
 
     private static VolumeManager volumeManager    = null;
-    ConnectionData               connection;
+    Params                       params;
     AdminClient                  client;
     int                          currentPosition;
     LinkedList<Volume>           volumes;
     LinkedList<Volume>           createdVolumes;
     HashMap<Volume, String[]>    filelists;
 
-    public static void init(ConnectionData connection) throws Exception {
+    public static void init(Params params) throws Exception {
         if (volumeManager == null) {
-            volumeManager = new VolumeManager(connection);
+            volumeManager = new VolumeManager(params);
         }
     }
 
@@ -50,10 +50,10 @@ public class VolumeManager {
         return volumeManager;
     }
 
-    private VolumeManager(ConnectionData connection) throws Exception {
-        this.connection = connection;
+    private VolumeManager(Params params) throws Exception {
+        this.params = params;
         currentPosition = 0;
-        this.client = BenchmarkClientFactory.getNewClient(connection);
+        this.client = BenchmarkClientFactory.getNewClient(params);
         this.volumes = new LinkedList<Volume>();
         this.createdVolumes = new LinkedList<Volume>();
         this.filelists = new HashMap<Volume, String[]>(5);
@@ -90,12 +90,12 @@ public class VolumeManager {
     private Volume createAndOpenVolume(String volumeName) throws IOException {
         Volume volume = null;
         try {
-            client.createVolume(connection.mrcAddress, connection.auth, connection.userCredentials, volumeName);
-            volume = client.openVolume(volumeName, connection.sslOptions, connection.options);
+            client.createVolume(params.mrcAddress, params.auth, params.userCredentials, volumeName);
+            volume = client.openVolume(volumeName, params.sslOptions, params.options);
             createdVolumes.add(volume);
         } catch (PosixErrorException e) {
             if (e.getPosixError() == POSIXErrno.POSIX_ERROR_EEXIST) {
-                volume = client.openVolume(volumeName, connection.sslOptions, connection.options);
+                volume = client.openVolume(volumeName, params.sslOptions, params.options);
             }
         }
         return volume;
@@ -135,7 +135,7 @@ public class VolumeManager {
 
     void deleteVolumeIfExisting(String volumeName) throws IOException {
         if (new ArrayList<String>(Arrays.asList(client.listVolumeNames())).contains(volumeName)) {
-            client.deleteVolume(connection.auth, connection.userCredentials, volumeName);
+            client.deleteVolume(params.auth, params.userCredentials, volumeName);
             Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Deleting volume %s", volumeName);
         }
     }
@@ -143,7 +143,7 @@ public class VolumeManager {
     /* Performs cleanup on a OSD (because deleting the volume does not delete the files in the volume) */
     void scrub() throws Exception {
 
-        String pwd = connection.osdPassword;
+        String pwd = params.osdPassword;
         LinkedList<String> uuids = getOSDUUIDs();
 
         for (String osd : uuids) {
