@@ -38,6 +38,7 @@ import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.XLocSetVersionState;
 
 /**
  * 
@@ -66,6 +67,11 @@ public class HashStorageLayout extends StorageLayout {
      * file that stores the mapping between file and object versions
      */
     public static final String             CURRENT_VER_FILENAME          = ".curr_file_ver";
+
+    /**
+     * file that stores the latest XLocSet version this replica belonged to and if it is invalidated
+     */
+    public static final String             XLOC_VERSION_STATE_FILENAME   = ".version_state";
 
     public static final int                SL_TAG                        = 0x00000002;
 
@@ -1352,4 +1358,43 @@ public class HashStorageLayout extends StorageLayout {
         }
     }
 
+    @Override
+    public XLocSetVersionState getXLocSetVersionState(String fileId) throws IOException {
+        // TODO (jdillmann): Implement some cache
+        XLocSetVersionState.Builder vsbuilder = XLocSetVersionState.newBuilder();
+
+        File fileDir = new File(generateAbsoluteFilePath(fileId));
+        File vsFile = new File(fileDir, XLOC_VERSION_STATE_FILENAME);
+
+        FileInputStream input = null;
+        try {
+            input = new FileInputStream(vsFile);
+            vsbuilder.mergeDelimitedFrom(input);
+        } finally {
+            if (input != null) {
+                input.close();
+            }
+        }
+
+        return vsbuilder.build();
+    }
+
+    @Override
+    public void setXLocSetVersionState(String fileId, XLocSetVersionState versionState) throws IOException {
+        File fileDir = new File(generateAbsoluteFilePath(fileId));
+        if (!fileDir.exists()) {
+            fileDir.mkdirs();
+        }
+        File vsFile = new File(fileDir, XLOC_VERSION_STATE_FILENAME);
+        FileOutputStream output = null;
+
+        try {
+            output = new FileOutputStream(vsFile);
+            versionState.writeDelimitedTo(output);
+        } finally {
+            if (output != null) {
+                output.close();
+            }
+        }
+    }
 }

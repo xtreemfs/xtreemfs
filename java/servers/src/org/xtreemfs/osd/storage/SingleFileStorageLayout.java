@@ -16,8 +16,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Stack;
 import java.util.Map.Entry;
+import java.util.Stack;
+
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.LRUCache;
 import org.xtreemfs.foundation.buffer.BufferPool;
@@ -30,6 +31,7 @@ import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.XLocSetVersionState;
 
 /**
  *
@@ -511,6 +513,16 @@ public class SingleFileStorageLayout extends StorageLayout {
 
     @Override
     public void setTruncateLog(String fileId, TruncateLog log) {
+
+    }
+
+    @Override
+    public XLocSetVersionState getXLocSetVersionState(String fileId) throws IOException {
+        return null;
+    }
+
+    @Override
+    public void setXLocSetVersionState(String fileId, XLocSetVersionState versionState) throws IOException {
 
     }
 }

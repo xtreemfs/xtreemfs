@@ -104,6 +104,14 @@ message TruncateLog {
   repeated TruncateRecord records = 1;
 }
 
+// Version of the latest XLocSet a Replica has beeen part of 
+// and a flag indicating if the Replica is currently participating
+// in a XLocSetChange 
+message XLocSetVersionState {
+  required fixed32 version = 1;
+  required bool invalidated = 2;
+}
+
 // Full status of a replica. Used by the read-write
 // replication during Replica Reset.
 message ReplicaStatus {
@@ -334,6 +342,28 @@ message xtreemfs_rwr_reset_completeRequest {
   required fixed32 primary_epoch = 3;
 }
 
+
+message xtreemfs_xloc_set_invalidateRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+}
+
+message xtreemfs_xloc_set_invalidateResponse {
+  required string file_id = 1;
+  required bool is_primary = 2;
+}
+
+message xtreemfs_xloc_set_installRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+}
+
+message xtreemfs_xloc_set_installResponse {
+  required string file_id = 1;
+  required fixed32 version = 4;
+}
+
+
 service OSDService {
   
   option(interface_id)=30001;
@@ -532,6 +562,16 @@ service OSDService {
   // Shuts the OSD down. Requires AUTH_PASSWORD.
   rpc xtreemfs_shutdown(emptyRequest) returns(emptyResponse) {
     option(proc_id)=70;
+  };
+
+  // Invalidate the replicas location set
+  rpc xtreemfs_xloc_set_invalidate(xtreemfs_xloc_set_invalidateRequest) returns(xtreemfs_xloc_set_invalidateResponse) {
+    option(proc_id)=81;
+  };
+
+  // Installs a new version of a XLocationSet
+  rpc xtreemfs_xloc_set_install(xtreemfs_xloc_set_installRequest) returns(xtreemfs_xloc_set_installResponse) {
+    option(proc_id)=82;
   };
 
 }

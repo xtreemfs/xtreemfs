@@ -23,8 +23,8 @@ import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.replication.ObjectSet;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.XLocSetVersionState;
 
 /**
  * Abstracts object data access from underlying on-disk storage layout.
@@ -450,6 +450,22 @@ public abstract class StorageLayout {
      */
     public abstract ArrayList<String> getFileIDList();
     
+    /**
+     * Retrieves the XLocSet version and invalidated sate for a replica
+     * 
+     * @param fileId
+     * @return current version and state stored on disk
+     */
+    public abstract XLocSetVersionState getXLocSetVersionState(String fileId) throws IOException;
+
+    /**
+     * Stores the XLocSet version for a replica on stable storage
+     * 
+     * @param fileId
+     * @param versionState
+     */
+    public abstract void setXLocSetVersionState(String fileId, XLocSetVersionState versionState) throws IOException;
+
     public static final class FileList {
         // directories to scan
         final Stack<String>         status;
