@@ -212,7 +212,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
         int receivedData = 0;
 
         if (fc.getXlocs().getReplicasCount() == 0) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this, "No replica found for fiel %s",
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this, "No replica found for file %s",
                     fileInfo.getPath());
             throw new PosixErrorException(POSIXErrno.POSIX_ERROR_EIO, "no replica found for file: "
                     + fileInfo.getPath());
@@ -305,7 +305,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
      * RPC.UserCredentials, byte[], int, int, long)
      */
     @Override
-    public int write(UserCredentials userCredentials, byte[] data, int dataOffset, int count, long offset)
+    public synchronized int write(UserCredentials userCredentials, byte[] data, int dataOffset, int count, long offset)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         ReusableBuffer buffer = ReusableBuffer.wrap(data, dataOffset, count);
         return write(userCredentials, buffer, count, offset);
