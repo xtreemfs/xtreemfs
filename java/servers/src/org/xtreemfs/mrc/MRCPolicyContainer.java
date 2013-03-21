@@ -31,6 +31,7 @@ import org.xtreemfs.mrc.osdselection.SortDCMapPolicy;
 import org.xtreemfs.mrc.osdselection.SortFQDNPolicy;
 import org.xtreemfs.mrc.osdselection.SortRandomPolicy;
 import org.xtreemfs.mrc.osdselection.SortReversePolicy;
+import org.xtreemfs.mrc.osdselection.SortUUIDPolicy;
 import org.xtreemfs.mrc.osdselection.SortVivaldiPolicy;
 
 public class MRCPolicyContainer extends PolicyContainer {
@@ -39,13 +40,13 @@ public class MRCPolicyContainer extends PolicyContainer {
         OSDSelectionPolicy.class.getName()         };
     
     private static final String[] BUILT_IN_POLICIES = { POSIXFileAccessPolicy.class.getName(),
-        VolumeACLFileAccessPolicy.class.getName(), YesToAnyoneFileAccessPolicy.class.getName(),
-        FilterDefaultPolicy.class.getName(), FilterFQDNPolicy.class.getName(),
-        FilterUUIDPolicy.class.getName(), GroupDCMapPolicy.class.getName(), GroupFQDNPolicy.class.getName(),
-        SortDCMapPolicy.class.getName(), SortFQDNPolicy.class.getName(), SortRandomPolicy.class.getName(),
-        SortVivaldiPolicy.class.getName(), SortReversePolicy.class.getName() };
+            VolumeACLFileAccessPolicy.class.getName(), YesToAnyoneFileAccessPolicy.class.getName(),
+            FilterDefaultPolicy.class.getName(), FilterFQDNPolicy.class.getName(), FilterUUIDPolicy.class.getName(),
+            GroupDCMapPolicy.class.getName(), GroupFQDNPolicy.class.getName(), SortDCMapPolicy.class.getName(),
+            SortFQDNPolicy.class.getName(), SortRandomPolicy.class.getName(), SortVivaldiPolicy.class.getName(),
+            SortUUIDPolicy.class.getName(), SortReversePolicy.class.getName() };
     
-    private MRCConfig             config;
+    private final MRCConfig             config;
     
     public MRCPolicyContainer(MRCConfig config) throws IOException {
         super(config, new PolicyClassLoader(config.getPolicyDir(), POLICY_INTERFACES, BUILT_IN_POLICIES));
