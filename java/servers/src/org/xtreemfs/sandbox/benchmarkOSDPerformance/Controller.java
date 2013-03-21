@@ -9,50 +9,29 @@
 package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.foundation.util.CLIParser;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
-import org.xtreemfs.utils.utils;
 
 /**
- * Todo Zusammenspiel von sw und rr verbessern (kleiner sw sollte den das basefile nicht jedes mal killen)
+ * Todo Zusammenspiel von sw und rr verbessern (kleiner sw sollte das basefile nicht jedes mal killen)
  * 
  * @author jensvfischer
  * 
  */
 public class Controller {
 
-    static final int                                KiB_IN_BYTES                 = 1024;
-    static final int                                MiB_IN_BYTES                 = 1024 * 1024;
-    static final int                                GiB_IN_BYTES                 = 1024 * 1024 * 1024;
-    static ConnectionData                           connection;
-    private static Map<String, CLIParser.CliOption> options;
+    static final int       KiB_IN_BYTES = 1024;
+    static final int       MiB_IN_BYTES = 1024 * 1024;
+    static final int       GiB_IN_BYTES = 1024 * 1024 * 1024;
+    private Params         params;
 
-    static void tryConnection() throws Exception {
-        try {
-            BenchmarkClientFactory.getNewClient(connection).getServiceByType(DIR.ServiceType.SERVICE_TYPE_OSD);
-        } catch (IOException e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, Controller.class,
-                    "Failed to establish connection to servers. Errormessage: %s", e.getMessage());
-            Thread.yield(); // allows the logger to catch up
-            e.printStackTrace();
-            System.exit(42);
-        } catch (Exception e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, Controller.class, e.getMessage());
-            e.printStackTrace();
-            throw e;
-        }
+    public Controller(Params params) {
+        this.params = params;
     }
 
-    private static void printResults(ConcurrentLinkedQueue<BenchmarkResult> results) {
-        /* print the results */
-        for (BenchmarkResult res : results) {
-            System.out.println(res);
-        }
+    private void setup() {
     }
 
     /**
@@ -68,7 +47,7 @@ public class Controller {
      * @return
      * @throws Exception
      */
-    static ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(BenchmarkType benchmarkType, int numberOfThreads,
+    ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(BenchmarkType benchmarkType, int numberOfThreads,
             long sizeInBytes) throws Exception {
 
         if (sizeInBytes % Benchmark.XTREEMFS_BLOCK_SIZE_IN_BYTES != 0)
@@ -79,7 +58,7 @@ public class Controller {
 
         for (int i = 0; i < numberOfThreads; i++) {
             Benchmark benchmark = BenchmarkFactory.createBenchmark(benchmarkType, VolumeManager.getInstance()
-                    .getNextVolume(), connection);
+                    .getNextVolume(), params);
             benchmark.startBenchmark(sizeInBytes, results, threads);
         }
 
@@ -99,79 +78,60 @@ public class Controller {
         return results;
     }
 
+    public void teardown() throws Exception {
+        VolumeManager.getInstance().deleteCreatedVolumes();
+        VolumeManager.getInstance().scrub();
+        BenchmarkClientFactory.shutdownClients();
+    }
+
+    public static void printResults(ConcurrentLinkedQueue<BenchmarkResult> results) {
+        /* print the results */
+        for (BenchmarkResult res : results) {
+            System.out.println(res);
+        }
+    }
+
+    private void tryConnection() {
+        try {
+            BenchmarkClientFactory.getNewClient(params).getServiceByType(DIR.ServiceType.SERVICE_TYPE_OSD);
+        } catch (IOException e) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, Controller.class,
+                    "Failed to establish connection to servers. Errormessage: %s", e.getMessage());
+            Thread.yield(); // allows the logger to catch up
+            e.printStackTrace();
+            System.exit(42);
+        } catch (Exception e) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, Controller.class, e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    void setupVolumes(String... volumeNames) throws Exception {
+        VolumeManager.init(this.params);
+        VolumeManager volumeManager = VolumeManager.getInstance();
+
+        if (volumeNames.length == 0)
+            volumeManager.createDefaultVolumes(params.numberOfThreads);
+        else if (volumeNames.length != params.numberOfThreads) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this,
+                    "Number of volume names must be in accordance with number of benchmarks run in parallel");
+            throw new IllegalArgumentException(
+                    "Number of volume names must be in accordance with number of benchmarks run in parallel");
+        } else
+            volumeManager.openVolumes(volumeNames);
+    }
+
     public static void main(String[] args) throws Exception {
         Logging.start(Logging.LEVEL_INFO, Logging.Category.tool);
-        Params params = new Params();
-        params.parseCLIOptions(args);
 
-        displayUsageIfSet(params);
+        Params params = new ParamsBuilder().build();
 
-        connection = params.getConnectionData();
-        tryConnection();
-
-        setupVolumes(params);
-
-        runBenchmarks(params);
-
-        // volumeManager.deleteCreatedVolumes();
-        // volumeManager.scrub();
-
-        System.exit(0);
-
-    }
-
-    private static void setupVolumes(Params params) throws Exception {
-        VolumeManager.init(connection);
-        VolumeManager volumeManager = VolumeManager.getInstance();
-        List<String> arguments = params.getArguments();
-
-        if (arguments.size() == 0)
-            volumeManager.createDefaultVolumes(params.getNumberOfThreads());
-        else {
-            // ToDo add check to verify that the number of volumes is in accordence with the number of threads
-            String[] volumes = arguments.toArray(new String[arguments.size()]);
-            volumeManager.openVolumes(volumes);
-        }
-    }
-
-    private static void displayUsageIfSet(Params params){
-        if (params.usageIsSet())
-            params.usage();
-    }
-
-    private static void runBenchmarks(Params params) throws Exception {
-
-        ConcurrentLinkedQueue<BenchmarkResult> result;
-        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
-
-        VolumeManager volumeManager = VolumeManager.getInstance();
-
-        if (params.sequentialReadBenchmarkIsSet()) {
-            result = startBenchmarks(BenchmarkType.WRITE, params.getNumberOfThreads(), params.getSequentialSizeInBytes());
-            results.addAll(result);
-        }
-
-        if (params.sequentialWriteBenchmarkIsSet()) {
-            result = startBenchmarks(BenchmarkType.READ, params.getNumberOfThreads(), params.getSequentialSizeInBytes());
-            results.addAll(result);
-        }
-
-        if (params.randomReadBenchmarkIsSet()) {
-            result = startBenchmarks(BenchmarkType.RANDOM_IO_READ, 1, params.getRandomSizeInBytes());
-            results.addAll(result);
-        }
-
-        if (params.randomFilebasedWriteBenchmarkIsSet()) {
-            result = startBenchmarks(BenchmarkType.RANDOM_IO_WRITE_FILEBASED, 1, params.getRandomSizeInBytes());
-            results.addAll(result);
-        }
-
-        if (params.randomFilebasedReadBenchmarkIsSet()) {
-            result = startBenchmarks(BenchmarkType.RANDOM_IO_READ_FILEBASED, 1, params.getRandomSizeInBytes());
-            results.addAll(result);
-        }
-
+        Controller controller = new Controller(params);
+        controller.tryConnection();
+        controller.setupVolumes();
+        ConcurrentLinkedQueue results = controller.startBenchmarks(BenchmarkType.WRITE, 1, 10L*MiB_IN_BYTES);
         printResults(results);
+        controller.teardown();
     }
 
 }
