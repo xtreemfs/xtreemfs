@@ -76,6 +76,7 @@ import org.xtreemfs.osd.operations.EventWriteObject;
 import org.xtreemfs.osd.operations.FleaseMessageOperation;
 import org.xtreemfs.osd.operations.GetFileIDListOperation;
 import org.xtreemfs.osd.operations.GetObjectSetOperation;
+import org.xtreemfs.osd.operations.InstallXLocSetOperation;
 import org.xtreemfs.osd.operations.InternalGetFileSizeOperation;
 import org.xtreemfs.osd.operations.InternalGetGmaxOperation;
 import org.xtreemfs.osd.operations.InternalRWRAuthStateOperation;
@@ -84,6 +85,7 @@ import org.xtreemfs.osd.operations.InternalRWRStatusOperation;
 import org.xtreemfs.osd.operations.InternalRWRTruncateOperation;
 import org.xtreemfs.osd.operations.InternalRWRUpdateOperation;
 import org.xtreemfs.osd.operations.InternalTruncateOperation;
+import org.xtreemfs.osd.operations.InvalidateXLocSetOperation;
 import org.xtreemfs.osd.operations.LocalReadOperation;
 import org.xtreemfs.osd.operations.LockAcquireOperation;
 import org.xtreemfs.osd.operations.LockCheckOperation;
@@ -323,7 +325,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         udpCom = new RPCUDPSocketServer(config.getPort(), this);
         udpCom.setLifeCycleListener(this);
         
-        preprocStage = new PreprocStage(this, metadataCache, config.getMaxRequestsQueueLength());
+        preprocStage = new PreprocStage(this, metadataCache, storageLayout, config.getMaxRequestsQueueLength());
         preprocStage.setLifeCycleListener(this);
         
         stStage = new StorageStage(this, metadataCache, storageLayout, config.getStorageThreads(), config.getMaxRequestsQueueLength());
@@ -848,6 +850,12 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         op = new InternalRWRAuthStateOperation(this);
         operations.put(op.getProcedureId(), op);
         
+        op = new InvalidateXLocSetOperation(this);
+        operations.put(op.getProcedureId(), op);
+
+        op = new InstallXLocSetOperation(this);
+        operations.put(op.getProcedureId(), op);
+
         // --internal events here--
         
         op = new EventCloseFile(this);

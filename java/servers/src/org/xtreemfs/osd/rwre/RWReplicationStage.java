@@ -33,6 +33,7 @@ import org.xtreemfs.foundation.flease.FleaseStatusListener;
 import org.xtreemfs.foundation.flease.FleaseViewChangeListenerInterface;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.flease.proposer.FleaseException;
+import org.xtreemfs.foundation.flease.proposer.FleaseListener;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
@@ -40,7 +41,6 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
@@ -51,6 +51,8 @@ import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.operations.EventRWRStatus;
 import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.rwre.ReplicatedFileState.ReplicaState;
+import org.xtreemfs.osd.stages.PreprocStage.InstallXLocSetCallback;
+import org.xtreemfs.osd.stages.PreprocStage.InvalidateXLocSetCallback;
 import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.osd.stages.StorageStage.DeleteObjectsCallback;
 import org.xtreemfs.osd.stages.StorageStage.InternalGetMaxObjectNoCallback;
@@ -63,6 +65,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.XLocSetVersionState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 /**
@@ -71,22 +74,25 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
  */
 public class RWReplicationStage extends Stage implements FleaseMessageSenderInterface {
 
-    public static final int STAGEOP_REPLICATED_WRITE = 1;
-    public static final int STAGEOP_CLOSE = 2;
-    public static final int STAGEOP_PROCESS_FLEASE_MSG = 3;
-    public static final int STAGEOP_PREPAREOP = 5;
-    public static final int STAGEOP_TRUNCATE = 6;
-    public static final int STAGEOP_GETSTATUS = 7;
+    public static final int STAGEOP_REPLICATED_WRITE          = 1;
+    public static final int STAGEOP_CLOSE                     = 2;
+    public static final int STAGEOP_PROCESS_FLEASE_MSG        = 3;
+    public static final int STAGEOP_PREPAREOP                 = 5;
+    public static final int STAGEOP_TRUNCATE                  = 6;
+    public static final int STAGEOP_GETSTATUS                 = 7;
 
-    public static final int STAGEOP_INTERNAL_AUTHSTATE = 10;
-    public static final int STAGEOP_INTERNAL_OBJFETCHED = 11;
+    public static final int STAGEOP_INTERNAL_AUTHSTATE        = 10;
+    public static final int STAGEOP_INTERNAL_OBJFETCHED       = 11;
 
-    public static final int STAGEOP_LEASE_STATE_CHANGED = 13;
-    public static final int STAGEOP_INTERNAL_STATEAVAIL = 14;
-    public static final int STAGEOP_INTERNAL_DELETE_COMPLETE = 15;
-    public static final int STAGEOP_FORCE_RESET = 16;
-    public static final int STAGEOP_INTERNAL_MAXOBJ_AVAIL = 17;
+    public static final int STAGEOP_LEASE_STATE_CHANGED       = 13;
+    public static final int STAGEOP_INTERNAL_STATEAVAIL       = 14;
+    public static final int STAGEOP_INTERNAL_DELETE_COMPLETE  = 15;
+    public static final int STAGEOP_FORCE_RESET               = 16;
+    public static final int STAGEOP_INTERNAL_MAXOBJ_AVAIL     = 17;
     public static final int STAGEOP_INTERNAL_BACKUP_AUTHSTATE = 18;
+
+    public static final int STAGEOP_SETVIEW                   = 21;
+    public static final int STAGEOP_INVALIDATEVIEW            = 22;
 
     public  static enum Operation {
         READ,
@@ -204,7 +210,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         super.waitForStartup();
     }
 
-    @Override
     public void waitForShutdown() throws Exception {
         client.waitForShutdown();
         fleaseClient.waitForShutdown();
@@ -527,15 +532,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 if (error != null) {
                     numObjsInFlight--;
                     fetchObjects();
-
                     failed(state, error, "processObjectFetched");
-                } else if (data.getData() == null) {
-                    // data is null if object was deleted meanwhile.
-                    numObjsInFlight--;
-                    fetchObjects();
-
-                    ErrorResponse generatedError = ErrorResponse.newBuilder().setErrorType(RPC.ErrorType.INTERNAL_SERVER_ERROR).setErrorMessage("Fetching a missing object failed because no data was returned. The object was probably deleted meanwhile.").build();
-                    failed(state, generatedError, "processObjectFetched");
                 } else {
                     final int bytes = data.getData().remaining();
                     master.getStorageStage().writeObjectWithoutGMax(fileId, record.getObjectNumber(),
@@ -822,6 +819,18 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         public void statusComplete(Map<String,Map<String,String>> status);
     }
 
+    public void setFleaseView(String fileId, XLocSetVersionState versionState) {
+        enqueueOperation(STAGEOP_SETVIEW, new Object[] { fileId, versionState }, null, null);
+    }
+
+    public void setFleaseView(String fileId, XLocSetVersionState versionState, InstallXLocSetCallback callback) {
+        enqueueOperation(STAGEOP_SETVIEW, new Object[] { fileId, versionState }, null, callback);
+    }
+    
+    public void invalidateView(String fileId, XLocSetVersionState versionState, InvalidateXLocSetCallback callback) {
+        enqueueOperation(STAGEOP_INVALIDATEVIEW, new Object[] { fileId, versionState }, null, callback);
+    }
+    
     @Override
     public void sendMessage(FleaseMessage message, InetSocketAddress recipient) {
         ReusableBuffer data = BufferPool.allocate(message.getSize());
@@ -871,6 +880,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             case STAGEOP_INTERNAL_BACKUP_AUTHSTATE: processBackupAuthoritativeState(method); break;
             case STAGEOP_FORCE_RESET : processForceReset(method); break;
             case STAGEOP_GETSTATUS : processGetStatus(method); break;
+            case STAGEOP_SETVIEW: processSetFleaseView(method); break;
+            case STAGEOP_INVALIDATEVIEW: processInvalidateView(method); break;
             default : throw new IllegalArgumentException("no such stageop");
         }
     }
@@ -1211,5 +1222,68 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             }
         }
         return primary;
+    }
+    
+    private void processSetFleaseView(StageRequest method) {
+        final Object[] args = method.getArgs();
+        final String fileId = (String) args[0];
+        final XLocSetVersionState versionState = (XLocSetVersionState) args[1];
+        final InstallXLocSetCallback callback = (InstallXLocSetCallback) method.getCallback();
+
+        // TODO (jdillmann): check if file exists and files.get() != null
+        final ASCIIString cellId = files.get(fileId).getPolicy().getCellId();
+
+        int viewId;
+        if (versionState.getInvalidated()) {
+            viewId = FleaseMessage.VIEW_ID_INVALIDATED;
+        } else {
+            viewId = versionState.getVersion();
+        }
+
+        fstage.setViewId(cellId, viewId, new FleaseListener() {
+
+            @Override
+            public void proposalResult(ASCIIString cellId, ASCIIString leaseHolder, long leaseTimeout_ms,
+                    long masterEpochNumber) {
+                if (callback != null) {
+                    callback.installComplete(fileId, versionState.getVersion(), null);
+                }
+            }
+
+            @Override
+            public void proposalFailed(ASCIIString cellId, Throwable cause) {
+                if (callback != null) {
+                    callback.installComplete(fileId, versionState.getVersion(),
+                            ErrorUtils.getInternalServerError(cause));
+                }
+            }
+        });
+    }
+
+    private void processInvalidateView(StageRequest method) {
+        final Object[] args = method.getArgs();
+        final String fileId = (String) args[0];
+        final XLocSetVersionState versionState = (XLocSetVersionState) args[1];
+        final InvalidateXLocSetCallback callback = (InvalidateXLocSetCallback) method.getCallback();
+
+        // TODO (jdillmann): check if file exists and files.get() != null
+        final ReplicatedFileState fState = files.get(fileId);
+        final ASCIIString cellId = fState.getPolicy().getCellId();
+        
+        final boolean isPrimary = (fState != null && fState.isLocalIsPrimary());
+
+        fstage.setViewId(cellId, FleaseMessage.VIEW_ID_INVALIDATED, new FleaseListener() {
+            
+            @Override
+            public void proposalResult(ASCIIString cellId, ASCIIString leaseHolder, long leaseTimeout_ms, long masterEpochNumber) {
+                callback.invalidateComplete(fileId, versionState.getVersion(), isPrimary, null);
+            }
+            
+            @Override
+            public void proposalFailed(ASCIIString cellId, Throwable cause) {
+                callback.invalidateComplete(fileId, versionState.getVersion(), isPrimary,
+                        ErrorUtils.getInternalServerError(cause));
+            }
+        }); 
     }
 }

@@ -8,12 +8,9 @@
 
 package org.xtreemfs.osd.operations;
 
-import com.google.protobuf.Message;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
-import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
@@ -49,6 +46,13 @@ public abstract class OSDOperation {
     public abstract ErrorResponse parseRPCMessage(OSDRequest rq);
 
     public abstract boolean requiresCapability();
+
+    /**
+     * Requires that the request is from the same view as the replica. Defaults to false
+     */
+    public boolean requiresValidView() {
+        return false;
+    }
 
     public void waitForResponses(final RPCResponse[] responses, final ResponsesListener listener) {
 
