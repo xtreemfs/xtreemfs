@@ -19,6 +19,7 @@ import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.LRUCache;
 import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
@@ -73,6 +74,8 @@ public class PreprocStage extends Stage {
     public final static int                                 STAGEOP_INSTALL_XLOC       = 15;
 
     public final static int                                 STAGEOP_INVALIDATE_XLOC    = 16;
+
+    public final static int                                 STAGEOP_UPDATE_XLOC        = 17;
 
     private final static long                               OFT_CLEAN_INTERVAL         = 1000 * 60;
     
@@ -462,6 +465,9 @@ public class PreprocStage extends Stage {
         case STAGEOP_INVALIDATE_XLOC:
             doInvalidateXLocSet(m);
             break;
+        case STAGEOP_UPDATE_XLOC:
+            doUpdateXLocSetFromFlease(m);
+            break;
         default:
             Logging.logMessage(Logging.LEVEL_ERROR, this, "unknown stageop called: %d", requestedMethod);
             break;
@@ -696,6 +702,47 @@ public class PreprocStage extends Stage {
         return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EAGAIN, "view is not valid");
     }
 
+    /**
+     * Process a viewIdChangeEvent from flease and update the persistent version/state
+     */
+    public void updateXLocSetFromFlease(ASCIIString cellId, int version) {
+        enqueueOperation(STAGEOP_UPDATE_XLOC, new Object[] { cellId, version }, null, null);
+    }
+
+    private void doUpdateXLocSetFromFlease(StageRequest m) {
+        // TODO (jdillmann): Extend CoordinatedReplicaUpdatePolicy with a generic fileIdFromCellId() function
+        // @see org.xtreemfs.osd.rwre.FleaseMasterEpochThread.processMethod(StageRequest)
+        final String fileId = m.getArgs()[0].toString().replace("file/", "");
+        final int version = (int) m.getArgs()[1];
+        
+        XLocSetVersionState state;
+        try {
+            // TODO (jdillmann): Cache the VersionState
+            state = layout.getXLocSetVersionState(fileId);
+        } catch (IOException e) {
+            // TODO (jdillmann): do something with the error or at least log it
+            return;
+        }
+
+
+        if (state.getVersion() > version || (state.getVersion() == version && state.getInvalidated())) {
+            state = state.toBuilder().setInvalidated(false).setVersion(version).build();
+            try {
+                // persist the version
+                layout.setXLocSetVersionState(fileId, state);
+                // and pass it back to flease
+                master.getRWReplicationStage().setFleaseView(fileId, state);
+            } catch (IOException e) {
+                // TODO (jdillmann): do something with the error or at least log it
+                return;
+            }
+
+        }
+
+        // If the local version is greater then the one flease got from it responses, the other replicas have
+        // to update their version. There exists no path to decrement the version if it has been seen once.
+        return;
+    }
 
     /**
      * Invalidate the current XLocSet. The replica will not respond to read/write/truncate or flease

@@ -164,7 +164,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
             @Override
             public void viewIdChangeEvent(ASCIIString cellId, int viewId) {
-                throw new UnsupportedOperationException("Not supported yet.");
+                eventViewIdChanged(cellId, viewId);
             }
         }, new FleaseStatusListener() {
 
@@ -251,6 +251,10 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     public void eventBackupReplicaReset(String fileId, AuthoritativeReplicaState authState, ReplicaStatus localState,
             FileCredentials credentials, XLocations xloc) {
         this.enqueueOperation(STAGEOP_INTERNAL_BACKUP_AUTHSTATE, new Object[]{fileId,authState, localState, credentials, xloc}, null, null);
+    }
+
+    void eventViewIdChanged(ASCIIString cellId, int viewId) {
+        master.getPreprocStage().updateXLocSetFromFlease(cellId, viewId);
     }
 
     private void executeSetAuthState(final ReplicaStatus localState, final AuthoritativeReplicaState authState, ReplicatedFileState state, final String fileId) {
