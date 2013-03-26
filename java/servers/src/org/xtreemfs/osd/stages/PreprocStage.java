@@ -19,7 +19,6 @@ import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.LRUCache;
 import org.xtreemfs.foundation.TimeSync;
-import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
@@ -705,16 +704,19 @@ public class PreprocStage extends Stage {
     /**
      * Process a viewIdChangeEvent from flease and update the persistent version/state
      */
-    public void updateXLocSetFromFlease(ASCIIString cellId, int version) {
+    public void updateXLocSetFromFlease(String cellId, int version) {
         enqueueOperation(STAGEOP_UPDATE_XLOC, new Object[] { cellId, version }, null, null);
     }
 
     private void doUpdateXLocSetFromFlease(StageRequest m) {
-        // TODO (jdillmann): Extend CoordinatedReplicaUpdatePolicy with a generic fileIdFromCellId() function
-        // @see org.xtreemfs.osd.rwre.FleaseMasterEpochThread.processMethod(StageRequest)
-        final String fileId = m.getArgs()[0].toString().replace("file/", "");
+        final String fileId = (String) m.getArgs()[0];
         final int version = (int) m.getArgs()[1];
         
+        if (fileId == null) {
+            // TODO (jdillmann): error handling required. Why or is it possible that there exists no cellToFileId entry
+            return;
+        }
+
         XLocSetVersionState state;
         try {
             // TODO (jdillmann): Cache the VersionState

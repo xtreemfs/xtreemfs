@@ -9,12 +9,11 @@
 package org.xtreemfs.osd.rwre;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
@@ -288,6 +287,11 @@ public class ReplicatedFileState {
         this.localIsPrimary = localIsPrimary;
     }
 
-
+    /**
+     * @return the XLocations
+     */
+    public XLocations getLocations() {
+        return loc;
+    }
 
 }

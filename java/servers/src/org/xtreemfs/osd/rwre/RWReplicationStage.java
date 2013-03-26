@@ -254,7 +254,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
 
     void eventViewIdChanged(ASCIIString cellId, int viewId) {
-        master.getPreprocStage().updateXLocSetFromFlease(cellId, viewId);
+        master.getPreprocStage().updateXLocSetFromFlease(cellToFileId.get(cellId), viewId);
     }
 
     private void executeSetAuthState(final ReplicaStatus localState, final AuthoritativeReplicaState authState, ReplicatedFileState state, final String fileId) {
@@ -675,7 +675,12 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     for (ServiceUUID osd : file.getPolicy().getRemoteOSDUUIDs()) {
                         osdAddresses.add(osd.getAddress());
                     }
-                    fstage.openCell(file.getPolicy().getCellId(), osdAddresses, true);
+
+                    // it is save to use the version from the XLoc, because outdated or invalidated requests
+                    // will be filtered in the preprocStage if the Operation requires a valid view
+                    int viewId = file.getLocations().getVersion();
+
+                    fstage.openCell(file.getPolicy().getCellId(), osdAddresses, true, viewId);
                     //wait for lease...
                 } catch (UnknownUUIDException ex) {
                     failed(file, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex), "doWaitingForLease");
@@ -1244,9 +1249,31 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         final XLocSetVersionState versionState = (XLocSetVersionState) args[1];
         final InstallXLocSetCallback callback = (InstallXLocSetCallback) method.getCallback();
 
-        // TODO (jdillmann): check if file exists and files.get() != null
-        final ASCIIString cellId = files.get(fileId).getPolicy().getCellId();
+        ReplicatedFileState fState = files.get(fileId);
 
+        // there is no open cell for this file yet and thus we can't propagate the view yet.
+        // this has to be done when the cell is opened.
+        // we can use the version from the XLocations, because any operation with an outdated or invalid view will be prevented
+        if (fState == null) {
+            if (callback != null) {
+                // TODO (jdillmann): check if we should add another callback method to distinguish this case
+                callback.installComplete(fileId, versionState.getVersion(), null);
+            }
+            return;
+        }
+        
+        // if the policy isn't based on a primary/backup strategy, flease won't be used and we don't have to
+        // propagate the view
+        if (!fState.getPolicy().requiresLease()) {
+            if (callback != null) {
+                // TODO (jdillmann): check if we should add another callback method to distinguish this case
+                callback.installComplete(fileId, versionState.getVersion(), null);
+            }
+            return;
+        }
+        
+        ASCIIString cellId = fState.getPolicy().getCellId();
+        
         int viewId;
         if (versionState.getInvalidated()) {
             viewId = FleaseMessage.VIEW_ID_INVALIDATED;
@@ -1280,12 +1307,16 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         final XLocSetVersionState versionState = (XLocSetVersionState) args[1];
         final InvalidateXLocSetCallback callback = (InvalidateXLocSetCallback) method.getCallback();
 
-        // TODO (jdillmann): check if file exists and files.get() != null
         final ReplicatedFileState fState = files.get(fileId);
-        final ASCIIString cellId = fState.getPolicy().getCellId();
-        
-        final boolean isPrimary = (fState != null && fState.isLocalIsPrimary());
 
+        // @see processSetFleaseView
+        if (fState == null || !fState.getPolicy().requiresLease()) {
+            callback.invalidateComplete(fileId, versionState.getVersion(), true, null);
+            return;
+        }
+
+        final ASCIIString cellId = fState.getPolicy().getCellId();
+        final boolean isPrimary = fState.isLocalIsPrimary();
         fstage.setViewId(cellId, FleaseMessage.VIEW_ID_INVALIDATED, new FleaseListener() {
             
             @Override
