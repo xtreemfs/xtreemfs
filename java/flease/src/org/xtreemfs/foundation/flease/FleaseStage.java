@@ -7,7 +7,6 @@
 package org.xtreemfs.foundation.flease;
 
 import java.io.IOException;
-import org.xtreemfs.foundation.flease.proposer.*;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -19,6 +18,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+
 import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.buffer.ASCIIString;
@@ -27,6 +27,10 @@ import org.xtreemfs.foundation.flease.acceptor.FleaseAcceptorCell;
 import org.xtreemfs.foundation.flease.acceptor.LearnEventListener;
 import org.xtreemfs.foundation.flease.comm.FleaseCommunicationInterface;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
+import org.xtreemfs.foundation.flease.proposer.FleaseException;
+import org.xtreemfs.foundation.flease.proposer.FleaseListener;
+import org.xtreemfs.foundation.flease.proposer.FleaseLocalQueueInterface;
+import org.xtreemfs.foundation.flease.proposer.FleaseProposer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 
@@ -157,12 +161,18 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
      * @return
      */
     public FleaseFuture openCell(ASCIIString cellId, List<InetSocketAddress> acceptors, boolean requestMasterEpoch) {
+        return openCell(cellId, acceptors, requestMasterEpoch, 0);
+    }
+
+    public FleaseFuture openCell(ASCIIString cellId, List<InetSocketAddress> acceptors, boolean requestMasterEpoch,
+            int viewId) {
         FleaseFuture f = new FleaseFuture();
         Request rq = new Request(Request.RequestType.OPEN_CELL_REQUEST);
         rq.cellId = cellId;
         rq.acceptors = acceptors;
         rq.listener = f;
         rq.requestME = requestMasterEpoch;
+        rq.viewId = viewId;
 
         if (COLLECT_STATISTICS)
             inRequests.incrementAndGet();
@@ -416,7 +426,8 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
                             case OPEN_CELL_REQUEST: {
                                 assert (rq.acceptors != null);
                                 try {
-                                    proposer.openCell(rq.cellId, rq.acceptors, rq.requestME);
+                                proposer.openCell(rq.cellId, rq.acceptors, rq.requestME, rq.viewId);
+                                acceptor.setViewId(rq.cellId, rq.viewId);
                                     if (rq.listener != null)
                                         rq.listener.proposalResult(rq.cellId, null, 0, FleaseMessage.IGNORE_MASTER_EPOCH);
                                 } catch (FleaseException ex) {

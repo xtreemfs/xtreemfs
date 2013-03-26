@@ -11,13 +11,14 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.flease.Flease;
 import org.xtreemfs.foundation.flease.FleaseConfig;
 import org.xtreemfs.foundation.flease.FleaseStage;
-import org.xtreemfs.foundation.flease.FleaseViewChangeListenerInterface;
 import org.xtreemfs.foundation.flease.FleaseStatusListener;
+import org.xtreemfs.foundation.flease.FleaseViewChangeListenerInterface;
 import org.xtreemfs.foundation.flease.MasterEpochHandlerInterface;
 import org.xtreemfs.foundation.flease.acceptor.FleaseAcceptor;
 import org.xtreemfs.foundation.flease.acceptor.LearnEventListener;
@@ -113,12 +114,14 @@ public class FleaseProposer {
     public void openCell(
             ASCIIString cellId,
             List<InetSocketAddress> acceptors,
-            boolean requestMasterEpoch) throws FleaseException {
+            boolean requestMasterEpoch,
+            int viewId) throws FleaseException {
         FleaseProposerCell cell = cells.get(cellId);
         if (cell == null) {
             cell = new FleaseProposerCell(cellId, acceptors, config.getSenderId());
             cell.setCellState(State.IDLE);
             cell.setRequestMasteEpoch(requestMasterEpoch);
+            cell.setViewId(viewId);
             cells.put(cellId, cell);
             cell.addAction(ActionName.PROPOSER_CELL_OPENED);
             if (Logging.isDebug()) {

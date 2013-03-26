@@ -14,9 +14,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.security.auth.login.FailedLoginException;
-
 import junit.framework.TestCase;
+
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.flease.Flease;
@@ -116,7 +115,7 @@ public class FleaseProposerTest extends TestCase {
 
     public void testGetLease() throws Exception {
 
-        proposer.openCell(TESTCELL, new ArrayList(),false);
+        proposer.openCell(TESTCELL, new ArrayList(), false, 0);
 
         Thread.sleep(100);
 
