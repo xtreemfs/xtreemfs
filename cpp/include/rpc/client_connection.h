@@ -111,11 +111,11 @@ class ClientConnection {
   const std::string server_port_;
   boost::asio::io_service &service_;
   boost::asio::ip::tcp::resolver resolver_;
-  AbstractSocketChannel *socket_;
+  AbstractSocketChannel* socket_;
 
-  boost::asio::ip::tcp::endpoint *endpoint_;
+  boost::asio::ip::tcp::endpoint* endpoint_;
   /** Points to the Client's request_table_. */
-  request_map *request_table_;
+  request_map* request_table_;
   boost::asio::deadline_timer timer_;
   const int32_t connect_timeout_s_;
   const int32_t max_reconnect_interval_s_;
@@ -126,6 +126,12 @@ class ClientConnection {
 
   bool use_gridssl_;
   boost::asio::ssl::context* ssl_context_;
+
+  /** Deletes "socket".
+   *
+   * @remark    Ownership of "socket" is transferred.
+   */
+  void static DelayedSocketDeletionHandler(AbstractSocketChannel* socket);
 
   void Connect();
   void SendRequest();
