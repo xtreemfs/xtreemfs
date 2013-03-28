@@ -72,8 +72,14 @@ class GridSSLSocketChannel : public AbstractSocketChannel {
   }
 
   virtual void close() {
-    ssl_stream_.lowest_layer().shutdown(boost::asio::ip::tcp::socket::shutdown_both);
-    ssl_stream_.lowest_layer().close();
+    boost::system::error_code ignored_error;
+
+    ssl_stream_.lowest_layer().shutdown(
+        boost::asio::ip::tcp::socket::shutdown_both,
+        ignored_error);
+    ssl_stream_.lowest_layer().close(ignored_error);
+
+    ssl_stream_.shutdown(ignored_error);
   }
 
  private:

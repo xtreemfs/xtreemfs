@@ -54,8 +54,11 @@ class TCPSocketChannel : public AbstractSocketChannel {
   }
 
   virtual void close() {
-    socket_->shutdown(boost::asio::ip::tcp::socket::shutdown_both);
-    socket_->close();
+    boost::system::error_code ignored_error;
+
+    socket_->shutdown(boost::asio::ip::tcp::socket::shutdown_both,
+                      ignored_error);
+    socket_->close(ignored_error);
   }
 
  protected:
