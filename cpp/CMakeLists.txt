@@ -4,6 +4,8 @@ PROJECT(cpp CXX)
 #SET (CMAKE_VERBOSE_MAKEFILE true)
 
 add_definitions(-D_FILE_OFFSET_BITS=64)
+# Uncomment this to enable boost::asio debug output.
+#add_definitions(-DBOOST_ASIO_ENABLE_HANDLER_TRACKING)
 
 # Set variables and required libraries.
 ##########################################
