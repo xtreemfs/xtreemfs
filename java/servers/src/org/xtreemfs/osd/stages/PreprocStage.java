@@ -704,8 +704,8 @@ public class PreprocStage extends Stage {
     /**
      * Process a viewIdChangeEvent from flease and update the persistent version/state
      */
-    public void updateXLocSetFromFlease(String cellId, int version) {
-        enqueueOperation(STAGEOP_UPDATE_XLOC, new Object[] { cellId, version }, null, null);
+    public void updateXLocSetFromFlease(String fileId, int version) {
+        enqueueOperation(STAGEOP_UPDATE_XLOC, new Object[] { fileId, version }, null, null);
     }
 
     private void doUpdateXLocSetFromFlease(StageRequest m) {
@@ -713,7 +713,7 @@ public class PreprocStage extends Stage {
         final int version = (int) m.getArgs()[1];
         
         if (fileId == null) {
-            // TODO (jdillmann): error handling required. Why or is it possible that there exists no cellToFileId entry
+            // TODO (jdillmann): error handling required
             return;
         }
 

@@ -254,7 +254,13 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
 
     void eventViewIdChanged(ASCIIString cellId, int viewId) {
-        master.getPreprocStage().updateXLocSetFromFlease(cellToFileId.get(cellId), viewId);
+        // TODO (jdillmann): check if cellToFileId.get(cellId) could be used. we would have to call getState. 
+        //                   - what will be the side effects?
+        //                   - when will the file be closed again?
+        // TODO (jdillmann): Extend CoordinatedReplicaUpdatePolicy with a generic fileIdFromCellId() function
+        // @see org.xtreemfs.osd.rwre.FleaseMasterEpochThread.processMethod(StageRequest)
+        final String fileId = cellId.toString().replace("file/", "");
+        master.getPreprocStage().updateXLocSetFromFlease(fileId, viewId);
     }
 
     private void executeSetAuthState(final ReplicaStatus localState, final AuthoritativeReplicaState authState, ReplicatedFileState state, final String fileId) {
