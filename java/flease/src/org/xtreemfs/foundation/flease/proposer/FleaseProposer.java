@@ -458,6 +458,7 @@ public class FleaseProposer {
         msg.setLeaseTimeout(TimeSync.getGlobalTime() + config.getMaxLeaseTimeout());
         msg.setSendTimestamp(TimeSync.getGlobalTime());
         msg.setSender(null);
+        msg.setViewId(cell.getViewId());
         if (cell.isRequestMasteEpoch()) {
             msg.setMasterEpochNumber(FleaseMessage.REQUEST_MASTER_EPOCH);
             cell.addAction(ActionName.PROPOSER_REQUEST_MASTER_EPOCH);
@@ -635,7 +636,7 @@ public class FleaseProposer {
                 }
             }
 
-            if (maxViewId != cell.getViewId()) {
+            if (maxViewId > cell.getViewId()) {
                 cell.addAction(ActionName.PROPOSER_VIEW_OUTDATED,
                         maxViewId + "!=" + cell.getViewId());
                 if (Logging.isDebug()) {
@@ -798,6 +799,7 @@ public class FleaseProposer {
         msg.setLeaseTimeout(cell.getMessageSent().getLeaseTimeout());
         msg.setSendTimestamp(TimeSync.getGlobalTime());
         msg.setSender(null);
+        msg.setViewId(cell.getViewId());
         if (cell.isRequestMasteEpoch())
             msg.setMasterEpochNumber(cell.getMasterEpochNumber());
         cell.setMessageSent(msg);
@@ -939,7 +941,7 @@ public class FleaseProposer {
                 }
             }
 
-            if (maxViewId != cell.getViewId()) {
+            if (maxViewId > cell.getViewId()) {
                 if (Logging.isDebug() && config.isDebugPrintMessages()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG,
                             Logging.Category.replication,
@@ -993,6 +995,7 @@ public class FleaseProposer {
         msg.setLeaseTimeout(cell.getMessageSent().getLeaseTimeout());
         msg.setSendTimestamp(TimeSync.getGlobalTime());
         msg.setSender(null);
+        msg.setViewId(cell.getViewId());
         if (cell.isRequestMasteEpoch()) {
             assertState(cell.getMasterEpochNumber() > -1, cell);
             msg.setMasterEpochNumber(cell.getMasterEpochNumber());

@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.flease.FleaseConfig;
@@ -321,7 +322,6 @@ public class FleaseAcceptor {
         if (myViewId < msg.getViewId()) {
             //notify listener
             viewListener.viewIdChangeEvent(msg.getCellId(), msg.getViewId());
-            return null;
         }
 
         FleaseMessage response = null;
