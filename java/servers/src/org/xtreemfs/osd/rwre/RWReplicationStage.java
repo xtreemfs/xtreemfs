@@ -254,13 +254,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
 
     void eventViewIdChanged(ASCIIString cellId, int viewId) {
-        // TODO (jdillmann): check if cellToFileId.get(cellId) could be used. we would have to call getState. 
-        //                   - what will be the side effects?
-        //                   - when will the file be closed again?
-        // TODO (jdillmann): Extend CoordinatedReplicaUpdatePolicy with a generic fileIdFromCellId() function
-        // @see org.xtreemfs.osd.rwre.FleaseMasterEpochThread.processMethod(StageRequest)
-        final String fileId = cellId.toString().replace("file/", "");
-        master.getPreprocStage().updateXLocSetFromFlease(fileId, viewId);
+        master.getPreprocStage().updateXLocSetFromFlease(cellId, viewId);
     }
 
     private void executeSetAuthState(final ReplicaStatus localState, final AuthoritativeReplicaState authState, ReplicatedFileState state, final String fileId) {
@@ -848,6 +842,10 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         enqueueOperation(STAGEOP_SETVIEW, new Object[] { fileId, versionState }, null, null);
     }
 
+    public void setFleaseView(String fileId, XLocSetVersionState versionState, ASCIIString cellId) {
+        enqueueOperation(STAGEOP_SETVIEW, new Object[] { fileId, versionState, cellId }, null, null);
+    }
+
     public void setFleaseView(String fileId, XLocSetVersionState versionState, InstallXLocSetCallback callback) {
         enqueueOperation(STAGEOP_SETVIEW, new Object[] { fileId, versionState }, null, callback);
     }
@@ -1254,31 +1252,45 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         final String fileId = (String) args[0];
         final XLocSetVersionState versionState = (XLocSetVersionState) args[1];
         final InstallXLocSetCallback callback = (InstallXLocSetCallback) method.getCallback();
-
-        ReplicatedFileState fState = files.get(fileId);
-
-        // there is no open cell for this file yet and thus we can't propagate the view yet.
-        // this has to be done when the cell is opened.
-        // we can use the version from the XLocations, because any operation with an outdated or invalid view will be prevented
-        if (fState == null) {
-            if (callback != null) {
-                // TODO (jdillmann): check if we should add another callback method to distinguish this case
-                callback.installComplete(fileId, versionState.getVersion(), null);
+        
+        
+        ASCIIString cellId;
+        if (args.length > 2) {
+            cellId = (ASCIIString) args[2];
+        }
+        else {
+            /* 
+            // TODO (jdillmann): The ReplicatedFileState has not to be set yet. It is possible to call getState(...) 
+            //                     (see PreprocStage.doUpdateXLocSetFromFlease for discussion)
+            ReplicatedFileState fState = files.get(fileId);
+    
+            // there is no open cell for this file yet and thus we can't propagate the view yet.
+            // this has to be done when the cell is opened.
+            // we can use the version from the XLocations, because any operation with an outdated or invalid view will be prevented
+            if (fState == null) {
+                if (callback != null) {
+                    // TODO (jdillmann): check if we should add another callback method to distinguish this case
+                    callback.installComplete(fileId, versionState.getVersion(), null);
+                }
+                return;
             }
+            
+            // if the policy isn't based on a primary/backup strategy, flease won't be used and we don't have to
+            // propagate the view
+            if (!fState.getPolicy().requiresLease()) {
+                if (callback != null) {
+                    // TODO (jdillmann): check if we should add another callback method to distinguish this case
+                    callback.installComplete(fileId, versionState.getVersion(), null);
+                }
+                return;
+            }
+            
+            
+            ASCIIString cellId = fState.getPolicy().getCellId();
+            */
             return;
         }
-        
-        // if the policy isn't based on a primary/backup strategy, flease won't be used and we don't have to
-        // propagate the view
-        if (!fState.getPolicy().requiresLease()) {
-            if (callback != null) {
-                // TODO (jdillmann): check if we should add another callback method to distinguish this case
-                callback.installComplete(fileId, versionState.getVersion(), null);
-            }
-            return;
-        }
-        
-        ASCIIString cellId = fState.getPolicy().getCellId();
+
         
         int viewId;
         if (versionState.getInvalidated()) {
@@ -1338,3 +1350,4 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         }); 
     }
 }
+

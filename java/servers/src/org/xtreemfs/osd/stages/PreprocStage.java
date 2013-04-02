@@ -19,6 +19,7 @@ import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.LRUCache;
 import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
@@ -704,14 +705,21 @@ public class PreprocStage extends Stage {
     /**
      * Process a viewIdChangeEvent from flease and update the persistent version/state
      */
-    public void updateXLocSetFromFlease(String fileId, int version) {
-        enqueueOperation(STAGEOP_UPDATE_XLOC, new Object[] { fileId, version }, null, null);
+    public void updateXLocSetFromFlease(ASCIIString cellId, int version) {
+        enqueueOperation(STAGEOP_UPDATE_XLOC, new Object[] { cellId, version }, null, null);
     }
 
     private void doUpdateXLocSetFromFlease(StageRequest m) {
-        final String fileId = (String) m.getArgs()[0];
+        final ASCIIString cellId = (ASCIIString) m.getArgs()[0];
         final int version = (int) m.getArgs()[1];
         
+        // TODO (jdillmann): check if cellToFileId.get(cellId) could be used. we would have to call getState.
+        // - what will be the side effects?
+        // - when will the file be closed again?
+        // TODO (jdillmann): Extend CoordinatedReplicaUpdatePolicy with a generic fileIdFromCellId() function
+        // @see org.xtreemfs.osd.rwre.FleaseMasterEpochThread.processMethod(StageRequest)
+        final String fileId = cellId.toString().replace("file/", "");
+
         if (fileId == null) {
             // TODO (jdillmann): error handling required
             return;
@@ -723,19 +731,23 @@ public class PreprocStage extends Stage {
             state = layout.getXLocSetVersionState(fileId);
         } catch (IOException e) {
             // TODO (jdillmann): do something with the error or at least log it
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
+                    "VersionState could not be read for fileId: %s", fileId);
             return;
         }
 
 
-        if (state.getVersion() > version || (state.getVersion() == version && state.getInvalidated())) {
+        if (state.getVersion() < version || (state.getVersion() == version && state.getInvalidated())) {
             state = state.toBuilder().setInvalidated(false).setVersion(version).build();
             try {
                 // persist the version
                 layout.setXLocSetVersionState(fileId, state);
                 // and pass it back to flease
-                master.getRWReplicationStage().setFleaseView(fileId, state);
+                master.getRWReplicationStage().setFleaseView(fileId, state, cellId);
             } catch (IOException e) {
                 // TODO (jdillmann): do something with the error or at least log it
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
+                        "VersionState could not be written for fileId: %s", fileId);
                 return;
             }
 
