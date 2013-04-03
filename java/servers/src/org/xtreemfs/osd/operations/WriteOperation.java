@@ -1,4 +1,5 @@
 /*
+
  * Copyright (c) 2009-2011 by Bjoern Kolbeck,
  *               Zuse Institute Berlin
  *
@@ -217,6 +218,11 @@ public final class WriteOperation extends OSDOperation {
 
     @Override
     public boolean requiresCapability() {
+        return true;
+    }
+
+    @Override
+    public boolean requiresValidView() {
         return true;
     }
 

@@ -253,6 +253,11 @@ public final class TruncateOperation extends OSDOperation {
     }
 
     @Override
+    public boolean requiresValidView() {
+        return true;
+    }
+
+    @Override
     public void startInternalEvent(Object[] args) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
