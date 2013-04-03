@@ -23,6 +23,7 @@ import org.xtreemfs.common.libxtreemfs.AdminVolume;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.common.libxtreemfs.Volume;
+import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.json.JSONException;
@@ -30,6 +31,7 @@ import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.FSUtils;
@@ -116,12 +118,16 @@ public class VersionedXLocSetTest {
         client.shutdown();
     }
 
-    private void addReplicas(Volume volume, String fileName, int replicaNumber) throws IOException {
+    private void addReplicas(Volume volume, String fileName, int replicaNumber) throws IOException,
+            InterruptedException {
 
         // due to a bug in the OSDSelectionPolicys the numOSDs parameter is not working properly and mostly
         // returns all suitable OSDs
         List<String> osdUUIDs = volume.getSuitableOSDs(userCredentials, fileName, replicaNumber);
         assert (osdUUIDs.size() >= replicaNumber);
+        
+        // save the current Rreplica Number
+        int currentReplicaNumber = volume.listReplicas(userCredentials, fileName).getReplicasCount();
 
         // get Replication Flags
         // copied from org.xtreemfs.common.libxtreemfs.VolumeImplementation.listACL(UserCredentials, String)
@@ -136,6 +142,10 @@ public class VersionedXLocSetTest {
             throw new IOException(e);
         }
 
+        // 15s is the default lease timeout
+        // we have to wait that long, because addReplica calls ping which requires do become primary
+        Thread.sleep(16 * 1000);
+
         // for some reason addAllOsdUuids wont work and we have to add them individually
         // Replica replica = Replica.newBuilder().addAllOsdUuids(osdUUIDs.subList(0, newReplicaNumber))
         // .setStripingPolicy(defaultStripingPolicy).setReplicationFlags(repl_flags).build();
@@ -146,12 +156,17 @@ public class VersionedXLocSetTest {
             Replica replica = Replica.newBuilder().setStripingPolicy(defaultStripingPolicy)
                     .setReplicationFlags(repl_flags).addOsdUuids(osdUUIDs.get(i)).build();
             volume.addReplica(userCredentials, fileName, replica);
+
+            // 15s is the default lease timeout
+            Thread.sleep(16 * 1000);
             System.out.println("Added replica on " + osdUUIDs.get(i));
         }
-
+        
+        assertEquals(currentReplicaNumber + replicaNumber, volume.listReplicas(userCredentials, fileName)
+                .getReplicasCount());
     }
 
-    private void readOutdated(AdminVolume volume, String fileName) throws Exception {
+    private void removeReadOutdated(AdminVolume volume, String fileName) throws Exception {
         // open testfile and write some bytes not "0"
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
@@ -168,7 +183,7 @@ public class VersionedXLocSetTest {
         fileHandle.close();
 
         // wait until the file is written and probably replicated
-        Thread.sleep(5000);
+        Thread.sleep(20 * 1000);
 
         System.out.println("openagain");
 
@@ -193,7 +208,7 @@ public class VersionedXLocSetTest {
         // open the file again with another
 
         // wait until the file is actually deleted on the OSD
-        Thread.sleep(70000);
+        Thread.sleep(70 * 1000);
 
         // reading a deleted file seems like reading a sparse file and should return "0" bytes
         // TODO (jdillmann): update assertions when versioned XLocSets are implemented
@@ -207,15 +222,15 @@ public class VersionedXLocSetTest {
         System.out.println(volume.getSuitableOSDs(userCredentials, fileName, NUM_OSDS));
     }
 
-    private void readOutdated(String volumeName, String fileName) throws Exception {
+    private void removeReadOutdated(String volumeName, String fileName) throws Exception {
         AdminVolume volume = client.openVolume(volumeName, null, options);
-        readOutdated(volume, fileName);
+        removeReadOutdated(volume, fileName);
     }
 
     @Ignore
     @Test
-    public void testRonlyReadOutdated() throws Exception {
-        String volumeName = "testRonlyReadOutdated";
+    public void testRonlyRemoveReadOutdated() throws Exception {
+        String volumeName = "testRonlyRemoveReadOutdated";
         String fileName = "/testfile";
 
         client.createVolume(mrcAddress, auth, userCredentials, volumeName);
@@ -226,12 +241,13 @@ public class VersionedXLocSetTest {
         volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY, 2,
                 repl_flags);
 
-        readOutdated(volume, fileName);
+        removeReadOutdated(volume, fileName);
     }
     
+    @Ignore
     @Test
-    public void testWqRqReadOutdated() throws Exception {
-        String volumeName = "testWqRqReadOutdated";
+    public void testWqRqRemoveReadOutdated() throws Exception {
+        String volumeName = "testWqRqRemoveReadOutdated";
         String fileName = "/testfile";
 
         client.createVolume(mrcAddress, auth, userCredentials, volumeName);
@@ -241,7 +257,76 @@ public class VersionedXLocSetTest {
         volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 3,
                 repl_flags);
 
-        readOutdated(volume, fileName);
+        removeReadOutdated(volume, fileName);
+    }
+
+
+    @Test
+    public void testRonlyAddReadOutdated() throws Exception {
+        String volumeName = "testRonlyAddReadOutdated";
+        String fileName = "/testfile";
+
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+        AdminVolume volume = client.openVolume(volumeName, null, options);
+
+        // setup a full read only replica with sequential access strategy
+        int repl_flags = ReplicationFlags.setFullReplica(ReplicationFlags.setSequentialStrategy(0));
+        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY, 2,
+                repl_flags);
+
+        // general part
+        int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
+                | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
+
+        // open file handle
+        AdminFileHandle fileHandle = volume.openFile(userCredentials, fileName, flags, 0777);
+        int stripeSize = fileHandle.getStripingPolicy().getStripeSize();
+        int count = stripeSize * 2;
+        ReusableBuffer data = SetupUtils.generateData(count, (byte) 1);
+
+        System.out.println("writing");
+        fileHandle.write(userCredentials, data.createViewBuffer().getData(), count, 0);
+        fileHandle.close();
+
+        flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber();
+        fileHandle = volume.openFile(userCredentials, fileName, flags, 0777);
+
+        // AdminVolume
+        System.out.println("reopen file");
+        AdminVolume volume2 = client.openVolume(volumeName, null, options);
+
+        // add replica
+        System.out.println("adding replicas");
+        int newReplicaNumber = 1;
+        addReplicas(volume2, fileName, newReplicaNumber);
+
+        AdminFileHandle fileHandle2 = volume2.openFile(userCredentials, fileName, flags, 0777);
+
+        // read data
+        System.out.println("read with new version");
+        byte[] data2 = new byte[1];
+        fileHandle2.read(userCredentials, data2, 1, 0);
+        fileHandle2.close();
+
+        fileHandle2.close();
+        volume2.close();
+
+        // read outdated
+        System.out.println("read with old version");
+        PosixErrorException catched = null;
+        try {
+            fileHandle.read(userCredentials, data2, 1, 0);
+        } catch (PosixErrorException e) {
+            catched = e;
+        }
+        finally {
+            fileHandle.close();
+        }
+        
+        // TODO (jdillmann): make this more dynamic
+        assert (catched != null);
+        assert (catched.getPosixError() == RPC.POSIXErrno.POSIX_ERROR_EAGAIN);
+        assert (catched.getMessage().equals("view is not valid"));
     }
 
     // @Test
