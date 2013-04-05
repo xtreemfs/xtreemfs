@@ -54,15 +54,15 @@ public class HeartbeatThread extends LifeCycleThread {
         public DIR.ServiceSet getServiceData();
     }
 
-    public static final long      UPDATE_INTERVAL           = 60 * 1000;                    // 60s
+    public static final long      UPDATE_INTERVAL           = 60 * 1000;                                      // 60s
 
     public static final long      CONCURRENT_RETRY_INTERVAL = 5 * 1000;                     // 5s
 
-    private ServiceUUID           uuid;
+    private final ServiceUUID           uuid;
 
-    private ServiceDataGenerator  serviceDataGen;
+    private final ServiceDataGenerator  serviceDataGen;
 
-    private DIRClient             client;
+    private final DIRClient             client;
 
     private volatile boolean      quit;
 
@@ -93,6 +93,15 @@ public class HeartbeatThread extends LifeCycleThread {
      */
     private long                  lastHeartbeat;
 
+    /** Guards pauseNumberOfWaitingThreads and paused. */
+    private final Object                     pauseLock;
+
+    /** While >0, the thread will stop its periodic operations. */
+    private int                        pauseNumberOfWaitingThreads;
+
+    /** Set to true if the periodic operation is stopped. */
+    private boolean                    paused;
+
     private static Auth           authNone;
 
     static {
@@ -105,6 +114,8 @@ public class HeartbeatThread extends LifeCycleThread {
         super(name);
 
         setPriority(Thread.MAX_PRIORITY);
+
+        this.pauseLock = new Object();
 
         this.client = client;
         this.uuid = uuid;
@@ -126,6 +137,7 @@ public class HeartbeatThread extends LifeCycleThread {
         this.lastHeartbeat = TimeSync.getGlobalTime();
     }
 
+    @Override
     public synchronized void shutdown() {
         try {
             if (client.clientIsAlive()) {
@@ -279,6 +291,7 @@ public class HeartbeatThread extends LifeCycleThread {
         }
     }
 
+    @Override
     public void run() {
         try {
 
@@ -286,37 +299,49 @@ public class HeartbeatThread extends LifeCycleThread {
 
             // periodically, ...
             while (!quit) {
-                synchronized (this) {
-                    try {
-                        // update data on DIR; do not retry, as this is done periodically anyway
-                        registerServices(1);
-                    } catch (PBRPCException ex) {
-                        if (ex.getPOSIXErrno() == POSIXErrno.POSIX_ERROR_EAGAIN) {
-                            if (Logging.isInfo())
-                                Logging.logMessage(
-                                        Logging.LEVEL_INFO,
-                                        Category.misc,
-                                        this,
-                                        "concurrent service registration; will try again after %d milliseconds",
-                                        UPDATE_INTERVAL);
-                        } else
-                            Logging.logMessage(Logging.LEVEL_ERROR, this,
-                                    "An error occurred during the periodic registration at the DIR:");
-                        Logging.logError(Logging.LEVEL_ERROR, this, ex);
-                    } catch (IOException ex) {
+                synchronized (pauseLock) {
+                    while (pauseNumberOfWaitingThreads > 0) {
+                        try {
+                            pauseLock.wait();
+                        } catch (InterruptedException ex) {
+                            quit = true;
+                            break;
+                        }
+                    }
+
+                    paused = false;
+                }
+
+                try {
+                    // update data on DIR; do not retry, as this is done periodically anyway
+                    registerServices(1);
+                } catch (PBRPCException ex) {
+                    if (ex.getPOSIXErrno() == POSIXErrno.POSIX_ERROR_EAGAIN) {
+                        if (Logging.isInfo())
+                            Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this,
+                                    "concurrent service registration; will try again after %d milliseconds",
+                                    UPDATE_INTERVAL);
+                    } else
                         Logging.logMessage(Logging.LEVEL_ERROR, this,
-                                "periodic registration at DIR failed: %s", ex.toString());
-                        if (Logging.isDebug())
-                            Logging.logError(Logging.LEVEL_DEBUG, this, ex);
-                    } catch (InterruptedException ex) {
-                        quit = true;
-                        break;
-                    }
+                                "An error occurred during the periodic registration at the DIR:");
+                    Logging.logError(Logging.LEVEL_ERROR, this, ex);
+                } catch (IOException ex) {
+                    Logging.logMessage(Logging.LEVEL_ERROR, this, "periodic registration at DIR failed: %s",
+                            ex.toString());
+                    if (Logging.isDebug())
+                        Logging.logError(Logging.LEVEL_DEBUG, this, ex);
+                } catch (InterruptedException ex) {
+                    quit = true;
+                    break;
+                }
 
-                    if (quit) {
-                        break;
-                    }
+                if (quit) {
+                    break;
+                }
 
+                synchronized (pauseLock) {
+                    paused = true;
+                    pauseLock.notifyAll();
                 }
 
                 try {
@@ -332,7 +357,7 @@ public class HeartbeatThread extends LifeCycleThread {
         }
     }
 
-    private void registerServices(int numRetries) throws IOException, PBRPCException, InterruptedException {
+    private synchronized void registerServices(int numRetries) throws IOException, PBRPCException, InterruptedException {
 
         for (Service reg : serviceDataGen.getServiceData().getServicesList()) {
             // retrieve old DIR entry
@@ -471,4 +496,38 @@ public class HeartbeatThread extends LifeCycleThread {
         return advertisedHostName;
     }
 
+    /**
+     * Instructs the HeartbeatThread to pause its current operations. Blocks until it has done so.
+     * 
+     * @remark Do not forget to call {@link #resumeOperation()} afterward or the thread won't be unpaused.
+     * 
+     * @throws InterruptedException
+     */
+    public void pauseOperation() throws InterruptedException {
+        synchronized (pauseLock) {
+            pauseNumberOfWaitingThreads++;
+            while (!paused) {
+                try {
+                    pauseLock.wait();
+                } catch (InterruptedException e) {
+                    // In case of a shutdown, abort.
+                    pauseNumberOfWaitingThreads--;
+                    pauseLock.notifyAll();
+
+                    throw e;
+                }
+            }
+        }
+    }
+
+    /**
+     * Tells the HeartbeatThread to resume operation.
+     */
+    public void resumeOperation() {
+        synchronized (pauseLock) {
+            pauseNumberOfWaitingThreads--;
+
+            pauseLock.notifyAll();
+        }
+    }
 }
