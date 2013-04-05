@@ -8,6 +8,8 @@
 
 package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 
+import java.lang.reflect.Field;
+
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.ClientImplementation;
 import org.xtreemfs.common.libxtreemfs.Options;
@@ -36,6 +38,9 @@ public class Params {
     final RPC.Auth            auth;
     final SSLOptions          sslOptions;
     final Options             options;
+    final boolean             noCleanup;
+    final boolean             noCleanupOfVolumes;
+    final boolean             noCleanupOfBasefile;
 
     Params(ParamsBuilder builder) {
         this.numberOfThreads = builder.numberOfThreads;
@@ -53,6 +58,9 @@ public class Params {
         this.options = builder.options;
         this.mrcAddress = getMRCAddress(dirAddress, userCredentials, sslOptions, options);
         this.auth = builder.auth;
+        this.noCleanup = builder.noCleanup;
+        this.noCleanupOfVolumes = builder.noCleanupOfVolumes;
+        this.noCleanupOfBasefile = builder.noCleanupOfBasefile;
     }
 
     private String getMRCAddress(String dirAddress, RPC.UserCredentials userCredentials, SSLOptions sslOptions,
@@ -74,6 +82,30 @@ public class Params {
             System.exit(1);
         }
         return mrcAddress;
+    }
+
+    public String getAllValues() throws IllegalAccessException {
+        Field[] fields = Params.class.getDeclaredFields();
+        StringBuffer result = new StringBuffer();
+        for (Field field : fields) {
+            String name = field.getName();
+            Object value = field.get(this);
+            if (name != "userCredentials") {
+                result.append(name + ": " + value + ";\n");
+            }
+        }
+        return result.toString();
+    }
+
+    @Override
+    public String toString() {
+        try {
+            return getAllValues();
+        } catch (IllegalAccessException e) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this, e.getMessage());
+            e.printStackTrace();
+        }
+        return "Access not possible";
     }
 
 }

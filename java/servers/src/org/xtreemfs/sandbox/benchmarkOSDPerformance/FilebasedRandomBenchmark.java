@@ -15,6 +15,7 @@ import org.xtreemfs.common.libxtreemfs.Volume;
  */
 public abstract class FilebasedRandomBenchmark extends RandomBenchmark {
 
+    static final String BENCHMARK_FILENAME           = "benchmarks/randomBenchmark/benchFile";
     final int randomIOFilesize;
 
 

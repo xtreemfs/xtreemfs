@@ -9,17 +9,16 @@
 package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.*;
 
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC;
 
 /**
  * Singleton Volume Manager.
@@ -28,15 +27,17 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
  */
 public class VolumeManager {
 
-    static final String          VOLUME_BASE_NAME = "performanceTest";
+    static final String              VOLUME_BASE_NAME = "benchmark";
 
-    private static VolumeManager volumeManager    = null;
-    Params                       params;
-    AdminClient                  client;
-    int                          currentPosition;
-    LinkedList<Volume>           volumes;
-    LinkedList<Volume>           createdVolumes;
-    HashMap<Volume, String[]>    filelists;
+    private static VolumeManager     volumeManager    = null;
+    Params                           params;
+    AdminClient                      client;
+    int                              currentPosition;
+    LinkedList<Volume>               volumes;
+    LinkedList<Volume>               createdVolumes;
+    HashMap<Volume, HashSet<String>> createdFiles;
+    HashMap<Volume, String[]>        filelistsSequentialBenchmark;
+    HashMap<Volume, String[]>        filelistsRandomBenchmark;
 
     public static void init(Params params) throws Exception {
         if (volumeManager == null) {
@@ -56,7 +57,9 @@ public class VolumeManager {
         this.client = BenchmarkClientFactory.getNewClient(params);
         this.volumes = new LinkedList<Volume>();
         this.createdVolumes = new LinkedList<Volume>();
-        this.filelists = new HashMap<Volume, String[]>(5);
+        this.filelistsSequentialBenchmark = new HashMap<Volume, String[]>(5);
+        this.filelistsRandomBenchmark = new HashMap<Volume, String[]>(5);
+        this.createdFiles = new HashMap<Volume, HashSet<String>>();
     }
 
     Volume getNextVolume() {
@@ -88,11 +91,13 @@ public class VolumeManager {
     }
 
     private Volume createAndOpenVolume(String volumeName) throws IOException {
+        // Todo (jvf) Add Logging Info
         Volume volume = null;
         try {
             client.createVolume(params.mrcAddress, params.auth, params.userCredentials, volumeName);
             volume = client.openVolume(volumeName, params.sslOptions, params.options);
             createdVolumes.add(volume);
+            createDirStructure(volume);
         } catch (PosixErrorException e) {
             if (e.getPosixError() == POSIXErrno.POSIX_ERROR_EEXIST) {
                 volume = client.openVolume(volumeName, params.sslOptions, params.options);
@@ -101,20 +106,151 @@ public class VolumeManager {
         return volume;
     }
 
-    void setFilelistForVolume(Volume volume, LinkedList<String> filelist) {
-        String[] files = new String[filelist.size()];
-        synchronized (this) {
-            filelists.put(volume, filelist.toArray(files));
+    private void createDirStructure(Volume volume) {
+//        tryToCreateDir(volume, "benchmarks", false);
+        tryToCreateDir(volume, "/benchmarks/sequentialBenchmark", true);
+        tryToCreateDir(volume, "/benchmarks/randomBenchmark", true);
+    }
+
+    private void tryToCreateDir(Volume volume, String dirName, boolean recursive) {
+        try {
+            volume.createDirectory(params.userCredentials, dirName, 0777, recursive);
+            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this,
+                    "Directory %s on volume %s created.", dirName, volume.getVolumeName());
+        } catch (PosixErrorException e) {
+            if (e.getPosixError() != POSIXErrno.POSIX_ERROR_EEXIST)                                         {
+            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this,
+                    "Error while trying to create directory %s. Errormessage: %s", dirName, e.getMessage());
+                e.printStackTrace();
+            }
+        } catch (IOException e) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this,
+                    "Error while trying to create directory %s. Errormessage: %s", dirName, e.getMessage());
+            e.printStackTrace();
+
         }
     }
 
-    synchronized String[] getFilelistForVolume(Volume volume) {
-        return filelists.get(volume);
+    void setSequentialFilelistForVolume(Volume volume, LinkedList<String> filelist) {
+        String[] files = new String[filelist.size()];
+        synchronized (this) {
+            filelistsSequentialBenchmark.put(volume, filelist.toArray(files));
+        }
+    }
+
+    void setRandomFilelistForVolume(Volume volume, LinkedList<String> filelist) {
+        String[] files = new String[filelist.size()];
+        synchronized (this) {
+            filelistsRandomBenchmark.put(volume, filelist.toArray(files));
+        }
+    }
+
+    synchronized String[] getSequentialFilelistForVolume(Volume volume) throws IOException {
+        String[] filelist;
+
+        /* null means no filelist from a previous write benchmark has been deposited */
+        if (null == filelistsSequentialBenchmark.get(volume)) {
+            filelist = inferFilelist(volume, SequentialBenchmark.BENCHMARK_FILENAME);
+
+            if (params.sequentialSizeInBytes == calculateTotalSizeOfFilelist(volume, filelist)) {
+                filelistsSequentialBenchmark.put(volume, filelist);
+                Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this,
+                        "Succesfully infered filelist on volume %s.", volume.getVolumeName());
+            } else {
+                Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Infering filelist failed",
+                        volume.getVolumeName());
+                throw new IllegalArgumentException("No valid files for benchmark found");
+            }
+
+        }
+        return filelistsSequentialBenchmark.get(volume);
+    }
+
+    synchronized String[] getRandomFilelistForVolume(Volume volume) throws IOException {
+        String[] filelist;
+
+        /* null means no filelist from a previous write benchmark has been deposited */
+        if (null == filelistsRandomBenchmark.get(volume)) {
+            filelist = inferFilelist(volume, FilebasedRandomBenchmark.BENCHMARK_FILENAME);
+
+            if (params.randomSizeInBytes == calculateTotalSizeOfFilelist(volume, filelist)) {
+                filelistsRandomBenchmark.put(volume, filelist);
+                Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this,
+                        "Succesfully infered filelist on volume %s.", volume.getVolumeName());
+            } else {
+                Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Infering filelist failed",
+                        volume.getVolumeName());
+                throw new IllegalArgumentException("No valid files for benchmark found");
+            }
+
+        }
+        return filelistsRandomBenchmark.get(volume);
+    }
+
+    private String[] inferFilelist(Volume volume, String pathToBasefile) throws IOException {
+
+        Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Read benchmark without write benchmark. "
+                + "Trying to infer a filelist on volume %s", volume.getVolumeName());
+
+        String path = pathToBasefile.substring(0, pathToBasefile.lastIndexOf('/'));
+        String filename = pathToBasefile.substring(pathToBasefile.lastIndexOf('/')+1);
+
+        /* ToDo (jvf) there seems to be a bug if you try to get filelist > 1024 files */
+        List<MRC.DirectoryEntry> directoryEntries = volume.readDir(params.userCredentials, path, 0, 0, true)
+                .getEntriesList();
+        ArrayList<String> entries = new ArrayList<String>(directoryEntries.size());
+
+        for (MRC.DirectoryEntry directoryEntry : directoryEntries) {
+            String entry = directoryEntry.getName();
+            if (entry.matches(filename + "[0-9]+"))
+                entries.add(path+'/'+directoryEntry.getName());
+        }
+        entries.trimToSize();
+        String[] filelist = new String[entries.size()];
+        entries.toArray(filelist);
+        return filelist;
+    }
+
+    private long calculateTotalSizeOfFilelist(Volume volume, String[] filelist) throws IOException {
+        long aggregatedSizeInBytes = 0;
+        for (String file : filelist) {
+            MRC.Stat stat = volume.getAttr(params.userCredentials, file);
+            aggregatedSizeInBytes += stat.getSize();
+        }
+        return aggregatedSizeInBytes;
+    }
+
+    // adds the files created by a benchmark to the list of created files
+    synchronized void addCreatedFiles(Volume volume, LinkedList<String> newFiles) {
+        HashSet<String> filelistForVolume;
+        if (createdFiles.containsKey(volume))
+            filelistForVolume = createdFiles.get(volume);
+        else
+            filelistForVolume = new HashSet();
+        filelistForVolume.addAll(newFiles);
+        createdFiles.put(volume, filelistForVolume);
+    }
+
+    void deleteCreatedFiles() throws IOException {
+        for (Volume volume : volumes) {
+            HashSet<String> fileListForVolume = createdFiles.get(volume);
+
+            if (null != fileListForVolume) {
+
+                Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Deleting %s file(s) on volume %s",
+                        fileListForVolume.size(), volume.getVolumeName());
+
+                for (String filename : fileListForVolume) {
+                    volume.unlink(params.userCredentials, filename);
+                }
+            }
+        }
     }
 
     void deleteCreatedVolumes() throws IOException {
-        for (Volume volume : createdVolumes)
+        for (Volume volume : createdVolumes) {
             deleteVolumeIfExisting(volume);
+        }
     }
 
     void deleteVolumes(String... volumeName) throws IOException {
@@ -176,6 +312,10 @@ public class VolumeManager {
             uuids.add(service.getUuid());
         }
         return uuids;
+    }
+
+    public LinkedList<Volume> getVolumes() {
+        return volumes;
     }
 
 }

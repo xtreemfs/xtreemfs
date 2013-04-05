@@ -39,6 +39,9 @@ public class ParamsBuilder {
     RPC.Auth   auth                  = DefaultParams.auth;
     SSLOptions sslOptions            = DefaultParams.sslOptions;
     Options    options               = DefaultParams.options;
+    boolean    noCleanup             = DefaultParams.noCleanup;
+    boolean    noCleanupOfVolumes    = DefaultParams.noCleanupOfVolumes;
+    boolean    noCleanupOfBasefile   = DefaultParams.isNoCleanupOfBasefile;
 
     public ParamsBuilder() {
     }
@@ -101,6 +104,18 @@ public class ParamsBuilder {
     public ParamsBuilder setOptions(Options options) {
         this.options = options;
         return this;
+    }
+
+    public void setNoCleanup(boolean noCleanup) {
+        this.noCleanup = noCleanup;
+    }
+
+    public void setNoCleanupOfVolumes(boolean noCleanupOfVolumes) {
+        this.noCleanupOfVolumes = noCleanupOfVolumes;
+    }
+
+    public void setNoCleanupOfBasefile(boolean noCleanupOfBasefile) {
+        this.noCleanupOfBasefile = noCleanupOfBasefile;
     }
 
     public Params build() {

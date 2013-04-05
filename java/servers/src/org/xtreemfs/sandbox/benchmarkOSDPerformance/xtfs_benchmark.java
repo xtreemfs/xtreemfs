@@ -68,6 +68,9 @@ public class xtfs_benchmark {
         setAuth();
         setSSLOptions();
         setOptions();
+        setNoCleanup();
+        setNoCleanupOfVolumes();
+        setNoCleanupOfBasefile();
         return builder.build();
     }
 
@@ -89,12 +92,12 @@ public class xtfs_benchmark {
         ConcurrentLinkedQueue<BenchmarkResult> result;
         ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
 
-        if (sequentialReadBenchmarkIsSet()) {
+        if (sequentialWriteBenchmarkIsSet()) {
             result = controller.startBenchmarks(BenchmarkType.WRITE, params.numberOfThreads);
             results.addAll(result);
         }
 
-        if (sequentialWriteBenchmarkIsSet()) {
+        if (sequentialReadBenchmarkIsSet()) {
             result = controller.startBenchmarks(BenchmarkType.READ, params.numberOfThreads);
             results.addAll(result);
         }
@@ -120,8 +123,8 @@ public class xtfs_benchmark {
     private static void initOptions() {
 
         /*
-         * -sw -sr -rw -p -rr -rfr -rfw -p <number> -ssize -rsize -file-size -basefile-size -no-cleanup
-         * volume1 volume2
+         * -sw -sr -rw -p -rr -rfr -rfw -p <number> -ssize -rsize --file-size --basefile-size (--no-cleanup |
+         * --no-cleanup-volumes) volume1 volume2
          */
 
         /* Connection Data */
@@ -138,8 +141,8 @@ public class xtfs_benchmark {
         options.put("rfw", new CliOption(SWITCH, "random filebased write benchmark", ""));
         options.put("rfr", new CliOption(SWITCH, "random filebased read benchmark", ""));
 
-        options.put("p",
-                new CliOption(STRING, "number of sequential benchmarks to be started in parallel. default: 1", "<number>"));
+        options.put("p", new CliOption(STRING, "number of sequential benchmarks to be started in parallel. default: 1",
+                "<number>"));
 
         /* sizes */
         options.put("ssize", new CliOption(STRING,
@@ -152,11 +155,18 @@ public class xtfs_benchmark {
                 "size of the files for random filebased benchmarks in [B|K|M|G] (no modifier assumes bytes)."
                         + " The filesize for filebased random IO Benchmarks must be <= 23^31-1", "<size>"));
 
-        // todo: implement deletion options
         /* deletion options */
-        options.put("-no-cleanup", new CliOption(SWITCH, "do not delete created volumes and files", ""));
-        options.put("-no-cleanup-volumes", new CliOption(SWITCH, "do not delete created volumes", ""));
-        options.put("-no-cleanup-files", new CliOption(SWITCH, "do not delete created files", ""));
+        String noCleanupDescription = "do not delete created volumes and files. Volumes and files need to be removed "
+                + "manually. Volumes can be removed using rmfs.xtreemfs. Files can be removed by mounting the according "
+                + "volume with mount.xtreemfs and deleting the files with rm";
+        options.put("-no-cleanup", new CliOption(SWITCH, noCleanupDescription, ""));
+
+        options.put("-no-cleanup-volumes", new CliOption(SWITCH,
+                "do not delete created volumes. Created volumes neet to be removed manually using rmfs.xtreemfs", ""));
+
+        String noCleanupBasefileDescription = "do not delete created basefile (only works with --no-cleanup or "
+                + "--no-cleanup-volumes. Created Files and volumes need to be removed manually";
+        options.put("-no-cleanup-basefile", new CliOption(SWITCH, noCleanupBasefileDescription, ""));
     }
 
     private static boolean usageIsSet() {
@@ -192,28 +202,28 @@ public class xtfs_benchmark {
         String optionValue;
         optionValue = options.get("ssize").stringValue;
         if (null != optionValue)
-            builder.setSequentialSizeInBytes(parseSizeToBytes(optionValue));
+            builder.setSequentialSizeInBytes(parseSizeWithModifierToBytes(optionValue));
     }
 
     private static void setRandomSize() {
         String optionValue;
         optionValue = options.get("rsize").stringValue;
         if (null != optionValue)
-            builder.setRandomSizeInBytes(parseSizeToBytes(optionValue));
+            builder.setRandomSizeInBytes(parseSizeWithModifierToBytes(optionValue));
     }
 
     private static void setBasefileSize() {
         String optionValue;
         optionValue = options.get("-basefile-size").stringValue;
         if (null != optionValue)
-            builder.setBasefileSizeInBytes(parseSizeToBytes(optionValue));
+            builder.setBasefileSizeInBytes(parseSizeWithModifierToBytes(optionValue));
     }
 
     private static void setFileSize() {
         String optionValue;
         optionValue = options.get("-file-size").stringValue;
         if (null != optionValue) {
-            long sizeInBytes = parseSizeToBytes(optionValue);
+            long sizeInBytes = parseSizeWithModifierToBytes(optionValue);
             if (sizeInBytes > Integer.MAX_VALUE)
                 throw new IllegalArgumentException("Filesize for filebased random IO Benchmarks must be <= 23^31-1");
             builder.setRandomIOFilesize((int) sizeInBytes);
@@ -261,6 +271,21 @@ public class xtfs_benchmark {
         // Todo (jvf) implement?
     }
 
+    private static void setNoCleanup() {
+        boolean switchValue = options.get("-no-cleanup").switchValue;
+        builder.setNoCleanup(switchValue);
+    }
+
+    private static void setNoCleanupOfVolumes() {
+        boolean switchValue = options.get("-no-cleanup-volumes").switchValue;
+        builder.setNoCleanupOfVolumes(switchValue);
+    }
+
+    private static void setNoCleanupOfBasefile() {
+        boolean switchValue = options.get("-no-cleanup-basefile").switchValue;
+        builder.setNoCleanupOfBasefile(switchValue);
+    }
+
     private static boolean sequentialWriteBenchmarkIsSet() {
         return options.get("sw").switchValue;
     }
@@ -281,7 +306,7 @@ public class xtfs_benchmark {
         return options.get("rfr").switchValue;
     }
 
-    private static long parseSizeToBytes(String size) {
+    private static long parseSizeWithModifierToBytes(String size) {
         size = size.toUpperCase();
         long sizeInBytes;
 

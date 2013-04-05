@@ -33,4 +33,7 @@ public class DefaultParams {
     static RPC.Auth   auth                  = authNone;
     static SSLOptions sslOptions            = null;
     static Options    options               = new Options();
+    static boolean    noCleanup             = false;
+    static boolean    noCleanupOfVolumes    = false;
+    static boolean    isNoCleanupOfBasefile = false;
 }

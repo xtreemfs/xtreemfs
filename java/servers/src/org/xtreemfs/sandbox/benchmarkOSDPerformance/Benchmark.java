@@ -17,23 +17,20 @@ import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.foundation.logging.Logging;
 
 /**
- * Benchmarklibrary for measuring read- and writeperformance of a OSD. TODO ErrorHandling TODO Move Cleanup to
- * the scheduleBenchmark-methods (needs clarification whether Benchmarks should be performed via libxtreemfs
- * of directly on the OSD)
+ * Benchmarklibrary for measuring read- and writeperformance of a OSD. ToDo (jvf) ErrorHandling
  * 
  * @author jensvfischer
  */
 public abstract class Benchmark {
 
-    static final int    MiB_IN_BYTES                 = 1024 * 1024;
-    static final int    GiB_IN_BYTES                 = 1024 * 1024 * 1024;
-    static final int    XTREEMFS_BLOCK_SIZE_IN_BYTES = 128 * 1024;        // 128 KiB
-    static final String BENCHMARK_FILENAME           = "benchmarkFile";
+    static final int  MiB_IN_BYTES                 = 1024 * 1024;
+    static final int  GiB_IN_BYTES                 = 1024 * 1024 * 1024;
+    static final int  XTREEMFS_BLOCK_SIZE_IN_BYTES = 128 * 1024;        // 128 kib
 
-    final long          benchmarkSizeInBytes;
-    final Volume        volume;
-    final AdminClient   client;
-    final Params        params;
+    final long        benchmarkSizeInBytes;
+    final Volume      volume;
+    final AdminClient client;
+    final Params      params;
 
     Benchmark(long benchmarkSizeInBytes, Volume volume, Params params) throws Exception {
         client = BenchmarkClientFactory.getNewClient(params);
@@ -67,8 +64,8 @@ public abstract class Benchmark {
         double timeInSec = (after - before) / 1000.;
         double speedMiBPerSec = round((byteCounter / MiB_IN_BYTES) / timeInSec, 2);
 
-        BenchmarkResult result = new BenchmarkResult(timeInSec, speedMiBPerSec, benchmarkSizeInBytes, Thread.currentThread()
-                .getId(), byteCounter);
+        BenchmarkResult result = new BenchmarkResult(timeInSec, speedMiBPerSec, benchmarkSizeInBytes, Thread
+                .currentThread().getId(), byteCounter);
         results.add(result);
 
         finalizeBenchmark();
@@ -84,14 +81,9 @@ public abstract class Benchmark {
         long byteCounter;
         try {
             byteCounter = performIO(data, numberOfBlocks);
-        } catch (PosixErrorException e) {
-            byteCounter = 0;
-            e.printStackTrace();
-            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this,
-                    "POSIX Error while trying to perform IO: %s", e.getPosixError());
         } catch (IOException e) {
             byteCounter = 0;
-            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this, e.getMessage());
+            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this,"Error while trying to perform IO: %s", e.getMessage());
         }
         return byteCounter;
     }
@@ -106,8 +98,8 @@ public abstract class Benchmark {
     abstract void finalizeBenchmark() throws Exception;
 
     /* Starts a benchmark in its own thread. */
-    public void startBenchmark(ConcurrentLinkedQueue<BenchmarkResult> results,
-            ConcurrentLinkedQueue<Thread> threads) throws Exception {
+    public void startBenchmark(ConcurrentLinkedQueue<BenchmarkResult> results, ConcurrentLinkedQueue<Thread> threads)
+            throws Exception {
         prepareBenchmark();
         Thread benchThread = new Thread(new BenchThread(this, results));
         threads.add(benchThread);

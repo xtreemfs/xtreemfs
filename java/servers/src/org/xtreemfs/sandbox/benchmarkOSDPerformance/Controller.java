@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2012-2013 by Jens V. Fischer, Zuse Institute Berlin
- *               
- *
- * Licensed under the BSD License, see LICENSE file for details.
- *
- */
+* Copyright (c) 2012-2013 by Jens V. Fischer, Zuse Institute Berlin
+*
+*
+* Licensed under the BSD License, see LICENSE file for details.
+*
+*/
 
 package org.xtreemfs.sandbox.benchmarkOSDPerformance;
 
@@ -15,17 +15,13 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 
 /**
- * TODO (jvf) Zusammenspiel von sw und rr verbessern (kleiner sw sollte das basefile nicht jedes mal killen)
- * 
- * @author jensvfischer
- * 
- */
+*
+* @author jensvfischer
+*
+*/
 public class Controller {
 
-    static final int KiB_IN_BYTES = 1024;
-    static final int MiB_IN_BYTES = 1024 * 1024;
-    static final int GiB_IN_BYTES = 1024 * 1024 * 1024;
-    private Params   params;
+    private Params params;
 
     public Controller(Params params) {
         this.params = params;
@@ -37,20 +33,21 @@ public class Controller {
     /**
      * Starts the specified amount of benchmarks in parallel. Every benchmark is started within its own
      * thread. The method waits for all threads to finish.
-     * 
+     *
      * @param benchmarkType
      * @param numberOfThreads
-     *            number of benchmarks run in parallel
-     *            Size of the benchmark in bytes. Must be in alignment with (i.e. divisible through) the block
-     *            size (128 KiB).
+     *            number of benchmarks run in parallel Size of the benchmark in bytes. Must be in alignment
+     *            with (i.e. divisible through) the block size (128 KiB).
      * @return
      * @throws Exception
      */
-    ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(BenchmarkType benchmarkType, int numberOfThreads) throws Exception {
+    ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(BenchmarkType benchmarkType, int numberOfThreads)
+            throws Exception {
 
-//        TODO (jvf) Check für benchmarksize % blocksize an anderer Stelle einbauen
-//        if (sizeInBytes % Benchmark.XTREEMFS_BLOCK_SIZE_IN_BYTES != 0)
-//            throw new IllegalArgumentException("Size must be in alignment with (i.e. divisible through) the block size");
+        // TODO (jvf) Check für benchmarksize % blocksize an anderer Stelle einbauen
+        // if (sizeInBytes % Benchmark.XTREEMFS_BLOCK_SIZE_IN_BYTES != 0)
+        // throw new
+        // IllegalArgumentException("Size must be in alignment with (i.e. divisible through) the block size");
 
         ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
         ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
@@ -78,9 +75,18 @@ public class Controller {
     }
 
     public void teardown() throws Exception {
-        VolumeManager.getInstance().deleteCreatedVolumes();
-        VolumeManager.getInstance().scrub();
+        deleteVolumesAndFiles();
         BenchmarkClientFactory.shutdownClients();
+    }
+
+    private void deleteVolumesAndFiles() throws Exception {
+        VolumeManager volumeManager = VolumeManager.getInstance();
+        if (!params.noCleanup && !params.noCleanupOfVolumes)
+            volumeManager.deleteCreatedVolumes();
+        else if (!params.noCleanup)
+           volumeManager.deleteCreatedFiles();
+
+        volumeManager.scrub();
     }
 
     public static void printResults(ConcurrentLinkedQueue<BenchmarkResult> results) {
@@ -90,7 +96,7 @@ public class Controller {
         }
     }
 
-    private void tryConnection() {
+    public void tryConnection() {
         try {
             BenchmarkClientFactory.getNewClient(params).getServiceByType(DIR.ServiceType.SERVICE_TYPE_OSD);
         } catch (IOException e) {

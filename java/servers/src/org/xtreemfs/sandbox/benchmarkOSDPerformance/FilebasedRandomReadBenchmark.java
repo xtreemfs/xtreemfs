@@ -32,14 +32,16 @@ public class FilebasedRandomReadBenchmark extends FilebasedRandomBenchmark {
 
     @Override
     void prepareBenchmark() throws Exception {
-        this.filenames = VolumeManager.getInstance().getFilelistForVolume(volume);
+        this.filenames = VolumeManager.getInstance().getRandomFilelistForVolume(volume);
     }
 
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */
     @Override
     long performIO(byte[] data, long numberOfBlocks) throws IOException {
 
-        long numberOfFilesToRead = convertTo4KiBBlocks(numberOfBlocks);
+//        long numberOfFilesToRead = convertTo4KiBBlocks(numberOfBlocks);
+        long numberOfFilesToRead = params.randomSizeInBytes/4096;
+
         int filenamesSize = filenames.length;
         long byteCounter = 0;
         Random random = new Random();
@@ -56,15 +58,7 @@ public class FilebasedRandomReadBenchmark extends FilebasedRandomBenchmark {
     }
 
     @Override
-    void finalizeBenchmark() throws Exception {
-        Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this,
-                "Deleting the %s files used for the FilebasedRandomReadBenchmark", filenames.length);
-        for (String filename : filenames) {
-            volume.unlink(params.userCredentials, filename);
-        }
-        Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this,
-                "Finished deleting the files used for the FilebasedRandomReadBenchmark");
-    }
+    void finalizeBenchmark() throws Exception {}
 
     long nextLong(long limit) {
         long next = Math.round(Math.random() * limit);

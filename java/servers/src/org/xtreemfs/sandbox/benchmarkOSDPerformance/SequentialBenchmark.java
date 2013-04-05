@@ -16,6 +16,7 @@ import org.xtreemfs.common.libxtreemfs.Volume;
 public abstract class SequentialBenchmark extends Benchmark {
 
 
+    static final String BENCHMARK_FILENAME           = "benchmarks/sequentialBenchmark/benchFile";
 
     public SequentialBenchmark(Volume volume, Params params) throws Exception {
         super(params.sequentialSizeInBytes, volume, params);

@@ -20,16 +20,22 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  * @author jensvfischer
  */
 public class ReadBenchmark extends SequentialBenchmark {
+    private String[] filenames;
 
 
     ReadBenchmark(Volume volume, Params params) throws Exception {
         super(volume, params);
     }
 
+    @Override
+    void prepareBenchmark() throws Exception {
+        this.filenames = VolumeManager.getInstance().getSequentialFilelistForVolume(volume);
+    }
+
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */
     @Override
     long performIO(byte[] data, long numberOfBlocks) throws IOException {
-        FileHandle fileHandle = volume.openFile(params.userCredentials, BENCHMARK_FILENAME,
+        FileHandle fileHandle = volume.openFile(params.userCredentials, filenames[0],
                 GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
         long byteCounter = 0;
         for (long j = 0; j < numberOfBlocks; j++) {
