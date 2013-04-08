@@ -28,6 +28,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 public class ParamsBuilder {
 
     int        numberOfThreads       = DefaultParams.numberOfThreads;
+    int        numberOfRepetitions   = DefaultParams.numberOfRepetitions;
     long       sequentialSizeInBytes = DefaultParams.sequentialSizeInBytes;
     long       randomSizeInBytes     = DefaultParams.randomSizeInBytes;
     long       basefileSizeInBytes   = DefaultParams.basefileSizeInBytes;
@@ -49,6 +50,10 @@ public class ParamsBuilder {
     public ParamsBuilder setNumberOfThreads(int numberOfThreads) {
         this.numberOfThreads = numberOfThreads;
         return this;
+    }
+
+    public void setNumberOfRepetitions(int numberOfRepetitions) {
+        this.numberOfRepetitions = numberOfRepetitions;
     }
 
     public ParamsBuilder setSequentialSizeInBytes(long sequentialSizeInBytes) {

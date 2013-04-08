@@ -59,6 +59,7 @@ public class xtfs_benchmark {
 
     private static Params buildParams() {
         setNumberOfThreads();
+        setNumberOfRepetitions();
         setSequentialSize();
         setRandomSize();
         setBasefileSize();
@@ -125,7 +126,7 @@ public class xtfs_benchmark {
     private static void initOptions() {
 
         /*
-         * -sw -sr -rw -p -rr -rfr -rfw -p <number> -ssize -rsize --file-size --basefile-size (--no-cleanup |
+         * -sw -sr -rw -p -rr -rfr -rfw -p <number> -r <number> -ssize -rsize --file-size --basefile-size (--no-cleanup |
          * --no-cleanup-volumes) volume1 volume2
          */
 
@@ -144,6 +145,8 @@ public class xtfs_benchmark {
         options.put("rfr", new CliOption(SWITCH, "random filebased read benchmark", ""));
 
         options.put("p", new CliOption(STRING, "number of sequential benchmarks to be started in parallel. default: 1",
+                "<number>"));
+        options.put("r", new CliOption(STRING, "number of repetitions of a benchmarks. default: 1",
                 "<number>"));
 
         /* sizes */
@@ -198,6 +201,12 @@ public class xtfs_benchmark {
         String optionValue = options.get("p").stringValue;
         if (null != optionValue)
             builder.setNumberOfThreads(Integer.valueOf(optionValue));
+    }
+
+    private static void setNumberOfRepetitions(){
+        String optionValue = options.get("r").stringValue;
+        if (null != optionValue)
+            builder.setNumberOfRepetitions(Integer.valueOf(optionValue));
     }
 
     private static void setSequentialSize() {

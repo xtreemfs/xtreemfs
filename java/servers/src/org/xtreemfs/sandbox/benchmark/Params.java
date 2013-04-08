@@ -25,6 +25,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 public class Params {
 
     final int                 numberOfThreads;
+    final int                 numberOfRepetitions;
     final long                sequentialSizeInBytes;
     final long                randomSizeInBytes;
     final long                basefileSizeInBytes;
@@ -44,6 +45,7 @@ public class Params {
 
     Params(ParamsBuilder builder) {
         this.numberOfThreads = builder.numberOfThreads;
+        this.numberOfRepetitions = builder.numberOfRepetitions;
         this.sequentialSizeInBytes = builder.sequentialSizeInBytes;
         this.randomSizeInBytes = builder.randomSizeInBytes;
         this.basefileSizeInBytes = builder.basefileSizeInBytes;

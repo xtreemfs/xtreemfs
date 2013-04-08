@@ -30,6 +30,18 @@ public class Controller {
     private void setup() {
     }
 
+    ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(BenchmarkType benchmarkType, int numberOfThreads)
+            throws Exception {
+        ConcurrentLinkedQueue<BenchmarkResult> result;
+        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
+
+        for (int i = 0; i < params.numberOfRepetitions; i++) {
+            result = startBenchmark(benchmarkType, numberOfThreads);
+            results.addAll(result);
+        }
+        return results;
+    }
+
     /**
      * Starts the specified amount of benchmarks in parallel. Every benchmark is started within its own
      * thread. The method waits for all threads to finish.
@@ -41,7 +53,7 @@ public class Controller {
      * @return
      * @throws Exception
      */
-    ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(BenchmarkType benchmarkType, int numberOfThreads)
+    ConcurrentLinkedQueue<BenchmarkResult> startBenchmark(BenchmarkType benchmarkType, int numberOfThreads)
             throws Exception {
 
         // TODO (jvf) Check für benchmarksize % blocksize an anderer Stelle einbauen
@@ -90,6 +102,7 @@ public class Controller {
     }
 
     public static void printResults(ConcurrentLinkedQueue<BenchmarkResult> results) {
+        System.out.println("Type;NumberOfParallelThreads;TimeInSec;MiB/Sec;DataWrittenInBytes;ByteCount");
         /* print the results */
         for (BenchmarkResult res : results) {
             System.out.println(res);

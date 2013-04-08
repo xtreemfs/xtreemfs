@@ -22,6 +22,7 @@ public class DefaultParams {
     static final long MiB_IN_BYTES          = 1024 * 1024;
     static final long GiB_IN_BYTES          = 1024 * 1024 * 1024;
     static int        numberOfThreads       = 1;
+    static int        numberOfRepetitions   = 1;
     static long       sequentialSizeInBytes = 10L * MiB_IN_BYTES;
     static long       randomSizeInBytes     = 10L * MiB_IN_BYTES;
     static long       basefileSizeInBytes   = 3L * GiB_IN_BYTES;
