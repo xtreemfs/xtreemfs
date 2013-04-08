@@ -1,4 +1,4 @@
-package org.xtreemfs.sandbox.benchmarkOSDPerformance;
+package org.xtreemfs.sandbox.benchmark;
 
 import static org.xtreemfs.foundation.logging.Logging.*;
 import static org.xtreemfs.foundation.util.CLIParser.CliOption;

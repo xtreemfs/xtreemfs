@@ -6,11 +6,7 @@
  *
  */
 
-package org.xtreemfs.sandbox.benchmarkOSDPerformance;
-
-import org.xtreemfs.common.libxtreemfs.Volume;
-
-import java.util.LinkedList;
+package org.xtreemfs.sandbox.benchmark;
 
 /**
  * Result objects for {@link Benchmark}.

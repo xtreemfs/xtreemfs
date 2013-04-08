@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.sandbox.benchmarkOSDPerformance;
+package org.xtreemfs.sandbox.benchmark;
 
 import java.io.IOException;
 import java.util.*;
@@ -15,7 +15,6 @@ import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC;

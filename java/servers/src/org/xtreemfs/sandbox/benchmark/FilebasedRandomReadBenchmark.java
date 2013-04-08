@@ -6,14 +6,13 @@
  *
  */
 
-package org.xtreemfs.sandbox.benchmarkOSDPerformance;
+package org.xtreemfs.sandbox.benchmark;
 
 import java.io.IOException;
 import java.util.Random;
 
 import org.xtreemfs.common.libxtreemfs.FileHandle;
 import org.xtreemfs.common.libxtreemfs.Volume;
-import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 
 /**

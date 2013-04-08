@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.sandbox.benchmarkOSDPerformance;
+package org.xtreemfs.sandbox.benchmark;
 
 import org.xtreemfs.common.libxtreemfs.Volume;
 
