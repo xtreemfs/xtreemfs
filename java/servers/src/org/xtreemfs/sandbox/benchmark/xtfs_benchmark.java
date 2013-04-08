@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.utils.DefaultDirConfig;
 import org.xtreemfs.utils.utils;
 
@@ -32,6 +33,8 @@ public class xtfs_benchmark {
     }
 
     public static void main(String[] args) throws Exception {
+
+        Logging.start(Logging.LEVEL_INFO, Logging.Category.tool);
 
         parseCLIOptions(args);
         displayUsageIfSet();
