@@ -35,8 +35,8 @@ public class BenchmarkResult {
         this.byteCount = byteCount;
     }
 
-    @Override
-    public String toString() {
+    @Deprecated
+    public String toString1() {
 
         String dataWritten = dataWrittenInBytes >= GiB_IN_BYTES ? dataWrittenInBytes / GiB_IN_BYTES + " GiB ["
                 : dataWrittenInBytes / MiB_IN_BYTES + " MiB [";
@@ -55,6 +55,11 @@ public class BenchmarkResult {
         return "{\n\tBenchmarkType: " + benchmarkType + "\n" + readersOrWriters + "\tThreadID: " + threadID + "\n"
                 + "\tTime: " + timeInSec + " Sec\n" + "\tSpeed: " + speedInMiBProSec + " MiB/s\n" + "\tData written: "
                 + dataWritten + dataWrittenInBytes + " Bytes]\n" + "\tByteCount: " + byteCount + " Bytes\n" + "}";
+    }
+
+    @Override
+    public String toString(){
+        return benchmarkType+";"+numberOfReadersOrWriters+";"+timeInSec+";"+speedInMiBProSec+";"+dataWrittenInBytes+";"+byteCount;
     }
 
 
