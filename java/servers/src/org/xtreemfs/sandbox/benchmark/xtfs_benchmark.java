@@ -39,7 +39,6 @@ public class xtfs_benchmark {
         parseCLIOptions(args);
         displayUsageIfSet();
         Params params = buildParams();
-        System.out.println(params);
         controller = new Controller(params);
         controller.tryConnection();
         setupVolumes(params);
