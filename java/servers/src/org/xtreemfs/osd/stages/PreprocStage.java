@@ -671,9 +671,6 @@ public class PreprocStage extends Stage {
         }
 
         XLocations locset = request.getLocationList();
-        System.out.println("op:" + request.getOperation() + " vr: " + state.getVersion() + " req:"
-                + locset.getVersion());
-
         if (state.getVersion() == locset.getVersion() && !state.getInvalidated()) {
             return null;
         } else if (locset.getVersion() > state.getVersion()) {
