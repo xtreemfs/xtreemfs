@@ -93,8 +93,10 @@ public class Controller {
 
     private void deleteVolumesAndFiles() throws Exception {
         VolumeManager volumeManager = VolumeManager.getInstance();
-        if (!params.noCleanup && !params.noCleanupOfVolumes)
+        if (!params.noCleanup && !params.noCleanupOfVolumes){
+            volumeManager.deleteCreatedFiles();   // is needed in case no volume was created!
             volumeManager.deleteCreatedVolumes();
+        }
         else if (!params.noCleanup)
            volumeManager.deleteCreatedFiles();
 
