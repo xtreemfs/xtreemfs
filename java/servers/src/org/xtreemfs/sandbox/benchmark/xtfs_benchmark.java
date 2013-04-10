@@ -359,10 +359,9 @@ public class xtfs_benchmark {
             dirAddresses = cfg.getDirectoryServices();
             return dirAddresses[0];
         } catch (IOException e) {
-            logMessage(LEVEL_ERROR, Category.tool, xtfs_benchmark.class,
-                    "Could not read Default DIR Config in %s. Errormessage: %s", DefaultDirConfig.DEFAULT_DIR_CONFIG,
+            logMessage(LEVEL_INFO, Category.tool, xtfs_benchmark.class,
+                    "Could not read or find Default DIR Config in %s. Errormessage: %s", DefaultDirConfig.DEFAULT_DIR_CONFIG,
                     e.getMessage());
-            e.printStackTrace();
             return null;
         }
     }
