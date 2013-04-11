@@ -288,6 +288,10 @@ public class RPCCaller {
             return Helper.stringToInetSocketAddress(address,
                     GlobalTypes.PORTS.OSD_PBRPC_PORT_DEFAULT.getNumber());
         }
+        if (SERVICES.Scheduler.equals(service)) {
+            return Helper.stringToInetSocketAddress(address,
+                    GlobalTypes.PORTS.SCHEDULER_PBRPC_PORT_DEFAULT.getNumber());
+        }
         return null;
     }
 }

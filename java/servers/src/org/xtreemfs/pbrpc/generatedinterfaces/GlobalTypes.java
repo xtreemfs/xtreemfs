@@ -369,6 +369,7 @@ public final class GlobalTypes {
     MRC_PBRPC_PORT_DEFAULT(3, 32636),
     OSD_HTTP_PORT_DEFAULT(4, 30640),
     OSD_PBRPC_PORT_DEFAULT(5, 32640),
+    SCHEDULER_PBRPC_PORT_DEFAULT(6, 32642),
     ;
     
     
@@ -382,6 +383,7 @@ public final class GlobalTypes {
         case 32636: return MRC_PBRPC_PORT_DEFAULT;
         case 30640: return OSD_HTTP_PORT_DEFAULT;
         case 32640: return OSD_PBRPC_PORT_DEFAULT;
+        case 32642: return SCHEDULER_PBRPC_PORT_DEFAULT;
         default: return null;
       }
     }
@@ -668,6 +670,7 @@ public final class GlobalTypes {
     DIR(0, 1),
     MRC(1, 2),
     OSD(2, 3),
+    Scheduler(3, 4),
     ;
     
     
@@ -678,6 +681,7 @@ public final class GlobalTypes {
         case 1: return DIR;
         case 2: return MRC;
         case 3: return OSD;
+        case 4: return Scheduler;
         default: return null;
       }
     }
@@ -708,7 +712,7 @@ public final class GlobalTypes {
     }
     
     private static final SERVICES[] VALUES = {
-      DIR, MRC, OSD, 
+      DIR, MRC, OSD, Scheduler, 
     };
     public static SERVICES valueOf(
         com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
@@ -5159,9 +5163,9 @@ public final class GlobalTypes {
       "DOM\020\004\022#\n\037REPL_FLAG_STRATEGY_RAREST_FIRST" +
       "\020\010\022!\n\035REPL_FLAG_STRATEGY_SEQUENTIAL\020\020\022-\n",
       ")REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETCHI" +
-      "NG\020 *%\n\010SERVICES\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n\003OS" +
-      "D\020\003B(\n&org.xtreemfs.pbrpc.generatedinter" +
-      "faces"
+      "NG\020 *4\n\010SERVICES\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n\003OS" +
+      "D\020\003\022\r\n\tScheduler\020\004B(\n&org.xtreemfs.pbrpc" +
+      ".generatedinterfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {

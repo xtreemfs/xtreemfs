@@ -1,0 +1,99 @@
+//
+// Copyright (c) 2009-2013, Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
+//
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// Redistributions of source code must retain the above copyright notice, this
+// list of conditions and the following disclaimer.
+// Redistributions in binary form must reproduce the above copyright notice,
+// this list of conditions and the following disclaimer in the documentation
+// and/or other materials provided with the distribution.
+// Neither the name of the Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
+// nor the names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+// AUTHORS: Christoph Kleineweber (ZIB)
+//
+
+
+option java_package="org.xtreemfs.pbrpc.generatedinterfaces";
+package xtreemfs.pbrpc;
+import "include/PBRPC.proto";
+import "include/Common.proto";
+import "xtreemfs/GlobalTypes.proto";
+
+enum reservationType {
+  STREAMING_RESERVATION = 1;
+  RANDOM_IO_RESERVATION = 2;
+  BEST_EFFORT_RESERVATION = 3;
+  COLD_STORAGE_RESERVATION = 4;
+}
+
+message osdIdentifier {
+  required string uuid = 1;
+}
+
+message volumeIdentifier {
+  required string uuid = 1;
+}
+
+message volumeSet {
+  repeated volumeIdentifier volumes = 1;
+}
+
+message reservation {
+  required volumeIdentifier volume = 1;
+  required reservationType type = 2;
+  required double capacity = 3;
+  optional double streamingThroughput = 4;
+  optional double randomThroughput = 5;
+}
+
+message reservationSet {
+  repeated reservation reservations = 1;
+}
+
+message osdSet {
+  repeated osdIdentifier osd=1;
+}
+
+service SchedulerService {
+  
+  option(interface_id) = 40001;
+  
+  rpc scheduleReservation(reservation) returns(osdSet) {
+    option(proc_id) = 101;
+  }
+  
+  rpc removeReservation(volumeIdentifier) returns(emptyResponse) {
+    option(proc_id) = 102;
+  }
+
+  rpc getSchedule(volumeIdentifier) returns(osdSet) {
+    option(proc_id) = 103;
+  }
+  
+  rpc getVolumes(osdIdentifier) returns(volumeSet) {
+    option(proc_id) = 104;
+  }
+
+  rpc getAllVolumes(emptyRequest) returns(reservationSet) {
+    option(proc_id) = 105;
+  }
+  
+}

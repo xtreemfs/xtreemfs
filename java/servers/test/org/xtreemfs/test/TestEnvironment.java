@@ -39,6 +39,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
+import org.xtreemfs.pbrpc.generatedinterfaces.SchedulerServiceClient;
+import org.xtreemfs.scheduler.SchedulerRequestDispatcher;
 
 /**
  * 
@@ -52,6 +54,10 @@ public class TestEnvironment {
     
     public InetSocketAddress getDIRAddress() throws IOException {
         return new InetSocketAddress("localhost", SetupUtils.createDIRConfig().getPort());
+    }
+
+    public InetSocketAddress getSchedulerAddress() throws IOException {
+        return new InetSocketAddress("localhost", SetupUtils.createSchedulerConfig().getPort());
     }
     
     /**
@@ -77,6 +83,10 @@ public class TestEnvironment {
     
     public OSDServiceClient getOSDClient() {
         return osdClient;
+    }
+    
+    public SchedulerServiceClient getSchedulerClient() {
+    	return schedulerClient;
     }
     
     /**
@@ -105,28 +115,34 @@ public class TestEnvironment {
         OSD_CLIENT, // OSD client
         DIR_SERVICE, // Directory Service
         MRC, // MRC
+        MRC_QOS, // MRC with QoS features
         MOCKUP_OSD, // mock-up OSD: registers a non-existing OSD at the DIR
         MOCKUP_OSD2, // mock-up OSD: registers a non-existing OSD at the DIR
         MOCKUP_OSD3, // mock-up OSD: registers a non-existing OSD at the DIR
-        OSD
-        // an OSD
+        OSD, // an OSD
+        SCHEDULER_SERVICE, // Scheduler
+        SCHEDULER_CLIENT // Scheduler client
     };
     
     private RPCNIOSocketClient                                      rpcClient;
     
     private org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient pbrpcClient;
     
-    private DIRServiceClient                                  dirClient;
+    private DIRServiceClient                                  		dirClient;
     
     private MRCServiceClient                                        mrcClient;
     
     private OSDServiceClient                                        osdClient;
+    
+    private SchedulerServiceClient									schedulerClient;
     
     private DIRRequestDispatcher                                    dirService;
     
     private MRCRequestDispatcher                                    mrc;
     
     private OSDRequestDispatcher[]                                  osds;
+    
+    private SchedulerRequestDispatcher								scheduler;
     
     private final List<Services>                                    enabledServs;
     
@@ -150,7 +166,11 @@ public class TestEnvironment {
             getRpcClient().waitForStartup();
             
             dirClient = SetupUtils.createDIRClient(getRpcClient());
-            
+
+            if (enabledServs.contains(Services.SCHEDULER_CLIENT)) {
+                schedulerClient = SetupUtils.createSchedulerClient(getRpcClient());
+            }
+
             if (enabledServs.contains(Services.DIR_SERVICE)) {
                 dirService = new DIRRequestDispatcher(SetupUtils.createDIRConfig(), SetupUtils.createDIRdbsConfig());
                 dirService.startup();
@@ -244,6 +264,23 @@ public class TestEnvironment {
                 mrc.startup();
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "MRC running");
             }
+
+            if (enabledServs.contains(Services.MRC_QOS)) {
+                if (enabledServs.contains(Services.MRC)) {
+                    Logging.logMessage(Logging.LEVEL_WARN, this, "MRC without QoS already running, QoS is ignored");
+                } else {
+                    mrc = new MRCRequestDispatcher(SetupUtils.createMRCQoSConfig(), SetupUtils.createMRCQoSdbsConfig());
+                    mrc.startup();
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "MRC with QoS running");
+                }
+            }
+            
+            if (enabledServs.contains(Services.SCHEDULER_SERVICE)) {
+            	scheduler = new SchedulerRequestDispatcher(SetupUtils.createSchedulerConfig(), SetupUtils.createSchedulerdbsConfig());
+            	scheduler.startup();
+            	scheduler.waitForStartup();
+            	Logging.logMessage(Logging.LEVEL_DEBUG, this, "Scheduler running");
+            }
             
             if (enabledServs.contains(Services.MRC_CLIENT)) {
                 mrcClient = new MRCServiceClient(rpcClient, null);
@@ -261,15 +298,16 @@ public class TestEnvironment {
     public void shutdown() {
         Logging.logMessage(Logging.LEVEL_DEBUG, this, "shutting down testEnv...");
         
-        if (enabledServs.contains(Services.MRC) && mrc != null) {
+        if (enabledServs.contains(Services.MRC) || enabledServs.contains(Services.MRC_QOS)) {
             try {
-                mrc.shutdown();
+                if (mrc != null)
+                    mrc.shutdown();
             } catch (Throwable th) {
                 th.printStackTrace();
             }
         }
-        
-        if (enabledServs.contains(Services.OSD) && osds != null) {
+
+        if (enabledServs.contains(Services.OSD)) {
             try {
                 for (OSDRequestDispatcher osd : osds) {
                     osd.shutdown();
@@ -286,13 +324,22 @@ public class TestEnvironment {
             }
         }
         
-        if (enabledServs.contains(Services.DIR_SERVICE) && dirService != null) {
+        if (enabledServs.contains(Services.DIR_SERVICE)) {
             try {
                 dirService.shutdown();
                 dirService.waitForShutdown();
             } catch (Throwable th) {
                 th.printStackTrace();
             }
+        }
+        
+        if (enabledServs.contains(Services.SCHEDULER_SERVICE)) {
+        	try {
+        		scheduler.shutdown();
+        		scheduler.waitForShutdown();
+        	} catch (Throwable th) {
+        		th.printStackTrace();
+        	}
         }
         
         try {
@@ -305,10 +352,8 @@ public class TestEnvironment {
         if (enabledServs.contains(Services.TIME_SYNC)) {
             try {
                 tsInstance = TimeSync.getInstance();
-                if (tsInstance != null) {
-                    tsInstance.shutdown();
-                    tsInstance.waitForShutdown();
-                }
+                tsInstance.shutdown();
+                tsInstance.waitForShutdown();
             } catch (Throwable th) {
             }
         }

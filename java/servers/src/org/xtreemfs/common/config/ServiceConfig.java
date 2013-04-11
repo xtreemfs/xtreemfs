@@ -42,6 +42,7 @@ public class ServiceConfig extends Config {
             DIRECTORY_SERVICE2("dir_service.2.host", null, InetSocketAddress.class, false),
             DIRECTORY_SERVICE3("dir_service.3.host", null, InetSocketAddress.class, false),
             DIRECTORY_SERVICE4("dir_service.4.host", null, InetSocketAddress.class, false),
+            SCHEDULER_SERVICE("scheduler_service.host", null, InetSocketAddress.class, false),
             PORT("listen.port", null, Integer.class, true),
             HTTP_PORT("http_port", null, Integer.class, true),
             LISTEN_ADDRESS("listen.address", null, InetAddress.class, false),
@@ -67,6 +68,7 @@ public class ServiceConfig extends Config {
             FAILOVER_WAIT("failover.wait_ms", 15 * 1000, Integer.class, false),
             MAX_CLIENT_Q("max_client_queue", 100, Integer.class, false),
             MAX_REQUEST_QUEUE_LENGTH("max_requests_queue_length", 1000, Integer.class, false),
+            USE_QOS("use_qos", false, Boolean.class, false),
             
             /*
              * DIR specific configuration parameter
@@ -657,6 +659,10 @@ public class ServiceConfig extends Config {
     public InetSocketAddress getDirectoryService() {
         return (InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE);
     }
+    
+    public InetSocketAddress getSchedulerService() {
+    	return (InetSocketAddress) parameter.get(Parameter.SCHEDULER_SERVICE);
+    }
 
     public InetSocketAddress[] getDirectoryServices() {
         List<InetSocketAddress> addresses = new ArrayList<InetSocketAddress>();
@@ -683,6 +689,10 @@ public class ServiceConfig extends Config {
         parameter.put(Parameter.DIRECTORY_SERVICE, addr);
     }
 
+    public boolean useQoS() {
+    	return (Boolean) parameter.get(Parameter.USE_QOS);
+    }
+    
     /**
      * Checks if the SSL Configuration is valid. If not throws a {@link RuntimeException}.
      * 

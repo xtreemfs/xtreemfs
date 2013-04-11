@@ -264,4 +264,5 @@ enum SERVICES {
   DIR = 1;
   MRC = 2;
   OSD = 3;
+  Scheduler = 4;
 }

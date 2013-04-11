@@ -408,9 +408,9 @@ void protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto() {
     "DOM\020\004\022#\n\037REPL_FLAG_STRATEGY_RAREST_FIRST"
     "\020\010\022!\n\035REPL_FLAG_STRATEGY_SEQUENTIAL\020\020\022-\n"
     ")REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETCHI"
-    "NG\020 *%\n\010SERVICES\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n\003OS"
-    "D\020\003B(\n&org.xtreemfs.pbrpc.generatedinter"
-    "faces", 2925);
+    "NG\020 *4\n\010SERVICES\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n\003OS"
+    "D\020\003\022\r\n\tScheduler\020\004B(\n&org.xtreemfs.pbrpc"
+    ".generatedinterfaces", 2940);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "xtreemfs/GlobalTypes.proto", &protobuf_RegisterTypes);
   NewFileSize::default_instance_ = new NewFileSize();
@@ -606,6 +606,7 @@ bool SERVICES_IsValid(int value) {
     case 1:
     case 2:
     case 3:
+    case 4:
       return true;
     default:
       return false;

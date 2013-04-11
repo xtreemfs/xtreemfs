@@ -32,6 +32,8 @@ import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
+import org.xtreemfs.pbrpc.generatedinterfaces.SchedulerServiceClient;
+import org.xtreemfs.scheduler.SchedulerConfig;
 
 /**
  * 
@@ -273,6 +275,108 @@ public class SetupUtils {
         
         return new BabuDBConfig(props);
     }
+
+    public static MRCConfig createMRCQoSConfig() throws IOException {
+        Properties props = new Properties();
+        props.setProperty("dir_service.host", "localhost");
+        props.setProperty("dir_service.port", new Integer(32638 + PORT_RANGE_OFFSET).toString());
+        props.setProperty("osd_check_interval", "10");
+        props.setProperty("debug.level", "" + DEBUG_LEVEL);
+        props.setProperty("debug.categories",
+                "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
+        props.setProperty("listen.port", new Integer(32636 + PORT_RANGE_OFFSET).toString());
+        props.setProperty("http_port", new Integer(30636 + PORT_RANGE_OFFSET).toString());
+        props.setProperty("listen.address", "localhost");
+        props.setProperty("no_atime", "true");
+        props.setProperty("local_clock_renewal", "0");
+        props.setProperty("remote_time_sync", "60000");
+        props.setProperty("ssl.enabled", "" + SSL_ON);
+        props.setProperty("ssl.service_creds", CERT_DIR + "MRC.p12");
+        props.setProperty("ssl.service_creds.pw", "passphrase");
+        props.setProperty("ssl.service_creds.container", "pkcs12");
+        props.setProperty("ssl.trusted_certs", CERT_DIR + "trusted.jks");
+        props.setProperty("ssl.trusted_certs.pw", "passphrase");
+        props.setProperty("ssl.trusted_certs.container", "jks");
+        props.setProperty("authentication_provider", "org.xtreemfs.common.auth.NullAuthProvider");
+        props.setProperty("capability_secret", "secretPassphrase");
+        props.setProperty("uuid", getMRC1UUID().toString());
+        props.setProperty("snmp.enabled", "true");
+        props.setProperty("snmp.port", new Integer(34636 + PORT_RANGE_OFFSET).toString());
+        props.setProperty("snmp.address", "localhost");
+        props.setProperty("measure_requests", "false");
+        props.setProperty("scheduler_service.host", "localhost");
+        props.setProperty("scheduler_service.port", new Integer(32842 + PORT_RANGE_OFFSET).toString());
+        props.setProperty("use_qos", "true");
+
+        MRCConfig config = new MRCConfig(props);
+        config.setDefaults();
+        return config;
+    }
+
+    public static BabuDBConfig createMRCQoSdbsConfig() throws IOException {
+        Properties props = new Properties();
+        props.setProperty("babudb.debug.level", "" + DEBUG_LEVEL);
+        props.setProperty("babudb.debug.categories",
+                "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
+        props.setProperty("babudb.cfgFile", "config.db");
+        props.setProperty("babudb.baseDir", TEST_DIR + "/mrc1");
+        props.setProperty("babudb.logDir", TEST_DIR + "/test-brain1.log");
+        props.setProperty("babudb.sync", "" + SyncMode.ASYNC);
+        props.setProperty("babudb.worker.maxQueueLength", "500");
+        props.setProperty("babudb.worker.numThreads", "2");
+        props.setProperty("babudb.maxLogfileSize", "16777216");
+        props.setProperty("babudb.checkInterval", "300");
+        props.setProperty("babudb.pseudoSyncWait", "0");
+
+        return new BabuDBConfig(props);
+    }
+
+    public static SchedulerConfig createSchedulerConfig() throws IOException {
+    	Properties props = new Properties();
+    	
+        props.setProperty("dir_service.host", "localhost");
+        props.setProperty("dir_service.port", new Integer(32638 + PORT_RANGE_OFFSET).toString());
+        props.setProperty("scheduler_service.host", "localhost");
+        props.setProperty("scheduler_service.port", new Integer(32842 + PORT_RANGE_OFFSET).toString());
+        props.setProperty("debug.level", "" + DEBUG_LEVEL);
+        props.setProperty("debug.categories",
+                "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
+        props.setProperty("ssl.enabled", "" + SSL_ON);
+        props.setProperty("ssl.service_creds", CERT_DIR + "MRC.p12");
+        props.setProperty("ssl.service_creds.pw", "passphrase");
+        props.setProperty("ssl.service_creds.container", "pkcs12");
+        props.setProperty("ssl.trusted_certs", CERT_DIR + "trusted.jks");
+        props.setProperty("ssl.trusted_certs.pw", "passphrase");
+        props.setProperty("ssl.trusted_certs.container", "jks");
+        props.setProperty("authentication_provider", "org.xtreemfs.common.auth.NullAuthProvider");
+        props.setProperty("capability_secret", "secretPassphrase");
+        props.setProperty("listen.port", new Integer(32842 + PORT_RANGE_OFFSET).toString());
+        props.setProperty("remote_time_sync", "60000");
+        props.setProperty("local_clock_renewal", "0");
+        
+        SchedulerConfig config = new SchedulerConfig(props);
+        config.setDefaults();
+        
+    	return config;
+    }
+    
+    public static BabuDBConfig createSchedulerdbsConfig() throws IOException {
+        Properties props = new Properties();
+        props.setProperty("babudb.debug.level", "" + DEBUG_LEVEL);
+        props.setProperty("babudb.debug.categories",
+                "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
+        props.setProperty("babudb.cfgFile", "config.db");
+        props.setProperty("babudb.baseDir", TEST_DIR + "/scheduler");
+        props.setProperty("babudb.logDir", TEST_DIR + "/test-scheduler.log");
+        props.setProperty("babudb.sync", "" + SyncMode.ASYNC);
+        props.setProperty("babudb.worker.maxQueueLength", "500");
+        props.setProperty("babudb.worker.numThreads", "2");
+        props.setProperty("babudb.maxLogfileSize", "16777216");
+        props.setProperty("babudb.checkInterval", "300");
+        props.setProperty("babudb.pseudoSyncWait", "0");
+        
+        return new BabuDBConfig(props);
+    }
     
     public static InetSocketAddress getMRC1Addr() {
         return new InetSocketAddress("localhost", 32636 + PORT_RANGE_OFFSET);
@@ -300,6 +404,10 @@ public class SetupUtils {
     
     public static InetSocketAddress getDIRAddr() {
         return new InetSocketAddress("localhost", 32638 + PORT_RANGE_OFFSET);
+    }
+
+    public static InetSocketAddress getSchedulerAddr() {
+        return new InetSocketAddress("localhost", 32842 + PORT_RANGE_OFFSET);
     }
     
     public static ServiceUUID getMRC1UUID() {
@@ -356,6 +464,10 @@ public class SetupUtils {
     
     static DIRServiceClient createDIRClient(RPCNIOSocketClient client) throws IOException {
         return new DIRServiceClient(client, new InetSocketAddress("localhost", 32638 + PORT_RANGE_OFFSET));
+    }
+    
+    static SchedulerServiceClient createSchedulerClient(RPCNIOSocketClient client) throws IOException {
+    	return new SchedulerServiceClient(client, new InetSocketAddress("localhost", 32842 + PORT_RANGE_OFFSET));
     }
     
     public static OSDConfig createOSD1ConfigForceWithoutSSL() throws IOException {

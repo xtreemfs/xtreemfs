@@ -198,6 +198,55 @@ public interface Client {
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
+     * Creates a volume on the MRC at mrc_address.
+     *
+     * @param mrcAddress
+     *            String of the form "hostname:port".
+     * @param schedulerAddress
+     *            String of the form "hostname:port".
+     * @param auth
+     *            Authentication data, e.g. of type AUTH_PASSWORD.
+     * @param userCredentials
+     *            Username and groups of the user who executes CreateVolume().
+     * @param volumeName
+     *            Name of the new volume.
+     * @param mode
+     *            Mode of the volume's root directory (in octal representation (e.g. 511), not decimal (777)).
+     * @param ownerUsername
+     *            Name of the owner user.
+     * @param ownerGroupname
+     *            Name of the owner group.
+     * @param accessPolicy_type
+     *            Access policy type (Null, Posix, Volume, ...).
+     * @param defaultStripingPolicyType
+     *            Only RAID0 so far.
+     * @param defaultStripeSize
+     *            Size of an object on the OSD (in kBytes).
+     * @param defaultStripeWidth
+     *            Number of OSDs objects of a file are striped across.
+     * @param volumeAttributes
+     *            Reference to a list of key-value pairs of volume attributes which will bet set at creation
+     *            time of the volume.
+     * @param capacity
+     *            Capacity of the new volume
+     * @param randomTP
+     *            Random throughput in 4k IOPS. Either random or sequential TP can be set.
+     * @param seqTP
+     *            Sequential throughput in MB/s. Either random or sequential TP can be set.
+     * @param coldStorage
+     *            Cold storage reservation
+     *
+     * @throws IOException
+     * @throws PosixErrorException
+     */
+    public void createVolume(List<String> mrcAddresses, String schedulerAddress, Auth auth, UserCredentials userCredentials,
+            String volumeName, int mode, String ownerUsername, String ownerGroupname,
+            AccessControlPolicyType accessPolicyType, StripingPolicyType defaultStripingPolicyType,
+            int defaultStripeSize, int defaultStripeWidth, List<KeyValuePair> volumeAttributes,
+            int capacity, int randomTP, int seqTP, boolean coldStorage)
+            throws IOException;
+
+    /**
      * Deletes the volume "volume_name" at the MRC "mrc_address".
      * 
      * @param mrcAddress
@@ -248,6 +297,26 @@ public interface Client {
      */
     public void deleteVolume(Auth auth, UserCredentials userCredentials, String volumeName)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
+
+    /**
+     * Deletes the volume "volume_name" at the MRC "mrc_address".
+     *
+     * @param mrcAddress
+     *            String of the form "hostname:port".
+     * @param auth
+     *            Authentication data, e.g. of type AUTH_PASSWORD.
+     * @param schedulerAddress
+     *            String of the form "hostname:port".
+     * @param userCredentials
+     *            Username and groups of the user who executes CreateVolume().
+     * @param volumeName
+     *            Name of the volume to be deleted.
+     *
+     * @throws IOException
+     * @throws PosixErrorException
+     */
+    public void deleteVolume(List<String> mrcAddresses, Auth auth, String schedulerAddress, UserCredentials userCredentials,
+                             String volumeName) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
      * Returns the available volumes on a MRC.

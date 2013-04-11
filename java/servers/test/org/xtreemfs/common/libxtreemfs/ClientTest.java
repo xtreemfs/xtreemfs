@@ -6,12 +6,6 @@
  */
 package org.xtreemfs.common.libxtreemfs;
 
-import static org.junit.Assert.assertEquals;
-
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -20,6 +14,7 @@ import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
+import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.FSUtils;
@@ -27,8 +22,8 @@ import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
+import org.xtreemfs.pbrpc.generatedinterfaces.*;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
@@ -37,6 +32,13 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ClientTest {
 
@@ -76,7 +78,8 @@ public class ClientTest {
 
         testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_CLIENT,
                 TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.RPC_CLIENT,
-                TestEnvironment.Services.MRC });
+                TestEnvironment.Services.MRC, TestEnvironment.Services.SCHEDULER_SERVICE,
+                TestEnvironment.Services.SCHEDULER_CLIENT, TestEnvironment.Services.MRC_CLIENT });
         testEnv.start();
 
         userCredentials = UserCredentials.newBuilder().setUsername("test").addGroups("test").build();
@@ -372,6 +375,40 @@ public class ClientTest {
         }
 
         fileHandle.close();
+        client.shutdown();
+    }
+
+    @Test
+    public void testCreateQoSVolume() throws Exception {
+        final String VOLUME_NAME = "testVolume";
+        Options options = new Options();
+
+        String dirAddress = testEnv.getDIRAddress().getHostName() + ":" + testEnv.getDIRAddress().getPort();
+        List<String> mrcAddresses = new ArrayList<String>();
+        mrcAddresses.add(testEnv.getMRCAddress().getHostName() + ":" + testEnv.getMRCAddress().getPort());
+        String schedulerAddress = testEnv.getSchedulerAddress().getHostName() + ":" + testEnv.getSchedulerAddress().getPort();
+
+        Client client = ClientFactory.createClient(dirAddress, userCredentials, null, options);
+        client.start();
+
+        // Create volume with QoS reservation
+        client.createVolume(mrcAddresses, schedulerAddress, auth, userCredentials,
+                VOLUME_NAME, 0777, userCredentials.getUsername(), userCredentials.getGroupsList().get(0),
+                AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, StripingPolicyType.STRIPING_POLICY_RAID0,
+                4, 2, new ArrayList<KeyValuePair>(), 10, 10, 0, false);
+
+        // Check volume for being scheduled to at least one osd
+        SchedulerServiceClient schedulerClient = testEnv.getSchedulerClient();
+        RPCResponse<Scheduler.osdSet> response = schedulerClient.getSchedule(testEnv.getSchedulerAddress(), auth, userCredentials, VOLUME_NAME);
+        Scheduler.osdSet osds = response.get();
+        assertTrue(osds.getOsdCount() > 0);
+
+        // Check xattr for osd selection policy to be set
+        MRCServiceClient mrcClient = testEnv.getMrcClient();
+        MRC.getxattrRequest xattrReq = MRC.getxattrRequest.newBuilder().setName("UUIDS").setVolumeName(VOLUME_NAME).setPath("/").build();
+        MRC.getxattrResponse xattrResp = mrcClient.getxattr(testEnv.getMRCAddress(), auth, userCredentials, xattrReq).get();
+        assertTrue(xattrResp.getValue().length() > 0);
+
         client.shutdown();
     }
 }

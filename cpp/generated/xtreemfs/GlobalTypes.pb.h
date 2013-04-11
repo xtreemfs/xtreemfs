@@ -247,11 +247,12 @@ inline bool REPL_FLAG_Parse(
 enum SERVICES {
   DIR = 1,
   MRC = 2,
-  OSD = 3
+  OSD = 3,
+  Scheduler = 4
 };
 bool SERVICES_IsValid(int value);
 const SERVICES SERVICES_MIN = DIR;
-const SERVICES SERVICES_MAX = OSD;
+const SERVICES SERVICES_MAX = Scheduler;
 const int SERVICES_ARRAYSIZE = SERVICES_MAX + 1;
 
 const ::google::protobuf::EnumDescriptor* SERVICES_descriptor();

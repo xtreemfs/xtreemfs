@@ -17,10 +17,12 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import com.google.protobuf.Message;
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.KeyValuePairs;
 import org.xtreemfs.common.libxtreemfs.RPCCaller.CallGenerator;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
+import org.xtreemfs.common.libxtreemfs.exceptions.InternalServerErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -33,10 +35,12 @@ import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.*;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
@@ -48,20 +52,16 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceGetByTypeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceGetByUUIDRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceRegisterRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceRegisterResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SERVICES;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 /**
  * Standard implementation of the client. Used only internally.
@@ -225,6 +225,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         return volume;
     }
 
+    @Override
     public void createVolume(String mrcAddress, Auth auth, UserCredentials userCredentials, String volumeName)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
 
@@ -232,8 +233,9 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         createVolume(mrcAddress, auth, userCredentials, volumeName, 511, "", "",
                 AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
                 StripingPolicyType.STRIPING_POLICY_RAID0, 128, 1, volumeAttributes);
-    };
+    }
 
+    @Override
     public void createVolume(List<String> mrcAddresses, Auth auth, UserCredentials userCredentials,
             String volumeName) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
 
@@ -330,6 +332,38 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
                 defaultStripeWidth, volumeAttributes);
     }
 
+    @Override
+    public void createVolume(List<String> mrcAddresses, String schedulerAddress, Auth auth, UserCredentials userCredentials,
+            String volumeName, int mode, String ownerUsername, String ownerGroupname,
+            AccessControlPolicyType accessPolicyType, StripingPolicyType defaultStripingPolicyType,
+            int defaultStripeSize, int defaultStripeWidth, List<KeyValuePair> volumeAttributes,
+            int capacity, int randomTP, int seqTP, boolean coldStorage)
+            throws IOException {
+        List<String> osds = createReservation(schedulerAddress, auth, userCredentials, volumeName, capacity, randomTP, seqTP, coldStorage);
+        if(osds.size() <= 0) {
+            throw new IOException("OSD reservation failed");
+        }
+
+
+        UUIDIterator iteratorWithAddresses = new UUIDIterator();
+        iteratorWithAddresses.addUUIDs(mrcAddresses);
+        try {
+            createVolume(iteratorWithAddresses, auth, userCredentials, volumeName, mode, ownerUsername,
+                    ownerGroupname, accessPolicyType, defaultStripingPolicyType, defaultStripeSize,
+                    defaultStripeWidth, volumeAttributes);
+        } catch(Exception ex) {
+            deleteReservation(schedulerAddress, auth, userCredentials, volumeName);
+            throw new IOException("Volume creation failed");
+        }
+
+        try {
+            setVolumeOSDs(mrcAddresses, auth, userCredentials, volumeName, osds);
+        } catch(Exception ex) {
+            deleteVolume(mrcAddresses, auth, schedulerAddress, userCredentials, volumeName);
+            throw new IOException("Enforcing OSD selection failed");
+        }
+    }
+
     private void createVolume(UUIDIterator mrcAddresses, Auth auth, UserCredentials userCredentials,
             String volumeName, int mode, String ownerUsername, String ownerGroupname,
             AccessControlPolicyType accessPolicyType, StripingPolicyType defaultStripingPolicyType,
@@ -355,6 +389,98 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
                             throws IOException {
                         return mrcClient.xtreemfs_mkvol(server, auth, userCreds, input);
                     };
+                });
+    }
+
+    private List<String> createReservation(String schedulerAddress, Auth auth, UserCredentials userCredentials,
+            String volumeName, int capacity, int randomTP, int seqTP, boolean coldStorage)
+            throws IOException {
+        List<String> result = new ArrayList<String>();
+        final SchedulerServiceClient schedulerClient = new SchedulerServiceClient(this.networkClient, null);
+
+        UUIDIterator iteratorWithAddresses = new UUIDIterator();
+        iteratorWithAddresses.addUUID(schedulerAddress);
+
+        Scheduler.reservation.Builder resBuilder = Scheduler.reservation.newBuilder();
+        resBuilder.setVolume(Scheduler.volumeIdentifier.newBuilder().setUuid(volumeName).build());
+        resBuilder.setCapacity(capacity);
+        resBuilder.setRandomThroughput(randomTP);
+        resBuilder.setStreamingThroughput(seqTP);
+
+        if(coldStorage)
+            if(randomTP != 0 || seqTP != 0)
+                throw  new IOException("Cold storage reservation cannot have performance requirements");
+            else
+                resBuilder.setType(Scheduler.reservationType.COLD_STORAGE_RESERVATION);
+        else if(randomTP == 0 && seqTP != 0)
+            resBuilder.setType(Scheduler.reservationType.STREAMING_RESERVATION);
+        else if(randomTP != 0 && seqTP == 0)
+            resBuilder.setType(Scheduler.reservationType.RANDOM_IO_RESERVATION);
+        else
+            resBuilder.setType(Scheduler.reservationType.BEST_EFFORT_RESERVATION);
+
+        RPCCaller.<Scheduler.reservation, Scheduler.osdSet> syncCall(SERVICES.Scheduler,
+                userCredentials, auth, this.options, this, iteratorWithAddresses, true, resBuilder.build(),
+                new CallGenerator<Scheduler.reservation, Scheduler.osdSet>() {
+                    @Override
+                    public RPCResponse<Scheduler.osdSet> executeCall(InetSocketAddress server, Auth auth,
+                        UserCredentials userCreds, Scheduler.reservation input)
+                        throws IOException {
+                        return schedulerClient.scheduleReservation(server, auth, userCreds, input);
+                    }
+                });
+
+        return result;
+    }
+
+    private void deleteReservation(String schedulerAddress, Auth auth, UserCredentials userCredentials, String volumeName) throws IOException{
+        final SchedulerServiceClient schedulerClient = new SchedulerServiceClient(this.networkClient, null);
+
+        UUIDIterator iteratorWithAddresses = new UUIDIterator();
+        iteratorWithAddresses.addUUID(schedulerAddress);
+
+        Scheduler.volumeIdentifier vol = Scheduler.volumeIdentifier.newBuilder().setUuid(volumeName).build();
+
+        RPCCaller.<Scheduler.volumeIdentifier, emptyResponse> syncCall(SERVICES.Scheduler,
+                userCredentials, auth, this.options, this, iteratorWithAddresses, true, vol,
+                new CallGenerator<Scheduler.volumeIdentifier, emptyResponse>() {
+                    @Override
+                    public RPCResponse<emptyResponse> executeCall(InetSocketAddress server, Auth auth,
+                        UserCredentials userCreds, Scheduler.volumeIdentifier input)
+                        throws IOException, PosixErrorException {
+                        return schedulerClient.removeReservation(server, auth, userCreds,  input);
+                    }
+                });
+    }
+
+    private void setVolumeOSDs(List<String> mrcAddresses, Auth auth, UserCredentials userCredentials,
+                               String volumeName, List<String> osds) throws IOException {
+        final MRCServiceClient mrcClient = new MRCServiceClient(this.networkClient, null);
+        UUIDIterator iteratorWithAddresses = new UUIDIterator();
+        iteratorWithAddresses.addUUIDs(mrcAddresses);
+
+        String osdStr = "";
+        for(String osd: osds) {
+            if (osdStr.equals("")) {
+                osdStr = osd;
+            } else {
+                osdStr += "," + osd;
+            }
+        }
+
+        // TODO(ckleineweber): Set correct flags
+        MRC.setxattrRequest xattr = MRC.setxattrRequest.newBuilder().setName("UUIDS").setValue(osdStr).
+                setVolumeName(volumeName).setPath("/").setFlags(0).build();
+
+        RPCCaller.<MRC.setxattrRequest, MRC.timestampResponse> syncCall(SERVICES.MRC,
+                userCredentials, auth, this.options, this, iteratorWithAddresses, true, xattr,
+                new CallGenerator<MRC.setxattrRequest, MRC.timestampResponse>() {
+                    @Override
+                    public RPCResponse<MRC.timestampResponse> executeCall(InetSocketAddress server, Auth auth,
+                                                                     UserCredentials userCreds, MRC.setxattrRequest input)
+                            throws IOException {
+                        return mrcClient.setxattr(server, auth, userCreds, input);
+                    }
                 });
     }
 
@@ -438,6 +564,27 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
                         return mrcServiceClient.xtreemfs_rmvol(server, authHeader, userCreds, input);
                     }
                 });
+    }
+
+    public void deleteVolume(List<String> mrcAddresses, Auth auth, String schedulerAddress, UserCredentials userCredentials,
+                             String volumeName) throws IOException, PosixErrorException, AddressToUUIDNotFoundException
+    {
+        final SchedulerServiceClient schedulerServiceClient = new SchedulerServiceClient(this.networkClient, null);
+        Scheduler.volumeIdentifier vol = Scheduler.volumeIdentifier.newBuilder().setUuid(volumeName).build();
+        UUIDIterator iteratorWithAddresses = new UUIDIterator();
+        iteratorWithAddresses.addUUID(schedulerAddress);
+
+        deleteVolume(mrcAddresses, auth, userCredentials, volumeName);
+
+        RPCCaller.<Scheduler.volumeIdentifier, emptyResponse> syncCall(SERVICES.Scheduler, userCredentials, auth, this.options, this,
+                iteratorWithAddresses, true, vol, new CallGenerator<Scheduler.volumeIdentifier, emptyResponse>() {
+            @SuppressWarnings("unchecked")
+            @Override
+            public RPCResponse<emptyResponse> executeCall(InetSocketAddress server, Auth authHeader,
+                UserCredentials userCreds, Scheduler.volumeIdentifier input) throws IOException {
+                return schedulerServiceClient.removeReservation(server, authHeader, userCreds, input);
+            }
+        });
     }
 
     /*
