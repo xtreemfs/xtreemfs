@@ -39,6 +39,7 @@ import org.xtreemfs.osd.operations.DeleteOperation;
 import org.xtreemfs.osd.operations.EventCloseFile;
 import org.xtreemfs.osd.operations.EventCreateFileVersion;
 import org.xtreemfs.osd.operations.OSDOperation;
+import org.xtreemfs.osd.rwre.ReplicaUpdatePolicy;
 import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.osd.storage.CowPolicy.cowMode;
 import org.xtreemfs.osd.storage.MetadataCache;
@@ -671,6 +672,13 @@ public class PreprocStage extends Stage {
         }
 
         XLocations locset = request.getLocationList();
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                    "operation: %s, local version: %s, request version: %s, destination: %s", request.getOperation()
+                            .getClass().getSimpleName(), state.getVersion(), locset.getVersion(), master.getConfig()
+                            .getPort());
+        }
+
         if (state.getVersion() == locset.getVersion() && !state.getInvalidated()) {
             return null;
         } else if (locset.getVersion() > state.getVersion()) {
@@ -684,8 +692,10 @@ public class PreprocStage extends Stage {
                 layout.setXLocSetVersionState(fileId, newstate);
                 // inform flease about the new view
                 if (!locset.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
+                    ASCIIString cellId = ReplicaUpdatePolicy.fileToCellId(fileId);
+
                     // TODO (jdillmann): think about using a callback which will be called when flease got the message
-                    master.getRWReplicationStage().setFleaseView(fileId, newstate);
+                    master.getRWReplicationStage().setFleaseView(fileId, cellId, newstate);
                 }
             } catch (IOException e) {
                 // TODO (jdillmann): do something with the error
@@ -709,18 +719,7 @@ public class PreprocStage extends Stage {
     private void doUpdateXLocSetFromFlease(StageRequest m) {
         final ASCIIString cellId = (ASCIIString) m.getArgs()[0];
         final int version = (int) m.getArgs()[1];
-        
-        // TODO (jdillmann): check if cellToFileId.get(cellId) could be used. we would have to call getState.
-        // - what will be the side effects?
-        // - when will the file be closed again?
-        // TODO (jdillmann): Extend CoordinatedReplicaUpdatePolicy with a generic fileIdFromCellId() function
-        // @see org.xtreemfs.osd.rwre.FleaseMasterEpochThread.processMethod(StageRequest)
-        final String fileId = cellId.toString().replace("file/", "");
-
-        if (fileId == null) {
-            // TODO (jdillmann): error handling required
-            return;
-        }
+        final String fileId = ReplicaUpdatePolicy.cellToFileId(cellId);
 
         XLocSetVersionState state;
         try {
@@ -740,7 +739,7 @@ public class PreprocStage extends Stage {
                 // persist the version
                 layout.setXLocSetVersionState(fileId, state);
                 // and pass it back to flease
-                master.getRWReplicationStage().setFleaseView(fileId, state, cellId);
+                master.getRWReplicationStage().setFleaseView(fileId, cellId, state);
             } catch (IOException e) {
                 // TODO (jdillmann): do something with the error or at least log it
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
@@ -813,7 +812,8 @@ public class PreprocStage extends Stage {
             if (request.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
                 callback.installComplete(fileId, state.getVersion(), null);
             } else {
-                master.getRWReplicationStage().setFleaseView(fileId, state, callback);
+                ASCIIString cellId = ReplicaUpdatePolicy.fileToCellId(fileId);
+                master.getRWReplicationStage().setFleaseView(fileId, cellId, state, callback);
             }
 
         } catch (IOException e) {

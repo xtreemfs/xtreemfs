@@ -838,16 +838,13 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         public void statusComplete(Map<String,Map<String,String>> status);
     }
 
-    public void setFleaseView(String fileId, XLocSetVersionState versionState) {
-        enqueueOperation(STAGEOP_SETVIEW, new Object[] { fileId, versionState }, null, null);
+    public void setFleaseView(String fileId, ASCIIString cellId, XLocSetVersionState versionState) {
+        enqueueOperation(STAGEOP_SETVIEW, new Object[] { fileId, cellId, versionState }, null, null);
     }
 
-    public void setFleaseView(String fileId, XLocSetVersionState versionState, ASCIIString cellId) {
-        enqueueOperation(STAGEOP_SETVIEW, new Object[] { fileId, versionState, cellId }, null, null);
-    }
-
-    public void setFleaseView(String fileId, XLocSetVersionState versionState, InstallXLocSetCallback callback) {
-        enqueueOperation(STAGEOP_SETVIEW, new Object[] { fileId, versionState }, null, callback);
+    public void setFleaseView(String fileId, ASCIIString cellId, XLocSetVersionState versionState,
+            InstallXLocSetCallback callback) {
+        enqueueOperation(STAGEOP_SETVIEW, new Object[] { fileId, cellId, versionState }, null, callback);
     }
     
     public void invalidateView(String fileId, XLocSetVersionState versionState, InvalidateXLocSetCallback callback) {
@@ -1250,46 +1247,9 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     private void processSetFleaseView(StageRequest method) {
         final Object[] args = method.getArgs();
         final String fileId = (String) args[0];
-        final XLocSetVersionState versionState = (XLocSetVersionState) args[1];
+        final ASCIIString cellId = (ASCIIString) args[1];
+        final XLocSetVersionState versionState = (XLocSetVersionState) args[2];
         final InstallXLocSetCallback callback = (InstallXLocSetCallback) method.getCallback();
-        
-        
-        ASCIIString cellId;
-        if (args.length > 2) {
-            cellId = (ASCIIString) args[2];
-        }
-        else {
-            /* 
-            // TODO (jdillmann): The ReplicatedFileState has not to be set yet. It is possible to call getState(...) 
-            //                     (see PreprocStage.doUpdateXLocSetFromFlease for discussion)
-            ReplicatedFileState fState = files.get(fileId);
-    
-            // there is no open cell for this file yet and thus we can't propagate the view yet.
-            // this has to be done when the cell is opened.
-            // we can use the version from the XLocations, because any operation with an outdated or invalid view will be prevented
-            if (fState == null) {
-                if (callback != null) {
-                    // TODO (jdillmann): check if we should add another callback method to distinguish this case
-                    callback.installComplete(fileId, versionState.getVersion(), null);
-                }
-                return;
-            }
-            
-            // if the policy isn't based on a primary/backup strategy, flease won't be used and we don't have to
-            // propagate the view
-            if (!fState.getPolicy().requiresLease()) {
-                if (callback != null) {
-                    // TODO (jdillmann): check if we should add another callback method to distinguish this case
-                    callback.installComplete(fileId, versionState.getVersion(), null);
-                }
-                return;
-            }
-            
-            
-            ASCIIString cellId = fState.getPolicy().getCellId();
-            */
-            return;
-        }
 
         
         int viewId;
