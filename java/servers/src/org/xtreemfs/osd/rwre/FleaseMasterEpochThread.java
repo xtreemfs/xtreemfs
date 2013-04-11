@@ -35,7 +35,7 @@ public class FleaseMasterEpochThread extends Stage implements MasterEpochHandler
     protected void processMethod(StageRequest method) {
         final Continuation callback = (Continuation) method.getCallback();
         final FleaseMessage message = (FleaseMessage) method.getArgs()[0];
-        final String fileId = message.getCellId().toString().replace("file/", "");
+        final String fileId = ReplicaUpdatePolicy.cellToFileId(message.getCellId());
         switch (method.getStageMethod()) {
             case STAGEOP_GET_MEPOCH: {
                 try {

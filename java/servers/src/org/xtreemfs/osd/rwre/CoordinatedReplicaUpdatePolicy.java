@@ -15,8 +15,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
 import org.xtreemfs.common.uuids.ServiceUUID;
-import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.flease.Flease;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
@@ -46,13 +46,11 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
  */
 public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy {
 
-    public static final String FILE_CELLID_PREFIX = "/file/";
-
     private final OSDServiceClient client;
 
 
     public CoordinatedReplicaUpdatePolicy(List<ServiceUUID> remoteOSDUUIDs, String localUUID, String fileId, OSDServiceClient client) throws IOException {
-        super(remoteOSDUUIDs,new ASCIIString(FILE_CELLID_PREFIX+fileId), localUUID);
+        super(remoteOSDUUIDs, fileId, localUUID);
         this.client = client;
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) created %s for %s",localUUID,this.getClass().getSimpleName(),cellId);
