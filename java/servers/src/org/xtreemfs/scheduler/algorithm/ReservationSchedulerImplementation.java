@@ -100,7 +100,11 @@ public class ReservationSchedulerImplementation implements ReservationScheduler 
 			for (OSDDescription osd : osds) {
 				if (osd.hasFreeCapacity(r) && fittingUsageType(r, osd)) {
 					result.add(osd);
-				}
+
+                    if (result.size() == stripeLength) {
+                        break;
+                    }
+                }
 			}
 			if (result.size() == stripeLength) {
 				break;
