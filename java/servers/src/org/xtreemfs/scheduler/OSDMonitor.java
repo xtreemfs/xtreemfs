@@ -24,7 +24,6 @@ public class OSDMonitor extends LifeCycleThread {
         super("OSDMonitor");
         this.master = master;
         this.quit = false;
-        this.notifyStarted();
     }
 
     @Override
@@ -34,6 +33,7 @@ public class OSDMonitor extends LifeCycleThread {
 
     @Override
     public void run() {
+        notifyStarted();
         while(!quit) {
             try{
                 master.reloadOSDs();
@@ -42,5 +42,6 @@ public class OSDMonitor extends LifeCycleThread {
                 Logging.logError(Logging.LEVEL_ERROR, this, ex);
             }
         }
+        notifyStopped();
     }
 }
