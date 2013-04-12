@@ -137,7 +137,8 @@ public class VersionedXLocSetTest {
         try {
             String rpAsJSON = volume.getXAttr(userCredentials, "/", "xtreemfs.default_rp");
             Map<String, Object> rp = (Map<String, Object>) JSONParser.parseJSON(new JSONString(rpAsJSON));
-            repl_flags = (int) ((long) rp.get("replication-flags"));
+            long temp = ((Long) rp.get("replication-flags"));
+            repl_flags = (int) temp;
         } catch (JSONException e) {
             throw new IOException(e);
         }

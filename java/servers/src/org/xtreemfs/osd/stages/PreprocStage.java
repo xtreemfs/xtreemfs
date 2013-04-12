@@ -718,7 +718,7 @@ public class PreprocStage extends Stage {
 
     private void doUpdateXLocSetFromFlease(StageRequest m) {
         final ASCIIString cellId = (ASCIIString) m.getArgs()[0];
-        final int version = (int) m.getArgs()[1];
+        final int version = (Integer) m.getArgs()[1];
         final String fileId = ReplicaUpdatePolicy.cellToFileId(cellId);
 
         XLocSetVersionState state;
