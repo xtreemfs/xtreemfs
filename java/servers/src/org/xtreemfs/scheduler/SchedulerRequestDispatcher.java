@@ -82,6 +82,7 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 	private final RPCNIOSocketServer server;
 	private final Map<Integer, SchedulerOperation> registry;
 	private ReservationStore reservationStore;
+    private OSDMonitor osdMonitor;
 
 	public SchedulerRequestDispatcher(SchedulerConfig config,
 			final BabuDBConfig dbsConfig) throws BabuDBException, IOException {
@@ -170,6 +171,9 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 		server = new RPCNIOSocketServer(config.getPort(), config.getAddress(),
 				this, sslOptions);
 		server.setLifeCycleListener(this);
+
+        osdMonitor = new OSDMonitor(this);
+        osdMonitor.setLifeCycleListener(this);
 	}
 
 	public void startup() {
@@ -182,7 +186,8 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 			clientStage.start();
 			clientStage.waitForStartup();
 
-			reloadOSDs();
+			osdMonitor.start();
+            osdMonitor.waitForStartup();
 			
 			// TODO(ckleineweber): Get scheduler parameters from config
 			reservationScheduler = ReservationSchedulerFactory.getScheduler(
