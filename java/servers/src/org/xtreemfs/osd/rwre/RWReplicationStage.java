@@ -847,8 +847,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         enqueueOperation(STAGEOP_SETVIEW, new Object[] { fileId, cellId, versionState }, null, callback);
     }
     
-    public void invalidateView(String fileId, XLocSetVersionState versionState, InvalidateXLocSetCallback callback) {
-        enqueueOperation(STAGEOP_INVALIDATEVIEW, new Object[] { fileId, versionState }, null, callback);
+    public void invalidateFleaseView(String fileId, ASCIIString cellId, XLocSetVersionState versionState, InvalidateXLocSetCallback callback) {
+        enqueueOperation(STAGEOP_INVALIDATEVIEW, new Object[] { fileId, cellId, versionState }, null, callback);
     }
     
     @Override
@@ -901,7 +901,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             case STAGEOP_FORCE_RESET : processForceReset(method); break;
             case STAGEOP_GETSTATUS : processGetStatus(method); break;
             case STAGEOP_SETVIEW: processSetFleaseView(method); break;
-            case STAGEOP_INVALIDATEVIEW: processInvalidateView(method); break;
+            case STAGEOP_INVALIDATEVIEW: processInvalidateFleaseView(method); break;
             default : throw new IllegalArgumentException("no such stageop");
         }
     }
@@ -1279,22 +1279,23 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         });
     }
 
-    private void processInvalidateView(StageRequest method) {
+    private void processInvalidateFleaseView(StageRequest method) {
         final Object[] args = method.getArgs();
         final String fileId = (String) args[0];
-        final XLocSetVersionState versionState = (XLocSetVersionState) args[1];
+        final ASCIIString cellId = (ASCIIString) args[1];
+        final XLocSetVersionState versionState = (XLocSetVersionState) args[2];
         final InvalidateXLocSetCallback callback = (InvalidateXLocSetCallback) method.getCallback();
-
-        final ReplicatedFileState fState = files.get(fileId);
-
-        // @see processSetFleaseView
-        if (fState == null || !fState.getPolicy().requiresLease()) {
-            callback.invalidateComplete(fileId, versionState.getVersion(), true, null);
-            return;
+        
+        final boolean isPrimary;
+        
+        ReplicatedFileState fState = files.get(fileId);
+        if (fState != null) {
+        	isPrimary = fState.isLocalIsPrimary();
+        }
+        else {
+        	isPrimary = false;
         }
 
-        final ASCIIString cellId = fState.getPolicy().getCellId();
-        final boolean isPrimary = fState.isLocalIsPrimary();
         fstage.setViewId(cellId, FleaseMessage.VIEW_ID_INVALIDATED, new FleaseListener() {
             
             @Override

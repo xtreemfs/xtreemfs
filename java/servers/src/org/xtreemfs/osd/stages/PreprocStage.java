@@ -775,7 +775,8 @@ public class PreprocStage extends Stage {
             if (request.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
                 callback.invalidateComplete(fileId, state.getVersion(), true, null);
             } else {
-                master.getRWReplicationStage().invalidateView(fileId, state, callback);
+            	ASCIIString cellId = ReplicaUpdatePolicy.fileToCellId(fileId);
+                master.getRWReplicationStage().invalidateFleaseView(fileId, cellId, state, callback);
             }
 
         } catch (IOException e) {
