@@ -356,12 +356,21 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
             throw new IOException("Volume creation failed");
         }
 
-        try {
-            setVolumeOSDs(mrcAddresses, auth, userCredentials, volumeName, osds);
-        } catch(Exception ex) {
-            deleteVolume(mrcAddresses, auth, schedulerAddress, userCredentials, volumeName);
-            throw new IOException("Enforcing OSD selection failed");
+        String osdStr = "";
+        for(String osd: osds) {
+            if (osdStr.equals("")) {
+                osdStr = osd;
+            } else {
+                osdStr += "," + osd;
+            }
         }
+
+        Options volumeOptions = new Options();
+        volumeOptions.setMetadataCacheSize(0);
+
+        AdminVolume volume = openVolume(volumeName, null, volumeOptions);
+        volume.setOSDSelectionPolicy(userCredentials, "1002");
+        volume.setPolicyAttribute(userCredentials, "1002.UUIDS", osdStr);
     }
 
     private void createVolume(UUIDIterator mrcAddresses, Auth auth, UserCredentials userCredentials,
@@ -453,37 +462,6 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
                         UserCredentials userCreds, Scheduler.volumeIdentifier input)
                         throws IOException, PosixErrorException {
                         return schedulerClient.removeReservation(server, auth, userCreds,  input);
-                    }
-                });
-    }
-
-    private void setVolumeOSDs(List<String> mrcAddresses, Auth auth, UserCredentials userCredentials,
-                               String volumeName, List<String> osds) throws IOException {
-        final MRCServiceClient mrcClient = new MRCServiceClient(this.networkClient, null);
-        UUIDIterator iteratorWithAddresses = new UUIDIterator();
-        iteratorWithAddresses.addUUIDs(mrcAddresses);
-
-        String osdStr = "";
-        for(String osd: osds) {
-            if (osdStr.equals("")) {
-                osdStr = osd;
-            } else {
-                osdStr += "," + osd;
-            }
-        }
-
-        // TODO(ckleineweber): Set correct flags
-        MRC.setxattrRequest xattr = MRC.setxattrRequest.newBuilder().setName("UUIDS").setValue(osdStr).
-                setVolumeName(volumeName).setPath("/").setFlags(0).build();
-
-        RPCCaller.<MRC.setxattrRequest, MRC.timestampResponse> syncCall(SERVICES.MRC,
-                userCredentials, auth, this.options, this, iteratorWithAddresses, true, xattr,
-                new CallGenerator<MRC.setxattrRequest, MRC.timestampResponse>() {
-                    @Override
-                    public RPCResponse<MRC.timestampResponse> executeCall(InetSocketAddress server, Auth auth,
-                                                                     UserCredentials userCreds, MRC.setxattrRequest input)
-                            throws IOException {
-                        return mrcClient.setxattr(server, auth, userCreds, input);
                     }
                 });
     }

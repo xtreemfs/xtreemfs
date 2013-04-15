@@ -403,12 +403,10 @@ public class ClientTest {
         Scheduler.osdSet osds = response.get();
         assertTrue(osds.getOsdCount() > 0);
 
-        // Check xattr for osd selection policy to be set
-        MRCServiceClient mrcClient = testEnv.getMrcClient();
-        MRC.getxattrRequest xattrReq = MRC.getxattrRequest.newBuilder().setName("UUIDS").setVolumeName(VOLUME_NAME).setPath("/").build();
-        MRC.getxattrResponse xattrResp = mrcClient.getxattr(testEnv.getMRCAddress(), auth, userCredentials, xattrReq).get();
-        assertTrue(xattrResp.getValue().length() > 0);
-
+        // Check osd selection policy to be set
+        Options volumeOptions = new Options();
+        volumeOptions.setMetadataCacheSize(0);
+        assertTrue(client.openVolume(VOLUME_NAME, null, volumeOptions).getOSDSelectionPolicy(userCredentials).equals("1002"));
         client.shutdown();
     }
 }
