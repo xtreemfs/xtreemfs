@@ -419,7 +419,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         else
             resBuilder.setType(Scheduler.reservationType.BEST_EFFORT_RESERVATION);
 
-        RPCCaller.<Scheduler.reservation, Scheduler.osdSet> syncCall(SERVICES.Scheduler,
+        Scheduler.osdSet osds = RPCCaller.<Scheduler.reservation, Scheduler.osdSet> syncCall(SERVICES.Scheduler,
                 userCredentials, auth, this.options, this, iteratorWithAddresses, true, resBuilder.build(),
                 new CallGenerator<Scheduler.reservation, Scheduler.osdSet>() {
                     @Override
@@ -429,6 +429,10 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
                         return schedulerClient.scheduleReservation(server, auth, userCreds, input);
                     }
                 });
+
+        for(Scheduler.osdIdentifier osd: osds.getOsdList()) {
+            result.add(osd.getUuid());
+        }
 
         return result;
     }
