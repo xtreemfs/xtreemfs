@@ -9,6 +9,7 @@
 package org.xtreemfs.osd.operations;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.XLocations;
@@ -19,7 +20,10 @@ import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.stages.PreprocStage.InvalidateXLocSetCallback;
+import org.xtreemfs.osd.stages.StorageStage.InternalGetReplicaStateCallback;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 public class InvalidateXLocSetOperation extends OSDOperation {
@@ -44,21 +48,48 @@ public class InvalidateXLocSetOperation extends OSDOperation {
             
             @Override
             public void invalidateComplete(String fileId, int version, boolean isPrimary, ErrorResponse error) {
-                // TODO Auto-generated method stub
+                if (error != null) {
+                    rq.sendError(error);
+                } else {
+                    postInvalidation(rq, fileId, version, isPrimary);
+                }
             }
         });
+    }
 
-        // master.getXLocSetStage().invalidateXLocSet(rq, new InvalidateOperationCallback() {
-        //
-        // @Override
-        // public void invalidateComplete(boolean isPrimary) {
-        //
-        // xtreemfs_xloc_set_invalidateResponse msg = xtreemfs_xloc_set_invalidateResponse.newBuilder()
-        // .setFileId(rq.getFileId()).setIsPrimary(isPrimary).build();
-        //
-        // rq.sendSuccess(msg, null);
-        // }
-        // });
+    private void postInvalidation(final OSDRequest rq, final String fileId, final int version, final boolean isPrimary) {
+        // TODO (jdillmann): RO replication
+        if (rq.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
+            invalidationFinished(rq, fileId, version, isPrimary, null);
+        } else {
+            // TODO (jdillmann): check maxLocalObjVersion parameter @see CoordinatedReplicaUpdatePolicy.executeReset
+            master.getStorageStage().internalGetReplicaState(fileId,
+                    rq.getLocationList().getLocalReplica().getStripingPolicy(), 0,
+                    new InternalGetReplicaStateCallback() {
+
+                        @Override
+                        public void getReplicaStateComplete(ReplicaStatus localState, ErrorResponse error) {
+                            if (error != null) {
+                                rq.sendError(error);
+                            } else {
+                                invalidationFinished(rq, fileId, version, isPrimary, localState);
+                            }
+                        }
+                    });
+        }
+    }
+
+    private void invalidationFinished(OSDRequest rq, String fileId, int version, boolean isPrimary, ReplicaStatus localState) {
+        // TODO (jdillmann): Extend the response to include the current XLocSet version and filter outdated responses at the coordinator
+        
+        xtreemfs_xloc_set_invalidateResponse.Builder response = xtreemfs_xloc_set_invalidateResponse.newBuilder();
+        response.setFileId(fileId).setIsPrimary(isPrimary);
+
+        if (localState != null) {
+            response.setStatus(localState);
+        }
+        
+        rq.sendSuccess(response.build(), null);
     }
 
     @Override
