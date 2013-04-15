@@ -10,6 +10,10 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import com.sun.net.httpserver.HttpContext;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 import org.xtreemfs.babudb.BabuDBFactory;
 import org.xtreemfs.babudb.api.BabuDB;
 import org.xtreemfs.babudb.api.DatabaseManager;
@@ -73,6 +77,7 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 	private SchedulerConfig config;
 	private RPCNIOSocketClient clientStage;
 	private static final String DB_NAME = "scheddb";
+    private final HttpServer httpServ;
 	private DIRClient dirClient;
 	private List<OSDDescription> osds;
 	private ReservationScheduler reservationScheduler;
@@ -174,6 +179,19 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 
         osdMonitor = new OSDMonitor(this);
         osdMonitor.setLifeCycleListener(this);
+
+        httpServ = HttpServer.create(new InetSocketAddress(config.getHttpPort()), 0);
+
+        final HttpContext ctx = httpServ.createContext("/", new HttpHandler() {
+            public void handle(HttpExchange httpExchange) throws IOException {
+                byte[] content;
+                content = SchedulerStatusPage.getStatusPage(SchedulerRequestDispatcher.this).getBytes("ascii");
+                httpExchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
+                httpExchange.sendResponseHeaders(200, content.length);
+                httpExchange.getResponseBody().write(content);
+                httpExchange.getResponseBody().close();
+            }
+        });
 	}
 
 	public void startup() {
