@@ -94,12 +94,10 @@ public class VolumeManager {
         // Todo (jvf) Add Logging Info
         Volume volume = null;
         try {
-            int stripeSizeInKiB = 128;
-            int stripeWidth = 1;
             List<GlobalTypes.KeyValuePair> volumeAttributes = new ArrayList<GlobalTypes.KeyValuePair>();
             client.createVolume(params.mrcAddress, params.auth, params.userCredentials, volumeName, 511,
                     params.userName, params.group, GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
-                    GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, stripeSizeInKiB, stripeWidth,
+                    GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, params.getStripeSizeInKiB, params.stripeWidth,
                     volumeAttributes);
             volume = client.openVolume(volumeName, params.sslOptions, params.options);
 
