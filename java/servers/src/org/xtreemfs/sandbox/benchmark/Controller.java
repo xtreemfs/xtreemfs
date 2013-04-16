@@ -104,10 +104,17 @@ public class Controller {
     }
 
     public static void printResults(ConcurrentLinkedQueue<BenchmarkResult> results) {
-        System.out.println("Type;NumberOfParallelThreads;TimeInSec;MiB/Sec;DataWrittenInBytes;ByteCount");
         /* print the results */
         for (BenchmarkResult res : results) {
             System.out.println(res);
+        }
+    }
+
+    public static void printCSV(ConcurrentLinkedQueue<BenchmarkResult> results) {
+        System.out.println("Type;NumberOfParallelThreads;TimeInSec;MiB/Sec;DataWrittenInBytes;ByteCount");
+        /* print the results */
+        for (BenchmarkResult res : results) {
+            System.out.println(res.toCSV());
         }
     }
 
