@@ -38,7 +38,11 @@ public class xtfs_benchmark {
         setLoggingLevel();
         displayUsageIfSet();
         Params params = buildParams();
-        System.out.println(params);
+
+        // Todo (jvf) delete
+        if (Logging.isInfo())
+            System.out.println(params);
+
         controller = new Controller(params);
         controller.tryConnection();
         setupVolumes(params);
@@ -58,7 +62,6 @@ public class xtfs_benchmark {
      */
     private static void setLoggingLevel() {
         String loggingLevel = options.get("-logging").stringValue;
-        System.out.println(loggingLevel);
         if (null != loggingLevel)
             Logging.start(Integer.valueOf(loggingLevel), Category.tool);
     }
