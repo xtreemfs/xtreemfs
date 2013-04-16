@@ -152,9 +152,9 @@ public class xtfs_benchmark {
         options.put("p", new CliOption(STRING, "number of sequential benchmarks to be started in parallel. default: 1",
                 "<number>"));
         options.put("r", new CliOption(STRING, "number of repetitions of a benchmarks. default: 1", "<number>"));
-        options.put("-stripeSize", new CliOption(STRING,
+        options.put("-stripe-size", new CliOption(STRING,
                 "stripeSize in [B|K|M|G] (no modifier assumes bytes). default: 128K", "<stripeSize>"));
-        options.put("-stripeWidth", new CliOption(STRING, "stripeWidth. default: 1", "<stripeWidth>"));
+        options.put("-stripe-width", new CliOption(STRING, "stripe width. default: 1", "<stripe width>"));
 
         /* sizes */
         options.put("ssize", new CliOption(STRING,
@@ -290,7 +290,7 @@ public class xtfs_benchmark {
     }
 
     private static void setStripeSize() {
-        String stripeSize = options.get("-stripeSize").stringValue;
+        String stripeSize = options.get("-stripe-size").stringValue;
         if (null != stripeSize){
             long stripeSizeInBytes = parseSizeWithModifierToBytes(stripeSize);
             assert stripeSizeInBytes <= Integer.MAX_VALUE : "StripeSize must be less equal than Integer.MAX_VALUE";
@@ -299,7 +299,7 @@ public class xtfs_benchmark {
     }
 
     private static void setStripeWidth() {
-        String stripeWidth = options.get("-stripeWidth").stringValue;
+        String stripeWidth = options.get("-stripe-width").stringValue;
         if (null != stripeWidth)
             builder.setStripeWidth(Integer.parseInt(stripeWidth));
     }

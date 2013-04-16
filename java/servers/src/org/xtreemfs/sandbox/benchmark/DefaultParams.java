@@ -35,7 +35,7 @@ public class DefaultParams {
     static SSLOptions sslOptions            = null;
     static Options    options               = new Options();
     static int        stripeSizeInBytes     = 128 * KiB_IN_BYTES;
-    static int        stripeWidth           = 4;
+    static int        stripeWidth           = 1;
     static boolean    noCleanup             = false;
     static boolean    noCleanupOfVolumes    = false;
     static boolean    isNoCleanupOfBasefile = false;
