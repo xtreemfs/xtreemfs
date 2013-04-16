@@ -34,9 +34,8 @@ public class xtfs_benchmark {
 
     public static void main(String[] args) throws Exception {
 
-        Logging.start(Logging.LEVEL_INFO, Logging.Category.tool);
-
         parseCLIOptions(args);
+        setLoggingLevel();
         displayUsageIfSet();
         Params params = buildParams();
         System.out.println(params);
@@ -51,6 +50,17 @@ public class xtfs_benchmark {
     private static void parseCLIOptions(String[] args) {
         initOptions();
         parseCLI(args, options, arguments);
+    }
+
+    /*
+     * The logging level gets a different handling then the other options, because it is to be started as
+     * early as possible
+     */
+    private static void setLoggingLevel() {
+        String loggingLevel = options.get("-logging").stringValue;
+        System.out.println(loggingLevel);
+        if (null != loggingLevel)
+            Logging.start(Integer.valueOf(loggingLevel), Category.tool);
     }
 
     private static void displayUsageIfSet() {
@@ -155,6 +165,7 @@ public class xtfs_benchmark {
         options.put("-stripe-size", new CliOption(STRING,
                 "stripeSize in [B|K|M|G] (no modifier assumes bytes). default: 128K", "<stripeSize>"));
         options.put("-stripe-width", new CliOption(STRING, "stripe width. default: 1", "<stripe width>"));
+        options.put("-logging", new CliOption(STRING, "Logging Level: 0-7. default: 4", "<logginglevel>"));
 
         /* sizes */
         options.put("ssize", new CliOption(STRING,
@@ -291,10 +302,10 @@ public class xtfs_benchmark {
 
     private static void setStripeSize() {
         String stripeSize = options.get("-stripe-size").stringValue;
-        if (null != stripeSize){
+        if (null != stripeSize) {
             long stripeSizeInBytes = parseSizeWithModifierToBytes(stripeSize);
             assert stripeSizeInBytes <= Integer.MAX_VALUE : "StripeSize must be less equal than Integer.MAX_VALUE";
-            builder.setStripeSizeInBytes((int) stripeSizeInBytes );
+            builder.setStripeSizeInBytes((int) stripeSizeInBytes);
         }
     }
 

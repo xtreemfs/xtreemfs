@@ -8,11 +8,11 @@
 
 package org.xtreemfs.sandbox.benchmark;
 
-import static org.xtreemfs.foundation.pbrpc.client.RPCAuthentication.authNone;
-
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
+
+import static org.xtreemfs.foundation.pbrpc.client.RPCAuthentication.authNone;
 
 /**
  * @author jensvfischer
