@@ -338,6 +338,7 @@ public class SetupUtils {
         props.setProperty("dir_service.port", new Integer(32638 + PORT_RANGE_OFFSET).toString());
         props.setProperty("scheduler_service.host", "localhost");
         props.setProperty("scheduler_service.port", new Integer(32842 + PORT_RANGE_OFFSET).toString());
+        props.setProperty("http_port", new Integer(30641 + PORT_RANGE_OFFSET).toString());
         props.setProperty("debug.level", "" + DEBUG_LEVEL);
         props.setProperty("debug.categories",
                 "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
