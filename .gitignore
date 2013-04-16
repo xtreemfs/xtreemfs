@@ -4,3 +4,4 @@
 .classpath
 .project
 bin/
+java/servers/src/org/xtreemfs/sandbox/benchmark/ControllerTest.java
