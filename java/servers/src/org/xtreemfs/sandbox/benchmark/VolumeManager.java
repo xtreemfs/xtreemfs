@@ -122,7 +122,7 @@ public class VolumeManager {
     private void tryToCreateDir(Volume volume, String dirName, boolean recursive) {
         try {
             volume.createDirectory(params.userCredentials, dirName, 0777, recursive);
-            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this, "Directory %s on volume %s created.",
+            Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Directory %s on volume %s created.",
                     dirName, volume.getVolumeName());
         } catch (PosixErrorException e) {
             if (e.getPosixError() != POSIXErrno.POSIX_ERROR_EEXIST) {
