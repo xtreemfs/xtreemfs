@@ -71,6 +71,8 @@ public class xtfs_benchmark {
         setAuth();
         setSSLOptions();
         setOptions();
+        setStripeSize();
+        setStripeWidth();
         setNoCleanup();
         setNoCleanupOfVolumes();
         setNoCleanupOfBasefile();
@@ -126,8 +128,8 @@ public class xtfs_benchmark {
     private static void initOptions() {
 
         /*
-         * -sw -sr -rw -p -rr -rfr -rfw -p <number> -r <number> -ssize -rsize --file-size --basefile-size (--no-cleanup |
-         * --no-cleanup-volumes) volume1 volume2
+         * -sw -sr -rw -p -rr -rfr -rfw -p <number> -r <number> -ssize -rsize --file-size --basefile-size
+         * (--no-cleanup | --no-cleanup-volumes) volume1 volume2
          */
 
         /* Connection Data */
@@ -146,8 +148,10 @@ public class xtfs_benchmark {
 
         options.put("p", new CliOption(STRING, "number of sequential benchmarks to be started in parallel. default: 1",
                 "<number>"));
-        options.put("r", new CliOption(STRING, "number of repetitions of a benchmarks. default: 1",
-                "<number>"));
+        options.put("r", new CliOption(STRING, "number of repetitions of a benchmarks. default: 1", "<number>"));
+        options.put("-stripeSize", new CliOption(STRING,
+                "stripeSize in [B|K|M|G] (no modifier assumes bytes). default: 128K", "<stripeSize>"));
+        options.put("-stripeWidth", new CliOption(STRING, "stripeWidth. default: 1", "<stripeWidth>"));
 
         /* sizes */
         options.put("ssize", new CliOption(STRING,
@@ -203,7 +207,7 @@ public class xtfs_benchmark {
             builder.setNumberOfThreads(Integer.valueOf(optionValue));
     }
 
-    private static void setNumberOfRepetitions(){
+    private static void setNumberOfRepetitions() {
         String optionValue = options.get("r").stringValue;
         if (null != optionValue)
             builder.setNumberOfRepetitions(Integer.valueOf(optionValue));
@@ -280,6 +284,21 @@ public class xtfs_benchmark {
 
     private static void setOptions() {
         // Todo (jvf) implement?
+    }
+
+    private static void setStripeSize() {
+        String stripeSize = options.get("-stripeSize").stringValue;
+        if (null != stripeSize){
+            long stripeSizeInBytes = parseSizeWithModifierToBytes(stripeSize);
+            assert stripeSizeInBytes <= Integer.MAX_VALUE : "StripeSize must be less equal than Integer.MAX_VALUE";
+            builder.setStripeSizeInBytes((int) stripeSizeInBytes );
+        }
+    }
+
+    private static void setStripeWidth() {
+        String stripeWidth = options.get("-stripeWidth").stringValue;
+        if (null != stripeWidth)
+            builder.setStripeWidth(Integer.parseInt(stripeWidth));
     }
 
     private static void setNoCleanup() {
@@ -360,8 +379,8 @@ public class xtfs_benchmark {
             return dirAddresses[0];
         } catch (IOException e) {
             logMessage(LEVEL_INFO, Category.tool, xtfs_benchmark.class,
-                    "Could not read or find Default DIR Config in %s. Errormessage: %s", DefaultDirConfig.DEFAULT_DIR_CONFIG,
-                    e.getMessage());
+                    "Could not read or find Default DIR Config in %s. Errormessage: %s",
+                    DefaultDirConfig.DEFAULT_DIR_CONFIG, e.getMessage());
             return null;
         }
     }

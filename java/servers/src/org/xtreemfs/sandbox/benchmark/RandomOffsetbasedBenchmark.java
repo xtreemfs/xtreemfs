@@ -21,8 +21,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  * @author jensvfischer
  */
 public abstract class RandomOffsetbasedBenchmark extends RandomBenchmark {
-    final static int    RANDOM_IO_BLOCKSIZE = 1024 * 4;  // 4 KiB
-    static final String BENCHMARK_FILENAME           = "randomBenchFile";
+    final static int    RANDOM_IO_BLOCKSIZE = 1024 * 4;             // 4 KiB
+    static final String BENCHMARK_FILENAME  = "randomBenchFile";
     final long          sizeOfBasefile;
     final static String BASFILE_FILENAME    = "benchmarks/basefile";
 
@@ -44,8 +44,8 @@ public abstract class RandomOffsetbasedBenchmark extends RandomBenchmark {
     }
 
     /* convert to 4 KiB Blocks */
-    protected static long convertTo4KiBBlocks(long numberOfBlocks) {
-        return (numberOfBlocks * (long) XTREEMFS_BLOCK_SIZE_IN_BYTES) / (long) RANDOM_IO_BLOCKSIZE;
+    protected long convertTo4KiBBlocks(long numberOfBlocks) {
+        return (numberOfBlocks * (long) stripeWidth) / (long) RANDOM_IO_BLOCKSIZE;
     }
 
     protected long generateNextRandomOffset() {
@@ -74,19 +74,19 @@ public abstract class RandomOffsetbasedBenchmark extends RandomBenchmark {
     private void createBasefile() throws Exception {
         Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this,
                 "Start creating a basefile of size %s bytes.", sizeOfBasefile);
-        long numberOfBlocks = sizeOfBasefile / (long) XTREEMFS_BLOCK_SIZE_IN_BYTES;
+        long numberOfBlocks = sizeOfBasefile / (long) stripeWidth;
         Random random = new Random();
         int flags = GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
         FileHandle fileHandle = volume.openFile(params.userCredentials, BASFILE_FILENAME, flags, 511);
         long byteCounter = 0;
-        byte[] data = new byte[XTREEMFS_BLOCK_SIZE_IN_BYTES];
+        byte[] data = new byte[stripeWidth];
         for (long j = 0; j < numberOfBlocks; j++) {
-            long nextOffset = j * XTREEMFS_BLOCK_SIZE_IN_BYTES;
+            long nextOffset = j * stripeWidth;
             assert nextOffset >= 0 : "Offset < 0 not allowed";
             random.nextBytes(data);
-            byteCounter += fileHandle.write(params.userCredentials, data, XTREEMFS_BLOCK_SIZE_IN_BYTES, nextOffset);
+            byteCounter += fileHandle.write(params.userCredentials, data, stripeWidth, nextOffset);
         }
         fileHandle.close();
         assert byteCounter == sizeOfBasefile : " Error while writing the basefile for the random io benchmark";

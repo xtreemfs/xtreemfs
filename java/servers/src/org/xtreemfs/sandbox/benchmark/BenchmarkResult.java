@@ -35,7 +35,6 @@ public class BenchmarkResult {
         this.byteCount = byteCount;
     }
 
-    @Deprecated
     public String toString1() {
 
         String dataWritten = dataWrittenInBytes >= GiB_IN_BYTES ? dataWrittenInBytes / GiB_IN_BYTES + " GiB ["

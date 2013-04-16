@@ -22,10 +22,10 @@ import org.xtreemfs.foundation.logging.Logging;
  */
 public abstract class Benchmark {
 
-    static final int  MiB_IN_BYTES                 = 1024 * 1024;
-    static final int  GiB_IN_BYTES                 = 1024 * 1024 * 1024;
-    static final int  XTREEMFS_BLOCK_SIZE_IN_BYTES = 128 * 1024;        // 128 kib
+    static final int  MiB_IN_BYTES = 1024 * 1024;
+    static final int  GiB_IN_BYTES = 1024 * 1024 * 1024;
 
+    final int         stripeWidth;
     final long        benchmarkSizeInBytes;
     final Volume      volume;
     final AdminClient client;
@@ -36,6 +36,7 @@ public abstract class Benchmark {
         this.benchmarkSizeInBytes = benchmarkSizeInBytes;
         this.volume = volume;
         this.params = params;
+        stripeWidth = params.stripeSizeInBytes;
     }
 
     /*
@@ -49,9 +50,9 @@ public abstract class Benchmark {
         Logging.logMessage(Logging.LEVEL_INFO, this, "Starting %s", shortClassname, Logging.Category.tool);
 
         // Setting up
-        byte[] data = new byte[XTREEMFS_BLOCK_SIZE_IN_BYTES];
+        byte[] data = new byte[stripeWidth];
 
-        long numberOfBlocks = benchmarkSizeInBytes / XTREEMFS_BLOCK_SIZE_IN_BYTES;
+        long numberOfBlocks = benchmarkSizeInBytes / stripeWidth;
         long byteCounter = 0;
 
         /* Run the Benchmark */
@@ -82,7 +83,8 @@ public abstract class Benchmark {
             byteCounter = performIO(data, numberOfBlocks);
         } catch (IOException e) {
             byteCounter = 0;
-            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this,"Error while trying to perform IO: %s", e.getMessage());
+            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this,
+                    "Error while trying to perform IO: %s", e.getMessage());
         }
         return byteCounter;
     }

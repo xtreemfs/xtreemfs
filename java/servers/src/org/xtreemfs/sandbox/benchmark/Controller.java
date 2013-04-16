@@ -57,7 +57,7 @@ public class Controller {
             throws Exception {
 
         // TODO (jvf) Check für benchmarksize % blocksize an anderer Stelle einbauen
-        // if (sizeInBytes % Benchmark.XTREEMFS_BLOCK_SIZE_IN_BYTES != 0)
+        // if (sizeInBytes % Benchmark.stripeWidth != 0)
         // throw new
         // IllegalArgumentException("Size must be in alignment with (i.e. divisible through) the block size");
 

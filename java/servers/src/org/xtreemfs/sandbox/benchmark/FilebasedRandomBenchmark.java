@@ -26,6 +26,6 @@ public abstract class FilebasedRandomBenchmark extends RandomBenchmark {
 
     /* convert to 4 KiB Blocks */
     protected long convertTo4KiBBlocks(long numberOfBlocks) {
-        return (numberOfBlocks * (long) XTREEMFS_BLOCK_SIZE_IN_BYTES) / (long) randomIOFilesize;
+        return (numberOfBlocks * (long) stripeWidth) / (long) randomIOFilesize;
     }
 }

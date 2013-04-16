@@ -40,6 +40,8 @@ public class ParamsBuilder {
     RPC.Auth   auth                  = DefaultParams.auth;
     SSLOptions sslOptions            = DefaultParams.sslOptions;
     Options    options               = DefaultParams.options;
+    int        stripeSizeInBytes     = DefaultParams.stripeSizeInBytes;
+    int        stripeWidth           = DefaultParams.stripeWidth;
     boolean    noCleanup             = DefaultParams.noCleanup;
     boolean    noCleanupOfVolumes    = DefaultParams.noCleanupOfVolumes;
     boolean    noCleanupOfBasefile   = DefaultParams.isNoCleanupOfBasefile;
@@ -109,6 +111,14 @@ public class ParamsBuilder {
     public ParamsBuilder setOptions(Options options) {
         this.options = options;
         return this;
+    }
+
+    public void setStripeSizeInBytes(int stripeSizeInBytes) {
+        this.stripeSizeInBytes = stripeSizeInBytes;
+    }
+
+    public void setStripeWidth(int stripeWidth) {
+        this.stripeWidth = stripeWidth;
     }
 
     public void setNoCleanup(boolean noCleanup) {

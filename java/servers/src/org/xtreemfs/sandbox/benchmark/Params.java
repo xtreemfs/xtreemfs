@@ -39,6 +39,9 @@ public class Params {
     final RPC.Auth            auth;
     final SSLOptions          sslOptions;
     final Options             options;
+    int                       stripeSizeInBytes;
+    int                       getStripeSizeInKiB;
+    int                       stripeWidth;
     final boolean             noCleanup;
     final boolean             noCleanupOfVolumes;
     final boolean             noCleanupOfBasefile;
@@ -58,6 +61,9 @@ public class Params {
                 .build();
         this.sslOptions = builder.sslOptions;
         this.options = builder.options;
+        this.stripeSizeInBytes = builder.stripeSizeInBytes;
+        this.getStripeSizeInKiB = builder.stripeSizeInBytes / 1024;
+        this.stripeWidth = builder.stripeWidth;
         this.mrcAddress = getMRCAddress(dirAddress, userCredentials, sslOptions, options);
         this.auth = builder.auth;
         this.noCleanup = builder.noCleanup;

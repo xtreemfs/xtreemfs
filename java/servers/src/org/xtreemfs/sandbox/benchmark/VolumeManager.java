@@ -17,6 +17,7 @@ import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC;
 
 /**
@@ -93,9 +94,17 @@ public class VolumeManager {
         // Todo (jvf) Add Logging Info
         Volume volume = null;
         try {
-            client.createVolume(params.mrcAddress, params.auth, params.userCredentials, volumeName);
+            int stripeSizeInKiB = 128;
+            int stripeWidth = 1;
+            List<GlobalTypes.KeyValuePair> volumeAttributes = new ArrayList<GlobalTypes.KeyValuePair>();
+            client.createVolume(params.mrcAddress, params.auth, params.userCredentials, volumeName, 511,
+                    params.userName, params.group, GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
+                    GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, stripeSizeInKiB, stripeWidth,
+                    volumeAttributes);
             volume = client.openVolume(volumeName, params.sslOptions, params.options);
-            volume.setOSDSelectionPolicy(params.userCredentials, "1000,3002,4711");   // Todo (jvf) Implement in tool and params or delete
+
+            // Todo (jvf) Implement in tool and params or delete
+            volume.setOSDSelectionPolicy(params.userCredentials, "1000,3002,4711");
             createdVolumes.add(volume);
             createDirStructure(volume);
         } catch (PosixErrorException e) {
@@ -107,7 +116,7 @@ public class VolumeManager {
     }
 
     private void createDirStructure(Volume volume) {
-//        tryToCreateDir(volume, "benchmarks", false);
+        // tryToCreateDir(volume, "benchmarks", false);
         tryToCreateDir(volume, "/benchmarks/sequentialBenchmark", true);
         tryToCreateDir(volume, "/benchmarks/randomBenchmark", true);
     }
@@ -115,12 +124,12 @@ public class VolumeManager {
     private void tryToCreateDir(Volume volume, String dirName, boolean recursive) {
         try {
             volume.createDirectory(params.userCredentials, dirName, 0777, recursive);
-            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this,
-                    "Directory %s on volume %s created.", dirName, volume.getVolumeName());
+            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this, "Directory %s on volume %s created.",
+                    dirName, volume.getVolumeName());
         } catch (PosixErrorException e) {
-            if (e.getPosixError() != POSIXErrno.POSIX_ERROR_EEXIST)                                         {
-            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this,
-                    "Error while trying to create directory %s. Errormessage: %s", dirName, e.getMessage());
+            if (e.getPosixError() != POSIXErrno.POSIX_ERROR_EEXIST) {
+                Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this,
+                        "Error while trying to create directory %s. Errormessage: %s", dirName, e.getMessage());
                 e.printStackTrace();
             }
         } catch (IOException e) {
@@ -193,7 +202,7 @@ public class VolumeManager {
                 + "Trying to infer a filelist on volume %s", volume.getVolumeName());
 
         String path = pathToBasefile.substring(0, pathToBasefile.lastIndexOf('/'));
-        String filename = pathToBasefile.substring(pathToBasefile.lastIndexOf('/')+1);
+        String filename = pathToBasefile.substring(pathToBasefile.lastIndexOf('/') + 1);
 
         /* ToDo (jvf) there seems to be a bug if you try to get filelist > 1024 files */
         List<MRC.DirectoryEntry> directoryEntries = volume.readDir(params.userCredentials, path, 0, 0, true)
@@ -203,7 +212,7 @@ public class VolumeManager {
         for (MRC.DirectoryEntry directoryEntry : directoryEntries) {
             String entry = directoryEntry.getName();
             if (entry.matches(filename + "[0-9]+"))
-                entries.add(path+'/'+directoryEntry.getName());
+                entries.add(path + '/' + directoryEntry.getName());
         }
         entries.trimToSize();
         String[] filelist = new String[entries.size()];
