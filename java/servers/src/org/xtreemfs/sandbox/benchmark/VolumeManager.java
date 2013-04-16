@@ -95,6 +95,7 @@ public class VolumeManager {
         try {
             client.createVolume(params.mrcAddress, params.auth, params.userCredentials, volumeName);
             volume = client.openVolume(volumeName, params.sslOptions, params.options);
+            volume.setOSDSelectionPolicy(params.userCredentials, "1000,3002,4711");   // Todo (jvf) Implement in tool and params or delete
             createdVolumes.add(volume);
             createDirStructure(volume);
         } catch (PosixErrorException e) {
