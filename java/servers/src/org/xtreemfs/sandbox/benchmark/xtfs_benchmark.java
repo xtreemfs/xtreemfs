@@ -136,7 +136,8 @@ public class xtfs_benchmark {
             results.addAll(result);
         }
 
-        Controller.printResults(results);
+        if (Logging.isInfo())
+            Controller.printResults(results);
         System.out.println();
         Controller.printCSV(results);
     }
