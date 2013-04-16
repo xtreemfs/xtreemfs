@@ -17,7 +17,7 @@ class bonnieTest(unittest.TestCase):
         
     def runTest( self ):
         if self.direct_io:
-            args = "bonnie -d ." #  -s 100"
+            args = "bonnie++ -d ." #  -s 100"
             p = subprocess.Popen( args, shell=True, stdout=self.stdout, stderr=self.stderr )
             retcode = p.wait()
             # self.assertEqual( retcode, 0 )
