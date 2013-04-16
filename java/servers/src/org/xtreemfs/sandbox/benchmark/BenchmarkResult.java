@@ -35,7 +35,8 @@ public class BenchmarkResult {
         this.byteCount = byteCount;
     }
 
-    public String toString1() {
+    @Override
+    public String toString() {
 
         String dataWritten = dataWrittenInBytes >= GiB_IN_BYTES ? dataWrittenInBytes / GiB_IN_BYTES + " GiB ["
                 : dataWrittenInBytes / MiB_IN_BYTES + " MiB [";
@@ -56,8 +57,7 @@ public class BenchmarkResult {
                 + dataWritten + dataWrittenInBytes + " Bytes]\n" + "\tByteCount: " + byteCount + " Bytes\n" + "}";
     }
 
-    @Override
-    public String toString(){
+    public String toCSV(){
         return benchmarkType+";"+numberOfReadersOrWriters+";"+timeInSec+";"+speedInMiBProSec+";"+dataWrittenInBytes+";"+byteCount;
     }
 

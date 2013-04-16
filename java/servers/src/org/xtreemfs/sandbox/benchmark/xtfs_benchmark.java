@@ -123,6 +123,8 @@ public class xtfs_benchmark {
         }
 
         Controller.printResults(results);
+        System.out.println();
+        Controller.printCSV(results);
     }
 
     private static void initOptions() {

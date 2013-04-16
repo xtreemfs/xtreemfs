@@ -111,6 +111,14 @@ public class Controller {
         }
     }
 
+    public static void printCSV(ConcurrentLinkedQueue<BenchmarkResult> results) {
+        System.out.println("Type;NumberOfParallelThreads;TimeInSec;MiB/Sec;DataWrittenInBytes;ByteCount");
+        /* print the results */
+        for (BenchmarkResult res : results) {
+            System.out.println(res.toCSV());
+        }
+    }
+
     public void tryConnection() {
         try {
             BenchmarkClientFactory.getNewClient(params).getServiceByType(DIR.ServiceType.SERVICE_TYPE_OSD);
