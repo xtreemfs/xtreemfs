@@ -69,6 +69,7 @@ import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.osdselection.OSDStatusManager;
 import org.xtreemfs.mrc.stages.OnCloseReplicationThread;
 import org.xtreemfs.mrc.stages.ProcessingStage;
+import org.xtreemfs.mrc.stages.XLocSetCoordinator;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.DirService;
@@ -127,6 +128,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     private List<MRCStatusListener>        statusListener;
     
+    private final XLocSetCoordinator       xLocSetCoordinator;
+
     public MRCRequestDispatcher(final MRCConfig config, final BabuDBConfig dbConfig) throws Exception {
         
         Logging.logMessage(Logging.LEVEL_INFO, this, "XtreemFS Metadata Service version "
@@ -201,8 +204,10 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         osdMonitor = new OSDStatusManager(this);
         osdMonitor.setLifeCycleListener(this);
-        
+
+        xLocSetCoordinator = new XLocSetCoordinator(this);
         procStage = new ProcessingStage(this);
+
         
         volumeManager = new BabuDBVolumeManager(this, dbConfig);
         fileAccessManager = new FileAccessManager(volumeManager, policyContainer);
@@ -390,6 +395,9 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 mrcMonitor.waitForStartup();
             }
             
+            xLocSetCoordinator.start();
+            xLocSetCoordinator.waitForStartup();
+
             procStage.start();
             procStage.waitForStartup();
             
@@ -439,6 +447,9 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         procStage.shutdown();
         procStage.waitForShutdown();
         
+        xLocSetCoordinator.shutdown();
+        xLocSetCoordinator.waitForShutdown();
+
         volumeManager.shutdown();
         
         statusServer.shutdown();
@@ -878,7 +889,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 }
             }
             
-            return uuid;
+            return uuid;	
             
         } else
             return null;
@@ -897,5 +908,9 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
      */
     public void resumeHeartbeatThread() {
         heartbeatThread.resumeOperation();
+    }
+
+    public XLocSetCoordinator getXLocSetCoordinator() {
+        return xLocSetCoordinator;
     }
 }
