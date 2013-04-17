@@ -206,6 +206,12 @@ Tests = [
         'TestSets': [ 'full', 'short', 'short-ssl' ]
     },
     {
+        'name': 'C++ Unit Tests',
+        'file': 'cpp_unit_tests.sh',
+        'VolumeConfigs': [],
+        'TestSets': [ 'full', 'short', 'short-ssl' ]
+    },
+    {
         'name': 'mkfs-lsfs-rmfs.xtreemfs test',
         'file': 'system_mkfs_lsfs_rmfs_test.sh',
         'VolumeConfigs': [],
