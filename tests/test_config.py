@@ -141,7 +141,7 @@ Tests = [
         'name': 'IOZone diagnostic',
         'file': '11_iozone_diagnostic.py',
         'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1', 'replicated_wqrq_asyncwrites' ],
-        'TestSets': [  ]
+        'TestSets': [ 'full' ]
     },
     {
         'name': 'IOZone throughput',
@@ -202,7 +202,7 @@ Tests = [
         'name': 'JUnit tests',
         'file': 'junit_tests.sh',
         'VolumeConfigs': [],
-        'TestSets': [ 'full', 'short', 'short-ssl' ]
+        'TestSets': [ 'full', 'short', 'short-ssl', 'testing' ]
     },
     {
         'name': 'mkfs-lsfs-rmfs.xtreemfs test',
