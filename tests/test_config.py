@@ -135,7 +135,8 @@ Tests = [
         'name': 'bonnie',
         'file': '10_bonnie.py',
         'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1', 'replicated_wqrq_asyncwrites' ],
-        'TestSets': [ 'full', 'short', 'short-ssl' ]
+        # NOTE(mberlin): 2013/04: Disabled because it takes too long and was not helpful in finding problems so far.
+        'TestSets': [ ]
     },
     {
         'name': 'IOZone diagnostic',
