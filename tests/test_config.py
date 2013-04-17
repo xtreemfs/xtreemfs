@@ -203,7 +203,7 @@ Tests = [
         'name': 'JUnit tests',
         'file': 'junit_tests.sh',
         'VolumeConfigs': [],
-        'TestSets': [ 'full', 'short', 'short-ssl', 'testing' ]
+        'TestSets': [ 'full', 'short', 'short-ssl' ]
     },
     {
         'name': 'mkfs-lsfs-rmfs.xtreemfs test',
