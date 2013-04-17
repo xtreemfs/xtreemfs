@@ -1,16 +1,16 @@
 #!/bin/bash
 
-# Copyright (c) 2006-2010 by Björn Kolbeck, Zuse Institute Berlin
+# Copyright (c) 2006-2011 by Björn Kolbeck, Zuse Institute Berlin
 #               2011-2013 by Michael Berlin, Zuse Institute Berlin
 #
 # Licensed under the BSD License, see LICENSE file for details.
 
 
 # This script downloads the latest XtreemFS sources and runs the integration tests.
-# As of April 2013, we run this script internally every night. The result of the
-# tests is posted to the internal mailing list xtreemfs-test@googlegroups.com.
+# As of April 2013, we run this script internally every night. The results of the
+# tests are posted to the internal mailing list xtreemfs-test@googlegroups.com.
 #
-# Run it as cron job as follows: TODO(mberlin)
+# Run it as cron job as follows: /usr/bin/wget http://xtreemfs.googlecode.com/git/tests/cronjob/run_xtreemfs_tests.sh -q -O - | bash -l
 
 # Environment
 export LANG=en_US.UTF-8
@@ -67,10 +67,10 @@ sendresult() {
     mailx_additional_params="-a $ATTACHMENT_ZIP_LOGS"
   fi
   mailx -a $ATTACHMENT $mailx_additional_params -s "$subject" xtreemfs-test@googlegroups.com<< EOF
-  $subject
+$subject
 
-  The logfile of this test run and the logs of servers and clients are attached to this email.
-  Logfiles and databases can be found in: $TEST_DIR
+The logfile of this test run and the logs of servers and clients are attached to this email.
+Logfiles and databases can be found in: $TEST_DIR
 
 EOF
 
