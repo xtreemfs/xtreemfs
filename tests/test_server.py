@@ -204,7 +204,7 @@ class Server:
 
             print "xtestenv: started", self.__class__.__name__, "server with UUID", self.get_uuid(), "on port", self.get_rpc_port(), "with pid", p.pid
 
-            sleep(2.0)
+            sleep(1.0)
 
             if not self.is_running():
                 raise RuntimeError, self.get_uuid() + " failed to start"
@@ -227,8 +227,8 @@ class Server:
 
                         try: os.kill(pid, signo)
                         except: pass
-
-                        sleep(1)
+                        
+                        sleep(0.5)
 
                         try:
                             if os.waitpid(pid, os.WNOHANG)[0] != 0:
