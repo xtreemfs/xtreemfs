@@ -222,6 +222,7 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 
 	@Override
 	public void shutdown() throws Exception {
+        httpServ.stop(0);
 		server.shutdown();
 		server.waitForShutdown();
 		database.shutdown();
