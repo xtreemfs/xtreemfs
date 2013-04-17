@@ -72,6 +72,27 @@ class VolumeImplementationTest : public ::testing::Test {
 
  protected:
   virtual void SetUp() {
+#ifdef __linux__
+  const char* dir_url_env = getenv("XTREEMFS_DIR_URL");
+  if (dir_url_env) {
+    dir_url_.xtreemfs_url = string(dir_url_env);
+  }
+  const char* mrc_url_env = getenv("XTREEMFS_MRC_URL");
+  if (mrc_url_env) {
+    mrc_url_.xtreemfs_url = string(mrc_url_env);
+  }
+#endif
+
+    if (dir_url_.xtreemfs_url.empty()) {
+      dir_url_.xtreemfs_url = "pbrpc://localhost:32638/";
+    }
+    if (mrc_url_.xtreemfs_url.empty()) {
+      mrc_url_.xtreemfs_url = "pbrpc://localhost:32636/";
+    }
+
+    dir_url_.ParseURL(kDIR);
+    mrc_url_.ParseURL(kMRC);
+
     auth_.set_auth_type(AUTH_NONE);
 
     // Every operation is executed in the context of a given user and his groups
@@ -83,9 +104,9 @@ class VolumeImplementationTest : public ::testing::Test {
     // at port 32638 using the default implementation.
     options_.log_level_string = "WARN";
     client_ = Client::CreateClient(
-        ServiceAddresses("localhost:32638"),
+        dir_url_.service_addresses,
         user_credentials_,
-        NULL,  // No SSL options.
+        dir_url_.GenerateSSLOptions(),
         options_);
 
     // Start the client (a connection to the DIR service will be setup).
@@ -93,7 +114,9 @@ class VolumeImplementationTest : public ::testing::Test {
 
     // Create volume with a random name.
     volume_name_ = RandomVolumeName(5);
-    client_->CreateVolume("localhost:32636", auth_, user_credentials_,
+    client_->CreateVolume(mrc_url_.service_addresses,
+                          auth_,
+                          user_credentials_,
                           volume_name_);
 
     // Mount volume.
@@ -103,7 +126,9 @@ class VolumeImplementationTest : public ::testing::Test {
   virtual void TearDown() {
     volume_->Close();
 
-    client_->DeleteVolume("localhost:32636", auth_, user_credentials_,
+    client_->DeleteVolume(mrc_url_.service_addresses,
+                          auth_,
+                          user_credentials_,
                           volume_name_);
 
     client_->Shutdown();
@@ -112,6 +137,10 @@ class VolumeImplementationTest : public ::testing::Test {
 
   xtreemfs::Client* client_;
   xtreemfs::Options options_;
+  /** Only used to store and parse the DIR URL. */
+  xtreemfs::Options dir_url_;
+  /** Only used to store and parse the MRC URL. */
+  xtreemfs::Options mrc_url_;
   xtreemfs::Volume* volume_;
   std::string volume_name_;
 
