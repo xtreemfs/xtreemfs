@@ -465,9 +465,8 @@ if __name__ == "__main__":
         testEnv.start()
         try:
             print
-            print "*** Ctrl-C to shut down test environment ***"
-            while True:
-                sleep(10000000)
+            print "*** Press enter to shut down test environment ***"
+            raw_input()
         except KeyboardInterrupt:
             pass
         testEnv.stop()
