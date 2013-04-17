@@ -320,7 +320,7 @@ class TestEnvironment:
         t_start = time.time()
         success = False
         try:
-            testprocess = subprocess.Popen(testargs, stdout=testlog, stderr=testlog)
+            testprocess = subprocess.Popen(testargs, stdout=testlog, stderr=testlog, cwd=self.__xtreemfs_dir)
             testprocess.wait()
             if testprocess.returncode == 0:
                 success = True
