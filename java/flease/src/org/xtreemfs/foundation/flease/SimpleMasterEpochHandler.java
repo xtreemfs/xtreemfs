@@ -37,6 +37,7 @@ public class SimpleMasterEpochHandler extends LifeCycleThread implements MasterE
         this.directory = directory;
     }
 
+    @Override
     public void run() {
         try {
             notifyStarted();
@@ -58,7 +59,7 @@ public class SimpleMasterEpochHandler extends LifeCycleThread implements MasterE
                                     epoch = 0l;
                                 }
                                 epochs.put(rq.message.getCellId(),epoch);
-                                Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.all, this, "sent %d",epoch);
+                            Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.all, this, "sent %d", epoch);
                             }
                             rq.message.setMasterEpochNumber(epoch);
                         } catch (Exception ex) {
@@ -79,7 +80,8 @@ public class SimpleMasterEpochHandler extends LifeCycleThread implements MasterE
                             raf.writeLong(rq.message.getMasterEpochNumber());
                             raf.getFD().sync();
                             raf.close();
-                            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.all, this, "stored %d",rq.message.getMasterEpochNumber());
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.all, this, "stored %d",
+                                rq.message.getMasterEpochNumber());
                             epochs.put(rq.message.getCellId(),rq.message.getMasterEpochNumber());
                         } catch (Exception ex) {
                             ex.printStackTrace();
@@ -106,6 +108,7 @@ public class SimpleMasterEpochHandler extends LifeCycleThread implements MasterE
         return directory + cellId.toString() + ".me";
     }
 
+    @Override
     public void shutdown() {
         this.interrupt();
     }

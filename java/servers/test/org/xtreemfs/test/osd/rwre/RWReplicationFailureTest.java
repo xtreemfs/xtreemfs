@@ -52,10 +52,11 @@ public class RWReplicationFailureTest extends TestCase {
 
     public RWReplicationFailureTest() {
         super();
-        Logging.start(Logging.LEVEL_DEBUG, Category.all);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
     }
 
 
+    @Override
     @Before
     public void setUp() throws Exception {
 
@@ -80,6 +81,7 @@ public class RWReplicationFailureTest extends TestCase {
 
     }
 
+    @Override
     @After
     public void tearDown() {
         if (osds != null) {
@@ -124,7 +126,7 @@ public class RWReplicationFailureTest extends TestCase {
             r.get();
             fail("write should have failed");
         } catch (Exception ex) {
-            System.out.println("write failed as expected: "+ex);
+            // System.out.println("write failed as expected: "+ex);
         }
         r.freeBuffers();
 
@@ -167,7 +169,7 @@ public class RWReplicationFailureTest extends TestCase {
             r.get();
             fail("write should have failed");
         } catch (Exception ex) {
-            System.out.println("write failed as expected: "+ex);
+            // System.out.println("write failed as expected: "+ex);
         }
         r.freeBuffers();
 

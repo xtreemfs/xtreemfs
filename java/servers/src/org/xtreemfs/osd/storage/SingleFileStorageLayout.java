@@ -394,7 +394,7 @@ public class SingleFileStorageLayout extends StorageLayout {
         final long lastObj = sp.getObjectNoForOffset(fileSize);
 
         if (lastObj == objNo) {
-            System.out.println("truncating: "+(objFileOffset + newLength));
+            // System.out.println("truncating: "+(objFileOffset + newLength));
             ofile.setLength(objFileOffset + newLength);
 
             long newChecksum = 0l;
@@ -495,17 +495,21 @@ public class SingleFileStorageLayout extends StorageLayout {
         return fileList;
     }
 
+    @Override
     public int getMasterEpoch(String fileId) {
         return -1;
     }
 
+    @Override
     public void setMasterEpoch(String fileId, int masterEpoch) {
     }
 
+    @Override
     public TruncateLog getTruncateLog(String fileId) {
         return TruncateLog.newBuilder().build();
     }
 
+    @Override
     public void setTruncateLog(String fileId, TruncateLog log) {
 
     }

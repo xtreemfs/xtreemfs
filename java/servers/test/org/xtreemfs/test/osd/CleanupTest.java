@@ -52,7 +52,7 @@ public class CleanupTest extends TestCase {
     
     public CleanupTest() {
         super();
-        Logging.start(Logging.LEVEL_DEBUG);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
         passwd = Auth.newBuilder().setAuthType(AuthType.AUTH_PASSWORD).setAuthPasswd(AuthPassword.newBuilder().setPassword("")).build();
     }
     
@@ -64,6 +64,7 @@ public class CleanupTest extends TestCase {
     public static void tearDownClass() throws Exception {
     }
 
+    @Override
     @Before
     public void setUp() throws Exception {
         env = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.TIME_SYNC,
@@ -73,6 +74,7 @@ public class CleanupTest extends TestCase {
         env.start();
     }
 
+    @Override
     @After
     public void tearDown() {
         env.shutdown();

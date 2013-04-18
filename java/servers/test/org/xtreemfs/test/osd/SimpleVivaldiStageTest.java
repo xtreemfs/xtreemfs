@@ -26,6 +26,7 @@ import org.xtreemfs.osd.vivaldi.VivaldiNode;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
+import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestEnvironment.Services;
 
@@ -38,7 +39,7 @@ public class SimpleVivaldiStageTest extends TestCase {
     TestEnvironment env;
 
     public SimpleVivaldiStageTest() {
-        Logging.start(Logging.LEVEL_DEBUG);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
     }
 
     @BeforeClass
@@ -49,12 +50,14 @@ public class SimpleVivaldiStageTest extends TestCase {
     public static void tearDownClass() throws Exception {
     }
 
+    @Override
     @Before
     public void setUp() throws Exception {
         env = new TestEnvironment(new TestEnvironment.Services[]{Services.DIR_SERVICE,Services.OSD, Services.OSD_CLIENT});
         env.start();
     }
 
+    @Override
     @After
     public void tearDown() {
         env.shutdown();
@@ -83,7 +86,7 @@ public class SimpleVivaldiStageTest extends TestCase {
         ReusableBuffer rb = ReusableBuffer.wrap(answer.getData(), 0, answer.getLength());
         dpack = new PBRPCDatagramPacket(rb, payload);
 
-        System.out.println("result: "+dpack.getMessage());
+        // System.out.println("result: "+dpack.getMessage());
 
         dsock.close();
     }

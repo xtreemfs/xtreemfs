@@ -17,9 +17,11 @@ import org.xtreemfs.foundation.util.OutputUtils;
 
 public class OutputUtilsTest extends TestCase {
     
+    @Override
     protected void setUp() throws Exception {
     }
     
+    @Override
     protected void tearDown() throws Exception {
     }
     
@@ -52,7 +54,7 @@ public class OutputUtilsTest extends TestCase {
         OutputUtils.writeHexInt(sb,(int) (checksum & 0xFFFFFFFF));
         OutputUtils.writeHexLong(sb, checksum);
         final String result = sb.toString();
-        System.out.println("result: "+result);
+        // System.out.println("result: "+result);
 
         int tmp = OutputUtils.readHexInt(result, 0);
         assertEquals(objno,tmp);

@@ -31,7 +31,7 @@ public class FleaseAcceptorTest extends TestCase {
     
     public FleaseAcceptorTest(String testName) {
         super(testName);
-        Logging.start(Logging.LEVEL_DEBUG, Category.all);
+        Logging.start(Logging.LEVEL_WARN, Category.all);
         TimeSync.initializeLocal(50);
 
         cfg = new FleaseConfig(10000, 500, 500, new InetSocketAddress(12345), "localhost:12345",1);
@@ -42,6 +42,7 @@ public class FleaseAcceptorTest extends TestCase {
         super.setUp();
         acceptor = new FleaseAcceptor(new LearnEventListener() {
 
+            @Override
             public void learnedEvent(ASCIIString cellId, ASCIIString leaseHolder, long leaseTimeout_ms, long me) {
             }
         }, cfg, "/tmp/xtreemfs-test/", true);

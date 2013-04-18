@@ -73,7 +73,7 @@ public class ScrubberTest {
     private static final UserCredentials userCredentials = xtfs_scrub.credentials;
 
     public ScrubberTest() {
-        Logging.start(Logging.LEVEL_DEBUG);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
     }
 
     @BeforeClass

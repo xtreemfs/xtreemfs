@@ -31,7 +31,7 @@ public class FleaseStageTest extends TestCase {
     public FleaseStageTest(String testName) {
         super(testName);
 
-        Logging.start(Logging.LEVEL_DEBUG, Category.all);
+        Logging.start(Logging.LEVEL_WARN, Category.all);
         TimeSync.initializeLocal(50);
 
         cfg = new FleaseConfig(10000, 500, 500, new InetSocketAddress(12345), "localhost:12345",5);
@@ -57,23 +57,27 @@ public class FleaseStageTest extends TestCase {
 
         FleaseStage fs = new FleaseStage(cfg, "/tmp/xtreemfs-test/", new FleaseMessageSenderInterface() {
 
+            @Override
             public void sendMessage(FleaseMessage message, InetSocketAddress recipient) {
                 //ignore me
             }
         }, true, new FleaseViewChangeListenerInterface() {
 
+            @Override
             public void viewIdChangeEvent(ASCIIString cellId, int viewId) {
             }
         },new FleaseStatusListener() {
 
+            @Override
             public void statusChanged(ASCIIString cellId, Flease lease) {
-                System.out.println("state change: "+cellId+" owner="+lease.getLeaseHolder());
+                // System.out.println("state change: "+cellId+" owner="+lease.getLeaseHolder());
                 synchronized (result) {
                     result.set(new Flease(cellId, lease.getLeaseHolder(), lease.getLeaseTimeout_ms(),lease.getMasterEpochNumber()));
                     result.notify();
                 }
             }
 
+            @Override
             public void leaseFailed(ASCIIString cellId, FleaseException error) {
                 FleaseStageTest.fail(error.toString());
             }
@@ -126,18 +130,22 @@ public class FleaseStageTest extends TestCase {
     public void testGetState() throws Exception {
         FleaseStage fs = new FleaseStage(cfg, "/tmp/xtreemfs-test/", new FleaseMessageSenderInterface() {
 
+            @Override
             public void sendMessage(FleaseMessage message, InetSocketAddress recipient) {
                 //ignore me
             }
         }, true, new FleaseViewChangeListenerInterface() {
 
+            @Override
             public void viewIdChangeEvent(ASCIIString cellId, int viewId) {
             }
         },new FleaseStatusListener() {
 
+            @Override
             public void statusChanged(ASCIIString cellId, Flease lease) {
             }
 
+            @Override
             public void leaseFailed(ASCIIString cellId, FleaseException error) {
                 FleaseStageTest.fail(error.toString());
             }
@@ -158,9 +166,9 @@ public class FleaseStageTest extends TestCase {
 
         Map<ASCIIString,FleaseMessage> m = fs.getLocalState();
 
-        for (ASCIIString cellId : m.keySet()) {
-            System.out.println("cell "+cellId+" "+m.get(cellId));
-        }
+        // for (ASCIIString cellId : m.keySet()) {
+        // System.out.println("cell "+cellId+" "+m.get(cellId));
+        // }
 
         fs.shutdown();
         fs.waitForShutdown();
@@ -173,19 +181,23 @@ public class FleaseStageTest extends TestCase {
     public void testCreateTimer() throws Exception {
         FleaseStage fs = new FleaseStage(cfg, "/tmp/xtreemfs-test/", new FleaseMessageSenderInterface() {
 
+            @Override
             public void sendMessage(FleaseMessage messages, InetSocketAddress recipient) {
                 //ignore me
             }
         }, true, new FleaseViewChangeListenerInterface() {
 
+            @Override
             public void viewIdChangeEvent(ASCIIString cellId, int viewId) {
             }
         },new FleaseStatusListener() {
 
+            @Override
             public void statusChanged(ASCIIString cellId, Flease lease) {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
+            @Override
             public void leaseFailed(ASCIIString cellId, FleaseException error) {
                 throw new UnsupportedOperationException("Not supported yet.");
             }

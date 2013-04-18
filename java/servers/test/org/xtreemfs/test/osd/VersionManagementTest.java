@@ -69,6 +69,7 @@ public class VersionManagementTest extends TestCase {
         
     }
     
+    @Override
     protected void setUp() throws Exception {
         
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
@@ -108,6 +109,7 @@ public class VersionManagementTest extends TestCase {
                 snapTimestamp, capSecret).getXCap()).setXlocs(xloc).build();
     }
     
+    @Override
     protected void tearDown() throws Exception {
         osdServer.shutdown();
         testEnv.shutdown();
@@ -194,7 +196,7 @@ public class VersionManagementTest extends TestCase {
         
         // wait for OSD-internal file close, which will implicitly cause a new
         // version to be created
-        System.out.println("\n########## waiting " + timeoutSpan / 1000 + "s ##########\n");
+        // System.out.println("\n########## waiting " + timeoutSpan / 1000 + "s ##########\n");
         Thread.sleep(timeoutSpan);
         
         // overwrite the first object
@@ -256,7 +258,7 @@ public class VersionManagementTest extends TestCase {
         r.get();
         r.freeBuffers();
         
-        System.out.println("\n########## waiting " + timeoutSpan / 1000 + "s ##########\n");
+        // System.out.println("\n########## waiting " + timeoutSpan / 1000 + "s ##########\n");
         Thread.sleep(timeoutSpan);
         
         r = client.write(osdId.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,

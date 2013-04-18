@@ -52,7 +52,7 @@ public class UUIDIteratorTest extends TestCase {
      */
     public UUIDIteratorTest() throws IOException {
         dirConfig = SetupUtils.createDIRConfig();
-        Logging.start(Logging.LEVEL_DEBUG);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
     }
     
     /* (non-Javadoc)
@@ -68,6 +68,7 @@ public class UUIDIteratorTest extends TestCase {
         
     }
     
+    @Override
     @After
     public void tearDown() throws Exception {
 

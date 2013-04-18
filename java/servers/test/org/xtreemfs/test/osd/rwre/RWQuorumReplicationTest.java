@@ -55,10 +55,11 @@ public class RWQuorumReplicationTest extends TestCase {
 
     public RWQuorumReplicationTest() {
         super();
-        Logging.start(Logging.LEVEL_DEBUG, Category.all);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
     }
 
 
+    @Override
     @Before
     public void setUp() throws Exception {
 
@@ -82,6 +83,7 @@ public class RWQuorumReplicationTest extends TestCase {
 
     }
 
+    @Override
     @After
     public void tearDown() {
         if (osds != null) {
@@ -140,7 +142,7 @@ public class RWQuorumReplicationTest extends TestCase {
             ex.printStackTrace();
             throw ex;
         }
-        System.out.println("got response");
+        // System.out.println("got response");
         r.freeBuffers();
 
 
@@ -153,7 +155,7 @@ public class RWQuorumReplicationTest extends TestCase {
         } catch (PBRPCException ex) {
             if (ex.getErrorType() != ErrorType.REDIRECT)
                 fail("expected redirect");
-            System.out.println("got response: "+ex);
+            // System.out.println("got response: "+ex);
         }
         r.freeBuffers();
 
@@ -165,11 +167,11 @@ public class RWQuorumReplicationTest extends TestCase {
         r = client.write(osd1, RPCAuthentication.authNone, RPCAuthentication.userService,
                     fc, fileId, 0, 0, 1024, 0, objdata, rb);
         r.get();
-        System.out.println("got response");
+        // System.out.println("got response");
         r.freeBuffers();
 
         //read from slave
-        System.out.println("//// START READ ////");
+        // System.out.println("//// START READ ////");
         RPCResponse<ObjectData> r2 = client.read(osd2, RPCAuthentication.authNone, RPCAuthentication.userService,
                     fc, fileId, 0, -1, 0, 2048);
         try {
@@ -178,7 +180,7 @@ public class RWQuorumReplicationTest extends TestCase {
         } catch (PBRPCException ex) {
             if (ex.getErrorType() != ErrorType.REDIRECT)
                 fail("expected redirect");
-            System.out.println("got response: "+ex);
+            // System.out.println("got response: "+ex);
         }
         r2.freeBuffers();
 
@@ -234,7 +236,7 @@ public class RWQuorumReplicationTest extends TestCase {
             ex.printStackTrace();
             throw ex;
         }
-        System.out.println("got response");
+        // System.out.println("got response");
         r.freeBuffers();
 
 
@@ -247,7 +249,7 @@ public class RWQuorumReplicationTest extends TestCase {
         } catch (PBRPCException ex) {
             if (ex.getErrorType() != ErrorType.REDIRECT)
                 fail("expected redirect");
-            System.out.println("got response: "+ex);
+            // System.out.println("got response: "+ex);
         }
         r.freeBuffers();
 
@@ -259,11 +261,11 @@ public class RWQuorumReplicationTest extends TestCase {
         r = client.write(osd1, RPCAuthentication.authNone, RPCAuthentication.userService,
                     fc, fileId, 0, 0, 1024, 0, objdata, rb);
         r.get();
-        System.out.println("got response");
+        // System.out.println("got response");
         r.freeBuffers();
 
         //read from slave
-        System.out.println("//// START READ ////");
+        // System.out.println("//// START READ ////");
         RPCResponse<ObjectData> r2 = client.read(osd2, RPCAuthentication.authNone, RPCAuthentication.userService,
                     fc, fileId, 0, -1, 0, 2048);
         try {
@@ -272,7 +274,7 @@ public class RWQuorumReplicationTest extends TestCase {
         } catch (PBRPCException ex) {
             if (ex.getErrorType() != ErrorType.REDIRECT)
                 fail("expected redirect");
-            System.out.println("got response: "+ex);
+            // System.out.println("got response: "+ex);
         }
         r2.freeBuffers();
 
