@@ -19,6 +19,8 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.FSUtils;
+import org.xtreemfs.mrc.osdselection.OSDSelectionPolicy;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDSelectionPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.test.SetupUtils;
@@ -96,8 +98,10 @@ public class ReadOnlyReplicationTest {
         volume.start();
         volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY, 2,
                 ReplicationFlags.setPartialReplica(ReplicationFlags.setSequentialPrefetchingStrategy(0)));
-        volume.setOSDSelectionPolicy(userCredentials, "1000");
-        volume.setReplicaSelectionPolicy(userCredentials, "999");
+        volume.setOSDSelectionPolicy(userCredentials,
+                Helper.policiesToString(new OSDSelectionPolicyType[] { OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT }));
+        volume.setReplicaSelectionPolicy(userCredentials,
+                Helper.policiesToString(new OSDSelectionPolicyType[] { OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_REVERSE }));
 
         // open FileHandle.
         FileHandle fileHandle = volume.openFile(
