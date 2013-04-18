@@ -11,6 +11,7 @@ package org.xtreemfs.sandbox.benchmark;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.common.libxtreemfs.AdminClient;
+import org.xtreemfs.common.libxtreemfs.Client;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.foundation.SSLOptions;
@@ -34,8 +35,7 @@ public class BenchmarkClientFactory {
      * @throws Exception
      */
     static AdminClient getNewClient(Params params) {
-        return tryCreateClient(params.dirAddress, params.userCredentials, params.sslOptions,
-                params.options);
+        return tryCreateClient(params.dirAddress, params.userCredentials, params.sslOptions, params.options);
     }
 
     static AdminClient getNewClient(String dirAddress, RPC.UserCredentials userCredentials, SSLOptions sslOptions,
@@ -74,10 +74,24 @@ public class BenchmarkClientFactory {
     /* shutdown all clients */
     static void shutdownClients() {
         for (AdminClient client : clients) {
-            client.shutdown();
+            tryShutdownOfClient(client);
         }
         Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, Runtime.getRuntime(), "Shutting down %s clients",
                 clients.size());
+    }
+
+    /*
+     * there were AssertionErrors in VolumeImplementation.internalShutdown(VolumeImplementation.java:259)
+     * VolumeImplementation.close(VolumeImplementation.java:281)
+     * ClientImplementation.shutdown(ClientImplementation.java:186)
+     */
+    static void tryShutdownOfClient(Client client) {
+        try {
+            client.shutdown();
+        } catch (AssertionError e) {
+            Logging.logMessage(Logging.LEVEL_WARN, Logging.Category.tool, Runtime.getRuntime(),
+                    "Error while shutting down client. Errormessage: %s", e.getMessage());
+        }
     }
 
 }
