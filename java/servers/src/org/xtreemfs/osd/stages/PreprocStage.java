@@ -773,7 +773,7 @@ public class PreprocStage extends Stage {
             layout.setXLocSetVersionState(fileId, state);
             
             if (request.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
-                callback.invalidateComplete(fileId, state.getVersion(), true, null);
+                callback.invalidateComplete(true, null);
             } else {
             	ASCIIString cellId = ReplicaUpdatePolicy.fileToCellId(fileId);
                 master.getRWReplicationStage().invalidateFleaseView(fileId, cellId, state, callback);
@@ -783,12 +783,12 @@ public class PreprocStage extends Stage {
             // TODO (jdillmann): do something with the exception
             ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
                     "invalid view. local version could not be written");
-            callback.invalidateComplete(fileId, -1, false, error);
+            callback.invalidateComplete(false, error);
         }
     }
 
     public static interface InvalidateXLocSetCallback {
-        public void invalidateComplete(String fileId, int version, boolean isPrimary, ErrorResponse error);
+        public void invalidateComplete(boolean isPrimary, ErrorResponse error);
     }
 
     /**

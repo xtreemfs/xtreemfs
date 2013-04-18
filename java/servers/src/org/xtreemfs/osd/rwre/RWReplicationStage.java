@@ -1300,13 +1300,12 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             
             @Override
             public void proposalResult(ASCIIString cellId, ASCIIString leaseHolder, long leaseTimeout_ms, long masterEpochNumber) {
-                callback.invalidateComplete(fileId, versionState.getVersion(), isPrimary, null);
+                callback.invalidateComplete(isPrimary, null);
             }
             
             @Override
             public void proposalFailed(ASCIIString cellId, Throwable cause) {
-                callback.invalidateComplete(fileId, versionState.getVersion(), isPrimary,
-                        ErrorUtils.getInternalServerError(cause));
+                callback.invalidateComplete(isPrimary, ErrorUtils.getInternalServerError(cause));
             }
         }); 
     }

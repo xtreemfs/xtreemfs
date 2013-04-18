@@ -50,7 +50,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addRequest;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
@@ -241,7 +240,7 @@ public class XLocSetCoordinator extends LifeCycleThread {
 
         // TODO (jdillmann): store that a XLocSet change is in progress (use xattr and json)
         
-        ReplicaStatus[] states = invalidateReplicas(fileId, file, xLocList);
+        invalidateReplicas(fileId, file, xLocList);
 
         // TODO (jdillmann): Instruct the new replica(s) to fetch data from the existing osds and rebuild the majority
         
@@ -293,7 +292,7 @@ public class XLocSetCoordinator extends LifeCycleThread {
      * @param xLocList
      * @throws Throwable
      */
-    private ReplicaStatus[] invalidateReplicas(String fileId, FileMetadata file, XLocList xLocList)
+    private void invalidateReplicas(String fileId, FileMetadata file, XLocList xLocList)
             throws Throwable {
         // convert the XLocList to an XLocSet 
         XLocSet xLocSet = Converter.xLocListToXLocSet(xLocList).build();
@@ -322,9 +321,6 @@ public class XLocSetCoordinator extends LifeCycleThread {
         OSDServiceClient client = master.getOSDClient();
         
         boolean primaryResponded = false;
-        // TODO (jdillmann): Make this a list or depended on the number of responses we got
-        ReplicaStatus[] states = new ReplicaStatus[xLocSet.getReplicasCount()];
-        
         // TODO (jdillmann): Use RPCResponseAvailableListener @see CoordinatedReplicaUpdatePolicy.executeReset
         for (int i = 0; i < xLocSet.getReplicasCount(); i++) {
             String headOsd = Helper.getOSDUUIDFromXlocSet(xLocSet, i, 0);
@@ -335,10 +331,6 @@ public class XLocSetCoordinator extends LifeCycleThread {
                 rpcResponse = client.xtreemfs_xloc_set_invalidate(server, RPCAuthentication.authNone,
                         RPCAuthentication.userService, creds, fileId);
                 response = rpcResponse.get();
-
-                if (response.hasStatus()) {
-                    states[i] = response.getStatus();
-                }
 
             } catch (InterruptedException e) {
                 if (quit) {
@@ -364,7 +356,6 @@ public class XLocSetCoordinator extends LifeCycleThread {
             sleep(leaseToMS);
         }
 
-        return states;
     }
 
     // TODO (jdillmann): Share error reporting between ProcessingStage.parseAndExecure and this
