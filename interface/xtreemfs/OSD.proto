@@ -349,21 +349,13 @@ message xtreemfs_xloc_set_invalidateRequest {
 }
 
 message xtreemfs_xloc_set_invalidateResponse {
-  required string file_id = 1;
-  required bool is_primary = 2;
-  optional ReplicaStatus status = 3;
+  required bool is_primary = 1;
 }
 
 message xtreemfs_xloc_set_installRequest {
   required FileCredentials file_credentials = 1;
   required string file_id = 2;
 }
-
-message xtreemfs_xloc_set_installResponse {
-  required string file_id = 1;
-  required fixed32 version = 4;
-}
-
 
 service OSDService {
   
@@ -571,7 +563,7 @@ service OSDService {
   };
 
   // Installs a new version of a XLocationSet
-  rpc xtreemfs_xloc_set_install(xtreemfs_xloc_set_installRequest) returns(xtreemfs_xloc_set_installResponse) {
+  rpc xtreemfs_xloc_set_install(xtreemfs_xloc_set_installRequest) returns(emptyResponse) {
     option(proc_id)=82;
   };
 

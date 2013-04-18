@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Wed Nov 20 11:35:27 CET 2013
+//automatically generated from OSD.proto at Wed Nov 20 11:36:06 CET 2013
 //(c) 2013. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -466,15 +466,15 @@ public class OSDServiceClient {
          return xtreemfs_xloc_set_invalidate(server, authHeader, userCreds,msg);
     }
 
-    public RPCResponse<OSD.xtreemfs_xloc_set_installResponse> xtreemfs_xloc_set_install(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_xloc_set_installRequest input) throws IOException {
+    public RPCResponse xtreemfs_xloc_set_install(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_xloc_set_installRequest input) throws IOException {
          if (server == null) server = defaultServer;
          if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
-         RPCResponse<OSD.xtreemfs_xloc_set_installResponse> response = new RPCResponse<OSD.xtreemfs_xloc_set_installResponse>(OSD.xtreemfs_xloc_set_installResponse.getDefaultInstance());
+         RPCResponse response = new RPCResponse(null);
          client.sendRequest(server, authHeader, userCreds, 30001, 82, input, null, response, false);
          return response;
     }
 
-    public RPCResponse<OSD.xtreemfs_xloc_set_installResponse> xtreemfs_xloc_set_install(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id) throws IOException {
+    public RPCResponse xtreemfs_xloc_set_install(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id) throws IOException {
          final OSD.xtreemfs_xloc_set_installRequest msg = OSD.xtreemfs_xloc_set_installRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).build();
          return xtreemfs_xloc_set_install(server, authHeader, userCreds,msg);
     }
