@@ -106,7 +106,7 @@ public class Controller {
     public static void printResults(ConcurrentLinkedQueue<BenchmarkResult> results) {
         /* print the results */
         for (BenchmarkResult res : results) {
-            System.out.println(res);
+            System.err.println(res);
         }
     }
 

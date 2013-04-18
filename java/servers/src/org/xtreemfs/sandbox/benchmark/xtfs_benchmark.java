@@ -35,14 +35,14 @@ public class xtfs_benchmark {
     public static void main(String[] args) throws Exception {
 
         Logging.start(6, Category.tool);
+        Logging.redirect(System.err);
 
         parseCLIOptions(args);
         displayUsageIfSet();
         Params params = buildParams();
 
         // Todo (jvf) delete
-        if (Logging.isInfo())
-            System.out.println(params);
+        System.err.println(params);
 
         controller = new Controller(params);
         controller.tryConnection();
@@ -127,9 +127,7 @@ public class xtfs_benchmark {
             results.addAll(result);
         }
 
-        if (Logging.isInfo())
-            Controller.printResults(results);
-        System.out.println();
+        Controller.printResults(results);
         Controller.printCSV(results);
     }
 
