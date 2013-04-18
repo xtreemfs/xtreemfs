@@ -17,6 +17,8 @@ import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.PingServiceClient;
+
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -324,12 +326,28 @@ public class PBRPCClientServerTest {
         ClassLoader cl = this.getClass().getClassLoader();
 
         InputStream ks = cl.getResourceAsStream(keyStoreName);
-        if (ks == null)
-            ks = new FileInputStream("../../tests/certs/" + keyStoreName);
+        if (ks == null) {
+            // Assume the working directory is "java/servers".
+            String testCert = "../../tests/certs/" + keyStoreName;
+            if (new File(testCert).isFile()) {
+                ks = new FileInputStream(testCert);
+            } else {
+                // Assume the working directory is the root of the project.
+                ks = new FileInputStream("tests/certs/" + keyStoreName);
+            }
+        }
 
         InputStream ts = cl.getResourceAsStream(trustStoreName);
-        if (ts == null)
-            ts = new FileInputStream("../../tests/certs/" + trustStoreName);
+        if (ts == null) {
+            // Assume the working directory is "java/servers".
+            String testCert = "../../tests/certs/" + trustStoreName;
+            if (new File(testCert).isFile()) {
+                ts = new FileInputStream(testCert);
+            } else {
+                // Assume the working directory is the root of the project.
+                ts = new FileInputStream("tests/certs/" + trustStoreName);
+            }
+        }
 
         return new SSLOptions(ks, ksPassphrase, ksContainerType, ts, tsPassphrase, tsContainerType, false, gridSSL, null);
     }
