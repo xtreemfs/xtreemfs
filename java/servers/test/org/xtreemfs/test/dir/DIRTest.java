@@ -7,11 +7,13 @@
 
 package org.xtreemfs.test.dir;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Set;
-
-import junit.framework.TestCase;
 
 import org.junit.After;
 import org.junit.Before;
@@ -51,47 +53,31 @@ import org.xtreemfs.test.TestEnvironment;
  * 
  * @author bjko
  */
-public class DIRTest extends TestCase {
-
-    DIRRequestDispatcher dir;
-
-    DIRConfig            config;
-
-    BabuDBConfig         dbsConfig;
+public class DIRTest {
 
     TestEnvironment      testEnv;
 
     public DIRTest() throws IOException {
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
-
-        config = SetupUtils.createDIRConfig();
-        dbsConfig = SetupUtils.createDIRdbsConfig();
     }
 
     @Before
     public void setUp() throws Exception {
 
-        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_CLIENT,
-                TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.RPC_CLIENT,
-                TestEnvironment.Services.OSD_CLIENT, TestEnvironment.Services.UUID_RESOLVER });
-        testEnv.start();
+        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_SERVICE,
+                TestEnvironment.Services.DIR_CLIENT, TestEnvironment.Services.TIME_SYNC,
+                TestEnvironment.Services.RPC_CLIENT, TestEnvironment.Services.OSD_CLIENT,
+                TestEnvironment.Services.UUID_RESOLVER });
 
-        dir = new DIRRequestDispatcher(config, dbsConfig);
-        dir.startup();
-        dir.waitForStartup();
+        testEnv.start();
     }
 
     @After
     public void tearDown() throws Exception {
-        dir.shutdown();
-
-        dir.waitForShutdown();
-
         testEnv.shutdown();
-
     }
 
-    // @Test
+    @Test
     public void testGlobalTime() throws Exception {
 
         RPCResponse<globalTimeSGetResponse> r = testEnv.getDirClient().xtreemfs_global_time_s_get(null,
@@ -203,6 +189,8 @@ public class DIRTest extends TestCase {
         Set<String> removedOsd = adminClient.getRemovedOsds();
 
         assertTrue(removedOsd.contains(osdConfig.getUUID().toString()));
+
+        osd.shutdown();
     }
 
     @Test
@@ -252,12 +240,12 @@ public class DIRTest extends TestCase {
         resonseGet = client.xtreemfs_configuration_get(null, RPCAuthentication.authNone,
                 RPCAuthentication.userService, uuid);
 
-        Configuration newConf = (Configuration) resonseGet.get();
+        Configuration newConf = resonseGet.get();
 
         assertEquals(version + 1, newConf.getVersion());
         assertEquals(uuid, newConf.getUuid());
 
-        System.out.println(newConf.getAllFields().toString());
+        // System.out.println(newConf.getAllFields().toString());
 
         for (int i = 0; i < parameterNumber; i++) {
             assertEquals(new String("key" + i), newConf.getParameter(i).getKey());
