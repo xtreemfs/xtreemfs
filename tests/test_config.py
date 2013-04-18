@@ -95,7 +95,7 @@ VolumeConfigs = {
                     'rwr_policy': 'all',
                     'rwr_factor': 2,
                     'ronly_factor': 0,
-                    'mount_options': [ ]
+                    'mount_options': [ '--max-tries=240', '--max-read-tries=240', '--max-write-tries=240' ]
                 },
 }
 
