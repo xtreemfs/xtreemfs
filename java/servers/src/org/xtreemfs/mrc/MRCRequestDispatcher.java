@@ -461,9 +461,6 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         volumeManager.shutdown();
         
         httpServ.stop(0);
-        
-        if (Logging.isInfo())
-            Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this, "MRC shutdown complete");
     }
     
     public void requestFinished(MRCRequest request) {
