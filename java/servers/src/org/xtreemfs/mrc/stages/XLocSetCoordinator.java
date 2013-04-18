@@ -321,6 +321,7 @@ public class XLocSetCoordinator extends LifeCycleThread {
         OSDServiceClient client = master.getOSDClient();
         
         boolean primaryResponded = false;
+        int responseCount = 0;
         // TODO (jdillmann): Use RPCResponseAvailableListener @see CoordinatedReplicaUpdatePolicy.executeReset
         for (int i = 0; i < xLocSet.getReplicasCount(); i++) {
             String headOsd = Helper.getOSDUUIDFromXlocSet(xLocSet, i, 0);
@@ -331,6 +332,7 @@ public class XLocSetCoordinator extends LifeCycleThread {
                 rpcResponse = client.xtreemfs_xloc_set_invalidate(server, RPCAuthentication.authNone,
                         RPCAuthentication.userService, creds, fileId);
                 response = rpcResponse.get();
+                responseCount = responseCount + 1;
 
             } catch (InterruptedException e) {
                 if (quit) {
@@ -347,8 +349,10 @@ public class XLocSetCoordinator extends LifeCycleThread {
             }
         }
         
+
         // if the primary didn't respond we have to wait until the lease timed out
-        if (!primaryResponded) {
+        // if every replica replied and none has been primary we don't have to wait
+        if (!primaryResponded && !(responseCount == xLocSet.getReplicasCount())) {
             // FIXME (jdillmann): Howto get the lease timeout value from the OSD config?
             long leaseToMS = 15 * 1000;
             
