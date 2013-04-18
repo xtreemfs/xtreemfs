@@ -97,8 +97,8 @@ public class VolumeManager {
             List<GlobalTypes.KeyValuePair> volumeAttributes = new ArrayList<GlobalTypes.KeyValuePair>();
             client.createVolume(params.mrcAddress, params.auth, params.userCredentials, volumeName, 511,
                     params.userName, params.group, GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
-                    GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, params.getStripeSizeInKiB, params.stripeWidth,
-                    volumeAttributes);
+                    GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, params.getStripeSizeInKiB,
+                    params.stripeWidth, volumeAttributes);
             volume = client.openVolume(volumeName, params.sslOptions, params.options);
 
             // Todo (jvf) Implement in tool and params or delete
@@ -238,7 +238,7 @@ public class VolumeManager {
         createdFiles.put(volume, filelistForVolume);
     }
 
-    void deleteCreatedFiles() throws IOException {
+    void deleteCreatedFiles() {
         for (Volume volume : volumes) {
             HashSet<String> fileListForVolume = createdFiles.get(volume);
 
@@ -248,9 +248,18 @@ public class VolumeManager {
                         fileListForVolume.size(), volume.getVolumeName());
 
                 for (String filename : fileListForVolume) {
-                    volume.unlink(params.userCredentials, filename);
+                    tryToDeleteFile(volume, filename);
                 }
             }
+        }
+    }
+
+    private void tryToDeleteFile(Volume volume, String filename) {
+        try {
+            volume.unlink(params.userCredentials, filename);
+        } catch (IOException e) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this,
+                    "IO Error while trying to delete a file. Errormessage: %s", e.getMessage());
         }
     }
 
