@@ -88,7 +88,7 @@ if [ "$FAILED" -ne "0" ]; then exit 1; fi
 
 # Report crashes.
 grep "has crashed" "$JUNIT_LOG_FILE" >/dev/null
-if [ $? -ne 0 ]
+if [ $? -eq 0 ]
 then
   echo "However, during the test services did crash. Examine the log file junit.log for more information."
   exit 2
