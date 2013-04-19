@@ -9,6 +9,7 @@ package org.xtreemfs.mrc.stages;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -36,7 +37,6 @@ import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
-import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
@@ -189,7 +189,6 @@ public class XLocSetCoordinator extends LifeCycleThread {
         final String fileId = m.getFileId();
         final GlobalFileIdResolver idRes = new GlobalFileIdResolver(fileId);
         final StorageManager sMan = vMan.getStorageManager(idRes.getVolumeId());
-        final ReplicationPolicy replPol = sMan.getDefaultReplicationPolicy(idRes.getLocalFileId());
 
         // retrieve the file metadata
         final FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
@@ -244,17 +243,27 @@ public class XLocSetCoordinator extends LifeCycleThread {
 
         // TODO (jdillmann): Instruct the new replica(s) to fetch data from the existing osds and rebuild the majority
         
-        if (replPol.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
-            // TODO (jdillmann): Howto get an invalidated state from RONLY replicas?
-        } else {
-            // determine if the new replica has to be updated
-            // calculate AuthState
-            // send to new replica
-        }
+        // // if (replPol.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
+        // if (false) {
+        // // TODO (jdillmann): Howto get an invalidated state from RONLY replicas?
+        // } else {
+        // // determine if the new replica has to be updated
+        // // calculate AuthState
+        // // send to new replica
+        // }
 
         xLocList = sMan.createXLocList(extendedRepl, xLocList.getReplUpdatePolicy(), xLocList.getVersion() + 1);
         file.setXLocList(xLocList);
 
+        
+        // ping the new replica
+        OSDServiceClient client = master.getOSDClient();
+
+        // client.read(server, authHeader, userCreds, file_credentials, file_id, object_number,
+        // object_version, offset, length)
+        // client.read(server, authHeader, userCreds, input)
+        
+        
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
 
         // update the X-Locations list
@@ -284,6 +293,37 @@ public class XLocSetCoordinator extends LifeCycleThread {
     }
 
     /**
+     * Build a valid Capability for the given file
+     * 
+     * @param fileId
+     * @param file
+     */
+    private Capability buildCapability(String fileId, FileMetadata file) {
+        // Build the Capability
+        int accessMode = FileAccessManager.O_RDWR;
+        int validity = master.getConfig().getCapabilityTimeout();
+        long expires = TimeSync.getGlobalTime() / 1000 + master.getConfig().getCapabilityTimeout();
+
+        // TODO (jdillmann): check correct MRC adress
+        String clientIdentity;
+        try {
+            clientIdentity = master.getConfig().getAddress() != null ? master.getConfig().getAddress().toString()                : InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            clientIdentity = "";
+        }
+        
+        int epochNo = file.getEpoch();
+        boolean replicateOnClose = false;
+        SnapConfig snapConfig = SnapConfig.SNAP_CONFIG_SNAPS_DISABLED;
+        long snapTimestamp = 0;
+        String sharedSecret = master.getConfig().getCapabilitySecret();
+
+        Capability cap = new Capability(fileId, accessMode, validity, expires, clientIdentity, epochNo,
+                replicateOnClose, snapConfig, snapTimestamp, sharedSecret);
+        return cap;
+    }
+
+    /**
      * Invalidate the Replicas listed in xLocList. Will sleep until the lease has timed out if the primary
      * didn't respond
      * 
@@ -297,22 +337,7 @@ public class XLocSetCoordinator extends LifeCycleThread {
         // convert the XLocList to an XLocSet 
         XLocSet xLocSet = Converter.xLocListToXLocSet(xLocList).build();
         
-        // Build the Capability
-        int accessMode = FileAccessManager.O_RDWR;
-        int validity = master.getConfig().getCapabilityTimeout();
-        long expires = TimeSync.getGlobalTime() / 1000 + master.getConfig().getCapabilityTimeout();
-        // TODO (jdillmann): check correct MRC adress
-        String clientIdentity = master.getConfig().getAddress() != null ? master.getConfig().getAddress().toString()
-                : InetAddress.getLocalHost().getHostAddress();
-        int epochNo = file.getEpoch();
-        boolean replicateOnClose = false;
-        SnapConfig snapConfig = SnapConfig.SNAP_CONFIG_SNAPS_DISABLED;
-        long snapTimestamp = 0;
-        String sharedSecret = master.getConfig().getCapabilitySecret();
-
-        Capability cap = new Capability(fileId, accessMode, validity, expires, clientIdentity, epochNo,
-                replicateOnClose, snapConfig, snapTimestamp, sharedSecret);
-        
+        Capability cap = buildCapability(fileId, file);
         FileCredentials creds = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLocSet).build();
         
         // Invalidate the replicas (the majority should be enough)
