@@ -57,12 +57,7 @@ import org.xtreemfs.scheduler.algorithm.ReservationSchedulerFactory;
 import org.xtreemfs.scheduler.data.OSDDescription;
 import org.xtreemfs.scheduler.data.OSDPerformanceDescription;
 import org.xtreemfs.scheduler.data.store.ReservationStore;
-import org.xtreemfs.scheduler.operations.GetAllVolumesOperation;
-import org.xtreemfs.scheduler.operations.GetScheduleOperation;
-import org.xtreemfs.scheduler.operations.GetVolumesOperation;
-import org.xtreemfs.scheduler.operations.RemoveReservationOperation;
-import org.xtreemfs.scheduler.operations.ScheduleReservationOperation;
-import org.xtreemfs.scheduler.operations.SchedulerOperation;
+import org.xtreemfs.scheduler.operations.*;
 
 public class SchedulerRequestDispatcher extends LifeCycleThread implements
 		RPCServerRequestListener, LifeCycleListener {
@@ -209,7 +204,7 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 			
 			// TODO(ckleineweber): Get scheduler parameters from config
 			reservationScheduler = ReservationSchedulerFactory.getScheduler(
-					osds, 0.0, 1.0, 1.0, 1.0, true);
+                    getOsds(), 0.0, 1.0, 1.0, 1.0, true);
 			
 	        server.start();
 	        server.waitForStartup();
@@ -274,7 +269,7 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 		for (Service osd : knownOSDs.getServicesList()) {
 			boolean osdFound = false;
 
-            for(OSDDescription o: this.osds) {
+            for(OSDDescription o: this.getOsds()) {
                 if(o.getIdentifier().equals(osd.getName())) {
                     osdFound = true;
                     break;
@@ -286,7 +281,7 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
                     byte[] bytes = getSchedulerDatabase().lookup(INDEX_ID_OSDS, osd.getUuid().getBytes(), null).get();
                     if(bytes != null) {
                         OSDDescription osdDescription = new OSDDescription(bytes);
-                        osds.add(osdDescription);
+                        getOsds().add(osdDescription);
                         osdFound = true;
                     }
                 } catch(BabuDBException ex) {
@@ -306,7 +301,7 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 				// TODO(ckleineweber): Determine osd type
 				OSDDescription.OSDType type = OSDDescription.OSDType.UNKNOWN;
 				OSDDescription osdDescription = new OSDDescription(osd.getUuid(), osdPerf, type);
-				osds.add(osdDescription);
+				getOsds().add(osdDescription);
 				try {
 					getSchedulerDatabase().singleInsert(INDEX_ID_OSDS, osd.toByteArray(), osdDescription.getBytes(), null);
 				} catch(BabuDBException ex) {
@@ -333,6 +328,9 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 		
 		op = new GetAllVolumesOperation(this);
 		registry.put(op.getProcedureId(), op);
+
+        op = new GetFreeResourcesOperation(this);
+        registry.put(op.getProcedureId(), op);
 	}
 
 	private void initDB(DatabaseManager dbMan, SnapshotManager sMan) {
@@ -472,4 +470,8 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 	public ReservationStore getStore() {
 		return reservationStore;
 	}
+
+    public List<OSDDescription> getOsds() {
+        return osds;
+    }
 }

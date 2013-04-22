@@ -1,4 +1,4 @@
-//automatically generated from Scheduler.proto at Fri Apr 05 14:03:44 CEST 2013
+//automatically generated from Scheduler.proto at Mon Apr 22 14:58:58 CEST 2013
 //(c) 2013. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -87,6 +87,19 @@ public class SchedulerServiceClient {
     public RPCResponse<Scheduler.reservationSet> getAllVolumes(InetSocketAddress server, Auth authHeader, UserCredentials userCreds) throws IOException {
          
          return getAllVolumes(server, authHeader, userCreds,null);
+    }
+
+    public RPCResponse<Scheduler.freeResourcesResponse> getFreeResources(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, Common.emptyRequest input) throws IOException {
+         if (server == null) server = defaultServer;
+         if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
+         RPCResponse<Scheduler.freeResourcesResponse> response = new RPCResponse<Scheduler.freeResourcesResponse>(Scheduler.freeResourcesResponse.getDefaultInstance());
+         client.sendRequest(server, authHeader, userCreds, 40001, 106, input, null, response, false);
+         return response;
+    }
+
+    public RPCResponse<Scheduler.freeResourcesResponse> getFreeResources(InetSocketAddress server, Auth authHeader, UserCredentials userCreds) throws IOException {
+         
+         return getFreeResources(server, authHeader, userCreds,null);
     }
 
     public boolean clientIsAlive() {

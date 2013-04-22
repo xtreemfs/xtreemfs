@@ -43,6 +43,7 @@ class volumeSet;
 class reservation;
 class reservationSet;
 class osdSet;
+class freeResourcesResponse;
 
 enum reservationType {
   STREAMING_RESERVATION = 1,
@@ -654,6 +655,111 @@ class osdSet : public ::google::protobuf::Message {
   void InitAsDefaultInstance();
   static osdSet* default_instance_;
 };
+// -------------------------------------------------------------------
+
+class freeResourcesResponse : public ::google::protobuf::Message {
+ public:
+  freeResourcesResponse();
+  virtual ~freeResourcesResponse();
+  
+  freeResourcesResponse(const freeResourcesResponse& from);
+  
+  inline freeResourcesResponse& operator=(const freeResourcesResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+  
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+  
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const freeResourcesResponse& default_instance();
+  
+  void Swap(freeResourcesResponse* other);
+  
+  // implements Message ----------------------------------------------
+  
+  freeResourcesResponse* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const freeResourcesResponse& from);
+  void MergeFrom(const freeResourcesResponse& from);
+  void Clear();
+  bool IsInitialized() const;
+  
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+  
+  ::google::protobuf::Metadata GetMetadata() const;
+  
+  // nested types ----------------------------------------------------
+  
+  // accessors -------------------------------------------------------
+  
+  // required double capacity = 1;
+  inline bool has_capacity() const;
+  inline void clear_capacity();
+  static const int kCapacityFieldNumber = 1;
+  inline double capacity() const;
+  inline void set_capacity(double value);
+  
+  // required double streamingThroughput = 2;
+  inline bool has_streamingthroughput() const;
+  inline void clear_streamingthroughput();
+  static const int kStreamingThroughputFieldNumber = 2;
+  inline double streamingthroughput() const;
+  inline void set_streamingthroughput(double value);
+  
+  // required double randomThroughput = 3;
+  inline bool has_randomthroughput() const;
+  inline void clear_randomthroughput();
+  static const int kRandomThroughputFieldNumber = 3;
+  inline double randomthroughput() const;
+  inline void set_randomthroughput(double value);
+  
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.freeResourcesResponse)
+ private:
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+  mutable int _cached_size_;
+  
+  double capacity_;
+  double streamingthroughput_;
+  double randomthroughput_;
+  friend void  protobuf_AddDesc_xtreemfs_2fScheduler_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fScheduler_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fScheduler_2eproto();
+  
+  ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
+  
+  // WHY DOES & HAVE LOWER PRECEDENCE THAN != !?
+  inline bool _has_bit(int index) const {
+    return (_has_bits_[index / 32] & (1u << (index % 32))) != 0;
+  }
+  inline void _set_bit(int index) {
+    _has_bits_[index / 32] |= (1u << (index % 32));
+  }
+  inline void _clear_bit(int index) {
+    _has_bits_[index / 32] &= ~(1u << (index % 32));
+  }
+  
+  void InitAsDefaultInstance();
+  static freeResourcesResponse* default_instance_;
+};
 // ===================================================================
 
 class SchedulerService_Stub;
@@ -688,6 +794,10 @@ class SchedulerService : public ::google::protobuf::Service {
   virtual void getAllVolumes(::google::protobuf::RpcController* controller,
                        const ::xtreemfs::pbrpc::emptyRequest* request,
                        ::xtreemfs::pbrpc::reservationSet* response,
+                       ::google::protobuf::Closure* done);
+  virtual void getFreeResources(::google::protobuf::RpcController* controller,
+                       const ::xtreemfs::pbrpc::emptyRequest* request,
+                       ::xtreemfs::pbrpc::freeResourcesResponse* response,
                        ::google::protobuf::Closure* done);
   
   // implements Service ----------------------------------------------
@@ -737,6 +847,10 @@ class SchedulerService_Stub : public SchedulerService {
   void getAllVolumes(::google::protobuf::RpcController* controller,
                        const ::xtreemfs::pbrpc::emptyRequest* request,
                        ::xtreemfs::pbrpc::reservationSet* response,
+                       ::google::protobuf::Closure* done);
+  void getFreeResources(::google::protobuf::RpcController* controller,
+                       const ::xtreemfs::pbrpc::emptyRequest* request,
+                       ::xtreemfs::pbrpc::freeResourcesResponse* response,
                        ::google::protobuf::Closure* done);
  private:
   ::google::protobuf::RpcChannel* channel_;
@@ -1011,6 +1125,58 @@ osdSet::osd() const {
 inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::osdIdentifier >*
 osdSet::mutable_osd() {
   return &osd_;
+}
+
+// -------------------------------------------------------------------
+
+// freeResourcesResponse
+
+// required double capacity = 1;
+inline bool freeResourcesResponse::has_capacity() const {
+  return _has_bit(0);
+}
+inline void freeResourcesResponse::clear_capacity() {
+  capacity_ = 0;
+  _clear_bit(0);
+}
+inline double freeResourcesResponse::capacity() const {
+  return capacity_;
+}
+inline void freeResourcesResponse::set_capacity(double value) {
+  _set_bit(0);
+  capacity_ = value;
+}
+
+// required double streamingThroughput = 2;
+inline bool freeResourcesResponse::has_streamingthroughput() const {
+  return _has_bit(1);
+}
+inline void freeResourcesResponse::clear_streamingthroughput() {
+  streamingthroughput_ = 0;
+  _clear_bit(1);
+}
+inline double freeResourcesResponse::streamingthroughput() const {
+  return streamingthroughput_;
+}
+inline void freeResourcesResponse::set_streamingthroughput(double value) {
+  _set_bit(1);
+  streamingthroughput_ = value;
+}
+
+// required double randomThroughput = 3;
+inline bool freeResourcesResponse::has_randomthroughput() const {
+  return _has_bit(2);
+}
+inline void freeResourcesResponse::clear_randomthroughput() {
+  randomthroughput_ = 0;
+  _clear_bit(2);
+}
+inline double freeResourcesResponse::randomthroughput() const {
+  return randomthroughput_;
+}
+inline void freeResourcesResponse::set_randomthroughput(double value) {
+  _set_bit(2);
+  randomthroughput_ = value;
 }
 
 

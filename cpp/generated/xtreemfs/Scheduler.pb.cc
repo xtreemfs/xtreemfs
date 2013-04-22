@@ -33,6 +33,9 @@ const ::google::protobuf::internal::GeneratedMessageReflection*
 const ::google::protobuf::Descriptor* osdSet_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   osdSet_reflection_ = NULL;
+const ::google::protobuf::Descriptor* freeResourcesResponse_descriptor_ = NULL;
+const ::google::protobuf::internal::GeneratedMessageReflection*
+  freeResourcesResponse_reflection_ = NULL;
 const ::google::protobuf::EnumDescriptor* reservationType_descriptor_ = NULL;
 const ::google::protobuf::ServiceDescriptor* SchedulerService_descriptor_ = NULL;
 
@@ -139,6 +142,23 @@ void protobuf_AssignDesc_xtreemfs_2fScheduler_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(osdSet));
+  freeResourcesResponse_descriptor_ = file->message_type(6);
+  static const int freeResourcesResponse_offsets_[3] = {
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(freeResourcesResponse, capacity_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(freeResourcesResponse, streamingthroughput_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(freeResourcesResponse, randomthroughput_),
+  };
+  freeResourcesResponse_reflection_ =
+    new ::google::protobuf::internal::GeneratedMessageReflection(
+      freeResourcesResponse_descriptor_,
+      freeResourcesResponse::default_instance_,
+      freeResourcesResponse_offsets_,
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(freeResourcesResponse, _has_bits_[0]),
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(freeResourcesResponse, _unknown_fields_),
+      -1,
+      ::google::protobuf::DescriptorPool::generated_pool(),
+      ::google::protobuf::MessageFactory::generated_factory(),
+      sizeof(freeResourcesResponse));
   reservationType_descriptor_ = file->enum_type(0);
   SchedulerService_descriptor_ = file->service(0);
 }
@@ -165,6 +185,8 @@ void protobuf_RegisterTypes(const ::std::string&) {
     reservationSet_descriptor_, &reservationSet::default_instance());
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
     osdSet_descriptor_, &osdSet::default_instance());
+  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
+    freeResourcesResponse_descriptor_, &freeResourcesResponse::default_instance());
 }
 
 }  // namespace
@@ -182,6 +204,8 @@ void protobuf_ShutdownFile_xtreemfs_2fScheduler_2eproto() {
   delete reservationSet_reflection_;
   delete osdSet::default_instance_;
   delete osdSet_reflection_;
+  delete freeResourcesResponse::default_instance_;
+  delete freeResourcesResponse_reflection_;
 }
 
 void protobuf_AddDesc_xtreemfs_2fScheduler_2eproto() {
@@ -207,23 +231,28 @@ void protobuf_AddDesc_xtreemfs_2fScheduler_2eproto() {
     "(\001\022\030\n\020randomThroughput\030\005 \001(\001\"C\n\016reservat"
     "ionSet\0221\n\014reservations\030\001 \003(\0132\033.xtreemfs."
     "pbrpc.reservation\"4\n\006osdSet\022*\n\003osd\030\001 \003(\013"
-    "2\035.xtreemfs.pbrpc.osdIdentifier*\202\001\n\017rese"
-    "rvationType\022\031\n\025STREAMING_RESERVATION\020\001\022\031"
-    "\n\025RANDOM_IO_RESERVATION\020\002\022\033\n\027BEST_EFFORT"
-    "_RESERVATION\020\003\022\034\n\030COLD_STORAGE_RESERVATI"
-    "ON\020\0042\312\003\n\020SchedulerService\022S\n\023scheduleRes"
-    "ervation\022\033.xtreemfs.pbrpc.reservation\032\026."
-    "xtreemfs.pbrpc.osdSet\"\007\215\265\030e\000\000\000\022]\n\021remove"
-    "Reservation\022 .xtreemfs.pbrpc.volumeIdent"
-    "ifier\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265"
-    "\030f\000\000\000\022P\n\013getSchedule\022 .xtreemfs.pbrpc.vo"
-    "lumeIdentifier\032\026.xtreemfs.pbrpc.osdSet\"\007"
-    "\215\265\030g\000\000\000\022O\n\ngetVolumes\022\035.xtreemfs.pbrpc.o"
-    "sdIdentifier\032\031.xtreemfs.pbrpc.volumeSet\""
-    "\007\215\265\030h\000\000\000\022V\n\rgetAllVolumes\022\034.xtreemfs.pbr"
-    "pc.emptyRequest\032\036.xtreemfs.pbrpc.reserva"
-    "tionSet\"\007\215\265\030i\000\000\000\032\007\225\265\030A\234\000\000B(\n&org.xtreemf"
-    "s.pbrpc.generatedinterfaces", 1187);
+    "2\035.xtreemfs.pbrpc.osdIdentifier\"`\n\025freeR"
+    "esourcesResponse\022\020\n\010capacity\030\001 \002(\001\022\033\n\023st"
+    "reamingThroughput\030\002 \002(\001\022\030\n\020randomThrough"
+    "put\030\003 \002(\001*\202\001\n\017reservationType\022\031\n\025STREAMI"
+    "NG_RESERVATION\020\001\022\031\n\025RANDOM_IO_RESERVATIO"
+    "N\020\002\022\033\n\027BEST_EFFORT_RESERVATION\020\003\022\034\n\030COLD"
+    "_STORAGE_RESERVATION\020\0042\254\004\n\020SchedulerServ"
+    "ice\022S\n\023scheduleReservation\022\033.xtreemfs.pb"
+    "rpc.reservation\032\026.xtreemfs.pbrpc.osdSet\""
+    "\007\215\265\030e\000\000\000\022]\n\021removeReservation\022 .xtreemfs"
+    ".pbrpc.volumeIdentifier\032\035.xtreemfs.pbrpc"
+    ".emptyResponse\"\007\215\265\030f\000\000\000\022P\n\013getSchedule\022 "
+    ".xtreemfs.pbrpc.volumeIdentifier\032\026.xtree"
+    "mfs.pbrpc.osdSet\"\007\215\265\030g\000\000\000\022O\n\ngetVolumes\022"
+    "\035.xtreemfs.pbrpc.osdIdentifier\032\031.xtreemf"
+    "s.pbrpc.volumeSet\"\007\215\265\030h\000\000\000\022V\n\rgetAllVolu"
+    "mes\022\034.xtreemfs.pbrpc.emptyRequest\032\036.xtre"
+    "emfs.pbrpc.reservationSet\"\007\215\265\030i\000\000\000\022`\n\020ge"
+    "tFreeResources\022\034.xtreemfs.pbrpc.emptyReq"
+    "uest\032%.xtreemfs.pbrpc.freeResourcesRespo"
+    "nse\"\007\215\265\030j\000\000\000\032\007\225\265\030A\234\000\000B(\n&org.xtreemfs.pb"
+    "rpc.generatedinterfaces", 1383);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "xtreemfs/Scheduler.proto", &protobuf_RegisterTypes);
   osdIdentifier::default_instance_ = new osdIdentifier();
@@ -232,12 +261,14 @@ void protobuf_AddDesc_xtreemfs_2fScheduler_2eproto() {
   reservation::default_instance_ = new reservation();
   reservationSet::default_instance_ = new reservationSet();
   osdSet::default_instance_ = new osdSet();
+  freeResourcesResponse::default_instance_ = new freeResourcesResponse();
   osdIdentifier::default_instance_->InitAsDefaultInstance();
   volumeIdentifier::default_instance_->InitAsDefaultInstance();
   volumeSet::default_instance_->InitAsDefaultInstance();
   reservation::default_instance_->InitAsDefaultInstance();
   reservationSet::default_instance_->InitAsDefaultInstance();
   osdSet::default_instance_->InitAsDefaultInstance();
+  freeResourcesResponse::default_instance_->InitAsDefaultInstance();
   ::google::protobuf::internal::OnShutdown(&protobuf_ShutdownFile_xtreemfs_2fScheduler_2eproto);
 }
 
@@ -1710,6 +1741,288 @@ void osdSet::Swap(osdSet* other) {
 
 // ===================================================================
 
+#ifndef _MSC_VER
+const int freeResourcesResponse::kCapacityFieldNumber;
+const int freeResourcesResponse::kStreamingThroughputFieldNumber;
+const int freeResourcesResponse::kRandomThroughputFieldNumber;
+#endif  // !_MSC_VER
+
+freeResourcesResponse::freeResourcesResponse()
+  : ::google::protobuf::Message() {
+  SharedCtor();
+}
+
+void freeResourcesResponse::InitAsDefaultInstance() {
+}
+
+freeResourcesResponse::freeResourcesResponse(const freeResourcesResponse& from)
+  : ::google::protobuf::Message() {
+  SharedCtor();
+  MergeFrom(from);
+}
+
+void freeResourcesResponse::SharedCtor() {
+  _cached_size_ = 0;
+  capacity_ = 0;
+  streamingthroughput_ = 0;
+  randomthroughput_ = 0;
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+}
+
+freeResourcesResponse::~freeResourcesResponse() {
+  SharedDtor();
+}
+
+void freeResourcesResponse::SharedDtor() {
+  if (this != default_instance_) {
+  }
+}
+
+void freeResourcesResponse::SetCachedSize(int size) const {
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+}
+const ::google::protobuf::Descriptor* freeResourcesResponse::descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return freeResourcesResponse_descriptor_;
+}
+
+const freeResourcesResponse& freeResourcesResponse::default_instance() {
+  if (default_instance_ == NULL) protobuf_AddDesc_xtreemfs_2fScheduler_2eproto();  return *default_instance_;
+}
+
+freeResourcesResponse* freeResourcesResponse::default_instance_ = NULL;
+
+freeResourcesResponse* freeResourcesResponse::New() const {
+  return new freeResourcesResponse;
+}
+
+void freeResourcesResponse::Clear() {
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    capacity_ = 0;
+    streamingthroughput_ = 0;
+    randomthroughput_ = 0;
+  }
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+  mutable_unknown_fields()->Clear();
+}
+
+bool freeResourcesResponse::MergePartialFromCodedStream(
+    ::google::protobuf::io::CodedInputStream* input) {
+#define DO_(EXPRESSION) if (!(EXPRESSION)) return false
+  ::google::protobuf::uint32 tag;
+  while ((tag = input->ReadTag()) != 0) {
+    switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
+      // required double capacity = 1;
+      case 1: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
+                 input, &capacity_)));
+          _set_bit(0);
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(17)) goto parse_streamingThroughput;
+        break;
+      }
+      
+      // required double streamingThroughput = 2;
+      case 2: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
+         parse_streamingThroughput:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
+                 input, &streamingthroughput_)));
+          _set_bit(1);
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(25)) goto parse_randomThroughput;
+        break;
+      }
+      
+      // required double randomThroughput = 3;
+      case 3: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
+         parse_randomThroughput:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
+                 input, &randomthroughput_)));
+          _set_bit(2);
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectAtEnd()) return true;
+        break;
+      }
+      
+      default: {
+      handle_uninterpreted:
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_END_GROUP) {
+          return true;
+        }
+        DO_(::google::protobuf::internal::WireFormat::SkipField(
+              input, tag, mutable_unknown_fields()));
+        break;
+      }
+    }
+  }
+  return true;
+#undef DO_
+}
+
+void freeResourcesResponse::SerializeWithCachedSizes(
+    ::google::protobuf::io::CodedOutputStream* output) const {
+  // required double capacity = 1;
+  if (_has_bit(0)) {
+    ::google::protobuf::internal::WireFormatLite::WriteDouble(1, this->capacity(), output);
+  }
+  
+  // required double streamingThroughput = 2;
+  if (_has_bit(1)) {
+    ::google::protobuf::internal::WireFormatLite::WriteDouble(2, this->streamingthroughput(), output);
+  }
+  
+  // required double randomThroughput = 3;
+  if (_has_bit(2)) {
+    ::google::protobuf::internal::WireFormatLite::WriteDouble(3, this->randomthroughput(), output);
+  }
+  
+  if (!unknown_fields().empty()) {
+    ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
+        unknown_fields(), output);
+  }
+}
+
+::google::protobuf::uint8* freeResourcesResponse::SerializeWithCachedSizesToArray(
+    ::google::protobuf::uint8* target) const {
+  // required double capacity = 1;
+  if (_has_bit(0)) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(1, this->capacity(), target);
+  }
+  
+  // required double streamingThroughput = 2;
+  if (_has_bit(1)) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(2, this->streamingthroughput(), target);
+  }
+  
+  // required double randomThroughput = 3;
+  if (_has_bit(2)) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(3, this->randomthroughput(), target);
+  }
+  
+  if (!unknown_fields().empty()) {
+    target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
+        unknown_fields(), target);
+  }
+  return target;
+}
+
+int freeResourcesResponse::ByteSize() const {
+  int total_size = 0;
+  
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    // required double capacity = 1;
+    if (has_capacity()) {
+      total_size += 1 + 8;
+    }
+    
+    // required double streamingThroughput = 2;
+    if (has_streamingthroughput()) {
+      total_size += 1 + 8;
+    }
+    
+    // required double randomThroughput = 3;
+    if (has_randomthroughput()) {
+      total_size += 1 + 8;
+    }
+    
+  }
+  if (!unknown_fields().empty()) {
+    total_size +=
+      ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
+        unknown_fields());
+  }
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = total_size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+  return total_size;
+}
+
+void freeResourcesResponse::MergeFrom(const ::google::protobuf::Message& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  const freeResourcesResponse* source =
+    ::google::protobuf::internal::dynamic_cast_if_available<const freeResourcesResponse*>(
+      &from);
+  if (source == NULL) {
+    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
+  } else {
+    MergeFrom(*source);
+  }
+}
+
+void freeResourcesResponse::MergeFrom(const freeResourcesResponse& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    if (from._has_bit(0)) {
+      set_capacity(from.capacity());
+    }
+    if (from._has_bit(1)) {
+      set_streamingthroughput(from.streamingthroughput());
+    }
+    if (from._has_bit(2)) {
+      set_randomthroughput(from.randomthroughput());
+    }
+  }
+  mutable_unknown_fields()->MergeFrom(from.unknown_fields());
+}
+
+void freeResourcesResponse::CopyFrom(const ::google::protobuf::Message& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void freeResourcesResponse::CopyFrom(const freeResourcesResponse& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool freeResourcesResponse::IsInitialized() const {
+  if ((_has_bits_[0] & 0x00000007) != 0x00000007) return false;
+  
+  return true;
+}
+
+void freeResourcesResponse::Swap(freeResourcesResponse* other) {
+  if (other != this) {
+    std::swap(capacity_, other->capacity_);
+    std::swap(streamingthroughput_, other->streamingthroughput_);
+    std::swap(randomthroughput_, other->randomthroughput_);
+    std::swap(_has_bits_[0], other->_has_bits_[0]);
+    _unknown_fields_.Swap(&other->_unknown_fields_);
+    std::swap(_cached_size_, other->_cached_size_);
+  }
+}
+
+::google::protobuf::Metadata freeResourcesResponse::GetMetadata() const {
+  protobuf_AssignDescriptorsOnce();
+  ::google::protobuf::Metadata metadata;
+  metadata.descriptor = freeResourcesResponse_descriptor_;
+  metadata.reflection = freeResourcesResponse_reflection_;
+  return metadata;
+}
+
+
+// ===================================================================
+
 SchedulerService::~SchedulerService() {}
 
 const ::google::protobuf::ServiceDescriptor* SchedulerService::descriptor() {
@@ -1762,6 +2075,14 @@ void SchedulerService::getAllVolumes(::google::protobuf::RpcController* controll
   done->Run();
 }
 
+void SchedulerService::getFreeResources(::google::protobuf::RpcController* controller,
+                         const ::xtreemfs::pbrpc::emptyRequest*,
+                         ::xtreemfs::pbrpc::freeResourcesResponse*,
+                         ::google::protobuf::Closure* done) {
+  controller->SetFailed("Method getFreeResources() not implemented.");
+  done->Run();
+}
+
 void SchedulerService::CallMethod(const ::google::protobuf::MethodDescriptor* method,
                              ::google::protobuf::RpcController* controller,
                              const ::google::protobuf::Message* request,
@@ -1799,6 +2120,12 @@ void SchedulerService::CallMethod(const ::google::protobuf::MethodDescriptor* me
              ::google::protobuf::down_cast< ::xtreemfs::pbrpc::reservationSet*>(response),
              done);
       break;
+    case 5:
+      getFreeResources(controller,
+             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::emptyRequest*>(request),
+             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::freeResourcesResponse*>(response),
+             done);
+      break;
     default:
       GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
       break;
@@ -1818,6 +2145,8 @@ const ::google::protobuf::Message& SchedulerService::GetRequestPrototype(
     case 3:
       return ::xtreemfs::pbrpc::osdIdentifier::default_instance();
     case 4:
+      return ::xtreemfs::pbrpc::emptyRequest::default_instance();
+    case 5:
       return ::xtreemfs::pbrpc::emptyRequest::default_instance();
     default:
       GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -1839,6 +2168,8 @@ const ::google::protobuf::Message& SchedulerService::GetResponsePrototype(
       return ::xtreemfs::pbrpc::volumeSet::default_instance();
     case 4:
       return ::xtreemfs::pbrpc::reservationSet::default_instance();
+    case 5:
+      return ::xtreemfs::pbrpc::freeResourcesResponse::default_instance();
     default:
       GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
       return *reinterpret_cast< ::google::protobuf::Message*>(NULL);
@@ -1889,6 +2220,13 @@ void SchedulerService_Stub::getAllVolumes(::google::protobuf::RpcController* con
                               ::xtreemfs::pbrpc::reservationSet* response,
                               ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(4),
+                       controller, request, response, done);
+}
+void SchedulerService_Stub::getFreeResources(::google::protobuf::RpcController* controller,
+                              const ::xtreemfs::pbrpc::emptyRequest* request,
+                              ::xtreemfs::pbrpc::freeResourcesResponse* response,
+                              ::google::protobuf::Closure* done) {
+  channel_->CallMethod(descriptor()->method(5),
                        controller, request, response, done);
 }
 

@@ -7,6 +7,7 @@ import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.Common;
 import org.xtreemfs.pbrpc.generatedinterfaces.Scheduler;
 import org.xtreemfs.pbrpc.generatedinterfaces.SchedulerServiceClient;
 import org.xtreemfs.test.SetupUtils;
@@ -134,4 +135,61 @@ public class SchedulerTest {
 		assertTrue(r.getVolume().getUuid().equals(uuid));
 		reservationsResponse.freeBuffers();
 	}
+
+    @Test
+    public void testGetFreeResources() throws Exception {
+        // Get initially free resources
+        RPCResponse<Scheduler.freeResourcesResponse> response = client.getFreeResources(
+                null, RPCAuthentication.authNone, RPCAuthentication.userService, Common.emptyRequest.getDefaultInstance());
+
+        Scheduler.freeResourcesResponse freeRes = response.get();
+
+        double initialCapacity = freeRes.getCapacity();
+        double initialRandTp = freeRes.getRandomThroughput();
+        double initialSeqTp = freeRes.getStreamingThroughput();
+        response.freeBuffers();
+
+        assertTrue(initialCapacity > 0.0);
+        assertTrue(initialRandTp > 0.0 || initialSeqTp > 0.0);
+
+
+        // Schedule reservation
+        Scheduler.reservation.Builder resBuilder = Scheduler.reservation
+                .newBuilder();
+        double capacity = 100.0;
+        double randomTP = 0.0;
+        double seqTP = 10.0;
+        String uuid = "asdf";
+        resBuilder.setCapacity(capacity);
+        resBuilder.setRandomThroughput(randomTP);
+        resBuilder.setStreamingThroughput(seqTP);
+        resBuilder.setType(Scheduler.reservationType.STREAMING_RESERVATION);
+        Scheduler.volumeIdentifier.Builder volBuilder = Scheduler.volumeIdentifier
+                .newBuilder();
+        volBuilder.setUuid(uuid);
+        Scheduler.volumeIdentifier volume = volBuilder.build();
+        resBuilder.setVolume(volume);
+        Scheduler.reservation res = resBuilder.build();
+
+        RPCResponse<Scheduler.osdSet> resResponse = client.scheduleReservation(
+                null, RPCAuthentication.authNone,
+                RPCAuthentication.userService, res);
+
+
+        // Check free resources after scheduling reservation
+        RPCResponse<Scheduler.freeResourcesResponse> newResponse = client.getFreeResources(
+                null, RPCAuthentication.authNone, RPCAuthentication.userService, Common.emptyRequest.getDefaultInstance());
+
+        Scheduler.freeResourcesResponse newFreeRes = newResponse.get();
+
+        double newCapacity = newFreeRes.getCapacity();
+        double newRandomTP = newFreeRes.getRandomThroughput();
+        double newSeqTP = newFreeRes.getStreamingThroughput();
+
+        assertTrue(initialCapacity >= newCapacity);
+        assertTrue(initialRandTp >= newRandomTP);
+        assertTrue(initialSeqTp >= newSeqTP);
+
+        newResponse.freeBuffers();
+    }
 }

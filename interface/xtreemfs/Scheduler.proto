@@ -72,6 +72,12 @@ message osdSet {
   repeated osdIdentifier osd=1;
 }
 
+message freeResourcesResponse {
+  required double capacity = 1;
+  required double streamingThroughput = 2;
+  required double randomThroughput = 3;
+}
+
 service SchedulerService {
   
   option(interface_id) = 40001;
@@ -96,4 +102,7 @@ service SchedulerService {
     option(proc_id) = 105;
   }
   
+  rpc getFreeResources(emptyRequest) returns(freeResourcesResponse) {
+    option(proc_id) = 106;
+  }
 }

@@ -1,4 +1,4 @@
-//automatically generated from Scheduler.proto at Fri Apr 05 14:03:44 CEST 2013
+//automatically generated from Scheduler.proto at Mon Apr 22 14:58:58 CEST 2013
 //(c) 2013. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -13,6 +13,7 @@ public class SchedulerServiceConstants {
     public static final int PROC_ID_GETSCHEDULE = 103;
     public static final int PROC_ID_GETVOLUMES = 104;
     public static final int PROC_ID_GETALLVOLUMES = 105;
+    public static final int PROC_ID_GETFREERESOURCES = 106;
 
     public static Message getRequestMessage(int procId) {
         switch (procId) {
@@ -21,6 +22,7 @@ public class SchedulerServiceConstants {
            case 103: return Scheduler.volumeIdentifier.getDefaultInstance();
            case 104: return Scheduler.osdIdentifier.getDefaultInstance();
            case 105: return null;
+           case 106: return null;
            default: throw new RuntimeException("unknown procedure id");
         }
     }
@@ -33,6 +35,7 @@ public class SchedulerServiceConstants {
            case 103: return Scheduler.osdSet.getDefaultInstance();
            case 104: return Scheduler.volumeSet.getDefaultInstance();
            case 105: return Scheduler.reservationSet.getDefaultInstance();
+           case 106: return Scheduler.freeResourcesResponse.getDefaultInstance();
            default: throw new RuntimeException("unknown procedure id");
         }
     }

@@ -2136,6 +2136,371 @@ public final class Scheduler {
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.osdSet)
   }
   
+  public static final class freeResourcesResponse extends
+      com.google.protobuf.GeneratedMessage {
+    // Use freeResourcesResponse.newBuilder() to construct.
+    private freeResourcesResponse() {
+      initFields();
+    }
+    private freeResourcesResponse(boolean noInit) {}
+    
+    private static final freeResourcesResponse defaultInstance;
+    public static freeResourcesResponse getDefaultInstance() {
+      return defaultInstance;
+    }
+    
+    public freeResourcesResponse getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+    
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.internal_static_xtreemfs_pbrpc_freeResourcesResponse_descriptor;
+    }
+    
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.internal_static_xtreemfs_pbrpc_freeResourcesResponse_fieldAccessorTable;
+    }
+    
+    // required double capacity = 1;
+    public static final int CAPACITY_FIELD_NUMBER = 1;
+    private boolean hasCapacity;
+    private double capacity_ = 0D;
+    public boolean hasCapacity() { return hasCapacity; }
+    public double getCapacity() { return capacity_; }
+    
+    // required double streamingThroughput = 2;
+    public static final int STREAMINGTHROUGHPUT_FIELD_NUMBER = 2;
+    private boolean hasStreamingThroughput;
+    private double streamingThroughput_ = 0D;
+    public boolean hasStreamingThroughput() { return hasStreamingThroughput; }
+    public double getStreamingThroughput() { return streamingThroughput_; }
+    
+    // required double randomThroughput = 3;
+    public static final int RANDOMTHROUGHPUT_FIELD_NUMBER = 3;
+    private boolean hasRandomThroughput;
+    private double randomThroughput_ = 0D;
+    public boolean hasRandomThroughput() { return hasRandomThroughput; }
+    public double getRandomThroughput() { return randomThroughput_; }
+    
+    private void initFields() {
+    }
+    public final boolean isInitialized() {
+      if (!hasCapacity) return false;
+      if (!hasStreamingThroughput) return false;
+      if (!hasRandomThroughput) return false;
+      return true;
+    }
+    
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (hasCapacity()) {
+        output.writeDouble(1, getCapacity());
+      }
+      if (hasStreamingThroughput()) {
+        output.writeDouble(2, getStreamingThroughput());
+      }
+      if (hasRandomThroughput()) {
+        output.writeDouble(3, getRandomThroughput());
+      }
+      getUnknownFields().writeTo(output);
+    }
+    
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+    
+      size = 0;
+      if (hasCapacity()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeDoubleSize(1, getCapacity());
+      }
+      if (hasStreamingThroughput()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeDoubleSize(2, getStreamingThroughput());
+      }
+      if (hasRandomThroughput()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeDoubleSize(3, getRandomThroughput());
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+    
+    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+    
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> {
+      private org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse result;
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse.newBuilder()
+      private Builder() {}
+      
+      private static Builder create() {
+        Builder builder = new Builder();
+        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse();
+        return builder;
+      }
+      
+      protected org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse internalGetResult() {
+        return result;
+      }
+      
+      public Builder clear() {
+        if (result == null) {
+          throw new IllegalStateException(
+            "Cannot call clear() after build().");
+        }
+        result = new org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse();
+        return this;
+      }
+      
+      public Builder clone() {
+        return create().mergeFrom(result);
+      }
+      
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse.getDescriptor();
+      }
+      
+      public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse getDefaultInstanceForType() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse.getDefaultInstance();
+      }
+      
+      public boolean isInitialized() {
+        return result.isInitialized();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse build() {
+        if (result != null && !isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return buildPartial();
+      }
+      
+      private org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse buildParsed()
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        if (!isInitialized()) {
+          throw newUninitializedMessageException(
+            result).asInvalidProtocolBufferException();
+        }
+        return buildPartial();
+      }
+      
+      public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse buildPartial() {
+        if (result == null) {
+          throw new IllegalStateException(
+            "build() has already been called on this Builder.");
+        }
+        org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse returnMe = result;
+        result = null;
+        return returnMe;
+      }
+      
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse) {
+          return mergeFrom((org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+      
+      public Builder mergeFrom(org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse other) {
+        if (other == org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse.getDefaultInstance()) return this;
+        if (other.hasCapacity()) {
+          setCapacity(other.getCapacity());
+        }
+        if (other.hasStreamingThroughput()) {
+          setStreamingThroughput(other.getStreamingThroughput());
+        }
+        if (other.hasRandomThroughput()) {
+          setRandomThroughput(other.getRandomThroughput());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+      
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder(
+            this.getUnknownFields());
+        while (true) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              this.setUnknownFields(unknownFields.build());
+              return this;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                this.setUnknownFields(unknownFields.build());
+                return this;
+              }
+              break;
+            }
+            case 9: {
+              setCapacity(input.readDouble());
+              break;
+            }
+            case 17: {
+              setStreamingThroughput(input.readDouble());
+              break;
+            }
+            case 25: {
+              setRandomThroughput(input.readDouble());
+              break;
+            }
+          }
+        }
+      }
+      
+      
+      // required double capacity = 1;
+      public boolean hasCapacity() {
+        return result.hasCapacity();
+      }
+      public double getCapacity() {
+        return result.getCapacity();
+      }
+      public Builder setCapacity(double value) {
+        result.hasCapacity = true;
+        result.capacity_ = value;
+        return this;
+      }
+      public Builder clearCapacity() {
+        result.hasCapacity = false;
+        result.capacity_ = 0D;
+        return this;
+      }
+      
+      // required double streamingThroughput = 2;
+      public boolean hasStreamingThroughput() {
+        return result.hasStreamingThroughput();
+      }
+      public double getStreamingThroughput() {
+        return result.getStreamingThroughput();
+      }
+      public Builder setStreamingThroughput(double value) {
+        result.hasStreamingThroughput = true;
+        result.streamingThroughput_ = value;
+        return this;
+      }
+      public Builder clearStreamingThroughput() {
+        result.hasStreamingThroughput = false;
+        result.streamingThroughput_ = 0D;
+        return this;
+      }
+      
+      // required double randomThroughput = 3;
+      public boolean hasRandomThroughput() {
+        return result.hasRandomThroughput();
+      }
+      public double getRandomThroughput() {
+        return result.getRandomThroughput();
+      }
+      public Builder setRandomThroughput(double value) {
+        result.hasRandomThroughput = true;
+        result.randomThroughput_ = value;
+        return this;
+      }
+      public Builder clearRandomThroughput() {
+        result.hasRandomThroughput = false;
+        result.randomThroughput_ = 0D;
+        return this;
+      }
+      
+      // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.freeResourcesResponse)
+    }
+    
+    static {
+      defaultInstance = new freeResourcesResponse(true);
+      org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.internalForceInit();
+      defaultInstance.initFields();
+    }
+    
+    // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.freeResourcesResponse)
+  }
+  
   public static abstract class SchedulerService
       implements com.google.protobuf.Service {
     protected SchedulerService() {}
@@ -2165,6 +2530,11 @@ public final class Scheduler {
           com.google.protobuf.RpcController controller,
           org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
           com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationSet> done);
+      
+      public abstract void getFreeResources(
+          com.google.protobuf.RpcController controller,
+          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
+          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse> done);
       
     }
     
@@ -2211,6 +2581,14 @@ public final class Scheduler {
           impl.getAllVolumes(controller, request, done);
         }
         
+        @Override
+        public  void getFreeResources(
+            com.google.protobuf.RpcController controller,
+            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
+            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse> done) {
+          impl.getFreeResources(controller, request, done);
+        }
+        
       };
     }
     
@@ -2243,6 +2621,8 @@ public final class Scheduler {
               return impl.getVolumes(controller, (org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdIdentifier)request);
             case 4:
               return impl.getAllVolumes(controller, (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest)request);
+            case 5:
+              return impl.getFreeResources(controller, (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest)request);
             default:
               throw new java.lang.AssertionError("Can't get here.");
           }
@@ -2266,6 +2646,8 @@ public final class Scheduler {
             case 3:
               return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdIdentifier.getDefaultInstance();
             case 4:
+              return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest.getDefaultInstance();
+            case 5:
               return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest.getDefaultInstance();
             default:
               throw new java.lang.AssertionError("Can't get here.");
@@ -2291,6 +2673,8 @@ public final class Scheduler {
               return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeSet.getDefaultInstance();
             case 4:
               return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationSet.getDefaultInstance();
+            case 5:
+              return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse.getDefaultInstance();
             default:
               throw new java.lang.AssertionError("Can't get here.");
           }
@@ -2323,6 +2707,11 @@ public final class Scheduler {
         com.google.protobuf.RpcController controller,
         org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
         com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationSet> done);
+    
+    public abstract void getFreeResources(
+        com.google.protobuf.RpcController controller,
+        org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
+        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse> done);
     
     public static final
         com.google.protobuf.Descriptors.ServiceDescriptor
@@ -2371,6 +2760,11 @@ public final class Scheduler {
             com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationSet>specializeCallback(
               done));
           return;
+        case 5:
+          this.getFreeResources(controller, (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest)request,
+            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse>specializeCallback(
+              done));
+          return;
         default:
           throw new java.lang.AssertionError("Can't get here.");
       }
@@ -2394,6 +2788,8 @@ public final class Scheduler {
         case 3:
           return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdIdentifier.getDefaultInstance();
         case 4:
+          return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest.getDefaultInstance();
+        case 5:
           return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest.getDefaultInstance();
         default:
           throw new java.lang.AssertionError("Can't get here.");
@@ -2419,6 +2815,8 @@ public final class Scheduler {
           return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeSet.getDefaultInstance();
         case 4:
           return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationSet.getDefaultInstance();
+        case 5:
+          return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse.getDefaultInstance();
         default:
           throw new java.lang.AssertionError("Can't get here.");
       }
@@ -2514,6 +2912,21 @@ public final class Scheduler {
             org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationSet.class,
             org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationSet.getDefaultInstance()));
       }
+      
+      public  void getFreeResources(
+          com.google.protobuf.RpcController controller,
+          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
+          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse> done) {
+        channel.callMethod(
+          getDescriptor().getMethods().get(5),
+          controller,
+          request,
+          org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse.getDefaultInstance(),
+          com.google.protobuf.RpcUtil.generalizeCallback(
+            done,
+            org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse.class,
+            org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse.getDefaultInstance()));
+      }
     }
     
     public static BlockingInterface newBlockingStub(
@@ -2543,6 +2956,11 @@ public final class Scheduler {
           throws com.google.protobuf.ServiceException;
       
       public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationSet getAllVolumes(
+          com.google.protobuf.RpcController controller,
+          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request)
+          throws com.google.protobuf.ServiceException;
+      
+      public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse getFreeResources(
           com.google.protobuf.RpcController controller,
           org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request)
           throws com.google.protobuf.ServiceException;
@@ -2614,6 +3032,18 @@ public final class Scheduler {
           org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationSet.getDefaultInstance());
       }
       
+      
+      public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse getFreeResources(
+          com.google.protobuf.RpcController controller,
+          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request)
+          throws com.google.protobuf.ServiceException {
+        return (org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse) channel.callBlockingMethod(
+          getDescriptor().getMethods().get(5),
+          controller,
+          request,
+          org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse.getDefaultInstance());
+      }
+      
     }
   }
   
@@ -2647,6 +3077,11 @@ public final class Scheduler {
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_xtreemfs_pbrpc_osdSet_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_xtreemfs_pbrpc_freeResourcesResponse_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_xtreemfs_pbrpc_freeResourcesResponse_fieldAccessorTable;
   
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -2669,23 +3104,28 @@ public final class Scheduler {
       "(\001\022\030\n\020randomThroughput\030\005 \001(\001\"C\n\016reservat" +
       "ionSet\0221\n\014reservations\030\001 \003(\0132\033.xtreemfs." +
       "pbrpc.reservation\"4\n\006osdSet\022*\n\003osd\030\001 \003(\013" +
-      "2\035.xtreemfs.pbrpc.osdIdentifier*\202\001\n\017rese" +
-      "rvationType\022\031\n\025STREAMING_RESERVATION\020\001\022\031" +
-      "\n\025RANDOM_IO_RESERVATION\020\002\022\033\n\027BEST_EFFORT" +
-      "_RESERVATION\020\003\022\034\n\030COLD_STORAGE_RESERVATI" +
-      "ON\020\0042\312\003\n\020SchedulerService\022S\n\023scheduleRes" +
-      "ervation\022\033.xtreemfs.pbrpc.reservation\032\026." +
-      "xtreemfs.pbrpc.osdSet\"\007\215\265\030e\000\000\000\022]\n\021remove",
-      "Reservation\022 .xtreemfs.pbrpc.volumeIdent" +
-      "ifier\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265" +
-      "\030f\000\000\000\022P\n\013getSchedule\022 .xtreemfs.pbrpc.vo" +
-      "lumeIdentifier\032\026.xtreemfs.pbrpc.osdSet\"\007" +
-      "\215\265\030g\000\000\000\022O\n\ngetVolumes\022\035.xtreemfs.pbrpc.o" +
-      "sdIdentifier\032\031.xtreemfs.pbrpc.volumeSet\"" +
-      "\007\215\265\030h\000\000\000\022V\n\rgetAllVolumes\022\034.xtreemfs.pbr" +
-      "pc.emptyRequest\032\036.xtreemfs.pbrpc.reserva" +
-      "tionSet\"\007\215\265\030i\000\000\000\032\007\225\265\030A\234\000\000B(\n&org.xtreemf" +
-      "s.pbrpc.generatedinterfaces"
+      "2\035.xtreemfs.pbrpc.osdIdentifier\"`\n\025freeR" +
+      "esourcesResponse\022\020\n\010capacity\030\001 \002(\001\022\033\n\023st" +
+      "reamingThroughput\030\002 \002(\001\022\030\n\020randomThrough" +
+      "put\030\003 \002(\001*\202\001\n\017reservationType\022\031\n\025STREAMI" +
+      "NG_RESERVATION\020\001\022\031\n\025RANDOM_IO_RESERVATIO" +
+      "N\020\002\022\033\n\027BEST_EFFORT_RESERVATION\020\003\022\034\n\030COLD" +
+      "_STORAGE_RESERVATION\020\0042\254\004\n\020SchedulerServ",
+      "ice\022S\n\023scheduleReservation\022\033.xtreemfs.pb" +
+      "rpc.reservation\032\026.xtreemfs.pbrpc.osdSet\"" +
+      "\007\215\265\030e\000\000\000\022]\n\021removeReservation\022 .xtreemfs" +
+      ".pbrpc.volumeIdentifier\032\035.xtreemfs.pbrpc" +
+      ".emptyResponse\"\007\215\265\030f\000\000\000\022P\n\013getSchedule\022 " +
+      ".xtreemfs.pbrpc.volumeIdentifier\032\026.xtree" +
+      "mfs.pbrpc.osdSet\"\007\215\265\030g\000\000\000\022O\n\ngetVolumes\022" +
+      "\035.xtreemfs.pbrpc.osdIdentifier\032\031.xtreemf" +
+      "s.pbrpc.volumeSet\"\007\215\265\030h\000\000\000\022V\n\rgetAllVolu" +
+      "mes\022\034.xtreemfs.pbrpc.emptyRequest\032\036.xtre",
+      "emfs.pbrpc.reservationSet\"\007\215\265\030i\000\000\000\022`\n\020ge" +
+      "tFreeResources\022\034.xtreemfs.pbrpc.emptyReq" +
+      "uest\032%.xtreemfs.pbrpc.freeResourcesRespo" +
+      "nse\"\007\215\265\030j\000\000\000\032\007\225\265\030A\234\000\000B(\n&org.xtreemfs.pb" +
+      "rpc.generatedinterfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -2740,6 +3180,14 @@ public final class Scheduler {
               new java.lang.String[] { "Osd", },
               org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet.class,
               org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet.Builder.class);
+          internal_static_xtreemfs_pbrpc_freeResourcesResponse_descriptor =
+            getDescriptor().getMessageTypes().get(6);
+          internal_static_xtreemfs_pbrpc_freeResourcesResponse_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_xtreemfs_pbrpc_freeResourcesResponse_descriptor,
+              new java.lang.String[] { "Capacity", "StreamingThroughput", "RandomThroughput", },
+              org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse.class,
+              org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse.Builder.class);
           com.google.protobuf.ExtensionRegistry registry =
             com.google.protobuf.ExtensionRegistry.newInstance();
           registerAllExtensions(registry);

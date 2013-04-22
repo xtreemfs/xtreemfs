@@ -1,4 +1,4 @@
-//automatically generated from Scheduler.proto at Fri Apr 05 14:03:44 CEST 2013
+//automatically generated from Scheduler.proto at Mon Apr 22 14:58:58 CEST 2013
 //(c) 2013. See LICENSE file for details.
 
 #ifndef SCHEDULERSERVICECLIENT_H
@@ -143,6 +143,29 @@ namespace pbrpc {
                 SyncCallback<xtreemfs::pbrpc::reservationSet>* sync_cb = new SyncCallback<xtreemfs::pbrpc::reservationSet>();
                 client_->sendRequest(address, 40001, 105,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::reservationSet(),
+                     NULL, sync_cb);
+                return sync_cb;
+            }
+
+            void getFreeResources(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds,
+                CallbackInterface<xtreemfs::pbrpc::freeResourcesResponse> *callback, void *context = NULL) {
+                const char* data = NULL; uint32_t data_length = 0;
+                xtreemfs::pbrpc::emptyRequest* request = NULL;
+                client_->sendRequest(address, 40001, 106,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::freeResourcesResponse(),
+                     context, callback);
+            }
+
+            SyncCallback<xtreemfs::pbrpc::freeResourcesResponse>* getFreeResources_sync(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds) {
+                const char* data = NULL; uint32_t data_length = 0;
+                xtreemfs::pbrpc::emptyRequest* request = NULL;
+                SyncCallback<xtreemfs::pbrpc::freeResourcesResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::freeResourcesResponse>();
+                client_->sendRequest(address, 40001, 106,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::freeResourcesResponse(),
                      NULL, sync_cb);
                 return sync_cb;
             }
