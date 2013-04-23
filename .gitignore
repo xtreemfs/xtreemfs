@@ -3,5 +3,4 @@
 /.googletest_library_already_built
 .classpath
 .project
-bin/
 java/servers/src/org/xtreemfs/sandbox/benchmark/ControllerTest.java
