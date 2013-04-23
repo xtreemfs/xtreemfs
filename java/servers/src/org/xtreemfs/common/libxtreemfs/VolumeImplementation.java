@@ -1317,6 +1317,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
                     }
                 });
 
+        // TODO (jdillmann): Remove the ping. This will be handled by XLocSetCoordinator
         // Trigger the replication at this point by reading at least one byte.
         FileHandle fileHandle = openFile(userCredentials, path,
                 SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
