@@ -16,6 +16,8 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.utils.DefaultDirConfig;
 import org.xtreemfs.utils.utils;
 
+import sun.net.NetHooks;
+
 public class xtfs_benchmark {
     static final int                      KiB_IN_BYTES = 1024;
     static final int                      MiB_IN_BYTES = 1024 * 1024;
@@ -36,6 +38,9 @@ public class xtfs_benchmark {
 
         Logging.start(6, Category.tool);
         Logging.redirect(System.err);
+
+        if (Logging.isDebug())
+            NetHooks.beforeTcpBind(null, null, 0);
 
         parseCLIOptions(args);
         displayUsageIfSet();
