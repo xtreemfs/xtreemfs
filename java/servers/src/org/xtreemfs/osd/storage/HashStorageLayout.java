@@ -1370,6 +1370,11 @@ public class HashStorageLayout extends StorageLayout {
         try {
             input = new FileInputStream(vsFile);
             vsbuilder.mergeDelimitedFrom(input);
+
+        } catch (FileNotFoundException e) {
+            // if the file does not exist yet, set the initial state
+            vsbuilder.setInvalidated(true).setVersion(-1);
+
         } finally {
             if (input != null) {
                 input.close();
