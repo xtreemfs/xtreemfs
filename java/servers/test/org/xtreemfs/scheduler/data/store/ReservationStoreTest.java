@@ -33,7 +33,6 @@ public class ReservationStoreTest {
 			db = dbm.getDatabase(DB_NAME);
 		}
 		store = new ReservationStore(db, 0);
-		store.waitForRestore();
 		
 		// Test writing and reading reservations
 		Reservation r1 = new Reservation("testVolume", ReservationType.STREAMING_RESERVATION, 0.0, 100.0, 100.0);
@@ -44,7 +43,6 @@ public class ReservationStoreTest {
 		// Test restoring reservations from database
 		store = null;
 		store = new ReservationStore(db, 0);
-		store.waitForRestore();
 		
 		assertEquals(store.getReservations().size(), 1);
 		assertTrue(store.getReservations().contains(r1));

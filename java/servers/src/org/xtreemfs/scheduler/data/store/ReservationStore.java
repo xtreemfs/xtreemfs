@@ -1,89 +1,69 @@
 package org.xtreemfs.scheduler.data.store;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import org.xtreemfs.babudb.api.database.Database;
-import org.xtreemfs.babudb.api.database.DatabaseRequestListener;
+import org.xtreemfs.babudb.api.database.DatabaseRequestResult;
 import org.xtreemfs.babudb.api.database.ResultSet;
 import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.scheduler.data.Reservation;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ReservationStore {
 	private Database database;
-	private Map<String, Reservation> reservations;
 	private final int index;
-	private boolean restored = false;
 
 	public ReservationStore(Database database, final int index) {
 		this.database = database;
-		restoreReservations();
 		this.index = index;
-		this.reservations = new HashMap<String, Reservation>();
 	}
 
-	private void restoreReservations() {
-		this.database.prefixLookup(index, new byte[0], this).registerListener(
-				new LoadReservationsDBListener());
-	}
+	public List<Reservation> getReservations() {
+        List<Reservation> result = new ArrayList<Reservation>();
 
-	public Collection<Reservation> getReservations() {
-		return reservations.values();
+        try {
+            DatabaseRequestResult<ResultSet<byte[],byte[]>> dbResult = database.prefixLookup(index, "".getBytes(), null);
+            ResultSet<byte[], byte[]> resultSet = dbResult.get();
+            while(resultSet.hasNext()) {
+                Reservation r = new Reservation(resultSet.next().getValue());
+                result.add(r);
+            }
+        } catch (Exception ex) {
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
+        }
+
+        return result;
 	}
 
 	public void storeReservation(Reservation reservation) {
-		this.reservations.put(reservation.getVolumeIdentifier(), reservation);
-		this.database.singleInsert(index, reservation.getVolumeIdentifier()
-				.getBytes(), reservation.getBytes(), null);
+        try {
+            DatabaseRequestResult<Object> result = this.database.singleInsert(index, reservation.getVolumeIdentifier()
+                    .getBytes(), reservation.getBytes(), null);
+            result.get();
+        } catch(BabuDBException ex) {
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
+        }
 	}
 
 	public void removeReservation(Reservation reservation) {
-		this.reservations.remove(reservation.getVolumeIdentifier());
-		this.database.singleInsert(index, reservation.getVolumeIdentifier()
-				.getBytes(), null, null);
+        try {
+            DatabaseRequestResult<Object> result = this.database.singleInsert(index, reservation.getVolumeIdentifier()
+                    .getBytes(), null, null);
+            result.get();
+        } catch(BabuDBException ex) {
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
+        }
 	}
 
 	public Reservation getReservation(String volumeUuid) throws Exception {
-		Reservation result = this.reservations.get(volumeUuid);
-
-		if (result == null)
+        Reservation result;
+        try {
+            DatabaseRequestResult<byte[]> dbResult = this.database.lookup(index, volumeUuid.getBytes(), null);
+            result = new Reservation(dbResult.get());
+        } catch(BabuDBException ex) {
 			throw new Exception("Unknown volume");
-		else
-			return result;
-	}
-	
-	public void waitForRestore(){
-		while(!restored) {
-			try {
-				Thread.sleep(10);
-			} catch(InterruptedException ex ) {}
-		}
-	}
-
-	private class LoadReservationsDBListener implements
-			DatabaseRequestListener<ResultSet<byte[], byte[]>> {
-		@Override
-		public void finished(ResultSet<byte[], byte[]> data, Object context) {
-			while (data.hasNext()) {
-				try {
-					Entry<byte[], byte[]> entry = data.next();
-					reservations.put(new String(entry.getKey()),
-							new Reservation(entry.getValue()));
-				} catch (Exception e) {
-					Logging.logMessage(Logging.LEVEL_ERROR, this,
-							e.getMessage());
-				}
-			}
-			restored = true;
-		}
-
-		@Override
-		public void failed(BabuDBException error, Object request) {
-			Logging.logMessage(Logging.LEVEL_ERROR, this, error.getMessage());
-			restored = true;
-		}
+        }
+		return result;
 	}
 }
