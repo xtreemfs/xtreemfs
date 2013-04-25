@@ -33,11 +33,9 @@ import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.RequestDetails;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
-import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
-import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
@@ -49,12 +47,12 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
-public class XLocSetCoordinator extends LifeCycleThread {
+public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResultListener<Object> {
     private enum RequestType {
         ADD_REPLICAS, REMOVE_REPLICAS, REPLACE_REPLICA
     };
     
-    public static String                 XLOCSET_CHANGE_ATTR_KEY = "XLocSetChange";
+    public final static String           XLOCSET_CHANGE_ATTR_KEY = "XLocSetChange";
 
     protected volatile boolean           quit;
     private final MRCRequestDispatcher   master;
@@ -118,7 +116,7 @@ public class XLocSetCoordinator extends LifeCycleThread {
         }
     }
 
-    private final static class RequestMethod {
+    public final static class RequestMethod {
 
         RequestType                type;
         MRCOperation               op;
@@ -172,13 +170,13 @@ public class XLocSetCoordinator extends LifeCycleThread {
     }
 
     
-    public <O extends MRCOperation & XLocSetCoordinatorCallback> void addReplicas(String fileId, FileMetadata file,
-            StorageManager sMan, XLocList curXLocList, XLocList extXLocList, XLoc[] newXLocs, MRCRequest rq, O op)
-            throws DatabaseException {
-        addReplicas(fileId, file, sMan, curXLocList, extXLocList, newXLocs, rq, op, op);
+    public <O extends MRCOperation & XLocSetCoordinatorCallback> RequestMethod addReplicas(String fileId,
+            FileMetadata file,
+            XLocList curXLocList, XLocList extXLocList, XLoc[] newXLocs, MRCRequest rq, O op) throws DatabaseException {
+        return addReplicas(fileId, file, curXLocList, extXLocList, newXLocs, rq, op, op);
     }
 
-    public void addReplicas(String fileId, FileMetadata file, StorageManager sMan, XLocList curXLocList,
+    public RequestMethod addReplicas(String fileId, FileMetadata file, XLocList curXLocList,
             XLocList extXLocList, XLoc[] newXLocs, MRCRequest rq, MRCOperation op, XLocSetCoordinatorCallback callback)
             throws DatabaseException {
 
@@ -186,7 +184,7 @@ public class XLocSetCoordinator extends LifeCycleThread {
         RequestMethod m = new RequestMethod(RequestType.ADD_REPLICAS, fileId, rq, op, callback, cap, new Object[] {
                 curXLocList, extXLocList, newXLocs });
 
-        storeXLocSetChange(file, sMan, m);
+        return m;
     }
 
 
@@ -385,35 +383,22 @@ public class XLocSetCoordinator extends LifeCycleThread {
     }
 
     /**
-     * This method has to be called by the ProcessingStage through an MRCOperation and
-     * add/remove/replaceReplicas
-     * 
-     * @param file
-     * @param sMan
-     * @param m
-     * @throws DatabaseException
+     * Add the RequestMethod saved as context in the local queue when the update operation completes
      */
-    private void storeXLocSetChange(final FileMetadata file, final StorageManager sMan, final RequestMethod m)
-            throws DatabaseException {
-        final XLocSetCoordinator coordinator = this;
-
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new DBAccessResultListener<Object>() {
-
-            @Override
-            public void finished(Object result, Object context) {
-                coordinator.q.add(m);
-            }
-
-            @Override
-            public void failed(Throwable error, Object context) {
-                master.failed(error, context);
-            }
-        }, m.getRequest());
-
-        sMan.setXAttr(file.getId(), StorageManager.SYSTEM_UID, StorageManager.SYS_ATTR_KEY_PREFIX
-                + XLocSetCoordinator.XLOCSET_CHANGE_ATTR_KEY, String.valueOf(true).getBytes(), update);
-        update.execute();
+    @Override
+    public void finished(Object result, Object context) {
+        // TODO (jdillmann): Check if the context is really a RequestMethod
+        RequestMethod m = (RequestMethod) context;
+        q.add(m);
     }
+
+    @Override
+    public void failed(Throwable error, Object context) {
+        // TODO (jdillmann): Check if the context is really a RequestMethod
+        RequestMethod m = (RequestMethod) context;
+        master.failed(error, m.getRequest());
+    }
+
 
 
     // TODO (jdillmann): Share error reporting between ProcessingStage.parseAndExecure and this

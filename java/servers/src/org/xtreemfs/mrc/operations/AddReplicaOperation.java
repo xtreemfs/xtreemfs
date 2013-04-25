@@ -23,6 +23,7 @@ import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
+import org.xtreemfs.mrc.stages.XLocSetCoordinator;
 import org.xtreemfs.mrc.stages.XLocSetCoordinatorCallback;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper;
@@ -151,10 +152,22 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
         
         repls[repls.length - 1] = replica;
         XLocList extXLocList = sMan.createXLocList(repls, xLocList.getReplUpdatePolicy(), xLocList.getVersion() + 1);
-
-
         XLoc[] newXLocs = new XLoc[] { replica };
-        master.getXLocSetCoordinator().addReplicas(fileId, file, sMan, xLocList, extXLocList, newXLocs, rq, this);
+
+        XLocSetCoordinator coordinator = master.getXLocSetCoordinator();
+        XLocSetCoordinator.RequestMethod m = coordinator.addReplicas(fileId, file, xLocList, extXLocList, newXLocs, rq,
+                this);
+
+        
+        // Make an update with the RequestMethod as context and the Coordinator as callback. This will enqueue
+        // the RequestMethod when the update is complete
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(coordinator, m);
+        
+        // lock the replica
+        sMan.setXAttr(file.getId(), StorageManager.SYSTEM_UID, StorageManager.SYS_ATTR_KEY_PREFIX
+                + XLocSetCoordinator.XLOCSET_CHANGE_ATTR_KEY, String.valueOf(true).getBytes(), update);
+        update.execute();
+        
     }
 
     @Override
@@ -177,6 +190,10 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
         // update the X-Locations list
         sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
         
+        // unlock the replica
+        sMan.setXAttr(file.getId(), StorageManager.SYSTEM_UID, StorageManager.SYS_ATTR_KEY_PREFIX
+                + XLocSetCoordinator.XLOCSET_CHANGE_ATTR_KEY, null, update);
+
         // set the response
         rq.setResponse(emptyResponse.getDefaultInstance());
         
