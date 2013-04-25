@@ -48,6 +48,7 @@ import org.xtreemfs.mrc.operations.GetSuitableOSDsOperation;
 import org.xtreemfs.mrc.operations.GetXAttrOperation;
 import org.xtreemfs.mrc.operations.GetXAttrsOperation;
 import org.xtreemfs.mrc.operations.GetXLocListOperation;
+import org.xtreemfs.mrc.operations.InternalInstallXLocSetOperation;
 import org.xtreemfs.mrc.operations.InternalDebugOperation;
 import org.xtreemfs.mrc.operations.MRCOperation;
 import org.xtreemfs.mrc.operations.MoveOperation;
@@ -80,6 +81,10 @@ public class ProcessingStage extends MRCStage {
     
     public static final int                  STAGEOP_PARSE_AND_EXECUTE = 1;
     
+    // public static final int STAGEOP_INTERNAL_CALLBACK = 2;
+
+    public static final int                  PROC_ID_INTERNAL_CALLBACK = -1;
+
     private final MRCRequestDispatcher       master;
     
     private final Map<Integer, MRCOperation> operations;
@@ -104,6 +109,8 @@ public class ProcessingStage extends MRCStage {
     }
     
     public void installOperations() {
+        operations.put(PROC_ID_INTERNAL_CALLBACK, new InternalInstallXLocSetOperation(master));
+
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_SHUTDOWN, new ShutdownOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_MKVOL, new CreateVolumeOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_RMVOL, new DeleteVolumeOperation(master));
@@ -166,6 +173,11 @@ public class ProcessingStage extends MRCStage {
         case STAGEOP_PARSE_AND_EXECUTE:
             parseAndExecute(method);
             break;
+
+        // case STAGEOP_INTERNAL_CALLBACK:
+        // executeInternalCallback(method);
+        // break;
+
         default:
             method.getRq().setError(ErrorType.INTERNAL_SERVER_ERROR, "unknown stage operation");
             master.requestFinished(method.getRq());

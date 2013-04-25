@@ -14,7 +14,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.xtreemfs.common.Capability;
-import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.libxtreemfs.Helper;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.LifeCycleThread;
@@ -25,45 +24,37 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader;
+import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
+import org.xtreemfs.mrc.RequestDetails;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
+import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.StorageManager;
-import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
-import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.operations.MRCOperation;
 import org.xtreemfs.mrc.utils.Converter;
-import org.xtreemfs.mrc.utils.MRCHelper;
-import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
-import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.REPL_FLAG;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addRequest;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
-
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class XLocSetCoordinator extends LifeCycleThread {
     private enum RequestType {
         ADD_REPLICAS, REMOVE_REPLICAS, REPLACE_REPLICA
     };
     
-    private static String                XLOCSET_CHANGE_ATTR_KEY = "XLocSetChange";
+    public static String                 XLOCSET_CHANGE_ATTR_KEY = "XLocSetChange";
 
     protected volatile boolean           quit;
     private final MRCRequestDispatcher   master;
@@ -112,11 +103,11 @@ public class XLocSetCoordinator extends LifeCycleThread {
             case ADD_REPLICAS:
                 processAddReplicas(m);
                 break;
-            case REMOVE_REPLICAS:
-                processRemoveReplicas(m);
-                break;
-            case REPLACE_REPLICA:
-                processReplaceReplica(m);
+            // case REMOVE_REPLICAS:
+            // processRemoveReplicas(m);
+            // break;
+            // case REPLACE_REPLICA:
+            // processReplaceReplica(m);
             default:
                 throw new Exception("unknown stage operation");
             }
@@ -129,212 +120,173 @@ public class XLocSetCoordinator extends LifeCycleThread {
 
     private final static class RequestMethod {
 
-        RequestType  type;
-        MRCOperation op;
-        MRCRequest   rq;
-        String       fileId;
+        RequestType                type;
+        MRCOperation               op;
+        MRCRequest                 rq;
+        String                     fileId;
+        Capability                 capability;
+        XLocSetCoordinatorCallback callback;
+        Object[]                   arguments;
 
-        // XLocSetCoordinatorCallback callback;
 
-        // public RequestMethod(RequestType type, MRCOperation op, MRCRequest rq, XLocSetCoordinatorCallback
-        // callback) {
-        // this.type = type;
-        // this.op = op;
-        // this.rq = rq;
-        // this.callback = callback;
-        // }
-
-        public RequestMethod(RequestType type, String fileId, MRCOperation op, MRCRequest rq) {
+        public RequestMethod(RequestType type, String fileId, MRCRequest rq, MRCOperation op,
+                XLocSetCoordinatorCallback callback, Capability cap, Object[] args) {
             this.type = type;
             this.op = op;
             this.rq = rq;
             this.fileId = fileId;
+            this.callback = callback;
+            this.capability = cap;
+            this.arguments = args;
         }
 
         public RequestType getRequestType() {
             return type;
         }
 
+
+        public String getFileId() {
+            return fileId;
+        }
+
         public MRCRequest getRequest() {
             return rq;
         }
-
-        // public XLocSetCoordinatorCallback getCallback() {
-        // return callback;
-        // }
 
         public MRCOperation getOperation() {
             return op;
         }
 
-        public String getFileId() {
-            return fileId;
+        public XLocSetCoordinatorCallback getCallback() {
+            return callback;
         }
+
+        public Capability getCapability() {
+            return capability;
+        }
+
+        public Object[] getArguments() {
+            return arguments;
+        }
+
     }
 
-    public interface XLocSetCoordinatorCallback {
-        public void finished();
-        public void error();
+    
+    public <O extends MRCOperation & XLocSetCoordinatorCallback> void addReplicas(String fileId, FileMetadata file,
+            StorageManager sMan, XLocList curXLocList, XLocList extXLocList, XLoc[] newXLocs, MRCRequest rq, O op)
+            throws DatabaseException {
+        addReplicas(fileId, file, sMan, curXLocList, extXLocList, newXLocs, rq, op, op);
     }
 
-    public void addReplicas(String fileId, MRCOperation op, MRCRequest rq) {
-        q.add(new RequestMethod(RequestType.ADD_REPLICAS, fileId, op, rq));
+    public void addReplicas(String fileId, FileMetadata file, StorageManager sMan, XLocList curXLocList,
+            XLocList extXLocList, XLoc[] newXLocs, MRCRequest rq, MRCOperation op, XLocSetCoordinatorCallback callback)
+            throws DatabaseException {
+
+        Capability cap = buildCapability(fileId, file);
+        RequestMethod m = new RequestMethod(RequestType.ADD_REPLICAS, fileId, rq, op, callback, cap, new Object[] {
+                curXLocList, extXLocList, newXLocs });
+
+        storeXLocSetChange(file, sMan, m);
     }
 
-    // TODO (jdillmann): Allow multiple replicas to be added / rename
+
     private void processAddReplicas(RequestMethod m) throws Throwable {
         final MRCRequest rq = m.getRequest();
         
-        final xtreemfs_replica_addRequest rqArgs = (xtreemfs_replica_addRequest) rq.getRequestArgs();
-
-        final VolumeManager vMan = master.getVolumeManager();
-        
-        // parse volume and file ID from global file ID
         final String fileId = m.getFileId();
-        final GlobalFileIdResolver idRes = new GlobalFileIdResolver(fileId);
-        final StorageManager sMan = vMan.getStorageManager(idRes.getVolumeId());
+        final Capability cap = m.getCapability();
 
-        // retrieve the file metadata
-        final FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
-        if (file == null)
-            throw new UserException(POSIXErrno.POSIX_ERROR_ENOENT, "file '" + fileId + "' does not exist");
-        
-
-
-        Replica newRepl = rqArgs.getNewReplica();
-        org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy sp = newRepl.getStripingPolicy();
-
-        StripingPolicy sPol = sMan.createStripingPolicy(sp.getType().toString(), sp.getStripeSize(), sp.getWidth());
-
-        // check whether the new replica relies on a set of OSDs which
-        // hasn't been used yet
-        XLocList xLocList = file.getXLocList();
-        assert (xLocList != null);
-
-        if (ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(xLocList.getReplUpdatePolicy()))
-            throw new UserException(POSIXErrno.POSIX_ERROR_EPERM,
-                    "missing replica update policy - needs to be specified before adding replicas");
-
-        if (!MRCHelper.isResolvable(newRepl.getOsdUuidsList()))
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "replica contains unresolvable OSD UUIDs in '"
-                    + newRepl.getOsdUuidsList() + "'");
-
-        if (xLocList.getReplica(0).getStripingPolicy().getStripeSize() != newRepl.getStripingPolicy().getStripeSize())
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "invalid stripe size; must be "
-                    + xLocList.getReplica(0).getStripingPolicy().getStripeSize());
-
-        if (!MRCHelper.isAddable(xLocList, newRepl.getOsdUuidsList()))
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
-                    "at least one OSD already used in current X-Locations list '"
-                            + Converter.xLocListToString(xLocList) + "'");
-
-
-        // create a new XLocList
-        XLoc replica = sMan.createXLoc(sPol, newRepl.getOsdUuidsList().toArray(new String[newRepl.getOsdUuidsCount()]),
-                newRepl.getReplicationFlags());
-
-        XLoc[] extendedRepl = new XLoc[xLocList.getReplicaCount() + 1];
-        for (int i = 0; i < xLocList.getReplicaCount(); i++) {
-            XLoc repl = xLocList.getReplica(i);
-            extendedRepl[i] = repl;
-        }
-        extendedRepl[extendedRepl.length - 1] = replica;
-
-        XLocList extXLocList = sMan.createXLocList(extendedRepl, xLocList.getReplUpdatePolicy(),
-                xLocList.getVersion() + 1);
-        XLocSet extXLocSet = Converter.xLocListToXLocSet(extXLocList).build();
-
-        // Don't use callbacks - this will ensure no other ReplicaSetChange could happen inbetween
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
-
-        // TODO (jdillmann): Catch UnknownUUIDException, JSONException from Converter.xLocListToJSON
-        sMan.setXAttr(file.getId(), StorageManager.SYSTEM_UID, 
-                StorageManager.SYS_ATTR_KEY_PREFIX + XLOCSET_CHANGE_ATTR_KEY, 
-                Converter.xLocListToJSON(extXLocList, master.getOSDStatusManager()).getBytes(),
-                update);
-        update.execute();
+        final XLocList curXLocList = (XLocList) m.getArguments()[0];
+        final XLocList extXLocList = (XLocList) m.getArguments()[1];
+        final XLoc[] newXLocs = (XLoc[]) m.getArguments()[2];
 
         
+        invalidateReplicas(fileId, cap, curXLocList);
 
-        invalidateReplicas(fileId, file, xLocList);
-
+        final XLocSet extXLocSet = Converter.xLocListToXLocSet(extXLocList).build();
 
 
         // Check replication flags, if it's a full replica. The replication does not need to be triggered for partial replicas
-        if (!(extXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY))
-                || ((replica.getReplicationFlags() & REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber()) == 0)) {
-
-            // Build the FileCredentials
-            Capability cap = buildCapability(fileId, file);
-            FileCredentials.Builder fileCredentialsBuilder = FileCredentials.newBuilder();
-            fileCredentialsBuilder.setXlocs(extXLocSet);
-            fileCredentialsBuilder.setXcap(cap.getXCap());
-
-            // Build the readRequest
-            readRequest.Builder readRequestBuilder = readRequest.newBuilder();
-            readRequestBuilder.setFileCredentials(fileCredentialsBuilder);
-            readRequestBuilder.setFileId(fileId);
-
-            // Read one byte from the replica to trigger the replication.
-            readRequestBuilder.setObjectNumber(0);
-            readRequestBuilder.setObjectVersion(0);
-            readRequestBuilder.setOffset(0);
-            readRequestBuilder.setLength(1);
-
-            // Get the UUID and the address of the new replica
-            String headOsd = newRepl.getOsdUuids(0);
-            InetSocketAddress server = new ServiceUUID(headOsd).getAddress();
-
-            // Ping the new replica
-            OSDServiceClient client = master.getOSDClient();
-
-            // TODO (jdillmann): retry on timeouts?
-            RPCResponse<ObjectData> rpcResponse;
-            rpcResponse = client.read(server, RPCAuthentication.authNone, RPCAuthentication.userService,
-                    readRequestBuilder.build());
-            rpcResponse.freeBuffers();
-
-            // TODO (jdillmann): tell the primary to give up its role to be able to continue with other new
-            // replicas
-        }
-
-
-
+        // TODO (jdillmann): Allow multiple replicas to be added
+        // if (!(extXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY))
+        // || ((replica.getReplicationFlags() & REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber()) == 0)) {
+        //
+        // // Build the FileCredentials
+        // Capability cap = buildCapability(fileId, file);
+        // FileCredentials.Builder fileCredentialsBuilder = FileCredentials.newBuilder();
+        // fileCredentialsBuilder.setXlocs(extXLocSet);
+        // fileCredentialsBuilder.setXcap(cap.getXCap());
+        //
+        // // Build the readRequest
+        // readRequest.Builder readRequestBuilder = readRequest.newBuilder();
+        // readRequestBuilder.setFileCredentials(fileCredentialsBuilder);
+        // readRequestBuilder.setFileId(fileId);
+        //
+        // // Read one byte from the replica to trigger the replication.
+        // readRequestBuilder.setObjectNumber(0);
+        // readRequestBuilder.setObjectVersion(0);
+        // readRequestBuilder.setOffset(0);
+        // readRequestBuilder.setLength(1);
+        //
+        // // Get the UUID and the address of the new replica
+        // String headOsd = newRepl.getOsdUuids(0);
+        // InetSocketAddress server = new ServiceUUID(headOsd).getAddress();
+        //
+        // // Ping the new replica
+        // OSDServiceClient client = master.getOSDClient();
+        //
+        // // TODO (jdillmann): retry on timeouts?
+        // RPCResponse<ObjectData> rpcResponse;
+        // rpcResponse = client.read(server, RPCAuthentication.authNone, RPCAuthentication.userService,
+        // readRequestBuilder.build());
+        // rpcResponse.freeBuffers();
+        //
+        // // TODO (jdillmann): tell the primary to give up its role to be able to continue with other new
+        // // replicas
+        // }
 
 
-        update = sMan.createAtomicDBUpdate(master, rq);
-
-        // update the X-Locations list
-        file.setXLocList(extXLocList);
-        sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
+        // TODO (jdillmann): the byte message will be parsed again using this method: see
+        // MRCOperation.parseRequestArgs
+        RPCServerRequest rpc = rq.getRPCRequest();
+        RPCHeader header = rpc.getHeader();
+        RPCHeader.RequestHeader rqHeader = header.getRequestHeader();
+        int initialProcId = rqHeader.getProcId();
         
-        // remove the XLocSetChange attribute
-        sMan.setXAttr(file.getId(), StorageManager.SYSTEM_UID, 
-                StorageManager.SYS_ATTR_KEY_PREFIX + XLOCSET_CHANGE_ATTR_KEY, 
-                null,update);
+        // forge the new request
+        rqHeader = rqHeader.toBuilder().setProcId(ProcessingStage.PROC_ID_INTERNAL_CALLBACK).build();
+        header = header.toBuilder().setRequestHeader(rqHeader).build();
+        // rpc.setRequestHeader() is not possible -> this won't work
         
-        // set the response
-        rq.setResponse(emptyResponse.getDefaultInstance());
+        
+        MRCRequest forgedRq = new MRCRequest(rpc);
 
-        update.execute();
+        RequestDetails rd = rq.getDetails();
+        rd.context.put("xLocSetCoordinatorCallback", m.getCallback());
+        rd.context.put("fileId", m.getFileId());
+        rd.context.put("initalProcId", null);
+        rd.context.put("extXLocList", extXLocList);
+        forgedRq.setDetails(rd);
+
+        master.getProcStage().enqueueOperation(forgedRq, ProcessingStage.STAGEOP_PARSE_AND_EXECUTE, null);
     }
 
-    public void removeReplicas(String fileId, MRCOperation op, MRCRequest rq) {
-        q.add(new RequestMethod(RequestType.REMOVE_REPLICAS, fileId, op, rq));
-    }
-
-    private void processRemoveReplicas(RequestMethod m) throws Throwable {
-        final MRCRequest rq = m.getRequest();
-
-    }
-
-    public void replaceReplica(String fileId, MRCOperation op, MRCRequest rq) {
-        q.add(new RequestMethod(RequestType.REPLACE_REPLICA, fileId, op, rq));
-    }
-
-    private void processReplaceReplica(RequestMethod m) throws Throwable {
-        throw new NotImplementedException();
-    }
+    // public void removeReplicas(String fileId, MRCOperation op, MRCRequest rq) {
+    // q.add(new RequestMethod(RequestType.REMOVE_REPLICAS, fileId, op, rq));
+    // }
+    //
+    // private void processRemoveReplicas(RequestMethod m) throws Throwable {
+    // final MRCRequest rq = m.getRequest();
+    //
+    // }
+    //
+    // public void replaceReplica(String fileId, MRCOperation op, MRCRequest rq) {
+    // q.add(new RequestMethod(RequestType.REPLACE_REPLICA, fileId, op, rq));
+    // }
+    //
+    // private void processReplaceReplica(RequestMethod m) throws Throwable {
+    // throw new NotImplementedException();
+    // }
 
     /**
      * Build a valid Capability for the given file
@@ -348,7 +300,7 @@ public class XLocSetCoordinator extends LifeCycleThread {
         int validity = master.getConfig().getCapabilityTimeout();
         long expires = TimeSync.getGlobalTime() / 1000 + master.getConfig().getCapabilityTimeout();
 
-        // TODO (jdillmann): check correct MRC adress
+        // TODO (jdillmann): check correct MRC address
         String clientIdentity;
         try {
             clientIdentity = master.getConfig().getAddress() != null ? master.getConfig().getAddress().toString()                : InetAddress.getLocalHost().getHostAddress();
@@ -372,16 +324,15 @@ public class XLocSetCoordinator extends LifeCycleThread {
      * didn't respond
      * 
      * @param fileId
-     * @param file
+     * @param capability
      * @param xLocList
      * @throws Throwable
      */
-    private void invalidateReplicas(String fileId, FileMetadata file, XLocList xLocList)
+    private void invalidateReplicas(String fileId, Capability cap, XLocList xLocList)
             throws Throwable {
         // convert the XLocList to an XLocSet 
         XLocSet xLocSet = Converter.xLocListToXLocSet(xLocList).build();
         
-        Capability cap = buildCapability(fileId, file);
         FileCredentials creds = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLocSet).build();
         
         // Invalidate the replicas (the majority should be enough)
@@ -432,6 +383,38 @@ public class XLocSetCoordinator extends LifeCycleThread {
         }
 
     }
+
+    /**
+     * This method has to be called by the ProcessingStage through an MRCOperation and
+     * add/remove/replaceReplicas
+     * 
+     * @param file
+     * @param sMan
+     * @param m
+     * @throws DatabaseException
+     */
+    private void storeXLocSetChange(final FileMetadata file, final StorageManager sMan, final RequestMethod m)
+            throws DatabaseException {
+        final XLocSetCoordinator coordinator = this;
+
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new DBAccessResultListener<Object>() {
+
+            @Override
+            public void finished(Object result, Object context) {
+                coordinator.q.add(m);
+            }
+
+            @Override
+            public void failed(Throwable error, Object context) {
+                master.failed(error, context);
+            }
+        }, m.getRequest());
+
+        sMan.setXAttr(file.getId(), StorageManager.SYSTEM_UID, StorageManager.SYS_ATTR_KEY_PREFIX
+                + XLocSetCoordinator.XLOCSET_CHANGE_ATTR_KEY, String.valueOf(true).getBytes(), update);
+        update.execute();
+    }
+
 
     // TODO (jdillmann): Share error reporting between ProcessingStage.parseAndExecure and this
     private void handleError(RequestMethod m, Throwable err) {
@@ -486,4 +469,5 @@ public class XLocSetCoordinator extends LifeCycleThread {
     private void redirect(MRCRequest rq, String uuid) {
         rq.getRPCRequest().sendRedirect(uuid);
     }
+
 }

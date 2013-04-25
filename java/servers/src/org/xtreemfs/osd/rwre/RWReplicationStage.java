@@ -1288,6 +1288,9 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         
         final boolean isPrimary;
         
+        // TODO (jdillmann): getState() would be save to use, because invalidateFleaseView is only called by
+        // InvalidateXLocSetOperation which will be passed through doPrepareRequest which is recognizing the
+        // fileId and thus set an entry in the openFileTable
         ReplicatedFileState fState = files.get(fileId);
         if (fState != null) {
         	isPrimary = fState.isLocalIsPrimary();

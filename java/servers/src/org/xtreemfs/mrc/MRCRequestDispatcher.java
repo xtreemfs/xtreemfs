@@ -913,4 +913,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     public XLocSetCoordinator getXLocSetCoordinator() {
         return xLocSetCoordinator;
     }
+
+    public ProcessingStage getProcStage() {
+        return procStage;
+    }
 }
