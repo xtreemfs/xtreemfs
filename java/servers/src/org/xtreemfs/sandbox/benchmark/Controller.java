@@ -100,7 +100,7 @@ public class Controller {
         else if (!params.noCleanup)
            volumeManager.deleteCreatedFiles();
 
-        volumeManager.scrub();
+        //volumeManager.scrub();
     }
 
     public static void printResults(ConcurrentLinkedQueue<BenchmarkResult> results) {
