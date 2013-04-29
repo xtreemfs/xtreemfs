@@ -81,13 +81,14 @@ public class FleaseProposer {
         viewListener = listener;
     }
 
-    public void setViewId(ASCIIString cellId, int viewId) throws FleaseException {
+    public void setViewId(ASCIIString cellId, int viewId) {
         FleaseProposerCell cell = cells.get(cellId);
-        if (cell == null) {
-            throw new FleaseException("cell must be opened before any operation!");
+        
+        // Set the view only if the cell is already open. New cells have to be opened with a viewId @see FleaseStage.openCell()
+        if (cell != null) {
+            cell.setViewId(viewId);
+            cell.addAction(ActionName.PROPOSER_SET_VIEWID, Integer.toString(viewId));
         }
-        cell.setViewId(viewId);
-        cell.addAction(ActionName.PROPOSER_SET_VIEWID, Integer.toString(viewId));
     }
 
     public Flease updatePrevLeaseForCell(ASCIIString cellId, Flease lease) {

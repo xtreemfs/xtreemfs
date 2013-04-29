@@ -152,18 +152,25 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
         return config.getIdentity();
     }
 
-    /**
-     * Opens a cell. The leaseListener will be notified of all lease events for this cell.
-     * The local flease instance will try to acquire the lease.
-     * @param cellId unique ID of the cell to open.
-     * @param acceptors list of remote flease instances, do not include local flease instance.
-     * @param requestMasterEpoch if true, a master epoch will be requested when the local instance is lease owner.
-     * @return
-     */
+    @Deprecated
     public FleaseFuture openCell(ASCIIString cellId, List<InetSocketAddress> acceptors, boolean requestMasterEpoch) {
         return openCell(cellId, acceptors, requestMasterEpoch, 0);
     }
 
+    /**
+     * Opens a cell. The leaseListener will be notified of all lease events for this cell. The local flease
+     * instance will try to acquire the lease.
+     * 
+     * @param cellId
+     *            unique ID of the cell to open.
+     * @param acceptors
+     *            list of remote flease instances, do not include local flease instance.
+     * @param requestMasterEpoch
+     *            if true, a master epoch will be requested when the local instance is lease owner.
+     * @param viewId
+     *            the current view id to open the cell with.
+     * @return
+     */
     public FleaseFuture openCell(ASCIIString cellId, List<InetSocketAddress> acceptors, boolean requestMasterEpoch,
             int viewId) {
         FleaseFuture f = new FleaseFuture();
@@ -455,12 +462,8 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
                                 break;
                             }
                             case SET_VIEW: {
-                                try {
-                                    proposer.setViewId(rq.cellId, rq.viewId);
-                                    acceptor.setViewId(rq.cellId, rq.viewId);
-                                } catch (FleaseException ex) {
-                                    rq.listener.proposalFailed(rq.cellId, ex);
-                                }
+                                proposer.setViewId(rq.cellId, rq.viewId);
+                                acceptor.setViewId(rq.cellId, rq.viewId);
                                 rq.listener.proposalResult(rq.cellId, null, 0, FleaseMessage.IGNORE_MASTER_EPOCH);
                                 break;
                             }
