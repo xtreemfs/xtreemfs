@@ -24,13 +24,11 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader;
-import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
 import org.xtreemfs.mrc.ErrorRecord;
+import org.xtreemfs.mrc.MRCCallbackRequest;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
-import org.xtreemfs.mrc.RequestDetails;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
@@ -188,7 +186,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
     }
 
 
-    private void processAddReplicas(RequestMethod m) throws Throwable {
+    private void processAddReplicas(final RequestMethod m) throws Throwable {
         final MRCRequest rq = m.getRequest();
         
         final String fileId = m.getFileId();
@@ -242,31 +240,17 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         // // TODO (jdillmann): tell the primary to give up its role to be able to continue with other new
         // // replicas
         // }
-
-
-        // TODO (jdillmann): the byte message will be parsed again using this method: see
-        // MRCOperation.parseRequestArgs
-        RPCServerRequest rpc = rq.getRPCRequest();
-        RPCHeader header = rpc.getHeader();
-        RPCHeader.RequestHeader rqHeader = header.getRequestHeader();
-        int initialProcId = rqHeader.getProcId();
-        
-        // forge the new request
-        rqHeader = rqHeader.toBuilder().setProcId(ProcessingStage.PROC_ID_INTERNAL_CALLBACK).build();
-        header = header.toBuilder().setRequestHeader(rqHeader).build();
-        // rpc.setRequestHeader() is not possible -> this won't work
         
         
-        MRCRequest forgedRq = new MRCRequest(rpc);
+        // Call the installXLocSet method in the context of the ProcessingStage
+        MRCCallbackRequest callbackRequest = new MRCCallbackRequest(rq.getRPCRequest(), new InternalCallbackInterface() {
+            @Override
+            public void startCallback(MRCRequest rq) throws Throwable {
+                m.getCallback().installXLocSet(rq, fileId, extXLocList);
+            }
+        });
 
-        RequestDetails rd = rq.getDetails();
-        rd.context.put("xLocSetCoordinatorCallback", m.getCallback());
-        rd.context.put("fileId", m.getFileId());
-        rd.context.put("initalProcId", null);
-        rd.context.put("extXLocList", extXLocList);
-        forgedRq.setDetails(rd);
-
-        master.getProcStage().enqueueOperation(forgedRq, ProcessingStage.STAGEOP_PARSE_AND_EXECUTE, null);
+        master.getProcStage().enqueueOperation(callbackRequest, ProcessingStage.STAGEOP_INTERNAL_CALLBACK, null);
     }
 
     // public void removeReplicas(String fileId, MRCOperation op, MRCRequest rq) {

@@ -48,7 +48,7 @@ import org.xtreemfs.mrc.operations.GetSuitableOSDsOperation;
 import org.xtreemfs.mrc.operations.GetXAttrOperation;
 import org.xtreemfs.mrc.operations.GetXAttrsOperation;
 import org.xtreemfs.mrc.operations.GetXLocListOperation;
-import org.xtreemfs.mrc.operations.InternalInstallXLocSetOperation;
+import org.xtreemfs.mrc.operations.InternalCallbackOperation;
 import org.xtreemfs.mrc.operations.InternalDebugOperation;
 import org.xtreemfs.mrc.operations.MRCOperation;
 import org.xtreemfs.mrc.operations.MoveOperation;
@@ -81,14 +81,14 @@ public class ProcessingStage extends MRCStage {
     
     public static final int                  STAGEOP_PARSE_AND_EXECUTE = 1;
     
-    // public static final int STAGEOP_INTERNAL_CALLBACK = 2;
+    public static final int                  STAGEOP_INTERNAL_CALLBACK = 2;
 
     public static final int                  PROC_ID_INTERNAL_CALLBACK = -1;
 
     private final MRCRequestDispatcher       master;
     
     private final Map<Integer, MRCOperation> operations;
-    
+
     private final Map<Integer, Integer>      _opCountMap;
     
     private final boolean                    statisticsEnabled         = true;
@@ -109,7 +109,7 @@ public class ProcessingStage extends MRCStage {
     }
     
     public void installOperations() {
-        operations.put(PROC_ID_INTERNAL_CALLBACK, new InternalInstallXLocSetOperation(master));
+        operations.put(PROC_ID_INTERNAL_CALLBACK, new InternalCallbackOperation(master));
 
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_SHUTDOWN, new ShutdownOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_MKVOL, new CreateVolumeOperation(master));
@@ -174,9 +174,9 @@ public class ProcessingStage extends MRCStage {
             parseAndExecute(method);
             break;
 
-        // case STAGEOP_INTERNAL_CALLBACK:
-        // executeInternalCallback(method);
-        // break;
+        case STAGEOP_INTERNAL_CALLBACK:
+            executeInternalCallback(method);
+            break;
 
         default:
             method.getRq().setError(ErrorType.INTERNAL_SERVER_ERROR, "unknown stage operation");
@@ -260,6 +260,24 @@ public class ProcessingStage extends MRCStage {
             return;
         }
         
+        execute(op, method);
+
+    }
+
+    /**
+     * Execute an operation
+     * 
+     * @param operation
+     *            MRCOperation to execute
+     * @param method
+     *            StageMethod to serve as the context
+     */
+    private void execute(MRCOperation op, StageMethod method) {
+        final MRCRequest rq = method.getRq();
+        final RPCServerRequest rpcRequest = rq.getRPCRequest();
+        final RPCHeader header = rpcRequest.getHeader();
+        final RPCHeader.RequestHeader rqHeader = header.getRequestHeader();
+
         try {
             
             if (Logging.isDebug()) {
@@ -309,6 +327,16 @@ public class ProcessingStage extends MRCStage {
         }
     }
     
+    /**
+     * Execute an internal callback operation
+     * 
+     * @param method
+     *            with an RPCRequest of type RPCCallbackRequest
+     */
+    private void executeInternalCallback(StageMethod method) {
+        execute(operations.get(PROC_ID_INTERNAL_CALLBACK), method);
+    }
+
     private void reportUserError(MRCOperation op, MRCRequest rq, Throwable exc, POSIXErrno errno) {
         if (Logging.isDebug())
             Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, exc);
