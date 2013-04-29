@@ -776,7 +776,7 @@ public class PreprocStage extends Stage {
                 callback.invalidateComplete(true, null);
             } else {
             	ASCIIString cellId = ReplicaUpdatePolicy.fileToCellId(fileId);
-                master.getRWReplicationStage().invalidateFleaseView(fileId, cellId, state, callback);
+                master.getRWReplicationStage().invalidateFleaseView(fileId, cellId, callback);
             }
 
         } catch (IOException e) {

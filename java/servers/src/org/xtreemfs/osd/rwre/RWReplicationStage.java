@@ -837,19 +837,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     public static interface StatusCallback {
         public void statusComplete(Map<String,Map<String,String>> status);
     }
-
-    public void setFleaseView(String fileId, ASCIIString cellId, XLocSetVersionState versionState) {
-        enqueueOperation(STAGEOP_SETVIEW, new Object[] { fileId, cellId, versionState }, null, null);
-    }
-
-    public void setFleaseView(String fileId, ASCIIString cellId, XLocSetVersionState versionState,
-            InstallXLocSetCallback callback) {
-        enqueueOperation(STAGEOP_SETVIEW, new Object[] { fileId, cellId, versionState }, null, callback);
-    }
-    
-    public void invalidateFleaseView(String fileId, ASCIIString cellId, XLocSetVersionState versionState, InvalidateXLocSetCallback callback) {
-        enqueueOperation(STAGEOP_INVALIDATEVIEW, new Object[] { fileId, cellId, versionState }, null, callback);
-    }
     
     @Override
     public void sendMessage(FleaseMessage message, InetSocketAddress recipient) {
@@ -1244,6 +1231,29 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         return primary;
     }
     
+    /**
+     * @see #setFleaseView(String, ASCIIString, XLocSetVersionState, callback)
+     * 
+     * @param fileId
+     * @param cellId
+     * @param versionState
+     */
+    public void setFleaseView(String fileId, ASCIIString cellId, XLocSetVersionState versionState) {
+        enqueueOperation(STAGEOP_SETVIEW, new Object[] { fileId, cellId, versionState }, null, null);
+    }
+
+    /**
+     * Set the viewId associated with the fileId/cellId. This will close open cells
+     * 
+     * @param fileId
+     * @param cellId
+     * @param versionState
+     * @param callback
+     */
+    public void setFleaseView(String fileId, ASCIIString cellId, XLocSetVersionState versionState,
+            InstallXLocSetCallback callback) {
+        enqueueOperation(STAGEOP_SETVIEW, new Object[] { fileId, cellId, versionState }, null, callback);
+    }
     private void processSetFleaseView(StageRequest method) {
         final Object[] args = method.getArgs();
         final String fileId = (String) args[0];
@@ -1279,11 +1289,24 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         });
     }
 
+    /**
+     * Invalidate the Flease view. If this Replica is the primary it will ensure the lease is given back
+     * 
+     * @param fileId
+     *            to close
+     * @param cellId
+     *            to close
+     * @param callback
+     *            to execute after the view has been invalidated
+     */
+    public void invalidateFleaseView(String fileId, ASCIIString cellId, InvalidateXLocSetCallback callback) {
+        enqueueOperation(STAGEOP_INVALIDATEVIEW, new Object[] { fileId, cellId }, null, callback);
+    }
+
     private void processInvalidateFleaseView(StageRequest method) {
         final Object[] args = method.getArgs();
         final String fileId = (String) args[0];
-        final ASCIIString cellId = (ASCIIString) args[1];
-        final XLocSetVersionState versionState = (XLocSetVersionState) args[2];
+        final ASCIIString cellId = (ASCIIString) args[0];
         final InvalidateXLocSetCallback callback = (InvalidateXLocSetCallback) method.getCallback();
         
         final boolean isPrimary;
@@ -1291,14 +1314,20 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         // TODO (jdillmann): getState() would be save to use, because invalidateFleaseView is only called by
         // InvalidateXLocSetOperation which will be passed through doPrepareRequest which is recognizing the
         // fileId and thus set an entry in the openFileTable
+        
+        // check if the file has an open cell and close it, if it is the primary 
         ReplicatedFileState fState = files.get(fileId);
         if (fState != null) {
         	isPrimary = fState.isLocalIsPrimary();
+
+            // TODO (jdillmann): ensure, that the lease is given up immediately or wait until the lease has timed out
+            fstage.closeCell(cellId, true);
+
         }
         else {
         	isPrimary = false;
         }
-
+        
         fstage.setViewId(cellId, FleaseMessage.VIEW_ID_INVALIDATED, new FleaseListener() {
             
             @Override
