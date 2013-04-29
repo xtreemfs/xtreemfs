@@ -1306,7 +1306,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     private void processInvalidateFleaseView(StageRequest method) {
         final Object[] args = method.getArgs();
         final String fileId = (String) args[0];
-        final ASCIIString cellId = (ASCIIString) args[0];
+        final ASCIIString cellId = (ASCIIString) args[1];
         final InvalidateXLocSetCallback callback = (InvalidateXLocSetCallback) method.getCallback();
         
         final boolean isPrimary;
