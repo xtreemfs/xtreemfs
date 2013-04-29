@@ -350,6 +350,7 @@ message xtreemfs_xloc_set_invalidateRequest {
 
 message xtreemfs_xloc_set_invalidateResponse {
   required bool is_primary = 1;
+  optional ReplicaStatus status = 2;
 }
 
 message xtreemfs_xloc_set_installRequest {
