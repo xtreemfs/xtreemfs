@@ -80,9 +80,14 @@ public class InvalidateXLocSetOperation extends OSDOperation {
     }
 
     private void invalidationFinished(OSDRequest rq, boolean isPrimary, ReplicaStatus localState) {
-        xtreemfs_xloc_set_invalidateResponse response = xtreemfs_xloc_set_invalidateResponse.newBuilder()
-                .setIsPrimary(isPrimary).build();
-        rq.sendSuccess(response, null);
+        xtreemfs_xloc_set_invalidateResponse.Builder response = xtreemfs_xloc_set_invalidateResponse.newBuilder();
+        response.setIsPrimary(isPrimary);
+
+        if (localState != null) {
+            response.setStatus(localState);
+        }
+        
+        rq.sendSuccess(response.build(), null);
     }
 
     @Override
