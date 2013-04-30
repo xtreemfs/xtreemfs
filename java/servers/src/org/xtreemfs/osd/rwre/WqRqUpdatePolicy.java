@@ -8,11 +8,9 @@
 
 package org.xtreemfs.osd.rwre;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.List;
-import org.xtreemfs.common.uuids.ServiceUUID;
 
+import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.osd.rwre.RWReplicationStage.Operation;
@@ -26,7 +24,7 @@ public class WqRqUpdatePolicy extends CoordinatedReplicaUpdatePolicy {
 
     final int numResponses;
 
-    public WqRqUpdatePolicy(List<ServiceUUID> remoteOSDUUIDs, String localUUID, String fileId, OSDServiceClient client) throws IOException {
+    public WqRqUpdatePolicy(List<ServiceUUID> remoteOSDUUIDs, String localUUID, String fileId, OSDServiceClient client) {
         super(remoteOSDUUIDs, localUUID, fileId, client);
         this.numResponses = (int) Math.ceil((double)(remoteOSDUUIDs.size())/ 2.0);
         if (Logging.isDebug())
@@ -34,12 +32,12 @@ public class WqRqUpdatePolicy extends CoordinatedReplicaUpdatePolicy {
     }
 
     @Override
-    protected int getNumRequiredAcks(Operation operation) {
+    public int getNumRequiredAcks(Operation operation) {
         return numResponses;
     }
 
     @Override
-    protected boolean backupCanRead() {
+    public boolean backupCanRead() {
         return false;
     }
 

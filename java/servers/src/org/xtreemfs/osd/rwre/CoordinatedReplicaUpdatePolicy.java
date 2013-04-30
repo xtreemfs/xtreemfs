@@ -49,7 +49,8 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
     private final OSDServiceClient client;
 
 
-    public CoordinatedReplicaUpdatePolicy(List<ServiceUUID> remoteOSDUUIDs, String localUUID, String fileId, OSDServiceClient client) throws IOException {
+    public CoordinatedReplicaUpdatePolicy(List<ServiceUUID> remoteOSDUUIDs, String localUUID, String fileId,
+            OSDServiceClient client) {
         super(remoteOSDUUIDs, fileId, localUUID);
         this.client = client;
         if (Logging.isDebug())
@@ -61,9 +62,9 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
      * @param operation
      * @return number of external acks required for an operation (majority minus local replica).
      */
-    protected abstract int getNumRequiredAcks(Operation operation);
+    public abstract int getNumRequiredAcks(Operation operation);
 
-    protected abstract boolean backupCanRead();
+    public abstract boolean backupCanRead();
    
 
     @Override
@@ -154,11 +155,10 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
 
                 if (numResponses == numAcksRequired) {
                     states[states.length - 1] = localReplicaState;
-
                     if (Logging.isDebug()) {
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) received enough status responses for %s",localUUID, fileId);
                     }
-                    AuthoritativeReplicaState auth = CalculateAuthoritativeState(states, fileId, remoteOSDUUIDs, localUUID);
+                    AuthoritativeReplicaState auth = CalculateAuthoritativeState(states, fileId);
                     final RPCResponseAvailableListener listener2 = new RPCResponseAvailableListener() {
 
                         @Override
@@ -198,8 +198,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
         public List<InetSocketAddress> osds;
     }
 
-    public static AuthoritativeReplicaState CalculateAuthoritativeState(ReplicaStatus[] states, String fileId,
-            List<ServiceUUID> remoteOSDUUIDs, String localUUID) {
+    public AuthoritativeReplicaState CalculateAuthoritativeState(ReplicaStatus[] states, String fileId) {
         StringBuilder stateStr = new StringBuilder();
         Map<Long,TruncateRecord> truncateLog = new HashMap();
         Map<Long,ObjectVersionMapping.Builder> all_objects = new HashMap();
@@ -231,7 +230,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                     all_objects.put(onum, omr);
                 }
                 if (omr.getObjectVersion() == over.getObjectVersion()) {
-                    if (i < states.length - 1 || localUUID == null) {
+                    if (i < states.length - 1) {
                         omr.addOsdUuids(remoteOSDUUIDs.get(i).toString());
                     } else {
                         omr.addOsdUuids(localUUID);
@@ -276,8 +275,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
             stateStr.append(" maxTE=");
             stateStr.append(maxTruncateEpoch);
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, (Object) null,
-                        "(R:%s) AUTH state for %s: %s", localUUID, fileId, stateStr.toString());
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) AUTH state for %s: %s",localUUID, fileId, stateStr.toString());
             }
         }
 
