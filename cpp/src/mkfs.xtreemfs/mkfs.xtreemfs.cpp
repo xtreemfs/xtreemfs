@@ -203,7 +203,12 @@ int main(int argc, char* argv[]) {
                          options.default_striping_policy_type,
                          options.default_stripe_size,
                          options.default_stripe_width,
-                         options.volume_attributes);
+                         options.volume_attributes,
+                         options.scheduler_service,
+                         options.volume_capacity,
+                         options.seq_tp,
+                         options.iops,
+                         options.reservation_type);
   } catch (const XtreemFSException& e) {
     success = false;
     cout << "Failed to create the volume, error:\n"

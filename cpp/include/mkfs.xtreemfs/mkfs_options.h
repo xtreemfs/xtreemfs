@@ -100,6 +100,21 @@ class MkfsOptions : public Options {
   /** If true, chown_non_root=true will be added to the list of attributes. */
   bool chown_non_root;
 
+  /** Scheduler service */
+  std::string scheduler_service;
+
+  /** Volume size */
+  int volume_capacity;
+
+  /** Sequential throughput */
+  int seq_tp;
+
+  /** Random throughput */
+  int iops;
+
+  /** Reservation type, must be RAMDOM_IO, SEQUENTIAL_IO, BEST_EFFORT, or COLD_STORAGE */
+  std::string reservation_type;
+
  private:
   /** Contains all available mkfs options and its descriptions. */
   boost::program_options::options_description mkfs_descriptions_;

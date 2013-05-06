@@ -80,6 +80,13 @@ MkfsOptions::MkfsOptions() : Options() {
   default_stripe_size = 128;
   default_stripe_width = 1;
 
+  // QoS options
+  scheduler_service = "";
+  volume_capacity = 0;
+  seq_tp = 0;
+  iops = 0;
+  reservation_type = "BEST_EFFORT";
+
   po::options_description striping_policy_descriptions_(
       "Striping Policy Options");
   striping_policy_descriptions_.add_options()
@@ -110,10 +117,30 @@ MkfsOptions::MkfsOptions() : Options() {
      " not set, regular users (everybody except root) are not allowed to change"
      " the ownership of their _own_ files.");
 
+  po::options_description qos_descriptions_(
+		"Quality of Service Options");
+  qos_descriptions_.add_options()
+  ("scheduler-service",
+   po::value(&scheduler_service)->default_value(scheduler_service),
+   "Scheduler service")
+	("capacity",
+	 po::value(&volume_capacity)->default_value(volume_capacity),
+	 "Volume capacity (MB)")
+	("seq-tp",
+	 po::value(&seq_tp)->default_value(seq_tp),
+	 "Sequential throughput (MB/s)")
+	("iops",
+	 po::value(&iops)->default_value(iops),
+	 "Random throughput (4K IOPS)")
+  ("res-type",
+   po::value(&reservation_type)->default_value(reservation_type),
+   "Reservation type, must be RAMDOM_IO, SEQUENTIAL_IO, BEST_EFFORT, or COLD_STORAGE.");
+
   mkfs_descriptions_.add(password_descriptions)
                     .add(volume_descriptions)
                     .add(striping_policy_descriptions_)
-                    .add(volume_attributes_descriptions_);
+                    .add(volume_attributes_descriptions_)
+                    .add(qos_descriptions_);
 }
 
 MkfsOptions::~MkfsOptions() {
