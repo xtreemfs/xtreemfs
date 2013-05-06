@@ -144,6 +144,51 @@ class Client {
       int default_stripe_width,
       const std::list<xtreemfs::pbrpc::KeyValuePair*>& volume_attributes) = 0;
 
+  /** Creates a volume on the MRC at mrc_address.
+   *
+   * @param mrc_address     String of the form "hostname:port".
+   * @param auth            Authentication data, e.g. of type AUTH_PASSWORD.
+   * @param user_credentials    Username and groups of the user who executes
+   *                        CreateVolume().
+   * @param volume_name     Name of the new volume.
+   * @param mode            Mode of the volume's root directory (in octal
+   *                        representation (e.g. 511), not decimal (777)).
+   * @param owner_username  Name of the owner user.
+   * @param owner_groupname Name of the owner group.
+   * @param access_policy_type  Access policy type (Null, Posix, Volume, ...).
+   * @param default_striping_policy_type    Only RAID0 so far.
+   * @param default_stripe_size     Size of an object on the OSD (in kBytes).
+   * @param default_stripe_width    Number of OSDs objects of a file are striped
+   *                                across.
+   * @param volume_attributes   Reference to a list of key-value pairs of volume
+   *                            attributes which will bet set at creation time
+   *                            of the volume.
+   * @param volume_capacity	Volume capacity (in MB)
+   * @param seq_tp			Sequential throughput (in MB/s).
+   * @param iops			Ramdom throughput (in 4K IOPS)
+   *
+   * @throws IOException
+   * @throws PosixErrorException
+   */
+  virtual void CreateVolume(
+      const ServiceAddresses& mrc_address,
+      const xtreemfs::pbrpc::Auth& auth,
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      const std::string& volume_name,
+      int mode,
+      const std::string& owner_username,
+      const std::string& owner_groupname,
+      const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
+      const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
+      int default_stripe_size,
+      int default_stripe_width,
+      const std::list<xtreemfs::pbrpc::KeyValuePair*>& volume_attributes,
+      const ServiceAddresses &scheduler_address,
+      int volume_capacity,
+      int seq_tp,
+      int iops,
+      const std::string reservation_type) = 0;
+
   // TODO(mberlin): Also provide a method which accepts a list of MRC addresses.
   /** Deletes the volume "volume_name" at the MRC "mrc_address".
    *

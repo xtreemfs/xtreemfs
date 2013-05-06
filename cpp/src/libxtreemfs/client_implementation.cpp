@@ -28,6 +28,8 @@
 #include "xtreemfs/DIRServiceClient.h"
 #include "xtreemfs/MRCServiceClient.h"
 #include "xtreemfs/OSDServiceClient.h"
+#include "xtreemfs/SchedulerServiceClient.h"
+#include "xtreemfs/Scheduler.pb.h"
 
 using namespace std;
 using namespace xtreemfs::pbrpc;
@@ -457,6 +459,94 @@ void ClientImplementation::CreateVolume(
           NULL,
           RPCOptionsFromOptions(options_),
           true));
+  response->DeleteBuffers();
+}
+
+void ClientImplementation::CreateVolume(
+    const ServiceAddresses& mrc_address,
+    const xtreemfs::pbrpc::Auth& auth,
+    const xtreemfs::pbrpc::UserCredentials& user_credentials,
+    const std::string& volume_name,
+    int mode,
+    const std::string& owner_username,
+    const std::string& owner_groupname,
+    const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
+    const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
+    int default_stripe_size,
+    int default_stripe_width,
+    const std::list<xtreemfs::pbrpc::KeyValuePair*>& volume_attributes,
+    const ServiceAddresses &scheduler_address,
+    int volume_capacity,
+    int seq_tp,
+    int iops,
+    const std::string reservation_type) {
+  SchedulerServiceClient scheduler_service_client(network_client_.get());
+
+  xtreemfs::pbrpc::reservation new_reservation;
+  new_reservation.set_capacity((double) volume_capacity);
+  new_reservation.set_randomthroughput((double) iops);
+  new_reservation.set_streamingthroughput((double) seq_tp);
+
+  if(reservation_type == "RANDOM_IO")
+    new_reservation.set_type(RANDOM_IO_RESERVATION);
+  else if(reservation_type == "SEQUENTIAL_IO")
+    new_reservation.set_type(STREAMING_RESERVATION);
+  else if(reservation_type == "BEST_EFFORT")
+      new_reservation.set_type(BEST_EFFORT_RESERVATION);
+  else if(reservation_type == "COLD_STORAGE")
+      new_reservation.set_type(COLD_STORAGE_RESERVATION);
+  else {
+    Logging::log->getLog(LEVEL_ERROR)
+              << "Unknown reservation type" << endl;
+    exit(1);
+  }
+
+  SimpleUUIDIterator temp_uuid_iterator_with_addresses;
+  AddAddresses(scheduler_address, &temp_uuid_iterator_with_addresses);
+
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
+          boost::bind(
+              &xtreemfs::pbrpc::SchedulerServiceClient::scheduleReservation_sync,
+              &scheduler_service_client,
+              _1,
+              boost::cref(auth),
+              boost::cref(user_credentials),
+              &new_reservation),
+          &temp_uuid_iterator_with_addresses,
+          NULL,
+          RPCOptionsFromOptions(options_),
+          true));
+
+  xtreemfs::pbrpc::osdSet *osds = (xtreemfs::pbrpc::osdSet*) response->response();
+
+  if(osds->osd_size() <= 0) {
+    Logging::log->getLog(LEVEL_ERROR)
+              << "Cannot make reservation" << endl;
+    exit(1);
+  }
+
+  CreateVolume(mrc_address, auth, user_credentials, volume_name, mode,
+               owner_username, owner_groupname, access_policy_type, default_striping_policy_type,
+               default_stripe_size, default_stripe_width, volume_attributes);
+
+  std::string osdUuidsString = "";
+  for(int i = 0; i < osds->osd_size(); i++) {
+    if(osdUuidsString == "")
+      osdUuidsString += osds->osd(i).uuid();
+    else
+      osdUuidsString += "," + osds->osd(i).uuid();
+  }
+
+  Options options;
+  options.metadata_cache_size = 0;
+
+  Volume *v = this->OpenVolume(volume_name, NULL, options);
+  v->SetXAttr(user_credentials, "/", "xtreemfs.osel_policy", "1002", XATTR_FLAGS_REPLACE);
+  v->SetXAttr(user_credentials, "/", "xtreemfs.policies.1002.UUIDS", osdUuidsString, XATTR_FLAGS_REPLACE);
+
+  delete v;
+  delete osds;
   response->DeleteBuffers();
 }
 
