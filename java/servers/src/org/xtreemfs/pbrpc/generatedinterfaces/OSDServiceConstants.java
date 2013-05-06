@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Wed Nov 20 11:36:49 CET 2013
+//automatically generated from OSD.proto at Wed Nov 20 11:37:12 CET 2013
 //(c) 2013. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -43,6 +43,7 @@ public class OSDServiceConstants {
     public static final int PROC_ID_XTREEMFS_SHUTDOWN = 70;
     public static final int PROC_ID_XTREEMFS_XLOC_SET_INVALIDATE = 81;
     public static final int PROC_ID_XTREEMFS_XLOC_SET_INSTALL = 82;
+    public static final int PROC_ID_XTREEMFS_RWR_FETCH_INVALIDATED = 83;
 
     public static Message getRequestMessage(int procId) {
         switch (procId) {
@@ -81,6 +82,7 @@ public class OSDServiceConstants {
            case 70: return null;
            case 81: return OSD.xtreemfs_xloc_set_invalidateRequest.getDefaultInstance();
            case 82: return OSD.xtreemfs_xloc_set_installRequest.getDefaultInstance();
+           case 83: return OSD.xtreemfs_rwr_fetch_invalidatedRequest.getDefaultInstance();
            default: throw new RuntimeException("unknown procedure id");
         }
     }
@@ -123,6 +125,7 @@ public class OSDServiceConstants {
            case 70: return null;
            case 81: return OSD.xtreemfs_xloc_set_invalidateResponse.getDefaultInstance();
            case 82: return null;
+           case 83: return null;
            default: throw new RuntimeException("unknown procedure id");
         }
     }
