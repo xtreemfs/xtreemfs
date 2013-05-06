@@ -63,6 +63,11 @@ class Server:
 
             java_args = [os.path.join(os.environ["JAVA_HOME"], "bin", "java")]
 
+            # Enable SDP
+            java_args.append("-Dcom.sun.sdp.conf=/home/bzcfisch/jensvfischer-personal/sdp.conf")
+            java_args.append("-Dcom.sun.sdp.debug=/home/bzcfisch/jensvfischer-personal/sdp.log")
+            java_args.append("-Djava.net.preferIPv4Stack=true")
+
             # Enable assertions.
             java_args.append("-ea")
 
@@ -100,6 +105,9 @@ class Server:
                 stderr = stdout = open(log_file_path, "a")
 
             #print "xctl: starting", self.__class__.__name__, "server with UUID", self.get_uuid(), "on port", self.get_rpc_port(), "with", " ".join(java_args)
+
+
+            print java_args
 
             p = subprocess.Popen(java_args, stdout=stdout, stderr=stderr) # No shell=True: we only want one process (java), not two (/bin/sh and java)
             if p.returncode is not None:
@@ -179,7 +187,7 @@ if __name__ == "__main__":
     option_parser.add_option(  "--osd-suffix", action="store", dest="osd_suffix")
 
     options, positional_args = option_parser.parse_args()
-    
+
     if options.dir_suffix:
         dir_string = "dir" + options.dir_suffix
     else:
@@ -208,7 +216,7 @@ if __name__ == "__main__":
             os.mkdir(os.path.join(options.base_dir, "log"))
         except:
             pass
-        
+
 
     if options.dir_start:
         if not options.config_file_path:
