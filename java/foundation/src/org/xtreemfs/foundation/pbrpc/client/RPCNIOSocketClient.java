@@ -192,6 +192,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         }
     }
     
+    @Override
     public void run() {
 
         brokenSelect = false;
@@ -334,7 +335,9 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 }
                 channel.configureBlocking(false);
                 channel.socket().setTcpNoDelay(true);
-                channel.socket().bind(localBindPoint);
+                if (localBindPoint != null) {
+                    channel.socket().bind(localBindPoint);
+                }
                 
                 if (sendBufferSize != -1) {
                     channel.socket().setSendBufferSize(sendBufferSize);
@@ -769,6 +772,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         }
     }
     
+    @Override
     public void shutdown() {
         this.quit = true;
         this.interrupt();
