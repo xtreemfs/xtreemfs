@@ -5,21 +5,76 @@
 #
 # Licensed under the BSD License, see LICENSE file for details.
 
-import subprocess, threading, sys, time, BaseHTTPServer
+import threading, sys, time, BaseHTTPServer
 
-hosts = ["tick.zib.de", "trick.zib.de", "track.zib.de"]
+from urllib2 import urlopen, URLError, HTTPError
+import socket
+import json
+
+
+hosts = ["localhost:30640", "localhost:30641", "localhost:30642",  "localhost"]
 hostStatus = {}
 hostStatusLock = threading.Lock()
 
-def isReachable(host):
-    ret = subprocess.call("fping -t 100 %s" % host, 
-        shell=True, 
-        stdout=open('/dev/null', 'w'), 
-        stderr=subprocess.STDOUT)
-    if ret == 0:
-        return True 
-    else:
+
+def getStatus(host):
+    try:
+        url = "http://{host}/rft.json".format(host=host)
+        f = urlopen(url, timeout=0.1)
+        raw = f.read()
+        data = json.loads(raw)
+        f.close()
+
+        return data
+
+    except ValueError as e:
+        return None
+    except HTTPError as e:
+        return None
+    except URLError as e:
+        if isinstance(e.reason, socket.timeout) or isinstance(e.reason, socket.error):
+            return False
+        return None
+    # TODO: remove this except
+    except socket.timeout as e:
         return False
+
+
+
+
+def statusToString(status):
+    if status == False:
+        return "offline"
+    elif status == None:
+        return "unknown"
+    else:
+        return "online"
+
+
+def statusToRole(status, file_id):
+    if status == False:
+        return "offline"
+    elif status == None:
+        return "unknown"
+
+    # empty file list
+    elif type(status) == list:
+        return "unknown"
+
+    print("status:" + str(status))
+    print("file_id:" + file_id)
+
+    if file_id in status and "role" in status[file_id]:
+        role = status[file_id]["role"]
+        if role.startswith("primary"):
+            return "primary"
+        elif role.startswith("backup"):
+            return "backup"
+        # elif role.startswith("outdated"):
+        #     return "outdated"
+    
+    return "unknown"
+
 
 class MonitoringThread(threading.Thread):
     def __init__(self, hosts):
@@ -30,9 +85,10 @@ class MonitoringThread(threading.Thread):
     def run(self):
         while self.runThread:
             for host in self.hosts:
-                reachable = isReachable(host)
+                status = getStatus(host)
+
                 hostStatusLock.acquire()
-                hostStatus[host] = reachable
+                hostStatus[host] = status
                 hostStatusLock.release()
             time.sleep(0.1)
             
@@ -42,18 +98,15 @@ class MonitoringThread(threading.Thread):
 class StatusHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def generateStatusOutput(self):
         hostStatusLock.acquire()
-        result = "# hostname status\n"
 
-        for key in hostStatus.keys():
-            result += key + "\t"
-            if hostStatus[key] == True:
-                result += "online"
-            else:
-                result += "offline"
-            result += "\n"
+        host_status = [ statusToString(hostStatus[host]) for host in hosts ]
+
+        file_ids = { file_id  for host in hosts if type(hostStatus[host]) == dict for file_id in hostStatus[host].keys() }
+        file_status = [ (file_id, [statusToRole(hostStatus[host], file_id) for host in hosts]) for file_id in file_ids ]
 
         hostStatusLock.release()
-        return result
+
+        return json.dumps({"status": host_status, "files": dict(file_status)})
 
     def do_GET(self):
         try:
