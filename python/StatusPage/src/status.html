@@ -19,18 +19,19 @@ Licensed under the BSD License, see LICENSE file for details.
         
 // configuration
 var conf = new Object();
-conf.hGrid = 100;
+conf.hGrid = 125;
 conf.canvasFrame = 25;
 conf.reloadInterval = 2000; // in ms
 
 conf.fileStatusRadius = 30;
 conf.fileStatusSpace  = 10;
-conf.fileStatusTextSize = 20;
+conf.fileStatusTextSize = 15;
 conf.fileStatusTextSpace = 5;
 conf.fileStatusTextColor = "#000";
 conf.fileStatusBackgroundColor = "#eee";
 conf.fileStatusCircleStyle = {
-  "primary": {"fill": "#009900"},
+  "_default": {"stroke": "#000", "stroke-width": 1},
+  "primary": {"fill": "#009900" },
   "backup": {"fill": "#000099"},
   "offline": {"fill": "#990000"},
   "unknown": {"fill": "#ddd"},
@@ -38,6 +39,7 @@ conf.fileStatusCircleStyle = {
 
 conf.hostStatusRadius = 40;
 conf.hostStatusCircleStyle = {
+  "_default": {"stroke": "#000", "stroke-width": 1},
   "online": {"fill": "#009900"},
   "offline": {"fill": "#990000"},
   "unknown": {"fill": "#ddd"}
@@ -53,7 +55,7 @@ var intervalID = 0; // for periodic data fetch via GET
 function hGridCenter(d, i) { return i * conf.hGrid + conf.hGrid / 2  }
 function fileStatusHeight() { return conf.fileStatusRadius * 2 + conf.fileStatusSpace * 2 + conf.fileStatusTextSize + conf.fileStatusTextSpace }
 function totalHeight(fileCount) { return fileCount * fileStatusHeight() + conf.hostStatusRadius * 3 }
-function circleStyle(conf, attr) { return function(d) { return conf[d][attr] } }
+function circleStyle(conf, attr) { return function(d) { return attr in conf[d] ? conf[d][attr] : conf["_default"][attr] } }
 
 
 // init code
@@ -62,10 +64,35 @@ window.onload = function() {
 	// insert svg as canvas
   d3.select("#container")
     .append("svg")
-    .attr("id", "canvas")
-    .style("padding", conf.canvasFrame);
+      .attr("id", "frame")
+    .append("svg:g")
+      .attr("id", "canvas")
+      .attr("transform", "translate(" + conf.canvasFrame + " " + conf.canvasFrame + ")");
 
-  window.setInterval(loadData, conf.reloadInterval);
+  var controls = d3.select("#controls");
+  controls.append("button")
+    .attr("id", "reloadButton")
+    .text("Reload")
+    .on("click", loadData);
+  
+  controls.append("button")
+    .attr("id", "pauseButton")
+    .text("Disable Auto Reload")
+    .on("click", function() {
+      if (paused) {
+        paused = false;
+        intervalID =  window.setInterval(loadData, conf.reloadInterval);
+        d3.select(this).text("Disable Auto Reload");
+      }
+      else {
+        paused = true;
+        window.clearInterval(intervalID);
+        d3.select(this).text("Enable Auto Reload");
+      }
+    });
+
+  loadData();
+  intervalID =  window.setInterval(loadData, conf.reloadInterval);
 }
 
 function loadData() {
@@ -86,10 +113,14 @@ function draw(status) {
 
   var totalWidth = hostStatus.length * conf.hGrid;
 
-  var canvas = d3.select("#canvas")
-    .attr("viewBox", "0 0 " + totalWidth +  " " + totalHeight(files.length))
-    .attr("width", totalWidth)
-    .attr("height", totalHeight(files.length));
+  var svg = d3.select("#frame")
+    .attr("width", totalWidth + conf.canvasFrame * 2)
+    .attr("height", totalHeight(files.length) + conf.canvasFrame * 2)
+
+  var canvas = d3.select("#canvas");
+    // .attr("viewBox", "0 0 " + totalWidth +  " " + totalHeight(files.length))
+    // .attr("width", totalWidth)
+    // .attr("height", totalHeight(files.length));
 
   var host_circles = canvas.selectAll("circle.host").data(hostStatus);
   host_circles.enter().append("svg:circle")
@@ -97,11 +128,15 @@ function draw(status) {
     .attr("r", conf.hostStatusRadius)
     .attr("cx", hGridCenter)
     .attr("cy", conf.hostStatusRadius)
-    .attr("fill", circleStyle(conf.hostStatusCircleStyle, "fill"));
-
-  host_circles.transition()
+    .attr("fill", circleStyle(conf.hostStatusCircleStyle, "fill"))
+    .attr("stroke", circleStyle(conf.hostStatusCircleStyle, "stroke"))
+    .attr("stroke-width", circleStyle(conf.hostStatusCircleStyle, "stroke-width"));
+  
+ host_circles.transition()
     .duration(1000)
-    .attr("fill", circleStyle(conf.hostStatusCircleStyle, "fill"));
+    .attr("fill", circleStyle(conf.hostStatusCircleStyle, "fill"))
+    .attr("stroke", circleStyle(conf.hostStatusCircleStyle, "stroke"))
+    .attr("stroke-width", circleStyle(conf.hostStatusCircleStyle, "stroke-width"));
   
   var groups = canvas.selectAll("g").data(files, function(d) { return d.key });
 
@@ -146,18 +181,22 @@ function draw(status) {
         d3.select(this).select("rect.background").attr("fill", conf.fileStatusBackgroundColor); })
     .on("mouseout", function() { d3.select(this).selectAll("text.file-id, rect.background").attr("fill", "none")  } )
 
-  var circles = groups.selectAll("circle").data(function(d,i) { console.log(d); return d.value });
+  var circles = groups.selectAll("circle").data(function(d,i) { return d.value });
 
   circles.enter().append("svg:circle")
     .attr("r", conf.fileStatusRadius)
     .attr("cx", hGridCenter )
     .attr("cy", conf.fileStatusRadius + conf.fileStatusSpace )
-    .attr("fill", circleStyle(conf.fileStatusCircleStyle, "fill"));
+    .attr("fill", circleStyle(conf.fileStatusCircleStyle, "fill"))
+    .attr("stroke", circleStyle(conf.fileStatusCircleStyle, "stroke"))
+    .attr("stroke-width", circleStyle(conf.fileStatusCircleStyle, "stroke-width"));
 
   circles.transition()
     .duration(1000)
-    .attr("fill",  circleStyle(conf.fileStatusCircleStyle, "fill"));
-  
+    .attr("fill",  circleStyle(conf.fileStatusCircleStyle, "fill"))
+    .attr("stroke", circleStyle(conf.fileStatusCircleStyle, "stroke"))
+    .attr("stroke-width", circleStyle(conf.fileStatusCircleStyle, "stroke-width"));
+
   circles.exit()
          .remove();
 }
@@ -188,10 +227,7 @@ function draw(status) {
   <body>
 		<h1><a href="http://www.XtreemFS.org"><img src="http://www.xtreemfs.com/imgs/Logo_200px.jpg" alt="XtreemFS Logo"/></a> Server Status</h1>
 
-    <div id="controls">
-			<button onclick="loadData()">Reload</button>
-			<button type="button" id="pauseButton" onclick="pauseButtonHandler()">Disable Auto Reload</button>
-		</div>
+    <div id="controls"></div>
 		<div id="container"></div>
   </body>
 </html>
