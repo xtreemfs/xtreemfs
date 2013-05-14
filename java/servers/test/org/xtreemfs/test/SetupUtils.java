@@ -350,7 +350,7 @@ public class SetupUtils {
     static RPCNIOSocketClient createRPCClient(int timeout) throws IOException {
         final SSLOptions sslOptions = SSL_ON ? new SSLOptions(new FileInputStream(CERT_DIR + "Client.p12"),
                 "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trusted.jks"), "passphrase",
-                SSLOptions.JKS_CONTAINER, false) : null;
+                SSLOptions.JKS_CONTAINER, false, false, null) : null;
         return new RPCNIOSocketClient(sslOptions, timeout, 5 * 60 * 1000, "SetupUtils");
     }
     
