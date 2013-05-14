@@ -133,7 +133,7 @@ public class xtfs_mrcdbtool {
                     AuthPassword.newBuilder().setPassword(options.get(utils.OPTION_ADMIN_PASS).stringValue)).build();
             
             if (op.equals("dump")) {
-                RPCResponse r = null;
+                RPCResponse<?> r = null;
                 try {
                     r = client.xtreemfs_dump_database(null, passwdAuth, RPCAuthentication.userService,
                         dumpFile);
@@ -142,10 +142,8 @@ public class xtfs_mrcdbtool {
                     if (r != null)
                         r.freeBuffers();
                 }
-            }
-
-            else if (op.equals("restore")) {
-                RPCResponse r = null;
+            } else if (op.equals("restore")) {
+                RPCResponse<?> r = null;
                 try {
                     r = client.xtreemfs_restore_database(null, passwdAuth, RPCAuthentication.userService,
                         dumpFile);
@@ -154,23 +152,23 @@ public class xtfs_mrcdbtool {
                     if (r != null)
                         r.freeBuffers();
                 }
-            }
-
-            else {
+            } else {
                 usage(options);
                 System.exit(1);
             }
             
         } catch (PBRPCException exc) {
-            if (exc.getPOSIXErrno() == POSIXErrno.POSIX_ERROR_EACCES)
+            if (exc.getPOSIXErrno() == POSIXErrno.POSIX_ERROR_EACCES) {
                 System.out.println("permission denied: admin password invalid or volumes exist already");
-            else
+            } else {
                 exc.printStackTrace();
+            }
         } catch (Exception exc) {
             exc.printStackTrace();
         } finally {
-            if (rpcClient != null)
+            if (rpcClient != null) {
                 rpcClient.shutdown();
+            }
         }
     }
     
