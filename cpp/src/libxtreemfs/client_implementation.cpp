@@ -483,6 +483,7 @@ void ClientImplementation::CreateVolume(
   SchedulerServiceClient scheduler_service_client(network_client_.get());
 
   xtreemfs::pbrpc::reservation new_reservation;
+  new_reservation.mutable_volume()->set_uuid(volume_name);
   new_reservation.set_capacity((double) volume_capacity);
   new_reservation.set_randomthroughput((double) iops);
   new_reservation.set_streamingthroughput((double) seq_tp);
@@ -547,7 +548,6 @@ void ClientImplementation::CreateVolume(
 
   delete v;
   delete osds;
-  response->DeleteBuffers();
 }
 
 void ClientImplementation::DeleteVolume(

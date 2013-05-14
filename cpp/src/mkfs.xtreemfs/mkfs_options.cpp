@@ -86,6 +86,7 @@ MkfsOptions::MkfsOptions() : Options() {
   seq_tp = 0;
   iops = 0;
   reservation_type = "BEST_EFFORT";
+  dir_service = "localhost:32638";
 
   po::options_description striping_policy_descriptions_(
       "Striping Policy Options");
@@ -134,7 +135,10 @@ MkfsOptions::MkfsOptions() : Options() {
 	 "Random throughput (4K IOPS)")
   ("res-type",
    po::value(&reservation_type)->default_value(reservation_type),
-   "Reservation type, must be RAMDOM_IO, SEQUENTIAL_IO, BEST_EFFORT, or COLD_STORAGE.");
+   "Reservation type, must be RAMDOM_IO, SEQUENTIAL_IO, BEST_EFFORT, or COLD_STORAGE.")
+  ("dir-service",
+   po::value(&dir_service)->default_value(dir_service),
+   "Directory service.");
 
   mkfs_descriptions_.add(password_descriptions)
                     .add(volume_descriptions)

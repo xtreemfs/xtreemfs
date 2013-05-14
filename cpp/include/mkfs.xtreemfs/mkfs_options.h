@@ -115,6 +115,9 @@ class MkfsOptions : public Options {
   /** Reservation type, must be RAMDOM_IO, SEQUENTIAL_IO, BEST_EFFORT, or COLD_STORAGE */
   std::string reservation_type;
 
+  /** Directory service */
+  std::string dir_service;
+
  private:
   /** Contains all available mkfs options and its descriptions. */
   boost::program_options::options_description mkfs_descriptions_;

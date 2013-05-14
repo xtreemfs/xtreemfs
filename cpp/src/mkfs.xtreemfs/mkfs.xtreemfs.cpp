@@ -185,7 +185,7 @@ int main(int argc, char* argv[]) {
 
     // Create a new client and start it.
     client.reset(Client::CreateClient(
-        "DIR-host-not-required-for-mkfs",  // Using a bogus value as DIR address.  // NOLINT
+        options.dir_service,  // Using a bogus value as DIR address.  // NOLINT
         user_credentials,
         options.GenerateSSLOptions(),
         options));
