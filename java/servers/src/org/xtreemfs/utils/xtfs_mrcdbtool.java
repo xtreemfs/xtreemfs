@@ -102,10 +102,9 @@ public class xtfs_mrcdbtool {
         RPCNIOSocketClient rpcClient = null;
         
         try {
-            
             SSLOptions sslOptions = null;
-            if (protocol.startsWith(Schemes.SCHEME_PBRPCS)) {
-                
+            boolean gridSSL = false;
+            if (protocol.startsWith(Schemes.SCHEME_PBRPCS) || protocol.startsWith(Schemes.SCHEME_PBRPCG)) {
                 if (c.stringValue == null) {
                     System.out.println("SSL requires '-" + utils.OPTION_USER_CREDS_FILE + "' parameter to be specified");
                     usage(options);
@@ -116,8 +115,13 @@ public class xtfs_mrcdbtool {
                     System.exit(1);
                 }
                 
+                if (protocol.startsWith(Schemes.SCHEME_PBRPCG)) {
+                    gridSSL = true;
+                }
+
                 sslOptions = new SSLOptions(new FileInputStream(c.stringValue), cp.stringValue,
-                    new FileInputStream(t.stringValue), tp.stringValue);
+                        SSLOptions.PKCS12_CONTAINER, new FileInputStream(t.stringValue), tp.stringValue,
+                        SSLOptions.JKS_CONTAINER, false, gridSSL, null);
             }
             rpcClient = new RPCNIOSocketClient(sslOptions, Integer.MAX_VALUE - 1000, Integer.MAX_VALUE, "xtfs_mrcdbtool");
             rpcClient.start();
