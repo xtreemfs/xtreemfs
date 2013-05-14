@@ -201,6 +201,8 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
                         content = OutputUtils.getThreadDump().getBytes("ascii");
                     } else if (httpExchange.getRequestURI().getPath().contains("babudb")) {
                         content = StatusPage.getDBInfo(database.getRuntimeState()).getBytes("ascii");
+                    } else if (httpExchange.getRequestURI().getPath().startsWith("/replicaStatus")) {
+                        content = StatusPage.getReplicatedFileStatusPage(DIRRequestDispatcher.this, config).getBytes("ascii");
                     } else {
                         content = StatusPage.getStatusPage(DIRRequestDispatcher.this, config).getBytes("ascii");
                     }

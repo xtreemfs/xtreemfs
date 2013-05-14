@@ -15,6 +15,7 @@ import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
@@ -33,6 +34,8 @@ import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.foundation.VersionManagement;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.json.JSONException;
+import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.util.OutputUtils;
@@ -50,6 +53,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 public class StatusPage {
 
     private final static String  statusPageTemplate;
+    
+    private final static String  replicatedFileStatusPageTemplate;
 
     /**
      * Time after a service, which has not send a heartbeat signal, will be displayed as not available
@@ -68,7 +73,7 @@ public class StatusPage {
                 "<!-- $BPSTATS -->"), PORT("<!-- $PORT -->"), DEBUG("<!-- $DEBUG -->"), NUMCON(
                 "<!-- $NUMCON -->"), PINKYQ("<!-- $PINKYQ -->"), NUMREQS("<!-- $NUMREQS -->"), TIME(
                 "<!-- $TIME -->"), TABLEDUMP("<!-- $TABLEDUMP -->"), PROTOVERSION("<!-- $PROTOVERSION -->"), VERSION(
-                "<!-- $VERSION -->"), DBVERSION("<!-- $DBVERSION -->");
+                "<!-- $VERSION -->"), DBVERSION("<!-- $DBVERSION -->"), OSDSJSON("<!-- $OSDSJSON -->");
 
         /*
          * @formatter: on
@@ -86,31 +91,22 @@ public class StatusPage {
     };
 
     static {
-        StringBuffer sb = null;
-        try {
-            InputStream is = StatusPage.class.getClassLoader().getResourceAsStream(
-                    "org/xtreemfs/dir/templates/status.html");
-            if (is == null) {
-                is = StatusPage.class.getClass().getResourceAsStream("../templates/status.html");
-            }
-            BufferedReader br = new BufferedReader(new InputStreamReader(is));
-            sb = new StringBuffer();
-            String line = br.readLine();
-            while (line != null) {
-                sb.append(line + "\n");
-                line = br.readLine();
-            }
-            br.close();
-        } catch (Exception ex) {
-            Logging.logMessage(Logging.LEVEL_WARN, Category.misc, (Object) null,
-                    "could not load status page template: %s", OutputUtils.stackTraceToString(ex));
+        StringBuffer sb = readTemplate("replicated_status.html");
+        if (sb == null) {
+            replicatedFileStatusPageTemplate = "<H1>Template was not found, unable to show status page!</h1>";
+        } else {
+            replicatedFileStatusPageTemplate = sb.toString();
         }
+    }
+    static {
+        StringBuffer sb = readTemplate("status.html");
         if (sb == null) {
             statusPageTemplate = "<H1>Template was not found, unable to show status page!</h1>";
         } else {
             statusPageTemplate = sb.toString();
         }
     }
+
 
     public static String getStatusPage(DIRRequestDispatcher master, DIRConfig config) throws BabuDBException,
             IOException, InterruptedException {
@@ -466,5 +462,71 @@ public class StatusPage {
         sb.append("</BODY></HTML>");
 
         return sb.toString();
+    }
+    
+    public static String getReplicatedFileStatusPage(DIRRequestDispatcher master, DIRConfig config)
+            throws BabuDBException, IOException, InterruptedException {
+
+        final Database database = master.getDirDatabase();
+        ResultSet<byte[], byte[]> iter;
+
+        HashMap<String, HashMap<String, String>> osds = new HashMap<String, HashMap<String, String>>();
+        
+        iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0], null).get();
+        while (iter.hasNext()) {
+            Entry<byte[], byte[]> e = iter.next();
+            final String uuid = new String(e.getKey());
+            final ServiceRecord sreg = new ServiceRecord(ReusableBuffer.wrap(e.getValue()));
+
+            if (sreg.getType() == ServiceType.SERVICE_TYPE_OSD) {
+                HashMap<String, String> data = new HashMap<String, String>();
+                data.put("uuid", sreg.getUuid());
+                data.put("name", sreg.getName());
+
+                for (Entry<String, String> dataEntry : sreg.getData().entrySet()) {
+                    if (dataEntry.getKey().equals("status_page_url")) {
+                        data.put("status_page_url", dataEntry.getValue());
+                    }
+                }
+                // TODO (jdillmann): check if status_page_url was found
+                osds.put(sreg.getUuid(), data);
+            }
+
+        }
+        iter.free();
+
+        String osdsJSON = "[]";
+        try {
+            osdsJSON = JSONParser.writeJSON(osds);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+
+        return replicatedFileStatusPageTemplate.replace(Vars.OSDSJSON.toString(), osdsJSON);
+    }
+
+    private static StringBuffer readTemplate(String template) {
+        StringBuffer sb = null;
+        try {
+            InputStream is = StatusPage.class.getClassLoader().getResourceAsStream(
+                    "org/xtreemfs/dir/templates/" + template);
+            if (is == null) {
+                is = StatusPage.class.getClass().getResourceAsStream("../templates/" + template);
+            }
+            BufferedReader br = new BufferedReader(new InputStreamReader(is));
+            sb = new StringBuffer();
+            String line = br.readLine();
+            while (line != null) {
+                sb.append(line + "\n");
+                line = br.readLine();
+            }
+            br.close();
+        } catch (Exception ex) {
+            Logging.logMessage(Logging.LEVEL_WARN, Category.misc, (Object) null,
+                    "could not load page template '%s': %s", template, OutputUtils.stackTraceToString(ex));
+        }
+
+        return sb;
     }
 }
