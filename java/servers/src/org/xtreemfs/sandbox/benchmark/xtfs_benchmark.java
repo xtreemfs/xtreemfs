@@ -39,12 +39,13 @@ public class xtfs_benchmark {
         Logging.start(6, Category.tool);
         Logging.redirect(System.err);
 
-        if (Logging.isDebug())
-            NetHooks.beforeTcpBind(null, null, 0);
 
         parseCLIOptions(args);
         displayUsageIfSet();
         Params params = buildParams();
+
+        if (params.stripeWidth == 39)
+            NetHooks.beforeTcpBind(null, null, 0);
 
         // Todo (jvf) delete
         System.err.println(params);
