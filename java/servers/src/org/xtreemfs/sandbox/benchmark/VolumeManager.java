@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2012-2013 by Jens V. Fischer, Zuse Institute Berlin
- *               
+ *
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -22,7 +22,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC;
 
 /**
  * Singleton Volume Manager.
- * 
+ *
  * @author jensvfischer
  */
 public class VolumeManager {
@@ -95,7 +95,7 @@ public class VolumeManager {
         Volume volume = null;
         try {
             List<GlobalTypes.KeyValuePair> volumeAttributes = new ArrayList<GlobalTypes.KeyValuePair>();
-            client.createVolume(params.mrcAddress, params.auth, params.userCredentials, volumeName, 511,
+            client.createVolume(params.auth, params.userCredentials, volumeName, 511,
                     params.userName, params.group, GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
                     GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, params.getStripeSizeInKiB,
                     params.stripeWidth, volumeAttributes);
