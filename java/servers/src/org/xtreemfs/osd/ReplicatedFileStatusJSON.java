@@ -16,6 +16,7 @@ import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
 
+import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 
 public class ReplicatedFileStatusJSON extends StatusServerModule {
@@ -66,11 +67,16 @@ public class ReplicatedFileStatusJSON extends StatusServerModule {
                 if (result.get() == null)
                     result.wait();
             }
-            Map<String, Map<String, String>> status = result.get();
 
+            Map<String, Map<String, String>> status = result.get();
             String statusJSON = JSONParser.writeJSON(status);
 
-            httpExchange.getResponseHeaders().set("Content-Type", "application/json");
+            // set headers
+            Headers headers = httpExchange.getResponseHeaders();
+            headers.set("Access-Control-Allow-Origin", "*");
+            headers.set("Access-Control-Allow-Methods", "GET");
+            headers.set("Content-Type", "application/json");
+
             sendResponse(httpExchange, statusJSON);
 
         } catch (Throwable ex) {

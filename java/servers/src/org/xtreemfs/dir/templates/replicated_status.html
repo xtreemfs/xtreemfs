@@ -10,14 +10,319 @@ Licensed under the BSD License, see LICENSE file for details.
 
     <title>Server Status</title>
 
-    <script type="text/javascript" src="d3.v3.js"></script>
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/d3/3.0.8/d3.js"></script>
 
     <style type="text/css">
     </style>
 
     <script type="text/javascript">
-
 var osds = <!-- $OSDSJSON -->;
+
+// temp
+// var osds = {"test-osd1":{"status_page_url":"http:\/\/127.0.0.1:30641","name":"OSD @ test-osd1","uuid":"test-osd1"},"test-osd2":{"status_page_url":"http:\/\/127.0.0.1:30642","name":"OSD @ test-osd2","uuid":"test-osd2"},"test-osd0":{"status_page_url":"http:\/\/127.0.0.1:30640","name":"OSD @ test-osd0","uuid":"test-osd0"}};
+
+
+
+
+// configuration
+var conf = new Object();
+conf.hGrid = 125;
+conf.canvasFrame = 25;
+conf.reloadInterval = 2000; // in ms
+// after this time the request will be aborted and retried
+conf.requestTimeout_ms = 2000;
+
+conf.fileStatusRadius = 30;
+conf.fileStatusSpace  = 10;
+conf.fileStatusTextSize = 15;
+conf.fileStatusTextSpace = 5;
+conf.fileStatusTextColor = "#000";
+conf.fileStatusBackgroundColor = "#eee";
+conf.fileStatusCircleStyle = {
+  "_default": {"stroke": "#000", "stroke-width": 1},
+  "primary": {"fill": "#009900" },
+  "backup": {"fill": "#000099"},
+  "offline": {"fill": "#990000"},
+  "unknown": {"fill": "#ddd"},
+}
+
+conf.hostStatusRadius = 40;
+conf.hostStatusCircleStyle = {
+  "_default": {"stroke": "#000", "stroke-width": 1},
+  "online": {"fill": "#009900"},
+  "offline": {"fill": "#990000"},
+  "unknown": {"fill": "#ddd"}
+}
+
+
+// globals
+var paused = false;
+var intervalID = 0; // for periodic data fetch via GET
+var osdURLs = [];
+var requests = [];
+
+
+
+// helper functions
+function hGridCenter(d, i) { return i * conf.hGrid + conf.hGrid / 2  }
+function fileStatusHeight() { return conf.fileStatusRadius * 2 + conf.fileStatusSpace * 2 + conf.fileStatusTextSize + conf.fileStatusTextSpace }
+function totalHeight(fileCount) { return fileCount * fileStatusHeight() + conf.hostStatusRadius * 3 }
+function circleStyle(conf, attr) { return function(d) { return attr in conf[d] ? conf[d][attr] : conf["_default"][attr] } }
+function statusToRole(data) {
+  if (typeof data["role"] == "string") {
+    if (data["role"].startsWith("primary")) 
+      return "primary";
+    if (data["role"].startsWith("backup"))
+      return "backup";
+    // if (data["role"].startsWith("outdated"))
+    //   return "outdated"
+  }
+  
+  return "unknown";
+}
+
+if (typeof String.prototype.startsWith != 'function') {
+  String.prototype.startsWith = function (str){
+    return this.slice(0, str.length) == str;
+  };
+}
+
+
+// init code
+window.onload = function() {
+
+  // make the osd object an sorted array
+  osdURLs = d3.values(osds).sort().map(function(d) { return { "uuid": d["uuid"], "url": (d["status_page_url"] + "/rft.json") }});
+
+
+	// insert svg as canvas
+  d3.select("#container")
+    .append("svg")
+      .attr("id", "frame")
+    .append("svg:g")
+      .attr("id", "canvas")
+      .attr("transform", "translate(" + conf.canvasFrame + " " + conf.canvasFrame + ")");
+
+  var controls = d3.select("#controls");
+  controls.append("button")
+    .attr("id", "reloadButton")
+    .text("Reload")
+    .on("click", loadData);
+  
+  controls.append("button")
+    .attr("id", "pauseButton")
+    .text("Disable Auto Reload")
+    .on("click", function() {
+      if (paused) {
+        paused = false;
+        intervalID =  window.setInterval(loadData, conf.reloadInterval);
+        d3.select(this).text("Disable Auto Reload");
+      }
+      else {
+        paused = true;
+        window.clearInterval(intervalID);
+        d3.select(this).text("Enable Auto Reload");
+      }
+    });
+
+  loadData();
+  intervalID =  window.setInterval(loadData, conf.reloadInterval);
+}
+
+function loadData() {
+
+  var now_ms = (new Date()).getTime();
+  var hostStatus = [];
+  var fileStatus = {};
+
+  for (var i=0; i < osdURLs.length; i++) {
+    var r = requests[i];
+    var sendRequest = false;
+
+    if (r == undefined) {
+      sendRequest = true;
+
+      // we don't know anything about this host yet
+      hostStatus[i] = "unknown";
+    }
+    else if (r["finished"]) {
+      // everything's fine - we got a response
+      sendRequest = true;
+
+      if (r["online"] && r["valid"]) {
+        hostStatus[i] = "online";
+
+        for (var file_id in r["data"]) {
+          if (fileStatus[file_id] == undefined) {
+            fileStatus[file_id] = [];
+          }
+
+          fileStatus[file_id][i] = statusToRole(r["data"][file_id])
+        }
+      }
+      else if (!r["online"]) {
+        hostStatus[i] = "offline";
+      }
+      else {
+        hostStatus[i] = "unknown";
+      }
+    }
+    else if (now_ms > r["start_ms"] + conf.requestTimeout_ms ) {
+        // this request timed out: abort it and retry
+        r["xhr"].abort();
+        sendRequest = true;
+        hostStatus[i] = "offline";
+    }
+    else {
+      // keep prev state?
+      hostStatus[i] = "unknown";
+    }
+  
+
+    // send another request
+    if (sendRequest) {
+      requests[i] = { "start_ms": now_ms, "finished": false, "online": false, "valid": false, "data": {} };
+      requests[i]["xhr"] = d3.xhr(osdURLs[i]["url"], "application/json", handleResponse(i));
+    }
+  } 
+
+
+  // fill undefined fileStates
+  for (var file_id in fileStatus) {
+    for (var i=0; i < hostStatus.length; i++) {
+      if (fileStatus[file_id][i] == undefined) {
+        fileStatus[file_id][i] = hostStatus[i] == "offline" ? "offline" : "unknown";
+      }
+    }
+  }
+  draw(hostStatus, fileStatus);
+}
+
+// handle ajax response from (ordered) host i
+function handleResponse(i) {
+  return function(error, data) {
+    var request = requests[i];
+    if (error != null) {
+      var htmlStatus = "status" in error ? error["status"] : 0;
+
+      if (htmlStatus == 0) {
+        request["online"] = false;
+        request["valid"] = false;
+      }
+      else {
+        request["online"] = true;
+        request["valid"] = false;
+      }
+    }
+    else {
+      request["online"] = true;
+      try {
+        var data = JSON.parse(data.responseText);
+        if (data == undefined)
+          console.log("undef", data);
+        request["data"] = data;
+        request["valid"] = true;
+      }
+      catch(e) {
+        request["valid"] = false;
+      }
+    }
+    request["finished"] = true;
+  }
+}
+
+function draw(hostStatus, fileStatus) {
+  var files = d3.entries(fileStatus).sort(function(x,y) { return x.key < y.key ? -1 : 1 });
+
+  var totalWidth = hostStatus.length * conf.hGrid;
+
+  var svg = d3.select("#frame")
+    .attr("width", totalWidth + conf.canvasFrame * 2)
+    .attr("height", totalHeight(files.length) + conf.canvasFrame * 2)
+
+  var canvas = d3.select("#canvas");
+    // .attr("viewBox", "0 0 " + totalWidth +  " " + totalHeight(files.length))
+    // .attr("width", totalWidth)
+    // .attr("height", totalHeight(files.length));
+
+  var host_circles = canvas.selectAll("circle.host").data(hostStatus);
+  host_circles.enter().append("svg:circle")
+    .classed("host", true)
+    .attr("r", conf.hostStatusRadius)
+    .attr("cx", hGridCenter)
+    .attr("cy", conf.hostStatusRadius)
+    .attr("fill", circleStyle(conf.hostStatusCircleStyle, "fill"))
+    .attr("stroke", circleStyle(conf.hostStatusCircleStyle, "stroke"))
+    .attr("stroke-width", circleStyle(conf.hostStatusCircleStyle, "stroke-width"));
+  
+ host_circles.transition()
+    .duration(1000)
+    .attr("fill", circleStyle(conf.hostStatusCircleStyle, "fill"))
+    .attr("stroke", circleStyle(conf.hostStatusCircleStyle, "stroke"))
+    .attr("stroke-width", circleStyle(conf.hostStatusCircleStyle, "stroke-width"));
+  
+  var groups = canvas.selectAll("g").data(files, function(d) { return d.key });
+
+  var groups_enter = groups.enter().append("svg:g")
+    .attr("id", function(d) { return "file-" + d.key })
+    .attr("transform", function(d, i) { return "translate(0 " + totalHeight(i) + ")" })
+    .attr("font-size", conf.fileStatusTextSize)
+    .attr("height", fileStatusHeight())
+    .attr("width", totalWidth)
+    .attr("opacity", 0)
+    .attr("pointer-events", "all");
+    
+  groups.exit()
+    .remove();
+
+  groups_enter.append("svg:rect")
+    .classed("background", true)
+    .attr("height", fileStatusHeight())
+    .attr("width", totalWidth)
+    .attr("fill", "none")
+    .attr("rx", 10);
+
+  
+  groups_enter.append("svg:text")
+    .classed("file-id", true)
+    .text(function(d, i) { return d.key })
+    .attr("y", conf.fileStatusTextSize + conf.fileStatusTextSpace + conf.fileStatusSpace + conf.fileStatusRadius * 2)
+    .attr("x", hGridCenter(null, 0) - conf.fileStatusRadius )
+    .attr("fill", "none");
+
+  
+  groups.transition()
+    .attr("transform", function(d, i) { return "translate(0 " + totalHeight(i) + ")" })
+    .transition()
+    .attr("opacity", 1);
+
+  // TODO: optimize mouseover/out handling. they are fired multiple times because the event bubbles
+  groups_enter
+    .attr("pointer-events", "all")
+    .on("mouseover", function() {
+        d3.select(this).select("text.file-id").attr("fill", conf.fileStatusTextColor);
+        d3.select(this).select("rect.background").attr("fill", conf.fileStatusBackgroundColor); })
+    .on("mouseout", function() { d3.select(this).selectAll("text.file-id, rect.background").attr("fill", "none")  } )
+
+  var circles = groups.selectAll("circle").data(function(d,i) { return d.value });
+
+  circles.enter().append("svg:circle")
+    .attr("r", conf.fileStatusRadius)
+    .attr("cx", hGridCenter )
+    .attr("cy", conf.fileStatusRadius + conf.fileStatusSpace )
+    .attr("fill", circleStyle(conf.fileStatusCircleStyle, "fill"))
+    .attr("stroke", circleStyle(conf.fileStatusCircleStyle, "stroke"))
+    .attr("stroke-width", circleStyle(conf.fileStatusCircleStyle, "stroke-width"));
+
+  circles.transition()
+    .duration(1000)
+    .attr("fill",  circleStyle(conf.fileStatusCircleStyle, "fill"))
+    .attr("stroke", circleStyle(conf.fileStatusCircleStyle, "stroke"))
+    .attr("stroke-width", circleStyle(conf.fileStatusCircleStyle, "stroke-width"));
+
+  circles.exit()
+         .remove();
+}
 
     </script>
   </head>
