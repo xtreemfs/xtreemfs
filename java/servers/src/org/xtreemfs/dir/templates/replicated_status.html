@@ -18,11 +18,6 @@ Licensed under the BSD License, see LICENSE file for details.
     <script type="text/javascript">
 var osds = <!-- $OSDSJSON -->;
 
-// temp
-// var osds = {"test-osd1":{"status_page_url":"http:\/\/127.0.0.1:30641","name":"OSD @ test-osd1","uuid":"test-osd1"},"test-osd2":{"status_page_url":"http:\/\/127.0.0.1:30642","name":"OSD @ test-osd2","uuid":"test-osd2"},"test-osd0":{"status_page_url":"http:\/\/127.0.0.1:30640","name":"OSD @ test-osd0","uuid":"test-osd0"}};
-
-
-
 
 // configuration
 var conf = new Object();
@@ -30,7 +25,7 @@ conf.hGrid = 125;
 conf.canvasFrame = 25;
 conf.reloadInterval = 2000; // in ms
 // after this time the request will be aborted and retried
-conf.requestTimeout_ms = 2000;
+conf.requestTimeout_ms = 5000;
 
 conf.fileStatusRadius = 30;
 conf.fileStatusSpace  = 10;
@@ -60,6 +55,8 @@ var paused = false;
 var intervalID = 0; // for periodic data fetch via GET
 var osdURLs = [];
 var requests = [];
+var hostStatus = [];
+var fileStatus = {};
 
 
 
@@ -95,7 +92,7 @@ window.onload = function() {
   osdURLs = d3.values(osds).sort().map(function(d) { return { "uuid": d["uuid"], "url": (d["status_page_url"] + "/rft.json") }});
 
 
-	// insert svg as canvas
+  // insert svg as canvas
   d3.select("#container")
     .append("svg")
       .attr("id", "frame")
@@ -129,11 +126,9 @@ window.onload = function() {
   intervalID =  window.setInterval(loadData, conf.reloadInterval);
 }
 
-function loadData() {
 
+function loadData() {
   var now_ms = (new Date()).getTime();
-  var hostStatus = [];
-  var fileStatus = {};
 
   for (var i=0; i < osdURLs.length; i++) {
     var r = requests[i];
@@ -152,12 +147,24 @@ function loadData() {
       if (r["online"] && r["valid"]) {
         hostStatus[i] = "online";
 
-        for (var file_id in r["data"]) {
-          if (fileStatus[file_id] == undefined) {
-            fileStatus[file_id] = [];
+        var rft = r["data"];
+        for (var fileId in fileStatus) {
+          if (fileId in rft) {
+            // set the role
+            fileStatus[fileId][i] = statusToRole(rft[fileId]);
+            
+            // remove the file from the per host result
+            delete rft[fileId];
           }
+          else {
+            fileStatus[fileId][i] = "unknown";
+          }
+        }
 
-          fileStatus[file_id][i] = statusToRole(r["data"][file_id])
+        // process the remaining (new) files
+        for (var fileId in rft) {
+          fileStatus[fileId] = [];
+          fileStatus[fileId][i] = statusToRole(rft[fileId])
         }
       }
       else if (!r["online"]) {
@@ -173,10 +180,7 @@ function loadData() {
         sendRequest = true;
         hostStatus[i] = "offline";
     }
-    else {
-      // keep prev state?
-      hostStatus[i] = "unknown";
-    }
+    // else keep the previous state
   
 
     // send another request
@@ -187,14 +191,29 @@ function loadData() {
   } 
 
 
-  // fill undefined fileStates
-  for (var file_id in fileStatus) {
+  // fill undefined fileStates and filter files that are no longer open
+  for (var fileId in fileStatus) {
+    var open = 0;
+
     for (var i=0; i < hostStatus.length; i++) {
-      if (fileStatus[file_id][i] == undefined) {
-        fileStatus[file_id][i] = hostStatus[i] == "offline" ? "offline" : "unknown";
+      if (hostStatus[i] == "offline") {
+        fileStatus[fileId][i] = "offline";
+      }
+      else if (fileStatus[fileId][i] == undefined) {
+        fileStatus[fileId][i] = hostStatus[i] == "offline" ? "offline" : "unknown";
+      }
+      else if (fileStatus[fileId][i] != "unknown") {
+        // the file has some "open" state
+        open = open + 1;
       }
     }
+
+    // remove the file if it is no longer open
+    if (open == 0) {
+      delete fileStatus[fileId];
+    }
   }
+
   draw(hostStatus, fileStatus);
 }
 
@@ -328,9 +347,9 @@ function draw(hostStatus, fileStatus) {
   </head>
 
   <body>
-  	<h1><a href="http://www.XtreemFS.org"><img src="http://www.xtreemfs.com/imgs/Logo_200px.jpg" alt="XtreemFS Logo"/></a> Server Status</h1>
-  	
-  	<div id="controls"></div>
+    <h1><a href="http://www.XtreemFS.org"><img src="http://www.xtreemfs.com/imgs/Logo_200px.jpg" alt="XtreemFS Logo"/></a> Server Status</h1>
+    
+    <div id="controls"></div>
     <div id="container"></div>
   </body>
 </html>
