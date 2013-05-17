@@ -87,10 +87,13 @@ if (typeof String.prototype.startsWith != 'function') {
 
 // init code
 window.onload = function() {
-
   // make the osd object an sorted array
   osdURLs = d3.values(osds).sort().map(function(d) { return { "uuid": d["uuid"], "url": (d["status_page_url"] + "/rft.json") }});
-
+  for(var i=0; i < osdURLs.length; i++) {
+    if (hostStatus[i] == undefined) {
+      hostStatus[i] = "unknown";
+    }
+  }
 
   // insert svg as canvas
   d3.select("#container")
@@ -126,7 +129,6 @@ window.onload = function() {
   intervalID =  window.setInterval(loadData, conf.reloadInterval);
 }
 
-
 function loadData() {
   var now_ms = (new Date()).getTime();
 
@@ -135,44 +137,13 @@ function loadData() {
     var sendRequest = false;
 
     if (r == undefined) {
+      // this osd has never been queried
       sendRequest = true;
-
-      // we don't know anything about this host yet
-      hostStatus[i] = "unknown";
     }
     else if (r["finished"]) {
       // everything's fine - we got a response
+      // the data has been parsed as part of the vent handler
       sendRequest = true;
-
-      if (r["online"] && r["valid"]) {
-        hostStatus[i] = "online";
-
-        var rft = r["data"];
-        for (var fileId in fileStatus) {
-          if (fileId in rft) {
-            // set the role
-            fileStatus[fileId][i] = statusToRole(rft[fileId]);
-            
-            // remove the file from the per host result
-            delete rft[fileId];
-          }
-          else {
-            fileStatus[fileId][i] = "unknown";
-          }
-        }
-
-        // process the remaining (new) files
-        for (var fileId in rft) {
-          fileStatus[fileId] = [];
-          fileStatus[fileId][i] = statusToRole(rft[fileId])
-        }
-      }
-      else if (!r["online"]) {
-        hostStatus[i] = "offline";
-      }
-      else {
-        hostStatus[i] = "unknown";
-      }
     }
     else if (now_ms > r["start_ms"] + conf.requestTimeout_ms ) {
         // this request timed out: abort it and retry
@@ -185,12 +156,78 @@ function loadData() {
 
     // send another request
     if (sendRequest) {
-      requests[i] = { "start_ms": now_ms, "finished": false, "online": false, "valid": false, "data": {} };
+      requests[i] = { "start_ms": now_ms, "finished": false };
       requests[i]["xhr"] = d3.xhr(osdURLs[i]["url"], "application/json", handleResponse(i));
     }
   } 
 
 
+  cleanFileStatus();
+  draw();
+}
+
+// handle ajax response from (ordered) host i
+function handleResponse(i) {
+  return function(error, data) {
+    var request = requests[i];
+    request["finished"] = true;
+
+    var rft;
+    var online = true;
+    var valid = false;
+
+    if (error != null) {
+      var htmlStatus = "status" in error ? error["status"] : 0;
+
+      if (htmlStatus == 0) {
+        online = false;
+        valid = false;
+      }
+      else {
+        valid = false;
+      }
+    }
+    else {
+      try {
+        rft = JSON.parse(data.responseText);
+        valid = true;
+      }
+      catch(e) {
+        valid = false;
+      }
+    }
+
+    // update the host's status
+    hostStatus[i] = (online && !valid) ? "unknown" : (online ? "online" : "offline");
+
+    // update the files' states
+    if (valid) {
+      for (var fileId in fileStatus) {
+        if (fileId in rft) {
+          // set the role
+          fileStatus[fileId][i] = statusToRole(rft[fileId]);
+          
+          // remove the file from the per host result
+          delete rft[fileId];
+        }
+        else {
+          fileStatus[fileId][i] = "unknown";
+        }
+      }
+
+      // process the remaining (new) files
+      for (var fileId in rft) {
+        fileStatus[fileId] = [];
+        fileStatus[fileId][i] = statusToRole(rft[fileId])
+      }
+    }
+    
+    cleanFileStatus();
+    draw();
+  }
+}
+
+function cleanFileStatus() {
   // fill undefined fileStates and filter files that are no longer open
   for (var fileId in fileStatus) {
     var open = 0;
@@ -213,44 +250,9 @@ function loadData() {
       delete fileStatus[fileId];
     }
   }
-
-  draw(hostStatus, fileStatus);
 }
 
-// handle ajax response from (ordered) host i
-function handleResponse(i) {
-  return function(error, data) {
-    var request = requests[i];
-    if (error != null) {
-      var htmlStatus = "status" in error ? error["status"] : 0;
-
-      if (htmlStatus == 0) {
-        request["online"] = false;
-        request["valid"] = false;
-      }
-      else {
-        request["online"] = true;
-        request["valid"] = false;
-      }
-    }
-    else {
-      request["online"] = true;
-      try {
-        var data = JSON.parse(data.responseText);
-        if (data == undefined)
-          console.log("undef", data);
-        request["data"] = data;
-        request["valid"] = true;
-      }
-      catch(e) {
-        request["valid"] = false;
-      }
-    }
-    request["finished"] = true;
-  }
-}
-
-function draw(hostStatus, fileStatus) {
+function draw() {
   var files = d3.entries(fileStatus).sort(function(x,y) { return x.key < y.key ? -1 : 1 });
 
   var totalWidth = hostStatus.length * conf.hGrid;
