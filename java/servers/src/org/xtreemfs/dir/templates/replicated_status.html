@@ -41,6 +41,9 @@ conf.fileStatusCircleStyle = {
   "unknown": {"fill": "#ddd"},
 }
 
+conf.hostStatusTextSize = 10;
+conf.hostStatusTextColor = "#ccc";
+conf.hostStatusTextSpace = 4;
 conf.hostStatusRadius = 40;
 conf.hostStatusCircleStyle = {
   "_default": {"stroke": "#000", "stroke-width": 1},
@@ -125,6 +128,7 @@ window.onload = function() {
       }
     });
 
+  draw();
   loadData();
   intervalID =  window.setInterval(loadData, conf.reloadInterval);
 }
@@ -177,14 +181,11 @@ function handleResponse(i) {
     var valid = false;
 
     if (error != null) {
-      var htmlStatus = "status" in error ? error["status"] : 0;
+      valid = false;
 
+      var htmlStatus = "status" in error ? error["status"] : 0;
       if (htmlStatus == 0) {
         online = false;
-        valid = false;
-      }
-      else {
-        valid = false;
       }
     }
     else {
@@ -237,7 +238,7 @@ function cleanFileStatus() {
         fileStatus[fileId][i] = "offline";
       }
       else if (fileStatus[fileId][i] == undefined) {
-        fileStatus[fileId][i] = hostStatus[i] == "offline" ? "offline" : "unknown";
+        fileStatus[fileId][i] = "unknown";
       }
       else if (fileStatus[fileId][i] != "unknown") {
         // the file has some "open" state
@@ -262,74 +263,94 @@ function draw() {
     .attr("height", totalHeight(files.length) + conf.canvasFrame * 2)
 
   var canvas = d3.select("#canvas");
-    // .attr("viewBox", "0 0 " + totalWidth +  " " + totalHeight(files.length))
-    // .attr("width", totalWidth)
-    // .attr("height", totalHeight(files.length));
 
-  var host_circles = canvas.selectAll("circle.host").data(hostStatus);
-  host_circles.enter().append("svg:circle")
+  var hostGroups = canvas.selectAll("g.host").data(hostStatus);
+  var hostGroupsEnter = hostGroups.enter().append("g")
+    .classed("host", true)
+    .attr("transform", function(d,i) { 
+        var tx = hGridCenter(d,i);
+        var ty = conf.hostStatusRadius + circleStyle(conf.hostStatusCircleStyle, "stroke-width")(d);
+        return "translate(" +  tx + " " + ty +")"   
+    });
+  
+  hostGroupsEnter.append("svg:circle")
     .classed("host", true)
     .attr("r", conf.hostStatusRadius)
-    .attr("cx", hGridCenter)
-    .attr("cy", conf.hostStatusRadius)
     .attr("fill", circleStyle(conf.hostStatusCircleStyle, "fill"))
     .attr("stroke", circleStyle(conf.hostStatusCircleStyle, "stroke"))
     .attr("stroke-width", circleStyle(conf.hostStatusCircleStyle, "stroke-width"));
-  
- host_circles.transition()
+
+  hostGroups.select("circle.host")
+    .transition()
     .duration(1000)
     .attr("fill", circleStyle(conf.hostStatusCircleStyle, "fill"))
     .attr("stroke", circleStyle(conf.hostStatusCircleStyle, "stroke"))
     .attr("stroke-width", circleStyle(conf.hostStatusCircleStyle, "stroke-width"));
-  
-  var groups = canvas.selectAll("g").data(files, function(d) { return d.key });
 
-  var groups_enter = groups.enter().append("svg:g")
+  hostGroupsEnter.append("svg:text")
+    .classed("host", true);
+  
+  hostGroups.select("text.host")
+    .text(function(d,i){ return osds[osdURLs[i]["uuid"]]["name"]; })
+    .attr("font-size", conf.hostStatusTextSize)
+    .attr("fill", conf.hostStatusTextColor)
+    .attr("text-anchor", "middle")
+    .attr("dominant-baseline", "central")
+    .attr("transform", function(d) { 
+        var bbox = this.getBBox();
+        var maxWidth = conf.hostStatusRadius * 2 -conf.hostStatusTextSpace * 2;
+        if (bbox.width >  maxWidth) {
+          var scale = maxWidth / bbox.width;
+          return "scale(" + scale + ")";
+        }
+    });
+
+  
+  var fileGroups = canvas.selectAll("g.file").data(files, function(d) { return d.key });
+  var fileGroupsEnter = fileGroups.enter().append("svg:g")
+    .classed("file", true)
     .attr("id", function(d) { return "file-" + d.key })
     .attr("transform", function(d, i) { return "translate(0 " + totalHeight(i) + ")" })
     .attr("font-size", conf.fileStatusTextSize)
-    .attr("height", fileStatusHeight())
-    .attr("width", totalWidth)
     .attr("opacity", 0)
     .attr("pointer-events", "all");
     
-  groups.exit()
+  fileGroups.exit()
     .remove();
 
-  groups_enter.append("svg:rect")
+  fileGroupsEnter.append("svg:rect")
     .classed("background", true)
     .attr("height", fileStatusHeight())
     .attr("width", totalWidth)
     .attr("fill", "none")
     .attr("rx", 10);
 
-  
-  groups_enter.append("svg:text")
+  fileGroupsEnter.append("svg:text")
     .classed("file-id", true)
     .text(function(d, i) { return d.key })
     .attr("y", conf.fileStatusTextSize + conf.fileStatusTextSpace + conf.fileStatusSpace + conf.fileStatusRadius * 2)
     .attr("x", hGridCenter(null, 0) - conf.fileStatusRadius )
     .attr("fill", "none");
 
-  
-  groups.transition()
+  fileGroups.transition()
     .attr("transform", function(d, i) { return "translate(0 " + totalHeight(i) + ")" })
     .transition()
     .attr("opacity", 1);
 
   // TODO: optimize mouseover/out handling. they are fired multiple times because the event bubbles
-  groups_enter
+  fileGroupsEnter
     .attr("pointer-events", "all")
     .on("mouseover", function() {
         d3.select(this).select("text.file-id").attr("fill", conf.fileStatusTextColor);
-        d3.select(this).select("rect.background").attr("fill", conf.fileStatusBackgroundColor); })
-    .on("mouseout", function() { d3.select(this).selectAll("text.file-id, rect.background").attr("fill", "none")  } )
+        d3.select(this).select("rect.background").attr("fill", conf.fileStatusBackgroundColor); 
+    })
+    .on("mouseout", function() { d3.select(this).selectAll("text.file-id, rect.background").attr("fill", "none") });
 
-  var circles = groups.selectAll("circle").data(function(d,i) { return d.value });
 
+  var circles = fileGroups.selectAll("circle").data(function(d,i) { return d.value });
   circles.enter().append("svg:circle")
     .attr("r", conf.fileStatusRadius)
-    .attr("cx", hGridCenter )
+    .attr("cx", hGridCenter)
     .attr("cy", conf.fileStatusRadius + conf.fileStatusSpace )
     .attr("fill", circleStyle(conf.fileStatusCircleStyle, "fill"))
     .attr("stroke", circleStyle(conf.fileStatusCircleStyle, "stroke"))
@@ -342,7 +363,7 @@ function draw() {
     .attr("stroke-width", circleStyle(conf.fileStatusCircleStyle, "stroke-width"));
 
   circles.exit()
-         .remove();
+    .remove();
 }
 
     </script>
