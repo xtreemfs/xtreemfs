@@ -26,6 +26,7 @@ conf.canvasFrame = 25;
 conf.reloadInterval = 2000; // in ms
 // after this time the request will be aborted and retried
 conf.requestTimeout_ms = 5000;
+conf.bgColor = "#fff";
 
 conf.fileStatusRadius = 30;
 conf.fileStatusSpace  = 10;
@@ -99,12 +100,18 @@ window.onload = function() {
   }
 
   // insert svg as canvas
-  d3.select("#container")
+  var svg = d3.select("#container")
     .append("svg")
-      .attr("id", "frame")
-    .append("svg:g")
-      .attr("id", "canvas")
-      .attr("transform", "translate(" + conf.canvasFrame + " " + conf.canvasFrame + ")");
+    .attr("id", "frame");
+
+  svg.append("svg:rect")
+    .attr("width", "100%")
+    .attr("height", "100%")
+    .attr("fill", conf.bgColor);
+
+  svg.append("svg:g")
+    .attr("id", "canvas")
+    .attr("transform", "translate(" + conf.canvasFrame + " " + conf.canvasFrame + ")");
 
   var controls = d3.select("#controls");
   controls.append("button")
