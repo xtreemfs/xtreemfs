@@ -83,6 +83,7 @@ enum ServiceType {
   SERVICE_TYPE_MRC = 1;
   SERVICE_TYPE_OSD = 2;
   SERVICE_TYPE_VOLUME = 3;
+  SERVICE_TYPE_DIR = 4;
 }
 
 enum ServiceStatus {
