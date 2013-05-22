@@ -80,6 +80,20 @@ public class ReplicaStatusPage extends StatusServerModule {
 
     @Override
     public void handle(HttpExchange httpExchange) throws IOException {
+
+        String uriPath = httpExchange.getRequestURI().getPath();
+        if (uriPath.equals("/replicaStatus/d3.v3.js")) {
+            StatusServerHelper.sendFile("org/xtreemfs/dir/templates/d3.v3.js", httpExchange);
+        } else if (uriPath.equals("/replicaStatus")) {
+            handleStatusPage(httpExchange);
+        } else {
+            httpExchange.sendResponseHeaders(404, -1);
+            httpExchange.close();
+        }
+
+    }
+
+    private void handleStatusPage(HttpExchange httpExchange) throws IOException {
         try {
             final Database database = master.getDirDatabase();
             ResultSet<byte[], byte[]> iter;
