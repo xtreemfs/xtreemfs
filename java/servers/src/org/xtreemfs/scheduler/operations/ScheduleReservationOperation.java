@@ -33,7 +33,7 @@ public class ScheduleReservationOperation extends SchedulerOperation {
         try {
             master.reloadOSDs();
         } catch(Exception ex) {
-            rq.sendError(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "Cannot request OSD from DIR");
+            rq.sendError(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "Cannot request OSDs from DIR");
         }
 		Scheduler.reservation request = (Scheduler.reservation) rq
 				.getRequestMessage();

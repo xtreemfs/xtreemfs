@@ -138,6 +138,9 @@ public class SchedulerTest {
 
     @Test
     public void testGetFreeResources() throws Exception {
+        // Wait until OSDMonitor discovered OSDs
+        Thread.sleep(1000);
+
         // Get initially free resources
         RPCResponse<Scheduler.freeResourcesResponse> response = client.getFreeResources(
                 null, RPCAuthentication.authNone, RPCAuthentication.userService, Common.emptyRequest.getDefaultInstance());
@@ -186,9 +189,9 @@ public class SchedulerTest {
         double newRandomTP = newFreeRes.getRandomThroughput();
         double newSeqTP = newFreeRes.getStreamingThroughput();
 
-        assertTrue(initialCapacity >= newCapacity);
-        assertTrue(initialRandTp >= newRandomTP);
-        assertTrue(initialSeqTp >= newSeqTP);
+        assertTrue(initialCapacity > newCapacity);
+        assertTrue(initialRandTp == newRandomTP);
+        assertTrue(initialSeqTp > newSeqTP);
 
         newResponse.freeBuffers();
     }

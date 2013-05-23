@@ -18,8 +18,6 @@ import org.xtreemfs.scheduler.data.OSDDescription;
 import org.xtreemfs.scheduler.data.Reservation;
 import org.xtreemfs.scheduler.data.store.ReservationStore;
 
-import java.util.Iterator;
-
 /**
  * @author Christoph Kleineweber <kleineweber@zib.de>
  */
@@ -58,13 +56,11 @@ public class GetFreeResourcesOperation extends SchedulerOperation {
             }
         }
 
-        Iterator<Reservation> it = reservations.getReservations().iterator();
-        while(it.hasNext()) {
-            Reservation r = it.next();
+        for(Reservation r: reservations.getReservations()) {
             freeCapacity -= r.getCapacity();
 
             if(r.getType() == Reservation.ReservationType.STREAMING_RESERVATION) {
-                freeSeq -= r.getRamdomThroughput();
+                freeSeq -= r.getStreamingThroughput();
             }
             if(r.getType() == Reservation.ReservationType.RANDOM_IO_RESERVATION) {
                 freeIOPS -= r.getRamdomThroughput();
