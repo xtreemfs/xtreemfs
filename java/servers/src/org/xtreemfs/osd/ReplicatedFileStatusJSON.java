@@ -13,12 +13,16 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.xtreemfs.common.statusserver.StatusServerModule;
 import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
 
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 
+/**
+ * JSON interface returning the the list of files currently open in replication mode.
+ */
 public class ReplicatedFileStatusJSON extends StatusServerModule {
 
     private OSDRequestDispatcher myDispatcher;
@@ -80,7 +84,7 @@ public class ReplicatedFileStatusJSON extends StatusServerModule {
             sendResponse(httpExchange, statusJSON);
 
         } catch (Throwable ex) {
-            ex.printStackTrace();
+            Logging.logError(Logging.LEVEL_WARN, (Object) null, ex);
             httpExchange.sendResponseHeaders(500, 0);
         }
     }

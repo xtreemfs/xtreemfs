@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2013 Johannes Dillmann, Zuse Institute Berlin 
+ *
+ * Licensed under the BSD License, see LICENSE file for details.
+ * 
+ */
 package org.xtreemfs.dir;
 
 import java.io.IOException;
@@ -12,6 +18,7 @@ import org.xtreemfs.common.statusserver.StatusServerHelper;
 import org.xtreemfs.common.statusserver.StatusServerModule;
 import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.osd.vivaldi.VivaldiNode;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
@@ -19,6 +26,9 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 
 import com.sun.net.httpserver.HttpExchange;
 
+/**
+ * Serves a HTML status page, which is using JavaScript to visualize vivaldi distances and states.
+ */
 public class VivaldiStatusPage extends StatusServerModule {
 
     private DIRRequestDispatcher master;
@@ -63,14 +73,9 @@ public class VivaldiStatusPage extends StatusServerModule {
                 String content = getVivaldiData();
                 sendResponse(httpExchange, content);
             } catch (BabuDBException ex) {
-                ex.printStackTrace();
+                Logging.logError(Logging.LEVEL_WARN, (Object) null, ex);
                 httpExchange.sendResponseHeaders(500, 0);
-            }
-            // catch (IOException ex) {
-            // ex.printStackTrace();
-            // httpExchange.sendResponseHeaders(500, 0);
-            // }
-            finally {
+            } finally {
                 httpExchange.close();
             }
         } else if (uriPath.equals("/vivaldi")) {

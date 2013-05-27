@@ -20,10 +20,14 @@ import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
 
 import com.sun.net.httpserver.HttpExchange;
 
+/**
+ * Serves a HTML page, which is using JavaScript to monitor and present the states of the OSDs and open files.
+ */
 public class ReplicaStatusPage extends StatusServerModule {
 
     private DIRRequestDispatcher master;
@@ -45,7 +49,7 @@ public class ReplicaStatusPage extends StatusServerModule {
     };
 
     public ReplicaStatusPage() {
-        StringBuffer sb = StatusServerHelper.readTemplate("org/xtreemfs/dir/templates/replicated_status.html");
+        StringBuffer sb = StatusServerHelper.readTemplate("org/xtreemfs/dir/templates/replica_status.html");
         if (sb == null) {
             statusPageTemplate = "<h1>Template was not found, unable to show status page!</h1>";
         } else {
@@ -60,7 +64,7 @@ public class ReplicaStatusPage extends StatusServerModule {
 
     @Override
     public String getUriPath() {
-        return "/replicaStatus";
+        return "/replica_status";
     }
 
     @Override
@@ -82,9 +86,9 @@ public class ReplicaStatusPage extends StatusServerModule {
     public void handle(HttpExchange httpExchange) throws IOException {
 
         String uriPath = httpExchange.getRequestURI().getPath();
-        if (uriPath.equals("/replicaStatus/d3.v3.js")) {
+        if (uriPath.equals("/replica_status/d3.v3.js")) {
             StatusServerHelper.sendFile("org/xtreemfs/dir/templates/d3.v3.js", httpExchange);
-        } else if (uriPath.equals("/replicaStatus")) {
+        } else if (uriPath.equals("/replica_status")) {
             handleStatusPage(httpExchange);
         } else {
             httpExchange.sendResponseHeaders(404, -1);
@@ -94,11 +98,14 @@ public class ReplicaStatusPage extends StatusServerModule {
     }
 
     private void handleStatusPage(HttpExchange httpExchange) throws IOException {
+        // The OSDs will be saved as a map associating the OSDs uuid with a map consisting of the uuid, the
+        // name and the status page url. This map will be served as JSON.
+        // For example: { "osd-uuid-1": { "uuid": "osd-uuid-1", "name": "OSD Number 1", "status_page_url": "http://osd1.cluster.tld"} }
+        HashMap<String, HashMap<String, String>> osds = new HashMap<String, HashMap<String, String>>();
+        ResultSet<byte[], byte[]> iter = null;
+
         try {
             final Database database = master.getDirDatabase();
-            ResultSet<byte[], byte[]> iter;
-
-            HashMap<String, HashMap<String, String>> osds = new HashMap<String, HashMap<String, String>>();
 
             iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0], null).get();
             while (iter.hasNext()) {
@@ -116,24 +123,29 @@ public class ReplicaStatusPage extends StatusServerModule {
                             data.put("status_page_url", dataEntry.getValue());
                         }
                     }
-                    // TODO (jdillmann): check if status_page_url was found
-                    osds.put(sreg.getUuid(), data);
+
+                    // Add only OSDs with a status_page_url
+                    if (data.containsKey("status_page_url")) {
+                        osds.put(sreg.getUuid(), data);
+                    }
                 }
 
             }
-            iter.free();
 
             String osdsJSON = JSONParser.writeJSON(osds);
             sendResponse(httpExchange, statusPageTemplate.replace(Vars.OSDSJSON.toString(), osdsJSON));
 
         } catch (BabuDBException ex) {
-            ex.printStackTrace();
+            Logging.logError(Logging.LEVEL_WARN, (Object) null, ex);
             httpExchange.sendResponseHeaders(500, 0);
         } catch (JSONException ex) {
-            ex.printStackTrace();
+            Logging.logError(Logging.LEVEL_WARN, (Object) null, ex);
             httpExchange.sendResponseHeaders(500, 0);
         } finally {
             httpExchange.close();
+            if (iter != null) {
+                iter.free();
+            }
         }
     }
 

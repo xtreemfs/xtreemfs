@@ -18,6 +18,9 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
 
 import com.sun.net.httpserver.HttpExchange;
 
+/**
+ * Serves a simple HTML status page with BabuDBs runtime state.
+ */
 public class BabuDBStatusPage extends StatusServerModule {
 
     private DIRRequestDispatcher master;
@@ -62,9 +65,7 @@ public class BabuDBStatusPage extends StatusServerModule {
 
         if (dbStatus == null) {
             sb.append("BabuDB has not yet been initialized.");
-        }
-
-        else {
+        } else {
             sb.append("<TABLE>");
             Map<String, Object> status = new TreeMap<String, Object>(dbStatus);
             for (Entry<String, Object> entry : status.entrySet()) {

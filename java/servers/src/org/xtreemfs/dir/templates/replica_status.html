@@ -10,14 +10,13 @@ Licensed under the BSD License, see LICENSE file for details.
 
     <title>Server Status</title>
 
-    <script type="text/javascript" src="replicaStatus/d3.v3.js"></script>
+    <script type="text/javascript" src="/replica_status/d3.v3.js"></script>
 
     <style type="text/css">
     </style>
 
     <script type="text/javascript">
 var osds = <!-- $OSDSJSON -->;
-
 
 // configuration
 var conf = new Object();
@@ -38,8 +37,8 @@ conf.fileStatusCircleStyle = {
   "_default": {"stroke": "#000", "stroke-width": 1},
   "primary": {"fill": "#009900" },
   "backup": {"fill": "#000099"},
-  "offline": {"fill": conf.bgColor, "stroke": conf.bgColor},
-  "unknown": {"fill": "#ddd"},
+  "offline": {"fill": "#990000"},
+  "unknown": {"fill": "#000099"},
 }
 
 conf.hostStatusTextSize = 10;
@@ -53,7 +52,6 @@ conf.hostStatusCircleStyle = {
   "unknown": {"fill": "#ddd"}
 }
 
-
 // globals
 var paused = false;
 var intervalID = 0; // for periodic data fetch via GET
@@ -61,8 +59,6 @@ var osdURLs = [];
 var requests = [];
 var hostStatus = [];
 var fileStatus = {};
-
-
 
 // helper functions
 function hGridCenter(d, i) { return i * conf.hGrid + conf.hGrid / 2  }
@@ -75,25 +71,27 @@ function statusToRole(data) {
       return "primary";
     if (data["role"].startsWith("backup"))
       return "backup";
-    // if (data["role"].startsWith("outdated"))
-    //   return "outdated"
   }
   
   return "unknown";
 }
 
+// Extend the JavaScript String object with a startsWith method.
+// String.startsWith tests if this string starts with the specified prefix. 
 if (typeof String.prototype.startsWith != 'function') {
   String.prototype.startsWith = function (str){
     return this.slice(0, str.length) == str;
   };
 }
 
-
 // init code
 window.onload = function() {
   // make the osd object an sorted array
   osdURLs = d3.values(osds).sort().map(function(d) { return { "uuid": d["uuid"], "url": (d["status_page_url"] + "/rft.json") }});
-  for(var i=0; i < osdURLs.length; i++) {
+
+  // initialize the hostStatus list with an unknown state to allow transition effects
+  // TODO (jdillmann): Extend the ReplicaStatusPage with an JSON interface to the OSD list and periodically check if the list changed
+  for(var i = 0; i < osdURLs.length; i++) {
     if (hostStatus[i] == undefined) {
       hostStatus[i] = "unknown";
     }
@@ -127,8 +125,7 @@ window.onload = function() {
         paused = false;
         intervalID =  window.setInterval(loadData, conf.reloadInterval);
         d3.select(this).text("Disable Auto Reload");
-      }
-      else {
+      } else {
         paused = true;
         window.clearInterval(intervalID);
         d3.select(this).text("Enable Auto Reload");
@@ -143,20 +140,18 @@ window.onload = function() {
 function loadData() {
   var now_ms = (new Date()).getTime();
 
-  for (var i=0; i < osdURLs.length; i++) {
+  for (var i = 0; i < osdURLs.length; i++) {
     var r = requests[i];
     var sendRequest = false;
 
     if (r == undefined) {
       // this osd has never been queried
       sendRequest = true;
-    }
-    else if (r["finished"]) {
+    } else if (r["finished"]) {
       // everything's fine - we got a response
-      // the data has been parsed as part of the vent handler
+      // the data has been parsed as part of the event handler
       sendRequest = true;
-    }
-    else if (now_ms > r["start_ms"] + conf.requestTimeout_ms ) {
+    } else if (now_ms > r["start_ms"] + conf.requestTimeout_ms ) {
         // this request timed out: abort it and retry
         r["xhr"].abort();
         sendRequest = true;
@@ -164,14 +159,12 @@ function loadData() {
     }
     // else keep the previous state
   
-
     // send another request
     if (sendRequest) {
       requests[i] = { "start_ms": now_ms, "finished": false };
       requests[i]["xhr"] = d3.xhr(osdURLs[i]["url"], "application/json", handleResponse(i));
     }
   } 
-
 
   cleanFileStatus();
   draw();
@@ -183,33 +176,34 @@ function handleResponse(i) {
     var request = requests[i];
     request["finished"] = true;
 
+    // rft will contain the parsed JSON result if it is valid
+    // it will be undefined if the received data is invalid
     var rft;
-    var online = true;
-    var valid = false;
 
     if (error != null) {
-      valid = false;
+      // an error occured while requesting the data
 
-      var htmlStatus = "status" in error ? error["status"] : 0;
-      if (htmlStatus == 0) {
-        online = false;
+      if ( "status" in error && error["status"] == 0 ) {
+        // if the status code == 0 the server didn't respond
+        hostStatus[i] = "offline";
+      } else {
+        // if an HTTP status code != 0 is set, the server is online but could not handle the request
+        hostStatus[i] = "unknown";
       }
-    }
-    else {
+    } else {
+      hostStatus[i] = "online";
+
       try {
         rft = JSON.parse(data.responseText);
-        valid = true;
       }
       catch(e) {
-        valid = false;
+        // if the received data is invalid, the server probably isn't working correctly, but is still online
+        hostStatus[i] = "unknown";
       }
     }
 
-    // update the host's status
-    hostStatus[i] = (online && !valid) ? "unknown" : (online ? "online" : "offline");
-
     // update the files' states
-    if (valid) {
+    if (rft != undefined) {
       for (var fileId in fileStatus) {
         if (fileId in rft) {
           // set the role
@@ -217,8 +211,8 @@ function handleResponse(i) {
           
           // remove the file from the per host result
           delete rft[fileId];
-        }
-        else {
+        
+        } else {
           fileStatus[fileId][i] = "unknown";
         }
       }
@@ -240,14 +234,16 @@ function cleanFileStatus() {
   for (var fileId in fileStatus) {
     var open = 0;
 
-    for (var i=0; i < hostStatus.length; i++) {
+    for (var i = 0; i < hostStatus.length; i++) {
       if (hostStatus[i] == "offline") {
         fileStatus[fileId][i] = "offline";
       }
-      else if (fileStatus[fileId][i] == undefined) {
+
+      if (fileStatus[fileId][i] == undefined) {
         fileStatus[fileId][i] = "unknown";
       }
-      else if (fileStatus[fileId][i] != "unknown") {
+      
+      if (fileStatus[fileId][i] == "primary" || fileStatus[fileId][i] == "backup") {
         // the file has some "open" state
         open = open + 1;
       }
@@ -344,7 +340,7 @@ function draw() {
     .transition()
     .attr("opacity", 1);
 
-  // TODO: optimize mouseover/out handling. they are fired multiple times because the event bubbles
+  // TODO (jdillmann): optimize mouseover/out handling. they are fired multiple times because the event bubbles
   fileGroupsEnter
     .attr("pointer-events", "all")
     .on("mouseover", function() {

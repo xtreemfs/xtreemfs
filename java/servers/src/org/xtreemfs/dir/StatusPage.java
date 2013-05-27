@@ -30,6 +30,7 @@ import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.foundation.VersionManagement;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.vivaldi.VivaldiNode;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceStatus;
@@ -40,6 +41,9 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 
 import com.sun.net.httpserver.HttpExchange;
 
+/**
+ * Serves a simple HTML status page with BabuDBs runtime state.
+ */
 public class StatusPage extends StatusServerModule {
 
     private DIRRequestDispatcher master;
@@ -53,8 +57,6 @@ public class StatusPage extends StatusServerModule {
      * (default: 10 min).
      */
     private final static int     SERVICE_TIMEOUT = 600000;
-
-    private static StringBuilder dump;
 
     private enum Vars {
 
@@ -122,6 +124,11 @@ public class StatusPage extends StatusServerModule {
 
     @Override
     public void handle(HttpExchange httpExchange) throws IOException {
+
+        ResultSet<byte[], byte[]> addrMapsIter = null;
+        ResultSet<byte[], byte[]> servRegIter = null;
+        ResultSet<byte[], byte[]> confIter = null;
+
         try {
 
             final Database database = master.getDirDatabase();
@@ -130,14 +137,12 @@ public class StatusPage extends StatusServerModule {
 
             long time = System.currentTimeMillis();
 
-            ResultSet<byte[], byte[]> iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, new byte[0],
-                    null).get();
-
+            addrMapsIter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, new byte[0], null).get();
             StringBuilder dump = new StringBuilder();
             dump.append("<br><table width=\"100%\" frame=\"box\"><td colspan=\"2\" class=\"heading\">Address Mapping</td>");
             dump.append("<tr><td class=\"dumpTitle\">UUID</td><td class=\"dumpTitle\">mapping</td></tr>");
-            while (iter.hasNext()) {
-                Entry<byte[], byte[]> e = iter.next();
+            while (addrMapsIter.hasNext()) {
+                Entry<byte[], byte[]> e = addrMapsIter.next();
                 AddressMappingRecords ams = new AddressMappingRecords(ReusableBuffer.wrap(e.getValue()));
 
                 final String uuid = new String(e.getKey());
@@ -165,14 +170,14 @@ public class StatusPage extends StatusServerModule {
                 dump.append("</b></td></tr></table>");
             }
             dump.append("</td></tr></table>");
-            iter.free();
+            addrMapsIter.free();
 
-            iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0], null).get();
+            servRegIter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0], null).get();
 
             dump.append("<br><table width=\"100%\" frame=\"box\"><td colspan=\"2\" class=\"heading\">Service Registry</td>");
             dump.append("<tr><td class=\"dumpTitle\">UUID</td><td class=\"dumpTitle\">mapping</td></tr>");
-            while (iter.hasNext()) {
-                Entry<byte[], byte[]> e = iter.next();
+            while (servRegIter.hasNext()) {
+                Entry<byte[], byte[]> e = servRegIter.next();
                 final String uuid = new String(e.getKey());
                 final ServiceRecord sreg = new ServiceRecord(ReusableBuffer.wrap(e.getValue()));
 
@@ -279,17 +284,17 @@ public class StatusPage extends StatusServerModule {
             }
 
             dump.append("</td></tr></table>");
-            iter.free();
+            servRegIter.free();
 
             // Configuration part
 
-            iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_CONFIGURATIONS, new byte[0], null).get();
+            confIter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_CONFIGURATIONS, new byte[0], null).get();
 
             dump.append("<br><table width=\"100%\" frame=\"box\"><td colspan=\"2\" class=\"heading\">Configurations</td>");
             dump.append("<tr><td class=\"dumpTitle\">UUID</td><td class=\"dumpTitle\">Configuration Parameter</td></tr>");
 
-            while (iter.hasNext()) {
-                Entry<byte[], byte[]> e = iter.next();
+            while (confIter.hasNext()) {
+                Entry<byte[], byte[]> e = confIter.next();
                 final String uuid = new String(e.getKey());
                 final ConfigurationRecord conf = new ConfigurationRecord(ReusableBuffer.wrap(e.getValue()));
 
@@ -322,7 +327,7 @@ public class StatusPage extends StatusServerModule {
                 dump.append(conf.getVersion());
                 dump.append("</b></td></table></td></tr>");
             }
-            iter.free();
+            confIter.free();
 
             dump.append("</b></td></table></td></tr>");
             dump.append("</table>");
@@ -351,9 +356,19 @@ public class StatusPage extends StatusServerModule {
             sendResponse(httpExchange, tmp);
 
         } catch (BabuDBException ex) {
-            ex.printStackTrace();
+            Logging.logError(Logging.LEVEL_WARN, (Object) null, ex);
             httpExchange.sendResponseHeaders(500, 0);
+        } finally {
             httpExchange.close();
+            if (addrMapsIter != null) {
+                addrMapsIter.free();
+            }
+            if (servRegIter != null) {
+                servRegIter.free();
+            }
+            if (confIter != null) {
+                confIter.free();
+            }
         }
     }
 
