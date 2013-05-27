@@ -230,12 +230,21 @@ public final class OpenFileTable {
         return false;
     }
 
-    public void close(String fileId) {
-        OpenFileTableEntry currEntry = openFiles.get(fileId);
+    /**
+     * Delete a file by setting its expiration timestamp to 0.
+     * 
+     * @return true if it's necessary to call {@link PreprocStage#checkOpenFileTable()} afterward.
+     */
+    public boolean close(String fileId) {
+        if (contains(fileId)) {
+            // TODO(mberlin): "write" (here set to false) should be part of the OpenFileTableEntry - otherwise
+            // it is not possible to decide if a new file version should be retained upon deletion. {@link
+            // PreprocStage#doPingFile()} suffers the same problem.
+            refresh(fileId, 0, false, true);
 
-        if (currEntry != null) {
-            expTimes.remove(currEntry);
-            openFiles.remove(fileId);
+            return true;
+        } else {
+            return false;
         }
     }
 
