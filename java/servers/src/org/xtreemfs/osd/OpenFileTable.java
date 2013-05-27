@@ -31,11 +31,11 @@ import org.xtreemfs.osd.storage.CowPolicy;
  */
 public final class OpenFileTable {
 
-    private HashMap<String, OpenFileTableEntry> openFiles;
+    private final HashMap<String, OpenFileTableEntry> openFiles;
 
-    private SortedSet<OpenFileTableEntry>       expTimes;
+    private final SortedSet<OpenFileTableEntry>       expTimes;
 
-    private SortedSet<OpenFileTableEntry>       expTimesWrite;
+    private final SortedSet<OpenFileTableEntry>       expTimesWrite;
 
     // constructor
     public OpenFileTable() {
@@ -45,14 +45,25 @@ public final class OpenFileTable {
     }
 
     /**
+     * Insert a new entry in the table.
+     * 
+     * @see #refresh(String, long, boolean, boolean)
+     */
+    public CowPolicy refresh(String fId, long expTime, boolean write) {
+        return refresh(fId, expTime, write, false);
+    }
+
+    /**
      * Insert a new entry in the table
      * 
      * @param fId
      *            fileId
      * @param expTime
      *            expiration time
+     * @param ignoreOlderExpTime
+     *            If true, set expTime even if it's older than the current one.
      */
-    public CowPolicy refresh(String fId, long expTime, boolean write) {
+    public CowPolicy refresh(String fId, long expTime, boolean write, boolean ignoreOlderExpTime) {
         OpenFileTableEntry currEntry = openFiles.get(fId);
 
         if (currEntry != null) {
@@ -62,7 +73,7 @@ public final class OpenFileTable {
 
             // 'currEntry' isn't a new entry, so update it
             // if its expiration time is renewed
-            if (expTime > currEntry.expTime) {
+            if (ignoreOlderExpTime || expTime > currEntry.expTime) {
 
                 // openFiles.remove(fId);
                 expTimes.remove(currEntry);
@@ -297,6 +308,7 @@ public final class OpenFileTable {
                 fileCowPolicy = new CowPolicy(CowPolicy.cowMode.NO_COW);
         }
 
+        @Override
         public int compareTo(OpenFileTableEntry e) {
             int res = 0;
             if (this.expTime < e.expTime) {
@@ -309,6 +321,7 @@ public final class OpenFileTable {
             return res;
         }
 
+        @Override
         public boolean equals(Object o) {
             try {
                 final OpenFileTableEntry e = (OpenFileTableEntry) o;
@@ -322,6 +335,7 @@ public final class OpenFileTable {
             }
         }
 
+        @Override
         public String toString() {
             return "(" + fileId + "," + expTime + ")";
         }
