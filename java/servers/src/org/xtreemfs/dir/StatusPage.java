@@ -130,7 +130,7 @@ public class StatusPage extends StatusServerModule {
         ResultSet<byte[], byte[]> confIter = null;
 
         try {
-
+            // NOTE(jdillmann): Access to the database is not synchronized. This might result in reading stale data.
             final Database database = master.getDirDatabase();
 
             assert (statusPageTemplate != null);

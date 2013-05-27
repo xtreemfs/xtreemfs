@@ -90,6 +90,7 @@ public class VivaldiStatusPage extends StatusServerModule {
     }
 
     private String getVivaldiData() throws BabuDBException, IOException {
+        // NOTE(jdillmann): Access to the database is not synchronized. This might result in reading stale data.
         final Database database = master.getDirDatabase();
         StringBuilder dump = new StringBuilder();
         ResultSet<byte[], byte[]> iter = database

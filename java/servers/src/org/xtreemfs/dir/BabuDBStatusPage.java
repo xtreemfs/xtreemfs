@@ -58,6 +58,7 @@ public class BabuDBStatusPage extends StatusServerModule {
     @Override
     public void handle(HttpExchange httpExchange) throws IOException {
 
+        // NOTE(jdillmann): Access to the database is not synchronized. This might result in reading stale data.
         Map<String, Object> dbStatus = database.getRuntimeState();
 
         StringBuilder sb = new StringBuilder();

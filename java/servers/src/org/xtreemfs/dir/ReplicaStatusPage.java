@@ -105,6 +105,7 @@ public class ReplicaStatusPage extends StatusServerModule {
         ResultSet<byte[], byte[]> iter = null;
 
         try {
+            // NOTE(jdillmann): Access to the database is not synchronized. This might result in reading stale data.
             final Database database = master.getDirDatabase();
 
             iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0], null).get();
