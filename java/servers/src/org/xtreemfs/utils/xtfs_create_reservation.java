@@ -36,12 +36,16 @@ public class xtfs_create_reservation {
     private static final int DEFAULT_PORT = 32642;
 
     public static void main(String args[]) {
+        long capacity = 0;
+        long iops = 0;
+        long seq_tp = 0;
+
         Logging.start(Logging.LEVEL_WARN);
         options = utils.getDefaultAdminToolOptions(false);
-        options.put("volume", new CLIParser.CliOption(CLIParser.CliOption.OPTIONTYPE.STRING, "Volume name", ""));
-        options.put("capacity", new CLIParser.CliOption(CLIParser.CliOption.OPTIONTYPE.NUMBER, "Volume capacity", ""));
-        options.put("iops", new CLIParser.CliOption(CLIParser.CliOption.OPTIONTYPE.NUMBER, "Random throughput (IOPS)", ""));
-        options.put("seq-tp", new CLIParser.CliOption(CLIParser.CliOption.OPTIONTYPE.NUMBER, "Sequential throughput (MB/s)", ""));
+        options.put("volume", new CLIParser.CliOption(CLIParser.CliOption.OPTIONTYPE.STRING, "Volume name", "<volume>"));
+        options.put("capacity", new CLIParser.CliOption(CLIParser.CliOption.OPTIONTYPE.NUMBER, "Volume capacity", "<capacity>"));
+        options.put("iops", new CLIParser.CliOption(CLIParser.CliOption.OPTIONTYPE.NUMBER, "Random throughput (IOPS)", "<iops>"));
+        options.put("seq-tp", new CLIParser.CliOption(CLIParser.CliOption.OPTIONTYPE.NUMBER, "Sequential throughput (MB/s)", "<sequential throughput>"));
 
         List<String> arguments = new ArrayList<String>(1);
         CLIParser.parseCLI(args, options, arguments);
@@ -57,16 +61,22 @@ public class xtfs_create_reservation {
         String schedulerURL = arguments.get(0);
 
         boolean gridSSL = false;
-        SSLOptions sslOptions;
+        SSLOptions sslOptions = null;
         String serviceCredsFile = options.get(utils.OPTION_USER_CREDS_FILE).stringValue;
         String serviceCredsPass = options.get(utils.OPTION_USER_CREDS_PASS).stringValue;
         String trustedCAsFile = options.get(utils.OPTION_TRUSTSTORE_FILE).stringValue;
         String trustedCAsPass = options.get(utils.OPTION_TRUSTSTORE_PASS).stringValue;
 
-        String volumeName = options.get("volumeName").stringValue;
-        long capacity = options.get("capacity").numValue;
-        long iops = options.get("iops").numValue;
-        long seq_tp = options.get("seq-tp").numValue;
+        String volumeName = options.get("volume").stringValue;
+
+        if(options.get("capacity").numValue != null)
+            capacity = options.get("capacity").numValue;
+
+        if(options.get("iops").numValue != null)
+            iops = options.get("iops").numValue;
+
+        if(options.get("seq-tp").numValue != null)
+            seq_tp = options.get("seq-tp").numValue;
 
         Scheduler.reservationType type = (iops != 0) ? Scheduler.reservationType.RANDOM_IO_RESERVATION :
                 ((seq_tp != 0) ? Scheduler.reservationType.STREAMING_RESERVATION :
@@ -78,11 +88,17 @@ public class xtfs_create_reservation {
 
         // TODO: support custom SSL trust managers
         try {
-            sslOptions = new SSLOptions(new FileInputStream(serviceCredsFile), serviceCredsPass,
-                    SSLOptions.PKCS12_CONTAINER, new FileInputStream(trustedCAsFile),
-                    trustedCAsPass, SSLOptions.JKS_CONTAINER, false, gridSSL, null);
+            if(serviceCredsFile != null && serviceCredsPass != null &&
+                    trustedCAsFile != null && trustedCAsPass != null) {
+                sslOptions = new SSLOptions(new FileInputStream(serviceCredsFile), serviceCredsPass,
+                        SSLOptions.PKCS12_CONTAINER, new FileInputStream(trustedCAsFile),
+                        trustedCAsPass, SSLOptions.JKS_CONTAINER, false, gridSSL, null);
+            }
+
             InetSocketAddress schedulerSocket = getSchedulerConnection(schedulerURL);
             RPCNIOSocketClient client = new RPCNIOSocketClient(sslOptions, RPC_TIMEOUT, CONNECTION_TIMEOUT);
+            client.start();
+            client.waitForStartup();
             SchedulerServiceClient schedulerServiceClient = new SchedulerServiceClient(client, schedulerSocket);
 
             RPC.UserCredentials userCreds = RPC.UserCredentials.newBuilder().setUsername("root").addGroups("root").build();
@@ -98,7 +114,7 @@ public class xtfs_create_reservation {
             SchedulerClient schedulerClient = new SchedulerClient(schedulerServiceClient, schedulerSocket, MAX_RETRIES, RETRY_WAIT);
             schedulerClient.scheduleReservation(schedulerSocket, authHeader, userCreds, r.build());
         } catch (Exception e) {
-            System.err.println("unable to get SSL options, because:" + e.getMessage());
+            System.err.println("Error: " + e.getMessage());
             System.exit(1);
         }
     }

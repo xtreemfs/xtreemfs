@@ -56,22 +56,28 @@ public class xtfs_show_reservations {
         
         // TODO: support custom SSL trust managers
         try {
-            sslOptions = new SSLOptions(new FileInputStream(serviceCredsFile), serviceCredsPass,
-                    SSLOptions.PKCS12_CONTAINER, new FileInputStream(trustedCAsFile),
-                    trustedCAsPass, SSLOptions.JKS_CONTAINER, false, gridSSL, null);
+            if(serviceCredsFile != null && serviceCredsPass != null &&
+                    trustedCAsFile != null && trustedCAsPass != null) {
+                sslOptions = new SSLOptions(new FileInputStream(serviceCredsFile), serviceCredsPass,
+                        SSLOptions.PKCS12_CONTAINER, new FileInputStream(trustedCAsFile),
+                        trustedCAsPass, SSLOptions.JKS_CONTAINER, false, gridSSL, null);
+            }
+
             InetSocketAddress schedulerSocket = getSchedulerConnection(schedulerURL);
             RPCNIOSocketClient client = new RPCNIOSocketClient(sslOptions, RPC_TIMEOUT, CONNECTION_TIMEOUT);
+            client.start();
+            client.waitForStartup();
             SchedulerServiceClient schedulerServiceClient = new SchedulerServiceClient(client, schedulerSocket);
-            
-            UserCredentials userCreds = UserCredentials.newBuilder().setUsername("root").addGroups("root").build();;
+
+            UserCredentials userCreds = UserCredentials.newBuilder().setUsername("root").addGroups("root").build();
             Auth authHeader = Auth.newBuilder().setAuthType(AuthType.AUTH_NONE).build();
             
             SchedulerClient schedulerClient = new SchedulerClient(schedulerServiceClient, schedulerSocket, MAX_RETRIES, RETRY_WAIT);
-            
-            Scheduler.reservationSet reservations = schedulerClient.getAllVolumes(schedulerSocket, authHeader, userCreds);
+
+                Scheduler.reservationSet reservations = schedulerClient.getAllVolumes(schedulerSocket, authHeader, userCreds);
             printReservations(reservations);
         } catch (Exception e) {
-            System.err.println("unable to get SSL options, because:" + e.getMessage());
+            System.err.println("Error: " + e.getMessage());
             System.exit(1);
         }
 	}
