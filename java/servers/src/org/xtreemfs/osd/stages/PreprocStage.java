@@ -174,6 +174,11 @@ public class PreprocStage extends Stage {
                     oft.openFile(fileId, TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, cowPolicy, write);
                     request.setFileOpen(true);
                 }
+            } else {
+                // It's a DeleteOperation. Close the file first.
+                if (oft.close(fileId)) {
+                    checkOpenFileTable(true);
+                }
             }
             request.setCowPolicy(cowPolicy);
         }
