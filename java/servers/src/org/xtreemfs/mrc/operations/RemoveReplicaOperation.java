@@ -112,6 +112,13 @@ public class RemoveReplicaOperation extends MRCOperation {
         XLocList oldXLocList = file.getXLocList();
         assert (oldXLocList != null);
         
+        // Do not delete replicas from non-replicated files.
+        if (ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(oldXLocList.getReplUpdatePolicy())) {
+            throw new UserException(
+                    POSIXErrno.POSIX_ERROR_EINVAL,
+                    "Replica cannot be removed because the file's replication policy is set to 'none' i.e., the file has only one replica which shouldn't be deleted. Delete the whole file instead.");
+        }
+
         // find and remove the replica from the X-Locations list
         int i = 0;
         XLoc replica = null;
