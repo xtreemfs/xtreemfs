@@ -107,6 +107,7 @@ function cleanup_client() {
 function delete_svn() {
   PACKAGE_PATH=$1
   find $PACKAGE_PATH -name ".svn" -print0 | xargs -0 rm -rf
+  find $PACKAGE_PATH -name ".git" -print0 | xargs -0 rm -rf
   find $PACKAGE_PATH -name ".gitignore" -delete
 }
 
