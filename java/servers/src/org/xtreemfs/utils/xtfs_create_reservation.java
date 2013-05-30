@@ -9,6 +9,7 @@
 package org.xtreemfs.utils;
 
 import org.xtreemfs.foundation.SSLOptions;
+import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.Schemes;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
@@ -95,6 +96,8 @@ public class xtfs_create_reservation {
                         trustedCAsPass, SSLOptions.JKS_CONTAINER, false, gridSSL, null);
             }
 
+            TimeSync.initializeLocal(0).waitForStartup();
+
             InetSocketAddress schedulerSocket = getSchedulerConnection(schedulerURL);
             RPCNIOSocketClient client = new RPCNIOSocketClient(sslOptions, RPC_TIMEOUT, CONNECTION_TIMEOUT);
             client.start();
@@ -113,6 +116,10 @@ public class xtfs_create_reservation {
 
             SchedulerClient schedulerClient = new SchedulerClient(schedulerServiceClient, schedulerSocket, MAX_RETRIES, RETRY_WAIT);
             schedulerClient.scheduleReservation(schedulerSocket, authHeader, userCreds, r.build());
+            //schedulerServiceClient.scheduleReservation(schedulerSocket, authHeader, userCreds, r.build()).get();
+
+            client.shutdown();
+            client.waitForShutdown();
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
             System.exit(1);

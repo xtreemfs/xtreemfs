@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.xtreemfs.foundation.SSLOptions;
+import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.Schemes;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
@@ -63,6 +64,8 @@ public class xtfs_show_reservations {
                         trustedCAsPass, SSLOptions.JKS_CONTAINER, false, gridSSL, null);
             }
 
+            TimeSync.initializeLocal(0).waitForStartup();
+
             InetSocketAddress schedulerSocket = getSchedulerConnection(schedulerURL);
             RPCNIOSocketClient client = new RPCNIOSocketClient(sslOptions, RPC_TIMEOUT, CONNECTION_TIMEOUT);
             client.start();
@@ -73,9 +76,12 @@ public class xtfs_show_reservations {
             Auth authHeader = Auth.newBuilder().setAuthType(AuthType.AUTH_NONE).build();
             
             SchedulerClient schedulerClient = new SchedulerClient(schedulerServiceClient, schedulerSocket, MAX_RETRIES, RETRY_WAIT);
+            Scheduler.reservationSet reservations = schedulerClient.getAllVolumes(schedulerSocket, authHeader, userCreds);
 
-                Scheduler.reservationSet reservations = schedulerClient.getAllVolumes(schedulerSocket, authHeader, userCreds);
             printReservations(reservations);
+
+            client.shutdown();
+            client.waitForShutdown();
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
             System.exit(1);
@@ -98,12 +104,16 @@ public class xtfs_show_reservations {
     }
     
     private static void printReservations(Scheduler.reservationSet reservations) {
-    	for(Scheduler.reservation r: reservations.getReservationsList()) {
-    		System.out.println("Volume:\t\t" + r.getVolume().getUuid());
-    		System.out.println("Capacity:\t\t" + r.getCapacity());
-    		System.out.println("Sequential-Throughput:\t\t" + r.getStreamingThroughput());
-    		System.out.println("Ramdom-Throughput:\t\t" + r.getRandomThroughput() + "\n\n");
-    	}
+        if(reservations.getReservationsCount() > 0) {
+            for(Scheduler.reservation r: reservations.getReservationsList()) {
+                System.out.println("Volume:\t\t\t" + r.getVolume().getUuid());
+                System.out.println("Capacity:\t\t" + r.getCapacity() + " MB");
+                System.out.println("Sequential-Throughput:\t" + r.getStreamingThroughput() + " MB/s");
+                System.out.println("Ramdom-Throughput:\t" + r.getRandomThroughput() + " IOPS\n");
+            }
+        } else {
+            System.out.println("No reservations");
+        }
     }
     
     private static InetSocketAddress getSchedulerConnection(String url) {
