@@ -114,8 +114,7 @@ public abstract class ReplicaUpdatePolicy {
         ClientOperationCallback callback);
 
     public static interface ClientOperationCallback {
-        // TODO (jdillmann): fix typo
-        public void finsihed();
+        public void finished();
         public void failed(ErrorResponse error);
     }
 
