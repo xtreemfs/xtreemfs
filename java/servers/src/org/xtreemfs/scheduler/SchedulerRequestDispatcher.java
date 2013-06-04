@@ -270,7 +270,7 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 			boolean osdFound = false;
 
             for(OSDDescription o: this.getOsds()) {
-                if(o.getIdentifier().equals(osd.getName())) {
+                if(o.getIdentifier().equals(osd.getUuid())) {
                     osdFound = true;
                     break;
                 }
@@ -278,7 +278,7 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 
             if(!osdFound) {
                 try {
-                    byte[] bytes = getSchedulerDatabase().lookup(INDEX_ID_OSDS, osd.getName().getBytes(), null).get();
+                    byte[] bytes = getSchedulerDatabase().lookup(INDEX_ID_OSDS, osd.getUuid().getBytes(), null).get();
                     if(bytes != null) {
                         OSDDescription osdDescription = new OSDDescription(bytes);
                         getOsds().add(osdDescription);
@@ -300,10 +300,10 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 				
 				// TODO(ckleineweber): Determine osd type
 				OSDDescription.OSDType type = OSDDescription.OSDType.UNKNOWN;
-				OSDDescription osdDescription = new OSDDescription(osd.getName(), osdPerf, type);
+				OSDDescription osdDescription = new OSDDescription(osd.getUuid(), osdPerf, type);
 				getOsds().add(osdDescription);
 				try {
-					getSchedulerDatabase().singleInsert(INDEX_ID_OSDS, osd.getName().getBytes(), osdDescription.getBytes(), null).get();
+					getSchedulerDatabase().singleInsert(INDEX_ID_OSDS, osd.getUuid().getBytes(), osdDescription.getBytes(), null).get();
 				} catch(BabuDBException ex) {
 					Logging.logError(Logging.LEVEL_ERROR, this, ex);
 				}
