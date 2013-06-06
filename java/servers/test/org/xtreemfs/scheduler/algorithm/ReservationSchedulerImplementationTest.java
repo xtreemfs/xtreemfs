@@ -45,7 +45,8 @@ public class ReservationSchedulerImplementationTest {
 		Reservation reservation1 = new Reservation("volume1", Reservation.ReservationType.STREAMING_RESERVATION, 0.0, 80.0, 100.0);
 		Reservation reservation2 = new Reservation("volume2", Reservation.ReservationType.STREAMING_RESERVATION, 0.0, 40.0, 100.0);
 		Reservation reservation3 = new Reservation("volume3", Reservation.ReservationType.STREAMING_RESERVATION, 0.0, 100.0, 100.0);
-		
+		Reservation reservation4 = new Reservation("volume4", Reservation.ReservationType.RANDOM_IO_RESERVATION, 1.0, 0.0, 1.0);
+
 		scheduler.reset();
 		
 		try {
@@ -65,9 +66,14 @@ public class ReservationSchedulerImplementationTest {
 			scheduler.scheduleReservation(reservation3);
 			fail();
 		}
-		catch (SchedulerException e) {
-			assertTrue(true);
-		}
+		catch (SchedulerException e) {}
+
+        // All OSDs are used for sequential IO, random IO reservation should not be scheduled
+        try {
+            scheduler.scheduleReservation(reservation4);
+            fail();
+        }
+        catch (SchedulerException e) {}
 	}
 	
     @Test

@@ -13,8 +13,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.SchedulerServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class SchedulerTest {
 	TestEnvironment testEnv;
@@ -56,7 +55,7 @@ public class SchedulerTest {
 	public void testScheduleRequest() throws Exception {
 		Scheduler.reservation.Builder resBuilder = Scheduler.reservation
 				.newBuilder();
-		resBuilder.setCapacity(100.0);
+		resBuilder.setCapacity(10.0);
 		resBuilder.setRandomThroughput(0.0);
 		resBuilder.setStreamingThroughput(10.0);
 		resBuilder.setType(Scheduler.reservationType.STREAMING_RESERVATION);
@@ -83,6 +82,26 @@ public class SchedulerTest {
 		assertTrue(numOSDs == osds.getOsdCount());
 		assertTrue(osds.getOsd(0).getUuid().length() > 0);
 		response.freeBuffers();
+
+        // Try to schedule random io reservation to the same OSD
+        Scheduler.reservation.Builder resBuilder2 = Scheduler.reservation
+                .newBuilder();
+        resBuilder2.setCapacity(10.0);
+        resBuilder2.setRandomThroughput(10.0);
+        resBuilder2.setStreamingThroughput(0.0);
+        resBuilder2.setType(Scheduler.reservationType.RANDOM_IO_RESERVATION);
+        Scheduler.volumeIdentifier.Builder volBuilder2 = Scheduler.volumeIdentifier
+                .newBuilder();
+        volBuilder2.setUuid("jkl");
+        resBuilder2.setVolume(volBuilder2.build());
+        RPCResponse<Scheduler.osdSet> response2 = client.scheduleReservation(
+                null, RPCAuthentication.authNone,
+                RPCAuthentication.userService, resBuilder2.build());
+        try {
+            response2.get();
+            fail();
+        }
+        catch(Exception e) {}
 
 		// Test getting an empty schedule after removing the reservation
 		// TODO(ckleineweber): Scheduler receives emptyResponse instead of volumeIdentifier
