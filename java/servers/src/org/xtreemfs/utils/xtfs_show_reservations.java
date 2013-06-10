@@ -109,10 +109,25 @@ public class xtfs_show_reservations {
                 System.out.println("Volume:\t\t\t" + r.getVolume().getUuid());
                 System.out.println("Capacity:\t\t" + r.getCapacity() + " MB");
                 System.out.println("Sequential-Throughput:\t" + r.getStreamingThroughput() + " MB/s");
-                System.out.println("Ramdom-Throughput:\t" + r.getRandomThroughput() + " IOPS\n");
+                System.out.println("Ramdom-Throughput:\t" + r.getRandomThroughput() + " IOPS");
+                System.out.println("Type:\t\t\t" + typeToString(r.getType()) + "\n");
             }
         } else {
             System.out.println("No reservations");
+        }
+    }
+
+    private static String typeToString(Scheduler.reservationType type) {
+        switch(type) {
+            case COLD_STORAGE_RESERVATION:
+                return "COLD_STORAGE_RESERVATION";
+            case RANDOM_IO_RESERVATION:
+                return "RANDOM_IO_RESERVATION";
+            case STREAMING_RESERVATION:
+                return "STREAMING_RESERVATION";
+            case BEST_EFFORT_RESERVATION:
+            default:
+                return "BEST_EFFORT_RESERVATION";
         }
     }
     

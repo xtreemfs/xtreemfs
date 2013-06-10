@@ -71,8 +71,8 @@ public class ReservationSchedulerImplementation implements ReservationScheduler 
 	}
 
 	private boolean fittingUsageType(Reservation r, OSDDescription o) {
-		if ((r.getType() == Reservation.ReservationType.RANDOM_IO_RESERVATION && o
-				.getUsage() == OSDDescription.OSDUsage.RANDOM_IO)
+		if ((r.getType() == Reservation.ReservationType.STREAMING_RESERVATION &&
+                o.getUsage() == OSDDescription.OSDUsage.RANDOM_IO)
 				|| (r.getType() == Reservation.ReservationType.RANDOM_IO_RESERVATION && o
 						.getUsage() == OSDDescription.OSDUsage.STREAMING)
 				|| getAngle(r, o) < this.minAngle)
@@ -120,7 +120,11 @@ public class ReservationSchedulerImplementation implements ReservationScheduler 
 			if (osd.getUsage() == OSDDescription.OSDUsage.UNUSED) {
 				if (osd.getType() == OSDDescription.OSDType.DISK
 						|| osd.getType() == OSDDescription.OSDType.UNKNOWN) {
-					osd.setUsage(OSDDescription.OSDUsage.STREAMING);
+                    if(r.getType() == Reservation.ReservationType.STREAMING_RESERVATION) {
+					    osd.setUsage(OSDDescription.OSDUsage.STREAMING);
+                    } else if(r.getType() == Reservation.ReservationType.RANDOM_IO_RESERVATION) {
+                        osd.setUsage((OSDDescription.OSDUsage.RANDOM_IO));
+                    }
 				}
 			}
 

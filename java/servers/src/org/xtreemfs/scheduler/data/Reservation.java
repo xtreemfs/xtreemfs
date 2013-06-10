@@ -132,12 +132,16 @@ public class Reservation {
 		switch(x) {
 		case 0:
 			type = ReservationType.STREAMING_RESERVATION;
+            break;
 		case 1:
 			type = ReservationType.RANDOM_IO_RESERVATION;
+            break;
 		case 2:
 			type = ReservationType.BEST_EFFORT_RESERVATION;
+            break;
 		case 3:
 			type = ReservationType.COLD_STORAGE_RESERVATION;
+            break;
 		default:
 			type = ReservationType.BEST_EFFORT_RESERVATION;
 		}

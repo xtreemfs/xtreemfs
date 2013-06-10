@@ -191,6 +191,13 @@ int main(int argc, char* argv[]) {
         options));
     client->Start();
 
+    cout << "QoS options:\n"
+         << "  Reservation type:\t\t"     << options.reservation_type << "\n"
+         << "  Capacity:\t\t\t"           << options.volume_capacity  << "\n"
+         << "  IOPS:\t\t\t\t"             << options.iops             << "\n"
+         << "  Sequential-throughput:\t"  << options.seq_tp           << "\n";
+
+
     // Create the volume on the MRC.
     client->CreateVolume(options.mrc_service_address,
                          auth,
