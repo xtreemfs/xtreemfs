@@ -54,7 +54,7 @@ public class Client {
     
     private final UUIDResolver        uuidRes;
     
-    private Map<String, Volume>       volumeMap;
+    private final Map<String, Volume>       volumeMap;
     
     public Client(InetSocketAddress[] dirAddresses, int requestTimeout, int connectionTimeout, SSLOptions ssl)
         throws IOException {
@@ -63,7 +63,7 @@ public class Client {
         osdClient = new RPCNIOSocketClient(ssl, requestTimeout, connectionTimeout, "Client (osd)");
         DIRServiceClient dirRpcClient = new DIRServiceClient(mdClient, dirAddress[0]);
         dirClient = new DIRClient(dirRpcClient, dirAddress, 100, 1000 * 15);
-        TimeSync.initializeLocal(50);
+        TimeSync.initializeLocal(0);
         uuidRes = UUIDResolver.startNonSingelton(dirClient, 3600, 1000);
         volumeMap = new HashMap<String, Volume>();
     }
@@ -263,6 +263,7 @@ public class Client {
         }
     }
     
+    @Override
     public void finalize() {
         stop();
     }

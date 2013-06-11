@@ -215,7 +215,7 @@ public class xtfs_remove_osd {
 
     public void initialize() throws Exception {
 
-        TimeSync.initializeLocal(50);
+        TimeSync.initializeLocal(0);
 
         // TODO(lukas): support multiple DIRs
         // connect to DIR
