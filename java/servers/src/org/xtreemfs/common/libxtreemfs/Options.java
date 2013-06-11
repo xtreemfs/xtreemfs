@@ -22,66 +22,66 @@ public class Options {
     /**
      * Maximum number of entries of the StatCache. Default: 100000
      */
-    private int    metadataCacheSize     = 100000;
+    private int        metadataCacheSize     = 100000;
 
     /**
      * Time to live for MetadataCache entries. Default: 120
      */
-    private long    metadataCacheTTLs     = 120;
+    private final long metadataCacheTTLs     = 120;
 
     /**
      * Maximum number of pending bytes (of async writes) per file. TODO: Reenable async writes when retry
      * support is completed.
      */
-    private int     maxWriteahead         = 0;
+    private int        maxWriteahead         = 0;
 
     /**
      * Maximum number of pending async write requests per file. Default: 10
      */
-    private int     maxWriteaheadRequests = 10;
+    private final int  maxWriteaheadRequests = 10;
 
     /**
      * Number of retrieved entries per readdir request. Default: 1024
      */
-    private int     readdirChunkSize      = 1024;
+    private int        readdirChunkSize      = 1024;
 
     // Error Handling options.
     /**
      * How often shall a failed operation get retried? Default: 40
      */
-    private int     maxTries              = 40;
+    private final int  maxTries              = 40;
     /**
      * How often shall a failed read operation get retried? Default: 40
      */
-    private int     maxReadTries          = 40;
+    private int        maxReadTries          = 40;
     /**
      * How often shall a failed write operation get retried? Default: 40
      */
-    private int     maxWriteTries         = 40;
+    private final int  maxWriteTries         = 40;
     /**
      * How long to wait after a failed request? Default: 15
      */
-    private int     retryDelay_s          = 15;
+    private final int  retryDelay_s          = 15;
 
     /**
      * Stops retrying to execute a synchronous request if this signal was send to the thread responsible for
      * the execution of the request. Default: 0
      */
-    private int     interruptSignal       = 0;
+    private final int  interruptSignal       = 0;
 
     /**
      * Maximum time until a connection attempt will be aborted. Default: 60
      */
-    private int     connectTimeout_s      = 60;
+    private final int  connectTimeout_s      = 60;
     /**
      * Maximum time until a request will be aborted and the response returned. Default:
      */
-    private int     requestTimeout_s      = 30;
+    private final int  requestTimeout_s      = 30;
 
     /**
      * The RPC Client closes connections after "linger_timeout_s" time of inactivity. Default: 600
      */
-    private int     lingerTimeout_s       = 600;
+    private final int  lingerTimeout_s       = 600;
 
     public int getMetadataCacheSize() {
         return metadataCacheSize;
@@ -112,42 +112,42 @@ public class Options {
     }
 
     // SSL options.
-    private String  sslPemCertPath                    = "";
-    private String  sslPemPath                        = "";
-    private String  sslPemKeyPass                     = "";
-    private String  sslPKCS2Path                      = "";
-    private String  sslPKCS12Pass                     = "";
+    private final String  sslPemCertPath                    = "";
+    private final String  sslPemPath                        = "";
+    private final String  sslPemKeyPass                     = "";
+    private final String  sslPKCS2Path                      = "";
+    private final String  sslPKCS12Pass                     = "";
 
     // Grid Support options.
     /**
      * True, if the XtreemFS Grid-SSL Mode (only SSL handshake, no encryption of data itself) shall be used.
      * Default: false
      */
-    private boolean gridSSL                           = false;
+    private final boolean gridSSL                           = false;
     /**
      * True if the Globus user mapping shall be used. Default: false
      * */
-    private boolean gridAuthModeGlobus                = false;
+    private final boolean gridAuthModeGlobus                = false;
     /**
      * True if the Unicore user mapping shall be used. Default: false
      * */
-    private boolean gridAuthModeUnicore               = false;
+    private final boolean gridAuthModeUnicore               = false;
     /**
      * Location of the gridmap file. Default: ""
      */
-    private String  gridGridmapLocation               = "";
+    private final String  gridGridmapLocation               = "";
     /**
      * Default Location of the Globus gridmap file. Default: "/etc/grid-security/grid-mapfile"
      */
-    private String  gridGridmapLocationDefaultGlobus  = "/etc/grid-security/grid-mapfile";
+    private final String  gridGridmapLocationDefaultGlobus  = "/etc/grid-security/grid-mapfile";
     /**
      * Default Location of the Unicore gridmap file. Default: "/etc/grid-security/d-grid_uudb"
      */
-    private String  gridGridmapLocationDefaultUnicore = "/etc/grid-security/d-grid_uudb";
+    private final String  gridGridmapLocationDefaultUnicore = "/etc/grid-security/d-grid_uudb";
     /**
      * Periodic interval after which the gridmap file will be reloaded. Default: 60
      */
-    private int     gridGridmapReloadInterval_m       = 60;                               // 60 minutes = 1
+    private final int     gridGridmapReloadInterval_m       = 60;                               // 60 minutes = 1
                                                                                            // hour
 
     // Advanced XtreemFS options
@@ -159,7 +159,7 @@ public class Options {
     /**
      * Interval for periodic xcap renewal in seconds. Default: 60
      */
-    private int     periodicXcapRenewalIntervalS      = 60;
+    private final int     periodicXcapRenewalIntervalS      = 60;
 
     protected int getPeriodicXcapRenewalIntervalS() {
         return periodicXcapRenewalIntervalS;
