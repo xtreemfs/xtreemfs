@@ -234,6 +234,10 @@ public class Options {
         return readdirChunkSize;
     }
     
+    public void setReaddirChunkSize(int readdirChunkSize) {
+        this.readdirChunkSize = readdirChunkSize;
+    }
+
     public void setPeriodicFileSizeUpdatesIntervalS(int periodicFileSizeUpdatesIntervalS) {
         this.periodicFileSizeUpdatesIntervalS = periodicFileSizeUpdatesIntervalS;
     }
