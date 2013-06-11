@@ -180,6 +180,41 @@ public class VolumeTest {
     }
 
     @Test
+    public void testReadDirMultipleChunks() throws Exception {
+        options.setReaddirChunkSize(2);
+
+        VOLUME_NAME = "testReadDirMultipleChunks";
+        final String TESTFILE = "test";
+        final int fileCount = 10;
+
+        // create volume
+        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME, 0, userCredentials.getUsername(),
+                userCredentials.getGroups(0), AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL,
+                StripingPolicyType.STRIPING_POLICY_RAID0, defaultStripingPolicy.getStripeSize(),
+                defaultStripingPolicy.getWidth(), new ArrayList<KeyValuePair>());
+
+        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+
+        // create some files
+        for (int i = 0; i < fileCount; i++) {
+            FileHandle fh = volume.openFile(userCredentials, "/" + TESTFILE + i,
+                    SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber());
+            fh.close();
+        }
+
+        // test 'readDir' across multiple readDir chunks.
+        DirectoryEntries entrySet = null;
+
+        entrySet = volume.readDir(userCredentials, "/", 0, 1000, false);
+        assertEquals(2 + fileCount, entrySet.getEntriesCount());
+        assertEquals("..", entrySet.getEntries(0).getName());
+        assertEquals(".", entrySet.getEntries(1).getName());
+        for (int i = 0; i < fileCount; i++) {
+            assertEquals(TESTFILE + i, entrySet.getEntries(2 + i).getName());
+        }
+    }
+
+    @Test
     public void testCreateDelete() throws Exception {
         VOLUME_NAME = "testCreateDelete";
         // Both directories should be created under "/"
