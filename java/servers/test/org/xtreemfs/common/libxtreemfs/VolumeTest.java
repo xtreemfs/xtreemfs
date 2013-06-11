@@ -298,6 +298,49 @@ public class VolumeTest {
         assertEquals(3, entrySet.getEntriesCount());
     }
 
+//    TODO(stenjan): Fix this issue and comment it out again.
+//    @Test
+//    public void testCreateDirWithEmptyPathComponents() throws Exception {
+//        VOLUME_NAME = "testCreateDirWithEmptyPathComponents";
+//        // Both directories should be created under "/"
+//        final String DIR1 = "/test";
+//        final String DIR2 = "/test//";
+//        final String DIR3 = "/test//testdir";
+//
+//        // create volume
+//        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME, 0, userCredentials.getUsername(),
+//                userCredentials.getGroups(0), AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL,
+//                StripingPolicyType.STRIPING_POLICY_RAID0, defaultStripingPolicy.getStripeSize(),
+//                defaultStripingPolicy.getWidth(), new ArrayList<KeyValuePair>());
+//
+//        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+//
+//        // create some files and directories
+//        try {
+//            volume.createDirectory(userCredentials, DIR1, 0755);
+//            volume.createDirectory(userCredentials, DIR2, 0755);
+//            volume.createDirectory(userCredentials, DIR3, 0755);
+//        } catch (IOException ioe) {
+//            fail("failed to create testdirs");
+//        }
+//
+//        // test 'readDir' and 'stat'
+//        DirectoryEntries entrySet = null;
+//
+//        entrySet = volume.readDir(userCredentials, DIR2, 0, 1000, false);
+//        assertEquals(3, entrySet.getEntriesCount());
+//        assertEquals("..", entrySet.getEntries(0).getName());
+//        assertEquals(".", entrySet.getEntries(1).getName());
+//        assertEquals(DIR3, "/" + entrySet.getEntries(2).getName());
+//
+//        entrySet = volume.readDir(userCredentials, DIR3, 0, 1000, false);
+//        assertEquals(0, entrySet.getEntriesCount());
+//
+//        volume.removeDirectory(userCredentials, DIR3);
+//        entrySet = volume.readDir(userCredentials, DIR1, 0, 1000, false);
+//        assertEquals(2, entrySet.getEntriesCount());
+//    }
+
     @Test
     public void testHardLink() throws Exception {
         VOLUME_NAME = "testHardLink";
