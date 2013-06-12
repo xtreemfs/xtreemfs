@@ -75,6 +75,14 @@ public class ReservationSchedulerImplementationTest {
         }
         catch (SchedulerException e) {}
 	}
+
+    @Test
+    public void testScheduleMultiOSDReservation() throws Exception {
+        Reservation reservation1 = new Reservation("volume1", Reservation.ReservationType.STREAMING_RESERVATION, 0.0, 150.0, 100.0);
+        scheduler.reset();
+        List<OSDDescription> targets = scheduler.scheduleReservation(reservation1);
+        assertTrue(targets.size() == 2);
+    }
 	
     @Test
 	public void testGetAngle() throws Exception {
