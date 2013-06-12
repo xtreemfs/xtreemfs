@@ -3,6 +3,7 @@ package org.xtreemfs.utils;
 import java.io.FileInputStream;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +28,8 @@ public class xtfs_show_reservations {
     private static final int MAX_RETRIES = 15;
     private static final int RETRY_WAIT = 1000;
     private static final int DEFAULT_PORT = 32642;
+
+    private static Map<String, String> schedule;
 	
 	public static void main(String[] args) {
 		Logging.start(Logging.LEVEL_WARN);
@@ -78,6 +81,20 @@ public class xtfs_show_reservations {
             SchedulerClient schedulerClient = new SchedulerClient(schedulerServiceClient, schedulerSocket, MAX_RETRIES, RETRY_WAIT);
             Scheduler.reservationSet reservations = schedulerClient.getAllVolumes(schedulerSocket, authHeader, userCreds);
 
+            schedule = new HashMap<String, String>();
+
+            for(Scheduler.reservation r: reservations.getReservationsList()) {
+                Scheduler.osdSet osds = schedulerClient.getSchedule(schedulerSocket, authHeader, userCreds, r.getVolume());
+                String tmp = "";
+                for(Scheduler.osdIdentifier osd: osds.getOsdList()) {
+                    if(tmp.equals(""))
+                        tmp += osd.getUuid();
+                    else
+                        tmp += ", " + osd.getUuid();
+                }
+                schedule.put(r.getVolume().getUuid(), tmp);
+            }
+
             printReservations(reservations);
 
             client.shutdown();
@@ -110,7 +127,8 @@ public class xtfs_show_reservations {
                 System.out.println("Capacity:\t\t" + r.getCapacity() + " MB");
                 System.out.println("Sequential-Throughput:\t" + r.getStreamingThroughput() + " MB/s");
                 System.out.println("Ramdom-Throughput:\t" + r.getRandomThroughput() + " IOPS");
-                System.out.println("Type:\t\t\t" + typeToString(r.getType()) + "\n");
+                System.out.println("Type:\t\t\t" + typeToString(r.getType()) + "");
+                System.out.println("Schedule:\t\t" + schedule.get(r.getVolume().getUuid()) + "\n");
             }
         } else {
             System.out.println("No reservations");
