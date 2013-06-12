@@ -544,7 +544,7 @@ void ClientImplementation::CreateVolume(
 
   Volume *v = this->OpenVolume(volume_name, NULL, options);
   v->SetXAttr(user_credentials, "/", "xtreemfs.osel_policy", "1002", XATTR_FLAGS_REPLACE);
-  v->SetXAttr(user_credentials, "/", "xtreemfs.policies.1002.UUIDS", osdUuidsString, XATTR_FLAGS_REPLACE);
+  v->SetXAttr(user_credentials, "/", "xtreemfs.policies.1002.uuids", osdUuidsString, XATTR_FLAGS_REPLACE);
 
   delete v;
   delete osds;
