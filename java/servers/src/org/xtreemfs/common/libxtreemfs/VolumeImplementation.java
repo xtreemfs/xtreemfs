@@ -975,7 +975,8 @@ public class VolumeImplementation implements Volume, AdminVolume {
                     .setNamesOnly(namesOnly).setKnownEtag(0).setSeenDirectoryEntriesCount(currentOffset)
                     .setLimitDirectoryEntriesCount(limitDirEntriesCount).build();
 
-            result = RPCCaller.<readdirRequest, DirectoryEntries> syncCall(SERVICES.MRC, userCredentials,
+            DirectoryEntries readDirResponse = RPCCaller.<readdirRequest, DirectoryEntries> syncCall(SERVICES.MRC,
+                    userCredentials,
                     authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
                     new CallGenerator<readdirRequest, DirectoryEntries>() {
                         @Override
@@ -986,9 +987,9 @@ public class VolumeImplementation implements Volume, AdminVolume {
                         }
                     });
 
-            assert (result != null);
+            assert (readDirResponse != null);
 
-            dirEntriesBuilder.addAllEntries(result.getEntriesList());
+            dirEntriesBuilder.addAllEntries(readDirResponse.getEntriesList());
 
             // Break if this is the last chunk.
             if (dirEntriesBuilder.getEntriesCount() < (currentOffset + volumeOptions.getReaddirChunkSize())) {
@@ -1025,10 +1026,12 @@ public class VolumeImplementation implements Volume, AdminVolume {
         // condition.
         // TODO: Set an upper bound of dentries, otherwise don't cache it.
 
-        if (!namesOnly && offset == 0 && dirEntriesBuilder.getEntriesCount() < count) {
+        result = dirEntriesBuilder.build();
+
+        if (!namesOnly && offset == 0 && result.getEntriesCount() < count) {
             metadataCache.updateDirEntries(path, result);
         }
-        return dirEntriesBuilder.build();
+        return result;
     }
 
     /*
