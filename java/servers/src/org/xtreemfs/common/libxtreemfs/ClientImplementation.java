@@ -370,7 +370,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
 
         AdminVolume volume = openVolume(volumeName, null, volumeOptions);
         volume.setOSDSelectionPolicy(userCredentials, "1002");
-        volume.setPolicyAttribute(userCredentials, "1002.UUIDS", osdStr);
+        volume.setPolicyAttribute(userCredentials, "1002.uuids", osdStr);
     }
 
     private void createVolume(UUIDIterator mrcAddresses, Auth auth, UserCredentials userCredentials,
