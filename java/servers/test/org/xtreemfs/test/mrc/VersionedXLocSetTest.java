@@ -7,6 +7,7 @@
 package org.xtreemfs.test.mrc;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.List;
@@ -126,12 +127,12 @@ public class VersionedXLocSetTest {
         List<String> osdUUIDs = volume.getSuitableOSDs(userCredentials, fileName, replicaNumber);
         assert (osdUUIDs.size() >= replicaNumber);
         
-        // save the current Rreplica Number
+        // save the current Replica Number
         int currentReplicaNumber = volume.listReplicas(userCredentials, fileName).getReplicasCount();
 
         // get Replication Flags
         // copied from org.xtreemfs.common.libxtreemfs.VolumeImplementation.listACL(UserCredentials, String)
-        // TODO (jdillmann): move to VolumeImplementation.getDefaultReplicationPolicy ?
+        // TODO(jdillmann): move to VolumeImplementation.getDefaultReplicationPolicy ?
         int repl_flags;
 
         try {
@@ -145,12 +146,7 @@ public class VersionedXLocSetTest {
 
         // 15s is the default lease timeout
         // we have to wait that long, because addReplica calls ping which requires do become primary
-        Thread.sleep(16 * 1000);
-
-        // for some reason addAllOsdUuids wont work and we have to add them individually
-        // Replica replica = Replica.newBuilder().addAllOsdUuids(osdUUIDs.subList(0, newReplicaNumber))
-        // .setStripingPolicy(defaultStripingPolicy).setReplicationFlags(repl_flags).build();
-        // volume.addReplica(userCredentials, fileName, replica);
+        // Thread.sleep(16 * 1000);
 
         // so we have to fall back to add the replicas individually
         for (int i = 0; i < replicaNumber; i++) {
@@ -159,7 +155,7 @@ public class VersionedXLocSetTest {
             volume.addReplica(userCredentials, fileName, replica);
 
             // 15s is the default lease timeout
-            Thread.sleep(16 * 1000);
+            // Thread.sleep(16 * 1000);
             System.out.println("Added replica on " + osdUUIDs.get(i));
         }
         
@@ -205,14 +201,14 @@ public class VersionedXLocSetTest {
         // remove the replica from the OSD
         volume.removeReplica(userCredentials, fileName, replica.getOsdUuids(0));
 
-        // TODO (jdillmann): remove when the changeReplicaSet cooridnation is working
+        // TODO(jdillmann): remove when the changeReplicaSet coordination is working
         // open the file again with another
 
         // wait until the file is actually deleted on the OSD
         Thread.sleep(70 * 1000);
 
         // reading a deleted file seems like reading a sparse file and should return "0" bytes
-        // TODO (jdillmann): update assertions when versioned XLocSets are implemented
+        // TODO(jdillmann): update assertions when versioned XLocSets are implemented
         byte[] data2 = new byte[1];
         fileHandle.read(userCredentials, data2, 1, 0);
         fileHandle.close();
@@ -262,209 +258,80 @@ public class VersionedXLocSetTest {
     }
 
 
+    @Ignore
     @Test
-    public void testRonlyAddReadOutdated() throws Exception {
-        String volumeName = "testRonlyAddReadOutdated";
+    public void testRonlyInvalidViewOnAdd() throws Exception {
+        String volumeName = "testRonlyInvalidViewOnAdd";
         String fileName = "/testfile";
 
         client.createVolume(mrcAddress, auth, userCredentials, volumeName);
         AdminVolume volume = client.openVolume(volumeName, null, options);
+        volume.close();
 
         // setup a full read only replica with sequential access strategy
         int repl_flags = ReplicationFlags.setFullReplica(ReplicationFlags.setSequentialStrategy(0));
         volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY, 2,
                 repl_flags);
+        
+        testInvalidViewOnAdd(volumeName, fileName);
+    }
 
-        // general part
+    @Test
+    public void testWqRqInvalidViewOnAdd() throws Exception {
+        String volumeName = "testWqRqInvalidViewOnAdd";
+        String fileName = "/testfile";
+
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+        AdminVolume volume = client.openVolume(volumeName, null, options);
+
+        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 2, 0);
+        volume.close();
+
+        testInvalidViewOnAdd(volumeName, fileName);
+    }
+
+    private void testInvalidViewOnAdd(String volumeName, String fileName) throws Exception {
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
 
-        // open file handle
-        AdminFileHandle fileHandle = volume.openFile(userCredentials, fileName, flags, 0777);
-        int stripeSize = fileHandle.getStripingPolicy().getStripeSize();
-        int count = stripeSize * 2;
-        ReusableBuffer data = SetupUtils.generateData(count, (byte) 1);
+        // open outdated file handle and write some data
+        AdminVolume outdatedVolume = client.openVolume(volumeName, null, options);
+        AdminFileHandle outdatedFile = outdatedVolume.openFile(userCredentials, fileName, flags, 0777);
 
         System.out.println("writing");
-        fileHandle.write(userCredentials, data.createViewBuffer().getData(), count, 0);
-        fileHandle.close();
+        ReusableBuffer data = SetupUtils.generateData(256, (byte) 1);
+        outdatedFile.write(userCredentials, data.createViewBuffer().getData(), 256, 0);
+        outdatedFile.close();
 
-        flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber();
-        fileHandle = volume.openFile(userCredentials, fileName, flags, 0777);
-
-        // AdminVolume
         System.out.println("reopen file");
-        AdminVolume volume2 = client.openVolume(volumeName, null, options);
+        flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber();
+        outdatedFile = outdatedVolume.openFile(userCredentials, fileName, flags, 0777);
 
-        // add replica
+        // open the volume again and add some more replicas
+        AdminVolume volume = client.openVolume(volumeName, null, options);
+
         System.out.println("adding replicas");
-        int newReplicaNumber = 1;
-        addReplicas(volume2, fileName, newReplicaNumber);
+        addReplicas(volume, fileName, 1);
 
-        AdminFileHandle fileHandle2 = volume2.openFile(userCredentials, fileName, flags, 0777);
+        volume.close();
 
-        // read data
-        System.out.println("read with new version");
-        byte[] data2 = new byte[1];
-        fileHandle2.read(userCredentials, data2, 1, 0);
-        fileHandle2.close();
-
-        fileHandle2.close();
-        volume2.close();
-
-        // read outdated
+        // read data with outdated xLocSet
         System.out.println("read with old version");
         PosixErrorException catched = null;
         try {
-            fileHandle.read(userCredentials, data2, 1, 0);
+            byte[] dataOut = new byte[1];
+            outdatedFile.read(userCredentials, dataOut, 1, 0);
         } catch (PosixErrorException e) {
             catched = e;
+        } finally {
+            outdatedFile.close();
+            outdatedVolume.close();
         }
-        finally {
-            fileHandle.close();
-        }
-        
-        // TODO (jdillmann): make this more dynamic
-        assert (catched != null);
-        assert (catched.getPosixError() == RPC.POSIXErrno.POSIX_ERROR_EAGAIN);
-        assert (catched.getMessage().equals("view is not valid"));
-    }
 
-    // @Test
-    // public void testWqRqOutdatedAdd() throws Exception {
-    // String volumeName = "testWqRqOutdatedAdd";
-    // String fileName = "/testfile";
-    //
-    // // client.createVolume(mrcAddress, auth, userCredentials, volumeName, 0,
-    // // userCredentials.getUsername(),
-    // // userCredentials.getGroups(0), AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL,
-    // // StripingPolicyType.STRIPING_POLICY_RAID0, defaultStripingPolicy.getStripeSize(),
-    // // defaultStripingPolicy.getWidth(), new ArrayList<KeyValuePair>());
-    // client.createVolume(mrcAddress, auth, userCredentials, volumeName);
-    // AdminVolume volume = client.openVolume(volumeName, null, options);
-    //
-    // int replicaNumber = 3;
-    // int repl_flags = ReplicationFlags.setSequentialStrategy(0);
-    //
-    // // addReplica with WQRQ is not working for some reasons i don't understand
-    // volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ,
-    // replicaNumber, repl_flags);
-    //
-    // // volume.setDefaultReplicationPolicy(userCredentials, "/",
-    // // ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE,
-    // // replicaNumber, repl_flags);
-    //
-    // // open testfile and write some bytes not "0"
-    // int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
-    // | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
-    // AdminFileHandle fileHandle = volume.openFile(userCredentials, fileName, flags, 0777);
-    //
-    // int stripeSize = fileHandle.getStripingPolicy().getStripeSize();
-    // int count = stripeSize * 2;
-    // ReusableBuffer data = SetupUtils.generateData(count, (byte) 1);
-    //
-    // fileHandle.write(userCredentials, data.createViewBuffer().getData(), count, 0);
-    // fileHandle.close();
-    //
-    // // wait some time to allow the file to replicate
-    // // Thread.sleep(15 * 1000);
-    //
-    //
-    // // add some more replicas
-    // int newReplicaNumber = 1;
-    // addReplicas(volume, fileName, newReplicaNumber);
-    //
-    // // wait for flease
-    // // Thread.sleep(20 * 1000);
-    //
-    // assertEquals(replicaNumber + newReplicaNumber, volume.listReplicas(userCredentials, fileName)
-    // .getReplicasCount());
-    //
-    // // fileHandle = volume.openFile(userCredentials, fileName, flags);
-    // // byte[] data2 = new byte[1];
-    // // fileHandle.read(userCredentials, data2, 1, 0);
-    // // fileHandle.close();
-    // // System.out.println(data2);
-    //
-    // System.out.println("wait");
-    // }
-    //
-    // @Test
-    // public void testWqRqOutdatedRemove() throws Exception {
-    // String volumeName = "testWqRqOutdatedRemove";
-    // String path = "/testfile";
-    //
-    // // client.createVolume(mrcAddress, auth, userCredentials, volumeName, 0,
-    // // userCredentials.getUsername(),
-    // // userCredentials.getGroups(0), AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL,
-    // // StripingPolicyType.STRIPING_POLICY_RAID0, defaultStripingPolicy.getStripeSize(),
-    // // defaultStripingPolicy.getWidth(), new ArrayList<KeyValuePair>());
-    // client.createVolume(mrcAddress, auth, userCredentials, volumeName);
-    // AdminVolume volume = client.openVolume(volumeName, null, options);
-    //
-    // int repl_flags = ReplicationFlags.setSequentialStrategy(0);
-    // volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ,
-    // NUM_OSDS,
-    // repl_flags);
-    //
-    // AdminFileHandle fileHandle = volume.openFile(userCredentials, path,
-    // SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber(), 0777);
-    //
-    // assert (fileHandle.getReplicasList().size() == NUM_OSDS);
-    //
-    // // write "1" bytes to the file
-    // int stripeSize = fileHandle.getStripingPolicy().getStripeSize();
-    // int count = stripeSize * 2;
-    // ReusableBuffer data = SetupUtils.generateData(count, (byte) 1);
-    // byte[] dataout = new byte[count];
-    //
-    // fileHandle.write(userCredentials, data.createViewBuffer().getData(), count, 0);
-    // fileHandle.close();
-    //
-    // assert (volume.getSuitableOSDs(userCredentials, path, NUM_OSDS).size() == 0);
-    //
-    // // open a FileHandle which should be outdated
-    // System.out.println("open outdated file handle");
-    // AdminClient outdatedClient = ClientFactory.createAdminClient(dirAddress, userCredentials, null,
-    // options);
-    // outdatedClient.start();
-    // AdminVolume outdatedVolume = outdatedClient.openVolume(volumeName, null, options);
-    // AdminFileHandle outdatedFileHandle = outdatedVolume.openFile(userCredentials, path,
-    // SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
-    //
-    //
-    // // remove replicas
-    // System.out.println("removing replicas");
-    // fileHandle = volume.openFile(userCredentials, path,
-    // SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
-    // List<Replica> replicas = fileHandle.getReplicasList();
-    // fileHandle.close();
-    //
-    // for (int i = 0; i<3; i++) {
-    // volume.removeReplica(userCredentials, path, replicas.get(i).getOsdUuids(0));
-    // }
-    //
-    // assert (volume.getSuitableOSDs(userCredentials, path, NUM_OSDS).size() == 3);
-    //
-    // Thread.sleep(70 * 1000);
-    //
-    // System.out.println("open the file with the new xlocset");
-    // // write something new => for example two
-    // fileHandle = volume.openFile(userCredentials, path,
-    // SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber());
-    // assert (fileHandle.getReplicasList().size() == 2);
-    // System.out.println(fileHandle.getReplicasList());
-    //
-    // data = SetupUtils.generateData(count, (byte) 2);
-    // fileHandle.write(userCredentials, data.createViewBuffer().getData(), count, 0);
-    //
-    // fileHandle.read(userCredentials, dataout, count, 0);
-    // fileHandle.close();
-    // assert (dataout[0] == (byte) 2);
-    //
-    // outdatedFileHandle.read(userCredentials, dataout, count, 0);
-    // outdatedFileHandle.close();
-    // assert (dataout[0] == (byte) 2);
-    // }
+        // TODO(jdillmann): make this more dynamic
+        assertTrue(catched != null);
+        assertEquals(catched.getPosixError(), RPC.POSIXErrno.POSIX_ERROR_EAGAIN);
+        assertTrue(catched.getMessage().contains("view is not valid"));
+    }
 
 }
