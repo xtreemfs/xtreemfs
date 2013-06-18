@@ -42,7 +42,8 @@ public class ReplicatedFileState {
         RESET, 
         WAITING_FOR_LEASE, 
         BACKUP, 
-        PRIMARY
+        PRIMARY, 
+        INVALIDATED
     };
 
     private final AtomicInteger        queuedData;
@@ -77,6 +78,10 @@ public class ReplicatedFileState {
 
     private long                       masterEpoch;
 
+    private boolean                    invalidated;
+
+    private boolean                    invalidatedReset;
+
     public ReplicatedFileState(String fileId, XLocations locations, ServiceUUID localUUID, FleaseStage fstage,
             OSDServiceClient client) throws UnknownUUIDException, IOException {
         queuedData = new AtomicInteger();
@@ -88,6 +93,8 @@ public class ReplicatedFileState {
         this.lease = Flease.EMPTY_LEASE;
         this.forceReset = false;
         this.masterEpoch = FleaseMessage.IGNORE_MASTER_EPOCH;
+        this.invalidated = false;
+        this.invalidatedReset = false;
 
         remoteOSDs = new ArrayList(locations.getNumReplicas() - 1);
         for (Replica r : locations.getReplicas()) {
@@ -293,4 +300,31 @@ public class ReplicatedFileState {
         return loc;
     }
 
+    /**
+     * Set the files' invalidated state. Once a file has been invalidated any other requests will be rejected.
+     */
+    public void setInvalidated(boolean invalidated) {
+        this.invalidated = invalidated;
+    }
+
+    /**
+     * @return True if the file has been invalidated.
+     */
+    public boolean isInvalidated() {
+        return invalidated;
+    }
+
+    /**
+     * InvalidatedReset should be set true when the file is invalidated but a reset is forced.
+     */
+    public void setInvalidatedReset(boolean invalidatedReset) {
+        this.invalidatedReset = invalidatedReset;
+    }
+
+    /**
+     * Returns true if the file is in an forced reset.
+     */
+    public boolean isInvalidatedReset() {
+        return invalidatedReset;
+    }
 }

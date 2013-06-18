@@ -645,6 +645,8 @@ public class PreprocStage extends Stage {
             
         }
 
+        // TODO(jdillmann): check rights for invalidate, install, and internal fetch invalidated
+
         return null;
     }
     
@@ -663,10 +665,10 @@ public class PreprocStage extends Stage {
 
         XLocSetVersionState state;
         try {
-            // TODO (jdillmann): Cache the VersionState
+            // TODO(jdillmann): Cache the VersionState
             state = layout.getXLocSetVersionState(fileId);
         } catch (IOException e) {
-            // TODO (jdillmann): do something with the error
+            // TODO(jdillmann): do something with the error
             return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
                     "invalid view. local version could not be read");
         }
@@ -694,11 +696,11 @@ public class PreprocStage extends Stage {
                 if (!locset.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
                     ASCIIString cellId = ReplicaUpdatePolicy.fileToCellId(fileId);
 
-                    // TODO (jdillmann): think about using a callback which will be called when flease got the message
+                    // TODO(jdillmann): think about using a callback which will be called when flease got the message
                     master.getRWReplicationStage().setFleaseView(fileId, cellId, newstate);
                 }
             } catch (IOException e) {
-                // TODO (jdillmann): do something with the error
+                // TODO(jdillmann): do something with the error
                 return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
                         "invalid view. local version could not be written");
             }
@@ -723,10 +725,10 @@ public class PreprocStage extends Stage {
 
         XLocSetVersionState state;
         try {
-            // TODO (jdillmann): Cache the VersionState
+            // TODO(jdillmann): Cache the VersionState
             state = layout.getXLocSetVersionState(fileId);
         } catch (IOException e) {
-            // TODO (jdillmann): do something with the error or at least log it
+            // TODO(jdillmann): do something with the error or at least log it
             Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
                     "VersionState could not be read for fileId: %s", fileId);
             return;
@@ -741,7 +743,7 @@ public class PreprocStage extends Stage {
                 // and pass it back to flease
                 master.getRWReplicationStage().setFleaseView(fileId, cellId, state);
             } catch (IOException e) {
-                // TODO (jdillmann): do something with the error or at least log it
+                // TODO(jdillmann): do something with the error or at least log it
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
                         "VersionState could not be written for fileId: %s", fileId);
                 return;
@@ -780,7 +782,7 @@ public class PreprocStage extends Stage {
             }
 
         } catch (IOException e) {
-            // TODO (jdillmann): do something with the exception
+            // TODO(jdillmann): do something with the exception
             ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
                     "invalid view. local version could not be written");
             callback.invalidateComplete(false, error);
@@ -818,7 +820,7 @@ public class PreprocStage extends Stage {
             }
 
         } catch (IOException e) {
-            // TODO (jdillmann): do something with the exception
+            // TODO(jdillmann): do something with the exception
             ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
                     "invalid view. local version could not be written");
             callback.installComplete(fileId, -1, error);

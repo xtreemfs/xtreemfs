@@ -48,6 +48,7 @@ import org.xtreemfs.osd.rwre.CoordinatedReplicaUpdatePolicy;
 import org.xtreemfs.osd.rwre.WaR1UpdatePolicy;
 import org.xtreemfs.osd.rwre.WaRaUpdatePolicy;
 import org.xtreemfs.osd.rwre.WqRqUpdatePolicy;
+import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
@@ -55,6 +56,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetch_invalidatedRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
@@ -203,7 +205,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
         final XLocList curXLocList = (XLocList) m.getArguments()[0];
         final XLocList extXLocList = (XLocList) m.getArguments()[1];
-        // TODO (jdillmann): check if this argument is really needed
+        // TODO(jdillmann): check if this argument is really needed
         final XLoc[] newXLocs = (XLoc[]) m.getArguments()[2];
 
         final XLocSet curXLocSet = Converter.xLocListToXLocSet(curXLocList).build();
@@ -219,7 +221,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet, OSDUUIDs);
 
         if (extXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
-            // TODO (jdillman): Check what to to if this should be a full/complete replica
+            // TODO(jdillmann): Check what to to if this should be a full/complete replica
 
         } else {
             // Calculate the AuthState and the minimal majority perceived
@@ -234,64 +236,34 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
                 requiredRead = 1;
             } else {
                 // since the RequiredAcks excludes the local Replica we have to add it explicitly
-                requiredRead = policy.getNumRequiredAcks(null);
+                requiredRead = policy.getNumRequiredAcks(null) + 1;
             }
 
             // Calculate the requiredUpdates
-            // TODO (jdillmann): explain the formula (R + W > N, W'' > N - R - W', W'' = N - R - W' + 1)
+            // TODO(jdillmann): explain the formula (R + W > N, W'' > N - R - W', W'' = N - R - W' + 1)
             int requiredUpdates = extXLocSet.getReplicasCount() - minMajority - requiredRead + 1;
 
             if (requiredUpdates > 0) {
 
-                assert (requiredUpdates < newXLocs.length);
+                assert (requiredUpdates <= newXLocs.length);
+           
+                // build the FileCredentials
+                FileCredentials fileCredentials = FileCredentials.newBuilder()
+                        .setXlocs(extXLocSet).setXcap(cap.getXCap()).build();
+                
+                // build the fetch request
+                xtreemfs_rwr_fetch_invalidatedRequest fiRequest = xtreemfs_rwr_fetch_invalidatedRequest.newBuilder()
+                        .setFileId(fileId).setFileCredentials(fileCredentials).setState(authState).build();
 
                 // take the new replicas from the end of the list
                 for (ServiceUUID OSDUUID : OSDUUIDs.subList(OSDUUIDs.size() - requiredUpdates, OSDUUIDs.size())) {
-                    // Check replication flags, if it's a full replica. The replication does not need to be
-                    // triggered
-                    // for partial replicas
-                    // TODO (jdillmann): Allow multiple replicas to be added
-                    // if
-                    // (!(extXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY))
-                    // || ((replica.getReplicationFlags() & REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber()) ==
-                    // 0)) {
-                    //
-                    // // Build the FileCredentials
-                    // Capability cap = buildCapability(fileId, file);
-                    // FileCredentials.Builder fileCredentialsBuilder = FileCredentials.newBuilder();
-                    // fileCredentialsBuilder.setXlocs(extXLocSet);
-                    // fileCredentialsBuilder.setXcap(cap.getXCap());
-                    //
-                    // // Build the readRequest
-                    // readRequest.Builder readRequestBuilder = readRequest.newBuilder();
-                    // readRequestBuilder.setFileCredentials(fileCredentialsBuilder);
-                    // readRequestBuilder.setFileId(fileId);
-                    //
-                    // // Read one byte from the replica to trigger the replication.
-                    // readRequestBuilder.setObjectNumber(0);
-                    // readRequestBuilder.setObjectVersion(0);
-                    // readRequestBuilder.setOffset(0);
-                    // readRequestBuilder.setLength(1);
-                    //
-                    // // Get the UUID and the address of the new replica
-                    // String headOsd = newRepl.getOsdUuids(0);
-                    // InetSocketAddress server = new ServiceUUID(headOsd).getAddress();
-                    //
-                    // // Ping the new replica
-                    // OSDServiceClient client = master.getOSDClient();
-                    //
-                    // // TODO (jdillmann): retry on timeouts?
-                    // RPCResponse<ObjectData> rpcResponse;
-                    // rpcResponse = client.read(server, RPCAuthentication.authNone,
-                    // RPCAuthentication.userService,
-                    // readRequestBuilder.build());
-                    // rpcResponse.freeBuffers();
-                    //
-                    // // TODO (jdillmann): tell the primary to give up its role to be able to continue with
-                    // other
-                    // new
-                    // // replicas
-                    // }
+
+                    // TODO(jdillmann): retry on timeouts?
+                    @SuppressWarnings("unchecked")
+                    RPCResponse<emptyResponse> rpcResponse = master.getOSDClient().xtreemfs_rwr_fetch_invalidated(
+                            OSDUUID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fiRequest);
+                    rpcResponse.get();
+                    rpcResponse.freeBuffers();
                 }
             }
         }
@@ -337,7 +309,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         int validity = master.getConfig().getCapabilityTimeout();
         long expires = TimeSync.getGlobalTime() / 1000 + master.getConfig().getCapabilityTimeout();
 
-        // TODO (jdillmann): check correct MRC address
+        // TODO(jdillmann): check correct MRC address
         String clientIdentity;
         try {
             clientIdentity = master.getConfig().getAddress() != null ? master.getConfig().getAddress().toString()
@@ -382,7 +354,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
         ReplicaStatus[] states = new ReplicaStatus[xLocSet.getReplicasCount()];
 
-        // TODO (jdillmann): Use RPCResponseAvailableListener @see CoordinatedReplicaUpdatePolicy.executeReset
+        // TODO(jdillmann): Use RPCResponseAvailableListener @see CoordinatedReplicaUpdatePolicy.executeReset
         for (int i = 0; i < xLocSet.getReplicasCount(); i++) {
             InetSocketAddress server = OSDUUIDs.get(i).getAddress();
 
@@ -401,7 +373,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
                     throw e;
                 }
             } catch (IOException e) {
-                // TODO (jdillmann): Do something with the error
+                // TODO(jdillmann): Do something with the error
                 if (Logging.isDebug())
                     Logging.logError(Logging.LEVEL_DEBUG, this, e);
                 continue;
@@ -418,7 +390,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             // FIXME (jdillmann): Howto get the lease timeout value from the OSD config?
             long leaseToMS = 15 * 1000;
 
-            // TODO (jdillmann): Care about the InterruptedException to ensure we will sleep for the required
+            // TODO(jdillmann): Care about the InterruptedException to ensure we will sleep for the required
             // time
             sleep(leaseToMS);
         }
@@ -449,7 +421,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             }
         }
 
-        // TODO (jdillmann): What should i do if the file is a sparse file and no objects exists?
+        // TODO(jdillmann): What should i do if the file is a sparse file and no objects exists?
         Integer minimalMajority = states.length;
         if (objectCount.size() > 0) {
             minimalMajority = Collections.min(objectCount.values());
@@ -485,19 +457,19 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
      */
     @Override
     public void finished(Object result, Object context) {
-        // TODO (jdillmann): Check if the context is really a RequestMethod
+        // TODO(jdillmann): Check if the context is really a RequestMethod
         RequestMethod m = (RequestMethod) context;
         q.add(m);
     }
 
     @Override
     public void failed(Throwable error, Object context) {
-        // TODO (jdillmann): Check if the context is really a RequestMethod
+        // TODO(jdillmann): Check if the context is really a RequestMethod
         RequestMethod m = (RequestMethod) context;
         master.failed(error, m.getRequest());
     }
 
-    // TODO (jdillmann): Share error reporting between ProcessingStage.parseAndExecure and this
+    // TODO(jdillmann): Share error reporting between ProcessingStage.parseAndExecure and this
     private void handleError(RequestMethod m, Throwable err) {
         MRCOperation op = m.getOperation();
         MRCRequest rq = m.getRequest();
