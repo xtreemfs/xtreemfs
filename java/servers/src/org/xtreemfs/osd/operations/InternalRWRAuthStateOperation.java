@@ -21,12 +21,9 @@ import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.stages.StorageStage.InternalGetReplicaStateCallback;
-import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
-import org.xtreemfs.osd.storage.ObjectInformation;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 public final class InternalRWRAuthStateOperation extends OSDOperation {
@@ -109,6 +106,9 @@ public final class InternalRWRAuthStateOperation extends OSDOperation {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    
+    @Override
+    public boolean requiresValidView() {
+        return true;
+    }
 
 }
