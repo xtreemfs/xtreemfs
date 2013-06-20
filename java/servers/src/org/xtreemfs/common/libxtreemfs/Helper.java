@@ -18,6 +18,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDSelectionPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
@@ -296,5 +297,22 @@ public class Helper {
         }
 
         return policiesSB.toString();
+    }
+
+    /**
+     * Convert the given flags to their corresponding bit patterns and combine them by an or.
+     * 
+     * @param flags
+     *            Variable number of SYSTEM_V_FCNTL flags
+     * @return bit pattern as an integer of the or'ed flags
+     */
+    public static int flagsToInt(SYSTEM_V_FCNTL... flags) {
+        int flagsInt = 0;
+        
+        for (SYSTEM_V_FCNTL flag: flags) {
+            flagsInt = flagsInt | flag.getNumber();
+        }
+
+        return flagsInt;
     }
 }
