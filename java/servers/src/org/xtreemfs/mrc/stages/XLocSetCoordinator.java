@@ -40,7 +40,6 @@ import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.metadata.FileMetadata;
-import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.operations.MRCOperation;
 import org.xtreemfs.mrc.utils.Converter;
@@ -50,6 +49,7 @@ import org.xtreemfs.osd.rwre.WaRaUpdatePolicy;
 import org.xtreemfs.osd.rwre.WqRqUpdatePolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState;
@@ -181,18 +181,17 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
     }
 
     public <O extends MRCOperation & XLocSetCoordinatorCallback> RequestMethod addReplicas(String fileId,
-            FileMetadata file, XLocList curXLocList, XLocList extXLocList, XLoc[] newXLocs, MRCRequest rq, O op)
+            FileMetadata file, XLocList curXLocList, XLocList extXLocList, MRCRequest rq, O op)
             throws DatabaseException {
-        return addReplicas(fileId, file, curXLocList, extXLocList, newXLocs, rq, op, op);
+        return addReplicas(fileId, file, curXLocList, extXLocList, rq, op, op);
     }
 
     public RequestMethod addReplicas(String fileId, FileMetadata file, XLocList curXLocList, XLocList extXLocList,
-            XLoc[] newXLocs, MRCRequest rq, MRCOperation op, XLocSetCoordinatorCallback callback)
-            throws DatabaseException {
+            MRCRequest rq, MRCOperation op, XLocSetCoordinatorCallback callback) throws DatabaseException {
 
         Capability cap = buildCapability(fileId, file);
         RequestMethod m = new RequestMethod(RequestType.ADD_REPLICAS, fileId, rq, op, callback, cap, new Object[] {
-                curXLocList, extXLocList, newXLocs });
+                curXLocList, extXLocList });
 
         return m;
     }
@@ -205,67 +204,20 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
         final XLocList curXLocList = (XLocList) m.getArguments()[0];
         final XLocList extXLocList = (XLocList) m.getArguments()[1];
-        // TODO(jdillmann): check if this argument is really needed
-        final XLoc[] newXLocs = (XLoc[]) m.getArguments()[2];
 
         final XLocSet curXLocSet = Converter.xLocListToXLocSet(curXLocList).build();
         final XLocSet extXLocSet = Converter.xLocListToXLocSet(extXLocList).build();
 
-        ArrayList<ServiceUUID> OSDUUIDs = new ArrayList<ServiceUUID>(extXLocSet.getReplicasCount());
-        for (int i = 0; i < extXLocSet.getReplicasCount(); i++) {
-            // save each head OSDUUID to the list
-            OSDUUIDs.add(i, new ServiceUUID(Helper.getOSDUUIDFromXlocSet(extXLocSet, i, 0)));
-        }
-
-        // Invalidate the majority of the replicas and get their ReplicaStatus
-        ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet, OSDUUIDs);
-
-        if (extXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
-            // TODO(jdillmann): Check what to to if this should be a full/complete replica
-
+        if (extXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ)) {
+            addReplicasWqRq(fileId, cap, curXLocSet, extXLocSet);
         } else {
-            // Calculate the AuthState and the minimal majority perceived
-            CoordinatedReplicaUpdatePolicy policy = getMockupPolicy(extXLocSet.getReplicaUpdatePolicy(), fileId,
-                    OSDUUIDs);
-            AuthoritativeReplicaState authState = policy.CalculateAuthoritativeState(states, fileId);
-            int minMajority = calculateMinimalMajority(states, authState);
-
-            // Determine how many Replicas have to be read
-            int requiredRead;
-            if (policy.backupCanRead()) {
-                requiredRead = 1;
-            } else {
-                // since the RequiredAcks excludes the local Replica we have to add it explicitly
-                requiredRead = policy.getNumRequiredAcks(null) + 1;
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                        "replication policy (%s) will be handled by VolumeImplementation",
+                        extXLocSet.getReplicaUpdatePolicy());
             }
-
-            // Calculate the requiredUpdates
-            // TODO(jdillmann): explain the formula (R + W > N, W'' > N - R - W', W'' = N - R - W' + 1)
-            int requiredUpdates = extXLocSet.getReplicasCount() - minMajority - requiredRead + 1;
-
-            if (requiredUpdates > 0) {
-
-                assert (requiredUpdates <= newXLocs.length);
-           
-                // build the FileCredentials
-                FileCredentials fileCredentials = FileCredentials.newBuilder()
-                        .setXlocs(extXLocSet).setXcap(cap.getXCap()).build();
-                
-                // build the fetch request
-                xtreemfs_rwr_fetch_invalidatedRequest fiRequest = xtreemfs_rwr_fetch_invalidatedRequest.newBuilder()
-                        .setFileId(fileId).setFileCredentials(fileCredentials).setState(authState).build();
-
-                // take the new replicas from the end of the list
-                for (ServiceUUID OSDUUID : OSDUUIDs.subList(OSDUUIDs.size() - requiredUpdates, OSDUUIDs.size())) {
-
-                    // TODO(jdillmann): retry on timeouts?
-                    @SuppressWarnings("unchecked")
-                    RPCResponse<emptyResponse> rpcResponse = master.getOSDClient().xtreemfs_rwr_fetch_invalidated(
-                            OSDUUID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fiRequest);
-                    rpcResponse.get();
-                    rpcResponse.freeBuffers();
-                }
-            }
+            // throw new IllegalArgumentException("unsupported replica update mode: "
+            // + extXLocSet.getReplicaUpdatePolicy());
         }
 
         // Call the installXLocSet method in the context of the ProcessingStage
@@ -279,6 +231,107 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
         master.getProcStage().enqueueOperation(callbackRequest, ProcessingStage.STAGEOP_INTERNAL_CALLBACK, null);
     }
+
+    private void addReplicasWqRq(String fileId, Capability cap, XLocSet curXLocSet, XLocSet extXLocSet) throws Throwable {
+
+        ArrayList<ServiceUUID> OSDUUIDs = new ArrayList<ServiceUUID>(extXLocSet.getReplicasCount());
+        for (int i = 0; i < extXLocSet.getReplicasCount(); i++) {
+            // save each head OSDUUID to the list
+            OSDUUIDs.add(i, new ServiceUUID(Helper.getOSDUUIDFromXlocSet(extXLocSet, i, 0)));
+        }
+
+        // Invalidate the majority of the replicas and get their ReplicaStatus
+        ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet);
+
+        // Calculate the AuthState and the minimal majority perceived
+        CoordinatedReplicaUpdatePolicy policy = getMockupPolicy(extXLocSet.getReplicaUpdatePolicy(), fileId, OSDUUIDs);
+        AuthoritativeReplicaState authState = policy.CalculateAuthoritativeState(states, fileId);
+        int minMajority = calculateMinimalMajority(states, authState);
+
+        // Determine how many Replicas have to be read
+        int requiredRead;
+        if (policy.backupCanRead()) {
+            requiredRead = 1;
+        } else {
+            // since the RequiredAcks excludes the local Replica we have to add it explicitly
+            requiredRead = policy.getNumRequiredAcks(null) + 1;
+        }
+
+        // Calculate the requiredUpdates
+        // TODO(jdillmann): explain the formula (R + W > N, W'' > N - R - W', W'' = N - R - W' + 1)
+        // W = N - R + 1 <=> R + W - 1 = N => R + W > N
+        int requiredUpdates = extXLocSet.getReplicasCount() - minMajority - requiredRead + 1;
+
+        if (requiredUpdates > 0) {
+            assert (requiredUpdates <= (extXLocSet.getReplicasCount() - curXLocSet.getReplicasCount()));
+
+            // build the FileCredentials
+            FileCredentials fileCredentials = FileCredentials.newBuilder().setXlocs(extXLocSet).setXcap(cap.getXCap())
+                    .build();
+
+            // build the fetch request
+            xtreemfs_rwr_fetch_invalidatedRequest fiRequest = xtreemfs_rwr_fetch_invalidatedRequest.newBuilder()
+                    .setFileId(fileId).setFileCredentials(fileCredentials).setState(authState).build();
+
+            // take the new replicas from the end of the list
+            for (ServiceUUID OSDUUID : OSDUUIDs.subList(OSDUUIDs.size() - requiredUpdates, OSDUUIDs.size())) {
+
+                // TODO(jdillmann): check if there is any sane way to use libxtreemfs at the mrc
+                @SuppressWarnings("unchecked")
+                RPCResponse<emptyResponse> rpcResponse = master.getOSDClient().xtreemfs_rwr_fetch_invalidated(
+                        OSDUUID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fiRequest);
+                rpcResponse.get();
+                rpcResponse.freeBuffers();
+            }
+        }
+    }
+
+    // If the read operation is triggered from the client side via libxtreemfs it behaves different from the call made
+    // here. To retain compatibility the ping will remain at the VolumeImplementation.
+//    private void addReplicasRo(String fileId, Capability cap, XLocSet curXLocSet, XLocSet extXLocSet) throws Throwable {
+//
+//        // extending the replica set won't break any functionality. Access based on an older XLocSet will still be
+//        // correct, as long as the stripes are staying on the same OSDs
+//
+//        List<Replica> newReplicas = new ArrayList<Replica>(extXLocSet.getReplicasList());
+//        newReplicas.removeAll(curXLocSet.getReplicasList());
+//        assert (extXLocSet.getReplicasCount() - curXLocSet.getReplicasCount() == newReplicas.size());
+//
+//        for (Replica replica : newReplicas) {
+//            
+//            // Check replication flags, if it's a full replica.
+//            if ((replica.getReplicationFlags() & REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber()) == 0) {
+//                // Nothing to do here because the replication does not need to be triggered for partial replicas.
+//                continue;
+//            }
+//
+//            FileCredentials.Builder fileCredentialsBuilder = FileCredentials.newBuilder()
+//                    .setXcap(cap.getXCap())
+//                    .setXlocs(extXLocSet);
+//
+//            readRequest.Builder readRequestBuilder = readRequest.newBuilder()
+//                    .setFileId(fileId)
+//                    .setFileCredentials(fileCredentialsBuilder);
+//
+//            // Read one byte from the replica to trigger the replication.
+//            readRequestBuilder
+//                    .setObjectNumber(0)
+//                    .setObjectVersion(0)
+//                    .setOffset(0)
+//                    .setLength(1);
+//
+//            String headOSD = replica.getOsdUuids(0);
+//            InetSocketAddress server = new ServiceUUID(headOSD).getAddress();
+//
+//            // TODO(jdillmann): check if there is any sane way to use libxtreemfs at the mrc
+//            RPCResponse<OSD.ObjectData> rpcResponse = master.getOSDClient().read(server, RPCAuthentication.authNone,
+//                    RPCAuthentication.userService, readRequestBuilder.build());
+//            rpcResponse.get();
+//            rpcResponse.freeBuffers();
+//
+//            // TODO(jdillmann): Every OSD in a striped replica has to be pinged.
+//        }
+//    }
 
     // public void removeReplicas(String fileId, MRCOperation op, MRCRequest rq) {
     // q.add(new RequestMethod(RequestType.REMOVE_REPLICAS, fileId, op, rq));
@@ -336,11 +389,9 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
      * @param fileId
      * @param capability
      * @param xLocSet
-     * @param OSDUUIDs
      * @throws Throwable
      */
-    private ReplicaStatus[] invalidateReplicas(String fileId, Capability cap, XLocSet xLocSet,
-            List<ServiceUUID> OSDUUIDs) throws Throwable {
+    private ReplicaStatus[] invalidateReplicas(String fileId, Capability cap, XLocSet xLocSet) throws Throwable {
 
         FileCredentials creds = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLocSet).build();
 
@@ -356,7 +407,9 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
         // TODO(jdillmann): Use RPCResponseAvailableListener @see CoordinatedReplicaUpdatePolicy.executeReset
         for (int i = 0; i < xLocSet.getReplicasCount(); i++) {
-            InetSocketAddress server = OSDUUIDs.get(i).getAddress();
+
+            Replica replica = xLocSet.getReplicas(i);
+            InetSocketAddress server = new ServiceUUID(replica.getOsdUuids(0)).getAddress();
 
             try {
                 rpcResponse = client.xtreemfs_xloc_set_invalidate(server, RPCAuthentication.authNone,
@@ -368,6 +421,10 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
                     states[i] = response.getStatus();
                 }
 
+                if (response.getIsPrimary()) {
+                    primaryResponded = true;
+                }
+
             } catch (InterruptedException e) {
                 if (quit) {
                     throw e;
@@ -376,11 +433,6 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
                 // TODO(jdillmann): Do something with the error
                 if (Logging.isDebug())
                     Logging.logError(Logging.LEVEL_DEBUG, this, e);
-                continue;
-            }
-
-            if (response.getIsPrimary()) {
-                primaryResponded = true;
             }
         }
 

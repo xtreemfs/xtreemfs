@@ -87,7 +87,7 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
             res.checkIfFileDoesNotExist();
             file = res.getFile();
 
-            // TODO (jdillmann): Move to MRCHelper.createGlobalFileId(VolumeInfo volume, FileMetadata file)
+            // TODO(jdillmann): Move to MRCHelper.createGlobalFileId(VolumeInfo volume, FileMetadata file)
             fileId = sMan.getVolumeInfo().getId() + ":" + file.getId();
 
             // check whether the path prefix is searchable
@@ -105,8 +105,7 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "file '" + rqArgs.getFileId()
                 + "' is a symbolic link");
         
-        // check whether privileged permissions are granted for adding
-        // replicas
+        // check whether privileged permissions are granted for adding replicas
         faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq.getDetails().superUser, rq
                 .getDetails().groupIds);
         
@@ -116,8 +115,7 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
         StripingPolicy sPol = sMan.createStripingPolicy(sp.getType().toString(), sp.getStripeSize(), sp
                 .getWidth());
         
-        // check whether the new replica relies on a set of OSDs which
-        // hasn't been used yet
+        // check whether the new replica relies on a set of OSDs which hasn't been used yet
         XLocList xLocList = file.getXLocList();
         assert (xLocList != null);
         
@@ -152,12 +150,9 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
         
         repls[repls.length - 1] = replica;
         XLocList extXLocList = sMan.createXLocList(repls, xLocList.getReplUpdatePolicy(), xLocList.getVersion() + 1);
-        XLoc[] newXLocs = new XLoc[] { replica };
 
         XLocSetCoordinator coordinator = master.getXLocSetCoordinator();
-        XLocSetCoordinator.RequestMethod m = coordinator.addReplicas(fileId, file, xLocList, extXLocList, newXLocs, rq,
-                this);
-
+        XLocSetCoordinator.RequestMethod m = coordinator.addReplicas(fileId, file, xLocList, extXLocList, rq, this);
         
         // Make an update with the RequestMethod as context and the Coordinator as callback. This will enqueue
         // the RequestMethod when the update is complete

@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
+import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.libxtreemfs.RPCCaller.CallGenerator;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
@@ -1317,11 +1318,16 @@ public class VolumeImplementation implements Volume, AdminVolume {
                     }
                 });
 
-        // TODO (jdillmann): Remove the ping. This will be handled by XLocSetCoordinator
-        // Trigger the replication at this point by reading at least one byte.
-        FileHandle fileHandle = openFile(userCredentials, path,
+        // Renew the local XLocSet by reopening the file.
+        // TODO(jdillmann): Return the updated XLocSet as a response to the addReplicaOperation.
+        AdminFileHandle fileHandle = openFile(userCredentials, path,
                 SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
-        fileHandle.pingReplica(userCredentials, newReplica.getOsdUuids(0));
+
+        // The WqRq policy is handled on the MRC side by the XLocSetCoordinator and has not to be pinged.
+        if (!fileHandle.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ)) {
+            // Trigger the replication at this point by reading at least one byte.
+            fileHandle.pingReplica(userCredentials, newReplica.getOsdUuids(0));
+        }
         fileHandle.close();
     }
 
