@@ -41,11 +41,12 @@ public class xtfs_benchmark {
 
 
         parseCLIOptions(args);
-        displayUsageIfSet();
-        Params params = buildParams();
+        if (usageIsSet())  {
+            displayUsage();
+            return;
+        }
 
-        if (params.stripeWidth == 39)
-            NetHooks.beforeTcpBind(null, null, 0);
+        Params params = buildParams();
 
         // Todo (jvf) delete
         System.err.println(params);
