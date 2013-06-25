@@ -224,16 +224,6 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
 
       if (err.error_type() == IO_ERROR ||
           err.error_type() == INTERNAL_SERVER_ERROR) {
-        retry = true;
-        // Mark the current UUID as failed and get the next one.
-        if (uuid_iterator_has_addresses) {
-         uuid_iterator->MarkUUIDAsFailed(service_address);
-         uuid_iterator->GetUUID(&service_address);
-        } else {
-         uuid_iterator->MarkUUIDAsFailed(service_uuid);
-         uuid_iterator->GetUUID(&service_uuid);
-        }
-
         // Log only the first retry.
         if (attempt == 1 && options.max_retries() != 1) {
          string retries_left = options.max_retries() == 0 ? "infinite"
@@ -244,6 +234,16 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
              + ", retrying ("
              + boost::lexical_cast<string>(retries_left)
              + " attempts left)";
+        }
+
+        retry = true;
+        // Mark the current UUID as failed and get the next one.
+        if (uuid_iterator_has_addresses) {
+         uuid_iterator->MarkUUIDAsFailed(service_address);
+         uuid_iterator->GetUUID(&service_address);
+        } else {
+         uuid_iterator->MarkUUIDAsFailed(service_uuid);
+         uuid_iterator->GetUUID(&service_uuid);
         }
       }
 

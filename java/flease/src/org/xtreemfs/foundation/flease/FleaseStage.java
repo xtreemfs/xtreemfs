@@ -370,22 +370,33 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
                         } else if (msg.isAcceptorMessage()) {
                             final FleaseMessage response = acceptor.processMessage(msg);
                             if (response != null) {
-                                if (msg.getMasterEpochNumber() == FleaseMessage.REQUEST_MASTER_EPOCH) {
+                                if (msg.getMasterEpochNumber() == FleaseMessage.REQUEST_MASTER_EPOCH
+                                        && response.getMsgType() == FleaseMessage.MsgType.MSG_PREPARE_ACK) {
+                                    // Respond with the current master epoch.
                                     if (meHandler != null) {
                                         MasterEpochHandlerInterface.Continuation cont = new MasterEpochHandlerInterface.Continuation() {
-                                                @Override
-                                                public void processingFinished() {
-                                                    sender.sendMessage(response, msg.getSender());
-                                                }
-                                            };
-                                        if (response.getMsgType() == FleaseMessage.MsgType.MSG_PREPARE_ACK) {
-                                            meHandler.sendMasterEpoch(response, cont);
-                                        } else if (response.getMsgType() == FleaseMessage.MsgType.MSG_ACCEPT_ACK) {
-                                            meHandler.storeMasterEpoch(response, cont);
-                                        }
+                                            @Override
+                                            public void processingFinished() {
+                                                sender.sendMessage(response, msg.getSender());
+                                            }
+                                        };
+                                        meHandler.sendMasterEpoch(response, cont);
                                     } else {
-                                        Logging.logMessage(Logging.LEVEL_ERROR, this, "MASTER EPOCH WAS REQUESTED, BUT NO MASTER EPOCH HANDLER DEFINED!!!");
+                                        Logging.logMessage(Logging.LEVEL_ERROR, this,
+                                                "MASTER EPOCH WAS REQUESTED, BUT NO MASTER EPOCH HANDLER DEFINED!!!");
                                         sender.sendMessage(response, msg.getSender());
+                                    }
+                                } else if (msg.getMasterEpochNumber() != FleaseMessage.IGNORE_MASTER_EPOCH
+                                        && response.getMsgType() == FleaseMessage.MsgType.MSG_ACCEPT_ACK) {
+                                    // Write the current master epoch to disk.
+                                    if (meHandler != null) {
+                                        MasterEpochHandlerInterface.Continuation cont = new MasterEpochHandlerInterface.Continuation() {
+                                            @Override
+                                            public void processingFinished() {
+                                                sender.sendMessage(response, msg.getSender());
+                                            }
+                                        };
+                                        meHandler.storeMasterEpoch(response, cont);
                                     }
                                 } else {
                                     sender.sendMessage(response, msg.getSender());

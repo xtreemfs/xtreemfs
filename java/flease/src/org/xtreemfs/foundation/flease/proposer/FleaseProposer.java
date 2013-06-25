@@ -649,12 +649,12 @@ public class FleaseProposer {
                 return;
             }
 
-            if (!maxBallot.isEmpty() && config.isDebugPrintMessages()) {
+            if (!maxBallot.isEmpty()) {
                 cell.addAction(ActionName.PROPOSER_PREPARE_OVERRULED);
                 cell.setBallotNo(new ProposalNumber(
                         maxBallot.getProposalNo() + (int) (Math.random() * 10) + 1,
                         cell.getBallotNo().getSenderId()));
-                if (Logging.isDebug()) {
+                if (Logging.isDebug() && config.isDebugPrintMessages()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG,
                             Logging.Category.replication,
                             this,

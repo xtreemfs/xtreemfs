@@ -29,7 +29,7 @@ class dbenchTest(unittest.TestCase):
         
            args = "dbench -c dbench-client.txt -D . 5"
            isodatetime = datetime.today().isoformat()[:-7].replace( '-', '' ).replace( ':', '' )
-           stdout = open( "/tmp/dbench-stdout-"+isodatetime+".txt", "a+" )
+           stdout = open(sys.argv[4] + "/log/dbench-stdout-"+isodatetime+".txt", "a+" )
            p = subprocess.Popen( args, shell=True, stdout=stdout, stderr=subprocess.STDOUT )
            retcode = p.wait()
            self.assertEqual( retcode, 0 )

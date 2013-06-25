@@ -222,6 +222,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         replicated = dbConfig.getPlugins().size() > 0;
         
         ServiceDataGenerator gen = new ServiceDataGenerator() {
+            @Override
             public ServiceSet getServiceData() {
                 
                 String uuid = config.getUUID().toString();
@@ -302,6 +303,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         httpServ = HttpServer.create(new InetSocketAddress(config.getHttpPort()), 0);
         final HttpContext ctx = httpServ.createContext("/", new HttpHandler() {
+            @Override
             public void handle(HttpExchange httpExchange) throws IOException {
                 byte[] content;
                 try {
@@ -655,6 +657,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                     volumes.add(sMan.getVolumeInfo());
                 
                 Collections.sort(volumes, new Comparator<VolumeInfo>() {
+                    @Override
                     public int compare(VolumeInfo o1, VolumeInfo o2) {
                         return o1.getName().compareTo(o2.getName());
                     }
@@ -758,12 +761,15 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         return config;
     }
     
+    @Override
     public void startupPerformed() {
     }
     
+    @Override
     public void shutdownPerformed() {
     }
     
+    @Override
     public void crashPerformed(Throwable cause) {
         final String report = CrashReporter.createCrashReport("MRC", VersionManagement.RELEASE_VERSION, cause);
         System.out.println(report);
@@ -898,5 +904,20 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             
         } else
             return null;
+    }
+
+    /**
+     * @see HeartbeatThread#pauseOperation()
+     * @throws InterruptedException
+     */
+    public void pauseHeartbeatThread() throws InterruptedException {
+        heartbeatThread.pauseOperation();
+    }
+
+    /**
+     * @see HeartbeatThread#resumeOperation()
+     */
+    public void resumeHeartbeatThread() {
+        heartbeatThread.resumeOperation();
     }
 }

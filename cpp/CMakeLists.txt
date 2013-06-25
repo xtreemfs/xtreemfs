@@ -4,6 +4,8 @@ PROJECT(cpp CXX)
 #SET (CMAKE_VERBOSE_MAKEFILE true)
 
 add_definitions(-D_FILE_OFFSET_BITS=64)
+# Uncomment this to enable boost::asio debug output.
+#add_definitions(-DBOOST_ASIO_ENABLE_HANDLER_TRACKING)
 
 # Set variables and required libraries.
 ##########################################
@@ -125,6 +127,10 @@ if(NOT BOOST_ROOT AND EXISTS "/usr/lib64/libboost_system.so")
   set(BOOST_LIBRARYDIR "/usr/lib64")
 endif(NOT BOOST_ROOT AND EXISTS "/usr/lib64/libboost_system.so")
 FIND_PACKAGE(Boost COMPONENTS system thread program_options regex REQUIRED)
+# Since boost 1.50, the thread library requires the chrono library. This dependency has to be filled in manually on Windows.
+if(WIN32 AND Boost_VERSION VERSION_GREATER "104900")
+  find_package(Boost COMPONENTS chrono REQUIRED)
+endif(WIN32 AND Boost_VERSION VERSION_GREATER "104900")
 if (NOT Boost_FOUND)
   message(FATAL_ERROR "The boost library was not found on your system. If needed, you can also download and compile it on your own. After compiling boost locally, set the the environment variable BOOST_ROOT to the boost base directory before executing 'make' e.g., 'export BOOST_ROOT=/Users/xyz/boost_1_47_0'.")
 endif(NOT Boost_FOUND)
@@ -203,7 +209,7 @@ add_library(xtreemfs ${SRCS_RPC} ${SRCS_UTIL} ${SRCS_GENERATED} ${SRCS_XTREEMFS}
 #          If you want to use a static libxtreemfs, you have to use a CMake file like this which does automatically add the static libxtreemfs and libprotobuf to the executable.
 #          An alternative would be to change this file in such a way that the static libxtreemfs and libprotobuf are merged together into a static libxtreemfs.
 #          But this would require additional CMake macros as presented here: http://www.mail-archive.com/cmake@cmake.org/msg28670.html
-TARGET_LINK_LIBRARIES(xtreemfs optimized protobuf debug protobuf_debug ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${LIBPTHREAD} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${OPENSSL_LIBRARIES} ${LIBSOCKET_SOLARIS} ${LIBNSL_SOLARIS})
+TARGET_LINK_LIBRARIES(xtreemfs optimized protobuf debug protobuf_debug ${Boost_LIBRARIES} ${LIBPTHREAD} ${OPENSSL_LIBRARIES} ${LIBSOCKET_SOLARIS} ${LIBNSL_SOLARIS})
 
 ADD_EXECUTABLE(example_libxtreemfs src/example_libxtreemfs/example_libxtreemfs.cpp)
 TARGET_LINK_LIBRARIES(example_libxtreemfs xtreemfs)
@@ -230,7 +236,7 @@ if (NOT WIN32)
   TARGET_LINK_LIBRARIES(mount.xtreemfs xtreemfs ${LIBFUSE})
 
   ADD_EXECUTABLE(xtfsutil src/xtfsutil/xtfsutil.cpp ${SRCS_JSONCPP})
-  TARGET_LINK_LIBRARIES(xtfsutil ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_REGEX_LIBRARY} ${LIBATTR})
+  TARGET_LINK_LIBRARIES(xtfsutil ${Boost_LIBRARIES} ${LIBATTR})
 
   set(UNITTESTS_SKIP_cbfs true)
   set(UNITTESTS_REQUIRED_SOURCES_fuse ${SRCS_FUSE_ADAPTER} ${SRCS_XTFS_UTIL} ${SRCS_JSONCPP})

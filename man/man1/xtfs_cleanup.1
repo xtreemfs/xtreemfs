@@ -1,13 +1,13 @@
 .TH xtfs_cleanup 1 "July 2011" "The XtreemFS Distributed File System" "XtreemFS Admin Tools"
 .SH NAME
-xtfs_cleanup \- checks for each file on the OSD, if it has an entry at the Metadata Server (MRC). 
+xtfs_cleanup \- checks for each file on the OSD, if it has an entry at the Metadata Server (MRC).
 .SH SYNOPSIS
 \fBxtfs_cleanup [ \fIoptions\fB ] \fIuuid:<osd_uuid>
 .BR
 
 .SH DESCRIPTION
 .I xtfs_cleanup
-performs a check of each file on the given Object Storage Device (OSD) whether it is registered at a MRC or not. 
+performs a check of each file on the given Object Storage Device (OSD) whether it is registered at a MRC or not.
 
 .SH EXAMPLE USAGE
 .TP
@@ -25,7 +25,7 @@ An optional passphrase to access the credentials file.
 \fB-deleteVolumes
 Deletes volumes that might be dead.
 .TP
-\fB-dirs \fI<uri(,uri...)>
+\fB-dir \fI<uri(,uri...)>
 Specifies the directory services to use (e.g. 'pbrpc://localhost:32638,pbrpc://myDir.com:32638') (comma-separated). If no URI is specified, URIs and security settings are taken from '/etc/xos/xtreemfs/default_dir'. In case of a secured URI ('pbrpcs://...' or 'pbrpcg://...'), it is necessary to also specify SSL settings.
 .TP
 \fB-e

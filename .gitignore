@@ -1,6 +1,5 @@
 /bin/xtfs_vivaldi
 /.sconsign.dblite
 /.googletest_library_already_built
-.classpath
-.project
-java/servers/src/org/xtreemfs/sandbox/benchmark/ControllerTest.java
+.idea
+*.iml

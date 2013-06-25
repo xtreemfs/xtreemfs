@@ -103,8 +103,7 @@ Client::Client(int32_t connect_timeout_s,
       char tmplate1[] = "/tmp/pmXXXXXX";
       char tmplate2[] = "/tmp/ctXXXXXX";
 
-      const char* fp = options->pkcs12_file_name().c_str();
-      FILE *p12_file = fopen(fp, "rb");
+      FILE *p12_file = fopen(options->pkcs12_file_name().c_str(), "rb");
 
       // read the pkcs12 file
       if (!p12_file) {
@@ -113,7 +112,7 @@ Client::Client(int32_t connect_timeout_s,
         //TODO(mberlin): Use a better approach than exit - throw?
         exit(1);
       }
-      PKCS12 *p12 = d2i_PKCS12_fp(p12_file, NULL);
+      PKCS12* p12 = d2i_PKCS12_fp(p12_file, NULL);
       fclose(p12_file);
 
       if (!p12) {
@@ -124,9 +123,9 @@ Client::Client(int32_t connect_timeout_s,
         exit(1);
       }
 
-      EVP_PKEY *pkey = NULL;
-      X509 *cert = NULL;
-      STACK_OF(X509) *ca = NULL;
+      EVP_PKEY* pkey = NULL;
+      X509* cert = NULL;
+      STACK_OF(X509)* ca = NULL;
 
       // parse pkcs12 file
       if (!PKCS12_parse(p12,
@@ -143,6 +142,7 @@ Client::Client(int32_t connect_timeout_s,
         exit(1);
       }
       PKCS12_free(p12);
+      sk_X509_free(ca);
 
       // create two tmp files containing the PEM certificates.
       // these which be deleted when exiting the program
@@ -200,22 +200,28 @@ Client::Client(int32_t connect_timeout_s,
         Logging::log->getLog(LEVEL_ERROR)
             << "Error writing pem file:" << tmplate1 << endl;
         free(password);
+        EVP_PKEY_free(pkey);
+
         unlink(tmplate1);
         unlink(tmplate2);
         //TODO(mberlin): Use a better approach than exit - throw?
         exit(1);
       }
       free(password);
+      EVP_PKEY_free(pkey);
 
       // write ca certificate
       if (!PEM_write_X509(certFile, cert)) {
         Logging::log->getLog(LEVEL_ERROR) << "Error writing cert file:"
             << tmplate2 << endl;
+
+        X509_free(cert);
         unlink(tmplate1);
         unlink(tmplate2);
         //TODO(mberlin): Use a better approach than exit - throw?
         exit(1);
       }
+      X509_free(cert);
 
       fclose(pemFile);
       fclose(certFile);
@@ -251,6 +257,9 @@ Client::Client(int32_t connect_timeout_s,
          exit(1);
       }
     }
+
+    // Cleanup thread-local OpenSSL state.
+    ERR_remove_state(0);
   }
 }
 
@@ -546,6 +555,9 @@ void Client::run() {
                        "Request aborted since RPC client was stopped.");
   }
   request_table_.clear();
+
+  // Cleanup thread-local OpenSSL state.
+  ERR_remove_state(0);
 }
 
 void Client::shutdown() {

@@ -23,7 +23,6 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.FSUtils;
-import org.xtreemfs.mrc.MRC;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.osd.OSD;
@@ -66,7 +65,7 @@ public class ClientTest {
     @BeforeClass
     public static void setUp() throws Exception {
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
-        Logging.start(Logging.LEVEL_DEBUG);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
 
         dirConfig = SetupUtils.createDIRConfig();
         osdConfigs = SetupUtils.createMultipleOSDConfigs(NUMBER_OF_OSDS);
@@ -183,6 +182,9 @@ public class ClientTest {
         mrcAddressList.add(mrc2Address);
 
         // Create volume
+        Volumes volumesBeforeCreate = client.listVolumes(mrcAddressList);
+        assertEquals(0, volumesBeforeCreate.getVolumesCount());
+
         client.createVolume(mrcAddressList, auth, userCredentials, VOLUME_NAME_1);
 
         ServiceSet sSet = null;
@@ -226,7 +228,7 @@ public class ClientTest {
         Client client = ClientFactory.createClient(dirAddress, userCredentials, null, options);
         client.start();
 
-        // Open a volume named "foobar".
+        // Create and open volume.
         client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME_1);
         Volume volume = client.openVolume(VOLUME_NAME_1, null, options);
 
@@ -259,6 +261,9 @@ public class ClientTest {
         }
 
         fileHandle.close();
+
+        client.deleteVolume(mrcAddress, auth, userCredentials, VOLUME_NAME_1);
+
         client.shutdown();
     }
 
@@ -311,6 +316,7 @@ public class ClientTest {
         }
 
         fileHandle.close();
+        client.deleteVolume(mrcAddress, auth, userCredentials, VOLUME_NAME_1);
         client.shutdown();
     }
 

@@ -66,6 +66,15 @@ public class DeleteVolumeOperation extends MRCOperation {
             master.getFileAccessManager().checkPrivilegedPermissions(sMan, file, rq.getDetails().userId,
                     rq.getDetails().superUser, rq.getDetails().groupIds);
         
+        // Pause the HeartbeatThread while we are deleting the volume. Otherwise, the thread may re-register a
+        // volume at the DIR which was already deregistered.
+        try {
+            master.pauseHeartbeatThread();
+        } catch (InterruptedException ex) {
+            finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
+                    "An error has occurred. The server is probably shutting down.", ex));
+        }
+
         // deregister the volume from the Directory Service
         // Ugly workaround for async call.
         Runnable rqThr = new Runnable() {
@@ -76,6 +85,8 @@ public class DeleteVolumeOperation extends MRCOperation {
                             RPCAuthentication.userService, volume.getId());
                     processStep2(rqArgs, volume.getId(), rq);
                 } catch (Exception ex) {
+                    master.resumeHeartbeatThread();
+
                     finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
                             "an error has occurred", ex));
                 }
@@ -102,7 +113,8 @@ public class DeleteVolumeOperation extends MRCOperation {
         } catch (Throwable exc) {
             finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
                     "an error has occurred", exc));
+        } finally {
+            master.resumeHeartbeatThread();
         }
     }
-    
 }

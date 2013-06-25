@@ -17,6 +17,9 @@ fi
 xtreemfs_version_management_files="../java/foundation/src/org/xtreemfs/foundation/VersionManagement.java:RELEASE_VERSION ../cpp/include/libxtreemfs/version_management.h:XTREEMFS_VERSION_STRING"
 
 xtreemfs_release_names="
+1.0|Jelly Donut
+1.1|Hot Tamales
+1.2|Luscious Lebkuchen
 1.3|Tasty Tartlet
 1.4|Salty Sticks
 "

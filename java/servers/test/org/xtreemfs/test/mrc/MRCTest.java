@@ -8,6 +8,11 @@
 
 package org.xtreemfs.test.mrc;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashSet;
@@ -15,9 +20,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import junit.framework.TestCase;
-import junit.textui.TestRunner;
-
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.foundation.buffer.BufferPool;
@@ -60,7 +65,7 @@ import com.google.protobuf.Message;
  * 
  * @author stender
  */
-public class MRCTest extends TestCase {
+public class MRCTest {
     
     private MRCServiceClient  client;
     
@@ -72,10 +77,8 @@ public class MRCTest extends TestCase {
         Logging.start(SetupUtils.DEBUG_LEVEL);
     }
     
-    protected void setUp() throws Exception {
-        
-        System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
-        
+    @Before
+    public void setUp() throws Exception {
         mrcAddress = SetupUtils.getMRC1Addr();
         
         // register an OSD at the directory service (needed in order to assign
@@ -89,11 +92,57 @@ public class MRCTest extends TestCase {
         client = testEnv.getMrcClient();
     }
     
-    protected void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
         testEnv.shutdown();
         Logging.logMessage(Logging.LEVEL_DEBUG, this, BufferPool.getStatus());
     }
     
+    @Test
+    public void testReCreateVolumes() throws Exception {
+        final String uid = "userXY";
+        final List<String> gids = createGIDs("groupZ");
+        final UserCredentials uc = createUserCredentials(uid, gids);
+
+        // Using a large number of volumes to generate load while creation
+        for (int i = 25; i <= 30; i++) {
+            // Create volumes
+            for (int j = 0; j < i; j++) {
+                String name = "vol-" + j;
+                invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
+                        AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, getDefaultStripingPolicy(), "", 0775,
+                        name, "", "", getKVList("i", String.valueOf(i))));
+            }
+
+            // Check number of created volumes
+            Volumes vols = invokeSync(client.xtreemfs_lsvol(mrcAddress, RPCAuthentication.authNone, uc));
+            assertEquals(vols.getVolumesCount(), i);
+
+            // Try to create existing volumes
+            for (int j = 0; j < i; j++) {
+                String name = "vol-" + j;
+                try {
+                    invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
+                            AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, getDefaultStripingPolicy(), "", 0775,
+                            name, "", "", getKVList("i", String.valueOf(i))));
+                    fail();
+                } catch (Exception ex) {
+                    vols = invokeSync(client.xtreemfs_lsvol(mrcAddress, RPCAuthentication.authNone, uc));
+                    assertEquals(vols.getVolumesCount(), i);
+                }
+            }
+
+            // Delete created volumes
+            for (int j = 0; j < i; j++) {
+                String volName = "vol-" + j;
+                invokeSync(client.xtreemfs_rmvol(mrcAddress, RPCAuthentication.authNone, uc, volName));
+            }
+            vols = invokeSync(client.xtreemfs_lsvol(mrcAddress, RPCAuthentication.authNone, uc));
+            assertEquals(vols.getVolumesCount(), 0);
+        }
+    }
+
+    @Test
     public void testCreateDeleteListVolumes() throws Exception {
         
         final int numVols = 10;
@@ -147,6 +196,7 @@ public class MRCTest extends TestCase {
         
     }
     
+    @Test
     public void testCreateDelete() throws Exception {
         
         final String uid = "userXY";
@@ -245,6 +295,7 @@ public class MRCTest extends TestCase {
         invokeSync(client.rmdir(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "anotherDir"));
     }
     
+    @Test
     public void testReaddir() throws Exception {
         
         final String uid = "userXY";
@@ -259,6 +310,7 @@ public class MRCTest extends TestCase {
             false, 0));
     }
     
+    @Test
     public void testXAttrs() throws Exception {
         
         final String uid = "userXY";
@@ -380,6 +432,7 @@ public class MRCTest extends TestCase {
         assertEquals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY, xLoc.getReplicaUpdatePolicy());
     }
     
+    @Test
     public void testLargeXAttrs() throws Exception {
         
         final String uid = "userXY";
@@ -408,6 +461,7 @@ public class MRCTest extends TestCase {
             assertEquals(largeAttr[i], val[i]);
     }
     
+    @Test
     public void testSymlink() throws Exception {
         
         final String uid = "userXY";
@@ -431,6 +485,7 @@ public class MRCTest extends TestCase {
         assertEquals("test.txt", target);
     }
     
+    @Test
     public void testHardLink() throws Exception {
         
         final String uid = "userXY";
@@ -512,7 +567,7 @@ public class MRCTest extends TestCase {
         }
     }
     
-    @SuppressWarnings("unchecked")
+    @Test
     public void testOpen() throws Exception {
         
         final String uid = "userXY";
@@ -605,6 +660,7 @@ public class MRCTest extends TestCase {
         }
     }
     
+    @Test
     public void testOpenCreateNoPerm() throws Exception {
         
         final String uid = "userXY";
@@ -631,6 +687,7 @@ public class MRCTest extends TestCase {
         
     }
     
+    @Test
     public void testRename() throws Exception {
         
         final String uid = "userXY";
@@ -738,6 +795,7 @@ public class MRCTest extends TestCase {
         
     }
     
+    @Test
     public void testAccessControl() throws Exception {
         
         final String uid1 = "userXY";
@@ -995,6 +1053,7 @@ public class MRCTest extends TestCase {
             "stickyDir/newfile3.txt"));
     }
     
+    @Test
     public void testFileSizeUpdate() throws Exception {
         
         final String uid = "userXY";
@@ -1092,6 +1151,7 @@ public class MRCTest extends TestCase {
         assertEquals(32L, stat.getSize());
     }
     
+    @Test
     public void testDefaultStripingPolicies() throws Exception {
         
         final String uid = "userXY";
@@ -1138,6 +1198,7 @@ public class MRCTest extends TestCase {
         
     }
     
+    @Test
     public void testDefaultReplicationPolicies() throws Exception {
         
         final String uid = "userXY";
@@ -1201,6 +1262,7 @@ public class MRCTest extends TestCase {
         assertEquals(rp.getFactor(), xLoc.getReplicasCount());
     }
     
+    @Test
     public void testReplicateOnClose() throws Exception {
         
         final String uid = "userXY";
@@ -1325,10 +1387,6 @@ public class MRCTest extends TestCase {
             
             assertEquals(count + (path.equals("") ? 1 : 2), size);
         }
-    }
-    
-    public static void main(String[] args) {
-        TestRunner.run(MRCTest.class);
     }
     
     private static List<String> createGIDs(String gid) {

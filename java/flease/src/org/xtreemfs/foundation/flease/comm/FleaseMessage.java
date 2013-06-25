@@ -367,12 +367,13 @@ public class FleaseMessage implements Serializable, Cloneable {
      * toString
      * @return a string representation of the message
      */
+    @Override
     public String toString() {
         assert(this.msgType != null);
-        return String.format("FleaseMessage ( type=%s cell=%s v=%d b=%s lease=%s/%d(%s) prevb=%s ts=%d(%s) addr=%s)",
+        return String.format("FleaseMessage ( type=%s cell=%s v=%d b=%s lease=%s/%d(%s) prevb=%s ts=%d(%s) addr=%s mepoch=%d)",
                 this.msgType.toString(),this.cellId,this.viewId,this.proposalNo,this.leaseHolder,
                 this.leaseTimeout,new Date(this.leaseTimeout),this.prevProposalNo,this.sendTimestamp,new Date(this.sendTimestamp),
-                (address != null) ? address.toString() : "n/a");
+                (address != null) ? address.toString() : "n/a", this.masterEpochNumber);
     }
 
     public boolean isInternalEvent() {

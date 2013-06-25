@@ -23,7 +23,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 
 /**
- * Test against the bug from Issue 227 (erroneous calculation of object offsets for read requests). The test
+ * Test against the bug from Issue 277 (erroneous calculation of object offsets for read requests). The test
  * iterates over an offset range from 1.5 to 2.5 GiB in steps of 109 ensuring that offset calculation only
  * produces offsets greater equal 0. The range is chosen to include offsets lesser equal and greater than
  * Integer.MAX_VALUE. A prime is used as step to enlarge the coverage of the range of offsets.
@@ -70,10 +70,10 @@ public class StripeTranslatorTest {
     @Test
     public void testWriteRequestOffsetCalculation() throws NoSuchFieldException, IllegalAccessException {
 
-        for (long offset = (long) (1.5 * (long) GiB_IN_BYTES); offset < maxOffset; offset += 9973) {
+        byte[] data = new byte[XTREEMFS_BLOCK_SIZE_IN_BYTES];
+        ReusableBuffer buffer = ReusableBuffer.wrap(data);
 
-            byte[] data = new byte[XTREEMFS_BLOCK_SIZE_IN_BYTES];
-            ReusableBuffer buffer = ReusableBuffer.wrap(data);
+        for (long offset = (long) (1.5 * (long) GiB_IN_BYTES); offset < maxOffset; offset += 9973) {
 
             // Map offsets
             Vector<WriteOperation> operations = new Vector<WriteOperation>();
@@ -89,6 +89,7 @@ public class StripeTranslatorTest {
             for (WriteOperation operation : operations) {
                 assertTrue((Integer) reqOffset.get(operation) >= 0);
             }
+
         }
     }
 }

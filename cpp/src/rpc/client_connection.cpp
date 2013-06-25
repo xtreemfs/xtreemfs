@@ -126,14 +126,22 @@ void ClientConnection::DoProcess() {
   }
 }
 
+void ClientConnection::DelayedSocketDeletionHandler(
+    AbstractSocketChannel* socket) {
+  delete socket;
+}
+
 void ClientConnection::CreateChannel() {
   if (socket_ != NULL) {
-    try {
       socket_->close();
-    } catch (const boost::system::system_error&) {
-      // Ignore close errors. Needed for Windows.
-    }
-    delete socket_;
+
+    // In case of SSL connections, boost::asio tries to write to the socket
+    // after the SSL stream and the socket was shutdown. Therefore, we delay
+    // the deletion and hope that no segmentation fault is triggered. The
+    // correct way would have been to use a shared_ptr for the socket.
+    service_.post(boost::bind(&ClientConnection::DelayedSocketDeletionHandler,
+                              socket_));
+    socket_ = NULL;
   }
   if (ssl_context_ == NULL) {
     socket_ = new TCPSocketChannel(service_);
@@ -344,15 +352,18 @@ void ClientConnection::Reset() {
 void ClientConnection::Close(const std::string& error) {
   resolver_.cancel();
   timer_.cancel();
-  try {
-    if (socket_) {
+
+  if (socket_) {
       socket_->close();
-    }
-  } catch (const boost::system::system_error&) {
-    // Ignore close errors. Needed for Windows.
+    // In case of SSL connections, boost::asio tries to write to the socket
+    // after the SSL stream and the socket was shutdown. Therefore, we delay
+    // the deletion and hope that no segmentation fault is triggered. The
+    // correct way would have been to use a shared_ptr for the socket.
+    service_.post(boost::bind(&ClientConnection::DelayedSocketDeletionHandler,
+                              socket_));
+    socket_ = NULL;
   }
-  delete socket_;
-  socket_ = NULL;
+
   connection_state_ = CLOSED;
   SendError(POSIX_ERROR_EIO,
             "Connection to '" + server_name_ + ":" + server_port_ + "' closed"
@@ -540,7 +551,6 @@ void ClientConnection::DeleteInternalBuffers() {
 
 ClientConnection::~ClientConnection() {
   delete endpoint_;
-  delete socket_;
   delete[] receive_marker_buffer_;
   DeleteInternalBuffers();
 }

@@ -131,6 +131,7 @@ public class PolicyClassLoader extends ClassLoader {
             
             // get all JAR files
             jarFiles = policyDir.listFiles(new FileFilter() {
+                @Override
                 public boolean accept(File pathname) {
                     return pathname.getAbsolutePath().endsWith(".jar");
                 }
@@ -138,6 +139,7 @@ public class PolicyClassLoader extends ClassLoader {
             
             // get all Java files recursively
             File[] javaFiles = FSUtils.listRecursively(policyDir, new FileFilter() {
+                @Override
                 public boolean accept(File pathname) {
                     return pathname.getAbsolutePath().endsWith(".java");
                 }
@@ -158,19 +160,28 @@ public class PolicyClassLoader extends ClassLoader {
                 options.add(cp);
                 
                 JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-                StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
-                
-                Iterable<? extends JavaFileObject> compilationUnits = fileManager
-                        .getJavaFileObjectsFromFiles(Arrays.asList(javaFiles));
-                if (!compiler.getTask(null, fileManager, null, options, null, compilationUnits).call())
-                    Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
-                        "some policies in '%s' could not be compiled", policyDir.getAbsolutePath());
-                
-                fileManager.close();
+                if (compiler == null) {
+                    Logging.logMessage(
+                            Logging.LEVEL_WARN,
+                            Category.misc,
+                            this,
+                            "No Java compiler was found to compile additional policies. Make sure that a Java development environment is installed on your system.");
+                } else {
+                    StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
+                    
+                    Iterable<? extends JavaFileObject> compilationUnits = fileManager
+                            .getJavaFileObjectsFromFiles(Arrays.asList(javaFiles));
+                    if (!compiler.getTask(null, fileManager, null, options, null, compilationUnits).call())
+                        Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
+                            "some policies in '%s' could not be compiled", policyDir.getAbsolutePath());
+                    
+                    fileManager.close();
+                }
             }
             
             // retrieve all policies from class files
             File[] classFiles = FSUtils.listRecursively(policyDir, new FileFilter() {
+                @Override
                 public boolean accept(File pathname) {
                     return pathname.getAbsolutePath().endsWith(".class");
                 }

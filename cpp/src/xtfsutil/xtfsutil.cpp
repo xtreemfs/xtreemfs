@@ -699,8 +699,8 @@ bool SetRSP(const string& xctl_file,
   request["operation"] = "setRSP";
   request["path"] = path;
   if (policy_uc == "DEFAULT") {
-    request["policy"] = boost::lexical_cast<string>(
-        xtreemfs::pbrpc::OSD_SELECTION_POLICY_SORT_RANDOM);
+    // By default, no RSP is set.
+    request["policy"] = "";
   } else if (policy_uc == "FQDN") {
     request["policy"] = boost::lexical_cast<string>(
         xtreemfs::pbrpc::OSD_SELECTION_POLICY_SORT_FQDN);

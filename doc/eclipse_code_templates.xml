@@ -4,34 +4,12 @@
  * @param ${param} the ${bare_field_name} to set
  */</template><template autoinsert="true" context="constructorcomment_context" deleted="false" description="Comment for created constructors" enabled="true" id="org.eclipse.jdt.ui.text.codetemplates.constructorcomment" name="constructorcomment">/**
  * ${tags}
- */</template><template autoinsert="false" context="filecomment_context" deleted="false" description="Comment for created Java files" enabled="true" id="org.eclipse.jdt.ui.text.codetemplates.filecomment" name="filecomment">/*  Copyright (c) 2009 Barcelona Supercomputing Center - Centro Nacional
-    de Supercomputacion and Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
-
-    This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
-    Grid Operating System, see &lt;http://www.xtreemos.eu&gt; for more details.
-    The XtreemOS project has been developed with the financial support of the
-    European Commission's IST program under contract #FP6-033576.
-
-    XtreemFS is free software: you can redistribute it and/or modify it under
-    the terms of the GNU General Public License as published by the Free
-    Software Foundation, either version 2 of the License, or (at your option)
-    any later version.
-
-    XtreemFS is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with XtreemFS. If not, see &lt;http://www.gnu.org/licenses/&gt;.
- */
-/*
- * AUTHORS: John Doe (Organisation)
- */</template><template autoinsert="false" context="typecomment_context" deleted="false" description="Comment for created types" enabled="true" id="org.eclipse.jdt.ui.text.codetemplates.typecomment" name="typecomment">/**
+ */</template><template autoinsert="false" context="filecomment_context" deleted="false" description="Comment for created Java files" enabled="true" id="org.eclipse.jdt.ui.text.codetemplates.filecomment" name="filecomment">/*
+ * Copyright (c) ${year} by ${user}, Zuse Institute Berlin
  *
- * &lt;br&gt;${date}
- * ${tags}
- */</template><template autoinsert="true" context="fieldcomment_context" deleted="false" description="Comment for fields" enabled="true" id="org.eclipse.jdt.ui.text.codetemplates.fieldcomment" name="fieldcomment">/**
+ * Licensed under the BSD License, see LICENSE file for details.
+ *
+ */</template><template autoinsert="false" context="typecomment_context" deleted="false" description="Comment for created types" enabled="true" id="org.eclipse.jdt.ui.text.codetemplates.typecomment" name="typecomment">/** TODO: Brief description of the purpose of this type and its relation to other types. */</template><template autoinsert="true" context="fieldcomment_context" deleted="false" description="Comment for fields" enabled="true" id="org.eclipse.jdt.ui.text.codetemplates.fieldcomment" name="fieldcomment">/**
  * 
  */</template><template autoinsert="true" context="methodcomment_context" deleted="false" description="Comment for non-overriding methods" enabled="true" id="org.eclipse.jdt.ui.text.codetemplates.methodcomment" name="methodcomment">/**
  * ${tags}
