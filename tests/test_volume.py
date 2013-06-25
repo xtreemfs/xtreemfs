@@ -107,7 +107,7 @@ class Volume:
 
         # Use subprocess.Popen instead of subprocess.call to run in the background
         p = subprocess.Popen(mount_xtreemfs_args, stderr=stderr, stdout=stdout)
-        sleep(2.0)
+        sleep(1.0)
         if p.returncode is not None:
             raise RuntimeError("Failed to mount volume '" + self.__name + "' error: " + str(p.returncode))
           

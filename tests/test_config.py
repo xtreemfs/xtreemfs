@@ -95,7 +95,7 @@ VolumeConfigs = {
                     'rwr_policy': 'all',
                     'rwr_factor': 2,
                     'ronly_factor': 0,
-                    'mount_options': [ ]
+                    'mount_options': [ '--max-tries=240', '--max-read-tries=240', '--max-write-tries=240' ]
                 },
 }
 
@@ -135,13 +135,14 @@ Tests = [
         'name': 'bonnie',
         'file': '10_bonnie.py',
         'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1', 'replicated_wqrq_asyncwrites' ],
-        'TestSets': [ 'full', 'short', 'short-ssl' ]
+        # NOTE(mberlin): 2013/04: Disabled because it takes too long and was not helpful in finding problems so far.
+        'TestSets': [ ]
     },
     {
         'name': 'IOZone diagnostic',
         'file': '11_iozone_diagnostic.py',
         'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1', 'replicated_wqrq_asyncwrites' ],
-        'TestSets': [  ]
+        'TestSets': [ 'full' ]
     },
     {
         'name': 'IOZone throughput',
@@ -201,6 +202,12 @@ Tests = [
     {
         'name': 'JUnit tests',
         'file': 'junit_tests.sh',
+        'VolumeConfigs': [],
+        'TestSets': [ 'full', 'short', 'short-ssl' ]
+    },
+    {
+        'name': 'C++ Unit Tests',
+        'file': 'cpp_unit_tests.sh',
         'VolumeConfigs': [],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
     },

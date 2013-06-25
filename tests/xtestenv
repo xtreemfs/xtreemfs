@@ -320,7 +320,7 @@ class TestEnvironment:
         t_start = time.time()
         success = False
         try:
-            testprocess = subprocess.Popen(testargs, stdout=testlog, stderr=testlog)
+            testprocess = subprocess.Popen(testargs, stdout=testlog, stderr=testlog, cwd=self.__xtreemfs_dir)
             testprocess.wait()
             if testprocess.returncode == 0:
                 success = True
@@ -465,9 +465,8 @@ if __name__ == "__main__":
         testEnv.start()
         try:
             print
-            print "*** Ctrl-C to shut down test environment ***"
-            while True:
-                sleep(10000000)
+            print "*** Press enter to shut down test environment ***"
+            raw_input()
         except KeyboardInterrupt:
             pass
         testEnv.stop()

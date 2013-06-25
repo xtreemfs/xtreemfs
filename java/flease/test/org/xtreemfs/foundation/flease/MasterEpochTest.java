@@ -34,7 +34,7 @@ public class MasterEpochTest extends TestCase {
     public MasterEpochTest(String testName) {
         super(testName);
 
-        Logging.start(Logging.LEVEL_DEBUG, Category.all);
+        Logging.start(Logging.LEVEL_WARN, Category.all);
         TimeSync.initializeLocal(50);
 
         cfg = new FleaseConfig(10000, 500, 500, new InetSocketAddress(12345), "localhost:12345",5, true, 0, true);
@@ -63,23 +63,27 @@ public class MasterEpochTest extends TestCase {
 
         FleaseStage fs = new FleaseStage(cfg, "/tmp/xtreemfs-test/", new FleaseMessageSenderInterface() {
 
+            @Override
             public void sendMessage(FleaseMessage message, InetSocketAddress recipient) {
                 //ignore me
             }
         }, true, new FleaseViewChangeListenerInterface() {
 
+            @Override
             public void viewIdChangeEvent(ASCIIString cellId, int viewId) {
             }
         },new FleaseStatusListener() {
 
+            @Override
             public void statusChanged(ASCIIString cellId, Flease lease) {
-                System.out.println("state change: "+cellId+" owner="+lease.getLeaseHolder());
+                // System.out.println("state change: "+cellId+" owner="+lease.getLeaseHolder());
                 synchronized (result) {
                     result.set(new Flease(cellId, lease.getLeaseHolder(), lease.getLeaseTimeout_ms(),lease.getMasterEpochNumber()));
                     result.notify();
                 }
             }
 
+            @Override
             public void leaseFailed(ASCIIString cellId, FleaseException error) {
                 MasterEpochTest.fail(error.toString());
             }
@@ -89,7 +93,7 @@ public class MasterEpochTest extends TestCase {
 
             @Override
             public void sendMasterEpoch(FleaseMessage response, Continuation callback) {
-                System.out.println("sending: "+masterEpochNum);
+                // System.out.println("sending: "+masterEpochNum);
                 response.setMasterEpochNumber(masterEpochNum);
                 callback.processingFinished();
             }
@@ -97,7 +101,7 @@ public class MasterEpochTest extends TestCase {
             @Override
             public void storeMasterEpoch(FleaseMessage request, Continuation callback) {
                 masterEpochNum = request.getMasterEpochNumber();
-                System.out.println("storing: "+masterEpochNum);
+                // System.out.println("storing: "+masterEpochNum);
                 callback.processingFinished();
             }
         });
@@ -159,23 +163,27 @@ public class MasterEpochTest extends TestCase {
 
         FleaseStage fs = new FleaseStage(cfg, "/tmp/xtreemfs-test/", new FleaseMessageSenderInterface() {
 
+            @Override
             public void sendMessage(FleaseMessage message, InetSocketAddress recipient) {
                 //ignore me
             }
         }, true, new FleaseViewChangeListenerInterface() {
 
+            @Override
             public void viewIdChangeEvent(ASCIIString cellId, int viewId) {
             }
         },new FleaseStatusListener() {
 
+            @Override
             public void statusChanged(ASCIIString cellId, Flease lease) {
-                System.out.println("state change: "+cellId+" owner="+lease.getLeaseHolder());
+                // System.out.println("state change: "+cellId+" owner="+lease.getLeaseHolder());
                 synchronized (result) {
                     result.set(new Flease(cellId, lease.getLeaseHolder(), lease.getLeaseTimeout_ms(),lease.getMasterEpochNumber()));
                     result.notify();
                 }
             }
 
+            @Override
             public void leaseFailed(ASCIIString cellId, FleaseException error) {
                 MasterEpochTest.fail(error.toString());
             }
@@ -216,23 +224,27 @@ public class MasterEpochTest extends TestCase {
 
         fs = new FleaseStage(cfg, "/tmp/xtreemfs-test/", new FleaseMessageSenderInterface() {
 
+            @Override
             public void sendMessage(FleaseMessage message, InetSocketAddress recipient) {
                 //ignore me
             }
         }, true, new FleaseViewChangeListenerInterface() {
 
+            @Override
             public void viewIdChangeEvent(ASCIIString cellId, int viewId) {
             }
         },new FleaseStatusListener() {
 
+            @Override
             public void statusChanged(ASCIIString cellId, Flease lease) {
-                System.out.println("state change: "+cellId+" owner="+lease.getLeaseHolder());
+                // System.out.println("state change: "+cellId+" owner="+lease.getLeaseHolder());
                 synchronized (result) {
                     result.set(new Flease(cellId, lease.getLeaseHolder(), lease.getLeaseTimeout_ms(),lease.getMasterEpochNumber()));
                     result.notify();
                 }
             }
 
+            @Override
             public void leaseFailed(ASCIIString cellId, FleaseException error) {
                 MasterEpochTest.fail(error.toString());
             }

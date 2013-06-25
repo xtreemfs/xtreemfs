@@ -17,6 +17,8 @@ import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.PingServiceClient;
+
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,7 +44,7 @@ import static org.junit.Assert.*;
  * @author bjko
  */
 public class PBRPCClientServerTest {
-    private int TEST_PORT = 12999;
+    private final int TEST_PORT = 12999;
 
     private static final String[] schemes = new String[]{Schemes.SCHEME_PBRPC, Schemes.SCHEME_PBRPCS, Schemes.SCHEME_PBRPCG};
     
@@ -53,7 +55,7 @@ public class PBRPCClientServerTest {
 
     @BeforeClass
     public static void setUpClass() throws Exception {
-        Logging.start(Logging.LEVEL_DEBUG, Logging.Category.all);
+        Logging.start(Logging.LEVEL_WARN, Logging.Category.all);
         ts = TimeSync.initializeLocal(50);
     }
 
@@ -199,7 +201,7 @@ public class PBRPCClientServerTest {
                 for (int i= 0; i < arr.length; i++)
                     arr[i] = 'x';
                 ReusableBuffer sendData = ReusableBuffer.wrap(arr);
-                System.out.println("data: "+sendData);
+                // System.out.println("data: "+sendData);
 
                 RPC.UserCredentials userCred = RPC.UserCredentials.newBuilder().setUsername("test").addGroups("tester").build();
                 RPCResponse<PingResponse> response = psClient.doPing(new InetSocketAddress("localhost", TEST_PORT), RPCAuthentication.authNone, userCred, "Hello World!", false, sendData);
@@ -256,7 +258,7 @@ public class PBRPCClientServerTest {
         RPCNIOSocketClient client = null;
         RPCNIOSocketServer server = null;
 
-        System.out.println("loading ssl context");
+        // System.out.println("loading ssl context");
 
         SSLOptions srvSSL = null;
         SSLOptions clientSSL = null;
@@ -268,7 +270,7 @@ public class PBRPCClientServerTest {
                 SSLOptions.PKCS12_CONTAINER, "trusted.jks", "passphrase", SSLOptions.JKS_CONTAINER,pbrpcScheme.equals(Schemes.SCHEME_PBRPCG));
         }
 
-        System.out.println("setup done");
+        // System.out.println("setup done");
 
         try {
 
@@ -301,7 +303,7 @@ public class PBRPCClientServerTest {
 
                 @Override
                 public void receiveRecord(RPCServerRequest rq) {
-                    System.out.println("received request");
+                // System.out.println("received request");
                     try {
                         ReusableBufferInputStream is = new ReusableBufferInputStream(rq.getMessage());
                         Ping.PingRequest pingRq = Ping.PingRequest.parseFrom(is);
@@ -324,12 +326,28 @@ public class PBRPCClientServerTest {
         ClassLoader cl = this.getClass().getClassLoader();
 
         InputStream ks = cl.getResourceAsStream(keyStoreName);
-        if (ks == null)
-            ks = new FileInputStream("../../tests/certs/" + keyStoreName);
+        if (ks == null) {
+            // Assume the working directory is "java/servers".
+            String testCert = "../../tests/certs/" + keyStoreName;
+            if (new File(testCert).isFile()) {
+                ks = new FileInputStream(testCert);
+            } else {
+                // Assume the working directory is the root of the project.
+                ks = new FileInputStream("tests/certs/" + keyStoreName);
+            }
+        }
 
         InputStream ts = cl.getResourceAsStream(trustStoreName);
-        if (ts == null)
-            ts = new FileInputStream("../../tests/certs/" + trustStoreName);
+        if (ts == null) {
+            // Assume the working directory is "java/servers".
+            String testCert = "../../tests/certs/" + trustStoreName;
+            if (new File(testCert).isFile()) {
+                ts = new FileInputStream(testCert);
+            } else {
+                // Assume the working directory is the root of the project.
+                ts = new FileInputStream("tests/certs/" + trustStoreName);
+            }
+        }
 
         return new SSLOptions(ks, ksPassphrase, ksContainerType, ts, tsPassphrase, tsContainerType, false, gridSSL, null);
     }

@@ -137,7 +137,7 @@ public class StripingTestCOW extends TestCase {
     /** Creates a new instance of StripingTest */
     public StripingTestCOW(String testName) throws IOException {
         super(testName);
-        Logging.start(Logging.LEVEL_DEBUG);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
         
         osdCfg1 = SetupUtils.createOSD1Config();
         osdCfg2 = SetupUtils.createOSD2Config();
@@ -152,6 +152,7 @@ public class StripingTestCOW extends TestCase {
         
     }
     
+    @Override
     protected void setUp() throws Exception {
         
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
@@ -191,6 +192,7 @@ public class StripingTestCOW extends TestCase {
                 COW ? SnapConfig.SNAP_CONFIG_ACCESS_CURRENT : SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, capSecret);
     }
     
+    @Override
     protected void tearDown() throws Exception {
         
         osdServer.get(0).shutdown();

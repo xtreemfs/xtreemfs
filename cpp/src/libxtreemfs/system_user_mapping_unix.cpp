@@ -80,7 +80,7 @@ std::string SystemUserMappingUnix::UIDToUsername(uid_t uid) {
 }
 
 uid_t SystemUserMappingUnix::UsernameToUID(const std::string& username) {
-  string local_username = username;
+  string local_username(username);
   if (additional_user_mapping_.get()) {
     additional_user_mapping_->GlobalToLocalUsername(username, &local_username);
   }
@@ -194,7 +194,7 @@ std::string SystemUserMappingUnix::GIDToGroupname(gid_t gid) {
 }
 
 gid_t SystemUserMappingUnix::GroupnameToGID(const std::string& groupname) {
-  string local_groupname;
+  string local_groupname(groupname);
   if (additional_user_mapping_.get()) {
     additional_user_mapping_->GlobalToLocalGroupname(groupname,
                                                      &local_groupname);

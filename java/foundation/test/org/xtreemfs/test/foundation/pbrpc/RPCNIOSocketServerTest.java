@@ -40,7 +40,7 @@ public class RPCNIOSocketServerTest {
     private RPCNIOSocketServer server;
 
     public RPCNIOSocketServerTest() {
-        Logging.start(Logging.LEVEL_DEBUG, Logging.Category.all);
+        Logging.start(Logging.LEVEL_WARN, Logging.Category.all);
     }
 
     @BeforeClass
@@ -98,7 +98,7 @@ public class RPCNIOSocketServerTest {
 
             @Override
             public void receiveRecord(RPCServerRequest rq) {
-                System.out.println("received request");
+                // System.out.println("received request");
                 try {
                     assertEquals(CALLID,rq.getHeader().getCallId());
                     assertEquals(RPC.MessageType.RPC_REQUEST, rq.getHeader().getMessageType());
@@ -157,7 +157,7 @@ public class RPCNIOSocketServerTest {
         int msgLen = marker.getInt();
         int dataLen = marker.getInt();
 
-        System.out.println("header: "+hdrLen+"/"+msgLen+"/"+dataLen);
+        // System.out.println("header: "+hdrLen+"/"+msgLen+"/"+dataLen);
 
         byte[] hdrIn = new byte[hdrLen];
         byte[] msgIn = new byte[msgLen];
@@ -167,7 +167,7 @@ public class RPCNIOSocketServerTest {
         in.read(msgIn);
         in.read(dataIn);
 
-        System.out.println("read data");
+        // System.out.println("read data");
 
         RPC.RPCHeader respHdr = RPC.RPCHeader.parseFrom(hdrIn);
 
@@ -181,12 +181,9 @@ public class RPCNIOSocketServerTest {
         assertEquals(15,dataIn[0]);
         assertEquals(20,dataIn[1]);
 
-        System.out.println("everything ok!");
-
         sock.close();
         server.shutdown();
         server.waitForShutdown();
-        System.out.println("shutdown complete");
     }
 
     @Test
@@ -200,7 +197,7 @@ public class RPCNIOSocketServerTest {
 
             @Override
             public void receiveRecord(RPCServerRequest rq) {
-                System.out.println("received request");
+                // System.out.println("received request");
                 try {
                     assertNotNull(rq.getData());
                     assertNull(rq.getMessage());
@@ -265,7 +262,7 @@ public class RPCNIOSocketServerTest {
         int msgLen = marker.getInt();
         int dataLen = marker.getInt();
 
-        System.out.println("header: "+hdrLen+"/"+msgLen+"/"+dataLen);
+        // System.out.println("header: "+hdrLen+"/"+msgLen+"/"+dataLen);
 
         byte[] hdrIn = new byte[hdrLen];
         byte[] msgIn = new byte[msgLen];
@@ -275,7 +272,7 @@ public class RPCNIOSocketServerTest {
         in.read(msgIn);
         in.read(dataIn);
 
-        System.out.println("read data");
+        // System.out.println("read data");
 
         RPC.RPCHeader respHdr = RPC.RPCHeader.parseFrom(hdrIn);
 
@@ -289,12 +286,9 @@ public class RPCNIOSocketServerTest {
         assertEquals(15,dataIn[0]);
         assertEquals(20,dataIn[1]);
 
-        System.out.println("everything ok!");
-
         sock.close();
         server.shutdown();
         server.waitForShutdown();
-        System.out.println("shutdown complete");
     }
 
     @Test
@@ -308,7 +302,7 @@ public class RPCNIOSocketServerTest {
 
             @Override
             public void receiveRecord(RPCServerRequest rq) {
-                System.out.println("received request");
+                // System.out.println("received request");
                 try {
                     assertEquals(CALLID,rq.getHeader().getCallId());
                     assertEquals(RPC.MessageType.RPC_REQUEST, rq.getHeader().getMessageType());
@@ -363,7 +357,7 @@ public class RPCNIOSocketServerTest {
         assertEquals(0,msgLen);
         assertEquals(0,dataLen);
 
-        System.out.println("header: "+hdrLen+"/"+msgLen+"/"+dataLen);
+        // System.out.println("header: "+hdrLen+"/"+msgLen+"/"+dataLen);
 
         byte[] hdrIn = new byte[hdrLen];
 
@@ -375,14 +369,9 @@ public class RPCNIOSocketServerTest {
         assertEquals(header.getCallId(),respHdr.getCallId());
         assertEquals(RPC.ErrorType.AUTH_FAILED,respHdr.getErrorResponse().getErrorType());
 
-        System.out.println("everything ok!");
-
         sock.close();
         server.shutdown();
         server.waitForShutdown();
-        System.out.println("shutdown complete");
-
-
     }
 
 }

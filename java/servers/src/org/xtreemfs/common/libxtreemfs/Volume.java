@@ -140,6 +140,9 @@ public interface  Volume {
     /**
      * Opens a file and returns the pointer to a {@link FileHandle} object.
      * 
+     * When creating files, use the function {@link #openFile(UserCredentials, String, int, int)} with the
+     * additional mode parameter instead.
+     * 
      * @param userCredentials
      *            Name and Groups of the user.
      * @param path
@@ -162,6 +165,9 @@ public interface  Volume {
     /**
      * Same as previous openFile() except for the additional mode parameter, which sets the permissions for
      * the file in case SYSTEM_V_FCNTL_H_O_CREAT is specified as flag and the file will be created.
+     * 
+     * Please note that the mode parameter requires octal values, i.e. use 0777 instead of 777 for the
+     * permissions.
      * 
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
@@ -728,15 +734,15 @@ public interface  Volume {
      * 
      */
     public class StripeLocation {
-        private long     startSize;
-        private long     length;
-        private String[] uuids;
+        private final long     startSize;
+        private final long     length;
+        private final String[] uuids;
 
         /**
          * The hostname as configured with "hostname = " parameter of the OSD or otherwise the resolved
          * hostname from the IP address registered at DIR.
          */
-        private String[] hostnames;
+        private final String[] hostnames;
 
         protected StripeLocation(long startSize, long length, String[] uuids, String[] hostnames) {
             this.startSize = startSize;

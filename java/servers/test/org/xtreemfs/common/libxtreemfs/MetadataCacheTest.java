@@ -26,6 +26,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Setattrs;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XAttr;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrResponse;
+import org.xtreemfs.test.SetupUtils;
 
 /**
  * 
@@ -36,13 +37,13 @@ public class MetadataCacheTest {
 
     private class MetadataCacheSmasherThread extends Thread {
 
-        private MetadataCache      mdCache;
+        private final MetadataCache      mdCache;
 
-        private String[]           paths;
+        private final String[]           paths;
 
-        private Stat[]             stats;
+        private final Stat[]             stats;
 
-        private DirectoryEntries[] dirs;
+        private final DirectoryEntries[] dirs;
 
         private boolean            failed;
 
@@ -137,7 +138,7 @@ public class MetadataCacheTest {
      */
     @Before
     public void setUp() throws Exception {
-        Logging.start(Logging.LEVEL_DEBUG, Category.all);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
         // Max 2 entries, 1 hour
         metadataCache = new MetadataCache(2, 3600);
     }
@@ -476,7 +477,7 @@ public class MetadataCacheTest {
         stat.setMode(511); // Octal: 0777 (no sticky bit + 777).
         metadataCache.updateStatAttributes(path, stat.build(), Setattrs.SETATTR_MODE.getNumber());
         assertEquals(1l, metadataCache.size());
-        statA = (Stat) metadataCache.getStat(path);
+        statA = metadataCache.getStat(path);
         assertNotNull(statA);
         assertEquals(0, statA.getIno());
         assertEquals(262655, statA.getMode()); // Octal: 1000777

@@ -38,7 +38,7 @@ public class FilterFQDNPolicy implements OSDSelectionPolicy {
     
     private static final String DOMAINS   = "domains";
     
-    private List<String>        domains   = new LinkedList<String>();
+    private final List<String>        domains   = new LinkedList<String>();
     
     {
         // default: all domains match
@@ -70,8 +70,11 @@ public class FilterFQDNPolicy implements OSDSelectionPolicy {
         if (key.equals(DOMAINS)) {
             domains.clear();
             StringTokenizer st = new StringTokenizer(value, " ,;\t\n");
-            while (st.hasMoreTokens())
-                domains.add(st.nextToken());
+            if (st != null) {
+                while (st.hasMoreTokens()) {
+                    domains.add(st.nextToken());
+                }
+            }
         }
     }
     

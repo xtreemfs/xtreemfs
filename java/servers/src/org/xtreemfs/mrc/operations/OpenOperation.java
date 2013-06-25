@@ -285,21 +285,17 @@ public class OpenOperation extends MRCOperation {
         
         // update POSIX timestamps of file
         
-        // create or truncate: ctime + mtime, atime only if create
-        if (createNew || truncate)
+        if (createNew || truncate) {
+            // create or truncate: ctime + mtime, atime only if create
             MRCHelper.updateFileTimes(res.getParentsParentId(), file, createNew ? !master.getConfig()
                     .isNoAtime() : false, true, true, sMan, time, update);
         
-        // write: ctime + mtime
-        else if (write)
-            MRCHelper.updateFileTimes(res.getParentsParentId(), file, false, true, true, sMan, time, update);
-        
-        // otherwise: only atime, if necessary
-        else if (!master.getConfig().isNoAtime())
+        } else if (!master.getConfig().isNoAtime()) {
+            // otherwise: only atime, if necessary
             MRCHelper.updateFileTimes(res.getParentsParentId(), file, true, false, false, sMan, time, update);
-        
-        else
+        } else {
             time = 0;
+        }
         
         // update POSIX timestamps of parent directory, in case of a newly
         // created file

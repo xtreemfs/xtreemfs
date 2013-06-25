@@ -95,32 +95,32 @@ public class VolumeImplementation implements Volume, AdminVolume {
     /**
      * UUID String of the client.
      */
-    private String                                    clientUuid;
+    private final String                                    clientUuid;
 
     /**
      * Client who opened this volume.
      */
-    private ClientImplementation                      client;
+    private final ClientImplementation                      client;
 
     /**
      * UUIDResolver used by this volume.
      */
-    private UUIDResolver                              uuidResolver;
+    private final UUIDResolver                              uuidResolver;
 
     /**
      * Name of this volume.
      */
-    private String                                    volumeName;
+    private final String                                    volumeName;
 
     /**
      * The options of the client that should be used for this volume.
      */
-    private Options                                   volumeOptions;
+    private final Options                                   volumeOptions;
 
     /**
      * Bogus object of UserCredentials. Used when no real UserCredentials are needed.
      */
-    private UserCredentials                           userCredentialsBogus;
+    private final UserCredentials                           userCredentialsBogus;
 
     /**
      * The RPC Client.
@@ -140,17 +140,17 @@ public class VolumeImplementation implements Volume, AdminVolume {
     /**
      * SSLOptions required for connections to the services.
      */
-    private SSLOptions                                sslOptions;
+    private final SSLOptions                                sslOptions;
 
     /**
      * Bogus auth used for calls where no valid Auth is required.
      */
-    private Auth                                      authBogus;
+    private final Auth                                      authBogus;
 
     /**
      * UUIDIterator for all MRCs which know this volume.
      */
-    private UUIDIterator                              mrcUUIDIterator;
+    private final UUIDIterator                              mrcUUIDIterator;
 
     /**
      * Concurrent map that stores all open files.
@@ -160,7 +160,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
     /**
      * MetadataCache to cache already fetches Metadata.
      */
-    private MetadataCache                             metadataCache;
+    private final MetadataCache                             metadataCache;
 
     /**
      * XCap renewal thread to renew Xcap periodically.
@@ -175,7 +175,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
     /**
      * Maps a StripingPolicyType to a StripeTranslator. Should be filled with all possible StripingPolicys.
      */
-    private Map<StripingPolicyType, StripeTranslator> stripeTranslators;
+    private final Map<StripingPolicyType, StripeTranslator> stripeTranslators;
 
     private static final String XTREEMFS_DEFAULT_RP = "xtreemfs.default_rp";
     
@@ -694,6 +694,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
         }
     }
 
+    @Override
     public void unlink(UserCredentials userCredentials, String path) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException {
         unlink(userCredentials, path, false);
@@ -964,7 +965,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
         DirectoryEntries.Builder dirEntriesBuilder = DirectoryEntries.newBuilder();
 
         // Process large requests in multiples of readdirChunkSize.
-        for (int currentOffset = offset; currentOffset < offset + count; offset += volumeOptions
+        for (int currentOffset = offset; currentOffset < offset + count; currentOffset += volumeOptions
                 .getReaddirChunkSize()) {
 
             int limitDirEntriesCount = (currentOffset > offset + count) ? (currentOffset - offset - count)
@@ -974,7 +975,8 @@ public class VolumeImplementation implements Volume, AdminVolume {
                     .setNamesOnly(namesOnly).setKnownEtag(0).setSeenDirectoryEntriesCount(currentOffset)
                     .setLimitDirectoryEntriesCount(limitDirEntriesCount).build();
 
-            result = RPCCaller.<readdirRequest, DirectoryEntries> syncCall(SERVICES.MRC, userCredentials,
+            DirectoryEntries readDirResponse = RPCCaller.<readdirRequest, DirectoryEntries> syncCall(SERVICES.MRC,
+                    userCredentials,
                     authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
                     new CallGenerator<readdirRequest, DirectoryEntries>() {
                         @Override
@@ -985,12 +987,12 @@ public class VolumeImplementation implements Volume, AdminVolume {
                         }
                     });
 
-            assert (result != null);
+            assert (readDirResponse != null);
 
-            dirEntriesBuilder.addAllEntries(result.getEntriesList());
+            dirEntriesBuilder.addAllEntries(readDirResponse.getEntriesList());
 
             // Break if this is the last chunk.
-            if (result.getEntriesCount() < (currentOffset + volumeOptions.getReaddirChunkSize())) {
+            if (dirEntriesBuilder.getEntriesCount() < (currentOffset + volumeOptions.getReaddirChunkSize())) {
                 break;
             }
         }
@@ -1024,10 +1026,12 @@ public class VolumeImplementation implements Volume, AdminVolume {
         // condition.
         // TODO: Set an upper bound of dentries, otherwise don't cache it.
 
-        if (!namesOnly && offset == 0 && dirEntriesBuilder.getEntriesCount() < count) {
+        result = dirEntriesBuilder.build();
+
+        if (!namesOnly && offset == 0 && result.getEntriesCount() < count) {
             metadataCache.updateDirEntries(path, result);
         }
-        return dirEntriesBuilder.build();
+        return result;
     }
 
     /*
@@ -1581,6 +1585,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
         return stripeLocations;
     }
 
+    @Override
     public long getNumObjects(UserCredentials userCredentials, String path) throws IOException {
         StripingPolicy stripingPolicy = this.listReplicas(userCredentials, path).getReplicas(0)
                 .getStripingPolicy();

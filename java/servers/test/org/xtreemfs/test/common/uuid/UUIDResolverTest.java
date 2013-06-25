@@ -100,8 +100,8 @@ public class UUIDResolverTest extends TestCase {
         r.get();
         ServiceUUID uuid = new ServiceUUID("MY_TEST_UUID");
         uuid.resolve();
-        System.out.println(uuid);
-        System.out.println(uuid);
+        // System.out.println(uuid);
+        // System.out.println(uuid);
 
         try {
             ServiceUUID uuid2 = new ServiceUUID("YAGGA YAGGA");
@@ -115,11 +115,11 @@ public class UUIDResolverTest extends TestCase {
 
         uuid = new ServiceUUID("MY_TEST_UUID");
         uuid.resolve();
-        System.out.println(uuid);
+        // System.out.println(uuid);
 
         uuid = new ServiceUUID("localhost");
         uuid.resolve();
-        System.out.println(uuid);
+        // System.out.println(uuid);
     }
 
 

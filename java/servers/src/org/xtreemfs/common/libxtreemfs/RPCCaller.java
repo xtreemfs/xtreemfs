@@ -164,11 +164,13 @@ public class RPCCaller {
                         if (attempt == 1 && maxTries != 1) {
                             String retriesLeft =
                                     (maxTries == 0) ? ("infinite") : (String.valueOf(maxTries - attempt));
-                            Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, ioe,
-                                    "Got no response from %s,"
-                                            + "retrying (%s attemps left, waiting at least %s seconds"
-                                            + " between two attemps)", it.getUUID(), retriesLeft,
-                                    options.getRetryDelay_s());
+                            Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, ioe, "Got no response from %s, "
+                                    + "retrying (%s attemps left, waiting at least %s seconds"
+                                    + " between two attemps) Error was: %s", it.getUUID(), retriesLeft,
+                                    options.getRetryDelay_s(), ioe.getMessage());
+                            if (Logging.isDebug()) {
+                                Logging.logError(Logging.LEVEL_DEBUG, null, ioe);
+                            }
                         }
                         // Mark the current UUID as failed and get the next one.
                         it.markUUIDAsFailed(it.getUUID());

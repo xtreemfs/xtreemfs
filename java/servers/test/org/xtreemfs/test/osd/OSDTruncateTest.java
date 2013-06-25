@@ -71,6 +71,7 @@ public class OSDTruncateTest extends TestCase {
         fcred = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xloc).build();
     }
     
+    @Override
     protected void setUp() throws Exception {
         
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
@@ -101,12 +102,11 @@ public class OSDTruncateTest extends TestCase {
         osdClient = new OSDServiceClient(testEnv.getRpcClient(),null);
     }
     
+    @Override
     protected void tearDown() throws Exception {
-        System.out.println("teardown");
         osdServer.shutdown();
         
         testEnv.shutdown();
-        System.out.println("shutdown complete");
     }
 
     public void testDeleteFile() throws Exception {

@@ -82,54 +82,6 @@ public class SSLOptions {
     
     private final boolean      useFakeSSLMode;
     
-    /**
-     * creates a new SSLOptions object, which uses PKCS12 Container and
-     * symmetric encryption
-     * 
-     * @param serverCredentialFile
-     *            file with the private key and the public cert for the server
-     * @param serverCredentialFilePassphrase
-     *            passphrase of the server credential file
-     * @param trustedCertificatesFile
-     *            file with trusted public certs
-     * @param trustedCertificatesFilePassphrase
-     *            passphrase of the trusted certificates file
-     * @throws IOException
-     */
-    public SSLOptions(InputStream serverCredentialFile, String serverCredentialFilePassphrase,
-        InputStream trustedCertificatesFile, String trustedCertificatesFilePassphrase) throws IOException {
-        this(serverCredentialFile, serverCredentialFilePassphrase, PKCS12_CONTAINER, trustedCertificatesFile,
-            trustedCertificatesFilePassphrase, JKS_CONTAINER, false);
-    }
-    
-    /**
-     * creates a new SSLOptions object
-     * 
-     * @param serverCredentialFile
-     *            file with the private key and the public cert for the server
-     * @param serverCredentialFilePassphrase
-     *            passphrase of the server credential file
-     * @param serverCredentialFileContainer
-     *            file format of the server credential file
-     * @param trustedCertificatesFile
-     *            file with trusted public certs
-     * @param trustedCertificatesFilePassphrase
-     *            passphrase of the trusted certificates file
-     * @param trustedCertificatesFileContainer
-     *            file format of the trusted certificates file
-     * @param authenticationWithoutEncryption
-     *            using symmetric encryption or only authenticating via certs
-     * @throws IOException
-     */
-    public SSLOptions(InputStream serverCredentialFile, String serverCredentialFilePassphrase,
-        String serverCredentialFileContainer, InputStream trustedCertificatesFile,
-        String trustedCertificatesFilePassphrase, String trustedCertificatesFileContainer,
-        boolean authenticationWithoutEncryption) throws IOException {
-        this(serverCredentialFile, serverCredentialFilePassphrase, serverCredentialFileContainer,
-            trustedCertificatesFile, trustedCertificatesFilePassphrase, trustedCertificatesFileContainer,
-            authenticationWithoutEncryption, false, null);
-    }
-    
     public SSLOptions(InputStream serverCredentialFile, String serverCredentialFilePassphrase,
         String serverCredentialFileContainer, InputStream trustedCertificatesFile,
         String trustedCertificatesFilePassphrase, String trustedCertificatesFileContainer,

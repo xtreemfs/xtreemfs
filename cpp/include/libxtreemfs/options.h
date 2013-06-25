@@ -58,6 +58,9 @@ class Options {
    * @throws InvalidURLException */
   std::vector<std::string> ParseCommandLine(int argc, char** argv);
 
+  /** Extract volume name and dir service address from dir_volume_url. */
+  void ParseURL(XtreemFSServiceType service_type);
+
   /** Outputs usage of the command line parameters of all options. */
   virtual std::string ShowCommandLineHelp();
 
@@ -223,10 +226,6 @@ class Options {
   // Additional User mapping.
   /** Type of the UserMapping used to translate between local/global names. */
   UserMapping::UserMappingType additional_user_mapping_type;
-
- protected:
-  /** Extract volume name and dir service address from dir_volume_url. */
-  void ParseURL(XtreemFSServiceType service_type);
 
  private:
   /** Reads password from stdin and stores it in 'password'. */

@@ -40,7 +40,7 @@ public class xtfs_mrcdbtool {
         
         Logging.start(Logging.LEVEL_ERROR);
         try {
-            TimeSync.initializeLocal(50);
+            TimeSync.initializeLocal(0);
         } catch (Exception ex) {
             ex.printStackTrace();
             System.exit(1);
@@ -102,10 +102,9 @@ public class xtfs_mrcdbtool {
         RPCNIOSocketClient rpcClient = null;
         
         try {
-            
             SSLOptions sslOptions = null;
-            if (protocol.startsWith(Schemes.SCHEME_PBRPCS)) {
-                
+            boolean gridSSL = false;
+            if (protocol.startsWith(Schemes.SCHEME_PBRPCS) || protocol.startsWith(Schemes.SCHEME_PBRPCG)) {
                 if (c.stringValue == null) {
                     System.out.println("SSL requires '-" + utils.OPTION_USER_CREDS_FILE + "' parameter to be specified");
                     usage(options);
@@ -116,8 +115,13 @@ public class xtfs_mrcdbtool {
                     System.exit(1);
                 }
                 
+                if (protocol.startsWith(Schemes.SCHEME_PBRPCG)) {
+                    gridSSL = true;
+                }
+
                 sslOptions = new SSLOptions(new FileInputStream(c.stringValue), cp.stringValue,
-                    new FileInputStream(t.stringValue), tp.stringValue);
+                        SSLOptions.PKCS12_CONTAINER, new FileInputStream(t.stringValue), tp.stringValue,
+                        SSLOptions.JKS_CONTAINER, false, gridSSL, null);
             }
             rpcClient = new RPCNIOSocketClient(sslOptions, Integer.MAX_VALUE - 1000, Integer.MAX_VALUE, "xtfs_mrcdbtool");
             rpcClient.start();
@@ -129,7 +133,7 @@ public class xtfs_mrcdbtool {
                     AuthPassword.newBuilder().setPassword(options.get(utils.OPTION_ADMIN_PASS).stringValue)).build();
             
             if (op.equals("dump")) {
-                RPCResponse r = null;
+                RPCResponse<?> r = null;
                 try {
                     r = client.xtreemfs_dump_database(null, passwdAuth, RPCAuthentication.userService,
                         dumpFile);
@@ -138,10 +142,8 @@ public class xtfs_mrcdbtool {
                     if (r != null)
                         r.freeBuffers();
                 }
-            }
-
-            else if (op.equals("restore")) {
-                RPCResponse r = null;
+            } else if (op.equals("restore")) {
+                RPCResponse<?> r = null;
                 try {
                     r = client.xtreemfs_restore_database(null, passwdAuth, RPCAuthentication.userService,
                         dumpFile);
@@ -150,23 +152,23 @@ public class xtfs_mrcdbtool {
                     if (r != null)
                         r.freeBuffers();
                 }
-            }
-
-            else {
+            } else {
                 usage(options);
                 System.exit(1);
             }
             
         } catch (PBRPCException exc) {
-            if (exc.getPOSIXErrno() == POSIXErrno.POSIX_ERROR_EACCES)
+            if (exc.getPOSIXErrno() == POSIXErrno.POSIX_ERROR_EACCES) {
                 System.out.println("permission denied: admin password invalid or volumes exist already");
-            else
+            } else {
                 exc.printStackTrace();
+            }
         } catch (Exception exc) {
             exc.printStackTrace();
         } finally {
-            if (rpcClient != null)
+            if (rpcClient != null) {
                 rpcClient.shutdown();
+            }
         }
     }
     

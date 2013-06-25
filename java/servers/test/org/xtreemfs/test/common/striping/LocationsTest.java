@@ -47,10 +47,12 @@ public class LocationsTest extends TestCase {
         osds.add(new ServiceUUID("http://10.0.0.1:65535"));
     }
 
+    @Override
     protected void setUp() throws Exception {
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
     }
 
+    @Override
     protected void tearDown() throws Exception {
     }
 
@@ -70,8 +72,8 @@ public class LocationsTest extends TestCase {
         XLocSet xlocset = XLocSet.newBuilder().setReadOnlyFileSize(0).setVersion(1).addReplicas(r1).addReplicas(r2).setReplicaUpdatePolicy("").build();// XLocSet(0, rset, "", 1);
         XLocations loc = new XLocations(xlocset, osds.get(1));
 
-        System.out.println(loc.getLocalReplica().toString());
-        System.out.println(loc.getReplica(0).toString());
+        // System.out.println(loc.getLocalReplica().toString());
+        // System.out.println(loc.getReplica(0).toString());
         assertEquals(loc.getLocalReplica(), loc.getReplica(0));
         assertNotNull(loc.getLocalReplica().getStripingPolicy());
 

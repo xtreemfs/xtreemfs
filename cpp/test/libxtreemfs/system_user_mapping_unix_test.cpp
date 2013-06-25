@@ -103,9 +103,9 @@ TEST_F(UserMappingUnixTest, UID2Pow32Minus1IsMinus1) {
  *  returned as string. Therefore, this test should work on the complete range
  *  of UIDs (except for the special ID (uid_t)-1 (= 4294967295).
  *
- *  We only test till 2^16 (65536) and not the complete range (4294967294). */
-TEST_F(UserMappingUnixTest, UIDsFrom0To2Pow16MapBackCorrectlyToUsernames) {
-  for (uid_t uid = 0; uid <= 65536; uid++) {
+ *  We only test till 2^10 (1024) and not the complete range (4294967294). */
+TEST_F(UserMappingUnixTest, UIDsFrom0To2Pow10MapBackCorrectlyToUsernames) {
+  for (uid_t uid = 0; uid <= 1024; uid++) {
     std::string username_for_uid = user_mapping_.UIDToUsername(uid);
     EXPECT_EQ(uid, user_mapping_.UsernameToUID(username_for_uid));
   }
@@ -180,9 +180,9 @@ TEST_F(UserMappingUnixTest, GID2Pow32Minus1IsMinus1) {
  *  returned as string. Therefore, this test should work on the complete range
  *  of GIDs (except for the special ID (gid_t)-1 (= 4294967295).
  *
- *  We only test till 2^16 (65536) and not the complete range (4294967294). */
-TEST_F(UserMappingUnixTest, GIDsFrom0To2Pow16MapBackCorrectlyToGroupnames) {
-  for (gid_t gid = 0; gid <= 65536; gid++) {
+ *  We only test till 2^10 (1024) and not the complete range (4294967294). */
+TEST_F(UserMappingUnixTest, GIDsFrom0To2Pow10MapBackCorrectlyToGroupnames) {
+  for (gid_t gid = 0; gid <= 1024; gid++) {
     std::string groupname_for_gid = user_mapping_.GIDToGroupname(gid);
     EXPECT_EQ(gid, user_mapping_.GroupnameToGID(groupname_for_gid));
   }

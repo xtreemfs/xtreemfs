@@ -67,6 +67,7 @@ public class RWReplicationTest extends TestCase {
     }
 
 
+    @Override
     @Before
     public void setUp() throws Exception {
 
@@ -90,6 +91,7 @@ public class RWReplicationTest extends TestCase {
 
     }
 
+    @Override
     @After
     public void tearDown() {
         if (osds != null) {
@@ -129,7 +131,7 @@ public class RWReplicationTest extends TestCase {
 
         byte[] data = new byte[2048];
 
-        System.out.println("open file with replicas");
+        // System.out.println("open file with replicas");
         RandomAccessFile raf = f.open("rw", 0444);
         raf.write(data, 0, data.length);
 
@@ -173,7 +175,7 @@ public class RWReplicationTest extends TestCase {
         RPCResponse<OSDWriteResponse> r = client.write(osd1, RPCAuthentication.authNone, RPCAuthentication.userService,
                     fc, fileId, 0, 0, 0, 0, objdata, rb);
         r.get();
-        System.out.println("got response");
+        // System.out.println("got response");
         r.freeBuffers();
 
         r = client.write(osd2, RPCAuthentication.authNone, RPCAuthentication.userService,
@@ -184,7 +186,7 @@ public class RWReplicationTest extends TestCase {
         } catch (PBRPCException ex) {
             if (ex.getErrorType() != ErrorType.REDIRECT)
                 fail("expected redirect");
-            System.out.println("got response: "+ex);
+            // System.out.println("got response: "+ex);
         }
         r.freeBuffers();
 
@@ -196,11 +198,11 @@ public class RWReplicationTest extends TestCase {
         r = client.write(osd1, RPCAuthentication.authNone, RPCAuthentication.userService,
                     fc, fileId, 0, 0, 1024, 0, objdata, rb);
         r.get();
-        System.out.println("got response");
+        // System.out.println("got response");
         r.freeBuffers();
 
         //read from slave
-        System.out.println("//// START READ ////");
+        // System.out.println("//// START READ ////");
         RPCResponse<ObjectData> r2 = client.read(osd2, RPCAuthentication.authNone, RPCAuthentication.userService,
                     fc, fileId, 0, -1, 0, 2048);
         try {
@@ -209,7 +211,7 @@ public class RWReplicationTest extends TestCase {
         } catch (PBRPCException ex) {
             if (ex.getErrorType() != ErrorType.REDIRECT)
                 fail("expected redirect");
-            System.out.println("got response: "+ex);
+            // System.out.println("got response: "+ex);
         }
         r2.freeBuffers();
 
@@ -272,7 +274,7 @@ public class RWReplicationTest extends TestCase {
         RPCResponse<OSDWriteResponse> r = client.write(osd1, RPCAuthentication.authNone, RPCAuthentication.userService,
                     oneFC, fileId, 0, 0, 0, 0, objdata, rb);
         r.get();
-        System.out.println("got response");
+        // System.out.println("got response");
         r.freeBuffers();
 
         rb = BufferPool.allocate(1024);
@@ -283,17 +285,17 @@ public class RWReplicationTest extends TestCase {
         r = client.write(osd1, RPCAuthentication.authNone, RPCAuthentication.userService,
                     fc, fileId, 1, 0, 0, 0, objdata, rb);
         r.get();
-        System.out.println("got response");
+        // System.out.println("got response");
         r.freeBuffers();
 
-        System.out.println("waiting...");
+        // System.out.println("waiting...");
         Thread.sleep(90*1000);
-        System.out.println("continue...\n\n");
+        // System.out.println("continue...\n\n");
 
         r = client.write(osd2, RPCAuthentication.authNone, RPCAuthentication.userService,
                     fc, fileId, 0, 0, 0, 0, objdata, BufferPool.allocate(1024*8));
         r.get();
-        System.out.println("got response");
+        // System.out.println("got response");
         r.freeBuffers();
     }
 }

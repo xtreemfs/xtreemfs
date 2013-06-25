@@ -55,7 +55,7 @@ public class OSDRangeReads extends TestCase {
     public OSDRangeReads(String testName) throws Exception {
         super(testName);
         
-        Logging.start(Logging.LEVEL_DEBUG);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
         
         osdConfig = SetupUtils.createOSD1Config();
         serverID = SetupUtils.getOSD1UUID();
@@ -69,6 +69,7 @@ public class OSDRangeReads extends TestCase {
         fcred = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xloc).build();
     }
     
+    @Override
     protected void setUp() throws Exception {
         
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
@@ -99,12 +100,11 @@ public class OSDRangeReads extends TestCase {
         osdClient = new OSDServiceClient(testEnv.getRpcClient(),null);
     }
     
+    @Override
     protected void tearDown() throws Exception {
-        System.out.println("teardown");
         osdServer.shutdown();
         
         testEnv.shutdown();
-        System.out.println("shutdown complete");
     }
 
     public void testRandomRanges() throws Exception {
@@ -125,7 +125,7 @@ public class OSDRangeReads extends TestCase {
         //do random reads
         for (int round = 0; round < 200; round++) {
             final int offset = (int)(Math.random()*2048.0);
-            final int size = (int)(Math.random()*(2048.0-((double)offset)));
+            final int size = (int)(Math.random()*(2048.0-(offset)));
             System.out.println("offset: "+offset+" size: "+size);
             assert (offset+size <= 2048);
             RPCResponse<ObjectData> rr = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
@@ -161,7 +161,7 @@ public class OSDRangeReads extends TestCase {
         //do random reads
         for (int round = 0; round < 200; round++) {
             final int offset = (int)(Math.random()*2048.0);
-            final int size = (int)(Math.random()*(2048.0-((double)offset)));
+            final int size = (int)(Math.random()*(2048.0-(offset)));
             System.out.println("offset: "+offset+" size: "+size);
             assert (offset+size <= 2048);
             RPCResponse<ObjectData> rr = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,

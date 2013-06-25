@@ -430,6 +430,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         statusServer.registerModule(new StatusPage());
         statusServer.registerModule(new PrintStackTrace());
         statusServer.registerModule(new ReplicatedFileStatusPage());
+        statusServer.registerModule(new ReplicatedFileStatusJSON());
         
         if (config.getAdminPassword().length() > 0) {
             statusServer.addAuthorizedUser("admin", config.getAdminPassword());

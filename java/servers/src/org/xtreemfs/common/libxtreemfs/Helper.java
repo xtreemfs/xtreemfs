@@ -15,6 +15,7 @@ import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDSelectionPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
@@ -268,5 +269,21 @@ public class Helper {
         }
 
         return false;
+    }
+
+    public static String policiesToString(OSDSelectionPolicyType[] policies) {
+        StringBuffer policiesSB = new StringBuffer();
+        boolean firstEntry = true;
+        for (OSDSelectionPolicyType policy : policies) {
+            if (firstEntry) {
+                firstEntry = false;
+            } else {
+                policiesSB.append(",");
+            }
+
+            policiesSB.append(String.valueOf(policy.getNumber()));
+        }
+
+        return policiesSB.toString();
     }
 }

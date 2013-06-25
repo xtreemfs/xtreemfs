@@ -10,9 +10,7 @@ package org.xtreemfs.dir;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -32,6 +30,8 @@ import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.common.config.PolicyContainer;
 import org.xtreemfs.common.monitoring.StatusMonitor;
+import org.xtreemfs.common.statusserver.PrintStackTrace;
+import org.xtreemfs.common.statusserver.StatusServer;
 import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.dir.data.ServiceRecords;
 import org.xtreemfs.dir.discovery.DiscoveryMsgThread;
@@ -68,13 +68,8 @@ import org.xtreemfs.foundation.pbrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequestListener;
 import org.xtreemfs.foundation.util.OutputUtils;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
-
-import com.sun.net.httpserver.BasicAuthenticator;
-import com.sun.net.httpserver.HttpContext;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
 
 /**
  * 
@@ -100,7 +95,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     
     public static final int                       DB_VERSION              = 2010111010;
     
-    private final HttpServer                      httpServ;
+    protected final StatusServer                  statusServer;
     
     private int                                   numRequests;
     
@@ -191,109 +186,18 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             discoveryThr = null;
         }
         
-        httpServ = HttpServer.create(new InetSocketAddress(config.getHttpPort()), 0);
-        
-        final HttpContext ctx = httpServ.createContext("/", new HttpHandler() {
-            public void handle(HttpExchange httpExchange) throws IOException {
-                byte[] content;
-                try {
-                    if (httpExchange.getRequestURI().getPath().contains("strace")) {
-                        content = OutputUtils.getThreadDump().getBytes("ascii");
-                    } else if (httpExchange.getRequestURI().getPath().contains("babudb")) {
-                        content = StatusPage.getDBInfo(database.getRuntimeState()).getBytes("ascii");
-                    } else {
-                        content = StatusPage.getStatusPage(DIRRequestDispatcher.this, config).getBytes("ascii");
-                    }
-                    httpExchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
-                    httpExchange.sendResponseHeaders(200, content.length);
-                    httpExchange.getResponseBody().write(content);
-                    httpExchange.getResponseBody().close();
-                } catch (BabuDBException ex) {
-                    ex.printStackTrace();
-                    httpExchange.sendResponseHeaders(500, 0);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    httpExchange.sendResponseHeaders(500, 0);
-                }
-                
-            }
-        });
-        
-        /* The following url structure is used:
-         * /vivaldi
-         * /vivaldi/d3.js
-         * /vivaldi/data
-         */
-        final HttpContext ctxVivaldiData = httpServ.createContext("/vivaldi", new HttpHandler() {
-            public void handle(HttpExchange httpExchange) throws IOException {
-                byte[] content;
-                try {
-                    String uriPath = httpExchange.getRequestURI().getPath();
-                    //System.out.println("RequestURIPath:" + httpExchange.getRequestURI().getPath()); // TODO(mno): Comment before committing
-                    if (uriPath.equals("/vivaldi/data")) {
-                        // generate data
-                        content = StatusPage.getVivaldiData(DIRRequestDispatcher.this, config).getBytes("ascii");
-                        httpExchange.getResponseHeaders().add("Content-Type", "text/plain; charset=UTF-8");
-                        httpExchange.sendResponseHeaders(200, content.length);
-                        httpExchange.getResponseBody().write(content);
-                        httpExchange.getResponseBody().close();
-                    } else if (uriPath.equals("/vivaldi") || uriPath.equals("/vivaldi/d3.js")) {
-                        // load requested file
-                        String path = "";
-                        if (uriPath.equals("/vivaldi")) {
-                            path = "/vivaldi.html";
-                        } else if (uriPath.equals("/vivaldi/d3.js")) {
-                            path = "/d3.js";
-                        }
-                        httpExchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
-                        httpExchange.sendResponseHeaders(200, 0);
-                        try {
-                            InputStream htmlFile = StatusPage.class.getClassLoader().getResourceAsStream("org/xtreemfs/dir/templates" + path);
-                            if (htmlFile == null) {
-                                htmlFile = StatusPage.class.getClass().getResourceAsStream("../templates" + path);
-                            }
-                            byte[] buffer = new byte[4096];
-                            int len = 0;
-                            while ((len = htmlFile.read(buffer)) >= 0) {
-                                httpExchange.getResponseBody().write(buffer, 0, len);
-                            }
-                        } catch (Exception e) {
-                            httpExchange.getResponseBody().write(("Sorry, could not read vivaldi status page (" + e.toString() + ")").getBytes("ascii"));
-                            System.out.println("Ex: " + e);
-                        }
-                        httpExchange.getResponseBody().close();
-                    } else {
-                        // 404 for every other URI
-                        httpExchange.sendResponseHeaders(404,-1);
-                        httpExchange.getResponseBody().close();
-                    }
-                } catch (BabuDBException ex) {
-                    ex.printStackTrace();
-                    httpExchange.sendResponseHeaders(500, 0);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    httpExchange.sendResponseHeaders(500, 0);
-                }
-                
-            }
-        });
-        
+        statusServer = new StatusServer(ServiceType.SERVICE_TYPE_DIR, this, config.getHttpPort());
+        statusServer.registerModule(new PrintStackTrace());
+        statusServer.registerModule(new StatusPage(config));
+        statusServer.registerModule(new BabuDBStatusPage(database));
+        statusServer.registerModule(new ReplicaStatusPage());
+        statusServer.registerModule(new VivaldiStatusPage(config));
+
         if (config.getAdminPassword().length() > 0) {
-            ctx.setAuthenticator(new BasicAuthenticator("XtreemFS DIR") {
-                @Override
-                public boolean checkCredentials(String arg0, String arg1) {
-                    return (arg0.equals("admin") && arg1.equals(config.getAdminPassword()));
-                }
-            });
-            ctxVivaldiData.setAuthenticator(new BasicAuthenticator("XtreemFS DIR") {
-                @Override
-                public boolean checkCredentials(String arg0, String arg1) {
-                    return (arg0.equals("admin") && arg1.equals(config.getAdminPassword()));
-                }
-            });
+            statusServer.addAuthorizedUser("admin", config.getAdminPassword());
         }
-        
-        httpServ.start();
+
+        statusServer.start();
         
         numRequests = 0;
         
@@ -393,7 +297,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
 			listener.shuttingDown();
 		}
     	
-        httpServ.stop(0);
+        statusServer.shutdown();
         server.shutdown();
         server.waitForShutdown();
         database.shutdown();

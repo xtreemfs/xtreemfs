@@ -41,6 +41,12 @@ public class RPCClientRequest<ReturnType extends Message> {
 
 
     RPCClientRequest(Auth authHeader, UserCredentials uCreds, int callId, int interfaceId, int procId, Message message, ReusableBuffer data, RPCResponse<ReturnType> response) throws IOException {
+        if (uCreds == null) {
+            throw new IOException("No UserCredentials object given (null). Make sure it's set.");
+        }
+        if (authHeader == null) {
+            throw new IOException("No Auth object given (null). Make sure it's set.");
+        }
 
         RPC.RPCHeader.RequestHeader rqHdr = RPC.RPCHeader.RequestHeader.newBuilder().setAuthData(authHeader).setUserCreds(uCreds).
                 setInterfaceId(interfaceId).setProcId(procId).build();

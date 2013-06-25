@@ -47,7 +47,7 @@ public class FleaseProposerTest extends TestCase {
         super(testName);
 
         result = new AtomicReference();
-        Logging.start(Logging.LEVEL_DEBUG, Category.all);
+        Logging.start(Logging.LEVEL_WARN, Category.all);
         TimeSync.initializeLocal(50);
 
         cfg = new FleaseConfig(10000, 500, 500, new InetSocketAddress(12345), "localhost:12345",5);
@@ -58,14 +58,17 @@ public class FleaseProposerTest extends TestCase {
         super.setUp();
         acceptor = new FleaseAcceptor(new LearnEventListener() {
 
+            @Override
             public void learnedEvent(ASCIIString cellId, ASCIIString leaseHolder, long leaseTimeout_ms, long me) {
             }
         }, cfg, "/tmp/xtreemfs-test/", true);
         proposer = new FleaseProposer(cfg, acceptor, new FleaseCommunicationInterface() {
 
+            @Override
             public void sendMessage(FleaseMessage msg, InetSocketAddress receiver) throws IOException {
             }
 
+            @Override
             public void requestTimer(FleaseMessage msg, long timestamp) {
                 if (msg.getMsgType() == FleaseMessage.MsgType.EVENT_RESTART) {
                     long wait = timestamp - TimeSync.getLocalSystemTime();
@@ -83,20 +86,23 @@ public class FleaseProposerTest extends TestCase {
             }
         }, new FleaseStatusListener() {
 
+            @Override
             public void statusChanged(ASCIIString cellId, Flease lease) {
-                System.out.println("result: "+lease.getLeaseHolder());
+                // System.out.println("result: "+lease.getLeaseHolder());
                 synchronized (result) {
                     result.set(new Flease(cellId, lease.getLeaseHolder(), lease.getLeaseTimeout_ms(),lease.getMasterEpochNumber()));
                     result.notify();
                 }
             }
 
+            @Override
             public void leaseFailed(ASCIIString cellId, FleaseException error) {
-                System.out.println("failed: "+error);
+                // System.out.println("failed: "+error);
                 FleaseProposerTest.fail(error.toString());
             }
         }, new LearnEventListener() {
 
+            @Override
             public void learnedEvent(ASCIIString cellId, ASCIIString leaseHolder, long leaseTimeout_ms, long me) {
                 throw new UnsupportedOperationException("Not supported yet.");
             }

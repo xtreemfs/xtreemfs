@@ -11,6 +11,8 @@ then
 fi
 echo "TEST_DIR: $TEST_DIR"
 
+JUNIT_LOG_FILE="${TEST_DIR}/log/junit.log"
+
 XTREEMFS=$1
 if [ -z "$XTREEMFS" ]
 then
@@ -27,9 +29,10 @@ done < <(find $XTREEMFS/java -name \*.jar)
 
 # find all source files for the unit tests
 SOURCES=""
-while read LINE; do
-    SOURCES="$SOURCES $LINE"
-done < <(find $XTREEMFS/java/servers/test -name \*.java)
+for PROJECT in servers flease foundation
+do
+  SOURCES="$SOURCES "$(find "java/${PROJECT}/test" -name \*.java -printf "%p ")
+done
 
 CLASSES_DIR=$TEST_DIR/classes
 
@@ -45,13 +48,13 @@ if [ "$RESULT" -ne "0" ]; then echo "$COMMAND failed"; exit $RESULT; fi
 CLASSPATH="$CLASSPATH:$CLASSES_DIR"
 
 # find and execute all JUnit tests among the class files
-rm -f $TEST_DIR/log/junit.log
+rm -f "$JUNIT_LOG_FILE"
 COUNTER=0
 FAILED=0
 JUNIT_TESTS=""
 while read LINE; do
 
-  if [[ $LINE == *ExternalIntegrationTest.class ]]
+  if [[ $LINE = *ExternalIntegrationTest.class ]]
   then
       # not a valid JUnit test
       continue;
@@ -66,7 +69,7 @@ while read LINE; do
   JAVA_CALL="$JAVA_HOME/bin/java -ea -cp $CLASSPATH org.junit.runner.JUnitCore $TEST"
 
   echo -n "Running test `expr $COUNTER + 1`: $TEST ... "
-  $JAVA_CALL >>$TEST_DIR/log/junit.log 2>&1
+  $JAVA_CALL >> "$JUNIT_LOG_FILE" 2>&1
   RESULT=$?
   if [ "$RESULT" -ne "0" ]; then
     echo "FAILURE"
@@ -82,3 +85,11 @@ done < <(find $CLASSES_DIR -name *Test.class -type f)
 echo "`expr $COUNTER - $FAILED` / $COUNTER tests successfully executed."
 
 if [ "$FAILED" -ne "0" ]; then exit 1; fi
+
+# Report crashes.
+grep "has crashed" "$JUNIT_LOG_FILE" >/dev/null
+if [ $? -eq 0 ]
+then
+  echo "However, during the test services did crash. Examine the log file junit.log for more information."
+  exit 2
+fi

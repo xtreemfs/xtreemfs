@@ -36,7 +36,7 @@ public class RPCUDPSocketServerTest {
     final static int PORT_2 = 33334;
 
     public RPCUDPSocketServerTest() {
-        Logging.start(Logging.LEVEL_DEBUG, Logging.Category.all);
+        Logging.start(Logging.LEVEL_WARN, Logging.Category.all);
     }
 
     @BeforeClass
@@ -59,7 +59,7 @@ public class RPCUDPSocketServerTest {
 
             @Override
             public void receiveRecord(RPCServerRequest rq) {
-                System.out.println("srv1: "+rq);
+                // System.out.println("srv1: "+rq);
             }
         });
 
@@ -67,7 +67,7 @@ public class RPCUDPSocketServerTest {
 
             @Override
             public void receiveRecord(RPCServerRequest rq) {
-                System.out.println("srv2: "+rq);
+                // System.out.println("srv2: "+rq);
                 rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, "yagga");
             }
         });

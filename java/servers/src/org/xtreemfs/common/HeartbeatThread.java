@@ -357,7 +357,7 @@ public class HeartbeatThread extends LifeCycleThread {
         }
     }
 
-    private synchronized void registerServices(int numRetries) throws IOException, PBRPCException, InterruptedException {
+    private void registerServices(int numRetries) throws IOException, PBRPCException, InterruptedException {
 
         for (Service reg : serviceDataGen.getServiceData().getServicesList()) {
             // retrieve old DIR entry

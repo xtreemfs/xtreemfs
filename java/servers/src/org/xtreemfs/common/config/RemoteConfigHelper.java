@@ -52,7 +52,7 @@ public class RemoteConfigHelper {
     
             timeSyncAlreadyRunning = TimeSync.isInitialized();
             if (!timeSyncAlreadyRunning) {
-                ts = TimeSync.initializeLocal(50);
+                ts = TimeSync.initializeLocal(0);
                 ts.waitForStartup();
             }
     

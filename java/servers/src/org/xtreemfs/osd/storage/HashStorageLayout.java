@@ -669,7 +669,7 @@ public class HashStorageLayout extends StorageLayout {
         // calculate the checksum for the padding object if necessary
         long checksum = 0;
         if (checksumAlgo != null) {
-            byte[] content = new byte[(int) size];
+            byte[] content = new byte[size];
             checksumAlgo.update(ByteBuffer.wrap(content));
             checksum = checksumAlgo.getValue();
         }
@@ -734,6 +734,7 @@ public class HashStorageLayout extends StorageLayout {
         File fileDir = new File(generateAbsoluteFilePath(fileId));
         File[] objs = fileDir.listFiles(new FileFilter() {
 
+            @Override
             public boolean accept(File pathname) {
                 if (pathname.getName().startsWith(".")) {
                     return false;
@@ -753,6 +754,7 @@ public class HashStorageLayout extends StorageLayout {
         return dir.exists();
     }
 
+    @Override
     protected FileMetadata loadFileMetadata(String fileId, StripingPolicyImpl sp) throws IOException {
 
         _stat_fileInfoLoads = 0;
@@ -836,7 +838,7 @@ public class HashStorageLayout extends StorageLayout {
                 // determine the largest object version
                 Long oldver = largestObjVersions.get(ofd.objNo);
                 if ((oldver == null) || (oldver < ofd.objVersion))
-                    largestObjVersions.put((long) ofd.objNo, ofd.objVersion);
+                    largestObjVersions.put(ofd.objNo, ofd.objVersion);
             }
 
             if (multiVersionSupport) {
@@ -1047,6 +1049,7 @@ public class HashStorageLayout extends StorageLayout {
         }
     }
 
+    @Override
     public long getFileInfoLoadCount() {
         return _stat_fileInfoLoads;
     }
@@ -1257,13 +1260,39 @@ public class HashStorageLayout extends StorageLayout {
     public int getMasterEpoch(String fileId) throws IOException {
         int masterEpoch = 0;
         RandomAccessFile raf = null;
-        try {
-            File fileDir = new File(generateAbsoluteFilePath(fileId));
-            File mepoch = new File(fileDir, MASTER_EPOCH_FILENAME);
+        File fileDir = new File(generateAbsoluteFilePath(fileId));
+        File mepoch = new File(fileDir, MASTER_EPOCH_FILENAME);
 
+        try {
             raf = new RandomAccessFile(mepoch, "r");
+
             masterEpoch = raf.readInt();
         } catch (FileNotFoundException ex) {
+            // Before XtreemFS 1.4.1 the .mepoch was accidentally stored in the
+            // wrong directory because a leading "/" was not removed from
+            // fileId.
+            String oldFileId = "/" + fileId;
+            File oldFileDir = new File(generateAbsoluteFilePath(oldFileId));
+            File oldMepoch = new File(oldFileDir, MASTER_EPOCH_FILENAME);
+
+            if (oldMepoch.isFile()) {
+                if (!fileDir.exists()) {
+                    fileDir.mkdirs();
+                }
+
+                if (oldMepoch.renameTo(mepoch)) {
+                    del(oldFileDir);
+
+                    raf = new RandomAccessFile(mepoch, "r");
+                } else {
+                    Logging.logMessage(Logging.LEVEL_WARN, this, "Failed to move %s file from: %s to: %s",
+                            MASTER_EPOCH_FILENAME, oldFileDir.getPath(), fileDir.getPath());
+
+                    raf = new RandomAccessFile(oldMepoch, "r");
+                }
+
+                masterEpoch = raf.readInt();
+            }
         } finally {
             if (raf != null) {
                 raf.close();
@@ -1272,6 +1301,7 @@ public class HashStorageLayout extends StorageLayout {
         return masterEpoch;
     }
 
+    @Override
     public void setMasterEpoch(String fileId, int masterEpoch) throws IOException {
         File fileDir = new File(generateAbsoluteFilePath(fileId));
         if (!fileDir.exists()) {
@@ -1283,6 +1313,7 @@ public class HashStorageLayout extends StorageLayout {
         rf.close();
     }
 
+    @Override
     public TruncateLog getTruncateLog(String fileId) throws IOException {
         TruncateLog.Builder tlbuilder = TruncateLog.newBuilder();
 
@@ -1303,6 +1334,7 @@ public class HashStorageLayout extends StorageLayout {
         return tlbuilder.build();
     }
 
+    @Override
     public void setTruncateLog(String fileId, TruncateLog log) throws IOException {
         File fileDir = new File(generateAbsoluteFilePath(fileId));
         if (!fileDir.exists()) {

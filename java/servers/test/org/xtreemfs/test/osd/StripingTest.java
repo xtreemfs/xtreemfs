@@ -55,7 +55,7 @@ public class StripingTest extends TestCase {
         
         private long   fileSize;
         
-        private String capSecret;
+        private final String capSecret;
         
         public MRCDummy(String capSecret) {
             this.capSecret = capSecret;
@@ -80,7 +80,7 @@ public class StripingTest extends TestCase {
             try {
                 
                 OSDWriteResponse resp = r.get();
-                System.out.println("fs-update: " + resp);
+                // System.out.println("fs-update: " + resp);
                 
                 if (resp.hasSizeInBytes()) {
                     
@@ -130,7 +130,7 @@ public class StripingTest extends TestCase {
     
     private OSDServiceClient    client;
     
-    private StripingPolicyImpl  sp;
+    private final StripingPolicyImpl  sp;
     
     private XLocSet             xloc;
     
@@ -152,6 +152,7 @@ public class StripingTest extends TestCase {
         
     }
     
+    @Override
     protected void setUp() throws Exception {
         
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
@@ -193,6 +194,7 @@ public class StripingTest extends TestCase {
                 COW ? SnapConfig.SNAP_CONFIG_ACCESS_CURRENT : SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, capSecret);
     }
     
+    @Override
     protected void tearDown() throws Exception {
         
         osdServer.get(0).shutdown();
@@ -324,7 +326,7 @@ public class StripingTest extends TestCase {
             RPCAuthentication.userService, fcred, FILE_ID, 0, 0, 0, SIZE);
         ObjectData result = r2.get();
         ReusableBuffer dataOut = r2.getData();
-        System.out.println(result);
+        // System.out.println(result);
         // either padding data or all zeros
         assertNotNull(dataOut);
         assertEquals(3, dataOut.capacity());

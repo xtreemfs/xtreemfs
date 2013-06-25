@@ -30,6 +30,8 @@ public abstract class ReplicaUpdatePolicy {
 
     public static final long UNLIMITED_RESET = -1;
 
+    public static final String  FILE_CELLID_PREFIX = "/file/";
+
     protected List<ServiceUUID> remoteOSDUUIDs;
 
     protected final ASCIIString cellId;
@@ -38,12 +40,20 @@ public abstract class ReplicaUpdatePolicy {
 
     protected final String localUUID;
 
-    public ReplicaUpdatePolicy(List<ServiceUUID> remoteOSDUUIDs, ASCIIString cellId,
+    public ReplicaUpdatePolicy(List<ServiceUUID> remoteOSDUUIDs, String fileId,
             String localUUID) {
         this.remoteOSDUUIDs = remoteOSDUUIDs;
-        this.cellId = cellId;
+        this.cellId = fileToCellId(fileId);
         this.localUUID = localUUID;
         localObjVersion = -1;
+    }
+
+    public static String cellToFileId(ASCIIString cellId) {
+        return cellId.toString().substring(FILE_CELLID_PREFIX.length());
+    }
+
+    public static ASCIIString fileToCellId(String fileId) {
+        return new ASCIIString(FILE_CELLID_PREFIX + fileId);
     }
 
     public List<ServiceUUID> getRemoteOSDUUIDs() {

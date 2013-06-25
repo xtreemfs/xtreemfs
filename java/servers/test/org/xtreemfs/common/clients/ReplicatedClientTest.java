@@ -101,11 +101,11 @@ public class ReplicatedClientTest {
 
         String[] osds = f.getSuitableOSDs(1);
         assertTrue(osds.length >= 1);
-        System.out.println("suitable OSD: "+osds[0]);
+        // System.out.println("suitable OSD: "+osds[0]);
 
         f.addReplica(1, osds, ReplicationFlags.setRandomStrategy(ReplicationFlags.setFullReplica(0)));
 
-        System.out.println("locations: "+f.getLocations(uc));
+        // System.out.println("locations: "+f.getLocations(uc));
 
         Thread.sleep(1000);
 
@@ -117,7 +117,7 @@ public class ReplicatedClientTest {
         raf.read(data, 0, data.length);
         raf.close();
 
-        System.out.println("locations: "+f.getLocations(uc));
+        // System.out.println("locations: "+f.getLocations(uc));
 
         for (Replica r : f.getReplicas(uc)) {
             assertTrue(r.isCompleteReplica());

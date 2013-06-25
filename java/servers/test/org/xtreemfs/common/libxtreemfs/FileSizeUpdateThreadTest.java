@@ -44,7 +44,7 @@ public class FileSizeUpdateThreadTest {
     @BeforeClass
     public static void setUp() throws Exception {
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
-        Logging.start(Logging.LEVEL_DEBUG);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
 
         dirConfig = SetupUtils.createDIRConfig();
 

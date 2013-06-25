@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2012-2013 by Lukas Kairies, Zuse Institute Berlin
+ *
+ * Licensed under the BSD License, see LICENSE file for details.
+ *
+ */
 package org.xtreemfs.utils;
 
 import static org.junit.Assert.assertEquals;
@@ -67,7 +73,7 @@ public class ScrubberTest {
     private static final UserCredentials userCredentials = xtfs_scrub.credentials;
 
     public ScrubberTest() {
-        Logging.start(Logging.LEVEL_DEBUG);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
     }
 
     @BeforeClass

@@ -58,7 +58,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
     /**
      * A map containing all known OSDs sorted by their UUIDs.
      */
-    private Map<String, Service>               knownOSDMap;
+    private final Map<String, Service>               knownOSDMap;
     
     /**
      * Thread shuts down if true.
@@ -68,7 +68,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
     /**
      * Reference to the MRCRequestDispatcher.
      */
-    private MRCRequestDispatcher               master;
+    private final MRCRequestDispatcher               master;
     
     public OSDStatusManager(MRCRequestDispatcher master) throws IOException {
         
@@ -84,6 +84,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         checkIntervalMillis = 1000 * interval;
     }
     
+    @Override
     public synchronized void volumeChanged(VolumeInfo volume) {
         
         final String volId = volume.getId();
@@ -103,10 +104,12 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         this.notifyAll();
     }
     
+    @Override
     public synchronized void volumeDeleted(String volumeId) {
         volumeMap.remove(volumeId);
     }
     
+    @Override
     public synchronized void attributeSet(String volumeId, String key, String value) {
         
         VolumeOSDFilter vol = volumeMap.get(volumeId);
@@ -124,6 +127,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
     /**
      * Shuts down the thread.
      */
+    @Override
     public synchronized void shutdown() {
         quit = true;
         this.interrupt();
@@ -133,6 +137,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
     /**
      * Main loop.
      */
+    @Override
     public void run() {
         
         // initially fetch the list of OSDs from the Directory Service
@@ -220,7 +225,6 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
             String osds = "";
             for (Service s : result.getServicesList())
                 osds += s.getUuid() + ", " + s.getData() + " ";
-            Logging.logMessage(Logging.LEVEL_WARN, this, "all OSDs: %s", osds);
         }
         
         return result;

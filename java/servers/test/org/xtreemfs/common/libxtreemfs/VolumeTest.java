@@ -180,6 +180,41 @@ public class VolumeTest {
     }
 
     @Test
+    public void testReadDirMultipleChunks() throws Exception {
+        options.setReaddirChunkSize(2);
+
+        VOLUME_NAME = "testReadDirMultipleChunks";
+        final String TESTFILE = "test";
+        final int fileCount = 10;
+
+        // create volume
+        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME, 0, userCredentials.getUsername(),
+                userCredentials.getGroups(0), AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL,
+                StripingPolicyType.STRIPING_POLICY_RAID0, defaultStripingPolicy.getStripeSize(),
+                defaultStripingPolicy.getWidth(), new ArrayList<KeyValuePair>());
+
+        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+
+        // create some files
+        for (int i = 0; i < fileCount; i++) {
+            FileHandle fh = volume.openFile(userCredentials, "/" + TESTFILE + i,
+                    SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber());
+            fh.close();
+        }
+
+        // test 'readDir' across multiple readDir chunks.
+        DirectoryEntries entrySet = null;
+
+        entrySet = volume.readDir(userCredentials, "/", 0, 1000, false);
+        assertEquals(2 + fileCount, entrySet.getEntriesCount());
+        assertEquals("..", entrySet.getEntries(0).getName());
+        assertEquals(".", entrySet.getEntries(1).getName());
+        for (int i = 0; i < fileCount; i++) {
+            assertEquals(TESTFILE + i, entrySet.getEntries(2 + i).getName());
+        }
+    }
+
+    @Test
     public void testCreateDelete() throws Exception {
         VOLUME_NAME = "testCreateDelete";
         // Both directories should be created under "/"
@@ -262,6 +297,49 @@ public class VolumeTest {
         entrySet = volume.readDir(userCredentials, "", 0, 1000, false);
         assertEquals(3, entrySet.getEntriesCount());
     }
+
+//    TODO(stenjan): Fix this issue and comment it out again.
+//    @Test
+//    public void testCreateDirWithEmptyPathComponents() throws Exception {
+//        VOLUME_NAME = "testCreateDirWithEmptyPathComponents";
+//        // Both directories should be created under "/"
+//        final String DIR1 = "/test";
+//        final String DIR2 = "/test//";
+//        final String DIR3 = "/test//testdir";
+//
+//        // create volume
+//        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME, 0, userCredentials.getUsername(),
+//                userCredentials.getGroups(0), AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL,
+//                StripingPolicyType.STRIPING_POLICY_RAID0, defaultStripingPolicy.getStripeSize(),
+//                defaultStripingPolicy.getWidth(), new ArrayList<KeyValuePair>());
+//
+//        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+//
+//        // create some files and directories
+//        try {
+//            volume.createDirectory(userCredentials, DIR1, 0755);
+//            volume.createDirectory(userCredentials, DIR2, 0755);
+//            volume.createDirectory(userCredentials, DIR3, 0755);
+//        } catch (IOException ioe) {
+//            fail("failed to create testdirs");
+//        }
+//
+//        // test 'readDir' and 'stat'
+//        DirectoryEntries entrySet = null;
+//
+//        entrySet = volume.readDir(userCredentials, DIR2, 0, 1000, false);
+//        assertEquals(3, entrySet.getEntriesCount());
+//        assertEquals("..", entrySet.getEntries(0).getName());
+//        assertEquals(".", entrySet.getEntries(1).getName());
+//        assertEquals(DIR3, "/" + entrySet.getEntries(2).getName());
+//
+//        entrySet = volume.readDir(userCredentials, DIR3, 0, 1000, false);
+//        assertEquals(0, entrySet.getEntriesCount());
+//
+//        volume.removeDirectory(userCredentials, DIR3);
+//        entrySet = volume.readDir(userCredentials, DIR1, 0, 1000, false);
+//        assertEquals(2, entrySet.getEntriesCount());
+//    }
 
     @Test
     public void testHardLink() throws Exception {

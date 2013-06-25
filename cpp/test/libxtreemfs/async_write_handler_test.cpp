@@ -35,9 +35,9 @@ class AsyncWriteHandlerTest : public ::testing::Test {
 
   virtual void SetUp() {
     initialize_logger(LEVEL_WARN);
-    test_env.options.connect_timeout_s = 5;
+    test_env.options.connect_timeout_s = 3;
     test_env.options.request_timeout_s = 3;
-    test_env.options.retry_delay_s = 1;
+    test_env.options.retry_delay_s = 3;
     test_env.options.enable_async_writes = true;
     test_env.options.async_writes_max_request_size_kb = 128;
     test_env.options.async_writes_max_requests = 8;
@@ -83,12 +83,8 @@ TEST_F(AsyncWriteHandlerTest, NormalWrite) {
     expected[i] = WriteEntry(i, 0, kBlockSize);
   }
 
-  file->Write(write_buf.get(),
-              buffer_size,
-              0);
-
-  boost::this_thread::sleep(boost::posix_time::seconds(
-      2 * test_env.options.request_timeout_s));
+  ASSERT_NO_THROW(file->Write(write_buf.get(), buffer_size, 0));
+  ASSERT_NO_THROW(file->Flush());
 
   EXPECT_TRUE(equal(expected.begin(),
                     expected.end(),
@@ -112,12 +108,8 @@ TEST_F(AsyncWriteHandlerTest, FirstWriteFail) {
   test_env.osds[0]->AddDropRule(
       new ProcIDFilterRule(xtreemfs::pbrpc::PROC_ID_WRITE, new DropNRule(1)));
 
-  file->Write(write_buf.get(), buffer_size, 0);
-
-  boost::this_thread::sleep(boost::posix_time::seconds(
-      test_env.options.connect_timeout_s +
-      2 * test_env.options.request_timeout_s +
-      2 * test_env.options.retry_delay_s));
+  ASSERT_NO_THROW(file->Write(write_buf.get(), buffer_size, 0));
+  ASSERT_NO_THROW(file->Flush());
 
   EXPECT_TRUE(equal(expected_tail.begin(), expected_tail.end(),
       test_env.osds[0]->GetReceivedWrites().end() - expected_tail.size()));
@@ -144,12 +136,8 @@ TEST_F(AsyncWriteHandlerTest, LastWriteFail) {
       new ProcIDFilterRule(xtreemfs::pbrpc::PROC_ID_WRITE,
                            new SkipMDropNRule(blocks - 1, 1)));
 
-  file->Write(write_buf.get(), buffer_size, 0);
-
-  boost::this_thread::sleep(boost::posix_time::seconds(
-      test_env.options.connect_timeout_s +
-      2 * test_env.options.request_timeout_s +
-      2 * test_env.options.retry_delay_s));
+  ASSERT_NO_THROW(file->Write(write_buf.get(), buffer_size, 0));
+  ASSERT_NO_THROW(file->Flush());
 
   EXPECT_TRUE(equal(expected_front.begin(),
                     expected_front.end(),
@@ -185,12 +173,8 @@ TEST_F(AsyncWriteHandlerTest, IntermediateWriteFail) {
       new ProcIDFilterRule(xtreemfs::pbrpc::PROC_ID_WRITE,
                            new SkipMDropNRule(middle, 1)));
 
-  file->Write(write_buf.get(), buffer_size, 0);
-
-  boost::this_thread::sleep(boost::posix_time::seconds(
-      test_env.options.connect_timeout_s +
-      2 * test_env.options.request_timeout_s +
-      2 * test_env.options.retry_delay_s));
+  ASSERT_NO_THROW(file->Write(write_buf.get(), buffer_size, 0));
+  ASSERT_NO_THROW(file->Flush());
 
   EXPECT_TRUE(equal(expected_front.begin(),
                     expected_front.end(),
@@ -220,12 +204,8 @@ TEST_F(AsyncWriteHandlerTest, AllWritesFail) {
       new ProcIDFilterRule(xtreemfs::pbrpc::PROC_ID_WRITE,
                            new DropNRule(blocks)));
 
-  file->Write(write_buf.get(), buffer_size, 0);
-
-  boost::this_thread::sleep(boost::posix_time::seconds(
-      test_env.options.connect_timeout_s +
-      2 * test_env.options.request_timeout_s +
-      2 * test_env.options.retry_delay_s));
+  ASSERT_NO_THROW(file->Write(write_buf.get(), buffer_size, 0));
+  ASSERT_NO_THROW(file->Flush());
 
   EXPECT_TRUE(equal(expected_tail.begin(),
                     expected_tail.end(),
@@ -252,12 +232,8 @@ TEST_F(AsyncWriteHandlerTest, FirstWriteFailLong) {
   test_env.osds[0]->AddDropRule(
       new ProcIDFilterRule(xtreemfs::pbrpc::PROC_ID_WRITE, new DropNRule(1)));
 
-  file->Write(write_buf.get(), buffer_size, 0);
-
-  boost::this_thread::sleep(boost::posix_time::seconds(
-      test_env.options.connect_timeout_s +
-      2 * test_env.options.request_timeout_s +
-      2 * test_env.options.retry_delay_s));
+  ASSERT_NO_THROW(file->Write(write_buf.get(), buffer_size, 0));
+  ASSERT_NO_THROW(file->Flush());
 
   EXPECT_TRUE(equal(expected_tail.begin(),
                     expected_tail.end(),
