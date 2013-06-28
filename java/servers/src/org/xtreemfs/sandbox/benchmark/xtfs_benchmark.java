@@ -96,7 +96,7 @@ public class xtfs_benchmark {
         if (arguments.size() == 0)
             volumeManager.createDefaultVolumes(params.numberOfThreads);
         else {
-            // ToDo add check to verify that the number of volumes is in accordence with the number of threads
+            // ToDo add check to verify that the number of volumes is in accordance with the number of threads
             String[] volumes = arguments.toArray(new String[arguments.size()]);
             volumeManager.openVolumes(volumes);
         }
@@ -116,6 +116,11 @@ public class xtfs_benchmark {
             result = controller.startBenchmarks(BenchmarkType.READ, params.numberOfThreads);
             results.addAll(result);
         }
+
+		if (randomWriteBenchmarkIsSet()) {
+			result = controller.startBenchmarks(BenchmarkType.RANDOM_IO_WRITE, params.numberOfThreads);
+			results.addAll(result);
+		}
 
         if (randomReadBenchmarkIsSet()) {
             result = controller.startBenchmarks(BenchmarkType.RANDOM_IO_READ, params.numberOfThreads);
@@ -338,6 +343,10 @@ public class xtfs_benchmark {
     private static boolean randomReadBenchmarkIsSet() {
         return options.get("rr").switchValue;
     }
+
+	private static boolean randomWriteBenchmarkIsSet() {
+		return options.get("rw").switchValue;
+	}
 
     private static boolean randomFilebasedWriteBenchmarkIsSet() {
         return options.get("rfw").switchValue;
