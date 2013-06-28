@@ -36,13 +36,19 @@ public class RandomWriteBenchmark extends RandomOffsetbasedBenchmark {
 				| GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
 				| GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
 
-        for (long j = 0; j < numberOfBlocks; j++) {
+        for (long j = 0; j < numberOfBlocks-1; j++) {
             FileHandle fileHandle = volume.openFile(params.userCredentials, BASFILE_FILENAME,
                     flags, 511);
             long nextOffset = generateNextRandomOffset();
             byteCounter += fileHandle.write(params.userCredentials, data, RANDOM_IO_BLOCKSIZE, nextOffset);
             fileHandle.close();
         }
+
+		/* last block written needs to be the last block of the basefile to not violate the basefile filesize */
+		FileHandle fileHandle = volume.openFile(params.userCredentials, BASFILE_FILENAME,
+				flags, 511);
+		byteCounter += fileHandle.write(params.userCredentials, data, RANDOM_IO_BLOCKSIZE, params.basefileSizeInBytes-RANDOM_IO_BLOCKSIZE);
+		fileHandle.close();
         return byteCounter;
     }
 
