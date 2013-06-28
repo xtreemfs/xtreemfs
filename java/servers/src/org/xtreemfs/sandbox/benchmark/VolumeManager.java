@@ -301,7 +301,7 @@ public class VolumeManager {
         for (String osd : uuids) {
             Logging.logMessage(Logging.LEVEL_INFO, this, "Starting cleanup of OSD with UUID %s", osd,
                     Logging.Category.tool);
-            client.startCleanUp(osd, pwd, true, true, true);
+            client.startCleanUp(osd, pwd, true, true, false);
         }
 
         boolean cleanUpIsRunning = true;
