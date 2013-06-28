@@ -27,6 +27,7 @@ public class BenchmarkFactory {
             benchmark = new ReadBenchmark(volume, params);
             break;
         case RANDOM_IO_WRITE:
+			benchmark = new RandomWriteBenchmark(volume, params);
             break;
         case RANDOM_IO_READ:
             benchmark = new RandomReadBenchmark(volume, params);
