@@ -16,8 +16,6 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.utils.DefaultDirConfig;
 import org.xtreemfs.utils.utils;
 
-import sun.net.NetHooks;
-
 public class xtfs_benchmark {
     static final int                      KiB_IN_BYTES = 1024;
     static final int                      MiB_IN_BYTES = 1024 * 1024;
@@ -120,7 +118,7 @@ public class xtfs_benchmark {
         }
 
         if (randomReadBenchmarkIsSet()) {
-            result = controller.startBenchmarks(BenchmarkType.RANDOM_IO_READ, 1);
+            result = controller.startBenchmarks(BenchmarkType.RANDOM_IO_READ, params.numberOfThreads);
             results.addAll(result);
         }
 
