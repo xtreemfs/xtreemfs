@@ -63,11 +63,6 @@ class Server:
 
             java_args = [os.path.join(os.environ["JAVA_HOME"], "bin", "java")]
 
-            # Enable SDP
-            java_args.append("-Dcom.sun.sdp.conf=/home/bzcfisch/jensvfischer-personal/sdp.conf")
-            java_args.append("-Dcom.sun.sdp.debug=/home/bzcfisch/jensvfischer-personal/sdp.log")
-            java_args.append("-Djava.net.preferIPv4Stack=true")
-
             # Enable assertions.
             java_args.append("-ea")
 
