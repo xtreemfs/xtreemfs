@@ -14,9 +14,12 @@ import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.List;
 
+import org.apache.commons.net.util.SubnetUtils;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMapping;
@@ -44,82 +47,40 @@ public class NetUtils {
             NetworkInterface ifc = ifcs.nextElement();
             List<InterfaceAddress> addrs = ifc.getInterfaceAddresses();
             
-            // // prefer global addresses to local ones
-            // Collections.sort(addrs, new Comparator<InterfaceAddress>() {
-            // public int compare(InterfaceAddress o1, InterfaceAddress o2) {
-            // int o1global = o1.getAddress().isAnyLocalAddress() ? -1 : 1;
-            // int o2global = o2.getAddress().isAnyLocalAddress() ? -1 : 1;
-            // return o1global - o2global;
-            // }
-            //                
-            // });
+            // prefer global addresses to local ones
+            Collections.sort(addrs, new Comparator<InterfaceAddress>() {
+                public int compare(InterfaceAddress o1, InterfaceAddress o2) {
+                    int o1global = o1.getAddress().isLinkLocalAddress() ? -1 : 1;
+                    int o2global = o2.getAddress().isLinkLocalAddress() ? -1 : 1;
+                    return o1global - o2global;
+                }
+
+            });
             
             for (InterfaceAddress addr : addrs) {
                 
                 InetAddress inetAddr = addr.getAddress();
-                if (inetAddr.isLoopbackAddress() || inetAddr.isLinkLocalAddress())
+
+                // ignore local and wildcard addresses
+                if (inetAddr.isLoopbackAddress() || inetAddr.isLinkLocalAddress() || inetAddr.isAnyLocalAddress())
                     continue;
                 
-                if (!(inetAddr.isLinkLocalAddress() || inetAddr.isSiteLocalAddress())) {
-                    final String hostAddr = getHostAddress(inetAddr);
-                    final String uri = getURI(protocol,inetAddr,port);
-                    AddressMapping.Builder amap = AddressMapping.newBuilder().setAddress(hostAddr).setPort(port).setProtocol(protocol).setTtlS(3600).setMatchNetwork("*").setUri(uri).setVersion(0).setUuid("");
-                    endpoints.add(amap);
-                    /*endpoints.add(new AddressMapping("", 0, protocol, hostAddr, port, "*",
-                        3600,uri));*/
-                    break;
+                final String hostAddr = getHostAddress(inetAddr);
+                final String uri = getURI(protocol, inetAddr, port);
+                AddressMapping.Builder amap = AddressMapping.newBuilder().setAddress(hostAddr).setPort(port)
+                        .setProtocol(protocol).setTtlS(3600).setUri(uri).setVersion(0).setUuid("");
+
+                if (inetAddr.isSiteLocalAddress()) {
+                    amap.setMatchNetwork(getNetworkCIDR(inetAddr, addr.getNetworkPrefixLength()));
+                } else {
+                    amap.setMatchNetwork("*");
                 }
                 
-                // endpoints.add(RPCClient.generateMap("address",
-                // inetAddr.getHostAddress(), "port",
-                // port, "protocol", protocol, "ttl", 3600, "match_network",
-                // (inetAddr
-                // .isLinkLocalAddress()
-                // || inetAddr.isSiteLocalAddress() ? inetAddr.getHostAddress()
-                // + "/"
-                // + getSubnetMaskString(addr.getNetworkPrefixLength()) :
-                // "*")));
-            }
-            
-            // stop searching for endpoints if an endpoint has been found
-            if (!endpoints.isEmpty())
-                break;
-        }
-        
-        // if no globally reachable endpoints are available, pick the first
-        // locally reachable endpoint
-        if (endpoints.isEmpty()) {
-            
-            ifcs = NetworkInterface.getNetworkInterfaces();
-            
-            while (ifcs.hasMoreElements()) {
-                
-                NetworkInterface ifc = ifcs.nextElement();
-                List<InterfaceAddress> addrs = ifc.getInterfaceAddresses();
-                
-                // if there is no "public" IP check for a site local address to
-                // use
-                for (InterfaceAddress addr : addrs) {
-                    
-                    InetAddress inetAddr = addr.getAddress();
-                    
-                    if (inetAddr.isSiteLocalAddress()) {
-                        final String hostAddr = getHostAddress(inetAddr);
-                        final String uri = getURI(protocol,inetAddr,port);
-                        //endpoints.add(new AddressMapping("", 0, protocol, hostAddr, port, "*", 3600, uri));
-                        AddressMapping.Builder amap = AddressMapping.newBuilder().setAddress(hostAddr).setPort(port).setProtocol(protocol).setTtlS(3600).setMatchNetwork("*").setUri(uri).setVersion(0).setUuid("");
-                        endpoints.add(amap);
-                        break;
-                    }
-                }
-                
-                if (!endpoints.isEmpty())
-                    break;
+                endpoints.add(amap);
             }
         }
         
-        // in case no IP address could be found at all, use 127.0.0.1 for local
-        // testing
+        // in case no IP address could be found at all, use 127.0.0.1 for local testing
         if (endpoints.isEmpty()) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.net, null,
                 "could not find a valid IP address, will use 127.0.0.1 instead", new Object[0]);
@@ -177,6 +138,11 @@ public class NetUtils {
         return sb.toString();
     }
     
+    private static String getNetworkCIDR(InetAddress addr, short prefixLength) {
+        SubnetUtils subnet = new SubnetUtils(addr.getHostAddress() + "/" + prefixLength);
+        return (subnet.getInfo().getNetworkAddress() + "/" + prefixLength);
+    }
+
     public static void main(String[] args) throws Exception {
         
         System.out.println("all network interfaces: ");

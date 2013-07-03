@@ -91,7 +91,6 @@ import org.xtreemfs.osd.operations.LockReleaseOperation;
 import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.operations.RWRNotifyOperation;
 import org.xtreemfs.osd.operations.ReadOperation;
-import org.xtreemfs.osd.operations.RepairObjectOperation;
 import org.xtreemfs.osd.operations.ShutdownOperation;
 import org.xtreemfs.osd.operations.TruncateOperation;
 import org.xtreemfs.osd.operations.VivaldiPingOperation;
@@ -1035,6 +1034,13 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
      */
     public String getPrimary(String fileId) {
         return rwrStage.getPrimary(fileId);
+    }
+
+    /**
+     * Instruct the HeartbeatThread to renew the address mappings associated to this OSD.
+     */
+    public void renewAddressMappings() {
+        heartbeatThread.renewAddressMappings();
     }
 
 }
