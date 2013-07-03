@@ -72,6 +72,7 @@ public final class UUIDResolver extends Thread {
             theInstance = this;
         }
         
+        // TODO(jdillmann): Reload myNetworks on the OSDs when the addressMapping is renewed
         List<AddressMapping.Builder> ntwrks = NetUtils.getReachableEndpoints(0, "http");
         myNetworks = new ArrayList(ntwrks.size());
         for (AddressMapping.Builder network : ntwrks) {
@@ -174,7 +175,19 @@ public final class UUIDResolver extends Thread {
                         uuid);
                 throw new UnknownUUIDException("uuid " + uuid + " is not registered at directory server");
             }
-            for (AddressMapping addrMapping : ams.getMappingsList()) {
+
+            List<AddressMapping> mappings = ams.getMappingsList();
+
+            // Prefer local networks over global ones
+            // Collections.sort(mappings, new Comparator<AddressMapping>() {
+            // public int compare(AddressMapping o1, AddressMapping o2) {
+            // int o1global = "*".equals(o1.getMatchNetwork()) ? -1 : 1;
+            // int o2global = "*".equals(o2.getMatchNetwork()) ? -1 : 1;
+            // return o1global - o2global;
+            // }
+            // });
+
+            for (AddressMapping addrMapping : mappings) {
                 final String network = addrMapping.getMatchNetwork();
                 if ((myNetworks.contains(network) || (network.equals("*"))) && ((protocol == null) || addrMapping.getProtocol().equals(protocol))) {
                     final String address = addrMapping.getAddress();

@@ -43,7 +43,7 @@ public class NetUtils {
         // first, try to find a globally reachable endpoint
         Enumeration<NetworkInterface> ifcs = NetworkInterface.getNetworkInterfaces();
         while (ifcs.hasMoreElements()) {
-            
+            // TODO(jdillmann): check if the NetworkInterface.isUp() || isLoopback() or continue
             NetworkInterface ifc = ifcs.nextElement();
             List<InterfaceAddress> addrs = ifc.getInterfaceAddresses();
             
