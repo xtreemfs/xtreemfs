@@ -8,7 +8,6 @@
 
 package org.xtreemfs.mrc.stages;
 
-import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -27,6 +26,7 @@ import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
+import org.xtreemfs.mrc.StatusPage;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
@@ -42,6 +42,7 @@ import org.xtreemfs.mrc.operations.DeleteOperation;
 import org.xtreemfs.mrc.operations.DeleteVolumeOperation;
 import org.xtreemfs.mrc.operations.DumpDBOperation;
 import org.xtreemfs.mrc.operations.FSetAttrOperation;
+import org.xtreemfs.mrc.operations.GetFileCredentialsOperation;
 import org.xtreemfs.mrc.operations.GetLocalVolumesOperation;
 import org.xtreemfs.mrc.operations.GetSuitableOSDsOperation;
 import org.xtreemfs.mrc.operations.GetXAttrOperation;
@@ -63,10 +64,8 @@ import org.xtreemfs.mrc.operations.SetReplicaUpdatePolicyOperation;
 import org.xtreemfs.mrc.operations.SetXAttrOperation;
 import org.xtreemfs.mrc.operations.SetattrOperation;
 import org.xtreemfs.mrc.operations.ShutdownOperation;
-import org.xtreemfs.mrc.operations.GetFileCredentialsOperation;
 import org.xtreemfs.mrc.operations.StatFSOperation;
 import org.xtreemfs.mrc.operations.StatOperation;
-import org.xtreemfs.mrc.operations.StatusPageOperation;
 import org.xtreemfs.mrc.operations.TruncateOperation;
 import org.xtreemfs.mrc.operations.UpdateFileSizeOperation;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceConstants;
@@ -265,7 +264,7 @@ public class ProcessingStage extends MRCStage {
                     }
                 }
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "parsed request: %s (%s)\n",
-                    StatusPageOperation.getOpName(rqHeader.getProcId()), params.toString());
+                        StatusPage.getOpName(rqHeader.getProcId()), params.toString());
             }
             
             op.startRequest(rq);

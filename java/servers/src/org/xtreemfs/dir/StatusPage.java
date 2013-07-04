@@ -42,7 +42,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 import com.sun.net.httpserver.HttpExchange;
 
 /**
- * Serves a simple HTML status page with BabuDBs runtime state.
+ * Serves a simple HTML status page with DIR stats.
  */
 public class StatusPage extends StatusServerModule {
 
