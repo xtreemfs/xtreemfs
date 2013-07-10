@@ -8,6 +8,9 @@ package org.xtreemfs.test.mrc;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT;
+import static org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY;
+import static org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR;
 
 import java.io.IOException;
 import java.util.List;
@@ -22,6 +25,7 @@ import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.AdminFileHandle;
 import org.xtreemfs.common.libxtreemfs.AdminVolume;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
+import org.xtreemfs.common.libxtreemfs.Helper;
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
@@ -38,8 +42,8 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDSelectionPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.test.SetupUtils;
@@ -126,7 +130,7 @@ public class VersionedXLocSetTest {
         // returns all suitable OSDs
         List<String> osdUUIDs = volume.getSuitableOSDs(userCredentials, fileName, replicaNumber);
         assert (osdUUIDs.size() >= replicaNumber);
-        
+
         // save the current Replica Number
         int currentReplicaNumber = volume.listReplicas(userCredentials, fileName).getReplicasCount();
 
@@ -158,20 +162,19 @@ public class VersionedXLocSetTest {
             // Thread.sleep(16 * 1000);
             System.out.println("Added replica on " + osdUUIDs.get(i));
         }
-        
+
         assertEquals(currentReplicaNumber + replicaNumber, volume.listReplicas(userCredentials, fileName)
                 .getReplicasCount());
     }
 
-    private void removeReadOutdated(AdminVolume volume, String fileName) throws Exception {
+    private void removeReadOutdated(String volumeName, String fileName) throws Exception {
+        AdminVolume volume = client.openVolume(volumeName, null, options);
+
         // open testfile and write some bytes not "0"
-        int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
-                | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
+        AdminFileHandle fileHandle = volume.openFile(userCredentials, fileName,
+                Helper.flagsToInt(SYSTEM_V_FCNTL_H_O_CREAT, SYSTEM_V_FCNTL_H_O_RDWR), 0777);
 
-        AdminFileHandle fileHandle = volume.openFile(userCredentials, fileName, flags, 0777);
-
-        int stripeSize = fileHandle.getStripingPolicy().getStripeSize();
-        int count = stripeSize * 2;
+        int count = 256 * 1024;
         ReusableBuffer data = SetupUtils.generateData(count, (byte) 1);
 
         System.out.println("writing");
@@ -185,26 +188,34 @@ public class VersionedXLocSetTest {
         System.out.println("openagain");
 
         // open the file again and wait until the primary replica is removed
-        flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber();
-        fileHandle = volume.openFile(userCredentials, fileName, flags, 0777);
-
-        // get the OSDs which are suitable for the file
-        System.out.println(volume.getSuitableOSDs(userCredentials, fileName, NUM_OSDS));
+        fileHandle = volume.openFile(userCredentials, fileName, Helper.flagsToInt(SYSTEM_V_FCNTL_H_O_RDONLY));
 
         // get the primary replica
         List<Replica> replicas = fileHandle.getReplicasList();
+        System.out.println(replicas);
         Replica replica = replicas.get(0);
+        int prevReplicaCount = fileHandle.getReplicasList().size();
+
+        System.out.println("Remove replica: " + replica.getOsdUuids(0));
 
         // since striping is disabled there should be only one OSD for this certain replica
         assertEquals(1, replica.getOsdUuidsCount());
 
-        // remove the replica from the OSD
-        volume.removeReplica(userCredentials, fileName, replica.getOsdUuids(0));
+        // use another volume remove the replica from the OSD
+        AdminVolume controlVolume = client.openVolume(volumeName, null, options);
+        controlVolume.removeReplica(userCredentials, fileName, replica.getOsdUuids(0));
+        AdminFileHandle controlFile = controlVolume.openFile(userCredentials, fileName,
+                Helper.flagsToInt(SYSTEM_V_FCNTL_H_O_RDONLY));
 
-        // TODO(jdillmann): remove when the changeReplicaSet coordination is working
-        // open the file again with another
+        assertEquals(controlFile.getReplicasList().size(), prevReplicaCount - 1);
+
+        System.out.println(controlFile.getReplicasList());
+
+        controlFile.close();
+        controlVolume.close();
 
         // wait until the file is actually deleted on the OSD
+        System.out.println("wait until the file is closed and delted on the osd");
         Thread.sleep(70 * 1000);
 
         // reading a deleted file seems like reading a sparse file and should return "0" bytes
@@ -213,20 +224,21 @@ public class VersionedXLocSetTest {
         fileHandle.read(userCredentials, data2, 1, 0);
         fileHandle.close();
 
-        assert (data2[0] != (byte) 1);
+        assertEquals(data2[0], (byte) 1);
 
-        // get the OSDs which are suitable for the file
-        System.out.println(volume.getSuitableOSDs(userCredentials, fileName, NUM_OSDS));
-    }
-
-    private void removeReadOutdated(String volumeName, String fileName) throws Exception {
-        AdminVolume volume = client.openVolume(volumeName, null, options);
-        removeReadOutdated(volume, fileName);
+        volume.close();
     }
 
     @Ignore
     @Test
     public void testRonlyRemoveReadOutdated() throws Exception {
+        // TODO(jdillmann): This test will fail because the VersionState is deleted together with the data objects.
+        // Subsequent calls, with any ViewID >= 0, are therefore valid. If a replica is marked as completed, this will
+        // lead to the false assumption, that the missing object file resembles a sparse file and zeros will be returned
+        // instead of raising an error.
+        // For partial replicas this won't necessarily lead to an error, because internal fetch requests can be checked
+        // for a valid view.
+
         String volumeName = "testRonlyRemoveReadOutdated";
         String fileName = "/testfile";
 
@@ -238,9 +250,11 @@ public class VersionedXLocSetTest {
         volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY, 2,
                 repl_flags);
 
-        removeReadOutdated(volume, fileName);
+        volume.close();
+
+        removeReadOutdated(volumeName, fileName);
     }
-    
+
     @Ignore
     @Test
     public void testWqRqRemoveReadOutdated() throws Exception {
@@ -250,13 +264,20 @@ public class VersionedXLocSetTest {
         client.createVolume(mrcAddress, auth, userCredentials, volumeName);
         AdminVolume volume = client.openVolume(volumeName, null, options);
 
-        int repl_flags = ReplicationFlags.setSequentialStrategy(0);
-        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 3,
-                repl_flags);
+        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 3, 0);
+        volume.setOSDSelectionPolicy(
+                userCredentials,
+                Helper.policiesToString(new OSDSelectionPolicyType[] {
+                        OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT,
+                        OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID }));
+        volume.setReplicaSelectionPolicy(
+                userCredentials,
+                Helper.policiesToString(new OSDSelectionPolicyType[] { OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID }));
 
-        removeReadOutdated(volume, fileName);
+        volume.close();
+
+        removeReadOutdated(volumeName, fileName);
     }
-
 
     @Ignore
     @Test
@@ -276,6 +297,7 @@ public class VersionedXLocSetTest {
         testInvalidViewOnAdd(volumeName, fileName);
     }
 
+    @Ignore
     @Test
     public void testWqRqInvalidViewOnAdd() throws Exception {
         String volumeName = "testWqRqInvalidViewOnAdd";
@@ -291,12 +313,10 @@ public class VersionedXLocSetTest {
     }
 
     private void testInvalidViewOnAdd(String volumeName, String fileName) throws Exception {
-        int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
-                | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
-
         // open outdated file handle and write some data
         AdminVolume outdatedVolume = client.openVolume(volumeName, null, options);
-        AdminFileHandle outdatedFile = outdatedVolume.openFile(userCredentials, fileName, flags, 0777);
+        AdminFileHandle outdatedFile = outdatedVolume.openFile(userCredentials, fileName,
+                Helper.flagsToInt(SYSTEM_V_FCNTL_H_O_CREAT, SYSTEM_V_FCNTL_H_O_RDWR), 0777);
 
         System.out.println("writing");
         ReusableBuffer data = SetupUtils.generateData(256, (byte) 1);
@@ -304,8 +324,7 @@ public class VersionedXLocSetTest {
         outdatedFile.close();
 
         System.out.println("reopen file");
-        flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber();
-        outdatedFile = outdatedVolume.openFile(userCredentials, fileName, flags, 0777);
+        outdatedFile = outdatedVolume.openFile(userCredentials, fileName, Helper.flagsToInt(SYSTEM_V_FCNTL_H_O_RDONLY));
 
         // open the volume again and add some more replicas
         AdminVolume volume = client.openVolume(volumeName, null, options);

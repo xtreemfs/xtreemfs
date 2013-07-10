@@ -13,6 +13,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -114,9 +115,9 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             case ADD_REPLICAS:
                 processAddReplicas(m);
                 break;
-            // case REMOVE_REPLICAS:
-            // processRemoveReplicas(m);
-            // break;
+            case REMOVE_REPLICAS:
+                processRemoveReplicas(m);
+                break;
             // case REPLACE_REPLICA:
             // processReplaceReplica(m);
             default:
@@ -225,7 +226,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
                 new InternalCallbackInterface() {
                     @Override
                     public void startCallback(MRCRequest rq) throws Throwable {
-                        m.getCallback().installXLocSet(rq, fileId, extXLocList);
+                        m.getCallback().installXLocSet(rq, fileId, extXLocList, curXLocList);
                     }
                 });
 
@@ -273,6 +274,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             xtreemfs_rwr_fetch_invalidatedRequest fiRequest = xtreemfs_rwr_fetch_invalidatedRequest.newBuilder()
                     .setFileId(fileId).setFileCredentials(fileCredentials).setState(authState).build();
 
+            // TODO(jdillmann): make this robust and use a diff of the ext/cur set
             // take the new replicas from the end of the list
             for (ServiceUUID OSDUUID : OSDUUIDs.subList(OSDUUIDs.size() - requiredUpdates, OSDUUIDs.size())) {
 
@@ -333,15 +335,161 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 //        }
 //    }
 
-    // public void removeReplicas(String fileId, MRCOperation op, MRCRequest rq) {
-    // q.add(new RequestMethod(RequestType.REMOVE_REPLICAS, fileId, op, rq));
-    // }
-    //
-    // private void processRemoveReplicas(RequestMethod m) throws Throwable {
-    // final MRCRequest rq = m.getRequest();
-    //
-    // }
-    //
+    public <O extends MRCOperation & XLocSetCoordinatorCallback> RequestMethod removeReplicas(String fileId,
+            FileMetadata file, XLocList curXLocList, XLocList newXLocList, MRCRequest rq, O op)
+            throws DatabaseException {
+        return removeReplicas(fileId, file, curXLocList, newXLocList, rq, op, op);
+    }
+
+    public RequestMethod removeReplicas(String fileId, FileMetadata file, XLocList curXLocList, XLocList newXLocList,
+            MRCRequest rq, MRCOperation op, XLocSetCoordinatorCallback callback) throws DatabaseException {
+
+        Capability cap = buildCapability(fileId, file);
+        RequestMethod m = new RequestMethod(RequestType.REMOVE_REPLICAS, fileId, rq, op, callback, cap, new Object[] {
+                curXLocList, newXLocList });
+
+        return m;
+    }
+
+    private void processRemoveReplicas(final RequestMethod m) throws Throwable {
+        final MRCRequest rq = m.getRequest();
+
+        final String fileId = m.getFileId();
+        final Capability cap = m.getCapability();
+
+        final XLocList curXLocList = (XLocList) m.getArguments()[0];
+        final XLocList newXLocList = (XLocList) m.getArguments()[1];
+
+        final XLocSet curXLocSet = Converter.xLocListToXLocSet(curXLocList).build();
+        final XLocSet newXLocSet = Converter.xLocListToXLocSet(newXLocList).build();
+
+        // Invalidate the majority of the replicas and get their ReplicaStatus
+        ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet);
+
+        // Build a mockupPolicy for the current XLocSet
+        ArrayList<ServiceUUID> curOSDUUIDs = new ArrayList<ServiceUUID>(curXLocSet.getReplicasCount());
+        for (int i = 0; i < curXLocSet.getReplicasCount(); i++) {
+            // save each head OSDUUID to the list
+            curOSDUUIDs.add(i, new ServiceUUID(Helper.getOSDUUIDFromXlocSet(curXLocSet, i, 0)));
+        }
+        CoordinatedReplicaUpdatePolicy curPolicy = getMockupPolicy(curXLocSet.getReplicaUpdatePolicy(), fileId,
+                curOSDUUIDs);
+
+        // If the backup can read we can assume every replica will be written on updates.
+        if (!curPolicy.backupCanRead()) {
+
+            // calculate the current AuthState.
+            AuthoritativeReplicaState authState = curPolicy.CalculateAuthoritativeState(states, fileId);
+
+            // Create a policy for the new XLocSet and calculate the minimal reads,
+            ArrayList<ServiceUUID> newOSDUUIDs = new ArrayList<ServiceUUID>(newXLocSet.getReplicasCount());
+            for (int i = 0; i < newXLocSet.getReplicasCount(); i++) {
+                // save each head OSDUUID to the list
+                newOSDUUIDs.add(i, new ServiceUUID(Helper.getOSDUUIDFromXlocSet(newXLocSet, i, 0)));
+            }
+
+            CoordinatedReplicaUpdatePolicy newPolicy = getMockupPolicy(newXLocSet.getReplicaUpdatePolicy(), fileId,
+                    newOSDUUIDs);
+            int requiredRead = newPolicy.getNumRequiredAcks(null) + 1;
+
+            // Create a Set containing the remaining UUIDs.
+            final HashSet<String> newXLocSetUUIDs = new HashSet<String>(newXLocSet.getReplicasCount());
+            for (int i = 0; i < newXLocList.getReplicaCount(); i++) {
+                // TODO(jdillmann): Currently using the head OSD. Not sure what to do with striping.
+                String osdUUID = Helper.getOSDUUIDFromXlocSet(newXLocSet, i, 0);
+                newXLocSetUUIDs.add(osdUUID);
+            }
+
+            // Create a Set containing the UUIDs of replicas that have been removed.
+            final HashSet<String> removedOSDUUIDs = new HashSet<String>(curXLocSet.getReplicasCount()
+                    - newXLocSet.getReplicasCount());
+            for (int i = 0; i < curXLocList.getReplicaCount(); i++) {
+                String osdUUID = Helper.getOSDUUIDFromXlocSet(curXLocSet, i, 0);
+                if (!newXLocSetUUIDs.contains(osdUUID)) {
+                    removedOSDUUIDs.add(osdUUID);
+                }
+            }
+
+            // Create a UUID set containing UUIDs of OSDs missing some objects, that could harm the invariant.
+            // Since all the missing objects will be fetched, even OSDs missing more than one object have to be added
+            // only once.
+            HashSet<String> fetchUUIDs = new HashSet<String>();
+
+            // Check the AuthState for missing objects and find the OSDs missing them.
+            // TODO(jdillmann): TruncateLog ?
+            for (ObjectVersionMapping ovm : authState.getObjectVersionsList()) {
+                HashSet<String> osdUUIDs = new HashSet<String>(ovm.getOsdUuidsCount());
+                for (String UUID : ovm.getOsdUuidsList()) {
+                    if (!removedOSDUUIDs.contains(UUID)) {
+                        osdUUIDs.add(UUID);
+                    }
+                }
+
+                // W + requiredRead > N <= W = N - requiredRead + 1
+                // == (requiredWrite + minMajority) = N - requiredRead + 1
+                // == requiredWrite = N - requiredRead - minMajority +1
+                int N = newXLocSet.getReplicasCount();
+                int minMajority = osdUUIDs.size();
+                int requiredWrite = N - requiredRead - minMajority + 1;
+
+                // if the removal would harm the invariant update an OSD, which hasn't the latest data yet.
+                if (requiredWrite > 0) {
+
+                    int i = 0;
+                    for (String UUID : newXLocSetUUIDs) {
+                        if (!osdUUIDs.contains(UUID)) {
+                            i++;
+                            fetchUUIDs.add(UUID);
+
+                            if (i == requiredWrite) {
+                                break;
+                            }
+                        }
+                    }
+
+                    assert (i == requiredWrite);
+                }
+            }
+
+            // Instruct the Replicas, that are not up to date to fetch all the data.
+            if (fetchUUIDs.size() > 0) {
+                // build the FileCredentials
+                FileCredentials fileCredentials = FileCredentials.newBuilder().setXlocs(curXLocSet)
+                        .setXcap(cap.getXCap()).build();
+
+                // build the fetch request
+                xtreemfs_rwr_fetch_invalidatedRequest fiRequest = xtreemfs_rwr_fetch_invalidatedRequest.newBuilder()
+                        .setFileId(fileId).setFileCredentials(fileCredentials).setState(authState).build();
+
+                // and send the request to the OSDs missing some data
+                for (String OSDUUID : fetchUUIDs) {
+                    ServiceUUID service = new ServiceUUID(OSDUUID);
+                    // TODO(jdillmann): check if there is any sane way to use libxtreemfs at the mrc
+                    @SuppressWarnings("unchecked")
+                    RPCResponse<emptyResponse> rpcResponse = master.getOSDClient().xtreemfs_rwr_fetch_invalidated(
+                            service.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fiRequest);
+                    rpcResponse.get();
+                    rpcResponse.freeBuffers();
+                }
+            }
+        }
+
+        // It is now guaranteed, that the invariant won't be harmed by removing the Replicas.
+
+        // Call the installXLocSet method in the context of the ProcessingStage
+        MRCCallbackRequest callbackRequest = new MRCCallbackRequest(rq.getRPCRequest(),
+                new InternalCallbackInterface() {
+                    @Override
+                    public void startCallback(MRCRequest rq) throws Throwable {
+                        m.getCallback().installXLocSet(rq, fileId, newXLocList, curXLocList);
+                    }
+                });
+
+        master.getProcStage().enqueueOperation(callbackRequest, ProcessingStage.STAGEOP_INTERNAL_CALLBACK, null);
+
+    }
+
+
     // public void replaceReplica(String fileId, MRCOperation op, MRCRequest rq) {
     // q.add(new RequestMethod(RequestType.REPLACE_REPLICA, fileId, op, rq));
     // }

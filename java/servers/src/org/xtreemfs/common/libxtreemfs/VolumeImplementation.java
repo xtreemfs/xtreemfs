@@ -1401,6 +1401,13 @@ public class VolumeImplementation implements Volume, AdminVolume {
                         return osdServiceClient.unlink(server, authHeader, userCreds, input);
                     }
                 });
+
+        // Update the local XLocSet cached at FileInfo if it exists.
+        if (openFileTable.containsKey(response.getXcap().getFileId())) {
+            // TODO(jdillmann): Return the new XLocSet and the replicateOnClose flag with the response.
+            FileHandle file = openFile(userCredentials, path, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
+            file.close();
+        }
     }
 
     @Override

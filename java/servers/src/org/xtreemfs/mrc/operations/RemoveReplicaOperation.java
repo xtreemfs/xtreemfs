@@ -20,16 +20,18 @@ import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
+import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeManager;
-import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
+import org.xtreemfs.mrc.stages.XLocSetCoordinator;
+import org.xtreemfs.mrc.stages.XLocSetCoordinatorCallback;
 import org.xtreemfs.mrc.utils.Converter;
+import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
-import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
@@ -39,7 +41,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeRequest
  * 
  * @author stender
  */
-public class RemoveReplicaOperation extends MRCOperation {
+public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoordinatorCallback {
     
     public RemoveReplicaOperation(MRCRequestDispatcher master) {
         super(master);
@@ -63,11 +65,14 @@ public class RemoveReplicaOperation extends MRCOperation {
         StorageManager sMan;
         FileMetadata file;
         String volumeId;
+        String fileId;
         
         if (rqArgs.hasFileId()) {
             
+            fileId = rqArgs.getFileId();
+
             // parse volume and file ID from global file ID
-            GlobalFileIdResolver idRes = new GlobalFileIdResolver(rqArgs.getFileId());
+            GlobalFileIdResolver idRes = new GlobalFileIdResolver(fileId);
             volumeId = idRes.getVolumeId();
             
             sMan = vMan.getStorageManager(idRes.getVolumeId());
@@ -90,6 +95,9 @@ public class RemoveReplicaOperation extends MRCOperation {
             res.checkIfFileDoesNotExist();
             file = res.getFile();
             
+            // TODO(jdillmann): Move to MRCHelper.createGlobalFileId(VolumeInfo volume, FileMetadata file)
+            fileId = sMan.getVolumeInfo().getId() + ":" + file.getId();
+
             // check whether the path prefix is searchable
             faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser,
                     rq.getDetails().groupIds);
@@ -165,11 +173,38 @@ public class RemoveReplicaOperation extends MRCOperation {
                         + "least one remaining replica that is full or complete");
         }
         
+        XLocSetCoordinator coordinator = master.getXLocSetCoordinator();
+        XLocSetCoordinator.RequestMethod m = coordinator.removeReplicas(fileId, file, oldXLocList, newXLocList, rq,
+                this);
+
+        // Make an update with the RequestMethod as context and the Coordinator as callback. This will enqueue
+        // the RequestMethod when the update is complete
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(coordinator, m);
+
+        // lock the replica
+        sMan.setXAttr(file.getId(), StorageManager.SYSTEM_UID, StorageManager.SYS_ATTR_KEY_PREFIX
+                + XLocSetCoordinator.XLOCSET_CHANGE_ATTR_KEY, String.valueOf(true).getBytes(), update);
+        update.execute();
+    }
+
+    @Override
+    public void installXLocSet(MRCRequest rq, String fileId, XLocList xLocList, XLocList oldXLocList)
+            throws Throwable {
+
+        final VolumeManager vMan = master.getVolumeManager();
+        final GlobalFileIdResolver idRes = new GlobalFileIdResolver(fileId);
+        final StorageManager sMan = vMan.getStorageManager(idRes.getVolumeId());
+
+        // retrieve the file metadata
+        final FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
+        if (file == null)
+            throw new UserException(POSIXErrno.POSIX_ERROR_ENOENT, "file '" + fileId + "' does not exist");
+
         // assign the new XLoc list
-        file.setXLocList(newXLocList);
-        
+        file.setXLocList(xLocList);
+
         // remove the read-only flag if only one replica remains
-        if (newXLocList.getReplicaCount() == 1)
+        if (xLocList.getReplicaCount() == 1)
             file.setReadOnly(false);
         
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
@@ -177,8 +212,13 @@ public class RemoveReplicaOperation extends MRCOperation {
         // update the X-Locations list
         sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
         
+        // unlock the replica
+        sMan.setXAttr(file.getId(), StorageManager.SYSTEM_UID, StorageManager.SYS_ATTR_KEY_PREFIX
+                + XLocSetCoordinator.XLOCSET_CHANGE_ATTR_KEY, null, update);
+
         // create a deletion capability for the replica
-        Capability deleteCap = new Capability(volumeId + ":" + file.getId(), FileAccessManager.NON_POSIX_DELETE, master
+        Capability deleteCap = new Capability(idRes.getVolumeId() + ":" + file.getId(),
+                FileAccessManager.NON_POSIX_DELETE, master
                 .getConfig().getCapabilityTimeout(), Integer.MAX_VALUE, ((InetSocketAddress) rq.getRPCRequest()
                 .getSenderAddress()).getAddress().getHostAddress(), file.getEpoch(), false, !sMan.getVolumeInfo()
                 .isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
@@ -188,7 +228,7 @@ public class RemoveReplicaOperation extends MRCOperation {
         
         // convert xloc list
         XLocSet.Builder xLocSet = Converter.xLocListToXLocSet(oldXLocList);
-        
+
         // wrap xcap and xloc list
         FileCredentials fc = FileCredentials.newBuilder().setXcap(deleteCap.getXCap()).setXlocs(xLocSet).build();
         

@@ -10,5 +10,6 @@ import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.metadata.XLocList;
 
 public interface XLocSetCoordinatorCallback {
-    public void installXLocSet(MRCRequest rq, String fileId, XLocList xLocList) throws Throwable;
+    public void installXLocSet(MRCRequest rq, String fileId, XLocList newXLocList, XLocList prevXLocList)
+            throws Throwable;
 }
