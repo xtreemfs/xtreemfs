@@ -353,11 +353,6 @@ message xtreemfs_xloc_set_invalidateResponse {
   optional ReplicaStatus status = 2;
 }
 
-message xtreemfs_xloc_set_installRequest {
-  required FileCredentials file_credentials = 1;
-  required string file_id = 2;
-}
-
 message xtreemfs_rwr_fetch_invalidatedRequest {
   required FileCredentials file_credentials = 1;
   required string file_id = 2;
@@ -569,15 +564,10 @@ service OSDService {
     option(proc_id)=81;
   };
 
-  // Installs a new version of a XLocationSet
-  rpc xtreemfs_xloc_set_install(xtreemfs_xloc_set_installRequest) returns(emptyResponse) {
-    option(proc_id)=82;
-  };
-
-  // Instructs Replica to update to the AuthoritativeReplicaState 
-  // This operation can only be called when the Replica is invalidated or new
+  // Instructs a replica to update to the AuthoritativeReplicaState 
+  // This operation can only be called when the replica is invalidated or new
   rpc xtreemfs_rwr_fetch_invalidated(xtreemfs_rwr_fetch_invalidatedRequest) returns(emptyResponse) {
-    option(proc_id)=83;
+    option(proc_id)=82;
   };
 
 }
