@@ -13,13 +13,13 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.List;
 
-import org.apache.commons.net.util.SubnetUtils;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMapping;
@@ -139,8 +139,39 @@ public class NetUtils {
     }
     
     private static String getNetworkCIDR(InetAddress addr, short prefixLength) {
-        SubnetUtils subnet = new SubnetUtils(addr.getHostAddress() + "/" + prefixLength);
-        return (subnet.getInfo().getNetworkAddress() + "/" + prefixLength);
+        byte[] raw = addr.getAddress();
+
+        // If the address is more then 32bit long it has to be an v6 address.
+        boolean isV6 = raw.length > 4;
+
+        // Get the number of fields that are network specific and null the remaining host fields.
+        int networkFields = prefixLength / 8;
+        for (int i = networkFields + 1; i < raw.length; i++) {
+            raw[i] = 0x00;
+        }
+
+        // Get the remaining bytes attributed to the network amidst a byte field.
+        int networkRemainder = prefixLength % 8;
+        if (networkFields < raw.length) {
+            // Construct a 8bit mask, with bytes set for the network.
+            byte mask = (byte) (0xFF << (8 - networkRemainder));
+            raw[networkFields] = (byte) (raw[networkFields] & mask);
+        }
+
+        StringBuilder sb = new StringBuilder();
+
+        // Use the InetAddress implementation to convert the raw byte[] to a string.
+        try {
+            sb.append(InetAddress.getByAddress(raw).getHostAddress());
+        } catch (UnknownHostException e) {
+            // This should never happen, since the foundation of every calculation is the byte array
+            // returned by a valid InetAddress
+            throw new RuntimeException(e);
+        }
+
+        sb.append("/").append(prefixLength);
+
+        return sb.toString();
     }
 
     public static void main(String[] args) throws Exception {
