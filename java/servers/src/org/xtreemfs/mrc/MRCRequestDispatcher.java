@@ -314,7 +314,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
         statusServer.start();
         
-        heartbeatThread = new HeartbeatThread("MRC Heartbeat Thread", dirClient, config.getUUID(), gen, config, false);
+        heartbeatThread = new HeartbeatThread("MRC Heartbeat Thread", dirClient, config.getUUID(), gen, config, false,
+                config.isUsingRenewalSignal());
         heartbeatThread.setLifeCycleListener(this);
         
         onCloseReplicationThread = new OnCloseReplicationThread(this);

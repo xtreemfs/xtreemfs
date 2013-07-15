@@ -1090,6 +1090,14 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & MRCs and OSDs all synchronize their clocks with the directory service to ensure a loose clock synchronization of all services. This is required for leases to work correctly. This parameter defines the interval in milliseconds between time updates from the directory service.
 \end{tabular}
 
+\subsubsection{\texttt{renewal\_signal} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & MRC, OSD\\
+ Values   & true, false\\
+ Default  & false\\
+ Description & If set to true, the service will try to register a signal handler for USR2 upon which it renews its address mapping. Since some VMs are using USR2 internally, this parameter should be used together with the VM option -XX:+UseAltSigs.
+\end{tabular}
+
 \subsubsection{\texttt{renew\_to\_caps} \textit{optional}}
 \begin{tabular}{lp{10cm}}
  Services & MRC\\

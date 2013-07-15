@@ -40,6 +40,9 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
+
 /**
  * A thread that regularly sends a heartbeat signal with fresh service data to the Directory Service.
  */
@@ -112,8 +115,8 @@ public class HeartbeatThread extends LifeCycleThread {
         authNone = Auth.newBuilder().setAuthType(AuthType.AUTH_NONE).build();
     }
 
-    public HeartbeatThread(String name, DIRClient client, ServiceUUID uuid,
-            ServiceDataGenerator serviceDataGen, ServiceConfig config, boolean advertiseUDPEndpoints) {
+    public HeartbeatThread(String name, DIRClient client, ServiceUUID uuid, ServiceDataGenerator serviceDataGen,
+            ServiceConfig config, boolean advertiseUDPEndpoints, boolean useAddressRenewalSignal) {
 
         super(name);
 
@@ -136,6 +139,10 @@ public class HeartbeatThread extends LifeCycleThread {
             } else {
                 proto = Schemes.SCHEME_PBRPCS;
             }
+        }
+
+        if (useAddressRenewalSignal) {
+            enableAddressRenewalSignal();
         }
 
         this.lastHeartbeat = TimeSync.getGlobalTime();
@@ -571,5 +578,38 @@ public class HeartbeatThread extends LifeCycleThread {
         synchronized (updateIntervallMonitor) {
             updateIntervallMonitor.notifyAll();
         }
+    }
+
+    /**
+     * Enable a signal handler for USR2 which will trigger the the address mapping renewal.
+     * 
+     * Since it is possible, that certain VMs are using the USR2 signal internally, the server should 
+     * be started with the -XX:+UseAltSigs flag when signal usage is desired.
+     * 
+     * @return true if the signals could be enabled.
+     */
+    private boolean enableAddressRenewalSignal() {
+
+        final HeartbeatThread hbt = this;
+
+        // TODO(jdillmann): Test on different VMs and operating systems.
+        try {
+            Signal.handle(new Signal("USR2"), new SignalHandler() {
+
+                @Override
+                public void handle(Signal signal) {
+                    // If the HeartbeatThread is still alive, renew the addresses and send them to the DIR.
+                    if (hbt != null) {
+                        hbt.renewAddressMappings();
+                    }
+                }
+            });
+
+        } catch (IllegalArgumentException e) {
+            Logging.logMessage(Logging.LEVEL_WARN, this, "Could not register SignalHandler for USR2");
+            return false;
+        }
+
+        return true;
     }
 }

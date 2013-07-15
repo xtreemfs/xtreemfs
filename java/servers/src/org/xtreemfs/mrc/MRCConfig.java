@@ -58,6 +58,7 @@ public class MRCConfig extends ServiceConfig {
             Parameter.SNMP_ACL,
             Parameter.FAILOVER_MAX_RETRIES,
             Parameter.FAILOVER_WAIT,
+            Parameter.USE_RENEWAL_SIGNAL
             };
     /*
      * @formatter:on
@@ -134,5 +135,9 @@ public class MRCConfig extends ServiceConfig {
      */
     public void checkConfig() {
         super.checkConfig(mrcParameter);
+    }
+
+    public boolean isUsingRenewalSignal() {
+        return (Boolean) parameter.get(Parameter.USE_RENEWAL_SIGNAL);
     }
 }

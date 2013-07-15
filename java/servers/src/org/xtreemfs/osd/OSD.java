@@ -11,9 +11,6 @@ package org.xtreemfs.osd;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
-
 public class OSD {
     
     private OSDRequestDispatcher dispatcher;
@@ -69,25 +66,6 @@ public class OSD {
                 }
             System.exit(1);
         }
-        
-        // try registering a handler for the USR2 signal
-        // the VM should be instructed to use different signals with the -XX:+UseAltSigs flag
-        // TODO(jdillmann): Test on different VMs and operating systems
-        try {
-            Signal.handle(new Signal("USR2"), new SignalHandler() {
-
-                @Override
-                public void handle(Signal signal) {
-                    if (dispatcher != null) {
-                        // instruct dispatcher.heartbeatThread to renew the address mappings and send them to the DIR
-                        dispatcher.renewAddressMappings();
-                    }
-                }
-            });
-        } catch (IllegalArgumentException e) {
-            Logging.logMessage(Logging.LEVEL_WARN, config.getUUID(), "Could not register SignalHandler for USR2");
-        }
-
     }
     
     public void shutdown() {

@@ -77,7 +77,8 @@ public class OSDConfig extends ServiceConfig {
             Parameter.VIVALDI_MAX_RETRIES_FOR_A_REQUEST,
             Parameter.VIVALDI_MAX_REQUEST_TIMEOUT_IN_MS,
             Parameter.VIVALDI_TIMER_INTERVAL_IN_MS,
-            Parameter.STORAGE_THREADS
+            Parameter.STORAGE_THREADS,
+            Parameter.USE_RENEWAL_SIGNAL
     };
     /*
      * @formatter:on   
@@ -281,5 +282,9 @@ public class OSDConfig extends ServiceConfig {
 
     public int getStorageThreads() {
         return (Integer) parameter.get(Parameter.STORAGE_THREADS);
+    }
+
+    public boolean isUsingRenewalSignal() {
+        return (Boolean) parameter.get(Parameter.USE_RENEWAL_SIGNAL);
     }
 }
