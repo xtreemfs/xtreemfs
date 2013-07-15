@@ -38,27 +38,27 @@ public class NetUtils {
      */
     public static List<AddressMapping.Builder> getReachableEndpoints(int port, String protocol) throws IOException {
         
-        List<AddressMapping.Builder> endpoints = new ArrayList(10);
+        List<AddressMapping.Builder> endpoints = new ArrayList<AddressMapping.Builder>(10);
         
-        // first, try to find a globally reachable endpoint
+        // Try to find the global address by resolving the local hostname.
+        String localHostAddress = null;
+        try {
+            localHostAddress = getHostAddress(InetAddress.getLocalHost());
+        } catch (UnknownHostException e) {
+            Logging.logMessage(Logging.LEVEL_WARN, Category.net, null, "Could not resolve the local hostnamme.",
+                    new Object[0]);
+        }
+
+        // Use every ip, that is assigned to an interface, and its corresponding network as an endpoint.
         Enumeration<NetworkInterface> ifcs = NetworkInterface.getNetworkInterfaces();
         while (ifcs.hasMoreElements()) {
-            // TODO(jdillmann): check if the NetworkInterface.isUp() || isLoopback() or continue
             NetworkInterface ifc = ifcs.nextElement();
+            
+            if (ifc.isLoopback() || !ifc.isUp())
+                continue;
+            
             List<InterfaceAddress> addrs = ifc.getInterfaceAddresses();
-            
-            // prefer global addresses to local ones
-            Collections.sort(addrs, new Comparator<InterfaceAddress>() {
-                public int compare(InterfaceAddress o1, InterfaceAddress o2) {
-                    int o1global = o1.getAddress().isLinkLocalAddress() ? -1 : 1;
-                    int o2global = o2.getAddress().isLinkLocalAddress() ? -1 : 1;
-                    return o1global - o2global;
-                }
-
-            });
-            
             for (InterfaceAddress addr : addrs) {
-                
                 InetAddress inetAddr = addr.getAddress();
 
                 // ignore local and wildcard addresses
@@ -67,13 +67,15 @@ public class NetUtils {
                 
                 final String hostAddr = getHostAddress(inetAddr);
                 final String uri = getURI(protocol, inetAddr, port);
+                final String network = getNetworkCIDR(inetAddr, addr.getNetworkPrefixLength());
                 AddressMapping.Builder amap = AddressMapping.newBuilder().setAddress(hostAddr).setPort(port)
                         .setProtocol(protocol).setTtlS(3600).setUri(uri).setVersion(0).setUuid("");
 
-                if (inetAddr.isSiteLocalAddress()) {
-                    amap.setMatchNetwork(getNetworkCIDR(inetAddr, addr.getNetworkPrefixLength()));
-                } else {
+                // Add the wildcard network if this is the local host address.
+                if (hostAddr.equals(localHostAddress)) {
                     amap.setMatchNetwork("*");
+                } else {
+                    amap.setMatchNetwork(network);
                 }
                 
                 endpoints.add(amap);
@@ -84,13 +86,22 @@ public class NetUtils {
         if (endpoints.isEmpty()) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.net, null,
                 "could not find a valid IP address, will use 127.0.0.1 instead", new Object[0]);
-            //endpoints.add(new AddressMapping("", 0, protocol, "127.0.0.1", port, "*", 3600, getURI(protocol, InetAddress.getLocalHost(), port)));
-            AddressMapping.Builder amap = AddressMapping.newBuilder().setAddress("127.0.0.1").setPort(port).setProtocol(protocol).setTtlS(3600).setMatchNetwork("*").setUri(getURI(protocol, InetAddress.getLocalHost(), port)).setVersion(0).setUuid("");
+            AddressMapping.Builder amap = AddressMapping.newBuilder().setAddress("127.0.0.1").setPort(port)
+                    .setProtocol(protocol).setTtlS(3600).setMatchNetwork("*")
+                    .setUri(getURI(protocol, InetAddress.getLocalHost(), port)).setVersion(0).setUuid("");
             endpoints.add(amap);
         }
         
+        // The sorting will assure globally reachable endpoints are at the head of the collection.
+        Collections.sort(endpoints, new Comparator<AddressMapping.Builder>() {
+            public int compare(AddressMapping.Builder o1, AddressMapping.Builder o2) {
+                int o1global = "*".equals(o1.getMatchNetwork()) ? -1 : 1;
+                int o2global = "*".equals(o2.getMatchNetwork()) ? -1 : 1;
+                return o1global - o2global;
+            }
+        });
+
         return endpoints;
-        
     }
 
     public static String getHostAddress(InetAddress host) {
@@ -188,7 +199,7 @@ public class NetUtils {
         
         System.out.println("\nsuitable network interfaces: ");
         for (AddressMapping.Builder endpoint : NetUtils.getReachableEndpoints(32640, "http"))
-            System.out.println(endpoint);
+            System.out.println(endpoint.build().toString());
     }
     
 }

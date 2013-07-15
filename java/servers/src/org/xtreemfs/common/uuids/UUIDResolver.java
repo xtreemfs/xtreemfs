@@ -11,6 +11,8 @@ package org.xtreemfs.common.uuids;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -178,15 +180,17 @@ public final class UUIDResolver extends Thread {
 
             List<AddressMapping> mappings = ams.getMappingsList();
 
-            // Prefer local networks over global ones
-            // Collections.sort(mappings, new Comparator<AddressMapping>() {
-            // public int compare(AddressMapping o1, AddressMapping o2) {
-            // int o1global = "*".equals(o1.getMatchNetwork()) ? -1 : 1;
-            // int o2global = "*".equals(o2.getMatchNetwork()) ? -1 : 1;
-            // return o1global - o2global;
-            // }
-            // });
+            // Sort the mappings and prefer local networks over globals ones.
+            Collections.sort(mappings, new Comparator<AddressMapping>() {
+                public int compare(AddressMapping o1, AddressMapping o2) {
+                    int o1global = "*".equals(o1.getMatchNetwork()) ? 1 : -1;
+                    int o2global = "*".equals(o2.getMatchNetwork()) ? 1 : -1;
+                    return o1global - o2global;
+                }
+            });
 
+            // Iterate through the mappings and look for a matching network.
+            // Since the mappings are sorted, global networks will be accessed only if no local network matches.
             for (AddressMapping addrMapping : mappings) {
                 final String network = addrMapping.getMatchNetwork();
                 if ((myNetworks.contains(network) || (network.equals("*"))) && ((protocol == null) || addrMapping.getProtocol().equals(protocol))) {
