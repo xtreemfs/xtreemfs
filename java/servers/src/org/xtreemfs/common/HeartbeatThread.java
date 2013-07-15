@@ -106,6 +106,8 @@ public class HeartbeatThread extends LifeCycleThread {
 
     private volatile boolean           renewAddressMappings      = false;
 
+    private Object                     updateIntervallMonitor    = new Object();
+
     static {
         authNone = Auth.newBuilder().setAuthType(AuthType.AUTH_NONE).build();
     }
@@ -139,6 +141,7 @@ public class HeartbeatThread extends LifeCycleThread {
         this.lastHeartbeat = TimeSync.getGlobalTime();
     }
 
+    // TODO(jdillmann): Discuss if the synchronization is really needed, since its not used anywhere else.
     @Override
     public void shutdown() {
         try {
@@ -240,12 +243,14 @@ public class HeartbeatThread extends LifeCycleThread {
                 
                 
                 if (renewAddressMappings) {
+                    renewAddressMappings = false;
                     try {
                         registerAddressMappings();
-                        renewAddressMappings = false;
                     } catch (IOException ex) {
                         Logging.logMessage(Logging.LEVEL_ERROR, this,
                                 "requested renewal of address mappings failed: %s", ex.toString());
+                        // If an error occurred, the renewal has to be rescheduled.
+                        renewAddressMappings = true;
                     } catch (InterruptedException ex) {
                         quit = true;
                         break;
@@ -261,11 +266,21 @@ public class HeartbeatThread extends LifeCycleThread {
                     pauseLock.notifyAll();
                 }
 
-                try {
-                    Thread.sleep(UPDATE_INTERVAL);
-                } catch (InterruptedException e) {
-                    // ignore
+
+                // If no renewal request is pending, this HeartbeatThread can wait for the next regular UPDATE_INTERVAL.
+                if (!renewAddressMappings) {
+                    try {
+                        synchronized (updateIntervallMonitor) {
+                            updateIntervallMonitor.wait(UPDATE_INTERVAL);
+                        }
+                    } catch (InterruptedException e) {
+                        // ignore
+                        // TODO(jdillmann): Ask why the interrupts above can terminate the thread and this one won't. If
+                        // every InterruptedEx should make this Thread stop the run method could be restructured.
+                    }
+
                 }
+
             }
 
             notifyStopped();
@@ -547,9 +562,14 @@ public class HeartbeatThread extends LifeCycleThread {
     }
 
     /**
-     * Renew the address mappings with the next periodically update defined by {@link #UPDATE_INTERVAL} .
+     * Renew the address mappings immediately (HeartbeatThread will wake up when this is called).
      */
     public void renewAddressMappings() {
         renewAddressMappings = true;
+
+        // To make the changes immediate, the thread has to be notified if it is sleeping.
+        synchronized (updateIntervallMonitor) {
+            updateIntervallMonitor.notifyAll();
+        }
     }
 }
