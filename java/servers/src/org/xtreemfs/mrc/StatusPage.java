@@ -48,7 +48,25 @@ public class StatusPage extends StatusServerModule {
 
     private final String                      statusPageTemplate;
     private MRCRequestDispatcher              master;
+
+    /**
+     * opNames contains a mapping from numerical operation ids to their textual representation. 
+     * It is used by the static method {@link #getOpName} and has therefore to be statically initialized.
+     */
     private static final Map<Integer, String> opNames;
+    static {
+        opNames = new HashMap<Integer, String>();
+        for (Field field : MRCServiceConstants.class.getDeclaredFields()) {
+            if (field.getName().startsWith("PROC_ID"))
+                try {
+                    opNames.put(field.getInt(null), field.getName().substring("PROC_ID_".length()).toLowerCase());
+                } catch (IllegalArgumentException e) {
+                    Logging.logError(Logging.LEVEL_ERROR, null, e);
+                } catch (IllegalAccessException e) {
+                    Logging.logError(Logging.LEVEL_ERROR, null, e);
+                }
+        }
+    }
 
     public StatusPage() {
         StringBuffer sb = StatusServerHelper.readTemplate("org/xtreemfs/mrc/templates/status.html");
@@ -96,19 +114,13 @@ public class StatusPage extends StatusServerModule {
     public void shutdown() {
     }
 
-    static {
-        opNames = new HashMap<Integer, String>();
-        for (Field field : MRCServiceConstants.class.getDeclaredFields()) {
-            if (field.getName().startsWith("PROC_ID"))
-                try {
-                    opNames.put(field.getInt(null), field.getName().substring("PROC_ID_".length()).toLowerCase());
-                } catch (IllegalArgumentException e) {
-                    Logging.logError(Logging.LEVEL_ERROR, null, e);
-                } catch (IllegalAccessException e) {
-                    Logging.logError(Logging.LEVEL_ERROR, null, e);
-                }
-        }
-    }
+    /**
+     * Returns the textual representation of an operation defined in {@link MRCServiceConstants}.
+     * 
+     * @param opId
+     *            numeric if of an operation.
+     * @return The textual representation of the operation or null if the opId does not exist.
+     */
     public static String getOpName(int opId) {
         String name = opNames.get(opId);
         return name == null ? null : name;
