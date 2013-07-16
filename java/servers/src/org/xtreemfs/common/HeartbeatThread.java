@@ -138,7 +138,7 @@ public class HeartbeatThread extends LifeCycleThread {
     }
 
     @Override
-    public synchronized void shutdown() {
+    public void shutdown() {
         try {
             if (client.clientIsAlive()) {
                 client.xtreemfs_service_offline(null, authNone, uc, uuid.toString(), 1);
