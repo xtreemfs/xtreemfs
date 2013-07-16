@@ -49,3 +49,6 @@ check_java
 
 exec $JAVA_HOME/bin/java -ea -cp $XTREEMFS/java/servers/dist/XtreemFS.jar:$XTREEMFS/java/foundation/dist/Foundation.jar:$XTREEMFS/java/lib/*:/usr/share/java/XtreemFS.jar:/usr/share/java/protobuf-java-2.3.0.jar:/usr/share/java/Foundation.jar:. \
   org.xtreemfs.sandbox.benchmark.xtfs_benchmark $*
+
+# exec $JAVA_HOME/bin/java -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=3128 -ea -cp $XTREEMFS/java/servers/dist/XtreemFS.jar:$XTREEMFS/java/foundation/dist/Foundation.jar:$XTREEMFS/java/lib/*:/usr/share/java/XtreemFS.jar:/usr/share/java/protobuf-java-2.3.0.jar:/usr/share/java/Foundation.jar:. \
+  # org.xtreemfs.sandbox.benchmark.xtfs_benchmark $*
