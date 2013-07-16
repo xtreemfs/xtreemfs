@@ -1,0 +1,244 @@
+#!/bin/bash
+
+### BEGIN INIT INFO
+# Provides:          xtreemfs-osd
+# Required-Start:    $network $remote_fs
+# Required-Stop:     $network $remote_fs
+# Should-Start:      xtreemfs-dir
+# Should-Stop:       $null
+# Default-Start:     3 5
+# Default-Stop:      0 1 2 6
+# Short-Description: XtreemFS OSD
+# Description:       XtreemFS Object Storage Device (OSD). http://www.xtreemfs.org/
+### END INIT INFO
+
+# Source function library.
+if [ -e /lib/lsb/init-functions ]; then
+  . /lib/lsb/init-functions
+else
+  . /etc/init.d/functions
+fi
+
+XTREEMFS_USER=xtreemfs
+
+LOCKDIR=/var/lock/subsys
+
+# List of OSD instances which shall be started, seperated by spaces.
+# For every OSD there has to be a configuration file.
+OSD_INSTANCES="osd01 osd02 osd03"
+
+# OSD specific options. Use %OSDNAME% which will be substituted.
+LOCKFILE_OSD_GENERIC=$LOCKDIR/xtreemfs-%OSDNAME%
+
+PID_OSD_GENERIC=/var/run/xtreemfs_%OSDNAME%.pid
+
+CONFIG_OSD_GENERIC=/etc/xos/xtreemfs/%OSDNAME%.config.properties
+
+LOG_OSD_GENERIC=/var/log/xtreemfs/%OSDNAME%.log
+
+if [ -z $JAVA_HOME ]; then
+  export JAVA_HOME=/usr
+fi
+JAVA_CALL="$JAVA_HOME/bin/java -ea -cp /usr/share/java/XtreemFS.jar:/usr/share/java/BabuDB.jar:/usr/share/java/Flease.jar:/usr/share/java/protobuf-java-2.3.0.jar:/usr/share/java/Foundation.jar:/usr/share/java/jdmkrt.jar:/usr/share/java/jdmktk.jar:/usr/share/java/commons-codec-1.3.jar"
+
+# For SELinux we need to use 'runuser' not 'su'
+if [ -x "/sbin/runuser" ]; then
+  SU="/sbin/runuser"
+else
+  SU="/bin/su"
+fi
+
+pre_check() {
+  LOG_OSD="$1"
+  CONFIG_OSD="$2"
+  exists=`grep -c $XTREEMFS_USER /etc/passwd`
+  if [ $exists -eq 0 ]; then
+    echo "User $XTREEMFS_USER does not exist. Create it first."
+    exit 1
+  fi
+  log_directory=`dirname $LOG_OSD`
+  if [ ! -e $log_directory ]; then
+    echo "Directory for logfiles $log_directory does not exist. Create it first."
+    exit 1
+  fi
+
+  if [ ! -f "$CONFIG_OSD" ]; then
+    echo -e "Config file not found: $CONFIG_OSD"
+    echo
+    exit 1
+  fi
+
+}
+
+get_osd_list() {
+  OSD_LIST=""
+  if [ -n "$1" ]; then
+    # Check if given OSD name in list of allowed OSDs.
+    for osd in $OSD_INSTANCES; do
+      [ "$osd" = "$1" ] && OSD_LIST="$1" && return 0
+    done
+
+    echo "OSD \"$1\" is not part of the list OSD_INSTANCES."
+    exit 1
+  else
+    OSD_LIST=$OSD_INSTANCES
+    return 0
+  fi
+}
+
+substitute_osdname() {
+  echo "$1" | sed -e "s/%OSDNAME%/$2/g"
+}
+
+pre_check_vars() {
+  for var in $LOG_OSD_GENERIC $PID_OSD_GENERIC $LOCKFILE_OSD_GENERIC $CONFIG_OSD_GENERIC; do
+    echo "$var" | grep %OSDNAME% >/dev/null || {
+    echo "%OSDNAME% parameter not found in variable: $var"
+    exit 1
+    }
+  done
+}
+
+start() {
+  get_osd_list "$1"
+  pre_check_vars
+
+  for osdname in $OSD_LIST; do
+    LOG_OSD=$(substitute_osdname "$LOG_OSD_GENERIC" "$osdname")
+    PID_OSD=$(substitute_osdname "$PID_OSD_GENERIC" "$osdname")
+    LOCKFILE_OSD=$(substitute_osdname "$LOCKFILE_OSD_GENERIC" "$osdname")
+    CONFIG_OSD=$(substitute_osdname "$CONFIG_OSD_GENERIC" "$osdname")
+
+    if [ -f $LOCKFILE_OSD ]; then
+      echo -n "XtreemFS Object Storage Device (OSD): $osdname already started"
+      echo
+      continue
+    fi
+
+    pre_check "$LOG_OSD" "$CONFIG_OSD"
+
+    echo >> $LOG_OSD
+    date >> $LOG_OSD
+    echo -e "Starting XtreemFS Object Storage Device (OSD): $osdname ... \n\n" >> $LOG_OSD
+
+    echo -n "Starting XtreemFS Object Storage Device (OSD): $osdname ... "
+    $SU -s /bin/bash $XTREEMFS_USER -c "$JAVA_CALL org.xtreemfs.osd.OSD $CONFIG_OSD" >> $LOG_OSD 2>&1 &
+    PROCPID=$!
+    echo $PROCPID > $PID_OSD
+    sleep 1s
+
+    if [ -e /proc/$PROCPID ]; then
+      echo "success"
+    else
+      echo "failed"
+      return 1
+    fi
+
+    if [ ! -d $LOCKDIR ]; then
+      mkdir -p $LOCKDIR
+    fi
+    touch $LOCKFILE_OSD
+
+  done
+
+  return 0
+}
+
+stop() {
+  get_osd_list "$1"
+  pre_check_vars
+
+  for osdname in $OSD_LIST; do
+    LOG_OSD=$(substitute_osdname "$LOG_OSD_GENERIC" "$osdname")
+    PID_OSD=$(substitute_osdname "$PID_OSD_GENERIC" "$osdname")
+    LOCKFILE_OSD=$(substitute_osdname "$LOCKFILE_OSD_GENERIC" "$osdname")
+    CONFIG_OSD=$(substitute_osdname "$CONFIG_OSD_GENERIC" "$osdname")
+
+    result=0
+    if [ -f $PID_OSD ]; then
+      echo -n "Stopping XtreemFS Object Storage Device (OSD): $osdname ... "
+      killproc -p $PID_OSD $SU
+      result=$?
+      if [ $result -eq 0 ]; then
+        rm -f $PID_OSD
+        echo "success"
+      else
+        echo "failed"
+      fi
+    else
+      echo "XtreemFS Object Storage Device (OSD) is not running"
+    fi
+
+    rm -f $LOCKFILE_OSD
+
+  done
+  return $result
+}
+
+status() {
+  get_osd_list "$1"
+  pre_check_vars
+
+  rc=0
+  for osdname in $OSD_LIST; do
+    LOG_OSD=$(substitute_osdname "$LOG_OSD_GENERIC" "$osdname")
+    PID_OSD=$(substitute_osdname "$PID_OSD_GENERIC" "$osdname")
+    LOCKFILE_OSD=$(substitute_osdname "$LOCKFILE_OSD_GENERIC" "$osdname")
+    CONFIG_OSD=$(substitute_osdname "$CONFIG_OSD_GENERIC" "$osdname")
+
+    if [ -f $PID_OSD ]; then
+      PROCPID=`cat $PID_OSD`
+      if [ ! -e /proc/$PROCPID ]; then
+        echo "XtreemFS Object Storage Device (OSD): $osdname has crashed"
+        rc=1
+      else
+        echo "XtreemFS Object Storage Device (OSD): $osdname is running"
+      fi
+    else
+      echo "XtreemFS Object Storage Device (OSD): $osdname is not running"
+      rc=3
+    fi
+  done
+
+  return $rc
+}
+
+# See how we were called.
+case "$1" in
+  start)
+    start "$2"
+    result=$?
+    ;;
+  stop)
+    stop "$2"
+    result=$?
+    ;;
+  status)
+    status "$2"
+    result=$?
+    ;;
+  reload)
+    result=0
+    ;;
+  restart)
+    stop "$2" && sleep 1 && start "$2"
+    result=$?
+    ;;
+  try-restart)
+    ## Stop the service and if this succeeds (i.e. the
+    ## service was running before), start it again.
+    $0 status "$2" >/dev/null
+    if [ $? -eq 0 ]; then
+      $0 restart "$2"
+      result=$?
+    else
+      result=0
+    fi
+    ;;
+  *)
+    echo -e "Usage: $0 {start|stop|restart|reload|status|try-restart}\n"
+    result=1
+    ;;
+esac
+
+exit $result
