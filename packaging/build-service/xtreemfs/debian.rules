@@ -101,6 +101,9 @@ install: build
 	mkdir -p $(BUILD_DIR)-server/etc/init.d
 	mv    -t $(BUILD_DIR)-server/etc/init.d \
 	         $(BUILD_DIR)/etc/init.d/xtreemfs-*
+	mkdir -p $(BUILD_DIR)-server/usr/share/xtreemfs
+	mv    -t $(BUILD_DIR)-server/usr/share/xtreemfs \
+	         $(BUILD_DIR)/usr/share/xtreemfs/xtreemfs-osd-farm
 	mkdir -p $(BUILD_DIR)-server/etc/xos/xtreemfs
 	mv    -t $(BUILD_DIR)-server/etc/xos/xtreemfs \
 	         $(BUILD_DIR)/etc/xos/xtreemfs/*.properties \
