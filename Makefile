@@ -32,6 +32,7 @@ XTREEMFS_JAR_DIR=$(DESTDIR)/usr/share/java
 XTREEMFS_CONFIG_PARENT_DIR=$(DESTDIR)/etc/xos
 XTREEMFS_CONFIG_DIR=$(XTREEMFS_CONFIG_PARENT_DIR)/xtreemfs
 XTREEMFS_INIT_DIR=$(DESTDIR)/etc/init.d
+XTREEMFS_SHARE_DIR=$(DESTDIR)/usr/share/xtreemfs
 BIN_DIR=$(DESTDIR)/usr/bin
 SBIN_DIR=$(DESTDIR)/sbin
 MAN_DIR=$(DESTDIR)/usr/share/man/man1
@@ -118,6 +119,9 @@ install-server:
 	@cp etc/init.d/xtreemfs-* $(XTREEMFS_INIT_DIR)
 	@chmod a+x $(XTREEMFS_INIT_DIR)/xtreemfs-*
 
+	@mkdir -p $(XTREEMFS_SHARE_DIR)
+	@cp contrib/xtreemfs-osd-farm/xtreemfs-osd-farm $(XTREEMFS_SHARE_DIR)
+	
 	@echo "to complete the server installation, please execute $(XTREEMFS_CONFIG_DIR)/postinstall_setup.sh" 
 
 install-tools:
