@@ -157,7 +157,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
     final private UserCredentials                   userCredentialsBogus;
 
     /**
-     * 
+     *
      */
     public FileHandleImplementation(VolumeImplementation volume,
             String clientUuid, FileInfo fileInfo, XCap xcap,
@@ -186,7 +186,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.xtreemfs.common.libxtreemfs.FileHandle#read(org.xtreemfs.foundation
      * .pbrpc.generatedinterfaces.RPC .UserCredentials, org.xtreemfs.foundation.buffer.ReusableBuffer, int,
      * long)
@@ -297,7 +297,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.xtreemfs.common.libxtreemfs.FileHandle#write(org.xtreemfs.foundation
      * .pbrpc.generatedinterfaces. RPC.UserCredentials, org.xtreemfs.foundation.buffer.ReusableBuffer, int,
      * long)
@@ -312,7 +312,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * org.xtreemfs.common.libxtreemfs.FileHandle#write(org.xtreemfs.foundation.pbrpc.generatedinterfaces.
      * RPC.UserCredentials, byte[], int, int, long)
@@ -434,12 +434,10 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
                         request.build(), new CallGenerator<writeRequest, OSDWriteResponse>() {
 
                             @Override
-                            public RPCResponse<OSDWriteResponse> executeCall(InetSocketAddress server,
-                                    Auth authHeader, UserCredentials userCreds, writeRequest input)
-                                    throws IOException {
-                                // TODO Auto-generated method stub
+                            public RPCResponse<OSDWriteResponse> executeCall(InetSocketAddress server, Auth authHeader,
+                                    UserCredentials userCreds, writeRequest input) throws IOException {
                                 return osdServiceClient.write(server, authHeader, userCreds, input,
-                                        writeDataBuffer);
+                                        writeDataBuffer.createViewBuffer());
                             }
                         });
 
@@ -459,7 +457,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.xtreemfs.common.libxtreemfs.FileHandle#flush()
      */
     @Override
@@ -491,7 +489,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.xtreemfs.common.libxtreemfs.FileHandle#truncate(org.xtreemfs.foundation
      * .pbrpc.generatedinterfaces .RPC.UserCredentials, int)
      */
@@ -535,7 +533,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
     /**
      * Used by truncate() and Volume.openFile() to truncate the file to "newFileSize" on the OSD and update
      * the file size at the MRC.
-     * 
+     *
      * @throws AddressToUUIDNotFoundException
      * @throws IOException
      * @throws PosixErrorException
@@ -589,7 +587,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.xtreemfs.common.libxtreemfs.FileHandle#getAttr(org.xtreemfs.foundation
      * .pbrpc.generatedinterfaces .RPC.UserCredentials)
      */
@@ -601,7 +599,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.xtreemfs.common.libxtreemfs.FileHandle#acquireLock(org.xtreemfs.
      * foundation.pbrpc.generatedinterfaces .RPC.UserCredentials, int, long, long, boolean, boolean)
      */
@@ -691,7 +689,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.xtreemfs.common.libxtreemfs.FileHandle#checkLock(org.xtreemfs.foundation
      * .pbrpc.generatedinterfaces .RPC.UserCredentials, int, long, long, boolean)
      */
@@ -745,7 +743,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.xtreemfs.common.libxtreemfs.FileHandle#releaseLock(org.xtreemfs.
      * foundation.pbrpc.generatedinterfaces .RPC.UserCredentials, int, long, long, boolean)
      */
@@ -763,7 +761,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.xtreemfs.common.libxtreemfs.FileHandle#releaseLock(org.xtreemfs.
      * foundation.pbrpc.generatedinterfaces .RPC.UserCredentials,
      * org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock)
@@ -804,7 +802,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.xtreemfs.common.libxtreemfs.FileHandle#releaseLockOfProcess(int)
      */
     @Override
@@ -815,7 +813,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /**
      * Releases "lock" with userCredentials from this fileHandle object.
-     * 
+     *
      * @param lock
      */
     protected void releaseLock(Lock lock) throws IOException, PosixErrorException,
@@ -825,7 +823,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.xtreemfs.common.libxtreemfs.FileHandle#pingReplica(org.xtreemfs.
      * foundation.pbrpc.generatedinterfaces .RPC.UserCredentials, java.lang.String)
      */
@@ -890,7 +888,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.xtreemfs.common.libxtreemfs.FileHandle#close()
      */
     @Override
@@ -1036,7 +1034,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /**
      * Sends pending file size updates synchronous (needed for flush/close).
-     * 
+     *
      * @throws IOException
      */
     protected void writeBackFileSize(OSDWriteResponse response, boolean closeFile) throws IOException,
