@@ -116,7 +116,7 @@ public class HeartbeatThread extends LifeCycleThread {
     }
 
     public HeartbeatThread(String name, DIRClient client, ServiceUUID uuid, ServiceDataGenerator serviceDataGen,
-            ServiceConfig config, boolean advertiseUDPEndpoints, boolean useAddressRenewalSignal) {
+            ServiceConfig config, boolean advertiseUDPEndpoints) {
 
         super(name);
 
@@ -141,14 +141,13 @@ public class HeartbeatThread extends LifeCycleThread {
             }
         }
 
-        if (useAddressRenewalSignal) {
+        if (config.isUsingMultihoming() && config.isUsingRenewalSignal()) {
             enableAddressRenewalSignal();
         }
 
         this.lastHeartbeat = TimeSync.getGlobalTime();
     }
 
-    // TODO(jdillmann): Discuss if the synchronization is really needed, since its not used anywhere else.
     @Override
     public void shutdown() {
         try {
@@ -420,7 +419,6 @@ public class HeartbeatThread extends LifeCycleThread {
     }
 
     private void registerAddressMappings() throws InterruptedException, IOException {
-        // AddressMappingSet endpoints = null;
         List<AddressMapping.Builder> endpoints = null;
 
         // check if hostname or listen.address are set

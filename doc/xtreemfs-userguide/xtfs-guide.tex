@@ -949,7 +949,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Services & MRC, OSD\\
  Values   & String \\
  Default  & \\
- Description & If specified, it defines the host name that is used to register the service at the directory service. If not specified, the host address defined in \texttt{listen.address} will be used if specified. If neither \texttt{hostname} nor \texttt{listen.address} are specified, the service itself will search for externally reachable network interfaces and advertise their addresses.
+ Description & If specified and \texttt{multihoming.enabled} is \texttt{false}, it defines the host name that is used to register the service at the directory service. If not specified, the host address defined in \texttt{listen.address} will be used if specified. If neither \texttt{hostname} nor \texttt{listen.address} are specified, the service itself will search for externally reachable network interfaces and advertise their addresses.
 \end{tabular}
 
 \subsubsection{\texttt{http\_port}}
@@ -970,7 +970,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
 
 \subsubsection{\texttt{listen.address} \textit{optional}}
 \begin{tabular}{lp{10cm}}
- Services & OSD\\
+ Services & DIR, MRC, OSD\\
  Values   & IP address \\
  Default  & \\
  Description & If specified, it defines the interface to listen on. If not specified, the service will listen on all interfaces (any).
@@ -1050,6 +1050,22 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & Time to wait for a heartbeat message before sending an alert email. See \texttt{monitoring} parameters.
 \end{tabular}
 
+\subsubsection{\texttt{multihoming.enabled} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & MRC, OSD\\
+ Values   & true, false\\
+ Default  & false\\
+ Description & If set to \texttt{true}, the service will use every interface installed in the system and propagate their addresses to the DIR. If \texttt{hostname} is set, its address will be used as default. Else the service tries to discover the hostname itself. If this parameter is true, then \texttt{listen.address} must not be set. 
+\end{tabular}
+
+\subsubsection{\texttt{multihoming.renewal\_signal} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & MRC, OSD\\
+ Values   & true, false\\
+ Default  & false\\
+ Description & If set to \texttt{true}, the service will try to register a signal handler for USR2 upon which it renews its address mapping. Since some VMs are using USR2 internally, this parameter should be used together with the VM option -XX:+UseAltSigs.
+\end{tabular}
+
 \subsubsection{\texttt{no\_atime}}
 \begin{tabular}{lp{10cm}}
  Services & MRC\\
@@ -1088,14 +1104,6 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Values   & milliseconds \\
  Default  & 30,000\\
  Description & MRCs and OSDs all synchronize their clocks with the directory service to ensure a loose clock synchronization of all services. This is required for leases to work correctly. This parameter defines the interval in milliseconds between time updates from the directory service.
-\end{tabular}
-
-\subsubsection{\texttt{renewal\_signal} \textit{optional}}
-\begin{tabular}{lp{10cm}}
- Services & MRC, OSD\\
- Values   & true, false\\
- Default  & false\\
- Description & If set to true, the service will try to register a signal handler for USR2 upon which it renews its address mapping. Since some VMs are using USR2 internally, this parameter should be used together with the VM option -XX:+UseAltSigs.
 \end{tabular}
 
 \subsubsection{\texttt{renew\_to\_caps} \textit{optional}}

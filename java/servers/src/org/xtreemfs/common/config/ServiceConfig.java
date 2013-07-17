@@ -67,7 +67,8 @@ public class ServiceConfig extends Config {
             FAILOVER_WAIT("failover.wait_ms", 15 * 1000, Integer.class, false),
             MAX_CLIENT_Q("max_client_queue", 100, Integer.class, false),
             MAX_REQUEST_QUEUE_LENGTH("max_requests_queue_length", 1000, Integer.class, false),
-            USE_RENEWAL_SIGNAL("renewal_signal", false, Boolean.class, false ),
+            USE_MULTIHOMING("multihoming.enabled", false, Boolean.class, false),
+            USE_RENEWAL_SIGNAL("multihoming.renewal_signal", false, Boolean.class, false ),
             
             /*
              * DIR specific configuration parameter
@@ -722,5 +723,13 @@ public class ServiceConfig extends Config {
             }
         }
         this.checkSSLConfiguration();
+    }
+
+    public boolean isUsingRenewalSignal() {
+        return (Boolean) parameter.get(Parameter.USE_RENEWAL_SIGNAL);
+    }
+
+    public boolean isUsingMultihoming() {
+        return (Boolean) parameter.get(Parameter.USE_MULTIHOMING);
     }
 }

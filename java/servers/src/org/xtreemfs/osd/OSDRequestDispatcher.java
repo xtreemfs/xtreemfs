@@ -428,8 +428,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 return data.build();
             }
         };
-        heartbeatThread = new HeartbeatThread("OSD HB Thr", dirClient, config.getUUID(), gen, config, true,
-                config.isUsingRenewalSignal());
+        heartbeatThread = new HeartbeatThread("OSD HB Thr", dirClient, config.getUUID(), gen, config, true);
         
         statusServer = new StatusServer(ServiceType.SERVICE_TYPE_OSD, this, config.getHttpPort());
         statusServer.registerModule(new StatusPage());
