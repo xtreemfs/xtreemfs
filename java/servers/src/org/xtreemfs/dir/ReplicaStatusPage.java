@@ -43,6 +43,7 @@ public class ReplicaStatusPage extends StatusServerModule {
             this.template = template;
         }
 
+        @Override
         public String toString() {
             return template;
         }
@@ -125,8 +126,8 @@ public class ReplicaStatusPage extends StatusServerModule {
                         }
                     }
 
-                    // Add only OSDs with a status_page_url
-                    if (data.containsKey("status_page_url")) {
+                    // Add only OSDs with a status_page_url and are not shutdown (last_updated_s == 0).
+                    if (data.containsKey("status_page_url") && sreg.getLast_updated_s() > 0) {
                         osds.put(sreg.getUuid(), data);
                     }
                 }
