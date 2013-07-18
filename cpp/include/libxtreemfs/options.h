@@ -153,7 +153,7 @@ class Options {
   int max_read_tries;
   /** How often shall a failed write operation get retried? */
   int max_write_tries;
-  /** How long to wait after a failed request? */
+  /** How long to wait after a failed request at least? */
   int retry_delay_s;
   /** Maximum time until a connection attempt will be aborted. */
   int32_t connect_timeout_s;

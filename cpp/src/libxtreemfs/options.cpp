@@ -71,31 +71,21 @@ Options::Options()
   object_cache_size = 0;
 
   // Error Handling options.
-  // Depending on the values max{_read|_write}_tries and and (retry_delay_s or
-  // (connect_|request_)timeout_s), the _maximum_ time an operation does block
-  // is in the range:
-  // [(max_tries-1) * retry_delay_s, max_tries * connect_timeout_s]
-  // (assuming retry_delay_s <= connect_timeout_s).
+  // A RPC call may be retried up to "max{_read|_write|}_tries" times. The
+  // different parameters are considered depending on the operation
+  // (read, write, rest). Different parameters were introduced because Fuse
+  // under Linux does not allow to interrupt read() requests if the disk cache
+  // is involved and therefore it's not wise to retry read() requests by
+  // default.
   //
-  // Example: If there is only one replica available and the connect
-  //          attempt does always fail immediately (for instance because the
-  //          host is up and it refuses the connection), then the client does
-  //          wait retry_delay_s seconds between two attempts, in total
-  //          (max_tries-1) * retry_delay_s (-1 because it does not wait after
-  //          the last failed attempt).
+  // A RPC call will block at least for the minimum out of
+  // ("retry_delay_s", "connect_timeout_s", "request_timeout_s") and at most
+  // for the maximum out of the three parameters.
   //
-  //          However, if the attempt does not fail immediately (for instance
-  //          the host is not up and we have to wait for the timeout for the
-  //          request), the client will wait at least connect_timeout_s or
-  //          request_timeout_s seconds for the completion of every request.
-  //          The timeout values and retry_delay_s do not add up, i.e. the
-  //          client will only wait for the maximum of both.
-  //          In total, the maximum time will not exceed max_tries *
-  //          (connect_|request_)timeout_s).
-  //
-  //          With the default values, an unsuccessful operation may block
-  //          between ~10 and 40 minutes: [(15-1) seconds * 40 tries,
-  //                                       60 secs * 40].
+  // The parameter "retry_delay_s" exists to enforce a lower bound and avoid
+  // flooding the server. For example, an unsuccessful connect may return much
+  // earlier than "connect_timeout_s" (e.g. in most cases a connect with the
+  // error 'connection refused' returns immediately.).
   max_tries = 40;
   max_read_tries = 40;
   max_write_tries = 40;
