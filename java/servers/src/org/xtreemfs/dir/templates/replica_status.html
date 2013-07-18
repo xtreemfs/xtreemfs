@@ -294,7 +294,7 @@ function draw() {
     .classed("host", true);
   
   hostGroups.select("text.host")
-    .text(function(d,i){ return osds[osdURLs[i]["uuid"]]["name"]; })
+    .text(function(d,i){ return osds[osdURLs[i]["uuid"]]["uuid"]; })
     .attr("font-size", conf.hostStatusTextSize)
     .attr("fill", conf.hostStatusTextColor)
     .attr("text-anchor", "middle")
