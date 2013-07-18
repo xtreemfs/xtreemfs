@@ -106,7 +106,7 @@ public class ServiceConfig extends Config {
             IGNORE_CAPABILITIES("ignore_capabilities", false, Boolean.class, false),
             /** Maximum assumed drift between two server clocks. If the drift is higher, the system may not function properly. */
             FLEASE_DMAX_MS("flease.dmax_ms", 1000, Integer.class, false),
-            FLEASE_LEASE_TIMEOUT_MS("flease.lease_timeout_ms", 15000, Integer.class, false),
+            FLEASE_LEASE_TIMEOUT_MS("flease.lease_timeout_ms", 14000, Integer.class, false),
             /** Message timeout. Maximum allowed in-transit time for a Flease message. */
             FLEASE_MESSAGE_TO_MS("flease.message_to_ms", 500, Integer.class, false),
             FLEASE_RETRIES("flease.retries", 3, Integer.class, false),
