@@ -8,6 +8,7 @@ import java.util.Map;
 
 import org.xtreemfs.scheduler.data.OSDDescription;
 import org.xtreemfs.scheduler.data.Reservation;
+import org.xtreemfs.scheduler.data.ResourceSet;
 import org.xtreemfs.scheduler.exceptions.SchedulerException;
 
 public class ReservationSchedulerImplementation implements ReservationScheduler {
@@ -155,6 +156,25 @@ public class ReservationSchedulerImplementation implements ReservationScheduler 
 			}
 		}
 	}
+
+    @Override
+    public ResourceSet getFreeResources() {
+        ResourceSet result = new ResourceSet();
+        double freeCapacity = 0.0;
+        double freeIOPS = 0.0;
+        double freeSeqTP = 0.0;
+
+        for(OSDDescription osd: osds) {
+            freeCapacity += osd.getFreeResources().getCapacity();
+            freeIOPS += osd.getFreeResources().getIops();
+            freeSeqTP += osd.getFreeResources().getSeqTP();
+        }
+
+        result.setCapacity(freeCapacity);
+        result.setIops(freeIOPS);
+        result.setSeqTP(freeSeqTP);
+        return result;
+    }
 	
 	private OSDDescription getOSDByIdentifier(String identifier) {
 		for(OSDDescription osd: this.osds) {

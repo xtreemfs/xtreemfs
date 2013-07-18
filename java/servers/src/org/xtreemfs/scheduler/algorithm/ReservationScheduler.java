@@ -9,6 +9,7 @@ import java.util.Map;
 
 import org.xtreemfs.scheduler.data.OSDDescription;
 import org.xtreemfs.scheduler.data.Reservation;
+import org.xtreemfs.scheduler.data.ResourceSet;
 import org.xtreemfs.scheduler.exceptions.SchedulerException;
 
 /**
@@ -20,4 +21,5 @@ public interface ReservationScheduler {
     public void removeReservation(String volumeIdentifier);
     public void addReservations(Map<String, Reservation> reservations);
     public void reset();
+    public ResourceSet getFreeResources();
 }

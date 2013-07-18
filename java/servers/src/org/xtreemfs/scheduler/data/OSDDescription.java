@@ -158,7 +158,25 @@ public class OSDDescription {
 			return true;
 		}
 	}
-	
+
+    public ResourceSet getFreeResources() {
+        ResourceSet result = new ResourceSet();
+        double freeCapacity = this.getCapabilities().getCapacity();
+        double freeIOPS = this.getCapabilities().getIops();
+        double freeSeqTP = this.getCapabilities().getStreamingPerformance().get(this.getReservations().size());
+
+        for(Reservation r: this.getReservations()) {
+            freeCapacity -= r.getCapacity();
+            freeIOPS -= r.getRamdomThroughput();
+            freeSeqTP -= r.getStreamingThroughput();
+        }
+
+        result.setCapacity(freeCapacity);
+        result.setIops(freeIOPS);
+        result.setSeqTP(freeSeqTP);
+        return result;
+    }
+
 	private void getTypeFromInt(int x) {
 		switch(x) {
 		case 0:
