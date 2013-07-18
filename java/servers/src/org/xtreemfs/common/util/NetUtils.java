@@ -15,8 +15,6 @@ import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.List;
 
@@ -33,12 +31,18 @@ public class NetUtils {
      *            the port to assign to the mappings
      * @param protocol
      *            the protocol for the endpoint
+     * @param multihoming
+     *            set to false if only the first reachable address should be returned
      * @return a list of mappings
      * @throws IOException
      */
-    public static List<AddressMapping.Builder> getReachableEndpoints(int port, String protocol) throws IOException {
+    public static List<AddressMapping.Builder> getReachableEndpoints(int port, String protocol, boolean multihoming)
+            throws IOException {
         
         List<AddressMapping.Builder> endpoints = new ArrayList<AddressMapping.Builder>(10);
+        
+        AddressMapping.Builder firstGlobal = null;
+        AddressMapping.Builder firstLocal = null;
         
         // Try to find the global address by resolving the local hostname.
         String localHostAddress = null;
@@ -49,11 +53,12 @@ public class NetUtils {
                     new Object[0]);
         }
 
-        // Use every ip, that is assigned to an interface, and its corresponding network as an endpoint.
+        // Iterate over the existing network interfaces and their addresses
         Enumeration<NetworkInterface> ifcs = NetworkInterface.getNetworkInterfaces();
         while (ifcs.hasMoreElements()) {
             NetworkInterface ifc = ifcs.nextElement();
             
+            // Ignore loopback interfaces and interfaces that are down
             if (ifc.isLoopback() || !ifc.isUp())
                 continue;
             
@@ -61,27 +66,49 @@ public class NetUtils {
             for (InterfaceAddress addr : addrs) {
                 InetAddress inetAddr = addr.getAddress();
 
-                // ignore local and wildcard addresses
-                if (inetAddr.isLoopbackAddress() || inetAddr.isLinkLocalAddress() || inetAddr.isAnyLocalAddress())
+                // Ignore local, wildcard and multicast addresses
+                if (inetAddr.isLoopbackAddress() || inetAddr.isLinkLocalAddress() 
+                        || inetAddr.isAnyLocalAddress() || inetAddr.isMulticastAddress())
                     continue;
-                
+                                               
                 final String hostAddr = getHostAddress(inetAddr);
                 final String uri = getURI(protocol, inetAddr, port);
                 final String network = getNetworkCIDR(inetAddr, addr.getNetworkPrefixLength());
                 AddressMapping.Builder amap = AddressMapping.newBuilder().setAddress(hostAddr).setPort(port)
-                        .setProtocol(protocol).setTtlS(3600).setUri(uri).setVersion(0).setUuid("");
+                        .setMatchNetwork(network).setProtocol(protocol).setTtlS(3600).setUri(uri).setVersion(0)
+                        .setUuid("");
 
-                // Add the wildcard network if this is the local host address.
-                if (hostAddr.equals(localHostAddress)) {
-                    amap.setMatchNetwork("*");
+                if (!multihoming) {
+                    // If multihoming is disabled and this is the first local address, save it
+                    if (inetAddr.isSiteLocalAddress() && firstLocal == null) {
+                        firstLocal = amap;
+                    }
+                    
+                    // If it is the first global address, save it, too and stop looking for other ones
+                    if (!inetAddr.isSiteLocalAddress() && firstGlobal == null) {
+                        firstGlobal = amap;
+                    }
+
+                    if (firstGlobal != null)
+                        break;
                 } else {
-                    amap.setMatchNetwork(network);
+                    // For multihoming configurations add every endpoint 
+                    endpoints.add(amap);
                 }
-                
-                endpoints.add(amap);
             }
         }
         
+        // add the first global address if one is found, or the first local otherwise
+        if (!multihoming) {
+            AddressMapping.Builder endpoint = (firstGlobal != null) ? firstGlobal : firstLocal;
+            
+            if (endpoint != null) {
+                // Set the matching network to any
+                endpoint.setMatchNetwork("*");
+                endpoints.add(endpoint);
+            }
+        }
+
         // in case no IP address could be found at all, use 127.0.0.1 for local testing
         if (endpoints.isEmpty()) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.net, null,
@@ -92,15 +119,6 @@ public class NetUtils {
             endpoints.add(amap);
         }
         
-        // The sorting will assure globally reachable endpoints are at the head of the collection.
-        Collections.sort(endpoints, new Comparator<AddressMapping.Builder>() {
-            public int compare(AddressMapping.Builder o1, AddressMapping.Builder o2) {
-                int o1global = "*".equals(o1.getMatchNetwork()) ? -1 : 1;
-                int o2global = "*".equals(o2.getMatchNetwork()) ? -1 : 1;
-                return o1global - o2global;
-            }
-        });
-
         return endpoints;
     }
 
@@ -198,7 +216,7 @@ public class NetUtils {
         }
         
         System.out.println("\nsuitable network interfaces: ");
-        for (AddressMapping.Builder endpoint : NetUtils.getReachableEndpoints(32640, "http"))
+        for (AddressMapping.Builder endpoint : NetUtils.getReachableEndpoints(32640, "http", true))
             System.out.println(endpoint.build().toString());
     }
     

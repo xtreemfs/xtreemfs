@@ -7,7 +7,6 @@
  */
 package org.xtreemfs.test.common.uuid;
 
-import com.google.protobuf.Message.Builder;
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -91,7 +90,7 @@ public class UUIDResolverTest extends TestCase {
     }
 
     public void testSimpleMapping() throws Exception {
-        List<AddressMapping.Builder> mpgs = NetUtils.getReachableEndpoints(32636, "http");
+        List<AddressMapping.Builder> mpgs = NetUtils.getReachableEndpoints(32636, "http", false);
         mpgs.get(0).setUuid("MY_TEST_UUID");
         AddressMappingSet.Builder ams = AddressMappingSet.newBuilder();
         for (AddressMapping.Builder b : mpgs)

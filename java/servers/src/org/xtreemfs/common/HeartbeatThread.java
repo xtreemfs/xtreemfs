@@ -10,6 +10,7 @@ package org.xtreemfs.common;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -421,24 +422,65 @@ public class HeartbeatThread extends LifeCycleThread {
     private void registerAddressMappings() throws InterruptedException, IOException {
         List<AddressMapping.Builder> endpoints = null;
 
-        // check if hostname or listen.address are set
-        if ("".equals(config.getHostName()) && config.getAddress() == null) {
+        if (config.isUsingMultihoming() && config.getAddress() != null) {
+            throw new RuntimeException(ServiceConfig.Parameter.USE_MULTIHOMING.getPropertyString() + " and "
+                    + ServiceConfig.Parameter.LISTEN_ADDRESS.getPropertyString() + " parameters are incompatible");
+        }
 
-            endpoints = NetUtils.getReachableEndpoints(config.getPort(), proto);
+        if (config.isUsingMultihoming()) {
+            endpoints = NetUtils.getReachableEndpoints(config.getPort(), proto, true);
 
             if (endpoints.size() > 0)
                 advertisedHostName = endpoints.get(0).getAddress();
 
             if (advertiseUDPEndpoints) {
-                endpoints.addAll(NetUtils.getReachableEndpoints(config.getPort(), Schemes.SCHEME_PBRPCU));
+                endpoints.addAll(NetUtils.getReachableEndpoints(config.getPort(), Schemes.SCHEME_PBRPCU, true));
+            }
+
+            // Try to find the default route. The address assigned to the host name is assumed to be default.
+            String hostAddress = null;
+            try {
+                InetAddress host = "".equals(config.getHostName()) ? InetAddress.getLocalHost() : InetAddress.getByName(config.getHostName());
+                hostAddress = NetUtils.getHostAddress(host);
+            } catch (UnknownHostException e) {
+                Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Could not resolve the local hostnamme.",
+                        new Object[0]);
+            }
+
+            // Add the UUID to the endpoints and mark the default route.
+            for (AddressMapping.Builder endpoint : endpoints) {
+                endpoint.setUuid(uuid.toString());
+
+                if (endpoint.getAddress().equals(hostAddress)) {
+                    endpoint.setMatchNetwork("*");
+                }
+            }
+
+
+            if (hostAddress != null) {
+                // If the hostname was configured or found use it for advertising
+                // TODO(jdillmann): Check if this should use the hostName instead of the address.
+                advertisedHostName = hostAddress;
+            } else if (endpoints.size() > 0) {
+                // else just the address of the first one found
+                advertisedHostName = endpoints.get(0).getAddress();
+            }
+
+        } else if ("".equals(config.getHostName()) && config.getAddress() == null) {
+            endpoints = NetUtils.getReachableEndpoints(config.getPort(), proto, false);
+
+            if (endpoints.size() > 0)
+                advertisedHostName = endpoints.get(0).getAddress();
+
+            if (advertiseUDPEndpoints) {
+                endpoints.addAll(NetUtils.getReachableEndpoints(config.getPort(), Schemes.SCHEME_PBRPCU, false));
             }
 
             for (AddressMapping.Builder endpoint : endpoints) {
                 endpoint.setUuid(uuid.toString());
             }
-
         } else {
-            // if it is set, we should use that for UUID mapping!
+            // if the hostname is set, we should use that for UUID mapping!
             endpoints = new ArrayList(10);
 
             // remove the leading '/' if necessary
@@ -461,21 +503,10 @@ public class HeartbeatThread extends LifeCycleThread {
                     .setProtocol(proto).setAddress(host).setPort(config.getPort()).setMatchNetwork("*").setTtlS(3600)
                     .setUri(proto + "://" + host + ":" + config.getPort());
             endpoints.add(tmp);
-            // add an oncrpc/oncrpcs mapping
-
-            /*
-             * endpoints.add(new AddressMapping(uuid.toString(), 0, proto, host, config.getPort(), "*", 3600, proto +
-             * "://" + host + ":" + config.getPort()));
-             */
 
             advertisedHostName = host;
 
             if (advertiseUDPEndpoints) {
-                /*
-                 * endpoints.add(new AddressMapping(uuid.toString(), 0, XDRUtils.ONCRPCU_SCHEME, host, config.getPort(),
-                 * "*", 3600, XDRUtils.ONCRPCU_SCHEME + "://" + host + ":" + config.getPort()));
-                 */
-
                 tmp = AddressMapping.newBuilder().setUuid(uuid.toString()).setVersion(0)
                         .setProtocol(Schemes.SCHEME_PBRPCU).setAddress(host).setPort(config.getPort())
                         .setMatchNetwork("*").setTtlS(3600)
