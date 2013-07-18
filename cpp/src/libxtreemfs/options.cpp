@@ -100,8 +100,8 @@ Options::Options()
   max_read_tries = 40;
   max_write_tries = 40;
   retry_delay_s = 15;
-  connect_timeout_s = 60;
-  request_timeout_s = 60;
+  connect_timeout_s = 15;
+  request_timeout_s = 15;
   linger_timeout_s = 600;  // 10 Minutes.
 
   // SSL options.
