@@ -47,7 +47,7 @@ public class xtfs_benchmark {
         Params params = buildParams();
 
         // Todo (jvf) delete
-        System.err.println(params);
+        //System.err.println(params);
 
         controller = new Controller(params);
         controller.tryConnection();
