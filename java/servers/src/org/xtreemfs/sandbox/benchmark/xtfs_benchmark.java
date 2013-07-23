@@ -1,36 +1,39 @@
 package org.xtreemfs.sandbox.benchmark;
 
-import static org.xtreemfs.foundation.logging.Logging.*;
+import static org.xtreemfs.foundation.logging.Logging.Category;
 
-import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.utils.utils;
 
 public class xtfs_benchmark {
-    static final int                      KiB_IN_BYTES = 1024;
-    static final int                      MiB_IN_BYTES = 1024 * 1024;
-    static final int                      GiB_IN_BYTES = 1024 * 1024 * 1024;
+    static final int          KiB_IN_BYTES = 1024;
+    static final int          MiB_IN_BYTES = 1024 * 1024;
+    static final int          GiB_IN_BYTES = 1024 * 1024 * 1024;
 
-    private static Controller             controller;
+    private static Controller controller;
+    private static CLIOptions cliOptions;
+
+    static {
+        cliOptions = new CLIOptions();
+    }
 
     public static void main(String[] args) throws Exception {
 
         Logging.start(6, Category.tool);
         Logging.redirect(System.err);
 
+        cliOptions.parseCLIOptions(args);
 
-        CLIOptions.parseCLIOptions(args);
-        if (CLIOptions.usageIsSet())  {
-            CLIOptions.displayUsage();
+        if (cliOptions.usageIsSet()) {
+            cliOptions.displayUsage();
             return;
         }
 
-        Params params = CLIOptions.buildParams();
+        Params params = cliOptions.buildParams();
 
         // Todo (jvf) delete
-        //System.err.println(params);
+        // System.err.println(params);
 
         controller = new Controller(params);
         controller.tryConnection();
@@ -44,11 +47,11 @@ public class xtfs_benchmark {
         VolumeManager.init(params);
         VolumeManager volumeManager = VolumeManager.getInstance();
 
-        if (CLIOptions.arguments.size() == 0)
+        if (cliOptions.arguments.size() == 0)
             volumeManager.createDefaultVolumes(params.numberOfThreads);
         else {
             // ToDo add check to verify that the number of volumes is in accordance with the number of threads
-            String[] volumes = CLIOptions.arguments.toArray(new String[CLIOptions.arguments.size()]);
+            String[] volumes = cliOptions.arguments.toArray(new String[cliOptions.arguments.size()]);
             volumeManager.openVolumes(volumes);
         }
     }
@@ -58,32 +61,32 @@ public class xtfs_benchmark {
         ConcurrentLinkedQueue<BenchmarkResult> result;
         ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
 
-        if (CLIOptions.sequentialWriteBenchmarkIsSet()) {
+        if (cliOptions.sequentialWriteBenchmarkIsSet()) {
             result = controller.startBenchmarks(BenchmarkType.WRITE, params.numberOfThreads);
             results.addAll(result);
         }
 
-        if (CLIOptions.sequentialReadBenchmarkIsSet()) {
+        if (cliOptions.sequentialReadBenchmarkIsSet()) {
             result = controller.startBenchmarks(BenchmarkType.READ, params.numberOfThreads);
             results.addAll(result);
         }
 
-		if (CLIOptions.randomWriteBenchmarkIsSet()) {
-			result = controller.startBenchmarks(BenchmarkType.RANDOM_IO_WRITE, params.numberOfThreads);
-			results.addAll(result);
-		}
+        if (cliOptions.randomWriteBenchmarkIsSet()) {
+            result = controller.startBenchmarks(BenchmarkType.RANDOM_IO_WRITE, params.numberOfThreads);
+            results.addAll(result);
+        }
 
-        if (CLIOptions.randomReadBenchmarkIsSet()) {
+        if (cliOptions.randomReadBenchmarkIsSet()) {
             result = controller.startBenchmarks(BenchmarkType.RANDOM_IO_READ, params.numberOfThreads);
             results.addAll(result);
         }
 
-        if (CLIOptions.randomFilebasedWriteBenchmarkIsSet()) {
+        if (cliOptions.randomFilebasedWriteBenchmarkIsSet()) {
             result = controller.startBenchmarks(BenchmarkType.RANDOM_IO_WRITE_FILEBASED, 1);
             results.addAll(result);
         }
 
-        if (CLIOptions.randomFilebasedReadBenchmarkIsSet()) {
+        if (cliOptions.randomFilebasedReadBenchmarkIsSet()) {
             result = controller.startBenchmarks(BenchmarkType.RANDOM_IO_READ_FILEBASED, 1);
             results.addAll(result);
         }

@@ -28,27 +28,27 @@ import org.xtreemfs.utils.utils;
  * @author jensvfischer
  */
 public class CLIOptions {
-    static Map<String, CLIParser.CliOption> options;
-    static List<String>                     arguments;
-    static ParamsBuilder                    builder;
+    Map<String, CLIParser.CliOption> options;
+    List<String>                     arguments;
+    ParamsBuilder                    builder;
 
-    static {
-        CLIOptions.options = utils.getDefaultAdminToolOptions(true);
-        CLIOptions.builder = new ParamsBuilder();
-        CLIOptions.arguments = new ArrayList<String>(5);
+    public CLIOptions() {
+        this.options = utils.getDefaultAdminToolOptions(true);
+        this.builder = new ParamsBuilder();
+        this.arguments = new ArrayList<String>(5);
     }
 
-    static void parseCLIOptions(String[] args) {
+    void parseCLIOptions(String[] args) {
         initOptions();
         parseCLI(args, options, arguments);
     }
 
-    private static void displayUsageIfSet() {
+    private void displayUsageIfSet() {
         if (usageIsSet())
             displayUsage();
     }
 
-    static Params buildParams() {
+    Params buildParams() {
         setNumberOfThreads();
         setNumberOfRepetitions();
         setSequentialSize();
@@ -70,7 +70,7 @@ public class CLIOptions {
         return builder.build();
     }
 
-    private static void initOptions() {
+    private void initOptions() {
 
         /*
          * -sw -sr -rw -p -rr -rfr -rfw -p <number> -r <number> -ssize -rsize --file-size --basefile-size (--no-cleanup
@@ -124,14 +124,14 @@ public class CLIOptions {
         options.put("-no-cleanup-basefile", new CLIParser.CliOption(SWITCH, noCleanupBasefileDescription, ""));
     }
 
-    static boolean usageIsSet() {
+    boolean usageIsSet() {
         return (options.get(utils.OPTION_HELP).switchValue || options.get(utils.OPTION_HELP_LONG).switchValue);
     }
 
     /**
      * Prints out displayUsage informations
      */
-    static void displayUsage() {
+    void displayUsage() {
 
         System.out.println("\nusage: xtfs_benchmark [options] volume1 volume2 ... \n");
         System.out
@@ -147,40 +147,40 @@ public class CLIOptions {
                 .println("\t\t starts a sequential write and read benchmark of 3 GiB with 3 benchmarks in parallel on volume1, volume2 and volume3\n");
     }
 
-    private static void setNumberOfThreads() {
+    private void setNumberOfThreads() {
         String optionValue = options.get("p").stringValue;
         if (null != optionValue)
             builder.setNumberOfThreads(Integer.valueOf(optionValue));
     }
 
-    private static void setNumberOfRepetitions() {
+    private void setNumberOfRepetitions() {
         String optionValue = options.get("r").stringValue;
         if (null != optionValue)
             builder.setNumberOfRepetitions(Integer.valueOf(optionValue));
     }
 
-    private static void setSequentialSize() {
+    private void setSequentialSize() {
         String optionValue;
         optionValue = options.get("ssize").stringValue;
         if (null != optionValue)
             builder.setSequentialSizeInBytes(parseSizeWithModifierToBytes(optionValue));
     }
 
-    private static void setRandomSize() {
+    private void setRandomSize() {
         String optionValue;
         optionValue = options.get("rsize").stringValue;
         if (null != optionValue)
             builder.setRandomSizeInBytes(parseSizeWithModifierToBytes(optionValue));
     }
 
-    private static void setBasefileSize() {
+    private void setBasefileSize() {
         String optionValue;
         optionValue = options.get("-basefile-size").stringValue;
         if (null != optionValue)
             builder.setBasefileSizeInBytes(parseSizeWithModifierToBytes(optionValue));
     }
 
-    private static void setFileSize() {
+    private void setFileSize() {
         String optionValue;
         optionValue = options.get("-file-size").stringValue;
         if (null != optionValue) {
@@ -192,7 +192,7 @@ public class CLIOptions {
     }
 
     /* Use DirAdress from Param, if not present, use DirAddress from ConfigFile, if not preset, use Default */
-    private static void setDirAddress() {
+    private void setDirAddress() {
         String dirAddressFromCLI = options.get("-dir-address").stringValue;
         String dirAddressFromConfig = getDefaultDir();
         if (null != dirAddressFromCLI)
@@ -201,38 +201,38 @@ public class CLIOptions {
             builder.setDirAddress(dirAddressFromConfig);
     }
 
-    private static void setUsername() {
+    private void setUsername() {
         String userName = options.get("-username").stringValue;
         if (null != userName)
             builder.setUserName(userName);
     }
 
-    private static void setGroup() {
+    private void setGroup() {
         // Todo Replace with real setGroup()
         String userName = options.get("-username").stringValue;
         if (null != userName)
             builder.setGroup(userName);
     }
 
-    private static void setOSDPassword() {
+    private void setOSDPassword() {
         String osdPassword = options.get(utils.OPTION_ADMIN_PASS).stringValue;
         if (null != osdPassword)
             builder.setOsdPassword(osdPassword);
     }
 
-    private static void setAuth() {
+    private void setAuth() {
         // Todo (jvf) implement?
     }
 
-    private static void setSSLOptions() {
+    private void setSSLOptions() {
         // Todo (jvf) Implement SSL Options?
     }
 
-    private static void setOptions() {
+    private void setOptions() {
         // Todo (jvf) implement?
     }
 
-    private static void setStripeSize() {
+    private void setStripeSize() {
         String stripeSize = options.get("-stripe-size").stringValue;
         if (null != stripeSize) {
             long stripeSizeInBytes = parseSizeWithModifierToBytes(stripeSize);
@@ -241,52 +241,52 @@ public class CLIOptions {
         }
     }
 
-    private static void setStripeWidth() {
+    private void setStripeWidth() {
         String stripeWidth = options.get("-stripe-width").stringValue;
         if (null != stripeWidth)
             builder.setStripeWidth(Integer.parseInt(stripeWidth));
     }
 
-    private static void setNoCleanup() {
+    private void setNoCleanup() {
         boolean switchValue = options.get("-no-cleanup").switchValue;
         builder.setNoCleanup(switchValue);
     }
 
-    private static void setNoCleanupOfVolumes() {
+    private void setNoCleanupOfVolumes() {
         boolean switchValue = options.get("-no-cleanup-volumes").switchValue;
         builder.setNoCleanupOfVolumes(switchValue);
     }
 
-    private static void setNoCleanupOfBasefile() {
+    private void setNoCleanupOfBasefile() {
         boolean switchValue = options.get("-no-cleanup-basefile").switchValue;
         builder.setNoCleanupOfBasefile(switchValue);
     }
 
-    static boolean sequentialWriteBenchmarkIsSet() {
+    boolean sequentialWriteBenchmarkIsSet() {
         return options.get("sw").switchValue;
     }
 
-    static boolean sequentialReadBenchmarkIsSet() {
+    boolean sequentialReadBenchmarkIsSet() {
         return options.get("sr").switchValue;
     }
 
-    static boolean randomReadBenchmarkIsSet() {
+    boolean randomReadBenchmarkIsSet() {
         return options.get("rr").switchValue;
     }
 
-    static boolean randomWriteBenchmarkIsSet() {
+    boolean randomWriteBenchmarkIsSet() {
         return options.get("rw").switchValue;
     }
 
-    static boolean randomFilebasedWriteBenchmarkIsSet() {
+    boolean randomFilebasedWriteBenchmarkIsSet() {
         return options.get("rfw").switchValue;
     }
 
-    static boolean randomFilebasedReadBenchmarkIsSet() {
+    boolean randomFilebasedReadBenchmarkIsSet() {
         return options.get("rfr").switchValue;
     }
 
-    private static long parseSizeWithModifierToBytes(String size) {
+    private long parseSizeWithModifierToBytes(String size) {
         size = size.toUpperCase();
         long sizeInBytes;
 
@@ -320,7 +320,7 @@ public class CLIOptions {
     }
 
     // Todo (jvf) Move to Controller or Params?
-    private static String getDefaultDir() {
+    private String getDefaultDir() {
         String[] dirAddresses;
         DefaultDirConfig cfg = null;
         try {
