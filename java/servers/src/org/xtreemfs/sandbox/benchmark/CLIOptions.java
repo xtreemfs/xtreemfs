@@ -32,6 +32,46 @@ public class CLIOptions {
     List<String>                     arguments;
     ParamsBuilder                    builder;
 
+    private static final String SEQ_WRITE;
+    private static final String SEQ_READ;
+    private static final String RAND_WRITE;
+    private static final String RAND_READ;
+    private static final String FILEBASED_WRITE;
+    private static final String FILEBASED_READ;
+    private static final String THREADS;
+    private static final String REPETITIONS;
+    private static final String STRIPE_SIZE;
+    private static final String STRIPE_WITDH;
+    private static final String SIZE_SEQ;
+    private static final String SIZE_RAND;
+    private static final String SIZE_BASEFILE;
+    private static final String SIZE_FILES;
+    private static final String NO_CLEANUP;
+    private static final String NO_CLEANUP_VOLUMES;
+    private static final String NO_CLEANUP_BASEFILE;
+          
+
+
+    static {
+        SEQ_WRITE = "sw";
+        SEQ_READ = "sr";
+        RAND_WRITE = "rw";
+        RAND_READ = "rr";
+        FILEBASED_WRITE = "fw";
+        FILEBASED_READ = "fr";
+        THREADS = "t";
+        REPETITIONS = "r";
+        STRIPE_SIZE = "-stripe-size";
+        STRIPE_WITDH = "-stripe-width";
+        SIZE_SEQ = "ssize";
+        SIZE_RAND = "rsize";
+        SIZE_BASEFILE = "-basefile-size";
+        SIZE_FILES = "-file-size";
+        NO_CLEANUP = "-no-cleanup";
+        NO_CLEANUP_VOLUMES = "-no-cleanup-volumes";
+        NO_CLEANUP_BASEFILE = "-no-cleanup-basefile";
+    }
+
     public CLIOptions() {
         this.options = utils.getDefaultAdminToolOptions(true);
         this.builder = new ParamsBuilder();
@@ -84,20 +124,20 @@ public class CLIOptions {
         options.put("-username", new CLIParser.CliOption(STRING, "username to use", "<username>"));
 
         /* benchmark switches */
-        options.put("sw", new CLIParser.CliOption(SWITCH, "sequential write benchmark", ""));
-        options.put("sr", new CLIParser.CliOption(SWITCH, "sequential read benchmark", ""));
-        options.put("rw", new CLIParser.CliOption(SWITCH, "random write benchmark", ""));
-        options.put("rr", new CLIParser.CliOption(SWITCH, "random read benchmark", ""));
-        options.put("rfw", new CLIParser.CliOption(SWITCH, "random filebased write benchmark", ""));
-        options.put("rfr", new CLIParser.CliOption(SWITCH, "random filebased read benchmark", ""));
+        options.put(SEQ_WRITE, new CLIParser.CliOption(SWITCH, "sequential write benchmark", ""));
+        options.put(SEQ_READ, new CLIParser.CliOption(SWITCH, "sequential read benchmark", ""));
+        options.put(RAND_WRITE, new CLIParser.CliOption(SWITCH, "random write benchmark", ""));
+        options.put(RAND_READ, new CLIParser.CliOption(SWITCH, "random read benchmark", ""));
+        options.put(FILEBASED_WRITE, new CLIParser.CliOption(SWITCH, "random filebased write benchmark", ""));
+        options.put(FILEBASED_READ, new CLIParser.CliOption(SWITCH, "random filebased read benchmark", ""));
 
-        options.put("p", new CLIParser.CliOption(STRING,
-                "number of sequential benchmarks to be started in parallel. default: 1", "<number>"));
-        options.put("r", new CLIParser.CliOption(STRING, "number of repetitions of a benchmarks. default: 1",
+        options.put(THREADS, new CLIParser.CliOption(STRING,
+                "number of benchmarks to be started in parallel. default: 1", "<number>"));
+        options.put(REPETITIONS, new CLIParser.CliOption(STRING, "number of repetitions of a benchmarks. default: 1",
                 "<number>"));
-        options.put("-stripe-size", new CLIParser.CliOption(STRING,
+        options.put(STRIPE_SIZE, new CLIParser.CliOption(STRING,
                 "stripeSize in [B|K|M|G] (no modifier assumes bytes). default: 128K", "<stripeSize>"));
-        options.put("-stripe-width", new CLIParser.CliOption(STRING, "stripe width. default: 1", "<stripe width>"));
+        options.put(STRIPE_WITDH, new CLIParser.CliOption(STRING, "stripe width. default: 1", "<stripe width>"));
 
         /* sizes */
         options.put("ssize", new CLIParser.CliOption(STRING,
@@ -263,19 +303,19 @@ public class CLIOptions {
     }
 
     boolean sequentialWriteBenchmarkIsSet() {
-        return options.get("sw").switchValue;
+        return options.get(SEQ_WRITE).switchValue;
     }
 
     boolean sequentialReadBenchmarkIsSet() {
-        return options.get("sr").switchValue;
+        return options.get(SEQ_READ).switchValue;
     }
 
     boolean randomReadBenchmarkIsSet() {
-        return options.get("rr").switchValue;
+        return options.get(RAND_READ).switchValue;
     }
 
     boolean randomWriteBenchmarkIsSet() {
-        return options.get("rw").switchValue;
+        return options.get(RAND_WRITE).switchValue;
     }
 
     boolean randomFilebasedWriteBenchmarkIsSet() {
