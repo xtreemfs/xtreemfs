@@ -105,6 +105,7 @@ public class CLIOptions {
         setNoCleanup();
         setNoCleanupOfVolumes();
         setNoCleanupOfBasefile();
+		setOsdCleanup();
         return builder.build();
     }
 
@@ -161,7 +162,7 @@ public class CLIOptions {
         String noCleanupBasefileDescription = "do not delete created basefile (only works with --no-cleanup or "
                 + "--no-cleanup-volumes. Created Files and volumes need to be removed manually";
         options.put(NO_CLEANUP_BASEFILE, new CLIParser.CliOption(SWITCH, noCleanupBasefileDescription, ""));
-        options.put(OSD_CLEANUP, new CLIParser.CliOption(SWITCH, "Run OSD cleanup after every benchmark", ""));
+        options.put(OSD_CLEANUP, new CLIParser.CliOption(SWITCH, "Run OSD cleanup after the benchmarks", ""));
     }
 
     boolean usageIsSet() {
@@ -306,6 +307,11 @@ public class CLIOptions {
         boolean switchValue = options.get(NO_CLEANUP_BASEFILE).switchValue;
         builder.setNoCleanupOfBasefile(switchValue);
     }
+
+	private void setOsdCleanup() {
+		boolean switchValue = options.get(OSD_CLEANUP).switchValue;
+		builder.setOsdCleanup(switchValue);
+	}
 
     boolean sequentialWriteBenchmarkIsSet() {
         return options.get(SEQ_WRITE).switchValue;
