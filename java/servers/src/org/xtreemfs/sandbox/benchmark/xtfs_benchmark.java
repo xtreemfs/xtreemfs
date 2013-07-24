@@ -30,7 +30,7 @@ public class xtfs_benchmark {
             return;
         }
 
-        Params params = cliOptions.buildParams();
+        Params params = cliOptions.buildParamsFromCLIOptions();
 
         // Todo (jvf) delete
         // System.err.println(params);
