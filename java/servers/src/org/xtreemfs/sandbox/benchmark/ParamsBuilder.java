@@ -51,9 +51,10 @@ public class ParamsBuilder {
     boolean           noCleanup             = false;
     boolean           noCleanupOfVolumes    = false;
     boolean           noCleanupOfBasefile   = false;
+    boolean           osdCleanup            = false;
 
 
-    public ParamsBuilder() {
+	public ParamsBuilder() {
     }
 
     public ParamsBuilder setNumberOfThreads(int numberOfThreads) {
@@ -145,6 +146,11 @@ public class ParamsBuilder {
         this.noCleanupOfBasefile = noCleanupOfBasefile;
 		return this;
     }
+
+	public ParamsBuilder setOsdCleanup(boolean osdCleanup) {
+		this.osdCleanup = osdCleanup;
+		return this;
+	}
 
 	public Params build() {
         return new Params(this);
