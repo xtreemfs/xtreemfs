@@ -32,9 +32,6 @@ public class xtfs_benchmark {
 
         Params params = cliOptions.buildParamsFromCLIOptions();
 
-        // Todo (jvf) delete
-        // System.err.println(params);
-
         controller = new Controller(params);
         controller.tryConnection();
         setupVolumes(params);

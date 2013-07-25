@@ -93,6 +93,8 @@ public class Controller {
     public void teardown() throws Exception {
         deleteVolumesAndFiles();
         BenchmarkClientFactory.shutdownClients();
+		if (params.osdCleanup)
+			VolumeManager.getInstance().cleanupOSD();
     }
 
     private void deleteVolumesAndFiles() throws Exception {
@@ -103,8 +105,6 @@ public class Controller {
         }
         else if (!params.noCleanup)
            volumeManager.deleteCreatedFiles();
-
-        /* volumeManager.scrub(); */
     }
 
     public static void printResults(ConcurrentLinkedQueue<BenchmarkResult> results) {
