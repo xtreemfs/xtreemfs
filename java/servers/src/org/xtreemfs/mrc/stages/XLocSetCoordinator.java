@@ -212,13 +212,18 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         if (extXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ)) {
             addReplicasWqRq(fileId, cap, curXLocSet, extXLocSet);
         } else {
+
+            // Invalidate the read-only replicas to make the behavior more consistent with read-write replication.
+            // This is unnecessary because the state of read-only data can't change and a replica that had the correct
+            // data once will never be superseded.
+            // TODO(jdillmann): Discuss if this should be kept or not.
+            invalidateReplicas(fileId, cap, curXLocSet);
+
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
                         "replication policy (%s) will be handled by VolumeImplementation",
                         extXLocSet.getReplicaUpdatePolicy());
             }
-            // throw new IllegalArgumentException("unsupported replica update mode: "
-            // + extXLocSet.getReplicaUpdatePolicy());
         }
 
         // Call the installXLocSet method in the context of the ProcessingStage
