@@ -1377,9 +1377,13 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         }
 
         // TODO(jdillmann): close the ReplicatedFileState to ensure no outdated UUIDList can exist.
-        ReplicatedFileState fState = files.get(fileId);
-        if (fState != null && fState.getLocations().getVersion() < versionState.getVersion()) {
-
+        ReplicatedFileState state = files.get(fileId);
+        if (state != null && state.getLocations().getVersion() < versionState.getVersion()) {
+            files.remove(fileId);
+            state.getPolicy().closeFile();
+            if (state.getPolicy().requiresLease())
+                fstage.closeCell(state.getPolicy().getCellId(), true);
+            cellToFileId.remove(state.getPolicy().getCellId());
         }
 
         // TODO(jdillmann): The callbacks aren't really making any sense, because there can't occur any error. Remove them.
