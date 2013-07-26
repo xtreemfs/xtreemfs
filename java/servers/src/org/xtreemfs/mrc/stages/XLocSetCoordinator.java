@@ -368,6 +368,30 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         final XLocSet curXLocSet = Converter.xLocListToXLocSet(curXLocList).build();
         final XLocSet newXLocSet = Converter.xLocListToXLocSet(newXLocList).build();
 
+        
+        if (curXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ)) {
+            removeReplicasWqRq(fileId, cap, curXLocSet, newXLocSet);
+        } else {
+            // In case of the read-only replication the replicas will be invalidated. But the coordination takes place
+            // at the client by libxtreemfs.
+            ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet);
+        }
+
+        // Call the installXLocSet method in the context of the ProcessingStage
+        MRCCallbackRequest callbackRequest = new MRCCallbackRequest(rq.getRPCRequest(),
+                new InternalCallbackInterface() {
+                    @Override
+                    public void startCallback(MRCRequest rq) throws Throwable {
+                        m.getCallback().installXLocSet(rq, fileId, newXLocList, curXLocList);
+                    }
+                });
+
+        master.getProcStage().enqueueOperation(callbackRequest, ProcessingStage.STAGEOP_INTERNAL_CALLBACK, null);
+
+    }
+
+    private void removeReplicasWqRq(String fileId, Capability cap, XLocSet curXLocSet, XLocSet newXLocSet)
+            throws Throwable {
         // Invalidate the majority of the replicas and get their ReplicaStatus
         ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet);
 
@@ -399,7 +423,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
             // Create a Set containing the remaining UUIDs.
             final HashSet<String> newXLocSetUUIDs = new HashSet<String>(newXLocSet.getReplicasCount());
-            for (int i = 0; i < newXLocList.getReplicaCount(); i++) {
+            for (int i = 0; i < newXLocSet.getReplicasCount(); i++) {
                 // TODO(jdillmann): Currently using the head OSD. Not sure what to do with striping.
                 String osdUUID = Helper.getOSDUUIDFromXlocSet(newXLocSet, i, 0);
                 newXLocSetUUIDs.add(osdUUID);
@@ -408,7 +432,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             // Create a Set containing the UUIDs of replicas that have been removed.
             final HashSet<String> removedOSDUUIDs = new HashSet<String>(curXLocSet.getReplicasCount()
                     - newXLocSet.getReplicasCount());
-            for (int i = 0; i < curXLocList.getReplicaCount(); i++) {
+            for (int i = 0; i < curXLocSet.getReplicasCount(); i++) {
                 String osdUUID = Helper.getOSDUUIDFromXlocSet(curXLocSet, i, 0);
                 if (!newXLocSetUUIDs.contains(osdUUID)) {
                     removedOSDUUIDs.add(osdUUID);
@@ -480,20 +504,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         }
 
         // It is now guaranteed, that the invariant won't be harmed by removing the Replicas.
-
-        // Call the installXLocSet method in the context of the ProcessingStage
-        MRCCallbackRequest callbackRequest = new MRCCallbackRequest(rq.getRPCRequest(),
-                new InternalCallbackInterface() {
-                    @Override
-                    public void startCallback(MRCRequest rq) throws Throwable {
-                        m.getCallback().installXLocSet(rq, fileId, newXLocList, curXLocList);
-                    }
-                });
-
-        master.getProcStage().enqueueOperation(callbackRequest, ProcessingStage.STAGEOP_INTERNAL_CALLBACK, null);
-
     }
-
 
     // public void replaceReplica(String fileId, MRCOperation op, MRCRequest rq) {
     // q.add(new RequestMethod(RequestType.REPLACE_REPLICA, fileId, op, rq));
