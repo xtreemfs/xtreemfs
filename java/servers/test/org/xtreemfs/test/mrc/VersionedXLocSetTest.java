@@ -16,6 +16,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import junit.extensions.PA;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -28,6 +30,7 @@ import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.Helper;
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.common.libxtreemfs.Volume;
+import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
@@ -72,6 +75,9 @@ public class VersionedXLocSetTest {
 
     private final static int       NUM_OSDS = 5;
 
+    private static Long            OFT_CLEAN_INTERVAL_MS;
+    private static int             LEASE_TIMEOUT_MS;
+
     @BeforeClass
     public static void initializeTest() throws Exception {
         System.out.println("TEST: " + VersionedXLocSetTest.class.getSimpleName());
@@ -79,6 +85,7 @@ public class VersionedXLocSetTest {
         // cleanup
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
         Logging.start(Logging.LEVEL_WARN);
+        // Logging.start(Logging.LEVEL_DEBUG);
 
         testEnv = new TestEnvironment(
                 new TestEnvironment.Services[] { TestEnvironment.Services.TIME_SYNC,
@@ -107,8 +114,14 @@ public class VersionedXLocSetTest {
 
         options = new Options();
 
+        options.setMaxTries(2);
+
         client = ClientFactory.createAdminClient(dirAddress, userCredentials, null, options);
         client.start();
+
+        // get the current timeouts to save time spend waiting
+        OFT_CLEAN_INTERVAL_MS = (Long) PA.getValue(osds[0].getDispatcher().getPreprocStage(), "OFT_CLEAN_INTERVAL");
+        LEASE_TIMEOUT_MS = configs[0].getFleaseLeaseToMS();
 
     }
 
@@ -150,7 +163,7 @@ public class VersionedXLocSetTest {
 
         // 15s is the default lease timeout
         // we have to wait that long, because addReplica calls ping which requires do become primary
-        // Thread.sleep(16 * 1000);
+        // Thread.sleep(LEASE_TIMEOUT_MS + 500);
 
         // so we have to fall back to add the replicas individually
         for (int i = 0; i < replicaNumber; i++) {
@@ -159,12 +172,76 @@ public class VersionedXLocSetTest {
             volume.addReplica(userCredentials, fileName, replica);
 
             // 15s is the default lease timeout
-            // Thread.sleep(16 * 1000);
+            // Thread.sleep(LEASE_TIMEOUT_MS + 500);
             System.out.println("Added replica on " + osdUUIDs.get(i));
         }
 
         assertEquals(currentReplicaNumber + replicaNumber, volume.listReplicas(userCredentials, fileName)
                 .getReplicasCount());
+    }
+
+    private static void readInvalidView(AdminFileHandle file) throws AddressToUUIDNotFoundException, IOException {
+        PosixErrorException catched = null;
+        try {
+            byte[] dataOut = new byte[1];
+            file.read(userCredentials, dataOut, 1, 0);
+        } catch (PosixErrorException e) {
+            catched = e;
+        }
+
+        // TODO(jdillmann): make this more dynamic
+        assertTrue(catched != null);
+        assertEquals(catched.getPosixError(), RPC.POSIXErrno.POSIX_ERROR_EAGAIN);
+        assertTrue(catched.getMessage().contains("view is not valid"));
+    }
+
+    @Ignore
+    @Test
+    public void testRonlyRemoveReadOutdated() throws Exception {
+        // TODO(jdillmann): This test will fail because the VersionState is deleted together with the data objects.
+        // Subsequent calls, with any ViewID >= 0, are therefore valid. If a replica is marked as completed, this will
+        // lead to the false assumption, that the missing object file resembles a sparse file and zeros will be returned
+        // instead of raising an error.
+        // For partial replicas this won't necessarily lead to an error, because internal fetch requests can be checked
+        // for a valid view.
+
+        String volumeName = "testRonlyRemoveReadOutdated";
+        String fileName = "/testfile";
+
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+        AdminVolume volume = client.openVolume(volumeName, null, options);
+
+        // setup a full read only replica with sequential access strategy
+        int repl_flags = ReplicationFlags.setFullReplica(ReplicationFlags.setSequentialStrategy(0));
+        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY, 2,
+                repl_flags);
+
+        volume.close();
+
+        removeReadOutdated(volumeName, fileName);
+    }
+
+    @Test
+    public void testWqRqRemoveReadOutdated() throws Exception {
+        String volumeName = "testWqRqRemoveReadOutdated";
+        String fileName = "/testfile";
+
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+        AdminVolume volume = client.openVolume(volumeName, null, options);
+
+        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 3, 0);
+        volume.setOSDSelectionPolicy(
+                userCredentials,
+                Helper.policiesToString(new OSDSelectionPolicyType[] {
+                        OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT,
+                        OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID }));
+        volume.setReplicaSelectionPolicy(
+                userCredentials,
+                Helper.policiesToString(new OSDSelectionPolicyType[] { OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID }));
+
+        volume.close();
+
+        removeReadOutdated(volumeName, fileName);
     }
 
     private void removeReadOutdated(String volumeName, String fileName) throws Exception {
@@ -215,71 +292,17 @@ public class VersionedXLocSetTest {
         controlVolume.close();
 
         // wait until the file is actually deleted on the OSD
-        System.out.println("wait until the file is closed and delted on the osd");
+        System.out.println("wait until the file is closed and deleted on the OSD");
         Thread.sleep(70 * 1000);
 
-        // reading a deleted file seems like reading a sparse file and should return "0" bytes
-        // TODO(jdillmann): update assertions when versioned XLocSets are implemented
-        byte[] data2 = new byte[1];
-        fileHandle.read(userCredentials, data2, 1, 0);
+        // Reading the the file should result in a invalid view.
+        System.out.println("Read with old version");
+        readInvalidView(fileHandle);
+
         fileHandle.close();
-
-        assertEquals(data2[0], (byte) 1);
-
         volume.close();
     }
 
-    @Ignore
-    @Test
-    public void testRonlyRemoveReadOutdated() throws Exception {
-        // TODO(jdillmann): This test will fail because the VersionState is deleted together with the data objects.
-        // Subsequent calls, with any ViewID >= 0, are therefore valid. If a replica is marked as completed, this will
-        // lead to the false assumption, that the missing object file resembles a sparse file and zeros will be returned
-        // instead of raising an error.
-        // For partial replicas this won't necessarily lead to an error, because internal fetch requests can be checked
-        // for a valid view.
-
-        String volumeName = "testRonlyRemoveReadOutdated";
-        String fileName = "/testfile";
-
-        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
-        AdminVolume volume = client.openVolume(volumeName, null, options);
-
-        // setup a full read only replica with sequential access strategy
-        int repl_flags = ReplicationFlags.setFullReplica(ReplicationFlags.setSequentialStrategy(0));
-        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY, 2,
-                repl_flags);
-
-        volume.close();
-
-        removeReadOutdated(volumeName, fileName);
-    }
-
-    @Ignore
-    @Test
-    public void testWqRqRemoveReadOutdated() throws Exception {
-        String volumeName = "testWqRqRemoveReadOutdated";
-        String fileName = "/testfile";
-
-        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
-        AdminVolume volume = client.openVolume(volumeName, null, options);
-
-        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 3, 0);
-        volume.setOSDSelectionPolicy(
-                userCredentials,
-                Helper.policiesToString(new OSDSelectionPolicyType[] {
-                        OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT,
-                        OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID }));
-        volume.setReplicaSelectionPolicy(
-                userCredentials,
-                Helper.policiesToString(new OSDSelectionPolicyType[] { OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID }));
-
-        volume.close();
-
-        removeReadOutdated(volumeName, fileName);
-    }
-
-    @Ignore
     @Test
     public void testRonlyInvalidViewOnAdd() throws Exception {
         String volumeName = "testRonlyInvalidViewOnAdd";
@@ -287,17 +310,20 @@ public class VersionedXLocSetTest {
 
         client.createVolume(mrcAddress, auth, userCredentials, volumeName);
         AdminVolume volume = client.openVolume(volumeName, null, options);
-        volume.close();
+
+        volume.setReplicaSelectionPolicy(
+                userCredentials,
+                Helper.policiesToString(new OSDSelectionPolicyType[] { OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID }));
 
         // setup a full read only replica with sequential access strategy
         int repl_flags = ReplicationFlags.setFullReplica(ReplicationFlags.setSequentialStrategy(0));
         volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY, 2,
                 repl_flags);
+        volume.close();
         
         testInvalidViewOnAdd(volumeName, fileName);
     }
 
-    @Ignore
     @Test
     public void testWqRqInvalidViewOnAdd() throws Exception {
         String volumeName = "testWqRqInvalidViewOnAdd";
@@ -336,21 +362,10 @@ public class VersionedXLocSetTest {
 
         // read data with outdated xLocSet
         System.out.println("read with old version");
-        PosixErrorException catched = null;
-        try {
-            byte[] dataOut = new byte[1];
-            outdatedFile.read(userCredentials, dataOut, 1, 0);
-        } catch (PosixErrorException e) {
-            catched = e;
-        } finally {
-            outdatedFile.close();
-            outdatedVolume.close();
-        }
+        readInvalidView(outdatedFile);
 
-        // TODO(jdillmann): make this more dynamic
-        assertTrue(catched != null);
-        assertEquals(catched.getPosixError(), RPC.POSIXErrno.POSIX_ERROR_EAGAIN);
-        assertTrue(catched.getMessage().contains("view is not valid"));
+        outdatedFile.close();
+        outdatedVolume.close();
     }
 
 }
