@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -x
-
 check_env(){
   if [ -z $XTREEMFS ]; then
     echo "\$XTREEMFS not set. Set \$XTREEMFS or invoke with XTREEMFS=/path/to/XTREEMFS ./benchmark.sh ..."
@@ -71,7 +69,7 @@ init_params(){
   fi
   if ! [ -d $RESULT_DIR ]; then
     echo "$RESULT_DIR doesn't existing. Creating $RESULT_DIR"
-    mkdir -p $LOG_DIR
+    mkdir -p $RESULT_DIR
   fi
 
   THREADS="$(seq $BEGIN $END)"
@@ -98,13 +96,12 @@ run_benchmark(){
   benchType=$1
   size=$2
   threads=$3
-  export $XTREEMFS
   if [ $benchType = "sw" ] || [ $benchType = "sr" ]; then
-    XTREEMFS=$XTREEMFS timeout $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -ssize $size -p $threads --no-cleanup-volumes \
+    XTREEMFS=$XTREEMFS timeout $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -ssize $size -t $threads --no-cleanup-volumes \
       bench1 bench2 bench3 bench4 bench5 bench6 bench7 bench8 bench9 bench10 >> $RESULTS 2>> $LOGFILE
   elif [ $benchType = "rw" ] || [ $benchType = "rr" ]; then
     # assumes existing basefiles. If no basefiles exits the first run will produce invalid results
-    timeout $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -rsize $size --basefile-size $BASEFILE_SIZE -p $threads \
+    XTREEMFS=$XTREEMFS timeout $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -rsize $size --basefile-size $BASEFILE_SIZE -t $threads \
       --no-cleanup-basefile --no-cleanup-volumes \
       bench1 bench2 bench3 bench4 bench5 bench6 bench7 bench8 bench9 bench10 >> $RESULTS 2>> $LOGFILE
   fi
@@ -121,7 +118,6 @@ run_benchmark(){
 }
 
 cleanup_osd(){
-  timeout $TIMEOUT_CLEANUP $CLEANUP_CALL
   for osd in $OSD_UUIDS; do
     timeout $TIMEOUT_CLEANUP $XTREEMFS/bin/xtfs_cleanup -dir pbrpc://$DIR -wait -e -delete_volumes uuid:$osd
   done
@@ -148,7 +144,7 @@ drop_caches(){
 ##### main ###
 
 # show usage if invoked without options/arguments
-if [ $NUMBER_OF_ARGUMENTS -eq 0 ]; then
+if [ $# -eq 0 ]; then
   printUsage
   exit 1
 fi
@@ -170,7 +166,6 @@ while getopts ":t:s:b:e:r:c:v" opt; do
         echo 'wrong argument to -t. Needs to be either "sw", "sr", "rw" or "rr"'
         exit 1
       fi
-      echo $TYPE
       ;;
     s)
       index=$(echo `expr match $OPTARG '[0-9]\+'`)
@@ -184,19 +179,15 @@ while getopts ":t:s:b:e:r:c:v" opt; do
         exit 1
       fi
       SIZE=${OPTARG:0:$index}
-      echo $SIZE $MODIFIER
       ;;
     b)
       BEGIN=$OPTARG
-      echo $BEGIN
       ;;
     e)
       END=$OPTARG
-      echo $END
       ;;
     r)
       REPETITIONS=$OPTARG
-      echo $REPETITIONS
       ;;
     v)
       SLEEP=false
@@ -231,6 +222,11 @@ for i in $THREADS; do
     until prepare_seq_read $size $i; do
       echo "ERROR: Preparing seq read benchmark failed. Repeating..." | tee -a $LOGFILE
     done
+    until cleanup_osd; do
+      echo "ERROR: Cleanup of OSD failed. Repeating cleanup... " | tee -a $LOGFILE
+      check_osd
+    done
+
   fi
 
   for j in $REPETITIONS; do
@@ -243,7 +239,7 @@ for i in $THREADS; do
 
     echo "Finished $i-Thread-Benchmark Nr. $j"
     if $SLEEP; then
-      echo "Start Sleeping for 15 minutes at $(date)"
+      echo "Start Sleeping for $(echo "$SLEEPTIME/60"|bc) minutes at $(date)"
       sleep $SLEEPTIME
       echo "Finished Sleeping at $(date)"
     fi
