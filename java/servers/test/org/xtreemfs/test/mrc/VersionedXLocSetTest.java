@@ -15,6 +15,7 @@ import static org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL.
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import junit.extensions.PA;
 
@@ -42,9 +43,11 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
 import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
+import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDSelectionPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
@@ -366,6 +369,192 @@ public class VersionedXLocSetTest {
 
         outdatedFile.close();
         outdatedVolume.close();
+    }
+
+    /**
+     * This test covers the case, that a number of replicas is added which will form a new majority. It has to be
+     * ensured that the correct data is returned even if only new replicas are accessed.
+     * 
+     * @throws Exception
+     */
+    @Test
+    public void testAddMajority() throws Exception {
+        String volumeName = "testAddMajority";
+        String fileName = "/testfile";
+
+        SuspendableOSDRequestDispatcher[] suspOSDs = replaceWithSuspendableOSDs(0, 2);
+
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+
+        System.out.println("open");
+        AdminVolume volume = client.openVolume(volumeName, null, options);
+        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 2, 0);
+        volume.setOSDSelectionPolicy(
+                userCredentials,
+                Helper.policiesToString(new OSDSelectionPolicyType[] {
+                        OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT,
+                        OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID }));
+        volume.setReplicaSelectionPolicy(
+                userCredentials,
+                Helper.policiesToString(new OSDSelectionPolicyType[] { OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID }));
+
+        System.out.println("write");
+        AdminFileHandle file = volume.openFile(userCredentials, fileName,
+                Helper.flagsToInt(SYSTEM_V_FCNTL_H_O_RDWR, SYSTEM_V_FCNTL_H_O_CREAT), 0777);
+        ReusableBuffer dataIn = SetupUtils.generateData(256 * 1024, (byte) 1);
+        file.write(userCredentials, dataIn.getData(), 256 * 1024, 0);
+        dataIn.clear();
+        file.close();
+
+        System.out.println("add replicas");
+        addReplicas(volume, fileName, 3);
+        
+        System.out.println("ensure lease timed out");
+        Thread.sleep(LEASE_TIMEOUT_MS + 500);
+
+        // reverse the selection policy
+        volume.setReplicaSelectionPolicy(
+                userCredentials,
+                Helper.policiesToString(new OSDSelectionPolicyType[] {
+                        OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID,
+                        OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_REVERSE }));
+
+        // suspend the first two OSDs
+        for (int i = 0; i < 2; i++) {
+            suspOSDs[i].suspended.set(true);
+        }
+
+        System.out.println("read");
+        file = volume.openFile(userCredentials, fileName, Helper.flagsToInt(SYSTEM_V_FCNTL_H_O_RDWR));
+        byte[] dataOut = new byte[1];
+        file.read(userCredentials, dataOut, 1, 0);
+        file.close();
+        volume.close();
+
+        // resume the first two OSDs
+        for (int i = 0; i < 2; i++) {
+            suspOSDs[i].suspended.set(false);
+        }
+        resetSuspendableOSDs(suspOSDs, 0);
+
+        assertEquals(dataOut[0], (byte) 1);
+    }
+
+    /**
+     * This test covers the removal of replicas forming a majority. It has to be ensured that the remaining replicas are
+     * up to date and the correct (last written) data is returned.
+     * 
+     * @throws Exception
+     */
+    @Test
+    public void testRemoveMajority() throws Exception {
+        String volumeName = "testRemoveMajority";
+        String fileName = "/testfile";
+
+        SuspendableOSDRequestDispatcher[] suspOSDs = replaceWithSuspendableOSDs(0, 2);
+
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+
+        System.out.println("open");
+        AdminVolume volume = client.openVolume(volumeName, null, options);
+        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 5, 0);
+        volume.setOSDSelectionPolicy(
+                userCredentials,
+                Helper.policiesToString(new OSDSelectionPolicyType[] {
+                        OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT,
+                        OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID }));
+        volume.setReplicaSelectionPolicy(
+                userCredentials,
+                Helper.policiesToString(new OSDSelectionPolicyType[] {
+                        OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID,
+                        OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_REVERSE }));
+
+        // suspend the first two OSDs
+        for (int i = 0; i < 2; i++) {
+            suspOSDs[i].suspended.set(true);
+        }
+
+        System.out.println("write");
+        AdminFileHandle file = volume.openFile(userCredentials, fileName,
+                Helper.flagsToInt(SYSTEM_V_FCNTL_H_O_RDWR, SYSTEM_V_FCNTL_H_O_CREAT), 0777);
+        ReusableBuffer dataIn = SetupUtils.generateData(256 * 1024, (byte) 1);
+        file.write(userCredentials, dataIn.getData(), 256 * 1024, 0);
+        dataIn.clear();
+
+        // start the OSDs again
+        for (int i = 0; i < 2; i++) {
+            suspOSDs[i].suspended.set(false);
+        }
+
+        System.out.println("remove replicas");
+        List<Replica> replicas = file.getReplicasList();
+        for (int i = 0; i < 3; i++) {
+            Replica replica = replicas.get(i);
+
+            // since striping is disabled there should be only one OSD for this certain replica
+            assertEquals(1, replica.getOsdUuidsCount());
+            volume.removeReplica(userCredentials, fileName, replica.getOsdUuids(0));
+        }
+        file.close();
+
+        // revert the selection policy
+        volume.setReplicaSelectionPolicy(
+                userCredentials,
+                Helper.policiesToString(new OSDSelectionPolicyType[] { OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID }));
+        
+        // reopen the file
+        System.out.println("read");
+        file = volume.openFile(userCredentials, fileName, Helper.flagsToInt(SYSTEM_V_FCNTL_H_O_RDONLY));
+        
+        byte[] dataOut = new byte[1];
+        file.read(userCredentials, dataOut, 1, 0);
+        file.close();
+        volume.close();
+
+        resetSuspendableOSDs(suspOSDs, 2);
+
+        assertEquals(dataOut[0], (byte) 1);
+    }
+
+    private SuspendableOSDRequestDispatcher[] replaceWithSuspendableOSDs(int start, int count) throws Exception {
+        SuspendableOSDRequestDispatcher[] suspOSDs = new SuspendableOSDRequestDispatcher[count];
+        for (int i = start; i < count; i++) {
+            osds[i].shutdown();
+            osds[i] = null;
+
+            suspOSDs[i] = new SuspendableOSDRequestDispatcher(configs[i]);
+            suspOSDs[i].start();
+        }
+
+        return suspOSDs;
+    }
+
+    private void resetSuspendableOSDs(SuspendableOSDRequestDispatcher[] suspOSDs, int start) {
+        for (int i = start; i < suspOSDs.length; i++) {
+            suspOSDs[i].shutdown();
+            suspOSDs[i] = null;
+
+            osds[i] = new OSD(configs[i]);
+        }
+    }
+
+    private class SuspendableOSDRequestDispatcher extends OSDRequestDispatcher {
+        private AtomicBoolean suspended;
+
+        public SuspendableOSDRequestDispatcher(OSDConfig config) throws Exception {
+            super(config);
+            suspended = new AtomicBoolean(false);
+        }
+
+        @Override
+        public void receiveRecord(RPCServerRequest rq) {
+            if (suspended.get()) {
+                // Drop the request.
+                rq.freeBuffers();
+            } else {
+                super.receiveRecord(rq);
+            }
+        }
     }
 
 }
