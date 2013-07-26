@@ -734,8 +734,8 @@ public class PreprocStage extends Stage {
             return;
         }
 
-
-        if (state.getVersion() < version || (state.getVersion() == version && state.getInvalidated())) {
+        // If a response from a newer View is encountered, we have to install it and leave the invalidated state.
+        if (state.getVersion() < version) {
             state = state.toBuilder().setInvalidated(false).setVersion(version).build();
             try {
                 // persist the version
