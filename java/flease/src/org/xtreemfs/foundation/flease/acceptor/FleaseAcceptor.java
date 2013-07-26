@@ -119,8 +119,14 @@ public class FleaseAcceptor {
             if ((cc.lastAccess+config.getCellTimeout()) < System.currentTimeMillis()) {
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication,this,"A GCed cell "+cellId);
-                //cell is outdated and GCed
+                // Cell is outdated and GCed.
+
+                // Transfer the local view id from the (outdated) cell.
+                int prevViewId = cc.getViewId();
+
+                // Create a new cell and transfer the previous viewId.
                 cc = new FleaseAcceptorCell();
+                cc.setViewId(prevViewId);
                 cells.put(cellId,cc);
             }
         }
