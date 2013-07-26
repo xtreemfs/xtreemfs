@@ -1430,13 +1430,18 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         // fileId and thus set an entry in the openFileTable
 
         // check if the file has an open cell and close it, if it is the primary
-        ReplicatedFileState fState = files.get(fileId);
-        if (fState != null) {
-            isPrimary = fState.isLocalIsPrimary();
+        ReplicatedFileState state = files.get(fileId);
+        if (state != null) {
+            isPrimary = state.isLocalIsPrimary();
+
+            files.remove(fileId);
+            state.getPolicy().closeFile();
+            if (state.getPolicy().requiresLease())
+                fstage.closeCell(state.getPolicy().getCellId(), true);
+            cellToFileId.remove(state.getPolicy().getCellId());
 
             // TODO(jdillmann): ensure, that the lease is given up immediately or wait until the lease has timed out
             // closing the cell isn't enough, because there could exists PendingRequests in ReplicatedFileState
-            fstage.closeCell(cellId, true);
 
             // TODO(jdillmann): close the ReplicatedFileState to ensure no outdated UUIDList can exist.
 
@@ -1500,11 +1505,18 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             case RESET:
                 // Wait until this reset is done. Since fileState.isInvalidated() this will result in an OPEN state.
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                        "(R:%s) enqueued backup reset for file %s", localID, fileId);
+                        "(R:%s) enqueued fetch invalidated reset for file %s", localID, fileId);
                 state.addPendingRequest(method);
                 break;
 
             case INITIALIZING:
+                // Wait until the initializing is done. Since fileState.isInvalidated() this will result in an OPEN
+                // state.
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                        "(R:%s) enqueued fetch invalidated reset for file %s", localID, fileId);
+                state.addPendingRequest(method);
+                break;
+
             case OPEN:
             case WAITING_FOR_LEASE:
             case BACKUP:
@@ -1520,10 +1532,10 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 // The AuthState has been set and the Replica is up to date.
 
                 // Close the file @see #processFileClosed .
-                files.remove(state);
+                files.remove(fileId);
                 state.getPolicy().closeFile();
                 if (state.getPolicy().requiresLease())
-                    fstage.closeCell(state.getPolicy().getCellId(), false);
+                    fstage.closeCell(state.getPolicy().getCellId(), true);
                 cellToFileId.remove(state.getPolicy().getCellId());
 
                 // Finish the request.
