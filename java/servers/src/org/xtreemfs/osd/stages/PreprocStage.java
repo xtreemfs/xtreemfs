@@ -693,7 +693,11 @@ public class PreprocStage extends Stage {
                 // persist the view
                 layout.setXLocSetVersionState(fileId, newstate);
                 // inform flease about the new view
-                if (!locset.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
+                if (!((locset.getReplicaUpdatePolicy().length() == 0) 
+                        || (locset.getNumReplicas() == 1) 
+                        || (locset.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)))) {
+
+
                     ASCIIString cellId = ReplicaUpdatePolicy.fileToCellId(fileId);
 
                     // TODO(jdillmann): think about using a callback which will be called when flease got the message
