@@ -117,8 +117,9 @@ public class ServiceConfig extends Config {
             VIVALDI_ITERATIONS_BEFORE_UPDATING("vivaldi.iterations_before_updating", 12, Integer.class, false),
             VIVALDI_MAX_RETRIES_FOR_A_REQUEST("vivaldi.max_retries_for_a_request", 2, Integer.class, false),
             VIVALDI_MAX_REQUEST_TIMEOUT_IN_MS("vivaldi.max_request_timeout_ms", 10000, Integer.class, false),
-            VIVALDI_TIMER_INTERVAL_IN_MS("vivaldi.timer_interval_ms", 60000, Integer.class, false);
-        
+            VIVALDI_TIMER_INTERVAL_IN_MS("vivaldi.timer_interval_ms", 60000, Integer.class, false),
+            STORAGE_THREADS("storage_threads", 1, Integer.class, false);
+
         Parameter(String propString, Object defaultValue, Class propClass, Boolean req) {
             propertyString = propString;
             this.defaultValue = defaultValue;
