@@ -8,6 +8,8 @@
 
 package org.xtreemfs.sandbox.benchmark;
 
+import static org.xtreemfs.foundation.pbrpc.client.RPCAuthentication.authNone;
+
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
@@ -27,26 +29,32 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
  */
 public class ParamsBuilder {
 
-    int        numberOfThreads       = DefaultParams.numberOfThreads;
-    int        numberOfRepetitions   = DefaultParams.numberOfRepetitions;
-    long       sequentialSizeInBytes = DefaultParams.sequentialSizeInBytes;
-    long       randomSizeInBytes     = DefaultParams.randomSizeInBytes;
-    long       basefileSizeInBytes   = DefaultParams.basefileSizeInBytes;
-    int        randomIOFilesize      = DefaultParams.randomIOFilesize;
-    String     userName              = DefaultParams.userName;
-    String     group                 = DefaultParams.group;
-    String     osdPassword           = DefaultParams.osdPassword;
-    String     dirAddress            = DefaultParams.dirAddress;
-    RPC.Auth   auth                  = DefaultParams.auth;
-    SSLOptions sslOptions            = DefaultParams.sslOptions;
-    Options    options               = DefaultParams.options;
-    int        stripeSizeInBytes     = DefaultParams.stripeSizeInBytes;
-    int        stripeWidth           = DefaultParams.stripeWidth;
-    boolean    noCleanup             = DefaultParams.noCleanup;
-    boolean    noCleanupOfVolumes    = DefaultParams.noCleanupOfVolumes;
-    boolean    noCleanupOfBasefile   = DefaultParams.isNoCleanupOfBasefile;
+    static final int  KiB_IN_BYTES          = 1024;
+    static final long MiB_IN_BYTES          = 1024 * 1024;
+    static final long GiB_IN_BYTES          = 1024 * 1024 * 1024;
 
-    public ParamsBuilder() {
+    int               numberOfThreads       = 1;
+    int               numberOfRepetitions   = 1;
+    long              sequentialSizeInBytes = 10L * MiB_IN_BYTES;
+    long              randomSizeInBytes     = 10L * MiB_IN_BYTES;
+    long              basefileSizeInBytes   = 3L * GiB_IN_BYTES;
+    int               randomIOFilesize      = 4 * KiB_IN_BYTES;
+    String            userName              = "root";
+    String            group                 = "root";
+    String            osdPassword           = "";
+    String            dirAddress            = "127.0.0.1:32638";
+    RPC.Auth          auth                  = authNone;
+    SSLOptions        sslOptions            = null;
+    Options           options               = new Options();
+    int               stripeSizeInBytes     = 128 * KiB_IN_BYTES;
+    int               stripeWidth           = 1;
+    boolean           noCleanup             = false;
+    boolean           noCleanupOfVolumes    = false;
+    boolean           noCleanupOfBasefile   = false;
+    boolean           osdCleanup            = false;
+
+
+	public ParamsBuilder() {
     }
 
     public ParamsBuilder setNumberOfThreads(int numberOfThreads) {
@@ -54,9 +62,10 @@ public class ParamsBuilder {
         return this;
     }
 
-    public void setNumberOfRepetitions(int numberOfRepetitions) {
+    public ParamsBuilder setNumberOfRepetitions(int numberOfRepetitions) {
         this.numberOfRepetitions = numberOfRepetitions;
-    }
+		return this;
+	}
 
     public ParamsBuilder setSequentialSizeInBytes(long sequentialSizeInBytes) {
         this.sequentialSizeInBytes = sequentialSizeInBytes;
@@ -113,27 +122,37 @@ public class ParamsBuilder {
         return this;
     }
 
-    public void setStripeSizeInBytes(int stripeSizeInBytes) {
+    public ParamsBuilder setStripeSizeInBytes(int stripeSizeInBytes) {
         this.stripeSizeInBytes = stripeSizeInBytes;
+		return this;
     }
 
-    public void setStripeWidth(int stripeWidth) {
+    public ParamsBuilder setStripeWidth(int stripeWidth) {
         this.stripeWidth = stripeWidth;
+		return this;
     }
 
-    public void setNoCleanup(boolean noCleanup) {
+    public ParamsBuilder setNoCleanup(boolean noCleanup) {
         this.noCleanup = noCleanup;
+		return this;
     }
 
-    public void setNoCleanupOfVolumes(boolean noCleanupOfVolumes) {
+    public ParamsBuilder setNoCleanupOfVolumes(boolean noCleanupOfVolumes) {
         this.noCleanupOfVolumes = noCleanupOfVolumes;
+		return this;
     }
 
-    public void setNoCleanupOfBasefile(boolean noCleanupOfBasefile) {
+    public ParamsBuilder setNoCleanupOfBasefile(boolean noCleanupOfBasefile) {
         this.noCleanupOfBasefile = noCleanupOfBasefile;
+		return this;
     }
 
-    public Params build() {
+	public ParamsBuilder setOsdCleanup(boolean osdCleanup) {
+		this.osdCleanup = osdCleanup;
+		return this;
+	}
+
+	public Params build() {
         return new Params(this);
     }
 

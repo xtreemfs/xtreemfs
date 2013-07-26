@@ -293,7 +293,7 @@ public class VolumeManager {
     }
 
     /* Performs cleanup on a OSD (because deleting the volume does not delete the files in the volume) */
-    void scrub() throws Exception {
+    void cleanupOSD() throws Exception {
 
         String pwd = params.osdPassword;
         LinkedList<String> uuids = getOSDUUIDs();

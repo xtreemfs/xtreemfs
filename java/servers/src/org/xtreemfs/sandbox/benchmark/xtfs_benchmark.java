@@ -30,10 +30,7 @@ public class xtfs_benchmark {
             return;
         }
 
-        Params params = cliOptions.buildParams();
-
-        // Todo (jvf) delete
-        // System.err.println(params);
+        Params params = cliOptions.buildParamsFromCLIOptions();
 
         controller = new Controller(params);
         controller.tryConnection();

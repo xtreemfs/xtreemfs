@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2012-2013 by Jens V. Fischer, Zuse Institute Berlin
- *               
+ *
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -8,18 +8,15 @@
 
 package org.xtreemfs.sandbox.benchmark;
 
-import static org.xtreemfs.foundation.logging.Logging.LEVEL_INFO;
 import static org.xtreemfs.foundation.logging.Logging.logMessage;
 import static org.xtreemfs.foundation.util.CLIParser.CliOption.OPTIONTYPE.STRING;
 import static org.xtreemfs.foundation.util.CLIParser.CliOption.OPTIONTYPE.SWITCH;
 import static org.xtreemfs.foundation.util.CLIParser.parseCLI;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.util.CLIParser;
 import org.xtreemfs.utils.DefaultDirConfig;
 import org.xtreemfs.utils.utils;
@@ -32,27 +29,32 @@ public class CLIOptions {
     List<String>                     arguments;
     ParamsBuilder                    builder;
 
-    private static final String SEQ_WRITE;
-    private static final String SEQ_READ;
-    private static final String RAND_WRITE;
-    private static final String RAND_READ;
-    private static final String FILEBASED_WRITE;
-    private static final String FILEBASED_READ;
-    private static final String THREADS;
-    private static final String REPETITIONS;
-    private static final String STRIPE_SIZE;
-    private static final String STRIPE_WITDH;
-    private static final String SIZE_SEQ;
-    private static final String SIZE_RAND;
-    private static final String SIZE_BASEFILE;
-    private static final String SIZE_FILES;
-    private static final String NO_CLEANUP;
-    private static final String NO_CLEANUP_VOLUMES;
-    private static final String NO_CLEANUP_BASEFILE;
-          
-
+    private static final String      DIR_ADDRESS;
+    private static final String      USERNAME;
+    private static final String      GROUPNAME;
+    private static final String      SEQ_WRITE;
+    private static final String      SEQ_READ;
+    private static final String      RAND_WRITE;
+    private static final String      RAND_READ;
+    private static final String      FILEBASED_WRITE;
+    private static final String      FILEBASED_READ;
+    private static final String      THREADS;
+    private static final String      REPETITIONS;
+    private static final String      STRIPE_SIZE;
+    private static final String      STRIPE_WITDH;
+    private static final String      SIZE_SEQ;
+    private static final String      SIZE_RAND;
+    private static final String      SIZE_BASEFILE;
+    private static final String      SIZE_FILES;
+    private static final String      NO_CLEANUP;
+    private static final String      NO_CLEANUP_VOLUMES;
+    private static final String      NO_CLEANUP_BASEFILE;
+    private static final String      OSD_CLEANUP;
 
     static {
+        DIR_ADDRESS = "-dir-address";
+        USERNAME = "-user";
+        GROUPNAME = "-group";
         SEQ_WRITE = "sw";
         SEQ_READ = "sr";
         RAND_WRITE = "rw";
@@ -70,12 +72,13 @@ public class CLIOptions {
         NO_CLEANUP = "-no-cleanup";
         NO_CLEANUP_VOLUMES = "-no-cleanup-volumes";
         NO_CLEANUP_BASEFILE = "-no-cleanup-basefile";
+        OSD_CLEANUP = "-osd-cleanup";
     }
 
     public CLIOptions() {
         this.options = utils.getDefaultAdminToolOptions(true);
         this.builder = new ParamsBuilder();
-        this.arguments = new ArrayList<String>(5);
+        this.arguments = new ArrayList<String>(20);
     }
 
     void parseCLIOptions(String[] args) {
@@ -83,12 +86,7 @@ public class CLIOptions {
         parseCLI(args, options, arguments);
     }
 
-    private void displayUsageIfSet() {
-        if (usageIsSet())
-            displayUsage();
-    }
-
-    Params buildParams() {
+    Params buildParamsFromCLIOptions() {
         setNumberOfThreads();
         setNumberOfRepetitions();
         setSequentialSize();
@@ -107,6 +105,7 @@ public class CLIOptions {
         setNoCleanup();
         setNoCleanupOfVolumes();
         setNoCleanupOfBasefile();
+		    setOsdCleanup();
         return builder.build();
     }
 
@@ -118,10 +117,11 @@ public class CLIOptions {
          */
 
         /* Connection Data */
-        options.put("-dir-address", new CLIParser.CliOption(STRING,
+        options.put(DIR_ADDRESS, new CLIParser.CliOption(STRING,
                 "directory service to use (e.g. 'localhost:32638'). If no URI is specified, URI and security settings are taken from '"
                         + DefaultDirConfig.DEFAULT_DIR_CONFIG + "'", "<uri>"));
-        options.put("-username", new CLIParser.CliOption(STRING, "username to use", "<username>"));
+        options.put(USERNAME, new CLIParser.CliOption(STRING, "username to use", "<username>"));
+        options.put(GROUPNAME, new CLIParser.CliOption(STRING, "name of group to use", "<group name>"));
 
         /* benchmark switches */
         options.put(SEQ_WRITE, new CLIParser.CliOption(SWITCH, "sequential write benchmark", ""));
@@ -140,13 +140,13 @@ public class CLIOptions {
         options.put(STRIPE_WITDH, new CLIParser.CliOption(STRING, "stripe width. default: 1", "<stripe width>"));
 
         /* sizes */
-        options.put("ssize", new CLIParser.CliOption(STRING,
+        options.put(SIZE_SEQ, new CLIParser.CliOption(STRING,
                 "size for sequential benchmarks in [B|K|M|G] (no modifier assumes bytes)", "<size>"));
-        options.put("rsize", new CLIParser.CliOption(STRING,
+        options.put(SIZE_RAND, new CLIParser.CliOption(STRING,
                 "size for random benchmarks in [B|K|M|G] (no modifier assumes bytes)", "<size>"));
-        options.put("-basefile-size", new CLIParser.CliOption(STRING,
+        options.put(SIZE_BASEFILE, new CLIParser.CliOption(STRING,
                 "size of the basefile for random benchmarks in [B|K|M|G] (no modifier assumes bytes)", "<size>"));
-        options.put("-file-size", new CLIParser.CliOption(STRING,
+        options.put(SIZE_FILES, new CLIParser.CliOption(STRING,
                 "size of the files for random filebased benchmarks in [B|K|M|G] (no modifier assumes bytes)."
                         + " The filesize for filebased random IO Benchmarks must be <= 23^31-1", "<size>"));
 
@@ -154,14 +154,15 @@ public class CLIOptions {
         String noCleanupDescription = "do not delete created volumes and files. Volumes and files need to be removed "
                 + "manually. Volumes can be removed using rmfs.xtreemfs. Files can be removed by mounting the according "
                 + "volume with mount.xtreemfs and deleting the files with rm";
-        options.put("-no-cleanup", new CLIParser.CliOption(SWITCH, noCleanupDescription, ""));
+        options.put(NO_CLEANUP, new CLIParser.CliOption(SWITCH, noCleanupDescription, ""));
 
-        options.put("-no-cleanup-volumes", new CLIParser.CliOption(SWITCH,
+        options.put(NO_CLEANUP_VOLUMES, new CLIParser.CliOption(SWITCH,
                 "do not delete created volumes. Created volumes neet to be removed manually using rmfs.xtreemfs", ""));
 
         String noCleanupBasefileDescription = "do not delete created basefile (only works with --no-cleanup or "
                 + "--no-cleanup-volumes. Created Files and volumes need to be removed manually";
-        options.put("-no-cleanup-basefile", new CLIParser.CliOption(SWITCH, noCleanupBasefileDescription, ""));
+        options.put(NO_CLEANUP_BASEFILE, new CLIParser.CliOption(SWITCH, noCleanupBasefileDescription, ""));
+        options.put(OSD_CLEANUP, new CLIParser.CliOption(SWITCH, "Run OSD cleanup after the benchmarks", ""));
     }
 
     boolean usageIsSet() {
@@ -177,52 +178,52 @@ public class CLIOptions {
         System.out
                 .println("The number of volumes must be in accordance with the number of benchmarks run in parallel (see -p).");
         System.out
-                .println("All sizes can be modified with multiplication modifiers, where K means KiB, M means MiB and G means GiB. \nIf no modifier is given, sizes are assumed to be in bytes.");
+                .println("All sizes can be modified with multiplication modifiers, where K means KiB, M means MiB and G means GiB. \n" +
+						"If no modifier is given, sizes are assumed to be in bytes.");
         System.out.println();
         System.out.println("  " + "options:");
         utils.printOptions(options);
         System.out.println();
         System.out.println("example: xtfs_benchmark -sw -sr -p 3 -ssize 3G volume1 volume2 volume3");
-        System.out
-                .println("\t\t starts a sequential write and read benchmark of 3 GiB with 3 benchmarks in parallel on volume1, volume2 and volume3\n");
+        System.out.println("\t\t starts a sequential write and read benchmark of 3 GiB with 3 benchmarks in parallel on volume1, volume2 and volume3\n");
     }
 
     private void setNumberOfThreads() {
-        String optionValue = options.get("p").stringValue;
+        String optionValue = options.get(THREADS).stringValue;
         if (null != optionValue)
             builder.setNumberOfThreads(Integer.valueOf(optionValue));
     }
 
     private void setNumberOfRepetitions() {
-        String optionValue = options.get("r").stringValue;
+        String optionValue = options.get(REPETITIONS).stringValue;
         if (null != optionValue)
             builder.setNumberOfRepetitions(Integer.valueOf(optionValue));
     }
 
     private void setSequentialSize() {
         String optionValue;
-        optionValue = options.get("ssize").stringValue;
+        optionValue = options.get(SIZE_SEQ).stringValue;
         if (null != optionValue)
             builder.setSequentialSizeInBytes(parseSizeWithModifierToBytes(optionValue));
     }
 
     private void setRandomSize() {
         String optionValue;
-        optionValue = options.get("rsize").stringValue;
+        optionValue = options.get(SIZE_RAND).stringValue;
         if (null != optionValue)
             builder.setRandomSizeInBytes(parseSizeWithModifierToBytes(optionValue));
     }
 
     private void setBasefileSize() {
         String optionValue;
-        optionValue = options.get("-basefile-size").stringValue;
+        optionValue = options.get(SIZE_BASEFILE).stringValue;
         if (null != optionValue)
             builder.setBasefileSizeInBytes(parseSizeWithModifierToBytes(optionValue));
     }
 
     private void setFileSize() {
         String optionValue;
-        optionValue = options.get("-file-size").stringValue;
+        optionValue = options.get(SIZE_FILES).stringValue;
         if (null != optionValue) {
             long sizeInBytes = parseSizeWithModifierToBytes(optionValue);
             if (sizeInBytes > Integer.MAX_VALUE)
@@ -231,10 +232,10 @@ public class CLIOptions {
         }
     }
 
-    /* Use DirAdress from Param, if not present, use DirAddress from ConfigFile, if not preset, use Default */
+    /* if no DirAdress is given, use DirAddress from ConfigFile */
     private void setDirAddress() {
-        String dirAddressFromCLI = options.get("-dir-address").stringValue;
-        String dirAddressFromConfig = getDefaultDir();
+        String dirAddressFromCLI = options.get(DIR_ADDRESS).stringValue;
+        String dirAddressFromConfig = Controller.getDefaultDir();
         if (null != dirAddressFromCLI)
             builder.setDirAddress(dirAddressFromCLI);
         else if (null != dirAddressFromConfig)
@@ -242,16 +243,21 @@ public class CLIOptions {
     }
 
     private void setUsername() {
-        String userName = options.get("-username").stringValue;
+        String userName = options.get(USERNAME).stringValue;
         if (null != userName)
             builder.setUserName(userName);
     }
 
     private void setGroup() {
-        // Todo Replace with real setGroup()
-        String userName = options.get("-username").stringValue;
-        if (null != userName)
-            builder.setGroup(userName);
+        /* if no group option is given, use username as groupname */
+        String groupName = options.get(GROUPNAME).stringValue;
+        if (null != groupName)
+            builder.setGroup(groupName);
+        else {
+            String userName = options.get(USERNAME).stringValue;
+            if (null != userName)
+                builder.setGroup(userName);
+        }
     }
 
     private void setOSDPassword() {
@@ -273,7 +279,7 @@ public class CLIOptions {
     }
 
     private void setStripeSize() {
-        String stripeSize = options.get("-stripe-size").stringValue;
+        String stripeSize = options.get(STRIPE_SIZE).stringValue;
         if (null != stripeSize) {
             long stripeSizeInBytes = parseSizeWithModifierToBytes(stripeSize);
             assert stripeSizeInBytes <= Integer.MAX_VALUE : "StripeSize must be less equal than Integer.MAX_VALUE";
@@ -282,25 +288,30 @@ public class CLIOptions {
     }
 
     private void setStripeWidth() {
-        String stripeWidth = options.get("-stripe-width").stringValue;
+        String stripeWidth = options.get(STRIPE_WITDH).stringValue;
         if (null != stripeWidth)
             builder.setStripeWidth(Integer.parseInt(stripeWidth));
     }
 
     private void setNoCleanup() {
-        boolean switchValue = options.get("-no-cleanup").switchValue;
+        boolean switchValue = options.get(NO_CLEANUP).switchValue;
         builder.setNoCleanup(switchValue);
     }
 
     private void setNoCleanupOfVolumes() {
-        boolean switchValue = options.get("-no-cleanup-volumes").switchValue;
+        boolean switchValue = options.get(NO_CLEANUP_VOLUMES).switchValue;
         builder.setNoCleanupOfVolumes(switchValue);
     }
 
     private void setNoCleanupOfBasefile() {
-        boolean switchValue = options.get("-no-cleanup-basefile").switchValue;
+        boolean switchValue = options.get(NO_CLEANUP_BASEFILE).switchValue;
         builder.setNoCleanupOfBasefile(switchValue);
     }
+
+	private void setOsdCleanup() {
+		boolean switchValue = options.get(OSD_CLEANUP).switchValue;
+		builder.setOsdCleanup(switchValue);
+	}
 
     boolean sequentialWriteBenchmarkIsSet() {
         return options.get(SEQ_WRITE).switchValue;
@@ -319,11 +330,11 @@ public class CLIOptions {
     }
 
     boolean randomFilebasedWriteBenchmarkIsSet() {
-        return options.get("rfw").switchValue;
+        return options.get(FILEBASED_WRITE).switchValue;
     }
 
     boolean randomFilebasedReadBenchmarkIsSet() {
-        return options.get("rfr").switchValue;
+        return options.get(FILEBASED_READ).switchValue;
     }
 
     private long parseSizeWithModifierToBytes(String size) {
@@ -359,19 +370,4 @@ public class CLIOptions {
         return sizeInBytes;
     }
 
-    // Todo (jvf) Move to Controller or Params?
-    private String getDefaultDir() {
-        String[] dirAddresses;
-        DefaultDirConfig cfg = null;
-        try {
-            cfg = new DefaultDirConfig();
-            dirAddresses = cfg.getDirectoryServices();
-            return dirAddresses[0];
-        } catch (IOException e) {
-            logMessage(LEVEL_INFO, Logging.Category.tool, xtfs_benchmark.class,
-                    "Could not read or find Default DIR Config in %s. Errormessage: %s",
-                    DefaultDirConfig.DEFAULT_DIR_CONFIG, e.getMessage());
-            return null;
-        }
-    }
 }

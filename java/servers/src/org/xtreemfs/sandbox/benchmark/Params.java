@@ -45,8 +45,10 @@ public class Params {
     final boolean             noCleanup;
     final boolean             noCleanupOfVolumes;
     final boolean             noCleanupOfBasefile;
+    boolean                   osdCleanup;
 
-    Params(ParamsBuilder builder) {
+
+	Params(ParamsBuilder builder) {
         this.numberOfThreads = builder.numberOfThreads;
         this.numberOfRepetitions = builder.numberOfRepetitions;
         this.sequentialSizeInBytes = builder.sequentialSizeInBytes;
@@ -69,6 +71,7 @@ public class Params {
         this.noCleanup = builder.noCleanup;
         this.noCleanupOfVolumes = builder.noCleanupOfVolumes;
         this.noCleanupOfBasefile = builder.noCleanupOfBasefile;
+		this.osdCleanup = builder.osdCleanup;
     }
 
     private String getMRCAddress(String dirAddress, RPC.UserCredentials userCredentials, SSLOptions sslOptions,

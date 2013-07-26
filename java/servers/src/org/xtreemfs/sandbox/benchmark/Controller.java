@@ -13,6 +13,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
+import org.xtreemfs.utils.DefaultDirConfig;
+
+import static org.xtreemfs.foundation.logging.Logging.LEVEL_INFO;
+import static org.xtreemfs.foundation.logging.Logging.logMessage;
 
 /**
 *
@@ -89,18 +93,18 @@ public class Controller {
     public void teardown() throws Exception {
         deleteVolumesAndFiles();
         BenchmarkClientFactory.shutdownClients();
+		if (params.osdCleanup)
+			VolumeManager.getInstance().cleanupOSD();
     }
 
     private void deleteVolumesAndFiles() throws Exception {
         VolumeManager volumeManager = VolumeManager.getInstance();
         if (!params.noCleanup && !params.noCleanupOfVolumes){
-            volumeManager.deleteCreatedFiles();   // is needed in case no volume was created!
+            volumeManager.deleteCreatedFiles();   // is needed in case no volume was created
             volumeManager.deleteCreatedVolumes();
         }
         else if (!params.noCleanup)
            volumeManager.deleteCreatedFiles();
-
-        /* volumeManager.scrub(); */
     }
 
     public static void printResults(ConcurrentLinkedQueue<BenchmarkResult> results) {
@@ -132,6 +136,21 @@ public class Controller {
             e.printStackTrace();
         }
     }
+
+	public static String getDefaultDir() {
+		String[] dirAddresses;
+		DefaultDirConfig cfg = null;
+		try {
+			cfg = new DefaultDirConfig();
+			dirAddresses = cfg.getDirectoryServices();
+			return dirAddresses[0];
+		} catch (IOException e) {
+			logMessage(LEVEL_INFO, Logging.Category.tool, Controller.class,
+					"Could not read or find Default DIR Config in %s. Errormessage: %s",
+					DefaultDirConfig.DEFAULT_DIR_CONFIG, e.getMessage());
+			return null;
+		}
+	}
 
     void setupVolumes(String... volumeNames) throws Exception {
         VolumeManager.init(this.params);
