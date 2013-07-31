@@ -19,9 +19,9 @@ import java.io.IOException;
  * 
  * @author jensvfischer
  */
-public class RandomWriteBenchmark extends RandomOffsetbasedBenchmark {
+public class BenchmarkRandomWrite extends BenchmarkRandomOffsetbased {
 
-    RandomWriteBenchmark(Volume volume, Params params) throws Exception {
+    BenchmarkRandomWrite(Volume volume, Params params) throws Exception {
         super(volume, params);
     }
 
