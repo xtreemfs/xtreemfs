@@ -20,7 +20,7 @@ import org.xtreemfs.foundation.logging.Logging;
  * 
  * @author jensvfischer
  */
-public abstract class Benchmark {
+public abstract class AbstractBenchmark {
 
     static final int  MiB_IN_BYTES = 1024 * 1024;
     static final int  GiB_IN_BYTES = 1024 * 1024 * 1024;
@@ -31,7 +31,7 @@ public abstract class Benchmark {
     final AdminClient client;
     final Params      params;
 
-    Benchmark(long benchmarkSizeInBytes, Volume volume, Params params) throws Exception {
+    AbstractBenchmark(long benchmarkSizeInBytes, Volume volume, Params params) throws Exception {
         client = BenchmarkClientFactory.getNewClient(params);
         this.benchmarkSizeInBytes = benchmarkSizeInBytes;
         this.volume = volume;
@@ -55,7 +55,7 @@ public abstract class Benchmark {
         long numberOfBlocks = benchmarkSizeInBytes / stripeWidth;
         long byteCounter = 0;
 
-        /* Run the Benchmark */
+        /* Run the AbstractBenchmark */
         long before = System.currentTimeMillis();
         byteCounter = tryPerformIO(data, numberOfBlocks);
         long after = System.currentTimeMillis();

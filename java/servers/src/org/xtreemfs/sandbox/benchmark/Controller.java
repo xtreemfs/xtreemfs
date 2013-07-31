@@ -34,7 +34,7 @@ public class Controller {
     private void setup() {
     }
 
-    ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(Benchmark.BenchmarkType benchmarkType, int numberOfThreads)
+    ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(AbstractBenchmark.BenchmarkType benchmarkType, int numberOfThreads)
             throws Exception {
         ConcurrentLinkedQueue<BenchmarkResult> result;
         ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
@@ -57,11 +57,11 @@ public class Controller {
      * @return
      * @throws Exception
      */
-    ConcurrentLinkedQueue<BenchmarkResult> startBenchmark(Benchmark.BenchmarkType benchmarkType, int numberOfThreads)
+    ConcurrentLinkedQueue<BenchmarkResult> startBenchmark(AbstractBenchmark.BenchmarkType benchmarkType, int numberOfThreads)
             throws Exception {
 
         // TODO (jvf) Check für benchmarksize % blocksize an anderer Stelle einbauen
-        // if (sizeInBytes % Benchmark.stripeWidth != 0)
+        // if (sizeInBytes % AbstractBenchmark.stripeWidth != 0)
         // throw new
         // IllegalArgumentException("Size must be in alignment with (i.e. divisible through) the block size");
 
@@ -69,7 +69,7 @@ public class Controller {
         ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
 
         for (int i = 0; i < numberOfThreads; i++) {
-            Benchmark benchmark = BenchmarkFactory.createBenchmark(benchmarkType, VolumeManager.getInstance()
+            AbstractBenchmark benchmark = BenchmarkFactory.createBenchmark(benchmarkType, VolumeManager.getInstance()
                     .getNextVolume(), params);
             benchmark.startBenchmark(results, threads);
         }
@@ -175,7 +175,7 @@ public class Controller {
         Controller controller = new Controller(params);
         controller.tryConnection();
         controller.setupVolumes();
-        ConcurrentLinkedQueue results = controller.startBenchmarks(Benchmark.BenchmarkType.SEQ_WRITE, 1);
+        ConcurrentLinkedQueue results = controller.startBenchmarks(AbstractBenchmark.BenchmarkType.SEQ_WRITE, 1);
         printResults(results);
         controller.teardown();
     }

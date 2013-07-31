@@ -11,17 +11,17 @@ package org.xtreemfs.sandbox.benchmark;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * Thread for a {@link Benchmark}. Starts
- * {@link Benchmark#benchmark(java.util.concurrent.ConcurrentLinkedQueue)} as run method.
+ * Thread for a {@link AbstractBenchmark}. Starts
+ * {@link AbstractBenchmark#benchmark(java.util.concurrent.ConcurrentLinkedQueue)} as run method.
  * 
  * @author jensvfischer
  */
 public class BenchThread implements Runnable {
 
     private ConcurrentLinkedQueue<BenchmarkResult> results;
-    private Benchmark benchmark;
+    private AbstractBenchmark benchmark;
 
-    public BenchThread(Benchmark benchmark, ConcurrentLinkedQueue<BenchmarkResult> results) {
+    public BenchThread(AbstractBenchmark benchmark, ConcurrentLinkedQueue<BenchmarkResult> results) {
         this.benchmark = benchmark;
         this.results = results;
     }

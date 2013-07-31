@@ -15,9 +15,9 @@ import org.xtreemfs.common.libxtreemfs.Volume;
  */
 public class BenchmarkFactory {
 
-    public static Benchmark createBenchmark(Benchmark.BenchmarkType benchmarkType, Volume volume, Params params) throws Exception {
+    public static AbstractBenchmark createBenchmark(AbstractBenchmark.BenchmarkType benchmarkType, Volume volume, Params params) throws Exception {
 
-        Benchmark benchmark = null;
+        AbstractBenchmark benchmark = null;
 
         switch (benchmarkType) {
         case SEQ_WRITE:

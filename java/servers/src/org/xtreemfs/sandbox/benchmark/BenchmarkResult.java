@@ -9,7 +9,7 @@
 package org.xtreemfs.sandbox.benchmark;
 
 /**
- * Result objects for {@link Benchmark}.
+ * Result objects for {@link AbstractBenchmark}.
  * 
  * @author jensvfischer
  */
@@ -18,7 +18,7 @@ public class BenchmarkResult {
     final static int MiB_IN_BYTES = 1024 * 1024;
     final static int GiB_IN_BYTES = 1024 * 1024 * 1024;
 
-    Benchmark.BenchmarkType benchmarkType;
+    AbstractBenchmark.BenchmarkType benchmarkType;
     int              numberOfReadersOrWriters;
     double           timeInSec;
     double           speedInMiBProSec;
@@ -42,13 +42,13 @@ public class BenchmarkResult {
                 : dataWrittenInBytes / MiB_IN_BYTES + " MiB [";
         String readersOrWriters;
 
-        if (benchmarkType == Benchmark.BenchmarkType.SEQ_WRITE
-                || benchmarkType == Benchmark.BenchmarkType.RAND_WRITE
-                || benchmarkType == Benchmark.BenchmarkType.FILES_WRITE){
+        if (benchmarkType == AbstractBenchmark.BenchmarkType.SEQ_WRITE
+                || benchmarkType == AbstractBenchmark.BenchmarkType.RAND_WRITE
+                || benchmarkType == AbstractBenchmark.BenchmarkType.FILES_WRITE){
             readersOrWriters = "\tNumber of Writers: " + numberOfReadersOrWriters + "\n";
-        } else if (benchmarkType == Benchmark.BenchmarkType.SEQ_READ
-                || benchmarkType == Benchmark.BenchmarkType.RAND_READ
-                || benchmarkType == Benchmark.BenchmarkType.FILES_READ){
+        } else if (benchmarkType == AbstractBenchmark.BenchmarkType.SEQ_READ
+                || benchmarkType == AbstractBenchmark.BenchmarkType.RAND_READ
+                || benchmarkType == AbstractBenchmark.BenchmarkType.FILES_READ){
             readersOrWriters = "\tNumber of Readers: " + numberOfReadersOrWriters + "\n";
         } else {
             readersOrWriters = "\tNumber of Readers/Writers: " + numberOfReadersOrWriters + "\n";

@@ -13,7 +13,7 @@ import org.xtreemfs.common.libxtreemfs.Volume;
 /**
  * @author jensvfischer
  */
-public abstract class SequentialBenchmark extends Benchmark {
+public abstract class SequentialBenchmark extends AbstractBenchmark {
 
 
     static final String BENCHMARK_FILENAME           = "benchmarks/sequentialBenchmark/benchFile";
