@@ -111,11 +111,6 @@ public class CLIOptions {
 
     private void initOptions() {
 
-        /*
-         * -sw -sr -rw -p -rr -rfr -rfw -p <number> -r <number> -ssize -rsize --file-size --basefile-size (--no-cleanup
-         * | --no-cleanup-volumes) volume1 volume2
-         */
-
         /* Connection Data */
         options.put(DIR_ADDRESS, new CLIParser.CliOption(STRING,
                 "directory service to use (e.g. 'localhost:32638'). If no URI is specified, URI and security settings are taken from '"
@@ -184,7 +179,7 @@ public class CLIOptions {
         System.out.println("  " + "options:");
         utils.printOptions(options);
         System.out.println();
-        System.out.println("example: xtfs_benchmark -sw -sr -p 3 -ssize 3G volume1 volume2 volume3");
+        System.out.println("example: xtfs_benchmark -sw -sr -t 3 -ssize 3G volume1 volume2 volume3");
         System.out.println("\t\t starts a sequential write and read benchmark of 3 GiB with 3 benchmarks in parallel on volume1, volume2 and volume3\n");
     }
 

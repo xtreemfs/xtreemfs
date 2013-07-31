@@ -16,7 +16,7 @@ import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.foundation.logging.Logging;
 
 /**
- * Benchmark library for measuring read- and writeperformance of a OSD. ToDo (jvf) ErrorHandling
+ * Benchmark library for measuring read- and writeperformance of a OSD.
  * 
  * @author jensvfischer
  */

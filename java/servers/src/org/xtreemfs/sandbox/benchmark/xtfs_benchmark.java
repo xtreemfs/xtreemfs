@@ -47,7 +47,6 @@ public class xtfs_benchmark {
         if (cliOptions.arguments.size() == 0)
             volumeManager.createDefaultVolumes(params.numberOfThreads);
         else {
-            // ToDo add check to verify that the number of volumes is in accordance with the number of threads
             String[] volumes = cliOptions.arguments.toArray(new String[cliOptions.arguments.size()]);
             volumeManager.openVolumes(volumes);
         }

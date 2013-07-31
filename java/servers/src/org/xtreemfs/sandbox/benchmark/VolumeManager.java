@@ -100,9 +100,6 @@ public class VolumeManager {
                     GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, params.getStripeSizeInKiB,
                     params.stripeWidth, volumeAttributes);
             volume = client.openVolume(volumeName, params.sslOptions, params.options);
-
-            // Todo (jvf) Implement in tool and params or delete
-//            volume.setOSDSelectionPolicy(params.userCredentials, "1000,3002,4711");
             createdVolumes.add(volume);
             createDirStructure(volume);
         } catch (PosixErrorException e) {
@@ -114,7 +111,6 @@ public class VolumeManager {
     }
 
     private void createDirStructure(Volume volume) {
-        // tryToCreateDir(volume, "benchmarks", false);
         tryToCreateDir(volume, "/benchmarks/sequentialBenchmark", true);
         tryToCreateDir(volume, "/benchmarks/randomBenchmark", true);
     }
@@ -202,7 +198,6 @@ public class VolumeManager {
         String path = pathToBasefile.substring(0, pathToBasefile.lastIndexOf('/'));
         String filename = pathToBasefile.substring(pathToBasefile.lastIndexOf('/') + 1);
 
-        /* ToDo (jvf) there seems to be a bug if you try to get filelist > 1024 files */
         List<MRC.DirectoryEntry> directoryEntries = volume.readDir(params.userCredentials, path, 0, 0, true)
                 .getEntriesList();
         ArrayList<String> entries = new ArrayList<String>(directoryEntries.size());
@@ -227,7 +222,7 @@ public class VolumeManager {
         return aggregatedSizeInBytes;
     }
 
-    // adds the files created by a benchmark to the list of created files
+    /* adds the files created by a benchmark to the list of created files */
     synchronized void addCreatedFiles(Volume volume, LinkedList<String> newFiles) {
         HashSet<String> filelistForVolume;
         if (createdFiles.containsKey(volume))
