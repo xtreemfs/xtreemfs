@@ -80,15 +80,15 @@ public class ControllerTest {
 
         Controller controller = new Controller(params);
         controller.setupVolumes();
-        ConcurrentLinkedQueue results = controller.startBenchmarks(BenchmarkType.WRITE, 1);
+        ConcurrentLinkedQueue results = controller.startBenchmarks(Benchmark.BenchmarkType.SEQ_WRITE, 1);
         Controller.printResults(results);
-        results = controller.startBenchmarks(BenchmarkType.READ, 1);
+        results = controller.startBenchmarks(Benchmark.BenchmarkType.SEQ_READ, 1);
         Controller.printResults(results);
-        // results = controller.startBenchmarks(BenchmarkType.RANDOM_IO_READ, 1, MiB_IN_BYTES);
+        // results = controller.startBenchmarks(BenchmarkType.RAND_READ, 1, MiB_IN_BYTES);
         // controller.printResults(results);
-        results = controller.startBenchmarks(BenchmarkType.RANDOM_IO_WRITE_FILEBASED, 1);
+        results = controller.startBenchmarks(Benchmark.BenchmarkType.FILES_WRITE, 1);
         Controller.printResults(results);
-        results = controller.startBenchmarks(BenchmarkType.RANDOM_IO_WRITE_FILEBASED, 1);
+        results = controller.startBenchmarks(Benchmark.BenchmarkType.FILES_WRITE, 1);
         Controller.printResults(results);
         controller.teardown();
     }

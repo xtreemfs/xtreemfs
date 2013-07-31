@@ -118,4 +118,12 @@ public abstract class Benchmark {
         return (double) tmp / factor;
     }
 
+    /**
+     * Enum for the different benchmark Types.
+     *
+     * @author jensvfischer
+     */
+    public static enum BenchmarkType {
+        SEQ_WRITE, SEQ_READ, RAND_WRITE, RAND_READ, FILES_WRITE, FILES_READ
+    }
 }

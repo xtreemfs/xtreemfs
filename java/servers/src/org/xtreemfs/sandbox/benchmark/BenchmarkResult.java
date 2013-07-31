@@ -18,7 +18,7 @@ public class BenchmarkResult {
     final static int MiB_IN_BYTES = 1024 * 1024;
     final static int GiB_IN_BYTES = 1024 * 1024 * 1024;
 
-    BenchmarkType    benchmarkType;
+    Benchmark.BenchmarkType benchmarkType;
     int              numberOfReadersOrWriters;
     double           timeInSec;
     double           speedInMiBProSec;
@@ -42,11 +42,13 @@ public class BenchmarkResult {
                 : dataWrittenInBytes / MiB_IN_BYTES + " MiB [";
         String readersOrWriters;
 
-        if (benchmarkType == BenchmarkType.SEQUENTIAL_SINGLE_WRITE
-                || benchmarkType == BenchmarkType.SEQUENTIAL_MULTI_WRITE) {
+        if (benchmarkType == Benchmark.BenchmarkType.SEQ_WRITE
+                || benchmarkType == Benchmark.BenchmarkType.RAND_WRITE
+                || benchmarkType == Benchmark.BenchmarkType.FILES_WRITE){
             readersOrWriters = "\tNumber of Writers: " + numberOfReadersOrWriters + "\n";
-        } else if (benchmarkType == BenchmarkType.SEQUENTIAL_SINGLE_READ
-                || benchmarkType == BenchmarkType.SEQUENTIAL_MULTI_READ) {
+        } else if (benchmarkType == Benchmark.BenchmarkType.SEQ_READ
+                || benchmarkType == Benchmark.BenchmarkType.RAND_READ
+                || benchmarkType == Benchmark.BenchmarkType.FILES_READ){
             readersOrWriters = "\tNumber of Readers: " + numberOfReadersOrWriters + "\n";
         } else {
             readersOrWriters = "\tNumber of Readers/Writers: " + numberOfReadersOrWriters + "\n";
