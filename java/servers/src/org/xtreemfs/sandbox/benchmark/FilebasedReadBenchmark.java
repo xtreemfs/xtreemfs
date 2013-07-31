@@ -21,11 +21,11 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  * 
  * @author jensvfischer
  */
-public class FilebasedRandomReadBenchmark extends FilebasedRandomBenchmark {
+public class FilebasedReadBenchmark extends FilebasedBenchmark {
 
     private String[] filenames;
 
-    FilebasedRandomReadBenchmark(Volume volume, Params params) throws Exception {
+    FilebasedReadBenchmark(Volume volume, Params params) throws Exception {
         super(volume, params);
     }
 

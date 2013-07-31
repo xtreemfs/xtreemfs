@@ -20,11 +20,11 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  * Class implementing a random read benchmark.
  * @author jensvfischer
  */
-public class FilebasedRandomWriteBenchmark extends FilebasedRandomBenchmark {
+public class FilebasedWriteBenchmark extends FilebasedBenchmark {
 
     private LinkedList<String> filenames;
 
-    FilebasedRandomWriteBenchmark(Volume volume, Params params) throws Exception {
+    FilebasedWriteBenchmark(Volume volume, Params params) throws Exception {
         super(volume, params);
         filenames = new LinkedList<String>();
     }

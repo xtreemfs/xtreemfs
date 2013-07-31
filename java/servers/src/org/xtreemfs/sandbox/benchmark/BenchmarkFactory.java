@@ -33,10 +33,10 @@ public class BenchmarkFactory {
             benchmark = new RandomReadBenchmark(volume, params);
             break;
         case RANDOM_IO_WRITE_FILEBASED:
-            benchmark = new FilebasedRandomWriteBenchmark(volume, params);
+            benchmark = new FilebasedWriteBenchmark(volume, params);
             break;
         case RANDOM_IO_READ_FILEBASED:
-            benchmark = new FilebasedRandomReadBenchmark(volume, params);
+            benchmark = new FilebasedReadBenchmark(volume, params);
             break;
         }
         return benchmark;

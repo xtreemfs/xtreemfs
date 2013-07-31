@@ -13,13 +13,13 @@ import org.xtreemfs.common.libxtreemfs.Volume;
 /**
  * @author jensvfischer
  */
-public abstract class FilebasedRandomBenchmark extends RandomBenchmark {
+public abstract class FilebasedBenchmark extends RandomBenchmark {
 
     static final String BENCHMARK_FILENAME           = "benchmarks/randomBenchmark/benchFile";
     final int randomIOFilesize;
 
 
-    public FilebasedRandomBenchmark(Volume volume, Params params) throws Exception {
+    public FilebasedBenchmark(Volume volume, Params params) throws Exception {
         super(volume, params);
         this.randomIOFilesize = params.randomIOFilesize;
     }
