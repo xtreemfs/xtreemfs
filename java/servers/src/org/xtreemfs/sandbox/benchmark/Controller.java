@@ -34,7 +34,7 @@ public class Controller {
     private void setup() {
     }
 
-    ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(AbstractBenchmark.BenchmarkType benchmarkType, int numberOfThreads)
+    ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(BenchmarkType benchmarkType, int numberOfThreads)
             throws Exception {
         ConcurrentLinkedQueue<BenchmarkResult> result;
         ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
@@ -57,13 +57,13 @@ public class Controller {
      * @return
      * @throws Exception
      */
-    ConcurrentLinkedQueue<BenchmarkResult> startBenchmark(AbstractBenchmark.BenchmarkType benchmarkType, int numberOfThreads)
+    ConcurrentLinkedQueue<BenchmarkResult> startBenchmark(BenchmarkType benchmarkType, int numberOfThreads)
             throws Exception {
 
         // TODO (jvf) Check für benchmarksize % blocksize an anderer Stelle einbauen
-        // if (sizeInBytes % AbstractBenchmark.stripeWidth != 0)
-        // throw new
-        // IllegalArgumentException("Size must be in alignment with (i.e. divisible through) the block size");
+        if (params.sequentialSizeInBytes % (params.stripeSizeInBytes * params.stripeWidth) != 0
+                || params.randomSizeInBytes % (params.stripeSizeInBytes * params.stripeWidth) != 0)
+            throw new IllegalArgumentException("Size must satisfy: size mod (stripeSize * stripeWidth) = 0");
 
         ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
         ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
@@ -174,7 +174,7 @@ public class Controller {
         Controller controller = new Controller(params);
         controller.tryConnection();
         controller.setupVolumes();
-        ConcurrentLinkedQueue results = controller.startBenchmarks(AbstractBenchmark.BenchmarkType.SEQ_WRITE, 1);
+        ConcurrentLinkedQueue results = controller.startBenchmarks(BenchmarkType.SEQ_WRITE, 1);
         printResults(results);
         controller.teardown();
     }

@@ -64,32 +64,32 @@ public class xtfs_benchmark {
         ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
 
         if (cliOptions.sequentialWriteBenchmarkIsSet()) {
-            result = controller.startBenchmarks(AbstractBenchmark.BenchmarkType.SEQ_WRITE, params.numberOfThreads);
+            result = controller.startBenchmarks(BenchmarkType.SEQ_WRITE, params.numberOfThreads);
             results.addAll(result);
         }
 
         if (cliOptions.sequentialReadBenchmarkIsSet()) {
-            result = controller.startBenchmarks(AbstractBenchmark.BenchmarkType.SEQ_READ, params.numberOfThreads);
+            result = controller.startBenchmarks(BenchmarkType.SEQ_READ, params.numberOfThreads);
             results.addAll(result);
         }
 
         if (cliOptions.randomWriteBenchmarkIsSet()) {
-            result = controller.startBenchmarks(AbstractBenchmark.BenchmarkType.RAND_WRITE, params.numberOfThreads);
+            result = controller.startBenchmarks(BenchmarkType.RAND_WRITE, params.numberOfThreads);
             results.addAll(result);
         }
 
         if (cliOptions.randomReadBenchmarkIsSet()) {
-            result = controller.startBenchmarks(AbstractBenchmark.BenchmarkType.RAND_READ, params.numberOfThreads);
+            result = controller.startBenchmarks(BenchmarkType.RAND_READ, params.numberOfThreads);
             results.addAll(result);
         }
 
         if (cliOptions.randomFilebasedWriteBenchmarkIsSet()) {
-            result = controller.startBenchmarks(AbstractBenchmark.BenchmarkType.FILES_WRITE, 1);
+            result = controller.startBenchmarks(BenchmarkType.FILES_WRITE, 1);
             results.addAll(result);
         }
 
         if (cliOptions.randomFilebasedReadBenchmarkIsSet()) {
-            result = controller.startBenchmarks(AbstractBenchmark.BenchmarkType.FILES_READ, 1);
+            result = controller.startBenchmarks(BenchmarkType.FILES_READ, 1);
             results.addAll(result);
         }
 
