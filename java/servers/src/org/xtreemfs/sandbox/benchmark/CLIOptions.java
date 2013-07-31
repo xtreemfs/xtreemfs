@@ -86,7 +86,7 @@ public class CLIOptions {
         parseCLI(args, options, arguments);
     }
 
-    Params buildParamsFromCLIOptions() {
+    Params buildParamsFromCLIOptions() throws Exception {
         setNumberOfThreads();
         setNumberOfRepetitions();
         setSequentialSize();

@@ -18,7 +18,7 @@ public class xtfs_benchmark {
         cliOptions = new CLIOptions();
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
 
         Logging.start(6, Category.tool);
         Logging.redirect(System.err);
@@ -30,14 +30,20 @@ public class xtfs_benchmark {
             return;
         }
 
-        Params params = cliOptions.buildParamsFromCLIOptions();
-
-        controller = new Controller(params);
-        controller.tryConnection();
-        setupVolumes(params);
-        runBenchmarks(params);
-        controller.teardown();
-
+        Params params = null;
+        try {
+            params = cliOptions.buildParamsFromCLIOptions();
+            controller = new Controller(params);
+            controller.tryConnection();
+            setupVolumes(params);
+            runBenchmarks(params);
+            controller.teardown();
+        } catch (Exception e) {
+            // Todo jvf add logging
+            e.printStackTrace();
+            /* force exit of benchmark tool in case of uncaught exceptions */
+            System.exit(1);
+        }
     }
 
     private static void setupVolumes(Params params) throws Exception {

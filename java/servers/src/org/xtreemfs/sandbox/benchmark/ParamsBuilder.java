@@ -152,7 +152,7 @@ public class ParamsBuilder {
 		return this;
 	}
 
-	public Params build() {
+	public Params build() throws Exception {
         return new Params(this);
     }
 

@@ -48,7 +48,7 @@ public class Params {
     boolean                   osdCleanup;
 
 
-	Params(ParamsBuilder builder) {
+	Params(ParamsBuilder builder) throws Exception {
         this.numberOfThreads = builder.numberOfThreads;
         this.numberOfRepetitions = builder.numberOfRepetitions;
         this.sequentialSizeInBytes = builder.sequentialSizeInBytes;
@@ -75,7 +75,7 @@ public class Params {
     }
 
     private String getMRCAddress(String dirAddress, RPC.UserCredentials userCredentials, SSLOptions sslOptions,
-            Options options) {
+            Options options) throws Exception {
 
         AdminClient client = BenchmarkClientFactory.getNewClient(dirAddress, userCredentials, sslOptions, options);
 
@@ -89,8 +89,7 @@ public class Params {
         } catch (Exception e) {
             Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this,
                     "Error while trying to get the MRC Address. Errormessage: %s", e.getMessage());
-            e.printStackTrace();
-            System.exit(1);
+            throw e;
         }
         return mrcAddress;
     }

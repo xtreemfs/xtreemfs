@@ -34,12 +34,12 @@ public class BenchmarkClientFactory {
      * @return a started AdminClient instance
      * @throws Exception
      */
-    static AdminClient getNewClient(Params params) {
+    static AdminClient getNewClient(Params params) throws Exception {
         return tryCreateClient(params.dirAddress, params.userCredentials, params.sslOptions, params.options);
     }
 
     static AdminClient getNewClient(String dirAddress, RPC.UserCredentials userCredentials, SSLOptions sslOptions,
-            Options options) {
+            Options options) throws Exception {
         return tryCreateClient(dirAddress, userCredentials, sslOptions, options);
     }
 
@@ -49,16 +49,14 @@ public class BenchmarkClientFactory {
 
     /* error handling for 'createNewClient()" */
     private static AdminClient tryCreateClient(String dirAddress, RPC.UserCredentials userCredentials,
-            SSLOptions sslOptions, Options options) {
+            SSLOptions sslOptions, Options options) throws Exception {
         AdminClient client = null;
         try {
             client = createNewClient(dirAddress, userCredentials, sslOptions, options);
         } catch (Exception e) {
             Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, BenchmarkClientFactory.class,
                     "Could not create new AdminClient. Errormessage: %s", e.getMessage());
-            Thread.yield(); // allow logger to catch up
-            e.printStackTrace();
-            System.exit(42);
+            throw e;
         }
         return client;
     }
