@@ -97,13 +97,18 @@ run_benchmark(){
   size=$2
   threads=$3
   if [ $benchType = "sw" ] || [ $benchType = "sr" ]; then
+
     XTREEMFS=$XTREEMFS timeout $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -ssize $size -t $threads --no-cleanup-volumes \
-      bench1 bench2 bench3 bench4 bench5 bench6 bench7 bench8 bench9 bench10 >> $RESULTS 2>> $LOGFILE
+      bench0 bench1 bench2 bench3 bench4 bench5 bench6 bench7 bench8 bench9 \
+      bench10 bench11 bench12 bench13 bench14 >> $RESULTS 2>> $LOGFILE
+
   elif [ $benchType = "rw" ] || [ $benchType = "rr" ]; then
+
     # assumes existing basefiles. If no basefiles exits the first run will produce invalid results
     XTREEMFS=$XTREEMFS timeout $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -rsize $size --basefile-size $BASEFILE_SIZE -t $threads \
       --no-cleanup-basefile --no-cleanup-volumes \
-      bench1 bench2 bench3 bench4 bench5 bench6 bench7 bench8 bench9 bench10 >> $RESULTS 2>> $LOGFILE
+      bench0 bench1 bench2 bench3 bench4 bench5 bench6 bench7 bench8 bench9 \
+      bench10 bench11 bench12 bench13 bench14 >> $RESULTS 2>> $LOGFILE
   fi
 
   if [ $? -eq 0 ]; then
