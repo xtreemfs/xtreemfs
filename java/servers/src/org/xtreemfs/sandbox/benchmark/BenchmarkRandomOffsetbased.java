@@ -49,7 +49,7 @@ public abstract class BenchmarkRandomOffsetbased extends BenchmarkRandom {
     }
 
     protected long generateNextRandomOffset() {
-        long nextOffset = Math.round(Math.random() * sizeOfBasefile - (long) RANDOM_IO_BLOCKSIZE);
+        long nextOffset = Math.round(Math.random() * (sizeOfBasefile - (long) RANDOM_IO_BLOCKSIZE));
         assert nextOffset >= 0 : "Offset < 0. Offset: " + nextOffset + " Basefilesize: " + sizeOfBasefile;
         assert nextOffset <= (sizeOfBasefile - RANDOM_IO_BLOCKSIZE) : " Offset > Filesize. Offset: " + nextOffset + "Basefilesize: " + sizeOfBasefile;
         return nextOffset;
