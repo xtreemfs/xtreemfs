@@ -81,16 +81,8 @@ public class Params {
 
         UUIDResolver resolver = (ClientImplementation) client;
 
-        String mrcUUID = null;
-        String mrcAddress = null;
-        try {
-            mrcUUID = client.getServiceByType(DIR.ServiceType.SERVICE_TYPE_MRC).getServices(0).getUuid();
-            mrcAddress = resolver.uuidToAddress(mrcUUID);
-        } catch (Exception e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this,
-                    "Error while trying to get the MRC Address. Errormessage: %s", e.getMessage());
-            throw e;
-        }
+        String mrcUUID = client.getServiceByType(DIR.ServiceType.SERVICE_TYPE_MRC).getServices(0).getUuid();
+        String mrcAddress = resolver.uuidToAddress(mrcUUID);
         return mrcAddress;
     }
 

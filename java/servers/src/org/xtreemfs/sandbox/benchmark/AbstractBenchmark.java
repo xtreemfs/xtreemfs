@@ -66,7 +66,7 @@ public abstract class AbstractBenchmark {
 
         /* Run the AbstractBenchmark */
         long before = System.currentTimeMillis();
-        byteCounter = tryPerformIO(data, numberOfBlocks);
+        byteCounter = performIO(data, numberOfBlocks);
         long after = System.currentTimeMillis();
 
         /* Calculate and return results */
@@ -84,19 +84,6 @@ public abstract class AbstractBenchmark {
 
     /* called before a benchmark thread is started */
     abstract void prepareBenchmark() throws Exception;
-
-    /* Error handling for 'performIO()' */
-    long tryPerformIO(byte[] data, long numberOfBlocks) {
-        long byteCounter;
-        try {
-            byteCounter = performIO(data, numberOfBlocks);
-        } catch (IOException e) {
-            byteCounter = 0;
-            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this,
-                    "Error while trying to perform IO: %s", e.getMessage());
-        }
-        return byteCounter;
-    }
 
     /*
      * Writes or reads the specified amount of data to/from the volume specified in the object initialization.

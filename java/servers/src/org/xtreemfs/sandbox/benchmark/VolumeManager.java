@@ -110,28 +110,9 @@ public class VolumeManager {
         return volume;
     }
 
-    private void createDirStructure(Volume volume) {
-        tryToCreateDir(volume, "/benchmarks/sequentialBenchmark", true);
-        tryToCreateDir(volume, "/benchmarks/randomBenchmark", true);
-    }
-
-    private void tryToCreateDir(Volume volume, String dirName, boolean recursive) {
-        try {
-            volume.createDirectory(params.userCredentials, dirName, 0777, recursive);
-            Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Directory %s on volume %s created.",
-                    dirName, volume.getVolumeName());
-        } catch (PosixErrorException e) {
-            if (e.getPosixError() != POSIXErrno.POSIX_ERROR_EEXIST) {
-                Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this,
-                        "Error while trying to create directory %s. Errormessage: %s", dirName, e.getMessage());
-                e.printStackTrace();
-            }
-        } catch (IOException e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this,
-                    "Error while trying to create directory %s. Errormessage: %s", dirName, e.getMessage());
-            e.printStackTrace();
-
-        }
+    private void createDirStructure(Volume volume) throws IOException {
+        volume.createDirectory(params.userCredentials, "/benchmarks/sequentialBenchmark", 0777, true);
+        volume.createDirectory(params.userCredentials, "/benchmarks/randomBenchmark", 0777, true);
     }
 
     void setSequentialFilelistForVolume(Volume volume, LinkedList<String> filelist) {

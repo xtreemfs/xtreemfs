@@ -25,6 +25,10 @@ public class BenchmarkClientFactory {
 
     private static ConcurrentLinkedQueue<AdminClient> clients;
 
+    static {
+        clients = new ConcurrentLinkedQueue<AdminClient>();
+    }
+
     /**
      * Create a AdminClient. The starting and shutdown of the client is managed by the BenchmarkClientFactory
      * (no need to call Client.start() and Client.shutdown())
@@ -35,34 +39,14 @@ public class BenchmarkClientFactory {
      * @throws Exception
      */
     static AdminClient getNewClient(Params params) throws Exception {
-        return tryCreateClient(params.dirAddress, params.userCredentials, params.sslOptions, params.options);
+        AdminClient client = ClientFactory.createAdminClient(params.dirAddress, params.userCredentials, params.sslOptions, params.options);
+        clients.add(client);
+        client.start();
+        return client;
     }
 
     static AdminClient getNewClient(String dirAddress, RPC.UserCredentials userCredentials, SSLOptions sslOptions,
             Options options) throws Exception {
-        return tryCreateClient(dirAddress, userCredentials, sslOptions, options);
-    }
-
-    static {
-        clients = new ConcurrentLinkedQueue<AdminClient>();
-    }
-
-    /* error handling for 'createNewClient()" */
-    private static AdminClient tryCreateClient(String dirAddress, RPC.UserCredentials userCredentials,
-            SSLOptions sslOptions, Options options) throws Exception {
-        AdminClient client = null;
-        try {
-            client = createNewClient(dirAddress, userCredentials, sslOptions, options);
-        } catch (Exception e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, BenchmarkClientFactory.class,
-                    "Could not create new AdminClient. Errormessage: %s", e.getMessage());
-            throw e;
-        }
-        return client;
-    }
-
-    private static AdminClient createNewClient(String dirAddress, RPC.UserCredentials userCredentials,
-            SSLOptions sslOptions, Options options) throws Exception {
         AdminClient client = ClientFactory.createAdminClient(dirAddress, userCredentials, sslOptions, options);
         clients.add(client);
         client.start();
@@ -78,17 +62,13 @@ public class BenchmarkClientFactory {
                 clients.size());
     }
 
-    /*
-     * there were AssertionErrors in VolumeImplementation.internalShutdown(VolumeImplementation.java:259)
-     * VolumeImplementation.close(VolumeImplementation.java:281)
-     * ClientImplementation.shutdown(ClientImplementation.java:186)
-     */
     static void tryShutdownOfClient(Client client) {
         try {
             client.shutdown();
-        } catch (AssertionError e) {
+        } catch (Throwable e) {
             Logging.logMessage(Logging.LEVEL_WARN, Logging.Category.tool, Runtime.getRuntime(),
-                    "Error while shutting down client. Errormessage: %s", e.getMessage());
+                    "Error while shutting down clients");
+            Logging.logError(Logging.LEVEL_WARN, BenchmarkClientFactory.class, e);
         }
     }
 

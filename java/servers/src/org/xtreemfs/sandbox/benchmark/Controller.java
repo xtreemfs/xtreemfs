@@ -122,17 +122,13 @@ public class Controller {
         }
     }
 
-    public void tryConnection() throws IOException {
+    public void tryConnection() throws Exception {
         try {
             BenchmarkClientFactory.getNewClient(params).getServiceByType(DIR.ServiceType.SERVICE_TYPE_OSD);
-        } catch (IOException e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, Controller.class,
-                    "Failed to establish connection to servers. Errormessage: %s", e.getMessage());
-            Thread.yield(); // allows the logger to catch up
-            throw e;
         } catch (Exception e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, Controller.class, e.getMessage());
-            e.printStackTrace();
+            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, Controller.class,
+                    "Failed to establish connection to DIR server.");
+            throw e;
         }
     }
 
