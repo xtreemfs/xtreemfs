@@ -29,6 +29,7 @@ public class BenchThread implements Runnable {
     @Override
     public void run() {
         try {
+            Thread.currentThread().setName(benchmark.getClass().getSimpleName() + "-Thread");
             benchmark.benchmark(results);
         } catch (Exception e) {
             e.printStackTrace();
