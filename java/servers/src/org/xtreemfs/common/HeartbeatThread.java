@@ -19,6 +19,7 @@ import java.util.Map.Entry;
 
 import org.xtreemfs.common.config.ServiceConfig;
 import org.xtreemfs.common.util.NetUtils;
+import org.xtreemfs.common.util.NetUtils.Endpoint;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.foundation.LifeCycleThread;
@@ -422,63 +423,72 @@ public class HeartbeatThread extends LifeCycleThread {
     }
 
     private void registerAddressMappings() throws InterruptedException, IOException {
-        List<AddressMapping.Builder> endpoints = null;
 
-        if (config.isUsingMultihoming()) {
-            endpoints = NetUtils.getReachableEndpoints(config.getPort(), proto, true);
+        List<AddressMapping.Builder> addressMappings = new ArrayList<AddressMapping.Builder>(10);
+        List<Endpoint> endpoints = NetUtils.getReachableEndpoints(config.getPort(), proto);
+        assert (endpoints.size() > 0);
 
-            if (endpoints.size() > 0)
-                advertisedHostName = endpoints.get(0).getAddress();
-
-            if (advertiseUDPEndpoints) {
-                endpoints.addAll(NetUtils.getReachableEndpoints(config.getPort(), Schemes.SCHEME_PBRPCU, true));
-            }
-
+        // If neither HostName nor listen address are explicitly set, try to find a single (preferably) global endpoint.
+        if ("".equals(config.getHostName()) && config.getAddress() == null) {
+            
             // Try to find the default route. The address assigned to the host name is assumed to be default.
             String hostAddress = null;
             try {
-                InetAddress host = "".equals(config.getHostName()) ? InetAddress.getLocalHost() : InetAddress.getByName(config.getHostName());
+                InetAddress host = InetAddress.getLocalHost();
                 hostAddress = NetUtils.getHostAddress(host);
             } catch (UnknownHostException e) {
                 Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Could not resolve the local hostname.");
             }
 
-            // Add the UUID to the endpoints and mark the default route.
-            for (AddressMapping.Builder endpoint : endpoints) {
-                endpoint.setUuid(uuid.toString());
 
-                if (endpoint.getAddress().equals(hostAddress)) {
-                    endpoint.setMatchNetwork("*");
-                }
-            }
-
+            AddressMapping.Builder amb = null;
 
             if (hostAddress != null) {
-                // If the hostname was configured or found use it for advertising
-                // TODO(jdillmann): Check if this should use the hostName instead of the address.
-                advertisedHostName = hostAddress;
-            } else if (endpoints.size() > 0) {
-                // else just the address of the first one found
-                advertisedHostName = endpoints.get(0).getAddress();
+                // Find the endpoint corresponding to the hostAddress.
+                for (Endpoint endpoint : endpoints) {
+                    if (endpoint.getAddressMapping().getAddress().equals(hostAddress)) {
+                        amb = endpoint.getAddressMapping();
+                        break;
+                    }
+                }
+            } else {
+                // Try to find a globally reachable endpoint.
+                for (Endpoint endpoint : endpoints) {
+                    if (endpoint.isGlobal()) {
+                        amb = endpoint.getAddressMapping();
+                        break;
+                    }
+                }
             }
+            
+            // If no globally reachable endpoint is found, use the first locally reachable one.
+            if (amb == null) {
+                amb = endpoints.get(0).getAddressMapping();
+            }
+            
+            // Mark the single endpoints matching network as default.
+            amb.setMatchNetwork("*");
+            
+            // Use the endpoints address to advertise this service.
+            advertisedHostName = amb.getAddress();
+            
+            // Add the mapping to the results.
+            addressMappings.add(amb);
 
-        } else if ("".equals(config.getHostName()) && config.getAddress() == null) {
-            endpoints = NetUtils.getReachableEndpoints(config.getPort(), proto, false);
-
-            if (endpoints.size() > 0)
-                advertisedHostName = endpoints.get(0).getAddress();
-
+            // If UDP endpoints are requested, find the used endpoint and add it to the result, too.
             if (advertiseUDPEndpoints) {
-                endpoints.addAll(NetUtils.getReachableEndpoints(config.getPort(), Schemes.SCHEME_PBRPCU, false));
+                List<Endpoint> UDPEndpoints = NetUtils.getReachableEndpoints(config.getPort(), Schemes.SCHEME_PBRPCU);
+                for (Endpoint endpoint : UDPEndpoints) {
+                    if (endpoint.getAddressMapping().getAddress().equals(amb.getAddress())) {
+                        AddressMapping.Builder ambUDP = endpoint.getAddressMapping();
+                        ambUDP.setMatchNetwork("*");
+                        addressMappings.add(ambUDP);
+                    }
+                }
             }
-
-            for (AddressMapping.Builder endpoint : endpoints) {
-                endpoint.setUuid(uuid.toString());
-            }
+            
         } else {
-            // if the hostname is set, we should use that for UUID mapping!
-            endpoints = new ArrayList(10);
-
+            
             // remove the leading '/' if necessary
             String host = "".equals(config.getHostName()) ? config.getAddress().getHostName() : config.getHostName();
             if (host.startsWith("/")) {
@@ -498,7 +508,7 @@ public class HeartbeatThread extends LifeCycleThread {
             AddressMapping.Builder tmp = AddressMapping.newBuilder().setUuid(uuid.toString()).setVersion(0)
                     .setProtocol(proto).setAddress(host).setPort(config.getPort()).setMatchNetwork("*").setTtlS(3600)
                     .setUri(proto + "://" + host + ":" + config.getPort());
-            endpoints.add(tmp);
+            addressMappings.add(tmp);
 
             advertisedHostName = host;
 
@@ -507,15 +517,37 @@ public class HeartbeatThread extends LifeCycleThread {
                         .setProtocol(Schemes.SCHEME_PBRPCU).setAddress(host).setPort(config.getPort())
                         .setMatchNetwork("*").setTtlS(3600)
                         .setUri(Schemes.SCHEME_PBRPCU + "://" + host + ":" + config.getPort());
-                endpoints.add(tmp);
+                addressMappings.add(tmp);
             }
 
         }
 
+        if (config.isUsingMultihoming()) {
+            AddressMapping.Builder amabDefault = addressMappings.get(0);
+
+            // Add the remaining endpoints to the result.
+            for (Endpoint endpoint : endpoints) {
+                if (!endpoint.getAddressMapping().getAddress().equals(amabDefault.getAddress())) {
+                    addressMappings.add(endpoint.getAddressMapping());
+                }
+            }
+
+            if (advertiseUDPEndpoints) {
+                List<Endpoint> UDPEndpoints = NetUtils.getReachableEndpoints(config.getPort(), Schemes.SCHEME_PBRPCU);
+                for (Endpoint endpoint : UDPEndpoints) {
+                    if (!endpoint.getAddressMapping().getAddress().equals(amabDefault.getAddress())) {
+                        addressMappings.add(endpoint.getAddressMapping());
+                    }
+                }
+            }
+        }
+
+
         if (Logging.isInfo()) {
             Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
                     "registering the following address mapping for the service:");
-            for (AddressMapping.Builder mapping : endpoints) {
+            for (Endpoint endpoint : endpoints) {
+                AddressMapping.Builder mapping = endpoint.getAddressMapping();
                 Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "%s --> %s (%s)", mapping.getUuid(),
                         mapping.getUri(), mapping.getMatchNetwork());
             }
@@ -530,12 +562,13 @@ public class HeartbeatThread extends LifeCycleThread {
             version = ams.getMappings(0).getVersion();
         }
 
-        if (endpoints.size() > 0) {
-            endpoints.get(0).setVersion(version);
+        // TODO(jdillmann): Discuss the use of the version flag.
+        if (addressMappings.size() > 0) {
+            addressMappings.get(0).setVersion(version);
         }
 
         AddressMappingSet.Builder amsb = AddressMappingSet.newBuilder();
-        for (AddressMapping.Builder mapping : endpoints) {
+        for (AddressMapping.Builder mapping : addressMappings) {
             amsb.addMappings(mapping);
         }
         // register/update the current address mapping

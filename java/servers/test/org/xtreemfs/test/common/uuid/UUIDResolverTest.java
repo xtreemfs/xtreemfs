@@ -15,6 +15,7 @@ import junit.framework.TestCase;
 
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.common.util.NetUtils;
+import org.xtreemfs.common.util.NetUtils.Endpoint;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
@@ -26,7 +27,6 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.util.FSUtils;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMappingSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.addressMappingSetResponse;
 import org.xtreemfs.test.SetupUtils;
@@ -90,11 +90,13 @@ public class UUIDResolverTest extends TestCase {
     }
 
     public void testSimpleMapping() throws Exception {
-        List<AddressMapping.Builder> mpgs = NetUtils.getReachableEndpoints(32636, "http", false);
-        mpgs.get(0).setUuid("MY_TEST_UUID");
+        List<Endpoint> endpoints = NetUtils.getReachableEndpoints(32636, "http");
+        endpoints.get(0).getAddressMapping().setUuid("MY_TEST_UUID").setMatchNetwork("*");
+
         AddressMappingSet.Builder ams = AddressMappingSet.newBuilder();
-        for (AddressMapping.Builder b : mpgs)
-            ams.addMappings(b);
+        for (Endpoint endpoint : endpoints) {
+            ams.addMappings(endpoint.getAddressMapping());
+        }
         RPCResponse<addressMappingSetResponse> r = testEnv.getDirClient().xtreemfs_address_mappings_set(null,RPCAuthentication.authNone, RPCAuthentication.userService, ams.build());
         r.get();
         ServiceUUID uuid = new ServiceUUID("MY_TEST_UUID");
