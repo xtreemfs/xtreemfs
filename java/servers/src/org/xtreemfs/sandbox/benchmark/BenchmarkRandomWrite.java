@@ -13,6 +13,7 @@ import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 
 import java.io.IOException;
+import java.util.Random;
 
 /**
  * Class implementing a random read benchmark.
@@ -29,26 +30,23 @@ public class BenchmarkRandomWrite extends BenchmarkRandomOffsetbased {
     @Override
     long performIO(byte[] data, long numberOfBlocks) throws IOException {
 
+		Random random = new Random();
+
         numberOfBlocks = convertTo4KiBBlocks(numberOfBlocks);
         long byteCounter = 0;
 
 		int flags = GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
-				| GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
-				| GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
+				| GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY.getNumber();
 
-        for (long j = 0; j < numberOfBlocks-1; j++) {
+        for (long j = 0; j < numberOfBlocks; j++) {
             FileHandle fileHandle = volume.openFile(params.userCredentials, BASFILE_FILENAME,
                     flags, 511);
             long nextOffset = generateNextRandomOffset();
+			random.nextBytes(data);
             byteCounter += fileHandle.write(params.userCredentials, data, RANDOM_IO_BLOCKSIZE, nextOffset);
             fileHandle.close();
         }
 
-		/* last block written needs to be the last block of the basefile to not violate the basefile filesize */
-		FileHandle fileHandle = volume.openFile(params.userCredentials, BASFILE_FILENAME,
-				flags, 511);
-		byteCounter += fileHandle.write(params.userCredentials, data, RANDOM_IO_BLOCKSIZE, params.basefileSizeInBytes-RANDOM_IO_BLOCKSIZE);
-		fileHandle.close();
         return byteCounter;
     }
 
