@@ -110,7 +110,7 @@ public class HeartbeatThread extends LifeCycleThread {
 
     private volatile boolean           renewAddressMappings      = false;
 
-    private Object                     updateIntervallMonitor    = new Object();
+    private Object                     updateIntervalMonitor     = new Object();
 
     static {
         authNone = Auth.newBuilder().setAuthType(AuthType.AUTH_NONE).build();
@@ -143,7 +143,7 @@ public class HeartbeatThread extends LifeCycleThread {
         }
 
         if (config.isUsingMultihoming() && config.isUsingRenewalSignal()) {
-            enableAddressRenewalSignal();
+            enableAddressMappingRenewalSignal();
         }
 
         this.lastHeartbeat = TimeSync.getGlobalTime();
@@ -206,6 +206,8 @@ public class HeartbeatThread extends LifeCycleThread {
 
     @Override
     public void run() {
+        boolean renewAddressMappingInProgress = false;
+
         try {
 
             notifyStarted();
@@ -248,16 +250,17 @@ public class HeartbeatThread extends LifeCycleThread {
                     break;
                 }
                 
-                
-                if (renewAddressMappings) {
+                if (renewAddressMappings || renewAddressMappingInProgress) {
                     renewAddressMappings = false;
+                    // Save that a renewal in in progress to be able to retry it on errors on the next heartbeat.
+                    renewAddressMappingInProgress = true;
                     try {
                         registerAddressMappings();
+                        // If the renewal was successful the inProgress Flag will be cleared.
+                        renewAddressMappingInProgress = false;
                     } catch (IOException ex) {
                         Logging.logMessage(Logging.LEVEL_ERROR, this,
                                 "requested renewal of address mappings failed: %s", ex.toString());
-                        // If an error occurred, the renewal has to be rescheduled.
-                        renewAddressMappings = true;
                     } catch (InterruptedException ex) {
                         quit = true;
                         break;
@@ -277,13 +280,12 @@ public class HeartbeatThread extends LifeCycleThread {
                 // If no renewal request is pending, this HeartbeatThread can wait for the next regular UPDATE_INTERVAL.
                 if (!renewAddressMappings) {
                     try {
-                        synchronized (updateIntervallMonitor) {
-                            updateIntervallMonitor.wait(UPDATE_INTERVAL);
+                        synchronized (updateIntervalMonitor) {
+                            updateIntervalMonitor.wait(UPDATE_INTERVAL);
                         }
                     } catch (InterruptedException e) {
                         // ignore
-                        // TODO(jdillmann): Ask why the interrupts above can terminate the thread and this one won't. If
-                        // every InterruptedEx should make this Thread stop the run method could be restructured.
+                        // TODO(jdillmann): Revise the ExceptionHandling and conditionen for termination.
                     }
 
                 }
@@ -422,11 +424,6 @@ public class HeartbeatThread extends LifeCycleThread {
     private void registerAddressMappings() throws InterruptedException, IOException {
         List<AddressMapping.Builder> endpoints = null;
 
-        if (config.isUsingMultihoming() && config.getAddress() != null) {
-            throw new RuntimeException(ServiceConfig.Parameter.USE_MULTIHOMING.getPropertyString() + " and "
-                    + ServiceConfig.Parameter.LISTEN_ADDRESS.getPropertyString() + " parameters are incompatible");
-        }
-
         if (config.isUsingMultihoming()) {
             endpoints = NetUtils.getReachableEndpoints(config.getPort(), proto, true);
 
@@ -443,8 +440,7 @@ public class HeartbeatThread extends LifeCycleThread {
                 InetAddress host = "".equals(config.getHostName()) ? InetAddress.getLocalHost() : InetAddress.getByName(config.getHostName());
                 hostAddress = NetUtils.getHostAddress(host);
             } catch (UnknownHostException e) {
-                Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Could not resolve the local hostnamme.",
-                        new Object[0]);
+                Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Could not resolve the local hostname.");
             }
 
             // Add the UUID to the endpoints and mark the default route.
@@ -520,8 +516,8 @@ public class HeartbeatThread extends LifeCycleThread {
             Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
                     "registering the following address mapping for the service:");
             for (AddressMapping.Builder mapping : endpoints) {
-                Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "%s --> %s", mapping.getUuid(),
-                        mapping.getUri());
+                Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "%s --> %s (%s)", mapping.getUuid(),
+                        mapping.getUri(), mapping.getMatchNetwork());
             }
         }
 
@@ -600,24 +596,24 @@ public class HeartbeatThread extends LifeCycleThread {
     /**
      * Renew the address mappings immediately (HeartbeatThread will wake up when this is called).
      */
-    public void renewAddressMappings() {
+    public void triggerAddressMappingRenewal() {
         renewAddressMappings = true;
 
         // To make the changes immediate, the thread has to be notified if it is sleeping.
-        synchronized (updateIntervallMonitor) {
-            updateIntervallMonitor.notifyAll();
+        synchronized (updateIntervalMonitor) {
+            updateIntervalMonitor.notifyAll();
         }
     }
 
     /**
-     * Enable a signal handler for USR2 which will trigger the the address mapping renewal.
+     * Enable a signal handler for USR2 which will trigger the address mapping renewal.
      * 
-     * Since it is possible, that certain VMs are using the USR2 signal internally, the server should 
-     * be started with the -XX:+UseAltSigs flag when signal usage is desired.
+     * Since it is possible that certain VMs are using the USR2 signal internally, the server should be started with the
+     * -XX:+UseAltSigs flag when signal usage is desired.
      * 
-     * @return true if the signals could be enabled.
+     * @throws RuntimeException
      */
-    private boolean enableAddressRenewalSignal() {
+    private void enableAddressMappingRenewalSignal() {
 
         final HeartbeatThread hbt = this;
 
@@ -629,16 +625,16 @@ public class HeartbeatThread extends LifeCycleThread {
                 public void handle(Signal signal) {
                     // If the HeartbeatThread is still alive, renew the addresses and send them to the DIR.
                     if (hbt != null) {
-                        hbt.renewAddressMappings();
+                        hbt.triggerAddressMappingRenewal();
                     }
                 }
             });
 
         } catch (IllegalArgumentException e) {
-            Logging.logMessage(Logging.LEVEL_WARN, this, "Could not register SignalHandler for USR2");
-            return false;
-        }
+            Logging.logMessage(Logging.LEVEL_CRIT, this, "Could not register SignalHandler for USR2.");
+            Logging.logError(Logging.LEVEL_CRIT, null, e);
 
-        return true;
+            throw new RuntimeException("Could not register SignalHandler for USR2.", e);
+        }
     }
 }

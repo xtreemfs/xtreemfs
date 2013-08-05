@@ -949,7 +949,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Services & MRC, OSD\\
  Values   & String \\
  Default  & \\
- Description & If specified and \texttt{multihoming.enabled} is \texttt{false}, it defines the host name that is used to register the service at the directory service. If not specified, the host address defined in \texttt{listen.address} will be used if specified. If neither \texttt{hostname} nor \texttt{listen.address} are specified, the service itself will search for externally reachable network interfaces and advertise their addresses.
+ Description & If specified and \texttt{multihoming.enabled} is \texttt{false}, it defines the host name that is used to register the service at the directory service. If neither \texttt{hostname} nor \texttt{listen.address} are specified, the service itself will search for an externally reachable network interface and advertise its addresse. To use multiple interfaces see \texttt{multihoming}.
 \end{tabular}
 
 \subsubsection{\texttt{http\_port}}
@@ -1055,7 +1055,8 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Services & MRC, OSD\\
  Values   & true, false\\
  Default  & false\\
- Description & If set to \texttt{true}, the service will use every interface installed in the system and propagate their addresses to the DIR. If \texttt{hostname} is set, its address will be used as default. Else the service tries to discover the hostname itself. If this parameter is true, then \texttt{listen.address} must not be set. 
+ Description & If set to \texttt{true}, the service will use every interface installed in the system and propagate their addresses to the DIR. If \texttt{hostname} is set, its address will be used as the default endpoint, that should be reachable from any network. Otherwise the service tries to discover the hostname itself.\\
+ & If this parameter is true, then \texttt{listen.address} must not be set. 
 \end{tabular}
 
 \subsubsection{\texttt{multihoming.renewal\_signal} \textit{optional}}
@@ -1063,8 +1064,9 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Services & MRC, OSD\\
  Values   & true, false\\
  Default  & false\\
- Description & If set to \texttt{true}, the service will try to register a signal handler for USR2 upon which it renews its address mapping. Since some VMs are using USR2 internally, this parameter should be used together with the VM option -XX:+UseAltSigs.
-\end{tabular}
+ Description & If set to \texttt{true}, the service will try to register a signal handler for USR2 upon which it refreshes its address mapping. Since some VMs are using USR2 internally by default, this parameter should be used together with the VM option -XX:+UseAltSigs.\\
+ & This functionality is helpful, if dynamic networks are added or removed to the system and the XtreemFS server should update its list of reachable networks. 
+ \end{tabular}
 
 \subsubsection{\texttt{no\_atime}}
 \begin{tabular}{lp{10cm}}

@@ -44,15 +44,6 @@ public class NetUtils {
         AddressMapping.Builder firstGlobal = null;
         AddressMapping.Builder firstLocal = null;
         
-        // Try to find the global address by resolving the local hostname.
-        String localHostAddress = null;
-        try {
-            localHostAddress = getHostAddress(InetAddress.getLocalHost());
-        } catch (UnknownHostException e) {
-            Logging.logMessage(Logging.LEVEL_WARN, Category.net, null, "Could not resolve the local hostnamme.",
-                    new Object[0]);
-        }
-
         // Iterate over the existing network interfaces and their addresses
         Enumeration<NetworkInterface> ifcs = NetworkInterface.getNetworkInterfaces();
         while (ifcs.hasMoreElements()) {
@@ -87,14 +78,17 @@ public class NetUtils {
                     // If it is the first global address, save it, too and stop looking for other ones
                     if (!inetAddr.isSiteLocalAddress() && firstGlobal == null) {
                         firstGlobal = amap;
-                    }
-
-                    if (firstGlobal != null)
                         break;
+                    }
                 } else {
                     // For multihoming configurations add every endpoint 
                     endpoints.add(amap);
                 }
+            }
+            
+            // Break out of the interface iteration if multihoming is disabled and a global endpoint is found.
+            if (!multihoming && firstGlobal != null) {
+                break;
             }
         }
         
@@ -111,8 +105,8 @@ public class NetUtils {
 
         // in case no IP address could be found at all, use 127.0.0.1 for local testing
         if (endpoints.isEmpty()) {
-            Logging.logMessage(Logging.LEVEL_WARN, Category.net, null,
-                "could not find a valid IP address, will use 127.0.0.1 instead", new Object[0]);
+            Logging.logMessage(Logging.LEVEL_WARN, Category.net, (Object) null,
+                    "could not find a valid IP address, will use 127.0.0.1 instead");
             AddressMapping.Builder amap = AddressMapping.newBuilder().setAddress("127.0.0.1").setPort(port)
                     .setProtocol(protocol).setTtlS(3600).setMatchNetwork("*")
                     .setUri(getURI(protocol, InetAddress.getLocalHost(), port)).setVersion(0).setUuid("");
