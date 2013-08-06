@@ -701,7 +701,18 @@ public class HashStorageLayout extends StorageLayout {
     public void deleteFile(String fileId, boolean deleteMetadata) throws IOException {
 
         File fileDir = new File(generateAbsoluteFilePath(fileId));
-        File[] objs = fileDir.listFiles();
+        File[] objs = fileDir.listFiles(new FileFilter() {
+
+            @Override
+            public boolean accept(File pathname) {
+                // TODO(jdillmann): use {@link CleanupTread} to delete the version state after the capability timed out.
+                if (pathname.getPath().endsWith(XLOC_VERSION_STATE_FILENAME)) {
+                    return false;
+                }
+
+                return true;
+            }
+        });
 
         if (objs == null) {
             return;
@@ -1360,7 +1371,7 @@ public class HashStorageLayout extends StorageLayout {
 
     @Override
     public XLocSetVersionState getXLocSetVersionState(String fileId) throws IOException {
-        // TODO (jdillmann): Implement some cache
+        // TODO(jdillmann): Implement some cache.
         XLocSetVersionState.Builder vsbuilder = XLocSetVersionState.newBuilder();
 
         File fileDir = new File(generateAbsoluteFilePath(fileId));
