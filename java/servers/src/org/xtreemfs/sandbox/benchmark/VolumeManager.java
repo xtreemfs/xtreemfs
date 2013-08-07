@@ -91,7 +91,6 @@ public class VolumeManager {
     }
 
     private Volume createAndOpenVolume(String volumeName) throws IOException {
-        // Todo (jvf) Add Logging Info
         Volume volume = null;
         try {
             List<GlobalTypes.KeyValuePair> volumeAttributes = new ArrayList<GlobalTypes.KeyValuePair>();
@@ -102,6 +101,7 @@ public class VolumeManager {
             volume = client.openVolume(volumeName, params.sslOptions, params.options);
             createdVolumes.add(volume);
             createDirStructure(volume);
+            Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Created volume %s", volumeName);
         } catch (PosixErrorException e) {
             if (e.getPosixError() == POSIXErrno.POSIX_ERROR_EEXIST) {
                 volume = client.openVolume(volumeName, params.sslOptions, params.options);
@@ -220,7 +220,7 @@ public class VolumeManager {
 
             if (null != fileListForVolume) {
 
-                Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Deleting %s file(s) on volume %s",
+                Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Deleted %s file(s) on volume %s",
                         fileListForVolume.size(), volume.getVolumeName());
 
                 for (String filename : fileListForVolume) {
@@ -235,7 +235,8 @@ public class VolumeManager {
             volume.unlink(params.userCredentials, filename);
         } catch (IOException e) {
             Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this,
-                    "IO Error while trying to delete a file. Errormessage: %s", e.getMessage());
+                    "IO Error while trying to delete a file.");
+            Logging.logError(Logging.LEVEL_ERROR, Logging.Category.tool, e);
         }
     }
 
@@ -264,7 +265,7 @@ public class VolumeManager {
     void deleteVolumeIfExisting(String volumeName) throws IOException {
         if (new ArrayList<String>(Arrays.asList(client.listVolumeNames())).contains(volumeName)) {
             client.deleteVolume(params.auth, params.userCredentials, volumeName);
-            Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Deleting volume %s", volumeName);
+            Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Deleted volume %s", volumeName);
         }
     }
 
@@ -275,8 +276,7 @@ public class VolumeManager {
         LinkedList<String> uuids = getOSDUUIDs();
 
         for (String osd : uuids) {
-            Logging.logMessage(Logging.LEVEL_INFO, this, "Starting cleanup of OSD with UUID %s", osd,
-                    Logging.Category.tool);
+            Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Starting cleanup of OSD %s", osd);
             client.startCleanUp(osd, pwd, true, true, false);
         }
 
@@ -290,10 +290,7 @@ public class VolumeManager {
         }
 
         for (String osd : uuids) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Cleanup Result: %s", client.getCleanUpResult(osd, pwd),
-                    Logging.Category.tool);
-            Logging.logMessage(Logging.LEVEL_INFO, this, "Finished cleanup of OSD with UUID %s", osd,
-                    Logging.Category.tool);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.tool, this, "Finished cleanup. Result: %s", client.getCleanUpResult(osd, pwd));
         }
 
     }

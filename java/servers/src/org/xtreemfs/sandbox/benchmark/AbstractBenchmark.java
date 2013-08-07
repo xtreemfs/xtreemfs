@@ -56,7 +56,7 @@ public abstract class AbstractBenchmark {
     void benchmark(ConcurrentLinkedQueue<BenchmarkResult> results) throws Exception {
 
         String shortClassname = this.getClass().getName().substring(this.getClass().getName().lastIndexOf('.') + 1);
-        Logging.logMessage(Logging.LEVEL_INFO, this, "Starting %s", shortClassname, Logging.Category.tool);
+        Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Starting %s", shortClassname);
 
         // Setting up
         byte[] data = new byte[stripeWidth];
@@ -79,7 +79,7 @@ public abstract class AbstractBenchmark {
 
         finalizeBenchmark();
 
-        Logging.logMessage(Logging.LEVEL_INFO, this, "Finished %s", shortClassname, Logging.Category.tool);
+        Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Finished %s", shortClassname);
     }
 
     /* called before a benchmark thread is started */

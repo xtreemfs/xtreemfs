@@ -8,7 +8,6 @@
 
 package org.xtreemfs.sandbox.benchmark;
 
-import static org.xtreemfs.foundation.logging.Logging.logMessage;
 import static org.xtreemfs.foundation.util.CLIParser.CliOption.OPTIONTYPE.STRING;
 import static org.xtreemfs.foundation.util.CLIParser.CliOption.OPTIONTYPE.SWITCH;
 import static org.xtreemfs.foundation.util.CLIParser.parseCLI;

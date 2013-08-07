@@ -58,7 +58,7 @@ public class BenchmarkClientFactory {
         for (AdminClient client : clients) {
             tryShutdownOfClient(client);
         }
-        Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, Runtime.getRuntime(), "Shutting down %s clients",
+        Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, BenchmarkClientFactory.class, "Shutting down %s clients",
                 clients.size());
     }
 
@@ -66,7 +66,7 @@ public class BenchmarkClientFactory {
         try {
             client.shutdown();
         } catch (Throwable e) {
-            Logging.logMessage(Logging.LEVEL_WARN, Logging.Category.tool, Runtime.getRuntime(),
+            Logging.logMessage(Logging.LEVEL_WARN, Logging.Category.tool, BenchmarkClientFactory.class,
                     "Error while shutting down clients");
             Logging.logError(Logging.LEVEL_WARN, BenchmarkClientFactory.class, e);
         }

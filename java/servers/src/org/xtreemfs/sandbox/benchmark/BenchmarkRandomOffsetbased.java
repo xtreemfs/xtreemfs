@@ -65,7 +65,7 @@ public abstract class BenchmarkRandomOffsetbased extends BenchmarkRandom {
             return sizeOfBasefile != fileSizeInBytes;
         } catch (PosixErrorException e) {
             Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this,
-                    "Could not find a basefile. Errormessage: %s", e.getMessage());
+                    "No basefile found.");
             return true;
         }
     }

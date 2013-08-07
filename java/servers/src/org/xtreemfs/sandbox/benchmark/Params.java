@@ -104,8 +104,8 @@ public class Params {
         try {
             return getAllValues();
         } catch (IllegalAccessException e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this, e.getMessage());
-            e.printStackTrace();
+            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this, "Access to Params fields not possible.");
+            Logging.logError(Logging.LEVEL_ERROR, Logging.Category.tool, e);
         }
         return "Access not possible";
     }

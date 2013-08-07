@@ -63,7 +63,7 @@ public class Controller {
         // TODO (jvf) Check für benchmarksize % blocksize an anderer Stelle einbauen
         if (params.sequentialSizeInBytes % (params.stripeSizeInBytes * params.stripeWidth) != 0
                 || params.randomSizeInBytes % (params.stripeSizeInBytes * params.stripeWidth) != 0)
-            throw new IllegalArgumentException("Size must satisfy: size mod (stripeSize * stripeWidth) = 0");
+            throw new IllegalArgumentException("Size must satisfy: size mod (stripeSize * stripeWidth) == 0");
 
         ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
         ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
@@ -141,8 +141,8 @@ public class Controller {
 			return dirAddresses[0];
 		} catch (IOException e) {
 			logMessage(LEVEL_INFO, Logging.Category.tool, Controller.class,
-					"Could not read or find Default DIR Config in %s. Errormessage: %s",
-					DefaultDirConfig.DEFAULT_DIR_CONFIG, e.getMessage());
+					"Could not access or find Default DIR Config in %s. Using default (localhost).",
+					DefaultDirConfig.DEFAULT_DIR_CONFIG);
 			return null;
 		}
 	}
@@ -154,8 +154,6 @@ public class Controller {
         if (volumeNames.length == 0)
             volumeManager.createDefaultVolumes(params.numberOfThreads);
         else if (volumeNames.length != params.numberOfThreads) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this,
-                    "Number of volume names must be in accordance with number of benchmarks run in parallel");
             throw new IllegalArgumentException(
                     "Number of volume names must be in accordance with number of benchmarks run in parallel");
         } else
