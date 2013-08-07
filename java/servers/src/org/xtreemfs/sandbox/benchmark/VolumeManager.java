@@ -94,8 +94,8 @@ public class VolumeManager {
         Volume volume = null;
         try {
             List<GlobalTypes.KeyValuePair> volumeAttributes = new ArrayList<GlobalTypes.KeyValuePair>();
-            client.createVolume(params.auth, params.userCredentials, volumeName, 511,
-                    params.userName, params.group, GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
+            client.createVolume(params.auth, params.userCredentials, volumeName, 511, params.userName, params.group,
+                    GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
                     GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, params.getStripeSizeInKiB,
                     params.stripeWidth, volumeAttributes);
             volume = client.openVolume(volumeName, params.sslOptions, params.options);
@@ -103,9 +103,10 @@ public class VolumeManager {
             createDirStructure(volume);
             Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Created volume %s", volumeName);
         } catch (PosixErrorException e) {
-            if (e.getPosixError() == POSIXErrno.POSIX_ERROR_EEXIST) {
+            if (e.getPosixError() == POSIXErrno.POSIX_ERROR_EEXIST)
                 volume = client.openVolume(volumeName, params.sslOptions, params.options);
-            }
+            else
+                throw e;
         }
         return volume;
     }
