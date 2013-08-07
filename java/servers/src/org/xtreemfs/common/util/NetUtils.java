@@ -18,28 +18,27 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
-import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMapping;
 
 public class NetUtils {
     
     /**
-     * Returns a list of endpoints for all reachable networks.
+     * Returns a list of mappings for all reachable network endpoints.
      * 
-     * If none can be found return the loopback device as a single endpoint for local testing purposes.
+     * The returned list contains global addresses in front of local ones.
      * 
      * @param port
      *            the port to assign to the mappings
      * @param protocol
      *            the protocol for the endpoint
      * 
-     * @return a list of endpoint
+     * @return a list of mappings, containing global ones up front.
      * @throws IOException
      */
-    public static List<Endpoint> getReachableEndpoints(int port, String protocol) throws IOException {
+    public static List<AddressMapping.Builder> getReachableEndpoints(int port, String protocol) throws IOException {
         
-        List<Endpoint> endpoints = new ArrayList<Endpoint>(10);
+        List<AddressMapping.Builder> endpoints = new ArrayList<AddressMapping.Builder>(10);
+        List<AddressMapping.Builder> localEndpoints = new ArrayList<AddressMapping.Builder>(5);
         
         // Iterate over the existing network interfaces and their addresses
         Enumeration<NetworkInterface> ifcs = NetworkInterface.getNetworkInterfaces();
@@ -66,20 +65,17 @@ public class NetUtils {
                         .setMatchNetwork(network).setProtocol(protocol).setTtlS(3600).setUri(uri).setVersion(0)
                         .setUuid("");
 
-                endpoints.add(new Endpoint(amap, !(inetAddr.isSiteLocalAddress())));
+                if (inetAddr.isSiteLocalAddress()) {
+                    localEndpoints.add(amap);
+                } else {
+                    endpoints.add(amap);
+                }
             }
         }
         
-        // in case no IP address could be found at all, use 127.0.0.1 for local testing
-        if (endpoints.isEmpty()) {
-            Logging.logMessage(Logging.LEVEL_WARN, Category.net, (Object) null,
-                    "could not find a valid IP address, will use 127.0.0.1 instead");
-            AddressMapping.Builder amap = AddressMapping.newBuilder().setAddress("127.0.0.1").setPort(port)
-                    .setProtocol(protocol).setTtlS(3600).setMatchNetwork("*")
-                    .setUri(getURI(protocol, InetAddress.getLocalHost(), port)).setVersion(0).setUuid("");
-            endpoints.add(new Endpoint(amap, false));
-        }
-        
+        // Append the local endpoints to the end of the list containing the global ones.
+        endpoints.addAll(localEndpoints);
+
         return endpoints;
     }
 
@@ -110,6 +106,14 @@ public class NetUtils {
 
     }
     
+    public static AddressMapping.Builder replaceProtocol(AddressMapping.Builder src, String protocol) {
+        // An uri looks like "protocol://address:port". The following code replaces the "protocol" part.
+        String uri = protocol + src.getUri().substring(src.getUri().indexOf("://"));
+        AddressMapping.Builder result = src.clone()
+                .setProtocol(protocol).setUri(uri);
+        return result;
+    }
+
     public static String getDomain(String hostName) {
         int i = hostName.indexOf('.');
         return i == -1? "": hostName.substring(i + 1);
@@ -177,30 +181,7 @@ public class NetUtils {
         }
         
         System.out.println("\nsuitable network interfaces: ");
-        for (Endpoint endpoint : NetUtils.getReachableEndpoints(32640, "http"))
-            System.out.println(endpoint.toString());
-    }
-    
-    public static final class Endpoint {
-        private AddressMapping.Builder addressMapping;
-        private boolean                isGlobal;
-
-        public Endpoint(AddressMapping.Builder addressMapping, boolean isGlobal) {
-            this.addressMapping = addressMapping;
-            this.isGlobal = isGlobal;
-        }
-
-        public AddressMapping.Builder getAddressMapping() {
-            return addressMapping;
-        }
-
-        public boolean isGlobal() {
-            return isGlobal;
-        }
-
-        @Override
-        public String toString() {
-            return addressMapping.build().toString();
-        }
+        for (AddressMapping.Builder endpoint : NetUtils.getReachableEndpoints(32640, "http"))
+            System.out.println(endpoint.build().toString());
     }
 }

@@ -19,7 +19,6 @@ import java.util.Map.Entry;
 
 import org.xtreemfs.common.config.ServiceConfig;
 import org.xtreemfs.common.util.NetUtils;
-import org.xtreemfs.common.util.NetUtils.Endpoint;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.foundation.LifeCycleThread;
@@ -425,73 +424,14 @@ public class HeartbeatThread extends LifeCycleThread {
 
     private void registerAddressMappings() throws InterruptedException, IOException {
 
-        List<AddressMapping.Builder> addressMappings = new ArrayList<AddressMapping.Builder>(10);
-        List<Endpoint> endpoints = NetUtils.getReachableEndpoints(config.getPort(), proto);
-        assert (endpoints.size() > 0);
+        List<AddressMapping.Builder> reachableEndpoints = NetUtils.getReachableEndpoints(config.getPort(), proto);
+        
+        AddressMapping.Builder advertisedEndpoint = null;
 
-        // If neither HostName nor listen address are explicitly set, try to find a single (preferably) global endpoint.
-        if ("".equals(config.getHostName()) && config.getAddress() == null) {
-            
-            // Try to find the default route. The address assigned to the host name is assumed to be default.
-            String hostAddress = null;
-            try {
-                InetAddress host = InetAddress.getLocalHost();
-                hostAddress = NetUtils.getHostAddress(host);
-            } catch (UnknownHostException e) {
-                Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Could not resolve the local hostname.");
-            }
-
-
-            AddressMapping.Builder amb = null;
-
-            if (hostAddress != null) {
-                // Find the endpoint corresponding to the hostAddress.
-                for (Endpoint endpoint : endpoints) {
-                    if (endpoint.getAddressMapping().getAddress().equals(hostAddress)) {
-                        amb = endpoint.getAddressMapping();
-                        break;
-                    }
-                }
-            } else {
-                // Try to find a globally reachable endpoint.
-                for (Endpoint endpoint : endpoints) {
-                    if (endpoint.isGlobal()) {
-                        amb = endpoint.getAddressMapping();
-                        break;
-                    }
-                }
-            }
-            
-            // If no globally reachable endpoint is found, use the first locally reachable one.
-            if (amb == null) {
-                amb = endpoints.get(0).getAddressMapping();
-            }
-            
-            // Mark the single endpoints matching network as default.
-            amb.setMatchNetwork("*");
-            
-            // Use the endpoints address to advertise this service.
-            advertisedHostName = amb.getAddress();
-            
-            // Add the mapping to the results.
-            addressMappings.add(amb);
-
-            // If UDP endpoints are requested, find the used endpoint and add it to the result, too.
-            if (advertiseUDPEndpoints) {
-                List<Endpoint> UDPEndpoints = NetUtils.getReachableEndpoints(config.getPort(), Schemes.SCHEME_PBRPCU);
-                for (Endpoint endpoint : UDPEndpoints) {
-                    if (endpoint.getAddressMapping().getAddress().equals(amb.getAddress())) {
-                        AddressMapping.Builder ambUDP = endpoint.getAddressMapping();
-                        ambUDP.setMatchNetwork("*");
-                        addressMappings.add(ambUDP);
-                    }
-                }
-            }
-            
-        } else {
-            
+        // Use the configured hostname or listen.address if they are set for the advertised endpoint.
+        if (!config.getHostName().isEmpty() || config.getAddress() != null) {
             // remove the leading '/' if necessary
-            String host = "".equals(config.getHostName()) ? config.getAddress().getHostName() : config.getHostName();
+            String host = config.getHostName().isEmpty() ? config.getAddress().getHostName() : config.getHostName();
             if (host.startsWith("/")) {
                 host = host.substring(1);
             }
@@ -506,72 +446,89 @@ public class HeartbeatThread extends LifeCycleThread {
                         + "problems if clients and other OSDs cannot resolve this service's address!\n", host);
             }
 
-            AddressMapping.Builder tmp = AddressMapping.newBuilder().setUuid(uuid.toString()).setVersion(0)
-                    .setProtocol(proto).setAddress(host).setPort(config.getPort()).setMatchNetwork("*").setTtlS(3600)
+            advertisedEndpoint = AddressMapping.newBuilder().setUuid(uuid.toString()).setVersion(0).setProtocol(proto)
+                    .setAddress(host).setPort(config.getPort()).setMatchNetwork("*").setTtlS(3600)
                     .setUri(proto + "://" + host + ":" + config.getPort());
-            addressMappings.add(tmp);
-
-            advertisedHostName = host;
-
-            if (advertiseUDPEndpoints) {
-                tmp = AddressMapping.newBuilder().setUuid(uuid.toString()).setVersion(0)
-                        .setProtocol(Schemes.SCHEME_PBRPCU).setAddress(host).setPort(config.getPort())
-                        .setMatchNetwork("*").setTtlS(3600)
-                        .setUri(Schemes.SCHEME_PBRPCU + "://" + host + ":" + config.getPort());
-                addressMappings.add(tmp);
-            }
-
         }
 
-        if (config.isUsingMultihoming()) {
-            AddressMapping.Builder amabDefault = addressMappings.get(0);
+        // Try to resolve the localHostName and find it in the endpoints to use it as the advertised endpoint if possible.
+        if (advertisedEndpoint == null) {
+            try {
+                InetAddress host = InetAddress.getLocalHost();
+                String hostAddress = NetUtils.getHostAddress(host);
 
-            // Add the remaining endpoints to the result.
-            for (Endpoint endpoint : endpoints) {
-                if (!endpoint.getAddressMapping().getAddress().equals(amabDefault.getAddress())) {
-                    addressMappings.add(endpoint.getAddressMapping());
+                // Try to find the
+                for (AddressMapping.Builder mapping : reachableEndpoints) {
+                    if (mapping.getAddress().equals(hostAddress)) {
+                        advertisedEndpoint = mapping;
+                        break;
+                    }
                 }
+            } catch (UnknownHostException e) {
+                Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Could not resolve the local hostname.");
             }
+        }
+        
+        // Use the first mapping from the reachable endpoints. This will be a global address if one exists.
+        if (advertisedEndpoint == null && reachableEndpoints.size() > 0) {
+            advertisedEndpoint = reachableEndpoints.get(0);
+        }
 
-            if (advertiseUDPEndpoints) {
-                List<Endpoint> UDPEndpoints = NetUtils.getReachableEndpoints(config.getPort(), Schemes.SCHEME_PBRPCU);
-                for (Endpoint endpoint : UDPEndpoints) {
-                    if (!endpoint.getAddressMapping().getAddress().equals(amabDefault.getAddress())) {
-                        addressMappings.add(endpoint.getAddressMapping());
+        // in case no IP address could be found at all, use 127.0.0.1 for local testing.
+        if (advertisedEndpoint == null) {
+            Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
+                    "could not find a valid IP address, will use 127.0.0.1 instead");
+            advertisedEndpoint = AddressMapping.newBuilder().setAddress("127.0.0.1").setPort(config.getPort())
+                    .setProtocol(proto).setTtlS(3600).setMatchNetwork("*").setVersion(0).setUuid("")
+                    .setUri(NetUtils.getURI(proto, InetAddress.getLoopbackAddress(), config.getPort()));
+        }
+       
+        // Fetch the latest address mapping version from the Directory Service.
+        long version = 0;
+        AddressMappingSet ams = client.xtreemfs_address_mappings_get(null, authNone, uc, uuid.toString());
+
+        // Retrieve the version number from the address mapping.
+        if (ams.getMappingsCount() > 0) {
+            version = ams.getMappings(0).getVersion();
+        }
+        
+        // Set the advertised endpoints version, matching network and uuid.
+        advertisedEndpoint.setVersion(version).setMatchNetwork("*").setUuid(uuid.toString());
+        advertisedHostName = advertisedEndpoint.getAddress();
+
+        List<AddressMapping.Builder> endpoints = new ArrayList<AddressMapping.Builder>();
+        endpoints.add(advertisedEndpoint);
+        if (advertiseUDPEndpoints) {
+            endpoints.add(NetUtils.replaceProtocol(advertisedEndpoint, Schemes.SCHEME_PBRPCU));
+        }
+        
+        if (config.isUsingMultihoming()) {
+            for (AddressMapping.Builder mapping : reachableEndpoints) {
+                // Add every remaining endpoint that is not the, already added, adevertised endpoint.
+                if (!advertisedEndpoint.getAddress().equals(mapping.getAddress())) {
+                    mapping.setUuid(uuid.toString());
+                    endpoints.add(mapping);
+                    if (advertiseUDPEndpoints) {
+                        endpoints.add(NetUtils.replaceProtocol(mapping, Schemes.SCHEME_PBRPCU));
                     }
                 }
             }
         }
 
+        AddressMappingSet.Builder amsb = AddressMappingSet.newBuilder();
+        for (AddressMapping.Builder mapping : endpoints) {
+            amsb.addMappings(mapping);
+        }
 
         if (Logging.isInfo()) {
             Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
                     "registering the following address mapping for the service:");
-            for (Endpoint endpoint : endpoints) {
-                AddressMapping.Builder mapping = endpoint.getAddressMapping();
+            for (AddressMapping mapping : amsb.getMappingsList()) {
                 Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "%s --> %s (%s)", mapping.getUuid(),
                         mapping.getUri(), mapping.getMatchNetwork());
             }
         }
 
-        // fetch the latest address mapping version from the Directory Service
-        long version = 0;
-        AddressMappingSet ams = client.xtreemfs_address_mappings_get(null, authNone, uc, uuid.toString());
-
-        // retrieve the version number from the address mapping
-        if (ams.getMappingsCount() > 0) {
-            version = ams.getMappings(0).getVersion();
-        }
-
-        // TODO(jdillmann): Discuss the use of the version flag.
-        if (addressMappings.size() > 0) {
-            addressMappings.get(0).setVersion(version);
-        }
-
-        AddressMappingSet.Builder amsb = AddressMappingSet.newBuilder();
-        for (AddressMapping.Builder mapping : addressMappings) {
-            amsb.addMappings(mapping);
-        }
         // register/update the current address mapping
         client.xtreemfs_address_mappings_set(null, authNone, uc, amsb.build());
     }

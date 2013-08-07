@@ -19,7 +19,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.xtreemfs.common.GlobalConstants;
 import org.xtreemfs.common.util.NetUtils;
-import org.xtreemfs.common.util.NetUtils.Endpoint;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
@@ -74,10 +73,10 @@ public final class UUIDResolver extends Thread {
         }
         
         // TODO(jdillmann): Reload myNetworks on the OSDs when the addressMapping is renewed
-        List<Endpoint> endpoints = NetUtils.getReachableEndpoints(0, "http");
-        myNetworks = new ArrayList(endpoints.size());
-        for (Endpoint endpoint : endpoints) {
-            myNetworks.add(endpoint.getAddressMapping().getMatchNetwork());
+        List<AddressMapping.Builder> ntwrks = NetUtils.getReachableEndpoints(0, "http");
+        myNetworks = new ArrayList<String>(ntwrks.size());
+        for (AddressMapping.Builder network : ntwrks) {
+            myNetworks.add(network.getMatchNetwork());
         }
     }
     
