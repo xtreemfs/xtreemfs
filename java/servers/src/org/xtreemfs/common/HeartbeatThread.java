@@ -109,9 +109,14 @@ public class HeartbeatThread extends LifeCycleThread {
 
     private static Auth                authNone;
 
-    private volatile boolean           renewAddressMappings      = false;
+    /** Determines if a renewal should take place in the next run of the main loop. **/
+    private volatile boolean           renewAddressMapping          = false;
 
-    private Object                     updateIntervalMonitor     = new Object();
+    /** Indicates if another renewal has been triggered during an address renewal. **/
+    private volatile boolean           addressMappingRenewalPending = false;
+
+    /** Used to sleep until the next heartbeat is scheduled. It can be notified to trigger an instant update **/
+    private Object                     updateIntervalMonitor        = new Object();
 
     static {
         authNone = Auth.newBuilder().setAuthType(AuthType.AUTH_NONE).build();
@@ -207,8 +212,6 @@ public class HeartbeatThread extends LifeCycleThread {
 
     @Override
     public void run() {
-        boolean renewAddressMappingInProgress = false;
-
         try {
 
             notifyStarted();
@@ -251,14 +254,15 @@ public class HeartbeatThread extends LifeCycleThread {
                     break;
                 }
                 
-                if (renewAddressMappings || renewAddressMappingInProgress) {
-                    renewAddressMappings = false;
-                    // Save that a renewal in in progress to be able to retry it on errors on the next heartbeat.
-                    renewAddressMappingInProgress = true;
+                if (renewAddressMapping) {
                     try {
+                        // Reset the flag indicating pending renewals.
+                        addressMappingRenewalPending = false;
+                        // Try to renew the address mappings.
                         registerAddressMappings();
-                        // If the renewal was successful the inProgress Flag will be cleared.
-                        renewAddressMappingInProgress = false;
+                        // If the renewal has been successful, the renewal flag will be reset.
+                        // If an error occurred, the renewal will be retried on the next regular heartbeat.
+                        renewAddressMapping = false;
                     } catch (IOException ex) {
                         Logging.logMessage(Logging.LEVEL_ERROR, this,
                                 "requested renewal of address mappings failed: %s", ex.toString());
@@ -277,20 +281,17 @@ public class HeartbeatThread extends LifeCycleThread {
                     pauseLock.notifyAll();
                 }
 
-
                 // If no renewal request is pending, this HeartbeatThread can wait for the next regular UPDATE_INTERVAL.
-                if (!renewAddressMappings) {
+                if (!addressMappingRenewalPending) {
                     try {
                         synchronized (updateIntervalMonitor) {
                             updateIntervalMonitor.wait(UPDATE_INTERVAL);
                         }
                     } catch (InterruptedException e) {
                         // ignore
-                        // TODO(jdillmann): Revise the ExceptionHandling and conditionen for termination.
+                        // TODO(jdillmann): Revise the exception handling and conditions for termination.
                     }
-
                 }
-
             }
 
             notifyStopped();
@@ -630,7 +631,8 @@ public class HeartbeatThread extends LifeCycleThread {
      * Renew the address mappings immediately (HeartbeatThread will wake up when this is called).
      */
     public void triggerAddressMappingRenewal() {
-        renewAddressMappings = true;
+        renewAddressMapping = true;
+        addressMappingRenewalPending = true;
 
         // To make the changes immediate, the thread has to be notified if it is sleeping.
         synchronized (updateIntervalMonitor) {
