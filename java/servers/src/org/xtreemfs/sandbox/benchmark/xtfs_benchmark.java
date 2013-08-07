@@ -34,21 +34,9 @@ public class xtfs_benchmark {
         Params params = cliOptions.buildParamsFromCLIOptions();
         controller = new Controller(params);
         controller.tryConnection();
-        setupVolumes(params);
+        controller.setupVolumes(cliOptions.arguments.toArray(new String[cliOptions.arguments.size()]));
         runBenchmarks(params);
         controller.teardown();
-    }
-
-    private static void setupVolumes(Params params) throws Exception {
-        VolumeManager.init(params);
-        VolumeManager volumeManager = VolumeManager.getInstance();
-
-        if (cliOptions.arguments.size() == 0)
-            volumeManager.createDefaultVolumes(params.numberOfThreads);
-        else {
-            String[] volumes = cliOptions.arguments.toArray(new String[cliOptions.arguments.size()]);
-            volumeManager.openVolumes(volumes);
-        }
     }
 
     private static void runBenchmarks(Params params) throws Exception {

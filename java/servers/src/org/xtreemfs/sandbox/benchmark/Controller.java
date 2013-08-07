@@ -153,10 +153,7 @@ public class Controller {
 
         if (volumeNames.length == 0)
             volumeManager.createDefaultVolumes(params.numberOfThreads);
-        else if (volumeNames.length != params.numberOfThreads) {
-            throw new IllegalArgumentException(
-                    "Number of volume names must be in accordance with number of benchmarks run in parallel");
-        } else
+        else
             volumeManager.openVolumes(volumeNames);
     }
 
