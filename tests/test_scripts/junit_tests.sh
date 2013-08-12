@@ -21,6 +21,33 @@ then
 fi
 echo "XTREEMFS=$XTREEMFS"
 
+# Method which returns a regex list of possible ports in use by the server webinterfaces.
+function get_webinterface_ports() {
+  offset=$(grep "PORT_RANGE_OFFSET = " "${XTREEMFS}/java/servers/test/org/xtreemfs/test/SetupUtils.java" | grep -oE "[0-9]+")
+  
+  default_ports="30638 30636 30639 29637 29640 29641 29642"
+  for port in $default_ports
+  do
+    default_ports=${default_ports/$port/$(($port + $offset))}
+  done
+  
+  # Construct final regex:
+  echo ":("${default_ports// /|}")"
+}
+
+# The used Sun webserver does allow to set the socket option SO_REUSEADDR.
+# Therefore, a subsequent JUnit test may fail with "address already in use"
+# because the webinterface of an XtreemFS server from a previous test is still
+# in the TIME_WAIT state
+function wait_for_time_wait_ports() {
+  ports_regex=$(get_webinterface_ports)
+  
+  while [ -n "$(netstat -n -l -t | grep -E "$ports_regex")" ]
+  do
+    sleep 1
+  done
+}
+
 # find all jars; build the classpath for running the JUnit tests
 CLASSPATH="."
 while read LINE; do
@@ -74,10 +101,17 @@ while read LINE; do
   if [ "$RESULT" -ne "0" ]; then
     echo "FAILURE"
     FAILED=`expr $FAILED + 1`
+    # Log netstat output to debug "address already in use" problems.
+    temp_file="$(mktemp netstat.XXXXXX)"
+    netstat -n -t -a &> "$temp_file.all"
+    netstat -n -t -l &> "$temp_file.listen"
+    netstat -n -t -a -o &> "$temp_file.all+timer"
   else
     echo "ok"
   fi
     
+  wait_for_time_wait_ports
+
   COUNTER=`expr $COUNTER + 1`
     
 done < <(find $CLASSES_DIR -name *Test.class -type f)
