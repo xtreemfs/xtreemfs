@@ -18,7 +18,7 @@ import org.xtreemfs.foundation.logging.Logging;
  * 
  * @author jensvfischer
  */
-public class UncaughtExceptionHandlerBenchmark implements Thread.UncaughtExceptionHandler {
+class UncaughtExceptionHandlerBenchmark implements Thread.UncaughtExceptionHandler {
 
     /**
      * Method invoked when the given thread terminates due to the given uncaught exception.

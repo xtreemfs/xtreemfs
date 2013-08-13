@@ -21,7 +21,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  * 
  * @author jensvfischer
  */
-public class BenchmarkFilebasedWrite extends BenchmarkFilebased {
+class BenchmarkFilebasedWrite extends BenchmarkFilebased {
 
     private LinkedList<String> filenames;
 

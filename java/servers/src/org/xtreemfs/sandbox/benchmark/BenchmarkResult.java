@@ -13,7 +13,7 @@ package org.xtreemfs.sandbox.benchmark;
  * 
  * @author jensvfischer
  */
-public class BenchmarkResult {
+class BenchmarkResult {
 
     final static int MiB_IN_BYTES = 1024 * 1024;
     final static int GiB_IN_BYTES = 1024 * 1024 * 1024;
@@ -26,7 +26,7 @@ public class BenchmarkResult {
     long             threadID;
     long             byteCount;
 
-    public BenchmarkResult(double timeInSec, double speedInMiBProSec, long dataWrittenInBytes, long threadID,
+    BenchmarkResult(double timeInSec, double speedInMiBProSec, long dataWrittenInBytes, long threadID,
             long byteCount) {
         this.timeInSec = timeInSec;
         this.speedInMiBProSec = speedInMiBProSec;
@@ -57,7 +57,7 @@ public class BenchmarkResult {
                 + dataWritten + dataWrittenInBytes + " Bytes]\n" + "\tByteCount: " + byteCount + " Bytes\n" + "}";
     }
 
-    public String toCSV() {
+    String toCSV() {
         return benchmarkType + ";" + numberOfReadersOrWriters + ";" + timeInSec + ";" + speedInMiBProSec + ";"
                 + dataWrittenInBytes + ";" + byteCount;
     }

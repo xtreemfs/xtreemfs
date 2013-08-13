@@ -29,7 +29,7 @@ enum BenchmarkType {
  * 
  * @author jensvfischer
  */
-public abstract class AbstractBenchmark {
+ abstract class AbstractBenchmark {
 
     static final int  MiB_IN_BYTES = 1024 * 1024;
     static final int  GiB_IN_BYTES = 1024 * 1024 * 1024;
@@ -94,7 +94,7 @@ public abstract class AbstractBenchmark {
     abstract void finalizeBenchmark() throws Exception;
 
     /* Starts a benchmark in its own thread. */
-    public void startBenchmark(ConcurrentLinkedQueue<BenchmarkResult> results, ConcurrentLinkedQueue<Thread> threads)
+     void startBenchmark(ConcurrentLinkedQueue<BenchmarkResult> results, ConcurrentLinkedQueue<Thread> threads)
             throws Exception {
         prepareBenchmark();
         Thread benchThread = new Thread(new BenchThread(this, results));

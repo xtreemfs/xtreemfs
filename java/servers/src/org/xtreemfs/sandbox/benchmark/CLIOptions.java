@@ -25,7 +25,7 @@ import org.xtreemfs.utils.utils;
  * 
  * @author jensvfischer
  */
-public class CLIOptions {
+class CLIOptions {
     Map<String, CLIParser.CliOption> options;
     List<String>                     arguments;
     ParamsBuilder                    builder;
@@ -76,7 +76,7 @@ public class CLIOptions {
         OSD_CLEANUP = "-osd-cleanup";
     }
 
-    public CLIOptions() {
+    CLIOptions() {
         this.options = utils.getDefaultAdminToolOptions(true);
         this.builder = new ParamsBuilder();
         this.arguments = new ArrayList<String>(20);

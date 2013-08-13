@@ -32,7 +32,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC;
  * 
  * @author jensvfischer
  */
-public class VolumeManager {
+class VolumeManager {
 
     static final String              VOLUME_BASE_NAME = "benchmark";
 
@@ -47,14 +47,14 @@ public class VolumeManager {
     HashMap<Volume, String[]>        filelistsRandomBenchmark;
 
     /* init the VolumeManager with params. This only needs to be called once */
-    public static void init(Params params) throws Exception {
+    static void init(Params params) throws Exception {
         if (volumeManager == null) {
             volumeManager = new VolumeManager(params);
         }
     }
 
     /* returns the (singleton) instance of the VolumeManager */
-    public static VolumeManager getInstance() throws Exception {
+    static VolumeManager getInstance() throws Exception {
         if (volumeManager == null)
             throw new RuntimeException("Volume Manager not initialized");
         return volumeManager;
@@ -355,7 +355,7 @@ public class VolumeManager {
     }
 
     /* get the list of volumes */
-    public LinkedList<Volume> getVolumes() {
+    LinkedList<Volume> getVolumes() {
         return volumes;
     }
 

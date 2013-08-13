@@ -21,7 +21,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  * 
  * @author jensvfischer
  */
-public class BenchmarkRandomRead extends BenchmarkRandomOffsetbased {
+class BenchmarkRandomRead extends BenchmarkRandomOffsetbased {
 
     BenchmarkRandomRead(Volume volume, Params params) throws Exception {
         super(volume, params);

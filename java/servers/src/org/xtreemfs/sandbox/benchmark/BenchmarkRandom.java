@@ -17,9 +17,9 @@ import org.xtreemfs.common.libxtreemfs.Volume;
  * 
  * @author jensvfischer
  */
-public abstract class BenchmarkRandom extends AbstractBenchmark {
+abstract class BenchmarkRandom extends AbstractBenchmark {
 
-    public BenchmarkRandom(Volume volume, Params params) throws Exception {
+    BenchmarkRandom(Volume volume, Params params) throws Exception {
         super(params.randomSizeInBytes, volume, params);
     }
 }

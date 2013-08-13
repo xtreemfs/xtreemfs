@@ -22,7 +22,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  * 
  * @author jensvfischer
  */
-public class BenchmarkRandomWrite extends BenchmarkRandomOffsetbased {
+class BenchmarkRandomWrite extends BenchmarkRandomOffsetbased {
 
     BenchmarkRandomWrite(Volume volume, Params params) throws Exception {
         super(volume, params);

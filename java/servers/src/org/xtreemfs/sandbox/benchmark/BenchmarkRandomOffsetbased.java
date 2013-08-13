@@ -24,13 +24,13 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  * 
  * @author jensvfischer
  */
-public abstract class BenchmarkRandomOffsetbased extends BenchmarkRandom {
+abstract class BenchmarkRandomOffsetbased extends BenchmarkRandom {
     final static int    RANDOM_IO_BLOCKSIZE = 1024 * 4;             // 4 KiB
     static final String BENCHMARK_FILENAME  = "randomBenchFile";
     final long          sizeOfBasefile;
     final static String BASFILE_FILENAME    = "benchmarks/basefile";
 
-    public BenchmarkRandomOffsetbased(Volume volume, Params params) throws Exception {
+    BenchmarkRandomOffsetbased(Volume volume, Params params) throws Exception {
         super(volume, params);
         sizeOfBasefile = params.basefileSizeInBytes;
     }
@@ -48,11 +48,11 @@ public abstract class BenchmarkRandomOffsetbased extends BenchmarkRandom {
     }
 
     /* convert to 4 KiB Blocks */
-    protected long convertTo4KiBBlocks(long numberOfBlocks) {
+    long convertTo4KiBBlocks(long numberOfBlocks) {
         return (numberOfBlocks * (long) stripeWidth) / (long) RANDOM_IO_BLOCKSIZE;
     }
 
-    protected long generateNextRandomOffset() {
+    long generateNextRandomOffset() {
         long nextOffset = Math.round(Math.random() * (sizeOfBasefile - (long) RANDOM_IO_BLOCKSIZE));
         assert nextOffset >= 0 : "Offset < 0. Offset: " + nextOffset + " Basefilesize: " + sizeOfBasefile;
         assert nextOffset <= (sizeOfBasefile - RANDOM_IO_BLOCKSIZE) : " Offset > Filesize. Offset: " + nextOffset

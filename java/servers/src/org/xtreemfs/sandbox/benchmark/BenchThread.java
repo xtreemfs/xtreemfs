@@ -19,12 +19,12 @@ import org.xtreemfs.foundation.logging.Logging;
  * 
  * @author jensvfischer
  */
-public class BenchThread implements Runnable {
+class BenchThread implements Runnable {
 
     private ConcurrentLinkedQueue<BenchmarkResult> results;
     private AbstractBenchmark                      benchmark;
 
-    public BenchThread(AbstractBenchmark benchmark, ConcurrentLinkedQueue<BenchmarkResult> results) {
+    BenchThread(AbstractBenchmark benchmark, ConcurrentLinkedQueue<BenchmarkResult> results) {
         this.benchmark = benchmark;
         this.results = results;
     }

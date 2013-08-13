@@ -21,7 +21,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  * 
  * @author jensvfischer
  */
-public class BenchmarkSequentialWrite extends BenchmarkSequential {
+class BenchmarkSequentialWrite extends BenchmarkSequential {
 
     private LinkedList<String> filenames;
 

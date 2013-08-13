@@ -26,7 +26,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
  * 
  * @author jensvfischer
  */
-public class BenchmarkClientFactory {
+class BenchmarkClientFactory {
 
     private static ConcurrentLinkedQueue<AdminClient> clients;
 

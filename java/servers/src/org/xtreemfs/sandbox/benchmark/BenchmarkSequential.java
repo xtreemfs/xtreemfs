@@ -15,11 +15,11 @@ import org.xtreemfs.common.libxtreemfs.Volume;
  * 
  * @author jensvfischer
  */
-public abstract class BenchmarkSequential extends AbstractBenchmark {
+abstract class BenchmarkSequential extends AbstractBenchmark {
 
     static final String BENCHMARK_FILENAME = "benchmarks/sequentialBenchmark/benchFile";
 
-    public BenchmarkSequential(Volume volume, Params params) throws Exception {
+    BenchmarkSequential(Volume volume, Params params) throws Exception {
         super(params.sequentialSizeInBytes, volume, params);
     }
 

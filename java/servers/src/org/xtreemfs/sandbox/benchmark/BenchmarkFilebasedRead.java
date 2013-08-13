@@ -20,7 +20,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  * 
  * @author jensvfischer
  */
-public class BenchmarkFilebasedRead extends BenchmarkFilebased {
+class BenchmarkFilebasedRead extends BenchmarkFilebased {
 
     private String[] filenames;
 

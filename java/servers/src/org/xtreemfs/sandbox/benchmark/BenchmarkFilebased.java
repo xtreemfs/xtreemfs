@@ -17,18 +17,18 @@ import org.xtreemfs.common.libxtreemfs.Volume;
  * 
  * @author jensvfischer
  */
-public abstract class BenchmarkFilebased extends BenchmarkRandom {
+abstract class BenchmarkFilebased extends BenchmarkRandom {
 
     static final String BENCHMARK_FILENAME = "benchmarks/randomBenchmark/benchFile";
     final int           randomIOFilesize;
 
-    public BenchmarkFilebased(Volume volume, Params params) throws Exception {
+    BenchmarkFilebased(Volume volume, Params params) throws Exception {
         super(volume, params);
         this.randomIOFilesize = params.randomIOFilesize;
     }
 
     /* convert to 4 KiB Blocks */
-    protected long convertTo4KiBBlocks(long numberOfBlocks) {
+    long convertTo4KiBBlocks(long numberOfBlocks) {
         return (numberOfBlocks * (long) stripeWidth) / (long) randomIOFilesize;
     }
 }
