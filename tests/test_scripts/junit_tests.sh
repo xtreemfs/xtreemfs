@@ -25,7 +25,7 @@ echo "XTREEMFS=$XTREEMFS"
 function get_webinterface_ports() {
   offset=$(grep "PORT_RANGE_OFFSET = " "${XTREEMFS}/java/servers/test/org/xtreemfs/test/SetupUtils.java" | grep -oE "[0-9]+")
   
-  default_ports="30638 30636 30639 29637 29640 29641 29642"
+  default_ports="30638 30636 30639 29637 29640 29641 29642 32638 32636 32639 32637 32640 32641 32642"
   for port in $default_ports
   do
     default_ports=${default_ports/$port/$(($port + $offset))}
