@@ -20,6 +20,13 @@ TestSets = {
                 'dir_repl': False,
                 'snmp': False,
               },
+	'ssd' : {
+				'ssl': False,
+				'mrc_repl': False,
+				'dir_repl': False,
+				'snmp': False
+			  },
+
     # Used for testing new test scripts, therefore usually contains no tests.
     'testing' : {
                 'ssl': False,
@@ -33,7 +40,7 @@ TestSets = {
                 'mrc_repl': False,
                 'dir_repl': False,
                 'snmp': True,
-    }
+   	          }
 }
 
 VolumeConfigs = {
@@ -161,6 +168,18 @@ Tests = [
         'file': '15_makextreemfs.py',
         'VolumeConfigs': [ 'regular', 'nomdcache' ],
         'TestSets': [ 'full' ]
+    },
+    {
+        'name': 'IOZone multithread',
+        'file': '16_iozone_multithread.py',
+        'VolumeConfigs': [ 'regular' ],
+        'TestSets': [ 'ssd' ]
+    },
+    {
+        'name': 'bonnie multithread',
+        'file': '17_bonnie_multithread.py',
+        'VolumeConfigs': [ 'regular' ],
+        'TestSets': [ 'ssd' ]
     },
     {
         'name': 'xtfs_cleanup test',

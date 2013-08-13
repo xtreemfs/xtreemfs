@@ -19,7 +19,8 @@ class TestEnvironment:
                  volume,
                  xtreemfs_dir,
                  test_dir,
-                 debug_level):
+                 debug_level,
+                 storage_threads):
         self.__xtreemfs_dir = xtreemfs_dir
         self.__test_dir = os.path.abspath(test_dir)
         self.__debug_level = debug_level
@@ -28,6 +29,7 @@ class TestEnvironment:
         self.__dir = None
         self.__mrc = None
         self.__osds = list()
+        self.__storage_threads = storage_threads
 
     def start(self):
         try:
@@ -112,7 +114,8 @@ class TestEnvironment:
                                          self.__xtreemfs_dir,
                                          os.path.join(self.__test_dir, "data", "dir"),
                                          dir_port,
-                                         "test-dir")
+                                         "test-dir",
+                                         self.__storage_threads)
             self.__dir.configure()
             self.__dir.set_debug_level(self.__debug_level)
             if ssl_enabled:
@@ -134,7 +137,8 @@ class TestEnvironment:
                                          self.__xtreemfs_dir,
                                          os.path.join(self.__test_dir, "data", "mrc"),
                                          dir_port - 2,
-                                         "test-mrc")
+                                         "test-mrc",
+                                         self.__storage_threads)
             self.__mrc.configure("localhost", self.__dir.get_rpc_port())
             self.__mrc.set_debug_level(self.__debug_level)
             if ssl_enabled:
@@ -156,7 +160,8 @@ class TestEnvironment:
                                       self.__xtreemfs_dir,
                                       os.path.join(self.__test_dir, "data", "osd"+str(osdNum)),
                                       dir_port + 2 +osdNum,
-                                      "test-osd"+str(osdNum))
+                                      "test-osd"+str(osdNum),
+                                      self.__storage_threads)
                 osd.configure("localhost", self.__dir.get_rpc_port())
                 osd.set_debug_level(self.__debug_level)
                 if ssl_enabled:
@@ -436,6 +441,8 @@ if __name__ == "__main__":
     option_parser.add_option( "-d", "--debug-level", action="store", dest="debug_level", default=6 )
     option_parser.add_option( "-x", "--xtreemfs-base-dir", action="store", dest="xtreemfs_dir", default=xtreemfs_dir)
     option_parser.add_option( "-e", "--start-test-env", action="store_true", dest="start_test_env")
+    option_parser.add_option( "-s", "--storage-threads", action="store", dest="storage_threads", default=1)
+
     if len(sys.argv) == 1:
         option_parser.print_help()
         sys.exit(2)
@@ -461,7 +468,8 @@ if __name__ == "__main__":
                                   options.volume,
                                   options.xtreemfs_dir,
                                   options.test_dir,
-                                  options.debug_level)
+                                  options.debug_level,
+                                  options.storage_threads)
         testEnv.start()
         try:
             print
@@ -485,7 +493,8 @@ if __name__ == "__main__":
                                   options.volume,
                                   options.xtreemfs_dir,
                                   options.test_dir,
-                                  options.debug_level)
+                                  options.debug_level,
+                                  options.storage_threads)
         testEnv.start()
         try:
             failed = testEnv.runTests()
