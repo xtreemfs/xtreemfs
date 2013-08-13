@@ -504,7 +504,7 @@ public class HeartbeatThread extends LifeCycleThread {
         
         if (config.isUsingMultihoming()) {
             for (AddressMapping.Builder mapping : reachableEndpoints) {
-                // Add every remaining endpoint that is not the, already added, adevertised endpoint.
+                // Add all the remaining endpoints not advertised yet.
                 if (!advertisedEndpoint.getAddress().equals(mapping.getAddress())) {
                     mapping.setUuid(uuid.toString());
                     endpoints.add(mapping);
