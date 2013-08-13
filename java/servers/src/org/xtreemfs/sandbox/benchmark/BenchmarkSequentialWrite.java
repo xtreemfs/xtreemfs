@@ -25,7 +25,6 @@ public class BenchmarkSequentialWrite extends BenchmarkSequential {
 
     private LinkedList<String> filenames;
 
-
     BenchmarkSequentialWrite(Volume volume, Params params) throws Exception {
         super(volume, params);
         filenames = new LinkedList<String>();
@@ -38,8 +37,8 @@ public class BenchmarkSequentialWrite extends BenchmarkSequential {
         int flags = GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
-        FileHandle fileHandle = volume.openFile(params.userCredentials, BENCHMARK_FILENAME+0, flags, 511);
-        this.filenames.add(BENCHMARK_FILENAME+0);
+        FileHandle fileHandle = volume.openFile(params.userCredentials, BENCHMARK_FILENAME + 0, flags, 511);
+        this.filenames.add(BENCHMARK_FILENAME + 0);
         long byteCounter = 0;
         for (long j = 0; j < numberOfBlocks; j++) {
             long nextOffset = j * stripeWidth;

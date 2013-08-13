@@ -21,6 +21,8 @@ import org.xtreemfs.utils.DefaultDirConfig;
 import org.xtreemfs.utils.utils;
 
 /**
+ * Class implementing the commandline options for {@link xtfs_benchmark}.
+ * 
  * @author jensvfischer
  */
 public class CLIOptions {
@@ -104,7 +106,7 @@ public class CLIOptions {
         setNoCleanup();
         setNoCleanupOfVolumes();
         setNoCleanupOfBasefile();
-		    setOsdCleanup();
+        setOsdCleanup();
         return builder.build();
     }
 
@@ -141,8 +143,8 @@ public class CLIOptions {
         options.put(SIZE_BASEFILE, new CLIParser.CliOption(STRING,
                 "size of the basefile for random benchmarks in [B|K|M|G] (no modifier assumes bytes)", "<size>"));
         options.put(SIZE_FILES, new CLIParser.CliOption(STRING,
-                "size of the files for random filebased benchmarks in [B|K|M|G] (no modifier assumes bytes)."
-                        + " The filesize for filebased random IO Benchmarks must be <= 23^31-1", "<size>"));
+                "size of the files for filebased benchmarks in [B|K|M|G] (no modifier assumes bytes)."
+                        + " The filesize must be <= 23^31-1", "<size>"));
 
         /* deletion options */
         String noCleanupDescription = "do not delete created volumes and files. Volumes and files need to be removed "
@@ -172,14 +174,15 @@ public class CLIOptions {
         System.out
                 .println("The number of volumes must be in accordance with the number of benchmarks run in parallel (see -p).");
         System.out
-                .println("All sizes can be modified with multiplication modifiers, where K means KiB, M means MiB and G means GiB. \n" +
-						"If no modifier is given, sizes are assumed to be in bytes.");
+                .println("All sizes can be modified with multiplication modifiers, where K means KiB, M means MiB and G means GiB. \n"
+                        + "If no modifier is given, sizes are assumed to be in bytes.");
         System.out.println();
         System.out.println("  " + "options:");
         utils.printOptions(options);
         System.out.println();
         System.out.println("example: xtfs_benchmark -sw -sr -t 3 -ssize 3G volume1 volume2 volume3");
-        System.out.println("\t\t starts a sequential write and read benchmark of 3 GiB with 3 benchmarks in parallel on volume1, volume2 and volume3\n");
+        System.out
+                .println("\t\t starts a sequential write and read benchmark of 3 GiB with 3 benchmarks in parallel on volume1, volume2 and volume3\n");
     }
 
     private void setNumberOfThreads() {
@@ -302,10 +305,10 @@ public class CLIOptions {
         builder.setNoCleanupOfBasefile(switchValue);
     }
 
-	private void setOsdCleanup() {
-		boolean switchValue = options.get(OSD_CLEANUP).switchValue;
-		builder.setOsdCleanup(switchValue);
-	}
+    private void setOsdCleanup() {
+        boolean switchValue = options.get(OSD_CLEANUP).switchValue;
+        builder.setOsdCleanup(switchValue);
+    }
 
     boolean sequentialWriteBenchmarkIsSet() {
         return options.get(SEQ_WRITE).switchValue;

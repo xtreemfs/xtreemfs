@@ -17,7 +17,7 @@ import org.xtreemfs.foundation.logging.Logging;
 
 /**
  * Enum for the different benchmark Types.
- *
+ * 
  * @author jensvfischer
  */
 enum BenchmarkType {
@@ -25,7 +25,7 @@ enum BenchmarkType {
 }
 
 /**
- * Benchmark library for measuring read- and writeperformance of a OSD.
+ * Abstract baseclass for the benchmark classes.
  * 
  * @author jensvfischer
  */
@@ -49,9 +49,8 @@ public abstract class AbstractBenchmark {
     }
 
     /*
-     * Performs a single sequential read- or write-benchmark. Whether a read- or write-benchmark is performed
-     * depends on which subclass is instantiated. This method is supposed to be called within its own thread
-     * to run a benchmark.
+     * Performs a single sequential read- or write-benchmark. Whether a read- or write-benchmark is performed depends on
+     * which subclass is instantiated. This method is supposed to be called within its own thread to run a benchmark.
      */
     void benchmark(ConcurrentLinkedQueue<BenchmarkResult> results) throws Exception {
 
@@ -86,8 +85,8 @@ public abstract class AbstractBenchmark {
     abstract void prepareBenchmark() throws Exception;
 
     /*
-     * Writes or reads the specified amount of data to/from the volume specified in the object initialization.
-     * Called within the benchmark method.
+     * Writes or reads the specified amount of data to/from the volume specified in the object initialization. Called
+     * within the benchmark method.
      */
     abstract long performIO(byte[] data, long numberOfBlocks) throws IOException;
 

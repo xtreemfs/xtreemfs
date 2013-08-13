@@ -11,11 +11,14 @@ package org.xtreemfs.sandbox.benchmark;
 import org.xtreemfs.common.libxtreemfs.Volume;
 
 /**
+ * Instantiates a benchmark dependig on the BenchmarkType.
+ * 
  * @author jensvfischer
  */
 public class BenchmarkFactory {
 
-    public static AbstractBenchmark createBenchmark(BenchmarkType benchmarkType, Volume volume, Params params) throws Exception {
+    public static AbstractBenchmark createBenchmark(BenchmarkType benchmarkType, Volume volume, Params params)
+            throws Exception {
 
         AbstractBenchmark benchmark = null;
 
@@ -27,7 +30,7 @@ public class BenchmarkFactory {
             benchmark = new BenchmarkSequentialRead(volume, params);
             break;
         case RAND_WRITE:
-			benchmark = new BenchmarkRandomWrite(volume, params);
+            benchmark = new BenchmarkRandomWrite(volume, params);
             break;
         case RAND_READ:
             benchmark = new BenchmarkRandomRead(volume, params);

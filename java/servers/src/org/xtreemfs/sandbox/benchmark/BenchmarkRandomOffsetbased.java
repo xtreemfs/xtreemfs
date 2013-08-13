@@ -18,6 +18,10 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 
 /**
+ * Abstract baseclass for random IO benchmarks.
+ * <p/>
+ * Random IO benchmarks write or read small blocks with random offsets within a large basefile.
+ * 
  * @author jensvfischer
  */
 public abstract class BenchmarkRandomOffsetbased extends BenchmarkRandom {
@@ -51,7 +55,8 @@ public abstract class BenchmarkRandomOffsetbased extends BenchmarkRandom {
     protected long generateNextRandomOffset() {
         long nextOffset = Math.round(Math.random() * (sizeOfBasefile - (long) RANDOM_IO_BLOCKSIZE));
         assert nextOffset >= 0 : "Offset < 0. Offset: " + nextOffset + " Basefilesize: " + sizeOfBasefile;
-        assert nextOffset <= (sizeOfBasefile - RANDOM_IO_BLOCKSIZE) : " Offset > Filesize. Offset: " + nextOffset + "Basefilesize: " + sizeOfBasefile;
+        assert nextOffset <= (sizeOfBasefile - RANDOM_IO_BLOCKSIZE) : " Offset > Filesize. Offset: " + nextOffset
+                + "Basefilesize: " + sizeOfBasefile;
         return nextOffset;
     }
 
@@ -64,8 +69,7 @@ public abstract class BenchmarkRandomOffsetbased extends BenchmarkRandom {
             fileHandle.close();
             return sizeOfBasefile != fileSizeInBytes;
         } catch (PosixErrorException e) {
-            Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this,
-                    "No basefile found.");
+            Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "No basefile found.");
             return true;
         }
     }

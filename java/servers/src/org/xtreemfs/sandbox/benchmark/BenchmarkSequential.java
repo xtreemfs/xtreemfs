@@ -11,12 +11,13 @@ package org.xtreemfs.sandbox.benchmark;
 import org.xtreemfs.common.libxtreemfs.Volume;
 
 /**
+ * Abstract baseclass for sequential benchmarks.
+ * 
  * @author jensvfischer
  */
 public abstract class BenchmarkSequential extends AbstractBenchmark {
 
-
-    static final String BENCHMARK_FILENAME           = "benchmarks/sequentialBenchmark/benchFile";
+    static final String BENCHMARK_FILENAME = "benchmarks/sequentialBenchmark/benchFile";
 
     public BenchmarkSequential(Volume volume, Params params) throws Exception {
         super(params.sequentialSizeInBytes, volume, params);
@@ -27,5 +28,6 @@ public abstract class BenchmarkSequential extends AbstractBenchmark {
     }
 
     @Override
-    void finalizeBenchmark() throws Exception {}
+    void finalizeBenchmark() throws Exception {
+    }
 }

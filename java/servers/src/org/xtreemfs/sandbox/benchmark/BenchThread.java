@@ -8,20 +8,21 @@
 
 package org.xtreemfs.sandbox.benchmark;
 
-import org.xtreemfs.foundation.logging.Logging;
-
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.xtreemfs.foundation.logging.Logging;
+
 /**
- * Thread for a {@link AbstractBenchmark}. Starts
- * {@link AbstractBenchmark#benchmark(java.util.concurrent.ConcurrentLinkedQueue)} as run method.
+ * Thread for a {@link AbstractBenchmark}.
+ * <p/>
+ * Starts {@link AbstractBenchmark#benchmark(java.util.concurrent.ConcurrentLinkedQueue)} as run method.
  * 
  * @author jensvfischer
  */
 public class BenchThread implements Runnable {
 
     private ConcurrentLinkedQueue<BenchmarkResult> results;
-    private AbstractBenchmark benchmark;
+    private AbstractBenchmark                      benchmark;
 
     public BenchThread(AbstractBenchmark benchmark, ConcurrentLinkedQueue<BenchmarkResult> results) {
         this.benchmark = benchmark;
@@ -34,7 +35,8 @@ public class BenchThread implements Runnable {
             Thread.currentThread().setName(benchmark.getClass().getSimpleName() + "-Thread");
             benchmark.benchmark(results);
         } catch (Exception e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this, "Error while trying to run %s", Thread.currentThread().getName());
+            Logging.logMessage(Logging.LEVEL_ERROR, this, "Error while trying to run %s", Thread.currentThread()
+                    .getName());
             Logging.logError(Logging.LEVEL_ERROR, this, e);
         }
     }

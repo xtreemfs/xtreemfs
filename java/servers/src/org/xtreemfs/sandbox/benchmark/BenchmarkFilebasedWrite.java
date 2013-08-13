@@ -17,7 +17,8 @@ import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 
 /**
- * Class implementing a random read benchmark.
+ * Class implementing a filebased write benchmark.
+ * 
  * @author jensvfischer
  */
 public class BenchmarkFilebasedWrite extends BenchmarkFilebased {
@@ -30,14 +31,15 @@ public class BenchmarkFilebasedWrite extends BenchmarkFilebased {
     }
 
     @Override
-    void prepareBenchmark() throws Exception {}
+    void prepareBenchmark() throws Exception {
+    }
 
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */
     @Override
     long performIO(byte[] data, long numberOfBlocks) throws IOException {
 
-//        long numberOfFiles = convertTo4KiBBlocks(numberOfBlocks);
-        long numberOfFiles = params.randomSizeInBytes/4096;
+        // long numberOfFiles = convertTo4KiBBlocks(numberOfBlocks);
+        long numberOfFiles = params.randomSizeInBytes / 4096;
         long byteCounter = 0;
         Random random = new Random();
 

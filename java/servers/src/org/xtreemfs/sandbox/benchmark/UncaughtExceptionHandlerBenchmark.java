@@ -11,7 +11,10 @@ package org.xtreemfs.sandbox.benchmark;
 import org.xtreemfs.foundation.logging.Logging;
 
 /**
- * Force exit of benchmark tool in case of uncaught exceptions
+ * UncaughtExceptionHandler for the benchmark tool.
+ * <p/>
+ * 
+ * Forces exit of benchmark tool in case of uncaught exceptions.
  * 
  * @author jensvfischer
  */
@@ -29,7 +32,8 @@ public class UncaughtExceptionHandlerBenchmark implements Thread.UncaughtExcepti
      */
     @Override
     public void uncaughtException(Thread t, Throwable e) {
-        Logging.logMessage(Logging.LEVEL_ERROR, this, "An uncaught exception was thrown in %s. The benchmark tool will be terminated.", t.getName());
+        Logging.logMessage(Logging.LEVEL_ERROR, this,
+                "An uncaught exception was thrown in %s. The benchmark tool will be terminated.", t.getName());
         Logging.logError(Logging.LEVEL_ERROR, this, e);
         System.exit(1);
     }

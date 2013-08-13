@@ -11,6 +11,10 @@ package org.xtreemfs.sandbox.benchmark;
 import org.xtreemfs.common.libxtreemfs.Volume;
 
 /**
+ * Abstract baseclass for random IO benchmarks.
+ * 
+ * Todo (jvf): If filebased benchmark is refactored to not be random IO benchmark, this class is useless
+ * 
  * @author jensvfischer
  */
 public abstract class BenchmarkRandom extends AbstractBenchmark {

@@ -15,7 +15,9 @@ import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 
 /**
- * Class implementing a random read benchmark.
+ * Class implementing a random IO read benchmarks.
+ * <p/>
+ * A random IO read benchmarks reads small blocks with random offsets within a large basefile.
  * 
  * @author jensvfischer
  */
@@ -41,6 +43,5 @@ public class BenchmarkRandomRead extends BenchmarkRandomOffsetbased {
         }
         return byteCounter;
     }
-
 
 }

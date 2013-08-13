@@ -16,8 +16,7 @@ import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 
 /**
- * Class implementing a random read benchmark.
- * The Files used for the benchmark are deleted after finishing the benchmark.
+ * Class implementing a filebased read benchmark.
  * 
  * @author jensvfischer
  */
@@ -38,8 +37,8 @@ public class BenchmarkFilebasedRead extends BenchmarkFilebased {
     @Override
     long performIO(byte[] data, long numberOfBlocks) throws IOException {
 
-//        long numberOfFilesToRead = convertTo4KiBBlocks(numberOfBlocks);
-        long numberOfFilesToRead = params.randomSizeInBytes/4096;
+        // long numberOfFilesToRead = convertTo4KiBBlocks(numberOfBlocks);
+        long numberOfFilesToRead = params.randomSizeInBytes / 4096;
 
         int filenamesSize = filenames.length;
         long byteCounter = 0;
@@ -57,7 +56,8 @@ public class BenchmarkFilebasedRead extends BenchmarkFilebased {
     }
 
     @Override
-    void finalizeBenchmark() throws Exception {}
+    void finalizeBenchmark() throws Exception {
+    }
 
     long nextLong(long limit) {
         long next = Math.round(Math.random() * limit);

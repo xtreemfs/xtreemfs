@@ -21,8 +21,15 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC;
 
 /**
- * Singleton Volume Manager.
- *
+ * Volume Manager (Singleton).
+ * <p/>
+ * 
+ * Class for managing volumes in the benchmark tools. Allows for the creation and deletion of volumes, manages the
+ * assignment of volumes to benchmark threads and does bookkeeping of created files and volumes.
+ * <p/>
+ * The bookkeeping of created volumes is necessary for the deletion (only) of created volumes and files as well as for
+ * the filebased benchmarks.
+ * 
  * @author jensvfischer
  */
 public class VolumeManager {
@@ -39,18 +46,21 @@ public class VolumeManager {
     HashMap<Volume, String[]>        filelistsSequentialBenchmark;
     HashMap<Volume, String[]>        filelistsRandomBenchmark;
 
+    /* init the VolumeManager with params. This only needs to be called once */
     public static void init(Params params) throws Exception {
         if (volumeManager == null) {
             volumeManager = new VolumeManager(params);
         }
     }
 
+    /* returns the (singleton) instance of the VolumeManager */
     public static VolumeManager getInstance() throws Exception {
         if (volumeManager == null)
             throw new RuntimeException("Volume Manager not initialized");
         return volumeManager;
     }
 
+    /* private constructor, used by init */
     private VolumeManager(Params params) throws Exception {
         this.params = params;
         currentPosition = 0;
@@ -62,15 +72,20 @@ public class VolumeManager {
         this.createdFiles = new HashMap<Volume, HashSet<String>>();
     }
 
+    /* cycles through the list of volumes to assign to volumes to benchmarks */
     Volume getNextVolume() {
         return volumes.get(currentPosition++);
     }
 
-    /* reset the position counter. Needs to be called if u want to reuse the volumes for another benchmark */
+    /*
+     * reset the position counter of the volume list. Needs to be called if one wants to reuse the volumes for a
+     * consecutive benchmark
+     */
     void reset() {
         currentPosition = 0;
     }
 
+    /* used if no volumes were specified */
     void createDefaultVolumes(int numberOfVolumes) throws IOException {
         for (int i = 0; i < numberOfVolumes; i++) {
             Volume volume = createAndOpenVolume(VOLUME_BASE_NAME + i);
@@ -78,11 +93,13 @@ public class VolumeManager {
         }
     }
 
+    /* add a volume to the volume list */
     private void addToVolumes(Volume volume) {
         if (!volumes.contains(volume))
             volumes.add(volume);
     }
 
+    /* opens multiple volumes (and creates and opens volumes if they do not exist) */
     void openVolumes(String... volumeName) throws IOException {
         this.volumes = new LinkedList<Volume>();
         for (String each : volumeName) {
@@ -90,6 +107,7 @@ public class VolumeManager {
         }
     }
 
+    /* opens a single volume (or creates and opens a volume if it does not exist) */
     private Volume createAndOpenVolume(String volumeName) throws IOException {
         Volume volume = null;
         try {
@@ -116,6 +134,10 @@ public class VolumeManager {
         volume.createDirectory(params.userCredentials, "/benchmarks/randomBenchmark", 0777, true);
     }
 
+    /*
+     * adds a filelist with files from a sequential benchmark (used to pass the list of files written by a sequential
+     * write benchmark to a sequential read benchmark)
+     */
     void setSequentialFilelistForVolume(Volume volume, LinkedList<String> filelist) {
         String[] files = new String[filelist.size()];
         synchronized (this) {
@@ -123,6 +145,10 @@ public class VolumeManager {
         }
     }
 
+    /*
+     * adds a filelist with files from a filebased benchmark (used to pass the list of files written by a filebased
+     * write benchmark to a filebased read benchmark)
+     */
     void setRandomFilelistForVolume(Volume volume, LinkedList<String> filelist) {
         String[] files = new String[filelist.size()];
         synchronized (this) {
@@ -130,6 +156,10 @@ public class VolumeManager {
         }
     }
 
+    /*
+     * get the list of files written to a volume (used to pass the list of files written by a filebased write benchmark
+     * to a filebased read benchmark)
+     */
     synchronized String[] getSequentialFilelistForVolume(Volume volume) throws IOException {
         String[] filelist;
 
@@ -151,6 +181,10 @@ public class VolumeManager {
         return filelistsSequentialBenchmark.get(volume);
     }
 
+    /*
+     * get the list of files written to a volume (used to pass the list of files written by a filebased write benchmark
+     * to a filebased read benchmark)
+     */
     synchronized String[] getRandomFilelistForVolume(Volume volume) throws IOException {
         String[] filelist;
 
@@ -172,6 +206,12 @@ public class VolumeManager {
         return filelistsRandomBenchmark.get(volume);
     }
 
+    /*
+     * Tries to infer a list of files from sequential benchmarks. This is called if a sequential read benchmark was
+     * executed without a previous write benchmark (e.g. when the benchmark tool is executed first to do write
+     * benchmarks with the noCleanup option, a consecutive renewed execution of a read benchmark tries to infer the
+     * filelist)
+     */
     private String[] inferFilelist(Volume volume, String pathToBasefile) throws IOException {
 
         Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Read benchmark without write benchmark. "
@@ -195,6 +235,7 @@ public class VolumeManager {
         return filelist;
     }
 
+    /* calculates the number of files on a volume */
     private long calculateTotalSizeOfFilelist(Volume volume, String[] filelist) throws IOException {
         long aggregatedSizeInBytes = 0;
         for (String file : filelist) {
@@ -215,6 +256,7 @@ public class VolumeManager {
         createdFiles.put(volume, filelistForVolume);
     }
 
+    /* deletes all files on in the createdFiles list */
     void deleteCreatedFiles() {
         for (Volume volume : volumes) {
             HashSet<String> fileListForVolume = createdFiles.get(volume);
@@ -231,6 +273,7 @@ public class VolumeManager {
         }
     }
 
+    /* try to delete a file. log errors, but continue */
     private void tryToDeleteFile(Volume volume, String filename) {
         try {
             volume.unlink(params.userCredentials, filename);
@@ -241,28 +284,33 @@ public class VolumeManager {
         }
     }
 
+    /* deletes all volumes in the list of created volumes */
     void deleteCreatedVolumes() throws IOException {
         for (Volume volume : createdVolumes) {
             deleteVolumeIfExisting(volume);
         }
     }
 
+    /* deletes the given volumes */
     void deleteVolumes(String... volumeName) throws IOException {
         for (String each : volumeName) {
             deleteVolumeIfExisting(each);
         }
     }
 
+    /* delete the default volumes */
     void deleteDefaultVolumes(int numberOfVolumes) throws IOException {
         for (int i = 0; i < numberOfVolumes; i++) {
             deleteVolumeIfExisting(VOLUME_BASE_NAME + i);
         }
     }
 
+    /* delete a volume specified by a volume ref */
     void deleteVolumeIfExisting(Volume volume) throws IOException {
         deleteVolumeIfExisting(volume.getVolumeName());
     }
 
+    /* delete a volume specified by a string with the volumes name */
     void deleteVolumeIfExisting(String volumeName) throws IOException {
         if (new ArrayList<String>(Arrays.asList(client.listVolumeNames())).contains(volumeName)) {
             client.deleteVolume(params.auth, params.userCredentials, volumeName);
@@ -291,11 +339,13 @@ public class VolumeManager {
         }
 
         for (String osd : uuids) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.tool, this, "Finished cleanup. Result: %s", client.getCleanUpResult(osd, pwd));
+            Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.tool, this, "Finished cleanup. Result: %s",
+                    client.getCleanUpResult(osd, pwd));
         }
 
     }
 
+    /* get the list of all OSDs registered a the DIR */
     LinkedList<String> getOSDUUIDs() throws IOException {
         LinkedList<String> uuids = new LinkedList<String>();
         for (DIR.Service service : client.getServiceByType(DIR.ServiceType.SERVICE_TYPE_OSD).getServicesList()) {
@@ -304,6 +354,7 @@ public class VolumeManager {
         return uuids;
     }
 
+    /* get the list of volumes */
     public LinkedList<Volume> getVolumes() {
         return volumes;
     }

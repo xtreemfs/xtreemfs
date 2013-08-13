@@ -22,7 +22,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 public class BenchmarkSequentialRead extends BenchmarkSequential {
     private String[] filenames;
 
-
     BenchmarkSequentialRead(Volume volume, Params params) throws Exception {
         super(volume, params);
     }

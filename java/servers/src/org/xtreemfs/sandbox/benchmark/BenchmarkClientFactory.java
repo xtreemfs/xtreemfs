@@ -19,6 +19,11 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 
 /**
+ * Handles client creation, startup and deletion centrally.
+ * <p/>
+ * getNewClient() can be used to get an already started client. shutdownClients() is used to shutdown all clients
+ * created so far.
+ * 
  * @author jensvfischer
  */
 public class BenchmarkClientFactory {
@@ -29,17 +34,10 @@ public class BenchmarkClientFactory {
         clients = new ConcurrentLinkedQueue<AdminClient>();
     }
 
-    /**
-     * Create a AdminClient. The starting and shutdown of the client is managed by the BenchmarkClientFactory
-     * (no need to call Client.start() and Client.shutdown())
-     * 
-     * @param params
-     *            the params data
-     * @return a started AdminClient instance
-     * @throws Exception
-     */
+    /* create and start an AdminClient. */
     static AdminClient getNewClient(Params params) throws Exception {
-        AdminClient client = ClientFactory.createAdminClient(params.dirAddress, params.userCredentials, params.sslOptions, params.options);
+        AdminClient client = ClientFactory.createAdminClient(params.dirAddress, params.userCredentials,
+                params.sslOptions, params.options);
         clients.add(client);
         client.start();
         return client;
@@ -58,8 +56,8 @@ public class BenchmarkClientFactory {
         for (AdminClient client : clients) {
             tryShutdownOfClient(client);
         }
-        Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, BenchmarkClientFactory.class, "Shutting down %s clients",
-                clients.size());
+        Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, BenchmarkClientFactory.class,
+                "Shutting down %s clients", clients.size());
     }
 
     static void tryShutdownOfClient(Client client) {

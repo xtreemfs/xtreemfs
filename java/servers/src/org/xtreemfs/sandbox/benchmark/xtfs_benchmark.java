@@ -6,6 +6,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.foundation.logging.Logging;
 
+/**
+ * The commandline benchmark tool.
+ */
 public class xtfs_benchmark {
     static final int          KiB_IN_BYTES = 1024;
     static final int          MiB_IN_BYTES = 1024 * 1024;
@@ -19,6 +22,13 @@ public class xtfs_benchmark {
         Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandlerBenchmark());
     }
 
+    /**
+     * Main loop of the commandline tool.
+     * 
+     * @param args
+     *            commandline options for the tool, as specified in {@link CLIOptions}
+     * @throws Exception
+     */
     public static void main(String[] args) throws Exception {
 
         Logging.start(6, Category.tool);
@@ -39,6 +49,7 @@ public class xtfs_benchmark {
         controller.teardown();
     }
 
+    /* run all benchmarks specified by the CLIOptions */
     private static void runBenchmarks(Params params) throws Exception {
 
         ConcurrentLinkedQueue<BenchmarkResult> result;

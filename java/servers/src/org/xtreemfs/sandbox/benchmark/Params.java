@@ -20,35 +20,158 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 
 /**
+ * Datastructure holding all parameters for the benchmark library.
+ * <p/>
+ * 
+ * {@link ParamsBuilder} should be used to build this (the given default values are only present if the builder is used
+ * <p/>
+ * 
+ * The {@link Controller}, the {@link ParamsBuilder} and {@link Params} represent the API to the benchmark library.
+ * 
  * @author jensvfischer
  */
 public class Params {
 
-    final int                 numberOfThreads;
-    final int                 numberOfRepetitions;
-    final long                sequentialSizeInBytes;
-    final long                randomSizeInBytes;
-    final long                basefileSizeInBytes;
-    final int                 randomIOFilesize;
-    final String              userName;
-    final String              group;
-    final String              osdPassword;
-    final String              dirAddress;
-    final String              mrcAddress;
-    final RPC.UserCredentials userCredentials;
-    final RPC.Auth            auth;
-    final SSLOptions          sslOptions;
-    final Options             options;
-    int                       stripeSizeInBytes;
-    int                       getStripeSizeInKiB;
-    int                       stripeWidth;
-    final boolean             noCleanup;
-    final boolean             noCleanupOfVolumes;
-    final boolean             noCleanupOfBasefile;
-    boolean                   osdCleanup;
+    /**
+     * Number of benchmarks (benchmark threads) to be run in parallel. <br/>
+     * Default: 1.
+     */
+    public final int                 numberOfThreads;
 
+    /**
+     * Number of repetitions of a benchmark. <br/>
+     * Default: 1.
+     */
+    public final int                 numberOfRepetitions;
 
-	Params(ParamsBuilder builder) throws Exception {
+    /**
+     * Number of bytes to write or read in a sequential benchmark. <br/>
+     * Default: 10 MiB.
+     */
+    public final long                sequentialSizeInBytes;
+
+    /**
+     * Number of bytes to write or read in a random benchmark. <br/>
+     * Default: 10 MiB.
+     */
+    public final long                randomSizeInBytes;
+
+    /**
+     * Size of basefile for random benchmarks. <br/>
+     * Default: 3 GiB.
+     */
+    public final long                basefileSizeInBytes;
+
+    /**
+     * Size of files in filebased benchmark. <br/>
+     * Default: 4 KiB.
+     */
+    public final int                 randomIOFilesize;
+
+    /**
+     * The username to be used when creating files and volumes <br/>
+     * Default: root.
+     */
+    public final String              userName;
+
+    /**
+     * The group to be used when creating files and volumes. <br/>
+     * Default: root.
+     */
+    public final String              group;
+
+    /**
+     * The password for accessing the osd * <br/>
+     * Default: "".
+     */
+    public final String              osdPassword;
+
+    /**
+     * The address of the DIR Server. <br/>
+     * Default: 127.0.0.1:32638.
+     */
+    public final String              dirAddress;
+
+    /**
+     * The address of the MRC Server, fetched from the DIR the instantiation of {@link Params}.
+     */
+    public final String              mrcAddress;
+
+    /**
+     * The RPC user credentials. Build from {@link #userName} and {@link #group} during instatiation of {@link Params}.
+     */
+    public final RPC.UserCredentials userCredentials;
+
+    /**
+     * Authentication Provider. <br/>
+     * Default: NullAuthProvider.
+     */
+    public final RPC.Auth            auth;
+
+    /**
+     * SSL Options for SSL Authetification Provider. <br/>
+     * Default: null.
+     */
+    public final SSLOptions          sslOptions;
+
+    /**
+     * The libxtreemfs {@link org.xtreemfs.common.libxtreemfs.Options}.
+     */
+    public final Options             options;
+
+    /**
+     * The size of an OSD storage block ("blocksize") in Bytes. <br/>
+     * Default: 131072 (128 KiB). <br/>
+     * The size of one write operation is stripeSize * stripeWidth.
+     */
+    public final int                 stripeSizeInBytes;
+
+    /**
+     * The size of an OSD storage block ("blocksize") in KiB. Calculated during instantiation of {@link Params}.
+     */
+    public final int                 getStripeSizeInKiB;
+
+    /**
+     * The maximum number of OSDs a file is distributed to. <br/>
+     * Default: 1. <br/>
+     * The size of one write operation is stripeSize * stripeWidth.
+     */
+    public final int                 stripeWidth;
+
+    /**
+     * If set to true, the files and volumes created during the benchmarks will not be deleted. <br/>
+     * Default: false.
+     */
+    public final boolean             noCleanup;
+
+    /**
+     * If set to true, the volumes created during the benchmarks will not be deleted. <br/>
+     * Default: false.
+     */
+    public final boolean             noCleanupOfVolumes;
+
+    /**
+     * If set to true, a basefile created during benchmarks will not be deleted. <br/>
+     * Default: false.
+     */
+    public final boolean             noCleanupOfBasefile;
+
+    /**
+     * If set to true, a OSD Cleanup will be done at the end of all benchmarks. This might be needed to actually delete
+     * the storage blocks from the OSD after deleting volumes. <br/>
+     * Default: false.
+     * 
+     */
+    public final boolean             osdCleanup;
+
+    /**
+     * Build Params from {@link ParamsBuilder}. Should only be called from
+     * {@link org.xtreemfs.sandbox.benchmark.ParamsBuilder#build()}
+     * 
+     * @param builder
+     * @throws Exception
+     */
+    public Params(ParamsBuilder builder) throws Exception {
         this.numberOfThreads = builder.numberOfThreads;
         this.numberOfRepetitions = builder.numberOfRepetitions;
         this.sequentialSizeInBytes = builder.sequentialSizeInBytes;
@@ -71,9 +194,10 @@ public class Params {
         this.noCleanup = builder.noCleanup;
         this.noCleanupOfVolumes = builder.noCleanupOfVolumes;
         this.noCleanupOfBasefile = builder.noCleanupOfBasefile;
-		this.osdCleanup = builder.osdCleanup;
+        this.osdCleanup = builder.osdCleanup;
     }
 
+    /* Gets the MRC address from the giben DIR */
     private String getMRCAddress(String dirAddress, RPC.UserCredentials userCredentials, SSLOptions sslOptions,
             Options options) throws Exception {
 
@@ -86,7 +210,8 @@ public class Params {
         return mrcAddress;
     }
 
-    public String getAllValues() throws IllegalAccessException {
+    /* Build string with all the instance parameters as key-value pairs */
+    private String getAllValues() throws IllegalAccessException {
         Field[] fields = Params.class.getDeclaredFields();
         StringBuffer result = new StringBuffer();
         for (Field field : fields) {
@@ -104,7 +229,8 @@ public class Params {
         try {
             return getAllValues();
         } catch (IllegalAccessException e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this, "Access to Params fields not possible.");
+            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this,
+                    "Access to Params fields not possible.");
             Logging.logError(Logging.LEVEL_ERROR, Logging.Category.tool, e);
         }
         return "Access not possible";
