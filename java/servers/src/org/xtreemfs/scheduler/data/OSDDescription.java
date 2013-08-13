@@ -28,6 +28,7 @@ public class OSDDescription {
 	public enum OSDUsage {
 		RANDOM_IO,
 		STREAMING,
+        BEST_EFFORT,
 		ALL,
 		UNUSED
 	}

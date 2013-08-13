@@ -72,14 +72,24 @@ public class ReservationSchedulerImplementation implements ReservationScheduler 
 	}
 
 	private boolean fittingUsageType(Reservation r, OSDDescription o) {
-		if ((r.getType() == Reservation.ReservationType.STREAMING_RESERVATION &&
+        if (r.getType() == Reservation.ReservationType.STREAMING_RESERVATION &&
+                o.getUsage() == OSDDescription.OSDUsage.STREAMING)
+            return true;
+
+        if (r.getType() == Reservation.ReservationType.RANDOM_IO_RESERVATION &&
                 o.getUsage() == OSDDescription.OSDUsage.RANDOM_IO)
-				|| (r.getType() == Reservation.ReservationType.RANDOM_IO_RESERVATION && o
-						.getUsage() == OSDDescription.OSDUsage.STREAMING)
-				|| getAngle(r, o) < this.minAngle)
-			return false;
-		else
-			return true;
+            return true;
+
+        if (r.getType() == Reservation.ReservationType.BEST_EFFORT_RESERVATION &&
+                o.getUsage() == OSDDescription.OSDUsage.BEST_EFFORT)
+            return true;
+
+        if (o.getUsage() == OSDDescription.OSDUsage.ALL ||
+                o.getUsage() == OSDDescription.OSDUsage.UNUSED ||
+                r.getType() == Reservation.ReservationType.COLD_STORAGE_RESERVATION)
+            return true;
+
+		return false;
 	}
 
 	@Override
