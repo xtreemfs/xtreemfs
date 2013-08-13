@@ -480,7 +480,7 @@ public class HeartbeatThread extends LifeCycleThread {
                     "could not find a valid IP address, will use 127.0.0.1 instead");
             advertisedEndpoint = AddressMapping.newBuilder().setAddress("127.0.0.1").setPort(config.getPort())
                     .setProtocol(proto).setTtlS(3600).setMatchNetwork("*").setVersion(0).setUuid("")
-                    .setUri(NetUtils.getURI(proto, InetAddress.getLoopbackAddress(), config.getPort()));
+                    .setUri(NetUtils.getURI(proto, InetAddress.getByName("127.0.0.1"), config.getPort()));
         }
        
         // Fetch the latest address mapping version from the Directory Service.
