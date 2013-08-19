@@ -20,12 +20,13 @@ TestSets = {
                 'dir_repl': False,
                 'snmp': False,
     },
-	'ssd' : {
-				'ssl': False,
-				'mrc_repl': False,
-				'dir_repl': False,
-				'snmp': False
-	},
+    # Contains only multi-threaded benchmarks. Set option "-t" accordingly.
+    'ssd' : {
+                'ssl': False,
+                'mrc_repl': False,
+                'dir_repl': False,
+                'snmp': False
+    },
     # Used for testing new test scripts, therefore usually contains no tests.
     'testing' : {
                 'ssl': False,
