@@ -118,7 +118,7 @@ public class InvalidateXLocSetOperation extends OSDOperation {
 
     @Override
     public boolean requiresValidView() {
-        // Although the local view will invalidated it is required to check the request. This will ensure, that the
+        // Although the local view will be invalidated it is required to check the request. This will ensure, that the
         // local version equals the latest one.
         // If this is not guaranteed, it could be that 'local version' < 'current version' < 'next version' and a
         // request from an outdated client with 'current version' would reset the INVALIDATED flag and be successful.

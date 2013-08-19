@@ -66,7 +66,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         ADD_REPLICAS, REMOVE_REPLICAS, REPLACE_REPLICA
     };
 
-    public final static String           XLOCSET_CHANGE_ATTR_KEY = "XLocSetChange";
+    public final static String           XLOCSET_CHANGE_ATTR_KEY = "xlocsetchange";
 
     protected volatile boolean           quit;
     private final MRCRequestDispatcher   master;
@@ -547,8 +547,8 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
     }
 
     /**
-     * Invalidate the Replicas listed in xLocList. Will sleep until the lease has timed out if the primary
-     * didn't respond
+     * Invalidate the majority of the replicas listed in xLocList. Will sleep until the lease has timed out if the
+     * primary didn't respond
      * 
      * @param fileId
      * @param capability
@@ -559,7 +559,6 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
         FileCredentials creds = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLocSet).build();
 
-        // Invalidate the replicas (the majority should be enough)
         RPCResponse<xtreemfs_xloc_set_invalidateResponse> rpcResponse;
         xtreemfs_xloc_set_invalidateResponse response = null;
         OSDServiceClient client = master.getOSDClient();
@@ -602,7 +601,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
         // if the primary didn't respond we have to wait until the lease timed out
         // if every replica replied and none has been primary we don't have to wait
-        if (!primaryResponded && !(responseCount == xLocSet.getReplicasCount())) {
+        if (!primaryResponded && responseCount != xLocSet.getReplicasCount()) {
             // FIXME(jdillmann): Howto get the lease timeout value from the OSD config?
             long leaseToMS = 15 * 1000;
 
@@ -616,9 +615,10 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
     private int calculateMinimalMajority(ReplicaStatus[] states, AuthoritativeReplicaState authState) {
 
-        // save object version mappings in a hashmap to speedup lookups
+        /** Mapping from objectNumbers to the corresponding ObjectVersionMapping to speedup lookups **/
         HashMap<Long, ObjectVersionMapping> objectVersionMappings = new HashMap<Long, ObjectVersionMapping>(
                 authState.getObjectVersionsCount());
+        /** Mapping from objectNumbers to the number of replicas containing the object. **/
         HashMap<Long, Integer> objectCount = new HashMap<Long, Integer>(authState.getObjectVersionsCount());
 
         for (ObjectVersionMapping ovm : authState.getObjectVersionsList()) {
@@ -637,7 +637,9 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             }
         }
 
-        // TODO(jdillmann): What should i do if the file is a sparse file and no objects exists?
+        // Return the count of replicas having the the object with the minimal distribution among the replicas regarded
+        // in the AuthoritativeReplicaState. If no objects exist, because this is a sparse file return the total number
+        // of replicas.
         Integer minimalMajority = states.length;
         if (objectCount.size() > 0) {
             minimalMajority = Collections.min(objectCount.values());
@@ -649,7 +651,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
     private CoordinatedReplicaUpdatePolicy getMockupPolicy(String replicaUpdatePolicy, String fileId,
             List<ServiceUUID> OSDUUIDs) {
 
-        // CoordinatedReplicaUpdatePolicy assumes an separation between the remote OSDs and the local one.
+        // CoordinatedReplicaUpdatePolicy assumes a separation between the remote OSDs and the local one.
         // This will take the last OSD out of the list and use it as the local.
         OSDUUIDs = new ArrayList<ServiceUUID>(OSDUUIDs);
         ServiceUUID mockupLocal = OSDUUIDs.remove(OSDUUIDs.size() - 1);

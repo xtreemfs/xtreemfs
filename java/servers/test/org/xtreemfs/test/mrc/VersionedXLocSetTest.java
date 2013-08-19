@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 by Johannes Dillmann, Zuse Institute Berlin
+ * Copyright (c) 2013 by Johannes Dillmann, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -141,8 +141,7 @@ public class VersionedXLocSetTest {
     private void addReplicas(Volume volume, String fileName, int replicaNumber) throws IOException,
             InterruptedException {
 
-        // due to a bug in the OSDSelectionPolicys the numOSDs parameter is not working properly and mostly
-        // returns all suitable OSDs
+
         List<String> osdUUIDs = volume.getSuitableOSDs(userCredentials, fileName, replicaNumber);
         assert (osdUUIDs.size() >= replicaNumber);
 

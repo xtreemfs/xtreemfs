@@ -499,30 +499,31 @@ public class SingleFileStorageLayout extends StorageLayout {
 
     @Override
     public int getMasterEpoch(String fileId) {
-        return -1;
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public void setMasterEpoch(String fileId, int masterEpoch) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public TruncateLog getTruncateLog(String fileId) {
-        return TruncateLog.newBuilder().build();
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public void setTruncateLog(String fileId, TruncateLog log) {
-
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public XLocSetVersionState getXLocSetVersionState(String fileId) throws IOException {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public void setXLocSetVersionState(String fileId, XLocSetVersionState versionState) throws IOException {
-
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

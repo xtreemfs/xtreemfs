@@ -1429,10 +1429,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
         final boolean isPrimary;
 
-        // TODO(jdillmann): getState() would be save to use, because invalidateFleaseView is only called by
-        // InvalidateXLocSetOperation which will be passed through doPrepareRequest which is recognizing the
-        // fileId and thus set an entry in the openFileTable
-
         // check if the file has an open cell and close it, if it is the primary
         ReplicatedFileState state = files.get(fileId);
         if (state != null) {
@@ -1515,7 +1511,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
             switch (state.getState()) {
             case RESET:
-                // Wait until this reset is done. Since fileState.isInvalidated() this will result in an OPEN state.
+                // Wait until this reset is done. Since fileState.isInvalidated() is true this will result in an OPEN
+                // state.
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
                         "(R:%s) enqueued fetch invalidated reset for file %s", localID, fileId);
                 state.addPendingRequest(method);

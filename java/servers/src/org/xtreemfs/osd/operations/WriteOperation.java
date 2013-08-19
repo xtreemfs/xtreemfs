@@ -1,5 +1,4 @@
 /*
-
  * Copyright (c) 2009-2011 by Bjoern Kolbeck,
  *               Zuse Institute Berlin
  *
