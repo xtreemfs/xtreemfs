@@ -206,6 +206,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         osdMonitor.setLifeCycleListener(this);
 
         xLocSetCoordinator = new XLocSetCoordinator(this);
+        xLocSetCoordinator.setLifeCycleListener(this);
+
         procStage = new ProcessingStage(this);
 
         
@@ -349,8 +351,10 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         clientStage.shutdown();
         
         osdMonitor.shutdown();
-        
+
         procStage.shutdown();
+        
+        xLocSetCoordinator.shutdown();
         
         volumeManager.shutdown();
         
