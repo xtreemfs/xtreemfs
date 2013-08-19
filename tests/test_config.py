@@ -41,7 +41,7 @@ TestSets = {
                 'dir_repl': False,
                 'snmp': True,
     },
-    # This configuration is used for manual test environment set-ups with SSL enabled (option -s).
+    # This configuration is used for manual test environment set-ups with SSL enabled (option -f).
     'manual-ssl' : {
                 'ssl': True,
                 'mrc_repl': False,

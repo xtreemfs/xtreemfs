@@ -441,8 +441,8 @@ if __name__ == "__main__":
     option_parser.add_option( "-d", "--debug-level", action="store", dest="debug_level", default=6 )
     option_parser.add_option( "-x", "--xtreemfs-base-dir", action="store", dest="xtreemfs_dir", default=xtreemfs_dir)
     option_parser.add_option( "-e", "--start-test-env", action="store_true", dest="start_test_env")
-    option_parser.add_option( "-t", "--storage-threads", action="store", dest="storage_threads", default=1)
-    option_parser.add_option( "-s", "--start-test-env-with-ssl", action="store_true", dest="start_test_env_with_ssl", help="Same as -e, but with SSL enabled.")
+    option_parser.add_option( "-f", "--start-test-env-with-ssl", action="store_true", dest="start_test_env_with_ssl", help="Same as -e, but with SSL enabled.")
+    option_parser.add_option( "-s", "--storage-threads", action="store", dest="storage_threads", default=1)
     if len(sys.argv) == 1:
         option_parser.print_help()
         sys.exit(2)
