@@ -603,7 +603,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         // if the primary didn't respond we have to wait until the lease timed out
         // if every replica replied and none has been primary we don't have to wait
         if (!primaryResponded && !(responseCount == xLocSet.getReplicasCount())) {
-            // FIXME (jdillmann): Howto get the lease timeout value from the OSD config?
+            // FIXME(jdillmann): Howto get the lease timeout value from the OSD config?
             long leaseToMS = 15 * 1000;
 
             // TODO(jdillmann): Care about the InterruptedException to ensure we will sleep for the required

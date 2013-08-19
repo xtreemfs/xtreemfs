@@ -21,7 +21,7 @@ public class InternalCallbackOperation extends MRCOperation {
     @Override
     public void startRequest(MRCRequest rq) throws Throwable {
         if (!(rq instanceof MRCCallbackRequest)) {
-            // TODO (jdillmann): check if this exception is the right one
+            // TODO(jdillmann): check if this exception is the right one
             throw new MRCException("InternalCallbackOperation must be called with an MRCCallbackRequest");
         }
 

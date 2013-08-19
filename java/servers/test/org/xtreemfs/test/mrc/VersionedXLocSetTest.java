@@ -21,7 +21,6 @@ import junit.extensions.PA;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.libxtreemfs.AdminClient;
@@ -198,16 +197,8 @@ public class VersionedXLocSetTest {
         assertTrue(catched.getMessage().contains("view is not valid"));
     }
 
-    @Ignore
     @Test
     public void testRonlyRemoveReadOutdated() throws Exception {
-        // TODO(jdillmann): This test will fail because the VersionState is deleted together with the data objects.
-        // Subsequent calls, with any ViewID >= 0, are therefore valid. If a replica is marked as completed, this will
-        // lead to the false assumption, that the missing object file resembles a sparse file and zeros will be returned
-        // instead of raising an error.
-        // For partial replicas this won't necessarily lead to an error, because internal fetch requests can be checked
-        // for a valid view.
-
         String volumeName = "testRonlyRemoveReadOutdated";
         String fileName = "/testfile";
 
@@ -307,8 +298,8 @@ public class VersionedXLocSetTest {
     }
 
     @Test
-    public void testRonlyInvalidViewOnAdd() throws Exception {
-        String volumeName = "testRonlyInvalidViewOnAdd";
+    public void testRonlyAddReadOutdated() throws Exception {
+        String volumeName = "testRonlyAddReadOutdated";
         String fileName = "/testfile";
 
         client.createVolume(mrcAddress, auth, userCredentials, volumeName);
@@ -324,12 +315,12 @@ public class VersionedXLocSetTest {
                 repl_flags);
         volume.close();
         
-        testInvalidViewOnAdd(volumeName, fileName);
+        testAddReadOutdated(volumeName, fileName);
     }
 
     @Test
-    public void testWqRqInvalidViewOnAdd() throws Exception {
-        String volumeName = "testWqRqInvalidViewOnAdd";
+    public void testWqRqAddReadOutdated() throws Exception {
+        String volumeName = "testWqRqAddReadOutdated";
         String fileName = "/testfile";
 
         client.createVolume(mrcAddress, auth, userCredentials, volumeName);
@@ -338,10 +329,10 @@ public class VersionedXLocSetTest {
         volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 2, 0);
         volume.close();
 
-        testInvalidViewOnAdd(volumeName, fileName);
+        testAddReadOutdated(volumeName, fileName);
     }
 
-    private void testInvalidViewOnAdd(String volumeName, String fileName) throws Exception {
+    private void testAddReadOutdated(String volumeName, String fileName) throws Exception {
         // open outdated file handle and write some data
         AdminVolume outdatedVolume = client.openVolume(volumeName, null, options);
         AdminFileHandle outdatedFile = outdatedVolume.openFile(userCredentials, fileName,

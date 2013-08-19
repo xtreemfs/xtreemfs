@@ -58,11 +58,11 @@ public class InvalidateXLocSetOperation extends OSDOperation {
     }
 
     private void postInvalidation(final OSDRequest rq, final boolean isPrimary) {
-        // TODO (jdillmann): RO replication
+        // TODO(jdillmann): RO replication
         if (rq.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
             invalidationFinished(rq, isPrimary, null);
         } else {
-            // TODO (jdillmann): check maxLocalObjVersion parameter @see CoordinatedReplicaUpdatePolicy.executeReset
+            // TODO(jdillmann): check maxLocalObjVersion parameter @see CoordinatedReplicaUpdatePolicy.executeReset
             master.getStorageStage().internalGetReplicaState(rq.getFileId(),
                     rq.getLocationList().getLocalReplica().getStripingPolicy(), 0,
                     new InternalGetReplicaStateCallback() {

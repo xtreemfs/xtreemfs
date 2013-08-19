@@ -1447,6 +1447,14 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             // TODO(jdillmann): ensure, that the lease is given up immediately or wait until the lease has timed out
             // closing the cell isn't enough, because there could exists PendingRequests in ReplicatedFileState
 
+            // if (isPrimary) {
+            // try {
+            // System.out.println("waiting");
+            // sleep(16 * 1000);
+            // } catch (InterruptedException e) {
+            // }
+            // }
+
             // TODO(jdillmann): close the ReplicatedFileState to ensure no outdated UUIDList can exist.
 
         } else {
