@@ -7,40 +7,46 @@ TestSets = {
                 'mrc_repl': False,
                 'dir_repl': False,
                 'snmp': False,
-              },
+    },
     'full' : {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
                 'snmp': False,
-              },
+    },
     'short-ssl' : {
                 'ssl': True,
                 'mrc_repl': False,
                 'dir_repl': False,
                 'snmp': False,
-              },
+    },
 	'ssd' : {
 				'ssl': False,
 				'mrc_repl': False,
 				'dir_repl': False,
 				'snmp': False
-			  },
-
+	},
     # Used for testing new test scripts, therefore usually contains no tests.
     'testing' : {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
                 'snmp': False,
-              },
-    # This configuration is used for manual test environment set-ups.
+    },
+    # This configuration is used for manual test environment set-ups (option -e).
     'manual' : {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
                 'snmp': True,
-   	          }
+    },
+    # This configuration is used for manual test environment set-ups with SSL enabled (option -s).
+    'manual-ssl' : {
+                'ssl': True,
+                'mrc_repl': False,
+                'dir_repl': False,
+                'snmp': True,
+    }
 }
 
 VolumeConfigs = {
