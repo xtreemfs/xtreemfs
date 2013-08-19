@@ -105,7 +105,7 @@ class TestConfig:
 
         self.__curren_test_set = self.__testSets[self.__testSetName]
 
-        if self.__testSetName == MANUAL_TEST_SET_NAME:
+        if self.__testSetName.startswith(MANUAL_TEST_SET_NAME):
             #skip this for manual set-ups.
             return
 
@@ -132,7 +132,7 @@ class TestConfig:
         self.__volumeConfigs = activeVolumeConfigs
 
     def printConfig(self):
-        if self.__testSetName != MANUAL_TEST_SET_NAME:
+        if not self.__testSetName.startswith(MANUAL_TEST_SET_NAME):
             print 'Active System Tests:'
             for test in self.__system_tests:
                 print '  "'+test['name']+'"'
