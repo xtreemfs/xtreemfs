@@ -241,8 +241,6 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
         translator.translateReadRequest(count, offset, policy, operations);
 
         UUIDIterator tempUuidIteratorForStriping = new UUIDIterator();
-        String osdUuid = "";
-
         // Read all objects
         for (int j = 0; j < operations.size(); j++) {
             readRequest.Builder readRqBuilder = readRequest.newBuilder();
@@ -259,13 +257,20 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
             UUIDIterator uuidIterator;
             if (readRqBuilder.getFileCredentials().getXlocs().getReplicas(0).getOsdUuidsCount() > 1) {
                 // Replica is striped. Pick UUID from xlocset.
-                osdUuid = Helper.getOSDUUIDFromXlocSet(fc.getXlocs(), 0, // Use
-                                                                         // first
-                                                                         // and
-                                                                         // only
-                                                                         // replica.
-                        operations.get(j).getOsdOffset());
-                tempUuidIteratorForStriping.clearAndAddUUID(osdUuid);
+                tempUuidIteratorForStriping.clear();
+                
+                // Replicas may have different stripe widths. However, the current Java client
+                // StripeTranslator code only supports the same stripe width as the first replica has.
+                int stripeWidthFirstReplica = fc.getXlocs().getReplicas(0).getStripingPolicy().getWidth();
+
+                for (int replicaIdx = 0; replicaIdx < fc.getXlocs().getReplicasCount(); replicaIdx++) {
+                    if (fc.getXlocs().getReplicas(replicaIdx).getStripingPolicy().getWidth() == stripeWidthFirstReplica) {
+                        tempUuidIteratorForStriping.addUUID(Helper.getOSDUUIDFromXlocSet(fc.getXlocs(),
+                                                            replicaIdx,
+                                                            operations.get(j).getOsdOffset()));
+                    }
+                }
+                
                 uuidIterator = tempUuidIteratorForStriping;
             } else {
                 // TODO(mberlin): Enhance UUIDIterator to read from different
