@@ -20,9 +20,16 @@ TestSets = {
                 'dir_repl': False,
                 'snmp': False,
     },
-    # Contains only multi-threaded benchmarks. Set option "-t" accordingly.
+    # contains only multi-threaded benchmarks. set option "-t" accordingly.
     'ssd' : {
                 'ssl': False,
+                'mrc_repl': False,
+                'dir_repl': False,
+                'snmp': False
+    },
+     # Contains dd tests for testing the SSL support of packages.
+    'packages-ssl' : {
+                'ssl': True,
                 'mrc_repl': False,
                 'dir_repl': False,
                 'snmp': False
@@ -125,7 +132,7 @@ Tests = [
         'name': 'Erichs dd write',
         'file': '02_erichs_ddwrite.py',
         'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_wqrq_asyncwrites' ],
-        'TestSets': [ 'full', 'short', 'short-ssl' ]
+        'TestSets': [ 'full', 'short', 'short-ssl', 'packages-ssl' ]
     },
     {
         'name': 'Erichs data integrity test',
