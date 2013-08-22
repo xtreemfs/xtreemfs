@@ -212,7 +212,7 @@ public class MRCHelper {
         
         // determine the actual striping width; if not enough OSDs are
         // available, the width will be limited to the amount of available OSDs
-        int width = Math.min((int) stripingPolicy.getWidth(), usableOSDs.getServicesCount());
+        int width = Math.min(stripingPolicy.getWidth(), usableOSDs.getServicesCount());
         
         // convert the set of OSDs to a string array of OSD UUIDs
         List<Service> osdServices = usableOSDs.getServicesList();
@@ -768,7 +768,7 @@ public class MRCHelper {
                 ReplicationPolicy rp = null;
                 rp = Converter.jsonStringToReplicationPolicy(value);
                 
-                if (rp.getFactor() == 1 && !ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(value)) {
+                if (rp.getFactor() == 1 && !ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(rp.getName())) {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EPERM,
                             "a default replication policy requires a replication factor >= 2");
                 }
