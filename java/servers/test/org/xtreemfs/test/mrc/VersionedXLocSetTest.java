@@ -508,7 +508,7 @@ public class VersionedXLocSetTest {
 
     private SuspendableOSDRequestDispatcher[] replaceWithSuspendableOSDs(int start, int count) throws Exception {
         SuspendableOSDRequestDispatcher[] suspOSDs = new SuspendableOSDRequestDispatcher[count];
-        for (int i = start; i < count; i++) {
+        for (int i = start; i < start + count; i++) {
             osds[i].shutdown();
             osds[i] = null;
 
