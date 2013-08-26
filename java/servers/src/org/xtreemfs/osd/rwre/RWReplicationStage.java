@@ -1002,18 +1002,22 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     private void processFileClosed(StageRequest method) {
         try {
             final String fileId = (String) method.getArgs()[0];
-            ReplicatedFileState state = files.remove(fileId);
-            if (state != null) {
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "closing file %s", fileId);
-                }
-                state.getPolicy().closeFile();
-                if (state.getPolicy().requiresLease())
-                    fstage.closeCell(state.getPolicy().getCellId(), false);
-                cellToFileId.remove(state.getPolicy().getCellId());
-            }
+            closeFileState(fileId, false);
         } catch (Exception ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
+        }
+    }
+
+    private void closeFileState(String fileId, boolean returnLease) {
+        ReplicatedFileState state = files.remove(fileId);
+        if (state != null) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "closing file %s", fileId);
+            }
+            state.getPolicy().closeFile();
+            if (state.getPolicy().requiresLease())
+                fstage.closeCell(state.getPolicy().getCellId(), returnLease);
+            cellToFileId.remove(state.getPolicy().getCellId());
         }
     }
 
@@ -1364,11 +1368,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         // Close ReplicatedFileState opened in a previous view to ensure no outdated UUIDList can exist.
         ReplicatedFileState state = files.get(fileId);
         if (state != null && state.getLocations().getVersion() < versionState.getVersion()) {
-            files.remove(fileId);
-            state.getPolicy().closeFile();
-            if (state.getPolicy().requiresLease())
-                fstage.closeCell(state.getPolicy().getCellId(), true);
-            cellToFileId.remove(state.getPolicy().getCellId());
+            closeFileState(fileId, true);
         }
 
         fstage.setViewId(cellId, viewId, new FleaseListener() {
@@ -1413,11 +1413,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         if (state != null) {
             isPrimary = state.isLocalIsPrimary();
 
-            files.remove(fileId);
-            state.getPolicy().closeFile();
-            if (state.getPolicy().requiresLease())
-                fstage.closeCell(state.getPolicy().getCellId(), true);
-            cellToFileId.remove(state.getPolicy().getCellId());
+            closeFileState(fileId, true);
 
             // TODO(jdillmann): ensure, that the lease is given up immediately or wait until the lease has timed out
             // closing the cell isn't enough, because there could exists PendingRequests in ReplicatedFileState
@@ -1519,12 +1515,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             case INVALIDATED:
                 // The AuthState has been set and the Replica is up to date.
 
-                // Close the file @see #processFileClosed .
-                files.remove(fileId);
-                state.getPolicy().closeFile();
-                if (state.getPolicy().requiresLease())
-                    fstage.closeCell(state.getPolicy().getCellId(), true);
-                cellToFileId.remove(state.getPolicy().getCellId());
+                // Close the file by clearing the state.
+                closeFileState(fileId, true);
 
                 // Finish the request.
                 callback.success(0);
