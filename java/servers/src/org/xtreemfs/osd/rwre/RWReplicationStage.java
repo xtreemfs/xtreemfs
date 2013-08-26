@@ -52,7 +52,6 @@ import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.operations.EventRWRStatus;
 import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.rwre.ReplicatedFileState.ReplicaState;
-import org.xtreemfs.osd.stages.PreprocStage.InstallXLocSetCallback;
 import org.xtreemfs.osd.stages.PreprocStage.InvalidateXLocSetCallback;
 import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.osd.stages.StorageStage.DeleteObjectsCallback;
@@ -1339,7 +1338,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
     
     /**
-     * @see #setFleaseView(String, ASCIIString, XLocSetVersionState, callback)
+     * Set the viewId associated with the fileId/cellId. This will close open cells.
      * 
      * @param fileId
      * @param cellId
@@ -1349,25 +1348,11 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         enqueueOperation(STAGEOP_SETVIEW, new Object[] { fileId, cellId, versionState }, null, null);
     }
 
-    /**
-     * Set the viewId associated with the fileId/cellId. This will close open cells.
-     * 
-     * @param fileId
-     * @param cellId
-     * @param versionState
-     * @param callback
-     */
-    public void setFleaseView(String fileId, ASCIIString cellId, XLocSetVersionState versionState,
-            InstallXLocSetCallback callback) {
-        enqueueOperation(STAGEOP_SETVIEW, new Object[] { fileId, cellId, versionState }, null, callback);
-    }
-
     private void processSetFleaseView(StageRequest method) {
         final Object[] args = method.getArgs();
         final String fileId = (String) args[0];
         final ASCIIString cellId = (ASCIIString) args[1];
         final XLocSetVersionState versionState = (XLocSetVersionState) args[2];
-        final InstallXLocSetCallback callback = (InstallXLocSetCallback) method.getCallback();
 
         int viewId;
         if (versionState.getInvalidated()) {
@@ -1376,7 +1361,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             viewId = versionState.getVersion();
         }
 
-        // TODO(jdillmann): close the ReplicatedFileState to ensure no outdated UUIDList can exist.
+        // Close ReplicatedFileState opened in a previous view to ensure no outdated UUIDList can exist.
         ReplicatedFileState state = files.get(fileId);
         if (state != null && state.getLocations().getVersion() < versionState.getVersion()) {
             files.remove(fileId);
@@ -1386,23 +1371,17 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             cellToFileId.remove(state.getPolicy().getCellId());
         }
 
-        // TODO(jdillmann): The callbacks aren't really making any sense, because there can't occur any error. Remove them.
         fstage.setViewId(cellId, viewId, new FleaseListener() {
 
             @Override
             public void proposalResult(ASCIIString cellId, ASCIIString leaseHolder, long leaseTimeout_ms,
                     long masterEpochNumber) {
-                if (callback != null) {
-                    callback.installComplete(fileId, versionState.getVersion(), null);
-                }
+                // Ignore because #setFleaseView is never used with a callback.
             }
 
             @Override
             public void proposalFailed(ASCIIString cellId, Throwable cause) {
-                if (callback != null) {
-                    callback.installComplete(fileId, versionState.getVersion(),
-                            ErrorUtils.getInternalServerError(cause));
-                }
+                // Ignore because proposalFailed will never be called in #setViewId
             }
         });
     }

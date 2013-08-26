@@ -71,12 +71,10 @@ public class PreprocStage extends Stage {
     public final static int                                 STAGEOP_UNLOCK             = 12;
 
     public final static int                                 STAGEOP_PING_FILE          = 14;
-    
-    public final static int                                 STAGEOP_INSTALL_XLOC       = 15;
 
-    public final static int                                 STAGEOP_INVALIDATE_XLOC    = 16;
+    public final static int                                 STAGEOP_INVALIDATE_XLOC    = 15;
 
-    public final static int                                 STAGEOP_UPDATE_XLOC        = 17;
+    public final static int                                 STAGEOP_UPDATE_XLOC        = 16;
 
     private final static long                               OFT_CLEAN_INTERVAL         = 1000 * 60;
     
@@ -460,9 +458,6 @@ public class PreprocStage extends Stage {
         case STAGEOP_PING_FILE:
             doPingFile(m);
             break;
-        case STAGEOP_INSTALL_XLOC:
-            doInstallXLocSet(m);
-            break;
         case STAGEOP_INVALIDATE_XLOC:
             doInvalidateXLocSet(m);
             break;
@@ -795,44 +790,6 @@ public class PreprocStage extends Stage {
 
     public static interface InvalidateXLocSetCallback {
         public void invalidateComplete(boolean isPrimary, ErrorResponse error);
-    }
-
-    /**
-     * Install a new XLocSet and release the replica from the invalidated state.
-     */
-    public void installXLocSet(OSDRequest request, InstallXLocSetCallback listener) {
-        enqueueOperation(STAGEOP_INSTALL_XLOC, new Object[] {}, request, listener);
-    }
-
-    private void doInstallXLocSet(StageRequest m) {
-        final OSDRequest request = m.getRequest();
-        final String fileId = request.getFileId();
-        final InstallXLocSetCallback callback = (InstallXLocSetCallback) m.getCallback();
-
-        XLocSetVersionState state = XLocSetVersionState.newBuilder()
-                .setInvalidated(false)
-                .setVersion(request.getLocationList().getVersion())
-                .build();
-        try {
-            layout.setXLocSetVersionState(fileId, state);
-
-            if (request.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
-                callback.installComplete(fileId, state.getVersion(), null);
-            } else {
-                ASCIIString cellId = ReplicaUpdatePolicy.fileToCellId(fileId);
-                master.getRWReplicationStage().setFleaseView(fileId, cellId, state, callback);
-            }
-
-        } catch (IOException e) {
-            // TODO(jdillmann): do something with the exception
-            ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
-                    "invalid view. local version could not be written");
-            callback.installComplete(fileId, -1, error);
-        }
-    }
-
-    public static interface InstallXLocSetCallback {
-        public void installComplete(String fileId, int version, ErrorResponse error);
     }
 
     public int getNumOpenFiles() {
