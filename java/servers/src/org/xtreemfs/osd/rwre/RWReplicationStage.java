@@ -952,9 +952,14 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 return;
             }
 
-            assert(state.getState() == ReplicaState.INITIALIZING);
-            state.getPolicy().setLocalObjectVersion(maxObjVersion);
-            doOpen(state);
+            if(state.getState() == ReplicaState.INITIALIZING) {
+                state.getPolicy().setLocalObjectVersion(maxObjVersion);
+                doOpen(state);
+            } else {
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this, "ReplicaState is not INITIALIZING");
+                return;
+            }
+
         } catch (Exception ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
