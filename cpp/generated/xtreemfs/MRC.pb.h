@@ -998,6 +998,13 @@ class StatVFS : public ::google::protobuf::Message {
   inline ::google::protobuf::uint64 bavail() const;
   inline void set_bavail(::google::protobuf::uint64 value);
   
+  // required fixed64 bfree = 13;
+  inline bool has_bfree() const;
+  inline void clear_bfree();
+  static const int kBfreeFieldNumber = 13;
+  inline ::google::protobuf::uint64 bfree() const;
+  inline void set_bfree(::google::protobuf::uint64 value);
+  
   // required fixed64 blocks = 3;
   inline bool has_blocks() const;
   inline void clear_blocks();
@@ -1087,6 +1094,7 @@ class StatVFS : public ::google::protobuf::Message {
   
   ::google::protobuf::uint32 bsize_;
   ::google::protobuf::uint64 bavail_;
+  ::google::protobuf::uint64 bfree_;
   ::google::protobuf::uint64 blocks_;
   ::std::string* fsid_;
   static const ::std::string _default_fsid_;
@@ -1105,7 +1113,7 @@ class StatVFS : public ::google::protobuf::Message {
   friend void protobuf_AssignDesc_xtreemfs_2fMRC_2eproto();
   friend void protobuf_ShutdownFile_xtreemfs_2fMRC_2eproto();
   
-  ::google::protobuf::uint32 _has_bits_[(12 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(13 + 31) / 32];
   
   // WHY DOES & HAVE LOWER PRECEDENCE THAN != !?
   inline bool _has_bit(int index) const {
@@ -7183,58 +7191,74 @@ inline void StatVFS::set_bavail(::google::protobuf::uint64 value) {
   bavail_ = value;
 }
 
+// required fixed64 bfree = 13;
+inline bool StatVFS::has_bfree() const {
+  return _has_bit(2);
+}
+inline void StatVFS::clear_bfree() {
+  bfree_ = GOOGLE_ULONGLONG(0);
+  _clear_bit(2);
+}
+inline ::google::protobuf::uint64 StatVFS::bfree() const {
+  return bfree_;
+}
+inline void StatVFS::set_bfree(::google::protobuf::uint64 value) {
+  _set_bit(2);
+  bfree_ = value;
+}
+
 // required fixed64 blocks = 3;
 inline bool StatVFS::has_blocks() const {
-  return _has_bit(2);
+  return _has_bit(3);
 }
 inline void StatVFS::clear_blocks() {
   blocks_ = GOOGLE_ULONGLONG(0);
-  _clear_bit(2);
+  _clear_bit(3);
 }
 inline ::google::protobuf::uint64 StatVFS::blocks() const {
   return blocks_;
 }
 inline void StatVFS::set_blocks(::google::protobuf::uint64 value) {
-  _set_bit(2);
+  _set_bit(3);
   blocks_ = value;
 }
 
 // required string fsid = 4;
 inline bool StatVFS::has_fsid() const {
-  return _has_bit(3);
+  return _has_bit(4);
 }
 inline void StatVFS::clear_fsid() {
   if (fsid_ != &_default_fsid_) {
     fsid_->clear();
   }
-  _clear_bit(3);
+  _clear_bit(4);
 }
 inline const ::std::string& StatVFS::fsid() const {
   return *fsid_;
 }
 inline void StatVFS::set_fsid(const ::std::string& value) {
-  _set_bit(3);
+  _set_bit(4);
   if (fsid_ == &_default_fsid_) {
     fsid_ = new ::std::string;
   }
   fsid_->assign(value);
 }
 inline void StatVFS::set_fsid(const char* value) {
-  _set_bit(3);
+  _set_bit(4);
   if (fsid_ == &_default_fsid_) {
     fsid_ = new ::std::string;
   }
   fsid_->assign(value);
 }
 inline void StatVFS::set_fsid(const char* value, size_t size) {
-  _set_bit(3);
+  _set_bit(4);
   if (fsid_ == &_default_fsid_) {
     fsid_ = new ::std::string;
   }
   fsid_->assign(reinterpret_cast<const char*>(value), size);
 }
 inline ::std::string* StatVFS::mutable_fsid() {
-  _set_bit(3);
+  _set_bit(4);
   if (fsid_ == &_default_fsid_) {
     fsid_ = new ::std::string;
   }
@@ -7243,122 +7267,122 @@ inline ::std::string* StatVFS::mutable_fsid() {
 
 // required fixed32 namemax = 5;
 inline bool StatVFS::has_namemax() const {
-  return _has_bit(4);
+  return _has_bit(5);
 }
 inline void StatVFS::clear_namemax() {
   namemax_ = 0u;
-  _clear_bit(4);
+  _clear_bit(5);
 }
 inline ::google::protobuf::uint32 StatVFS::namemax() const {
   return namemax_;
 }
 inline void StatVFS::set_namemax(::google::protobuf::uint32 value) {
-  _set_bit(4);
+  _set_bit(5);
   namemax_ = value;
 }
 
 // required .xtreemfs.pbrpc.AccessControlPolicyType access_control_policy = 6;
 inline bool StatVFS::has_access_control_policy() const {
-  return _has_bit(5);
+  return _has_bit(6);
 }
 inline void StatVFS::clear_access_control_policy() {
   access_control_policy_ = 1;
-  _clear_bit(5);
+  _clear_bit(6);
 }
 inline xtreemfs::pbrpc::AccessControlPolicyType StatVFS::access_control_policy() const {
   return static_cast< xtreemfs::pbrpc::AccessControlPolicyType >(access_control_policy_);
 }
 inline void StatVFS::set_access_control_policy(xtreemfs::pbrpc::AccessControlPolicyType value) {
   GOOGLE_DCHECK(xtreemfs::pbrpc::AccessControlPolicyType_IsValid(value));
-  _set_bit(5);
+  _set_bit(6);
   access_control_policy_ = value;
 }
 
 // required .xtreemfs.pbrpc.StripingPolicy default_striping_policy = 7;
 inline bool StatVFS::has_default_striping_policy() const {
-  return _has_bit(6);
+  return _has_bit(7);
 }
 inline void StatVFS::clear_default_striping_policy() {
   if (default_striping_policy_ != NULL) default_striping_policy_->::xtreemfs::pbrpc::StripingPolicy::Clear();
-  _clear_bit(6);
+  _clear_bit(7);
 }
 inline const ::xtreemfs::pbrpc::StripingPolicy& StatVFS::default_striping_policy() const {
   return default_striping_policy_ != NULL ? *default_striping_policy_ : *default_instance_->default_striping_policy_;
 }
 inline ::xtreemfs::pbrpc::StripingPolicy* StatVFS::mutable_default_striping_policy() {
-  _set_bit(6);
+  _set_bit(7);
   if (default_striping_policy_ == NULL) default_striping_policy_ = new ::xtreemfs::pbrpc::StripingPolicy;
   return default_striping_policy_;
 }
 
 // required fixed64 etag = 8;
 inline bool StatVFS::has_etag() const {
-  return _has_bit(7);
+  return _has_bit(8);
 }
 inline void StatVFS::clear_etag() {
   etag_ = GOOGLE_ULONGLONG(0);
-  _clear_bit(7);
+  _clear_bit(8);
 }
 inline ::google::protobuf::uint64 StatVFS::etag() const {
   return etag_;
 }
 inline void StatVFS::set_etag(::google::protobuf::uint64 value) {
-  _set_bit(7);
+  _set_bit(8);
   etag_ = value;
 }
 
 // required fixed32 mode = 9;
 inline bool StatVFS::has_mode() const {
-  return _has_bit(8);
+  return _has_bit(9);
 }
 inline void StatVFS::clear_mode() {
   mode_ = 0u;
-  _clear_bit(8);
+  _clear_bit(9);
 }
 inline ::google::protobuf::uint32 StatVFS::mode() const {
   return mode_;
 }
 inline void StatVFS::set_mode(::google::protobuf::uint32 value) {
-  _set_bit(8);
+  _set_bit(9);
   mode_ = value;
 }
 
 // required string name = 10;
 inline bool StatVFS::has_name() const {
-  return _has_bit(9);
+  return _has_bit(10);
 }
 inline void StatVFS::clear_name() {
   if (name_ != &_default_name_) {
     name_->clear();
   }
-  _clear_bit(9);
+  _clear_bit(10);
 }
 inline const ::std::string& StatVFS::name() const {
   return *name_;
 }
 inline void StatVFS::set_name(const ::std::string& value) {
-  _set_bit(9);
+  _set_bit(10);
   if (name_ == &_default_name_) {
     name_ = new ::std::string;
   }
   name_->assign(value);
 }
 inline void StatVFS::set_name(const char* value) {
-  _set_bit(9);
+  _set_bit(10);
   if (name_ == &_default_name_) {
     name_ = new ::std::string;
   }
   name_->assign(value);
 }
 inline void StatVFS::set_name(const char* value, size_t size) {
-  _set_bit(9);
+  _set_bit(10);
   if (name_ == &_default_name_) {
     name_ = new ::std::string;
   }
   name_->assign(reinterpret_cast<const char*>(value), size);
 }
 inline ::std::string* StatVFS::mutable_name() {
-  _set_bit(9);
+  _set_bit(10);
   if (name_ == &_default_name_) {
     name_ = new ::std::string;
   }
@@ -7367,40 +7391,40 @@ inline ::std::string* StatVFS::mutable_name() {
 
 // required string owner_group_id = 11;
 inline bool StatVFS::has_owner_group_id() const {
-  return _has_bit(10);
+  return _has_bit(11);
 }
 inline void StatVFS::clear_owner_group_id() {
   if (owner_group_id_ != &_default_owner_group_id_) {
     owner_group_id_->clear();
   }
-  _clear_bit(10);
+  _clear_bit(11);
 }
 inline const ::std::string& StatVFS::owner_group_id() const {
   return *owner_group_id_;
 }
 inline void StatVFS::set_owner_group_id(const ::std::string& value) {
-  _set_bit(10);
+  _set_bit(11);
   if (owner_group_id_ == &_default_owner_group_id_) {
     owner_group_id_ = new ::std::string;
   }
   owner_group_id_->assign(value);
 }
 inline void StatVFS::set_owner_group_id(const char* value) {
-  _set_bit(10);
+  _set_bit(11);
   if (owner_group_id_ == &_default_owner_group_id_) {
     owner_group_id_ = new ::std::string;
   }
   owner_group_id_->assign(value);
 }
 inline void StatVFS::set_owner_group_id(const char* value, size_t size) {
-  _set_bit(10);
+  _set_bit(11);
   if (owner_group_id_ == &_default_owner_group_id_) {
     owner_group_id_ = new ::std::string;
   }
   owner_group_id_->assign(reinterpret_cast<const char*>(value), size);
 }
 inline ::std::string* StatVFS::mutable_owner_group_id() {
-  _set_bit(10);
+  _set_bit(11);
   if (owner_group_id_ == &_default_owner_group_id_) {
     owner_group_id_ = new ::std::string;
   }
@@ -7409,40 +7433,40 @@ inline ::std::string* StatVFS::mutable_owner_group_id() {
 
 // required string owner_user_id = 12;
 inline bool StatVFS::has_owner_user_id() const {
-  return _has_bit(11);
+  return _has_bit(12);
 }
 inline void StatVFS::clear_owner_user_id() {
   if (owner_user_id_ != &_default_owner_user_id_) {
     owner_user_id_->clear();
   }
-  _clear_bit(11);
+  _clear_bit(12);
 }
 inline const ::std::string& StatVFS::owner_user_id() const {
   return *owner_user_id_;
 }
 inline void StatVFS::set_owner_user_id(const ::std::string& value) {
-  _set_bit(11);
+  _set_bit(12);
   if (owner_user_id_ == &_default_owner_user_id_) {
     owner_user_id_ = new ::std::string;
   }
   owner_user_id_->assign(value);
 }
 inline void StatVFS::set_owner_user_id(const char* value) {
-  _set_bit(11);
+  _set_bit(12);
   if (owner_user_id_ == &_default_owner_user_id_) {
     owner_user_id_ = new ::std::string;
   }
   owner_user_id_->assign(value);
 }
 inline void StatVFS::set_owner_user_id(const char* value, size_t size) {
-  _set_bit(11);
+  _set_bit(12);
   if (owner_user_id_ == &_default_owner_user_id_) {
     owner_user_id_ = new ::std::string;
   }
   owner_user_id_->assign(reinterpret_cast<const char*>(value), size);
 }
 inline ::std::string* StatVFS::mutable_owner_user_id() {
-  _set_bit(11);
+  _set_bit(12);
   if (owner_user_id_ == &_default_owner_user_id_) {
     owner_user_id_ = new ::std::string;
   }

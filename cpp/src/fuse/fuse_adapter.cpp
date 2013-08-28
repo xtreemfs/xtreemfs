@@ -473,6 +473,13 @@ int FuseAdapter::statfs(const char *path, struct statvfs *statv) {
     uint32_t statvfs_block_size = default_stripe_size;
     uint64_t total_blocks = stat_vfs->blocks();
     uint64_t avail_blocks = stat_vfs->bavail();
+    uint64_t free_blocks;
+
+    if(stat_vfs->has_bfree())
+      free_blocks = stat_vfs->bfree();
+    else
+      free_blocks = stat_vfs->bavail();
+
 
 #ifdef __APPLE__
     while (statvfs_block_size > (128 * 1024)) {
@@ -488,7 +495,7 @@ int FuseAdapter::statfs(const char *path, struct statvfs *statv) {
 
     statv->f_frsize  = statvfs_block_size;  // file system block size
     statv->f_blocks  = total_blocks;  // Total number of blocks in file system.
-    statv->f_bfree   = avail_blocks;  // # free blocks
+    statv->f_bfree   = free_blocks;  // # free blocks
     statv->f_bavail  = avail_blocks;  // # free blocks for unprivileged users
     statv->f_files   = 2048;  // # inodes (we use here a bogus number)
     statv->f_ffree   = 2048;  // # free inodes (we use here a bogus number)

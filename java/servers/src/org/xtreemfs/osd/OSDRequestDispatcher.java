@@ -360,9 +360,11 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 
                 OSDConfig config = OSDRequestDispatcher.this.config;
                 String freeSpace = "0";
+                String useableSpace = "0";
                 
                 if (config.isReportFreeSpace()) {
                     freeSpace = String.valueOf(FSUtils.getFreeSpace(config.getObjDir()));
+                    useableSpace = String.valueOf(FSUtils.getUsableSpace(config.getObjDir()));
                 }
                 
                 String totalSpace = "-1";
@@ -386,6 +388,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 dmap.addData(KeyValuePair.newBuilder().setKey("load").setValue(load).build());
                 dmap.addData(KeyValuePair.newBuilder().setKey("total").setValue(totalSpace).build());
                 dmap.addData(KeyValuePair.newBuilder().setKey("free").setValue(freeSpace).build());
+                dmap.addData(KeyValuePair.newBuilder().setKey("usable").setValue(useableSpace).build());
                 dmap.addData(KeyValuePair.newBuilder().setKey("totalRAM").setValue(Long.toString(totalRAM))
                         .build());
                 dmap.addData(KeyValuePair.newBuilder().setKey("usedRAM").setValue(Long.toString(usedRAM))
