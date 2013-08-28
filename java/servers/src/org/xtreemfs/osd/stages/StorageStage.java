@@ -48,12 +48,9 @@ public class StorageStage extends Stage {
             numberOfThreads = numOfThreads;
         
         storageThreads = new StorageThread[numberOfThreads];
-        // TODO(mberlin): It's not safe to assume that the requests can be equally distributed across all threads.
-        //                Once somebody uses more than one thread (e.g., with SSDs), it should be checked to set the limit
-        //                of each StorageThread to 'maxRequestsQueueLength'.
-        int maxQueueLengthPerThread = maxRequestsQueueLength / numberOfThreads;
         for (int i = 0; i < numberOfThreads; i++) {
-            storageThreads[i] = new StorageThread(i, master, cache, layout, maxQueueLengthPerThread);
+            // Each storage thread gets the max. queue length as it is possible that one thread gets the whole load
+            storageThreads[i] = new StorageThread(i, master, cache, layout, maxRequestsQueueLength);
             storageThreads[i].setLifeCycleListener(master);
         }
     }
