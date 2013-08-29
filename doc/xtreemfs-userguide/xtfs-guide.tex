@@ -549,6 +549,13 @@ $> cp SERVICE.p12 /etc/xos/xtreemfs/truststore/certs
 \end{enumerate}
 
 
+\subsection{Running XtreemFS on SSDs}
+
+SSDs are replacing spinning hard disk drives increasingly. This trend is also relevant for the area of distributed file systems. As XtreemFS uses an underlying local file system for all services, XtreemFS can be used with SSDs without any modifications.
+
+To make use of the increased performance that an SSD can provide, it might be suitable to use multiple storage threads on the XtreemFS OSD. The number of storage threads can be adjusted by the \texttt{storage\_threads} parameter in the OSD configuration file (see Sec. \ref{sec:config}).
+
+
 \subsection{List of Configuration Options}
 \label{sec:config}
 
@@ -1227,6 +1234,14 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Values   & HashStorageLayout\\
  Default  & HashStorageLayout\\
  Description & Adjusts the internally used storage layout on the OSD. The storage layout determines how an OSD stores its files and objects. Currently, only \texttt{HashStorageLayout} is supported.
+\end{tabular}
+
+\subsubsection{\texttt{storage\_threads} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & OSD\\
+ Values   & 1..N\\
+ Default  & 1\\
+ Description & Set the number of threads that are used to access the underlying file system. For spinning disks, the default value is recommended. For SSDs a higher number might be sufficient.
 \end{tabular}
 
 \subsubsection{\texttt{uuid}}
