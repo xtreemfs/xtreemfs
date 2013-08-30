@@ -1354,6 +1354,15 @@ To run init.d scripts, root permissions are required. Note that MRC and OSD will
 % 
 % The servers will be executed under the user ID of the user who called the xctl script.
 
+\subsection{Running multiple OSDs per Machine}
+
+Running more than one OSD service per host might be useful in various situations. Use cases for this might be machines with more than one disk as an alternative to a local RAID or testing purposes. We offer an extended \texttt{init.d} script, named \texttt{xtreemfs-osd-farm}, to start or stop a set of OSDs on one host by a single script.
+
+The \texttt{xtreemfs-osd-farm} script can be found in the /usr/share/xtreemfs directory, if XtreemFS is installed by the provided packages, or in the contrib directory of the XtreemFS GIT repository. 
+
+Using the \texttt{xtreemfs-osd-farm} script demands two steps. First, a list names for all of the used OSDs hat to be set to the OSD\_INSTANCES variable in the script. The list elements have to be separated by spaces. In the second step, a configuration file with the name \texttt{<osdname>.config.properties} has to be created in \texttt{/etc/xos/xtreemfs} for all of the defined OSD names, whereas <osdname> has to be replaced by the particular OSD name. After these steps, the \texttt{init.d} script can be executed with the usual arguments \texttt{start}, \texttt{stop}, \texttt{status}, \texttt{restart}, and \texttt{try-restart}. A single OSD can be controlled by \texttt{xtreemfs-osd-farm <osdname> <argument>}.
+
+
 \subsection{Web-based Status Page}
 
 \begin{figure}[h]
