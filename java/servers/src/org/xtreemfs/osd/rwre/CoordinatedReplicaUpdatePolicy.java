@@ -48,7 +48,6 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
 
     private final OSDServiceClient client;
 
-
     public CoordinatedReplicaUpdatePolicy(List<ServiceUUID> remoteOSDUUIDs, String localUUID, String fileId,
             OSDServiceClient client) {
         super(remoteOSDUUIDs, fileId, localUUID);
@@ -230,11 +229,16 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                     all_objects.put(onum, omr);
                 }
                 if (omr.getObjectVersion() == over.getObjectVersion()) {
-                    if (i < states.length - 1) {
+                    if (i < states.length - 1 || localUUID == null) {
                         omr.addOsdUuids(remoteOSDUUIDs.get(i).toString());
                     } else {
-                        omr.addOsdUuids(localUUID);
-                        // Last state is the local state, i.e. local OSD.
+                        if (localUUID != null) {
+                            // Last state is the local state, i.e. local OSD.
+                            omr.addOsdUuids(localUUID);
+                        } else if (i < remoteOSDUUIDs.size()) {
+                            // If no local state is set and a remote with this index exists, add its state.
+                            omr.addOsdUuids(remoteOSDUUIDs.get(i).toString());
+                        }
                     }
                 }
             }

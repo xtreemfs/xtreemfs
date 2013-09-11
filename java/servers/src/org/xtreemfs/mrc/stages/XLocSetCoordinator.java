@@ -248,9 +248,8 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         }
 
         // Invalidate the majority of the replicas and get their ReplicaStatus
-        CoordinatedReplicaUpdatePolicy policy = getMockupPolicy(extXLocSet.getReplicaUpdatePolicy(), fileId, OSDUUIDs);
-        // since the RequiredAcks excludes the local Replica we have to add it explicitly
-        int numRequiredAcks = policy.getNumRequiredAcks(null) + 1;
+        CoordinatedReplicaUpdatePolicy policy = getPolicy(extXLocSet.getReplicaUpdatePolicy(), fileId, OSDUUIDs);
+        int numRequiredAcks = policy.getNumRequiredAcks(null);
         ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet, numRequiredAcks);
 
         // Calculate the AuthState and the minimal majority perceived
@@ -262,8 +261,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         if (policy.backupCanRead()) {
             requiredRead = 1;
         } else {
-            // since the RequiredAcks excludes the local Replica we have to add it explicitly
-            requiredRead = policy.getNumRequiredAcks(null) + 1;
+            requiredRead = policy.getNumRequiredAcks(null);
         }
 
         // Calculate the requiredUpdates
@@ -354,12 +352,11 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             // save each head OSDUUID to the list
             curOSDUUIDs.add(i, new ServiceUUID(Helper.getOSDUUIDFromXlocSet(curXLocSet, i, 0)));
         }
-        CoordinatedReplicaUpdatePolicy curPolicy = getMockupPolicy(curXLocSet.getReplicaUpdatePolicy(), fileId,
+        CoordinatedReplicaUpdatePolicy curPolicy = getPolicy(curXLocSet.getReplicaUpdatePolicy(), fileId,
                 curOSDUUIDs);
 
         // Invalidate the majority of the replicas and get their ReplicaStatus
-        // since the RequiredAcks excludes the local Replica we have to add it explicitly
-        int numRequiredAcks = curPolicy.getNumRequiredAcks(null) + 1;
+        int numRequiredAcks = curPolicy.getNumRequiredAcks(null);
         ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet, numRequiredAcks);
 
         // If the backup can read we can assume every replica will be written on updates.
@@ -375,9 +372,9 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
                 newOSDUUIDs.add(i, new ServiceUUID(Helper.getOSDUUIDFromXlocSet(newXLocSet, i, 0)));
             }
 
-            CoordinatedReplicaUpdatePolicy newPolicy = getMockupPolicy(newXLocSet.getReplicaUpdatePolicy(), fileId,
+            CoordinatedReplicaUpdatePolicy newPolicy = getPolicy(newXLocSet.getReplicaUpdatePolicy(), fileId,
                     newOSDUUIDs);
-            int requiredRead = newPolicy.getNumRequiredAcks(null) + 1;
+            int requiredRead = newPolicy.getNumRequiredAcks(null);
 
             // Create a Set containing the remaining UUIDs.
             final HashSet<String> newXLocSetUUIDs = new HashSet<String>(newXLocSet.getReplicasCount());
@@ -633,7 +630,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             }
         }
         
-        // Clone the states
+        // Clone the states and return them.
         ReplicaStatus[] states = listener.getReplicaStates();
         return states;
     }
@@ -673,21 +670,16 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         return minimalMajority;
     }
 
-    private CoordinatedReplicaUpdatePolicy getMockupPolicy(String replicaUpdatePolicy, String fileId,
+    private CoordinatedReplicaUpdatePolicy getPolicy(String replicaUpdatePolicy, String fileId,
             List<ServiceUUID> OSDUUIDs) {
-
-        // CoordinatedReplicaUpdatePolicy assumes a separation between the remote OSDs and the local one.
-        // This will take the last OSD out of the list and use it as the local.
-        OSDUUIDs = new ArrayList<ServiceUUID>(OSDUUIDs);
-        ServiceUUID mockupLocal = OSDUUIDs.remove(OSDUUIDs.size() - 1);
 
         CoordinatedReplicaUpdatePolicy policy = null;
         if (replicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE)) {
-            policy = new WaR1UpdatePolicy(OSDUUIDs, mockupLocal.toString(), fileId, null);
+            policy = new WaR1UpdatePolicy(OSDUUIDs, null, fileId, null);
         } else if (replicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA)) {
-            policy = new WaRaUpdatePolicy(OSDUUIDs, mockupLocal.toString(), fileId, null);
+            policy = new WaRaUpdatePolicy(OSDUUIDs, null, fileId, null);
         } else if (replicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ)) {
-            policy = new WqRqUpdatePolicy(OSDUUIDs, mockupLocal.toString(), fileId, null);
+            policy = new WqRqUpdatePolicy(OSDUUIDs, null, fileId, null);
         } else {
             throw new IllegalArgumentException("unsupported replica update mode: " + replicaUpdatePolicy);
         }
