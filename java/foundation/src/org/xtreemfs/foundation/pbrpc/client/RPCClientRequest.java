@@ -20,6 +20,7 @@ import org.xtreemfs.foundation.pbrpc.utils.ReusableBufferOutputStream;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.foundation.pbrpc.utils.RecordMarker;
 
 
 /**
@@ -38,6 +39,7 @@ public class RPCClientRequest<ReturnType extends Message> {
     private final RPCResponse response;
 
     private long              timeQueued;
+    private long              bytesWritten;
 
 
     RPCClientRequest(Auth authHeader, UserCredentials uCreds, int callId, int interfaceId, int procId, Message message, ReusableBuffer data, RPCResponse<ReturnType> response) throws IOException {
@@ -149,5 +151,32 @@ public class RPCClientRequest<ReturnType extends Message> {
 
     public RPCResponse<ReturnType> getResponse() {
         return response;
+    }
+    
+    public void recordBytesWritten(long bytesWritten) {
+        this.bytesWritten += bytesWritten;
+        if (this.bytesWritten > RecordMarker.HDR_SIZE + hdrLen + dataLen + msgLen) {
+            String errorMessage = "Too many bytes written (expected: "
+                    + (RecordMarker.HDR_SIZE + hdrLen + dataLen + msgLen)
+                    + ", actual: "
+                    + this.bytesWritten
+                    + ") for message "
+                    + requestHeader;
+            Logging.logMessage(Logging.LEVEL_ERROR, this, errorMessage);
+            throw new IllegalStateException(errorMessage);
+        }
+    }
+
+    public void checkEnoughBytesSent() {
+        if (bytesWritten != RecordMarker.HDR_SIZE + hdrLen + dataLen + msgLen) {
+            String errorMessage = "Not enough bytes written (expected: "
+                    + (RecordMarker.HDR_SIZE + hdrLen + dataLen + msgLen)
+                    + ", actual: "
+                    + bytesWritten
+                    + ") for message "
+                    + requestHeader;
+            Logging.logMessage(Logging.LEVEL_ERROR, this, errorMessage);
+            throw new IllegalStateException(errorMessage);
+        }
     }
 }

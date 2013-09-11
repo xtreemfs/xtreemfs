@@ -518,6 +518,7 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                                 }
                                 response = rq.packBuffers(con.getSendFragHdr());
                                 con.setSendBuffers(response);
+                                con.setExpectedRecordSize(rq.getRpcMessageSize());
                             }
                         }
 
@@ -543,11 +544,14 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                             closeConnection(key);
                             return;
                         }
+                        con.recordBytesSent(numBytesWritten);
+                        
                         if (response[response.length-1].hasRemaining()) {
                             // not enough data...
                             key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
                             break;
                         }
+                        con.checkEnoughBytesSent();
                         // finished sending fragment
                         // clean up :-) request finished
                         pendingRequests--;

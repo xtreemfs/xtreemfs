@@ -77,5 +77,8 @@ public class RPCServerResponse {
     public String toString() {
         return this.getClass().getCanonicalName()+": callid="+callId;
     }
-
+    
+    public int getRpcMessageSize() {
+        return RecordMarker.HDR_SIZE + hdrLen + dataLen + msgLen;
+    }
 }

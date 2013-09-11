@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.channels.ChannelIO;
 import org.xtreemfs.foundation.pbrpc.utils.RecordMarker;
 
@@ -53,6 +54,10 @@ public class RPCNIOSocketServerConnection implements RPCServerConnectionInterfac
     private SocketAddress       clientAddress;
 
     private RPCServerInterface  server;
+    
+    private long                bytesSent;
+    
+    private int                 expectedRecordSize;
 
     public RPCNIOSocketServerConnection(RPCServerInterface server, ChannelIO channel) {
         assert(server != null);
@@ -196,5 +201,35 @@ public class RPCNIOSocketServerConnection implements RPCServerConnectionInterfac
         return clientAddress;
     }
     
+    public void setExpectedRecordSize(int expectedRecordSize) {
+        this.expectedRecordSize = expectedRecordSize;
+        bytesSent = 0;
+    }
+    
+    public void recordBytesSent(long bytesSent) {
+        this.bytesSent += bytesSent;
+        if (this.bytesSent > expectedRecordSize) {
+            String errorMessage = "Too many bytes written (expected: "
+                  + expectedRecordSize
+                  + ", actual: "
+                  + this.bytesSent
+                  + ") in connection to "
+                  + clientAddress;
+            Logging.logMessage(Logging.LEVEL_ERROR, this, errorMessage);
+            throw new IllegalStateException(errorMessage);
+        }
+    }
 
+    public void checkEnoughBytesSent() {
+        if (bytesSent != expectedRecordSize) {
+            String errorMessage = "Incorrect record length sent (expected: "
+                  + expectedRecordSize
+                  + ", actual: "
+                  + bytesSent
+                  + ") in connection to "
+                  + clientAddress;
+            Logging.logMessage(Logging.LEVEL_ERROR, this, errorMessage);
+            throw new IllegalStateException(errorMessage);
+        }
+    }
 }
