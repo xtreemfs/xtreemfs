@@ -28,6 +28,7 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
+import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.ErrorRecord;
@@ -217,7 +218,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             // This is unnecessary because the state of read-only data can't change and a replica that had the correct
             // data once will never be superseded.
             // TODO(jdillmann): Discuss if this should be kept or not.
-            invalidateReplicas(fileId, cap, curXLocSet);
+            invalidateReplicas(fileId, cap, curXLocSet, 1);
 
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
@@ -247,10 +248,12 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         }
 
         // Invalidate the majority of the replicas and get their ReplicaStatus
-        ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet);
+        CoordinatedReplicaUpdatePolicy policy = getMockupPolicy(extXLocSet.getReplicaUpdatePolicy(), fileId, OSDUUIDs);
+        // since the RequiredAcks excludes the local Replica we have to add it explicitly
+        int numRequiredAcks = policy.getNumRequiredAcks(null) + 1;
+        ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet, numRequiredAcks);
 
         // Calculate the AuthState and the minimal majority perceived
-        CoordinatedReplicaUpdatePolicy policy = getMockupPolicy(extXLocSet.getReplicaUpdatePolicy(), fileId, OSDUUIDs);
         AuthoritativeReplicaState authState = policy.CalculateAuthoritativeState(states, fileId);
         int minMajority = calculateMinimalMajority(states, authState);
 
@@ -293,53 +296,6 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         }
     }
 
-    // If the read operation is triggered from the client side via libxtreemfs it behaves different from the call made
-    // here. To retain compatibility the ping will remain at the VolumeImplementation.
-//    private void addReplicasRo(String fileId, Capability cap, XLocSet curXLocSet, XLocSet extXLocSet) throws Throwable {
-//
-//        // extending the replica set won't break any functionality. Access based on an older XLocSet will still be
-//        // correct, as long as the stripes are staying on the same OSDs
-//
-//        List<Replica> newReplicas = new ArrayList<Replica>(extXLocSet.getReplicasList());
-//        newReplicas.removeAll(curXLocSet.getReplicasList());
-//        assert (extXLocSet.getReplicasCount() - curXLocSet.getReplicasCount() == newReplicas.size());
-//
-//        for (Replica replica : newReplicas) {
-//            
-//            // Check replication flags, if it's a full replica.
-//            if ((replica.getReplicationFlags() & REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber()) == 0) {
-//                // Nothing to do here because the replication does not need to be triggered for partial replicas.
-//                continue;
-//            }
-//
-//            FileCredentials.Builder fileCredentialsBuilder = FileCredentials.newBuilder()
-//                    .setXcap(cap.getXCap())
-//                    .setXlocs(extXLocSet);
-//
-//            readRequest.Builder readRequestBuilder = readRequest.newBuilder()
-//                    .setFileId(fileId)
-//                    .setFileCredentials(fileCredentialsBuilder);
-//
-//            // Read one byte from the replica to trigger the replication.
-//            readRequestBuilder
-//                    .setObjectNumber(0)
-//                    .setObjectVersion(0)
-//                    .setOffset(0)
-//                    .setLength(1);
-//
-//            String headOSD = replica.getOsdUuids(0);
-//            InetSocketAddress server = new ServiceUUID(headOSD).getAddress();
-//
-//            // TODO(jdillmann): check if there is any sane way to use libxtreemfs at the mrc
-//            RPCResponse<OSD.ObjectData> rpcResponse = master.getOSDClient().read(server, RPCAuthentication.authNone,
-//                    RPCAuthentication.userService, readRequestBuilder.build());
-//            rpcResponse.get();
-//            rpcResponse.freeBuffers();
-//
-//            // TODO(jdillmann): Every OSD in a striped replica has to be pinged.
-//        }
-//    }
-
     public <O extends MRCOperation & XLocSetCoordinatorCallback> RequestMethod removeReplicas(String fileId,
             FileMetadata file, XLocList curXLocList, XLocList newXLocList, MRCRequest rq, O op)
             throws DatabaseException {
@@ -374,7 +330,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         } else {
             // In case of the read-only replication the replicas will be invalidated. But the coordination takes place
             // at the client by libxtreemfs.
-            ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet);
+            ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet, 1);
         }
 
         // Call the installXLocSet method in the context of the ProcessingStage
@@ -392,9 +348,6 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
     private void removeReplicasWqRq(String fileId, Capability cap, XLocSet curXLocSet, XLocSet newXLocSet)
             throws Throwable {
-        // Invalidate the majority of the replicas and get their ReplicaStatus
-        ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet);
-
         // Build a mockupPolicy for the current XLocSet
         ArrayList<ServiceUUID> curOSDUUIDs = new ArrayList<ServiceUUID>(curXLocSet.getReplicasCount());
         for (int i = 0; i < curXLocSet.getReplicasCount(); i++) {
@@ -403,6 +356,11 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         }
         CoordinatedReplicaUpdatePolicy curPolicy = getMockupPolicy(curXLocSet.getReplicaUpdatePolicy(), fileId,
                 curOSDUUIDs);
+
+        // Invalidate the majority of the replicas and get their ReplicaStatus
+        // since the RequiredAcks excludes the local Replica we have to add it explicitly
+        int numRequiredAcks = curPolicy.getNumRequiredAcks(null) + 1;
+        ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet, numRequiredAcks);
 
         // If the backup can read we can assume every replica will be written on updates.
         if (!curPolicy.backupCanRead()) {
@@ -547,69 +505,136 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
     }
 
     /**
-     * Invalidate the majority of the replicas listed in xLocList. Will sleep until the lease has timed out if the
-     * primary didn't respond
+     * Invalidate the majority of the replicas listed in xLocList. Will sleep until the lease has timed out if
+     * the primary didn't respond.
      * 
      * @param fileId
      * @param capability
      * @param xLocSet
+     * @param numAcksRequired
      * @throws Throwable
      */
-    private ReplicaStatus[] invalidateReplicas(String fileId, Capability cap, XLocSet xLocSet) throws Throwable {
+    private ReplicaStatus[] invalidateReplicas(String fileId, Capability cap, XLocSet xLocSet, int numAcksRequired) throws Throwable {
 
-        FileCredentials creds = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLocSet).build();
+        @SuppressWarnings("unchecked")
+        final RPCResponse<xtreemfs_xloc_set_invalidateResponse>[] responses = new RPCResponse[xLocSet
+                .getReplicasCount()];
 
-        RPCResponse<xtreemfs_xloc_set_invalidateResponse> rpcResponse;
-        xtreemfs_xloc_set_invalidateResponse response = null;
+        // Send INVALIDATE requests to every replica in the set.
         OSDServiceClient client = master.getOSDClient();
+        FileCredentials creds = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLocSet).build();
+        try {
+            for (int i = 0; i < responses.length; i++) {
+                Replica replica = xLocSet.getReplicas(i);
+                InetSocketAddress server = new ServiceUUID(replica.getOsdUuids(0)).getAddress();
 
-        boolean primaryResponded = false;
-        int responseCount = 0;
-
-        ReplicaStatus[] states = new ReplicaStatus[xLocSet.getReplicasCount()];
-
-        // TODO(jdillmann): Use RPCResponseAvailableListener @see CoordinatedReplicaUpdatePolicy.executeReset
-        for (int i = 0; i < xLocSet.getReplicasCount(); i++) {
-
-            Replica replica = xLocSet.getReplicas(i);
-            InetSocketAddress server = new ServiceUUID(replica.getOsdUuids(0)).getAddress();
-
-            try {
-                rpcResponse = client.xtreemfs_xloc_set_invalidate(server, RPCAuthentication.authNone,
+                responses[i] = client.xtreemfs_xloc_set_invalidate(server, RPCAuthentication.authNone,
                         RPCAuthentication.userService, creds, fileId);
-                response = rpcResponse.get();
-                responseCount = responseCount + 1;
-
-                if (response.hasStatus()) {
-                    states[i] = response.getStatus();
-                }
-
-                if (response.getIsPrimary()) {
-                    primaryResponded = true;
-                }
-
-            } catch (InterruptedException e) {
-                if (quit) {
-                    throw e;
-                }
-            } catch (IOException e) {
-                // TODO(jdillmann): Do something with the error
-                if (Logging.isDebug())
-                    Logging.logError(Logging.LEVEL_DEBUG, this, e);
+            }
+        } catch (IOException ex) {
+            // TODO(jdillmann): Do something with the error
+            if (Logging.isDebug()) {
+                Logging.logError(Logging.LEVEL_DEBUG, this, ex);
             }
         }
 
-        // if the primary didn't respond we have to wait until the lease timed out
-        // if every replica replied and none has been primary we don't have to wait
-        if (!primaryResponded && responseCount != xLocSet.getReplicasCount()) {
-            // FIXME(jdillmann): Howto get the lease timeout value from the OSD config?
-            long leaseToMS = 15 * 1000;
+        /**
+         * TODO(jdillmann): doc
+         */
+        class InvalidatedResponseListener implements RPCResponseAvailableListener<xtreemfs_xloc_set_invalidateResponse> {
+            private int             numResponses     = 0;
+            private int             numErrors        = 0;
+            private boolean         primaryResponded = false;
+            private RPCResponse<xtreemfs_xloc_set_invalidateResponse>[] responses;
+            private ReplicaStatus[] states;
 
-            // TODO(jdillmann): Care about the InterruptedException to ensure we will sleep for the required
-            // time
-            sleep(leaseToMS);
+            public InvalidatedResponseListener(RPCResponse<xtreemfs_xloc_set_invalidateResponse>[] responses) {
+                this.responses = responses;
+                states = new ReplicaStatus[responses.length];
+
+                for (int i = 0; i < responses.length; i++) {
+                    responses[i].registerListener(this);
+                }
+            }
+
+            @Override
+            synchronized public void responseAvailable(RPCResponse<xtreemfs_xloc_set_invalidateResponse> r) {
+
+                // Get the index of the responding OSD.
+                int osdNum = -1;
+                for (int i = 0; i < responses.length; i++) {
+                    if (responses[i] == r) {
+                        osdNum = i;
+                        break;
+                    }
+                }
+                assert (osdNum > -1);
+
+                try {
+                    xtreemfs_xloc_set_invalidateResponse response = r.get();
+
+                    if (response.hasStatus()) {
+                        states[osdNum] = response.getStatus();
+                    }
+
+                    if (response.getIsPrimary()) {
+                        primaryResponded = true;
+                    }
+
+                    numResponses++;
+                } catch (Exception ex) {
+                    numErrors++;
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                            "no invalidated response from replica due to exception: %s", ex.toString());
+                } finally {
+                    r.freeBuffers();
+                    this.notifyAll();
+                }
+            }
+
+            synchronized int getNumResponses() {
+                return numResponses;
+            }
+
+            synchronized public int getNumErrors() {
+                return numErrors;
+            }
+
+            synchronized boolean primaryResponded() {
+                return primaryResponded;
+            }
+
+            synchronized ReplicaStatus[] getReplicaStates() {
+                ReplicaStatus[] result = new ReplicaStatus[states.length];
+                System.arraycopy(states, 0, result, 0, states.length);
+                return result;
+            }
+        }
+        InvalidatedResponseListener listener = new InvalidatedResponseListener(responses);
+
+        // Wait until the majority responded.
+        synchronized (listener) {
+            while (listener.getNumResponses() < numAcksRequired) {
+                listener.wait();
+            }
         }
 
+        // Wait until either the primary responded, every replica responded or the lease has timed out.
+        // FIXME(jdillmann): Howto get the lease timeout value from the OSD config?
+        long leaseToMS = 15 * 1000;
+        long now = System.currentTimeMillis();
+        long leaseEndTimeMs = now + leaseToMS;
+        synchronized (listener) {
+            while (!listener.primaryResponded() 
+                    && now < leaseEndTimeMs
+                    && (listener.getNumResponses() + listener.getNumErrors()) < responses.length) {
+                listener.wait(leaseEndTimeMs - now);
+                now = System.currentTimeMillis();
+            }
+        }
+        
+        // Clone the states
+        ReplicaStatus[] states = listener.getReplicaStates();
         return states;
     }
 
