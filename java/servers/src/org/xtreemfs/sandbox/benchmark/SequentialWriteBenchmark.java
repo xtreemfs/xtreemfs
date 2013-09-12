@@ -25,8 +25,8 @@ class SequentialWriteBenchmark extends SequentialBenchmark {
 
     private LinkedList<String> filenames;
 
-    SequentialWriteBenchmark(Volume volume, Params params) throws Exception {
-        super(volume, params);
+    SequentialWriteBenchmark(Volume volume, Config config) throws Exception {
+        super(volume, config);
         filenames = new LinkedList<String>();
     }
 
@@ -37,14 +37,14 @@ class SequentialWriteBenchmark extends SequentialBenchmark {
         int flags = GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
-        FileHandle fileHandle = volume.openFile(params.userCredentials, BENCHMARK_FILENAME + 0, flags, 511);
+        FileHandle fileHandle = volume.openFile(config.userCredentials, BENCHMARK_FILENAME + 0, flags, 511);
         this.filenames.add(BENCHMARK_FILENAME + 0);
         long byteCounter = 0;
         for (long j = 0; j < numberOfBlocks; j++) {
             long nextOffset = j * stripeWidth;
             assert nextOffset >= 0 : "Offset < 0 not allowed";
             random.nextBytes(data);
-            byteCounter += fileHandle.write(params.userCredentials, data, stripeWidth, nextOffset);
+            byteCounter += fileHandle.write(config.userCredentials, data, stripeWidth, nextOffset);
         }
         fileHandle.close();
         return byteCounter;

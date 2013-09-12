@@ -41,37 +41,37 @@ public class xtfs_benchmark {
             return;
         }
 
-        Params params = cliOptions.buildParamsFromCLIOptions();
-        controller = new Controller(params);
+        Config config = cliOptions.buildParamsFromCLIOptions();
+        controller = new Controller(config);
         controller.tryConnection();
         controller.setupVolumes(cliOptions.arguments.toArray(new String[cliOptions.arguments.size()]));
-        runBenchmarks(params);
+        runBenchmarks(config);
         controller.teardown();
     }
 
     /* run all benchmarks specified by the CLIOptions */
-    private static void runBenchmarks(Params params) throws Exception {
+    private static void runBenchmarks(Config config) throws Exception {
 
         ConcurrentLinkedQueue<BenchmarkResult> result;
         ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
 
         if (cliOptions.sequentialWriteBenchmarkIsSet()) {
-            result = controller.startBenchmarks(BenchmarkType.SEQ_WRITE, params.numberOfThreads);
+            result = controller.startBenchmarks(BenchmarkType.SEQ_WRITE, config.numberOfThreads);
             results.addAll(result);
         }
 
         if (cliOptions.sequentialReadBenchmarkIsSet()) {
-            result = controller.startBenchmarks(BenchmarkType.SEQ_READ, params.numberOfThreads);
+            result = controller.startBenchmarks(BenchmarkType.SEQ_READ, config.numberOfThreads);
             results.addAll(result);
         }
 
         if (cliOptions.randomWriteBenchmarkIsSet()) {
-            result = controller.startBenchmarks(BenchmarkType.RAND_WRITE, params.numberOfThreads);
+            result = controller.startBenchmarks(BenchmarkType.RAND_WRITE, config.numberOfThreads);
             results.addAll(result);
         }
 
         if (cliOptions.randomReadBenchmarkIsSet()) {
-            result = controller.startBenchmarks(BenchmarkType.RAND_READ, params.numberOfThreads);
+            result = controller.startBenchmarks(BenchmarkType.RAND_READ, config.numberOfThreads);
             results.addAll(result);
         }
 

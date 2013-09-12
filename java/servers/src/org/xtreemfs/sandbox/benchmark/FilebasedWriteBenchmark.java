@@ -25,8 +25,8 @@ class FilebasedWriteBenchmark extends FilebasedBenchmark {
 
     private LinkedList<String> filenames;
 
-    FilebasedWriteBenchmark(Volume volume, Params params) throws Exception {
-        super(volume, params);
+    FilebasedWriteBenchmark(Volume volume, Config config) throws Exception {
+        super(volume, config);
         filenames = new LinkedList<String>();
     }
 
@@ -39,7 +39,7 @@ class FilebasedWriteBenchmark extends FilebasedBenchmark {
     long performIO(byte[] data, long numberOfBlocks) throws IOException {
 
         // long numberOfFiles = convertTo4KiBBlocks(numberOfBlocks);
-        long numberOfFiles = params.randomSizeInBytes / 4096;
+        long numberOfFiles = config.randomSizeInBytes / 4096;
         long byteCounter = 0;
         Random random = new Random();
 
@@ -48,10 +48,10 @@ class FilebasedWriteBenchmark extends FilebasedBenchmark {
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
 
         for (long j = 0; j < numberOfFiles; j++) {
-            FileHandle fileHandle = volume.openFile(params.userCredentials, BENCHMARK_FILENAME + j, flags, 511);
+            FileHandle fileHandle = volume.openFile(config.userCredentials, BENCHMARK_FILENAME + j, flags, 511);
             this.filenames.add(BENCHMARK_FILENAME + j);
             random.nextBytes(data);
-            byteCounter += fileHandle.write(params.userCredentials, data, randomIOFilesize, 0);
+            byteCounter += fileHandle.write(config.userCredentials, data, randomIOFilesize, 0);
             fileHandle.close();
         }
         return byteCounter;

@@ -22,9 +22,9 @@ abstract class FilebasedBenchmark extends RandomBenchmark {
     static final String BENCHMARK_FILENAME = "benchmarks/randomBenchmark/benchFile";
     final int           randomIOFilesize;
 
-    FilebasedBenchmark(Volume volume, Params params) throws Exception {
-        super(volume, params);
-        this.randomIOFilesize = params.randomIOFilesize;
+    FilebasedBenchmark(Volume volume, Config config) throws Exception {
+        super(volume, config);
+        this.randomIOFilesize = config.randomIOFilesize;
     }
 
     /* convert to 4 KiB Blocks */

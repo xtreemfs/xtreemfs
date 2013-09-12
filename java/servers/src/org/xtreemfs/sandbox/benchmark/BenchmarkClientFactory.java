@@ -35,9 +35,9 @@ class BenchmarkClientFactory {
     }
 
     /* create and start an AdminClient. */
-    static AdminClient getNewClient(Params params) throws Exception {
-        AdminClient client = ClientFactory.createAdminClient(params.dirAddress, params.userCredentials,
-                params.sslOptions, params.options);
+    static AdminClient getNewClient(Config config) throws Exception {
+        AdminClient client = ClientFactory.createAdminClient(config.dirAddress, config.userCredentials,
+                config.sslOptions, config.options);
         clients.add(client);
         client.start();
         return client;

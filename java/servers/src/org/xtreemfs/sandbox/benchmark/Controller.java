@@ -22,29 +22,29 @@ import org.xtreemfs.utils.DefaultDirConfig;
  * Controller for the benchmark library.
  * <p/>
  * 
- * The {@link Controller}, the {@link ParamsBuilder} and {@link Params} represent the API to the benchmark library.
+ * The {@link Controller}, the {@link ConfigBuilder} and {@link Config} represent the API to the benchmark library.
  * 
  * @author jensvfischer
  * 
  */
 public class Controller {
 
-    private Params params;
+    private Config config;
 
     /**
      * Create a new controller object.
      * 
-     * @param params
+     * @param config
      *            The parameters to be used for the benchmark.
      */
-    public Controller(Params params) {
-        this.params = params;
+    public Controller(Config config) {
+        this.config = config;
     }
 
     /**
      * Create and open the volumes needed for the benchmarks. <br/>
      * If no volume names are given, default volumes are created. The number of default volumes to be created is
-     * determined by {@link Params#numberOfThreads}. <br/>
+     * determined by {@link Config#numberOfThreads}. <br/>
      * If the volumeNames given are already existing volumes, the volumes are only opened.
      * 
      * @param volumeNames
@@ -52,11 +52,11 @@ public class Controller {
      * @throws Exception
      */
     public void setupVolumes(String... volumeNames) throws Exception {
-        VolumeManager.init(this.params);
+        VolumeManager.init(this.config);
         VolumeManager volumeManager = VolumeManager.getInstance();
 
         if (volumeNames.length == 0)
-            volumeManager.createDefaultVolumes(params.numberOfThreads);
+            volumeManager.createDefaultVolumes(config.numberOfThreads);
         else
             volumeManager.openVolumes(volumeNames);
     }
@@ -76,7 +76,7 @@ public class Controller {
         ConcurrentLinkedQueue<BenchmarkResult> result;
         ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
 
-        for (int i = 0; i < params.numberOfRepetitions; i++) {
+        for (int i = 0; i < config.numberOfRepetitions; i++) {
             result = startBenchmark(benchmarkType, numberOfThreads);
             results.addAll(result);
         }
@@ -97,8 +97,8 @@ public class Controller {
     ConcurrentLinkedQueue<BenchmarkResult> startBenchmark(BenchmarkType benchmarkType, int numberOfThreads)
             throws Exception {
 
-        if (params.sequentialSizeInBytes % (params.stripeSizeInBytes * params.stripeWidth) != 0
-                || params.randomSizeInBytes % (params.stripeSizeInBytes * params.stripeWidth) != 0)
+        if (config.sequentialSizeInBytes % (config.stripeSizeInBytes * config.stripeWidth) != 0
+                || config.randomSizeInBytes % (config.stripeSizeInBytes * config.stripeWidth) != 0)
             throw new IllegalArgumentException("Size must satisfy: size mod (stripeSize * stripeWidth) == 0");
 
         ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
@@ -106,7 +106,7 @@ public class Controller {
 
         for (int i = 0; i < numberOfThreads; i++) {
             AbstractBenchmark benchmark = BenchmarkFactory.createBenchmark(benchmarkType, VolumeManager.getInstance()
-                    .getNextVolume(), params);
+                    .getNextVolume(), config);
             benchmark.startBenchmark(results, threads);
         }
 
@@ -153,7 +153,7 @@ public class Controller {
 
     public void tryConnection() throws Exception {
         try {
-            BenchmarkClientFactory.getNewClient(params).getServiceByType(DIR.ServiceType.SERVICE_TYPE_OSD);
+            BenchmarkClientFactory.getNewClient(config).getServiceByType(DIR.ServiceType.SERVICE_TYPE_OSD);
         } catch (Exception e) {
             Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, Controller.class,
                     "Failed to establish connection to DIR server.");
@@ -184,24 +184,24 @@ public class Controller {
     /**
      * Deletes all created volumes and files and shuts down all clients. This method should be called when all
      * benchmarks are finished. The deletion of the volumes and files is regulated by the noCleanup options in
-     * {@link Params}.
+     * {@link Config}.
      * 
      * @throws Exception
      */
     public void teardown() throws Exception {
         deleteVolumesAndFiles();
         BenchmarkClientFactory.shutdownClients();
-        if (params.osdCleanup)
+        if (config.osdCleanup)
             VolumeManager.getInstance().cleanupOSD();
     }
 
     /* delete all created volumes and files depending on the noCleanup options */
     private void deleteVolumesAndFiles() throws Exception {
         VolumeManager volumeManager = VolumeManager.getInstance();
-        if (!params.noCleanup && !params.noCleanupOfVolumes) {
+        if (!config.noCleanup && !config.noCleanupOfVolumes) {
             volumeManager.deleteCreatedFiles(); // is needed in case no volume was created
             volumeManager.deleteCreatedVolumes();
-        } else if (!params.noCleanup)
+        } else if (!config.noCleanup)
             volumeManager.deleteCreatedFiles();
     }
 
@@ -215,10 +215,10 @@ public class Controller {
         Logging.start(Logging.LEVEL_INFO, Logging.Category.tool);
 
         /* use the default params */
-        Params params = new ParamsBuilder().build();
+        Config config = new ConfigBuilder().build();
 
         /* instantiate a new controller */
-        Controller controller = new Controller(params);
+        Controller controller = new Controller(config);
 
         /* test the connection */
         controller.tryConnection();

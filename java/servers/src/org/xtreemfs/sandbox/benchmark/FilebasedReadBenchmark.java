@@ -24,8 +24,8 @@ class FilebasedReadBenchmark extends FilebasedBenchmark {
 
     private String[] filenames;
 
-    FilebasedReadBenchmark(Volume volume, Params params) throws Exception {
-        super(volume, params);
+    FilebasedReadBenchmark(Volume volume, Config config) throws Exception {
+        super(volume, config);
     }
 
     @Override
@@ -38,7 +38,7 @@ class FilebasedReadBenchmark extends FilebasedBenchmark {
     long performIO(byte[] data, long numberOfBlocks) throws IOException {
 
         // long numberOfFilesToRead = convertTo4KiBBlocks(numberOfBlocks);
-        long numberOfFilesToRead = params.randomSizeInBytes / 4096;
+        long numberOfFilesToRead = config.randomSizeInBytes / 4096;
 
         int filenamesSize = filenames.length;
         long byteCounter = 0;
@@ -48,8 +48,8 @@ class FilebasedReadBenchmark extends FilebasedBenchmark {
 
         for (long i = 0; i < numberOfFilesToRead; i++) {
             String filename = filenames[random.nextInt(filenamesSize)];
-            FileHandle fileHandle = volume.openFile(params.userCredentials, filename, flags);
-            byteCounter += fileHandle.read(params.userCredentials, data, randomIOFilesize, 0);
+            FileHandle fileHandle = volume.openFile(config.userCredentials, filename, flags);
+            byteCounter += fileHandle.read(config.userCredentials, data, randomIOFilesize, 0);
             fileHandle.close();
         }
         return byteCounter;

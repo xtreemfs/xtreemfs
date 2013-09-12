@@ -29,14 +29,14 @@ import org.xtreemfs.foundation.logging.Logging;
     final long        benchmarkSizeInBytes;
     final Volume      volume;
     final AdminClient client;
-    final Params      params;
+    final Config config;
 
-    AbstractBenchmark(long benchmarkSizeInBytes, Volume volume, Params params) throws Exception {
-        client = BenchmarkClientFactory.getNewClient(params);
+    AbstractBenchmark(long benchmarkSizeInBytes, Volume volume, Config config) throws Exception {
+        client = BenchmarkClientFactory.getNewClient(config);
         this.benchmarkSizeInBytes = benchmarkSizeInBytes;
         this.volume = volume;
-        this.params = params;
-        stripeWidth = params.stripeSizeInBytes;
+        this.config = config;
+        stripeWidth = config.stripeSizeInBytes;
     }
 
     /*

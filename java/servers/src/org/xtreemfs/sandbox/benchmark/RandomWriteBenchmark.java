@@ -24,8 +24,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  */
 class RandomWriteBenchmark extends RandomOffsetbasedBenchmark {
 
-    RandomWriteBenchmark(Volume volume, Params params) throws Exception {
-        super(volume, params);
+    RandomWriteBenchmark(Volume volume, Config config) throws Exception {
+        super(volume, config);
     }
 
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */
@@ -41,10 +41,10 @@ class RandomWriteBenchmark extends RandomOffsetbasedBenchmark {
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY.getNumber();
 
         for (long j = 0; j < numberOfBlocks; j++) {
-            FileHandle fileHandle = volume.openFile(params.userCredentials, BASFILE_FILENAME, flags, 511);
+            FileHandle fileHandle = volume.openFile(config.userCredentials, BASFILE_FILENAME, flags, 511);
             long nextOffset = generateNextRandomOffset();
             random.nextBytes(data);
-            byteCounter += fileHandle.write(params.userCredentials, data, RANDOM_IO_BLOCKSIZE, nextOffset);
+            byteCounter += fileHandle.write(config.userCredentials, data, RANDOM_IO_BLOCKSIZE, nextOffset);
             fileHandle.close();
         }
 

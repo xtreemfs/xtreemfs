@@ -37,7 +37,7 @@ class VolumeManager {
     static final String              VOLUME_BASE_NAME = "benchmark";
 
     private static VolumeManager     volumeManager    = null;
-    Params                           params;
+    Config config;
     AdminClient                      client;
     int                              currentPosition;
     LinkedList<Volume>               volumes;
@@ -47,9 +47,9 @@ class VolumeManager {
     HashMap<Volume, String[]>        filelistsRandomBenchmark;
 
     /* init the VolumeManager with params. This only needs to be called once */
-    static void init(Params params) throws Exception {
+    static void init(Config config) throws Exception {
         if (volumeManager == null) {
-            volumeManager = new VolumeManager(params);
+            volumeManager = new VolumeManager(config);
         }
     }
 
@@ -61,10 +61,10 @@ class VolumeManager {
     }
 
     /* private constructor, used by init */
-    private VolumeManager(Params params) throws Exception {
-        this.params = params;
+    private VolumeManager(Config config) throws Exception {
+        this.config = config;
         currentPosition = 0;
-        this.client = BenchmarkClientFactory.getNewClient(params);
+        this.client = BenchmarkClientFactory.getNewClient(config);
         this.volumes = new LinkedList<Volume>();
         this.createdVolumes = new LinkedList<Volume>();
         this.filelistsSequentialBenchmark = new HashMap<Volume, String[]>(5);
@@ -112,17 +112,17 @@ class VolumeManager {
         Volume volume = null;
         try {
             List<GlobalTypes.KeyValuePair> volumeAttributes = new ArrayList<GlobalTypes.KeyValuePair>();
-            client.createVolume(params.auth, params.userCredentials, volumeName, 511, params.userName, params.group,
+            client.createVolume(config.auth, config.userCredentials, volumeName, 511, config.userName, config.group,
                     GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
-                    GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, params.getStripeSizeInKiB,
-                    params.stripeWidth, volumeAttributes);
-            volume = client.openVolume(volumeName, params.sslOptions, params.options);
+                    GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, config.getStripeSizeInKiB,
+                    config.stripeWidth, volumeAttributes);
+            volume = client.openVolume(volumeName, config.sslOptions, config.options);
             createdVolumes.add(volume);
             createDirStructure(volume);
             Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Created volume %s", volumeName);
         } catch (PosixErrorException e) {
             if (e.getPosixError() == POSIXErrno.POSIX_ERROR_EEXIST)
-                volume = client.openVolume(volumeName, params.sslOptions, params.options);
+                volume = client.openVolume(volumeName, config.sslOptions, config.options);
             else
                 throw e;
         }
@@ -130,8 +130,8 @@ class VolumeManager {
     }
 
     private void createDirStructure(Volume volume) throws IOException {
-        volume.createDirectory(params.userCredentials, "/benchmarks/sequentialBenchmark", 0777, true);
-        volume.createDirectory(params.userCredentials, "/benchmarks/randomBenchmark", 0777, true);
+        volume.createDirectory(config.userCredentials, "/benchmarks/sequentialBenchmark", 0777, true);
+        volume.createDirectory(config.userCredentials, "/benchmarks/randomBenchmark", 0777, true);
     }
 
     /*
@@ -167,7 +167,7 @@ class VolumeManager {
         if (null == filelistsSequentialBenchmark.get(volume)) {
             filelist = inferFilelist(volume, SequentialBenchmark.BENCHMARK_FILENAME);
 
-            if (params.sequentialSizeInBytes == calculateTotalSizeOfFilelist(volume, filelist)) {
+            if (config.sequentialSizeInBytes == calculateTotalSizeOfFilelist(volume, filelist)) {
                 filelistsSequentialBenchmark.put(volume, filelist);
                 Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this,
                         "Succesfully infered filelist on volume %s.", volume.getVolumeName());
@@ -192,7 +192,7 @@ class VolumeManager {
         if (null == filelistsRandomBenchmark.get(volume)) {
             filelist = inferFilelist(volume, FilebasedBenchmark.BENCHMARK_FILENAME);
 
-            if (params.randomSizeInBytes == calculateTotalSizeOfFilelist(volume, filelist)) {
+            if (config.randomSizeInBytes == calculateTotalSizeOfFilelist(volume, filelist)) {
                 filelistsRandomBenchmark.put(volume, filelist);
                 Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this,
                         "Succesfully infered filelist on volume %s.", volume.getVolumeName());
@@ -220,7 +220,7 @@ class VolumeManager {
         String path = pathToBasefile.substring(0, pathToBasefile.lastIndexOf('/'));
         String filename = pathToBasefile.substring(pathToBasefile.lastIndexOf('/') + 1);
 
-        List<MRC.DirectoryEntry> directoryEntries = volume.readDir(params.userCredentials, path, 0, 0, true)
+        List<MRC.DirectoryEntry> directoryEntries = volume.readDir(config.userCredentials, path, 0, 0, true)
                 .getEntriesList();
         ArrayList<String> entries = new ArrayList<String>(directoryEntries.size());
 
@@ -239,7 +239,7 @@ class VolumeManager {
     private long calculateTotalSizeOfFilelist(Volume volume, String[] filelist) throws IOException {
         long aggregatedSizeInBytes = 0;
         for (String file : filelist) {
-            MRC.Stat stat = volume.getAttr(params.userCredentials, file);
+            MRC.Stat stat = volume.getAttr(config.userCredentials, file);
             aggregatedSizeInBytes += stat.getSize();
         }
         return aggregatedSizeInBytes;
@@ -276,7 +276,7 @@ class VolumeManager {
     /* try to delete a file. log errors, but continue */
     private void tryToDeleteFile(Volume volume, String filename) {
         try {
-            volume.unlink(params.userCredentials, filename);
+            volume.unlink(config.userCredentials, filename);
         } catch (IOException e) {
             Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this,
                     "IO Error while trying to delete a file.");
@@ -313,7 +313,7 @@ class VolumeManager {
     /* delete a volume specified by a string with the volumes name */
     void deleteVolumeIfExisting(String volumeName) throws IOException {
         if (new ArrayList<String>(Arrays.asList(client.listVolumeNames())).contains(volumeName)) {
-            client.deleteVolume(params.auth, params.userCredentials, volumeName);
+            client.deleteVolume(config.auth, config.userCredentials, volumeName);
             Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Deleted volume %s", volumeName);
         }
     }
@@ -321,7 +321,7 @@ class VolumeManager {
     /* Performs cleanup on a OSD (because deleting the volume does not delete the files in the volume) */
     void cleanupOSD() throws Exception {
 
-        String pwd = params.osdPassword;
+        String pwd = config.osdPassword;
         LinkedList<String> uuids = getOSDUUIDs();
 
         for (String osd : uuids) {

@@ -28,7 +28,7 @@ import org.xtreemfs.utils.utils;
 class CLIOptions {
     Map<String, CLIParser.CliOption> options;
     List<String>                     arguments;
-    ParamsBuilder                    builder;
+    ConfigBuilder builder;
 
     private static final String      DIR_ADDRESS;
     private static final String      USERNAME;
@@ -78,7 +78,7 @@ class CLIOptions {
 
     CLIOptions() {
         this.options = utils.getDefaultAdminToolOptions(true);
-        this.builder = new ParamsBuilder();
+        this.builder = new ConfigBuilder();
         this.arguments = new ArrayList<String>(20);
     }
 
@@ -87,7 +87,7 @@ class CLIOptions {
         parseCLI(args, options, arguments);
     }
 
-    Params buildParamsFromCLIOptions() throws Exception {
+    Config buildParamsFromCLIOptions() throws Exception {
         setNumberOfThreads();
         setNumberOfRepetitions();
         setSequentialSize();

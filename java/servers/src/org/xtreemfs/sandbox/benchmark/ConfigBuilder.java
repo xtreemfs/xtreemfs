@@ -15,9 +15,9 @@ import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 
 /**
- * Builder for the {@link Params} datastructure.
+ * Builder for the {@link Config} datastructure.
  * <p/>
- * For documentation of the parameters and default values see {@link Params}.
+ * For documentation of the parameters and default values see {@link Config}.
  * <p/>
  * 
  * Use like this: <br/>
@@ -31,11 +31,11 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
  * Params params = new ParamsBuilder().setX("x").setY("y").build();<br/>
  * </code>
  * 
- * The {@link Controller}, the {@link ParamsBuilder} and {@link Params} represent the API to the benchmark library.
+ * The {@link Controller}, the {@link ConfigBuilder} and {@link Config} represent the API to the benchmark library.
  * 
  * @author jensvfischer
  */
-public class ParamsBuilder {
+public class ConfigBuilder {
 
     static final int  KiB_IN_BYTES          = 1024;
     static final long MiB_IN_BYTES          = 1024 * 1024;
@@ -62,228 +62,228 @@ public class ParamsBuilder {
     boolean           osdCleanup            = false;
 
     /**
-     * Instantiate an builder (all values are the default values, see {@link Params}).
+     * Instantiate an builder (all values are the default values, see {@link Config}).
      */
-    public ParamsBuilder() {
+    public ConfigBuilder() {
     }
 
     /**
-     * See {@link Params#numberOfRepetitions}
+     * See {@link Config#numberOfRepetitions}
      * 
      * @param numberOfRepetitions
      * @return
      */
-    public ParamsBuilder setNumberOfRepetitions(int numberOfRepetitions) {
+    public ConfigBuilder setNumberOfRepetitions(int numberOfRepetitions) {
         this.numberOfRepetitions = numberOfRepetitions;
         return this;
     }
 
     /**
-     * See {@link Params#numberOfThreads}
+     * See {@link Config#numberOfThreads}
      * 
      * @param numberOfThreads
      * @return the builder
      */
-    public ParamsBuilder setNumberOfThreads(int numberOfThreads) {
+    public ConfigBuilder setNumberOfThreads(int numberOfThreads) {
         this.numberOfThreads = numberOfThreads;
         return this;
     }
 
     /**
-     * See {@link Params#sequentialSizeInBytes}
+     * See {@link Config#sequentialSizeInBytes}
      * 
      * @param sequentialSizeInBytes
      * @return the builder
      */
-    public ParamsBuilder setSequentialSizeInBytes(long sequentialSizeInBytes) {
+    public ConfigBuilder setSequentialSizeInBytes(long sequentialSizeInBytes) {
         this.sequentialSizeInBytes = sequentialSizeInBytes;
         return this;
     }
 
     /**
-     * See {@link Params#randomSizeInBytes}
+     * See {@link Config#randomSizeInBytes}
      * 
      * @param randomSizeInBytes
      * @return the builder
      */
-    public ParamsBuilder setRandomSizeInBytes(long randomSizeInBytes) {
+    public ConfigBuilder setRandomSizeInBytes(long randomSizeInBytes) {
         this.randomSizeInBytes = randomSizeInBytes;
         return this;
     }
 
     /**
-     * See {@link Params#basefileSizeInBytes}
+     * See {@link Config#basefileSizeInBytes}
      * 
      * @param basefileSizeInBytes
      * @return the builder
      */
-    public ParamsBuilder setBasefileSizeInBytes(long basefileSizeInBytes) {
+    public ConfigBuilder setBasefileSizeInBytes(long basefileSizeInBytes) {
         this.basefileSizeInBytes = basefileSizeInBytes;
         return this;
     }
 
     /**
-     * See {@link Params#randomIOFilesize}
+     * See {@link Config#randomIOFilesize}
      * 
      * @param randomIOFilesize
      * @return the builder
      */
-    public ParamsBuilder setRandomIOFilesize(int randomIOFilesize) {
+    public ConfigBuilder setRandomIOFilesize(int randomIOFilesize) {
         this.randomIOFilesize = randomIOFilesize;
         return this;
     }
 
     /**
-     * See {@link Params#userName}
+     * See {@link Config#userName}
      * 
      * @param userName
      * @return the builder
      */
-    public ParamsBuilder setUserName(String userName) {
+    public ConfigBuilder setUserName(String userName) {
         this.userName = userName;
         return this;
     }
 
     /**
-     * See {@link Params#group}
+     * See {@link Config#group}
      * 
      * @param group
      * @return the builder
      */
-    public ParamsBuilder setGroup(String group) {
+    public ConfigBuilder setGroup(String group) {
         this.group = group;
         return this;
     }
 
     /**
-     * See {@link Params#osdPassword}
+     * See {@link Config#osdPassword}
      * 
      * @param osdPassword
      * @return the builder
      */
-    public ParamsBuilder setOsdPassword(String osdPassword) {
+    public ConfigBuilder setOsdPassword(String osdPassword) {
         this.osdPassword = osdPassword;
         return this;
     }
 
     /**
-     * See {@link Params#dirAddress}
+     * See {@link Config#dirAddress}
      * 
      * @param dirAddress
      * @return the builder
      */
-    public ParamsBuilder setDirAddress(String dirAddress) {
+    public ConfigBuilder setDirAddress(String dirAddress) {
         this.dirAddress = dirAddress;
         return this;
     }
 
     /**
-     * See {@link Params#auth}
+     * See {@link Config#auth}
      * 
      * @param auth
      * @return the builder
      */
-    public ParamsBuilder setAuth(RPC.Auth auth) {
+    public ConfigBuilder setAuth(RPC.Auth auth) {
         this.auth = auth;
         return this;
     }
 
     /**
-     * See {@link Params#sslOptions}
+     * See {@link Config#sslOptions}
      * 
      * @param sslOptions
      * @return the builder
      */
-    public ParamsBuilder setSslOptions(SSLOptions sslOptions) {
+    public ConfigBuilder setSslOptions(SSLOptions sslOptions) {
         this.sslOptions = sslOptions;
         return this;
     }
 
     /**
-     * See {@link Params#options}
+     * See {@link Config#options}
      * 
      * @param options
      * @return the builder
      */
-    public ParamsBuilder setOptions(Options options) {
+    public ConfigBuilder setOptions(Options options) {
         this.options = options;
         return this;
     }
 
     /**
-     * See {@link Params#stripeSizeInBytes}
+     * See {@link Config#stripeSizeInBytes}
      * 
      * @param stripeSizeInBytes
      * @return the builder
      */
-    public ParamsBuilder setStripeSizeInBytes(int stripeSizeInBytes) {
+    public ConfigBuilder setStripeSizeInBytes(int stripeSizeInBytes) {
         this.stripeSizeInBytes = stripeSizeInBytes;
         return this;
     }
 
     /**
-     * See {@link Params#stripeWidth}
+     * See {@link Config#stripeWidth}
      * 
      * @param stripeWidth
      * @return the builder
      */
-    public ParamsBuilder setStripeWidth(int stripeWidth) {
+    public ConfigBuilder setStripeWidth(int stripeWidth) {
         this.stripeWidth = stripeWidth;
         return this;
     }
 
     /**
-     * See {@link Params#noCleanup}
+     * See {@link Config#noCleanup}
      * 
      * @param noCleanup
      * @return the builder
      */
-    public ParamsBuilder setNoCleanup(boolean noCleanup) {
+    public ConfigBuilder setNoCleanup(boolean noCleanup) {
         this.noCleanup = noCleanup;
         return this;
     }
 
     /**
-     * See {@link Params#noCleanupOfVolumes}
+     * See {@link Config#noCleanupOfVolumes}
      * 
      * @param noCleanupOfVolumes
      * @return the builder
      */
-    public ParamsBuilder setNoCleanupOfVolumes(boolean noCleanupOfVolumes) {
+    public ConfigBuilder setNoCleanupOfVolumes(boolean noCleanupOfVolumes) {
         this.noCleanupOfVolumes = noCleanupOfVolumes;
         return this;
     }
 
     /**
-     * See {@link Params#noCleanupOfBasefile}
+     * See {@link Config#noCleanupOfBasefile}
      * 
      * @param noCleanupOfBasefile
      * @return the builder
      */
-    public ParamsBuilder setNoCleanupOfBasefile(boolean noCleanupOfBasefile) {
+    public ConfigBuilder setNoCleanupOfBasefile(boolean noCleanupOfBasefile) {
         this.noCleanupOfBasefile = noCleanupOfBasefile;
         return this;
     }
 
     /**
-     * See {@link Params#osdCleanup}
+     * See {@link Config#osdCleanup}
      * 
      * @param osdCleanup
      * @return the builder
      */
-    public ParamsBuilder setOsdCleanup(boolean osdCleanup) {
+    public ConfigBuilder setOsdCleanup(boolean osdCleanup) {
         this.osdCleanup = osdCleanup;
         return this;
     }
 
     /**
-     * Build the {@link Params} object.
+     * Build the {@link Config} object.
      * 
-     * @return the build {@link Params} object
+     * @return the build {@link Config} object
      * @throws Exception
      */
-    public Params build() throws Exception {
-        return new Params(this);
+    public Config build() throws Exception {
+        return new Config(this);
     }
 
 }

@@ -23,14 +23,14 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
  * Datastructure holding all parameters for the benchmark library.
  * <p/>
  * 
- * {@link ParamsBuilder} should be used to build this (the given default values are only present if the builder is used
+ * {@link ConfigBuilder} should be used to build this (the given default values are only present if the builder is used
  * <p/>
  * 
- * The {@link Controller}, the {@link ParamsBuilder} and {@link Params} represent the API to the benchmark library.
+ * The {@link Controller}, the {@link ConfigBuilder} and {@link Config} represent the API to the benchmark library.
  * 
  * @author jensvfischer
  */
-public class Params {
+public class Config {
 
     /**
      * Number of benchmarks (benchmark threads) to be run in parallel. <br/>
@@ -93,12 +93,12 @@ public class Params {
     public final String              dirAddress;
 
     /**
-     * The address of the MRC Server, fetched from the DIR the instantiation of {@link Params}.
+     * The address of the MRC Server, fetched from the DIR the instantiation of {@link Config}.
      */
     public final String              mrcAddress;
 
     /**
-     * The RPC user credentials. Build from {@link #userName} and {@link #group} during instatiation of {@link Params}.
+     * The RPC user credentials. Build from {@link #userName} and {@link #group} during instatiation of {@link Config}.
      */
     public final RPC.UserCredentials userCredentials;
 
@@ -127,7 +127,7 @@ public class Params {
     public final int                 stripeSizeInBytes;
 
     /**
-     * The size of an OSD storage block ("blocksize") in KiB. Calculated during instantiation of {@link Params}.
+     * The size of an OSD storage block ("blocksize") in KiB. Calculated during instantiation of {@link Config}.
      */
     public final int                 getStripeSizeInKiB;
 
@@ -165,13 +165,13 @@ public class Params {
     public final boolean             osdCleanup;
 
     /**
-     * Build Params from {@link ParamsBuilder}. Should only be called from
-     * {@link org.xtreemfs.sandbox.benchmark.ParamsBuilder#build()}
+     * Build Params from {@link ConfigBuilder}. Should only be called from
+     * {@link ConfigBuilder#build()}
      * 
      * @param builder
      * @throws Exception
      */
-    public Params(ParamsBuilder builder) throws Exception {
+    public Config(ConfigBuilder builder) throws Exception {
         this.numberOfThreads = builder.numberOfThreads;
         this.numberOfRepetitions = builder.numberOfRepetitions;
         this.sequentialSizeInBytes = builder.sequentialSizeInBytes;
@@ -212,7 +212,7 @@ public class Params {
 
     /* Build string with all the instance parameters as key-value pairs */
     private String getAllValues() throws IllegalAccessException {
-        Field[] fields = Params.class.getDeclaredFields();
+        Field[] fields = Config.class.getDeclaredFields();
         StringBuffer result = new StringBuffer();
         for (Field field : fields) {
             String name = field.getName();
