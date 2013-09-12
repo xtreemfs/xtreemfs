@@ -194,6 +194,19 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
     @Override
     public int read(UserCredentials userCredentials, byte[] data, int count, long offset) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException {
+        return read(userCredentials, data, 0, count, offset);
+    }
+
+    /*
+     * (non-Javadoc)
+     *
+     * @see org.xtreemfs.common.libxtreemfs.FileHandle#read(org.xtreemfs.foundation
+     * .pbrpc.generatedinterfaces.RPC .UserCredentials, org.xtreemfs.foundation.buffer.ReusableBuffer, int,
+     * long)
+     */
+    @Override
+    public int read(UserCredentials userCredentials, byte[] data, int dataOffset, int count, long offset)
+            throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         fileInfo.waitForPendingAsyncWrites();
         FileCredentials.Builder fcBuilder = FileCredentials.newBuilder();
         synchronized (this) {
@@ -208,7 +221,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
         }
         FileCredentials fc = fcBuilder.setXlocs(fileInfo.getXLocSet()).build();
 
-        ReusableBuffer buf = ReusableBuffer.wrap(data);
+        ReusableBuffer buf = ReusableBuffer.wrap(data, dataOffset, count);
         int receivedData = 0;
 
         if (fc.getXlocs().getReplicasCount() == 0) {
@@ -524,7 +537,6 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
      * @throws AddressToUUIDNotFoundException
      * @throws IOException
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      **/
     protected void truncatePhaseTwoAndThree(UserCredentials userCredentials, long newFileSize,
             boolean updateOnlyMRC) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {

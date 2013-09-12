@@ -231,7 +231,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %files server
 %defattr(-,root,xtreemfs,-)
-/etc/init.d/xtreemfs-*
+%attr(-,root,root) /etc/init.d/xtreemfs-*
+%dir %attr(-,root,root) /usr/share/xtreemfs
+%attr(-,root,root) /usr/share/xtreemfs/xtreemfs-osd-farm
 %dir /etc/xos/
 %dir %attr(0750,root,xtreemfs) /etc/xos/xtreemfs/
 %dir %attr(0750,root,xtreemfs) /etc/xos/xtreemfs/truststore/

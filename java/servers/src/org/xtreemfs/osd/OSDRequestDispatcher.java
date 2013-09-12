@@ -325,7 +325,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         preprocStage = new PreprocStage(this, metadataCache, config.getMaxRequestsQueueLength());
         preprocStage.setLifeCycleListener(this);
         
-        stStage = new StorageStage(this, metadataCache, storageLayout, 1, config.getMaxRequestsQueueLength());
+        stStage = new StorageStage(this, metadataCache, storageLayout, config.getStorageThreads(), config.getMaxRequestsQueueLength());
         stStage.setLifeCycleListener(this);
         
         delStage = new DeletionStage(this, metadataCache, storageLayout, config.getMaxRequestsQueueLength());

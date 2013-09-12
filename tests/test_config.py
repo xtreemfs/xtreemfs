@@ -110,19 +110,19 @@ Tests = [
     {
         'name': 'Erichs dd write',
         'file': '02_erichs_ddwrite.py',
-        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1', 'replicated_wqrq_asyncwrites' ],
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_wqrq_asyncwrites' ],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
     },
     {
         'name': 'Erichs data integrity test',
         'file': '03_erichs_data_integrity_test.py',
-        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1', 'replicated_wqrq_asyncwrites' ],
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_wqrq_asyncwrites' ],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
     },
     {
         'name': 'Find Grep Tar',
         'file': '05_findgreptar.sh',
-        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'nomdcache', 'replicated_wqrq', 'replicated_war1', 'replicated_wqrq_asyncwrites' ],
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'nomdcache', 'replicated_wqrq', 'replicated_wqrq_asyncwrites' ],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
     },
     {
@@ -134,20 +134,20 @@ Tests = [
     {
         'name': 'bonnie',
         'file': '10_bonnie.py',
-        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1', 'replicated_wqrq_asyncwrites' ],
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_wqrq_asyncwrites' ],
         # NOTE(mberlin): 2013/04: Disabled because it takes too long and was not helpful in finding problems so far.
         'TestSets': [ ]
     },
     {
         'name': 'IOZone diagnostic',
         'file': '11_iozone_diagnostic.py',
-        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1', 'replicated_wqrq_asyncwrites' ],
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_wqrq_asyncwrites' ],
         'TestSets': [ 'full' ]
     },
     {
         'name': 'IOZone throughput',
         'file': '12_iozone_throughput.py',
-        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1', 'replicated_wqrq_asyncwrites' ],
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_wqrq_asyncwrites' ],
         'TestSets': [ 'full' ]
     },
     {

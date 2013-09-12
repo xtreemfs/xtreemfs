@@ -7,6 +7,8 @@
 package org.xtreemfs.common.clients.hadoop;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+
 import org.apache.hadoop.fs.FSInputStream;
 import org.apache.hadoop.fs.FileSystem.Statistics;
 import org.xtreemfs.common.libxtreemfs.FileHandle;
@@ -64,7 +66,7 @@ public class XtreemFSInputStream extends FSInputStream {
 
     @Override
     public synchronized int read(byte[] bytes, int offset, int length) throws IOException {
-        int bytesRead = fileHandle.read(userCredentials, bytes, length, (int) getPos());
+        int bytesRead = fileHandle.read(userCredentials, bytes, offset, length, (int) getPos());
         if ((bytesRead == 0) && (length > 0)) {
             return -1;
         }
@@ -75,7 +77,7 @@ public class XtreemFSInputStream extends FSInputStream {
 
     @Override
     public synchronized int read(long position, byte[] bytes, int offset, int length) throws IOException {
-        int bytesRead = fileHandle.read(userCredentials, bytes, length, (int) position);
+        int bytesRead = fileHandle.read(userCredentials, bytes, offset, length, (int) position);
         if ((bytesRead == 0) && (length > 0)) {
             return -1;
         }

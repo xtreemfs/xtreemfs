@@ -86,8 +86,10 @@ if (typeof String.prototype.startsWith != 'function') {
 
 // init code
 window.onload = function() {
-  // make the osd object an sorted array
-  osdURLs = d3.values(osds).sort().map(function(d) { return { "uuid": d["uuid"], "url": (d["status_page_url"] + "/rft.json") }});
+  // sort the osds by their UUID and save them as an array
+  osdURLs = d3.values(osds)
+    .sort(function(a,b) { return (a["uuid"] < b["uuid"] ? -1 : 1) })
+    .map(function(d) { return { "uuid": d["uuid"], "url": (d["status_page_url"] + "/rft.json") }});
 
   // initialize the hostStatus list with an unknown state to allow transition effects
   // TODO (jdillmann): Extend the ReplicaStatusPage with an JSON interface to the OSD list and periodically check if the list changed
@@ -294,7 +296,7 @@ function draw() {
     .classed("host", true);
   
   hostGroups.select("text.host")
-    .text(function(d,i){ return osds[osdURLs[i]["uuid"]]["name"]; })
+    .text(function(d,i){ return osds[osdURLs[i]["uuid"]]["uuid"]; })
     .attr("font-size", conf.hostStatusTextSize)
     .attr("fill", conf.hostStatusTextColor)
     .attr("text-anchor", "middle")

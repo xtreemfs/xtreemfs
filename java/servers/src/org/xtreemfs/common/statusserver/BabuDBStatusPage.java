@@ -5,15 +5,13 @@
  * 
  */
 
-package org.xtreemfs.dir;
+package org.xtreemfs.common.statusserver;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-import org.xtreemfs.babudb.api.BabuDB;
-import org.xtreemfs.common.statusserver.StatusServerModule;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
 
 import com.sun.net.httpserver.HttpExchange;
@@ -23,11 +21,10 @@ import com.sun.net.httpserver.HttpExchange;
  */
 public class BabuDBStatusPage extends StatusServerModule {
 
-    private DIRRequestDispatcher master;
-    private BabuDB               database;
+    private final BabuDBStatusProvider statusProvider;
 
-    public BabuDBStatusPage(BabuDB database) {
-        this.database = database;
+    public BabuDBStatusPage(BabuDBStatusProvider statusProvider) {
+        this.statusProvider = statusProvider;
     }
 
     @Override
@@ -41,29 +38,11 @@ public class BabuDBStatusPage extends StatusServerModule {
     }
 
     @Override
-    public boolean isAvailableForService(ServiceType service) {
-        return service == ServiceType.SERVICE_TYPE_DIR;
-    }
-
-    @Override
-    public void initialize(ServiceType service, Object serviceRequestDispatcher) {
-        assert (service == ServiceType.SERVICE_TYPE_DIR);
-        master = (DIRRequestDispatcher) serviceRequestDispatcher;
-    }
-
-    @Override
-    public void shutdown() {
-    }
-
-    @Override
     public void handle(HttpExchange httpExchange) throws IOException {
-
-        // NOTE(jdillmann): Access to the database is not synchronized. This might result in reading stale data.
-        Map<String, Object> dbStatus = database.getRuntimeState();
-
         StringBuilder sb = new StringBuilder();
         sb.append("<HTML><BODY><H1>BABUDB STATE</H1>");
 
+        Map<String, Object> dbStatus = statusProvider.getStatus();
         if (dbStatus == null) {
             sb.append("BabuDB has not yet been initialized.");
         } else {
@@ -82,6 +61,27 @@ public class BabuDBStatusPage extends StatusServerModule {
         sb.append("</BODY></HTML>");
 
         sendResponse(httpExchange, sb.toString());
+        httpExchange.close();
+    }
+
+    @Override
+    public boolean isAvailableForService(ServiceType service) {
+        return true;
+    }
+
+    @Override
+    public void initialize(ServiceType service, Object serviceRequestDispatcher) {
+    }
+
+    @Override
+    public void shutdown() {
+    }
+
+    /**
+     * Simple interface which is used to provide the BabuDB status when the page is served.
+     */
+    public interface BabuDBStatusProvider {
+        Map<String, Object> getStatus();
     }
 
 }

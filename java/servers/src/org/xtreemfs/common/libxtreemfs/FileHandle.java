@@ -35,11 +35,34 @@ public interface FileHandle {
      * @throws AddressToUUIDNotFoundException
      * @throws IOException
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      * 
      * @return Number of bytes read.
      */
     public int read(UserCredentials userCredentials, byte[] data, int count, long offset)
+            throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
+
+    /**
+     * Read from a file 'count' bytes starting at 'offset' into 'buf'.
+     *
+     * @param userCredentials
+     *            Name and Groups of the user.
+     * @param data
+     *            [out] Byte array to be filled with read data.
+     * @param dataOffset
+     *            Offset in data array. This is the position of the first bytes in the data array that should
+     *            be read.
+     * @param count
+     *            Number of requested bytes.
+     * @param offset
+     *            Offset in bytes. At this position in the file the data will be read.
+     *
+     * @throws AddressToUUIDNotFoundException
+     * @throws IOException
+     * @throws PosixErrorException
+     *
+     * @return Number of bytes read.
+     */
+    public int read(UserCredentials userCredentials, byte[] data, int dataOffset, int count, long offset)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -64,7 +87,6 @@ public interface FileHandle {
      * @throws AddressToUUIDNotFoundException
      * @throws IOException
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      * 
      * @return Number of bytes written (see @attention above).
      */
@@ -96,7 +118,6 @@ public interface FileHandle {
      * @throws AddressToUUIDNotFoundException
      * @throws IOException
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      * 
      * @return Number of bytes written (see @attention above).
      */
@@ -109,7 +130,6 @@ public interface FileHandle {
      * @throws AddressToUUIDNotFoundException
      * @throws IOException
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      */
     public void flush() throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
@@ -124,7 +144,6 @@ public interface FileHandle {
      * @throws AddressToUUIDNotFoundException
      * @throws IOException
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      **/
     public void truncate(UserCredentials userCredentials, long newFileSize) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException;
@@ -134,13 +153,10 @@ public interface FileHandle {
      * 
      * @param userCredentials
      *            Name and Groups of the user.
-     * @param stat
-     *            Pointer to Stat which will be overwritten.
      * 
      * @throws AddressToUUIDNotFoundException
      * @throws IOException
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      */
     public Stat getAttr(UserCredentials userCredentials) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException;
@@ -167,7 +183,6 @@ public interface FileHandle {
      * @throws AddressToUUIDNotFoundException
      * @throws IOException
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      * 
      * @remark Ownership is transferred to the caller.
      */
@@ -194,7 +209,6 @@ public interface FileHandle {
      * @throws AddressToUUIDNotFoundException
      * @throws IOException
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      * 
      * @remark Ownership is transferred to the caller.
      */
@@ -218,7 +232,6 @@ public interface FileHandle {
      * @throws AddressToUUIDNotFoundException
      * @throws IOException
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      */
     public void releaseLock(UserCredentials userCredentials, int processId, long offset,
             long length, boolean exclusive) throws IOException, PosixErrorException,
@@ -235,7 +248,6 @@ public interface FileHandle {
      * @throws AddressToUUIDNotFoundException
      * @throws IOException
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      */
     public void releaseLock(UserCredentials userCredentials, Lock lock) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException;
@@ -255,7 +267,6 @@ public interface FileHandle {
      * @throws AddressToUUIDNotFoundException
      * @throws IOException
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      */
     public void releaseLockOfProcess(int processId) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException;
@@ -274,7 +285,6 @@ public interface FileHandle {
      * @throws AddressToUUIDNotFoundException
      * @throws IOException
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      * @throws UUIDNotInXlocSetException
      */
     public void pingReplica(UserCredentials userCredentials, String osdUuid) throws IOException,
@@ -289,13 +299,8 @@ public interface FileHandle {
      *            be closed. If you do not care about this, you don't have to release any locks on your own as
      *            all locks will be automatically released if the last open file handle of a file will be
      *            closed.
-     * 
-     * @throws AddressToUUIDNotFoundException
-     * @throws FileInfoNotFoundException
-     * @throws FileHandleNotFoundException
+     *
      * @throws IOException
-     * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      */
     public void close() throws IOException;
 }

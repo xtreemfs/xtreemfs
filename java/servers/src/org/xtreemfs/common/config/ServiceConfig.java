@@ -106,7 +106,7 @@ public class ServiceConfig extends Config {
             IGNORE_CAPABILITIES("ignore_capabilities", false, Boolean.class, false),
             /** Maximum assumed drift between two server clocks. If the drift is higher, the system may not function properly. */
             FLEASE_DMAX_MS("flease.dmax_ms", 1000, Integer.class, false),
-            FLEASE_LEASE_TIMEOUT_MS("flease.lease_timeout_ms", 15000, Integer.class, false),
+            FLEASE_LEASE_TIMEOUT_MS("flease.lease_timeout_ms", 14000, Integer.class, false),
             /** Message timeout. Maximum allowed in-transit time for a Flease message. */
             FLEASE_MESSAGE_TO_MS("flease.message_to_ms", 500, Integer.class, false),
             FLEASE_RETRIES("flease.retries", 3, Integer.class, false),
@@ -117,8 +117,9 @@ public class ServiceConfig extends Config {
             VIVALDI_ITERATIONS_BEFORE_UPDATING("vivaldi.iterations_before_updating", 12, Integer.class, false),
             VIVALDI_MAX_RETRIES_FOR_A_REQUEST("vivaldi.max_retries_for_a_request", 2, Integer.class, false),
             VIVALDI_MAX_REQUEST_TIMEOUT_IN_MS("vivaldi.max_request_timeout_ms", 10000, Integer.class, false),
-            VIVALDI_TIMER_INTERVAL_IN_MS("vivaldi.timer_interval_ms", 60000, Integer.class, false);
-        
+            VIVALDI_TIMER_INTERVAL_IN_MS("vivaldi.timer_interval_ms", 60000, Integer.class, false),
+            STORAGE_THREADS("storage_threads", 1, Integer.class, false);
+
         Parameter(String propString, Object defaultValue, Class propClass, Boolean req) {
             propertyString = propString;
             this.defaultValue = defaultValue;
