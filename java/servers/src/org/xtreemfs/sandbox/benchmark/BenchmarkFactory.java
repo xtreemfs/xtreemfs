@@ -24,22 +24,22 @@ class BenchmarkFactory {
 
         switch (benchmarkType) {
         case SEQ_WRITE:
-            benchmark = new BenchmarkSequentialWrite(volume, params);
+            benchmark = new SequentialWriteBenchmark(volume, params);
             break;
         case SEQ_READ:
-            benchmark = new BenchmarkSequentialRead(volume, params);
+            benchmark = new SequentialReadBenchmark(volume, params);
             break;
         case RAND_WRITE:
-            benchmark = new BenchmarkRandomWrite(volume, params);
+            benchmark = new RandomWriteBenchmark(volume, params);
             break;
         case RAND_READ:
-            benchmark = new BenchmarkRandomRead(volume, params);
+            benchmark = new RandomReadBenchmark(volume, params);
             break;
         case FILES_WRITE:
-            benchmark = new BenchmarkFilebasedWrite(volume, params);
+            benchmark = new FilebasedWriteBenchmark(volume, params);
             break;
         case FILES_READ:
-            benchmark = new BenchmarkFilebasedRead(volume, params);
+            benchmark = new FilebasedReadBenchmark(volume, params);
             break;
         }
         return benchmark;

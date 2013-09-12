@@ -24,13 +24,13 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  * 
  * @author jensvfischer
  */
-abstract class BenchmarkRandomOffsetbased extends BenchmarkRandom {
+abstract class RandomOffsetbasedBenchmark extends RandomBenchmark {
     final static int    RANDOM_IO_BLOCKSIZE = 1024 * 4;             // 4 KiB
     static final String BENCHMARK_FILENAME  = "randomBenchFile";
     final long          sizeOfBasefile;
     final static String BASFILE_FILENAME    = "benchmarks/basefile";
 
-    BenchmarkRandomOffsetbased(Volume volume, Params params) throws Exception {
+    RandomOffsetbasedBenchmark(Volume volume, Params params) throws Exception {
         super(volume, params);
         sizeOfBasefile = params.basefileSizeInBytes;
     }

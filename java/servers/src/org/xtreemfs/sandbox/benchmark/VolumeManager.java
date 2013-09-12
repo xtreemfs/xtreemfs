@@ -165,7 +165,7 @@ class VolumeManager {
 
         /* null means no filelist from a previous write benchmark has been deposited */
         if (null == filelistsSequentialBenchmark.get(volume)) {
-            filelist = inferFilelist(volume, BenchmarkSequential.BENCHMARK_FILENAME);
+            filelist = inferFilelist(volume, SequentialBenchmark.BENCHMARK_FILENAME);
 
             if (params.sequentialSizeInBytes == calculateTotalSizeOfFilelist(volume, filelist)) {
                 filelistsSequentialBenchmark.put(volume, filelist);
@@ -190,7 +190,7 @@ class VolumeManager {
 
         /* null means no filelist from a previous write benchmark has been deposited */
         if (null == filelistsRandomBenchmark.get(volume)) {
-            filelist = inferFilelist(volume, BenchmarkFilebased.BENCHMARK_FILENAME);
+            filelist = inferFilelist(volume, FilebasedBenchmark.BENCHMARK_FILENAME);
 
             if (params.randomSizeInBytes == calculateTotalSizeOfFilelist(volume, filelist)) {
                 filelistsRandomBenchmark.put(volume, filelist);
