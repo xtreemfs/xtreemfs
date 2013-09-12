@@ -16,15 +16,6 @@ import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.foundation.logging.Logging;
 
 /**
- * Enum for the different benchmark Types.
- * 
- * @author jensvfischer
- */
-enum BenchmarkType {
-    SEQ_WRITE, SEQ_READ, RAND_WRITE, RAND_READ, FILES_WRITE, FILES_READ
-}
-
-/**
  * Abstract baseclass for the benchmark classes.
  * 
  * @author jensvfischer
