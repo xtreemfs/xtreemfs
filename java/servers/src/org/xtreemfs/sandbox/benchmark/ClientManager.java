@@ -26,7 +26,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
  * 
  * @author jensvfischer
  */
-class BenchmarkClientFactory {
+class ClientManager {
 
     private static ConcurrentLinkedQueue<AdminClient> clients;
 
@@ -56,7 +56,7 @@ class BenchmarkClientFactory {
         for (AdminClient client : clients) {
             tryShutdownOfClient(client);
         }
-        Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, BenchmarkClientFactory.class,
+        Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, ClientManager.class,
                 "Shutting down %s clients", clients.size());
     }
 
@@ -64,9 +64,9 @@ class BenchmarkClientFactory {
         try {
             client.shutdown();
         } catch (Throwable e) {
-            Logging.logMessage(Logging.LEVEL_WARN, Logging.Category.tool, BenchmarkClientFactory.class,
+            Logging.logMessage(Logging.LEVEL_WARN, Logging.Category.tool, ClientManager.class,
                     "Error while shutting down clients");
-            Logging.logError(Logging.LEVEL_WARN, BenchmarkClientFactory.class, e);
+            Logging.logError(Logging.LEVEL_WARN, ClientManager.class, e);
         }
     }
 

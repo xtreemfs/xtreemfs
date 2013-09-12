@@ -153,7 +153,7 @@ public class Controller {
 
     public void tryConnection() throws Exception {
         try {
-            BenchmarkClientFactory.getNewClient(config).getServiceByType(DIR.ServiceType.SERVICE_TYPE_OSD);
+            ClientManager.getNewClient(config).getServiceByType(DIR.ServiceType.SERVICE_TYPE_OSD);
         } catch (Exception e) {
             Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, Controller.class,
                     "Failed to establish connection to DIR server.");
@@ -190,7 +190,7 @@ public class Controller {
      */
     public void teardown() throws Exception {
         deleteVolumesAndFiles();
-        BenchmarkClientFactory.shutdownClients();
+        ClientManager.shutdownClients();
         if (config.osdCleanup)
             VolumeManager.getInstance().cleanupOSD();
     }
