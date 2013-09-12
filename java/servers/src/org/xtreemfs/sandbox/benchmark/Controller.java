@@ -179,36 +179,4 @@ public class Controller {
         } else if (!config.noCleanup)
             volumeManager.deleteCreatedFiles();
     }
-
-    /**
-     * Example of how to use the controller.
-     * 
-     * @param args
-     * @throws Exception
-     */
-    public static void main(String[] args) throws Exception {
-        Logging.start(Logging.LEVEL_INFO, Logging.Category.tool);
-
-        /* use the default params */
-        Config config = new ConfigBuilder().build();
-
-        /* instantiate a new controller */
-        Controller controller = new Controller(config);
-
-        /* test the connection */
-        controller.tryConnection();
-
-        /* setup the volumes */
-        controller.setupVolumes();
-
-        /* start a sequential write benchmark with one thread */
-        ConcurrentLinkedQueue results = controller.startBenchmarks(BenchmarkType.SEQ_WRITE, 1);
-
-        /* print out the results */
-        xtfs_benchmark.printResults(results);
-
-        /* shutdown controller */
-        controller.teardown();
-    }
-
 }
