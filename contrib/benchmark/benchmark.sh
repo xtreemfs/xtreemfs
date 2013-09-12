@@ -1,5 +1,34 @@
 #!/bin/bash
 
+# the timeout for one execution of xtfs_benchmark
+TIMEOUT=3000
+
+# the timeout for one cleanup
+TIMEOUT_CLEANUP=300
+
+# the time to sleep after a cleanup
+SLEEPTIME=900
+
+# the size of the basefile for random benchmarks
+BASEFILE_SIZE="10g"
+
+JAVA_HOME="/usr/lib/jvm/java-7-oracle"
+XTREEMFS="/home/jvf/repo_xtfs"
+
+LOG_DIR="$HOME/log"
+RESULT_DIR="$HOME/result"
+
+RESTART_OSD_CALL="$XTREEMFS/tests/xstartserv --start-osd -c $HOME/xtreemfs_data/config/osd0.properties -b $HOME/xtreemfs_data"
+
+# cp drop_caches to /usr/local/bin and add ALL ALL=NOPASSWD: /usr/local/bin/drop_caches to sudoers file
+DROP_CACHES_CALL="sudo /usr/local/bin/drop_caches"
+
+# IP and Port of the DIR
+DIR="localhost:32638"
+
+# space separed list of OSD_UUIDS, e.g. "osd1 osd2 ..."
+OSD_UUIDS="test-osd0"
+
 check_env(){
   if [ -z $XTREEMFS ]; then
     echo "\$XTREEMFS not set. Set \$XTREEMFS or invoke with XTREEMFS=/path/to/XTREEMFS ./benchmark.sh ..."
@@ -11,13 +40,11 @@ check_env(){
   fi
 }
 
-
-
 printUsage() {
   cat << EOF
 
 Synopsis
-  `basename $0` -t TYPE -s NUMBER [-b NUMBER -e NUMBER] [-r NUMBER] -c CONFIGFILE [-v]
+  `basename $0` -t TYPE -s NUMBER [-b NUMBER -e NUMBER] [-r NUMBER] [-v]
   Run a XtreemFS benchmark suite, i.e. a series of benchmarks with increasing
   numbers of threads. Logs are placed in PWD/log/, results in PWD/results.
 
@@ -42,9 +69,6 @@ Synopsis
   -r repetitions
     Number of times a benchmark is repeated.
 
-  -c config file
-    Config file to use.
-
   -v verbose
     If set, bash debugging is enabled ('set -x') and sleeping after the benchmarks
     is disabled.
@@ -53,13 +77,6 @@ EOF
 }
 
 init_params(){
-
-  if [ -f $CONFIG ]; then
-    source $CONFIG
-  else
-    echo "Configuration file not found" >&2
-    exit 1
-  fi
 
   check_env
 
