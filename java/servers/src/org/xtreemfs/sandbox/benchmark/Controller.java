@@ -107,7 +107,7 @@ public class Controller {
         for (int i = 0; i < numberOfThreads; i++) {
             AbstractBenchmark benchmark = BenchmarkFactory.createBenchmark(benchmarkType, VolumeManager.getInstance()
                     .getNextVolume(), config);
-            benchmark.startBenchmark(results, threads);
+            benchmark.startBenchmarkThread(results, threads);
         }
 
         /* wait for all threads to finish */

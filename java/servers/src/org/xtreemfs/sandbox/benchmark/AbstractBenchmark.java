@@ -85,8 +85,7 @@ import org.xtreemfs.foundation.logging.Logging;
     abstract void finalizeBenchmark() throws Exception;
 
     /* Starts a benchmark in its own thread. */
-     void startBenchmark(ConcurrentLinkedQueue<BenchmarkResult> results, ConcurrentLinkedQueue<Thread> threads)
-            throws Exception {
+    void startBenchmarkThread(ConcurrentLinkedQueue<BenchmarkResult> results, ConcurrentLinkedQueue<Thread> threads) throws Exception {
         prepareBenchmark();
         Thread benchThread = new Thread(new BenchThread(this, results));
         threads.add(benchThread);
