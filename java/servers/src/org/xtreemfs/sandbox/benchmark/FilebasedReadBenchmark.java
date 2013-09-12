@@ -59,10 +59,4 @@ class FilebasedReadBenchmark extends FilebasedBenchmark {
     void finalizeBenchmark() throws Exception {
     }
 
-    long nextLong(long limit) {
-        long next = Math.round(Math.random() * limit);
-        assert next >= 0 : "Next long < 0";
-        return next;
-    }
-
 }
