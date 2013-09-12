@@ -201,7 +201,7 @@ public class Config {
     private String getMRCAddress(String dirAddress, RPC.UserCredentials userCredentials, SSLOptions sslOptions,
             Options options) throws Exception {
 
-        AdminClient client = ClientManager.getNewClient(dirAddress, userCredentials, sslOptions, options);
+        AdminClient client = ClientManager.getInstance().getNewClient(dirAddress, userCredentials, sslOptions, options);
 
         UUIDResolver resolver = (ClientImplementation) client;
 

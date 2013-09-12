@@ -8,6 +8,7 @@
 
 package org.xtreemfs.sandbox.benchmark;
 
+import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.common.libxtreemfs.AdminClient;
@@ -28,14 +29,23 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
  */
 class ClientManager {
 
-    private static ConcurrentLinkedQueue<AdminClient> clients;
+	private static ClientManager instance;
 
-    static {
-        clients = new ConcurrentLinkedQueue<AdminClient>();
-    }
+    private LinkedList<AdminClient> clients;
+
+
+	private ClientManager() {
+		this.clients = new LinkedList<AdminClient>();
+	}
+
+	static ClientManager getInstance(){
+		if (instance==null)
+			instance = new ClientManager();
+		return instance;
+	}
 
     /* create and start an AdminClient. */
-    static AdminClient getNewClient(Config config) throws Exception {
+    AdminClient getNewClient(Config config) throws Exception {
         AdminClient client = ClientFactory.createAdminClient(config.dirAddress, config.userCredentials,
                 config.sslOptions, config.options);
         clients.add(client);
@@ -43,7 +53,7 @@ class ClientManager {
         return client;
     }
 
-    static AdminClient getNewClient(String dirAddress, RPC.UserCredentials userCredentials, SSLOptions sslOptions,
+    AdminClient getNewClient(String dirAddress, RPC.UserCredentials userCredentials, SSLOptions sslOptions,
             Options options) throws Exception {
         AdminClient client = ClientFactory.createAdminClient(dirAddress, userCredentials, sslOptions, options);
         clients.add(client);
@@ -52,7 +62,7 @@ class ClientManager {
     }
 
     /* shutdown all clients */
-    static void shutdownClients() {
+    void shutdownClients() {
         for (AdminClient client : clients) {
             tryShutdownOfClient(client);
         }
@@ -60,7 +70,7 @@ class ClientManager {
                 "Shutting down %s clients", clients.size());
     }
 
-    static void tryShutdownOfClient(Client client) {
+    void tryShutdownOfClient(Client client) {
         try {
             client.shutdown();
         } catch (Throwable e) {

@@ -64,7 +64,7 @@ class VolumeManager {
     private VolumeManager(Config config) throws Exception {
         this.config = config;
         currentPosition = 0;
-        this.client = ClientManager.getNewClient(config);
+        this.client = ClientManager.getInstance().getNewClient(config);
         this.volumes = new LinkedList<Volume>();
         this.createdVolumes = new LinkedList<Volume>();
         this.filelistsSequentialBenchmark = new HashMap<Volume, String[]>(5);

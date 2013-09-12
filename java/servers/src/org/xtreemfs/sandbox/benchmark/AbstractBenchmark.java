@@ -32,7 +32,7 @@ import org.xtreemfs.foundation.logging.Logging;
     final Config config;
 
     AbstractBenchmark(long benchmarkSizeInBytes, Volume volume, Config config) throws Exception {
-        client = ClientManager.getNewClient(config);
+        client = ClientManager.getInstance().getNewClient(config);
         this.benchmarkSizeInBytes = benchmarkSizeInBytes;
         this.volume = volume;
         this.config = config;
