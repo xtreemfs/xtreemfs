@@ -126,32 +126,7 @@ public class Controller {
         return results;
     }
 
-    /**
-     * Print the results as csv.
-     * 
-     * @param results
-     */
-    public static void printCSV(ConcurrentLinkedQueue<BenchmarkResult> results) {
-        System.out.println("Type;NumberOfParallelThreads;TimeInSec;MiB/Sec;DataWrittenInBytes;ByteCount");
-        /* print the results */
-        for (BenchmarkResult res : results) {
-            System.out.println(res.toCSV());
-        }
-    }
-
-    /**
-     * Print the results in a json like style.
-     * 
-     * @param results
-     */
-    public static void printResults(ConcurrentLinkedQueue<BenchmarkResult> results) {
-        /* print the results */
-        for (BenchmarkResult res : results) {
-            System.err.println(res);
-        }
-    }
-
-    public void tryConnection() throws Exception {
+	public void tryConnection() throws Exception {
         try {
             ClientManager.getInstance().getNewClient(config).getServiceByType(DIR.ServiceType.SERVICE_TYPE_OSD);
         } catch (Exception e) {
@@ -230,7 +205,7 @@ public class Controller {
         ConcurrentLinkedQueue results = controller.startBenchmarks(BenchmarkType.SEQ_WRITE, 1);
 
         /* print out the results */
-        printResults(results);
+        xtfs_benchmark.printResults(results);
 
         /* shutdown controller */
         controller.teardown();
