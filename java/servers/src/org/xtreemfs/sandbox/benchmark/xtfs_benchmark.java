@@ -43,7 +43,7 @@ public class xtfs_benchmark {
 
         Config config = cliOptions.buildParamsFromCLIOptions();
         controller = new Controller(config);
-        controller.tryConnection();
+//        controller.tryConnection();
         controller.setupVolumes(cliOptions.arguments.toArray(new String[cliOptions.arguments.size()]));
         runBenchmarks(config);
         controller.teardown();

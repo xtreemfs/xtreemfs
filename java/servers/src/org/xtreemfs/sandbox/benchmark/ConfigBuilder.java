@@ -54,6 +54,7 @@ public class ConfigBuilder {
     RPC.Auth          auth                  = authNone;
     SSLOptions        sslOptions            = null;
     Options           options               = new Options();
+    String            osdSelectionPolicies  = "1000,3002";
     int               stripeSizeInBytes     = 128 * KiB_IN_BYTES;
     int               stripeWidth           = 1;
     boolean           noCleanup             = false;
@@ -209,6 +210,17 @@ public class ConfigBuilder {
         this.options = options;
         return this;
     }
+
+	/**
+	 * See {@link Config#osdSelectionPolicies}
+	 *
+	 * @param policies
+	 * @return the builder
+	 */
+	public ConfigBuilder setOsdSelectionPolicies(String policies){
+		this.osdSelectionPolicies = policies;
+		return this;
+	}
 
     /**
      * See {@link Config#stripeSizeInBytes}

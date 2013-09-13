@@ -95,7 +95,7 @@ public class Config {
     /**
      * The address of the MRC Server, fetched from the DIR the instantiation of {@link Config}.
      */
-    public final String              mrcAddress;
+//    public final String              mrcAddress;
 
     /**
      * The RPC user credentials. Build from {@link #userName} and {@link #group} during instatiation of {@link Config}.
@@ -118,6 +118,13 @@ public class Config {
      * The libxtreemfs {@link org.xtreemfs.common.libxtreemfs.Options}.
      */
     public final Options             options;
+
+
+	/**
+	 * The OSD selection policies used when creating volumes. <br/>
+	 * Default: "1000,3002" (Default OSD filter, Shuffling).
+	 */
+	public final String osdSelectionPolicies;
 
     /**
      * The size of an OSD storage block ("blocksize") in Bytes. <br/>
@@ -186,10 +193,11 @@ public class Config {
                 .build();
         this.sslOptions = builder.sslOptions;
         this.options = builder.options;
+		this.osdSelectionPolicies = builder.osdSelectionPolicies;
         this.stripeSizeInBytes = builder.stripeSizeInBytes;
         this.getStripeSizeInKiB = builder.stripeSizeInBytes / 1024;
         this.stripeWidth = builder.stripeWidth;
-        this.mrcAddress = getMRCAddress(dirAddress, userCredentials, sslOptions, options);
+//        this.mrcAddress = getMRCAddress(dirAddress, userCredentials, sslOptions, options);
         this.auth = builder.auth;
         this.noCleanup = builder.noCleanup;
         this.noCleanupOfVolumes = builder.noCleanupOfVolumes;
