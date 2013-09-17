@@ -1,0 +1,3 @@
+# Format:
+# <osd-name>;<capacity>;<iops>;<seq-tp for 1 stream>,<seq-tp for 2 streams>,...
+test-localhost-OSD;100.0;100.0;100.0,99.0,98.0,97.0,96.0,95.0

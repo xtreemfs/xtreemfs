@@ -17,7 +17,9 @@ public class SchedulerConfig extends ServiceConfig{
             Parameter.FAILOVER_WAIT,
             Parameter.LOCAL_CLOCK_RENEW,
             Parameter.REMOTE_TIME_SYNC,
-            Parameter.SCHEDULER_SERVICE
+            Parameter.SCHEDULER_SERVICE,
+            Parameter.OSD_AUTODISCOVER,
+            Parameter.OSD_CAPABILITIES_FILE
 	};
 	
 	public SchedulerConfig(String filename) throws IOException {

@@ -119,8 +119,14 @@ public class ServiceConfig extends Config {
             VIVALDI_ITERATIONS_BEFORE_UPDATING("vivaldi.iterations_before_updating", 12, Integer.class, false),
             VIVALDI_MAX_RETRIES_FOR_A_REQUEST("vivaldi.max_retries_for_a_request", 2, Integer.class, false),
             VIVALDI_MAX_REQUEST_TIMEOUT_IN_MS("vivaldi.max_request_timeout_ms", 10000, Integer.class, false),
-            VIVALDI_TIMER_INTERVAL_IN_MS("vivaldi.timer_interval_ms", 60000, Integer.class, false);
-        
+            VIVALDI_TIMER_INTERVAL_IN_MS("vivaldi.timer_interval_ms", 60000, Integer.class, false),
+
+            /*
+             * Scheduler specific configuration parameter
+             */
+            OSD_AUTODISCOVER("osd_autodiscover", false, Boolean.class, false),
+            OSD_CAPABILITIES_FILE("osd_capabilities_file", "/etc/xos/xtreemfs/scheduler.osd_capaibities", String.class, false);
+
         Parameter(String propString, Object defaultValue, Class propClass, Boolean req) {
             propertyString = propString;
             this.defaultValue = defaultValue;
@@ -662,6 +668,14 @@ public class ServiceConfig extends Config {
     
     public InetSocketAddress getSchedulerService() {
     	return (InetSocketAddress) parameter.get(Parameter.SCHEDULER_SERVICE);
+    }
+
+    public Boolean getOSDAutodiscover() {
+        return (Boolean) parameter.get(Parameter.OSD_AUTODISCOVER);
+    }
+
+    public String getOSDCapabilitiesFile() {
+        return (String) parameter.get(Parameter.OSD_CAPABILITIES_FILE);
     }
 
     public InetSocketAddress[] getDirectoryServices() {

@@ -118,3 +118,10 @@ babudb.pseudoSyncWait = 200
 #babudb.plugin.0 = contrib/server-repl-plugin/config/dir-test1.properties
 
 uuid = test-localhost-Scheduler
+
+#####################################################################
+# Scheduler configuration                                           #
+#####################################################################
+
+osd_autodiscover = false
+osd_capabilities_file = etc/xos/xtreemfs/scheduler.osd_capaibities

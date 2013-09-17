@@ -1,7 +1,6 @@
 package org.xtreemfs.scheduler;
 
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -172,8 +171,12 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 				this, sslOptions);
 		server.setLifeCycleListener(this);
 
-        osdMonitor = new OSDMonitor(this);
-        osdMonitor.setLifeCycleListener(this);
+        if(config.getOSDAutodiscover()) {
+            osdMonitor = new OSDMonitor(this);
+            osdMonitor.setLifeCycleListener(this);
+        } else {
+            readOSDCapabilitiesFile();
+        }
 
         httpServ = HttpServer.create(new InetSocketAddress(config.getHttpPort()), 0);
 
@@ -199,9 +202,11 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 			clientStage.start();
 			clientStage.waitForStartup();
 
-			osdMonitor.start();
-            osdMonitor.waitForStartup();
-			
+            if(config.getOSDAutodiscover()) {
+                osdMonitor.start();
+                osdMonitor.waitForStartup();
+            }
+
 			// TODO(ckleineweber): Get scheduler parameters from config
 			reservationScheduler = ReservationSchedulerFactory.getScheduler(
                     getOsds(), 0.0, 1.0, 1.0, 1.0, true);
@@ -310,6 +315,40 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 			}
 		}
 	}
+
+
+    public Database getSchedulerDatabase() throws BabuDBException {
+        return database.getDatabaseManager().getDatabase(DB_NAME);
+    }
+
+    public ReservationScheduler getReservationScheduler() {
+        return reservationScheduler;
+    }
+
+    @Override
+    public void run() {
+        try {
+            notifyStarted();
+            while (!quit) {
+                final RPCServerRequest rq = queue.take();
+
+                synchronized (database) {
+                    processRequest(rq);
+                }
+            }
+        } catch (InterruptedException ex) {
+            quit = true;
+        }
+        notifyStopped();
+    }
+
+    public ReservationStore getStore() {
+        return reservationStore;
+    }
+
+    public List<OSDDescription> getOsds() {
+        return osds;
+    }
 
 	private void registerOperations() throws BabuDBException {
 		SchedulerOperation op;
@@ -442,36 +481,41 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 		}
 	}
 
-	public Database getSchedulerDatabase() throws BabuDBException {
-		return database.getDatabaseManager().getDatabase(DB_NAME);
-	}
+    private void readOSDCapabilitiesFile() throws IOException {
+        File capabilitiesFile = new File(config.getOSDCapabilitiesFile());
+        if(capabilitiesFile.canRead() && capabilitiesFile.isFile()) {
+            BufferedReader reader = new BufferedReader(new FileReader(capabilitiesFile));
+            String line;
 
-	public ReservationScheduler getReservationScheduler() {
-		return reservationScheduler;
-	}
+            while((line = reader.readLine()) != null) {
+                if(line.startsWith("#"))
+                    continue;
 
-	@Override
-	public void run() {
-		try {
-			notifyStarted();
-			while (!quit) {
-				final RPCServerRequest rq = queue.take();
+                String tokens[] = line.split(";");
 
-				synchronized (database) {
-					processRequest(rq);
-				}
-			}
-		} catch (InterruptedException ex) {
-			quit = true;
-		}
-		notifyStopped();
-	}
+                if(tokens.length != 4) {
+                    Logging.logMessage(Logging.LEVEL_ERROR, this, "Cannot parse line: " + line);
+                }
 
-	public ReservationStore getStore() {
-		return reservationStore;
-	}
+                String osdName = tokens[0];
+                double capacity = Double.parseDouble(tokens[1]);
+                double iops = Double.parseDouble(tokens[2]);
+                String seqTP = tokens[3];
+                Map<Integer, Double> seqTPMap = new HashMap<Integer, Double>();
 
-    public List<OSDDescription> getOsds() {
-        return osds;
+                int i = 0;
+                for(String s: seqTP.split(",")){
+                    i++;
+                    seqTPMap.put(i, Double.parseDouble(s));
+                }
+
+                OSDPerformanceDescription osdPerf = new OSDPerformanceDescription(capacity, seqTPMap, iops);
+                OSDDescription osd = new OSDDescription(osdName, osdPerf, OSDDescription.OSDType.UNKNOWN);
+                osds.add(osd);
+            }
+            reader.close();
+        } else {
+            throw new IOException("Cannot read OSD capabilities file " + capabilitiesFile.getAbsolutePath());
+        }
     }
 }
