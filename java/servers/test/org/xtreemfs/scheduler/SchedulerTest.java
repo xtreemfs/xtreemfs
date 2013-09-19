@@ -209,7 +209,8 @@ public class SchedulerTest {
         double newSeqTP = newFreeRes.getStreamingThroughput();
 
         assertTrue(initialCapacity > newCapacity);
-        assertTrue(initialRandTp == newRandomTP);
+        // remaining random throughput resources are smaller than initial, caused by OSD labeling
+        assertTrue(initialRandTp >= newRandomTP);
         assertTrue(initialSeqTp > newSeqTP);
 
         newResponse.freeBuffers();
