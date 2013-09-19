@@ -124,7 +124,7 @@ public class ServiceConfig extends Config {
             /*
              * Scheduler specific configuration parameter
              */
-            OSD_AUTODISCOVER("osd_autodiscover", false, Boolean.class, false),
+            OSD_AUTODISCOVER("osd_autodiscover", true, Boolean.class, false),
             OSD_CAPABILITIES_FILE("osd_capabilities_file", "/etc/xos/xtreemfs/scheduler.osd_capaibities", String.class, false);
 
         Parameter(String propString, Object defaultValue, Class propClass, Boolean req) {
