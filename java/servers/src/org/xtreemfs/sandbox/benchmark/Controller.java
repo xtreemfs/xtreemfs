@@ -71,7 +71,7 @@ public class Controller {
      * @return the results of all repetitions of all the run benchmarks
      * @throws Exception
      */
-    public ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(BenchmarkType benchmarkType, int numberOfThreads)
+    public ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(BenchmarkUtils.BenchmarkType benchmarkType, int numberOfThreads)
             throws Exception {
         ConcurrentLinkedQueue<BenchmarkResult> result;
         ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
@@ -94,7 +94,7 @@ public class Controller {
      * @return the results of the benchmark
      * @throws Exception
      */
-    ConcurrentLinkedQueue<BenchmarkResult> startBenchmark(BenchmarkType benchmarkType, int numberOfThreads)
+    ConcurrentLinkedQueue<BenchmarkResult> startBenchmark(BenchmarkUtils.BenchmarkType benchmarkType, int numberOfThreads)
             throws Exception {
 
         if (config.sequentialSizeInBytes % (config.stripeSizeInBytes * config.stripeWidth) != 0

@@ -15,7 +15,7 @@ package org.xtreemfs.sandbox.benchmark;
  */
 class BenchmarkResult {
 
-    BenchmarkType    benchmarkType;
+    BenchmarkUtils.BenchmarkType benchmarkType;
     int              numberOfReadersOrWriters;
     double           timeInSec;
     double           speedInMiBProSec;
@@ -39,11 +39,11 @@ class BenchmarkResult {
                 : dataWrittenInBytes / BenchmarkUtils.getMiB_IN_BYTES() + " MiB [";
         String readersOrWriters;
 
-        if (benchmarkType == BenchmarkType.SEQ_WRITE || benchmarkType == BenchmarkType.RAND_WRITE
-                || benchmarkType == BenchmarkType.FILES_WRITE) {
+        if (benchmarkType == BenchmarkUtils.BenchmarkType.SEQ_WRITE || benchmarkType == BenchmarkUtils.BenchmarkType.RAND_WRITE
+                || benchmarkType == BenchmarkUtils.BenchmarkType.FILES_WRITE) {
             readersOrWriters = "\tNumber of Writers: " + numberOfReadersOrWriters + "\n";
-        } else if (benchmarkType == BenchmarkType.SEQ_READ || benchmarkType == BenchmarkType.RAND_READ
-                || benchmarkType == BenchmarkType.FILES_READ) {
+        } else if (benchmarkType == BenchmarkUtils.BenchmarkType.SEQ_READ || benchmarkType == BenchmarkUtils.BenchmarkType.RAND_READ
+                || benchmarkType == BenchmarkUtils.BenchmarkType.FILES_READ) {
             readersOrWriters = "\tNumber of Readers: " + numberOfReadersOrWriters + "\n";
         } else {
             readersOrWriters = "\tNumber of Readers/Writers: " + numberOfReadersOrWriters + "\n";
