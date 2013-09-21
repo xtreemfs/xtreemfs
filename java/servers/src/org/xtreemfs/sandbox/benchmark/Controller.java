@@ -97,10 +97,6 @@ public class Controller {
     ConcurrentLinkedQueue<BenchmarkResult> startBenchmark(BenchmarkUtils.BenchmarkType benchmarkType, int numberOfThreads)
             throws Exception {
 
-        if (config.getSequentialSizeInBytes() % (config.getStripeSizeInBytes()* config.getStripeWidth()) != 0
-                || config.getRandomSizeInBytes() % (config.getStripeSizeInBytes() * config.getStripeWidth()) != 0)
-            throw new IllegalArgumentException("Size must satisfy: size mod (stripeSize * stripeWidth) == 0");
-
         ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
         ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
 

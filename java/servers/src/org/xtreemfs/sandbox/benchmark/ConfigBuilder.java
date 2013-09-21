@@ -70,6 +70,8 @@ public class ConfigBuilder {
      * @return the builder
      */
     public ConfigBuilder setNumberOfRepetitions(int numberOfRepetitions) {
+		if (numberOfRepetitions < 1)
+			throw new IllegalArgumentException("numberOfRepetitions < 1 not allowed");
         this.numberOfRepetitions = numberOfRepetitions;
         return this;
     }
@@ -82,6 +84,9 @@ public class ConfigBuilder {
      * @return the builder
      */
     public ConfigBuilder setNumberOfThreads(int numberOfThreads) {
+		if (numberOfThreads < 1)
+			throw new IllegalArgumentException("numberOfThreads < 1 not allowed");
+
         this.numberOfThreads = numberOfThreads;
         return this;
     }
@@ -94,6 +99,8 @@ public class ConfigBuilder {
      * @return the builder
      */
     public ConfigBuilder setSequentialSizeInBytes(long sequentialSizeInBytes) {
+		if (sequentialSizeInBytes < 0)
+			throw new IllegalArgumentException("sequentialSizeInBytes < 0 not allowed");
         this.sequentialSizeInBytes = sequentialSizeInBytes;
         return this;
     }
@@ -106,6 +113,8 @@ public class ConfigBuilder {
      * @return the builder
      */
     public ConfigBuilder setRandomSizeInBytes(long randomSizeInBytes) {
+		if (randomSizeInBytes < 0)
+			throw new IllegalArgumentException("randomSizeInBytes < 0 not allowed");
         this.randomSizeInBytes = randomSizeInBytes;
         return this;
     }
@@ -118,6 +127,8 @@ public class ConfigBuilder {
      * @return the builder
      */
     public ConfigBuilder setBasefileSizeInBytes(long basefileSizeInBytes) {
+		if (basefileSizeInBytes < 1)
+			throw new IllegalArgumentException("basefileSizeInBytes < 1 not allowed");
         this.basefileSizeInBytes = basefileSizeInBytes;
         return this;
     }
@@ -130,6 +141,8 @@ public class ConfigBuilder {
      * @return the builder
      */
     public ConfigBuilder setFilesize(int filesize) {
+		if (filesize < 1)
+			throw new IllegalArgumentException("filesize < 1 not allowed");
         this.filesize = filesize;
         return this;
     }
@@ -142,6 +155,8 @@ public class ConfigBuilder {
      * @return the builder
      */
     public ConfigBuilder setUserName(String userName) {
+		if (userName.isEmpty())
+			throw new IllegalArgumentException("Empty username not allowed");
         this.userName = userName;
         return this;
     }
@@ -154,6 +169,8 @@ public class ConfigBuilder {
      * @return the builder
      */
     public ConfigBuilder setGroup(String group) {
+		if (group.isEmpty())
+			throw new IllegalArgumentException("Empty group name not allowed");
         this.group = group;
         return this;
     }
@@ -184,7 +201,7 @@ public class ConfigBuilder {
 
     /**
 	 * Set the RPC user credentials. Build from the user name and group name during instatiation of {@link Config}.
-     * 
+     *
      * @param auth
      * @return the builder
      */
@@ -207,7 +224,7 @@ public class ConfigBuilder {
 
     /**
 	 * Set the libxtreemfs {@link org.xtreemfs.common.libxtreemfs.Options}.
-     * 
+     *
      * @param options
      * @return the builder
      */
@@ -389,7 +406,25 @@ public class ConfigBuilder {
      * @throws Exception
      */
     public Config build() throws Exception {
+		verifySizes();
+		verifyNoCleanup();
         return new Config(this);
     }
 
+	private void verifyNoCleanup() {
+		if (noCleanupOfBasefile && !noCleanup && !noCleanupOfVolumes)
+			throw new IllegalArgumentException("noCleanupOfBasefile only works with noCleanup or noCleanupVolumes");
+	}
+
+	private void verifySizes(){
+
+		if (sequentialSizeInBytes % (stripeSizeInBytes * stripeWidth) != 0)
+			throw new IllegalArgumentException("sequentialSizeInBytes must satisfy: size mod (stripeSize * stripeWidth) == 0");
+		if (randomSizeInBytes % (stripeSizeInBytes * stripeWidth) != 0)
+			throw new IllegalArgumentException("randomSizeInBytes: size mod (stripeSize * stripeWidth) == 0");
+		if (randomSizeInBytes % filesize != 0)
+			throw new IllegalArgumentException("Size for filebased benchmarks (i.e. randomSizeInBytes) must satisfy: size mod filesize == 0");
+		if (basefileSizeInBytes < randomSizeInBytes)
+			throw new IllegalArgumentException("Basefile < random size");
+	}
 }
