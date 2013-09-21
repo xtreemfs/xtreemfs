@@ -48,11 +48,16 @@ class FilebasedReadBenchmark extends FilebasedBenchmark {
         for (long i = 0; i < numberOfFilesToRead; i++) {
             String filename = filenames[random.nextInt(filenamesSize)];
             FileHandle fileHandle = volume.openFile(config.getUserCredentials(), filename, flags);
-			for (long j = 0; j < filesize/stripeWidth; j++) {
-				long nextOffset = j * stripeWidth;
-				assert nextOffset >= 0 : "Offset < 0 not allowed";
-				byteCounter += fileHandle.read(config.getUserCredentials(), data, stripeWidth, nextOffset);
-			}
+
+            if (filesize <= stripeWidth) {
+                random.nextBytes(data);
+                byteCounter += fileHandle.read(config.getUserCredentials(), data, filesize, 0);
+            } else
+                for (long j = 0; j < filesize / stripeWidth; j++) {
+                    long nextOffset = j * stripeWidth;
+                    assert nextOffset >= 0 : "Offset < 0 not allowed";
+                    byteCounter += fileHandle.read(config.getUserCredentials(), data, stripeWidth, nextOffset);
+                }
             fileHandle.close();
         }
         return byteCounter;
