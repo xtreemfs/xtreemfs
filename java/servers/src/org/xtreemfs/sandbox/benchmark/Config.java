@@ -22,6 +22,9 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 /**
  * Datastructure holding all parameters for the benchmark library.
  * <p/>
+ *
+ * For documentation of the parameters and default values see {@link ConfigBuilder}.
+ * <p/>
  * 
  * {@link ConfigBuilder} should be used to build this (the given default values are only present if the builder is used
  * <p/>
@@ -32,144 +35,29 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
  */
 public class Config {
 
-    /**
-     * Number of benchmarks (benchmark threads) to be run in parallel. <br/>
-     * Default: 1.
-     */
-    public final int                 numberOfThreads;
-
-    /**
-     * Number of repetitions of a benchmark. <br/>
-     * Default: 1.
-     */
-    public final int                 numberOfRepetitions;
-
-    /**
-     * Number of bytes to write or read in a sequential benchmark. <br/>
-     * Default: 10 MiB.
-     */
-    public final long                sequentialSizeInBytes;
-
-    /**
-     * Number of bytes to write or read in a random benchmark. <br/>
-     * Default: 10 MiB.
-     */
-    public final long                randomSizeInBytes;
-
-    /**
-     * Size of basefile for random benchmarks. <br/>
-     * Default: 3 GiB.
-     */
-    public final long                basefileSizeInBytes;
-
-    /**
-     * Size of files in filebased benchmark. <br/>
-     * Default: 4 KiB.
-     */
-    public final int                 randomIOFilesize;
-
-    /**
-     * The username to be used when creating files and volumes <br/>
-     * Default: root.
-     */
-    public final String              userName;
-
-    /**
-     * The group to be used when creating files and volumes. <br/>
-     * Default: root.
-     */
-    public final String              group;
-
-    /**
-     * The password for accessing the osd * <br/>
-     * Default: "".
-     */
-    public final String              osdPassword;
-
-    /**
-     * The address of the DIR Server. <br/>
-     * Default: 127.0.0.1:32638.
-     */
-    public final String              dirAddress;
-
-    /**
-     * The address of the MRC Server, fetched from the DIR the instantiation of {@link Config}.
-     */
-//    public final String              mrcAddress;
-
-    /**
-     * The RPC user credentials. Build from {@link #userName} and {@link #group} during instatiation of {@link Config}.
-     */
-    public final RPC.UserCredentials userCredentials;
-
-    /**
-     * Authentication Provider. <br/>
-     * Default: NullAuthProvider.
-     */
-    public final RPC.Auth            auth;
-
-    /**
-     * SSL Options for SSL Authetification Provider. <br/>
-     * Default: null.
-     */
-    public final SSLOptions          sslOptions;
-
-    /**
-     * The libxtreemfs {@link org.xtreemfs.common.libxtreemfs.Options}.
-     */
-    public final Options             options;
-
-
-	/**
-	 * The OSD selection policies used when creating volumes. <br/>
-	 * Default: "1000,3002" (Default OSD filter, Shuffling).
-	 */
-	public final String osdSelectionPolicies;
-
-    /**
-     * The size of an OSD storage block ("blocksize") in Bytes. <br/>
-     * Default: 131072 (128 KiB). <br/>
-     * The size of one write operation is stripeSize * stripeWidth.
-     */
-    public final int                 stripeSizeInBytes;
-
-    /**
-     * The size of an OSD storage block ("blocksize") in KiB. Calculated during instantiation of {@link Config}.
-     */
-    public final int                 getStripeSizeInKiB;
-
-    /**
-     * The maximum number of OSDs a file is distributed to. <br/>
-     * Default: 1. <br/>
-     * The size of one write operation is stripeSize * stripeWidth.
-     */
-    public final int                 stripeWidth;
-
-    /**
-     * If set to true, the files and volumes created during the benchmarks will not be deleted. <br/>
-     * Default: false.
-     */
-    public final boolean             noCleanup;
-
-    /**
-     * If set to true, the volumes created during the benchmarks will not be deleted. <br/>
-     * Default: false.
-     */
-    public final boolean             noCleanupOfVolumes;
-
-    /**
-     * If set to true, a basefile created during benchmarks will not be deleted. <br/>
-     * Default: false.
-     */
-    public final boolean             noCleanupOfBasefile;
-
-    /**
-     * If set to true, a OSD Cleanup will be done at the end of all benchmarks. This might be needed to actually delete
-     * the storage blocks from the OSD after deleting volumes. <br/>
-     * Default: false.
-     * 
-     */
-    public final boolean             osdCleanup;
+    private final int                 numberOfThreads;
+    private final int                 numberOfRepetitions;
+    private final long                sequentialSizeInBytes;
+    private final long                randomSizeInBytes;
+    private final long                basefileSizeInBytes;
+    private final int                 randomIOFilesize;
+    private final String              userName;
+    private final String              group;
+    private final String              osdPassword;
+    private final String              dirAddress;
+    private final String              mrcAddress;
+    private final RPC.UserCredentials userCredentials;
+    private final RPC.Auth            auth;
+    private final SSLOptions          sslOptions;
+    private final Options             options;
+    private final String              osdSelectionPolicies;
+    private final int                 stripeSizeInBytes;
+    private final int                 getStripeSizeInKiB;
+    private final int                 stripeWidth;
+    private final boolean             noCleanup;
+    private final boolean             noCleanupOfVolumes;
+    private final boolean             noCleanupOfBasefile;
+    private final boolean             osdCleanup;
 
     /**
      * Build Params from {@link ConfigBuilder}. Should only be called from
@@ -179,30 +67,30 @@ public class Config {
      * @throws Exception
      */
     public Config(ConfigBuilder builder) throws Exception {
-        this.numberOfThreads = builder.numberOfThreads;
-        this.numberOfRepetitions = builder.numberOfRepetitions;
-        this.sequentialSizeInBytes = builder.sequentialSizeInBytes;
-        this.randomSizeInBytes = builder.randomSizeInBytes;
-        this.basefileSizeInBytes = builder.basefileSizeInBytes;
-        this.randomIOFilesize = builder.randomIOFilesize;
-        this.userName = builder.userName;
-        this.group = builder.group;
-        this.osdPassword = builder.osdPassword;
-        this.dirAddress = builder.dirAddress;
-        this.userCredentials = RPC.UserCredentials.newBuilder().setUsername(builder.userName).addGroups(builder.group)
+        this.numberOfThreads = builder.getNumberOfThreads();
+        this.numberOfRepetitions = builder.getNumberOfRepetitions();
+        this.sequentialSizeInBytes = builder.getSequentialSizeInBytes();
+        this.randomSizeInBytes = builder.getRandomSizeInBytes();
+        this.basefileSizeInBytes = builder.getBasefileSizeInBytes();
+        this.randomIOFilesize = builder.getRandomIOFilesize();
+        this.userName = builder.getUserName();
+        this.group = builder.getGroup();
+        this.osdPassword = builder.getOsdPassword();
+        this.dirAddress = builder.getDirAddress();
+        this.userCredentials = RPC.UserCredentials.newBuilder().setUsername(builder.getUserName()).addGroups(builder.getGroup())
                 .build();
-        this.sslOptions = builder.sslOptions;
-        this.options = builder.options;
-		this.osdSelectionPolicies = builder.osdSelectionPolicies;
-        this.stripeSizeInBytes = builder.stripeSizeInBytes;
-        this.getStripeSizeInKiB = builder.stripeSizeInBytes / 1024;
-        this.stripeWidth = builder.stripeWidth;
-//        this.mrcAddress = getMRCAddress(dirAddress, userCredentials, sslOptions, options);
-        this.auth = builder.auth;
-        this.noCleanup = builder.noCleanup;
-        this.noCleanupOfVolumes = builder.noCleanupOfVolumes;
-        this.noCleanupOfBasefile = builder.noCleanupOfBasefile;
-        this.osdCleanup = builder.osdCleanup;
+        this.sslOptions = builder.getSslOptions();
+        this.options = builder.getOptions();
+		this.osdSelectionPolicies = builder.getOsdSelectionPolicies();
+        this.stripeSizeInBytes = builder.getStripeSizeInBytes();
+        this.getStripeSizeInKiB = builder.getStripeSizeInBytes() / 1024;
+        this.stripeWidth = builder.getStripeWidth();
+        this.mrcAddress = getMRCAddress(dirAddress, userCredentials, sslOptions, options);
+        this.auth = builder.getAuth();
+        this.noCleanup = builder.isNoCleanup();
+        this.noCleanupOfVolumes = builder.isNoCleanupOfVolumes();
+        this.noCleanupOfBasefile = builder.isNoCleanupOfBasefile();
+        this.osdCleanup = builder.isOsdCleanup();
     }
 
     /* Gets the MRC address from the giben DIR */
@@ -244,4 +132,95 @@ public class Config {
         return "Access not possible";
     }
 
+	int getNumberOfThreads() {
+		return numberOfThreads;
+	}
+
+	int getNumberOfRepetitions() {
+		return numberOfRepetitions;
+	}
+
+	long getSequentialSizeInBytes() {
+		return sequentialSizeInBytes;
+	}
+
+	long getRandomSizeInBytes() {
+		return randomSizeInBytes;
+	}
+
+	long getBasefileSizeInBytes() {
+		return basefileSizeInBytes;
+	}
+
+	int getRandomIOFilesize() {
+		return randomIOFilesize;
+	}
+
+	String getUserName() {
+		return userName;
+	}
+
+	String getGroup() {
+		return group;
+	}
+
+	String getOsdPassword() {
+		return osdPassword;
+	}
+
+	String getDirAddress() {
+		return dirAddress;
+	}
+
+	String getMrcAddress() {
+		return mrcAddress;
+	}
+
+	RPC.UserCredentials getUserCredentials() {
+		return userCredentials;
+	}
+
+	RPC.Auth getAuth() {
+		return auth;
+	}
+
+	SSLOptions getSslOptions() {
+		return sslOptions;
+	}
+
+	Options getOptions() {
+		return options;
+	}
+
+	String getOsdSelectionPolicies() {
+		return osdSelectionPolicies;
+	}
+
+	int getStripeSizeInBytes() {
+		return stripeSizeInBytes;
+	}
+
+	int getGetStripeSizeInKiB() {
+		return getStripeSizeInKiB;
+	}
+
+	int getStripeWidth() {
+		return stripeWidth;
+	}
+
+	boolean isNoCleanup() {
+		return noCleanup;
+	}
+
+	boolean isNoCleanupOfVolumes() {
+		return noCleanupOfVolumes;
+	}
+
+	boolean isNoCleanupOfBasefile() {
+		return noCleanupOfBasefile;
+	}
+
+	boolean isOsdCleanup() {
+		return osdCleanup;
+	}
 }

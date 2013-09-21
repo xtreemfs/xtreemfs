@@ -26,32 +26,32 @@ import org.xtreemfs.utils.utils;
  * @author jensvfischer
  */
 class CLIOptions {
-    Map<String, CLIParser.CliOption> options;
-    List<String>                     arguments;
-    ConfigBuilder builder;
+    private Map<String, CLIParser.CliOption> options;
+    private List<String>                     arguments;
+    private ConfigBuilder                    builder;
 
-    private static final String      DIR_ADDRESS;
-	private static final String		 OSD_SELECTION_POLICIES;
-    private static final String      USERNAME;
-    private static final String      GROUPNAME;
-    private static final String      SEQ_WRITE;
-    private static final String      SEQ_READ;
-    private static final String      RAND_WRITE;
-    private static final String      RAND_READ;
-    private static final String      FILEBASED_WRITE;
-    private static final String      FILEBASED_READ;
-    private static final String      THREADS;
-    private static final String      REPETITIONS;
-    private static final String      STRIPE_SIZE;
-    private static final String      STRIPE_WITDH;
-    private static final String      SIZE_SEQ;
-    private static final String      SIZE_RAND;
-    private static final String      SIZE_BASEFILE;
-    private static final String      SIZE_FILES;
-    private static final String      NO_CLEANUP;
-    private static final String      NO_CLEANUP_VOLUMES;
-    private static final String      NO_CLEANUP_BASEFILE;
-    private static final String      OSD_CLEANUP;
+    private static final String              DIR_ADDRESS;
+    private static final String              OSD_SELECTION_POLICIES;
+    private static final String              USERNAME;
+    private static final String              GROUPNAME;
+    private static final String              SEQ_WRITE;
+    private static final String              SEQ_READ;
+    private static final String              RAND_WRITE;
+    private static final String              RAND_READ;
+    private static final String              FILEBASED_WRITE;
+    private static final String              FILEBASED_READ;
+    private static final String              THREADS;
+    private static final String              REPETITIONS;
+    private static final String              STRIPE_SIZE;
+    private static final String              STRIPE_WITDH;
+    private static final String              SIZE_SEQ;
+    private static final String              SIZE_RAND;
+    private static final String              SIZE_BASEFILE;
+    private static final String              SIZE_FILES;
+    private static final String              NO_CLEANUP;
+    private static final String              NO_CLEANUP_VOLUMES;
+    private static final String              NO_CLEANUP_BASEFILE;
+    private static final String              OSD_CLEANUP;
 
     static {
         DIR_ADDRESS = "-dir-address";
@@ -377,4 +377,7 @@ class CLIOptions {
         return sizeInBytes;
     }
 
+	List<String> getArguments() {
+		return arguments;
+	}
 }

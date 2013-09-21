@@ -46,8 +46,8 @@ class ClientManager {
 
     /* create and start an AdminClient. */
     AdminClient getNewClient(Config config) throws Exception {
-        AdminClient client = ClientFactory.createAdminClient(config.dirAddress, config.userCredentials,
-                config.sslOptions, config.options);
+        AdminClient client = ClientFactory.createAdminClient(config.getDirAddress(), config.getUserCredentials(),
+                config.getSslOptions(), config.getOptions());
         clients.add(client);
         client.start();
         return client;

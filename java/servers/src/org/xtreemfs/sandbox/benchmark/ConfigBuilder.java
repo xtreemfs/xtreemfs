@@ -17,9 +17,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 /**
  * Builder for the {@link Config} datastructure.
  * <p/>
- * For documentation of the parameters and default values see {@link Config}.
- * <p/>
- * 
+ *
  * Use like this: <br/>
  * <code>
  * ParamsBuilder builder = new ParamsBuilder();<br/>
@@ -37,26 +35,26 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
  */
 public class ConfigBuilder {
 
-    int               numberOfThreads       = 1;
-    int               numberOfRepetitions   = 1;
-    long              sequentialSizeInBytes = 10L * BenchmarkUtils.getMiB_IN_BYTES();
-    long              randomSizeInBytes     = 10L * BenchmarkUtils.getMiB_IN_BYTES();
-    long              basefileSizeInBytes   = 3L * BenchmarkUtils.getGiB_IN_BYTES();
-    int               randomIOFilesize      = 4 * BenchmarkUtils.getKiB_IN_BYTES();
-    String            userName              = "root";
-    String            group                 = "root";
-    String            osdPassword           = "";
-    String            dirAddress            = "127.0.0.1:32638";
-    RPC.Auth          auth                  = authNone;
-    SSLOptions        sslOptions            = null;
-    Options           options               = new Options();
-    String            osdSelectionPolicies  = "1000,3002";
-    int               stripeSizeInBytes     = 128 * BenchmarkUtils.getKiB_IN_BYTES();
-    int               stripeWidth           = 1;
-    boolean           noCleanup             = false;
-    boolean           noCleanupOfVolumes    = false;
-    boolean           noCleanupOfBasefile   = false;
-    boolean           osdCleanup            = false;
+    private int               numberOfThreads       = 1;
+    private int               numberOfRepetitions   = 1;
+    private long              sequentialSizeInBytes = 10L * BenchmarkUtils.getMiB_IN_BYTES();
+    private long              randomSizeInBytes     = 10L * BenchmarkUtils.getMiB_IN_BYTES();
+    private long              basefileSizeInBytes   = 3L * BenchmarkUtils.getGiB_IN_BYTES();
+    private int               randomIOFilesize      = 4 * BenchmarkUtils.getKiB_IN_BYTES();
+    private String            userName              = "root";
+    private String            group                 = "root";
+    private String            osdPassword           = "";
+    private String            dirAddress            = "127.0.0.1:32638";
+    private RPC.Auth          auth                  = authNone;
+    private SSLOptions        sslOptions            = null;
+    private Options           options               = new Options();
+    private String            osdSelectionPolicies  = "1000,3002";
+    private int               stripeSizeInBytes     = 128 * BenchmarkUtils.getKiB_IN_BYTES();
+    private int               stripeWidth           = 1;
+    private boolean           noCleanup             = false;
+    private boolean           noCleanupOfVolumes    = false;
+    private boolean           noCleanupOfBasefile   = false;
+    private boolean           osdCleanup            = false;
 
     /**
      * Instantiate an builder (all values are the default values, see {@link Config}).
@@ -65,10 +63,11 @@ public class ConfigBuilder {
     }
 
     /**
-     * See {@link Config#numberOfRepetitions}
+	 * Set the number of repetitions of a benchmark. <br/>
+	 * Default: 1.
      * 
      * @param numberOfRepetitions
-     * @return
+     * @return the builder
      */
     public ConfigBuilder setNumberOfRepetitions(int numberOfRepetitions) {
         this.numberOfRepetitions = numberOfRepetitions;
@@ -76,7 +75,8 @@ public class ConfigBuilder {
     }
 
     /**
-     * See {@link Config#numberOfThreads}
+	 * Set the number of benchmarks (benchmark threads) to be run in parallel. <br/>
+	 * Default: 1.
      * 
      * @param numberOfThreads
      * @return the builder
@@ -87,7 +87,8 @@ public class ConfigBuilder {
     }
 
     /**
-     * See {@link Config#sequentialSizeInBytes}
+	 * Set the number of bytes to write or read in a sequential benchmark. <br/>
+	 * Default: 10 MiB.
      * 
      * @param sequentialSizeInBytes
      * @return the builder
@@ -98,7 +99,8 @@ public class ConfigBuilder {
     }
 
     /**
-     * See {@link Config#randomSizeInBytes}
+	 * Set the number of bytes to write or read in a random benchmark. <br/>
+	 * Default: 10 MiB.
      * 
      * @param randomSizeInBytes
      * @return the builder
@@ -109,7 +111,8 @@ public class ConfigBuilder {
     }
 
     /**
-     * See {@link Config#basefileSizeInBytes}
+	 * Set the size of the basefile for random benchmarks. <br/>
+	 * Default: 3 GiB.
      * 
      * @param basefileSizeInBytes
      * @return the builder
@@ -120,7 +123,8 @@ public class ConfigBuilder {
     }
 
     /**
-     * See {@link Config#randomIOFilesize}
+	 * Set the size of files in filebased benchmark. <br/>
+	 * Default: 4 KiB.
      * 
      * @param randomIOFilesize
      * @return the builder
@@ -131,7 +135,8 @@ public class ConfigBuilder {
     }
 
     /**
-     * See {@link Config#userName}
+	 * Set the username to be used when creating files and volumes <br/>
+	 * Default: root.
      * 
      * @param userName
      * @return the builder
@@ -142,7 +147,8 @@ public class ConfigBuilder {
     }
 
     /**
-     * See {@link Config#group}
+	 * Set the group to be used when creating files and volumes. <br/>
+	 * Default: root.
      * 
      * @param group
      * @return the builder
@@ -153,7 +159,8 @@ public class ConfigBuilder {
     }
 
     /**
-     * See {@link Config#osdPassword}
+	 * Set the password for accessing the osd(s) <br/>
+	 * Default: "".
      * 
      * @param osdPassword
      * @return the builder
@@ -164,7 +171,8 @@ public class ConfigBuilder {
     }
 
     /**
-     * See {@link Config#dirAddress}
+	 * Set the address of the DIR Server. <br/>
+	 * Default: 127.0.0.1:3263
      * 
      * @param dirAddress
      * @return the builder
@@ -175,7 +183,7 @@ public class ConfigBuilder {
     }
 
     /**
-     * See {@link Config#auth}
+	 * Set the RPC user credentials. Build from the user name and group name during instatiation of {@link Config}.
      * 
      * @param auth
      * @return the builder
@@ -186,7 +194,8 @@ public class ConfigBuilder {
     }
 
     /**
-     * See {@link Config#sslOptions}
+	 * Set the SSL options for SSL Authetification Provider. <br/>
+	 * Default: null.
      * 
      * @param sslOptions
      * @return the builder
@@ -197,7 +206,7 @@ public class ConfigBuilder {
     }
 
     /**
-     * See {@link Config#options}
+	 * Set the libxtreemfs {@link org.xtreemfs.common.libxtreemfs.Options}.
      * 
      * @param options
      * @return the builder
@@ -208,7 +217,8 @@ public class ConfigBuilder {
     }
 
 	/**
-	 * See {@link Config#osdSelectionPolicies}
+	 * Set the OSD selection policies used when creating volumes. <br/>
+	 * Default: "1000,3002" (Default OSD filter, Shuffling).
 	 *
 	 * @param policies
 	 * @return the builder
@@ -219,7 +229,8 @@ public class ConfigBuilder {
 	}
 
     /**
-     * See {@link Config#stripeSizeInBytes}
+	 * Set the size of an OSD storage block ("blocksize") in Bytes. <br/>
+	 * Default: 131072 (128 KiB). <br/>
      * 
      * @param stripeSizeInBytes
      * @return the builder
@@ -230,7 +241,9 @@ public class ConfigBuilder {
     }
 
     /**
-     * See {@link Config#stripeWidth}
+	 * Set the maximum number of OSDs a file is distributed to. <br/>
+	 * Default: 1. <br/>
+	 * The size of one write operation is stripeSize * stripeWidth.
      * 
      * @param stripeWidth
      * @return the builder
@@ -241,7 +254,8 @@ public class ConfigBuilder {
     }
 
     /**
-     * See {@link Config#noCleanup}
+	 * If set to true, the files and volumes created during the benchmarks will not be deleted. <br/>
+	 * Default: false.
      * 
      * @param noCleanup
      * @return the builder
@@ -252,7 +266,8 @@ public class ConfigBuilder {
     }
 
     /**
-     * See {@link Config#noCleanupOfVolumes}
+	 * If set to true, the volumes created during the benchmarks will not be deleted. <br/>
+	 * Default: false.
      * 
      * @param noCleanupOfVolumes
      * @return the builder
@@ -263,7 +278,8 @@ public class ConfigBuilder {
     }
 
     /**
-     * See {@link Config#noCleanupOfBasefile}
+	 * If set to true, a basefile created during benchmarks will not be deleted. <br/>
+	 * Default: false.
      * 
      * @param noCleanupOfBasefile
      * @return the builder
@@ -274,7 +290,9 @@ public class ConfigBuilder {
     }
 
     /**
-     * See {@link Config#osdCleanup}
+	 * If set to true, a OSD Cleanup will be done at the end of all benchmarks. This might be needed to actually delete
+	 * the storage blocks from the OSD after deleting volumes. <br/>
+	 * Default: false.
      * 
      * @param osdCleanup
      * @return the builder
@@ -284,7 +302,87 @@ public class ConfigBuilder {
         return this;
     }
 
-    /**
+	int getNumberOfThreads() {
+		return numberOfThreads;
+	}
+
+	int getNumberOfRepetitions() {
+		return numberOfRepetitions;
+	}
+
+	long getSequentialSizeInBytes() {
+		return sequentialSizeInBytes;
+	}
+
+	long getRandomSizeInBytes() {
+		return randomSizeInBytes;
+	}
+
+	long getBasefileSizeInBytes() {
+		return basefileSizeInBytes;
+	}
+
+	int getRandomIOFilesize() {
+		return randomIOFilesize;
+	}
+
+	String getUserName() {
+		return userName;
+	}
+
+	String getGroup() {
+		return group;
+	}
+
+	String getOsdPassword() {
+		return osdPassword;
+	}
+
+	String getDirAddress() {
+		return dirAddress;
+	}
+
+	RPC.Auth getAuth() {
+		return auth;
+	}
+
+	SSLOptions getSslOptions() {
+		return sslOptions;
+	}
+
+	Options getOptions() {
+		return options;
+	}
+
+	String getOsdSelectionPolicies() {
+		return osdSelectionPolicies;
+	}
+
+	int getStripeSizeInBytes() {
+		return stripeSizeInBytes;
+	}
+
+	int getStripeWidth() {
+		return stripeWidth;
+	}
+
+	boolean isNoCleanup() {
+		return noCleanup;
+	}
+
+	boolean isNoCleanupOfVolumes() {
+		return noCleanupOfVolumes;
+	}
+
+	boolean isNoCleanupOfBasefile() {
+		return noCleanupOfBasefile;
+	}
+
+	boolean isOsdCleanup() {
+		return osdCleanup;
+	}
+
+	/**
      * Build the {@link Config} object.
      * 
      * @return the build {@link Config} object

@@ -40,8 +40,8 @@ public class xtfs_benchmark {
 
         Config config = cliOptions.buildParamsFromCLIOptions();
         controller = new Controller(config);
-//        controller.tryConnection();
-        controller.setupVolumes(cliOptions.arguments.toArray(new String[cliOptions.arguments.size()]));
+        controller.tryConnection();
+        controller.setupVolumes(cliOptions.getArguments().toArray(new String[cliOptions.getArguments().size()]));
         runBenchmarks(config);
         controller.teardown();
     }
@@ -53,22 +53,22 @@ public class xtfs_benchmark {
         ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
 
         if (cliOptions.sequentialWriteBenchmarkIsSet()) {
-            result = controller.startBenchmarks(BenchmarkUtils.BenchmarkType.SEQ_WRITE, config.numberOfThreads);
+            result = controller.startBenchmarks(BenchmarkUtils.BenchmarkType.SEQ_WRITE, config.getNumberOfThreads());
             results.addAll(result);
         }
 
         if (cliOptions.sequentialReadBenchmarkIsSet()) {
-            result = controller.startBenchmarks(BenchmarkUtils.BenchmarkType.SEQ_READ, config.numberOfThreads);
+            result = controller.startBenchmarks(BenchmarkUtils.BenchmarkType.SEQ_READ, config.getNumberOfThreads());
             results.addAll(result);
         }
 
         if (cliOptions.randomWriteBenchmarkIsSet()) {
-            result = controller.startBenchmarks(BenchmarkUtils.BenchmarkType.RAND_WRITE, config.numberOfThreads);
+            result = controller.startBenchmarks(BenchmarkUtils.BenchmarkType.RAND_WRITE, config.getNumberOfThreads());
             results.addAll(result);
         }
 
         if (cliOptions.randomReadBenchmarkIsSet()) {
-            result = controller.startBenchmarks(BenchmarkUtils.BenchmarkType.RAND_READ, config.numberOfThreads);
+            result = controller.startBenchmarks(BenchmarkUtils.BenchmarkType.RAND_READ, config.getNumberOfThreads());
             results.addAll(result);
         }
 

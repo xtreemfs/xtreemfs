@@ -33,7 +33,7 @@ import org.xtreemfs.foundation.logging.Logging;
         this.benchmarkSizeInBytes = benchmarkSizeInBytes;
         this.volume = volume;
         this.config = config;
-        stripeWidth = config.stripeSizeInBytes;
+        stripeWidth = config.getStripeSizeInBytes();
     }
 
     /*

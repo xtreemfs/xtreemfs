@@ -35,10 +35,10 @@ class RandomReadBenchmark extends RandomOffsetbasedBenchmark {
         long byteCounter = 0;
 
         for (long j = 0; j < numberOfBlocks; j++) {
-            FileHandle fileHandle = volume.openFile(config.userCredentials, BASFILE_FILENAME,
+            FileHandle fileHandle = volume.openFile(config.getUserCredentials(), BASFILE_FILENAME,
                     GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
             long nextOffset = generateNextRandomOffset();
-            byteCounter += fileHandle.read(config.userCredentials, data, RANDOM_IO_BLOCKSIZE, nextOffset);
+            byteCounter += fileHandle.read(config.getUserCredentials(), data, RANDOM_IO_BLOCKSIZE, nextOffset);
             fileHandle.close();
         }
         return byteCounter;

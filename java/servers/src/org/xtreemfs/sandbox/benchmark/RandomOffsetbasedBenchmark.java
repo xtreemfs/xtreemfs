@@ -32,7 +32,7 @@ abstract class RandomOffsetbasedBenchmark extends RandomBenchmark {
 
     RandomOffsetbasedBenchmark(Volume volume, Config config) throws Exception {
         super(volume, config);
-        sizeOfBasefile = config.basefileSizeInBytes;
+        sizeOfBasefile = config.getBasefileSizeInBytes();
     }
 
     @Override
@@ -63,9 +63,9 @@ abstract class RandomOffsetbasedBenchmark extends RandomBenchmark {
     /* check if a basefile to read from exists and if it has the right size */
     boolean basefileDoesNotExists() throws Exception {
         try {
-            FileHandle fileHandle = volume.openFile(config.userCredentials, BASFILE_FILENAME,
+            FileHandle fileHandle = volume.openFile(config.getUserCredentials(), BASFILE_FILENAME,
                     GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
-            long fileSizeInBytes = fileHandle.getAttr(config.userCredentials).getSize();
+            long fileSizeInBytes = fileHandle.getAttr(config.getUserCredentials()).getSize();
             fileHandle.close();
             return sizeOfBasefile != fileSizeInBytes;
         } catch (PosixErrorException e) {
@@ -83,14 +83,14 @@ abstract class RandomOffsetbasedBenchmark extends RandomBenchmark {
         int flags = GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
-        FileHandle fileHandle = volume.openFile(config.userCredentials, BASFILE_FILENAME, flags, 511);
+        FileHandle fileHandle = volume.openFile(config.getUserCredentials(), BASFILE_FILENAME, flags, 511);
         long byteCounter = 0;
         byte[] data = new byte[stripeWidth];
         for (long j = 0; j < numberOfBlocks; j++) {
             long nextOffset = j * stripeWidth;
             assert nextOffset >= 0 : "Offset < 0 not allowed";
             random.nextBytes(data);
-            byteCounter += fileHandle.write(config.userCredentials, data, stripeWidth, nextOffset);
+            byteCounter += fileHandle.write(config.getUserCredentials(), data, stripeWidth, nextOffset);
         }
         fileHandle.close();
         assert byteCounter == sizeOfBasefile : " Error while writing the basefile for the random io benchmark";
@@ -103,7 +103,7 @@ abstract class RandomOffsetbasedBenchmark extends RandomBenchmark {
     }
 
     private void addBasefileToCreatedFiles() throws Exception {
-        if (!config.noCleanupOfBasefile) {
+        if (!config.isNoCleanupOfBasefile()) {
             LinkedList<String> createdFiles = new LinkedList<String>();
             createdFiles.add(BASFILE_FILENAME);
             VolumeManager.getInstance().addCreatedFiles(volume, createdFiles);

@@ -24,11 +24,15 @@ abstract class FilebasedBenchmark extends RandomBenchmark {
 
     FilebasedBenchmark(Volume volume, Config config) throws Exception {
         super(volume, config);
-        this.randomIOFilesize = config.randomIOFilesize;
+        this.randomIOFilesize = config.getRandomIOFilesize();
     }
 
     /* convert to 4 KiB Blocks */
     long convertTo4KiBBlocks(long numberOfBlocks) {
         return (numberOfBlocks * (long) stripeWidth) / (long) randomIOFilesize;
     }
+
+	static String getBenchmarkFilename() {
+		return BENCHMARK_FILENAME;
+	}
 }

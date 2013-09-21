@@ -41,10 +41,10 @@ class RandomWriteBenchmark extends RandomOffsetbasedBenchmark {
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY.getNumber();
 
         for (long j = 0; j < numberOfBlocks; j++) {
-            FileHandle fileHandle = volume.openFile(config.userCredentials, BASFILE_FILENAME, flags, 511);
+            FileHandle fileHandle = volume.openFile(config.getUserCredentials(), BASFILE_FILENAME, flags, 511);
             long nextOffset = generateNextRandomOffset();
             random.nextBytes(data);
-            byteCounter += fileHandle.write(config.userCredentials, data, RANDOM_IO_BLOCKSIZE, nextOffset);
+            byteCounter += fileHandle.write(config.getUserCredentials(), data, RANDOM_IO_BLOCKSIZE, nextOffset);
             fileHandle.close();
         }
 

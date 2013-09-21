@@ -37,14 +37,14 @@ class SequentialWriteBenchmark extends SequentialBenchmark {
         int flags = GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
-        FileHandle fileHandle = volume.openFile(config.userCredentials, BENCHMARK_FILENAME + 0, flags, 511);
+        FileHandle fileHandle = volume.openFile(config.getUserCredentials(), BENCHMARK_FILENAME + 0, flags, 511);
         this.filenames.add(BENCHMARK_FILENAME + 0);
         long byteCounter = 0;
         for (long j = 0; j < numberOfBlocks; j++) {
             long nextOffset = j * stripeWidth;
             assert nextOffset >= 0 : "Offset < 0 not allowed";
             random.nextBytes(data);
-            byteCounter += fileHandle.write(config.userCredentials, data, stripeWidth, nextOffset);
+            byteCounter += fileHandle.write(config.getUserCredentials(), data, stripeWidth, nextOffset);
         }
         fileHandle.close();
         return byteCounter;

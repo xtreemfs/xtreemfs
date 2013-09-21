@@ -34,17 +34,17 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC;
  */
 class VolumeManager {
 
-    static final String              VOLUME_BASE_NAME = "benchmark";
+    private static final String              VOLUME_BASE_NAME = "benchmark";
 
-    private static VolumeManager     volumeManager    = null;
-    Config config;
-    AdminClient                      client;
-    int                              currentPosition;
-    LinkedList<Volume>               volumes;
-    LinkedList<Volume>               createdVolumes;
-    HashMap<Volume, HashSet<String>> createdFiles;
-    HashMap<Volume, String[]>        filelistsSequentialBenchmark;
-    HashMap<Volume, String[]>        filelistsRandomBenchmark;
+    private static VolumeManager             volumeManager    = null;
+    private Config                           config;
+    private AdminClient                      client;
+    private int                              currentPosition;
+    private LinkedList<Volume>               volumes;
+    private LinkedList<Volume>               createdVolumes;
+    private HashMap<Volume, HashSet<String>> createdFiles;
+    private HashMap<Volume, String[]>        filelistsSequentialBenchmark;
+    private HashMap<Volume, String[]>        filelistsRandomBenchmark;
 
     /* init the VolumeManager with params. This only needs to be called once */
     static void init(Config config) throws Exception {
@@ -112,19 +112,19 @@ class VolumeManager {
         Volume volume = null;
         try {
             List<GlobalTypes.KeyValuePair> volumeAttributes = new ArrayList<GlobalTypes.KeyValuePair>();
-            client.createVolume(config.auth, config.userCredentials, volumeName, 511, config.userName, config.group,
+            client.createVolume(config.getAuth(), config.getUserCredentials(), volumeName, 511, config.getUserName(), config.getGroup(),
                     GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
-                    GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, config.getStripeSizeInKiB,
-                    config.stripeWidth, volumeAttributes);			
-            volume = client.openVolume(volumeName, config.sslOptions, config.options);
-			volume.setOSDSelectionPolicy(config.userCredentials, config.osdSelectionPolicies);
+                    GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, config.getGetStripeSizeInKiB(),
+                    config.getStripeWidth(), volumeAttributes);
+            volume = client.openVolume(volumeName, config.getSslOptions(), config.getOptions());
+			volume.setOSDSelectionPolicy(config.getUserCredentials(), config.getOsdSelectionPolicies());
             createdVolumes.add(volume);
             createDirStructure(volume);
             Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Created volume %s", volumeName);
         } catch (PosixErrorException e) {
             if (e.getPosixError() == POSIXErrno.POSIX_ERROR_EEXIST) {
-                volume = client.openVolume(volumeName, config.sslOptions, config.options);
-                volume.setOSDSelectionPolicy(config.userCredentials, config.osdSelectionPolicies);
+                volume = client.openVolume(volumeName, config.getSslOptions(), config.getOptions());
+                volume.setOSDSelectionPolicy(config.getUserCredentials(), config.getOsdSelectionPolicies());
             } else
                 throw e;
         }
@@ -132,8 +132,8 @@ class VolumeManager {
     }
 
     private void createDirStructure(Volume volume) throws IOException {
-        volume.createDirectory(config.userCredentials, "/benchmarks/sequentialBenchmark", 0777, true);
-        volume.createDirectory(config.userCredentials, "/benchmarks/randomBenchmark", 0777, true);
+        volume.createDirectory(config.getUserCredentials(), "/benchmarks/sequentialBenchmark", 0777, true);
+        volume.createDirectory(config.getUserCredentials(), "/benchmarks/randomBenchmark", 0777, true);
     }
 
     /*
@@ -167,9 +167,9 @@ class VolumeManager {
 
         /* null means no filelist from a previous write benchmark has been deposited */
         if (null == filelistsSequentialBenchmark.get(volume)) {
-            filelist = inferFilelist(volume, SequentialBenchmark.BENCHMARK_FILENAME);
+            filelist = inferFilelist(volume, SequentialBenchmark.getBenchmarkFilename());
 
-            if (config.sequentialSizeInBytes == calculateTotalSizeOfFilelist(volume, filelist)) {
+            if (config.getSequentialSizeInBytes() == calculateTotalSizeOfFilelist(volume, filelist)) {
                 filelistsSequentialBenchmark.put(volume, filelist);
                 Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this,
                         "Succesfully infered filelist on volume %s.", volume.getVolumeName());
@@ -192,9 +192,9 @@ class VolumeManager {
 
         /* null means no filelist from a previous write benchmark has been deposited */
         if (null == filelistsRandomBenchmark.get(volume)) {
-            filelist = inferFilelist(volume, FilebasedBenchmark.BENCHMARK_FILENAME);
+            filelist = inferFilelist(volume, FilebasedBenchmark.getBenchmarkFilename());
 
-            if (config.randomSizeInBytes == calculateTotalSizeOfFilelist(volume, filelist)) {
+            if (config.getRandomSizeInBytes() == calculateTotalSizeOfFilelist(volume, filelist)) {
                 filelistsRandomBenchmark.put(volume, filelist);
                 Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this,
                         "Succesfully infered filelist on volume %s.", volume.getVolumeName());
@@ -222,7 +222,7 @@ class VolumeManager {
         String path = pathToBasefile.substring(0, pathToBasefile.lastIndexOf('/'));
         String filename = pathToBasefile.substring(pathToBasefile.lastIndexOf('/') + 1);
 
-        List<MRC.DirectoryEntry> directoryEntries = volume.readDir(config.userCredentials, path, 0, 0, true)
+        List<MRC.DirectoryEntry> directoryEntries = volume.readDir(config.getUserCredentials(), path, 0, 0, true)
                 .getEntriesList();
         ArrayList<String> entries = new ArrayList<String>(directoryEntries.size());
 
@@ -241,7 +241,7 @@ class VolumeManager {
     private long calculateTotalSizeOfFilelist(Volume volume, String[] filelist) throws IOException {
         long aggregatedSizeInBytes = 0;
         for (String file : filelist) {
-            MRC.Stat stat = volume.getAttr(config.userCredentials, file);
+            MRC.Stat stat = volume.getAttr(config.getUserCredentials(), file);
             aggregatedSizeInBytes += stat.getSize();
         }
         return aggregatedSizeInBytes;
@@ -278,7 +278,7 @@ class VolumeManager {
     /* try to delete a file. log errors, but continue */
     private void tryToDeleteFile(Volume volume, String filename) {
         try {
-            volume.unlink(config.userCredentials, filename);
+            volume.unlink(config.getUserCredentials(), filename);
         } catch (IOException e) {
             Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this,
                     "IO Error while trying to delete a file.");
@@ -315,7 +315,7 @@ class VolumeManager {
     /* delete a volume specified by a string with the volumes name */
     void deleteVolumeIfExisting(String volumeName) throws IOException {
         if (new ArrayList<String>(Arrays.asList(client.listVolumeNames())).contains(volumeName)) {
-            client.deleteVolume(config.auth, config.userCredentials, volumeName);
+            client.deleteVolume(config.getAuth(), config.getUserCredentials(), volumeName);
             Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Deleted volume %s", volumeName);
         }
     }
@@ -323,7 +323,7 @@ class VolumeManager {
     /* Performs cleanup on a OSD (because deleting the volume does not delete the files in the volume) */
     void cleanupOSD() throws Exception {
 
-        String pwd = config.osdPassword;
+        String pwd = config.getOsdPassword();
         LinkedList<String> uuids = getOSDUUIDs();
 
         for (String osd : uuids) {

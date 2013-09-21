@@ -15,13 +15,13 @@ package org.xtreemfs.sandbox.benchmark;
  */
 class BenchmarkResult {
 
-    BenchmarkUtils.BenchmarkType benchmarkType;
-    int              numberOfReadersOrWriters;
-    double           timeInSec;
-    double           speedInMiBProSec;
-    long             dataWrittenInBytes;
-    long             threadID;
-    long             byteCount;
+    private BenchmarkUtils.BenchmarkType benchmarkType;
+    private int                          numberOfReadersOrWriters;
+    private double                       timeInSec;
+    private double                       speedInMiBProSec;
+    private long                         dataWrittenInBytes;
+    private long                         threadID;
+    private long                         byteCount;
 
     BenchmarkResult(double timeInSec, double speedInMiBProSec, long dataWrittenInBytes, long threadID,
             long byteCount) {
@@ -59,4 +59,11 @@ class BenchmarkResult {
                 + dataWrittenInBytes + ";" + byteCount;
     }
 
+	void setBenchmarkType(BenchmarkUtils.BenchmarkType benchmarkType) {
+		this.benchmarkType = benchmarkType;
+	}
+
+	void setNumberOfReadersOrWriters(int numberOfReadersOrWriters) {
+		this.numberOfReadersOrWriters = numberOfReadersOrWriters;
+	}
 }

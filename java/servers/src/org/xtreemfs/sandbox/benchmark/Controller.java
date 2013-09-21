@@ -56,7 +56,7 @@ public class Controller {
         VolumeManager volumeManager = VolumeManager.getInstance();
 
         if (volumeNames.length == 0)
-            volumeManager.createDefaultVolumes(config.numberOfThreads);
+            volumeManager.createDefaultVolumes(config.getNumberOfThreads());
         else
             volumeManager.openVolumes(volumeNames);
     }
@@ -76,7 +76,7 @@ public class Controller {
         ConcurrentLinkedQueue<BenchmarkResult> result;
         ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
 
-        for (int i = 0; i < config.numberOfRepetitions; i++) {
+        for (int i = 0; i < config.getNumberOfRepetitions(); i++) {
             result = startBenchmark(benchmarkType, numberOfThreads);
             results.addAll(result);
         }
@@ -97,8 +97,8 @@ public class Controller {
     ConcurrentLinkedQueue<BenchmarkResult> startBenchmark(BenchmarkUtils.BenchmarkType benchmarkType, int numberOfThreads)
             throws Exception {
 
-        if (config.sequentialSizeInBytes % (config.stripeSizeInBytes * config.stripeWidth) != 0
-                || config.randomSizeInBytes % (config.stripeSizeInBytes * config.stripeWidth) != 0)
+        if (config.getSequentialSizeInBytes() % (config.getStripeSizeInBytes()* config.getStripeWidth()) != 0
+                || config.getRandomSizeInBytes() % (config.getStripeSizeInBytes() * config.getStripeWidth()) != 0)
             throw new IllegalArgumentException("Size must satisfy: size mod (stripeSize * stripeWidth) == 0");
 
         ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
@@ -120,8 +120,8 @@ public class Controller {
 
         /* Set BenchmarkResult Type */
         for (BenchmarkResult res : results) {
-            res.benchmarkType = benchmarkType;
-            res.numberOfReadersOrWriters = numberOfThreads;
+            res.setBenchmarkType(benchmarkType);
+            res.setNumberOfReadersOrWriters(numberOfThreads);
         }
         return results;
     }
@@ -166,17 +166,17 @@ public class Controller {
     public void teardown() throws Exception {
         deleteVolumesAndFiles();
         ClientManager.getInstance().shutdownClients();
-        if (config.osdCleanup)
+        if (config.isOsdCleanup())
             VolumeManager.getInstance().cleanupOSD();
     }
 
     /* delete all created volumes and files depending on the noCleanup options */
     private void deleteVolumesAndFiles() throws Exception {
         VolumeManager volumeManager = VolumeManager.getInstance();
-        if (!config.noCleanup && !config.noCleanupOfVolumes) {
+        if (!config.isNoCleanup() && !config.isNoCleanupOfVolumes()) {
             volumeManager.deleteCreatedFiles(); // is needed in case no volume was created
             volumeManager.deleteCreatedVolumes();
-        } else if (!config.noCleanup)
+        } else if (!config.isNoCleanup())
             volumeManager.deleteCreatedFiles();
     }
 }
