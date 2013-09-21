@@ -10,9 +10,6 @@ import org.xtreemfs.foundation.logging.Logging;
  * The commandline benchmark tool.
  */
 public class xtfs_benchmark {
-    static final int          KiB_IN_BYTES = 1024;
-    static final int          MiB_IN_BYTES = 1024 * 1024;
-    static final int          GiB_IN_BYTES = 1024 * 1024 * 1024;
 
     private static Controller controller;
     private static CLIOptions cliOptions;

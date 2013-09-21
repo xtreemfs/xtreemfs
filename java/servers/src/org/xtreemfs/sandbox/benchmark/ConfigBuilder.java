@@ -37,16 +37,12 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
  */
 public class ConfigBuilder {
 
-    static final int  KiB_IN_BYTES          = 1024;
-    static final long MiB_IN_BYTES          = 1024 * 1024;
-    static final long GiB_IN_BYTES          = 1024 * 1024 * 1024;
-
     int               numberOfThreads       = 1;
     int               numberOfRepetitions   = 1;
-    long              sequentialSizeInBytes = 10L * MiB_IN_BYTES;
-    long              randomSizeInBytes     = 10L * MiB_IN_BYTES;
-    long              basefileSizeInBytes   = 3L * GiB_IN_BYTES;
-    int               randomIOFilesize      = 4 * KiB_IN_BYTES;
+    long              sequentialSizeInBytes = 10L * BenchmarkUtils.getMiB_IN_BYTES();
+    long              randomSizeInBytes     = 10L * BenchmarkUtils.getMiB_IN_BYTES();
+    long              basefileSizeInBytes   = 3L * BenchmarkUtils.getGiB_IN_BYTES();
+    int               randomIOFilesize      = 4 * BenchmarkUtils.getKiB_IN_BYTES();
     String            userName              = "root";
     String            group                 = "root";
     String            osdPassword           = "";
@@ -55,7 +51,7 @@ public class ConfigBuilder {
     SSLOptions        sslOptions            = null;
     Options           options               = new Options();
     String            osdSelectionPolicies  = "1000,3002";
-    int               stripeSizeInBytes     = 128 * KiB_IN_BYTES;
+    int               stripeSizeInBytes     = 128 * BenchmarkUtils.getKiB_IN_BYTES();
     int               stripeWidth           = 1;
     boolean           noCleanup             = false;
     boolean           noCleanupOfVolumes    = false;

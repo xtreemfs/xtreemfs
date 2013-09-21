@@ -22,9 +22,6 @@ import org.xtreemfs.foundation.logging.Logging;
  */
  abstract class AbstractBenchmark {
 
-    static final int  MiB_IN_BYTES = 1024 * 1024;
-    static final int  GiB_IN_BYTES = 1024 * 1024 * 1024;
-
     final int         stripeWidth;
     final long        benchmarkSizeInBytes;
     final Volume      volume;
@@ -61,7 +58,7 @@ import org.xtreemfs.foundation.logging.Logging;
 
         /* Calculate and return results */
         double timeInSec = (after - before) / 1000.;
-        double speedMiBPerSec = round((byteCounter / MiB_IN_BYTES) / timeInSec, 2);
+        double speedMiBPerSec = round((byteCounter / BenchmarkUtils.getMiB_IN_BYTES()) / timeInSec, 2);
 
         BenchmarkResult result = new BenchmarkResult(timeInSec, speedMiBPerSec, benchmarkSizeInBytes, Thread
                 .currentThread().getId(), byteCounter);

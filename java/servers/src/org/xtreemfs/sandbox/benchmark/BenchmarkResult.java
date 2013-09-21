@@ -15,9 +15,6 @@ package org.xtreemfs.sandbox.benchmark;
  */
 class BenchmarkResult {
 
-    final static int MiB_IN_BYTES = 1024 * 1024;
-    final static int GiB_IN_BYTES = 1024 * 1024 * 1024;
-
     BenchmarkType    benchmarkType;
     int              numberOfReadersOrWriters;
     double           timeInSec;
@@ -38,8 +35,8 @@ class BenchmarkResult {
     @Override
     public String toString() {
 
-        String dataWritten = dataWrittenInBytes >= GiB_IN_BYTES ? dataWrittenInBytes / GiB_IN_BYTES + " GiB ["
-                : dataWrittenInBytes / MiB_IN_BYTES + " MiB [";
+        String dataWritten = dataWrittenInBytes >= BenchmarkUtils.getGiB_IN_BYTES() ? dataWrittenInBytes / BenchmarkUtils.getGiB_IN_BYTES() + " GiB ["
+                : dataWrittenInBytes / BenchmarkUtils.getMiB_IN_BYTES() + " MiB [";
         String readersOrWriters;
 
         if (benchmarkType == BenchmarkType.SEQ_WRITE || benchmarkType == BenchmarkType.RAND_WRITE
