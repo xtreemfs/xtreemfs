@@ -148,7 +148,7 @@ class CLIOptions {
                 "size of the basefile for random benchmarks in [B|K|M|G] (no modifier assumes bytes)", "<size>"));
         options.put(SIZE_FILES, new CLIParser.CliOption(STRING,
                 "size of the files for filebased benchmarks in [B|K|M|G] (no modifier assumes bytes)."
-                        + " The filesize must be <= 23^31-1", "<size>"));
+                        + " The filesize must be <= 2^31-1", "<size>"));
 
         /* deletion options */
         String noCleanupDescription = "do not delete created volumes and files. Volumes and files need to be removed "
@@ -229,7 +229,7 @@ class CLIOptions {
             long sizeInBytes = parseSizeWithModifierToBytes(optionValue);
             if (sizeInBytes > Integer.MAX_VALUE)
                 throw new IllegalArgumentException("Filesize for filebased random IO Benchmarks must be <= 23^31-1");
-            builder.setRandomIOFilesize((int) sizeInBytes);
+            builder.setFilesize((int) sizeInBytes);
         }
     }
 

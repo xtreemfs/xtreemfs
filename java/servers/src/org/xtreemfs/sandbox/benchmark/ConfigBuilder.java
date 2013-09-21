@@ -35,26 +35,26 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
  */
 public class ConfigBuilder {
 
-    private int               numberOfThreads       = 1;
-    private int               numberOfRepetitions   = 1;
-    private long              sequentialSizeInBytes = 10L * BenchmarkUtils.getMiB_IN_BYTES();
-    private long              randomSizeInBytes     = 10L * BenchmarkUtils.getMiB_IN_BYTES();
-    private long              basefileSizeInBytes   = 3L * BenchmarkUtils.getGiB_IN_BYTES();
-    private int               randomIOFilesize      = 4 * BenchmarkUtils.getKiB_IN_BYTES();
-    private String            userName              = "root";
-    private String            group                 = "root";
-    private String            osdPassword           = "";
-    private String            dirAddress            = "127.0.0.1:32638";
-    private RPC.Auth          auth                  = authNone;
-    private SSLOptions        sslOptions            = null;
-    private Options           options               = new Options();
-    private String            osdSelectionPolicies  = "1000,3002";
-    private int               stripeSizeInBytes     = 128 * BenchmarkUtils.getKiB_IN_BYTES();
-    private int               stripeWidth           = 1;
-    private boolean           noCleanup             = false;
-    private boolean           noCleanupOfVolumes    = false;
-    private boolean           noCleanupOfBasefile   = false;
-    private boolean           osdCleanup            = false;
+    private int        numberOfThreads       = 1;
+    private int        numberOfRepetitions   = 1;
+    private long       sequentialSizeInBytes = 10L * BenchmarkUtils.getMiB_IN_BYTES();
+    private long       randomSizeInBytes     = 10L * BenchmarkUtils.getMiB_IN_BYTES();
+    private long       basefileSizeInBytes   = 3L * BenchmarkUtils.getGiB_IN_BYTES();
+    private int        filesize              = 4 * BenchmarkUtils.getKiB_IN_BYTES();
+    private String     userName              = "root";
+    private String     group                 = "root";
+    private String     osdPassword           = "";
+    private String     dirAddress            = "127.0.0.1:32638";
+    private RPC.Auth   auth                  = authNone;
+    private SSLOptions sslOptions            = null;
+    private Options    options               = new Options();
+    private String     osdSelectionPolicies  = "1000,3002";
+    private int        stripeSizeInBytes     = 128 * BenchmarkUtils.getKiB_IN_BYTES();
+    private int        stripeWidth           = 1;
+    private boolean    noCleanup             = false;
+    private boolean    noCleanupOfVolumes    = false;
+    private boolean    noCleanupOfBasefile   = false;
+    private boolean    osdCleanup            = false;
 
     /**
      * Instantiate an builder (all values are the default values, see {@link Config}).
@@ -126,11 +126,11 @@ public class ConfigBuilder {
 	 * Set the size of files in filebased benchmark. <br/>
 	 * Default: 4 KiB.
      * 
-     * @param randomIOFilesize
+     * @param filesize
      * @return the builder
      */
-    public ConfigBuilder setRandomIOFilesize(int randomIOFilesize) {
-        this.randomIOFilesize = randomIOFilesize;
+    public ConfigBuilder setFilesize(int filesize) {
+        this.filesize = filesize;
         return this;
     }
 
@@ -322,8 +322,8 @@ public class ConfigBuilder {
 		return basefileSizeInBytes;
 	}
 
-	int getRandomIOFilesize() {
-		return randomIOFilesize;
+	int getFilesize() {
+		return filesize;
 	}
 
 	String getUserName() {

@@ -40,7 +40,7 @@ public class Config {
     private final long                sequentialSizeInBytes;
     private final long                randomSizeInBytes;
     private final long                basefileSizeInBytes;
-    private final int                 randomIOFilesize;
+    private final int                 filesize;
     private final String              userName;
     private final String              group;
     private final String              osdPassword;
@@ -72,7 +72,7 @@ public class Config {
         this.sequentialSizeInBytes = builder.getSequentialSizeInBytes();
         this.randomSizeInBytes = builder.getRandomSizeInBytes();
         this.basefileSizeInBytes = builder.getBasefileSizeInBytes();
-        this.randomIOFilesize = builder.getRandomIOFilesize();
+        this.filesize = builder.getFilesize();
         this.userName = builder.getUserName();
         this.group = builder.getGroup();
         this.osdPassword = builder.getOsdPassword();
@@ -152,8 +152,8 @@ public class Config {
 		return basefileSizeInBytes;
 	}
 
-	int getRandomIOFilesize() {
-		return randomIOFilesize;
+	int getFilesize() {
+		return filesize;
 	}
 
 	String getUserName() {

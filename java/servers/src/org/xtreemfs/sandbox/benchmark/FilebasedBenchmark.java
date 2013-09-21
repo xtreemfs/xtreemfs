@@ -20,16 +20,11 @@ import org.xtreemfs.common.libxtreemfs.Volume;
 abstract class FilebasedBenchmark extends RandomBenchmark {
 
     static final String BENCHMARK_FILENAME = "benchmarks/randomBenchmark/benchFile";
-    final int           randomIOFilesize;
+    final int           filesize;
 
     FilebasedBenchmark(Volume volume, Config config) throws Exception {
         super(volume, config);
-        this.randomIOFilesize = config.getRandomIOFilesize();
-    }
-
-    /* convert to 4 KiB Blocks */
-    long convertTo4KiBBlocks(long numberOfBlocks) {
-        return (numberOfBlocks * (long) stripeWidth) / (long) randomIOFilesize;
+        this.filesize = config.getFilesize();
     }
 
 	static String getBenchmarkFilename() {

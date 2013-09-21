@@ -38,8 +38,7 @@ class FilebasedWriteBenchmark extends FilebasedBenchmark {
     @Override
     long performIO(byte[] data, long numberOfBlocks) throws IOException {
 
-        // long numberOfFiles = convertTo4KiBBlocks(numberOfBlocks);
-        long numberOfFiles = config.getRandomSizeInBytes() / 4096;
+        long numberOfFiles = config.getRandomSizeInBytes() / filesize;
         long byteCounter = 0;
         Random random = new Random();
 
@@ -47,11 +46,17 @@ class FilebasedWriteBenchmark extends FilebasedBenchmark {
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
 
-        for (long j = 0; j < numberOfFiles; j++) {
-            FileHandle fileHandle = volume.openFile(config.getUserCredentials(), BENCHMARK_FILENAME + j, flags, 511);
-            this.filenames.add(BENCHMARK_FILENAME + j);
-            random.nextBytes(data);
-            byteCounter += fileHandle.write(config.getUserCredentials(), data, randomIOFilesize, 0);
+        for (long i = 0; i < numberOfFiles; i++) {
+            FileHandle fileHandle = volume.openFile(config.getUserCredentials(), BENCHMARK_FILENAME + i, flags, 511);
+            this.filenames.add(BENCHMARK_FILENAME + i);
+
+			for (long j = 0; j < filesize/stripeWidth; j++) {
+				long nextOffset = j * stripeWidth;
+				assert nextOffset >= 0 : "Offset < 0 not allowed";
+				random.nextBytes(data);
+				byteCounter += fileHandle.write(config.getUserCredentials(), data, stripeWidth, nextOffset);
+			}
+
             fileHandle.close();
         }
         return byteCounter;
