@@ -242,26 +242,36 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
     private void addReplicasWqRq(String fileId, Capability cap, XLocSet curXLocSet, XLocSet extXLocSet) throws Throwable {
 
-        ArrayList<ServiceUUID> OSDServiceUUIDs = new ArrayList<ServiceUUID>(extXLocSet.getReplicasCount());
-        for (int i = 0; i < extXLocSet.getReplicasCount(); i++) {
+        ArrayList<ServiceUUID> curOSDServiceUUIDs = new ArrayList<ServiceUUID>(curXLocSet.getReplicasCount());
+        for (int i = 0; i < curXLocSet.getReplicasCount(); i++) {
             // save each head OSDUUID to the list
-            OSDServiceUUIDs.add(i, new ServiceUUID(Helper.getOSDUUIDFromXlocSet(extXLocSet, i, 0)));
+            curOSDServiceUUIDs.add(i, new ServiceUUID(Helper.getOSDUUIDFromXlocSet(curXLocSet, i, 0)));
         }
 
         // Invalidate the majority of the replicas and get their ReplicaStatus.
-        CoordinatedReplicaUpdatePolicy policy = getPolicy(extXLocSet.getReplicaUpdatePolicy(), fileId, OSDServiceUUIDs);
-        int numRequiredAcks = policy.getNumRequiredAcks(null);
-        ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet, numRequiredAcks);
+        CoordinatedReplicaUpdatePolicy curPolicy = getPolicy(curXLocSet.getReplicaUpdatePolicy(), fileId,
+                curOSDServiceUUIDs);
+        int curNumRequiredAcks = curPolicy.getNumRequiredAcks(null);
+        ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet, curNumRequiredAcks);
 
         // Calculate the AuthState and determine how many replicas have to be updated until.
-        AuthoritativeReplicaState authState = policy.CalculateAuthoritativeState(states, fileId);
+        AuthoritativeReplicaState authState = curPolicy.CalculateAuthoritativeState(states, fileId);
         Set<String> replicasUpToDate = calculateReplicasUpToDate(authState, null);
-        int requiredUpdates = numRequiredAcks - replicasUpToDate.size();
         
+        ArrayList<ServiceUUID> extOSDServiceUUIDs = new ArrayList<ServiceUUID>(extXLocSet.getReplicasCount());
+        for (int i = 0; i < extXLocSet.getReplicasCount(); i++) {
+            // save each head OSDUUID to the list
+            extOSDServiceUUIDs.add(i, new ServiceUUID(Helper.getOSDUUIDFromXlocSet(extXLocSet, i, 0)));
+        }
+        CoordinatedReplicaUpdatePolicy extPolicy = getPolicy(extXLocSet.getReplicaUpdatePolicy(), fileId,
+                extOSDServiceUUIDs);
+        int extNumRequiredAcks = extPolicy.getNumRequiredAcks(null);
+        int requiredUpdates = extNumRequiredAcks - replicasUpToDate.size();
+
         FileCredentials fileCredentials = FileCredentials.newBuilder().setXlocs(extXLocSet).setXcap(cap.getXCap())
                 .build();
         
-        updateReplicas(fileId, fileCredentials, authState, OSDServiceUUIDs, replicasUpToDate, requiredUpdates);
+        updateReplicas(fileId, fileCredentials, authState, curOSDServiceUUIDs, replicasUpToDate, requiredUpdates);
     }
 
 
