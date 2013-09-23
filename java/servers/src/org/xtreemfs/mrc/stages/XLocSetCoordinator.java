@@ -226,7 +226,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             }
         }
 
-        // Call the installXLocSet method in the context of the ProcessingStage
+        // Call the installXLocSet method in the context of the ProcessingStage.
         MRCCallbackRequest callbackRequest = new MRCCallbackRequest(rq.getRPCRequest(),
                 new InternalCallbackInterface() {
                     @Override
@@ -247,9 +247,9 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
         // Calculate the AuthState and determine how many replicas have to be updated.
         AuthoritativeReplicaState authState = curPolicy.CalculateAuthoritativeState(states, fileId);
-        Set<String> replicasUpToDate = calculateReplicasUpToDate(authState, null);
+        Set<String> replicasUpToDate = calculateReplicasUpToDate(authState);
 
-        // Calculate the number of required updates and send them an request.
+        // Calculate the number of required updates and send them an update request.
         CoordinatedReplicaUpdatePolicy extPolicy = getPolicy(fileId, extXLocSet);
         int extNumRequiredAcks = extPolicy.getNumRequiredAcks(null);
         updateReplicas(fileId, cap, extXLocSet, authState, extNumRequiredAcks, replicasUpToDate);
@@ -293,7 +293,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet, 1);
         }
 
-        // Call the installXLocSet method in the context of the ProcessingStage
+        // Call the installXLocSet method in the context of the ProcessingStage.
         MRCCallbackRequest callbackRequest = new MRCCallbackRequest(rq.getRPCRequest(),
                 new InternalCallbackInterface() {
                     @Override
@@ -314,99 +314,29 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         int numRequiredAcks = curPolicy.getNumRequiredAcks(null);
         ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet, numRequiredAcks);
 
-        // If the backup can read we can assume every replica will be written on updates.
-        if (!curPolicy.backupCanRead()) {
+        // Calculate the AuthState and determine how many replicas have to be updated.
+        AuthoritativeReplicaState authState = curPolicy.CalculateAuthoritativeState(states, fileId);
+        Set<String> replicasUpToDate = calculateReplicasUpToDate(authState);
 
-            // Calculate the current AuthState.
-            AuthoritativeReplicaState authState = curPolicy.CalculateAuthoritativeState(states, fileId);
+        // Remove the replicas, that will be removed from the xLocSet, from the set containing up to date replicas.
+        HashSet<String> newReplicas = new HashSet<String>();
+        for (int i = 0; i < newXLocSet.getReplicasCount(); i++) {
+            String OSDUUID = Helper.getOSDUUIDFromXlocSet(curXLocSet, i, 0);
+            newReplicas.add(OSDUUID);
+        }
 
-            // Create a policy for the new XLocSet and calculate the minimal reads,
-            CoordinatedReplicaUpdatePolicy newPolicy = getPolicy(fileId, newXLocSet);
-            int requiredRead = newPolicy.getNumRequiredAcks(null);
-
-            // Create a Set containing the remaining UUIDs.
-            final HashSet<String> newXLocSetUUIDs = new HashSet<String>(newXLocSet.getReplicasCount());
-            for (int i = 0; i < newXLocSet.getReplicasCount(); i++) {
-                // TODO(jdillmann): Currently using the head OSD. Not sure what to do with striping.
-                String osdUUID = Helper.getOSDUUIDFromXlocSet(newXLocSet, i, 0);
-                newXLocSetUUIDs.add(osdUUID);
-            }
-
-            // Create a Set containing the UUIDs of replicas that have been removed.
-            final HashSet<String> removedOSDUUIDs = new HashSet<String>(curXLocSet.getReplicasCount()
-                    - newXLocSet.getReplicasCount());
-            for (int i = 0; i < curXLocSet.getReplicasCount(); i++) {
-                String osdUUID = Helper.getOSDUUIDFromXlocSet(curXLocSet, i, 0);
-                if (!newXLocSetUUIDs.contains(osdUUID)) {
-                    removedOSDUUIDs.add(osdUUID);
-                }
-            }
-
-            // Create a UUID set containing UUIDs of OSDs missing some objects, that could harm the invariant.
-            // Since all the missing objects will be fetched, even OSDs missing more than one object have to be added
-            // only once.
-            HashSet<String> fetchUUIDs = new HashSet<String>();
-
-            // Check the AuthState for missing objects and find the OSDs missing them.
-            // TODO(jdillmann): TruncateLog ?
-            for (ObjectVersionMapping ovm : authState.getObjectVersionsList()) {
-                HashSet<String> osdUUIDs = new HashSet<String>(ovm.getOsdUuidsCount());
-                for (String UUID : ovm.getOsdUuidsList()) {
-                    if (!removedOSDUUIDs.contains(UUID)) {
-                        osdUUIDs.add(UUID);
-                    }
-                }
-
-                // W + requiredRead > N <= W = N - requiredRead + 1
-                // == (requiredWrite + minMajority) = N - requiredRead + 1
-                // == requiredWrite = N - requiredRead - minMajority +1
-                int N = newXLocSet.getReplicasCount();
-                int minMajority = osdUUIDs.size();
-                int requiredWrite = N - requiredRead - minMajority + 1;
-
-                // if the removal would harm the invariant update an OSD, which hasn't the latest data yet.
-                if (requiredWrite > 0) {
-
-                    int i = 0;
-                    for (String UUID : newXLocSetUUIDs) {
-                        if (!osdUUIDs.contains(UUID)) {
-                            i++;
-                            fetchUUIDs.add(UUID);
-
-                            if (i == requiredWrite) {
-                                break;
-                            }
-                        }
-                    }
-
-                    assert (i == requiredWrite);
-                }
-            }
-
-            // Instruct the Replicas, that are not up to date to fetch all the data.
-            if (fetchUUIDs.size() > 0) {
-                // build the FileCredentials
-                FileCredentials fileCredentials = FileCredentials.newBuilder().setXlocs(curXLocSet)
-                        .setXcap(cap.getXCap()).build();
-
-                // build the fetch request
-                xtreemfs_rwr_fetch_invalidatedRequest fiRequest = xtreemfs_rwr_fetch_invalidatedRequest.newBuilder()
-                        .setFileId(fileId).setFileCredentials(fileCredentials).setState(authState).build();
-
-                // and send the request to the OSDs missing some data
-                for (String OSDUUID : fetchUUIDs) {
-                    ServiceUUID service = new ServiceUUID(OSDUUID);
-                    // TODO(jdillmann): check if there is any sane way to use libxtreemfs at the mrc
-                    @SuppressWarnings("unchecked")
-                    RPCResponse<emptyResponse> rpcResponse = master.getOSDClient().xtreemfs_rwr_fetch_invalidated(
-                            service.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fiRequest);
-                    rpcResponse.get();
-                    rpcResponse.freeBuffers();
-                }
+        Iterator<String> iterator = replicasUpToDate.iterator();
+        while (iterator.hasNext()) {
+            String OSDUUID = iterator.next();
+            if (!newReplicas.contains(OSDUUID)) {
+                iterator.remove();
             }
         }
 
-        // It is now guaranteed, that the invariant won't be harmed by removing the Replicas.
+        // Calculate the number of required updates and send them an update request.
+        CoordinatedReplicaUpdatePolicy newPolicy = getPolicy(fileId, newXLocSet);
+        int newNumRequiredAcks = newPolicy.getNumRequiredAcks(null);
+        updateReplicas(fileId, cap, newXLocSet, authState, newNumRequiredAcks, replicasUpToDate);
     }
 
     // public void replaceReplica(String fileId, MRCOperation op, MRCRequest rq) {
@@ -666,10 +596,9 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
      * object associated to a file.
      * 
      * @param authState
-     * @param filterOSDUUIDs
      * @return set of replicas that are up-to-date
      */
-    private Set<String> calculateReplicasUpToDate(AuthoritativeReplicaState authState, Set<String> filterOSDUUIDs) {
+    private Set<String> calculateReplicasUpToDate(AuthoritativeReplicaState authState) {
 
         HashMap<String, Integer> replicaObjCount = new HashMap<String, Integer>();
 
@@ -682,11 +611,9 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             totalObjCount++;
 
             for (String OSDUUID : ovm.getOsdUuidsList()) {
-                if (filterOSDUUIDs == null || !filterOSDUUIDs.contains(OSDUUID)) {
-                    Integer c = replicaObjCount.get(OSDUUID);
-                    c = (c == null) ? 1 : c + 1;
-                    replicaObjCount.put(OSDUUID, c);
-                }
+                Integer c = replicaObjCount.get(OSDUUID);
+                c = (c == null) ? 1 : c + 1;
+                replicaObjCount.put(OSDUUID, c);
             }
         }
         
