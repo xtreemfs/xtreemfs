@@ -238,20 +238,18 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         master.getProcStage().enqueueOperation(callbackRequest, ProcessingStage.STAGEOP_INTERNAL_CALLBACK, null);
     }
 
-    private void addReplicasWqRq(String fileId, Capability cap, XLocSet curXLocSet, XLocSet extXLocSet) throws Throwable {
-
+    private void addReplicasWqRq(String fileId, Capability cap, XLocSet curXLocSet, XLocSet extXLocSet)
+            throws Throwable {
         // Invalidate the majority of the replicas and get their ReplicaStatus.
-        CoordinatedReplicaUpdatePolicy curPolicy = getPolicy(fileId, curXLocSet);
-        int curNumRequiredAcks = curPolicy.getNumRequiredAcks(null);
+        int curNumRequiredAcks = calculateNumRequiredAcks(fileId, curXLocSet);
         ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet, curNumRequiredAcks);
 
         // Calculate the AuthState and determine how many replicas have to be updated.
-        AuthoritativeReplicaState authState = curPolicy.CalculateAuthoritativeState(states, fileId);
+        AuthoritativeReplicaState authState = calculateAuthoritativeState(fileId, curXLocSet, states);
         Set<String> replicasUpToDate = calculateReplicasUpToDate(authState);
 
         // Calculate the number of required updates and send them an update request.
-        CoordinatedReplicaUpdatePolicy extPolicy = getPolicy(fileId, extXLocSet);
-        int extNumRequiredAcks = extPolicy.getNumRequiredAcks(null);
+        int extNumRequiredAcks = calculateNumRequiredAcks(fileId, extXLocSet);
         updateReplicas(fileId, cap, extXLocSet, authState, extNumRequiredAcks, replicasUpToDate);
     }
 
@@ -308,14 +306,12 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
     private void removeReplicasWqRq(String fileId, Capability cap, XLocSet curXLocSet, XLocSet newXLocSet)
             throws Throwable {
-
         // Invalidate the majority of the replicas and get their ReplicaStatus
-        CoordinatedReplicaUpdatePolicy curPolicy = getPolicy(fileId, curXLocSet);
-        int numRequiredAcks = curPolicy.getNumRequiredAcks(null);
+        int numRequiredAcks = calculateNumRequiredAcks(fileId, curXLocSet);
         ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet, numRequiredAcks);
 
         // Calculate the AuthState and determine how many replicas have to be updated.
-        AuthoritativeReplicaState authState = curPolicy.CalculateAuthoritativeState(states, fileId);
+        AuthoritativeReplicaState authState = calculateAuthoritativeState(fileId, curXLocSet, states);
         Set<String> replicasUpToDate = calculateReplicasUpToDate(authState);
 
         // Remove the replicas, that will be removed from the xLocSet, from the set containing up to date replicas.
@@ -334,8 +330,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         }
 
         // Calculate the number of required updates and send them an update request.
-        CoordinatedReplicaUpdatePolicy newPolicy = getPolicy(fileId, newXLocSet);
-        int newNumRequiredAcks = newPolicy.getNumRequiredAcks(null);
+        int newNumRequiredAcks = calculateNumRequiredAcks(fileId, newXLocSet);
         updateReplicas(fileId, cap, newXLocSet, authState, newNumRequiredAcks, replicasUpToDate);
     }
 
@@ -628,28 +623,65 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         return replicaObjCount.keySet();
     }
 
-    private CoordinatedReplicaUpdatePolicy getPolicy(String fileId, XLocSet xLocSet) {
+    /**
+     * Calculate the AuthoritativeReplicaState from the ReplicaStatus returned by the INVALIDATE operation.
+     * 
+     * @param fileId
+     * @param xLocSet
+     * @param states
+     * @return
+     */
+    private AuthoritativeReplicaState calculateAuthoritativeState(String fileId, XLocSet xLocSet, ReplicaStatus[] states) {
         // Generate a list of ServiceUUIDs from the XLocSet.
-        List<ServiceUUID> OSDUUIDs = new ArrayList<ServiceUUID>(xLocSet.getReplicasCount());
-        for (int i = 0; i < xLocSet.getReplicasCount(); i++) {
+        int i;
+        List<ServiceUUID> OSDUUIDs = new ArrayList<ServiceUUID>(xLocSet.getReplicasCount() - 1);
+        for (i = 0; i < xLocSet.getReplicasCount() - 1; i++) {
             // Add each head OSDUUID to the list.
             OSDUUIDs.add(i, new ServiceUUID(Helper.getOSDUUIDFromXlocSet(xLocSet, i, 0)));
         }
+        // Save the last OSD as the localUUID.
+        String localUUID = Helper.getOSDUUIDFromXlocSet(xLocSet, i, 0);
 
+        // Calculate an return the AuthoritativeReplicaState.
+        return CoordinatedReplicaUpdatePolicy.CalculateAuthoritativeState(states, fileId, localUUID, OSDUUIDs);
+    }
+
+    /**
+     * Calculate the number of required ACKS that are constituting a majority.
+     * 
+     * @param fileId
+     * @param xLocSet
+     * @return
+     */
+    private int calculateNumRequiredAcks(String fileId, XLocSet xLocSet) {
+        // Generate a list of ServiceUUIDs from the XLocSet.
+        // TODO(jdillmann): Replace by a List implemenation that is only returning a size().
+        int i;
+        List<ServiceUUID> OSDUUIDs = new ArrayList<ServiceUUID>(xLocSet.getReplicasCount() - 1);
+        for (i = 0; i < xLocSet.getReplicasCount() - 1; i++) {
+            // Add each head OSDUUID to the list.
+            OSDUUIDs.add(i, new ServiceUUID(Helper.getOSDUUIDFromXlocSet(xLocSet, i, 0)));
+        }
+        // Save the last OSD as the localUUID.
+        String localUUID = Helper.getOSDUUIDFromXlocSet(xLocSet, i, 0);
+        
         // Create the policy without specifing a local OSD.
         String replicaUpdatePolicy = xLocSet.getReplicaUpdatePolicy();
         CoordinatedReplicaUpdatePolicy policy = null;
         if (replicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE)) {
-            policy = new WaR1UpdatePolicy(OSDUUIDs, null, fileId, null);
+            policy = new WaR1UpdatePolicy(OSDUUIDs, localUUID, fileId, null);
         } else if (replicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA)) {
-            policy = new WaRaUpdatePolicy(OSDUUIDs, null, fileId, null);
+            policy = new WaRaUpdatePolicy(OSDUUIDs, localUUID, fileId, null);
         } else if (replicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ)) {
-            policy = new WqRqUpdatePolicy(OSDUUIDs, null, fileId, null);
+            policy = new WqRqUpdatePolicy(OSDUUIDs, localUUID, fileId, null);
         } else {
             throw new IllegalArgumentException("unsupported replica update mode: " + replicaUpdatePolicy);
         }
 
-        return policy;
+        // Since the policy assumes that the localUUID's state is known, we have to wait for one more ACK on operations
+        // that aren't executed from an OSD.
+        int numRequiredAcks = policy.getNumRequiredAcks(null) + 1;
+        return numRequiredAcks;
     }
 
     /**
