@@ -17,8 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import junit.extensions.PA;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -77,7 +75,7 @@ public class VersionedXLocSetTest {
 
     private final static int       NUM_OSDS = 5;
 
-    private static Long            OFT_CLEAN_INTERVAL_MS;
+    // private static Long OFT_CLEAN_INTERVAL_MS;
     private static int             LEASE_TIMEOUT_MS;
 
     @BeforeClass
@@ -122,7 +120,7 @@ public class VersionedXLocSetTest {
         client.start();
 
         // get the current timeouts to save time spend waiting
-        OFT_CLEAN_INTERVAL_MS = (Long) PA.getValue(osds[0].getDispatcher().getPreprocStage(), "OFT_CLEAN_INTERVAL");
+        // OFT_CLEAN_INTERVAL_MS = (Long) PA.getValue(osds[0].getDispatcher().getPreprocStage(), "OFT_CLEAN_INTERVAL");
         LEASE_TIMEOUT_MS = configs[0].getFleaseLeaseToMS();
 
     }
@@ -314,7 +312,7 @@ public class VersionedXLocSetTest {
                 repl_flags);
         volume.close();
         
-        testAddReadOutdated(volumeName, fileName);
+        addReadOutdated(volumeName, fileName);
     }
 
     @Test
@@ -328,10 +326,10 @@ public class VersionedXLocSetTest {
         volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 2, 0);
         volume.close();
 
-        testAddReadOutdated(volumeName, fileName);
+        addReadOutdated(volumeName, fileName);
     }
 
-    private void testAddReadOutdated(String volumeName, String fileName) throws Exception {
+    private void addReadOutdated(String volumeName, String fileName) throws Exception {
         // open outdated file handle and write some data
         AdminVolume outdatedVolume = client.openVolume(volumeName, null, options);
         AdminFileHandle outdatedFile = outdatedVolume.openFile(userCredentials, fileName,
@@ -504,6 +502,59 @@ public class VersionedXLocSetTest {
         resetSuspendableOSDs(suspOSDs, 2);
 
         assertEquals(dataOut[0], (byte) 1);
+    }
+    
+    
+    /**
+     * This test covers the functionality in case of a network partition when not more then n+1/2 replicas are
+     * available. The majority has to be established both in the old and in the new replica set.
+     */
+    @Test
+    public void testPartition() throws Exception {
+        String volumeName = "testPartition";
+        String fileName = "/testfile";
+        
+        // Make the first OSD suspendable
+        SuspendableOSDRequestDispatcher[] suspOSDs = replaceWithSuspendableOSDs(0, 1);
+
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+
+        AdminVolume volume = client.openVolume(volumeName, null, options);
+        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 4, 0);
+        volume.setOSDSelectionPolicy(
+                userCredentials,
+                Helper.policiesToString(new OSDSelectionPolicyType[] {
+                        OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT,
+                        OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID }));
+        volume.setReplicaSelectionPolicy(
+                userCredentials,
+                Helper.policiesToString(new OSDSelectionPolicyType[] {
+                        OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID,
+                        OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_REVERSE }));
+
+        // Create the file an write some data to it.
+        AdminFileHandle file = volume.openFile(userCredentials, fileName,
+                Helper.flagsToInt(SYSTEM_V_FCNTL_H_O_RDWR, SYSTEM_V_FCNTL_H_O_CREAT), 0777);
+        ReusableBuffer dataIn = SetupUtils.generateData(256 * 1024, (byte) 1);
+        file.write(userCredentials, dataIn.getData(), 256 * 1024, 0);
+        dataIn.clear();
+
+        // Suspend the first OSD. The policy requires a majority of 3 for a replication factor of 4.
+        suspOSDs[0].suspended.set(true);
+
+        // Add another replica.
+        addReplicas(volume, fileName, 1);
+
+        // Get the replica recently added from the replica list and remove it.
+        // Since a majority in both, the new and the old set, has to be ensured, only one osd can be suspended.
+        List<Replica> replicas = file.getReplicasList();
+        Replica replica = replicas.get(0);
+        volume.removeReplica(userCredentials, fileName, replica.getOsdUuids(0));
+
+        file.close();
+        volume.close();
+
+        resetSuspendableOSDs(suspOSDs, 0);
     }
 
     private SuspendableOSDRequestDispatcher[] replaceWithSuspendableOSDs(int start, int count) throws Exception {
