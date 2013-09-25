@@ -117,7 +117,7 @@ class VolumeManager {
                     GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, config.getGetStripeSizeInKiB(),
                     config.getStripeWidth(), volumeAttributes);
             volume = client.openVolume(volumeName, config.getSslOptions(), config.getOptions());
-			volume.setOSDSelectionPolicy(config.getUserCredentials(), config.getOsdSelectionPolicies());
+            volume.setOSDSelectionPolicy(config.getUserCredentials(), config.getOsdSelectionPolicies());
             createdVolumes.add(volume);
             createDirStructure(volume);
             Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Created volume %s", volumeName);

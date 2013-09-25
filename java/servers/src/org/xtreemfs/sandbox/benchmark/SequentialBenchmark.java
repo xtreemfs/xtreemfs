@@ -31,7 +31,7 @@ abstract class SequentialBenchmark extends AbstractBenchmark {
     void finalizeBenchmark() throws Exception {
     }
 
-	static String getBenchmarkFilename() {
-		return BENCHMARK_FILENAME;
-	}
+    static String getBenchmarkFilename() {
+        return BENCHMARK_FILENAME;
+    }
 }

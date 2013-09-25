@@ -59,11 +59,11 @@ class BenchmarkResult {
                 + dataWrittenInBytes + ";" + byteCount;
     }
 
-	void setBenchmarkType(BenchmarkUtils.BenchmarkType benchmarkType) {
-		this.benchmarkType = benchmarkType;
-	}
+    void setBenchmarkType(BenchmarkUtils.BenchmarkType benchmarkType) {
+        this.benchmarkType = benchmarkType;
+    }
 
-	void setNumberOfReadersOrWriters(int numberOfReadersOrWriters) {
-		this.numberOfReadersOrWriters = numberOfReadersOrWriters;
-	}
+    void setNumberOfReadersOrWriters(int numberOfReadersOrWriters) {
+        this.numberOfReadersOrWriters = numberOfReadersOrWriters;
+    }
 }

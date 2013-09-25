@@ -29,20 +29,19 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
  */
 class ClientManager {
 
-	private static ClientManager instance;
+    private static ClientManager    instance;
 
     private LinkedList<AdminClient> clients;
 
+    private ClientManager() {
+        this.clients = new LinkedList<AdminClient>();
+    }
 
-	private ClientManager() {
-		this.clients = new LinkedList<AdminClient>();
-	}
-
-	static ClientManager getInstance(){
-		if (instance==null)
-			instance = new ClientManager();
-		return instance;
-	}
+    static ClientManager getInstance() {
+        if (instance == null)
+            instance = new ClientManager();
+        return instance;
+    }
 
     /* create and start an AdminClient. */
     AdminClient getNewClient(Config config) throws Exception {

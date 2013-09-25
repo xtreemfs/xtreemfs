@@ -86,20 +86,20 @@ public class xtfs_benchmark {
         printCSV(results);
     }
 
-	/* Print the results as csv. */
-	private static void printCSV(ConcurrentLinkedQueue<BenchmarkResult> results) {
-		System.out.println("Type;NumberOfParallelThreads;TimeInSec;MiB/Sec;DataWrittenInBytes;ByteCount");
-		/* print the results */
-		for (BenchmarkResult res : results) {
-			System.out.println(res.toCSV());
-		}
-	}
+    /* Print the results as csv. */
+    private static void printCSV(ConcurrentLinkedQueue<BenchmarkResult> results) {
+        System.out.println("Type;NumberOfParallelThreads;TimeInSec;MiB/Sec;DataWrittenInBytes;ByteCount");
+        /* print the results */
+        for (BenchmarkResult res : results) {
+            System.out.println(res.toCSV());
+        }
+    }
 
-	/* Print the results in a json like style. */
-	private static void printResults(ConcurrentLinkedQueue<BenchmarkResult> results) {
-		/* print the results */
-		for (BenchmarkResult res : results) {
-			System.err.println(res);
-		}
-	}
+    /* Print the results in a json like style. */
+    private static void printResults(ConcurrentLinkedQueue<BenchmarkResult> results) {
+        /* print the results */
+        for (BenchmarkResult res : results) {
+            System.err.println(res);
+        }
+    }
 }

@@ -81,7 +81,7 @@ public class Config {
                 .build();
         this.sslOptions = builder.getSslOptions();
         this.options = builder.getOptions();
-		this.osdSelectionPolicies = builder.getOsdSelectionPolicies();
+        this.osdSelectionPolicies = builder.getOsdSelectionPolicies();
         this.stripeSizeInBytes = builder.getStripeSizeInBytes();
         this.getStripeSizeInKiB = builder.getStripeSizeInBytes() / 1024;
         this.stripeWidth = builder.getStripeWidth();
@@ -132,95 +132,95 @@ public class Config {
         return "Access not possible";
     }
 
-	int getNumberOfThreads() {
-		return numberOfThreads;
-	}
+    int getNumberOfThreads() {
+        return numberOfThreads;
+    }
 
-	int getNumberOfRepetitions() {
-		return numberOfRepetitions;
-	}
+    int getNumberOfRepetitions() {
+        return numberOfRepetitions;
+    }
 
-	long getSequentialSizeInBytes() {
-		return sequentialSizeInBytes;
-	}
+    long getSequentialSizeInBytes() {
+        return sequentialSizeInBytes;
+    }
 
-	long getRandomSizeInBytes() {
-		return randomSizeInBytes;
-	}
+    long getRandomSizeInBytes() {
+        return randomSizeInBytes;
+    }
 
-	long getBasefileSizeInBytes() {
-		return basefileSizeInBytes;
-	}
+    long getBasefileSizeInBytes() {
+        return basefileSizeInBytes;
+    }
 
-	int getFilesize() {
-		return filesize;
-	}
+    int getFilesize() {
+        return filesize;
+    }
 
-	String getUserName() {
-		return userName;
-	}
+    String getUserName() {
+        return userName;
+    }
 
-	String getGroup() {
-		return group;
-	}
+    String getGroup() {
+        return group;
+    }
 
-	String getOsdPassword() {
-		return osdPassword;
-	}
+    String getOsdPassword() {
+        return osdPassword;
+    }
 
-	String getDirAddress() {
-		return dirAddress;
-	}
+    String getDirAddress() {
+        return dirAddress;
+    }
 
-	String getMrcAddress() {
-		return mrcAddress;
-	}
+    String getMrcAddress() {
+        return mrcAddress;
+    }
 
-	RPC.UserCredentials getUserCredentials() {
-		return userCredentials;
-	}
+    RPC.UserCredentials getUserCredentials() {
+        return userCredentials;
+    }
 
-	RPC.Auth getAuth() {
-		return auth;
-	}
+    RPC.Auth getAuth() {
+        return auth;
+    }
 
-	SSLOptions getSslOptions() {
-		return sslOptions;
-	}
+    SSLOptions getSslOptions() {
+        return sslOptions;
+    }
 
-	Options getOptions() {
-		return options;
-	}
+    Options getOptions() {
+        return options;
+    }
 
-	String getOsdSelectionPolicies() {
-		return osdSelectionPolicies;
-	}
+    String getOsdSelectionPolicies() {
+        return osdSelectionPolicies;
+    }
 
-	int getStripeSizeInBytes() {
-		return stripeSizeInBytes;
-	}
+    int getStripeSizeInBytes() {
+        return stripeSizeInBytes;
+    }
 
-	int getGetStripeSizeInKiB() {
-		return getStripeSizeInKiB;
-	}
+    int getGetStripeSizeInKiB() {
+        return getStripeSizeInKiB;
+    }
 
-	int getStripeWidth() {
-		return stripeWidth;
-	}
+    int getStripeWidth() {
+        return stripeWidth;
+    }
 
-	boolean isNoCleanup() {
-		return noCleanup;
-	}
+    boolean isNoCleanup() {
+        return noCleanup;
+    }
 
-	boolean isNoCleanupOfVolumes() {
-		return noCleanupOfVolumes;
-	}
+    boolean isNoCleanupOfVolumes() {
+        return noCleanupOfVolumes;
+    }
 
-	boolean isNoCleanupOfBasefile() {
-		return noCleanupOfBasefile;
-	}
+    boolean isNoCleanupOfBasefile() {
+        return noCleanupOfBasefile;
+    }
 
-	boolean isOsdCleanup() {
-		return osdCleanup;
-	}
+    boolean isOsdCleanup() {
+        return osdCleanup;
+    }
 }

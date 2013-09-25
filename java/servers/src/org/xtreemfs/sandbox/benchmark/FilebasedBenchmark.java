@@ -27,7 +27,7 @@ abstract class FilebasedBenchmark extends RandomBenchmark {
         this.filesize = config.getFilesize();
     }
 
-	static String getBenchmarkFilename() {
-		return BENCHMARK_FILENAME;
-	}
+    static String getBenchmarkFilename() {
+        return BENCHMARK_FILENAME;
+    }
 }

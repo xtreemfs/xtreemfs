@@ -122,7 +122,7 @@ public class Controller {
         return results;
     }
 
-	public void tryConnection() throws Exception {
+    public void tryConnection() throws Exception {
         try {
             ClientManager.getInstance().getNewClient(config).getServiceByType(DIR.ServiceType.SERVICE_TYPE_OSD);
         } catch (Exception e) {

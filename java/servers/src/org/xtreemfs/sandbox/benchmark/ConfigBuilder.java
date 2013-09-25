@@ -17,7 +17,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 /**
  * Builder for the {@link Config} datastructure.
  * <p/>
- *
+ * 
  * Use like this: <br/>
  * <code>
  * ParamsBuilder builder = new ParamsBuilder();<br/>
@@ -63,121 +63,121 @@ public class ConfigBuilder {
     }
 
     /**
-	 * Set the number of repetitions of a benchmark. <br/>
-	 * Default: 1.
+     * Set the number of repetitions of a benchmark. <br/>
+     * Default: 1.
      * 
      * @param numberOfRepetitions
      * @return the builder
      */
     public ConfigBuilder setNumberOfRepetitions(int numberOfRepetitions) {
-		if (numberOfRepetitions < 1)
-			throw new IllegalArgumentException("numberOfRepetitions < 1 not allowed");
+        if (numberOfRepetitions < 1)
+            throw new IllegalArgumentException("numberOfRepetitions < 1 not allowed");
         this.numberOfRepetitions = numberOfRepetitions;
         return this;
     }
 
     /**
-	 * Set the number of benchmarks (benchmark threads) to be run in parallel. <br/>
-	 * Default: 1.
+     * Set the number of benchmarks (benchmark threads) to be run in parallel. <br/>
+     * Default: 1.
      * 
      * @param numberOfThreads
      * @return the builder
      */
     public ConfigBuilder setNumberOfThreads(int numberOfThreads) {
-		if (numberOfThreads < 1)
-			throw new IllegalArgumentException("numberOfThreads < 1 not allowed");
+        if (numberOfThreads < 1)
+            throw new IllegalArgumentException("numberOfThreads < 1 not allowed");
 
         this.numberOfThreads = numberOfThreads;
         return this;
     }
 
     /**
-	 * Set the number of bytes to write or read in a sequential benchmark. <br/>
-	 * Default: 10 MiB.
+     * Set the number of bytes to write or read in a sequential benchmark. <br/>
+     * Default: 10 MiB.
      * 
      * @param sequentialSizeInBytes
      * @return the builder
      */
     public ConfigBuilder setSequentialSizeInBytes(long sequentialSizeInBytes) {
-		if (sequentialSizeInBytes < 0)
-			throw new IllegalArgumentException("sequentialSizeInBytes < 0 not allowed");
+        if (sequentialSizeInBytes < 0)
+            throw new IllegalArgumentException("sequentialSizeInBytes < 0 not allowed");
         this.sequentialSizeInBytes = sequentialSizeInBytes;
         return this;
     }
 
     /**
-	 * Set the number of bytes to write or read in a random benchmark. <br/>
-	 * Default: 10 MiB.
+     * Set the number of bytes to write or read in a random benchmark. <br/>
+     * Default: 10 MiB.
      * 
      * @param randomSizeInBytes
      * @return the builder
      */
     public ConfigBuilder setRandomSizeInBytes(long randomSizeInBytes) {
-		if (randomSizeInBytes < 0)
-			throw new IllegalArgumentException("randomSizeInBytes < 0 not allowed");
+        if (randomSizeInBytes < 0)
+            throw new IllegalArgumentException("randomSizeInBytes < 0 not allowed");
         this.randomSizeInBytes = randomSizeInBytes;
         return this;
     }
 
     /**
-	 * Set the size of the basefile for random benchmarks. <br/>
-	 * Default: 3 GiB.
+     * Set the size of the basefile for random benchmarks. <br/>
+     * Default: 3 GiB.
      * 
      * @param basefileSizeInBytes
      * @return the builder
      */
     public ConfigBuilder setBasefileSizeInBytes(long basefileSizeInBytes) {
-		if (basefileSizeInBytes < 1)
-			throw new IllegalArgumentException("basefileSizeInBytes < 1 not allowed");
+        if (basefileSizeInBytes < 1)
+            throw new IllegalArgumentException("basefileSizeInBytes < 1 not allowed");
         this.basefileSizeInBytes = basefileSizeInBytes;
         return this;
     }
 
     /**
-	 * Set the size of files in filebased benchmark. <br/>
-	 * Default: 4 KiB.
+     * Set the size of files in filebased benchmark. <br/>
+     * Default: 4 KiB.
      * 
      * @param filesize
      * @return the builder
      */
     public ConfigBuilder setFilesize(int filesize) {
-		if (filesize < 1)
-			throw new IllegalArgumentException("filesize < 1 not allowed");
+        if (filesize < 1)
+            throw new IllegalArgumentException("filesize < 1 not allowed");
         this.filesize = filesize;
         return this;
     }
 
     /**
-	 * Set the username to be used when creating files and volumes <br/>
-	 * Default: root.
+     * Set the username to be used when creating files and volumes <br/>
+     * Default: root.
      * 
      * @param userName
      * @return the builder
      */
     public ConfigBuilder setUserName(String userName) {
-		if (userName.isEmpty())
-			throw new IllegalArgumentException("Empty username not allowed");
+        if (userName.isEmpty())
+            throw new IllegalArgumentException("Empty username not allowed");
         this.userName = userName;
         return this;
     }
 
     /**
-	 * Set the group to be used when creating files and volumes. <br/>
-	 * Default: root.
+     * Set the group to be used when creating files and volumes. <br/>
+     * Default: root.
      * 
      * @param group
      * @return the builder
      */
     public ConfigBuilder setGroup(String group) {
-		if (group.isEmpty())
-			throw new IllegalArgumentException("Empty group name not allowed");
+        if (group.isEmpty())
+            throw new IllegalArgumentException("Empty group name not allowed");
         this.group = group;
         return this;
     }
 
     /**
-	 * Set the password for accessing the osd(s) <br/>
-	 * Default: "".
+     * Set the password for accessing the osd(s) <br/>
+     * Default: "".
      * 
      * @param osdPassword
      * @return the builder
@@ -188,8 +188,8 @@ public class ConfigBuilder {
     }
 
     /**
-	 * Set the address of the DIR Server. <br/>
-	 * Default: 127.0.0.1:3263
+     * Set the address of the DIR Server. <br/>
+     * Default: 127.0.0.1:3263
      * 
      * @param dirAddress
      * @return the builder
@@ -200,8 +200,8 @@ public class ConfigBuilder {
     }
 
     /**
-	 * Set the RPC user credentials. Build from the user name and group name during instatiation of {@link Config}.
-     *
+     * Set the RPC user credentials. Build from the user name and group name during instatiation of {@link Config}.
+     * 
      * @param auth
      * @return the builder
      */
@@ -211,8 +211,8 @@ public class ConfigBuilder {
     }
 
     /**
-	 * Set the SSL options for SSL Authetification Provider. <br/>
-	 * Default: null.
+     * Set the SSL options for SSL Authetification Provider. <br/>
+     * Default: null.
      * 
      * @param sslOptions
      * @return the builder
@@ -223,8 +223,8 @@ public class ConfigBuilder {
     }
 
     /**
-	 * Set the libxtreemfs {@link org.xtreemfs.common.libxtreemfs.Options}.
-     *
+     * Set the libxtreemfs {@link org.xtreemfs.common.libxtreemfs.Options}.
+     * 
      * @param options
      * @return the builder
      */
@@ -233,21 +233,21 @@ public class ConfigBuilder {
         return this;
     }
 
-	/**
-	 * Set the OSD selection policies used when creating volumes. <br/>
-	 * Default: "1000,3002" (Default OSD filter, Shuffling).
-	 *
-	 * @param policies
-	 * @return the builder
-	 */
-	public ConfigBuilder setOsdSelectionPolicies(String policies){
-		this.osdSelectionPolicies = policies;
-		return this;
-	}
+    /**
+     * Set the OSD selection policies used when creating volumes. <br/>
+     * Default: "1000,3002" (Default OSD filter, Shuffling).
+     * 
+     * @param policies
+     * @return the builder
+     */
+    public ConfigBuilder setOsdSelectionPolicies(String policies) {
+        this.osdSelectionPolicies = policies;
+        return this;
+    }
 
     /**
-	 * Set the size of an OSD storage block ("blocksize") in Bytes. <br/>
-	 * Default: 131072 (128 KiB). <br/>
+     * Set the size of an OSD storage block ("blocksize") in Bytes. <br/>
+     * Default: 131072 (128 KiB). <br/>
      * 
      * @param stripeSizeInBytes
      * @return the builder
@@ -258,9 +258,9 @@ public class ConfigBuilder {
     }
 
     /**
-	 * Set the maximum number of OSDs a file is distributed to. <br/>
-	 * Default: 1. <br/>
-	 * The size of one write operation is stripeSize * stripeWidth.
+     * Set the maximum number of OSDs a file is distributed to. <br/>
+     * Default: 1. <br/>
+     * The size of one write operation is stripeSize * stripeWidth.
      * 
      * @param stripeWidth
      * @return the builder
@@ -271,8 +271,8 @@ public class ConfigBuilder {
     }
 
     /**
-	 * If set to true, the files and volumes created during the benchmarks will not be deleted. <br/>
-	 * Default: false.
+     * If set to true, the files and volumes created during the benchmarks will not be deleted. <br/>
+     * Default: false.
      * 
      * @param noCleanup
      * @return the builder
@@ -283,8 +283,8 @@ public class ConfigBuilder {
     }
 
     /**
-	 * If set to true, the volumes created during the benchmarks will not be deleted. <br/>
-	 * Default: false.
+     * If set to true, the volumes created during the benchmarks will not be deleted. <br/>
+     * Default: false.
      * 
      * @param noCleanupOfVolumes
      * @return the builder
@@ -295,8 +295,8 @@ public class ConfigBuilder {
     }
 
     /**
-	 * If set to true, a basefile created during benchmarks will not be deleted. <br/>
-	 * Default: false.
+     * If set to true, a basefile created during benchmarks will not be deleted. <br/>
+     * Default: false.
      * 
      * @param noCleanupOfBasefile
      * @return the builder
@@ -307,9 +307,9 @@ public class ConfigBuilder {
     }
 
     /**
-	 * If set to true, a OSD Cleanup will be done at the end of all benchmarks. This might be needed to actually delete
-	 * the storage blocks from the OSD after deleting volumes. <br/>
-	 * Default: false.
+     * If set to true, a OSD Cleanup will be done at the end of all benchmarks. This might be needed to actually delete
+     * the storage blocks from the OSD after deleting volumes. <br/>
+     * Default: false.
      * 
      * @param osdCleanup
      * @return the builder
@@ -319,112 +319,114 @@ public class ConfigBuilder {
         return this;
     }
 
-	int getNumberOfThreads() {
-		return numberOfThreads;
-	}
+    int getNumberOfThreads() {
+        return numberOfThreads;
+    }
 
-	int getNumberOfRepetitions() {
-		return numberOfRepetitions;
-	}
+    int getNumberOfRepetitions() {
+        return numberOfRepetitions;
+    }
 
-	long getSequentialSizeInBytes() {
-		return sequentialSizeInBytes;
-	}
+    long getSequentialSizeInBytes() {
+        return sequentialSizeInBytes;
+    }
 
-	long getRandomSizeInBytes() {
-		return randomSizeInBytes;
-	}
+    long getRandomSizeInBytes() {
+        return randomSizeInBytes;
+    }
 
-	long getBasefileSizeInBytes() {
-		return basefileSizeInBytes;
-	}
+    long getBasefileSizeInBytes() {
+        return basefileSizeInBytes;
+    }
 
-	int getFilesize() {
-		return filesize;
-	}
+    int getFilesize() {
+        return filesize;
+    }
 
-	String getUserName() {
-		return userName;
-	}
+    String getUserName() {
+        return userName;
+    }
 
-	String getGroup() {
-		return group;
-	}
+    String getGroup() {
+        return group;
+    }
 
-	String getOsdPassword() {
-		return osdPassword;
-	}
+    String getOsdPassword() {
+        return osdPassword;
+    }
 
-	String getDirAddress() {
-		return dirAddress;
-	}
+    String getDirAddress() {
+        return dirAddress;
+    }
 
-	RPC.Auth getAuth() {
-		return auth;
-	}
+    RPC.Auth getAuth() {
+        return auth;
+    }
 
-	SSLOptions getSslOptions() {
-		return sslOptions;
-	}
+    SSLOptions getSslOptions() {
+        return sslOptions;
+    }
 
-	Options getOptions() {
-		return options;
-	}
+    Options getOptions() {
+        return options;
+    }
 
-	String getOsdSelectionPolicies() {
-		return osdSelectionPolicies;
-	}
+    String getOsdSelectionPolicies() {
+        return osdSelectionPolicies;
+    }
 
-	int getStripeSizeInBytes() {
-		return stripeSizeInBytes;
-	}
+    int getStripeSizeInBytes() {
+        return stripeSizeInBytes;
+    }
 
-	int getStripeWidth() {
-		return stripeWidth;
-	}
+    int getStripeWidth() {
+        return stripeWidth;
+    }
 
-	boolean isNoCleanup() {
-		return noCleanup;
-	}
+    boolean isNoCleanup() {
+        return noCleanup;
+    }
 
-	boolean isNoCleanupOfVolumes() {
-		return noCleanupOfVolumes;
-	}
+    boolean isNoCleanupOfVolumes() {
+        return noCleanupOfVolumes;
+    }
 
-	boolean isNoCleanupOfBasefile() {
-		return noCleanupOfBasefile;
-	}
+    boolean isNoCleanupOfBasefile() {
+        return noCleanupOfBasefile;
+    }
 
-	boolean isOsdCleanup() {
-		return osdCleanup;
-	}
+    boolean isOsdCleanup() {
+        return osdCleanup;
+    }
 
-	/**
+    /**
      * Build the {@link Config} object.
      * 
      * @return the build {@link Config} object
      * @throws Exception
      */
     public Config build() throws Exception {
-		verifySizes();
-		verifyNoCleanup();
+        verifySizes();
+        verifyNoCleanup();
         return new Config(this);
     }
 
-	private void verifyNoCleanup() {
-		if (noCleanupOfBasefile && !noCleanup && !noCleanupOfVolumes)
-			throw new IllegalArgumentException("noCleanupOfBasefile only works with noCleanup or noCleanupVolumes");
-	}
+    private void verifyNoCleanup() {
+        if (noCleanupOfBasefile && !noCleanup && !noCleanupOfVolumes)
+            throw new IllegalArgumentException("noCleanupOfBasefile only works with noCleanup or noCleanupVolumes");
+    }
 
-	private void verifySizes(){
+    private void verifySizes() {
 
-		if (sequentialSizeInBytes % (stripeSizeInBytes * stripeWidth) != 0)
-			throw new IllegalArgumentException("sequentialSizeInBytes must satisfy: size mod (stripeSize * stripeWidth) == 0");
-		if (randomSizeInBytes % (stripeSizeInBytes * stripeWidth) != 0)
-			throw new IllegalArgumentException("randomSizeInBytes: size mod (stripeSize * stripeWidth) == 0");
-		if (randomSizeInBytes % filesize != 0)
-			throw new IllegalArgumentException("Size for filebased benchmarks (i.e. randomSizeInBytes) must satisfy: size mod filesize == 0");
-		if (basefileSizeInBytes < randomSizeInBytes)
-			throw new IllegalArgumentException("Basefile < random size");
-	}
+        if (sequentialSizeInBytes % (stripeSizeInBytes * stripeWidth) != 0)
+            throw new IllegalArgumentException(
+                    "sequentialSizeInBytes must satisfy: size mod (stripeSize * stripeWidth) == 0");
+        if (randomSizeInBytes % (stripeSizeInBytes * stripeWidth) != 0)
+            throw new IllegalArgumentException("randomSizeInBytes: size mod (stripeSize * stripeWidth) == 0");
+        if (randomSizeInBytes % filesize != 0)
+            throw new IllegalArgumentException(
+                    "Size for filebased benchmarks (i.e. randomSizeInBytes) must satisfy: size mod filesize == 0");
+        if (basefileSizeInBytes < randomSizeInBytes)
+            throw new IllegalArgumentException("Basefile < random size");
+    }
 }
