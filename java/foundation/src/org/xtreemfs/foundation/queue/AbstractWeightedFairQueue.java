@@ -19,21 +19,21 @@ import java.util.concurrent.LinkedBlockingDeque;
  */
 abstract public class AbstractWeightedFairQueue<E> {
 
-    private Map<Integer, Queue<E>>  queues;
+    private Map<String, Queue<E>>  queues;
 
-    private Map<Integer, Integer>   qualityClassWeights;
+    private Map<String, Integer>    qualityClassWeights;
 
     private int                     capacity;
 
     private Iterator<Queue<E>>      queueIterator = null;
 
     public AbstractWeightedFairQueue(int capacity) {
-        this.queues = new HashMap<Integer, Queue<E>>();
-        this.qualityClassWeights = new HashMap<Integer, Integer>();
+        this.queues = new HashMap<String, Queue<E>>();
+        this.qualityClassWeights = new HashMap<String, Integer>();
         this.capacity = capacity;
     }
 
-    public synchronized void add(int qualityClass, E element) {
+    public synchronized void add(String qualityClass, E element) {
         if(queues.containsKey(qualityClass)) {
             queues.get(qualityClass).add(element);
         } else {
@@ -58,7 +58,7 @@ abstract public class AbstractWeightedFairQueue<E> {
         return true;
     }
 
-    public synchronized void addQualityClass(int qualityClass, int weight) {
+    public synchronized void addQualityClass(String qualityClass, int weight) {
         this.qualityClassWeights.put(qualityClass, weight);
         Queue<E> queue = new LinkedBlockingDeque<E>(capacity);
         this.queues.put(qualityClass, queue);
@@ -69,8 +69,11 @@ abstract public class AbstractWeightedFairQueue<E> {
         this.queues.remove(qualityClass);
     }
 
-    public synchronized int getQualityClassWeight(int qualityClass) {
-        return this.qualityClassWeights.get(qualityClass);
+    public synchronized int getQualityClassWeight(String qualityClass) {
+        if(this.qualityClassWeights.containsKey(qualityClass))
+            return this.qualityClassWeights.get(qualityClass);
+        else
+            throw new IllegalArgumentException("Unknown quality class");
     }
 
     public int size() {
