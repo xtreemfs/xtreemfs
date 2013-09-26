@@ -499,7 +499,7 @@ public class VersionedXLocSetTest {
         file.close();
         volume.close();
 
-        resetSuspendableOSDs(suspOSDs, 2);
+        resetSuspendableOSDs(suspOSDs, 0);
 
         assertEquals(dataOut[0], (byte) 1);
     }
