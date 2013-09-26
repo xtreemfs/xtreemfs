@@ -209,14 +209,27 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         final XLocSet curXLocSet = Converter.xLocListToXLocSet(curXLocList).build();
         final XLocSet extXLocSet = Converter.xLocListToXLocSet(extXLocList).build();
 
-        if (extXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ)) {
-            addReplicasWqRq(fileId, cap, curXLocSet, extXLocSet);
-        } else {
+        if (extXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ)
+                || extXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE)
+                || extXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA)) {
 
-            // Invalidate the read-only replicas to make the behavior more consistent with read-write replication.
-            // This is unnecessary because the state of read-only data can't change and a replica that had the correct
-            // data once will never be superseded.
-            // TODO(jdillmann): Discuss if this should be kept or not.
+            // Invalidate the majority of the replicas and get their ReplicaStatus.
+            int curNumRequiredAcks = calculateNumRequiredAcks(fileId, curXLocSet);
+            ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet, curNumRequiredAcks);
+
+            // Calculate the AuthState and determine how many replicas have to be updated.
+            AuthoritativeReplicaState authState = calculateAuthoritativeState(fileId, curXLocSet, states);
+            Set<String> replicasUpToDate = calculateReplicasUpToDate(authState);
+
+            // Calculate the number of required updates and send them an update request.
+            int extNumRequiredAcks = calculateNumRequiredAcks(fileId, extXLocSet);
+            updateReplicas(fileId, cap, extXLocSet, authState, extNumRequiredAcks, replicasUpToDate);
+
+        } else if (extXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
+            // In case of the read-only replication the replicas will be invalidated. But the coordination takes place
+            // at the client by libxtreemfs.
+            // The INVALIDATION request will be send to every replica, but the coordination continues on the first
+            // response.
             invalidateReplicas(fileId, cap, curXLocSet, 1);
 
             if (Logging.isDebug()) {
@@ -224,6 +237,9 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
                         "replication policy (%s) will be handled by VolumeImplementation",
                         extXLocSet.getReplicaUpdatePolicy());
             }
+        } else {
+            throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "Unknown replica update policy: "
+                    + extXLocSet.getReplicaUpdatePolicy());
         }
 
         // Call the installXLocSet method in the context of the ProcessingStage.
@@ -237,22 +253,6 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
         master.getProcStage().enqueueOperation(callbackRequest, ProcessingStage.STAGEOP_INTERNAL_CALLBACK, null);
     }
-
-    private void addReplicasWqRq(String fileId, Capability cap, XLocSet curXLocSet, XLocSet extXLocSet)
-            throws Throwable {
-        // Invalidate the majority of the replicas and get their ReplicaStatus.
-        int curNumRequiredAcks = calculateNumRequiredAcks(fileId, curXLocSet);
-        ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet, curNumRequiredAcks);
-
-        // Calculate the AuthState and determine how many replicas have to be updated.
-        AuthoritativeReplicaState authState = calculateAuthoritativeState(fileId, curXLocSet, states);
-        Set<String> replicasUpToDate = calculateReplicasUpToDate(authState);
-
-        // Calculate the number of required updates and send them an update request.
-        int extNumRequiredAcks = calculateNumRequiredAcks(fileId, extXLocSet);
-        updateReplicas(fileId, cap, extXLocSet, authState, extNumRequiredAcks, replicasUpToDate);
-    }
-
 
     public <O extends MRCOperation & XLocSetCoordinatorCallback> RequestMethod removeReplicas(String fileId,
             FileMetadata file, XLocList curXLocList, XLocList newXLocList, MRCRequest rq, O op)
@@ -283,13 +283,54 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         final XLocSet newXLocSet = Converter.xLocListToXLocSet(newXLocList).build();
 
         
-        if (curXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ)) {
-            removeReplicasWqRq(fileId, cap, curXLocSet, newXLocSet);
-        } else {
+        if (curXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ)
+                || curXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE)
+                || curXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA)) {
+
+            // Invalidate the majority of the replicas and get their ReplicaStatus
+            int numRequiredAcks = calculateNumRequiredAcks(fileId, curXLocSet);
+            ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet, numRequiredAcks);
+
+            // Calculate the AuthState and determine how many replicas have to be updated.
+            AuthoritativeReplicaState authState = calculateAuthoritativeState(fileId, curXLocSet, states);
+            Set<String> replicasUpToDate = calculateReplicasUpToDate(authState);
+
+            // Remove the replicas, that will be removed from the xLocSet, from the set containing up to date replicas.
+            HashSet<String> newReplicas = new HashSet<String>();
+            for (int i = 0; i < newXLocSet.getReplicasCount(); i++) {
+                String OSDUUID = Helper.getOSDUUIDFromXlocSet(curXLocSet, i, 0);
+                newReplicas.add(OSDUUID);
+            }
+
+            Iterator<String> iterator = replicasUpToDate.iterator();
+            while (iterator.hasNext()) {
+                String OSDUUID = iterator.next();
+                if (!newReplicas.contains(OSDUUID)) {
+                    iterator.remove();
+                }
+            }
+
+            // Calculate the number of required updates and send them an update request.
+            int newNumRequiredAcks = calculateNumRequiredAcks(fileId, newXLocSet);
+            updateReplicas(fileId, cap, newXLocSet, authState, newNumRequiredAcks, replicasUpToDate);
+
+        } else if (curXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
             // In case of the read-only replication the replicas will be invalidated. But the coordination takes place
             // at the client by libxtreemfs.
+            // The INVALIDATION request will be send to every replica, but the coordination continues on the first
+            // response.
             ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet, 1);
+
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                        "replication policy (%s) will be handled by VolumeImplementation",
+                        curXLocSet.getReplicaUpdatePolicy());
+            }
+        } else {
+            throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "Unknown replica update policy: "
+                    + curXLocSet.getReplicaUpdatePolicy());
         }
+
 
         // Call the installXLocSet method in the context of the ProcessingStage.
         MRCCallbackRequest callbackRequest = new MRCCallbackRequest(rq.getRPCRequest(),
@@ -304,35 +345,6 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
     }
 
-    private void removeReplicasWqRq(String fileId, Capability cap, XLocSet curXLocSet, XLocSet newXLocSet)
-            throws Throwable {
-        // Invalidate the majority of the replicas and get their ReplicaStatus
-        int numRequiredAcks = calculateNumRequiredAcks(fileId, curXLocSet);
-        ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet, numRequiredAcks);
-
-        // Calculate the AuthState and determine how many replicas have to be updated.
-        AuthoritativeReplicaState authState = calculateAuthoritativeState(fileId, curXLocSet, states);
-        Set<String> replicasUpToDate = calculateReplicasUpToDate(authState);
-
-        // Remove the replicas, that will be removed from the xLocSet, from the set containing up to date replicas.
-        HashSet<String> newReplicas = new HashSet<String>();
-        for (int i = 0; i < newXLocSet.getReplicasCount(); i++) {
-            String OSDUUID = Helper.getOSDUUIDFromXlocSet(curXLocSet, i, 0);
-            newReplicas.add(OSDUUID);
-        }
-
-        Iterator<String> iterator = replicasUpToDate.iterator();
-        while (iterator.hasNext()) {
-            String OSDUUID = iterator.next();
-            if (!newReplicas.contains(OSDUUID)) {
-                iterator.remove();
-            }
-        }
-
-        // Calculate the number of required updates and send them an update request.
-        int newNumRequiredAcks = calculateNumRequiredAcks(fileId, newXLocSet);
-        updateReplicas(fileId, cap, newXLocSet, authState, newNumRequiredAcks, replicasUpToDate);
-    }
 
     // public void replaceReplica(String fileId, MRCOperation op, MRCRequest rq) {
     // q.add(new RequestMethod(RequestType.REPLACE_REPLICA, fileId, op, rq));

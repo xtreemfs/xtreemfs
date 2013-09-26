@@ -1323,8 +1323,9 @@ public class VolumeImplementation implements Volume, AdminVolume {
         AdminFileHandle fileHandle = openFile(userCredentials, path,
                 SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
 
-        // The WqRq policy is handled on the MRC side by the XLocSetCoordinator and has not to be pinged.
-        if (!fileHandle.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ)) {
+        // Only the files with the RONLY policy have to be pinged. WqRq, WaR1, WaRa policies handled on the MRC side by
+        // the XLocSetCoordinator.
+        if (fileHandle.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
             // Trigger the replication at this point by reading at least one byte.
             fileHandle.pingReplica(userCredentials, newReplica.getOsdUuids(0));
         }
