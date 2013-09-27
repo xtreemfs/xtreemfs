@@ -50,7 +50,7 @@ public class WFQStage extends Stage {
 
     public void handleRequest(StageRequest request, Object callback) {
         // TODO(ckleineweber): set quality class
-        this.wfqQueue.add(1, new WFQRequest(request, callback));
+        this.wfqQueue.add("1", new WFQRequest(request, callback));
     }
 
     @Override
