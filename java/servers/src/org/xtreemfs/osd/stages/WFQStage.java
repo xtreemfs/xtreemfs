@@ -8,7 +8,7 @@
 
 package org.xtreemfs.osd.stages;
 
-import org.xtreemfs.foundation.queue.AbstractWeightedFairQueue;
+import org.xtreemfs.foundation.queue.WeightedFairQueue;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 
@@ -39,18 +39,33 @@ public class WFQStage extends Stage {
 
     private OSDRequestDispatcher    master;
 
-    private AbstractWeightedFairQueue<WFQRequest> wfqQueue;
+    private WeightedFairQueue<WFQRequest> wfqQueue;
 
     public WFQStage(OSDRequestDispatcher master, int queueCapacity) {
         super("WFQ Stage", queueCapacity);
         this.master = master;
 
+        this.wfqQueue = new WeightedFairQueue<WFQRequest>(queueCapacity, new WeightedFairQueue.WFQElementInformationProvider<WFQRequest>() {
+            @Override
+            public int getRequestCost(WFQRequest element) {
+                return 1;  //To change body of implemented methods use File | Settings | File Templates.
+            }
 
+            @Override
+            public String getQualityClass(WFQRequest element) {
+                return "1";  //To change body of implemented methods use File | Settings | File Templates.
+            }
+
+            @Override
+            public int getWeight(WFQRequest element) {
+                return 1;  //To change body of implemented methods use File | Settings | File Templates.
+            }
+        });
     }
 
     public void handleRequest(StageRequest request, Object callback) {
         // TODO(ckleineweber): set quality class
-        this.wfqQueue.add("1", new WFQRequest(request, callback));
+        this.wfqQueue.add(new WFQRequest(request, callback));
     }
 
     @Override

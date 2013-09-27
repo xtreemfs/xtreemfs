@@ -10,7 +10,7 @@ package org.xtreemfs.test.foundation.queue;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.xtreemfs.foundation.queue.AbstractWeightedFairQueue;
+import org.xtreemfs.foundation.queue.WeightedFairQueue;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -19,23 +19,33 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author Christoph Kleineweber <kleineweber@zib.de>
  */
-public class AbstractWeightedFairQueueTest {
-    AbstractWeightedFairQueue<Integer> queue;
+public class WeightedFairQueueTest {
+    WeightedFairQueue<String, Integer> queue;
 
     @Before
     public void setUp() throws Exception {
-        queue = new AbstractWeightedFairQueue<Integer>(100) {
-            public int getElementSize(Integer element) {
+        queue = new WeightedFairQueue<String, Integer>(100, new WeightedFairQueue.WFQElementInformationProvider<String, Integer>() {
+            @Override
+            public int getRequestCost(Integer element) {
                 return 1;
             }
-        };
+
+            @Override
+            public String getQualityClass(Integer element) {
+                return "test";
+            }
+
+            @Override
+            public int getWeight(Integer element) {
+                return 1;
+            }
+        });
     }
 
     @Test
     public void testIsEmpty() throws Exception {
         assertTrue(queue.isEmpty());
-        queue.addQualityClass("123", 123);
-        queue.add("123", 123);
+        queue.add(123);
         assertFalse(queue.isEmpty());
         queue.take();
         assertTrue(queue.isEmpty());
@@ -45,25 +55,25 @@ public class AbstractWeightedFairQueueTest {
     public void testTake() throws Exception {
         int element = 1;
 
-        queue.addQualityClass("123", 123);
-        queue.add("123", element);
-        assertEquals(element,  queue.take());
+        queue.add(element);
+        assertEquals(element, queue.take());
     }
 
     @Test
     public void testAdd() throws Exception {
-        queue.addQualityClass("1", 1);
         try {
-            queue.add("1", 2);
+            queue.add(2);
         } catch(IllegalArgumentException e) {
             assertTrue(false);
         }
+    }
 
-        try {
-            queue.add("2", 3);
-            assertTrue(false);
-        } catch(IllegalArgumentException e) {
-            assertTrue(true);
-        }
+    @Test
+    public void testClear() throws Exception {
+        queue.add(1);
+        queue.add(2);
+        queue.add(3);
+        queue.clear();
+        assertEquals(queue.size(), 0);
     }
 }
