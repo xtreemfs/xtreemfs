@@ -75,7 +75,6 @@ public class VersionedXLocSetTest {
 
     private final static int       NUM_OSDS = 5;
 
-    // private static Long OFT_CLEAN_INTERVAL_MS;
     private static int             LEASE_TIMEOUT_MS;
 
     @BeforeClass
@@ -119,10 +118,7 @@ public class VersionedXLocSetTest {
         client = ClientFactory.createAdminClient(dirAddress, userCredentials, null, options);
         client.start();
 
-        // get the current timeouts to save time spend waiting
-        // OFT_CLEAN_INTERVAL_MS = (Long) PA.getValue(osds[0].getDispatcher().getPreprocStage(), "OFT_CLEAN_INTERVAL");
         LEASE_TIMEOUT_MS = configs[0].getFleaseLeaseToMS();
-
     }
 
     @AfterClass
@@ -136,64 +132,10 @@ public class VersionedXLocSetTest {
         client.shutdown();
     }
 
-    private void addReplicas(Volume volume, String fileName, int replicaNumber) throws IOException,
-            InterruptedException {
-
-
-        List<String> osdUUIDs = volume.getSuitableOSDs(userCredentials, fileName, replicaNumber);
-        assert (osdUUIDs.size() >= replicaNumber);
-
-        // save the current Replica Number
-        int currentReplicaNumber = volume.listReplicas(userCredentials, fileName).getReplicasCount();
-
-        // get Replication Flags
-        // copied from org.xtreemfs.common.libxtreemfs.VolumeImplementation.listACL(UserCredentials, String)
-        // TODO(jdillmann): move to VolumeImplementation.getDefaultReplicationPolicy ?
-        int repl_flags;
-
-        try {
-            String rpAsJSON = volume.getXAttr(userCredentials, "/", "xtreemfs.default_rp");
-            Map<String, Object> rp = (Map<String, Object>) JSONParser.parseJSON(new JSONString(rpAsJSON));
-            long temp = ((Long) rp.get("replication-flags"));
-            repl_flags = (int) temp;
-        } catch (JSONException e) {
-            throw new IOException(e);
-        }
-
-        // 15s is the default lease timeout
-        // we have to wait that long, because addReplica calls ping which requires do become primary
-        // Thread.sleep(LEASE_TIMEOUT_MS + 500);
-
-        // so we have to fall back to add the replicas individually
-        for (int i = 0; i < replicaNumber; i++) {
-            Replica replica = Replica.newBuilder().setStripingPolicy(defaultStripingPolicy)
-                    .setReplicationFlags(repl_flags).addOsdUuids(osdUUIDs.get(i)).build();
-            volume.addReplica(userCredentials, fileName, replica);
-
-            // 15s is the default lease timeout
-            // Thread.sleep(LEASE_TIMEOUT_MS + 500);
-            System.out.println("Added replica on " + osdUUIDs.get(i));
-        }
-
-        assertEquals(currentReplicaNumber + replicaNumber, volume.listReplicas(userCredentials, fileName)
-                .getReplicasCount());
-    }
-
-    private static void readInvalidView(AdminFileHandle file) throws AddressToUUIDNotFoundException, IOException {
-        PosixErrorException catched = null;
-        try {
-            byte[] dataOut = new byte[1];
-            file.read(userCredentials, dataOut, 1, 0);
-        } catch (PosixErrorException e) {
-            catched = e;
-        }
-
-        // TODO(jdillmann): make this more dynamic
-        assertTrue(catched != null);
-        assertEquals(catched.getPosixError(), RPC.POSIXErrno.POSIX_ERROR_EAGAIN);
-        assertTrue(catched.getMessage().contains("view is not valid"));
-    }
-
+    /**
+     * Test to ensure the appropriate error (invalid view) is returned, when the RONLY policy is active and a client
+     * tries to read from a replica that has been removed.
+     */
     @Test
     public void testRonlyRemoveReadOutdated() throws Exception {
         String volumeName = "testRonlyRemoveReadOutdated";
@@ -202,7 +144,7 @@ public class VersionedXLocSetTest {
         client.createVolume(mrcAddress, auth, userCredentials, volumeName);
         AdminVolume volume = client.openVolume(volumeName, null, options);
 
-        // setup a full read only replica with sequential access strategy
+        // Setup a full read only replica with sequential access strategy.
         int repl_flags = ReplicationFlags.setFullReplica(ReplicationFlags.setSequentialStrategy(0));
         volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY, 2,
                 repl_flags);
@@ -212,6 +154,10 @@ public class VersionedXLocSetTest {
         removeReadOutdated(volumeName, fileName);
     }
 
+    /**
+     * Test to ensure the appropriate error (invalid view) is returned, when the WqRq policy is active and a client
+     * tries to read, and thus form an majority, based on an outdated XLocSet.
+     */
     @Test
     public void testWqRqRemoveReadOutdated() throws Exception {
         String volumeName = "testWqRqRemoveReadOutdated";
@@ -235,41 +181,41 @@ public class VersionedXLocSetTest {
         removeReadOutdated(volumeName, fileName);
     }
 
+    /**
+     * Remove the primary replica and provoke an invalid view error by accessing the file with an outdated xLocSet.
+     * 
+     * @param volumeName
+     * @param fileName
+     * @throws Exception
+     */
     private void removeReadOutdated(String volumeName, String fileName) throws Exception {
         AdminVolume volume = client.openVolume(volumeName, null, options);
 
-        // open testfile and write some bytes not "0"
+        // Open the testfile and write some bytes not "0".
         AdminFileHandle fileHandle = volume.openFile(userCredentials, fileName,
                 Helper.flagsToInt(SYSTEM_V_FCNTL_H_O_CREAT, SYSTEM_V_FCNTL_H_O_RDWR), 0777);
 
         int count = 256 * 1024;
         ReusableBuffer data = SetupUtils.generateData(count, (byte) 1);
 
-        System.out.println("writing");
-
         fileHandle.write(userCredentials, data.createViewBuffer().getData(), count, 0);
         fileHandle.close();
 
-        // wait until the file is written and probably replicated
-        Thread.sleep(20 * 1000);
+        // Give XtreemFS some time to replicate the data. This is only needed for the RONLY replication.
+        Thread.sleep(5 * 1000);
 
-        System.out.println("openagain");
-
-        // open the file again and wait until the primary replica is removed
+        // Open a fileHandle again and keep it open while removing the primary replica from another client.
         fileHandle = volume.openFile(userCredentials, fileName, Helper.flagsToInt(SYSTEM_V_FCNTL_H_O_RDONLY));
 
-        // get the primary replica
+        // Get the primary replica.
         List<Replica> replicas = fileHandle.getReplicasList();
-        System.out.println(replicas);
         Replica replica = replicas.get(0);
         int prevReplicaCount = fileHandle.getReplicasList().size();
 
-        System.out.println("Remove replica: " + replica.getOsdUuids(0));
-
-        // since striping is disabled there should be only one OSD for this certain replica
+        // Since striping is disabled there should be only one OSD for this certain replica.
         assertEquals(1, replica.getOsdUuidsCount());
 
-        // use another volume remove the replica from the OSD
+        // Use another Volume instance to remove the replica from the OSD.
         AdminVolume controlVolume = client.openVolume(volumeName, null, options);
         controlVolume.removeReplica(userCredentials, fileName, replica.getOsdUuids(0));
         AdminFileHandle controlFile = controlVolume.openFile(userCredentials, fileName,
@@ -277,23 +223,20 @@ public class VersionedXLocSetTest {
 
         assertEquals(controlFile.getReplicasList().size(), prevReplicaCount - 1);
 
-        System.out.println(controlFile.getReplicasList());
-
         controlFile.close();
         controlVolume.close();
 
-        // wait until the file is actually deleted on the OSD
-        System.out.println("wait until the file is closed and deleted on the OSD");
-        Thread.sleep(70 * 1000);
-
-        // Reading the the file should result in a invalid view.
-        System.out.println("Read with old version");
+        // Reading from the previous fileHandle with the outdated xLocSet has to result in an error.
         readInvalidView(fileHandle);
 
         fileHandle.close();
         volume.close();
     }
 
+    /**
+     * Test to ensure the appropriate error (invalid view) is returned, when new replicas are added to a file with the
+     * RONLY policy and a client tries to get access with an outdated xLocSet.
+     */
     @Test
     public void testRonlyAddReadOutdated() throws Exception {
         String volumeName = "testRonlyAddReadOutdated";
@@ -306,7 +249,7 @@ public class VersionedXLocSetTest {
                 userCredentials,
                 Helper.policiesToString(new OSDSelectionPolicyType[] { OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID }));
 
-        // setup a full read only replica with sequential access strategy
+        // Setup a full read only replica with sequential access strategy.
         int repl_flags = ReplicationFlags.setFullReplica(ReplicationFlags.setSequentialStrategy(0));
         volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY, 2,
                 repl_flags);
@@ -315,6 +258,10 @@ public class VersionedXLocSetTest {
         addReadOutdated(volumeName, fileName);
     }
 
+    /**
+     * Test to ensure the appropriate error (invalid view) is returned, when new replicas are added to a file with the
+     * WqRw policy and a client tries to get access with an outdated xLocSet.
+     */
     @Test
     public void testWqRqAddReadOutdated() throws Exception {
         String volumeName = "testWqRqAddReadOutdated";
@@ -329,30 +276,35 @@ public class VersionedXLocSetTest {
         addReadOutdated(volumeName, fileName);
     }
 
+    /**
+     * Add additional replicas and and provoke an invalid view error by accessing the file with an outdated xLocSet.
+     * 
+     * @param volumeName
+     * @param fileName
+     * @throws Exception
+     */
     private void addReadOutdated(String volumeName, String fileName) throws Exception {
-        // open outdated file handle and write some data
+        // Open the testfile and write some data to it.
         AdminVolume outdatedVolume = client.openVolume(volumeName, null, options);
         AdminFileHandle outdatedFile = outdatedVolume.openFile(userCredentials, fileName,
                 Helper.flagsToInt(SYSTEM_V_FCNTL_H_O_CREAT, SYSTEM_V_FCNTL_H_O_RDWR), 0777);
 
-        System.out.println("writing");
         ReusableBuffer data = SetupUtils.generateData(256, (byte) 1);
         outdatedFile.write(userCredentials, data.createViewBuffer().getData(), 256, 0);
         outdatedFile.close();
 
-        System.out.println("reopen file");
+        // Give XtreemFS some time to replicate the data. This is only needed for the RONLY replication.
+        Thread.sleep(5 * 1000);
+
+        // Open a fileHandle again and keep it open while add replicas from another client.
         outdatedFile = outdatedVolume.openFile(userCredentials, fileName, Helper.flagsToInt(SYSTEM_V_FCNTL_H_O_RDONLY));
 
-        // open the volume again and add some more replicas
+        // Use another Volume instance to add additional replicas.
         AdminVolume volume = client.openVolume(volumeName, null, options);
-
-        System.out.println("adding replicas");
         addReplicas(volume, fileName, 1);
-
         volume.close();
 
-        // read data with outdated xLocSet
-        System.out.println("read with old version");
+        // Reading from the previous fileHandle with the outdated xLocSet has to result in an error.
         readInvalidView(outdatedFile);
 
         outdatedFile.close();
@@ -361,9 +313,7 @@ public class VersionedXLocSetTest {
 
     /**
      * This test covers the case, that a number of replicas is added which will form a new majority. It has to be
-     * ensured that the correct data is returned even if only new replicas are accessed.
-     * 
-     * @throws Exception
+     * ensured that the correct data is returned, even if only new replicas are accessed.
      */
     @Test
     public void testAddMajority() throws Exception {
@@ -372,10 +322,11 @@ public class VersionedXLocSetTest {
 
         SuspendableOSDRequestDispatcher[] suspOSDs = replaceWithSuspendableOSDs(0, 2);
 
+        // Create and open the volume and set a replication factor of 2.
         client.createVolume(mrcAddress, auth, userCredentials, volumeName);
-
-        System.out.println("open");
         AdminVolume volume = client.openVolume(volumeName, null, options);
+
+        // Ensure the selected OSDs and replicas a sorted ascending by UUIDs.
         volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 2, 0);
         volume.setOSDSelectionPolicy(
                 userCredentials,
@@ -386,7 +337,7 @@ public class VersionedXLocSetTest {
                 userCredentials,
                 Helper.policiesToString(new OSDSelectionPolicyType[] { OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID }));
 
-        System.out.println("write");
+        // Create the testfile by writing some bytes to it.
         AdminFileHandle file = volume.openFile(userCredentials, fileName,
                 Helper.flagsToInt(SYSTEM_V_FCNTL_H_O_RDWR, SYSTEM_V_FCNTL_H_O_CREAT), 0777);
         ReusableBuffer dataIn = SetupUtils.generateData(256 * 1024, (byte) 1);
@@ -394,45 +345,40 @@ public class VersionedXLocSetTest {
         dataIn.clear();
         file.close();
 
-        System.out.println("add replicas");
+        // Add another 3 replicas that form a majority by itself.
         addReplicas(volume, fileName, 3);
         
-        System.out.println("ensure lease timed out");
+        // Ensure no primary can exist, by waiting until the lease timed out.
         Thread.sleep(LEASE_TIMEOUT_MS + 500);
 
-        // reverse the selection policy
+        // Reverse the replica selection policy to ensure subsequent requests will be directed to the recently added
+        // replicas.
         volume.setReplicaSelectionPolicy(
                 userCredentials,
                 Helper.policiesToString(new OSDSelectionPolicyType[] {
                         OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID,
                         OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_REVERSE }));
 
-        // suspend the first two OSDs
+        // Suspend the original 2 first OSDs to ensure only the recently added replicas can be accessed.
         for (int i = 0; i < 2; i++) {
             suspOSDs[i].suspended.set(true);
         }
 
-        System.out.println("read");
+        // Read from the file again and ensure the data is consistent.
         file = volume.openFile(userCredentials, fileName, Helper.flagsToInt(SYSTEM_V_FCNTL_H_O_RDWR));
         byte[] dataOut = new byte[1];
         file.read(userCredentials, dataOut, 1, 0);
         file.close();
         volume.close();
 
-        // resume the first two OSDs
-        for (int i = 0; i < 2; i++) {
-            suspOSDs[i].suspended.set(false);
-        }
-        resetSuspendableOSDs(suspOSDs, 0);
-
         assertEquals(dataOut[0], (byte) 1);
+
+        resetSuspendableOSDs(suspOSDs, 0);
     }
 
     /**
      * This test covers the removal of replicas forming a majority. It has to be ensured that the remaining replicas are
      * up to date and the correct (last written) data is returned.
-     * 
-     * @throws Exception
      */
     @Test
     public void testRemoveMajority() throws Exception {
@@ -441,11 +387,12 @@ public class VersionedXLocSetTest {
 
         SuspendableOSDRequestDispatcher[] suspOSDs = replaceWithSuspendableOSDs(0, 2);
 
+        // Create and open the volume and set a replication factor of 5.
         client.createVolume(mrcAddress, auth, userCredentials, volumeName);
-
-        System.out.println("open");
         AdminVolume volume = client.openVolume(volumeName, null, options);
         volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 5, 0);
+
+        // Ensure the selected OSDs are sorted ascending, and the list of replicas is sorted decending by UUIDs.
         volume.setOSDSelectionPolicy(
                 userCredentials,
                 Helper.policiesToString(new OSDSelectionPolicyType[] {
@@ -457,51 +404,43 @@ public class VersionedXLocSetTest {
                         OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID,
                         OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_REVERSE }));
 
-        // suspend the first two OSDs
+        // Suspend the first 2 of the 5 replicas, to ensure they won't get updated when writing to the file.
         for (int i = 0; i < 2; i++) {
             suspOSDs[i].suspended.set(true);
         }
 
-        System.out.println("write");
         AdminFileHandle file = volume.openFile(userCredentials, fileName,
                 Helper.flagsToInt(SYSTEM_V_FCNTL_H_O_RDWR, SYSTEM_V_FCNTL_H_O_CREAT), 0777);
         ReusableBuffer dataIn = SetupUtils.generateData(256 * 1024, (byte) 1);
         file.write(userCredentials, dataIn.getData(), 256 * 1024, 0);
         dataIn.clear();
 
-        // start the OSDs again
+        // Resume the first 2 OSDs again.
         for (int i = 0; i < 2; i++) {
             suspOSDs[i].suspended.set(false);
         }
 
-        System.out.println("remove replicas");
+        // Remove the last 3 OSDs, which have been updated by the last write.
         List<Replica> replicas = file.getReplicasList();
         for (int i = 0; i < 3; i++) {
             Replica replica = replicas.get(i);
 
-            // since striping is disabled there should be only one OSD for this certain replica
+            // Since striping is disabled there can be only one OSD for this certain replica.
             assertEquals(1, replica.getOsdUuidsCount());
             volume.removeReplica(userCredentials, fileName, replica.getOsdUuids(0));
         }
         file.close();
 
-        // revert the selection policy
-        volume.setReplicaSelectionPolicy(
-                userCredentials,
-                Helper.policiesToString(new OSDSelectionPolicyType[] { OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID }));
-        
-        // reopen the file
-        System.out.println("read");
+        // Read from the file again and ensure the data is consistent.
         file = volume.openFile(userCredentials, fileName, Helper.flagsToInt(SYSTEM_V_FCNTL_H_O_RDONLY));
-        
         byte[] dataOut = new byte[1];
         file.read(userCredentials, dataOut, 1, 0);
         file.close();
         volume.close();
 
-        resetSuspendableOSDs(suspOSDs, 0);
-
         assertEquals(dataOut[0], (byte) 1);
+
+        resetSuspendableOSDs(suspOSDs, 0);
     }
     
     
@@ -514,13 +453,14 @@ public class VersionedXLocSetTest {
         String volumeName = "testPartition";
         String fileName = "/testfile";
         
-        // Make the first OSD suspendable
         SuspendableOSDRequestDispatcher[] suspOSDs = replaceWithSuspendableOSDs(0, 1);
 
+        // Create and open the volume and set a replication factor of 4.
         client.createVolume(mrcAddress, auth, userCredentials, volumeName);
-
         AdminVolume volume = client.openVolume(volumeName, null, options);
         volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 4, 0);
+
+        // Ensure the selected OSDs are sorted ascending, and the list of replicas is sorted decending by UUIDs.
         volume.setOSDSelectionPolicy(
                 userCredentials,
                 Helper.policiesToString(new OSDSelectionPolicyType[] {
@@ -546,7 +486,7 @@ public class VersionedXLocSetTest {
         addReplicas(volume, fileName, 1);
 
         // Get the replica recently added from the replica list and remove it.
-        // Since a majority in both, the new and the old set, has to be ensured, only one osd can be suspended.
+        // Since a majority in both, the new and the old set, has to be ensured, only one OSD can be suspended.
         List<Replica> replicas = file.getReplicasList();
         Replica replica = replicas.get(0);
         volume.removeReplica(userCredentials, fileName, replica.getOsdUuids(0));
@@ -555,6 +495,54 @@ public class VersionedXLocSetTest {
         volume.close();
 
         resetSuspendableOSDs(suspOSDs, 0);
+    }
+
+    private void addReplicas(Volume volume, String fileName, int replicaNumber) throws IOException,
+            InterruptedException {
+
+        // Get a liste of suitable OSDs and ensure the requestes number of replicas can be added.
+        List<String> osdUUIDs = volume.getSuitableOSDs(userCredentials, fileName, replicaNumber);
+        assertTrue(osdUUIDs.size() >= replicaNumber);
+
+        // Save the current number of Replicas.
+        int currentReplicaNumber = volume.listReplicas(userCredentials, fileName).getReplicasCount();
+
+        // Get the default replication flags.
+        int repl_flags;
+        try {
+            String rpAsJSON = volume.getXAttr(userCredentials, "/", "xtreemfs.default_rp");
+            Map<String, Object> rp = (Map<String, Object>) JSONParser.parseJSON(new JSONString(rpAsJSON));
+            long temp = ((Long) rp.get("replication-flags"));
+            repl_flags = (int) temp;
+        } catch (JSONException e) {
+            throw new IOException(e);
+        }
+
+        // Add the required number of new replicas.
+        for (int i = 0; i < replicaNumber; i++) {
+            Replica replica = Replica.newBuilder().setStripingPolicy(defaultStripingPolicy)
+                    .setReplicationFlags(repl_flags).addOsdUuids(osdUUIDs.get(i)).build();
+            volume.addReplica(userCredentials, fileName, replica);
+        }
+
+        // Ensure the replicas have been added.
+        assertEquals(currentReplicaNumber + replicaNumber, volume.listReplicas(userCredentials, fileName)
+                .getReplicasCount());
+    }
+
+    private static void readInvalidView(AdminFileHandle file) throws AddressToUUIDNotFoundException, IOException {
+        PosixErrorException catched = null;
+        try {
+            byte[] dataOut = new byte[1];
+            file.read(userCredentials, dataOut, 1, 0);
+        } catch (PosixErrorException e) {
+            catched = e;
+        }
+
+        // TODO(jdillmann): make this more dynamic
+        assertTrue(catched != null);
+        assertEquals(catched.getPosixError(), RPC.POSIXErrno.POSIX_ERROR_EAGAIN);
+        assertTrue(catched.getMessage().contains("view is not valid"));
     }
 
     private SuspendableOSDRequestDispatcher[] replaceWithSuspendableOSDs(int start, int count) throws Exception {
