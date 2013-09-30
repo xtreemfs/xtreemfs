@@ -360,9 +360,8 @@ public class VersionedXLocSetTest {
                         OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_REVERSE }));
 
         // Suspend the original 2 first OSDs to ensure only the recently added replicas can be accessed.
-        for (int i = 0; i < 2; i++) {
-            suspOSDs[i].suspended.set(true);
-        }
+        suspOSDs[0].suspend();
+        suspOSDs[1].suspend();
 
         // Read from the file again and ensure the data is consistent.
         file = volume.openFile(userCredentials, fileName, Helper.flagsToInt(SYSTEM_V_FCNTL_H_O_RDWR));
@@ -405,9 +404,8 @@ public class VersionedXLocSetTest {
                         OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_REVERSE }));
 
         // Suspend the first 2 of the 5 replicas, to ensure they won't get updated when writing to the file.
-        for (int i = 0; i < 2; i++) {
-            suspOSDs[i].suspended.set(true);
-        }
+        suspOSDs[0].suspend();
+        suspOSDs[1].suspend();
 
         AdminFileHandle file = volume.openFile(userCredentials, fileName,
                 Helper.flagsToInt(SYSTEM_V_FCNTL_H_O_RDWR, SYSTEM_V_FCNTL_H_O_CREAT), 0777);
@@ -416,9 +414,8 @@ public class VersionedXLocSetTest {
         dataIn.clear();
 
         // Resume the first 2 OSDs again.
-        for (int i = 0; i < 2; i++) {
-            suspOSDs[i].suspended.set(false);
-        }
+        suspOSDs[0].resume();
+        suspOSDs[1].resume();
 
         // Remove the last 3 OSDs, which have been updated by the last write.
         List<Replica> replicas = file.getReplicasList();
@@ -480,7 +477,7 @@ public class VersionedXLocSetTest {
         dataIn.clear();
 
         // Suspend the first OSD. The policy requires a majority of 3 for a replication factor of 4.
-        suspOSDs[0].suspended.set(true);
+        suspOSDs[0].suspend();
 
         // Add another replica.
         addReplicas(volume, fileName, 1);
@@ -547,11 +544,12 @@ public class VersionedXLocSetTest {
 
     private SuspendableOSDRequestDispatcher[] replaceWithSuspendableOSDs(int start, int count) throws Exception {
         SuspendableOSDRequestDispatcher[] suspOSDs = new SuspendableOSDRequestDispatcher[count];
-        for (int i = start; i < start + count; i++) {
-            osds[i].shutdown();
-            osds[i] = null;
 
-            suspOSDs[i] = new SuspendableOSDRequestDispatcher(configs[i]);
+        for (int i = 0; i < count; i++) {
+            osds[start + i].shutdown();
+            osds[start + i] = null;
+
+            suspOSDs[i] = new SuspendableOSDRequestDispatcher(configs[start + i]);
             suspOSDs[i].start();
         }
 
@@ -559,11 +557,9 @@ public class VersionedXLocSetTest {
     }
 
     private void resetSuspendableOSDs(SuspendableOSDRequestDispatcher[] suspOSDs, int start) {
-        for (int i = start; i < suspOSDs.length; i++) {
+        for (int i = 0; i < suspOSDs.length; i++) {
             suspOSDs[i].shutdown();
-            suspOSDs[i] = null;
-
-            osds[i] = new OSD(configs[i]);
+            osds[start + i] = new OSD(configs[start + i]);
         }
     }
 
@@ -584,6 +580,13 @@ public class VersionedXLocSetTest {
                 super.receiveRecord(rq);
             }
         }
-    }
 
+        public void suspend() {
+            suspended.set(true);
+        }
+
+        public void resume() {
+            suspended.set(false);
+        }
+    }
 }
