@@ -361,13 +361,13 @@ class CLIOptions {
                 sizeInBytes = numbers;
                 break;
             case 'K':
-                sizeInBytes = numbers * (long) BenchmarkUtils.getKiB_IN_BYTES();
+                sizeInBytes = numbers * (long) BenchmarkUtils.KiB_IN_BYTES;
                 break;
             case 'M':
-                sizeInBytes = numbers * (long) BenchmarkUtils.getMiB_IN_BYTES();
+                sizeInBytes = numbers * (long) BenchmarkUtils.MiB_IN_BYTES;
                 break;
             case 'G':
-                sizeInBytes = numbers * (long) BenchmarkUtils.getGiB_IN_BYTES();
+                sizeInBytes = numbers * (long) BenchmarkUtils.GiB_IN_BYTES;
                 break;
             default:
                 sizeInBytes = 0L;

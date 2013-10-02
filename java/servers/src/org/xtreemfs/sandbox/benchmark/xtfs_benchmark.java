@@ -113,8 +113,8 @@ public class xtfs_benchmark {
     /* convert a single result to json like String */
     private static String resultToString(BenchmarkResult result) {
 
-        String dataWritten = result.getDataRequestedInBytes() >= BenchmarkUtils.getGiB_IN_BYTES() ? result.getDataRequestedInBytes()/ BenchmarkUtils.getGiB_IN_BYTES() + " GiB ["
-                : result.getDataRequestedInBytes()/ BenchmarkUtils.getMiB_IN_BYTES() + " MiB [";
+        String dataWritten = result.getDataRequestedInBytes() >= BenchmarkUtils.GiB_IN_BYTES ? result.getDataRequestedInBytes()/ BenchmarkUtils.GiB_IN_BYTES + " GiB ["
+                : result.getDataRequestedInBytes()/ BenchmarkUtils.MiB_IN_BYTES + " MiB [";
         String readersOrWriters;
         
         if (result.isWriteBenchmark()) {

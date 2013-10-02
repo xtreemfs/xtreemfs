@@ -37,10 +37,10 @@ public class ConfigBuilder {
 
     private int        numberOfThreads       = 1;
     private int        numberOfRepetitions   = 1;
-    private long       sequentialSizeInBytes = 10L * BenchmarkUtils.getMiB_IN_BYTES();
-    private long       randomSizeInBytes     = 10L * BenchmarkUtils.getMiB_IN_BYTES();
-    private long       basefileSizeInBytes   = 3L * BenchmarkUtils.getGiB_IN_BYTES();
-    private int        filesize              = 4 * BenchmarkUtils.getKiB_IN_BYTES();
+    private long       sequentialSizeInBytes = 10L * BenchmarkUtils.MiB_IN_BYTES;
+    private long       randomSizeInBytes     = 10L * BenchmarkUtils.MiB_IN_BYTES;
+    private long       basefileSizeInBytes   = 3L * BenchmarkUtils.GiB_IN_BYTES;
+    private int        filesize              = 4 * BenchmarkUtils.KiB_IN_BYTES;
     private String     userName              = "root";
     private String     group                 = "root";
     private String     osdPassword           = "";
@@ -49,7 +49,7 @@ public class ConfigBuilder {
     private SSLOptions sslOptions            = null;
     private Options    options               = new Options();
     private String     osdSelectionPolicies  = "1000,3002";
-    private int        stripeSizeInBytes     = 128 * BenchmarkUtils.getKiB_IN_BYTES();
+    private int        stripeSizeInBytes     = 128 * BenchmarkUtils.KiB_IN_BYTES;
     private int        stripeWidth           = 1;
     private boolean    noCleanup             = false;
     private boolean    noCleanupOfVolumes    = false;
