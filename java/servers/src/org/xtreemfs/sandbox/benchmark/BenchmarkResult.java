@@ -8,6 +8,8 @@
 
 package org.xtreemfs.sandbox.benchmark;
 
+import static org.xtreemfs.sandbox.benchmark.BenchmarkUtils.BenchmarkType;
+
 /**
  * Result object for benchmarks.
  * 
@@ -15,49 +17,19 @@ package org.xtreemfs.sandbox.benchmark;
  */
 public class BenchmarkResult {
 
-    private BenchmarkUtils.BenchmarkType benchmarkType;
-    private int                          numberOfReadersOrWriters;
-    private double                       timeInSec;
-    private long                         dataRequestedInBytes;
-    private long                         threadID;
-    private long                         byteCount;
+    private BenchmarkType benchmarkType;
+    private int           numberOfReadersOrWriters;
+    private double        timeInSec;
+    private long          dataRequestedInBytes;
+    private long          byteCount;
 
-    BenchmarkResult(double timeInSec, long dataRequestedInBytes, long threadID,
-            long byteCount) {
+    BenchmarkResult(double timeInSec, long dataRequestedInBytes, long byteCount) {
         this.timeInSec = timeInSec;
         this.dataRequestedInBytes = dataRequestedInBytes;
-        this.threadID = threadID;
         this.byteCount = byteCount;
     }
 
-    @Override
-    public String toString() {
-
-        String dataWritten = dataRequestedInBytes >= BenchmarkUtils.getGiB_IN_BYTES() ? dataRequestedInBytes / BenchmarkUtils.getGiB_IN_BYTES() + " GiB ["
-                : dataRequestedInBytes / BenchmarkUtils.getMiB_IN_BYTES() + " MiB [";
-        String readersOrWriters;
-
-        if (benchmarkType == BenchmarkUtils.BenchmarkType.SEQ_WRITE || benchmarkType == BenchmarkUtils.BenchmarkType.RAND_WRITE
-                || benchmarkType == BenchmarkUtils.BenchmarkType.FILES_WRITE) {
-            readersOrWriters = "\tNumber of Writers: " + numberOfReadersOrWriters + "\n";
-        } else if (benchmarkType == BenchmarkUtils.BenchmarkType.SEQ_READ || benchmarkType == BenchmarkUtils.BenchmarkType.RAND_READ
-                || benchmarkType == BenchmarkUtils.BenchmarkType.FILES_READ) {
-            readersOrWriters = "\tNumber of Readers: " + numberOfReadersOrWriters + "\n";
-        } else {
-            readersOrWriters = "\tNumber of Readers/Writers: " + numberOfReadersOrWriters + "\n";
-        }
-
-        return "{\n\tBenchmarkType: " + benchmarkType + "\n" + readersOrWriters + "\tThreadID: " + threadID + "\n"
-                + "\tTime: " + timeInSec + " Sec\n" + "\tSpeed: " + getSpeedInMiBPerSec() + " MiB/s\n" + "\tData written: "
-                + dataWritten + dataRequestedInBytes + " Bytes]\n" + "\tByteCount: " + byteCount + " Bytes\n" + "}";
-    }
-
-    String toCSV() {
-        return benchmarkType + ";" + numberOfReadersOrWriters + ";" + timeInSec + ";" + getSpeedInMiBPerSec() + ";"
-                + dataRequestedInBytes + ";" + byteCount;
-    }
-
-    void setBenchmarkType(BenchmarkUtils.BenchmarkType benchmarkType) {
+    void setBenchmarkType(BenchmarkType benchmarkType) {
         this.benchmarkType = benchmarkType;
     }
 
@@ -83,7 +55,7 @@ public class BenchmarkResult {
      * 
      * @return the type of the benchmark
      */
-    public BenchmarkUtils.BenchmarkType getBenchmarkType() {
+    public BenchmarkType getBenchmarkType() {
         return benchmarkType;
     }
 
@@ -130,6 +102,26 @@ public class BenchmarkResult {
      */
     public long getByteCount() {
         return byteCount;
+    }
+
+    /**
+     * Returns true, if the benchmark is either a sequential write benchmark, a random write benchmark or a filebased write benchmark.
+     *
+     * @return true, if the benchmark is a write benchmark
+     */
+    public boolean isWriteBenchmark(){
+        return benchmarkType == BenchmarkType.SEQ_WRITE || benchmarkType == BenchmarkType.RAND_WRITE
+                || benchmarkType == BenchmarkType.FILES_WRITE;
+    }
+
+    /**
+     * Returns true, if the benchmark is either a sequential read benchmark, a random read benchmark or a filebased read benchmark.
+     *
+     * @return true, if the benchmark is a read benchmark
+     */
+    public boolean isReadBenchmark(){
+        return benchmarkType == BenchmarkType.SEQ_READ || benchmarkType == BenchmarkType.RAND_READ
+                || benchmarkType == BenchmarkType.FILES_READ;
     }
 
     /* Round doubles to specified number of decimals */

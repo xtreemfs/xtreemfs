@@ -59,8 +59,7 @@ import org.xtreemfs.foundation.logging.Logging;
         /* Calculate and return results */
         double timeInSec = (after - before) / 1000.;
 
-        BenchmarkResult result = new BenchmarkResult(timeInSec, benchmarkSizeInBytes, Thread.currentThread().getId(),
-                byteCounter);
+        BenchmarkResult result = new BenchmarkResult(timeInSec, benchmarkSizeInBytes, byteCounter);
         results.add(result);
 
         finalizeBenchmark();
