@@ -58,10 +58,9 @@ import org.xtreemfs.foundation.logging.Logging;
 
         /* Calculate and return results */
         double timeInSec = (after - before) / 1000.;
-        double speedMiBPerSec = round((byteCounter / BenchmarkUtils.getMiB_IN_BYTES()) / timeInSec, 2);
 
-        BenchmarkResult result = new BenchmarkResult(timeInSec, speedMiBPerSec, benchmarkSizeInBytes, Thread
-                .currentThread().getId(), byteCounter);
+        BenchmarkResult result = new BenchmarkResult(timeInSec, benchmarkSizeInBytes, Thread.currentThread().getId(),
+                byteCounter);
         results.add(result);
 
         finalizeBenchmark();
@@ -87,17 +86,6 @@ import org.xtreemfs.foundation.logging.Logging;
         Thread benchThread = new Thread(new BenchmarkThread(this, results));
         threads.add(benchThread);
         benchThread.start();
-    }
-
-    /* Round doubles to specified number of decimals */
-    static double round(double value, int places) {
-        if (places < 0)
-            throw new IllegalArgumentException();
-
-        long factor = (long) Math.pow(10, places);
-        value = value * factor;
-        long tmp = Math.round(value);
-        return (double) tmp / factor;
     }
 
 }

@@ -18,15 +18,13 @@ public class BenchmarkResult {
     private BenchmarkUtils.BenchmarkType benchmarkType;
     private int                          numberOfReadersOrWriters;
     private double                       timeInSec;
-    private double                       speedInMiBProSec;
     private long                         dataRequestedInBytes;
     private long                         threadID;
     private long                         byteCount;
 
-    BenchmarkResult(double timeInSec, double speedInMiBProSec, long dataRequestedInBytes, long threadID,
+    BenchmarkResult(double timeInSec, long dataRequestedInBytes, long threadID,
             long byteCount) {
         this.timeInSec = timeInSec;
-        this.speedInMiBProSec = speedInMiBProSec;
         this.dataRequestedInBytes = dataRequestedInBytes;
         this.threadID = threadID;
         this.byteCount = byteCount;
@@ -50,12 +48,12 @@ public class BenchmarkResult {
         }
 
         return "{\n\tBenchmarkType: " + benchmarkType + "\n" + readersOrWriters + "\tThreadID: " + threadID + "\n"
-                + "\tTime: " + timeInSec + " Sec\n" + "\tSpeed: " + speedInMiBProSec + " MiB/s\n" + "\tData written: "
+                + "\tTime: " + timeInSec + " Sec\n" + "\tSpeed: " + getSpeedInMiBPerSec() + " MiB/s\n" + "\tData written: "
                 + dataWritten + dataRequestedInBytes + " Bytes]\n" + "\tByteCount: " + byteCount + " Bytes\n" + "}";
     }
 
     String toCSV() {
-        return benchmarkType + ";" + numberOfReadersOrWriters + ";" + timeInSec + ";" + speedInMiBProSec + ";"
+        return benchmarkType + ";" + numberOfReadersOrWriters + ";" + timeInSec + ";" + getSpeedInMiBPerSec() + ";"
                 + dataRequestedInBytes + ";" + byteCount;
     }
 
@@ -112,8 +110,8 @@ public class BenchmarkResult {
      *
      * @return the speed of the benchmark in MiB/Sec
      */
-    public double getSpeedInMiBProSec() {
-        return speedInMiBProSec;
+    public double getSpeedInMiBPerSec() {
+        return round((byteCount / BenchmarkUtils.getMiB_IN_BYTES()) / timeInSec, 2);
     }
 
     /**
@@ -133,4 +131,16 @@ public class BenchmarkResult {
     public long getByteCount() {
         return byteCount;
     }
+
+    /* Round doubles to specified number of decimals */
+    private double round(double value, int places) {
+        if (places < 0)
+            throw new IllegalArgumentException();
+
+        long factor = (long) Math.pow(10, places);
+        value = value * factor;
+        long tmp = Math.round(value);
+        return (double) tmp / factor;
+    }
+
 }
