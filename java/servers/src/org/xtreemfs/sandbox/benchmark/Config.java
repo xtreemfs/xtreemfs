@@ -51,6 +51,7 @@ public class Config {
     private final SSLOptions          sslOptions;
     private final Options             options;
     private final String              osdSelectionPolicies;
+    private String                    osdSelectionUuids;
     private final int                 stripeSizeInBytes;
     private final int                 getStripeSizeInKiB;
     private final int                 stripeWidth;
@@ -82,6 +83,7 @@ public class Config {
         this.sslOptions = builder.getSslOptions();
         this.options = builder.getOptions();
         this.osdSelectionPolicies = builder.getOsdSelectionPolicies();
+        this.osdSelectionUuids = builder.getOsdSelectionUuids();
         this.stripeSizeInBytes = builder.getStripeSizeInBytes();
         this.getStripeSizeInKiB = builder.getStripeSizeInBytes() / 1024;
         this.stripeWidth = builder.getStripeWidth();
@@ -194,6 +196,14 @@ public class Config {
 
     String getOsdSelectionPolicies() {
         return osdSelectionPolicies;
+    }
+
+    boolean isOsdSelectionByUuids(){
+        return !osdSelectionUuids.equals("");
+    }
+
+    String getOsdSelectionUuids() {
+        return osdSelectionUuids;
     }
 
     int getStripeSizeInBytes() {

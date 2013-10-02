@@ -117,17 +117,18 @@ class VolumeManager {
                     GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, config.getGetStripeSizeInKiB(),
                     config.getStripeWidth(), volumeAttributes);
             volume = client.openVolume(volumeName, config.getSslOptions(), config.getOptions());
-            volume.setOSDSelectionPolicy(config.getUserCredentials(), config.getOsdSelectionPolicies());
             createdVolumes.add(volume);
             createDirStructure(volume);
             Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Created volume %s", volumeName);
         } catch (PosixErrorException e) {
             if (e.getPosixError() == POSIXErrno.POSIX_ERROR_EEXIST) {
                 volume = client.openVolume(volumeName, config.getSslOptions(), config.getOptions());
-                volume.setOSDSelectionPolicy(config.getUserCredentials(), config.getOsdSelectionPolicies());
             } else
                 throw e;
         }
+        volume.setOSDSelectionPolicy(config.getUserCredentials(), config.getOsdSelectionPolicies());
+        if (config.isOsdSelectionByUuids())
+            volume.setPolicyAttribute(config.getUserCredentials(), "1002.uuids", config.getOsdSelectionUuids());
         return volume;
     }
 

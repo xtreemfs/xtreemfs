@@ -49,6 +49,7 @@ public class ConfigBuilder {
     private SSLOptions sslOptions            = null;
     private Options    options               = new Options();
     private String     osdSelectionPolicies  = "1000,3002";
+    private String     osdSelectionUuids     = "";
     private int        stripeSizeInBytes     = 128 * BenchmarkUtils.KiB_IN_BYTES;
     private int        stripeWidth           = 1;
     private boolean    noCleanup             = false;
@@ -235,15 +236,37 @@ public class ConfigBuilder {
 
     /**
      * Set the OSD selection policies used when creating volumes. <br/>
+     * This method assumes, that {@link #setSelectOsdsByUuid(String)} is not used.<br/>
      * Default: "1000,3002" (Default OSD filter, Shuffling).
      * 
      * @param policies
      * @return the builder
      */
     public ConfigBuilder setOsdSelectionPolicies(String policies) {
+        if (!this.osdSelectionUuids.equals(""))
+            throw new IllegalArgumentException("Setting a OSD selection policy is not allowed if selecting the OSD by UUID is used.");
         this.osdSelectionPolicies = policies;
         return this;
     }
+
+    /**
+     * Set the UUID-based filter policy (ID 1002) as OSD selection policy and set the uuids to be used by the policy
+     * (applied when creating volumes). <br/>
+     * This method assumes, that {@link #setOsdSelectionPolicies(String)} is not used.   <br/>
+     * 
+     * Default: see {@link #setOsdSelectionPolicies(String)}.
+     * 
+     * @param uuids
+     *            the uuids
+     * @return the builder
+     */
+    public ConfigBuilder setSelectOsdsByUuid(String uuids) {
+        if (!this.osdSelectionPolicies.equals("1000,3002"))
+            throw new IllegalArgumentException("Selecting the OSD by UUID is not allowed if Setting a OSD selection policy is used.");
+        this.osdSelectionPolicies = "1002";
+        this.osdSelectionUuids = uuids;
+        return this;
+    }    
 
     /**
      * Set the size of an OSD storage block ("blocksize") in Bytes. <br/>
@@ -373,6 +396,10 @@ public class ConfigBuilder {
 
     String getOsdSelectionPolicies() {
         return osdSelectionPolicies;
+    }
+
+    String getOsdSelectionUuids() {
+        return osdSelectionUuids;
     }
 
     int getStripeSizeInBytes() {
