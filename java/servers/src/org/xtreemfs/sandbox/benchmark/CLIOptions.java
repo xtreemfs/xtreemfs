@@ -32,6 +32,7 @@ class CLIOptions {
 
     private static final String              DIR_ADDRESS;
     private static final String              OSD_SELECTION_POLICIES;
+    private static final String              OSD_SELECTION_UUIDS;
     private static final String              USERNAME;
     private static final String              GROUPNAME;
     private static final String              SEQ_WRITE;
@@ -56,6 +57,7 @@ class CLIOptions {
     static {
         DIR_ADDRESS = "-dir-address";
         OSD_SELECTION_POLICIES = "-osd-selection-policies";
+        OSD_SELECTION_UUIDS = "-osd-selection-uuids";
         USERNAME = "-user";
         GROUPNAME = "-group";
         SEQ_WRITE = "sw";
@@ -98,6 +100,7 @@ class CLIOptions {
         setFileSize();
         setDirAddress();
         setOsdSelectionPolicies();
+        setOsdSelectionByUuids();
         setUsername();
         setGroup();
         setOSDPassword();
@@ -119,7 +122,13 @@ class CLIOptions {
         options.put(DIR_ADDRESS, new CLIParser.CliOption(STRING,
                 "directory service to use (e.g. 'localhost:32638'). If no URI is specified, URI and security settings are taken from '"
                         + DefaultDirConfig.DEFAULT_DIR_CONFIG + "'", "<uri>"));
-        options.put(OSD_SELECTION_POLICIES, new CLIParser.CliOption(STRING, "OSD selection policies to use when creating or opening volumes. default: 1000,3002", "<osd selection policies>"));
+        options.put(OSD_SELECTION_POLICIES, new CLIParser.CliOption(STRING,
+                "OSD selection policies to use when creating or opening volumes. default: 1000,3002",
+                "<osd selection policies>"));
+        options.put(OSD_SELECTION_UUIDS, new CLIParser.CliOption(STRING,
+                        "Set the UUID-based filter policy (ID 1002) as OSD selection policy and set the uuids to be used " +
+                                "by the policy (applied when creating or opening volumes). It is not allowed to use this option " +
+                                "with the -" + OSD_SELECTION_POLICIES + " option. Default: No selection by UUIDs", "<osd uuids to use>"));
         options.put(USERNAME, new CLIParser.CliOption(STRING, "username to use", "<username>"));
         options.put(GROUPNAME, new CLIParser.CliOption(STRING, "name of group to use", "<group name>"));
 
@@ -247,6 +256,12 @@ class CLIOptions {
         String osdSelectionPolicies = options.get(OSD_SELECTION_POLICIES).stringValue;
         if (null != osdSelectionPolicies)
             builder.setOsdSelectionPolicies(osdSelectionPolicies);
+    }
+
+    private void setOsdSelectionByUuids() {
+        String osdSelectionUuids = options.get(OSD_SELECTION_UUIDS).stringValue;
+        if (null != osdSelectionUuids)
+            builder.setSelectOsdsByUuid(osdSelectionUuids);
     }
 
     private void setUsername() {
