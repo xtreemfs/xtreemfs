@@ -53,7 +53,6 @@ public class Config {
     private final String              osdSelectionPolicies;
     private String                    osdSelectionUuids;
     private final int                 stripeSizeInBytes;
-    private final int                 getStripeSizeInKiB;
     private final int                 stripeWidth;
     private final boolean             noCleanup;
     private final boolean             noCleanupOfVolumes;
@@ -85,7 +84,6 @@ public class Config {
         this.osdSelectionPolicies = builder.getOsdSelectionPolicies();
         this.osdSelectionUuids = builder.getOsdSelectionUuids();
         this.stripeSizeInBytes = builder.getStripeSizeInBytes();
-        this.getStripeSizeInKiB = builder.getStripeSizeInBytes() / 1024;
         this.stripeWidth = builder.getStripeWidth();
         this.mrcAddress = getMRCAddress(dirAddress, userCredentials, sslOptions, options);
         this.auth = builder.getAuth();
@@ -210,8 +208,8 @@ public class Config {
         return stripeSizeInBytes;
     }
 
-    int getGetStripeSizeInKiB() {
-        return getStripeSizeInKiB;
+    int getStripeSizeInKiB() {
+        return stripeSizeInBytes/1024;
     }
 
     int getStripeWidth() {

@@ -114,7 +114,7 @@ class VolumeManager {
             List<GlobalTypes.KeyValuePair> volumeAttributes = new ArrayList<GlobalTypes.KeyValuePair>();
             client.createVolume(config.getAuth(), config.getUserCredentials(), volumeName, 511, config.getUserName(), config.getGroup(),
                     GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
-                    GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, config.getGetStripeSizeInKiB(),
+                    GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, config.getStripeSizeInKiB(),
                     config.getStripeWidth(), volumeAttributes);
             volume = client.openVolume(volumeName, config.getSslOptions(), config.getOptions());
             createdVolumes.add(volume);
