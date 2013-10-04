@@ -6,9 +6,9 @@
  *
  */
 
-package org.xtreemfs.sandbox.benchmark;
+package org.xtreemfs.common.benchmark;
 
-import static org.xtreemfs.sandbox.benchmark.BenchmarkUtils.BenchmarkType;
+import static org.xtreemfs.common.benchmark.BenchmarkUtils.BenchmarkType;
 
 /**
  * Result object for benchmarks.

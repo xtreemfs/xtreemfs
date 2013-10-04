@@ -17,9 +17,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.xtreemfs.foundation.util.CLIParser;
-import org.xtreemfs.sandbox.benchmark.Config;
-import org.xtreemfs.sandbox.benchmark.ConfigBuilder;
-import org.xtreemfs.sandbox.benchmark.Controller;
+import org.xtreemfs.common.benchmark.Config;
+import org.xtreemfs.common.benchmark.ConfigBuilder;
+import org.xtreemfs.common.benchmark.Controller;
 import org.xtreemfs.utils.DefaultDirConfig;
 import org.xtreemfs.utils.utils;
 

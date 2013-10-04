@@ -6,10 +6,9 @@
  *
  */
 
-package org.xtreemfs.sandbox.benchmark;
+package org.xtreemfs.common.benchmark;
 
 import java.util.LinkedList;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.Client;

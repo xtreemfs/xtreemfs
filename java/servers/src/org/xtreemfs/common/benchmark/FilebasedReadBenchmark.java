@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.sandbox.benchmark;
+package org.xtreemfs.common.benchmark;
 
 import java.io.IOException;
 import java.util.Random;

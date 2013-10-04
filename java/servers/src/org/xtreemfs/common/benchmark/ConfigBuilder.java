@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.sandbox.benchmark;
+package org.xtreemfs.common.benchmark;
 
 import static org.xtreemfs.foundation.pbrpc.client.RPCAuthentication.authNone;
 

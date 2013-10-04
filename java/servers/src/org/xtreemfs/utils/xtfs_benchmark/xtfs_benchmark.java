@@ -12,9 +12,9 @@ import static org.xtreemfs.foundation.logging.Logging.Category;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.sandbox.benchmark.BenchmarkResult;
-import org.xtreemfs.sandbox.benchmark.Config;
-import org.xtreemfs.sandbox.benchmark.Controller;
+import org.xtreemfs.common.benchmark.BenchmarkResult;
+import org.xtreemfs.common.benchmark.Config;
+import org.xtreemfs.common.benchmark.Controller;
 
 /**
  * The commandline benchmark tool.
