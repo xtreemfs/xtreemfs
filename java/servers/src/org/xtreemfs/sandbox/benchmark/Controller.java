@@ -62,66 +62,65 @@ public class Controller {
     }
 
     /**
-     * Repeat a benchmark multiple times.
-     * 
-     * @param benchmarkType
-     *            the type of the benchmark to be repeated
-     * @param numberOfThreads
-     *            the number of benchmarks run in parallel
-     * @return the results of all repetitions of all the run benchmarks
+     * Starts sequential write benchmarks with the parameters specified in the {@link Config}. <br/>
+     *
+     * @return the results of the benchmark (see {@link BenchmarkResult})
      * @throws Exception
      */
-    public ConcurrentLinkedQueue<BenchmarkResult> startBenchmarks(BenchmarkUtils.BenchmarkType benchmarkType, int numberOfThreads)
-            throws Exception {
-        ConcurrentLinkedQueue<BenchmarkResult> result;
-        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
-
-        for (int i = 0; i < config.getNumberOfRepetitions(); i++) {
-            result = startBenchmark(benchmarkType, numberOfThreads);
-            results.addAll(result);
-        }
-        return results;
+    public ConcurrentLinkedQueue<BenchmarkResult> startSequentialWriteBenchmark() throws Exception {
+        return repeatBenchmark(BenchmarkUtils.BenchmarkType.SEQ_WRITE);
     }
 
     /**
-     * Starts the specified amount of benchmarks in parallel. Every benchmark is started within its own thread. The
-     * method waits for all threads to finish.
-     * 
-     * @param benchmarkType
-     * @param numberOfThreads
-     *            number of benchmarks run in parallel Size of the benchmark in bytes. Must be in alignment with (i.e.
-     *            divisible through) the block size (128 KiB).
-     * @return the results of the benchmark
+     * Starts sequential read benchmarks with the parameters specified in the {@link Config}. <br/>
+     *
+     * @return the results of the benchmark (see {@link BenchmarkResult})
      * @throws Exception
      */
-    ConcurrentLinkedQueue<BenchmarkResult> startBenchmark(BenchmarkUtils.BenchmarkType benchmarkType, int numberOfThreads)
-            throws Exception {
-
-        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
-        ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
-
-        for (int i = 0; i < numberOfThreads; i++) {
-            AbstractBenchmark benchmark = BenchmarkFactory.createBenchmark(benchmarkType, VolumeManager.getInstance()
-                    .getNextVolume(), config);
-            benchmark.startBenchmarkThread(results, threads);
-        }
-
-        /* wait for all threads to finish */
-        for (Thread thread : threads) {
-            thread.join();
-        }
-
-        /* reset VolumeManager to prepare for possible consecutive benchmarks */
-        VolumeManager.getInstance().reset();
-
-        /* Set BenchmarkResult Type */
-        for (BenchmarkResult res : results) {
-            res.setBenchmarkType(benchmarkType);
-            res.setNumberOfReadersOrWriters(numberOfThreads);
-        }
-        return results;
+    public ConcurrentLinkedQueue<BenchmarkResult> startSequentialReadBenchmark() throws Exception {
+        return repeatBenchmark(BenchmarkUtils.BenchmarkType.SEQ_READ);
     }
 
+    /**
+     * Starts random write benchmarks with the parameters specified in the {@link Config}. <br/>
+     *
+     * @return the results of the benchmark (see {@link BenchmarkResult})
+     * @throws Exception
+     */
+    public ConcurrentLinkedQueue<BenchmarkResult> startRandomWriteBenchmark() throws Exception {
+        return repeatBenchmark(BenchmarkUtils.BenchmarkType.RAND_WRITE);
+    }
+
+    /**
+     * Starts random read benchmarks with the parameters specified in the {@link Config}. <br/>
+     *
+     * @return the results of the benchmark (see {@link BenchmarkResult})
+     * @throws Exception
+     */
+    public ConcurrentLinkedQueue<BenchmarkResult> startRandomReadBenchmark() throws Exception {
+        return repeatBenchmark(BenchmarkUtils.BenchmarkType.RAND_READ);
+    }
+
+    /**
+     * Starts filebased write benchmarks with the parameters specified in the {@link Config}. <br/>
+     *
+     * @return the results of the benchmark (see {@link BenchmarkResult})
+     * @throws Exception
+     */
+    public ConcurrentLinkedQueue<BenchmarkResult> startFilebasedWriteBenchmark() throws Exception {
+        return repeatBenchmark(BenchmarkUtils.BenchmarkType.FILES_WRITE);
+    }
+
+    /**
+     * Starts filebased read benchmarks with the parameters specified in the {@link Config}. <br/>
+     *
+     * @return the results of the benchmark (see {@link BenchmarkResult})
+     * @throws Exception
+     */
+    public ConcurrentLinkedQueue<BenchmarkResult> startFilebasedReadBenchmark() throws Exception {
+        return repeatBenchmark(BenchmarkUtils.BenchmarkType.FILES_READ);
+    }    
+    
     public void tryConnection() throws Exception {
         try {
             ClientManager.getInstance().getNewClient(config).getServiceByType(DIR.ServiceType.SERVICE_TYPE_OSD);
@@ -134,7 +133,7 @@ public class Controller {
 
     /**
      * Get the DIR address from default_dir
-     * 
+     *
      * @return the DIR address, or null if default_dir wasn't found or couldn't be accessed.
      */
     public static String getDefaultDir() {
@@ -156,7 +155,7 @@ public class Controller {
      * Deletes all created volumes and files and shuts down all clients. This method should be called when all
      * benchmarks are finished. The deletion of the volumes and files is regulated by the noCleanup options in
      * {@link Config}.
-     * 
+     *
      * @throws Exception
      */
     public void teardown() throws Exception {
@@ -164,6 +163,51 @@ public class Controller {
         ClientManager.getInstance().shutdownClients();
         if (config.isOsdCleanup())
             VolumeManager.getInstance().cleanupOSD();
+    }
+
+    /* Repeat a benchmark multiple times and pack the results. */
+    private ConcurrentLinkedQueue<BenchmarkResult> repeatBenchmark(BenchmarkUtils.BenchmarkType benchmarkType)
+            throws Exception {
+        ConcurrentLinkedQueue<BenchmarkResult> result;
+        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
+
+        for (int i = 0; i < config.getNumberOfRepetitions(); i++) {
+            result = startBenchmark(benchmarkType);
+            results.addAll(result);
+        }
+        return results;
+    }
+
+    /*
+     * Starts benchmarks in parallel. Every benchmark is started within its own thread. The method waits for all threads
+     * to finish.
+     */
+    private ConcurrentLinkedQueue<BenchmarkResult> startBenchmark(BenchmarkUtils.BenchmarkType benchmarkType)
+            throws Exception {
+
+        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
+        ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
+
+        for (int i = 0; i < config.getNumberOfThreads(); i++) {
+            AbstractBenchmark benchmark = BenchmarkFactory.createBenchmark(benchmarkType, VolumeManager.getInstance()
+                    .getNextVolume(), config);
+            benchmark.startBenchmarkThread(results, threads);
+        }
+
+        /* wait for all threads to finish */
+        for (Thread thread : threads) {
+            thread.join();
+        }
+
+        /* reset VolumeManager to prepare for possible consecutive benchmarks */
+        VolumeManager.getInstance().reset();
+
+        /* Set BenchmarkResult Type */
+        for (BenchmarkResult res : results) {
+            res.setBenchmarkType(benchmarkType);
+            res.setNumberOfReadersOrWriters(config.getNumberOfThreads());
+        }
+        return results;
     }
 
     /* delete all created volumes and files depending on the noCleanup options */
