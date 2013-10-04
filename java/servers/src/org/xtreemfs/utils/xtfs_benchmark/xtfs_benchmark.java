@@ -5,18 +5,25 @@
  * Licensed under the BSD License, see LICENSE file for details.
  *
  */
-package org.xtreemfs.sandbox.benchmark;
+package org.xtreemfs.utils.xtfs_benchmark;
 
 import static org.xtreemfs.foundation.logging.Logging.Category;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.sandbox.benchmark.BenchmarkResult;
+import org.xtreemfs.sandbox.benchmark.Config;
+import org.xtreemfs.sandbox.benchmark.Controller;
 
 /**
  * The commandline benchmark tool.
  */
 public class xtfs_benchmark {
+
+    static final int KiB_IN_BYTES = 1024;
+    static final int MiB_IN_BYTES = 1024 * 1024;
+    static final int GiB_IN_BYTES = 1024 * 1024 * 1024;
 
     private static Controller controller;
     private static CLIOptions cliOptions;
@@ -113,8 +120,8 @@ public class xtfs_benchmark {
     /* convert a single result to json like String */
     private static String resultToString(BenchmarkResult result) {
 
-        String dataWritten = result.getDataRequestedInBytes() >= BenchmarkUtils.GiB_IN_BYTES ? result.getDataRequestedInBytes()/ BenchmarkUtils.GiB_IN_BYTES + " GiB ["
-                : result.getDataRequestedInBytes()/ BenchmarkUtils.MiB_IN_BYTES + " MiB [";
+        String dataWritten = result.getDataRequestedInBytes() >= GiB_IN_BYTES ? result.getDataRequestedInBytes()/ GiB_IN_BYTES + " GiB ["
+                : result.getDataRequestedInBytes()/ MiB_IN_BYTES + " MiB [";
         String readersOrWriters;
         
         if (result.isWriteBenchmark()) {

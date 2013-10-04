@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.sandbox.benchmark;
+package org.xtreemfs.utils.xtfs_benchmark;
 
 import static org.xtreemfs.foundation.util.CLIParser.CliOption.OPTIONTYPE.STRING;
 import static org.xtreemfs.foundation.util.CLIParser.CliOption.OPTIONTYPE.SWITCH;
@@ -17,6 +17,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.xtreemfs.foundation.util.CLIParser;
+import org.xtreemfs.sandbox.benchmark.Config;
+import org.xtreemfs.sandbox.benchmark.ConfigBuilder;
+import org.xtreemfs.sandbox.benchmark.Controller;
 import org.xtreemfs.utils.DefaultDirConfig;
 import org.xtreemfs.utils.utils;
 
@@ -28,7 +31,7 @@ import org.xtreemfs.utils.utils;
 class CLIOptions {
     private Map<String, CLIParser.CliOption> options;
     private List<String>                     arguments;
-    private ConfigBuilder                    builder;
+    private ConfigBuilder builder;
 
     private static final String              DIR_ADDRESS;
     private static final String              OSD_SELECTION_POLICIES;
@@ -376,13 +379,13 @@ class CLIOptions {
                 sizeInBytes = numbers;
                 break;
             case 'K':
-                sizeInBytes = numbers * (long) BenchmarkUtils.KiB_IN_BYTES;
+                sizeInBytes = numbers * (long) xtfs_benchmark.KiB_IN_BYTES;
                 break;
             case 'M':
-                sizeInBytes = numbers * (long) BenchmarkUtils.MiB_IN_BYTES;
+                sizeInBytes = numbers * (long) xtfs_benchmark.MiB_IN_BYTES;
                 break;
             case 'G':
-                sizeInBytes = numbers * (long) BenchmarkUtils.GiB_IN_BYTES;
+                sizeInBytes = numbers * (long) xtfs_benchmark.GiB_IN_BYTES;
                 break;
             default:
                 sizeInBytes = 0L;

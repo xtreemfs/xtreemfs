@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.sandbox.benchmark;
+package org.xtreemfs.utils.xtfs_benchmark;
 
 import org.xtreemfs.foundation.logging.Logging;
 
