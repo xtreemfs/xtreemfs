@@ -43,7 +43,7 @@ public class ConfigBuilder {
     private int        filesize              = 4 * BenchmarkUtils.KiB_IN_BYTES;
     private String     userName              = "root";
     private String     group                 = "root";
-    private String     osdPassword           = "";
+    private String     adminPassword         = "";
     private String     dirAddress            = "127.0.0.1:32638";
     private RPC.Auth   auth                  = authNone;
     private SSLOptions sslOptions            = null;
@@ -180,11 +180,11 @@ public class ConfigBuilder {
      * Set the password for accessing the osd(s) <br/>
      * Default: "".
      * 
-     * @param osdPassword
+     * @param adminPassword
      * @return the builder
      */
-    public ConfigBuilder setOsdPassword(String osdPassword) {
-        this.osdPassword = osdPassword;
+    public ConfigBuilder setAdminPassword(String adminPassword) {
+        this.adminPassword = adminPassword;
         return this;
     }
 
@@ -374,8 +374,8 @@ public class ConfigBuilder {
         return group;
     }
 
-    String getOsdPassword() {
-        return osdPassword;
+    String getAdminPassword() {
+        return adminPassword;
     }
 
     String getDirAddress() {

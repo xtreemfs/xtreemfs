@@ -43,7 +43,7 @@ public class Config {
     private final int                 filesize;
     private final String              userName;
     private final String              group;
-    private final String              osdPassword;
+    private final String              adminPassword;
     private final String              dirAddress;
     private final String              mrcAddress;
     private final RPC.UserCredentials userCredentials;
@@ -75,7 +75,7 @@ public class Config {
         this.filesize = builder.getFilesize();
         this.userName = builder.getUserName();
         this.group = builder.getGroup();
-        this.osdPassword = builder.getOsdPassword();
+        this.adminPassword = builder.getAdminPassword();
         this.dirAddress = builder.getDirAddress();
         this.userCredentials = RPC.UserCredentials.newBuilder().setUsername(builder.getUserName()).addGroups(builder.getGroup())
                 .build();
@@ -164,8 +164,8 @@ public class Config {
         return group;
     }
 
-    String getOsdPassword() {
-        return osdPassword;
+    String getAdminPassword() {
+        return adminPassword;
     }
 
     String getDirAddress() {

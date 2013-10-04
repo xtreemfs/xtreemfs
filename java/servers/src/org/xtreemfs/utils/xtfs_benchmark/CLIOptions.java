@@ -288,7 +288,7 @@ class CLIOptions {
     private void setOSDPassword() {
         String osdPassword = options.get(utils.OPTION_ADMIN_PASS).stringValue;
         if (null != osdPassword)
-            builder.setOsdPassword(osdPassword);
+            builder.setAdminPassword(osdPassword);
     }
 
     private void setAuth() {
