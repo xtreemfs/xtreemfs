@@ -49,7 +49,7 @@ abstract class RandomOffsetbasedBenchmark extends RandomBenchmark {
 
     /* convert to 4 KiB Blocks */
     long convertTo4KiBBlocks(long numberOfBlocks) {
-        return (numberOfBlocks * (long) stripeWidth) / (long) RANDOM_IO_BLOCKSIZE;
+        return (numberOfBlocks * (long) stripeSize) / (long) RANDOM_IO_BLOCKSIZE;
     }
 
     long generateNextRandomOffset() {
@@ -78,19 +78,19 @@ abstract class RandomOffsetbasedBenchmark extends RandomBenchmark {
     private void createBasefile() throws Exception {
         Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this,
                 "Start creating a basefile of size %s bytes.", sizeOfBasefile);
-        long numberOfBlocks = sizeOfBasefile / (long) stripeWidth;
+        long numberOfBlocks = sizeOfBasefile / (long) stripeSize;
         Random random = new Random();
         int flags = GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
         FileHandle fileHandle = volume.openFile(config.getUserCredentials(), BASFILE_FILENAME, flags, 511);
         long byteCounter = 0;
-        byte[] data = new byte[stripeWidth];
+        byte[] data = new byte[stripeSize];
         for (long j = 0; j < numberOfBlocks; j++) {
-            long nextOffset = j * stripeWidth;
+            long nextOffset = j * stripeSize;
             assert nextOffset >= 0 : "Offset < 0 not allowed";
             random.nextBytes(data);
-            byteCounter += fileHandle.write(config.getUserCredentials(), data, stripeWidth, nextOffset);
+            byteCounter += fileHandle.write(config.getUserCredentials(), data, stripeSize, nextOffset);
         }
         fileHandle.close();
         assert byteCounter == sizeOfBasefile : " Error while writing the basefile for the random io benchmark";

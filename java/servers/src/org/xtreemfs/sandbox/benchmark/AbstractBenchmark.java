@@ -22,18 +22,18 @@ import org.xtreemfs.foundation.logging.Logging;
  */
  abstract class AbstractBenchmark {
 
-    final int         stripeWidth;
+    final int         stripeSize;
     final long        benchmarkSizeInBytes;
     final Volume      volume;
     final AdminClient client;
-    final Config config;
+    final Config      config;
 
     AbstractBenchmark(long benchmarkSizeInBytes, Volume volume, Config config) throws Exception {
         client = ClientManager.getInstance().getNewClient(config);
         this.benchmarkSizeInBytes = benchmarkSizeInBytes;
         this.volume = volume;
         this.config = config;
-        stripeWidth = config.getStripeSizeInBytes();
+        stripeSize = config.getStripeSizeInBytes();
     }
 
     /*
@@ -46,9 +46,9 @@ import org.xtreemfs.foundation.logging.Logging;
         Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Starting %s", shortClassname);
 
         // Setting up
-        byte[] data = new byte[stripeWidth];
+        byte[] data = new byte[stripeSize];
 
-        long numberOfBlocks = benchmarkSizeInBytes / stripeWidth;
+        long numberOfBlocks = benchmarkSizeInBytes / stripeSize;
         long byteCounter = 0;
 
         /* Run the AbstractBenchmark */
