@@ -102,7 +102,13 @@ public class FleaseAcceptor {
 
     public void setViewId(ASCIIString cellId, int viewId) {
         FleaseAcceptorCell cell = getCell(cellId);
-        cell.setViewId(viewId);
+
+        // Set the viewId or invalidate the cell if the VIEW_ID_INVALIDATED is passed.
+        if (viewId == FleaseMessage.VIEW_ID_INVALIDATED) {
+            cell.invalidateView();
+        } else {
+            cell.setViewId(viewId);
+        }
     }
     
     private FleaseAcceptorCell getCell(FleaseMessage msg) {
@@ -121,13 +127,15 @@ public class FleaseAcceptor {
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication,this,"A GCed cell "+cellId);
                 // Cell is outdated and GCed.
 
-                // Transfer the local view id from the (outdated) cell.
-                int prevViewId = cc.getViewId();
+                // Create a new cell and transfer the previous view.
+                FleaseAcceptorCell tmp = new FleaseAcceptorCell();
+                tmp.setViewId(cc.getViewId());
+                if (cc.isViewInvalidated()) {
+                    tmp.invalidateView();
+                }
 
-                // Create a new cell and transfer the previous viewId.
-                cc = new FleaseAcceptorCell();
-                cc.setViewId(prevViewId);
-                cells.put(cellId,cc);
+                cells.put(cellId, tmp);
+                cc = tmp;
             }
         }
         /*if (Logging.isDebug())
@@ -316,19 +324,18 @@ public class FleaseAcceptor {
 
 
         assert(msg.getCellId() != null);
-
-        final int myViewId = getCell(msg.getCellId()).getViewId();
-        if (myViewId < msg.getViewId()) {
-            // If the local view lower than the request's, the viewListener has to be informed to update the local view,
-            // but the request can be answered. This is also true if the local view is invalidated, because it is
-            // internally represented as -1
+        final FleaseAcceptorCell cc = getCell(msg.getCellId());
+        
+        if (cc.getViewId() < msg.getViewId()) {
+            // If the local view is lower than the delivered one, the view listener has to be informed to update
+            // the local view. But the request can still be answered.
             viewListener.viewIdChangeEvent(msg.getCellId(), msg.getViewId());
-        }
 
-        if ((myViewId == FleaseMessage.VIEW_ID_INVALIDATED) || (myViewId > msg.getViewId())) {
-            // Requests within the context of an older view are invalid.
+        } else if (cc.getViewId() > msg.getViewId() || (cc.getViewId() == msg.getViewId() && cc.isViewInvalidated())) {
+            // If the request is from an older view, or the a view that has been invalidated on this
+            // AcceptorCell, the request has to be aborted.
             FleaseMessage response = new FleaseMessage(FleaseMessage.MsgType.MSG_WRONG_VIEW, msg);
-            response.setViewId(myViewId);
+            response.setViewId(cc.getViewId());
             return response;
         }
 
@@ -350,9 +357,6 @@ public class FleaseAcceptor {
             Logging.logMessage(Logging.LEVEL_DEBUG,this,"response %s",(response != null) ? response.toString() : "<empty>");*/
 
         return response;
-                    
-                    
-        
     }
 
     /*private void notifyLeaseListener(FleaseAcceptorCell cell, ASCIIString leaseHolder, long leaseTimeout) {
