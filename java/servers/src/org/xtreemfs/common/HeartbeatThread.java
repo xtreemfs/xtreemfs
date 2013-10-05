@@ -109,13 +109,13 @@ public class HeartbeatThread extends LifeCycleThread {
     private static Auth                authNone;
 
     /** Determines if a renewal should take place in the next run of the main loop. **/
-    private volatile boolean           renewAddressMapping          = false;
+    private volatile boolean           addressMappingRenewalPending   = false;
 
-    /** Indicates if another renewal has been triggered during an address renewal. **/
-    private volatile boolean           addressMappingRenewalPending = false;
+    /** Indicates if a renewal has been triggered. **/
+    private volatile boolean           addressMappingRenewalTriggered = false;
 
     /** Used to sleep until the next heartbeat is scheduled. It can be notified to trigger an instant update **/
-    private Object                     updateIntervalMonitor        = new Object();
+    private Object                     updateIntervalMonitor          = new Object();
 
     static {
         authNone = Auth.newBuilder().setAuthType(AuthType.AUTH_NONE).build();
@@ -253,15 +253,15 @@ public class HeartbeatThread extends LifeCycleThread {
                     break;
                 }
                 
-                if (renewAddressMapping) {
+                if (addressMappingRenewalPending) {
                     try {
-                        // Reset the flag indicating pending renewals.
-                        addressMappingRenewalPending = false;
+                        // Reset the flag indicating a renewal has been triggered.
+                        addressMappingRenewalTriggered = false;
                         // Try to renew the address mappings.
                         registerAddressMappings();
                         // If the renewal has been successful, the renewal flag will be reset.
                         // If an error occurred, the renewal will be retried on the next regular heartbeat.
-                        renewAddressMapping = false;
+                        addressMappingRenewalPending = false;
                     } catch (IOException ex) {
                         Logging.logMessage(Logging.LEVEL_ERROR, this,
                                 "requested renewal of address mappings failed: %s", ex.toString());
@@ -280,8 +280,9 @@ public class HeartbeatThread extends LifeCycleThread {
                     pauseLock.notifyAll();
                 }
 
-                // If no renewal request is pending, this HeartbeatThread can wait for the next regular UPDATE_INTERVAL.
-                if (!addressMappingRenewalPending) {
+                // If no renewal request has been triggered during the loop, this HeartbeatThread can wait for
+                // the next regular UPDATE_INTERVAL.
+                if (!addressMappingRenewalTriggered) {
                     try {
                         synchronized (updateIntervalMonitor) {
                             updateIntervalMonitor.wait(UPDATE_INTERVAL);
@@ -447,7 +448,7 @@ public class HeartbeatThread extends LifeCycleThread {
             }
 
             advertisedEndpoint = AddressMapping.newBuilder().setUuid(uuid.toString()).setVersion(0).setProtocol(proto)
-                    .setAddress(host).setPort(config.getPort()).setMatchNetwork("*").setTtlS(3600)
+                    .setAddress(host).setPort(config.getPort()).setTtlS(3600)
                     .setUri(proto + "://" + host + ":" + config.getPort());
         }
 
@@ -477,9 +478,9 @@ public class HeartbeatThread extends LifeCycleThread {
         // in case no IP address could be found at all, use 127.0.0.1 for local testing.
         if (advertisedEndpoint == null) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
-                    "could not find a valid IP address, will use 127.0.0.1 instead");
+                    "Could not find a valid IP address, will use 127.0.0.1 instead.");
             advertisedEndpoint = AddressMapping.newBuilder().setAddress("127.0.0.1").setPort(config.getPort())
-                    .setProtocol(proto).setTtlS(3600).setMatchNetwork("*").setVersion(0).setUuid("")
+                    .setProtocol(proto).setTtlS(3600)
                     .setUri(NetUtils.getURI(proto, InetAddress.getByName("127.0.0.1"), config.getPort()));
         }
        
@@ -499,7 +500,7 @@ public class HeartbeatThread extends LifeCycleThread {
         List<AddressMapping.Builder> endpoints = new ArrayList<AddressMapping.Builder>();
         endpoints.add(advertisedEndpoint);
         if (advertiseUDPEndpoints) {
-            endpoints.add(NetUtils.replaceProtocol(advertisedEndpoint, Schemes.SCHEME_PBRPCU));
+            endpoints.add(NetUtils.cloneMappingForProtocol(advertisedEndpoint, Schemes.SCHEME_PBRPCU));
         }
         
         if (config.isUsingMultihoming()) {
@@ -509,7 +510,7 @@ public class HeartbeatThread extends LifeCycleThread {
                     mapping.setUuid(uuid.toString());
                     endpoints.add(mapping);
                     if (advertiseUDPEndpoints) {
-                        endpoints.add(NetUtils.replaceProtocol(mapping, Schemes.SCHEME_PBRPCU));
+                        endpoints.add(NetUtils.cloneMappingForProtocol(mapping, Schemes.SCHEME_PBRPCU));
                     }
                 }
             }
@@ -522,14 +523,14 @@ public class HeartbeatThread extends LifeCycleThread {
 
         if (Logging.isInfo()) {
             Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
-                    "registering the following address mapping for the service:");
+                    "Registering the following address mappings for the service:");
             for (AddressMapping mapping : amsb.getMappingsList()) {
                 Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "%s --> %s (%s)", mapping.getUuid(),
                         mapping.getUri(), mapping.getMatchNetwork());
             }
         }
 
-        // register/update the current address mapping
+        // Register or update the current address mapping.
         client.xtreemfs_address_mappings_set(null, authNone, uc, amsb.build());
     }
 
@@ -588,8 +589,8 @@ public class HeartbeatThread extends LifeCycleThread {
      * Renew the address mappings immediately (HeartbeatThread will wake up when this is called).
      */
     public void triggerAddressMappingRenewal() {
-        renewAddressMapping = true;
         addressMappingRenewalPending = true;
+        addressMappingRenewalTriggered = true;
 
         // To make the changes immediate, the thread has to be notified if it is sleeping.
         synchronized (updateIntervalMonitor) {

@@ -28,24 +28,24 @@ public class NetUtils {
      * The returned list contains global addresses in front of local ones.
      * 
      * @param port
-     *            the port to assign to the mappings
+     *            The port to assign to the mappings.
      * @param protocol
-     *            the protocol for the endpoint
+     *            The protocol for the endpoint.
      * 
-     * @return a list of mappings, containing global ones up front.
+     * @return A list of mappings, containing global ones up front.
      * @throws IOException
      */
     public static List<AddressMapping.Builder> getReachableEndpoints(int port, String protocol) throws IOException {
         
-        List<AddressMapping.Builder> endpoints = new ArrayList<AddressMapping.Builder>(10);
-        List<AddressMapping.Builder> localEndpoints = new ArrayList<AddressMapping.Builder>(5);
+        List<AddressMapping.Builder> endpoints = new ArrayList<AddressMapping.Builder>();
+        List<AddressMapping.Builder> localEndpoints = new ArrayList<AddressMapping.Builder>();
         
-        // Iterate over the existing network interfaces and their addresses
+        // Iterate over the existing network interfaces and their addresses.
         Enumeration<NetworkInterface> ifcs = NetworkInterface.getNetworkInterfaces();
         while (ifcs.hasMoreElements()) {
             NetworkInterface ifc = ifcs.nextElement();
             
-            // Ignore loopback interfaces and interfaces that are down
+            // Ignore loopback interfaces and interfaces that are down.
             if (ifc.isLoopback() || !ifc.isUp())
                 continue;
             
@@ -53,7 +53,7 @@ public class NetUtils {
             for (InterfaceAddress addr : addrs) {
                 InetAddress inetAddr = addr.getAddress();
 
-                // Ignore local, wildcard and multicast addresses
+                // Ignore local, wildcard and multicast addresses.
                 if (inetAddr.isLoopbackAddress() || inetAddr.isLinkLocalAddress() 
                         || inetAddr.isAnyLocalAddress() || inetAddr.isMulticastAddress())
                     continue;
@@ -106,7 +106,17 @@ public class NetUtils {
 
     }
     
-    public static AddressMapping.Builder replaceProtocol(AddressMapping.Builder src, String protocol) {
+    /**
+     * Creates a clone of the {@link AddressMapping.Builder} passed as <code>src</code> and replaces the
+     * protocol in the corresponding field and the uri string.
+     * 
+     * @param src
+     *            {@link AddressMapping.Builder} whose protocol should be replaced.
+     * @param protocol
+     *            The new protocol used for the mapping.
+     * @return Clone of the passed <code>src</code> with the protocol replaced.
+     */
+    public static AddressMapping.Builder cloneMappingForProtocol(AddressMapping.Builder src, String protocol) {
         // An uri looks like "protocol://address:port". The following code replaces the "protocol" part.
         String uri = protocol + src.getUri().substring(src.getUri().indexOf("://"));
         AddressMapping.Builder result = src.clone()
@@ -159,7 +169,7 @@ public class NetUtils {
             sb.append(InetAddress.getByAddress(raw).getHostAddress());
         } catch (UnknownHostException e) {
             // This should never happen, since the foundation of every calculation is the byte array
-            // returned by a valid InetAddress
+            // returned by a valid InetAddress.
             throw new RuntimeException(e);
         }
 
