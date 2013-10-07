@@ -21,15 +21,15 @@ import org.xtreemfs.osd.stages.PreprocStage.InvalidateXLocSetCallback;
 import org.xtreemfs.osd.stages.StorageStage.InternalGetReplicaStateCallback;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetch_invalidatedRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
-public class InternalFetchInvalidatedOperation extends OSDOperation {
+public class InternalRWRAuthStateInvalidatedOperation extends OSDOperation {
 
     final String      sharedSecret;
     final ServiceUUID localUUID;
 
-    public InternalFetchInvalidatedOperation(OSDRequestDispatcher master) {
+    public InternalRWRAuthStateInvalidatedOperation(OSDRequestDispatcher master) {
         super(master);
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
@@ -37,7 +37,7 @@ public class InternalFetchInvalidatedOperation extends OSDOperation {
 
     @Override
     public int getProcedureId() {
-        return OSDServiceConstants.PROC_ID_XTREEMFS_RWR_FETCH_INVALIDATED;
+        return OSDServiceConstants.PROC_ID_XTREEMFS_RWR_AUTH_STATE_INVALIDATED;
     }
 
     @Override
@@ -76,7 +76,7 @@ public class InternalFetchInvalidatedOperation extends OSDOperation {
     private void startFetch(final OSDRequest rq, final ReplicaStatus localState) {
         final String fileId = rq.getFileId();
         final XLocations xloc = rq.getLocationList();
-        final xtreemfs_rwr_fetch_invalidatedRequest args = (xtreemfs_rwr_fetch_invalidatedRequest) rq.getRequestArgs();
+        final xtreemfs_rwr_auth_stateRequest args = (xtreemfs_rwr_auth_stateRequest) rq.getRequestArgs();
 
         master.getRWReplicationStage().fetchInvalidated(fileId, args.getState(), localState, args.getFileCredentials(),
                 xloc, new RWReplicationCallback() {
@@ -110,7 +110,7 @@ public class InternalFetchInvalidatedOperation extends OSDOperation {
     @Override
     public ErrorResponse parseRPCMessage(OSDRequest rq) {
         try {
-            xtreemfs_rwr_fetch_invalidatedRequest rpcrq = (xtreemfs_rwr_fetch_invalidatedRequest) rq.getRequestArgs();
+            xtreemfs_rwr_auth_stateRequest rpcrq = (xtreemfs_rwr_auth_stateRequest) rq.getRequestArgs();
             rq.setFileId(rpcrq.getFileId());
             rq.setCapability(new Capability(rpcrq.getFileCredentials().getXcap(), sharedSecret));
             rq.setLocationList(new XLocations(rpcrq.getFileCredentials().getXlocs(), localUUID));
@@ -126,6 +126,11 @@ public class InternalFetchInvalidatedOperation extends OSDOperation {
     @Override
     public boolean requiresCapability() {
         return true;
+    }
+
+    @Override
+    public boolean requiresValidView() {
+        return false;
     }
 
 }

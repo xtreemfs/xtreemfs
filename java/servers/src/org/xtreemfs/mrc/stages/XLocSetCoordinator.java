@@ -57,7 +57,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetch_invalidatedRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
@@ -534,9 +534,9 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             }
         }
 
-        // Build the fetch request.
+        // Build the authState request.
         FileCredentials fileCredentials = FileCredentials.newBuilder().setXlocs(xLocSet).setXcap(cap.getXCap()).build();
-        xtreemfs_rwr_fetch_invalidatedRequest fiRequest = xtreemfs_rwr_fetch_invalidatedRequest.newBuilder()
+        xtreemfs_rwr_auth_stateRequest authStateRequest = xtreemfs_rwr_auth_stateRequest.newBuilder()
                 .setFileId(fileId).setFileCredentials(fileCredentials).setState(authState).build();
 
         // Send the request to every replica not up to date yet.
@@ -546,8 +546,8 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             try {
                 final ServiceUUID OSDUUID = OSDServiceUUIDs.get(i);
                 @SuppressWarnings("unchecked")
-                final RPCResponse<emptyResponse> rpcResponse = client.xtreemfs_rwr_fetch_invalidated(
-                        OSDUUID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fiRequest);
+                final RPCResponse<emptyResponse> rpcResponse = client.xtreemfs_rwr_auth_state_invalidated(
+                        OSDUUID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, authStateRequest);
                 responses[i] = rpcResponse;
             } catch (IOException ex) {
                 // TODO(jdillmann): Do something with the error

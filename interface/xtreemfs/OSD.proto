@@ -342,7 +342,6 @@ message xtreemfs_rwr_reset_completeRequest {
   required fixed32 primary_epoch = 3;
 }
 
-
 message xtreemfs_xloc_set_invalidateRequest {
   required FileCredentials file_credentials = 1;
   required string file_id = 2;
@@ -351,12 +350,6 @@ message xtreemfs_xloc_set_invalidateRequest {
 message xtreemfs_xloc_set_invalidateResponse {
   required bool is_primary = 1;
   optional ReplicaStatus status = 2;
-}
-
-message xtreemfs_rwr_fetch_invalidatedRequest {
-  required FileCredentials file_credentials = 1;
-  required string file_id = 2;
-  required AuthoritativeReplicaState state = 3;
 }
 
 service OSDService {
@@ -559,15 +552,15 @@ service OSDService {
     option(proc_id)=70;
   };
 
-  // Invalidate the replicas location set
+  // Invalidate the replicas location set.
   rpc xtreemfs_xloc_set_invalidate(xtreemfs_xloc_set_invalidateRequest) returns(xtreemfs_xloc_set_invalidateResponse) {
     option(proc_id)=81;
   };
-
-  // Instructs a replica to update to the AuthoritativeReplicaState 
-  // This operation can only be called when the replica is invalidated or new
-  rpc xtreemfs_rwr_fetch_invalidated(xtreemfs_rwr_fetch_invalidatedRequest) returns(emptyResponse) {
+  
+  // Sets the authoritative state on a replica during an xLocSet change. 
+  // This operation invalidets replicas not yet invalidated and does not require
+  // a valid view.
+  rpc xtreemfs_rwr_auth_state_invalidated(xtreemfs_rwr_auth_stateRequest) returns(emptyResponse) {
     option(proc_id)=82;
   };
-
 }

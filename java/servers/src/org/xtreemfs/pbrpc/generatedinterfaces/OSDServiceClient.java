@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Wed Nov 20 11:37:36 CET 2013
+//automatically generated from OSD.proto at Wed Nov 20 11:38:05 CET 2013
 //(c) 2013. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -466,7 +466,7 @@ public class OSDServiceClient {
          return xtreemfs_xloc_set_invalidate(server, authHeader, userCreds,msg);
     }
 
-    public RPCResponse xtreemfs_rwr_fetch_invalidated(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_rwr_fetch_invalidatedRequest input) throws IOException {
+    public RPCResponse xtreemfs_rwr_auth_state_invalidated(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_rwr_auth_stateRequest input) throws IOException {
          if (server == null) server = defaultServer;
          if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
          RPCResponse response = new RPCResponse(null);
@@ -474,9 +474,9 @@ public class OSDServiceClient {
          return response;
     }
 
-    public RPCResponse xtreemfs_rwr_fetch_invalidated(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, OSD.AuthoritativeReplicaState state) throws IOException {
-         final OSD.xtreemfs_rwr_fetch_invalidatedRequest msg = OSD.xtreemfs_rwr_fetch_invalidatedRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setState(state).build();
-         return xtreemfs_rwr_fetch_invalidated(server, authHeader, userCreds,msg);
+    public RPCResponse xtreemfs_rwr_auth_state_invalidated(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, OSD.AuthoritativeReplicaState state) throws IOException {
+         final OSD.xtreemfs_rwr_auth_stateRequest msg = OSD.xtreemfs_rwr_auth_stateRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setState(state).build();
+         return xtreemfs_rwr_auth_state_invalidated(server, authHeader, userCreds,msg);
     }
 
     public boolean clientIsAlive() {

@@ -76,7 +76,7 @@ import org.xtreemfs.osd.operations.EventWriteObject;
 import org.xtreemfs.osd.operations.FleaseMessageOperation;
 import org.xtreemfs.osd.operations.GetFileIDListOperation;
 import org.xtreemfs.osd.operations.GetObjectSetOperation;
-import org.xtreemfs.osd.operations.InternalFetchInvalidatedOperation;
+import org.xtreemfs.osd.operations.InternalRWRAuthStateInvalidatedOperation;
 import org.xtreemfs.osd.operations.InternalGetFileSizeOperation;
 import org.xtreemfs.osd.operations.InternalGetGmaxOperation;
 import org.xtreemfs.osd.operations.InternalRWRAuthStateOperation;
@@ -853,7 +853,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         op = new InvalidateXLocSetOperation(this);
         operations.put(op.getProcedureId(), op);
 
-        op = new InternalFetchInvalidatedOperation(this);
+        op = new InternalRWRAuthStateInvalidatedOperation(this);
         operations.put(op.getProcedureId(), op);
 
         // --internal events here--
