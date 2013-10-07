@@ -17,6 +17,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.mrc.stages.XLocSetCoordinator;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.stages.PreprocStage.InvalidateXLocSetCallback;
@@ -26,6 +27,12 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateRe
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
+/**
+ * Invalidates the XLocSet (view) on a certain replica.<br>
+ * Invalidated replicas won't respond to operations until a newer XLocSet is installed. The installation will be
+ * executed implicitly when a operation with a newer XLocSet is requested.<br>
+ * This operation is intended to be called from the MRCs {@link XLocSetCoordinator}.
+ */
 public class InvalidateXLocSetOperation extends OSDOperation {
     final String      sharedSecret;
     final ServiceUUID localUUID;
@@ -58,7 +65,6 @@ public class InvalidateXLocSetOperation extends OSDOperation {
     }
 
     private void postInvalidation(final OSDRequest rq, final boolean isPrimary) {
-        // TODO(jdillmann): RO replication
         if (rq.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
             invalidationFinished(rq, isPrimary, null);
         } else {

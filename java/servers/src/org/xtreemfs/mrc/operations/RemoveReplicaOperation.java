@@ -188,8 +188,7 @@ public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoord
     }
 
     @Override
-    public void installXLocSet(MRCRequest rq, String fileId, XLocList xLocList, XLocList oldXLocList)
-            throws Throwable {
+    public void installXLocSet(MRCRequest rq, String fileId, XLocList xLocList, XLocList oldXLocList) throws Throwable {
 
         final VolumeManager vMan = master.getVolumeManager();
         final GlobalFileIdResolver idRes = new GlobalFileIdResolver(fileId);

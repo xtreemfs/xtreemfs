@@ -33,7 +33,6 @@ import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.ErrorRecord;
-import org.xtreemfs.mrc.MRCCallbackRequest;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -61,6 +60,13 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
+/**
+ * Changes to xLocSet can harm the data consistency. The XLocSetCoordinator assures that a xLocSet change is atomic from
+ * a global point of view and that enough replicas are up to date to maintain consistency.<br>
+ * Since database calls have to be exclusively from one process the coordinator calls the
+ * {@link XLocSetCoordinatorCallback} in the context of the {@link ProcessingStage} when consistency in the new XLocSet
+ * is assured.
+ */
 public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResultListener<Object> {
     private enum RequestType {
         ADD_REPLICAS, REMOVE_REPLICAS, REPLACE_REPLICA
@@ -130,25 +136,41 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         }
     }
 
+    /**
+     * The RequestMethod keeps all the properties needed to coordinate a xLocSet change.
+     */
     public final static class RequestMethod {
 
+        /** The type of the coordination request **/
         RequestType                type;
+        /** The MRCOPeration the coordination request is originating from. **/
         MRCOperation               op;
+        /** The original client request asking to change the XLocSet. **/
         MRCRequest                 rq;
+        /** The fileId whose XLocSet has to be changed. **/
         String                     fileId;
+        /** A capability which will grant sufficient rights to invalidate and update replicas. **/
         Capability                 capability;
+        /**
+         * The callback which will be executed in the context of the {@link ProcessingStage} when the coordination is
+         * finished.
+         **/
         XLocSetCoordinatorCallback callback;
-        Object[]                   arguments;
+        /** The current XLocList. **/
+        XLocList                   curXLocList;
+        /** The new xLocList requested to be installed. **/
+        XLocList                   newXLocList;
 
         public RequestMethod(RequestType type, String fileId, MRCRequest rq, MRCOperation op,
-                XLocSetCoordinatorCallback callback, Capability cap, Object[] args) {
+                XLocSetCoordinatorCallback callback, Capability cap, XLocList curXLocList, XLocList newXLocList) {
             this.type = type;
             this.op = op;
             this.rq = rq;
             this.fileId = fileId;
             this.callback = callback;
             this.capability = cap;
-            this.arguments = args;
+            this.curXLocList = curXLocList;
+            this.newXLocList = newXLocList;
         }
 
         public RequestType getRequestType() {
@@ -175,10 +197,13 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             return capability;
         }
 
-        public Object[] getArguments() {
-            return arguments;
+        public XLocList getCurXLocList() {
+            return curXLocList;
         }
 
+        public XLocList getNewXLocList() {
+            return newXLocList;
+        }
     }
 
     public <O extends MRCOperation & XLocSetCoordinatorCallback> RequestMethod addReplicas(String fileId,
@@ -191,8 +216,8 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             MRCRequest rq, MRCOperation op, XLocSetCoordinatorCallback callback) throws DatabaseException {
 
         Capability cap = buildCapability(fileId, file);
-        RequestMethod m = new RequestMethod(RequestType.ADD_REPLICAS, fileId, rq, op, callback, cap, new Object[] {
-                curXLocList, extXLocList });
+        RequestMethod m = new RequestMethod(RequestType.ADD_REPLICAS, fileId, rq, op, callback, cap, curXLocList,
+                extXLocList);
 
         return m;
     }
@@ -203,8 +228,8 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         final String fileId = m.getFileId();
         final Capability cap = m.getCapability();
 
-        final XLocList curXLocList = (XLocList) m.getArguments()[0];
-        final XLocList extXLocList = (XLocList) m.getArguments()[1];
+        final XLocList curXLocList = m.getCurXLocList();
+        final XLocList extXLocList = m.getNewXLocList();
 
         final XLocSet curXLocSet = Converter.xLocListToXLocSet(curXLocList).build();
         final XLocSet extXLocSet = Converter.xLocListToXLocSet(extXLocList).build();
@@ -243,15 +268,12 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         }
 
         // Call the installXLocSet method in the context of the ProcessingStage.
-        MRCCallbackRequest callbackRequest = new MRCCallbackRequest(rq.getRPCRequest(),
-                new InternalCallbackInterface() {
-                    @Override
-                    public void startCallback(MRCRequest rq) throws Throwable {
-                        m.getCallback().installXLocSet(rq, fileId, extXLocList, curXLocList);
-                    }
-                });
-
-        master.getProcStage().enqueueOperation(callbackRequest, ProcessingStage.STAGEOP_INTERNAL_CALLBACK, null);
+        master.getProcStage().enqueueInternalCallbackOperation(rq, new InternalCallbackInterface() {
+            @Override
+            public void execute(MRCRequest rq) throws Throwable {
+                m.getCallback().installXLocSet(rq, fileId, extXLocList, curXLocList);
+            }
+        });
     }
 
     public <O extends MRCOperation & XLocSetCoordinatorCallback> RequestMethod removeReplicas(String fileId,
@@ -264,8 +286,8 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             MRCRequest rq, MRCOperation op, XLocSetCoordinatorCallback callback) throws DatabaseException {
 
         Capability cap = buildCapability(fileId, file);
-        RequestMethod m = new RequestMethod(RequestType.REMOVE_REPLICAS, fileId, rq, op, callback, cap, new Object[] {
-                curXLocList, newXLocList });
+        RequestMethod m = new RequestMethod(RequestType.REMOVE_REPLICAS, fileId, rq, op, callback, cap, curXLocList,
+                newXLocList);
 
         return m;
     }
@@ -276,8 +298,8 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         final String fileId = m.getFileId();
         final Capability cap = m.getCapability();
 
-        final XLocList curXLocList = (XLocList) m.getArguments()[0];
-        final XLocList newXLocList = (XLocList) m.getArguments()[1];
+        final XLocList curXLocList = m.getCurXLocList();
+        final XLocList newXLocList = m.getNewXLocList();
 
         final XLocSet curXLocSet = Converter.xLocListToXLocSet(curXLocList).build();
         final XLocSet newXLocSet = Converter.xLocListToXLocSet(newXLocList).build();
@@ -331,18 +353,13 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
                     + curXLocSet.getReplicaUpdatePolicy());
         }
 
-
         // Call the installXLocSet method in the context of the ProcessingStage.
-        MRCCallbackRequest callbackRequest = new MRCCallbackRequest(rq.getRPCRequest(),
-                new InternalCallbackInterface() {
-                    @Override
-                    public void startCallback(MRCRequest rq) throws Throwable {
-                        m.getCallback().installXLocSet(rq, fileId, newXLocList, curXLocList);
-                    }
-                });
-
-        master.getProcStage().enqueueOperation(callbackRequest, ProcessingStage.STAGEOP_INTERNAL_CALLBACK, null);
-
+        master.getProcStage().enqueueInternalCallbackOperation(rq, new InternalCallbackInterface() {
+            @Override
+            public void execute(MRCRequest rq) throws Throwable {
+                m.getCallback().installXLocSet(rq, fileId, newXLocList, curXLocList);
+            }
+        });
     }
 
 

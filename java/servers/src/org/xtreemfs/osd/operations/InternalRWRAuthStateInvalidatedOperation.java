@@ -14,6 +14,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.mrc.stages.XLocSetCoordinator;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.rwre.RWReplicationStage.RWReplicationCallback;
@@ -24,6 +25,12 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
+/**
+ * Sets the authoritative state on an invalidated replica and fetch missing data from other OSDs. <br>
+ * In contrast to {@link InternalRWRAuthStateOperation} this operation does not require a valid view and works on
+ * invalidated replicas. Effectively the replica will be invalidated when executing this operation. <br>
+ * This operation is intended to be called from the MRCs {@link XLocSetCoordinator}.
+ */
 public class InternalRWRAuthStateInvalidatedOperation extends OSDOperation {
 
     final String      sharedSecret;
