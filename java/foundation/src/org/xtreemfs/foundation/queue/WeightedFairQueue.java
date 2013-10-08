@@ -24,20 +24,16 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
         public int getWeight(E element);
     }
 
-    private Map<T, Queue<E>>       queues;
+    private Map<T, Queue<E>>                    queues;
 
-    private int                         capacity;
+    private int                                 capacity;
 
-    private Iterator<Queue<E>>          queueIterator = null;
+    private Iterator<Queue<E>>                  queueIterator = null;
 
     private WFQElementInformationProvider<T, E> elementInformationProvider;
 
     public WFQElementInformationProvider<T, E> getElementInformationProvider() {
         return elementInformationProvider;
-    }
-
-    public void setElementInformationProvider(WFQElementInformationProvider<T, E> elementInformationProvider) {
-        this.elementInformationProvider = elementInformationProvider;
     }
 
     public WeightedFairQueue(int capacity, WFQElementInformationProvider<T, E> elementInformationProvider) {
@@ -48,12 +44,19 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
 
     @Override
     public boolean add(E e) {
-        return this.getQueue(e).add(e);
+        boolean result = this.offer(e);
+        if(!result)
+            throw new IllegalStateException("No remaining queue capacity");
+        else
+            return result;
     }
 
     @Override
     public boolean offer(E e) {
-        return this.getQueue(e).offer(e);
+        if(this.remainingCapacity() > 0)
+            return this.getQueue(e).offer(e);
+        else
+            return false;
     }
 
     @Override
@@ -99,6 +102,7 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
 
     @Override
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
+        // TODO(ckleineweber): return after timeout
         return this.getNextQueue().poll();
     }
 
@@ -115,8 +119,9 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
     @Override
     public boolean containsAll(Collection<?> c) {
         boolean result = true;
-        for(Object element: c)
-            result &= this.contains(element);
+        Iterator<?> it = c.iterator();
+        while(it.hasNext() && result)
+            result &= this.contains(it.next());
         return result;
     }
 
@@ -215,7 +220,7 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
     }
 
     @Override
-    public synchronized boolean isEmpty() {
+    public boolean isEmpty() {
         for(Queue q: queues.values()) {
             if(!q.isEmpty())
                 return false;
