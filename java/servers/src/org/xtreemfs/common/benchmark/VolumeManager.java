@@ -362,4 +362,9 @@ class VolumeManager {
         return volumes;
     }
 
+    /* destroys the instance, to allow new instance */
+    void destroy(){
+        volumeManager = null;
+    }
+
 }

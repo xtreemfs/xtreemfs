@@ -119,8 +119,8 @@ public class Controller {
      */
     public ConcurrentLinkedQueue<BenchmarkResult> startFilebasedReadBenchmark() throws Exception {
         return repeatBenchmark(BenchmarkUtils.BenchmarkType.FILES_READ);
-    }    
-    
+    }
+
     public void tryConnection() throws Exception {
         try {
             ClientManager.getInstance().getNewClient(config).getServiceByType(DIR.ServiceType.SERVICE_TYPE_OSD);
@@ -163,6 +163,8 @@ public class Controller {
         ClientManager.getInstance().shutdownClients();
         if (config.isOsdCleanup())
             VolumeManager.getInstance().cleanupOSD();
+        VolumeManager.getInstance().destroy();
+        ClientManager.getInstance().destroy();
     }
 
     /* Repeat a benchmark multiple times and pack the results. */

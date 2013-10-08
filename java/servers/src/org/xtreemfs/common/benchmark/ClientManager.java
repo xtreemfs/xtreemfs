@@ -68,7 +68,12 @@ class ClientManager {
                 "Shutting down %s clients", clients.size());
     }
 
-    void tryShutdownOfClient(Client client) {
+    /* destroys the instance, to allow new instance */
+    void destroy(){
+        instance = null;
+    }
+
+    private void tryShutdownOfClient(Client client) {
         try {
             client.shutdown();
         } catch (Throwable e) {
