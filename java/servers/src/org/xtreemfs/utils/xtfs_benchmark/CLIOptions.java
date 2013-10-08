@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.xtreemfs.common.benchmark.BenchmarkUtils;
 import org.xtreemfs.foundation.util.CLIParser;
 import org.xtreemfs.common.benchmark.Config;
 import org.xtreemfs.common.benchmark.ConfigBuilder;
@@ -379,13 +380,13 @@ class CLIOptions {
                 sizeInBytes = numbers;
                 break;
             case 'K':
-                sizeInBytes = numbers * (long) xtfs_benchmark.KiB_IN_BYTES;
+                sizeInBytes = numbers * (long) BenchmarkUtils.KiB_IN_BYTES;
                 break;
             case 'M':
-                sizeInBytes = numbers * (long) xtfs_benchmark.MiB_IN_BYTES;
+                sizeInBytes = numbers * (long) BenchmarkUtils.MiB_IN_BYTES;
                 break;
             case 'G':
-                sizeInBytes = numbers * (long) xtfs_benchmark.GiB_IN_BYTES;
+                sizeInBytes = numbers * (long) BenchmarkUtils.GiB_IN_BYTES;
                 break;
             default:
                 sizeInBytes = 0L;
