@@ -51,7 +51,9 @@ public class InvalidateXLocSetOperation extends OSDOperation {
 
     @Override
     public void startRequest(final OSDRequest rq) {
-        master.getPreprocStage().invalidateXLocSet(rq, new InvalidateXLocSetCallback() {
+        xtreemfs_xloc_set_invalidateRequest rpcrq = (xtreemfs_xloc_set_invalidateRequest) rq.getRequestArgs();
+
+        master.getPreprocStage().invalidateXLocSet(rq, rpcrq.getFileCredentials(), new InvalidateXLocSetCallback() {
             
             @Override
             public void invalidateComplete(boolean isPrimary, ErrorResponse error) {

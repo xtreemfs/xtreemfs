@@ -44,6 +44,7 @@ import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.osd.storage.CowPolicy.cowMode;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.StorageLayout;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
@@ -759,13 +760,16 @@ public class PreprocStage extends Stage {
      * Invalidate the current XLocSet. The replica will not respond to read/write/truncate or flease
      * operations until a new XLocSet is installed.
      */
-    public void invalidateXLocSet(OSDRequest request, final InvalidateXLocSetCallback listener) {
-        enqueueOperation(STAGEOP_INVALIDATE_XLOC, new Object[] {}, request, listener);
+    public void invalidateXLocSet(OSDRequest request, FileCredentials fileCreds,
+            final InvalidateXLocSetCallback listener) {
+        enqueueOperation(STAGEOP_INVALIDATE_XLOC, new Object[] { fileCreds }, request, listener);
     }
 
     private void doInvalidateXLocSet(StageRequest m) {
         final OSDRequest request = m.getRequest();
         final String fileId = request.getFileId();
+        final XLocations xLoc = request.getLocationList();
+        final FileCredentials fileCreds = (FileCredentials) m.getArgs()[0];
         final InvalidateXLocSetCallback callback = (InvalidateXLocSetCallback) m.getCallback();
         
         XLocSetVersionState state;
@@ -776,8 +780,7 @@ public class PreprocStage extends Stage {
             if (request.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
                 callback.invalidateComplete(true, null);
             } else {
-            	ASCIIString cellId = ReplicaUpdatePolicy.fileToCellId(fileId);
-                master.getRWReplicationStage().invalidateFleaseView(fileId, cellId, callback);
+                master.getRWReplicationStage().invalidateReplica(fileId, fileCreds, xLoc, callback);
             }
 
         } catch (IOException e) {

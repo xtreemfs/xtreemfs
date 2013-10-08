@@ -49,7 +49,9 @@ public class InternalRWRAuthStateInvalidatedOperation extends OSDOperation {
 
     @Override
     public void startRequest(final OSDRequest rq) {
-        master.getPreprocStage().invalidateXLocSet(rq, new InvalidateXLocSetCallback() {
+        final xtreemfs_rwr_auth_stateRequest args = (xtreemfs_rwr_auth_stateRequest) rq.getRequestArgs();
+
+        master.getPreprocStage().invalidateXLocSet(rq, args.getFileCredentials(), new InvalidateXLocSetCallback() {
 
             @Override
             public void invalidateComplete(boolean isPrimary, ErrorResponse error) {
