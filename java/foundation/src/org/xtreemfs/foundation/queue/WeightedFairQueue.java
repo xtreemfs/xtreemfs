@@ -88,7 +88,8 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
 
     @Override
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        // TODO(ckleineweber): Implement offer() method
+        return false;
     }
 
     @Override
@@ -169,8 +170,11 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
     @Override
     public Iterator<E> iterator() {
         return new Iterator<E>() {
+            E lastElement = null;
+
             public void remove() {
-                // TODO(ckleineweber): implement remove()
+                if(lastElement != null)
+                    getQueue(lastElement).remove(lastElement);
             }
 
             public boolean hasNext() {
@@ -178,8 +182,8 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
             }
 
             public E next() {
-                // TODO(ckleineweber): implement next()
-                return null;
+                lastElement = getNextQueue().peek();
+                return lastElement;
             }
         };
     }
@@ -193,13 +197,21 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
             result[i] = it.next();
             i++;
         }
-        return result;  //To change body of implemented methods use File | Settings | File Templates.
+        return result;
     }
 
     @Override
     public <E> E[] toArray(E[] a) {
-        // TODO(ckleineweber): implement toArray()
-        return null;
+        if(a.length >= size()) {
+            Iterator<?> it = iterator();
+            for(int i = 0; i < size(); i++) {
+                if(it.hasNext())
+                    a[i] = (E) it.next();
+            }
+            return a;
+        } else {
+            return (E[]) toArray();
+        }
     }
 
     @Override
