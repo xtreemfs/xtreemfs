@@ -10,18 +10,17 @@ TIMEOUT_CLEANUP=300
 SLEEPTIME=900
 
 # the size of the basefile for random benchmarks
-BASEFILE_SIZE="10g"
+BASEFILE_SIZE="10G"
 
-JAVA_HOME="/usr/lib/jvm/java-7-oracle"
-XTREEMFS="/home/jvf/repo_xtfs"
-
+# the directories for the logfiles and the results
 LOG_DIR="$HOME/log"
 RESULT_DIR="$HOME/result"
 
 RESTART_OSD_CALL="$XTREEMFS/tests/xstartserv --start-osd -c $HOME/xtreemfs_data/config/osd0.properties -b $HOME/xtreemfs_data"
 
-# cp drop_caches to /usr/local/bin and add ALL ALL=NOPASSWD: /usr/local/bin/drop_caches to sudoers file
-DROP_CACHES_CALL="sudo /usr/local/bin/drop_caches"
+# Drops caches after each benchmark. Uncomment to activate
+# cp "drop_caches" to "/usr/local/bin" and add "ALL ALL=NOPASSWD: /usr/local/bin/drop_caches" to sudoers file
+# DROP_CACHES_CALL="sudo /usr/local/bin/drop_caches"
 
 # IP and Port of the DIR
 DIR="localhost:32638"
@@ -30,13 +29,30 @@ DIR="localhost:32638"
 OSD_UUIDS="test-osd0"
 
 check_env(){
-  if [ -z $XTREEMFS ]; then
-    echo "\$XTREEMFS not set. Set \$XTREEMFS or invoke with XTREEMFS=/path/to/XTREEMFS ./benchmark.sh ..."
+  # check XTREEMFS
+  if [ -z "$XTREEMFS" ]; then
+    if [ -d java -a -d cpp -a -d etc ]; then
+      #echo "Looks like you are in an XtreemFS base directory..."
+      XTREEMFS=`pwd`
+    elif [ -d ../java -a -d ../cpp -a -d ../etc ]; then
+      #echo "XTREEMFS base could be the parent directory..."
+      XTREEMFS=`pwd`/..
+    fi
+  fi
+  if [ ! -e "$XTREEMFS/java/servers/dist/XtreemFS.jar" -a ! -d "$XTREEMFS/java/lib" -a ! -f "/usr/share/java/XtreemFS.jar" ];
+  then
+    echo "XtreemFS jar could not be found!"
     exit 1
   fi
-  if [ -z $JAVA_HOME ]; then
-    echo "\$JAVA_HOME not set. Set \$JAVA_HOME or invoke with JAVA_HOME=/path/to/XTREEMFS ./benchmark.sh ..."
+
+  # check JAVA_HOME
+  if [ -z "$JAVA_HOME" -a ! -f "/usr/bin/java" ]; then
+    echo "\$JAVA_HOME not set, JDK/JRE 1.6 required"
     exit 1
+  fi
+
+  if [ -z "$JAVA_HOME" ]; then
+    JAVA_HOME=/usr
   fi
 }
 
@@ -160,7 +176,10 @@ check_osd(){
 }
 
 drop_caches(){
-  $DROP_CACHES_CALL
+  if [ $DROP_CACHES_CALL ]; then
+    echo "Dropping caches"
+    $DROP_CACHES_CALL
+  fi
 }
 
 ##### main ###
@@ -192,12 +211,12 @@ while getopts ":t:s:b:e:r:c:v" opt; do
     s)
       index=$(echo `expr match $OPTARG '[0-9]\+'`)
       modifier=${OPTARG:$index}
-      if [ $modifier = "m" ]; then
-        SIZE_MODIFIER="m"
-      elif [ $modifier = "g" ]; then
-        SIZE_MODIFIER="g"
+      if [ $modifier = "M" ]; then
+        SIZE_MODIFIER="M"
+      elif [ $modifier = "G" ]; then
+        SIZE_MODIFIER="G"
       else
-        echo "Wrong size modifier. Only 'm' and 'g' are allowed"
+        echo "Wrong size modifier. Only 'M' and 'G' are allowed"
         exit 1
       fi
       SIZE=${OPTARG:0:$index}
@@ -265,7 +284,6 @@ for i in $THREADS; do
       sleep $SLEEPTIME
       echo "Finished Sleeping at $(date)"
     fi
-    echo "Dropping caches"
     drop_caches
   done ;
 done
