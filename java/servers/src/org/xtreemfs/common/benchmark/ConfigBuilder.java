@@ -294,51 +294,47 @@ public class ConfigBuilder {
     }
 
     /**
-     * If set to true, the files and volumes created during the benchmarks will not be deleted. <br/>
+     * If set, the files and volumes created during the benchmarks will not be deleted. <br/>
      * Default: false.
-     * 
-     * @param noCleanup
+     *
      * @return the builder
      */
-    public ConfigBuilder setNoCleanup(boolean noCleanup) {
-        this.noCleanup = noCleanup;
+    public ConfigBuilder setNoCleanup() {
+        this.noCleanup = true;
         return this;
     }
 
     /**
-     * If set to true, the volumes created during the benchmarks will not be deleted. <br/>
+     * If set, the volumes created during the benchmarks will not be deleted. <br/>
      * Default: false.
      * 
-     * @param noCleanupOfVolumes
      * @return the builder
      */
-    public ConfigBuilder setNoCleanupOfVolumes(boolean noCleanupOfVolumes) {
-        this.noCleanupOfVolumes = noCleanupOfVolumes;
+    public ConfigBuilder setNoCleanupOfVolumes() {
+        this.noCleanupOfVolumes = true;
         return this;
     }
 
     /**
-     * If set to true, a basefile created during benchmarks will not be deleted. <br/>
+     * If set, a basefile created during benchmarks will not be deleted. <br/>
      * Default: false.
      * 
-     * @param noCleanupOfBasefile
      * @return the builder
      */
-    public ConfigBuilder setNoCleanupOfBasefile(boolean noCleanupOfBasefile) {
-        this.noCleanupOfBasefile = noCleanupOfBasefile;
+    public ConfigBuilder setNoCleanupOfBasefile() {
+        this.noCleanupOfBasefile = true;
         return this;
     }
 
     /**
-     * If set to true, a OSD Cleanup will be done at the end of all benchmarks. This might be needed to actually delete
+     * If set, a OSD Cleanup will be done at the end of all benchmarks. This might be needed to actually delete
      * the storage blocks from the OSD after deleting volumes. <br/>
      * Default: false.
-     * 
-     * @param osdCleanup
+     *
      * @return the builder
      */
-    public ConfigBuilder setOsdCleanup(boolean osdCleanup) {
-        this.osdCleanup = osdCleanup;
+    public ConfigBuilder setOsdCleanup() {
+        this.osdCleanup = true;
         return this;
     }
 

@@ -321,22 +321,26 @@ class CLIOptions {
 
     private void setNoCleanup() {
         boolean switchValue = options.get(NO_CLEANUP).switchValue;
-        builder.setNoCleanup(switchValue);
+        if (switchValue)
+            builder.setNoCleanup();
     }
 
     private void setNoCleanupOfVolumes() {
         boolean switchValue = options.get(NO_CLEANUP_VOLUMES).switchValue;
-        builder.setNoCleanupOfVolumes(switchValue);
+        if (switchValue)
+            builder.setNoCleanupOfVolumes();
     }
 
     private void setNoCleanupOfBasefile() {
         boolean switchValue = options.get(NO_CLEANUP_BASEFILE).switchValue;
-        builder.setNoCleanupOfBasefile(switchValue);
+        if (switchValue)
+            builder.setNoCleanupOfBasefile();
     }
 
     private void setOsdCleanup() {
         boolean switchValue = options.get(OSD_CLEANUP).switchValue;
-        builder.setOsdCleanup(switchValue);
+        if (switchValue)
+            builder.setOsdCleanup();
     }
 
     boolean sequentialWriteBenchmarkIsSet() {
