@@ -47,7 +47,7 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
     @Override
     public void startRequest(MRCRequest rq) throws Throwable {
         
-        // perform master redirect if necessary
+        // Perform master redirect if necessary.
         if (master.getReplMasterUUID() != null && !master.getReplMasterUUID().equals(master.getConfig().getUUID().toString()))
             throw new DatabaseException(ExceptionType.REDIRECT);
         
@@ -66,12 +66,12 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
 
             fileId = rqArgs.getFileId();
 
-            // parse volume and file ID from global file ID
+            // Parse volume and file ID from global file ID.
             GlobalFileIdResolver idRes = new GlobalFileIdResolver(fileId);
             
             sMan = vMan.getStorageManager(idRes.getVolumeId());
             
-            // retrieve the file metadata
+            // Retrieve the file metadata.
             file = sMan.getMetadata(idRes.getLocalFileId());
             if (file == null)
                 throw new UserException(POSIXErrno.POSIX_ERROR_ENOENT, "file '" + rqArgs.getFileId()
@@ -90,22 +90,32 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
             // TODO(jdillmann): Move to MRCHelper.createGlobalFileId(VolumeInfo volume, FileMetadata file)
             fileId = sMan.getVolumeInfo().getId() + ":" + file.getId();
 
-            // check whether the path prefix is searchable
+            // Check whether the path prefix is searchable.
             faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
                     .getDetails().groupIds);
             
-        } else
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
-                "either file ID or volume name + path required");
+        } else {
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "either file ID or volume name + path required");
+        }
         
-        if (file.isDirectory())
+        if (file.isDirectory()) {
             throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "replicas may only be added to files");
+        }
         
-        if (sMan.getSoftlinkTarget(file.getId()) != null)
+        if (sMan.getSoftlinkTarget(file.getId()) != null) {
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "file '" + rqArgs.getFileId()
-                + "' is a symbolic link");
+                    + "' is a symbolic link");
+        }
         
-        // check whether privileged permissions are granted for adding replicas
+        // Check if a xLocSetChange is already in progress.
+        byte[] value = sMan.getXAttr(file.getId(), StorageManager.SYSTEM_UID, StorageManager.SYS_ATTR_KEY_PREFIX
+                + XLocSetCoordinator.XLOCSET_CHANGE_ATTR_KEY);
+        boolean xLocSetChangeInProgress = Boolean.valueOf(new String(value));
+        if (xLocSetChangeInProgress) {
+            throw new UserException(POSIXErrno.POSIX_ERROR_EAGAIN, "xLocSet change already in progress. Please retry.");
+        }
+
+        // Check whether privileged permissions are granted for adding replicas.
         faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq.getDetails().superUser, rq
                 .getDetails().groupIds);
         
@@ -115,7 +125,7 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
         StripingPolicy sPol = sMan.createStripingPolicy(sp.getType().toString(), sp.getStripeSize(), sp
                 .getWidth());
         
-        // check whether the new replica relies on a set of OSDs which hasn't been used yet
+        // Check whether the new replica relies on a set of OSDs which hasn't been used yet.
         XLocList xLocList = file.getXLocList();
         assert (xLocList != null);
         
@@ -137,8 +147,7 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
                 "at least one OSD already used in current X-Locations list '"
                     + Converter.xLocListToString(xLocList) + "'");
         
-        // create a new replica and add it to the client's X-Locations list
-        // (this will automatically increment the X-Locations list version)
+        // Create a new replica and add it to the client's X-Locations list.
         XLoc replica = sMan.createXLoc(sPol, newRepl.getOsdUuidsList().toArray(
             new String[newRepl.getOsdUuidsCount()]), newRepl.getReplicationFlags());
         
@@ -155,10 +164,10 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
         XLocSetCoordinator.RequestMethod m = coordinator.addReplicas(fileId, file, xLocList, extXLocList, rq, this);
         
         // Make an update with the RequestMethod as context and the Coordinator as callback. This will enqueue
-        // the RequestMethod when the update is complete
+        // the RequestMethod when the update is complete.
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(coordinator, m);
         
-        // lock the replica
+        // Lock the replica and start the coordination.
         sMan.setXAttr(file.getId(), StorageManager.SYSTEM_UID, StorageManager.SYS_ATTR_KEY_PREFIX
                 + XLocSetCoordinator.XLOCSET_CHANGE_ATTR_KEY, String.valueOf(true).getBytes(), update);
         update.execute();
@@ -172,7 +181,7 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
         final GlobalFileIdResolver idRes = new GlobalFileIdResolver(fileId);
         final StorageManager sMan = vMan.getStorageManager(idRes.getVolumeId());
 
-        // retrieve the file metadata
+        // Retrieve the file metadata.
         final FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
         if (file == null)
             throw new UserException(POSIXErrno.POSIX_ERROR_ENOENT, "file '" + fileId + "' does not exist");
@@ -181,14 +190,14 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
         
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
         
-        // update the X-Locations list
+        // Update the X-Locations list.
         sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
         
-        // unlock the replica
+        // Unlock the replica.
         sMan.setXAttr(file.getId(), StorageManager.SYSTEM_UID, StorageManager.SYS_ATTR_KEY_PREFIX
                 + XLocSetCoordinator.XLOCSET_CHANGE_ATTR_KEY, null, update);
 
-        // set the response
+        // Set the response.
         rq.setResponse(emptyResponse.getDefaultInstance());
         
         update.execute();
