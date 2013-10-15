@@ -3132,7 +3132,7 @@ public final class MRC {
     public boolean hasBavail() { return hasBavail; }
     public long getBavail() { return bavail_; }
     
-    // required fixed64 bfree = 13;
+    // optional fixed64 bfree = 13;
     public static final int BFREE_FIELD_NUMBER = 13;
     private boolean hasBfree;
     private long bfree_ = 0L;
@@ -3216,7 +3216,6 @@ public final class MRC {
     public final boolean isInitialized() {
       if (!hasBsize) return false;
       if (!hasBavail) return false;
-      if (!hasBfree) return false;
       if (!hasBlocks) return false;
       if (!hasFsid) return false;
       if (!hasNamemax) return false;
@@ -3660,7 +3659,7 @@ public final class MRC {
         return this;
       }
       
-      // required fixed64 bfree = 13;
+      // optional fixed64 bfree = 13;
       public boolean hasBfree() {
         return result.hasBfree();
       }
@@ -23212,7 +23211,7 @@ public final class MRC {
       "treemfs.pbrpc.KeyValuePair\"2\n\007Volumes\022\'\n" +
       "\007volumes\030\001 \003(\0132\026.xtreemfs.pbrpc.Volume\"\310" +
       "\002\n\007StatVFS\022\r\n\005bsize\030\001 \002(\007\022\016\n\006bavail\030\002 \002(" +
-      "\006\022\r\n\005bfree\030\r \002(\006\022\016\n\006blocks\030\003 \002(\006\022\014\n\004fsid" +
+      "\006\022\r\n\005bfree\030\r \001(\006\022\016\n\006blocks\030\003 \002(\006\022\014\n\004fsid" +
       "\030\004 \002(\t\022\017\n\007namemax\030\005 \002(\007\022F\n\025access_contro" +
       "l_policy\030\006 \002(\0162\'.xtreemfs.pbrpc.AccessCo" +
       "ntrolPolicyType\022?\n\027default_striping_poli" +
