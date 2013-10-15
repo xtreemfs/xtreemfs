@@ -127,8 +127,9 @@ class VolumeManager {
                 throw e;
         }
         volume.setOSDSelectionPolicy(config.getUserCredentials(), config.getOsdSelectionPolicies());
-        if (config.isOsdSelectionByUuids())
-            volume.setPolicyAttribute(config.getUserCredentials(), "1002.uuids", config.getOsdSelectionUuids());
+        Map<String, String> attributes = config.getPolicyAttributes();
+        for (String attribute : attributes.keySet())
+            volume.setPolicyAttribute(config.getUserCredentials(), attribute, attributes.get(attribute));
         return volume;
     }
 

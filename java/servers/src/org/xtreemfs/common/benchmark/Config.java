@@ -9,6 +9,7 @@
 package org.xtreemfs.common.benchmark;
 
 import java.lang.reflect.Field;
+import java.util.Map;
 
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.ClientImplementation;
@@ -51,7 +52,7 @@ public class Config {
     private final SSLOptions          sslOptions;
     private final Options             options;
     private final String              osdSelectionPolicies;
-    private String                    osdSelectionUuids;
+    private final Map<String, String> policyAttributes;
     private final int                 stripeSizeInBytes;
     private final int                 stripeWidth;
     private final boolean             noCleanup;
@@ -82,7 +83,7 @@ public class Config {
         this.sslOptions = builder.getSslOptions();
         this.options = builder.getOptions();
         this.osdSelectionPolicies = builder.getOsdSelectionPolicies();
-        this.osdSelectionUuids = builder.getOsdSelectionUuids();
+        this.policyAttributes = builder.getPolicyAttributes();
         this.stripeSizeInBytes = builder.getStripeSizeInBytes();
         this.stripeWidth = builder.getStripeWidth();
         this.mrcAddress = getMRCAddress(dirAddress, userCredentials, sslOptions, options);
@@ -196,12 +197,8 @@ public class Config {
         return osdSelectionPolicies;
     }
 
-    boolean isOsdSelectionByUuids(){
-        return !osdSelectionUuids.equals("");
-    }
-
-    String getOsdSelectionUuids() {
-        return osdSelectionUuids;
+    Map<String, String> getPolicyAttributes() {
+        return policyAttributes;
     }
 
     int getStripeSizeInBytes() {

@@ -14,6 +14,9 @@ import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Builder for the {@link Config} datastructure.
  * <p/>
@@ -35,27 +38,27 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
  */
 public class ConfigBuilder {
 
-    private int        numberOfThreads       = 1;
-    private int        numberOfRepetitions   = 1;
-    private long       sequentialSizeInBytes = 10L * BenchmarkUtils.MiB_IN_BYTES;
-    private long       randomSizeInBytes     = 10L * BenchmarkUtils.MiB_IN_BYTES;
-    private long       basefileSizeInBytes   = 3L * BenchmarkUtils.GiB_IN_BYTES;
-    private int        filesize              = 4 * BenchmarkUtils.KiB_IN_BYTES;
-    private String     userName              = "root";
-    private String     group                 = "root";
-    private String     adminPassword         = "";
-    private String     dirAddress            = "127.0.0.1:32638";
-    private RPC.Auth   auth                  = authNone;
-    private SSLOptions sslOptions            = null;
-    private Options    options               = new Options();
-    private String     osdSelectionPolicies  = "1000,3002";
-    private String     osdSelectionUuids     = "";
-    private int        stripeSizeInBytes     = 128 * BenchmarkUtils.KiB_IN_BYTES;
-    private int        stripeWidth           = 1;
-    private boolean    noCleanup             = false;
-    private boolean    noCleanupOfVolumes    = false;
-    private boolean    noCleanupOfBasefile   = false;
-    private boolean    osdCleanup            = false;
+    private int                 numberOfThreads       = 1;
+    private int                 numberOfRepetitions   = 1;
+    private long                sequentialSizeInBytes = 10L * BenchmarkUtils.MiB_IN_BYTES;
+    private long                randomSizeInBytes     = 10L * BenchmarkUtils.MiB_IN_BYTES;
+    private long                basefileSizeInBytes   = 3L * BenchmarkUtils.GiB_IN_BYTES;
+    private int                 filesize              = 4 * BenchmarkUtils.KiB_IN_BYTES;
+    private String              userName              = "root";
+    private String              group                 = "root";
+    private String              adminPassword         = "";
+    private String              dirAddress            = "127.0.0.1:32638";
+    private RPC.Auth            auth                  = authNone;
+    private SSLOptions          sslOptions            = null;
+    private Options             options               = new Options();
+    private String              osdSelectionPolicies  = "1000,3002";
+    private Map<String, String> policyAttributes      = new HashMap<String, String>();
+    private int                 stripeSizeInBytes     = 128 * BenchmarkUtils.KiB_IN_BYTES;
+    private int                 stripeWidth           = 1;
+    private boolean             noCleanup             = false;
+    private boolean             noCleanupOfVolumes    = false;
+    private boolean             noCleanupOfBasefile   = false;
+    private boolean             osdCleanup            = false;
 
     /**
      * Instantiate an builder (all values are the default values, see {@link Config}).
@@ -243,28 +246,44 @@ public class ConfigBuilder {
      * @return the builder
      */
     public ConfigBuilder setOsdSelectionPolicies(String policies) {
-        if (!this.osdSelectionUuids.equals(""))
-            throw new IllegalArgumentException("Setting a OSD selection policy is not allowed if selecting the OSD by UUID is used.");
-        this.osdSelectionPolicies = policies;
+         this.osdSelectionPolicies = policies;
+        return this;
+    }
+
+    /**
+     * Set a policy attribute for a OSD selection policies. <p/>
+     * This method can be called multiple times, if multiple attributes are to be set. <br/>
+     * The attributes are set when the volumes are created / opened. <br/>
+     * A policy attribute consists of the name of the attribute, and the value the attribute is set to. For more information see the XtreemFS User Guide. <br/>
+     *
+     * Attribute Format: <policy id>.<attribute name> e.g., "1002.uuids" <br/>
+     * Value format: <value>, e.g. "osd01" 
+     * 
+     * @param attribute the attribute to be set
+     * @param value the value the attribute is set to
+     * @return the builder
+     */
+    public ConfigBuilder setPolicyAttribute(String attribute, String value) {
+        this.policyAttributes.put(attribute, value);
         return this;
     }
 
     /**
      * Set the UUID-based filter policy (ID 1002) as OSD selection policy and set the uuids to be used by the policy
-     * (applied when creating volumes). <br/>
-     * This method assumes, that {@link #setOsdSelectionPolicies(String)} is not used.   <br/>
-     * 
+     * (applied when creating/opening the volumes). It is a shortcut for setting the policy and the attributes manually. <br/>
+     *
      * Default: see {@link #setOsdSelectionPolicies(String)}.
      * 
      * @param uuids
-     *            the uuids
+     *            the uuids of osds to be used
      * @return the builder
      */
     public ConfigBuilder setSelectOsdsByUuid(String uuids) {
-        if (!this.osdSelectionPolicies.equals("1000,3002"))
-            throw new IllegalArgumentException("Selecting the OSD by UUID is not allowed if Setting a OSD selection policy is used.");
-        this.osdSelectionPolicies = "1002";
-        this.osdSelectionUuids = uuids;
+        if (this.osdSelectionPolicies.equals("1000,3002"))
+            this.osdSelectionPolicies = "1002";
+        else
+            this.osdSelectionPolicies += ",1002";
+        this.policyAttributes.put("1002.uuids", uuids);
         return this;
     }    
 
@@ -394,8 +413,8 @@ public class ConfigBuilder {
         return osdSelectionPolicies;
     }
 
-    String getOsdSelectionUuids() {
-        return osdSelectionUuids;
+    Map<String, String> getPolicyAttributes() {
+        return policyAttributes;
     }
 
     int getStripeSizeInBytes() {
