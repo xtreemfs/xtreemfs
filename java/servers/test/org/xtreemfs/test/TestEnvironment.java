@@ -91,6 +91,138 @@ public class TestEnvironment {
     }
     
     /**
+     * Returns the OSD config of the OSD with the UUID "osdUuid" or null if no OSD with the UUID "osdUuid"
+     * exists.
+     * 
+     * @param osdUuid
+     */
+    public OSDConfig getOSDConfig(String osdUuid) {
+
+        OSDConfig config = null;
+        for (OSDRequestDispatcher osd : osds) {
+            if (osd.getConfig().getUUID().toString().equals(osdUuid)) {
+                config = osd.getConfig();
+                break;
+            }
+        }
+        if (hasAdditionalOsds && config == null) {
+            for (OSDRequestDispatcher osd : additionalOsds) {
+                if (osd.getConfig().getUUID().toString().equals(osdUuid)) {
+                    config = osd.getConfig();
+                    break;
+                }
+            }
+        }
+        return config;
+    }
+
+    /**
+     * Stops the OSD with the UUID "osdUuid".
+     * 
+     * @param osdUuid
+     */
+    public void stopOSD(String osdUuid) {
+        boolean osdStoped = false;
+        for (OSDRequestDispatcher osd : osds) {
+            if (osd.getConfig().getUUID().toString().equals(osdUuid)) {
+                osd.shutdown();
+                osdStoped = true;
+                break;
+            }
+        }
+
+        if (hasAdditionalOsds && !osdStoped) {
+            for (OSDRequestDispatcher osd : additionalOsds) {
+                if (osd.getConfig().getUUID().toString().equals(osdUuid)) {
+                    osd.shutdown();
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Restarts the OSD with the UUID "osdUuid".
+     * 
+     * @param osdUuid
+     * @throws Exception 
+     */
+    public void restartOSD(String osdUuid) throws Exception {
+        boolean osdStarted = false;
+        for (int i = 0; i < osds.length; i++) {
+            if (osds[i].getConfig().getUUID().toString().equals(osdUuid)) {
+                osds[i] = new OSDRequestDispatcher(osdConfigs[i]);
+                osds[i].start();
+                break;
+            }
+        }
+        
+        if (hasAdditionalOsds && !osdStarted) {
+            for (int i = 0; i < additionalOsdCount; i++) {
+                if (additionalOsds[i].getConfig().getUUID().toString().equals(osdUuid)) {
+                    additionalOsds[i] = new OSDRequestDispatcher(osdConfigs[osdCount + i]);
+                    additionalOsds[i].start();
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * starts "number" additional OSDs (up to 5).
+     * 
+     * @param number
+     * @throws Exception
+     */
+    public void startAdditionalOSDs(int number) throws Exception {
+        assert (number <= 5);
+        hasAdditionalOsds = true;
+        for (int i = 0; i < number; i++) {
+            additionalOsds[i] = new OSDRequestDispatcher(osdConfigs[osdCount + i]);
+            additionalOsds[i].start();
+        }
+        additionalOsdCount = number;
+    }
+
+    /**
+     * Stops all additional OSDs
+     */
+    public void stopAdditionalOSDs() {
+        hasAdditionalOsds = false;
+        for (int i = 0; i < additionalOsdCount; i++) {
+            additionalOsds[i].shutdown();
+        }
+        additionalOsdCount = 0;
+    }
+
+    /**
+     * Returns the primary OSD UUID for the file with ID "fileId" or null if the file does not exists.
+     * 
+     * @param fileId
+     * @return
+     */
+    public String getPrimary(String fileId) {
+        String primary = null;
+
+        for (OSDRequestDispatcher osd : osds) {
+            primary = osd.getPrimary(fileId);
+            if (primary != null) {
+                break;
+            }
+        }
+
+        if (hasAdditionalOsds && primary == null) {
+            for (OSDRequestDispatcher osd : additionalOsds) {
+                primary = osd.getPrimary(fileId);
+                if (primary != null) {
+                    break;
+                }
+            }
+        }
+        return primary;
+    }
+
+    /**
      * @return the osdClient
      */
     // public OSDClient getOsdClient() {
@@ -116,7 +248,7 @@ public class TestEnvironment {
     
     private org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient pbrpcClient;
     
-    private DIRServiceClient                                  dirClient;
+    private DIRServiceClient                                        dirClient;
     
     private MRCServiceClient                                        mrcClient;
     
@@ -128,10 +260,20 @@ public class TestEnvironment {
     
     private OSDRequestDispatcher[]                                  osds;
     
+    private OSDRequestDispatcher[]                                  additionalOsds;
+
     private final List<Services>                                    enabledServs;
     
     private TimeSync                                                tsInstance;
+
+    private boolean                                                 hasAdditionalOsds = false;
     
+    private OSDConfig[]                                             osdConfigs;
+    
+    private int                                                     osdCount;
+
+    private int                                                     additionalOsdCount;
+
     public TestEnvironment(Services... servs) {
         enabledServs = new ArrayList(servs.length);
         for (Services serv : servs)
@@ -227,13 +369,17 @@ public class TestEnvironment {
             }
             
             if (enabledServs.contains(Services.OSD)) {
-                int osdCount = Collections.frequency(enabledServs, Services.OSD);
+                osdCount = Collections.frequency(enabledServs, Services.OSD);
                 osds = new OSDRequestDispatcher[osdCount];
-                OSDConfig[] configs = SetupUtils.createMultipleOSDConfigs(osdCount);
-                for (int i = 0; i < configs.length; i++) {
-                    osds[i] = new OSDRequestDispatcher(configs[i]);
+                //for up to 5 additional OSDs
+                additionalOsds = new OSDRequestDispatcher[5];
+                osdConfigs = SetupUtils.createMultipleOSDConfigs(osdCount + 5);
+
+                for (int i = 0; i < osdCount; i++) {
+                    osds[i] = new OSDRequestDispatcher(osdConfigs[i]);
                 }
-                for (int i = 0; i < configs.length; i++) {
+
+                for (int i = 0; i < osdCount; i++) {
                     osds[i].start();
                 }
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "OSDs 1-" + osdCount + " running");
@@ -273,6 +419,9 @@ public class TestEnvironment {
             try {
                 for (OSDRequestDispatcher osd : osds) {
                     osd.shutdown();
+                }
+                if (hasAdditionalOsds) {
+                    stopAdditionalOSDs();
                 }
             } catch (Throwable th) {
                 th.printStackTrace();
@@ -317,5 +466,4 @@ public class TestEnvironment {
         File testDir = new File(SetupUtils.TEST_DIR);
         // FSUtils.delTree(testDir);
     }
-    
 }

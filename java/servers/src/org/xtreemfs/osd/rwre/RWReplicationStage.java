@@ -1198,6 +1198,18 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         }
     }
 
-    
+    public String getPrimary(final String fileId) {
+        String primary = null;
+        
+        final ReplicatedFileState fState = files.get(fileId);
 
+        if ((fState != null) && (fState.getLease() != null) && (!fState.getLease().isEmptyLease())) {
+            if (fState.getLease().isValid()) {
+                    primary = "" + fState.getLease().getLeaseHolder();
+            } else {
+                // outdated lease
+            }
+        }
+        return primary;
+    }
 }
