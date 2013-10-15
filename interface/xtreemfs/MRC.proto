@@ -138,7 +138,7 @@ message StatVFS {
       // number of available blocks in the file system for non-privileged users      
       required fixed64 bavail = 2;
       // number of free blocks in the file system
-      required fixed64 bfree = 13;
+      optional fixed64 bfree = 13;
       // total number of blocks in file system        
       required fixed64 blocks = 3;
       // volume id
