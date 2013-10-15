@@ -60,7 +60,7 @@ public class XtreemFSFileSystem extends FileSystem {
         super.initialize(uri, conf);
 
         int logLevel = Logging.LEVEL_WARN;
-        if (conf.getBoolean("xtreemfs.client.debug", true)) {
+        if (conf.getBoolean("xtreemfs.client.debug", false)) {
             logLevel = Logging.LEVEL_DEBUG;
         }
 
