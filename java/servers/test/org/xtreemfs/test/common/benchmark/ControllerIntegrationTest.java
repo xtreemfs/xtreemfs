@@ -2,6 +2,7 @@ package org.xtreemfs.test.common.benchmark;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.xtreemfs.common.benchmark.BenchmarkUtils.*;
 
 import java.io.IOException;
@@ -10,15 +11,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Queue;
 
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.xtreemfs.common.benchmark.*;
-import org.xtreemfs.common.libxtreemfs.Client;
-import org.xtreemfs.common.libxtreemfs.ClientFactory;
-import org.xtreemfs.common.libxtreemfs.Options;
-import org.xtreemfs.common.libxtreemfs.Volume;
+import org.xtreemfs.common.libxtreemfs.*;
+import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
@@ -87,6 +83,13 @@ public class ControllerIntegrationTest {
         client = ClientFactory.createClient(dirAddress, userCredentials, null, options);
         client.start();
 
+        /* check that all volumes have been deleted properly by previous tests (prevent error masking) */
+        assertNoVolumes("TestVolA", "TestVolB", "TestVolC");
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        client.shutdown();
     }
 
     @AfterClass
@@ -353,6 +356,7 @@ public class ControllerIntegrationTest {
         assertEquals(0, Integer.valueOf(volumeA.getXAttr(userCredentials, "", "xtreemfs.used_space")));
         assertEquals(0, Integer.valueOf(volumeB.getXAttr(userCredentials, "", "xtreemfs.used_space")));
         assertEquals(0, Integer.valueOf(volumeC.getXAttr(userCredentials, "", "xtreemfs.used_space")));
+        deleteVolumes("TestVolA", "TestVolB", "TestVolC");
     }
 
     @Test
@@ -387,6 +391,17 @@ public class ControllerIntegrationTest {
         assertEquals(basefileSize, Integer.valueOf(volume.getXAttr(userCredentials, "", "xtreemfs.used_space")));
     }
 
+    private void assertNoVolumes(String... volumes) throws Exception {
+        for (String volumeName : volumes) {
+            try {
+                Volume volume = client.openVolume(volumeName, null, new Options());
+                fail("VolumeNotFoundException expected");
+            } catch (VolumeNotFoundException e) {
+                // ok (Exception expected)
+            }
+        }
+    }
+    
     private void compareResults(String type, int threads, long size, int numberOfResults, Queue<BenchmarkResult> results) {
         int resultCounter = 0;
         for (BenchmarkResult result : results) {
