@@ -280,5 +280,11 @@ Tests = [
         'file': 'system_chstatus_test.sh',
         'VolumeConfigs': [],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
+    },
+    {
+        'name': 'xtfs_benchmark',
+        'file': 'system_xtfs_benchmark.sh',
+        'VolumeConfigs': [ ],
+        'TestSets': [ 'full' ]
     }
-]
+ ]
