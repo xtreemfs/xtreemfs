@@ -235,6 +235,13 @@ message xtreemfs_rwr_fetchRequest {
   required fixed64 object_version = 4;
 }
 
+message xtreemfs_repair_objectRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+  required fixed64 object_number = 3;
+  required fixed64 object_version = 4;
+}
+
 message xtreemfs_rwr_flease_msgRequest {
   // The actual flease message is sent in data.
   required string sender_hostname = 1;
@@ -412,6 +419,11 @@ service OSDService {
   // Part of the experimental snapshots implementation.
   rpc xtreemfs_cleanup_versions_start(emptyRequest) returns(emptyResponse) {
     option(proc_id)=35;
+  };
+
+  // Triggers the OSD to fetch an Object form another Replica.
+  rpc xtreemfs_repair_object(xtreemfs_repair_objectRequest) returns(emptyResponse) {
+    option(proc_id)=36;
   };
 
   // Reads a specific object version from the OSD. Used by the read-write replication.
