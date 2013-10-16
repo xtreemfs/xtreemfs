@@ -66,17 +66,12 @@ public final class UUIDResolver extends Thread {
         this.maxUnusedEntry = maxUnusedEntry;
         this.cacheCleanInterval = cacheCleanInterval;
         this.uc = UserCredentials.newBuilder().setUsername("uuidresolver").addGroups("xtreemfs-services").build();
+        myNetworks = new ArrayList<String>();
+        renewNetworks(this);
         
         if (singleton) {
             assert (theInstance == null);
             theInstance = this;
-        }
-        
-        // TODO(jdillmann): Reload myNetworks on the OSDs when the addressMapping is renewed
-        List<AddressMapping.Builder> ntwrks = NetUtils.getReachableEndpoints(0, "http");
-        myNetworks = new ArrayList<String>(ntwrks.size());
-        for (AddressMapping.Builder network : ntwrks) {
-            myNetworks.add(network.getMatchNetwork());
         }
     }
     
@@ -181,19 +176,22 @@ public final class UUIDResolver extends Thread {
             // Iterate through the mappings and look for a matching network. Matches on the same network will be
             // preferred to global ones.
             AddressMapping matchingAddress = null;
-            for (AddressMapping addrMapping : mappings) {
-                final String network = addrMapping.getMatchNetwork();
+            synchronized (myNetworks) {
+                for (AddressMapping addrMapping : mappings) {
+                    final String network = addrMapping.getMatchNetwork();
 
-                // Cache the first default network found. This will be overwritten by direct network matches.
-                if (network.equals("*")) {
-                    if (matchingAddress == null && ((protocol == null) || addrMapping.getProtocol().equals(protocol))) {
-                        matchingAddress = addrMapping;
-                    }
-                } else if (myNetworks.contains(network)) {
-                    // Use the first address found in the same network and stop looking for further matches.
-                    if ((protocol == null) || addrMapping.getProtocol().equals(protocol)) {
-                        matchingAddress = addrMapping;
-                        break;
+                    // Cache the first default network found. This will be overwritten by direct network matches.
+                    if (network.equals("*")) {
+                        if (matchingAddress == null
+                                && ((protocol == null) || addrMapping.getProtocol().equals(protocol))) {
+                            matchingAddress = addrMapping;
+                        }
+                    } else if (myNetworks.contains(network)) {
+                        // Use the first address found in the same network and stop looking for further matches.
+                        if ((protocol == null) || addrMapping.getProtocol().equals(protocol)) {
+                            matchingAddress = addrMapping;
+                            break;
+                        }
                     }
                 }
             }
@@ -354,4 +352,29 @@ public final class UUIDResolver extends Thread {
         return sb.toString();
     }
     
+    /**
+     * Renew the list of networks available to the service running this UUIDResolver instance.
+     * 
+     * @throws IOException
+     */
+    public static void renewNetworks() throws IOException {
+        if (theInstance != null) {
+            renewNetworks(theInstance);
+        } else {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, (Object) null,
+                        "Networks can't be renewed, because the UUIDResolver is not running.");
+            }
+        }
+    }
+
+    static void renewNetworks(UUIDResolver instance) throws IOException {
+        List<AddressMapping.Builder> ntwrks = NetUtils.getReachableEndpoints(0, "http");
+        synchronized (instance.myNetworks) {
+            instance.myNetworks.clear();
+            for (AddressMapping.Builder network : ntwrks) {
+                instance.myNetworks.add(network.getMatchNetwork());
+            }
+        }
+    }
 }

@@ -20,6 +20,7 @@ import java.util.Map.Entry;
 import org.xtreemfs.common.config.ServiceConfig;
 import org.xtreemfs.common.util.NetUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.TimeSync;
@@ -262,6 +263,8 @@ public class HeartbeatThread extends LifeCycleThread {
                         // If the renewal has been successful, the renewal flag will be reset.
                         // If an error occurred, the renewal will be retried on the next regular heartbeat.
                         addressMappingRenewalPending = false;
+                        // Renew the networks list available to the UUIDResolver.
+                        UUIDResolver.renewNetworks();
                     } catch (IOException ex) {
                         Logging.logMessage(Logging.LEVEL_ERROR, this,
                                 "requested renewal of address mappings failed: %s", ex.toString());
