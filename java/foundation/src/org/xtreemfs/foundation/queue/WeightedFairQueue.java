@@ -26,6 +26,8 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
 
     private Map<T, Queue<E>>                    queues;
 
+    private Map<T, Integer>                     requestCount;
+
     private int                                 capacity;
 
     private Iterator<Queue<E>>                  queueIterator = null;
@@ -38,6 +40,7 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
 
     public WeightedFairQueue(int capacity, WFQElementInformationProvider<T, E> elementInformationProvider) {
         this.queues = new HashMap<T, Queue<E>>();
+        this.requestCount = new HashMap<T, Integer>();
         this.capacity = capacity;
         this.elementInformationProvider = elementInformationProvider;
     }
@@ -98,6 +101,7 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
         while((element = this.getNextQueue().poll()) == null) {
             Thread.sleep(1);
         }
+        this.countRequest(element);
         return element;
     }
 
@@ -247,6 +251,16 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
             size += q.size();
         }
         return size;
+    }
+
+    private void countRequest(E element) {
+        int count = 0;
+        T qualityClass = this.elementInformationProvider.getQualityClass(element);
+        if(this.requestCount.containsKey(qualityClass)) {
+            count = this.requestCount.get(qualityClass);
+        }
+        count += this.elementInformationProvider.getRequestCost(element);
+        this.requestCount.put(qualityClass, count);
     }
 
     private Queue<E> getQueue(E element) {
