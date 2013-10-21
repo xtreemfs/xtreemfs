@@ -6,6 +6,8 @@
  */
 package org.xtreemfs.common.clients.hadoop;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -20,26 +22,45 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
  */
 public class XtreemFSInputStream extends FSInputStream {
 
-    private long position = 0;
+    private long            position           = 0;
+
+    // Used by the buffer to determine the position in the file.
+    private long            bufferFilePosition = 0;
 
     private UserCredentials userCredentials;
-    
-    private String fileName;
-    
-    private FileHandle fileHandle;
-    
-    private Statistics statistics;
-    
-    public XtreemFSInputStream(UserCredentials userCredentials, FileHandle fileHandle, String fileName, Statistics statistics) {
+
+    private String          fileName;
+
+    private FileHandle      fileHandle;
+
+    private Statistics      statistics;
+
+    private boolean         useBuffer;
+
+    private ByteBuffer      buffer;
+
+    private boolean         EOF                = false;
+
+    public XtreemFSInputStream(UserCredentials userCredentials, FileHandle fileHandle, String fileName,
+            boolean useBuffer, int bufferSize, Statistics statistics) throws IOException {
         this.userCredentials = userCredentials;
         this.fileHandle = fileHandle;
         this.fileName = fileName;
         this.statistics = statistics;
+        this.useBuffer = useBuffer;
+        if (useBuffer) {
+            this.buffer = ByteBuffer.allocateDirect(bufferSize);
+            buffer.position(buffer.capacity());
+        }
     }
 
     @Override
     public synchronized void seek(long l) throws IOException {
         this.position = l;
+        if (useBuffer) {
+            this.bufferFilePosition = l;
+            buffer.position(buffer.limit());
+        }
     }
 
     @Override
@@ -54,30 +75,41 @@ public class XtreemFSInputStream extends FSInputStream {
 
     @Override
     public synchronized int read() throws IOException {
-        byte[] buf = new byte[1];
-        int numRead = fileHandle.read(userCredentials, buf, 1, (int) position);
-        if (numRead == 0) {
+        byte[] data = new byte[1];
+        int bytesRead = 0;
+        if (useBuffer) {
+            bytesRead = readFromBuffer(data, 0, 1);
+        } else {
+            bytesRead = fileHandle.read(userCredentials, data, 1, position);
+        }
+
+        if (bytesRead == 0) {
             return -1;
         }
-        seek(getPos() + 1);
+        position += 1;
         statistics.incrementBytesRead(1);
-        return (int) (buf[0] & 0xFF);
+        return (int) (data[0] & 0xFF);
     }
 
     @Override
     public synchronized int read(byte[] bytes, int offset, int length) throws IOException {
-        int bytesRead = fileHandle.read(userCredentials, bytes, offset, length, (int) getPos());
+        int bytesRead = 0;
+        if (useBuffer) {
+            bytesRead = readFromBuffer(bytes, offset, length);
+        } else {
+            bytesRead = fileHandle.read(userCredentials, bytes, offset, length, position);
+        }
         if ((bytesRead == 0) && (length > 0)) {
             return -1;
         }
-        seek(getPos() + bytesRead);
+        position += bytesRead;
         statistics.incrementBytesRead(bytesRead);
         return bytesRead;
     }
 
     @Override
     public synchronized int read(long position, byte[] bytes, int offset, int length) throws IOException {
-        int bytesRead = fileHandle.read(userCredentials, bytes, offset, length, (int) position);
+        int bytesRead = fileHandle.read(userCredentials, bytes, offset, length, position);
         if ((bytesRead == 0) && (length > 0)) {
             return -1;
         }
@@ -87,7 +119,7 @@ public class XtreemFSInputStream extends FSInputStream {
 
     @Override
     public synchronized int read(byte[] bytes) throws IOException {
-        return read(position, bytes, 0, bytes.length);
+        return read(bytes, 0, bytes.length);
     }
 
     @Override
@@ -97,5 +129,49 @@ public class XtreemFSInputStream extends FSInputStream {
         }
         super.close();
         fileHandle.close();
+    }
+
+    private int readFromBuffer(byte[] bytes, int offset, int length) throws IOException {
+        if (EOF || length == 0) {
+            return 0;
+        }
+
+        if (buffer.remaining() >= length) {
+            // Read from buffer.
+            buffer.get(bytes, offset, length);
+            return length;
+        } else {
+            int bytesLeftToRead = length;
+            int newBytesOffset = offset;
+            int bytesReadFromBuffer = 0;
+
+            if (buffer.hasRemaining()) {
+                // Read remaining bytes from buffer.
+                bytesReadFromBuffer = buffer.remaining();
+                buffer.get(bytes, offset, buffer.remaining());
+                bytesLeftToRead -= bytesReadFromBuffer;
+                newBytesOffset += bytesReadFromBuffer;
+            }
+
+            // Fill buffer.
+            byte[] tmp = new byte[buffer.capacity()];
+            int bytesRead = fileHandle.read(userCredentials, tmp, 0, tmp.length, bufferFilePosition);
+
+            if (bytesRead == 0) {
+                EOF = true;
+                return bytesReadFromBuffer;
+            } else {
+                bufferFilePosition += bytesRead;
+
+                // Put file content in buffer.
+                buffer.clear();
+                buffer.put(tmp, 0, bytesRead);
+                buffer.position(0);
+                buffer.limit(bytesRead);
+
+                // Read left bytes from buffer.
+                return bytesReadFromBuffer + readFromBuffer(bytes, newBytesOffset, bytesLeftToRead);
+            }
+        }
     }
 }

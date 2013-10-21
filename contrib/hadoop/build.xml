@@ -85,7 +85,7 @@
 			<zipfileset src="dist/XtreemFSHadoopClient_no_deps.jar" includes="**/*.java **/*.class"/>
 			<zipfileset src="../../java/foundation/dist/Foundation.jar" includes="**/*.java **/*.class"/>
 			<zipfileset src="../../java/servers/dist/XtreemFS.jar" includes="**/*.java **/*.class"/>
-			<zipfileset src="../../java/lib/protobuf-java-2.3.0.jar" includes="**/*.java **/*.class"/>
+			<zipfileset src="../../java/lib/protobuf-java-2.5.0.jar" includes="**/*.java **/*.class"/>
 		</jar>
 		<!-- Delete the original XtreemFSHadoopClient JAR. -->
 		<delete file="dist/XtreemFSHadoopClient_no_deps.jar"/>

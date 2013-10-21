@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2012 by Michael Berlin, Zuse Institute Berlin
+ * Copyright (c) 2011-2014 by Michael Berlin, Zuse Institute Berlin
  *               2010-2011 by Patrick Schaefer, Zuse Institute Berlin
  *
  *
@@ -94,39 +94,57 @@ void DIRUUIDResolver::UUIDToAddressWithOptions(const std::string& uuid,
           options,
           true));
 
+  boost::unordered_set<string> local_networks = GetNetworks();
   AddressMappingSet* set = static_cast<AddressMappingSet*>(
       response->response());
+  AddressMapping found_address_mapping;
   for (int i = 0; i < set->mappings_size(); i++) {
-    if (set->mappings(i).protocol() == PBRPCURL::SCHEME_PBRPC
-        || set->mappings(i).protocol() == PBRPCURL::SCHEME_PBRPCS
-        || set->mappings(i).protocol() == PBRPCURL::SCHEME_PBRPCG
-        || set->mappings(i).protocol() == PBRPCURL::SCHEME_PBRPCU) {
-      AddressMapping a = set->mappings(i);
-      uuid_cache_.update(uuid, a.address(), a.port(), a.ttl_s());
-
-      ostringstream s;
-      s << set->mappings(i).address() << ":" << set->mappings(i).port();
-
-      if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-        Logging::log->getLog(LEVEL_DEBUG)
-            << "UUID: found service for uuid " << s.str() << endl;
-      }
-      response->DeleteBuffers();
-      *address = s.str();
-      return;
-    } else {
+    const AddressMapping& am = set->mappings(i);
+    if (am.protocol() != PBRPCURL::SCHEME_PBRPC
+        && am.protocol() != PBRPCURL::SCHEME_PBRPCS
+        && am.protocol() != PBRPCURL::SCHEME_PBRPCG
+        && am.protocol() != PBRPCURL::SCHEME_PBRPCU) {
       Logging::log->getLog(LEVEL_ERROR)
-          << "Unknown scheme: " << set->mappings(i).protocol() << endl;
+          << "Unknown scheme: " << am.protocol() << endl;
       response->DeleteBuffers();
-      throw UnknownAddressSchemeException("Unknown scheme: " +
-          set->mappings(i).protocol());
+      throw UnknownAddressSchemeException("Unknown scheme: " + am.protocol());
+    }
+
+    const string& network = am.match_network();
+    // Prefer the UUID for a matching network, use the default otherwise.
+    if (network == "*") {
+      found_address_mapping = am;
+    } else {
+      boost::unordered_set<string>::const_iterator local_network
+        = local_networks.find(network);
+      if (local_network != local_networks.end()) {
+        found_address_mapping = am;
+        break;
+      }
     }
   }
 
-  Logging::log->getLog(LEVEL_ERROR)
-      << "UUID: service not found for uuid " << uuid << endl;
-  response->DeleteBuffers();
-  throw AddressToUUIDNotFoundException(uuid);
+  if (found_address_mapping.IsInitialized()) {
+    uuid_cache_.update(uuid,
+                       found_address_mapping.address(),
+                       found_address_mapping.port(),
+                       found_address_mapping.ttl_s());
+
+    ostringstream s;
+    s << found_address_mapping.address() << ":" << found_address_mapping.port();
+
+    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+      Logging::log->getLog(LEVEL_DEBUG)
+          << "Service found for UUID: " << s.str() << endl;
+    }
+    response->DeleteBuffers();
+    *address = s.str();
+  } else {
+    Logging::log->getLog(LEVEL_ERROR)
+        << "Service not found for UUID: " << uuid << endl;
+    response->DeleteBuffers();
+    throw AddressToUUIDNotFoundException(uuid);
+  }
 }
 
 void DIRUUIDResolver::VolumeNameToMRCUUID(const std::string& volume_name,

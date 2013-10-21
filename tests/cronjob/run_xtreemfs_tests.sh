@@ -58,7 +58,7 @@ sendresult() {
     # Work-around the problem that 'zip' always stores the complete path :(
     current_dir="$PWD"
     cd "$TEST_DIR""/log"
-    zip -q -9 $ATTACHMENT_ZIP_LOGS *.log
+    zip -r -q -9 $ATTACHMENT_ZIP_LOGS *.log
     cd "$current_dir"
   fi
 
@@ -137,7 +137,7 @@ git clone https://code.google.com/p/xtreemfs/ . &> $TEST_LOG
 # Build client unit tests.
 export BUILD_CLIENT_TESTS=true
 export CPPFLAGS=-O0
-make client_debug server &>$TEST_LOG
+make client_debug server hadoop-client &>$TEST_LOG
 if [ $? -ne 0 ]; then
   echo "FAILED: cannot make sources!" >> $TEST_LOG
   date >> $TEST_LOG

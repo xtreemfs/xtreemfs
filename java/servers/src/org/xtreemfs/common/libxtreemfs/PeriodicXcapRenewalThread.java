@@ -19,8 +19,9 @@ public class PeriodicXcapRenewalThread extends Thread {
 
     private VolumeImplementation volume = null;
 
-    public PeriodicXcapRenewalThread(VolumeImplementation volume) {
+    public PeriodicXcapRenewalThread(VolumeImplementation volume, boolean startAsDaemon) {
         this.volume = volume;
+        setDaemon(startAsDaemon);
     }
 
     /*

@@ -16,6 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.xtreemfs.common.GlobalConstants;
 import org.xtreemfs.common.util.NetUtils;
@@ -53,7 +54,7 @@ public final class UUIDResolver extends Thread {
     protected static UUIDResolver theInstance;
 
     protected final UserCredentials uc;
-    
+
     protected UUIDResolver(DIRClient client, int cacheCleanInterval, int maxUnusedEntry, boolean singleton)
         throws IOException {
         
@@ -66,16 +67,12 @@ public final class UUIDResolver extends Thread {
         this.maxUnusedEntry = maxUnusedEntry;
         this.cacheCleanInterval = cacheCleanInterval;
         this.uc = UserCredentials.newBuilder().setUsername("uuidresolver").addGroups("xtreemfs-services").build();
+        myNetworks = new ArrayList<String>();
+        renewNetworks(this);
         
         if (singleton) {
             assert (theInstance == null);
             theInstance = this;
-        }
-        
-        List<AddressMapping.Builder> ntwrks = NetUtils.getReachableEndpoints(0, "http");
-        myNetworks = new ArrayList(ntwrks.size());
-        for (AddressMapping.Builder network : ntwrks) {
-            myNetworks.add(network.getMatchNetwork());
         }
     }
     
@@ -94,19 +91,19 @@ public final class UUIDResolver extends Thread {
      * @throws java.io.IOException
      */
     public static synchronized void start(DIRClient client, int cacheCleanInterval, int maxUnusedEntry)
-        throws IOException {
-        if (theInstance == null) {
-            new UUIDResolver(client, cacheCleanInterval, maxUnusedEntry, true);
-            theInstance.start();
-            if (Logging.isInfo())
-                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null, "started UUIDResolver",
-                    new Object[0]);
-        } else {
-            if (Logging.isInfo())
-                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null,
-                    "UUIDResolver already running!", new Object[0]);
-        }
-    }
+            throws IOException {
+       if (theInstance == null) {
+           new UUIDResolver(client, cacheCleanInterval, maxUnusedEntry, true);
+           theInstance.start();
+           if (Logging.isInfo())
+               Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null, "started UUIDResolver",
+                   new Object[0]);
+       } else {
+           if (Logging.isInfo())
+               Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null,
+                   "UUIDResolver already running!", new Object[0]);
+       }
+   }
     
     public static synchronized UUIDResolver startNonSingelton(DIRClient client, int cacheCleanInterval,
         int maxUnusedEntry) throws IOException {
@@ -174,22 +171,47 @@ public final class UUIDResolver extends Thread {
                         uuid);
                 throw new UnknownUUIDException("uuid " + uuid + " is not registered at directory server");
             }
-            for (AddressMapping addrMapping : ams.getMappingsList()) {
-                final String network = addrMapping.getMatchNetwork();
-                if ((myNetworks.contains(network) || (network.equals("*"))) && ((protocol == null) || addrMapping.getProtocol().equals(protocol))) {
-                    final String address = addrMapping.getAddress();
-                    final String proto = addrMapping.getProtocol();
-                    final int port = addrMapping.getPort();
-                    final long validUntil = TimeSync.getLocalSystemTime() + addrMapping.getTtlS() * 1000;
-                    final InetSocketAddress endpoint = new InetSocketAddress(address, port);
-                    if (Logging.isDebug())
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
-                            "matching uuid record found for uuid " + uuid + " with network " + network);
-                    UUIDCacheEntry e = new UUIDCacheEntry(uuid, validUntil, new Mapping(proto, endpoint, address + ":" + port));
-                    cache.put(uuid, e);
-                    return e;
+
+            List<AddressMapping> mappings = ams.getMappingsList();
+
+            // Iterate through the mappings and look for a matching network. Matches on the same network will be
+            // preferred to global ones.
+            AddressMapping matchingAddress = null;
+            synchronized (myNetworks) {
+                for (AddressMapping addrMapping : mappings) {
+                    final String network = addrMapping.getMatchNetwork();
+
+                    // Cache the first default network found. This will be overwritten by direct network matches.
+                    if (network.equals("*")) {
+                        if (matchingAddress == null
+                                && ((protocol == null) || addrMapping.getProtocol().equals(protocol))) {
+                            matchingAddress = addrMapping;
+                        }
+                    } else if (myNetworks.contains(network)) {
+                        // Use the first address found in the same network and stop looking for further matches.
+                        if ((protocol == null) || addrMapping.getProtocol().equals(protocol)) {
+                            matchingAddress = addrMapping;
+                            break;
+                        }
+                    }
                 }
             }
+
+            if (matchingAddress != null) {
+                final String address = matchingAddress.getAddress();
+                final String proto = matchingAddress.getProtocol();
+                final int port = matchingAddress.getPort();
+                final long validUntil = TimeSync.getLocalSystemTime() + matchingAddress.getTtlS() * 1000;
+                final InetSocketAddress endpoint = new InetSocketAddress(address, port);
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "matching uuid record found for uuid "
+                            + uuid + " with network " + matchingAddress.getMatchNetwork());
+                UUIDCacheEntry e = new UUIDCacheEntry(uuid, validUntil, new Mapping(proto, endpoint, address + ":"
+                        + port));
+                cache.put(uuid, e);
+                return e;
+            }
+
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "NO UUID MAPPING FOR: %s", uuid);
             throw new UnknownUUIDException(
@@ -288,26 +310,6 @@ public final class UUIDResolver extends Thread {
         theInstance.cache.put(uuid, e);
     }
     
-    public static void shutdown(UUIDResolver nonSingleton) {
-        nonSingleton.quit = true;
-        nonSingleton.interrupt();
-    }
-    
-    public static void shutdown() {
-        if (theInstance != null) {
-            theInstance.quit = true;
-            theInstance.interrupt();
-            theInstance = null;
-            if (Logging.isInfo())
-                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null, "UUIDREsolver shut down",
-                    new Object[0]);
-        } else {
-            if (Logging.isInfo())
-                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null,
-                    "UUIDREsolver was already shut down or is not running", new Object[0]);
-        }
-    }
-    
     public static String getCache() {
         StringBuilder sb = new StringBuilder();
         for (UUIDCacheEntry e : theInstance.cache.values()) {
@@ -331,4 +333,44 @@ public final class UUIDResolver extends Thread {
         return sb.toString();
     }
     
+    public static void shutdown() {
+        if (theInstance != null) {
+            theInstance.quit = true;
+            theInstance.interrupt();
+            theInstance = null;
+            if (Logging.isInfo())
+                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null, "UUIDREsolver shut down",
+                        new Object[0]);
+        } else {
+            if (Logging.isInfo())
+                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null,
+                        "UUIDREsolver was already shut down or is not running", new Object[0]);
+        }
+    }
+
+    /**
+     * Renew the list of networks available to the service running this UUIDResolver instance.
+     * 
+     * @throws IOException
+     */
+    public static void renewNetworks() throws IOException {
+        if (theInstance != null) {
+            renewNetworks(theInstance);
+        } else {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, (Object) null,
+                        "Networks can't be renewed, because the UUIDResolver is not running.");
+            }
+        }
+    }
+
+    static void renewNetworks(UUIDResolver instance) throws IOException {
+        List<AddressMapping.Builder> ntwrks = NetUtils.getReachableEndpoints(0, "http");
+        synchronized (instance.myNetworks) {
+            instance.myNetworks.clear();
+            for (AddressMapping.Builder network : ntwrks) {
+                instance.myNetworks.add(network.getMatchNetwork());
+            }
+        }
+    }
 }

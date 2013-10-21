@@ -1,0 +1,21 @@
+config BR2_PACKAGE_XTREEMFS
+       bool "xtreemfs"
+       depends on BR2_PACKAGE_JAMVM
+       depends on BR2_PACKAGE_BASH
+       depends on BR2_PACKAGE_COREUTILS
+       depends on BR2_PACKAGE_UTIL_LINUX_BINARIES
+       select BR2_PACKAGE_OPENSSL
+       select BR2_PACKAGE_BOOST
+       select BR2_PACKAGE_BOOST_REGEX
+       select BR2_PACKAGE_BOOST_PROGRAM_OPTIONS
+       select BR2_PACKAGE_BOOST_SYSTEM
+       select BR2_PACKAGE_BOOST_THREAD
+       select BR2_PACKAGE_ATTR
+       select BR2_PACKAGE_UTIL_LINUX_LIBUUID
+       help
+         This is xtreemfs.
+         http://www.xtreemfs.org
+
+comment "xtreemsfs needs jamvm, bash, core-utils, util-linux binaries"
+        depends on !BR2_PACKAGE_JAMVM || !BR2_PACKAGE_BASH || \
+                !BR2_PACKAGE_COREUTILS || !BR2_PACKAGE_UTIL_LINUX_BINARIES

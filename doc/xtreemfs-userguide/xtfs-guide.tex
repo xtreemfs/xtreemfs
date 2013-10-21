@@ -32,7 +32,7 @@
 \begin{flushleft}
 \sffamily \begin{LARGE}The XtreemFS Installation and User Guide\end{LARGE}
 
-Version 1.4.x
+Version 1.5.x
 \end{flushleft}
 
 
@@ -41,12 +41,33 @@ Version 1.4.x
 XtreemFS is available from the \href{http://www.XtreemFS.org}{XtreemFS website (www.XtreemFS.org)}.
 
 
-This document is \copyright{} 2009-2011 by Bj\"orn Kolbeck, Jan Stender, Michael Berlin, Matthias Noack, Paul Seiferth, Felix Langner, NEC HPC Europe, Felix Hupfeld, Juan Gonzales. All rights reserved.
+This document is \copyright{} 2009-\the\year{} by Bj\"orn Kolbeck, Jan Stender, Michael Berlin, Christoph Kleineweber, Matthias Noack, Paul Seiferth, Felix Langner, NEC HPC Europe, Felix Hupfeld, Juan Gonzales, Patrick Sch\"afer, Lukas Kairies, Jens V. Fischer. All rights reserved.
 
 \setcounter{tocdepth}{2}
 \tableofcontents
 
 \chapter*{Changes}
+Summary of important changes in release 1.5:
+
+\begin{itemize}
+ \item \textbf{Improved Hadoop support}\\
+    Added support for multiple volumes and read and write buffer to speed up performance. See section~\ref{sec:hadoop_integration}.
+ \item \textbf{SSDs support}\\
+    Support for multiple OSD storage threads to increase parallelism. See section~\ref{sec:ssds}.
+ \item \textbf{Replication Status Page}\\
+    Status webpage as part of the DIR webinterface for replicated files to show current primary and backup replicas.
+ \item \textbf{Multi-Homing Support}\\
+    XtreemFS can now be made available for multiple networks and clients will pick the correct address automatically. See option \hyperref[option:multihoming.enabled]{multihoming.enabled}.
+ \item \textbf{Multiple OSDs per Machine}\\
+    Support for multiple OSDs per machine (e.g. one for each disk) through the xtreemfs-osd-farm init.d script. See section~\ref{sec:xtreemfs-osd-farm}.
+ \item \textbf{Improved Checksum Support}\\
+    xtfs_scrub now repairs replicas with an invalid checksum automatically.
+ \item \textbf{Major bugfixes for Read/Write and Read-Only Replication}\\
+    There were problems with the fail-over of replicas which were fixed.
+ \item \textbf{Minor bugfixes and improvements across all components.}\\
+    See the CHANGELOG for more details and references to the issue numbers.
+\end{itemize}
+
 Summary of important changes in release 1.4:
 
 \begin{itemize}
@@ -63,7 +84,7 @@ Summary of important changes in release 1.4:
  \item \textbf{Re-added and improved Vivaldi support}\\
     Vivaldi is directly integrated in the client now and there's a visualization of the coordinates available, even of the client coordinates. See section~\ref{sec:vivaldi}.
  \item \textbf{Support for custom attributes in the OSD Selection policies}\\
-    Added support for OSD Selection based on Custom Attributes e.g., assign a country code to every OSD as custom attribute and limit the placement of files on OSDs based on the attribute (see \ref{sec:customOSDSelection}).
+    Added support for OSD Selection based on Custom Attributes e.g., assign a country code to every OSD as custom attribute and limit the placement of files on OSDs based on the attribute (see \ref{sec:custom_osd_selection}).
 \end{itemize}
 
 Summary of important changes in release 1.3:
@@ -549,12 +570,20 @@ $> cp SERVICE.p12 /etc/xos/xtreemfs/truststore/certs
 \end{enumerate}
 
 
+\subsection{Running XtreemFS on SSDs}
+\label{sec:ssds}
+
+SSDs are replacing spinning hard disk drives increasingly. This trend is also relevant for the area of distributed file systems. As XtreemFS uses an underlying local file system for all services, XtreemFS can be used with SSDs without any modifications.
+
+To make use of the increased performance that an SSD can provide, it might be suitable to use multiple storage threads on the XtreemFS OSD. The number of storage threads can be adjusted by the \texttt{storage\_threads} parameter in the OSD configuration file (see Sec. \ref{sec:config}).
+
+
 \subsection{List of Configuration Options}
 \label{sec:config}
 
 All configuration parameters that may be used to define the behavior of the different services are listed in this section. Unless marked as optional, a parameter has to occur (exactly once) in a configuration file. Parameters marked as experimental belong to the DIR and MRC replication feature, which is currently under development. It is not recommended to mess about with these options if you want to use XtreemFS in production.
 
-Aside from using the following predefined parameters to configure services, OSDs also allow to specify \emph{custom configuration parameters}. Such parameters may have arbitrary names that start with the prefix ``\texttt{config.}''. They can be used to enable a fine-grained individual assignment of OSDs to new files and replicas. For further details, please refer to Section \ref{sec:customOSDSelection}.
+Aside from using the following predefined parameters to configure services, OSDs also allow to specify \emph{custom configuration parameters}. Such parameters may have arbitrary names that start with the prefix ``\texttt{config.}''. They can be used to enable a fine-grained individual assignment of OSDs to new files and replicas. For further details, please refer to Section \ref{sec:custom_osd_selection}.
 
 %\makeatletter
 %\renewcommand\paragraph{\@startsection{paragraph}{4}{\z@}%
@@ -942,7 +971,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Services & MRC, OSD\\
  Values   & String \\
  Default  & \\
- Description & If specified, it defines the host name that is used to register the service at the directory service. If not specified, the host address defined in \texttt{listen.address} will be used if specified. If neither \texttt{hostname} nor \texttt{listen.address} are specified, the service itself will search for externally reachable network interfaces and advertise their addresses.
+ Description & If specified and \texttt{multihoming.enabled} is \texttt{false}, it defines the host name that is used to register the service at the directory service. If neither \texttt{hostname} nor \texttt{listen.address} are specified, the service itself will search for an externally reachable network interface and advertise its address. To use multiple interfaces see \hyperref[option:multihoming.enabled]{multihoming.enabled}.
 \end{tabular}
 
 \subsubsection{\texttt{http\_port}}
@@ -963,7 +992,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
 
 \subsubsection{\texttt{listen.address} \textit{optional}}
 \begin{tabular}{lp{10cm}}
- Services & OSD\\
+ Services & DIR, MRC, OSD\\
  Values   & IP address \\
  Default  & \\
  Description & If specified, it defines the interface to listen on. If not specified, the service will listen on all interfaces (any).
@@ -1042,6 +1071,25 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Default  & 300 \\
  Description & Time to wait for a heartbeat message before sending an alert email. See \texttt{monitoring} parameters.
 \end{tabular}
+
+\subsubsection{\texttt{multihoming.enabled} \textit{optional}}
+\label{option:multihoming.enabled}
+\begin{tabular}{lp{10cm}}
+ Services & MRC, OSD\\
+ Values   & true, false\\
+ Default  & false\\
+ Description & If set to \texttt{true}, the service will use every interface installed in the system and propagate their addresses to the DIR. If \texttt{hostname} is set, its address will be used as the default endpoint that should be reachable from any network. Otherwise the service tries to discover the hostname itself.\\
+ & If this parameter is true, then \texttt{listen.address} must not be set. 
+\end{tabular}
+
+\subsubsection{\texttt{multihoming.renewal\_signal} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & MRC, OSD\\
+ Values   & true, false\\
+ Default  & false\\
+ Description & If set to \texttt{true}, the service will try to register a signal handler for \texttt{USR2} upon which it refreshes its address mapping. Since some  Java Virtual Machines (JVM) are using \texttt{USR2} internally by default, this parameter should be used together with the JVM flag \texttt{-XX:+UseAltSigs}.\\
+ & This functionality is helpful, if dynamic networks are added or removed to the system and the XtreemFS server should update its list of reachable networks. 
+ \end{tabular}
 
 \subsubsection{\texttt{no\_atime}}
 \begin{tabular}{lp{10cm}}
@@ -1229,6 +1277,14 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & Adjusts the internally used storage layout on the OSD. The storage layout determines how an OSD stores its files and objects. Currently, only \texttt{HashStorageLayout} is supported.
 \end{tabular}
 
+\subsubsection{\texttt{storage\_threads} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & OSD\\
+ Values   & 1..N\\
+ Default  & 1\\
+ Description & Set the number of threads that are used to access the underlying file system. For spinning disks, the default value is recommended. For SSDs a higher number might be sufficient.
+\end{tabular}
+
 \subsubsection{\texttt{uuid}}
 \begin{tabular}{lp{10cm}}
  Services & MRC, OSD\\
@@ -1338,6 +1394,16 @@ To run init.d scripts, root permissions are required. Note that MRC and OSD will
 % 	\end{verbatim}
 % 
 % The servers will be executed under the user ID of the user who called the xctl script.
+
+\subsection{Running multiple OSDs per Machine}
+\label{sec:xtreemfs-osd-farm}
+
+Running more than one OSD service per host might be useful in various situations. Use cases for this might be machines with more than one disk as an alternative to a local RAID or testing purposes. We offer an extended \texttt{init.d} script, named \texttt{xtreemfs-osd-farm}, to start or stop a set of OSDs on one host by a single script.
+
+The \texttt{xtreemfs-osd-farm} script can be found in the /usr/share/xtreemfs directory, if XtreemFS is installed by the provided packages, or in the contrib directory of the XtreemFS GIT repository. 
+
+Using the \texttt{xtreemfs-osd-farm} script demands two steps. First, a list names for all of the used OSDs hat to be set to the OSD\_INSTANCES variable in the script. The list elements have to be separated by spaces. In the second step, a configuration file with the name \texttt{<osdname>.config.properties} has to be created in \texttt{/etc/xos/xtreemfs} for all of the defined OSD names, whereas <osdname> has to be replaced by the particular OSD name. After these steps, the \texttt{init.d} script can be executed with the usual arguments \texttt{start}, \texttt{stop}, \texttt{status}, \texttt{restart}, and \texttt{try-restart}. A single OSD can be controlled by \texttt{xtreemfs-osd-farm <osdname> <argument>}.
+
 
 \subsection{Web-based Status Page}
 
@@ -1764,7 +1830,7 @@ If one of these limits is reached, subsequent write() requests will block.
 \label{sec:object_cache}
 The client supports a per-file write-back object cache with LRU policy. This cache is enabled with \texttt{----object-cache-size=<N>} where N is the maximum number of objects it may cache. The cache is currently mutually exclusive with async. writes.
 
-We recommend enabling the cache for most workloads.
+The cache is still experimental and therefore disabled by default.
 
 \section{Troubleshooting}
 
@@ -2339,6 +2405,8 @@ A replication policy can either be specified for an existing file or as a defaul
 
 For details on how to define replication policies, please refer to Section \ref{sec:xtfsutil_files} and \ref{sec:xtfsutil_volumes}.
 
+The DIR status page has a subpage which shows the replication status for open files. It's accessible at \href{http://localhost:30638/replica_status}{http://localhost:30638/replica_status}. Replace \texttt{localhost} with the hostname of the DIR service if you're not on the same machine.
+
 \section{Read-Only File Replication}
 \label{sec:ronly_replication}
 The read-only is designed for use-cases where you have many replicas that are not modified. Since files cannot be changed, the replicas don't need to be coordinated. Therefore, this replication mode can handle as many replicas as you like, e.g. to create copies of files close to consumers. One use-case for the read-only replication is to build a content-distribution network (CDN) like infrastructure.
@@ -2516,7 +2584,7 @@ The following predefined policies exist:
  \begin{itemize}
  \item \emph{free\_capacity\_bytes}: the lower space limit in bytes
  \item \emph{offline\_time\_secs}: the upper response time limit in seconds
- \item custom attributes (see Section \ref{sec:customOSDSelection})
+ \item custom attributes (see Section \ref{sec:custom_osd_selection})
  \end{itemize}
 
  \item \textbf{FQDN-based filter (policy ID 1001)}\\
@@ -2601,13 +2669,15 @@ This policy uses domain names of clients and OSDs to determine the distance betw
 \end{itemize}
 
 \subsection{OSD Selection based on Custom Attributes}
-\label{sec:customOSDSelection}
+\label{sec:custom_osd_selection}
 The default filtering policy (policy ID 1000) supports the use of policy attributes to further refine the filtering of OSDs. Given that different OSDs have individual \emph{custom configuration parameters}, it is possible to restrict the selection based on these attributes and parameters.
 
-To select a subset of all OSDs that has a certain \emph{custom configuration parameter}, it is necessary to define a policy attribute on the volume with the same name as the custom parameter and a value consisting of a space-separated list of matching OSDs.
+To select a subset of all OSDs that have a certain \emph{custom configuration parameter}, it is necessary to define a policy attribute on the volume with the same name as the custom parameter and a value consisting of a space-separated list of matching OSDs.
+
+Using \emph{not.} in front of a \emph{custom configuration parameters} will cause all OSDs to be exluded that match the value of this parameter.
 
 \vspace{0.5cm}
-\emph{Example:} Two OSDs exist with the following configurations:
+\emph{Example:} Three OSDs exist with the following configurations:
 
   \begin{verbatim}
   uuid = OSD1
@@ -2619,15 +2689,38 @@ and
   \begin{verbatim}
   uuid = OSD2
   ...
+  config.country = US\end{verbatim}
+
+and 
+
+  \begin{verbatim}
+  uuid = OSD3
+  ...
   config.country = UK\end{verbatim}
 
-. Executing
+Executing
 
   \begin{verbatim}
   %> xtfsutil --set-pattr 1000.country --value US DE <mountpoint>
   \end{verbatim}
 
-will only cause the former OSD to be regarded as eligible for new files and replicas. For further details on how to define \emph{custom configuration parameters}, please refer to Section \ref{sec:config}. For further details on how to specify policy attributes, please refer to Section \ref{sec:policyAttributes}.
+will cause the first two OSD to be regarded as eligible for new files and replicas. 
+
+\vspace{0.5cm}
+
+Executing
+
+  \begin{verbatim}
+  %> xtfsutil --set-pattr 1000.not.country --value US <mountpoint>
+  \end{verbatim}
+
+will cause the OSDs from DE and UK to be regarded as eligible for new files and replicas. 
+
+\vspace{0.5cm}
+
+For further details on how to define \emph{custom configuration parameters}, please refer to Section \ref{sec:config}. For further details on how to specify policy attributes, please refer to Section \ref{sec:policyAttributes}.
+
+
 
 \subsection{Vivaldi}
 \label{sec:vivaldi}
@@ -2728,7 +2821,7 @@ This section will help you to set up a simple Hadoop configuration with all nece
 \textbf{Required software:}
 \begin{itemize}
 \item XtreemFS (\href{http://code.google.com/p/xtreemfs/downloads/list}{www.XtreemFS.org})
-\item XtreemFSHadoopClient.jar (Download it from \href{http://code.google.com/p/xtreemfs/downloads/list}{www.XtreemFS.org} or build it by yourself by excecuting make hadoop-client)
+\item XtreemFSHadoopClient.jar (Download it from \href{http://www.xtreemfs.org/downloads/XtreemFSHadoopClient.jar}{www.XtreemFS.org} or build it by yourself by excecuting make hadoop-client)
 \item Hadoop (v 1.0.1 or newer) (\href{http://hadoop.apache.org}{hadoop.apache.org})
 \item JDK 1.6+ (\href{http://java.sun.com}{Oracle/SUN})
 \end{itemize}
@@ -2769,9 +2862,9 @@ This section will help you to set up a simple Hadoop configuration with all nece
   </property>
 
   <property>
-    <name>xtreemfs.volumeName</name>
+    <name>xtreemfs.defaultVolumeName</name>
     <value>volumeName</value>
-    <description>Name of the volume to use within XtreemFS.</description>
+    <description>Name of the default volume to use within XtreemFS.</description>
   </property>
   
   <property>
@@ -2788,14 +2881,12 @@ This section will help you to set up a simple Hadoop configuration with all nece
 	\item The next property makes Hadoop use the DIR instead of a 
 	NameNode, therefore address and port of the DIR has to be populated. In this case the DIR is located at 
 	\textit{localhost:32638}. 
-	\item The third property specifies the name of the volume to use within XtreemFS. Make sure, that the volume (here 
-	named \textit{volumeName}) does exist. If the volume is not available Hadoop will not be able to use XtreemFS.
+	\item The third property specifies the name of the default volume to use within XtreemFS. Make sure, that the volume (here    	named \textit{volumeName}) does exist. If the volume is not available Hadoop will not be able to use XtreemFS.
 	\item The last property tells Hadoop the buffer size that will be used when reading/writing files.
 	This size should be exactly the default stripesize of your volume. Note that this value is measured in bytes while the
 	stripe size of your volume usually is measured in kilo bytes. 
 	\end{enumerate}
-	Hint: If you want to provide user rights to your Hadoop installation according to the POSIX file-access-policy, you 
-	have to set the following additional properties: 
+	Hint: By default Hadoop uses the current user as user ID and "users" as group ID for accessing XtreemFS. To change the used user ID and group ID, you have to set the following additional properties: 
 	\begin{verbatim}
   <property>
     <name>xtreemfs.client.userid</name>
@@ -2809,6 +2900,41 @@ This section will help you to set up a simple Hadoop configuration with all nece
     <description>GroupID to be used by Hadoop while accessing XtreemFS.</description>
   </property>
 	\end{verbatim}
+	\newpage
+	Hint: The XtreemFSHadoopClient provides an experimental read- and write buffer (disabled by default). The buffers can be used to speed-up small read-/write requests, but in some cases the overhead of the buffer might slow-down the I/O performance. If you want to use the read-/write buffer in the XtreemFSHadoopClient, you have to enable the buffers and specify the buffer sizes with the following additional properties:
+	\begin{verbatim}
+  <property>
+    <name>xtreemfs.io.read.buffer</name>
+    <value>true</value>
+    <description>
+      Enable/Disable the read buffer in theXtreemFSHadoopClient
+    </description>
+  </property>
+  
+  <property>
+    <name>xtreemfs.io.buffer.size.read</name>
+    <value>bufferSize</value>
+    <description>
+      Buffer size of the read buffer in the XtreemFSHadoopClient
+    </description>
+  </property>
+  
+  <property>
+    <name>xtreemfs.io.write.buffer</name>
+    <value>true</value>
+    <description>
+      Enable/Disable the write buffer in the XtreemFSHadoopClient
+    </description>
+  </property>
+  
+  <property>
+    <name>xtreemfs.io.buffer.size.write</name>
+    <value>bufferSize</value>
+    <description>
+      Buffer size of the write buffer in the XtreemFSHadoopClient
+    </description>
+  </property>	
+	\end{verbatim}	
 	\end{enumerate}
 
 \item To provide the minimum JobTracker configuration for Hadoop you also have to add the following property to the 
@@ -2876,11 +3002,10 @@ Please note, that there are currently no build targets provided yet which allow 
 
 In particular, you need boost and libssl-dev. On a Unix plattform, you also need libfuse-dev or you have to comment out the respective portions in the CMake configuration manually. At last, you have to install ``cmake'' which generates the build system.
 
-  \item Check out the XtreemFS trunk.
+  \item Check out the XtreemFS master.
 
 \begin{verbatim}
-svn checkout http://xtreemfs.googlecode.com/svn/trunk/ \
-             xtreemfs-read-only 
+git clone https://code.google.com/p/xtreemfs
 \end{verbatim}
 
   \item Compile the Client.

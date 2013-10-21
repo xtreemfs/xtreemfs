@@ -8,6 +8,8 @@
 #ifndef CPP_INCLUDE_RPC_SSL_SOCKET_CHANNEL_H_
 #define CPP_INCLUDE_RPC_SSL_SOCKET_CHANNEL_H_
 
+#ifdef HAS_OPENSSL
+
 #include <boost/system/error_code.hpp>
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
@@ -87,6 +89,8 @@ class SSLSocketChannel : public AbstractSocketChannel {
 
 }  // namespace rpc
 }  // namespace xtreemfs
+
+#endif  // HAS_OPENSSL
 
 #endif  // CPP_INCLUDE_RPC_SSL_SOCKET_CHANNEL_H_
 

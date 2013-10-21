@@ -86,7 +86,7 @@ install: build
 	mv    -t $(BUILD_DIR)-backend/usr/share/java \
 	         $(BUILD_DIR)/usr/share/java/XtreemFS.jar \
 	         $(BUILD_DIR)/usr/share/java/Foundation.jar \
-	         $(BUILD_DIR)/usr/share/java/protobuf-java-2.3.0.jar \
+	         $(BUILD_DIR)/usr/share/java/protobuf-java-2.5.0.jar \
 	         $(BUILD_DIR)/usr/share/java/Flease.jar \
 	         $(BUILD_DIR)/usr/share/java/BabuDB.jar \
 	         $(BUILD_DIR)/usr/share/java/BabuDB_replication_plugin.jar \

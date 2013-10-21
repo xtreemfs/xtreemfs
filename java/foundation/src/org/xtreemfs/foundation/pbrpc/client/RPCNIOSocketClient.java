@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2009-2011 by Bjoern Kolbeck,
  *               Zuse Institute Berlin
+ * Copyright (c) 2013 by Bjoern Kolbeck.
+ * Copyright (c) 2014 by Quobyte Inc.
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -99,22 +101,32 @@ public class RPCNIOSocketClient extends LifeCycleThread {
 
     public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout)
         throws IOException {
-        this(sslOptions, requestTimeout, connectionTimeout, -1, -1, null, "");
+        this(sslOptions, requestTimeout, connectionTimeout, -1, -1, null, "", false);
     }
 
     public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout, String threadName)
         throws IOException {
-        this(sslOptions, requestTimeout, connectionTimeout, -1, -1, null, threadName);
+        this(sslOptions, requestTimeout, connectionTimeout, -1, -1, null, threadName, false);
     }
     
     public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout,
         int sendBufferSize, int receiveBufferSize, SocketAddress localBindPoint) throws IOException {
-        this(sslOptions, requestTimeout, connectionTimeout, sendBufferSize, receiveBufferSize, localBindPoint, "");
+        this(sslOptions, requestTimeout, connectionTimeout, sendBufferSize, receiveBufferSize, localBindPoint, "", false);
+    }
+    
+    public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout, String threadName, boolean startAsDaemon) throws IOException {
+        this(sslOptions, requestTimeout, connectionTimeout, -1, -1, null, threadName, startAsDaemon);
     }
     
     public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout,
-        int sendBufferSize, int receiveBufferSize, SocketAddress localBindPoint, String threadName) throws IOException {
+            int sendBufferSize, int receiveBufferSize, SocketAddress localBindPoint, String threadName) throws IOException {
+    	this(sslOptions, requestTimeout, connectionTimeout, sendBufferSize, receiveBufferSize, localBindPoint, threadName, false);
+    }
+    
+    public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout,
+        int sendBufferSize, int receiveBufferSize, SocketAddress localBindPoint, String threadName, boolean startAsDaemon) throws IOException {
         super(threadName);
+        setDaemon(startAsDaemon);
         if (requestTimeout >= connectionTimeout - TIMEOUT_GRANULARITY * 2) {
             throw new IllegalArgumentException(
                 "request timeout must be smaller than connection timeout less " + TIMEOUT_GRANULARITY * 2
@@ -550,6 +562,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 // sent.
                 BufferPool.free(receiveBuffers[1]);
                 BufferPool.free(receiveBuffers[2]);
+                con.setResponseBuffers(null);
                 Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
                                     "received response for unknown request callId=%d",
                                     header.getCallId());
@@ -586,7 +599,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                                     key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
                                     break;
                                 }
-                                send = con.getSendQueue().get(0);
+                                send = con.getSendQueue().remove(0);
                             }
                             assert(send != null);
                             con.getRequestRecordMarker().clear();
@@ -607,6 +620,9 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                             closeConnection(key, "server unexpectedly closed connection (EOF)");
                             return;
                         }
+                        // Detect if the client writes outside of the fragment.
+                        send.recordBytesWritten(numBytesWritten);
+
                         if (buffers[buffers.length-1].hasRemaining()) {
                             // not enough data...
                             key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
@@ -615,19 +631,13 @@ public class RPCNIOSocketClient extends LifeCycleThread {
 
                         //remove from queue
                         synchronized (con) {
-                            if (con.getSendQueue().remove(send)) {
-                                con.addRequest(send.getRequestHeader().getCallId(), send);
-                                if (Logging.isDebug()) {
-                                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
-                                        "sent request %d to %s", send.getRequestHeader().getCallId(), con.getEndpointString());
-                                }
-                            } else {
-                                if (Logging.isDebug()) {
-                                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
-                                        "sent request %d to %s, but it already timed out locally", send.getRequestHeader().getCallId(), con.getEndpointString());
-                                }
+                            con.addRequest(send.getRequestHeader().getCallId(), send);
+                            if (Logging.isDebug()) {
+                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                                    "sent request %d to %s", send.getRequestHeader().getCallId(), con.getEndpointString());
                             }
                         }
+                        send.checkEnoughBytesSent();
                         con.setRequestBuffers(null);
                         con.setPendingRequest(null);
                     }

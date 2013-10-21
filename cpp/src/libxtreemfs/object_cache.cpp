@@ -243,7 +243,7 @@ void ObjectCache::EvictObjects(const ObjectWriterFunction& writer) {
   Cache::iterator entry_with_minimum_atime;
   {
     boost::unique_lock<boost::mutex> lock(mutex_);
-    int objects_with_data = 0;
+    size_t objects_with_data = 0;
     for (Cache::iterator i = cache_.begin(); i != cache_.end(); ++i) {
       if (!i->second->has_data()) {
         continue;

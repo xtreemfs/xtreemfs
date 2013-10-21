@@ -15,6 +15,7 @@ import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.xloc.ReplicationFlags;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.REPL_FLAG;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
@@ -36,6 +37,14 @@ public interface  Volume {
      * Start this volume, e.g. initialize all required things.
      */
     void start() throws Exception;
+    
+    
+    /**
+     * Same as start(), but add option to start threads as daemons. Daemon threads are only used by the XtreemFSHadoopClient.
+     * 
+     * @param startThreadsAsDaemons if true, all threads are daemons.
+     */
+    void start(boolean startThreadsAsDaemons) throws Exception;
 
     /**
      * Close the volume.
@@ -413,6 +422,32 @@ public interface  Volume {
     public void setXAttr(UserCredentials userCredentials, String path, String name, String value,
             XATTR_FLAGS flags) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
+    
+    /**
+     * Sets the extended attribute "name" of "path" to "value".
+     * 
+     * @param userCredentials
+     *            Name and Groups of the user.
+     * @param auth
+     *            Authentication data, e.g. of type AUTH_PASSWORD.
+     * @param path
+     *            Path to the file/directory.
+     * @param name
+     *            Name of the extended attribute.
+     * @param value
+     *            Value of the extended attribute.
+     * @param flags
+     *            May be XATTR_CREATE or XATTR_REPLACE.
+     * 
+     * @throws AddressToUUIDNotFoundException
+     * @throws {@link IOException}
+     * @throws PosixErrorException
+     * @throws UnknownAddressSchemeException
+     */
+    public void setXAttr(UserCredentials userCredentials, Auth auth, String path, String name, String value,
+            XATTR_FLAGS flags) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
+
+    
     /**
      * Returns value for an XAttribute with "name" stored for "path" in "value".
      * 

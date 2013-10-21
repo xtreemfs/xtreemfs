@@ -253,15 +253,17 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                             .build());
                 }
                 
-                try {
-                    final String address = "".equals(config.getHostName()) ? config.getAddress() == null ? config
-                            .getUUID().getMappings()[0].resolvedAddr.getAddress().getHostAddress() : config
-                            .getAddress().getHostAddress() : config.getHostName();
-                    dmap.addData(KeyValuePair.newBuilder().setKey("status_page_url")
-                            .setValue("http://" + address + ":" + config.getHttpPort()));
-                } catch (UnknownUUIDException ex) {
-                    // should never happen
-                    Logging.logError(Logging.LEVEL_ERROR, this, ex);
+                if (config.getHttpPort() != -1) {
+                    try {
+                        final String address = "".equals(config.getHostName()) ? config.getAddress() == null ? config
+                                .getUUID().getMappings()[0].resolvedAddr.getAddress().getHostAddress() : config
+                                .getAddress().getHostAddress() : config.getHostName();
+                        dmap.addData(KeyValuePair.newBuilder().setKey("status_page_url")
+                                .setValue("http://" + address + ":" + config.getHttpPort()));
+                    } catch (UnknownUUIDException ex) {
+                        // should never happen
+                        Logging.logError(Logging.LEVEL_ERROR, this, ex);
+                    }
                 }
                 
                 Service mrcReg = Service.newBuilder().setType(ServiceType.SERVICE_TYPE_MRC).setUuid(uuid).setData(dmap)
@@ -295,24 +297,28 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             
         };
         
-        statusServer = new StatusServer(ServiceType.SERVICE_TYPE_MRC, this, config.getHttpPort());
-        statusServer.registerModule(new StatusPage());
-        statusServer.registerModule(new PrintStackTrace());
-        
-        final MRCRequestDispatcher master = this;
-        statusServer.registerModule(new BabuDBStatusPage(new BabuDBStatusPage.BabuDBStatusProvider() {
-            @Override
-            public Map<String, Object> getStatus() {
-                return master.getDBStatus();
-            }
-        }));
-        
-        
-        if (config.getAdminPassword().length() > 0) {
-            statusServer.addAuthorizedUser("admin", config.getAdminPassword());
-        }
+        if (config.getHttpPort() == -1) {
+            // Webinterface is explicitly disabled.
+            statusServer = null;
+        } else {
+            statusServer = new StatusServer(ServiceType.SERVICE_TYPE_MRC, this, config.getHttpPort());
+            statusServer.registerModule(new StatusPage());
+            statusServer.registerModule(new PrintStackTrace());
 
-        statusServer.start();
+            final MRCRequestDispatcher master = this;
+            statusServer.registerModule(new BabuDBStatusPage(new BabuDBStatusPage.BabuDBStatusProvider() {
+                @Override
+                public Map<String, Object> getStatus() {
+                    return master.getDBStatus();
+                }
+            }));
+
+            if (config.getAdminPassword().length() > 0) {
+                statusServer.addAuthorizedUser("admin", config.getAdminPassword());
+            }
+
+            statusServer.start();
+        }
         
         heartbeatThread = new HeartbeatThread("MRC Heartbeat Thread", dirClient, config.getUUID(), gen, config, false);
         heartbeatThread.setLifeCycleListener(this);
@@ -341,11 +347,11 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         procStage.shutdown();
         
-        UUIDResolver.shutdown();
-        
         volumeManager.shutdown();
         
-        statusServer.shutdown();
+        if (statusServer != null) {
+            statusServer.shutdown();
+        }
         
         if (replicated)
             mrcMonitor.shutdown();
@@ -432,8 +438,6 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         procStage.shutdown();
         procStage.waitForShutdown();
-        
-        UUIDResolver.shutdown();
         
         volumeManager.shutdown();
         

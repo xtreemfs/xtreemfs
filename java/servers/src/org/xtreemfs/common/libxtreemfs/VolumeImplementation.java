@@ -214,8 +214,14 @@ public class VolumeImplementation implements Volume, AdminVolume {
      */
     @Override
     public void start() throws IOException {
+        start(false);
+        
+    }
+    
+    @Override
+    public void start(boolean startThreadsAsDaemons) throws IOException {
         networkClient = new RPCNIOSocketClient(sslOptions, volumeOptions.getRequestTimeout_s() * 1000,
-                volumeOptions.getLingerTimeout_s() * 1000, "Volume");
+                volumeOptions.getLingerTimeout_s() * 1000, "Volume", startThreadsAsDaemons);
         networkClient.start();
         try {
             networkClient.waitForStartup();
@@ -229,10 +235,10 @@ public class VolumeImplementation implements Volume, AdminVolume {
         openFileTable = new ConcurrentHashMap<Long, FileInfo>();
 
         // // Start periodic threads.
-        fileSizeUpdateThread = new PeriodicFileSizeUpdateThread(this);
+        fileSizeUpdateThread = new PeriodicFileSizeUpdateThread(this, startThreadsAsDaemons);
         fileSizeUpdateThread.start();
 
-        xcapRenewalThread = new PeriodicXcapRenewalThread(this);
+        xcapRenewalThread = new PeriodicXcapRenewalThread(this, startThreadsAsDaemons);
         xcapRenewalThread.start();
 
     }
@@ -1085,6 +1091,38 @@ public class VolumeImplementation implements Volume, AdminVolume {
         return response;
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.xtreemfs.common.libxtreemfs.Volume#setXAttr(
+     * org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials,
+     * org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth,
+     * java.lang.String, java.lang.String, java.lang.String,
+     * org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS)
+     */
+    @Override
+    public void setXAttr(UserCredentials userCredentials, Auth auth, String path, String name, String value,
+            XATTR_FLAGS flags) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+        setxattrRequest request = setxattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
+                .setName(name).setValue(value).setFlags(flags.getNumber()).build();
+
+        timestampResponse response = RPCCaller.<setxattrRequest, timestampResponse> syncCall(SERVICES.MRC,
+                userCredentials, auth, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                new CallGenerator<setxattrRequest, timestampResponse>() {
+                    @Override
+                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server,
+                            Auth authHeader, UserCredentials userCreds, setxattrRequest input)
+                            throws IOException {
+                        return mrcServiceClient.setxattr(server, authHeader, userCreds, input);
+                    }
+                });
+
+        assert (response != null);
+
+        metadataCache.updateXAttr(path, name, value);
+    }
+    
+    
     /*
      * (non-Javadoc)
      * 

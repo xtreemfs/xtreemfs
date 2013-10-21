@@ -42,7 +42,7 @@ public class SetupUtils {
     
     public static final String     TEST_DIR         = "/tmp/xtreemfs-test2";
     
-    public static final String     CERT_DIR         = "test/certs/";
+    public static final String     CERT_DIR          = "tests/certs/";
     
     public static boolean          SSL_ON           = false;
     
@@ -53,6 +53,11 @@ public class SetupUtils {
     public static final Category[] DEBUG_CATEGORIES = new Category[] { Category.all };
     
     public static final int PORT_RANGE_OFFSET = 10000;
+    
+    /**
+     * Analog to nextOsdNo.
+     */  
+    private static final int offsetFirstOsdPort             = 32640 + PORT_RANGE_OFFSET;
     
     private static Properties createOSDProperties(int port, String dir) {
         Properties props = new Properties();
@@ -113,16 +118,29 @@ public class SetupUtils {
         config.setDefaults();
         return config;
     }
-    
+    /**
+     * 
+     * Creates multiple OSD configs starting at offset 0. 
+     * 
+     */
     public static OSDConfig[] createMultipleOSDConfigs(int number) throws IOException {
+        return createMultipleOSDConfigs(number, 0);
+    }
+
+    /**
+     * 
+     * Creates multiple OSD configs starting at offset "offsetNextOsd". 
+     * 
+     */
+    public static OSDConfig[] createMultipleOSDConfigs(int number, int offsetNextOsd) throws IOException {
         OSDConfig[] configs = new OSDConfig[number];
-        int startPort = 32640 + PORT_RANGE_OFFSET;
-        
+        int offsetNextOsdPort = offsetFirstOsdPort + offsetNextOsd;
         for (int i = 0; i < configs.length; i++) {
-            Properties props = createOSDProperties(startPort, TEST_DIR + "/osd" + i);
+            Properties props = createOSDProperties(offsetNextOsdPort, TEST_DIR + "/osd" + offsetNextOsd);
             configs[i] = new OSDConfig(props);
             configs[i].setDefaults();
-            startPort++;
+            offsetNextOsdPort++;
+            offsetNextOsd++;
         }
         return configs;
     }
@@ -342,7 +360,6 @@ public class SetupUtils {
     
     public static void setupLocalResolver() throws Exception {
         TimeSync.initialize(null, 100000, 50);
-        UUIDResolver.shutdown();
         
         UUIDResolver.start(null, 1000, 1000);
         localResolver();
@@ -354,9 +371,8 @@ public class SetupUtils {
     }
 
     public static SSLOptions createClientSSLOptions() throws IOException, FileNotFoundException {
-        return new SSLOptions(new FileInputStream(CERT_DIR + "Client.p12"),
-                "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trusted.jks"), "passphrase",
- SSLOptions.JKS_CONTAINER, false, false,
+        return new SSLOptions(new FileInputStream(CERT_DIR + "Client.p12"), "passphrase", SSLOptions.PKCS12_CONTAINER,
+                new FileInputStream(CERT_DIR + "trusted.jks"), "passphrase", SSLOptions.JKS_CONTAINER, false, false,
                 null);
     }
     

@@ -49,7 +49,7 @@ public class Options {
     /**
      * How often shall a failed operation get retried? Default: 40
      */
-    private final int  maxTries              = 40;
+    private int        maxTries              = 40;
     /**
      * How often shall a failed read operation get retried? Default: 40
      */
@@ -212,6 +212,10 @@ public class Options {
 
     public int getMaxTries() {
         return maxTries;
+    }
+
+    public void setMaxTries(int maxTries) {
+        this.maxTries = maxTries;
     }
 
     protected int getMaxWriteTries() {

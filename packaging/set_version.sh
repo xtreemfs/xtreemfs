@@ -22,6 +22,7 @@ xtreemfs_release_names="
 1.2|Luscious Lebkuchen
 1.3|Tasty Tartlet
 1.4|Salty Sticks
+1.5|Wonderful Waffles
 "
 
 function display_usage() {

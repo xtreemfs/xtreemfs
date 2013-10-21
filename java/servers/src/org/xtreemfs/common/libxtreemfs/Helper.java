@@ -85,6 +85,17 @@ public class Helper {
         return isa;
     }
 
+    /**
+     * Returns the UUID of the OSD which stores the object with number "objectNo" of the replica "replica"
+     * 
+     * @param replica
+     * @param objectNo
+     * @return
+     */
+    static public String getOSDUUIDFromObjectNo(Replica replica, long objectNo) {
+    	return replica.getOsdUuids((int) objectNo % replica.getStripingPolicy().getWidth());
+    }
+    
     static public String getOSDUUIDFromXlocSet(XLocSet xlocs, int replicaIndex, int stripeIndex) {
         if (xlocs.getReplicasCount() == 0) {
             Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, xlocs,

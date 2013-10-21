@@ -7,29 +7,50 @@ TestSets = {
                 'mrc_repl': False,
                 'dir_repl': False,
                 'snmp': False,
-              },
+    },
     'full' : {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
                 'snmp': False,
-              },
+    },
     'short-ssl' : {
                 'ssl': True,
                 'mrc_repl': False,
                 'dir_repl': False,
                 'snmp': False,
-              },
+    },
+    # contains only multi-threaded benchmarks. set option "-t" accordingly.
+    'ssd' : {
+                'ssl': False,
+                'mrc_repl': False,
+                'dir_repl': False,
+                'snmp': False
+    },
+     # Contains dd tests for testing the SSL support of packages.
+    'packages-ssl' : {
+                'ssl': True,
+                'mrc_repl': False,
+                'dir_repl': False,
+                'snmp': False
+    },
     # Used for testing new test scripts, therefore usually contains no tests.
     'testing' : {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
                 'snmp': False,
-              },
-    # This configuration is used for manual test environment set-ups.
+    },
+    # This configuration is used for manual test environment set-ups (option -e).
     'manual' : {
                 'ssl': False,
+                'mrc_repl': False,
+                'dir_repl': False,
+                'snmp': True,
+    },
+    # This configuration is used for manual test environment set-ups with SSL enabled (option -f).
+    'manual-ssl' : {
+                'ssl': True,
                 'mrc_repl': False,
                 'dir_repl': False,
                 'snmp': True,
@@ -43,7 +64,7 @@ VolumeConfigs = {
                     'rwr_factor': 0,
                     'ronly_factor': 0,
                     'mount_options': [ '-ouser_xattr', '-oallow_other' ],
-                    'mkfs_options':  [ '--chown-non-root' ]
+                    'mkfs_options':  [ '--max-tries=10', '--chown-non-root' ]
                 },
     'regular_two_osds' : {
                     'stripe_size': 128,
@@ -51,7 +72,8 @@ VolumeConfigs = {
                     'rwr_factor': 0,
                     'ronly_factor': 0,
                     'min_osds': 2,
-                    'mount_options': [ '-ouser_xattr' ]
+                    'mount_options': [ '-ouser_xattr' ],
+                    'mkfs_options':  [ '--max-tries=10']
                 },
     'nomdcache' : {
                     'stripe_size': 128,
@@ -59,35 +81,39 @@ VolumeConfigs = {
                     'rwr_factor': 0,
                     'ronly_factor': 0,
                     'mount_options': [ '--metadata-cache-size=0', '-ouser_xattr', '-oallow_other' ],
-                    'mkfs_options':  [ '--chown-non-root' ]
+                    'mkfs_options':  [ '--max-tries=10', '--chown-non-root' ]
                 },
     'directio' : {
                     'stripe_size': 128,
                     'stripe_width': 1,
                     'rwr_factor': 0,
                     'ronly_factor': 0,
-                    'mount_options': [ '-odirect_io' ]
+                    'mount_options': [ '-odirect_io' ],
+                    'mkfs_options':  [ '--max-tries=10']
                 },
     'striped2' : {
                     'stripe_size': 128,
                     'stripe_width': 2,
                     'rwr_factor': 0,
                     'ronly_factor': 0,
-                    'mount_options': [ ]
+                    'mount_options': [ ],
+                    'mkfs_options':  [ '--max-tries=10']
                 },
     'replicated_wqrq' : {
                     'stripe_size': 128,
                     'stripe_width': 1,
                     'rwr_factor': 3,
                     'ronly_factor': 0,
-                    'mount_options': [ ]
+                    'mount_options': [ ],
+                    'mkfs_options':  [ '--max-tries=10']
                 },
     'replicated_wqrq_asyncwrites' : {
                     'stripe_size': 128,
                     'stripe_width': 1,
                     'rwr_factor': 3,
                     'ronly_factor': 0,
-                    'mount_options': [ '--enable-async-writes' ]
+                    'mount_options': [ '--enable-async-writes' ],
+                    'mkfs_options':  [ '--max-tries=10']
                 },
     'replicated_war1' : {
                     'stripe_size': 128,
@@ -95,7 +121,8 @@ VolumeConfigs = {
                     'rwr_policy': 'all',
                     'rwr_factor': 2,
                     'ronly_factor': 0,
-                    'mount_options': [ '--max-tries=240', '--max-read-tries=240', '--max-write-tries=240' ]
+                    'mount_options': [ '--max-tries=240', '--max-read-tries=240', '--max-write-tries=240' ],
+                    'mkfs_options':  [ '--max-tries=10']
                 },
 }
 
@@ -111,7 +138,7 @@ Tests = [
         'name': 'Erichs dd write',
         'file': '02_erichs_ddwrite.py',
         'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_wqrq_asyncwrites' ],
-        'TestSets': [ 'full', 'short', 'short-ssl' ]
+        'TestSets': [ 'full', 'short', 'short-ssl', 'packages-ssl' ]
     },
     {
         'name': 'Erichs data integrity test',
@@ -163,6 +190,18 @@ Tests = [
         'TestSets': [ 'full' ]
     },
     {
+        'name': 'IOZone multithread',
+        'file': '16_iozone_multithread.py',
+        'VolumeConfigs': [ 'regular' ],
+        'TestSets': [ 'ssd' ]
+    },
+    {
+        'name': 'bonnie multithread',
+        'file': '17_bonnie_multithread.py',
+        'VolumeConfigs': [ 'regular' ],
+        'TestSets': [ 'ssd' ]
+    },
+    {
         'name': 'xtfs_cleanup test',
         'file': 'system_cleanup_test.sh',
         'VolumeConfigs': ['nomdcache'],
@@ -184,7 +223,8 @@ Tests = [
         'name': 'xtfs_scrub test',
         'file': 'system_scrub_test.sh',
         'VolumeConfigs': ['nomdcache'],
-        'TestSets': [ 'full', 'short', 'short-ssl' ]
+        #'TestSets': [ 'full', 'short', 'short-ssl' ]
+        'TestSets': []
     },
     {
         'name': 'Add and delete replica manually (read-only replication)',
@@ -198,6 +238,12 @@ Tests = [
         'VolumeConfigs': ['regular', 'nomdcache'],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
     },
+    {
+        'name': 'hadoop_test',
+        'file': 'hadoop_test.sh',
+        'VolumeConfigs': ['regular'],
+        'TestSets': [ 'full' ] 
+    },
     # SYSTEM TESTS
     {
         'name': 'JUnit tests',
@@ -210,6 +256,12 @@ Tests = [
         'file': 'cpp_unit_tests.sh',
         'VolumeConfigs': [],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
+    },
+    {
+        'name': 'Valgrind memory-leak check for C++ Unit Tests',
+        'file': 'cpp_unit_tests_valgrind.sh',
+        'VolumeConfigs': [],
+        'TestSets': [ 'full' ]
     },
     {
         'name': 'mkfs-lsfs-rmfs.xtreemfs test',

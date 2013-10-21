@@ -10,7 +10,6 @@
 
 #include <boost/function.hpp>
 #include <boost/asio.hpp>
-#include <boost/asio/ssl.hpp>
 #include <boost/system/error_code.hpp>
 
 #include <vector>
@@ -49,5 +48,5 @@ class AbstractSocketChannel {
 
 }  // namespace rpc
 }  // namespace xtreemfs
-#endif  // CPP_INCLUDE_RPC_ABSTRACT_SOCKET_CHANNEL_H_
 
+#endif  // CPP_INCLUDE_RPC_ABSTRACT_SOCKET_CHANNEL_H_

@@ -1120,7 +1120,7 @@ void VolumeImplementation::SetXAttr(
   // For unknown reasons this fails if c_str() is not used, for instance if the
   // value is set to the character '\002'.
   rq.set_value(value.c_str());
-  rq.set_value_bytes(value.c_str(), value.size());
+  rq.set_value_bytes_string(value.c_str(), value.size());
   rq.set_flags(flags);
 
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
@@ -1170,8 +1170,8 @@ bool VolumeImplementation::GetXAttr(
             RPCOptionsFromOptions(volume_options_)));
     getxattrResponse* get_response = static_cast<getxattrResponse*>(
         response->response());
-    if (get_response->has_value_bytes()) {
-      *value = get_response->value_bytes();
+    if (get_response->has_value_bytes_string()) {
+      *value = get_response->value_bytes_string();
       response->DeleteBuffers();
       return true;
     } else if (get_response->has_value()) {
@@ -1202,8 +1202,9 @@ bool VolumeImplementation::GetXAttr(
       for (int i = 0; i < xattrs->xattrs_size(); i++) {
         if (xattrs->xattrs(i).name() == name) {
           assert(xattrs->xattrs(i).has_value());
-          if (xattrs->xattrs(i).has_value_bytes()) {
-            *value = xattrs->xattrs(i).value_bytes();
+          if (xattrs->xattrs(i).has_value_bytes_string
+              ()) {
+            *value = xattrs->xattrs(i).value_bytes_string();
           } else {
             *value = xattrs->xattrs(i).value();
           }
@@ -1255,8 +1256,8 @@ bool VolumeImplementation::GetXAttrSize(
       for (int i = 0; i < xattrs->xattrs_size(); i++) {
         if (xattrs->xattrs(i).name() == name) {
           assert(xattrs->xattrs(i).has_value());
-          if (xattrs->xattrs(i).has_value_bytes()) {
-            *size = xattrs->xattrs(i).value_bytes().size();
+          if (xattrs->xattrs(i).has_value_bytes_string()) {
+            *size = xattrs->xattrs(i).value_bytes_string().size();
           } else {
             *size = xattrs->xattrs(i).value().size();
           }

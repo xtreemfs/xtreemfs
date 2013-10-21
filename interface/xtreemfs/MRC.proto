@@ -100,7 +100,7 @@ message XAttr {
     // If both value and value_bytes are present, value_bytes will always
     // be preferred. For backward compability "value" always has to be set,
     // even if "value_bytes" is available.
-    optional bytes value_bytes = 3;
+    optional bytes value_bytes_string = 3;
 }
 
 // information about a volume; relevant for the 'xtfs_mkvol' call
@@ -135,8 +135,10 @@ message StatVFS {
       
       // size of a block in bytes
       required fixed32 bsize = 1; 
-      // number of free blocks in the file system       
+      // number of available blocks in the file system for non-privileged users      
       required fixed64 bavail = 2;
+      // number of free blocks in the file system
+      optional fixed64 bfree = 13;
       // total number of blocks in file system        
       required fixed64 blocks = 3;
       // volume id
@@ -216,7 +218,7 @@ message getxattrRequest {
 message getxattrResponse {
   required string value = 1;
   // see XAttr message for explanation.
-  optional bytes value_bytes = 2;
+  optional bytes value_bytes_string = 2;
 }
 
 // creates a new hardlink to an existing file 
@@ -381,7 +383,7 @@ message setxattrRequest {
   // the (new) value for the extended attribute to set
   required string value = 4;
   // (new) value in bytes, see XAttr for explanation.
-  optional bytes value_bytes = 6;
+  optional bytes value_bytes_string = 6;
   // flags indicating whether the attribute is supposed to be created or
   // replaced (see XATTR_FLAGS)
   required fixed32 flags = 5;

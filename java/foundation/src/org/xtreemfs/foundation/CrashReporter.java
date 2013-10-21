@@ -73,24 +73,29 @@ public class CrashReporter {
                     report.append("\n");
                 }
             }
-            report.append("\n--- THREAD STATES ---\n");
-            final Map<Thread,StackTraceElement[]> traces =  Thread.getAllStackTraces();
-            for (Thread t : traces.keySet()) {
-                report.append("thread: ");
-                report.append(t.getName());
-                report.append("\n");
-                for (StackTraceElement e : traces.get(t)) {
-                    report.append(e.toString());
-                    report.append("\n");
-                }
-                report.append("\n");
-            }
+            reportThreadStates(report);
 
             report.append("----------------------------------------------------------------\n");
             return report.toString();
         } catch (Exception ex) {
             ex.printStackTrace();
             return "Could not write crash report for: "+service+","+version+","+cause+" due to "+ex;
+        }
+    }
+
+    /** Logs the stack trace of each thread into {@code report}. */
+    public static void reportThreadStates(StringBuilder report) {
+        report.append("\n--- THREAD STATES ---\n");
+        final Map<Thread,StackTraceElement[]> traces =  Thread.getAllStackTraces();
+        for (Thread t : traces.keySet()) {
+            report.append("thread: ");
+            report.append(t.getName());
+            report.append("\n");
+            for (StackTraceElement e : traces.get(t)) {
+                report.append(e.toString());
+                report.append("\n");
+            }
+            report.append("\n");
         }
     }
 

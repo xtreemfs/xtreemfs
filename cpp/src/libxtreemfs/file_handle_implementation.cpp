@@ -415,7 +415,7 @@ void FileHandleImplementation::WriteToOSD(
     XCap xcap;
     xcap_manager_.GetXCap(&xcap);
     if (file_info_->TryToUpdateOSDWriteResponse(write_response, xcap)) {
-      // Free everything except the response.
+      // Do not delete "write_response" because ownership was transferred.
       delete [] response->data();
       delete response->error();
     } else {
@@ -424,7 +424,7 @@ void FileHandleImplementation::WriteToOSD(
   } else {
     response->DeleteBuffers();
   }
-} 
+}
 
 void FileHandleImplementation::Flush() {
   Flush(false);
@@ -521,14 +521,17 @@ void FileHandleImplementation::TruncatePhaseTwoAndThree(
       static_cast<xtreemfs::pbrpc::OSDWriteResponse*>(response->response());
 
   assert(write_response->has_size_in_bytes());
-  // Free the rest of the msg.
-  delete [] response->data();
-  delete response->error();
 
   // Register the osd write response at this file's FileInfo.
   XCap xcap;
   xcap_manager_.GetXCap(&xcap);
-  file_info_->TryToUpdateOSDWriteResponse(write_response, xcap);
+  if (file_info_->TryToUpdateOSDWriteResponse(write_response, xcap)) {
+    // Do not delete "write_response" because ownership was transferred.
+    delete [] response->data();
+    delete response->error();
+  } else {
+    response->DeleteBuffers();
+  }
 
   if (object_cache_ != NULL) {
     object_cache_->Truncate(new_file_size);

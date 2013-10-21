@@ -137,7 +137,9 @@ void initialize_logger(LogLevel level, std::string logfilePath) {
   }
 
   if (!logfilePath.empty()) {
-    ofstream* logfile = new std::ofstream(logfilePath.c_str());
+    ofstream* logfile = new std::ofstream(logfilePath.c_str(),
+                                          std::ios_base::out | 
+                                          std::ios_base::app);
     if (logfile != NULL && logfile->is_open()) {
       cerr << "Logging to file " << logfilePath.c_str() << "." << endl;
       Logging::log = new Logging(level, logfile);

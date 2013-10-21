@@ -134,12 +134,12 @@ class Options {
   uint64_t metadata_cache_ttl_s;
   /** Enable asynchronous writes */
   bool enable_async_writes;
+  /** Maximum number of pending async write requests per file. */
+  int async_writes_max_requests;
   /** Maximum write request size per async write. Should be equal to the lowest
    *  upper bound in the system (e.g. an object size, or the FUSE limit). */
-  int async_writes_max_requests;
-  /** Number of retrieved entries per readdir request. */
   int async_writes_max_request_size_kb;
-  /** Maximum number of pending async write requests per file. */
+  /** Number of retrieved entries per readdir request. */
   int readdir_chunk_size;
   /** True, if atime requests are enabled in Fuse/not ignored by the library. */
   bool enable_atime;
@@ -163,17 +163,19 @@ class Options {
    *  inactivity. */
   int32_t linger_timeout_s;
 
+#ifdef HAS_OPENSSL
   // SSL options.
   std::string ssl_pem_cert_path;
   std::string ssl_pem_key_path;
   std::string ssl_pem_key_pass;
   std::string ssl_pkcs12_path;
   std::string ssl_pkcs12_pass;
-
-  // Grid Support options.
   /** True, if the XtreemFS Grid-SSL Mode (only SSL handshake, no encryption of
    *  data itself) shall be used. */
   bool grid_ssl;
+#endif  // HAS_OPENSSL
+
+  // Grid Support options.
   /** True if the Globus user mapping shall be used. */
   bool grid_auth_mode_globus;
   /** True if the Unicore user mapping shall be used. */
@@ -275,16 +277,18 @@ class Options {
   /** Description of options which improve performance. */
   boost::program_options::options_description optimizations_;
 
-  /** Descrption of timeout options etc. */
+  /** Description of timeout options etc. */
   boost::program_options::options_description error_handling_;
 
+#ifdef HAS_OPENSSL
   /** Description of SSL related options. */
   boost::program_options::options_description ssl_options_;
+#endif  // HAS_OPENSSL
 
   /** Description of options of the Grid support. */
   boost::program_options::options_description grid_options_;
 
-  /** Description of the vivaldi options */
+  /** Description of the Vivaldi options */
   boost::program_options::options_description vivaldi_options_;
 
   // Hidden options.

@@ -10,9 +10,14 @@
 
 #include <stdint.h>
 
+#include <boost/unordered_set.hpp>
 #include <string>
 
 #include <libxtreemfs/execute_sync_request.h>
+
+#ifdef __linux__
+#include <ifaddrs.h>
+#endif  // __linux__
 
 namespace xtreemfs {
 
@@ -117,6 +122,21 @@ std::wstring ConvertUTF8ToWindows(const std::string& utf8);
 
 #endif  // WIN32
 
+/** Returns the set of available networks (for each local network interface).
+ *
+ *  Each entry has the form "<network address>/<prefix length>".
+ *
+ *  Currently, only Linux is supported. For other OS, the list is empty.
+ */
+boost::unordered_set<std::string> GetNetworks();
+
+/** Returns for the "struct ifaddrs" the network prefix (e.g. 127.0.0.1/8).
+ *
+ * @throws XtreemFSException if the conversion fails.
+ */
+#ifdef __linux__
+std::string GetNetworkStringUnix(const struct ifaddrs* ifaddr);
+#endif  // __linux__
 
 }  // namespace xtreemfs
 

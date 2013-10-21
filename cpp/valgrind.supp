@@ -246,3 +246,13 @@
    obj:*
    obj:*
 }
+{
+   getaddrinfo causes invalid free of noai6ai_cached
+   Memcheck:Free
+   fun:free
+   fun:__libc_freeres
+   fun:_vgnU_freeres
+   fun:__run_exit_handlers
+   fun:exit
+   fun:(below main)
+}

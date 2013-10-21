@@ -10,6 +10,7 @@ package org.xtreemfs.common;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +20,7 @@ import java.util.Map.Entry;
 import org.xtreemfs.common.config.ServiceConfig;
 import org.xtreemfs.common.util.NetUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.TimeSync;
@@ -39,6 +41,9 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceDataMap;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
+
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
 
 /**
  * A thread that regularly sends a heartbeat signal with fresh service data to the Directory Service.
@@ -86,15 +91,15 @@ public class HeartbeatThread extends LifeCycleThread {
      * last_updated_s field for the service.
      * Used by tools like xtfs_chstatus.
      */
-    public static final String    DO_NOT_SET_LAST_UPDATED   = STATIC_ATTR_PREFIX + "do_not_set_last_updated";
+    public static final String         DO_NOT_SET_LAST_UPDATED   = STATIC_ATTR_PREFIX + "do_not_set_last_updated";
 
     /**
      * Timestamp when the last heartbeat was sent.
      */
-    private long                  lastHeartbeat;
+    private long                       lastHeartbeat;
 
     /** Guards pauseNumberOfWaitingThreads and paused. */
-    private final Object                     pauseLock;
+    private final Object               pauseLock;
 
     /** While >0, the thread will stop its periodic operations. */
     private int                        pauseNumberOfWaitingThreads;
@@ -102,14 +107,23 @@ public class HeartbeatThread extends LifeCycleThread {
     /** Set to true if the periodic operation is stopped. */
     private boolean                    paused;
 
-    private static Auth           authNone;
+    private static Auth                authNone;
+
+    /** Determines if a renewal should take place in the next run of the main loop. **/
+    private volatile boolean           addressMappingRenewalPending   = false;
+
+    /** Indicates if a renewal has been triggered. **/
+    private volatile boolean           addressMappingRenewalTriggered = false;
+
+    /** Used to sleep until the next heartbeat is scheduled. It can be notified to trigger an instant update **/
+    private Object                     updateIntervalMonitor          = new Object();
 
     static {
         authNone = Auth.newBuilder().setAuthType(AuthType.AUTH_NONE).build();
     }
 
-    public HeartbeatThread(String name, DIRClient client, ServiceUUID uuid,
-            ServiceDataGenerator serviceDataGen, ServiceConfig config, boolean advertiseUDPEndpoints) {
+    public HeartbeatThread(String name, DIRClient client, ServiceUUID uuid, ServiceDataGenerator serviceDataGen,
+            ServiceConfig config, boolean advertiseUDPEndpoints) {
 
         super(name);
 
@@ -134,11 +148,15 @@ public class HeartbeatThread extends LifeCycleThread {
             }
         }
 
+        if (config.isUsingMultihoming() && config.isUsingRenewalSignal()) {
+            enableAddressMappingRenewalSignal();
+        }
+
         this.lastHeartbeat = TimeSync.getGlobalTime();
     }
 
     @Override
-    public synchronized void shutdown() {
+    public void shutdown() {
         try {
             if (client.clientIsAlive()) {
                 client.xtreemfs_service_offline(null, authNone, uc, uuid.toString(), 1);
@@ -174,107 +192,7 @@ public class HeartbeatThread extends LifeCycleThread {
             }
 
             // ... register the address mapping for the service
-
-            // AddressMappingSet endpoints = null;
-            List<AddressMapping.Builder> endpoints = null;
-
-            // check if hostname or listen.address are set
-            if ("".equals(config.getHostName()) && config.getAddress() == null) {
-
-                endpoints = NetUtils.getReachableEndpoints(config.getPort(), proto);
-
-                if (endpoints.size() > 0)
-                    advertisedHostName = endpoints.get(0).getAddress();
-
-                if (advertiseUDPEndpoints) {
-                    endpoints.addAll(NetUtils.getReachableEndpoints(config.getPort(), Schemes.SCHEME_PBRPCU));
-                }
-
-                for (AddressMapping.Builder endpoint : endpoints) {
-                    endpoint.setUuid(uuid.toString());
-                }
-
-            } else {
-                // if it is set, we should use that for UUID mapping!
-                endpoints = new ArrayList(10);
-
-                // remove the leading '/' if necessary
-                String host = "".equals(config.getHostName()) ? config.getAddress().getHostName() : config
-                        .getHostName();
-                if (host.startsWith("/")) {
-                    host = host.substring(1);
-                }
-
-                try {
-                    // see if we can resolve the hostname
-                    InetAddress ia = InetAddress.getByName(host);
-                } catch (Exception ex) {
-                    Logging.logMessage(Logging.LEVEL_WARN, this, "WARNING! Could not resolve my "
-                            + "hostname (%s) locally! Please make sure that the hostname is set correctly "
-                            + "(either on your system or in the service config file). This will lead to "
-                            + "problems if clients and other OSDs cannot resolve this service's address!\n",
-                            host);
-                }
-
-                AddressMapping.Builder tmp = AddressMapping.newBuilder().setUuid(uuid.toString())
-                        .setVersion(0).setProtocol(proto).setAddress(host).setPort(config.getPort())
-                        .setMatchNetwork("*").setTtlS(3600)
-                        .setUri(proto + "://" + host + ":" + config.getPort());
-                endpoints.add(tmp);
-                // add an oncrpc/oncrpcs mapping
-
-                /*
-                 * endpoints.add(new AddressMapping(uuid.toString(), 0, proto, host, config.getPort(), "*",
-                 * 3600, proto + "://" + host + ":" + config.getPort()));
-                 */
-
-                advertisedHostName = host;
-
-                if (advertiseUDPEndpoints) {
-                    /*
-                     * endpoints.add(new AddressMapping(uuid.toString(), 0, XDRUtils.ONCRPCU_SCHEME, host,
-                     * config.getPort(), "*", 3600, XDRUtils.ONCRPCU_SCHEME + "://" + host + ":" +
-                     * config.getPort()));
-                     */
-
-                    tmp = AddressMapping.newBuilder().setUuid(uuid.toString()).setVersion(0)
-                            .setProtocol(Schemes.SCHEME_PBRPCU).setAddress(host).setPort(config.getPort())
-                            .setMatchNetwork("*").setTtlS(3600)
-                            .setUri(Schemes.SCHEME_PBRPCU + "://" + host + ":" + config.getPort());
-                    endpoints.add(tmp);
-                }
-
-            }
-
-            if (Logging.isInfo()) {
-                Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
-                        "registering the following address mapping for the service:");
-                for (AddressMapping.Builder mapping : endpoints) {
-                    Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "%s --> %s",
-                            mapping.getUuid(), mapping.getUri());
-                }
-            }
-
-            // fetch the latest address mapping version from the Directory
-            // Serivce
-            long version = 0;
-            AddressMappingSet ams = client.xtreemfs_address_mappings_get(null, authNone, uc, uuid.toString());
-
-            // retrieve the version number from the address mapping
-            if (ams.getMappingsCount() > 0) {
-                version = ams.getMappings(0).getVersion();
-            }
-
-            if (endpoints.size() > 0) {
-                endpoints.get(0).setVersion(version);
-            }
-
-            AddressMappingSet.Builder amsb = AddressMappingSet.newBuilder();
-            for (AddressMapping.Builder mapping : endpoints) {
-                amsb.addMappings(mapping);
-            }
-            // register/update the current address mapping
-            client.xtreemfs_address_mappings_set(null, authNone, uc, amsb.build());
+            registerAddressMappings();
 
         } catch (InterruptedException ex) {
         } catch (Exception ex) {
@@ -282,6 +200,7 @@ public class HeartbeatThread extends LifeCycleThread {
                     "an error occurred while initially contacting the Directory Service: " + ex);
             throw new IOException("cannot initialize service at XtreemFS DIR: " + ex, ex);
         }
+
         try {
             this.setServiceConfiguration();
         } catch (Exception e) {
@@ -301,12 +220,7 @@ public class HeartbeatThread extends LifeCycleThread {
             while (!quit) {
                 synchronized (pauseLock) {
                     while (pauseNumberOfWaitingThreads > 0) {
-                        try {
-                            pauseLock.wait();
-                        } catch (InterruptedException ex) {
-                            quit = true;
-                            break;
-                        }
+                        pauseLock.wait();
                     }
 
                     paused = false;
@@ -330,9 +244,23 @@ public class HeartbeatThread extends LifeCycleThread {
                             ex.toString());
                     if (Logging.isDebug())
                         Logging.logError(Logging.LEVEL_DEBUG, this, ex);
-                } catch (InterruptedException ex) {
-                    quit = true;
-                    break;
+                }
+                
+                if (addressMappingRenewalPending) {
+                    try {
+                        // Reset the flag indicating a renewal has been triggered.
+                        addressMappingRenewalTriggered = false;
+                        // Try to renew the address mappings.
+                        registerAddressMappings();
+                        // If the renewal has been successful, the renewal flag will be reset.
+                        // If an error occurred, the renewal will be retried on the next regular heartbeat.
+                        addressMappingRenewalPending = false;
+                        // Renew the networks list available to the UUIDResolver.
+                        UUIDResolver.renewNetworks();
+                    } catch (IOException ex) {
+                        Logging.logMessage(Logging.LEVEL_ERROR, this,
+                                "requested renewal of address mappings failed: %s", ex.toString());
+                    }
                 }
 
                 if (quit) {
@@ -344,13 +272,18 @@ public class HeartbeatThread extends LifeCycleThread {
                     pauseLock.notifyAll();
                 }
 
-                try {
-                    Thread.sleep(UPDATE_INTERVAL);
-                } catch (InterruptedException e) {
-                    // ignore
+                // If no renewal request has been triggered during the loop, this HeartbeatThread can wait for
+                // the next regular UPDATE_INTERVAL.
+                if (!addressMappingRenewalTriggered) {
+                    synchronized (updateIntervalMonitor) {
+                        updateIntervalMonitor.wait(UPDATE_INTERVAL);
+                    }
                 }
             }
 
+            notifyStopped();
+
+        } catch (InterruptedException e) {
             notifyStopped();
         } catch (Throwable ex) {
             notifyCrashed(ex);
@@ -480,6 +413,117 @@ public class HeartbeatThread extends LifeCycleThread {
         }
     }
 
+    private void registerAddressMappings() throws InterruptedException, IOException {
+
+        List<AddressMapping.Builder> reachableEndpoints = NetUtils.getReachableEndpoints(config.getPort(), proto);
+        
+        AddressMapping.Builder advertisedEndpoint = null;
+
+        // Use the configured hostname or listen.address if they are set for the advertised endpoint.
+        if (!config.getHostName().isEmpty() || config.getAddress() != null) {
+            // remove the leading '/' if necessary
+            String host = config.getHostName().isEmpty() ? config.getAddress().getHostName() : config.getHostName();
+            if (host.startsWith("/")) {
+                host = host.substring(1);
+            }
+
+            try {
+                // see if we can resolve the hostname
+                InetAddress ia = InetAddress.getByName(host);
+            } catch (Exception ex) {
+                Logging.logMessage(Logging.LEVEL_WARN, this, "WARNING! Could not resolve my "
+                        + "hostname (%s) locally! Please make sure that the hostname is set correctly "
+                        + "(either on your system or in the service config file). This will lead to "
+                        + "problems if clients and other OSDs cannot resolve this service's address!\n", host);
+            }
+
+            advertisedEndpoint = AddressMapping.newBuilder().setUuid(uuid.toString()).setVersion(0).setProtocol(proto)
+                    .setAddress(host).setPort(config.getPort()).setTtlS(3600)
+                    .setUri(proto + "://" + host + ":" + config.getPort());
+        }
+
+        // Try to resolve the localHostName and find it in the endpoints to use it as the advertised endpoint if possible.
+        if (advertisedEndpoint == null) {
+            try {
+                InetAddress host = InetAddress.getLocalHost();
+                String hostAddress = NetUtils.getHostAddress(host);
+
+                // Try to find the
+                for (AddressMapping.Builder mapping : reachableEndpoints) {
+                    if (mapping.getAddress().equals(hostAddress)) {
+                        advertisedEndpoint = mapping;
+                        break;
+                    }
+                }
+            } catch (UnknownHostException e) {
+                Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Could not resolve the local hostname.");
+            }
+        }
+        
+        // Use the first mapping from the reachable endpoints. This will be a global address if one exists.
+        if (advertisedEndpoint == null && reachableEndpoints.size() > 0) {
+            advertisedEndpoint = reachableEndpoints.get(0);
+        }
+
+        // in case no IP address could be found at all, use 127.0.0.1 for local testing.
+        if (advertisedEndpoint == null) {
+            Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
+                    "Could not find a valid IP address, will use 127.0.0.1 instead.");
+            advertisedEndpoint = AddressMapping.newBuilder().setAddress("127.0.0.1").setPort(config.getPort())
+                    .setProtocol(proto).setTtlS(3600)
+                    .setUri(NetUtils.getURI(proto, InetAddress.getByName("127.0.0.1"), config.getPort()));
+        }
+       
+        // Fetch the latest address mapping version from the Directory Service.
+        long version = 0;
+        AddressMappingSet ams = client.xtreemfs_address_mappings_get(null, authNone, uc, uuid.toString());
+
+        // Retrieve the version number from the address mapping.
+        if (ams.getMappingsCount() > 0) {
+            version = ams.getMappings(0).getVersion();
+        }
+        
+        // Set the advertised endpoints version, matching network and uuid.
+        advertisedEndpoint.setVersion(version).setMatchNetwork("*").setUuid(uuid.toString());
+        advertisedHostName = advertisedEndpoint.getAddress();
+
+        List<AddressMapping.Builder> endpoints = new ArrayList<AddressMapping.Builder>();
+        endpoints.add(advertisedEndpoint);
+        if (advertiseUDPEndpoints) {
+            endpoints.add(NetUtils.cloneMappingForProtocol(advertisedEndpoint, Schemes.SCHEME_PBRPCU));
+        }
+        
+        if (config.isUsingMultihoming()) {
+            for (AddressMapping.Builder mapping : reachableEndpoints) {
+                // Add all the remaining endpoints not advertised yet.
+                if (!advertisedEndpoint.getAddress().equals(mapping.getAddress())) {
+                    mapping.setUuid(uuid.toString());
+                    endpoints.add(mapping);
+                    if (advertiseUDPEndpoints) {
+                        endpoints.add(NetUtils.cloneMappingForProtocol(mapping, Schemes.SCHEME_PBRPCU));
+                    }
+                }
+            }
+        }
+
+        AddressMappingSet.Builder amsb = AddressMappingSet.newBuilder();
+        for (AddressMapping.Builder mapping : endpoints) {
+            amsb.addMappings(mapping);
+        }
+
+        if (Logging.isInfo()) {
+            Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
+                    "Registering the following address mappings for the service:");
+            for (AddressMapping mapping : amsb.getMappingsList()) {
+                Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "%s --> %s (%s)", mapping.getUuid(),
+                        mapping.getUri(), mapping.getMatchNetwork());
+            }
+        }
+
+        // Register or update the current address mapping.
+        client.xtreemfs_address_mappings_set(null, authNone, uc, amsb.build());
+    }
+
     /**
      * Getter for the timestamp when the last heartbeat was sent.
      * 
@@ -528,6 +572,52 @@ public class HeartbeatThread extends LifeCycleThread {
             pauseNumberOfWaitingThreads--;
 
             pauseLock.notifyAll();
+        }
+    }
+
+    /**
+     * Renew the address mappings immediately (HeartbeatThread will wake up when this is called).
+     */
+    public void triggerAddressMappingRenewal() {
+        addressMappingRenewalPending = true;
+        addressMappingRenewalTriggered = true;
+
+        // To make the changes immediate, the thread has to be notified if it is sleeping.
+        synchronized (updateIntervalMonitor) {
+            updateIntervalMonitor.notifyAll();
+        }
+    }
+
+    /**
+     * Enable a signal handler for USR2 which will trigger the address mapping renewal.
+     * 
+     * Since it is possible that certain VMs are using the USR2 signal internally, the server should be started with the
+     * -XX:+UseAltSigs flag when signal usage is desired.
+     * 
+     * @throws RuntimeException
+     */
+    private void enableAddressMappingRenewalSignal() {
+
+        final HeartbeatThread hbt = this;
+
+        // TODO(jdillmann): Test on different VMs and operating systems.
+        try {
+            Signal.handle(new Signal("USR2"), new SignalHandler() {
+
+                @Override
+                public void handle(Signal signal) {
+                    // If the HeartbeatThread is still alive, renew the addresses and send them to the DIR.
+                    if (hbt != null) {
+                        hbt.triggerAddressMappingRenewal();
+                    }
+                }
+            });
+
+        } catch (IllegalArgumentException e) {
+            Logging.logMessage(Logging.LEVEL_CRIT, this, "Could not register SignalHandler for USR2.");
+            Logging.logError(Logging.LEVEL_CRIT, null, e);
+
+            throw new RuntimeException("Could not register SignalHandler for USR2.", e);
         }
     }
 }

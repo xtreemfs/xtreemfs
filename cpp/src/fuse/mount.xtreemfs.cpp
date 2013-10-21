@@ -184,7 +184,8 @@ int main(int argc, char **argv) {
        it != required_fuse_options.end(); ++it) {
     fuse_opts.push_back((*it));
   }
-  struct fuse_args fuse_args = FUSE_ARGS_INIT(fuse_opts.size(), &fuse_opts[0]);
+  struct fuse_args fuse_args = FUSE_ARGS_INIT(
+      static_cast<int>(fuse_opts.size()), &fuse_opts[0]);
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
     Logging::log->getLog(LEVEL_DEBUG) << "About to call fuse_mount using "
         << fuse_opts.size() << " parameters: " << endl;

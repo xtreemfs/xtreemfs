@@ -11,7 +11,7 @@ Summary:        XtreemFS base package
 Source0:        XtreemFS-%{version}.tar.gz
 
 #requires for any distribution
-%if 0%{?sles_version} == 10
+%if 0%{?sles_version} == 10 || 0%{?fedora_version} >= 20
 # no need for ant-nodeps for SLE 10
 %else
 BuildRequires:  ant-nodeps >= 1.6.5
@@ -142,17 +142,6 @@ rm $RPM_BUILD_ROOT/etc/xos/xtreemfs/postinstall_setup.sh
 
 
 %post server
-XTREEMFS_CONFIG_DIR=/etc/xos/xtreemfs/
-
-# generate UUIDs
-if [ -x $XTREEMFS_CONFIG_DIR/generate_uuid ]; then
-  $XTREEMFS_CONFIG_DIR/generate_uuid $XTREEMFS_CONFIG_DIR/dirconfig.properties
-  $XTREEMFS_CONFIG_DIR/generate_uuid $XTREEMFS_CONFIG_DIR/mrcconfig.properties
-  $XTREEMFS_CONFIG_DIR/generate_uuid $XTREEMFS_CONFIG_DIR/osdconfig.properties
-else
-  echo "UUID can't be generated automatically. Please enter a correct UUID in each config file of a xtreemfs service."
-fi
-
 #$XTREEMFS_CONFIG_DIR/postinstall_setup.sh
 _POSTINSTALL_
 
@@ -220,7 +209,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 /usr/share/java/XtreemFS.jar
 /usr/share/java/Foundation.jar
-/usr/share/java/protobuf-java-2.3.0.jar
+/usr/share/java/protobuf-java-2.5.0.jar
 /usr/share/java/Flease.jar
 /usr/share/java/BabuDB.jar
 /usr/share/java/BabuDB_replication_plugin.jar

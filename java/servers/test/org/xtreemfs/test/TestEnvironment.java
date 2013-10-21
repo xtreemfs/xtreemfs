@@ -9,6 +9,7 @@ package org.xtreemfs.test;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,6 +22,7 @@ import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.foundation.CrashReporter;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.Schemes;
@@ -45,6 +47,40 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
  * @author bjko
  */
 public class TestEnvironment {
+    
+	/**
+	 * Wrapper for OSDRequestDispatcher which stores if an OSD is started.
+	 * 
+	 * @author lkairies
+	 *
+	 */
+    private class TestOSD {
+    	private OSDRequestDispatcher osd;
+    	private boolean started;
+    	
+    	public TestOSD(OSDRequestDispatcher osd) {
+            this.osd = osd;
+            this.started = false;
+    	}
+    	
+    	public void start() {
+            osd.start();
+            started = true;
+    	}
+    	
+    	public void shutdown() {
+            osd.shutdown();
+            started = false;
+    	}
+    	
+    	public String getPrimary(String fileId) {
+            return osd.getPrimary(fileId);
+    	}
+    	
+    	public OSDConfig getConfig() {
+            return osd.getConfig();
+    	}
+    }
     
     public InetSocketAddress getMRCAddress() throws UnknownUUIDException {
         return mrc.getConfig().getUUID().getAddress();
@@ -83,19 +119,97 @@ public class TestEnvironment {
      * returns always the address of the first OSD
      */
     public InetSocketAddress getOSDAddress() throws UnknownUUIDException {
-        return osds[0].getConfig().getUUID().getAddress();
-    }
-    
-    public InetSocketAddress getOSDAddress(int osdNumber) throws UnknownUUIDException {
-        return osds[osdNumber].getConfig().getUUID().getAddress();
+        return firstOSDAddress;
     }
     
     /**
-     * @return the osdClient
+     * Returns the OSD config of the OSD with the UUID "osdUuid" or null if no OSD with the UUID "osdUuid"
+     * exists.
+     * 
+     * @param osdUuid
      */
-    // public OSDClient getOsdClient() {
-    // return osdClient;
-    // }
+    public OSDConfig getOSDConfig(String osdUuid) {
+        return osds.get(osdUuid).getConfig();
+    }
+
+    /**
+     * Stops the OSD with the UUID "osdUuid".
+     * 
+     * @param osdUuid
+     */
+    public void stopOSD(String osdUuid) throws Exception{
+        TestOSD osd = osds.get(osdUuid);
+        
+        if (osd == null) {
+            throw new Exception("No OSD with UUID " + osdUuid + " available.");
+        }
+
+        if (osd.started) {
+            osd.shutdown();
+        } else {
+            throw new Exception("OSD " + osdUuid + " was already stoped!");
+        }
+    }
+
+    /**
+     * Starts a previously shut downed OSD with the UUID "osdUuid".
+     * 
+     * @param osdUuid
+     * @throws Exception 
+     */
+    public void startOSD(String osdUuid) throws Exception {	
+        TestOSD osd = osds.get(osdUuid);
+
+        if (osd == null) {
+            throw new Exception("No OSD with UUID " + osdUuid + " available.");
+        }
+
+        if (!osd.started) {
+            OSDConfig config = getOSDConfig(osdUuid);   
+            
+            //Create new OSDRequestDispatcher with same config.
+            osd = new TestOSD (new OSDRequestDispatcher(config));
+            osd.start();
+            
+            // Replace old OSDRequestDispatcher.
+            osds.put(osdUuid, osd);
+        } else {
+            throw new Exception("OSD " + osdUuid + " is already running!");
+        }
+    }
+
+    /**
+     * starts "number" additional OSDs.
+     * 
+     * @param number
+     * @throws Exception
+     */
+    public void startAdditionalOSDs(int number) throws Exception {
+        OSDConfig[] osdConfigs = SetupUtils.createMultipleOSDConfigs(number, osds.size());
+        for (OSDConfig config : osdConfigs) {
+        	TestOSD osd = new TestOSD (new OSDRequestDispatcher(config));
+        	osd.start();
+        	osds.put(config.getUUID().toString(), osd);
+        }
+    }
+
+    /**
+     * Returns the primary OSD UUID for the file with ID "fileId" or null if the file does not exists.
+     * 
+     * @param fileId
+     * @return
+     */
+    public String getPrimary(String fileId) {
+        String primary = null;
+        for (TestOSD osd : osds.values()) {
+            primary = osd.getPrimary(fileId);
+            if (primary != null) {
+                break;
+            }
+        }
+        return primary;
+    }
+
     public enum Services {
         TIME_SYNC, // time sync facility
         UUID_RESOLVER, // UUID resolver
@@ -116,7 +230,7 @@ public class TestEnvironment {
     
     private org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient pbrpcClient;
     
-    private DIRServiceClient                                  dirClient;
+    private DIRServiceClient                                        dirClient;
     
     private MRCServiceClient                                        mrcClient;
     
@@ -126,12 +240,16 @@ public class TestEnvironment {
     
     private MRCRequestDispatcher                                    mrc;
     
-    private OSDRequestDispatcher[]                                  osds;
-    
+    private HashMap<String, TestOSD>                                osds;
+
     private final List<Services>                                    enabledServs;
     
     private TimeSync                                                tsInstance;
     
+    private OSDConfig[]                                             osdConfigs;
+    
+    private InetSocketAddress                                       firstOSDAddress;
+
     public TestEnvironment(Services... servs) {
         enabledServs = new ArrayList(servs.length);
         for (Services serv : servs)
@@ -228,14 +346,17 @@ public class TestEnvironment {
             
             if (enabledServs.contains(Services.OSD)) {
                 int osdCount = Collections.frequency(enabledServs, Services.OSD);
-                osds = new OSDRequestDispatcher[osdCount];
-                OSDConfig[] configs = SetupUtils.createMultipleOSDConfigs(osdCount);
-                for (int i = 0; i < configs.length; i++) {
-                    osds[i] = new OSDRequestDispatcher(configs[i]);
+                osds = new HashMap<String, TestOSD>(osdCount);               
+                osdConfigs = SetupUtils.createMultipleOSDConfigs(osdCount);                           
+                for (OSDConfig config : osdConfigs) {
+                	TestOSD osd = new TestOSD(new OSDRequestDispatcher(config));
+                    osd.start();
+                    osds.put(config.getUUID().toString(), osd);
                 }
-                for (int i = 0; i < configs.length; i++) {
-                    osds[i].start();
-                }
+                
+                // Save address of first OSD for getOSDAdress method.
+                firstOSDAddress = osdConfigs[0].getUUID().getAddress();
+
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "OSDs 1-" + osdCount + " running");
             }
             
@@ -254,6 +375,22 @@ public class TestEnvironment {
             }
         } catch (Exception ex) {
             ex.printStackTrace();
+            // Shutdown servers which were already started or they will block ports.
+            shutdown();
+
+            // After shutdown, log remaining threads in case of blocked ports to debug the issue.
+            if (ex instanceof BindException && ex.getMessage().contains("Address already in use")) {
+                Logging.logMessage(
+                        Logging.LEVEL_ERROR,
+                        this,
+                        "TestEnvironment could not be started because: "
+                                + ex.getMessage()
+                                + " Please examine the following dump of threads to check if a previous test method did not correctly stop all servers.");
+                StringBuilder threadStates = new StringBuilder();
+                CrashReporter.reportThreadStates(threadStates);
+                Logging.logMessage(Logging.LEVEL_ERROR, this, "Thread States: %s", threadStates.toString());
+            }
+            
             throw ex;
         }
     }
@@ -269,10 +406,12 @@ public class TestEnvironment {
             }
         }
         
-        if (enabledServs.contains(Services.OSD) && osds != null) {
+        if (enabledServs.contains(Services.OSD)) {
             try {
-                for (OSDRequestDispatcher osd : osds) {
-                    osd.shutdown();
+                for (TestOSD osd : osds.values()) {
+                    if (osd != null && osd.started) {
+                        osd.shutdown();
+                    }
                 }
             } catch (Throwable th) {
                 th.printStackTrace();
@@ -285,7 +424,7 @@ public class TestEnvironment {
             } catch (Throwable th) {
             }
         }
-        
+
         if (enabledServs.contains(Services.DIR_SERVICE) && dirService != null) {
             try {
                 dirService.shutdown();
@@ -317,5 +456,4 @@ public class TestEnvironment {
         File testDir = new File(SetupUtils.TEST_DIR);
         // FSUtils.delTree(testDir);
     }
-    
 }

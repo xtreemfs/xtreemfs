@@ -1,3 +1,24 @@
+12-MAR-2014: release 1.5 (Wonderful Waffles)
+
+  Changes:
+    * Improved Hadoop Adapter e.g., added support for multiple volumes and read and write buffer to speed up performance.
+    * Support for SSDs: Support for multiple OSD storage threads to increase parallelism.
+    * Status webpage as part of the DIR webinterface for replicated files to show current primary and backup replicas.
+    * Multi-homing support. XtreemFS can now be made available for multiple networks and clients will pick the correct address automatically.
+    * Support for multiple OSDs per machine (e.g. one for each disk) through the xtreemfs-osd-farm init.d script.
+    * Fixed major issues in Read-Only and Read/Write file replication.
+    * Reduced metadata cache default timeout from 120 to 10 seconds. Disable it completely with --metadata-cache-size=0.
+    * Upgraded to Google Protobuffers 2.5 which improves performance.
+    * Windows Client: Fixed several issues (e.g., 286, 299) and updated the CbFS driver to the latest version.
+    * XtreemFS also compiles under buildroot now.
+    * Fixed several issues around SSL (e.g., 263, 281).
+    * Fixed many small issues e.g., reported volume capacity was inaccurate (issue 296).
+      Other fixed issues: 267, 268, 272, 274, 276, 277, 278, 283, 287, 288, 292, 293, 294.
+    * Improved general stability (e.g., see issues 297, 301).
+    * xtfs_scrub now repairs replicas with an invalid checksum automatically.
+    * Disabled deferred deletion of file data on the OSDs.
+    * Improved test coverage of nightly tests and added missing unit tests and a Valgrind leak check for C++ unit tests.    
+
 12-NOV-2012: release 1.4 (Salty Sticks)
 
   Changes:

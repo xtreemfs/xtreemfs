@@ -152,14 +152,16 @@ public class RPCCaller {
                         }
                         // Mark the current UUID as failed and get the next one.
                         it.markUUIDAsFailed(it.getUUID());
+                        waitDelay(options.getRetryDelay_s());
+                        continue;	
                     } else {
                         throw pbe;
                     }
                 } catch (IOException ioe) {
                     // Retry (and delay) only if at least one retry is left
-                    if (((attempt < maxTries || maxTries == 0) ||
-                    // or this last retry should be delayed
-                    (attempt == maxTries && delayNextTry))) {
+                    if ((attempt < maxTries || maxTries == 0)
+                            // or this last retry should be delayed
+                            || (attempt == maxTries && delayNextTry)) {
                         // Log only the first retry.
                         if (attempt == 1 && maxTries != 1) {
                             String retriesLeft =
@@ -174,6 +176,7 @@ public class RPCCaller {
                         }
                         // Mark the current UUID as failed and get the next one.
                         it.markUUIDAsFailed(it.getUUID());
+                        waitDelay(options.getRetryDelay_s());
                         continue;
                     } else {
                         throw ioe;
@@ -200,6 +203,24 @@ public class RPCCaller {
             handleErrorAfterMaxTriesExceeded(e, it);
         }
         return null;
+    }
+
+    /**
+     * Blocks the thread for delay_s seconds and throws an exception if interrupted.
+     * 
+     * @param delay_s
+     * @throws IOException
+     */
+    private static void waitDelay(long delay_s) throws IOException {
+        try {
+            Thread.sleep(delay_s * 1000);
+        } catch (InterruptedException e) {
+            String msg = "Caught interrupt while waiting for the next attempt, aborting sync request";
+            if (Logging.isInfo()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, e, msg);
+            }
+            throw new IOException(msg);
+        }
     }
 
     /**

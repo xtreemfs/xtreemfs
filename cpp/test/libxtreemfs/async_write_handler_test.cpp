@@ -76,7 +76,7 @@ class AsyncWriteHandlerTest : public ::testing::Test {
 TEST_F(AsyncWriteHandlerTest, NormalWrite) {
   size_t blocks = 5;
   size_t buffer_size = kBlockSize * blocks;
-  boost::scoped_array<char> write_buf(new char[buffer_size]);
+  boost::scoped_array<char> write_buf(new char[buffer_size]());
 
   vector<WriteEntry> expected(blocks);
   for (size_t i = 0; i < blocks; ++i) {
@@ -98,7 +98,7 @@ TEST_F(AsyncWriteHandlerTest, NormalWrite) {
 TEST_F(AsyncWriteHandlerTest, FirstWriteFail) {
   size_t blocks = 5;
   size_t buffer_size = kBlockSize * blocks;
-  boost::scoped_array<char> write_buf(new char[buffer_size]);
+  boost::scoped_array<char> write_buf(new char[buffer_size]());
 
   vector<WriteEntry> expected_tail(blocks);
   for (size_t i = 0; i < blocks; ++i) {
@@ -122,7 +122,7 @@ TEST_F(AsyncWriteHandlerTest, FirstWriteFail) {
 TEST_F(AsyncWriteHandlerTest, LastWriteFail) {
   size_t blocks = 5;
   size_t buffer_size = kBlockSize * blocks;
-  boost::scoped_array<char> write_buf(new char[buffer_size]);
+  boost::scoped_array<char> write_buf(new char[buffer_size]());
 
   vector<WriteEntry> expected_front(blocks - 1);
   vector<WriteEntry> expected_tail(1);
@@ -157,7 +157,7 @@ TEST_F(AsyncWriteHandlerTest, IntermediateWriteFail) {
   size_t blocks = 5;
   size_t buffer_size = kBlockSize * blocks;
   size_t middle = blocks / 2;
-  boost::scoped_array<char> write_buf(new char[buffer_size]);
+  boost::scoped_array<char> write_buf(new char[buffer_size]());
 
   vector<WriteEntry> expected_front(middle);
   vector<WriteEntry> expected_tail(blocks - middle);
@@ -193,7 +193,7 @@ TEST_F(AsyncWriteHandlerTest, IntermediateWriteFail) {
 TEST_F(AsyncWriteHandlerTest, AllWritesFail) {
   size_t blocks = 5;
   size_t buffer_size = kBlockSize * blocks;
-  boost::scoped_array<char> write_buf(new char[buffer_size]);
+  boost::scoped_array<char> write_buf(new char[buffer_size]());
 
   vector<WriteEntry> expected_tail(blocks);
   for (size_t i = 0; i < blocks; ++i) {
@@ -222,7 +222,7 @@ TEST_F(AsyncWriteHandlerTest, AllWritesFail) {
 TEST_F(AsyncWriteHandlerTest, FirstWriteFailLong) {
   size_t blocks = 2 * test_env.options.async_writes_max_requests;
   size_t buffer_size = kBlockSize * blocks;
-  boost::scoped_array<char> write_buf(new char[buffer_size]);
+  boost::scoped_array<char> write_buf(new char[buffer_size]());
 
   vector<WriteEntry> expected_tail(blocks);
   for (size_t i = 0; i < blocks; ++i) {

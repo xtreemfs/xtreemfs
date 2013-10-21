@@ -196,8 +196,7 @@ public class HashStorageLayout extends StorageLayout {
             length = stripeSize;
             if (checksumsEnabled) {
                 // Check checksum only if -1 was supplied as length. Fortunately, only xtfs_scrub uses this
-                // parameter effictively
-                // skipping the expensive checksum check for regular operations for now.
+                // parameter effectively skipping the expensive checksum check for regular operations.
                 checkChecksum = true;
             }
         }

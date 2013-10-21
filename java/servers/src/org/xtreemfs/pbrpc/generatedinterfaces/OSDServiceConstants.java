@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Thu Mar 21 17:09:46 CET 2013
+//automatically generated from OSD.proto at Mon Nov 11 11:46:59 CET 2013
 //(c) 2013. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -20,6 +20,7 @@ public class OSDServiceConstants {
     public static final int PROC_ID_XTREEMFS_CLEANUP_STATUS = 33;
     public static final int PROC_ID_XTREEMFS_CLEANUP_STOP = 34;
     public static final int PROC_ID_XTREEMFS_CLEANUP_VERSIONS_START = 35;
+    public static final int PROC_ID_XTREEMFS_REPAIR_OBJECT = 36;
     public static final int PROC_ID_XTREEMFS_RWR_FETCH = 73;
     public static final int PROC_ID_XTREEMFS_RWR_FLEASE_MSG = 71;
     public static final int PROC_ID_XTREEMFS_RWR_NOTIFY = 75;
@@ -55,6 +56,7 @@ public class OSDServiceConstants {
            case 33: return null;
            case 34: return null;
            case 35: return null;
+           case 36: return OSD.xtreemfs_repair_objectRequest.getDefaultInstance();
            case 73: return OSD.xtreemfs_rwr_fetchRequest.getDefaultInstance();
            case 71: return OSD.xtreemfs_rwr_flease_msgRequest.getDefaultInstance();
            case 75: return GlobalTypes.FileCredentials.getDefaultInstance();
@@ -94,6 +96,7 @@ public class OSDServiceConstants {
            case 33: return OSD.xtreemfs_cleanup_statusResponse.getDefaultInstance();
            case 34: return null;
            case 35: return null;
+           case 36: return null;
            case 73: return OSD.ObjectData.getDefaultInstance();
            case 71: return null;
            case 75: return null;

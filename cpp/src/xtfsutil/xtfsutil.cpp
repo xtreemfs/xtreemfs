@@ -120,9 +120,9 @@ string formatBytes(uint64_t bytes) {
   } else if (bytes < (1LL << 40)) {
     return boost::lexical_cast<string>(bytes/(1 << 30)) + " GB";
   } else if (bytes < (1LL << 50)) {
-    return boost::lexical_cast<string>(bytes/(1LL << 40)) + " TB";
+    return boost::lexical_cast<string>((float)bytes/(1LL << 40)) + " TB";
   } else {
-    return boost::lexical_cast<string>(bytes/(1LL << 50)) + " EB";
+    return boost::lexical_cast<string>((float)bytes/(1LL << 50)) + " PB";
   }
 }
 
@@ -240,7 +240,7 @@ bool getattr(const string& xctl_file,
         if (path == "/") {
           cout << "volume" << endl;
 
-          cout << "Free/Used Space      "
+          cout << "Available/Used Space "
             << formatBytes(boost::lexical_cast<uint64_t>(
                 stat["free_space"].asString()))
             << " / " << formatBytes(boost::lexical_cast<uint64_t>(

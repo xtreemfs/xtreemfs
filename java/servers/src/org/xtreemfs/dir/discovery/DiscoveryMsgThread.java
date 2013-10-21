@@ -36,6 +36,7 @@ public class DiscoveryMsgThread extends LifeCycleThread {
         quit = false;
     }
 
+    @Override
     public void run() {
 
         notifyStarted();
@@ -55,11 +56,11 @@ public class DiscoveryMsgThread extends LifeCycleThread {
                 data.position(0);
                 data.limit(data.capacity());
 
-                InetSocketAddress sender = (InetSocketAddress) channel.receive(data.getBuffer());
-                data.flip();
-
                 ReusableBuffer dataOut = null;
                 try {
+                    InetSocketAddress sender = (InetSocketAddress) channel.receive(data.getBuffer());
+                    data.flip();
+
                     PBRPCDatagramPacket packetIn = new PBRPCDatagramPacket(data, emptyRequest.getDefaultInstance());
                     
                     RPCHeader resp = RPCHeader.newBuilder().setMessageType(MessageType.RPC_RESPONSE_SUCCESS).setCallId(packetIn.getHeader().getCallId()).build();
@@ -95,6 +96,7 @@ public class DiscoveryMsgThread extends LifeCycleThread {
 
     }
 
+    @Override
     public void shutdown() {
         this.quit = true;
         this.interrupt();

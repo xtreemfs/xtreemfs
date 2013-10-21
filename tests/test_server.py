@@ -13,7 +13,8 @@ class Server:
                  xtreemfs_dir,
                  data_dir,
                  rpc_port,
-                 uuid):
+                 uuid,
+                 storage_threads):
         self._start_stop_retries = start_stop_retries
         self._config_file_path = config_file_path
         self._run_dir_path = run_dir_path
@@ -26,6 +27,7 @@ class Server:
         self._config['debug.level'] = 6
         self._config['uuid'] = uuid
         self._config['ssl.enabled'] = 'false'
+        self._config['storage_threads'] = storage_threads
 
     def configure(self):
         pass
@@ -155,7 +157,7 @@ class Server:
                 classpath = (
                              XtreemFS_jar_file_path,
                              os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "BabuDB.jar")),
-                             os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "protobuf-java-2.3.0.jar")),
+                             os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "protobuf-java-2.5.0.jar")),
                              os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "flease", "dist", "Flease.jar")),
                              os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "foundation", "dist", "Foundation.jar")),
                              os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "jdmkrt.jar")),
@@ -165,7 +167,7 @@ class Server:
                 classpath = (
                              os.path.join("/usr/share/java", "XtreemFS.jar"),
                              os.path.join("/usr/share/java", "BabuDB.jar"),
-                             os.path.join("/usr/share/java", "protobuf-java-2.3.0.jar"),
+                             os.path.join("/usr/share/java", "protobuf-java-2.5.0.jar"),
                              os.path.join("/usr/share/java", "Flease.jar"),
                              os.path.join("/usr/share/java", "Foundation.jar"),
                              os.path.join("/usr/share/java", "jdmkrt.jar"),

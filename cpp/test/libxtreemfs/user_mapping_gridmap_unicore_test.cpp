@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2012 by Michael Berlin, Zuse Institute Berlin
+ * Copyright (c) 2011-2014 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -27,9 +27,12 @@ using namespace xtreemfs;
 using namespace xtreemfs::util;
 using namespace xtreemfs::pbrpc;
 
-// Test for Unicore Version 6.
-class UserMappingGridmapUnicore6Test : public ::testing::Test {
+class UserMappingGridmapUnicoreTestGeneral : public ::testing::Test {
  protected:
+  static const int kWaittimeForReload = 2;
+
+  virtual string GetGridmapFileContent() = 0;
+
   virtual void SetUp() {
     initialize_logger(LEVEL_WARN);
 
@@ -43,8 +46,9 @@ class UserMappingGridmapUnicore6Test : public ::testing::Test {
 
     // Create a temporary gridmap file in the working directory.
     ofstream out(gridmap_file_path_.c_str());
-    out << "225;zib;root:dgms0006:dgls0050;user;mosgrid:lifescience;CN=Patrick Schaefer,OU=CSR,OU=Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB),O=GridGermany,C=DE\n";  // NOLINT
+    out << GetGridmapFileContent();
     out.close();
+    ASSERT_FALSE(out.fail());
 
     user_mapping_.reset(new UserMappingGridmapUnicore(
         gridmap_file_path_,
@@ -59,10 +63,20 @@ class UserMappingGridmapUnicore6Test : public ::testing::Test {
     remove(gridmap_file_path_.c_str());
 
     shutdown_logger();
+    atexit(google::protobuf::ShutdownProtobufLibrary);
   }
+
   std::string gridmap_file_path_;
 
   boost::scoped_ptr<UserMapping> user_mapping_;
+};
+
+class UserMappingGridmapUnicore6Test
+    : public UserMappingGridmapUnicoreTestGeneral {
+ private:
+  virtual string GetGridmapFileContent() {
+    return "225;zib;root:dgms0006:dgls0050;user;mosgrid:lifescience;CN=Patrick Schaefer,OU=CSR,OU=Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB),O=GridGermany,C=DE\n";  // NOLINT
+  }
 };
 
 TEST_F(UserMappingGridmapUnicore6Test, TestBasicDNAndOUResolving) {
@@ -112,12 +126,12 @@ TEST_F(UserMappingGridmapUnicore6Test, GridmapFileReload) {
             uc.groups(1));
 
   // Rewrite file with another entry.
-  boost::this_thread::sleep(boost::posix_time::seconds(1));
   ofstream out(gridmap_file_path_.c_str());
   out << "225;zib;root:dgms0006:dgls0050;user;mosgrid:lifescience;CN=Dummy Username,OU=Dummy OU 1,O=GridGermany,C=DE\n";  // NOLINT
   out.close();
+  ASSERT_FALSE(out.fail());
   // Wait for reload.
-  boost::this_thread::sleep(boost::posix_time::seconds(2));
+  boost::this_thread::sleep(boost::posix_time::seconds(kWaittimeForReload));
 
   // Old entry is no longer visible.
   user_mapping_->GlobalToLocalUsername(dn, &result);
@@ -135,46 +149,17 @@ TEST_F(UserMappingGridmapUnicore6Test, GridmapFileReload) {
 }
 
 // Test for Unicore Version < 6.
-class UserMappingGridmapUnicoreTest : public ::testing::Test {
- protected:
-  virtual void SetUp() {
-    initialize_logger(LEVEL_WARN);
-
-    gridmap_file_path_ = "gridmap_file_unicore";
-
-    // Check if file already exists.
-    struct stat stat_buf;
-    if (!stat(gridmap_file_path_.c_str(), &stat_buf)) {
-      ASSERT_FALSE("The temporary gridmap file does already exist");
-    }
-
-    // Create a temporary gridmap file in the working directory.
-    ofstream out(gridmap_file_path_.c_str());
-    out << "root:dgms0006=CN=Patrick Schaefer,OU=CSR,O=GridGermany,C=DE\n";  // NOLINT
-    out.close();
-
-    user_mapping_.reset(new UserMappingGridmapUnicore(
-        gridmap_file_path_,
-        1));  // Check every second for changes.
-    user_mapping_->Start();
+class UserMappingGridmapUnicoreTest
+    : public UserMappingGridmapUnicoreTestGeneral {
+ private:
+  virtual string GetGridmapFileContent() {
+    return "root:dgms0006=CN=Patrick Schaefer,OU=CSR,O=GridGermany,C=DE\n";
   }
-
-  virtual void TearDown() {
-    user_mapping_->Stop();
-
-    // Delete gridmap file.
-    remove(gridmap_file_path_.c_str());
-
-    shutdown_logger();
-  }
-  std::string gridmap_file_path_;
-
-  boost::scoped_ptr<UserMapping> user_mapping_;
 };
 
 TEST_F(UserMappingGridmapUnicoreTest, TestBasicDNAndOUResolving) {
   string dn = "CN=Patrick Schaefer,OU=CSR,O=GridGermany,C=DE";
-  
+
   string result;
   user_mapping_->LocalToGlobalUsername("root", &result);
   EXPECT_EQ(dn, result);
@@ -216,12 +201,12 @@ TEST_F(UserMappingGridmapUnicoreTest, GridmapFileReload) {
   EXPECT_EQ("CSR", uc.groups(0));
 
   // Rewrite file with another entry.
-  boost::this_thread::sleep(boost::posix_time::seconds(1));
   ofstream out(gridmap_file_path_.c_str());
   out << "root:dgms0006=CN=Dummy Username,OU=Dummy OU 1,O=GridGermany,C=DE\n";  // NOLINT
   out.close();
+  ASSERT_FALSE(out.fail());
   // Wait for reload.
-  boost::this_thread::sleep(boost::posix_time::seconds(2));
+  boost::this_thread::sleep(boost::posix_time::seconds(kWaittimeForReload));
 
   // Old entry is no longer visible.
   user_mapping_->GlobalToLocalUsername(dn, &result);

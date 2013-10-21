@@ -78,7 +78,7 @@ src_install() {
   java-pkg_dojar java/servers/dist/XtreemFS.jar
 
   java-pkg_jarinto /usr/share/${PN}/java/lib
-  java-pkg_dojar java/lib/protobuf-java-2.3.0.jar java/lib/BabuDB.jar java/lib/commons-codec-1.3.jar java/lib/jdmktk.jar java/lib/jdmkrt.jar
+  java-pkg_dojar java/lib/protobuf-java-2.5.0.jar java/lib/BabuDB.jar java/lib/commons-codec-1.3.jar java/lib/jdmktk.jar java/lib/jdmkrt.jar
 
   java-pkg_jarinto /usr/share/${PN}/java/foundation/dist
   java-pkg_dojar java/foundation/dist/Foundation.jar
@@ -101,8 +101,6 @@ pkg_preinst() {
 }
 
 pkg_postinst() {
-        ${S}/packaging/generate_uuid /etc/xtreemfs/dirconfig.properties
-        ${S}/packaging/generate_uuid /etc/xtreemfs/mrcconfig.properties
-        ${S}/packaging/generate_uuid /etc/xtreemfs/osdconfig.properties
-
+  # This script generates UUIDs for each service and checks that the permissions are set correctly.
+  ${S}/packaging/postinstall_setup.sh
 }

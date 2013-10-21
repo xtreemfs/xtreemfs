@@ -7,6 +7,7 @@
 package org.xtreemfs.common.statusserver;
 
 import java.io.IOException;
+import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,6 +27,14 @@ import com.sun.net.httpserver.HttpServer;
  * @author bjko
  */
 public class StatusServer {
+    /**
+     * Block server up to this time if the StatusServer cannot bind the port due to "Address already in use".
+     * Necessary because the Sun webserver does not support SO_REUSEADDR.
+     */
+    private static final double            MAX_TIME_CHECK_IF_ADDRESS_ALREADY_IN_USE_S = 180.0;
+    /** Interval between two attempts to start the webserver. */
+    private static final double            INTERVAL_CHECK_IF_ADDRESS_ALREADY_IN_USE_S = 0.1;
+
     private final int statusHttpPort;
     private final List<StatusServerModule> modules;
     private final ServiceType serviceType;
@@ -73,7 +82,32 @@ public class StatusServer {
             passwordProtection = null;
         }
         
-        httpServ = HttpServer.create(new InetSocketAddress(statusHttpPort), 0);
+        // Try to start the webserver and bind the port. Retry if "address already in use" because the Sun
+        // webserver does not support SO_REUSEADDR.
+        for (double elapsedSeconds = 0.0;
+             elapsedSeconds < MAX_TIME_CHECK_IF_ADDRESS_ALREADY_IN_USE_S;
+             elapsedSeconds += INTERVAL_CHECK_IF_ADDRESS_ALREADY_IN_USE_S) {
+            try {
+                httpServ = HttpServer.create(new InetSocketAddress(statusHttpPort), 0);
+                // Port successfully bound, do not retry.
+                break;
+            } catch (BindException e) {
+                if (e.getMessage().contains("Address already in use")) {
+                    if ((elapsedSeconds + INTERVAL_CHECK_IF_ADDRESS_ALREADY_IN_USE_S) >= MAX_TIME_CHECK_IF_ADDRESS_ALREADY_IN_USE_S) {
+                        // Retries exceeded. Throw error.
+                        throw new BindException(e.getMessage() + ". Port number: " + statusHttpPort);
+                    } else {
+                        // Wait between two attempts.
+                        try {
+                            Thread.sleep((long) (INTERVAL_CHECK_IF_ADDRESS_ALREADY_IN_USE_S * 1000));
+                        } catch (InterruptedException e1) {
+                        }
+                    }
+                } else {
+                    throw e;
+                }
+            }
+        }
         running = true;
         for (StatusServerModule module : modules) {
             String modulePath = module.getUriPath();

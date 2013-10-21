@@ -43,7 +43,7 @@ PLUGIN_CONFIG_DIR=$(XTREEMFS_CONFIG_DIR)/server-repl-plugin
 
 #Configuration of cpp code thirdparty dependencies.
 # If you edit the next five variables, make sure you also change them in cpp/CMakeLists.txt.
-CLIENT_GOOGLE_PROTOBUF_CPP = cpp/thirdparty/protobuf-2.3.0
+CLIENT_GOOGLE_PROTOBUF_CPP = cpp/thirdparty/protobuf-2.5.0
 CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY = $(CLIENT_GOOGLE_PROTOBUF_CPP)/src/.libs/libprotobuf.a
 CLIENT_GOOGLE_TEST_CPP = cpp/thirdparty/gtest-1.5.0
 CLIENT_GOOGLE_TEST_CPP_LIBRARY = $(CLIENT_GOOGLE_TEST_CPP)/lib/.libs/libgtest.a
@@ -67,17 +67,18 @@ install: install-client install-server install-tools
 
 install-client:
 
-	@if [ ! -f $(XTREEMFS_BINARIES_DIR)/mount.xtreemfs ]; then echo "PLEASE RUN 'make client' FIRST!"; exit 1; fi
+	@if [ ! -f $(XTREEMFS_BINARIES_DIR)/mkfs.xtreemfs ]; then echo "PLEASE RUN 'make client' FIRST!"; exit 1; fi
 
 	@mkdir -p $(DOC_DIR_CLIENT)
 	@cp LICENSE $(DOC_DIR_CLIENT)
 
 	@mkdir -p $(BIN_DIR)
 	@cp   -p  $(XTREEMFS_BINARIES_DIR)/*.xtreemfs $(XTREEMFS_BINARIES_DIR)/xtfsutil $(BIN_DIR)
-	          
-	@mkdir -p $(SBIN_DIR)
-	@ln -s $(BIN_DIR)/mount.xtreemfs $(SBIN_DIR)/mount.xtreemfs
-	@ln -s $(BIN_DIR)/umount.xtreemfs $(SBIN_DIR)/umount.xtreemfs
+
+# mount -t xtreemfs will be recognized when binaries are present in /sbin/. Only applicable if the Fuse Client was built.
+	@[ -f $(XTREEMFS_BINARIES_DIR)/mount.xtreemfs ] && mkdir -p $(SBIN_DIR); true
+	@[ -f $(XTREEMFS_BINARIES_DIR)/mount.xtreemfs ] && ln -s $(BIN_DIR)/mount.xtreemfs $(SBIN_DIR)/mount.xtreemfs; true
+	@[ -f $(XTREEMFS_BINARIES_DIR)/mount.xtreemfs ] && ln -s $(BIN_DIR)/umount.xtreemfs $(SBIN_DIR)/umount.xtreemfs; true
 
 	@mkdir -p $(XTREEMFS_CONFIG_DIR)
 	@cp etc/xos/xtreemfs/default_dir $(XTREEMFS_CONFIG_DIR)
@@ -102,7 +103,7 @@ install-server:
 
 	@mkdir -p $(XTREEMFS_CONFIG_DIR)
 #	@cp etc/xos/xtreemfs/*config.properties $(XTREEMFS_CONFIG_DIR)
-	# delete UUID from config-files
+# delete UUID from config-files
 	@grep -v '^uuid\W*=\W*\w\+' etc/xos/xtreemfs/dirconfig.properties > $(XTREEMFS_CONFIG_DIR)/dirconfig.properties
 	@grep -v '^uuid\W*=\W*\w\+' etc/xos/xtreemfs/mrcconfig.properties > $(XTREEMFS_CONFIG_DIR)/mrcconfig.properties
 	@grep -v '^uuid\W*=\W*\w\+' etc/xos/xtreemfs/osdconfig.properties > $(XTREEMFS_CONFIG_DIR)/osdconfig.properties
@@ -115,8 +116,10 @@ install-server:
 	@cp packaging/postinstall_setup.sh $(XTREEMFS_CONFIG_DIR)
 	@chmod a+x $(XTREEMFS_CONFIG_DIR)/postinstall_setup.sh
 
+# Generating init.d scripts based on template.
+	@etc/init.d/generate_initd_scripts.sh
 	@mkdir -p $(XTREEMFS_INIT_DIR)
-	@cp etc/init.d/xtreemfs-* $(XTREEMFS_INIT_DIR)
+	@cp etc/init.d/xtreemfs-{dir,mrc,osd} $(XTREEMFS_INIT_DIR)
 	@chmod a+x $(XTREEMFS_INIT_DIR)/xtreemfs-*
 
 	@mkdir -p $(XTREEMFS_SHARE_DIR)
@@ -156,8 +159,14 @@ uninstall:
 	@rm -f $(SBIN_DIR)/umount.xtreemfs
 
 	@rm -f $(XTREEMFS_JAR_DIR)/XtreemFS.jar
-	@rm -f $(XTREEMFS_JAR_DIR)/BabuDB*.jar
-	@rm -f $(XTREEMFS_JAR_DIR)/yidl.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/Foundation.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/Flease.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/BabuDB.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/commons-codec-1.3.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/jdmkrt.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/jdmktk.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/protobuf-java-2.5.0.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/BabuDB_replication_plugin.jar
 
 	@rm -f $(XTREEMFS_INIT_DIR)/xtreemfs-*
 	
@@ -209,12 +218,16 @@ endif
 ifdef BOOST_ROOT
 	CMAKE_BOOST_ROOT = -DBOOST_ROOT="$(BOOST_ROOT)"
 endif
+# Tell CMake if it should ignore a missing Fuse.
+ifdef SKIP_FUSE
+	CMAKE_SKIP_FUSE = -DSKIP_FUSE=true
+endif
 
 client_thirdparty: $(CLIENT_THIRDPARTY_REQUIREMENTS)
 
 $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY): $(CLIENT_GOOGLE_PROTOBUF_CPP)/src/**
 	@echo "client_thirdparty: Configuring and building required Google protobuf library..."
-	@cd $(CLIENT_GOOGLE_PROTOBUF_CPP) && ./configure $(PROTOBUF_DISABLE_64_BIT_SOLARIS) >/dev/null
+	@cd $(CLIENT_GOOGLE_PROTOBUF_CPP) && LIBS=-lpthread ./configure $(PROTOBUF_DISABLE_64_BIT_SOLARIS) >/dev/null
 	@$(MAKE) -C $(CLIENT_GOOGLE_PROTOBUF_CPP) >/dev/null
 	@echo "client_thirdparty: ...completed building required Google protobuf library."
 	@touch $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY)
@@ -251,7 +264,7 @@ client_debug: CLIENT_DEBUG = -DCMAKE_BUILD_TYPE=Debug
 client_debug: client
 
 client: check_client client_thirdparty set_version
-	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG) $(CMAKE_BOOST_ROOT) $(CMAKE_BUILD_CLIENT_TESTS)
+	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG) $(CMAKE_BOOST_ROOT) $(CMAKE_BUILD_CLIENT_TESTS) $(CMAKE_SKIP_FUSE)
 	@$(MAKE) -C $(XTREEMFS_CLIENT_BUILD_DIR)
 	@cd $(XTREEMFS_CLIENT_BUILD_DIR); for i in *.xtreemfs xtfsutil; do [ -f $(XTREEMFS_BINARIES_DIR)/$$i ] && rm -f $(XTREEMFS_BINARIES_DIR)/$$i; done; true
 	@cp   -p $(XTREEMFS_CLIENT_BUILD_DIR)/*.xtreemfs $(XTREEMFS_BINARIES_DIR)

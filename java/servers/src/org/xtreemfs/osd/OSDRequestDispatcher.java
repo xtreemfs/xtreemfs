@@ -91,6 +91,7 @@ import org.xtreemfs.osd.operations.LockReleaseOperation;
 import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.operations.RWRNotifyOperation;
 import org.xtreemfs.osd.operations.ReadOperation;
+import org.xtreemfs.osd.operations.RepairObjectOperation;
 import org.xtreemfs.osd.operations.ShutdownOperation;
 import org.xtreemfs.osd.operations.TruncateOperation;
 import org.xtreemfs.osd.operations.VivaldiPingOperation;
@@ -356,13 +357,16 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         myCoordinates = new AtomicReference<VivaldiCoordinates>();
         
         ServiceDataGenerator gen = new ServiceDataGenerator() {
+            @Override
             public ServiceSet getServiceData() {
                 
                 OSDConfig config = OSDRequestDispatcher.this.config;
                 String freeSpace = "0";
+                String useableSpace = "0";
                 
                 if (config.isReportFreeSpace()) {
                     freeSpace = String.valueOf(FSUtils.getFreeSpace(config.getObjDir()));
+                    useableSpace = String.valueOf(FSUtils.getUsableSpace(config.getObjDir()));
                 }
                 
                 String totalSpace = "-1";
@@ -386,6 +390,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 dmap.addData(KeyValuePair.newBuilder().setKey("load").setValue(load).build());
                 dmap.addData(KeyValuePair.newBuilder().setKey("total").setValue(totalSpace).build());
                 dmap.addData(KeyValuePair.newBuilder().setKey("free").setValue(freeSpace).build());
+                dmap.addData(KeyValuePair.newBuilder().setKey("usable").setValue(useableSpace).build());
                 dmap.addData(KeyValuePair.newBuilder().setKey("totalRAM").setValue(Long.toString(totalRAM))
                         .build());
                 dmap.addData(KeyValuePair.newBuilder().setKey("usedRAM").setValue(Long.toString(usedRAM))
@@ -400,15 +405,16 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 for (Entry<String, String> e : config.getCustomParams().entrySet())
                     dmap.addData(KeyValuePair.newBuilder().setKey(e.getKey()).setValue(e.getValue()));
                 
-                try {
-                    final String address = "".equals(config.getHostName()) ? config.getAddress() == null ? config
-                            .getUUID().getMappings()[0].resolvedAddr.getAddress().getHostAddress()
-                        : config.getAddress().getHostAddress()
-                        : config.getHostName();
-                    dmap.addData(KeyValuePair.newBuilder().setKey("status_page_url").setValue(
-                        "http://" + address + ":" + config.getHttpPort()));
-                } catch (UnknownUUIDException ex) {
-                    // should never happen
+                if (config.getHttpPort() != -1) {
+                    try {
+                        final String address = "".equals(config.getHostName()) ? config.getAddress() == null ? config
+                                .getUUID().getMappings()[0].resolvedAddr.getAddress().getHostAddress() : config
+                                .getAddress().getHostAddress() : config.getHostName();
+                        dmap.addData(KeyValuePair.newBuilder().setKey("status_page_url")
+                                .setValue("http://" + address + ":" + config.getHttpPort()));
+                    } catch (UnknownUUIDException ex) {
+                        // should never happen
+                    }
                 }
                 
                 Service.Builder me = Service.newBuilder();
@@ -426,17 +432,22 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         };
         heartbeatThread = new HeartbeatThread("OSD HB Thr", dirClient, config.getUUID(), gen, config, true);
         
-        statusServer = new StatusServer(ServiceType.SERVICE_TYPE_OSD, this, config.getHttpPort());
-        statusServer.registerModule(new StatusPage());
-        statusServer.registerModule(new PrintStackTrace());
-        statusServer.registerModule(new ReplicatedFileStatusPage());
-        statusServer.registerModule(new ReplicatedFileStatusJSON());
-        
-        if (config.getAdminPassword().length() > 0) {
-            statusServer.addAuthorizedUser("admin", config.getAdminPassword());
+        if (config.getHttpPort() == -1) {
+            // Webinterface is explicitly disabled.
+            statusServer = null;
+        } else {
+            statusServer = new StatusServer(ServiceType.SERVICE_TYPE_OSD, this, config.getHttpPort());
+            statusServer.registerModule(new StatusPage());
+            statusServer.registerModule(new PrintStackTrace());
+            statusServer.registerModule(new ReplicatedFileStatusPage());
+            statusServer.registerModule(new ReplicatedFileStatusJSON());
+
+            if (config.getAdminPassword().length() > 0) {
+                statusServer.addAuthorizedUser("admin", config.getAdminPassword());
+            }
+
+            statusServer.start();
         }
-        
-        statusServer.start();
         
         startupTime = System.currentTimeMillis();
         
@@ -529,8 +540,6 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             heartbeatThread.shutdown();
             heartbeatThread.waitForShutdown();
             
-            UUIDResolver.shutdown();
-            
             rpcServer.shutdown();
             rpcClient.shutdown();
             rpcClientForReplication.shutdown();
@@ -564,7 +573,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cThread.waitForShutdown();
             cvThread.waitForShutdown();
             
-            statusServer.shutdown();
+            if (statusServer != null) {
+                statusServer.shutdown();
+            }
             
             if (Logging.isInfo())
                 Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
@@ -584,8 +595,6 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             }
             
             heartbeatThread.shutdown();
-            
-            UUIDResolver.shutdown();
             
             rpcServer.shutdown();
             rpcClient.shutdown();
@@ -647,14 +656,17 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         return rpcClient;
     }
     
+    @Override
     public void startupPerformed() {
         
     }
     
+    @Override
     public void shutdownPerformed() {
         
     }
     
+    @Override
     public void crashPerformed(Throwable cause) {
         final String report = CrashReporter
                 .createCrashReport("OSD", VersionManagement.RELEASE_VERSION, cause);
@@ -767,6 +779,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         op = new CheckObjectOperation(this);
         operations.put(op.getProcedureId(), op);
         
+        op = new RepairObjectOperation(this);
+        operations.put(op.getProcedureId(), op);
+
         op = new InternalGetFileSizeOperation(this);
         operations.put(op.getProcedureId(), op);
         
@@ -1020,4 +1035,14 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         return heartbeatThread.getLastHeartbeat();
     }
     
+    /**
+     * Returns primary OSD UUID for the file with ID "fileId" (if OSD is primary or backup) or null (if OSD
+     * does not know the file).
+     * 
+     * @param fileId
+     */
+    public String getPrimary(String fileId) {
+        return rwrStage.getPrimary(fileId);
+    }
+
 }

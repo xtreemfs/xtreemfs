@@ -1,0 +1,12 @@
+/Debug/
+/Release/
+/_UpgradeReport_Files/
+/google/
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+/protobuf.sln.old
+/UpgradeLog.XML
+/protobuf.sdf
+/protobuf.sln.docstates.suo
+/protobuf.suo

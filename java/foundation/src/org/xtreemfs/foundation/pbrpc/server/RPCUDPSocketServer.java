@@ -8,7 +8,6 @@
 
 package org.xtreemfs.foundation.pbrpc.server;
 
-import com.google.protobuf.Message;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.CancelledKeyException;
@@ -19,10 +18,9 @@ import java.nio.channels.Selector;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.xtreemfs.foundation.LifeCycleThread;
 
+import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
@@ -32,6 +30,8 @@ import org.xtreemfs.foundation.pbrpc.utils.PBRPCDatagramPacket;
 import org.xtreemfs.foundation.pbrpc.utils.RecordMarker;
 import org.xtreemfs.foundation.pbrpc.utils.ReusableBufferInputStream;
 
+import com.google.protobuf.Message;
+
 /**
  *
  * @author bjko
@@ -40,13 +40,11 @@ public class RPCUDPSocketServer extends LifeCycleThread implements RPCServerInte
 
     public final int                              port;
 
-    private DatagramChannel                       channel;
+    private final DatagramChannel                 channel;
 
-    private Selector                              selector;
+    private final Selector                        selector;
 
     private volatile boolean                      quit;
-
-    private final AtomicBoolean                   sendMode;
 
     private final LinkedBlockingQueue<UDPMessage> q;
 
@@ -56,13 +54,23 @@ public class RPCUDPSocketServer extends LifeCycleThread implements RPCServerInte
 
     private final AtomicInteger                   callIdCounter;
 
-    public RPCUDPSocketServer(int port, RPCServerRequestListener receiver) {
+    public RPCUDPSocketServer(int port, RPCServerRequestListener receiver) throws IOException {
         super("UDPComStage");
         this.port = port;
         q = new LinkedBlockingQueue<UDPMessage>();
-        sendMode = new AtomicBoolean(false);
         this.receiver = receiver;
         callIdCounter = new AtomicInteger(1);
+
+        selector = Selector.open();
+
+        channel = DatagramChannel.open();
+        channel.socket().setReuseAddress(true);
+        channel.socket().bind(new InetSocketAddress(port));
+        channel.configureBlocking(false);
+        channel.register(selector, SelectionKey.OP_READ);
+
+        if (Logging.isInfo())
+            Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "UDP socket on port %d ready", port);
     }
 
     @Override
@@ -90,6 +98,7 @@ public class RPCUDPSocketServer extends LifeCycleThread implements RPCServerInte
         }
     }
 
+    @Override
     public void shutdown() {
         quit = true;
         interrupt();
@@ -99,18 +108,6 @@ public class RPCUDPSocketServer extends LifeCycleThread implements RPCServerInte
     public void run() {
 
         try {
-
-            selector = Selector.open();
-
-            channel = DatagramChannel.open();
-            channel.socket().bind(new InetSocketAddress(port));
-            channel.configureBlocking(false);
-            channel.register(selector, SelectionKey.OP_READ);
-
-            if (Logging.isInfo())
-                Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "UDP socket on port %d ready",
-                    port);
-
             notifyStarted();
 
             boolean isRdOnly = true;
@@ -194,12 +191,13 @@ public class RPCUDPSocketServer extends LifeCycleThread implements RPCServerInte
                                 ReusableBufferInputStream rbis = new ReusableBufferInputStream(data);
 
                                 final int origLimit = data.limit();
-                                assert(origLimit == rm.HDR_SIZE+rm.getRpcHeaderLength()+rm.getMessageLength());
-                                data.limit(rm.HDR_SIZE+rm.getRpcHeaderLength());
+                                assert (origLimit == RecordMarker.HDR_SIZE + rm.getRpcHeaderLength()
+                                        + rm.getMessageLength());
+                                data.limit(RecordMarker.HDR_SIZE + rm.getRpcHeaderLength());
 
                                 RPCHeader header = RPCHeader.newBuilder().mergeFrom(rbis).build();
 
-                                data.range(rm.HDR_SIZE+rm.getRpcHeaderLength(), rm.getMessageLength());
+                                data.range(RecordMarker.HDR_SIZE + rm.getRpcHeaderLength(), rm.getMessageLength());
 
                                 UDPMessage msg = new UDPMessage(null, sender, this);
                                 RPCServerRequest rq = new RPCServerRequest(msg, header, data);
