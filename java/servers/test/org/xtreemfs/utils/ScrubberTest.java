@@ -353,6 +353,7 @@ public class ScrubberTest {
         assertEquals(contentSize, objFile.length());
         
         // delete volume
+        file.close();
         client.deleteVolume(mrc1Address.getHostName() + ":" + mrc1Address.getPort(),
                 RPCAuthentication.authNone, userCredentials, VOLUME_NAME);
     }
