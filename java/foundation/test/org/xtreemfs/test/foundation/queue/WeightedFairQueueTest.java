@@ -36,7 +36,7 @@ public class WeightedFairQueueTest {
             }
 
             @Override
-            public int getWeight(Integer element) {
+            public int getWeight(String element) {
                 return 1;
             }
         });

@@ -21,7 +21,7 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
     public interface WFQElementInformationProvider<T, E> {
         public int getRequestCost(E element);
         public T getQualityClass(E element);
-        public int getWeight(E element);
+        public int getWeight(T element);
     }
 
     private Map<T, Queue<E>>                    queues;
@@ -281,5 +281,25 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
         }
 
         return this.queueIterator.next();
+    }
+
+    private double getProportion(T qualityClass) {
+        double sum = 0.0;
+
+        for(T c: this.requestCount.keySet()) {
+            sum += (double) this.elementInformationProvider.getWeight(c);
+        }
+
+        return sum / (double) this.elementInformationProvider.getWeight(qualityClass);
+    }
+
+    private double getCurrentProportion(T qualityClass) {
+        double sum = 0.0;
+
+        for(T c: this.requestCount.keySet()) {
+            sum += (double) this.requestCount.get(c);
+        }
+
+        return sum / (double) this.requestCount.get(qualityClass);
     }
 }
