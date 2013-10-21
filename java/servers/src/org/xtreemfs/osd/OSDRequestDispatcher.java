@@ -91,6 +91,7 @@ import org.xtreemfs.osd.operations.LockReleaseOperation;
 import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.operations.RWRNotifyOperation;
 import org.xtreemfs.osd.operations.ReadOperation;
+import org.xtreemfs.osd.operations.RepairObjectOperation;
 import org.xtreemfs.osd.operations.ShutdownOperation;
 import org.xtreemfs.osd.operations.TruncateOperation;
 import org.xtreemfs.osd.operations.VivaldiPingOperation;
@@ -360,9 +361,11 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 
                 OSDConfig config = OSDRequestDispatcher.this.config;
                 String freeSpace = "0";
+                String useableSpace = "0";
                 
                 if (config.isReportFreeSpace()) {
                     freeSpace = String.valueOf(FSUtils.getFreeSpace(config.getObjDir()));
+                    useableSpace = String.valueOf(FSUtils.getUsableSpace(config.getObjDir()));
                 }
                 
                 String totalSpace = "-1";
@@ -386,6 +389,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 dmap.addData(KeyValuePair.newBuilder().setKey("load").setValue(load).build());
                 dmap.addData(KeyValuePair.newBuilder().setKey("total").setValue(totalSpace).build());
                 dmap.addData(KeyValuePair.newBuilder().setKey("free").setValue(freeSpace).build());
+                dmap.addData(KeyValuePair.newBuilder().setKey("usable").setValue(useableSpace).build());
                 dmap.addData(KeyValuePair.newBuilder().setKey("totalRAM").setValue(Long.toString(totalRAM))
                         .build());
                 dmap.addData(KeyValuePair.newBuilder().setKey("usedRAM").setValue(Long.toString(usedRAM))
@@ -767,6 +771,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         op = new CheckObjectOperation(this);
         operations.put(op.getProcedureId(), op);
         
+        op = new RepairObjectOperation(this);
+        operations.put(op.getProcedureId(), op);
+
         op = new InternalGetFileSizeOperation(this);
         operations.put(op.getProcedureId(), op);
         
@@ -1020,4 +1027,14 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         return heartbeatThread.getLastHeartbeat();
     }
     
+    /**
+     * Returns primary OSD UUID for the file with ID "fileId" (if OSD is primary or backup) or null (if OSD
+     * does not know the file).
+     * 
+     * @param fileId
+     */
+    public String getPrimary(String fileId) {
+        return rwrStage.getPrimary(fileId);
+    }
+
 }

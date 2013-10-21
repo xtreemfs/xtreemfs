@@ -21,8 +21,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.StatVFS;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.statvfsRequest;
 
-import com.google.protobuf.Message;
-
 /**
  * 
  * @author stender
@@ -61,7 +59,8 @@ public class StatFSOperation extends MRCOperation {
         final FileMetadata volumeRoot = sMan.getMetadata(1);
         
         int blockSize = sMan.getDefaultStripingPolicy(1).getStripeSize() * 1024;
-        long bavail = master.getOSDStatusManager().getFreeSpace(volume.getId()) / blockSize;
+        long bavail = master.getOSDStatusManager().getUsableSpace(volume.getId()) / blockSize;
+        long bfree = master.getOSDStatusManager().getFreeSpace(volume.getId()) / blockSize;
         long blocks = master.getOSDStatusManager().getTotalSpace(volume.getId()) / blockSize;
         String volumeId = volume.getId();
         AccessControlPolicyType acPolId = AccessControlPolicyType.valueOf(volume.getAcPolicyId());
@@ -74,7 +73,7 @@ public class StatFSOperation extends MRCOperation {
         
         long newEtag = blockSize + bavail + blocks;
         
-        return StatVFS.newBuilder().setBsize(blockSize).setBavail(bavail).setBlocks(blocks).setFsid(volumeId)
+        return StatVFS.newBuilder().setBsize(blockSize).setBfree(bfree).setBavail(bavail).setBlocks(blocks).setFsid(volumeId)
                 .setNamemax(1024).setOwnerUserId(ownerId).setOwnerGroupId(owningGroupId).setName(volumeName)
                 .setEtag(newEtag).setMode(perms).setAccessControlPolicy(acPolId).setDefaultStripingPolicy(
                     defaultStripingPolicy).build();

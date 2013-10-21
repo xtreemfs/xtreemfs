@@ -13,7 +13,8 @@ class Server:
                  xtreemfs_dir,
                  data_dir,
                  rpc_port,
-                 uuid):
+                 uuid,
+                 storage_threads):
         self._start_stop_retries = start_stop_retries
         self._config_file_path = config_file_path
         self._run_dir_path = run_dir_path
@@ -26,6 +27,7 @@ class Server:
         self._config['debug.level'] = 6
         self._config['uuid'] = uuid
         self._config['ssl.enabled'] = 'false'
+        self._config['storage_threads'] = storage_threads
 
     def configure(self):
         pass

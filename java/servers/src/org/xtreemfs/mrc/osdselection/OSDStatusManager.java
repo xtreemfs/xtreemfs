@@ -310,6 +310,31 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         }
         return free;
     }
+
+    /**
+     * Returns the approximate amount of usable space in the given volume.
+     *
+     * @param volumeId
+     *            the ID of the volume
+     *
+     * @return the approximate number of usable bytes in the volume by non-privileged users
+     *
+     */
+    public long getUsableSpace(String volumeId) {
+
+        long usable = 0;
+
+        ServiceSet.Builder usableOSDs = getUsableOSDs(volumeId);
+        if (usableOSDs == null)
+            return 0;
+
+        for (Service entry : usableOSDs.getServicesList()) {
+            String usableStr = KeyValuePairs.getValue(entry.getData().getDataList(), "usable");
+            if (usableStr != null)
+                usable += Long.valueOf(usableStr);
+        }
+        return usable;
+    }
     
     public long getTotalSpace(String volumeId) {
         

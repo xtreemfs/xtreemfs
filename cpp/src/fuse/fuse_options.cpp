@@ -204,6 +204,12 @@ void FuseOptions::ParseCommandLine(int argc, char** argv) {
           "parameter and not passed through to Fuse. Use --interrupt-signal "
           "instead.");
     }
+    if (fuse_options[i] == "_netdev") {
+      // Don't send this option to Fuse, just ignore it, solves issue 276:
+      // https://code.google.com/p/xtreemfs/issues/detail?id=276
+      fuse_options.erase(fuse_options.begin() + i);
+      i--;
+    }
 #ifdef __APPLE__
     if (fuse_options[i].substr(0, 15) == "daemon_timeout=") {
       try {

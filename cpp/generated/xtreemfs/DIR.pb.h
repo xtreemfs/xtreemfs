@@ -61,11 +61,12 @@ enum ServiceType {
   SERVICE_TYPE_MIXED = 0,
   SERVICE_TYPE_MRC = 1,
   SERVICE_TYPE_OSD = 2,
-  SERVICE_TYPE_VOLUME = 3
+  SERVICE_TYPE_VOLUME = 3,
+  SERVICE_TYPE_DIR = 4
 };
 bool ServiceType_IsValid(int value);
 const ServiceType ServiceType_MIN = SERVICE_TYPE_MIXED;
-const ServiceType ServiceType_MAX = SERVICE_TYPE_VOLUME;
+const ServiceType ServiceType_MAX = SERVICE_TYPE_DIR;
 const int ServiceType_ARRAYSIZE = ServiceType_MAX + 1;
 
 const ::google::protobuf::EnumDescriptor* ServiceType_descriptor();
