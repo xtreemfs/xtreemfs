@@ -199,8 +199,20 @@ public class ConfigBuilder {
      * @return the builder
      */
     public ConfigBuilder setDirAddress(String dirAddress) {
+        /* remove protocol information */
+        if (dirAddress.contains("://"))
+            dirAddress = dirAddress.split("://", 2)[1];
+        /* remove trailing slashes */
+        if (dirAddress.endsWith("/"))
+            dirAddress = dirAddress.substring(0, dirAddress.length()-1);
         this.dirAddress = dirAddress;
         return this;
+    }
+
+    public static void main(String[] args) {
+        ConfigBuilder builder = new ConfigBuilder();
+        builder.setDirAddress("pbrpc://localhost:32638/");
+        System.out.println(builder.dirAddress);
     }
 
     /**
