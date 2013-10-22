@@ -32,6 +32,7 @@ import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
+import org.xtreemfs.mrc.stages.XLocSetLock;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.Path;
@@ -119,8 +120,6 @@ public class OpenOperation extends MRCOperation {
             // check whether the permission is granted
             faMan.checkPermission(rqArgs.getFlags(), sMan, file, res.getParentDirId(),
                 rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
-            
-            // TODO(jdillmann): Check if a xLocSet change is in progress.
 
         } catch (UserException exc) {
             
@@ -156,6 +155,29 @@ public class OpenOperation extends MRCOperation {
                 throw exc;
         }
         
+        XLocList xLocList = file.getXLocList();
+
+        // Check if a xLocSet change is in progress and recover if a previous change failed due to an MRC error.
+        XLocSetLock lock = master.getXLocSetCoordinator().getXLocSetLock(file, sMan);
+        if (lock.isLocked()) {
+            if (lock.hasCrashed()) {
+                // If the xLocSet change did not finish, the majority of the replicas could be invalidated. To allow
+                // operations on the (old) xLocSet, the version has to be increased to revalidate the replicas.
+                XLoc[] replicas = new XLoc[xLocList.getReplicaCount()];
+                for (int i = 0; i < xLocList.getReplicaCount(); i++) {
+                    replicas[i] = xLocList.getReplica(i);
+                }
+                xLocList = sMan.createXLocList(replicas, xLocList.getReplUpdatePolicy(), xLocList.getVersion() + 1);
+
+                // Unlock the replica.
+                master.getXLocSetCoordinator().unlockXLocSet(file, sMan, update);
+            } else {
+                // TODO(jdillmann): Custom exception.
+                throw new UserException(POSIXErrno.POSIX_ERROR_EAGAIN,
+                        "xLocSet change already in progress. Please retry.");
+            }
+        }
+
         // get the current epoch, use (and increase) the truncate number if
         // the open mode is truncate
         int trEpoch = file.getEpoch();
@@ -164,9 +186,7 @@ public class OpenOperation extends MRCOperation {
             trEpoch = file.getIssuedEpoch();
             sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
         }
-        
-        XLocList xLocList = file.getXLocList();
-        
+
         // retrieve the default replication policy
         ReplicationPolicy defaultReplPolicy = sMan.getDefaultReplicationPolicy(res.getParentDirId());
         if (defaultReplPolicy == null)

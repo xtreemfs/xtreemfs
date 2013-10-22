@@ -13,6 +13,7 @@ import java.net.InetSocketAddress;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.xloc.ReplicationFlags;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -28,6 +29,7 @@ import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.stages.XLocSetCoordinator;
 import org.xtreemfs.mrc.stages.XLocSetCoordinatorCallback;
+import org.xtreemfs.mrc.stages.XLocSetLock;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.mrc.utils.Path;
@@ -118,11 +120,19 @@ public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoord
         }
 
         // Check if a xLocSetChange is already in progress.
-        byte[] value = sMan.getXAttr(file.getId(), StorageManager.SYSTEM_UID, StorageManager.SYS_ATTR_KEY_PREFIX
-                + XLocSetCoordinator.XLOCSET_CHANGE_ATTR_KEY);
-        boolean xLocSetChangeInProgress = Boolean.valueOf(new String(value));
-        if (xLocSetChangeInProgress) {
-            throw new UserException(POSIXErrno.POSIX_ERROR_EAGAIN, "xLocSet change already in progress. Please retry.");
+        XLocSetLock lock = master.getXLocSetCoordinator().getXLocSetLock(file, sMan);
+        if (lock.isLocked()) {
+            if (lock.hasCrashed()) {
+                // Ignore if a previous xLocSet change did not finish, because the replicas will be revalidated when the
+                // new xLocSet is installed by this operation.
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "Previous xLocSet change did not finish.");
+                }
+            } else {
+                // TODO(jdillmann): Custom exception.
+                throw new UserException(POSIXErrno.POSIX_ERROR_EAGAIN,
+                        "xLocSet change already in progress. Please retry.");
+            }
         }
 
         // Check whether privileged permissions are granted for removing replicas.
@@ -198,9 +208,9 @@ public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoord
         // the RequestMethod when the update is complete
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(coordinator, m);
 
-        // Lock the replica.
-        sMan.setXAttr(file.getId(), StorageManager.SYSTEM_UID, StorageManager.SYS_ATTR_KEY_PREFIX
-                + XLocSetCoordinator.XLOCSET_CHANGE_ATTR_KEY, String.valueOf(true).getBytes(), update);
+        // Lock the replica and start the coordination.
+        coordinator.lockXLocSet(file, sMan, update);
+
         update.execute();
     }
 
@@ -231,8 +241,7 @@ public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoord
         sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
 
         // Unlock the replica.
-        sMan.setXAttr(file.getId(), StorageManager.SYSTEM_UID, StorageManager.SYS_ATTR_KEY_PREFIX
-                + XLocSetCoordinator.XLOCSET_CHANGE_ATTR_KEY, null, update);
+        master.getXLocSetCoordinator().unlockXLocSet(file, sMan, update);
 
         // Create a deletion capability for the replica.
         Capability deleteCap = new Capability(idRes.getVolumeId() + ":" + file.getId(),

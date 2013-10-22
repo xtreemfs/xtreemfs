@@ -9,6 +9,7 @@ package org.xtreemfs.mrc.stages;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,9 +39,11 @@ import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
+import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
+import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.operations.MRCOperation;
@@ -69,7 +72,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
  */
 public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResultListener<Object> {
     private enum RequestType {
-        ADD_REPLICAS, REMOVE_REPLICAS, REPLACE_REPLICA
+        ADD_REPLICAS, REMOVE_REPLICAS
     };
 
     public final static String           XLOCSET_CHANGE_ATTR_KEY = "xlocsetchange";
@@ -124,8 +127,6 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             case REMOVE_REPLICAS:
                 processRemoveReplicas(m);
                 break;
-            // case REPLACE_REPLICA:
-            // processReplaceReplica(m);
             default:
                 throw new Exception("unknown stage operation");
             }
@@ -362,14 +363,73 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         });
     }
 
+    /**
+     * Lock the xLocSet for a file. The lock should be released, when the coordination succeeded or on crash recovery. <br>
+     * 
+     * Currently the lock is saving the {@link MRCRequestDispatcher#hashCode()} to be able to identify if a previous MRC
+     * instance crashed while a xLocSet change was in progress.
+     * 
+     * @param file
+     * @param sMan
+     * @param update
+     * @throws DatabaseException
+     */
+    public void lockXLocSet(FileMetadata file, StorageManager sMan, AtomicDBUpdate update) throws DatabaseException {
+        byte[] hashValue = new byte[4];
+        ByteBuffer hashByte = ByteBuffer.wrap(hashValue).putInt(master.hashCode());
+        sMan.setXAttr(file.getId(), StorageManager.SYSTEM_UID, StorageManager.SYS_ATTR_KEY_PREFIX
+                + XLocSetCoordinator.XLOCSET_CHANGE_ATTR_KEY, hashValue, update);
+        hashByte.clear();
+    }
 
-    // public void replaceReplica(String fileId, MRCOperation op, MRCRequest rq) {
-    // q.add(new RequestMethod(RequestType.REPLACE_REPLICA, fileId, op, rq));
-    // }
-    //
-    // private void processReplaceReplica(RequestMethod m) throws Throwable {
-    // throw new NotImplementedException();
-    // }
+    /**
+     * Unlock the xLocSet for a file. This will clear the lock in the database.
+     * 
+     * @param file
+     * @param sMan
+     * @param update
+     * @throws DatabaseException
+     */
+    public void unlockXLocSet(FileMetadata file, StorageManager sMan, AtomicDBUpdate update)
+            throws DatabaseException {
+        sMan.setXAttr(file.getId(), StorageManager.SYSTEM_UID, StorageManager.SYS_ATTR_KEY_PREFIX
+                + XLocSetCoordinator.XLOCSET_CHANGE_ATTR_KEY, null, update);
+    }
+
+    /**
+     * Check if the XLocSet of the file is locked and if the lock was acquired by a previous MRC instance. If this is
+     * the case, it can be assumed the previous MRC crashed and the {@link XLocSetLock} should be released and replicas
+     * revalidated.
+     * 
+     * @param file
+     * @param sMan
+     * @return XLocSetLock
+     * @throws DatabaseException
+     */
+    public XLocSetLock getXLocSetLock(FileMetadata file, StorageManager sMan) throws DatabaseException {
+        XLocSetLock lock;
+
+        // Check if a hashCode has been saved to to the files XAttr to lock the xLocSet.
+        byte[] prevHashBytes = sMan.getXAttr(file.getId(), StorageManager.SYSTEM_UID,
+                StorageManager.SYS_ATTR_KEY_PREFIX + XLocSetCoordinator.XLOCSET_CHANGE_ATTR_KEY);
+        if (prevHashBytes != null) {
+            // Check if the saved hashCode differs from the current one. If this is the case, the MRC has crashed.
+            ByteBuffer prevHashBuffer = ByteBuffer.wrap(prevHashBytes);
+            int prevHash = prevHashBuffer.getInt();
+            prevHashBuffer.clear();
+
+            if (prevHash != master.hashCode()) {
+                lock = new XLocSetLock(true, true);
+            } else {
+                lock = new XLocSetLock(true, false);
+            }
+        } else {
+            lock = new XLocSetLock(false, false);
+        }
+
+        return lock;
+    }
+
 
     /**
      * Build a valid Capability for the given file
@@ -684,7 +744,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
      */
     private int calculateNumRequiredAcks(String fileId, XLocSet xLocSet) {
         // Generate a list of ServiceUUIDs from the XLocSet.
-        // TODO(jdillmann): Replace by a List implemenation that is only returning a size().
+        // TODO(jdillmann): Replace by a List implementation that is only returning a size().
         int i;
         List<ServiceUUID> OSDUUIDs = new ArrayList<ServiceUUID>(xLocSet.getReplicasCount() - 1);
         for (i = 0; i < xLocSet.getReplicasCount() - 1; i++) {
