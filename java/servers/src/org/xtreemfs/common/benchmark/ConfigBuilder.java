@@ -209,12 +209,6 @@ public class ConfigBuilder {
         return this;
     }
 
-    public static void main(String[] args) {
-        ConfigBuilder builder = new ConfigBuilder();
-        builder.setDirAddress("pbrpc://localhost:32638/");
-        System.out.println(builder.dirAddress);
-    }
-
     /**
      * Set the RPC user credentials. Build from the user name and group name during instatiation of {@link Config}.
      * 
