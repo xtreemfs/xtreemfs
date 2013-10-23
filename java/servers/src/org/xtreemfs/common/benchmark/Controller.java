@@ -56,6 +56,8 @@ public class Controller {
      * @throws Exception
      */
     public void setupVolumes(String... volumeNames) throws Exception {
+        if (volumeNames.length < config.getNumberOfThreads())
+            throw new IllegalArgumentException("Less volumes than parallel threads");
         if (volumeNames.length == 0)
             volumeManager.createDefaultVolumes(config.getNumberOfThreads());
         else
