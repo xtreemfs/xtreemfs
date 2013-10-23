@@ -31,6 +31,7 @@ public class Controller {
 
     private Config        config;
     private ClientManager clientManager;
+    private VolumeManager volumeManager;
 
     /**
      * Create a new controller object.
@@ -38,9 +39,10 @@ public class Controller {
      * @param config
      *            The parameters to be used for the benchmark.
      */
-    public Controller(Config config) {
+    public Controller(Config config) throws Exception {
         this.config = config;
         this.clientManager = new ClientManager(config);
+        this.volumeManager = new VolumeManager(config, clientManager.getNewClient());
     }
 
     /**
@@ -54,9 +56,6 @@ public class Controller {
      * @throws Exception
      */
     public void setupVolumes(String... volumeNames) throws Exception {
-        VolumeManager.init(this.config, clientManager.getNewClient());
-        VolumeManager volumeManager = VolumeManager.getInstance();
-
         if (volumeNames.length == 0)
             volumeManager.createDefaultVolumes(config.getNumberOfThreads());
         else
@@ -164,8 +163,7 @@ public class Controller {
         deleteVolumesAndFiles();
         clientManager.shutdownClients();
         if (config.isOsdCleanup())
-            VolumeManager.getInstance().cleanupOSD();
-        VolumeManager.getInstance().destroy();
+            volumeManager.cleanupOSD();
     }
 
     /* Repeat a benchmark multiple times and pack the results. */
@@ -192,8 +190,7 @@ public class Controller {
         ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
 
         for (int i = 0; i < config.getNumberOfThreads(); i++) {
-            AbstractBenchmark benchmark = BenchmarkFactory.createBenchmark(benchmarkType, VolumeManager.getInstance()
-                    .getNextVolume(), config, clientManager.getNewClient());
+            AbstractBenchmark benchmark = BenchmarkFactory.createBenchmark(benchmarkType, config, clientManager.getNewClient(), volumeManager);
             benchmark.startBenchmarkThread(results, threads);
         }
 
@@ -203,7 +200,7 @@ public class Controller {
         }
 
         /* reset VolumeManager to prepare for possible consecutive benchmarks */
-        VolumeManager.getInstance().reset();
+        volumeManager.reset();
 
         /* Set BenchmarkResult Type */
         for (BenchmarkResult res : results) {
@@ -215,7 +212,6 @@ public class Controller {
 
     /* delete all created volumes and files depending on the noCleanup options */
     private void deleteVolumesAndFiles() throws Exception {
-        VolumeManager volumeManager = VolumeManager.getInstance();
         if (!config.isNoCleanup() && !config.isNoCleanupOfVolumes()) {
             volumeManager.deleteCreatedFiles(); // is needed in case no volume was created
             volumeManager.deleteCreatedVolumes();

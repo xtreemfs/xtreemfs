@@ -26,8 +26,8 @@ class SequentialWriteBenchmark extends SequentialBenchmark {
 
     private LinkedList<String> filenames;
 
-    SequentialWriteBenchmark(Volume volume, Config config, AdminClient client) throws Exception {
-        super(volume, config, client);
+    SequentialWriteBenchmark(Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
+        super(config, client, volumeManager);
         filenames = new LinkedList<String>();
     }
 
@@ -53,8 +53,8 @@ class SequentialWriteBenchmark extends SequentialBenchmark {
 
     @Override
     void finalizeBenchmark() throws Exception {
-        VolumeManager.getInstance().setSequentialFilelistForVolume(volume, filenames);
-        VolumeManager.getInstance().addCreatedFiles(volume, filenames);
+        volumeManager.setSequentialFilelistForVolume(volume, filenames);
+        volumeManager.addCreatedFiles(volume, filenames);
     }
 
 }

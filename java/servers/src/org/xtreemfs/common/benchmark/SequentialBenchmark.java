@@ -20,8 +20,8 @@ abstract class SequentialBenchmark extends AbstractBenchmark {
 
     static final String BENCHMARK_FILENAME = "benchmarks/sequentialBenchmark/benchFile";
 
-    SequentialBenchmark(Volume volume, Config config, AdminClient client) throws Exception {
-        super(config.getSequentialSizeInBytes(), volume, config, client);
+    SequentialBenchmark(Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
+        super(config.getSequentialSizeInBytes(), config, client, volumeManager);
     }
 
     @Override
