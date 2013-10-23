@@ -46,7 +46,7 @@ public class Config {
     private final String              group;
     private final String              adminPassword;
     private final String              dirAddress;
-    private final String              mrcAddress;
+//    private final String              mrcAddress;
     private final RPC.UserCredentials userCredentials;
     private final RPC.Auth            auth;
     private final SSLOptions          sslOptions;
@@ -86,7 +86,7 @@ public class Config {
         this.policyAttributes = builder.getPolicyAttributes();
         this.stripeSizeInBytes = builder.getStripeSizeInBytes();
         this.stripeWidth = builder.getStripeWidth();
-        this.mrcAddress = getMRCAddress(dirAddress, userCredentials, sslOptions, options);
+//        this.mrcAddress = getMRCAddress(dirAddress, userCredentials, sslOptions, options);
         this.auth = builder.getAuth();
         this.noCleanup = builder.isNoCleanup();
         this.noCleanupOfVolumes = builder.isNoCleanupOfVolumes();
@@ -94,18 +94,18 @@ public class Config {
         this.osdCleanup = builder.isOsdCleanup();
     }
 
-    /* Gets the MRC address from the giben DIR */
-    private String getMRCAddress(String dirAddress, RPC.UserCredentials userCredentials, SSLOptions sslOptions,
-            Options options) throws Exception {
-
-        AdminClient client = ClientManager.getInstance().getNewClient(dirAddress, userCredentials, sslOptions, options);
-
-        UUIDResolver resolver = (ClientImplementation) client;
-
-        String mrcUUID = client.getServiceByType(DIR.ServiceType.SERVICE_TYPE_MRC).getServices(0).getUuid();
-        String mrcAddress = resolver.uuidToAddress(mrcUUID);
-        return mrcAddress;
-    }
+//    /* Gets the MRC address from the giben DIR */
+//    private String getMRCAddress(String dirAddress, RPC.UserCredentials userCredentials, SSLOptions sslOptions,
+//            Options options) throws Exception {
+//
+//        AdminClient client = ClientManager.getInstance().getNewClient(dirAddress, userCredentials, sslOptions, options);
+//
+//        UUIDResolver resolver = (ClientImplementation) client;
+//
+//        String mrcUUID = client.getServiceByType(DIR.ServiceType.SERVICE_TYPE_MRC).getServices(0).getUuid();
+//        String mrcAddress = resolver.uuidToAddress(mrcUUID);
+//        return mrcAddress;
+//    }
 
     /* Build string with all the instance parameters as key-value pairs */
     private String getAllValues() throws IllegalAccessException {
@@ -173,9 +173,9 @@ public class Config {
         return dirAddress;
     }
 
-    String getMrcAddress() {
-        return mrcAddress;
-    }
+//    String getMrcAddress() {
+//        return mrcAddress;
+//    }
 
     RPC.UserCredentials getUserCredentials() {
         return userCredentials;

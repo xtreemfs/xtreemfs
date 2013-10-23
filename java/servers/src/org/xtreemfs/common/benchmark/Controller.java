@@ -29,7 +29,8 @@ import org.xtreemfs.utils.DefaultDirConfig;
  */
 public class Controller {
 
-    private Config config;
+    private Config        config;
+    private ClientManager clientManager;
 
     /**
      * Create a new controller object.
@@ -39,6 +40,7 @@ public class Controller {
      */
     public Controller(Config config) {
         this.config = config;
+        this.clientManager = new ClientManager(config);
     }
 
     /**
@@ -52,7 +54,7 @@ public class Controller {
      * @throws Exception
      */
     public void setupVolumes(String... volumeNames) throws Exception {
-        VolumeManager.init(this.config);
+        VolumeManager.init(this.config, clientManager.getNewClient());
         VolumeManager volumeManager = VolumeManager.getInstance();
 
         if (volumeNames.length == 0)
@@ -123,7 +125,7 @@ public class Controller {
 
     public void tryConnection() throws Exception {
         try {
-            ClientManager.getInstance().getNewClient(config).getServiceByType(DIR.ServiceType.SERVICE_TYPE_OSD);
+            clientManager.getNewClient().getServiceByType(DIR.ServiceType.SERVICE_TYPE_OSD);
         } catch (Exception e) {
             Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, Controller.class,
                     "Failed to establish connection to DIR server.");
@@ -160,11 +162,10 @@ public class Controller {
      */
     public void teardown() throws Exception {
         deleteVolumesAndFiles();
-        ClientManager.getInstance().shutdownClients();
+        clientManager.shutdownClients();
         if (config.isOsdCleanup())
             VolumeManager.getInstance().cleanupOSD();
         VolumeManager.getInstance().destroy();
-        ClientManager.getInstance().destroy();
     }
 
     /* Repeat a benchmark multiple times and pack the results. */
@@ -192,7 +193,7 @@ public class Controller {
 
         for (int i = 0; i < config.getNumberOfThreads(); i++) {
             AbstractBenchmark benchmark = BenchmarkFactory.createBenchmark(benchmarkType, VolumeManager.getInstance()
-                    .getNextVolume(), config);
+                    .getNextVolume(), config, clientManager.getNewClient());
             benchmark.startBenchmarkThread(results, threads);
         }
 

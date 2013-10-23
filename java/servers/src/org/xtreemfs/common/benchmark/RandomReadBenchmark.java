@@ -10,6 +10,7 @@ package org.xtreemfs.common.benchmark;
 
 import java.io.IOException;
 
+import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.FileHandle;
 import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
@@ -23,8 +24,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  */
 class RandomReadBenchmark extends RandomOffsetbasedBenchmark {
 
-    RandomReadBenchmark(Volume volume, Config config) throws Exception {
-        super(volume, config);
+    RandomReadBenchmark(Volume volume, Config config, AdminClient client) throws Exception {
+        super(volume, config, client);
     }
 
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */

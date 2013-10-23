@@ -8,6 +8,7 @@
 
 package org.xtreemfs.common.benchmark;
 
+import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.Volume;
 
 /**
@@ -22,8 +23,8 @@ abstract class FilebasedBenchmark extends RandomBenchmark {
     static final String BENCHMARK_FILENAME = "benchmarks/randomBenchmark/benchFile";
     final int           filesize;
 
-    FilebasedBenchmark(Volume volume, Config config) throws Exception {
-        super(volume, config);
+    FilebasedBenchmark(Volume volume, Config config, AdminClient client) throws Exception {
+        super(volume, config, client);
         this.filesize = config.getFilesize();
     }
 

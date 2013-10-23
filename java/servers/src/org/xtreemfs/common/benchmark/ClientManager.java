@@ -28,32 +28,18 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
  */
 class ClientManager {
 
-    private static ClientManager    instance;
-
     private LinkedList<AdminClient> clients;
+    private Config                  config;
 
-    private ClientManager() {
+    ClientManager(Config config) {
         this.clients = new LinkedList<AdminClient>();
-    }
-
-    static ClientManager getInstance() {
-        if (instance == null)
-            instance = new ClientManager();
-        return instance;
+        this.config = config; 
     }
 
     /* create and start an AdminClient. */
-    AdminClient getNewClient(Config config) throws Exception {
+    AdminClient getNewClient() throws Exception {
         AdminClient client = ClientFactory.createAdminClient(config.getDirAddress(), config.getUserCredentials(),
                 config.getSslOptions(), config.getOptions());
-        clients.add(client);
-        client.start();
-        return client;
-    }
-
-    AdminClient getNewClient(String dirAddress, RPC.UserCredentials userCredentials, SSLOptions sslOptions,
-            Options options) throws Exception {
-        AdminClient client = ClientFactory.createAdminClient(dirAddress, userCredentials, sslOptions, options);
         clients.add(client);
         client.start();
         return client;
@@ -68,10 +54,6 @@ class ClientManager {
                 "Shutting down %s clients", clients.size());
     }
 
-    /* destroys the instance, to allow new instance */
-    void destroy(){
-        instance = null;
-    }
 
     private void tryShutdownOfClient(Client client) {
         try {

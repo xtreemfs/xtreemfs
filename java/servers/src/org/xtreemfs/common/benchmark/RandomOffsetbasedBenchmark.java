@@ -11,6 +11,7 @@ package org.xtreemfs.common.benchmark;
 import java.util.LinkedList;
 import java.util.Random;
 
+import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.FileHandle;
 import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
@@ -30,8 +31,8 @@ abstract class RandomOffsetbasedBenchmark extends RandomBenchmark {
     final long          sizeOfBasefile;
     final static String BASFILE_FILENAME    = "benchmarks/basefile";
 
-    RandomOffsetbasedBenchmark(Volume volume, Config config) throws Exception {
-        super(volume, config);
+    RandomOffsetbasedBenchmark(Volume volume, Config config, AdminClient client) throws Exception {
+        super(volume, config, client);
         sizeOfBasefile = config.getBasefileSizeInBytes();
     }
 

@@ -10,6 +10,7 @@ package org.xtreemfs.common.benchmark;
 
 import java.io.IOException;
 
+import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.FileHandle;
 import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
@@ -22,8 +23,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 class SequentialReadBenchmark extends SequentialBenchmark {
     private String[] filenames;
 
-    SequentialReadBenchmark(Volume volume, Config config) throws Exception {
-        super(volume, config);
+    SequentialReadBenchmark(Volume volume, Config config, AdminClient client) throws Exception {
+        super(volume, config, client);
     }
 
     @Override
