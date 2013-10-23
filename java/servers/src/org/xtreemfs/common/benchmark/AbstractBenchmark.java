@@ -8,12 +8,12 @@
 
 package org.xtreemfs.common.benchmark;
 
-import java.io.IOException;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.foundation.logging.Logging;
+
+import java.io.IOException;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Abstract baseclass for the benchmark classes.

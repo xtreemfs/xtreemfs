@@ -8,15 +8,15 @@
 
 package org.xtreemfs.common.benchmark;
 
-import static org.xtreemfs.foundation.logging.Logging.LEVEL_INFO;
-import static org.xtreemfs.foundation.logging.Logging.logMessage;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
+import org.xtreemfs.utils.DefaultDirConfig;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
-import org.xtreemfs.utils.DefaultDirConfig;
+import static org.xtreemfs.foundation.logging.Logging.LEVEL_INFO;
+import static org.xtreemfs.foundation.logging.Logging.logMessage;
 
 /**
  * Controller for the benchmark library.

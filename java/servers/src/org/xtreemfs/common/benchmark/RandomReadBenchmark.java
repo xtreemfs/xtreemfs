@@ -8,12 +8,11 @@
 
 package org.xtreemfs.common.benchmark;
 
-import java.io.IOException;
-
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.FileHandle;
-import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
+
+import java.io.IOException;
 
 /**
  * Class implementing a random IO read benchmarks.

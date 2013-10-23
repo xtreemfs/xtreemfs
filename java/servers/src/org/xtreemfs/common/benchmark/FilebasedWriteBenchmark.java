@@ -8,14 +8,13 @@
 
 package org.xtreemfs.common.benchmark;
 
+import org.xtreemfs.common.libxtreemfs.AdminClient;
+import org.xtreemfs.common.libxtreemfs.FileHandle;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
+
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Random;
-
-import org.xtreemfs.common.libxtreemfs.AdminClient;
-import org.xtreemfs.common.libxtreemfs.FileHandle;
-import org.xtreemfs.common.libxtreemfs.Volume;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 
 /**
  * Class implementing a filebased write benchmark.

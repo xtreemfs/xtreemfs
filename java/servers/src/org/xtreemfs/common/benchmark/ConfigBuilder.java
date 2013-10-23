@@ -8,14 +8,14 @@
 
 package org.xtreemfs.common.benchmark;
 
-import static org.xtreemfs.foundation.pbrpc.client.RPCAuthentication.authNone;
-
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.xtreemfs.foundation.pbrpc.client.RPCAuthentication.authNone;
 
 /**
  * Builder for the {@link Config} datastructure.

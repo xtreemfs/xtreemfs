@@ -8,17 +8,13 @@
 
 package org.xtreemfs.common.benchmark;
 
-import java.lang.reflect.Field;
-import java.util.Map;
-
-import org.xtreemfs.common.libxtreemfs.AdminClient;
-import org.xtreemfs.common.libxtreemfs.ClientImplementation;
 import org.xtreemfs.common.libxtreemfs.Options;
-import org.xtreemfs.common.libxtreemfs.UUIDResolver;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
+
+import java.lang.reflect.Field;
+import java.util.Map;
 
 /**
  * Datastructure holding all parameters for the benchmark library.

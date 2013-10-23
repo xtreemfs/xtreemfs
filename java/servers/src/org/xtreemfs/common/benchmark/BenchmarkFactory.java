@@ -9,7 +9,6 @@
 package org.xtreemfs.common.benchmark;
 
 import org.xtreemfs.common.libxtreemfs.AdminClient;
-import org.xtreemfs.common.libxtreemfs.Volume;
 
 /**
  * Instantiates a benchmark dependig on the BenchmarkType.
