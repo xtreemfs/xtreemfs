@@ -79,6 +79,7 @@ public class ControllerIntegrationTest {
     public void setUp() throws Exception {
         configBuilder = new ConfigBuilder();
         configBuilder.setDirAddress(dirAddress);
+        configBuilder.setUserName("test").setGroup("test");
         Options options = new Options();
         client = ClientFactory.createClient(dirAddress, userCredentials, null, options);
         client.start();
@@ -306,6 +307,7 @@ public class ControllerIntegrationTest {
 
         /* perform benchmark on osd "UUID:localhost:42641" */
         configBuilder = new ConfigBuilder();
+        configBuilder.setUserName("test").setGroup("test");
         configBuilder.setDirAddress(dirAddress);
         configBuilder.setSelectOsdsByUuid("UUID:localhost:42641").setNoCleanup();
         controller = new Controller(configBuilder.build());
