@@ -125,11 +125,18 @@ class VolumeManager {
             } else
                 throw e;
         }
+
         createDirStructure(volume);
-        volume.setOSDSelectionPolicy(config.getUserCredentials(), config.getOsdSelectionPolicies());
+
+        /* set osd selection policy */
+        if ( ! config.getOsdSelectionPolicies().equals(""))
+            volume.setOSDSelectionPolicy(config.getUserCredentials(), config.getOsdSelectionPolicies());
+
+        /* set policy attributes */
         Map<String, String> attributes = config.getPolicyAttributes();
         for (String attribute : attributes.keySet())
             volume.setPolicyAttribute(config.getUserCredentials(), attribute, attributes.get(attribute));
+
         return volume;
     }
 

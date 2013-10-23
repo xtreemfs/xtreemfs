@@ -51,7 +51,7 @@ public class ConfigBuilder {
     private RPC.Auth            auth                  = authNone;
     private SSLOptions          sslOptions            = null;
     private Options             options               = new Options();
-    private String              osdSelectionPolicies  = "1000,3002";
+    private String              osdSelectionPolicies  = "";
     private Map<String, String> policyAttributes      = new HashMap<String, String>();
     private int                 stripeSizeInBytes     = 128 * BenchmarkUtils.KiB_IN_BYTES;
     private int                 stripeWidth           = 1;
@@ -244,9 +244,10 @@ public class ConfigBuilder {
     }
 
     /**
-     * Set the OSD selection policies used when creating volumes. <br/>
-     * This method assumes, that {@link #setSelectOsdsByUuid(String)} is not used.<br/>
-     * Default: "1000,3002" (Default OSD filter, Shuffling).
+     * Set the OSD selection policies used when creating or opening volumes. <br/>
+     *
+     * Default: No policy is set. If an existing volume is used this means, that already set policies of the volume are
+     * used. If a new volume is created, the defaults are use ("1000,3002": OSD filter, Shuffling).
      * 
      * @param policies
      * @return the builder
@@ -285,7 +286,7 @@ public class ConfigBuilder {
      * @return the builder
      */
     public ConfigBuilder setSelectOsdsByUuid(String uuids) {
-        if (this.osdSelectionPolicies.equals("1000,3002"))
+        if (this.osdSelectionPolicies.equals(""))
             this.osdSelectionPolicies = "1002";
         else
             this.osdSelectionPolicies += ",1002";
