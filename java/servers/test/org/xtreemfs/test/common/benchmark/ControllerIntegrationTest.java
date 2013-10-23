@@ -294,6 +294,28 @@ public class ControllerIntegrationTest {
         deleteVolumes("TestVolA");
     }
 
+    /*
+     * Test, that using an existing volume doesn't change the stripe size and width previously set on said volume.
+     */
+    @Test
+    public void testConfigStripeSizeWidthNotSet() throws Exception {
+
+        List<GlobalTypes.KeyValuePair> volumeAttributes = new ArrayList<GlobalTypes.KeyValuePair>();
+        client.createVolume(authNone, userCredentials, "TestVolA", 511, "test", "test", GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
+                GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, 1024, 2, volumeAttributes);
+
+
+        Volume volume = performBenchmark(configBuilder, BenchmarkType.SEQ_WRITE);
+        String locations = volume.getXAttr(userCredentials, "benchmarks/sequentialBenchmark/benchFile0",
+                "xtreemfs.locations");
+        assertTrue("Stripe Width not correct", locations.contains("\"width\":2"));
+        assertEquals(1024*1024, volume.getAttr(userCredentials, "benchmarks/sequentialBenchmark/benchFile0")
+                .getBlksize());
+        deleteVolumes("TestVolA");
+    }
+
+
+
     @Test
     public void testConfigOSDSelectionPolicy() throws Exception {
         configBuilder.setOsdSelectionPolicies("1001,3003");
@@ -303,15 +325,15 @@ public class ControllerIntegrationTest {
     }
 
 
-    /**
-     * Test, that using a previous created volumes doesn't change the osd selection policies previously set on the volume.
+    /*
+     * Test, that using an existing volume doesn't change the osd selection policies previously set on said volume.
      */
     @Test
     public void testConfigOSDSelectionPolicyNotSet() throws Exception {
 
         List<GlobalTypes.KeyValuePair> volumeAttributes = new ArrayList<GlobalTypes.KeyValuePair>();
         client.createVolume(authNone, userCredentials, "TestVolA", 511, "test", "test", GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
-                GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, 128*1024,1, volumeAttributes);
+                GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, 128, 1, volumeAttributes);
         Volume volume = client.openVolume("TestVolA", null, new Options());
         volume.setOSDSelectionPolicy(userCredentials, "1001,3003");
         volume.close();
