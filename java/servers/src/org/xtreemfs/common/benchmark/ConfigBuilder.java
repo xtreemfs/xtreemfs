@@ -44,8 +44,8 @@ public class ConfigBuilder {
     private long                randomSizeInBytes     = 10L * BenchmarkUtils.MiB_IN_BYTES;
     private long                basefileSizeInBytes   = 3L * BenchmarkUtils.GiB_IN_BYTES;
     private int                 filesize              = 4 * BenchmarkUtils.KiB_IN_BYTES;
-    private String              userName              = "root";
-    private String              group                 = "root";
+    private String              userName              = "benchmark";
+    private String              group                 = "benchmark";
     private String              adminPassword         = "";
     private String              dirAddress            = "127.0.0.1:32638";
     private RPC.Auth            auth                  = authNone;
@@ -153,7 +153,7 @@ public class ConfigBuilder {
 
     /**
      * Set the username to be used when creating files and volumes <br/>
-     * Default: root.
+     * Default: benchmark.
      * 
      * @param userName
      * @return the builder
@@ -167,7 +167,7 @@ public class ConfigBuilder {
 
     /**
      * Set the group to be used when creating files and volumes. <br/>
-     * Default: root.
+     * Default: benchmark.
      * 
      * @param group
      * @return the builder
