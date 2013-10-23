@@ -47,9 +47,9 @@ class VolumeManager {
     private HashMap<Volume, String[]>        filelistsRandomBenchmark;
 
     /* init the VolumeManager with params. This only needs to be called once */
-    static void init(Config config) throws Exception {
+    static void init(Config config, AdminClient client) throws Exception {
         if (volumeManager == null) {
-            volumeManager = new VolumeManager(config);
+            volumeManager = new VolumeManager(config, client);
         }
     }
 
@@ -61,10 +61,10 @@ class VolumeManager {
     }
 
     /* private constructor, used by init */
-    private VolumeManager(Config config) throws Exception {
+    private VolumeManager(Config config, AdminClient client) throws Exception {
         this.config = config;
         currentPosition = 0;
-        this.client = ClientManager.getInstance().getNewClient(config);
+        this.client = client;
         this.volumes = new LinkedList<Volume>();
         this.createdVolumes = new LinkedList<Volume>();
         this.filelistsSequentialBenchmark = new HashMap<Volume, String[]>(5);

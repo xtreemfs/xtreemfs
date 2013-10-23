@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Random;
 
+import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.FileHandle;
 import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
@@ -25,8 +26,8 @@ class SequentialWriteBenchmark extends SequentialBenchmark {
 
     private LinkedList<String> filenames;
 
-    SequentialWriteBenchmark(Volume volume, Config config) throws Exception {
-        super(volume, config);
+    SequentialWriteBenchmark(Volume volume, Config config, AdminClient client) throws Exception {
+        super(volume, config, client);
         filenames = new LinkedList<String>();
     }
 

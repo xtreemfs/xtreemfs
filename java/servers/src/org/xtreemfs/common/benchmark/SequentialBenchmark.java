@@ -8,6 +8,7 @@
 
 package org.xtreemfs.common.benchmark;
 
+import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.Volume;
 
 /**
@@ -19,8 +20,8 @@ abstract class SequentialBenchmark extends AbstractBenchmark {
 
     static final String BENCHMARK_FILENAME = "benchmarks/sequentialBenchmark/benchFile";
 
-    SequentialBenchmark(Volume volume, Config config) throws Exception {
-        super(config.getSequentialSizeInBytes(), volume, config);
+    SequentialBenchmark(Volume volume, Config config, AdminClient client) throws Exception {
+        super(config.getSequentialSizeInBytes(), volume, config, client);
     }
 
     @Override

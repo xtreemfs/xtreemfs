@@ -8,6 +8,7 @@
 
 package org.xtreemfs.common.benchmark;
 
+import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.Volume;
 
 /**
@@ -19,7 +20,7 @@ import org.xtreemfs.common.libxtreemfs.Volume;
  */
 abstract class RandomBenchmark extends AbstractBenchmark {
 
-    RandomBenchmark(Volume volume, Config config) throws Exception {
-        super(config.getRandomSizeInBytes(), volume, config);
+    RandomBenchmark(Volume volume, Config config, AdminClient client) throws Exception {
+        super(config.getRandomSizeInBytes(), volume, config, client);
     }
 }
