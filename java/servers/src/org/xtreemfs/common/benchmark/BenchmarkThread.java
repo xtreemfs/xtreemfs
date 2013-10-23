@@ -8,9 +8,9 @@
 
 package org.xtreemfs.common.benchmark;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
-
 import org.xtreemfs.foundation.logging.Logging;
+
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Thread for a {@link AbstractBenchmark}.

@@ -8,15 +8,12 @@
 
 package org.xtreemfs.common.benchmark;
 
-import java.util.LinkedList;
-
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.Client;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
-import org.xtreemfs.common.libxtreemfs.Options;
-import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
+
+import java.util.LinkedList;
 
 /**
  * Handles client creation, startup and deletion centrally.
