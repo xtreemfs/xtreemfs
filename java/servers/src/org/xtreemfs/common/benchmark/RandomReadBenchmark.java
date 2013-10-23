@@ -24,8 +24,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
  */
 class RandomReadBenchmark extends RandomOffsetbasedBenchmark {
 
-    RandomReadBenchmark(Volume volume, Config config, AdminClient client) throws Exception {
-        super(volume, config, client);
+    RandomReadBenchmark(Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
+        super(config, client, volumeManager);
     }
 
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */

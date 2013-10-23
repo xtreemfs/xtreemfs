@@ -20,7 +20,7 @@ import org.xtreemfs.common.libxtreemfs.Volume;
  */
 abstract class RandomBenchmark extends AbstractBenchmark {
 
-    RandomBenchmark(Volume volume, Config config, AdminClient client) throws Exception {
-        super(config.getRandomSizeInBytes(), volume, config, client);
+    RandomBenchmark(Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
+        super(config.getRandomSizeInBytes(), config, client, volumeManager);
     }
 }

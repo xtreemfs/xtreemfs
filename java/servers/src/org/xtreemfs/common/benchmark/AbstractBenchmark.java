@@ -22,18 +22,20 @@ import org.xtreemfs.foundation.logging.Logging;
  */
  abstract class AbstractBenchmark {
 
-    final int         stripeSize;
-    final long        benchmarkSizeInBytes;
-    final Volume      volume;
-    final AdminClient client;
-    final Config      config;
+    final int           stripeSize;
+    final long          benchmarkSizeInBytes;
+    final Volume        volume;
+    final AdminClient   client;
+    final Config        config;
+    final VolumeManager volumeManager;
 
-    AbstractBenchmark(long benchmarkSizeInBytes, Volume volume, Config config, AdminClient client) throws Exception {
+    AbstractBenchmark(long benchmarkSizeInBytes, Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
         this.client = client;
         this.benchmarkSizeInBytes = benchmarkSizeInBytes;
-        this.volume = volume;
+        this.volume = volumeManager.getNextVolume();
         this.config = config;
-        stripeSize = config.getStripeSizeInBytes();
+        this.stripeSize = config.getStripeSizeInBytes();
+        this.volumeManager = volumeManager;        
     }
 
     /*

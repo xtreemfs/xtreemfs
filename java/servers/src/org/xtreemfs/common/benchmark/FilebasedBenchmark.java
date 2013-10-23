@@ -23,8 +23,8 @@ abstract class FilebasedBenchmark extends RandomBenchmark {
     static final String BENCHMARK_FILENAME = "benchmarks/randomBenchmark/benchFile";
     final int           filesize;
 
-    FilebasedBenchmark(Volume volume, Config config, AdminClient client) throws Exception {
-        super(volume, config, client);
+    FilebasedBenchmark(Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
+        super(config, client, volumeManager);
         this.filesize = config.getFilesize();
     }
 

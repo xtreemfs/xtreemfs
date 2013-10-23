@@ -23,13 +23,13 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 class SequentialReadBenchmark extends SequentialBenchmark {
     private String[] filenames;
 
-    SequentialReadBenchmark(Volume volume, Config config, AdminClient client) throws Exception {
-        super(volume, config, client);
+    SequentialReadBenchmark(Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
+        super(config, client, volumeManager);
     }
 
     @Override
     void prepareBenchmark() throws Exception {
-        this.filenames = VolumeManager.getInstance().getSequentialFilelistForVolume(volume);
+        this.filenames = volumeManager.getSequentialFilelistForVolume(volume);
     }
 
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */

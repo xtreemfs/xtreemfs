@@ -26,8 +26,8 @@ class FilebasedWriteBenchmark extends FilebasedBenchmark {
 
     private LinkedList<String> filenames;
 
-    FilebasedWriteBenchmark(Volume volume, Config config, AdminClient client) throws Exception {
-        super(volume, config, client);
+    FilebasedWriteBenchmark(Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
+        super(config, client, volumeManager);
         filenames = new LinkedList<String>();
     }
 
@@ -68,8 +68,8 @@ class FilebasedWriteBenchmark extends FilebasedBenchmark {
 
     @Override
     void finalizeBenchmark() throws Exception {
-        VolumeManager.getInstance().setRandomFilelistForVolume(volume, filenames);
-        VolumeManager.getInstance().addCreatedFiles(volume, filenames);
+        volumeManager.setRandomFilelistForVolume(volume, filenames);
+        volumeManager.addCreatedFiles(volume, filenames);
     }
 
 }

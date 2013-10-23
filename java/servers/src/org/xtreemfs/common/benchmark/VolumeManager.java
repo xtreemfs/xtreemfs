@@ -36,7 +36,6 @@ class VolumeManager {
 
     private static final String              VOLUME_BASE_NAME = "benchmark";
 
-    private static VolumeManager             volumeManager    = null;
     private Config                           config;
     private AdminClient                      client;
     private int                              currentPosition;
@@ -46,22 +45,7 @@ class VolumeManager {
     private HashMap<Volume, String[]>        filelistsSequentialBenchmark;
     private HashMap<Volume, String[]>        filelistsRandomBenchmark;
 
-    /* init the VolumeManager with params. This only needs to be called once */
-    static void init(Config config, AdminClient client) throws Exception {
-        if (volumeManager == null) {
-            volumeManager = new VolumeManager(config, client);
-        }
-    }
-
-    /* returns the (singleton) instance of the VolumeManager */
-    static VolumeManager getInstance() throws Exception {
-        if (volumeManager == null)
-            throw new RuntimeException("Volume Manager not initialized");
-        return volumeManager;
-    }
-
-    /* private constructor, used by init */
-    private VolumeManager(Config config, AdminClient client) throws Exception {
+    VolumeManager(Config config, AdminClient client) throws Exception {
         this.config = config;
         currentPosition = 0;
         this.client = client;
@@ -386,11 +370,6 @@ class VolumeManager {
     /* get the list of volumes */
     LinkedList<Volume> getVolumes() {
         return volumes;
-    }
-
-    /* destroys the instance, to allow new instance */
-    void destroy(){
-        volumeManager = null;
     }
 
 }
