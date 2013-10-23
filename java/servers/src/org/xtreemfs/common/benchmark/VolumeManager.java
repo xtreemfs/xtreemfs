@@ -110,22 +110,22 @@ class VolumeManager {
     /* opens a single volume (or creates and opens a volume if it does not exist) */
     private Volume createAndOpenVolume(String volumeName) throws IOException {
         Volume volume = null;
-        try {
+        try { /* try creating the volume */
             List<GlobalTypes.KeyValuePair> volumeAttributes = new ArrayList<GlobalTypes.KeyValuePair>();
-            client.createVolume(config.getAuth(), config.getUserCredentials(), volumeName, 511, config.getUserName(), config.getGroup(),
-                    GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
+            client.createVolume(config.getAuth(), config.getUserCredentials(), volumeName, 511, config.getUserName(),
+                    config.getGroup(), GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
                     GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, config.getStripeSizeInKiB(),
                     config.getStripeWidth(), volumeAttributes);
             volume = client.openVolume(volumeName, config.getSslOptions(), config.getOptions());
             createdVolumes.add(volume);
-            createDirStructure(volume);
             Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Created volume %s", volumeName);
         } catch (PosixErrorException e) {
-            if (e.getPosixError() == POSIXErrno.POSIX_ERROR_EEXIST) {
+            if (e.getPosixError() == POSIXErrno.POSIX_ERROR_EEXIST) { /* i.e. volume already exists */
                 volume = client.openVolume(volumeName, config.getSslOptions(), config.getOptions());
             } else
                 throw e;
         }
+        createDirStructure(volume);
         volume.setOSDSelectionPolicy(config.getUserCredentials(), config.getOsdSelectionPolicies());
         Map<String, String> attributes = config.getPolicyAttributes();
         for (String attribute : attributes.keySet())
@@ -134,8 +134,26 @@ class VolumeManager {
     }
 
     private void createDirStructure(Volume volume) throws IOException {
-        volume.createDirectory(config.getUserCredentials(), "/benchmarks/sequentialBenchmark", 0777, true);
-        volume.createDirectory(config.getUserCredentials(), "/benchmarks/randomBenchmark", 0777, true);
+        createDir(volume, "/benchmarks/sequentialBenchmark");
+        createDir(volume, "/benchmarks/randomBenchmark");
+    }
+
+    private void createDir(Volume volume, String directory) throws IOException {
+
+        try { /* try to create directory benchmark */
+            volume.createDirectory(config.getUserCredentials(), directory, 0777, true);
+            Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this,
+                    "/benchmarks/randomBenchmark created on volume %s", volume.getVolumeName());
+
+        /* catch should be entered when directory already exists */
+        } catch (PosixErrorException e) {
+
+            /* if its not because directory already exists, throw error again */
+            if (!(e.getPosixError() == POSIXErrno.POSIX_ERROR_EEXIST)) {
+                throw e;
+            }
+        }
+
     }
 
     /*
