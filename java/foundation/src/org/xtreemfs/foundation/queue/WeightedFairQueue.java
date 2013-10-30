@@ -24,15 +24,13 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
         public int getWeight(T element);
     }
 
-    private Map<T, Queue<E>>                    queues;
+    protected Map<T, Queue<E>>                    queues;
 
-    private Map<T, Integer>                     requestCount;
+    protected Map<T, Integer>                     requestCount;
 
-    private int                                 capacity;
+    protected int                                 capacity;
 
-    private Iterator<Queue<E>>                  queueIterator = null;
-
-    private WFQElementInformationProvider<T, E> elementInformationProvider;
+    protected WFQElementInformationProvider<T, E> elementInformationProvider;
 
     public WFQElementInformationProvider<T, E> getElementInformationProvider() {
         return elementInformationProvider;
@@ -64,22 +62,42 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
 
     @Override
     public E remove() {
-        return this.getNextQueue().remove();
+        Queue<E> resultQueue = this.getNextQueue();
+
+        if (resultQueue != null)
+            return resultQueue.remove();
+        else
+            return null;
     }
 
     @Override
     public E poll() {
-        return this.getNextQueue().poll();
+        Queue<E> resultQueue = this.getNextQueue();
+
+        if (resultQueue != null)
+            return resultQueue.poll();
+        else
+            return null;
     }
 
     @Override
     public E element() {
-        return this.getNextQueue().element();
+        Queue<E> resultQueue = this.getNextQueue();
+
+        if (resultQueue != null)
+            return resultQueue.element();
+        else
+            return null;
     }
 
     @Override
     public E peek() {
-        return this.getNextQueue().peek();
+        Queue<E> resultQueue = this.getNextQueue();
+
+        if (resultQueue != null)
+            return resultQueue.peek();
+        else
+            return null;
     }
 
     @Override
@@ -98,7 +116,12 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
     @Override
     public E take() throws InterruptedException {
         E element;
-        while((element = this.getNextQueue().poll()) == null) {
+        Queue<E> q = this.getNextQueue();
+
+        if (q == null)
+            return null;
+
+        while((element = q.poll()) == null) {
             Thread.sleep(1);
         }
         this.countRequest(element);
@@ -253,7 +276,7 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
         return size;
     }
 
-    private void countRequest(E element) {
+    protected void countRequest(E element) {
         int count = 0;
         T qualityClass = this.elementInformationProvider.getQualityClass(element);
         if(this.requestCount.containsKey(qualityClass)) {
@@ -263,7 +286,7 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
         this.requestCount.put(qualityClass, count);
     }
 
-    private Queue<E> getQueue(E element) {
+    protected Queue<E> getQueue(E element) {
         T qualityClass = this.elementInformationProvider.getQualityClass(element);
         if(this.queues.containsKey(qualityClass)) {
             return this.queues.get(qualityClass);
@@ -274,32 +297,49 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
         }
     }
 
-    private Queue<E> getNextQueue() {
-        // TODO(ckleineweber): consider quality class weights
-        if(this.queueIterator == null || !this.queueIterator.hasNext()) {
-            this.queueIterator = queues.values().iterator();
+    protected Queue<E> getNextQueue() {
+        T resultClass = null;
+
+        for(T c: this.queues.keySet()) {
+            if(resultClass == null && !this.queues.get(c).isEmpty()) {
+                resultClass = c;
+            } else if (resultClass != null) {
+                if(((getProportion(c) - getCurrentProportion(c)) >
+                        (getProportion(resultClass) - getCurrentProportion(resultClass))) &&
+                        !this.queues.get(c).isEmpty()) {
+                    resultClass = c;
+                }
+            } else if (!this.queues.get(c).isEmpty()) {
+                resultClass = c;
+            }
         }
 
-        return this.queueIterator.next();
+        if(resultClass == null)
+            return null;
+        else
+            return this.queues.get(resultClass);
     }
 
-    private double getProportion(T qualityClass) {
+    protected double getProportion(T qualityClass) {
         double sum = 0.0;
 
         for(T c: this.requestCount.keySet()) {
             sum += (double) this.elementInformationProvider.getWeight(c);
         }
 
-        return sum / (double) this.elementInformationProvider.getWeight(qualityClass);
+        return (double) this.elementInformationProvider.getWeight(qualityClass) / sum;
     }
 
-    private double getCurrentProportion(T qualityClass) {
+    protected double getCurrentProportion(T qualityClass) {
         double sum = 0.0;
+
+        if(!this.requestCount.containsKey(qualityClass) || !this.queues.containsKey(qualityClass))
+            return sum;
 
         for(T c: this.requestCount.keySet()) {
             sum += (double) this.requestCount.get(c);
         }
 
-        return sum / (double) this.requestCount.get(qualityClass);
+        return (double) this.requestCount.get(qualityClass) / sum;
     }
 }

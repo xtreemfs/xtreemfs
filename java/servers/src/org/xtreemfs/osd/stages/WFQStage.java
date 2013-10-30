@@ -57,7 +57,7 @@ public class WFQStage extends Stage {
             }
 
             @Override
-            public int getWeight(WFQRequest element) {
+            public int getWeight(String qualityClass) {
                 return 1;  //To change body of implemented methods use File | Settings | File Templates.
             }
         });
