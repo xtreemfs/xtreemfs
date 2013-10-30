@@ -196,23 +196,27 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
 
     @Override
     public Iterator<E> iterator() {
-        return new Iterator<E>() {
-            E lastElement = null;
+        List<E> elements = new ArrayList<E>();
+        for(Queue<E> q: queues.values()) {
+            elements.addAll(q);
+        }
 
-            public void remove() {
-                if(lastElement != null)
-                    getQueue(lastElement).remove(lastElement);
+        Collections.sort(elements, new Comparator<E>() {
+            @Override
+            public int compare(E o1, E o2) {
+                double d1= getProportion(elementInformationProvider.getQualityClass(o1)) -
+                        getCurrentProportion(elementInformationProvider.getQualityClass(o1));
+                double d2 = getProportion(elementInformationProvider.getQualityClass(o2)) -
+                        getCurrentProportion(elementInformationProvider.getQualityClass(o2));
+                if (d1 > d2)
+                    return 1;
+                else if (d1 < d2)
+                    return -1;
+                else return 0;
             }
+        });
 
-            public boolean hasNext() {
-                return (size() > 0);
-            }
-
-            public E next() {
-                lastElement = getNextQueue().peek();
-                return lastElement;
-            }
-        };
+        return elements.iterator();
     }
 
     @Override

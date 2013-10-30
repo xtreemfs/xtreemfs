@@ -14,6 +14,7 @@ import org.xtreemfs.foundation.queue.WeightedFairQueue;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -183,7 +184,7 @@ public class WeightedFairQueueTest {
         assertTrue(queue.contains(3));
     }
 
-    /*@Test
+    @Test
     public void testRetainAll() throws Exception {
         List<Integer> l = new ArrayList<Integer>();
         l.add(1);
@@ -198,7 +199,23 @@ public class WeightedFairQueueTest {
         assertTrue(queue.contains(1));
         assertTrue(queue.contains(2));
         assertFalse(queue.contains(3));
-    }*/
+    }
+
+    @Test
+    public void testIterator() throws Exception {
+        queue.add(1);
+        queue.add(2);
+        queue.add(3);
+
+        Iterator<Integer> it = queue.iterator();
+        assertTrue(it.hasNext());
+        assertEquals(it.next(), 3);
+        assertTrue(it.hasNext());
+        assertEquals(it.next(), 2);
+        assertTrue(it.hasNext());
+        assertEquals(it.next(), 1);
+        assertFalse(it.hasNext());
+    }
 
     @Test
     public void testProportions() throws Exception {
