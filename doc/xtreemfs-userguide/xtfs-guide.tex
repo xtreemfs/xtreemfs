@@ -41,7 +41,7 @@ Version 1.4.x
 XtreemFS is available from the \href{http://www.XtreemFS.org}{XtreemFS website (www.XtreemFS.org)}.
 
 
-This document is \copyright{} 2009-2011 by Bj\"orn Kolbeck, Jan Stender, Michael Berlin, Matthias Noack, Paul Seiferth, Felix Langner, NEC HPC Europe, Felix Hupfeld, Juan Gonzales. All rights reserved.
+This document is \copyright{} 2009-\the\year{} by Bj\"orn Kolbeck, Jan Stender, Michael Berlin, Matthias Noack, Paul Seiferth, Felix Langner, NEC HPC Europe, Felix Hupfeld, Juan Gonzales. All rights reserved.
 
 \setcounter{tocdepth}{2}
 \tableofcontents
@@ -310,7 +310,7 @@ $> export JAVA_HOME=/usr/java6
 \end{verbatim}
 
 
-Both RPM and Debian-based packages will install three \texttt{init.d} scripts to start up the services (\texttt{xtreemfs-dir}, \texttt{xtreemfs-mrc}, \texttt{xtreemfs-osd}). If you want the services to be started automatically when booting up the system, you can execute \texttt{insserv <init.d script>} (SuSE), \texttt{chkconfig --add <init.d script>} (Mandriva, RedHat) or \texttt{update-rc.d <init.d script> defaults} (Ubuntu, Debian).
+Both RPM and Debian-based packages will install three \texttt{init.d} scripts to start up the services (\texttt{xtreemfs-dir}, \texttt{xtreemfs-mrc}, \texttt{xtreemfs-osd}). If you want the services to be started automatically when booting up the system, you can execute \texttt{insserv <init.d script>} (SuSE), \texttt{chkconfig ----add <init.d script>} (Mandriva, RedHat) or \texttt{update-rc.d <init.d script> defaults} (Ubuntu, Debian).
 
 \subsection{Installing from Sources}
 
@@ -547,6 +547,13 @@ $> cp SERVICE.p12 /etc/xos/xtreemfs/truststore/certs
 	for Grid-SSL-enabled servers.
 
 \end{enumerate}
+
+
+\subsection{Running XtreemFS on SSDs}
+
+SSDs are replacing spinning hard disk drives increasingly. This trend is also relevant for the area of distributed file systems. As XtreemFS uses an underlying local file system for all services, XtreemFS can be used with SSDs without any modifications.
+
+To make use of the increased performance that an SSD can provide, it might be suitable to use multiple storage threads on the XtreemFS OSD. The number of storage threads can be adjusted by the \texttt{storage\_threads} parameter in the OSD configuration file (see Sec. \ref{sec:config}).
 
 
 \subsection{List of Configuration Options}
@@ -1229,6 +1236,14 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & Adjusts the internally used storage layout on the OSD. The storage layout determines how an OSD stores its files and objects. Currently, only \texttt{HashStorageLayout} is supported.
 \end{tabular}
 
+\subsubsection{\texttt{storage\_threads} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & OSD\\
+ Values   & 1..N\\
+ Default  & 1\\
+ Description & Set the number of threads that are used to access the underlying file system. For spinning disks, the default value is recommended. For SSDs a higher number might be sufficient.
+\end{tabular}
+
 \subsubsection{\texttt{uuid}}
 \begin{tabular}{lp{10cm}}
  Services & MRC, OSD\\
@@ -1338,6 +1353,15 @@ To run init.d scripts, root permissions are required. Note that MRC and OSD will
 % 	\end{verbatim}
 % 
 % The servers will be executed under the user ID of the user who called the xctl script.
+
+\subsection{Running multiple OSDs per Machine}
+
+Running more than one OSD service per host might be useful in various situations. Use cases for this might be machines with more than one disk as an alternative to a local RAID or testing purposes. We offer an extended \texttt{init.d} script, named \texttt{xtreemfs-osd-farm}, to start or stop a set of OSDs on one host by a single script.
+
+The \texttt{xtreemfs-osd-farm} script can be found in the /usr/share/xtreemfs directory, if XtreemFS is installed by the provided packages, or in the contrib directory of the XtreemFS GIT repository. 
+
+Using the \texttt{xtreemfs-osd-farm} script demands two steps. First, a list names for all of the used OSDs hat to be set to the OSD\_INSTANCES variable in the script. The list elements have to be separated by spaces. In the second step, a configuration file with the name \texttt{<osdname>.config.properties} has to be created in \texttt{/etc/xos/xtreemfs} for all of the defined OSD names, whereas <osdname> has to be replaced by the particular OSD name. After these steps, the \texttt{init.d} script can be executed with the usual arguments \texttt{start}, \texttt{stop}, \texttt{status}, \texttt{restart}, and \texttt{try-restart}. A single OSD can be controlled by \texttt{xtreemfs-osd-farm <osdname> <argument>}.
+
 
 \subsection{Web-based Status Page}
 
@@ -2325,7 +2349,7 @@ Reads can be executed locally on the primary. However, operations that modify da
 
 The replication of files adds significant communication overhead to keep replicas in sync. When a file is opened, the OSD which the client contacts requires at least three message round-trips to acquire the lease and to execute the replica reset. Once a primary was elected, read operations can be executed locally without any communication. Truncate and write require a single round-trip between the primary and the backup OSDs.
 
-Depending on the selected replication policy, the read/write replication can tolerate some replica failures. The \textbf{WqRq} (\textit{write quorum, read quorum}) policy employs majority voting and can tolerate replica failures as long as a majority of replicas is available. This is the most fault-tolerant strategy in XtreemFS. However, it guarantees only that data is stored on a majority of the replicas. If you lose more replicas permanently, data might be lost. Please note that, unlike the term \textit{read quorum} suggests, read operations are not executed on the majority of replicas. Instead it means that a majority of replicas has to be available during the replica reset phase in order to synchronize the primary's replica. After this phase read operations are executed locally. Please keep in mind that the majority of two replicas is two, i.e. using WqRq with two replicas will provide you no availability in case of a replica failure. Use the WqRq policy only if you have at least 3 OSDs - otherwise select the WqR1 policy.
+Depending on the selected replication policy, the read/write replication can tolerate some replica failures. The \textbf{WqRq} (\textit{write quorum, read quorum}) policy employs majority voting and can tolerate replica failures as long as a majority of replicas is available. This is the most fault-tolerant strategy in XtreemFS. However, it guarantees only that data is stored on a majority of the replicas. If you lose more replicas permanently, data might be lost. Please note that, unlike the term \textit{read quorum} suggests, read operations are not executed on the majority of replicas. Instead it means that a majority of replicas has to be available during the replica reset phase in order to synchronize the primary's replica. After this phase read operations are executed locally. Please keep in mind that the majority of two replicas is two, i.e. using WqRq with two replicas will provide you no availability in case of a replica failure. Use the WqRq policy only if you have at least 3 OSDs - otherwise select the WaR1 policy.
 
 The \textbf{WaR1} (\textit{write all, read 1}) policy writes updates to all replicas which yields higher data safety. However, if any replica is unavailable, modifications are not possible and the client will receive a write error. Local data can be still read from an OSD.
 

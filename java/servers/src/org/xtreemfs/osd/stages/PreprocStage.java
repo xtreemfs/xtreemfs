@@ -174,6 +174,11 @@ public class PreprocStage extends Stage {
                     oft.openFile(fileId, TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, cowPolicy, write);
                     request.setFileOpen(true);
                 }
+            } else {
+                // It's a DeleteOperation. Close the file first.
+                if (oft.close(fileId)) {
+                    checkOpenFileTable(true);
+                }
             }
             request.setCowPolicy(cowPolicy);
         }
@@ -325,7 +330,7 @@ public class PreprocStage extends Stage {
             try {
                 final StageRequest op = q.poll(timeToNextOFTclean, TimeUnit.MILLISECONDS);
                 
-                checkOpenFileTable();
+                checkOpenFileTable(false);
                 
                 if (op == null) {
                     // Logging.logMessage(Logging.LEVEL_DEBUG,this,"no request
@@ -346,12 +351,19 @@ public class PreprocStage extends Stage {
         notifyStopped();
     }
     
-    private void checkOpenFileTable() {
+    /**
+     * Removes all open files from the {@link OpenFileTable} whose time has expired and triggers for each file
+     * the internal event {@link EventCloseFile} or {@link EventCreateFileVersion}.
+     * 
+     * @param force
+     *            If true, force the cleaning and do not respect the cleaning interval.
+     */
+    private void checkOpenFileTable(boolean force) {
         final long tPassed = TimeSync.getLocalSystemTime() - lastOFTcheck;
         timeToNextOFTclean = timeToNextOFTclean - tPassed;
         // Logging.logMessage(Logging.LEVEL_DEBUG,this,"time to next OFT:
         // "+timeToNextOFTclean);
-        if (timeToNextOFTclean <= 0) {
+        if (force || timeToNextOFTclean <= 0) {
             
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "OpenFileTable clean");

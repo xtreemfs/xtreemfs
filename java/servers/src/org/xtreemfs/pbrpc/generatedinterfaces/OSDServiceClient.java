@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Thu Mar 21 17:09:46 CET 2013
+//automatically generated from OSD.proto at Wed Oct 30 10:58:13 CET 2013
 //(c) 2013. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -178,6 +178,19 @@ public class OSDServiceClient {
     public RPCResponse xtreemfs_cleanup_versions_start(InetSocketAddress server, Auth authHeader, UserCredentials userCreds) throws IOException {
          
          return xtreemfs_cleanup_versions_start(server, authHeader, userCreds,null);
+    }
+
+    public RPCResponse xtreemfs_repair_object(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_repair_objectRequest input) throws IOException {
+         if (server == null) server = defaultServer;
+         if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
+         RPCResponse response = new RPCResponse(null);
+         client.sendRequest(server, authHeader, userCreds, 30001, 36, input, null, response, false);
+         return response;
+    }
+
+    public RPCResponse xtreemfs_repair_object(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long object_number, long object_version) throws IOException {
+         final OSD.xtreemfs_repair_objectRequest msg = OSD.xtreemfs_repair_objectRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setObjectNumber(object_number).setObjectVersion(object_version).build();
+         return xtreemfs_repair_object(server, authHeader, userCreds,msg);
     }
 
     public RPCResponse<OSD.ObjectData> xtreemfs_rwr_fetch(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_rwr_fetchRequest input) throws IOException {

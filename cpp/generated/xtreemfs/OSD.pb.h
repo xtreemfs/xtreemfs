@@ -59,6 +59,7 @@ class xtreemfs_cleanup_is_runningResponse;
 class xtreemfs_cleanup_startRequest;
 class xtreemfs_cleanup_statusResponse;
 class xtreemfs_rwr_fetchRequest;
+class xtreemfs_repair_objectRequest;
 class xtreemfs_rwr_flease_msgRequest;
 class xtreemfs_rwr_set_primary_epochRequest;
 class xtreemfs_rwr_statusRequest;
@@ -2497,6 +2498,123 @@ class xtreemfs_rwr_fetchRequest : public ::google::protobuf::Message {
 };
 // -------------------------------------------------------------------
 
+class xtreemfs_repair_objectRequest : public ::google::protobuf::Message {
+ public:
+  xtreemfs_repair_objectRequest();
+  virtual ~xtreemfs_repair_objectRequest();
+  
+  xtreemfs_repair_objectRequest(const xtreemfs_repair_objectRequest& from);
+  
+  inline xtreemfs_repair_objectRequest& operator=(const xtreemfs_repair_objectRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+  
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+  
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const xtreemfs_repair_objectRequest& default_instance();
+  
+  void Swap(xtreemfs_repair_objectRequest* other);
+  
+  // implements Message ----------------------------------------------
+  
+  xtreemfs_repair_objectRequest* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const xtreemfs_repair_objectRequest& from);
+  void MergeFrom(const xtreemfs_repair_objectRequest& from);
+  void Clear();
+  bool IsInitialized() const;
+  
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+  
+  ::google::protobuf::Metadata GetMetadata() const;
+  
+  // nested types ----------------------------------------------------
+  
+  // accessors -------------------------------------------------------
+  
+  // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+  inline bool has_file_credentials() const;
+  inline void clear_file_credentials();
+  static const int kFileCredentialsFieldNumber = 1;
+  inline const ::xtreemfs::pbrpc::FileCredentials& file_credentials() const;
+  inline ::xtreemfs::pbrpc::FileCredentials* mutable_file_credentials();
+  
+  // required string file_id = 2;
+  inline bool has_file_id() const;
+  inline void clear_file_id();
+  static const int kFileIdFieldNumber = 2;
+  inline const ::std::string& file_id() const;
+  inline void set_file_id(const ::std::string& value);
+  inline void set_file_id(const char* value);
+  inline void set_file_id(const char* value, size_t size);
+  inline ::std::string* mutable_file_id();
+  
+  // required fixed64 object_number = 3;
+  inline bool has_object_number() const;
+  inline void clear_object_number();
+  static const int kObjectNumberFieldNumber = 3;
+  inline ::google::protobuf::uint64 object_number() const;
+  inline void set_object_number(::google::protobuf::uint64 value);
+  
+  // required fixed64 object_version = 4;
+  inline bool has_object_version() const;
+  inline void clear_object_version();
+  static const int kObjectVersionFieldNumber = 4;
+  inline ::google::protobuf::uint64 object_version() const;
+  inline void set_object_version(::google::protobuf::uint64 value);
+  
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_repair_objectRequest)
+ private:
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+  mutable int _cached_size_;
+  
+  ::xtreemfs::pbrpc::FileCredentials* file_credentials_;
+  ::std::string* file_id_;
+  static const ::std::string _default_file_id_;
+  ::google::protobuf::uint64 object_number_;
+  ::google::protobuf::uint64 object_version_;
+  friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fOSD_2eproto();
+  
+  ::google::protobuf::uint32 _has_bits_[(4 + 31) / 32];
+  
+  // WHY DOES & HAVE LOWER PRECEDENCE THAN != !?
+  inline bool _has_bit(int index) const {
+    return (_has_bits_[index / 32] & (1u << (index % 32))) != 0;
+  }
+  inline void _set_bit(int index) {
+    _has_bits_[index / 32] |= (1u << (index % 32));
+  }
+  inline void _clear_bit(int index) {
+    _has_bits_[index / 32] &= ~(1u << (index % 32));
+  }
+  
+  void InitAsDefaultInstance();
+  static xtreemfs_repair_objectRequest* default_instance_;
+};
+// -------------------------------------------------------------------
+
 class xtreemfs_rwr_flease_msgRequest : public ::google::protobuf::Message {
  public:
   xtreemfs_rwr_flease_msgRequest();
@@ -4191,6 +4309,10 @@ class OSDService : public ::google::protobuf::Service {
                        const ::xtreemfs::pbrpc::emptyRequest* request,
                        ::xtreemfs::pbrpc::emptyResponse* response,
                        ::google::protobuf::Closure* done);
+  virtual void xtreemfs_repair_object(::google::protobuf::RpcController* controller,
+                       const ::xtreemfs::pbrpc::xtreemfs_repair_objectRequest* request,
+                       ::xtreemfs::pbrpc::emptyResponse* response,
+                       ::google::protobuf::Closure* done);
   virtual void xtreemfs_rwr_fetch(::google::protobuf::RpcController* controller,
                        const ::xtreemfs::pbrpc::xtreemfs_rwr_fetchRequest* request,
                        ::xtreemfs::pbrpc::ObjectData* response,
@@ -4346,6 +4468,10 @@ class OSDService_Stub : public OSDService {
                        ::google::protobuf::Closure* done);
   void xtreemfs_cleanup_versions_start(::google::protobuf::RpcController* controller,
                        const ::xtreemfs::pbrpc::emptyRequest* request,
+                       ::xtreemfs::pbrpc::emptyResponse* response,
+                       ::google::protobuf::Closure* done);
+  void xtreemfs_repair_object(::google::protobuf::RpcController* controller,
+                       const ::xtreemfs::pbrpc::xtreemfs_repair_objectRequest* request,
                        ::xtreemfs::pbrpc::emptyResponse* response,
                        ::google::protobuf::Closure* done);
   void xtreemfs_rwr_fetch(::google::protobuf::RpcController* controller,
@@ -6004,6 +6130,101 @@ inline ::google::protobuf::uint64 xtreemfs_rwr_fetchRequest::object_version() co
   return object_version_;
 }
 inline void xtreemfs_rwr_fetchRequest::set_object_version(::google::protobuf::uint64 value) {
+  _set_bit(3);
+  object_version_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// xtreemfs_repair_objectRequest
+
+// required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+inline bool xtreemfs_repair_objectRequest::has_file_credentials() const {
+  return _has_bit(0);
+}
+inline void xtreemfs_repair_objectRequest::clear_file_credentials() {
+  if (file_credentials_ != NULL) file_credentials_->::xtreemfs::pbrpc::FileCredentials::Clear();
+  _clear_bit(0);
+}
+inline const ::xtreemfs::pbrpc::FileCredentials& xtreemfs_repair_objectRequest::file_credentials() const {
+  return file_credentials_ != NULL ? *file_credentials_ : *default_instance_->file_credentials_;
+}
+inline ::xtreemfs::pbrpc::FileCredentials* xtreemfs_repair_objectRequest::mutable_file_credentials() {
+  _set_bit(0);
+  if (file_credentials_ == NULL) file_credentials_ = new ::xtreemfs::pbrpc::FileCredentials;
+  return file_credentials_;
+}
+
+// required string file_id = 2;
+inline bool xtreemfs_repair_objectRequest::has_file_id() const {
+  return _has_bit(1);
+}
+inline void xtreemfs_repair_objectRequest::clear_file_id() {
+  if (file_id_ != &_default_file_id_) {
+    file_id_->clear();
+  }
+  _clear_bit(1);
+}
+inline const ::std::string& xtreemfs_repair_objectRequest::file_id() const {
+  return *file_id_;
+}
+inline void xtreemfs_repair_objectRequest::set_file_id(const ::std::string& value) {
+  _set_bit(1);
+  if (file_id_ == &_default_file_id_) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(value);
+}
+inline void xtreemfs_repair_objectRequest::set_file_id(const char* value) {
+  _set_bit(1);
+  if (file_id_ == &_default_file_id_) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(value);
+}
+inline void xtreemfs_repair_objectRequest::set_file_id(const char* value, size_t size) {
+  _set_bit(1);
+  if (file_id_ == &_default_file_id_) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* xtreemfs_repair_objectRequest::mutable_file_id() {
+  _set_bit(1);
+  if (file_id_ == &_default_file_id_) {
+    file_id_ = new ::std::string;
+  }
+  return file_id_;
+}
+
+// required fixed64 object_number = 3;
+inline bool xtreemfs_repair_objectRequest::has_object_number() const {
+  return _has_bit(2);
+}
+inline void xtreemfs_repair_objectRequest::clear_object_number() {
+  object_number_ = GOOGLE_ULONGLONG(0);
+  _clear_bit(2);
+}
+inline ::google::protobuf::uint64 xtreemfs_repair_objectRequest::object_number() const {
+  return object_number_;
+}
+inline void xtreemfs_repair_objectRequest::set_object_number(::google::protobuf::uint64 value) {
+  _set_bit(2);
+  object_number_ = value;
+}
+
+// required fixed64 object_version = 4;
+inline bool xtreemfs_repair_objectRequest::has_object_version() const {
+  return _has_bit(3);
+}
+inline void xtreemfs_repair_objectRequest::clear_object_version() {
+  object_version_ = GOOGLE_ULONGLONG(0);
+  _clear_bit(3);
+}
+inline ::google::protobuf::uint64 xtreemfs_repair_objectRequest::object_version() const {
+  return object_version_;
+}
+inline void xtreemfs_repair_objectRequest::set_object_version(::google::protobuf::uint64 value) {
   _set_bit(3);
   object_version_ = value;
 }

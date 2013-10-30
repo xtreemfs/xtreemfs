@@ -69,7 +69,7 @@ public class FileScrubber implements Runnable {
     public void run() {
         String replicaUpdatePolicy = fileHandle.getReplicaUpdatePolicy();
 
-        // If file has only one replica, treat it as non replicated
+        // If file has only one replica, treat it as non replicated.
         if (replicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)
                 && fileHandle.getReplicasList().size() > 1) {
             scrubReadOnlyReplicatedFile();
@@ -86,7 +86,7 @@ public class FileScrubber implements Runnable {
 
     private void scrubReadOnlyReplicatedFile() {
 
-        // get replicas and number of objects
+        // Get replicas and number of objects.
         List<Replica> replicas = fileHandle.getReplicasList();
         long numObjs = 0;
         boolean checkObjects = true;
@@ -98,15 +98,15 @@ public class FileScrubber implements Runnable {
             returnStatus.add(ReturnStatus.UNREACHABLE);
         }
 
-        // read all replicas
+        // Read all replicas.
         List<Replica> removedReplicas = new LinkedList<Replica>();
         for (int r = 0; r < replicas.size(); r++) {
             Replica replica = replicas.get(r);
-            // check if an OSD was removed
+            // check if an OSD was removed.
             boolean isReplOnDeadOsd = false;
             for (String osd : replica.getOsdUuidsList()) {
                 if (removedOSDs.contains(osd)) {
-                    // store replica for later re-creation
+                    // Store replica for later re-creation.
                     removedReplicas.add(replica);
                     isReplOnDeadOsd = true;
                     break;
@@ -127,9 +127,24 @@ public class FileScrubber implements Runnable {
                     try {
                         fileHandle.checkObjectAndGetSize(r, o);
                     } catch (InvalidChecksumException ex) {
-                        printFileErrorMessage("object #" + o + " of replica " + r
-                                + " has an invalid checksum on OSD " + replica.getOsdUuids((int) (o % replica.getOsdUuidsCount())));
-                        returnStatus.add(ReturnStatus.FAILURE_OBJECTS);
+                    	String errormsg = "";
+                        if (repair) {
+                            try {
+                                fileHandle.repairObject(r, o);
+                                errormsg = "object #" + o + " of replica " + r + " had an invalid checksum on OSD "
+                                        + getOSDUUIDFromObjectNo(replica, o) + " and was repaired";
+                                returnStatus.add(ReturnStatus.FAILURE_OBJECTS);
+                            } catch (IOException e) {
+                                errormsg = "object #" + o + " of replica " + r + " has an invalid checksum on OSD "
+                                        + getOSDUUIDFromObjectNo(replica, o) + " and is irreparable";
+                                returnStatus.add(ReturnStatus.FAILURE_OBJECTS);
+                            }
+                        } else {
+                            errormsg = "object #" + o + " of replica " + r + " has an invalid checksum on OSD "
+                                    + getOSDUUIDFromObjectNo(replica, o);
+                            returnStatus.add(ReturnStatus.FAILURE_OBJECTS);                            	
+                        }
+                        printFileErrorMessage(errormsg);
                     } catch (IOException ex) {
                         printFileErrorMessage("unable to check object #" + o + " of replica " + r + ": " + ex);
                         returnStatus.add(ReturnStatus.UNREACHABLE);
@@ -153,20 +168,19 @@ public class FileScrubber implements Runnable {
     }
 
     private void scrubRWOrNonReplicatedFile() {
-        boolean checkMrcFileSize = true;
 
-        // get replicas
+        // Get replicas.
         List<Replica> replicas = fileHandle.getReplicasList();
 
-        // read all replicas
+        // Read all replicas.
         List<Replica> removedReplicas = new LinkedList<Replica>();
         for (int r = 0; r < replicas.size(); r++) {
             Replica replica = replicas.get(r);
-            // check if an OSD was removed
+            // Check if an OSD was removed.
             boolean isReplOnDeadOsd = false;
             for (String osd : replica.getOsdUuidsList()) {
                 if (removedOSDs.contains(osd)) {
-                    // if file is not replicated or has only one replica, delete it
+                    // If file is not replicated or has only one replica, delete it.
                     if (fileHandle.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE)
                             || fileHandle.getReplicasList().size() == 1) {
                         String errMsg = "file data was stored on removed OSD. File is lost.";
@@ -174,7 +188,7 @@ public class FileScrubber implements Runnable {
                         if (delete) {
                             errMsg = "file data was stored on removed OSD. File was deleted.";
                             try {
-                                // delete file
+                                // Delete file.
                                 volume.unlink(xtfs_scrub.credentials, fileName);
                             } catch (IOException ex2) {
                                 errMsg = "unable to delete " + fileName + ", because: " + ex2.getMessage();
@@ -184,7 +198,7 @@ public class FileScrubber implements Runnable {
                         returnStatus.add(ReturnStatus.FILE_LOST);
                         return;
                     } else {
-                        // store replica for later re-creation
+                        // Store replica for later re-creation.
                         removedReplicas.add(replica);
                         isReplOnDeadOsd = true;
                         break;
@@ -193,65 +207,59 @@ public class FileScrubber implements Runnable {
             }
             if (!isReplOnDeadOsd) {
                 // check objects of the replica
-                byteCounter = 0;
                 boolean eof = false;
                 nextObjectToScrub = 0;
                 while (!eof) {
                     try {
                         int objSize = fileHandle.checkObjectAndGetSize(r, nextObjectToScrub++);
-                        byteCounter += objSize;
                         if (objSize < replica.getStripingPolicy().getStripeSize()) {
                             eof = true;
                         }
                     } catch (InvalidChecksumException ex) {
                         printFileErrorMessage("object #" + (nextObjectToScrub - 1) + " of replica " + r
                                 + " has an invalid checksum on OSD " + replica.getOsdUuids((int) ((nextObjectToScrub - 1) % replica.getOsdUuidsCount())));
-                        checkMrcFileSize = false;
                         returnStatus.add(ReturnStatus.FAILURE_OBJECTS);
                         break;
                     } catch (IOException ex) {
                         printFileErrorMessage("unable to check object #" + (nextObjectToScrub - 1)
                                 + " of replica " + r + ": " + ex);
-                        checkMrcFileSize = false;
                         returnStatus.add(ReturnStatus.UNREACHABLE);
                         break;
                     }
                 }
             }
         }
-        // handle removed replicas
+        // Handle removed replicas.
         if (!removedReplicas.isEmpty()) {
             if (repair) {
-                recreateReplicas(removedReplicas);
-            } else {
-                printFileErrorMessage("lost " + removedReplicas.size() + " replicas due to dead OSDs");
+                printFileErrorMessage("re-creation of R/W replicated files is not supported yet");
             }
+            printFileErrorMessage("lost " + removedReplicas.size() + " replicas due to dead OSDs");
             returnStatus.add(ReturnStatus.FAILURE_REPLICAS);
         }
-        // check file size on MRC(only if file is not replicated and a valid file size is available)
-        if (fileHandle.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE)
-                & checkMrcFileSize) {
-            try {
-                // get file size on the MRC
-                long mrcFileSize = volume.getAttr(xtfs_scrub.credentials, fileName).getSize();
-
-                if (byteCounter != mrcFileSize) {
-                    if (repair) {
-                        // truncate file
-                        fileHandle.truncate(xtfs_scrub.credentials, byteCounter, true);
-                        printFileErrorMessage("corrected file size from " + mrcFileSize + " to "
-                                + byteCounter + " bytes");
-                    } else {
-                        printFileErrorMessage("incorrect file size: is " + mrcFileSize + " but should be "
-                                + byteCounter + " bytes");
-                    }
-                    returnStatus.add(ReturnStatus.WRONG_FILE_SIZE);
+        // Check file size on MRC.
+        try {
+            // Get file size on MRC and OSDs
+            long mrcFileSize = volume.getAttr(xtfs_scrub.credentials, fileName).getSize();
+            byteCounter = fileHandle.getSizeOnOSD();
+            
+            if (byteCounter != mrcFileSize) {
+                if (repair) {
+                    // update file size on MRC
+                    fileHandle.truncate(xtfs_scrub.credentials, byteCounter, true);
+                    printFileErrorMessage("corrected file size from " + mrcFileSize + " to "
+                            + byteCounter + " bytes");
+                } else {
+                    printFileErrorMessage("incorrect file size: is " + mrcFileSize + " but should be "
+                            + byteCounter + " bytes");
                 }
-            } catch (IOException ex) {
-                printFileErrorMessage("unable to read file size from MRC: " + ex);
-                returnStatus.add(ReturnStatus.UNREACHABLE);
+                returnStatus.add(ReturnStatus.WRONG_FILE_SIZE);
             }
+        } catch (IOException ex) {
+            printFileErrorMessage("unable to get file size: " + ex);
+            returnStatus.add(ReturnStatus.UNREACHABLE);
         }
+
         // if everything is fine, set returnStatus to FILE_OK
         if (returnStatus.size() == 0) {
             returnStatus.add(ReturnStatus.FILE_OK);
@@ -261,6 +269,11 @@ public class FileScrubber implements Runnable {
     private void printFileErrorMessage(String error) {
         System.err.format("file '%s' (%s):\n\t%s\n", fileName, fileHandle.getGlobalFileId(), error);
     }
+
+    static private String getOSDUUIDFromObjectNo(Replica replica, long objectNo) {
+        return replica.getOsdUuids((int) objectNo % replica.getOsdUuidsCount());
+    }
+
 
     private void recreateReplicas(List<Replica> removedReplicas) {
         int numReplRemoved = removedReplicas.size();

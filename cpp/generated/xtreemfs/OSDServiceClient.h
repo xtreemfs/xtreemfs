@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Fri Apr 05 14:03:44 CEST 2013
+//automatically generated from OSD.proto at Wed Oct 30 10:58:13 CET 2013
 //(c) 2013. See LICENSE file for details.
 
 #ifndef OSDSERVICECLIENT_H
@@ -300,6 +300,29 @@ namespace pbrpc {
                 xtreemfs::pbrpc::emptyRequest* request = NULL;
                 SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
                 client_->sendRequest(address, 30001, 35,
+                     creds, auth, request, data, data_length, NULL,
+                     NULL, sync_cb);
+                return sync_cb;
+            }
+
+            void xtreemfs_repair_object(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds,
+                const xtreemfs::pbrpc::xtreemfs_repair_objectRequest* request,
+                CallbackInterface<xtreemfs::pbrpc::emptyResponse> *callback, void *context = NULL) {
+                const char* data = NULL; uint32_t data_length = 0;
+                client_->sendRequest(address, 30001, 36,
+                     creds, auth, request, data, data_length, NULL,
+                     context, callback);
+            }
+
+            SyncCallback<xtreemfs::pbrpc::emptyResponse>* xtreemfs_repair_object_sync(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds
+                , const xtreemfs::pbrpc::xtreemfs_repair_objectRequest* request) {
+                const char* data = NULL; uint32_t data_length = 0;
+                SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
+                client_->sendRequest(address, 30001, 36,
                      creds, auth, request, data, data_length, NULL,
                      NULL, sync_cb);
                 return sync_cb;

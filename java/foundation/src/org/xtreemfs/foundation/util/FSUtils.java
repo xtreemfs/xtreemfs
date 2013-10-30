@@ -88,9 +88,20 @@ public class FSUtils {
      *
      * @param dir
      *            the directory stored in the partition
-     * @return the free disk space (for non-privileged users)
+     * @return the free disk space
      */
     public static long getFreeSpace(String dir) {
+        return new File(dir).getFreeSpace();
+    }
+
+    /**
+     * Returns the available disk space on the partition storing the given directory.
+     *
+     * @param dir
+     *            the directory stored in the partition
+     * @return the available disk space (for non-privileged users)
+     */
+    public static long getUsableSpace(String dir) {
         return new File(dir).getUsableSpace();
     }
 

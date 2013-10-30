@@ -73,7 +73,7 @@ public interface AdminFileHandle extends FileHandle {
      * 
      * @param userCredentials
      *            Name and Groups of the user.
-     * 
+     *            
      * @throws IOException
      */
     public long getNumObjects(UserCredentials userCredentials) throws IOException;
@@ -84,13 +84,31 @@ public interface AdminFileHandle extends FileHandle {
      * 
      * @param replicaIndex
      *            Replica from which the object will be checked.
-     * @param NoObject
+     * @param objectNo
      *            Object which will be checked.
      * 
      * @throws InvalidChecksumException.
      */
     public int checkObjectAndGetSize(int replicaIndex, long objectNo) throws IOException,
             InvalidChecksumException;
+
+    /**
+     * Repairs the Object with number "objectNo" of the replica with index "replicaIndex".
+     * 
+     * @param replicaIndex
+     *            Index of the Replica in the xlocset from which the object will be repaired.
+     * @param objectNo
+     *            Object which will be repaired.
+     */
+    public void repairObject(int replicaIndex, long objectNo) throws IOException;
+
+    /**
+     * 
+     * Returns file size on the OSDs.
+     * 
+     * @throws IOException
+     */
+    public long getSizeOnOSD() throws IOException;
 
     /**
      * Same as truncate(userCredentials, newFileSize) but with the option to truncate the file only at the

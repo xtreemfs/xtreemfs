@@ -62,7 +62,7 @@ public class DeleteVolumeOperation extends MRCOperation {
         
         // if no admin password has been set, check whether privileged
         // permissions are granted for deleting the volume
-        if (master.getConfig().getAdminPassword().length() > 0)
+        if (master.getConfig().getAdminPassword().length() == 0)
             master.getFileAccessManager().checkPrivilegedPermissions(sMan, file, rq.getDetails().userId,
                     rq.getDetails().superUser, rq.getDetails().groupIds);
         

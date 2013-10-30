@@ -10,6 +10,8 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.FilenameFilter;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 
 import org.junit.AfterClass;
@@ -21,22 +23,18 @@ import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.AdminFileHandle;
 import org.xtreemfs.common.libxtreemfs.AdminVolume;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
+import org.xtreemfs.common.libxtreemfs.FileHandle;
+import org.xtreemfs.common.libxtreemfs.Helper;
 import org.xtreemfs.common.libxtreemfs.Options;
-import org.xtreemfs.dir.DIRConfig;
+import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.mrc.MRCConfig;
-import org.xtreemfs.mrc.MRCRequestDispatcher;
-import org.xtreemfs.osd.OSD;
-import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceStatus;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.REPL_FLAG;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
@@ -46,17 +44,9 @@ import org.xtreemfs.utils.xtfs_scrub.xtfs_scrub;
 
 public class ScrubberTest {
 
-    private static MRCRequestDispatcher  mrc1;
-
     private static MRCConfig             mrcCfg1;
 
     private static BabuDBConfig          mrcDBCfg1;
-
-    private static OSDConfig             osdConfig1, osdConfig2, osdConfig3, osdConfig4;
-
-    private static DIRConfig             dsCfg;
-
-    private static OSD                   osd1, osd2, osd3, osd4;
 
     private static InetSocketAddress     mrc1Address;
 
@@ -85,56 +75,42 @@ public class ScrubberTest {
 
         accessMode = 0777; // rwxrwxrwx
 
-        dsCfg = SetupUtils.createDIRConfig();
         dirAddress = SetupUtils.getDIRAddr();
 
         mrcCfg1 = SetupUtils.createMRC1Config();
         mrcDBCfg1 = SetupUtils.createMRC1dbsConfig();
         mrc1Address = SetupUtils.getMRC1Addr();
 
-        SetupUtils.CHECKSUMS_ON = true;
-        osdConfig1 = SetupUtils.createOSD1Config();
-        osdConfig2 = SetupUtils.createOSD2Config();
-        osdConfig3 = SetupUtils.createOSD3Config();
-        osdConfig4 = SetupUtils.createOSD4Config();
-        SetupUtils.CHECKSUMS_ON = false;
-
         // cleanup
         File testDir = new File(SetupUtils.TEST_DIR);
 
         FSUtils.delTree(testDir);
         testDir.mkdirs();
-
-        // startup: DIR
+        SetupUtils.CHECKSUMS_ON = true;
+        // startup test environment
         testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_SERVICE,
                 TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.UUID_RESOLVER,
-                TestEnvironment.Services.MRC_CLIENT, TestEnvironment.Services.OSD_CLIENT });
+                TestEnvironment.Services.MRC_CLIENT, TestEnvironment.Services.OSD_CLIENT, TestEnvironment.Services.MRC,
+                TestEnvironment.Services.OSD,
+                TestEnvironment.Services.OSD, TestEnvironment.Services.OSD, TestEnvironment.Services.OSD });
         testEnv.start();
-
-        // start the OSD
-        osd1 = new OSD(osdConfig1);
-
-        // start MRC
-        mrc1 = new MRCRequestDispatcher(mrcCfg1, mrcDBCfg1);
-        mrc1.startup();
-
+        SetupUtils.CHECKSUMS_ON = false;
         // create client
-
         client = ClientFactory.createAdminClient(dirAddress.getHostName() + ":" + dirAddress.getPort(),
                 userCredentials, null, new Options());
         client.start();
 
         // create content
         String tmp = "";
-        for (int i = 0; i < 12000; i++)
+        for (int i = 0; i < 12000; i++) {
             tmp = tmp.concat("Hello World ");
+        }
         content = tmp.getBytes();
     }
 
     @AfterClass
     public static void tearDown() throws Exception {
         client.shutdown();
-        osd1.shutdown();
         testEnv.shutdown();
     }
 
@@ -165,7 +141,7 @@ public class ScrubberTest {
         assertEquals(3, de.getEntriesCount());
 
         // mark OSD as removed
-        client.setOSDServiceStatus(osdConfig1.getUUID().toString(), ServiceStatus.SERVICE_STATUS_REMOVED);
+        client.setOSDServiceStatus(file.getReplica(0).getOsdUuids(0), ServiceStatus.SERVICE_STATUS_REMOVED);
 
         // scrub volume
         xtfs_scrub scrubber = new xtfs_scrub(client, volume, 3, true, true, true);
@@ -180,7 +156,7 @@ public class ScrubberTest {
                 RPCAuthentication.authNone, userCredentials, VOLUME_NAME);
 
         // mark OSD as available
-        client.setOSDServiceStatus(osdConfig1.getUUID().toString(), ServiceStatus.SERVICE_STATUS_AVAIL);
+        client.setOSDServiceStatus(file.getReplica(0).getOsdUuids(0), ServiceStatus.SERVICE_STATUS_AVAIL);
     }
 
     @Test
@@ -205,11 +181,9 @@ public class ScrubberTest {
         file.write(userCredentials, content, file.getStripingPolicy().getStripeSize() * 1024 - 20, 0);
 
         // modify first Object on OSD
-        HashStorageLayout hsl = new HashStorageLayout(osdConfig1, new MetadataCache());
-        String filePath = hsl.generateAbsoluteFilePath(file.getGlobalFileId());
 
-        File fileDir = new File(filePath);
-        FileWriter fw = new FileWriter(fileDir.listFiles()[0], true);
+        File objFile = openObjectFile(file, 0, 0);
+        FileWriter fw = new FileWriter(objFile, false);
 
         fw.write("foofoofoofoofoo");
         fw.close();
@@ -217,8 +191,6 @@ public class ScrubberTest {
         // scrub volume
         xtfs_scrub scrubber = new xtfs_scrub(client, volume, 3, true, true, true);
         scrubber.scrub();
-
-        // TODO(lukas): add asserts
         
         file.close();
 
@@ -248,22 +220,22 @@ public class ScrubberTest {
         // write file
         file.write(userCredentials, content, content.length, 0);
 
-        Stat s = file.getAttr(userCredentials);
-        assertEquals(content.length, s.getSize());
+        Stat stat = file.getAttr(userCredentials);
+        assertEquals(content.length, stat.getSize());
 
         // truncate file on MRC
         file.truncate(userCredentials, 10, true);
 
-        s = file.getAttr(userCredentials);
-        assertEquals(10, s.getSize());
+        stat = file.getAttr(userCredentials);
+        assertEquals(10, stat.getSize());
 
         // scrub volume
         xtfs_scrub scrubber = new xtfs_scrub(client, volume, 3, true, true, true);
         scrubber.scrub();
 
         // file size should be correct from 10 to content.length
-        s = file.getAttr(userCredentials);
-        assertEquals(content.length, s.getSize());
+        stat = file.getAttr(userCredentials);
+        assertEquals(content.length, stat.getSize());
         
         file.close();
 
@@ -283,6 +255,12 @@ public class ScrubberTest {
         AdminVolume volume = client.openVolume(VOLUME_NAME, null, new Options());
         volume.start();
 
+        // set replica update Policy
+        int replicationFlags = ReplicationFlags.setRarestFirstStrategy(0);
+        replicationFlags = ReplicationFlags.setFullReplica(replicationFlags);
+        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY, 3,
+                replicationFlags);
+
         // create file
         AdminFileHandle file = volume.openFile(
                 userCredentials,
@@ -293,34 +271,23 @@ public class ScrubberTest {
         // write file
         file.write(userCredentials, content, content.length, 0);
 
-        // start new OSDs and give them some time for start up
-        osd2 = new OSD(osdConfig2);
-        osd3 = new OSD(osdConfig3);
-        osd4 = new OSD(osdConfig4);
-        Thread.sleep(10000);
+        // re-open file to trigger replication
+        file.close();
+        file = volume.openFile(userCredentials, FILE_NAME, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
 
-        // set replica update Policy
-        RPCResponse<?> r = testEnv.getMrcClient().xtreemfs_set_replica_update_policy(mrc1Address,
-                RPCAuthentication.authNone, userCredentials, file.getGlobalFileId(),
-                ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY);
-        r.get();
-        r.freeBuffers();
+        // wait for replication
+        Thread.sleep(5000);
 
-        // create new replicas
-        Replica newRepl = file.getReplica(0).toBuilder().setOsdUuids(0, osdConfig2.getUUID().toString())
-                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber() & REPL_FLAG.REPL_FLAG_STRATEGY_RAREST_FIRST.getNumber()).build();
-        volume.addReplica(userCredentials, FILE_NAME, newRepl);
-
-        newRepl = file.getReplica(0).toBuilder().setOsdUuids(0, osdConfig3.getUUID().toString())
-                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber() & REPL_FLAG.REPL_FLAG_STRATEGY_RAREST_FIRST.getNumber()).build();
-        volume.addReplica(userCredentials, FILE_NAME, newRepl);
-
-        // mark OSD3 as removed
-        client.setOSDServiceStatus(osdConfig3.getUUID().toString(), ServiceStatus.SERVICE_STATUS_REMOVED);
+        // mark OSD of the second replica as removed
+        client.setOSDServiceStatus(file.getReplica(1).getOsdUuids(0), ServiceStatus.SERVICE_STATUS_REMOVED);
 
         // scrub volume
         xtfs_scrub scrubber = new xtfs_scrub(client, volume, 3, true, true, true);
         scrubber.scrub();
+
+        // re-open file
+        file.close();
+        file = volume.openFile(userCredentials, FILE_NAME, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
 
         // file has still three replicas
         assertEquals(3, file.getReplicasList().size());
@@ -331,10 +298,7 @@ public class ScrubberTest {
         client.deleteVolume(mrc1Address.getHostName() + ":" + mrc1Address.getPort(),
                 RPCAuthentication.authNone, userCredentials, VOLUME_NAME);
 
-        // shut down OSDs
-        osd2.shutdown();
-        osd3.shutdown();
-        osd4.shutdown();
+        client.setOSDServiceStatus(file.getReplica(1).getOsdUuids(0), ServiceStatus.SERVICE_STATUS_AVAIL);
     }
 
     @Test
@@ -348,6 +312,12 @@ public class ScrubberTest {
         AdminVolume volume = client.openVolume(VOLUME_NAME, null, new Options());
         volume.start();
 
+        // set replica update Policy
+        int replicationFlags = ReplicationFlags.setRarestFirstStrategy(0);
+        replicationFlags = ReplicationFlags.setFullReplica(replicationFlags);
+        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY, 3,
+                replicationFlags);
+
         // create file
         AdminFileHandle file = volume.openFile(
                 userCredentials,
@@ -356,29 +326,19 @@ public class ScrubberTest {
                         | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), accessMode);
 
         // write file
-        file.write(userCredentials, content, file.getStripingPolicy().getStripeSize() * 1024 - 20, 0);
+        int contentSize = file.getStripingPolicy().getStripeSize() * 1024;
+        file.write(userCredentials, content, contentSize, 0);
 
-        // start new OSDs
-        osd2 = new OSD(osdConfig2);
+        // re-open file to trigger replication
+        file.close();
+        file = volume.openFile(userCredentials, FILE_NAME, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
 
-        // set replica update Policy
-        RPCResponse<?> r = testEnv.getMrcClient().xtreemfs_set_replica_update_policy(mrc1Address,
-                RPCAuthentication.authNone, userCredentials, file.getGlobalFileId(),
-                ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY);
-        r.get();
-        r.freeBuffers();
+        // wait for replication
+        Thread.sleep(5000);
 
-        // create new replicas
-        Replica newRepl = file.getReplica(0).toBuilder().setOsdUuids(0, osdConfig2.getUUID().toString())
-                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber() & REPL_FLAG.REPL_FLAG_STRATEGY_RAREST_FIRST.getNumber()).build();
-        volume.addReplica(userCredentials, FILE_NAME, newRepl);
-
-        // modify first Object on OSD
-        HashStorageLayout hsl = new HashStorageLayout(osdConfig1, new MetadataCache());
-        String filePath = hsl.generateAbsoluteFilePath(file.getGlobalFileId());
-
-        File fileDir = new File(filePath);
-        FileWriter fw = new FileWriter(fileDir.listFiles()[0], true);
+        // modify first Object of the second replica on OSD
+        File objFile = openObjectFile(file, 1, 0);
+        FileWriter fw = new FileWriter(objFile, false);
 
         fw.write("foofoofoofoofoo");
         fw.close();
@@ -386,29 +346,32 @@ public class ScrubberTest {
         // scrub volume
         xtfs_scrub scrubber = new xtfs_scrub(client, volume, 3, true, true, true);
         scrubber.scrub();
-
-        // TODO(lukas): add asserts
         
-        file.close();
-
+        //object file should be as long as the originally written content
+        Thread.sleep(5000);
+        objFile = openObjectFile(file, 1, 0);
+        assertEquals(contentSize, objFile.length());
+        
         // delete volume
+        file.close();
         client.deleteVolume(mrc1Address.getHostName() + ":" + mrc1Address.getPort(),
                 RPCAuthentication.authNone, userCredentials, VOLUME_NAME);
-
-        // shut down OSDs
-        osd2.shutdown();
     }
 
-    @Test
+    //@Test
     public void testRWReplicatedFileWithLostReplica() throws Exception {
         final String VOLUME_NAME = "testRWReplicatedFileWithLostReplica";
         final String FILE_NAME = "test0.txt";
 
         // create Volume
-        client.createVolume(mrc1Address.getHostName() + ":" + mrc1Address.getPort(),
-                RPCAuthentication.authNone, userCredentials, VOLUME_NAME);
+        client.createVolume(mrc1Address.getHostName() + ":" + mrc1Address.getPort(), RPCAuthentication.authNone,
+                userCredentials, VOLUME_NAME);
         AdminVolume volume = client.openVolume(VOLUME_NAME, null, new Options());
         volume.start();
+        
+        // set replica update Policy
+        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ,
+                3, 0);
 
         // create file
         AdminFileHandle file = volume.openFile(
@@ -417,37 +380,19 @@ public class ScrubberTest {
                 SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                         | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), accessMode);
 
-        // start new OSDs and give them some time for start up
-        osd2 = new OSD(osdConfig2);
-        osd3 = new OSD(osdConfig3);
-        osd4 = new OSD(osdConfig4);
-        Thread.sleep(10000);
-
-        // set replica update Policy
-        RPCResponse<?> r = testEnv.getMrcClient().xtreemfs_set_replica_update_policy(mrc1Address,
-                RPCAuthentication.authNone, userCredentials, file.getGlobalFileId(),
-                ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE);
-        r.get();
-        r.freeBuffers();
-
         // write file
         file.write(userCredentials, content, content.length, 0);
 
-        // create new replicas
-        Replica newRepl = file.getReplica(0).toBuilder().setOsdUuids(0, osdConfig2.getUUID().toString())
-                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber() & REPL_FLAG.REPL_FLAG_STRATEGY_RAREST_FIRST.getNumber()).build();
-        volume.addReplica(userCredentials, FILE_NAME, newRepl);
-
-        newRepl = file.getReplica(0).toBuilder().setOsdUuids(0, osdConfig3.getUUID().toString())
-                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber() & REPL_FLAG.REPL_FLAG_STRATEGY_RAREST_FIRST.getNumber()).build();
-        volume.addReplica(userCredentials, FILE_NAME, newRepl);
-
-        // mark OSD3 as removed
-        client.setOSDServiceStatus(osdConfig3.getUUID().toString(), ServiceStatus.SERVICE_STATUS_REMOVED);
+        // mark OSD of the second replica as removed
+        client.setOSDServiceStatus(file.getReplica(1).getOsdUuids(0), ServiceStatus.SERVICE_STATUS_REMOVED);
 
         // scrub volume
         xtfs_scrub scrubber = new xtfs_scrub(client, volume, 3, true, true, true);
         scrubber.scrub();
+
+        // re-open file
+        file.close();
+        file = volume.openFile(userCredentials, FILE_NAME, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber());
 
         // file has still three replicas
         assertEquals(3, file.getReplicasList().size());
@@ -458,10 +403,7 @@ public class ScrubberTest {
         client.deleteVolume(mrc1Address.getHostName() + ":" + mrc1Address.getPort(),
                 RPCAuthentication.authNone, userCredentials, VOLUME_NAME);
 
-        // shut down OSDs
-        osd2.shutdown();
-        osd3.shutdown();
-        osd4.shutdown();
+        client.setOSDServiceStatus(file.getReplica(1).getOsdUuids(0), ServiceStatus.SERVICE_STATUS_AVAIL);
     }
 
     @Test
@@ -475,6 +417,9 @@ public class ScrubberTest {
         AdminVolume volume = client.openVolume(VOLUME_NAME, null, new Options());
         volume.start();
 
+        // set replica update Policy
+        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 3, 0);
+
         // create file
         AdminFileHandle file = volume.openFile(
                 userCredentials,
@@ -482,30 +427,12 @@ public class ScrubberTest {
                 SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                         | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), accessMode);
 
-        // start new OSDs
-        osd2 = new OSD(osdConfig2);
-
-        // set replica update Policy
-        RPCResponse<?> r = testEnv.getMrcClient().xtreemfs_set_replica_update_policy(mrc1Address,
-                RPCAuthentication.authNone, userCredentials, file.getGlobalFileId(),
-                ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE);
-        r.get();
-        r.freeBuffers();
-
         // write file
-        file.write(userCredentials, content, file.getStripingPolicy().getStripeSize() * 1024 - 20, 0);
+        file.write(userCredentials, content, content.length, 0);
 
-        // create new replicas
-        Replica newRepl = file.getReplica(0).toBuilder().setOsdUuids(0, osdConfig2.getUUID().toString())
-                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber() & REPL_FLAG.REPL_FLAG_STRATEGY_RAREST_FIRST.getNumber()).build();
-        volume.addReplica(userCredentials, FILE_NAME, newRepl);
-
-        // modify first Object on OSD
-        HashStorageLayout hsl = new HashStorageLayout(osdConfig1, new MetadataCache());
-        String filePath = hsl.generateAbsoluteFilePath(file.getGlobalFileId());
-
-        File fileDir = new File(filePath);
-        FileWriter fw = new FileWriter(fileDir.listFiles()[0], true);
+        // modify second Object
+        File objFile = openObjectFile(file, 0, 1);
+        FileWriter fw = new FileWriter(objFile, false);
 
         fw.write("foofoofoofoofoo");
         fw.close();
@@ -513,20 +440,15 @@ public class ScrubberTest {
         // scrub volume
         xtfs_scrub scrubber = new xtfs_scrub(client, volume, 3, true, true, true);
         scrubber.scrub();
-
-        // TODO(lukas): add asserts
         
         file.close();
 
         // delete volume
         client.deleteVolume(mrc1Address.getHostName() + ":" + mrc1Address.getPort(),
                 RPCAuthentication.authNone, userCredentials, VOLUME_NAME);
-
-        // shut down OSDs
-        osd2.shutdown();
     }
 
-    // not supported yet
+    @Test
     public void testRWReplicatedFileWithWrongFileSizeOnMrc() throws Exception {
         final String VOLUME_NAME = "testRWReplicatedFileWithWrongFileSizeOnMrc";
         final String FILE_NAME = "test0.txt";
@@ -537,6 +459,10 @@ public class ScrubberTest {
         AdminVolume volume = client.openVolume(VOLUME_NAME, null, new Options());
         volume.start();
 
+        // set replica update Policy
+        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ,
+                3, 0);
+
         // create file
         AdminFileHandle file = volume.openFile(
                 userCredentials,
@@ -544,23 +470,8 @@ public class ScrubberTest {
                 SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                         | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), accessMode);
 
-        // start new OSDs
-        osd2 = new OSD(osdConfig2);
-
-        // set replica update Policy
-        RPCResponse<?> r = testEnv.getMrcClient().xtreemfs_set_replica_update_policy(mrc1Address,
-                RPCAuthentication.authNone, userCredentials, file.getGlobalFileId(),
-                ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE);
-        r.get();
-        r.freeBuffers();
-
         // write file
         file.write(userCredentials, content, content.length, 0);
-
-        // create new replicas
-        Replica newRepl = file.getReplica(0).toBuilder().setOsdUuids(0, osdConfig2.getUUID().toString())
-                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber() & REPL_FLAG.REPL_FLAG_STRATEGY_RAREST_FIRST.getNumber()).build();
-        volume.addReplica(userCredentials, FILE_NAME, newRepl);
 
         Stat s = file.getAttr(userCredentials);
         assertEquals(content.length, s.getSize());
@@ -584,8 +495,23 @@ public class ScrubberTest {
         // delete volume
         client.deleteVolume(mrc1Address.getHostName() + ":" + mrc1Address.getPort(),
                 RPCAuthentication.authNone, userCredentials, VOLUME_NAME);
+    }
+    
+    private File openObjectFile(AdminFileHandle file, int replicaIndex, int objectIndex) throws IOException {
+    	
+    	String osdUUID = Helper.getOSDUUIDFromObjectNo(file.getReplica(replicaIndex), objectIndex);
+        HashStorageLayout hsl = new HashStorageLayout(testEnv.getOSDConfig(osdUUID),
+                new MetadataCache());
+        String filePath = hsl.generateAbsoluteFilePath(file.getGlobalFileId());
 
-        // shut down OSD
-        osd2.shutdown();
+        File fileDir = new File(filePath);
+        File[] objFiles = fileDir.listFiles(new FilenameFilter() {
+
+            @Override
+            public boolean accept(File dir, String name) {
+                return !name.matches("\\..*");
+            }
+        });
+        return objFiles[objectIndex / file.getStripingPolicy(replicaIndex).getWidth()];
     }
 }

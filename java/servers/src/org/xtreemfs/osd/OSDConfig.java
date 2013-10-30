@@ -76,7 +76,8 @@ public class OSDConfig extends ServiceConfig {
             Parameter.VIVALDI_ITERATIONS_BEFORE_UPDATING,
             Parameter.VIVALDI_MAX_RETRIES_FOR_A_REQUEST,
             Parameter.VIVALDI_MAX_REQUEST_TIMEOUT_IN_MS,
-            Parameter.VIVALDI_TIMER_INTERVAL_IN_MS
+            Parameter.VIVALDI_TIMER_INTERVAL_IN_MS,
+            Parameter.STORAGE_THREADS
     };
     /*
      * @formatter:on   
@@ -278,4 +279,7 @@ public class OSDConfig extends ServiceConfig {
         return (Integer) parameter.get(Parameter.VIVALDI_TIMER_INTERVAL_IN_MS);
     }
 
+    public int getStorageThreads() {
+        return (Integer) parameter.get(Parameter.STORAGE_THREADS);
+    }
 }

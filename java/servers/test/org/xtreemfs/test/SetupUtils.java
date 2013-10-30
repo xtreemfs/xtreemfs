@@ -9,6 +9,7 @@
 package org.xtreemfs.test;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
@@ -457,10 +458,15 @@ public class SetupUtils {
     }
     
     static RPCNIOSocketClient createRPCClient(int timeout) throws IOException {
-        final SSLOptions sslOptions = SSL_ON ? new SSLOptions(new FileInputStream(CERT_DIR + "Client.p12"),
-                "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trusted.jks"), "passphrase",
-                SSLOptions.JKS_CONTAINER, false, false, null) : null;
+        final SSLOptions sslOptions = SSL_ON ? createClientSSLOptions() : null;
         return new RPCNIOSocketClient(sslOptions, timeout, 5 * 60 * 1000, "SetupUtils");
+    }
+
+    public static SSLOptions createClientSSLOptions() throws IOException, FileNotFoundException {
+        return new SSLOptions(new FileInputStream(CERT_DIR + "Client.p12"),
+                "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trusted.jks"), "passphrase",
+ SSLOptions.JKS_CONTAINER, false, false,
+                null);
     }
     
     static DIRServiceClient createDIRClient(RPCNIOSocketClient client) throws IOException {

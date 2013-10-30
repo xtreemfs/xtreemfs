@@ -40,6 +40,9 @@ dir_service.port = 32638
 # directory containing XtreemFS file content
 object_dir = /tmp/xtreemfs-test/osd/
 
+# number of storage threads
+#storage_threads = 1
+
 # granularity of the local clock (in ms) (0 disables it to always use the current system time)
 local_clock_renewal = 0
 

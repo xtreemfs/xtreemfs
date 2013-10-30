@@ -952,9 +952,14 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 return;
             }
 
-            assert(state.getState() == ReplicaState.INITIALIZING);
-            state.getPolicy().setLocalObjectVersion(maxObjVersion);
-            doOpen(state);
+            if(state.getState() == ReplicaState.INITIALIZING) {
+                state.getPolicy().setLocalObjectVersion(maxObjVersion);
+                doOpen(state);
+            } else {
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this, "ReplicaState is %s instead of INITIALIZING, maxObjectVersion=%d", state.getState().name(), maxObjVersion);
+                return;
+            }
+
         } catch (Exception ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
@@ -1193,6 +1198,18 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         }
     }
 
-    
+    public String getPrimary(final String fileId) {
+        String primary = null;
+        
+        final ReplicatedFileState fState = files.get(fileId);
 
+        if ((fState != null) && (fState.getLease() != null) && (!fState.getLease().isEmptyLease())) {
+            if (fState.getLease().isValid()) {
+                    primary = "" + fState.getLease().getLeaseHolder();
+            } else {
+                // outdated lease
+            }
+        }
+        return primary;
+    }
 }

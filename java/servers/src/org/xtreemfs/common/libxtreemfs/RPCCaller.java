@@ -152,6 +152,7 @@ public class RPCCaller {
                         }
                         // Mark the current UUID as failed and get the next one.
                         it.markUUIDAsFailed(it.getUUID());
+                        continue;	
                     } else {
                         throw pbe;
                     }

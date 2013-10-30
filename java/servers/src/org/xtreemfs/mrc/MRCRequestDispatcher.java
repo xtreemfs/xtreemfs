@@ -31,6 +31,9 @@ import org.xtreemfs.common.auth.AuthenticationProvider;
 import org.xtreemfs.common.config.RemoteConfigHelper;
 import org.xtreemfs.common.config.ServiceConfig;
 import org.xtreemfs.common.monitoring.StatusMonitor;
+import org.xtreemfs.common.statusserver.BabuDBStatusPage;
+import org.xtreemfs.common.statusserver.PrintStackTrace;
+import org.xtreemfs.common.statusserver.StatusServer;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
@@ -55,6 +58,7 @@ import org.xtreemfs.foundation.pbrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequestListener;
 import org.xtreemfs.foundation.util.OutputUtils;
+import org.xtreemfs.mrc.StatusPage.Vars;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.StorageManager;
@@ -62,8 +66,6 @@ import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.database.babudb.BabuDBVolumeManager;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
-import org.xtreemfs.mrc.operations.StatusPageOperation;
-import org.xtreemfs.mrc.operations.StatusPageOperation.Vars;
 import org.xtreemfs.mrc.osdselection.OSDStatusManager;
 import org.xtreemfs.mrc.stages.OnCloseReplicationThread;
 import org.xtreemfs.mrc.stages.ProcessingStage;
@@ -79,12 +81,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyTyp
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
-
-import com.sun.net.httpserver.BasicAuthenticator;
-import com.sun.net.httpserver.HttpContext;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
 
 /**
  * 
@@ -123,8 +119,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     private final FileAccessManager        fileAccessManager;
     
-    private final HttpServer               httpServ;
-    
+    private final StatusServer             statusServer;
+
     private final OSDServiceClient         osdClient;
     
     private final boolean                  replicated;
@@ -299,43 +295,24 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             
         };
         
-        final StatusPageOperation status = new StatusPageOperation(this);
+        statusServer = new StatusServer(ServiceType.SERVICE_TYPE_MRC, this, config.getHttpPort());
+        statusServer.registerModule(new StatusPage());
+        statusServer.registerModule(new PrintStackTrace());
         
-        httpServ = HttpServer.create(new InetSocketAddress(config.getHttpPort()), 0);
-        final HttpContext ctx = httpServ.createContext("/", new HttpHandler() {
+        final MRCRequestDispatcher master = this;
+        statusServer.registerModule(new BabuDBStatusPage(new BabuDBStatusPage.BabuDBStatusProvider() {
             @Override
-            public void handle(HttpExchange httpExchange) throws IOException {
-                byte[] content;
-                try {
-                    if (httpExchange.getRequestURI().getPath().contains("strace")) {
-                        content = OutputUtils.getThreadDump().getBytes("ascii");
-                    } else if (httpExchange.getRequestURI().getPath().contains("babudb")) {
-                        content = status.getDBInfo().getBytes("ascii");
-                    } else {
-                        content = status.getStatusPage().getBytes("ascii");
-                    }
-                    httpExchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
-                    httpExchange.sendResponseHeaders(200, content.length);
-                    httpExchange.getResponseBody().write(content);
-                    httpExchange.getResponseBody().close();
-                } catch (Throwable ex) {
-                    ex.printStackTrace();
-                    httpExchange.sendResponseHeaders(500, 0);
-                }
-                
+            public Map<String, Object> getStatus() {
+                return master.getDBStatus();
             }
-        });
+        }));
+        
         
         if (config.getAdminPassword().length() > 0) {
-            ctx.setAuthenticator(new BasicAuthenticator("XtreemFS MRC " + config.getUUID()) {
-                @Override
-                public boolean checkCredentials(String arg0, String arg1) {
-                    return (arg0.equals("admin") && arg1.equals(config.getAdminPassword()));
-                }
-            });
+            statusServer.addAuthorizedUser("admin", config.getAdminPassword());
         }
-        
-        httpServ.start();
+
+        statusServer.start();
         
         heartbeatThread = new HeartbeatThread("MRC Heartbeat Thread", dirClient, config.getUUID(), gen, config, false);
         heartbeatThread.setLifeCycleListener(this);
@@ -368,7 +345,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         volumeManager.shutdown();
         
-        httpServ.stop(0);
+        statusServer.shutdown();
         
         if (replicated)
             mrcMonitor.shutdown();
@@ -460,7 +437,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         volumeManager.shutdown();
         
-        httpServ.stop(0);
+        statusServer.shutdown();
     }
     
     public void requestFinished(MRCRequest request) {
@@ -572,8 +549,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         return this.serverStage.getPendingRequests();
     }
     
-    public Map<StatusPageOperation.Vars, String> getStatusInformation() {
-        HashMap<StatusPageOperation.Vars, String> data = new HashMap<StatusPageOperation.Vars, String>();
+    public Map<StatusPage.Vars, String> getStatusInformation() {
+        HashMap<StatusPage.Vars, String> data = new HashMap<StatusPage.Vars, String>();
         
         data.put(Vars.AVAILPROCS, String.valueOf(Runtime.getRuntime().availableProcessors()));
         data.put(Vars.BPSTATS, BufferPool.getStatus());
@@ -625,7 +602,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             if (count != 0) {
                 
                 try {
-                    String req = StatusPageOperation.getOpName(entry.getKey());
+                    String req = StatusPage.getOpName(entry.getKey());
                     rqTableBuf.append("<tr><td align=\"left\">'");
                     rqTableBuf.append(req);
                     rqTableBuf.append("'</td><td>");

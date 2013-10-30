@@ -30,6 +30,7 @@ import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.common.config.PolicyContainer;
 import org.xtreemfs.common.monitoring.StatusMonitor;
+import org.xtreemfs.common.statusserver.BabuDBStatusPage;
 import org.xtreemfs.common.statusserver.PrintStackTrace;
 import org.xtreemfs.common.statusserver.StatusServer;
 import org.xtreemfs.dir.data.ServiceRecord;
@@ -189,9 +190,16 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         statusServer = new StatusServer(ServiceType.SERVICE_TYPE_DIR, this, config.getHttpPort());
         statusServer.registerModule(new PrintStackTrace());
         statusServer.registerModule(new StatusPage(config));
-        statusServer.registerModule(new BabuDBStatusPage(database));
         statusServer.registerModule(new ReplicaStatusPage());
         statusServer.registerModule(new VivaldiStatusPage(config));
+        statusServer.registerModule(new BabuDBStatusPage(new BabuDBStatusPage.BabuDBStatusProvider() {
+            @Override
+            public Map<String, Object> getStatus() {
+                // NOTE(jdillmann): Access to the database is not synchronized. This might result in reading stale data.
+                return database.getRuntimeState();
+            }
+        }));
+        
 
         if (config.getAdminPassword().length() > 0) {
             statusServer.addAuthorizedUser("admin", config.getAdminPassword());

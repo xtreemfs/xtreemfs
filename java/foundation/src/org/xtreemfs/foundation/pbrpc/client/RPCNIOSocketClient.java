@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2009-2011 by Bjoern Kolbeck,
  *               Zuse Institute Berlin
+ * Copyright (c) 2013 by Bjoern Kolbeck.
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -607,6 +608,9 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                             closeConnection(key, "server unexpectedly closed connection (EOF)");
                             return;
                         }
+                        // Detect if the client writes outside of the fragment.
+                        send.recordBytesWritten(numBytesWritten);
+
                         if (buffers[buffers.length-1].hasRemaining()) {
                             // not enough data...
                             key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
@@ -628,6 +632,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                                 }
                             }
                         }
+                        send.checkEnoughBytesSent();
                         con.setRequestBuffers(null);
                         con.setPendingRequest(null);
                     }
