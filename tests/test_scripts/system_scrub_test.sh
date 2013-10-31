@@ -36,7 +36,8 @@ echo "file ID of 'file.txt': $FILE_ID"
 for i in `ls $TEST_DIR/data | grep osd`; do FILE_DIR=`find $TEST_DIR/data/$i -type d |grep $FILE_ID`; if [ "$FILE_DIR" != "" ]; then break; fi; done
 if [ "$FILE_DIR" == "" ]; then echo "could not find file directory on any OSD"; exit 1
 else echo "Deleting data at $FILE_DIR..."; rm -rf $FILE_DIR/*; fi
-sleep 10s
+
+sleep 60s
 
 # execute scrub command
 COMMAND="$1/bin/xtfs_scrub -dir $2 $CREDS -repair nomdcache"
