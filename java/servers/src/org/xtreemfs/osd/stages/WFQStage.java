@@ -45,7 +45,7 @@ public class WFQStage extends Stage {
         super("WFQ Stage", queueCapacity);
         this.master = master;
 
-        this.wfqQueue = new WeightedFairQueue<String, WFQRequest>(queueCapacity, new WeightedFairQueue.WFQElementInformationProvider<String, WFQRequest>() {
+        this.wfqQueue = new WeightedFairQueue<String, WFQRequest>(queueCapacity, 1000, new WeightedFairQueue.WFQElementInformationProvider<String, WFQRequest>() {
             @Override
             public int getRequestCost(WFQRequest element) {
                 return 1;  //To change body of implemented methods use File | Settings | File Templates.
