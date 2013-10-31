@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -29,7 +30,8 @@ public class WeightedFairQueueTest {
     int capacity = 100;
     @Before
     public void setUp() throws Exception {
-        queue = new WeightedFairQueue<String, Integer>(capacity, new WeightedFairQueue.WFQElementInformationProvider<String, Integer>() {
+        queue = new WeightedFairQueue<String, Integer>(capacity, 10000,
+                new WeightedFairQueue.WFQElementInformationProvider<String, Integer>() {
             @Override
             public int getRequestCost(Integer element) {
                 return 1;
@@ -99,6 +101,33 @@ public class WeightedFairQueueTest {
     }
 
     @Test
+    public void testPoll() throws Exception {
+        assertTrue(queue.poll() == null);
+        queue.add(1);
+        assertEquals(queue.poll(), 1);
+        assertTrue(queue.poll() == null);
+    }
+
+    @Test
+    public void testPollWithTimeout() throws Exception {
+        assertTrue(queue.poll(100, TimeUnit.MILLISECONDS) == null);
+        queue.add(1);
+        assertEquals(queue.poll(100, TimeUnit.MILLISECONDS), 1);
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(100);
+                    queue.add(2);
+                } catch (InterruptedException e) {}
+            }
+        }).start();
+
+        assertEquals(queue.poll(200, TimeUnit.MILLISECONDS), 2);
+    }
+
+    @Test
     public void testAdd() throws Exception {
         // Add elements to reach capacity limits
         for(int i = 0; i < capacity; i++) {
@@ -133,6 +162,26 @@ public class WeightedFairQueueTest {
             assertTrue(queue.offer(i));
         }
         assertFalse(queue.offer(1));
+    }
+
+    @Test
+    public void testOfferWithTimeout() throws Exception {
+        for(int i = 0; i < capacity; i++) {
+            assertTrue(queue.offer(i, 100, TimeUnit.MILLISECONDS));
+        }
+        assertFalse(queue.offer(1, 100, TimeUnit.MILLISECONDS));
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(100);
+                    queue.take();
+                } catch (InterruptedException e) {}
+            }
+        }).start();
+
+        assertTrue(queue.offer(1, 1000, TimeUnit.MILLISECONDS));
     }
 
     @Test

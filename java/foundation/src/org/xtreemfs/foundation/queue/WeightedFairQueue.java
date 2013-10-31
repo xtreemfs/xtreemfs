@@ -30,16 +30,22 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
 
     protected int                                 capacity;
 
+    protected long                                resetTimeout;
+
+    protected  long                               lastReset;
+
     protected WFQElementInformationProvider<T, E> elementInformationProvider;
 
     public WFQElementInformationProvider<T, E> getElementInformationProvider() {
         return elementInformationProvider;
     }
 
-    public WeightedFairQueue(int capacity, WFQElementInformationProvider<T, E> elementInformationProvider) {
+    public WeightedFairQueue(int capacity, long resetTimeout, WFQElementInformationProvider<T, E> elementInformationProvider) {
         this.queues = new HashMap<T, Queue<E>>();
         this.requestCount = new HashMap<T, Integer>();
         this.capacity = capacity;
+        this.resetTimeout = resetTimeout;
+        this.lastReset = new Date().getTime();
         this.elementInformationProvider = elementInformationProvider;
     }
 
@@ -62,6 +68,9 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
 
     @Override
     public E remove() {
+        if (new Date().getTime() - this.lastReset > this.resetTimeout)
+            this.requestCount.clear();
+
         Queue<E> resultQueue = this.getNextQueue();
 
         if (resultQueue != null)
@@ -72,6 +81,9 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
 
     @Override
     public E poll() {
+        if (new Date().getTime() - this.lastReset > this.resetTimeout)
+            this.requestCount.clear();
+
         Queue<E> resultQueue = this.getNextQueue();
 
         if (resultQueue != null)
@@ -82,6 +94,9 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
 
     @Override
     public E element() {
+        if (new Date().getTime() - this.lastReset > this.resetTimeout)
+            this.requestCount.clear();
+
         Queue<E> resultQueue = this.getNextQueue();
 
         if (resultQueue != null)
@@ -92,6 +107,9 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
 
     @Override
     public E peek() {
+        if (new Date().getTime() - this.lastReset > this.resetTimeout)
+            this.requestCount.clear();
+
         Queue<E> resultQueue = this.getNextQueue();
 
         if (resultQueue != null)
@@ -109,13 +127,22 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
 
     @Override
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
-        // TODO(ckleineweber): Implement offer() method
-        return false;
+        Date t = new Date();
+        boolean result;
+
+        while(!(result = offer(e)) && new Date().getTime() - t.getTime() < unit.toMillis(timeout))
+            Thread.sleep(1);
+
+        return result;
     }
 
     @Override
     public E take() throws InterruptedException {
         E element;
+
+        if (new Date().getTime() - this.lastReset > this.resetTimeout)
+            this.requestCount.clear();
+
         Queue<E> q = this.getNextQueue();
 
         if (q == null)
@@ -130,8 +157,17 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
 
     @Override
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
-        // TODO(ckleineweber): return after timeout
-        return this.getNextQueue().poll();
+        Date t = new Date();
+        Queue<E> resultQueue;
+
+        if (new Date().getTime() - this.lastReset > this.resetTimeout)
+            this.requestCount.clear();
+
+        while((resultQueue = this.getNextQueue()) == null &&
+                new Date().getTime() - t.getTime() < unit.toMillis(timeout))
+            Thread.sleep(1);
+
+        return (resultQueue != null)?resultQueue.poll():null;
     }
 
     @Override
