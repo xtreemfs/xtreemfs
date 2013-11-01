@@ -15,6 +15,7 @@ import org.xtreemfs.utils.DefaultDirConfig;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import static org.xtreemfs.common.benchmark.BenchmarkUtils.BenchmarkType;
 import static org.xtreemfs.foundation.logging.Logging.LEVEL_INFO;
 import static org.xtreemfs.foundation.logging.Logging.logMessage;
 
@@ -47,22 +48,33 @@ public class Controller {
 
     /**
      * Create and open the volumes needed for the benchmarks. <br/>
-     * If no volume names are given, default volumes are created. The number of default volumes to be created is
-     * determined by {@link Config#numberOfThreads}. <br/>
-     * If the volumeNames given are already existing volumes, the volumes are only opened.
-     * 
+     * If the volumeNames given are already existing volumes, the volumes are only opened. <br/>
+     *
      * @param volumeNames
      *            the volumes to be created/opened
      * @throws Exception
      */
     public void setupVolumes(String... volumeNames) throws Exception {
-        if (volumeNames.length < config.getNumberOfThreads())
-            throw new IllegalArgumentException("Less volumes than parallel threads");
-        if (volumeNames.length == 0)
-            volumeManager.createDefaultVolumes(config.getNumberOfThreads());
+        if (volumeNames.length < 1)
+                throw new IllegalArgumentException("Number of volumes < 1");
         else
             volumeManager.openVolumes(volumeNames);
     }
+
+    /**
+     * Create and open default volumes for the benchmarks. <br/>
+     * The volumes will be created with the options given by {@link Config}.
+     *
+     * @param numberOfVolumes the number of volumes to be created
+     * @throws Exception
+     */
+    public void setupDefaultVolumes(int numberOfVolumes) throws Exception {
+        if (numberOfVolumes < 1)
+            throw new IllegalArgumentException("Number of volumes < 1");
+        else
+            volumeManager.createDefaultVolumes(numberOfVolumes);
+    }
+
 
     /**
      * Starts sequential write benchmarks with the parameters specified in the {@link Config}. <br/>
@@ -70,8 +82,9 @@ public class Controller {
      * @return the results of the benchmark (see {@link BenchmarkResult})
      * @throws Exception
      */
-    public ConcurrentLinkedQueue<BenchmarkResult> startSequentialWriteBenchmark() throws Exception {
-        return repeatBenchmark(BenchmarkUtils.BenchmarkType.SEQ_WRITE);
+    public ConcurrentLinkedQueue<BenchmarkResult> startSequentialWriteBenchmark(long size, int numberOfThreads) throws Exception {
+        verifySizesAndThreads(size, numberOfThreads, BenchmarkType.SEQ_WRITE);
+        return startBenchmark(size, numberOfThreads, BenchmarkType.SEQ_WRITE);
     }
 
     /**
@@ -80,8 +93,9 @@ public class Controller {
      * @return the results of the benchmark (see {@link BenchmarkResult})
      * @throws Exception
      */
-    public ConcurrentLinkedQueue<BenchmarkResult> startSequentialReadBenchmark() throws Exception {
-        return repeatBenchmark(BenchmarkUtils.BenchmarkType.SEQ_READ);
+    public ConcurrentLinkedQueue<BenchmarkResult> startSequentialReadBenchmark(long size, int numberOfThreads) throws Exception {
+        verifySizesAndThreads(size, numberOfThreads, BenchmarkType.SEQ_READ);
+        return startBenchmark(size, numberOfThreads, BenchmarkType.SEQ_READ);
     }
 
     /**
@@ -90,8 +104,9 @@ public class Controller {
      * @return the results of the benchmark (see {@link BenchmarkResult})
      * @throws Exception
      */
-    public ConcurrentLinkedQueue<BenchmarkResult> startRandomWriteBenchmark() throws Exception {
-        return repeatBenchmark(BenchmarkUtils.BenchmarkType.RAND_WRITE);
+    public ConcurrentLinkedQueue<BenchmarkResult> startRandomWriteBenchmark(long size, int numberOfThreads) throws Exception {
+        verifySizesAndThreads(size, numberOfThreads, BenchmarkType.RAND_WRITE);
+        return startBenchmark(size, numberOfThreads, BenchmarkType.RAND_WRITE);
     }
 
     /**
@@ -100,8 +115,9 @@ public class Controller {
      * @return the results of the benchmark (see {@link BenchmarkResult})
      * @throws Exception
      */
-    public ConcurrentLinkedQueue<BenchmarkResult> startRandomReadBenchmark() throws Exception {
-        return repeatBenchmark(BenchmarkUtils.BenchmarkType.RAND_READ);
+    public ConcurrentLinkedQueue<BenchmarkResult> startRandomReadBenchmark(long size, int numberOfThreads) throws Exception {
+        verifySizesAndThreads(size, numberOfThreads, BenchmarkType.RAND_READ);
+        return startBenchmark(size, numberOfThreads, BenchmarkType.RAND_READ);
     }
 
     /**
@@ -110,8 +126,9 @@ public class Controller {
      * @return the results of the benchmark (see {@link BenchmarkResult})
      * @throws Exception
      */
-    public ConcurrentLinkedQueue<BenchmarkResult> startFilebasedWriteBenchmark() throws Exception {
-        return repeatBenchmark(BenchmarkUtils.BenchmarkType.FILES_WRITE);
+    public ConcurrentLinkedQueue<BenchmarkResult> startFilebasedWriteBenchmark(long size, int numberOfThreads) throws Exception {
+        verifySizesAndThreads(size, numberOfThreads, BenchmarkType.FILES_WRITE);
+        return startBenchmark(size, numberOfThreads, BenchmarkType.FILES_WRITE);
     }
 
     /**
@@ -120,8 +137,9 @@ public class Controller {
      * @return the results of the benchmark (see {@link BenchmarkResult})
      * @throws Exception
      */
-    public ConcurrentLinkedQueue<BenchmarkResult> startFilebasedReadBenchmark() throws Exception {
-        return repeatBenchmark(BenchmarkUtils.BenchmarkType.FILES_READ);
+    public ConcurrentLinkedQueue<BenchmarkResult> startFilebasedReadBenchmark(long size, int numberOfThreads) throws Exception {
+        verifySizesAndThreads(size, numberOfThreads, BenchmarkType.FILES_READ);
+        return startBenchmark(size, numberOfThreads, BenchmarkType.FILES_READ);
     }
 
     public void tryConnection() throws Exception {
@@ -168,31 +186,34 @@ public class Controller {
             volumeManager.cleanupOSD();
     }
 
-    /* Repeat a benchmark multiple times and pack the results. */
-    private ConcurrentLinkedQueue<BenchmarkResult> repeatBenchmark(BenchmarkUtils.BenchmarkType benchmarkType)
-            throws Exception {
-        ConcurrentLinkedQueue<BenchmarkResult> result;
-        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
-
-        for (int i = 0; i < config.getNumberOfRepetitions(); i++) {
-            result = startBenchmark(benchmarkType);
-            results.addAll(result);
+    private void verifySizesAndThreads(long size, int threads, BenchmarkType type) {
+        if (size % (config.getStripeSizeInBytes() * config.getStripeWidth()) != 0)
+            throw new IllegalArgumentException("size of " + type
+                    + " must satisfy: size mod (stripeSize * stripeWidth) == 0");
+        if ((type == BenchmarkType.RAND_READ) || (type == BenchmarkType.RAND_WRITE)) {
+            if (config.getBasefileSizeInBytes() < size)
+                throw new IllegalArgumentException("Basefile < size of " + type);
         }
-        return results;
+        if ((type == BenchmarkType.FILES_WRITE) || (type == BenchmarkType.FILES_READ)) {
+            if (size % config.getFilesize() != 0)
+                throw new IllegalArgumentException("Size of " + type + " must satisfy: size mod filesize == 0");
+        }
+        if (volumeManager.getVolumes().size() < threads )
+            throw new IllegalArgumentException("Less volumes than parallel threads");
     }
 
     /*
      * Starts benchmarks in parallel. Every benchmark is started within its own thread. The method waits for all threads
      * to finish.
      */
-    private ConcurrentLinkedQueue<BenchmarkResult> startBenchmark(BenchmarkUtils.BenchmarkType benchmarkType)
+    private ConcurrentLinkedQueue<BenchmarkResult> startBenchmark(long size, int numberOfThreads, BenchmarkType benchmarkType)
             throws Exception {
 
         ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
         ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
 
-        for (int i = 0; i < config.getNumberOfThreads(); i++) {
-            AbstractBenchmark benchmark = BenchmarkFactory.createBenchmark(benchmarkType, config, clientManager.getNewClient(), volumeManager);
+        for (int i = 0; i < numberOfThreads ; i++) {
+            AbstractBenchmark benchmark = BenchmarkFactory.createBenchmark(size, benchmarkType, config, clientManager.getNewClient(), volumeManager);
             benchmark.startBenchmarkThread(results, threads);
         }
 
@@ -207,7 +228,7 @@ public class Controller {
         /* Set BenchmarkResult Type */
         for (BenchmarkResult res : results) {
             res.setBenchmarkType(benchmarkType);
-            res.setNumberOfReadersOrWriters(config.getNumberOfThreads());
+            res.setNumberOfReadersOrWriters(numberOfThreads);
         }
         return results;
     }

@@ -32,10 +32,6 @@ import java.util.Map;
  */
 public class Config {
 
-    private final int                 numberOfThreads;
-    private final int                 numberOfRepetitions;
-    private final long                sequentialSizeInBytes;
-    private final long                randomSizeInBytes;
     private final long                basefileSizeInBytes;
     private final int                 filesize;
     private final String              userName;
@@ -66,10 +62,6 @@ public class Config {
      * @throws Exception
      */
     public Config(ConfigBuilder builder) throws Exception {
-        this.numberOfThreads = builder.getNumberOfThreads();
-        this.numberOfRepetitions = builder.getNumberOfRepetitions();
-        this.sequentialSizeInBytes = builder.getSequentialSizeInBytes();
-        this.randomSizeInBytes = builder.getRandomSizeInBytes();
         this.basefileSizeInBytes = builder.getBasefileSizeInBytes();
         this.filesize = builder.getFilesize();
         this.userName = builder.getUserName();
@@ -127,22 +119,6 @@ public class Config {
 
     void setStripeWidth(int stripeWidth) {
         this.stripeWidth = stripeWidth;
-    }
-
-    int getNumberOfThreads() {
-        return numberOfThreads;
-    }
-
-    int getNumberOfRepetitions() {
-        return numberOfRepetitions;
-    }
-
-    long getSequentialSizeInBytes() {
-        return sequentialSizeInBytes;
-    }
-
-    long getRandomSizeInBytes() {
-        return randomSizeInBytes;
     }
 
     long getBasefileSizeInBytes() {

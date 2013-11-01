@@ -25,8 +25,8 @@ class FilebasedWriteBenchmark extends FilebasedBenchmark {
 
     private LinkedList<String> filenames;
 
-    FilebasedWriteBenchmark(Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
-        super(config, client, volumeManager);
+    FilebasedWriteBenchmark(long size, Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
+        super(size, config, client, volumeManager);
         filenames = new LinkedList<String>();
     }
 
@@ -38,7 +38,7 @@ class FilebasedWriteBenchmark extends FilebasedBenchmark {
     @Override
     long performIO(byte[] data, long numberOfBlocks) throws IOException {
 
-        long numberOfFiles = config.getRandomSizeInBytes() / filesize;
+        long numberOfFiles = benchmarkSizeInBytes / filesize;
         long byteCounter = 0;
         Random random = new Random();
 

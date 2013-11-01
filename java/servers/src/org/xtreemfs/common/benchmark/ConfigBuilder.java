@@ -38,10 +38,6 @@ import static org.xtreemfs.foundation.pbrpc.client.RPCAuthentication.authNone;
  */
 public class ConfigBuilder {
 
-    private int                 numberOfThreads       = 1;
-    private int                 numberOfRepetitions   = 1;
-    private long                sequentialSizeInBytes = 10L * BenchmarkUtils.MiB_IN_BYTES;
-    private long                randomSizeInBytes     = 10L * BenchmarkUtils.MiB_IN_BYTES;
     private long                basefileSizeInBytes   = 3L * BenchmarkUtils.GiB_IN_BYTES;
     private int                 filesize              = 4 * BenchmarkUtils.KiB_IN_BYTES;
     private String              userName              = "benchmark";
@@ -67,63 +63,6 @@ public class ConfigBuilder {
      * Instantiate an builder (all values are the default values, see {@link Config}).
      */
     public ConfigBuilder() {
-    }
-
-    /**
-     * Set the number of repetitions of a benchmark. <br/>
-     * Default: 1.
-     * 
-     * @param numberOfRepetitions
-     * @return the builder
-     */
-    public ConfigBuilder setNumberOfRepetitions(int numberOfRepetitions) {
-        if (numberOfRepetitions < 1)
-            throw new IllegalArgumentException("numberOfRepetitions < 1 not allowed");
-        this.numberOfRepetitions = numberOfRepetitions;
-        return this;
-    }
-
-    /**
-     * Set the number of benchmarks (benchmark threads) to be run in parallel. <br/>
-     * Default: 1.
-     * 
-     * @param numberOfThreads
-     * @return the builder
-     */
-    public ConfigBuilder setNumberOfThreads(int numberOfThreads) {
-        if (numberOfThreads < 1)
-            throw new IllegalArgumentException("numberOfThreads < 1 not allowed");
-
-        this.numberOfThreads = numberOfThreads;
-        return this;
-    }
-
-    /**
-     * Set the number of bytes to write or read in a sequential benchmark. <br/>
-     * Default: 10 MiB.
-     * 
-     * @param sequentialSizeInBytes
-     * @return the builder
-     */
-    public ConfigBuilder setSequentialSizeInBytes(long sequentialSizeInBytes) {
-        if (sequentialSizeInBytes < 0)
-            throw new IllegalArgumentException("sequentialSizeInBytes < 0 not allowed");
-        this.sequentialSizeInBytes = sequentialSizeInBytes;
-        return this;
-    }
-
-    /**
-     * Set the number of bytes to write or read in a random benchmark. <br/>
-     * Default: 10 MiB.
-     * 
-     * @param randomSizeInBytes
-     * @return the builder
-     */
-    public ConfigBuilder setRandomSizeInBytes(long randomSizeInBytes) {
-        if (randomSizeInBytes < 0)
-            throw new IllegalArgumentException("randomSizeInBytes < 0 not allowed");
-        this.randomSizeInBytes = randomSizeInBytes;
-        return this;
     }
 
     /**
@@ -386,22 +325,6 @@ public class ConfigBuilder {
         return this;
     }
 
-    int getNumberOfThreads() {
-        return numberOfThreads;
-    }
-
-    int getNumberOfRepetitions() {
-        return numberOfRepetitions;
-    }
-
-    long getSequentialSizeInBytes() {
-        return sequentialSizeInBytes;
-    }
-
-    long getRandomSizeInBytes() {
-        return randomSizeInBytes;
-    }
-
     long getBasefileSizeInBytes() {
         return basefileSizeInBytes;
     }
@@ -489,7 +412,6 @@ public class ConfigBuilder {
      * @throws Exception
      */
     public Config build() throws Exception {
-        verifySizes();
         verifyNoCleanup();
         return new Config(this);
     }
@@ -497,19 +419,5 @@ public class ConfigBuilder {
     private void verifyNoCleanup() {
         if (noCleanupOfBasefile && !noCleanup && !noCleanupOfVolumes)
             throw new IllegalArgumentException("noCleanupOfBasefile only works with noCleanup or noCleanupVolumes");
-    }
-
-    private void verifySizes() {
-
-        if (sequentialSizeInBytes % (stripeSizeInBytes * stripeWidth) != 0)
-            throw new IllegalArgumentException(
-                    "sequentialSizeInBytes must satisfy: size mod (stripeSize * stripeWidth) == 0");
-        if (randomSizeInBytes % (stripeSizeInBytes * stripeWidth) != 0)
-            throw new IllegalArgumentException("randomSizeInBytes: size mod (stripeSize * stripeWidth) == 0");
-        if (randomSizeInBytes % filesize != 0)
-            throw new IllegalArgumentException(
-                    "Size for filebased benchmarks (i.e. randomSizeInBytes) must satisfy: size mod filesize == 0");
-        if (basefileSizeInBytes < randomSizeInBytes)
-            throw new IllegalArgumentException("Basefile < random size");
     }
 }

@@ -30,8 +30,8 @@ abstract class RandomOffsetbasedBenchmark extends RandomBenchmark {
     final long          sizeOfBasefile;
     final static String BASFILE_FILENAME    = "benchmarks/basefile";
 
-    RandomOffsetbasedBenchmark(Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
-        super(config, client, volumeManager);
+    RandomOffsetbasedBenchmark(long size, Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
+        super(size, config, client, volumeManager);
         sizeOfBasefile = config.getBasefileSizeInBytes();
     }
 

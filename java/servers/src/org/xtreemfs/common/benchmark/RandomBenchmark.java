@@ -12,14 +12,12 @@ import org.xtreemfs.common.libxtreemfs.AdminClient;
 
 /**
  * Abstract baseclass for random IO benchmarks.
- * 
- * Todo (jvf): If filebased benchmark is refactored to not be random IO benchmark, this class is useless
- * 
+ *
  * @author jensvfischer
  */
 abstract class RandomBenchmark extends AbstractBenchmark {
 
-    RandomBenchmark(Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
-        super(config.getRandomSizeInBytes(), config, client, volumeManager);
+    RandomBenchmark(long size, Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
+        super(size, config, client, volumeManager);
     }
 }

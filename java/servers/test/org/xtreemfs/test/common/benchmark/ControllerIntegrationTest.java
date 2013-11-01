@@ -29,7 +29,6 @@ import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
@@ -134,30 +133,28 @@ public class ControllerIntegrationTest {
 
     @Test
     public void testSequentialBenchmark() throws Exception {
-        configBuilder.setNumberOfThreads(2);
         controller = new Controller(configBuilder.build());
         controller.setupVolumes("TestVolA", "TestVolB");
-        Queue<BenchmarkResult> results = controller.startSequentialWriteBenchmark();
+        Queue<BenchmarkResult> results = controller.startSequentialWriteBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("SEQ_WRITE", 2, 10L * MiB_IN_BYTES, 2, results);
-        results = controller.startSequentialReadBenchmark();
+        results = controller.startSequentialReadBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("SEQ_READ", 2, 10L * MiB_IN_BYTES, 2, results);
         controller.teardown();
     }
 
     @Test
     public void testSequentialBenchmarkSeparatedRuns() throws Exception {
-        configBuilder.setNumberOfThreads(2);
         configBuilder.setNoCleanup();
         Config config = configBuilder.build();
         controller = new Controller(config);
         controller.setupVolumes("TestVolA", "TestVolB");
-        Queue<BenchmarkResult> results = controller.startSequentialWriteBenchmark();
+        Queue<BenchmarkResult> results = controller.startSequentialWriteBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("SEQ_WRITE", 2, 10L * MiB_IN_BYTES, 2, results);
         controller.teardown();
 
         controller = new Controller(config);
         controller.setupVolumes("TestVolA", "TestVolB");
-        results = controller.startSequentialReadBenchmark();
+        results = controller.startSequentialReadBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("SEQ_READ", 2, 10L * MiB_IN_BYTES, 2, results);
         controller.teardown();
         deleteVolumes("TestVolA", "TestVolB");
@@ -165,32 +162,30 @@ public class ControllerIntegrationTest {
 
     @Test
     public void testRandomBenchmark() throws Exception {
-        configBuilder.setNumberOfThreads(2).setBasefileSizeInBytes(20L * MiB_IN_BYTES)
-                .setRandomSizeInBytes(1L * MiB_IN_BYTES);
+        configBuilder.setBasefileSizeInBytes(20L * MiB_IN_BYTES);
         controller = new Controller(configBuilder.build());
         controller.setupVolumes("TestVolA", "TestVolB");
-        Queue<BenchmarkResult> results = controller.startRandomWriteBenchmark();
+        Queue<BenchmarkResult> results = controller.startRandomWriteBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("RAND_WRITE", 2, 1L * MiB_IN_BYTES, 2, results);
-        results = controller.startRandomReadBenchmark();
+        results = controller.startRandomReadBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("RAND_READ", 2, 1L * MiB_IN_BYTES, 2, results);
         controller.teardown();
     }
 
     @Test
     public void testRandomBenchmarkSeparateRuns() throws Exception {
-        configBuilder.setNumberOfThreads(2).setRandomSizeInBytes(1L * MiB_IN_BYTES)
-                .setBasefileSizeInBytes(20L * MiB_IN_BYTES).setNoCleanup();
+        configBuilder.setBasefileSizeInBytes(20L * MiB_IN_BYTES).setNoCleanup();
         Config config = configBuilder.build();
 
         controller = new Controller(config);
         controller.setupVolumes("TestVolA", "TestVolB");
-        Queue<BenchmarkResult> results = controller.startRandomWriteBenchmark();
+        Queue<BenchmarkResult> results = controller.startRandomWriteBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("RAND_WRITE", 2, 1L * MiB_IN_BYTES, 2, results);
         controller.teardown();
 
         controller = new Controller(config);
         controller.setupVolumes("TestVolA", "TestVolB");
-        results = controller.startRandomReadBenchmark();
+        results = controller.startRandomReadBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("RAND_READ", 2, 1L * MiB_IN_BYTES, 2, results);
         controller.teardown();
         deleteVolumes("TestVolA", "TestVolB");
@@ -198,30 +193,29 @@ public class ControllerIntegrationTest {
 
     @Test
     public void testFilebasedBenchmark() throws Exception {
-        configBuilder.setNumberOfThreads(2).setRandomSizeInBytes(1L * MiB_IN_BYTES);
         controller = new Controller(configBuilder.build());
         controller.setupVolumes("TestVolA", "TestVolB");
-        Queue<BenchmarkResult> results = controller.startFilebasedWriteBenchmark();
+        Queue<BenchmarkResult> results = controller.startFilebasedWriteBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("FILES_WRITE", 2, 1L * MiB_IN_BYTES, 2, results);
-        results = controller.startFilebasedReadBenchmark();
+        results = controller.startFilebasedReadBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("FILES_READ", 2, 1L * MiB_IN_BYTES, 2, results);
         controller.teardown();
     }
 
     @Test
     public void testFilebasedBenchmarkSeparateRuns() throws Exception {
-        configBuilder.setNumberOfThreads(2).setRandomSizeInBytes(1L * MiB_IN_BYTES).setNoCleanup();
+        configBuilder.setNoCleanup();
         Config config = configBuilder.build();
 
         controller = new Controller(config);
         controller.setupVolumes("TestVolA", "TestVolB");
-        Queue<BenchmarkResult> results = controller.startFilebasedWriteBenchmark();
+        Queue<BenchmarkResult> results = controller.startFilebasedWriteBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("FILES_WRITE", 2, 1L * MiB_IN_BYTES, 2, results);
         controller.teardown();
 
         controller = new Controller(config);
         controller.setupVolumes("TestVolA", "TestVolB");
-        results = controller.startFilebasedReadBenchmark();
+        results = controller.startFilebasedReadBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("FILES_READ", 2, 1L * MiB_IN_BYTES, 2, results);
         controller.teardown();
         deleteVolumes("TestVolA", "TestVolB");
@@ -230,7 +224,7 @@ public class ControllerIntegrationTest {
     @Test
     public void testConfigUser() throws Exception {
         configBuilder.setUserName("test");
-        Volume volume = performBenchmark(configBuilder, BenchmarkType.SEQ_WRITE);
+        Volume volume = performBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, configBuilder, BenchmarkType.SEQ_WRITE);
         assertEquals("test", volume.getAttr(userCredentials, "benchmarks/sequentialBenchmark/benchFile0").getUserId());
         deleteVolumes("TestVolA");
     }
@@ -238,7 +232,7 @@ public class ControllerIntegrationTest {
     @Test
     public void testConfigGroup() throws Exception {
         configBuilder.setGroup("test");
-        Volume volume = performBenchmark(configBuilder, BenchmarkType.SEQ_WRITE);
+        Volume volume = performBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, configBuilder, BenchmarkType.SEQ_WRITE);
         assertEquals("test", volume.getAttr(userCredentials, "benchmarks/sequentialBenchmark/benchFile0").getGroupId());
         deleteVolumes("TestVolA");
     }
@@ -246,8 +240,7 @@ public class ControllerIntegrationTest {
     @Test
     public void testConfigSeqSize() throws Exception {
         long seqSize = 2L * MiB_IN_BYTES;
-        configBuilder.setSequentialSizeInBytes(seqSize);
-        Volume volume = performBenchmark(configBuilder, BenchmarkType.SEQ_WRITE);
+        Volume volume = performBenchmark(seqSize, configBuilder, BenchmarkType.SEQ_WRITE);
         assertEquals(seqSize, volume.getAttr(userCredentials, "benchmarks/sequentialBenchmark/benchFile0").getSize());
         deleteVolumes("TestVolA");
     }
@@ -256,8 +249,8 @@ public class ControllerIntegrationTest {
     public void testConfigBasefileSize() throws Exception {
         long randSize = 1L * MiB_IN_BYTES;
         long basefileSize = 20L * MiB_IN_BYTES;
-        configBuilder.setBasefileSizeInBytes(basefileSize).setRandomSizeInBytes(randSize);
-        Volume volume = performBenchmark(configBuilder, BenchmarkType.RAND_WRITE);
+        configBuilder.setBasefileSizeInBytes(basefileSize);
+        Volume volume = performBenchmark(randSize, configBuilder, BenchmarkType.RAND_WRITE);
         assertEquals(basefileSize, volume.getAttr(userCredentials, "benchmarks/basefile").getSize());
         deleteVolumes("TestVolA");
     }
@@ -266,7 +259,7 @@ public class ControllerIntegrationTest {
     public void testConfigFilesSize() throws Exception {
         int fileSize = 8 * KiB_IN_BYTES;
         configBuilder.setFilesize(fileSize);
-        Volume volume = performBenchmark(configBuilder, BenchmarkType.FILES_WRITE);
+        Volume volume = performBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, configBuilder, BenchmarkType.FILES_WRITE);
         int numberOfFiles = (MiB_IN_BYTES) / (8 * KiB_IN_BYTES);
         for (int i = 0; i < numberOfFiles; i++) {
             long fileSizeActual = volume.getAttr(userCredentials, "benchmarks/randomBenchmark/benchFile" + i).getSize();
@@ -279,7 +272,7 @@ public class ControllerIntegrationTest {
     public void testConfigStripeSize() throws Exception {
         int stripeSize = 64 * KiB_IN_BYTES;
         configBuilder.setStripeSizeInBytes(stripeSize);
-        Volume volume = performBenchmark(configBuilder, BenchmarkType.SEQ_WRITE);
+        Volume volume = performBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, configBuilder, BenchmarkType.SEQ_WRITE);
 
         String sp_values = volume.getXAttr(userCredentials, "", "xtreemfs.default_sp");
         assertEquals("size:64", sp_values.split(",")[2].replace("\"", "").replace("}", ""));
@@ -290,7 +283,7 @@ public class ControllerIntegrationTest {
     @Test
     public void testConfigStripeWidth() throws Exception {
         configBuilder.setStripeWidth(2);
-        Volume volume = performBenchmark(configBuilder, BenchmarkType.SEQ_WRITE);
+        Volume volume = performBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, configBuilder, BenchmarkType.SEQ_WRITE);
         String sp_values = volume.getXAttr(userCredentials, "", "xtreemfs.default_sp");
 
         assertEquals("width:2", sp_values.split(",")[1].replace("\"", ""));
@@ -308,7 +301,7 @@ public class ControllerIntegrationTest {
         client.createVolume(authNone, userCredentials, "TestVolA", 511, "test", "test", GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
                 GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, 1024, 2, volumeAttributes);
 
-        Volume volume = performBenchmark(configBuilder, BenchmarkType.SEQ_WRITE);
+        Volume volume = performBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, configBuilder, BenchmarkType.SEQ_WRITE);
 
         String sp_values = volume.getXAttr(userCredentials, "", "xtreemfs.default_sp");
         assertEquals("width:2", sp_values.split(",")[1].replace("\"", ""));
@@ -327,7 +320,7 @@ public class ControllerIntegrationTest {
                 GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, 128, 1, volumeAttributes);
 
         configBuilder.setStripeSizeInBytes(256*1024).setStripeWidth(2);
-        Volume volume = performBenchmark(configBuilder, BenchmarkType.SEQ_WRITE);
+        Volume volume = performBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, configBuilder, BenchmarkType.SEQ_WRITE);
 
         String sp_values = volume.getXAttr(userCredentials, "", "xtreemfs.default_sp");
         assertEquals("width:2", sp_values.split(",")[1].replace("\"", ""));
@@ -339,7 +332,7 @@ public class ControllerIntegrationTest {
     @Test
     public void testConfigOSDSelectionPolicy() throws Exception {
         configBuilder.setOsdSelectionPolicies("1001,3003");
-        Volume volumeA = performBenchmark(configBuilder, BenchmarkType.SEQ_WRITE);
+        Volume volumeA = performBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, configBuilder, BenchmarkType.SEQ_WRITE);
         assertEquals("1001,3003", volumeA.getOSDSelectionPolicy(userCredentials));
         deleteVolumes("TestVolA");
     }
@@ -359,7 +352,7 @@ public class ControllerIntegrationTest {
         volume.close();
 
         configBuilder.setUserName("test").setGroup("test");
-        Volume volumeA = performBenchmark(configBuilder, BenchmarkType.SEQ_WRITE);
+        Volume volumeA = performBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, configBuilder, BenchmarkType.SEQ_WRITE);
         assertEquals("1001,3003", volumeA.getOSDSelectionPolicy(userCredentials));
         deleteVolumes("TestVolA");
     }
@@ -368,7 +361,7 @@ public class ControllerIntegrationTest {
     public void testConfigOSDSelectionUUID() throws Exception {
         /* perform benchmark on osd "UUID:localhost:42640" */
         configBuilder.setSelectOsdsByUuid("UUID:localhost:42640");
-        Volume volumeA = performBenchmark(configBuilder, BenchmarkType.SEQ_WRITE);
+        Volume volumeA = performBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, configBuilder, BenchmarkType.SEQ_WRITE);
 
         /* perform benchmark on osd "UUID:localhost:42641" */
         configBuilder = new ConfigBuilder();
@@ -377,7 +370,7 @@ public class ControllerIntegrationTest {
         configBuilder.setSelectOsdsByUuid("UUID:localhost:42641").setNoCleanup();
         controller = new Controller(configBuilder.build());
         controller.setupVolumes("TestVolB");
-        controller.startSequentialWriteBenchmark();
+        controller.startSequentialWriteBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, 1);
         controller.teardown();
         Volume volumeB = client.openVolume("TestVolB", null, new Options());
 
@@ -396,10 +389,9 @@ public class ControllerIntegrationTest {
     @Test
     public void testConfigNoCleanupVolumes() throws Exception {
         configBuilder.setNoCleanupOfVolumes();
-        configBuilder.setNumberOfThreads(3);
         controller = new Controller(configBuilder.build());
         controller.setupVolumes("TestVolA", "TestVolB", "TestVolC");
-        controller.startSequentialWriteBenchmark();
+        controller.startSequentialWriteBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, 3);
 
         Volume volumeA = client.openVolume("TestVolA", null, new Options());
         Volume volumeB = client.openVolume("TestVolB", null, new Options());
@@ -430,14 +422,14 @@ public class ControllerIntegrationTest {
     public void testConfigNoCleanupBasefile() throws Exception {
         long basefileSize = 30L * BenchmarkUtils.MiB_IN_BYTES;
         long randSize = BenchmarkUtils.MiB_IN_BYTES;
-        configBuilder.setRandomSizeInBytes(randSize).setNoCleanupOfBasefile().setBasefileSizeInBytes(basefileSize)
+        configBuilder.setNoCleanupOfBasefile().setBasefileSizeInBytes(basefileSize)
                 .setNoCleanupOfVolumes();
         controller = new Controller(configBuilder.build());
         controller.setupVolumes("TestVolA");
-        controller.startRandomWriteBenchmark();
+        controller.startRandomWriteBenchmark(randSize, 1);
 
         /* the filebased benchmark is used to show, that really files are (created and) deleted, except the basefile */
-        controller.startFilebasedWriteBenchmark();
+        controller.startFilebasedWriteBenchmark(randSize, 1);
 
         Volume volume = client.openVolume("TestVolA", null, new Options());
 
@@ -468,7 +460,7 @@ public class ControllerIntegrationTest {
             }
         }
     }
-    
+
     private void compareResults(String type, int threads, long size, int numberOfResults, Queue<BenchmarkResult> results) {
         int resultCounter = 0;
         for (BenchmarkResult result : results) {
@@ -482,19 +474,19 @@ public class ControllerIntegrationTest {
         assertEquals(numberOfResults, resultCounter);
     }
 
-    private Volume performBenchmark(ConfigBuilder configBuilder, BenchmarkType type) throws Exception {
+    private Volume performBenchmark(long size, ConfigBuilder configBuilder, BenchmarkType type) throws Exception {
         configBuilder.setNoCleanup();
         controller = new Controller(configBuilder.build());
         controller.setupVolumes("TestVolA");
         switch (type) {
         case SEQ_WRITE:
-            controller.startSequentialWriteBenchmark();
+            controller.startSequentialWriteBenchmark(size, 1);
             break;
         case RAND_WRITE:
-            controller.startRandomWriteBenchmark();
+            controller.startRandomWriteBenchmark(size, 1);
             break;
         case FILES_WRITE:
-            controller.startFilebasedWriteBenchmark();
+            controller.startFilebasedWriteBenchmark(size, 1);
             break;
         }
         controller.teardown();

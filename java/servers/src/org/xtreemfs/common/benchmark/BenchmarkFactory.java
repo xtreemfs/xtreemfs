@@ -17,29 +17,29 @@ import org.xtreemfs.common.libxtreemfs.AdminClient;
  */
 class BenchmarkFactory {
 
-    static AbstractBenchmark createBenchmark(BenchmarkUtils.BenchmarkType benchmarkType, Config config, AdminClient client, VolumeManager volumeManager)
+    static AbstractBenchmark createBenchmark(long size, BenchmarkUtils.BenchmarkType benchmarkType, Config config, AdminClient client, VolumeManager volumeManager)
             throws Exception {
 
         AbstractBenchmark benchmark = null;
 
         switch (benchmarkType) {
         case SEQ_WRITE:
-            benchmark = new SequentialWriteBenchmark(config, client, volumeManager);
+            benchmark = new SequentialWriteBenchmark(size, config, client, volumeManager);
             break;
         case SEQ_READ:
-            benchmark = new SequentialReadBenchmark(config, client, volumeManager);
+            benchmark = new SequentialReadBenchmark(size, config, client, volumeManager);
             break;
         case RAND_WRITE:
-            benchmark = new RandomWriteBenchmark(config, client, volumeManager);
+            benchmark = new RandomWriteBenchmark(size, config, client, volumeManager);
             break;
         case RAND_READ:
-            benchmark = new RandomReadBenchmark(config, client, volumeManager);
+            benchmark = new RandomReadBenchmark(size, config, client, volumeManager);
             break;
         case FILES_WRITE:
-            benchmark = new FilebasedWriteBenchmark(config, client, volumeManager);
+            benchmark = new FilebasedWriteBenchmark(size, config, client, volumeManager);
             break;
         case FILES_READ:
-            benchmark = new FilebasedReadBenchmark(config, client, volumeManager);
+            benchmark = new FilebasedReadBenchmark(size, config, client, volumeManager);
             break;
         }
         return benchmark;

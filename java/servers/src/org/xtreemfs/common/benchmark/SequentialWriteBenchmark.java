@@ -25,8 +25,8 @@ class SequentialWriteBenchmark extends SequentialBenchmark {
 
     private LinkedList<String> filenames;
 
-    SequentialWriteBenchmark(Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
-        super(config, client, volumeManager);
+    SequentialWriteBenchmark(long size, Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
+        super(size, config, client, volumeManager);
         filenames = new LinkedList<String>();
     }
 

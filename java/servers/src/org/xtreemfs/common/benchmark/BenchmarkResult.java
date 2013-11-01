@@ -15,7 +15,7 @@ import static org.xtreemfs.common.benchmark.BenchmarkUtils.BenchmarkType;
  * 
  * @author jensvfischer
  */
-public class BenchmarkResult {
+public class BenchmarkResult implements Comparable<BenchmarkResult> {
 
     private BenchmarkType benchmarkType;
     private int           numberOfReadersOrWriters;
@@ -135,4 +135,8 @@ public class BenchmarkResult {
         return (double) tmp / factor;
     }
 
+    @Override
+    public int compareTo(BenchmarkResult otherResult) {
+        return benchmarkType.toString().compareTo(otherResult.benchmarkType.toString());
+    }
 }
