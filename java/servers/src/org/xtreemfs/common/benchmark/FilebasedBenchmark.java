@@ -17,7 +17,7 @@ import org.xtreemfs.common.libxtreemfs.AdminClient;
  * 
  * @author jensvfischer
  */
-abstract class FilebasedBenchmark extends RandomBenchmark {
+abstract class FilebasedBenchmark extends AbstractBenchmark {
 
     static final String BENCHMARK_FILENAME = "benchmarks/randomBenchmark/benchFile";
     final int           filesize;
