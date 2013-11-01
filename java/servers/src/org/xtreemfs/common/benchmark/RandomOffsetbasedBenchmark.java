@@ -24,9 +24,8 @@ import java.util.Random;
  * 
  * @author jensvfischer
  */
-abstract class RandomOffsetbasedBenchmark extends RandomBenchmark {
+abstract class RandomOffsetbasedBenchmark extends AbstractBenchmark {
     final static int    RANDOM_IO_BLOCKSIZE = 1024 * 4;             // 4 KiB
-    static final String BENCHMARK_FILENAME  = "randomBenchFile";
     final long          sizeOfBasefile;
     final static String BASFILE_FILENAME    = "benchmarks/basefile";
 
