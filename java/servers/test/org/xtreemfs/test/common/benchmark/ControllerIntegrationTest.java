@@ -29,6 +29,7 @@ import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
@@ -279,8 +280,10 @@ public class ControllerIntegrationTest {
         int stripeSize = 64 * KiB_IN_BYTES;
         configBuilder.setStripeSizeInBytes(stripeSize);
         Volume volume = performBenchmark(configBuilder, BenchmarkType.SEQ_WRITE);
-        assertEquals(stripeSize, volume.getAttr(userCredentials, "benchmarks/sequentialBenchmark/benchFile0")
-                .getBlksize());
+
+        String sp_values = volume.getXAttr(userCredentials, "", "xtreemfs.default_sp");
+        assertEquals("size:64", sp_values.split(",")[2].replace("\"", "").replace("}", ""));
+
         deleteVolumes("TestVolA");
     }
 
@@ -288,9 +291,10 @@ public class ControllerIntegrationTest {
     public void testConfigStripeWidth() throws Exception {
         configBuilder.setStripeWidth(2);
         Volume volume = performBenchmark(configBuilder, BenchmarkType.SEQ_WRITE);
-        String locations = volume.getXAttr(userCredentials, "benchmarks/sequentialBenchmark/benchFile0",
-                "xtreemfs.locations");
-        assertTrue("Stripe Width not correct", locations.contains("\"width\":2"));
+        String sp_values = volume.getXAttr(userCredentials, "", "xtreemfs.default_sp");
+
+        assertEquals("width:2", sp_values.split(",")[1].replace("\"", ""));
+
         deleteVolumes("TestVolA");
     }
 
@@ -304,17 +308,33 @@ public class ControllerIntegrationTest {
         client.createVolume(authNone, userCredentials, "TestVolA", 511, "test", "test", GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
                 GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, 1024, 2, volumeAttributes);
 
-
         Volume volume = performBenchmark(configBuilder, BenchmarkType.SEQ_WRITE);
-        String locations = volume.getXAttr(userCredentials, "benchmarks/sequentialBenchmark/benchFile0",
-                "xtreemfs.locations");
-        assertTrue("Stripe Width not correct", locations.contains("\"width\":2"));
-        assertEquals(1024*1024, volume.getAttr(userCredentials, "benchmarks/sequentialBenchmark/benchFile0")
-                .getBlksize());
+
+        String sp_values = volume.getXAttr(userCredentials, "", "xtreemfs.default_sp");
+        assertEquals("width:2", sp_values.split(",")[1].replace("\"", ""));
+        assertEquals("size:1024", sp_values.split(",")[2].replace("\"", "").replace("}", ""));
+
         deleteVolumes("TestVolA");
     }
 
+    /*
+     * Test, that setting stripe size and width overrides values of an existing volume.
+     */
+    @Test
+    public void testConfigStripeSizeWidthSet() throws Exception {
+        List<GlobalTypes.KeyValuePair> volumeAttributes = new ArrayList<GlobalTypes.KeyValuePair>();
+        client.createVolume(authNone, userCredentials, "TestVolA", 511, "test", "test", GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
+                GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, 128, 1, volumeAttributes);
 
+        configBuilder.setStripeSizeInBytes(256*1024).setStripeWidth(2);
+        Volume volume = performBenchmark(configBuilder, BenchmarkType.SEQ_WRITE);
+
+        String sp_values = volume.getXAttr(userCredentials, "", "xtreemfs.default_sp");
+        assertEquals("width:2", sp_values.split(",")[1].replace("\"", ""));
+        assertEquals("size:256", sp_values.split(",")[2].replace("\"", "").replace("}", ""));
+
+        deleteVolumes("TestVolA");
+    }
 
     @Test
     public void testConfigOSDSelectionPolicy() throws Exception {

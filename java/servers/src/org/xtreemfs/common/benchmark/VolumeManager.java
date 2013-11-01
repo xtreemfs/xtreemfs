@@ -93,23 +93,24 @@ class VolumeManager {
 
     /* opens a single volume (or creates and opens a volume if it does not exist) */
     private Volume createAndOpenVolume(String volumeName) throws IOException {
+
         Volume volume = null;
         try { /* try creating the volume */
             List<GlobalTypes.KeyValuePair> volumeAttributes = new ArrayList<GlobalTypes.KeyValuePair>();
             client.createVolume(config.getAuth(), config.getUserCredentials(), volumeName, 511, config.getUserName(),
                     config.getGroup(), GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
-                    GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, config.getStripeSizeInKiB(),
-                    config.getStripeWidth(), volumeAttributes);
+                    GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, 128, 1, volumeAttributes);
             volume = client.openVolume(volumeName, config.getSslOptions(), config.getOptions());
             createdVolumes.add(volume);
             Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Created volume %s", volumeName);
         } catch (PosixErrorException e) {
             if (e.getPosixError() == POSIXErrno.POSIX_ERROR_EEXIST) { /* i.e. volume already exists */
-                volume = client.openVolume(volumeName, config.getSslOptions(), config.getOptions());
+                volume = client.openVolume(volumeName, config.getSslOptions(), config.getOptions());                
             } else
                 throw e;
         }
 
+        setStripeSizeAndWidth(volume);
         createDirStructure(volume);
 
         /* set osd selection policy */
@@ -124,6 +125,47 @@ class VolumeManager {
         return volume;
     }
 
+    private void setStripeSizeAndWidth(Volume volume) throws IOException {
+        int size, width;
+        int sizeConf = config.getStripeSizeInKiB();
+        int widthConf = config.getStripeWidth();
+        int sizeVol = getVolStripeSize(volume);
+        int widthVol = getVolStripeWidth(volume);
+
+        if (!config.isStripeSizeSet() && !config.isStripeWidthSet())
+            return;
+        else {
+            if (!config.isStripeSizeSet() && config.isStripeWidthSet()) {
+                size = sizeVol;
+                width = widthConf;
+            } else if (config.isStripeSizeSet() && !config.isStripeWidthSet()) {
+                size = sizeConf;
+                width = widthVol;
+            } else { // i.e. (config.isStripeSizeSet() && config.isStripeWidthSet())
+                size = sizeConf;
+                width = widthConf;
+            }
+        }
+        String val = "{\"pattern\":\"STRIPING_POLICY_RAID0\",\"width\":" + width + ",\"size\":" + size + "}";
+        volume.setXAttr(config.getUserCredentials(), "", "xtreemfs.default_sp", val,
+                MRC.XATTR_FLAGS.XATTR_FLAGS_REPLACE);
+
+        config.setStripeSizeInBytes(size);
+        config.setStripeWidth(width);
+    }
+
+    private int getVolStripeSize(Volume volume) throws IOException {
+        String valueStr = volume.getXAttr(config.getUserCredentials(), "", "xtreemfs.default_sp" );        
+        String sizeStr = valueStr.split(",")[2];
+        return Integer.valueOf(sizeStr.substring(sizeStr.indexOf(":")+1, sizeStr.length()-1));
+    }
+
+    private int getVolStripeWidth(Volume volume) throws IOException {
+        String valueStr = volume.getXAttr(config.getUserCredentials(), "", "xtreemfs.default_sp" );
+        String widthStr = valueStr.split(",")[1];
+        return Integer.valueOf(widthStr.substring(widthStr.indexOf(":")+1));
+    }
+    
     private void createDirStructure(Volume volume) throws IOException {
         createDir(volume, "/benchmarks/sequentialBenchmark");
         createDir(volume, "/benchmarks/randomBenchmark");

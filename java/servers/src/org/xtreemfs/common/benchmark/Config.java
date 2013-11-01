@@ -42,15 +42,17 @@ public class Config {
     private final String              group;
     private final String              adminPassword;
     private final String              dirAddress;
-//    private final String              mrcAddress;
     private final RPC.UserCredentials userCredentials;
     private final RPC.Auth            auth;
     private final SSLOptions          sslOptions;
     private final Options             options;
     private final String              osdSelectionPolicies;
     private final Map<String, String> policyAttributes;
-    private final int                 stripeSizeInBytes;
-    private final int                 stripeWidth;
+    private final int                 chunkSizeInBytes;
+    private int                       stripeSizeInBytes;
+    private final boolean             stripeSizeSet;
+    private int                       stripeWidth;
+    private final boolean             stripeWidthSet;
     private final boolean             noCleanup;
     private final boolean             noCleanupOfVolumes;
     private final boolean             noCleanupOfBasefile;
@@ -80,9 +82,11 @@ public class Config {
         this.options = builder.getOptions();
         this.osdSelectionPolicies = builder.getOsdSelectionPolicies();
         this.policyAttributes = builder.getPolicyAttributes();
+        this.chunkSizeInBytes = builder.getChunkSizeInBytes();
         this.stripeSizeInBytes = builder.getStripeSizeInBytes();
+        this.stripeSizeSet = builder.isStripeSizeSet();
         this.stripeWidth = builder.getStripeWidth();
-//        this.mrcAddress = getMRCAddress(dirAddress, userCredentials, sslOptions, options);
+        this.stripeWidthSet = builder.isStripeWidthSet();
         this.auth = builder.getAuth();
         this.noCleanup = builder.isNoCleanup();
         this.noCleanupOfVolumes = builder.isNoCleanupOfVolumes();
@@ -90,18 +94,6 @@ public class Config {
         this.osdCleanup = builder.isOsdCleanup();
     }
 
-//    /* Gets the MRC address from the giben DIR */
-//    private String getMRCAddress(String dirAddress, RPC.UserCredentials userCredentials, SSLOptions sslOptions,
-//            Options options) throws Exception {
-//
-//        AdminClient client = ClientManager.getInstance().getNewClient(dirAddress, userCredentials, sslOptions, options);
-//
-//        UUIDResolver resolver = (ClientImplementation) client;
-//
-//        String mrcUUID = client.getServiceByType(DIR.ServiceType.SERVICE_TYPE_MRC).getServices(0).getUuid();
-//        String mrcAddress = resolver.uuidToAddress(mrcUUID);
-//        return mrcAddress;
-//    }
 
     /* Build string with all the instance parameters as key-value pairs */
     private String getAllValues() throws IllegalAccessException {
@@ -127,6 +119,14 @@ public class Config {
             Logging.logError(Logging.LEVEL_ERROR, Logging.Category.tool, e);
         }
         return "Access not possible";
+    }
+
+    void setStripeSizeInBytes(int stripeSizeInBytes) {
+        this.stripeSizeInBytes = stripeSizeInBytes;
+    }
+
+    void setStripeWidth(int stripeWidth) {
+        this.stripeWidth = stripeWidth;
     }
 
     int getNumberOfThreads() {
@@ -169,10 +169,6 @@ public class Config {
         return dirAddress;
     }
 
-//    String getMrcAddress() {
-//        return mrcAddress;
-//    }
-
     RPC.UserCredentials getUserCredentials() {
         return userCredentials;
     }
@@ -195,6 +191,10 @@ public class Config {
 
     Map<String, String> getPolicyAttributes() {
         return policyAttributes;
+    }
+
+    int getChunkSizeInBytes() {
+        return chunkSizeInBytes;
     }
 
     int getStripeSizeInBytes() {
@@ -223,5 +223,13 @@ public class Config {
 
     boolean isOsdCleanup() {
         return osdCleanup;
+    }
+
+    boolean isStripeSizeSet() {
+        return stripeSizeSet;
+    }
+
+    boolean isStripeWidthSet() {
+        return stripeWidthSet;
     }
 }

@@ -50,15 +50,15 @@ class FilebasedWriteBenchmark extends FilebasedBenchmark {
             FileHandle fileHandle = volume.openFile(config.getUserCredentials(), BENCHMARK_FILENAME + i, flags, 511);
             this.filenames.add(BENCHMARK_FILENAME + i);
 
-            if (filesize <= stripeSize) {
+            if (filesize <= chunkSize) {
                 random.nextBytes(data);
                 byteCounter += fileHandle.write(config.getUserCredentials(), data, filesize, 0);
             } else
-                for (long j = 0; j < filesize / stripeSize; j++) {
-                    long nextOffset = j * stripeSize;
+                for (long j = 0; j < filesize / chunkSize; j++) {
+                    long nextOffset = j * chunkSize;
                     assert nextOffset >= 0 : "Offset < 0 not allowed";
                     random.nextBytes(data);
-                    byteCounter += fileHandle.write(config.getUserCredentials(), data, stripeSize, nextOffset);
+                    byteCounter += fileHandle.write(config.getUserCredentials(), data, chunkSize, nextOffset);
                 }
             fileHandle.close();
         }

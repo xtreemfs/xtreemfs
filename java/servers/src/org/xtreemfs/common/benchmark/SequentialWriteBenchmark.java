@@ -41,10 +41,10 @@ class SequentialWriteBenchmark extends SequentialBenchmark {
         this.filenames.add(BENCHMARK_FILENAME + 0);
         long byteCounter = 0;
         for (long j = 0; j < numberOfBlocks; j++) {
-            long nextOffset = j * stripeSize;
+            long nextOffset = j * chunkSize;
             assert nextOffset >= 0 : "Offset < 0 not allowed";
             random.nextBytes(data);
-            byteCounter += fileHandle.write(config.getUserCredentials(), data, stripeSize, nextOffset);
+            byteCounter += fileHandle.write(config.getUserCredentials(), data, chunkSize, nextOffset);
         }
         fileHandle.close();
         return byteCounter;

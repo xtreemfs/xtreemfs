@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
  abstract class AbstractBenchmark {
 
-    final int           stripeSize;
+    final int chunkSize;
     final long          benchmarkSizeInBytes;
     final Volume        volume;
     final AdminClient   client;
@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
         this.benchmarkSizeInBytes = benchmarkSizeInBytes;
         this.volume = volumeManager.getNextVolume();
         this.config = config;
-        this.stripeSize = config.getStripeSizeInBytes();
+        this.chunkSize = config.getChunkSizeInBytes();
         this.volumeManager = volumeManager;        
     }
 
@@ -48,9 +48,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
         Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Starting %s", shortClassname);
 
         // Setting up
-        byte[] data = new byte[stripeSize];
+        byte[] data = new byte[chunkSize];
 
-        long numberOfBlocks = benchmarkSizeInBytes / stripeSize;
+        long numberOfBlocks = benchmarkSizeInBytes / chunkSize;
         long byteCounter = 0;
 
         /* Run the AbstractBenchmark */
