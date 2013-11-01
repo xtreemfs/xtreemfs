@@ -98,10 +98,6 @@ class CLIOptions {
     }
 
     Config buildParamsFromCLIOptions() throws Exception {
-        setNumberOfThreads();
-        setNumberOfRepetitions();
-        setSequentialSize();
-        setRandomSize();
         setBasefileSize();
         setFileSize();
         setDirAddress();
@@ -205,32 +201,6 @@ class CLIOptions {
         System.out.println("example: xtfs_benchmark -sw -sr -t 3 -ssize 3G volume1 volume2 volume3");
         System.out
                 .println("\t\t starts a sequential write and read benchmark of 3 GiB with 3 benchmarks in parallel on volume1, volume2 and volume3\n");
-    }
-
-    private void setNumberOfThreads() {
-        String optionValue = options.get(THREADS).stringValue;
-        if (null != optionValue)
-            builder.setNumberOfThreads(Integer.valueOf(optionValue));
-    }
-
-    private void setNumberOfRepetitions() {
-        String optionValue = options.get(REPETITIONS).stringValue;
-        if (null != optionValue)
-            builder.setNumberOfRepetitions(Integer.valueOf(optionValue));
-    }
-
-    private void setSequentialSize() {
-        String optionValue;
-        optionValue = options.get(SIZE_SEQ).stringValue;
-        if (null != optionValue)
-            builder.setSequentialSizeInBytes(parseSizeWithModifierToBytes(optionValue));
-    }
-
-    private void setRandomSize() {
-        String optionValue;
-        optionValue = options.get(SIZE_RAND).stringValue;
-        if (null != optionValue)
-            builder.setRandomSizeInBytes(parseSizeWithModifierToBytes(optionValue));
     }
 
     private void setBasefileSize() {
@@ -355,6 +325,40 @@ class CLIOptions {
         boolean switchValue = options.get(OSD_CLEANUP).switchValue;
         if (switchValue)
             builder.setOsdCleanup();
+    }
+
+    int getNumberOfThreads() {
+        String optionValue = options.get(THREADS).stringValue;
+        if (null != optionValue)
+            return Integer.valueOf(optionValue);
+        else
+            return 1; // default value
+    }
+
+    long getSequentialSize() {
+        String optionValue;
+        optionValue = options.get(SIZE_SEQ).stringValue;
+        if (null != optionValue)
+            return parseSizeWithModifierToBytes(optionValue);
+        else
+            return 10L*BenchmarkUtils.MiB_IN_BYTES; // default value
+    }
+
+    long getRandomSize() {
+        String optionValue;
+        optionValue = options.get(SIZE_RAND).stringValue;
+        if (null != optionValue)
+            return parseSizeWithModifierToBytes(optionValue);
+        else
+            return 10L*BenchmarkUtils.MiB_IN_BYTES; // default value
+    }
+
+    int getNumberOfRepetitions() {
+        String optionValue = options.get(REPETITIONS).stringValue;
+        if (null != optionValue)
+            return Integer.valueOf(optionValue);
+        else
+            return 1; // default value
     }
 
     boolean sequentialWriteBenchmarkIsSet() {

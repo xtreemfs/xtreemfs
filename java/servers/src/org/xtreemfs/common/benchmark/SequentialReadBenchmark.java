@@ -22,13 +22,13 @@ import java.io.IOException;
 class SequentialReadBenchmark extends SequentialBenchmark {
     private String[] filenames;
 
-    SequentialReadBenchmark(Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
-        super(config, client, volumeManager);
+    SequentialReadBenchmark(long size, Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
+        super(size, config, client, volumeManager);
     }
 
     @Override
     void prepareBenchmark() throws Exception {
-        this.filenames = volumeManager.getSequentialFilelistForVolume(volume);
+        this.filenames = volumeManager.getSequentialFilelistForVolume(volume, benchmarkSizeInBytes);
     }
 
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */

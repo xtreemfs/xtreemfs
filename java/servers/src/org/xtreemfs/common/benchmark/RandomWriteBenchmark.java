@@ -24,8 +24,8 @@ import java.util.Random;
  */
 class RandomWriteBenchmark extends RandomOffsetbasedBenchmark {
 
-    RandomWriteBenchmark(Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
-        super(config, client, volumeManager);
+    RandomWriteBenchmark(long size, Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
+        super(size, config, client, volumeManager);
     }
 
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */

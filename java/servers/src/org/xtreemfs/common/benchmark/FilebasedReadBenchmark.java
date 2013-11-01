@@ -24,20 +24,20 @@ class FilebasedReadBenchmark extends FilebasedBenchmark {
 
     private String[] filenames;
 
-    FilebasedReadBenchmark(Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
-        super(config, client, volumeManager);
+    FilebasedReadBenchmark(long size, Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
+        super(size, config, client, volumeManager);
     }
 
     @Override
     void prepareBenchmark() throws Exception {
-        this.filenames = volumeManager.getRandomFilelistForVolume(volume);
+        this.filenames = volumeManager.getRandomFilelistForVolume(volume, benchmarkSizeInBytes);
     }
 
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */
     @Override
     long performIO(byte[] data, long numberOfBlocks) throws IOException {
 
-        long numberOfFilesToRead = config.getRandomSizeInBytes() / filesize;
+        long numberOfFilesToRead = benchmarkSizeInBytes / filesize;
 
         int filenamesSize = filenames.length;
         long byteCounter = 0;

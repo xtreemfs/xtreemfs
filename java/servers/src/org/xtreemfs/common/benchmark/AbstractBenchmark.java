@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
  abstract class AbstractBenchmark {
 
-    final int chunkSize;
+    final int           chunkSize;
     final long          benchmarkSizeInBytes;
     final Volume        volume;
     final AdminClient   client;

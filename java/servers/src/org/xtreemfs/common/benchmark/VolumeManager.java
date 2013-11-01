@@ -132,8 +132,11 @@ class VolumeManager {
         int sizeVol = getVolStripeSize(volume);
         int widthVol = getVolStripeWidth(volume);
 
-        if (!config.isStripeSizeSet() && !config.isStripeWidthSet())
+        if (!config.isStripeSizeSet() && !config.isStripeWidthSet()){
+            config.setStripeSizeInBytes(sizeVol*BenchmarkUtils.KiB_IN_BYTES);
+            config.setStripeWidth(widthVol);
             return;
+        }
         else {
             if (!config.isStripeSizeSet() && config.isStripeWidthSet()) {
                 size = sizeVol;
@@ -141,10 +144,11 @@ class VolumeManager {
             } else if (config.isStripeSizeSet() && !config.isStripeWidthSet()) {
                 size = sizeConf;
                 width = widthVol;
-            } else { // i.e. (config.isStripeSizeSet() && config.isStripeWidthSet())
+            } else if (config.isStripeSizeSet() && config.isStripeWidthSet()){
                 size = sizeConf;
                 width = widthConf;
-            }
+            } else
+                throw new UnknownError("This should not have happened");
         }
         String val = "{\"pattern\":\"STRIPING_POLICY_RAID0\",\"width\":" + width + ",\"size\":" + size + "}";
         volume.setXAttr(config.getUserCredentials(), "", "xtreemfs.default_sp", val,
@@ -215,14 +219,14 @@ class VolumeManager {
      * get the list of files written to a volume (used to pass the list of files written by a filebased write benchmark
      * to a filebased read benchmark)
      */
-    synchronized String[] getSequentialFilelistForVolume(Volume volume) throws IOException {
+    synchronized String[] getSequentialFilelistForVolume(Volume volume, long benchmarkSizeInBytes) throws IOException {
         String[] filelist;
 
         /* null means no filelist from a previous write benchmark has been deposited */
         if (null == filelistsSequentialBenchmark.get(volume)) {
             filelist = inferFilelist(volume, SequentialBenchmark.getBenchmarkFilename());
 
-            if (config.getSequentialSizeInBytes() == calculateTotalSizeOfFilelist(volume, filelist)) {
+            if (benchmarkSizeInBytes == calculateTotalSizeOfFilelist(volume, filelist)) {
                 filelistsSequentialBenchmark.put(volume, filelist);
                 Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this,
                         "Succesfully infered filelist on volume %s.", volume.getVolumeName());
@@ -240,14 +244,14 @@ class VolumeManager {
      * get the list of files written to a volume (used to pass the list of files written by a filebased write benchmark
      * to a filebased read benchmark)
      */
-    synchronized String[] getRandomFilelistForVolume(Volume volume) throws IOException {
+    synchronized String[] getRandomFilelistForVolume(Volume volume, long benchmarkSizeInBytes) throws IOException {
         String[] filelist;
 
         /* null means no filelist from a previous write benchmark has been deposited */
         if (null == filelistsRandomBenchmark.get(volume)) {
             filelist = inferFilelist(volume, FilebasedBenchmark.getBenchmarkFilename());
 
-            if (config.getRandomSizeInBytes() == calculateTotalSizeOfFilelist(volume, filelist)) {
+            if (benchmarkSizeInBytes == calculateTotalSizeOfFilelist(volume, filelist)) {
                 filelistsRandomBenchmark.put(volume, filelist);
                 Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this,
                         "Succesfully infered filelist on volume %s.", volume.getVolumeName());

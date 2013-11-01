@@ -23,8 +23,8 @@ import java.io.IOException;
  */
 class RandomReadBenchmark extends RandomOffsetbasedBenchmark {
 
-    RandomReadBenchmark(Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
-        super(config, client, volumeManager);
+    RandomReadBenchmark(long size, Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
+        super(size, config, client, volumeManager);
     }
 
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */
