@@ -47,6 +47,7 @@ class CLIOptions {
     private static final String              FILEBASED_READ;
     private static final String              THREADS;
     private static final String              REPETITIONS;
+    private static final String              CHUNK_SIZE;
     private static final String              STRIPE_SIZE;
     private static final String              STRIPE_WITDH;
     private static final String              SIZE_SEQ;
@@ -72,6 +73,7 @@ class CLIOptions {
         FILEBASED_READ = "fr";
         THREADS = "t";
         REPETITIONS = "r";
+        CHUNK_SIZE = "-chunk-size";
         STRIPE_SIZE = "-stripe-size";
         STRIPE_WITDH = "-stripe-width";
         SIZE_SEQ = "ssize";
@@ -111,6 +113,7 @@ class CLIOptions {
         setAuth();
         setSSLOptions();
         setOptions();
+        setChunkSize();
         setStripeSize();
         setStripeWidth();
         setNoCleanup();
@@ -148,6 +151,8 @@ class CLIOptions {
                 "number of benchmarks to be started in parallel. default: 1", "<number>"));
         options.put(REPETITIONS, new CLIParser.CliOption(STRING, "number of repetitions of a benchmarks. default: 1",
                 "<number>"));
+        options.put(CHUNK_SIZE, new CLIParser.CliOption(STRING,
+                "Chunk size of reads/writes in benchmark in [B|K|M|G] (no modifier assumes bytes). default: 128K", "<chunkSize>"));
         options.put(STRIPE_SIZE, new CLIParser.CliOption(STRING,
                 "stripeSize in [B|K|M|G] (no modifier assumes bytes). default: 128K", "<stripeSize>"));
         options.put(STRIPE_WITDH, new CLIParser.CliOption(STRING, "stripe width. default: 1", "<stripe width>"));
@@ -302,6 +307,15 @@ class CLIOptions {
 
     private void setOptions() {
         // Todo (jvf) implement?
+    }
+
+    private void setChunkSize() {
+        String chunkSize = options.get(CHUNK_SIZE).stringValue;
+        if (null != chunkSize){
+            long chunkSizeInBytes = parseSizeWithModifierToBytes(chunkSize);
+            assert chunkSizeInBytes <= Integer.MAX_VALUE : "ChunkSize must be less equal than Integer.MAX_VALUE";
+            builder.setChunkSizeInBytes((int)chunkSizeInBytes);
+        }
     }
 
     private void setStripeSize() {

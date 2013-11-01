@@ -53,8 +53,11 @@ public class ConfigBuilder {
     private Options             options               = new Options();
     private String              osdSelectionPolicies  = "";
     private Map<String, String> policyAttributes      = new HashMap<String, String>();
+    private int                 chunkSizeInBytes      = 128 * BenchmarkUtils.KiB_IN_BYTES;
     private int                 stripeSizeInBytes     = 128 * BenchmarkUtils.KiB_IN_BYTES;
+    private boolean             stripeSizeSet         = false;
     private int                 stripeWidth           = 1;
+    private boolean             stripeWidthSet        = false;
     private boolean             noCleanup             = false;
     private boolean             noCleanupOfVolumes    = false;
     private boolean             noCleanupOfBasefile   = false;
@@ -292,30 +295,49 @@ public class ConfigBuilder {
             this.osdSelectionPolicies += ",1002";
         this.policyAttributes.put("1002.uuids", uuids);
         return this;
-    }    
+    }
 
     /**
-     * Set the size of an OSD storage block ("blocksize") in Bytes. <br/>
-     * Default: 131072 (128 KiB). <br/>
+     * Set the chunk size for reads/writes in benchmarks. The chuck size is the amount of data written/ret in one piece. <br/>
      * 
-     * @param stripeSizeInBytes
+     * Default: 131072 bytes (128 KiB).
+     *
+     * @param chunkSizeInBytes the chunk size in bytes
      * @return the builder
      */
-    public ConfigBuilder setStripeSizeInBytes(int stripeSizeInBytes) {
-        this.stripeSizeInBytes = stripeSizeInBytes;
+    public ConfigBuilder setChunkSizeInBytes(int chunkSizeInBytes) {
+        this.chunkSizeInBytes = chunkSizeInBytes;
         return this;
     }
 
     /**
-     * Set the maximum number of OSDs a file is distributed to. <br/>
-     * Default: 1. <br/>
-     * The size of one write operation is stripeSize * stripeWidth.
+     * Set the size of an OSD storage block ("blocksize") in bytes when creating or opening volumes. <br/>
+     * 
+     * When opening existing volumes, by default, the stripe size of the given volume is used. When creating a new
+     * volume, by default a stripe size of 131072 bytes (128 KiB) is used. <br/>
+     * 
+     * @param stripeSizeInBytes
+     *            the stripe size in bytes
+     * @return the builder
+     */
+    public ConfigBuilder setStripeSizeInBytes(int stripeSizeInBytes) {
+        this.stripeSizeInBytes = stripeSizeInBytes;
+        this.stripeSizeSet = true;
+        return this;
+    }
+
+    /**
+     * Set the maximum number of OSDs a file is distributed to. Used when creating or opening volumes <br/>
+     *
+     * When opening existing volumes, by default, the stripe width of the given volume is used. When creating a new
+     * volume, by default a stripe width of 1 is used. <br/>
      * 
      * @param stripeWidth
      * @return the builder
      */
     public ConfigBuilder setStripeWidth(int stripeWidth) {
         this.stripeWidth = stripeWidth;
+        this.stripeWidthSet = true;
         return this;
     }
 
@@ -424,12 +446,24 @@ public class ConfigBuilder {
         return policyAttributes;
     }
 
+    int getChunkSizeInBytes() {
+        return chunkSizeInBytes;
+    }
+
     int getStripeSizeInBytes() {
         return stripeSizeInBytes;
     }
 
+    boolean isStripeSizeSet() {
+        return stripeSizeSet;
+    }
+
     int getStripeWidth() {
         return stripeWidth;
+    }
+
+    boolean isStripeWidthSet() {
+        return stripeWidthSet;
     }
 
     boolean isNoCleanup() {

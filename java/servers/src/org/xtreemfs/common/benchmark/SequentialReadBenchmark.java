@@ -38,9 +38,9 @@ class SequentialReadBenchmark extends SequentialBenchmark {
                 GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
         long byteCounter = 0;
         for (long j = 0; j < numberOfBlocks; j++) {
-            long nextOffset = j * stripeSize;
+            long nextOffset = j * chunkSize;
             assert nextOffset >= 0 : "Offset < 0 not allowed";
-            byteCounter += fileHandle.read(config.getUserCredentials(), data, stripeSize, nextOffset);
+            byteCounter += fileHandle.read(config.getUserCredentials(), data, chunkSize, nextOffset);
         }
         fileHandle.close();
         return byteCounter;
