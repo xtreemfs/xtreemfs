@@ -187,9 +187,11 @@ public class Controller {
     }
 
     private void verifySizesAndThreads(long size, int threads, BenchmarkType type) {
-        if (size % (config.getStripeSizeInBytes() * config.getStripeWidth()) != 0)
-            throw new IllegalArgumentException("size of " + type
-                    + " must satisfy: size mod (stripeSize * stripeWidth) == 0");
+        if ((type == BenchmarkType.SEQ_READ) || (type == BenchmarkType.SEQ_WRITE)) {
+            if (size % (config.getStripeSizeInBytes() * config.getStripeWidth()) != 0)
+                throw new IllegalArgumentException("size of " + type
+                        + " must satisfy: size mod (stripeSize * stripeWidth) == 0");
+        }
         if ((type == BenchmarkType.RAND_READ) || (type == BenchmarkType.RAND_WRITE)) {
             if (config.getBasefileSizeInBytes() < size)
                 throw new IllegalArgumentException("Basefile < size of " + type);
