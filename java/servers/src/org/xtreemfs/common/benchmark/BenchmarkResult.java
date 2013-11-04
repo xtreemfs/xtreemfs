@@ -23,9 +23,16 @@ public class BenchmarkResult implements Comparable<BenchmarkResult> {
     private long          dataRequestedInBytes;
     private long          byteCount;
 
-    BenchmarkResult(double timeInSec, long dataRequestedInBytes, long byteCount) {
+    public BenchmarkResult(double timeInSec, long dataRequestedInBytes, long byteCount) {
         this.timeInSec = timeInSec;
         this.dataRequestedInBytes = dataRequestedInBytes;
+        this.byteCount = byteCount;
+    }
+
+    public BenchmarkResult(double timeInSec, long byteCount, int numberOfReadersOrWriters, BenchmarkType benchmarkType) {
+        this.benchmarkType = benchmarkType;
+        this.numberOfReadersOrWriters = numberOfReadersOrWriters;
+        this.timeInSec = timeInSec;
         this.byteCount = byteCount;
     }
 
