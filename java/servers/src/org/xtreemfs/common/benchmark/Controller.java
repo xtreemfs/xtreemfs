@@ -181,9 +181,9 @@ public class Controller {
      */
     public void teardown() throws Exception {
         deleteVolumesAndFiles();
-        clientManager.shutdownClients();
         if (config.isOsdCleanup())
             volumeManager.cleanupOSD();
+        clientManager.shutdownClients();
     }
 
     private void verifySizesAndThreads(long size, int threads, BenchmarkType type) {
