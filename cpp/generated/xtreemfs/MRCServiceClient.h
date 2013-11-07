@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Mon Nov 11 11:46:59 CET 2013
+//automatically generated from MRC.proto at Wed Nov 20 11:42:24 CET 2013
 //(c) 2013. See LICENSE file for details.
 
 #ifndef MRCSERVICECLIENT_H
@@ -946,6 +946,29 @@ namespace pbrpc {
                 SyncCallback<xtreemfs::pbrpc::FileCredentials>* sync_cb = new SyncCallback<xtreemfs::pbrpc::FileCredentials>();
                 client_->sendRequest(address, 20001, 50,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::FileCredentials(),
+                     NULL, sync_cb);
+                return sync_cb;
+            }
+
+            void xtreemfs_get_xlocset(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds,
+                const xtreemfs::pbrpc::XCap* request,
+                CallbackInterface<xtreemfs::pbrpc::XLocSet> *callback, void *context = NULL) {
+                const char* data = NULL; uint32_t data_length = 0;
+                client_->sendRequest(address, 20001, 51,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::XLocSet(),
+                     context, callback);
+            }
+
+            SyncCallback<xtreemfs::pbrpc::XLocSet>* xtreemfs_get_xlocset_sync(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds
+                , const xtreemfs::pbrpc::XCap* request) {
+                const char* data = NULL; uint32_t data_length = 0;
+                SyncCallback<xtreemfs::pbrpc::XLocSet>* sync_cb = new SyncCallback<xtreemfs::pbrpc::XLocSet>();
+                client_->sendRequest(address, 20001, 51,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::XLocSet(),
                      NULL, sync_cb);
                 return sync_cb;
             }

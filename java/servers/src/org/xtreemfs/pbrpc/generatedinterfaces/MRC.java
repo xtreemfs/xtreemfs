@@ -46685,7 +46685,7 @@ public final class MRC {
       "R_FLAGS_CREATE\020\001\022\027\n\023XATTR_FLAGS_REPLACE\020" +
       "\002*j\n\014ACCESS_FLAGS\022\025\n\021ACCESS_FLAGS_F_OK\020\000" +
       "\022\025\n\021ACCESS_FLAGS_X_OK\020\001\022\025\n\021ACCESS_FLAGS_" +
-      "W_OK\020\002\022\025\n\021ACCESS_FLAGS_R_OK\020\0042\234\037\n\nMRCSer" +
+      "W_OK\020\002\022\025\n\021ACCESS_FLAGS_R_OK\020\0042\354\037\n\nMRCSer" +
       "vice\022S\n\010fsetattr\022\037.xtreemfs.pbrpc.fsetat",
       "trRequest\032\035.xtreemfs.pbrpc.emptyResponse" +
       "\"\007\215\265\030\002\000\000\000\022@\n\tftruncate\022\024.xtreemfs.pbrpc." +
@@ -46785,7 +46785,9 @@ public final class MRC {
       "e\"\007\215\265\0301\000\000\000\022\177\n\035xtreemfs_get_file_credenti" +
       "als\0224.xtreemfs.pbrpc.xtreemfs_get_file_c" +
       "redentialsRequest\032\037.xtreemfs.pbrpc.FileC" +
-      "redentials\"\007\215\265\0302\000\000\000\032\007\225\265\030!N\000\000B(\n&org.xtre" +
+      "redentials\"\007\215\265\0302\000\000\000\022N\n\024xtreemfs_get_xloc" +
+      "set\022\024.xtreemfs.pbrpc.XCap\032\027.xtreemfs.pbr",
+      "pc.XLocSet\"\007\215\265\0303\000\000\000\032\007\225\265\030!N\000\000B(\n&org.xtre" +
       "emfs.pbrpc.generatedinterfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
@@ -47107,6 +47109,7 @@ public final class MRC {
               new java.lang.String[] { "FileId", });
           com.google.protobuf.ExtensionRegistry registry =
             com.google.protobuf.ExtensionRegistry.newInstance();
+          registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.procId);
           registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.procId);
           registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.procId);
           registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.procId);

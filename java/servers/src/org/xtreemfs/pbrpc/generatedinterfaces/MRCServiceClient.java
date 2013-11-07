@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Mon Nov 11 11:46:59 CET 2013
+//automatically generated from MRC.proto at Wed Nov 20 11:42:25 CET 2013
 //(c) 2013. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -542,6 +542,19 @@ public class MRCServiceClient {
     public RPCResponse<GlobalTypes.FileCredentials> xtreemfs_get_file_credentials(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, String file_id) throws IOException {
          final MRC.xtreemfs_get_file_credentialsRequest msg = MRC.xtreemfs_get_file_credentialsRequest.newBuilder().setFileId(file_id).build();
          return xtreemfs_get_file_credentials(server, authHeader, userCreds,msg);
+    }
+
+    public RPCResponse<GlobalTypes.XLocSet> xtreemfs_get_xlocset(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.XCap input) throws IOException {
+         if (server == null) server = defaultServer;
+         if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
+         RPCResponse<GlobalTypes.XLocSet> response = new RPCResponse<GlobalTypes.XLocSet>(GlobalTypes.XLocSet.getDefaultInstance());
+         client.sendRequest(server, authHeader, userCreds, 20001, 51, input, null, response, false);
+         return response;
+    }
+
+    public RPCResponse<GlobalTypes.XLocSet> xtreemfs_get_xlocset(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, int access_mode, String client_identity, long expire_time_s, int expire_timeout_s, String file_id, boolean replicate_on_close, String server_signature, int truncate_epoch, GlobalTypes.SnapConfig snap_config, long snap_timestamp) throws IOException {
+         final GlobalTypes.XCap msg = GlobalTypes.XCap.newBuilder().setAccessMode(access_mode).setClientIdentity(client_identity).setExpireTimeS(expire_time_s).setExpireTimeoutS(expire_timeout_s).setFileId(file_id).setReplicateOnClose(replicate_on_close).setServerSignature(server_signature).setTruncateEpoch(truncate_epoch).setSnapConfig(snap_config).setSnapTimestamp(snap_timestamp).build();
+         return xtreemfs_get_xlocset(server, authHeader, userCreds,msg);
     }
 
     public boolean clientIsAlive() {

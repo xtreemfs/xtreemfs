@@ -1,4 +1,4 @@
-//automatically generated at Wed Nov 20 11:39:08 CET 2013
+//automatically generated at Wed Nov 20 11:42:24 CET 2013
 //(c) 2013. See LICENSE file for details.
 
 #include "xtreemfs/get_request_message.h"
@@ -249,6 +249,10 @@ google::protobuf::Message* GetMessageForProcID(uint32_t interface_id,
         }
         case 50: {
           return new xtreemfs::pbrpc::xtreemfs_get_file_credentialsRequest();
+          break;
+        }
+        case 51: {
+          return new xtreemfs::pbrpc::XCap();
           break;
         }
         default: {

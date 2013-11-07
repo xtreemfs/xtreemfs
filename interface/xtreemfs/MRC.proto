@@ -795,4 +795,8 @@ service MRCService {
     option(proc_id)=50;	  
   }; 
 
+  // Returns the current xLocSet for the file specified in the capability.
+  rpc xtreemfs_get_xlocset(XCap) returns(XLocSet) {
+    option(proc_id)=51;
+  };
 }
