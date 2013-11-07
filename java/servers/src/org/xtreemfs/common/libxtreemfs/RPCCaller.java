@@ -11,6 +11,7 @@ import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.InternalServerErrorException;
+import org.xtreemfs.common.libxtreemfs.exceptions.InvalidViewException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
 import org.xtreemfs.foundation.buffer.BufferPool;
@@ -46,31 +47,45 @@ public class RPCCaller {
             Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
             boolean uuidIteratorHasAddresses, C callRequest, CallGenerator<C, R> callGen) throws IOException,
             PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
-        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, false,
-                options.getMaxTries(), callRequest, null, callGen);
+        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, null,
+                false, options.getMaxTries(), callRequest, null, callGen);
     }
 
-    protected static <C, R extends Message> R
-            syncCall(SERVICES service, UserCredentials userCreds, Auth auth, Options options,
-                    UUIDResolver uuidResolver, UUIDIterator it, boolean uuidIteratorHasAddresses,
-                    boolean delayNextTry, int maxRetries, C callRequest, CallGenerator<C, R> callGen) throws IOException,
-                    PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
-        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses,
+    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds, Auth auth,
+            Options options, UUIDResolver uuidResolver, UUIDIterator it, boolean uuidIteratorHasAddresses,
+            XLocSetHandler<C> xLocSetHandler, C callRequest, CallGenerator<C, R> callGen) throws IOException,
+            PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
+        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, xLocSetHandler,
+                false, options.getMaxTries(), callRequest, null, callGen);
+    }
+
+    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds, Auth auth,
+            Options options, UUIDResolver uuidResolver, UUIDIterator it, boolean uuidIteratorHasAddresses,
+            boolean delayNextTry, int maxRetries, C callRequest, CallGenerator<C, R> callGen) throws IOException,
+            PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
+        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, null,
                 delayNextTry, options.getMaxTries(), callRequest, null, callGen);
     }
 
-    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
-            Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
-            boolean uuidIteratorHasAddresses, C callRequest, ReusableBuffer buf, CallGenerator<C, R> callGen)
-            throws IOException, PosixErrorException, InternalServerErrorException,
-            AddressToUUIDNotFoundException {
-        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, false,
+    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds, Auth auth,
+            Options options, UUIDResolver uuidResolver, UUIDIterator it, boolean uuidIteratorHasAddresses,
+            C callRequest, ReusableBuffer buf, CallGenerator<C, R> callGen) throws IOException, PosixErrorException,
+            InternalServerErrorException, AddressToUUIDNotFoundException {
+        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, null, false,
                 options.getMaxTries(), callRequest, buf, callGen);
     }
 
-    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
-            Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
-            boolean uuidIteratorHasAddresses, boolean delayNextTry, int maxRetries, C callRequest,
+    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds, Auth auth,
+            Options options, UUIDResolver uuidResolver, UUIDIterator it, boolean uuidIteratorHasAddresses,
+            XLocSetHandler<C> xLocSetHandler, C callRequest, ReusableBuffer buf, CallGenerator<C, R> callGen)
+            throws IOException, PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
+        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, xLocSetHandler,
+                false, options.getMaxTries(), callRequest, buf, callGen);
+    }
+
+    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds, Auth auth,
+            Options options, UUIDResolver uuidResolver, UUIDIterator it, boolean uuidIteratorHasAddresses,
+            XLocSetHandler<C> xLocSetHandler, boolean delayNextTry, int maxRetries, C callRequest,
             ReusableBuffer buffer, CallGenerator<C, R> callGen) throws PosixErrorException, IOException,
             InternalServerErrorException, AddressToUUIDNotFoundException {
         int maxTries = maxRetries;
@@ -131,6 +146,30 @@ public class RPCCaller {
                         it.markUUIDAsFailed(it.getUUID());
                         continue;
                     }
+
+                    // If the view of this request is invalid (outdated xlocset), the view (and the UUIDIterator) has to
+                    // be updated and the request restarted.
+                    if (pbe.getErrorType().equals(ErrorType.INVALID_VIEW)) {
+                        if (Logging.isDebug()) {
+                            Logging.logMessage(Logging.LEVEL_DEBUG, (Object) null,
+                                    "The server %s denied the requested operation because the clients view is outdated. "
+                                            + "The request will be retried once the view is renewed. Error: %s",
+                                    it.getUUID(), pbe.getErrorMessage());
+                        }
+
+                        if ((attempt <= maxTries || maxTries == 0) && xLocSetHandler != null) {
+                            // TODO(jdillmann): Introduce RetryViewDelay and delay the xLocSet renewal if this isn't the
+                            // first invalid_view error.
+                            xLocSetHandler.renew();
+                            it = xLocSetHandler.updateUUIDIterator(it);
+                            callRequest = xLocSetHandler.updateXLocSetInRequest(callRequest);
+
+                            continue;
+                        } else {
+                            throw pbe;
+                        }
+                    }
+
                     // Retry (and delay) only if at least one retry is left
                     if (((attempt < maxTries || maxTries == 0) ||
                     // or this last retry should be delayed
@@ -230,8 +269,8 @@ public class RPCCaller {
      * @param e
      * @param it
      */
-    private static void handleErrorAfterMaxTriesExceeded(PBRPCException e, UUIDIterator it)
-            throws PosixErrorException, IOException, InternalServerErrorException, XtreemFSException {
+    private static void handleErrorAfterMaxTriesExceeded(PBRPCException e, UUIDIterator it) throws PosixErrorException,
+            IOException, InternalServerErrorException, InvalidViewException, XtreemFSException {
         // By default all errors are logged as errors.
         int logLevel = Logging.LEVEL_INFO;
 
@@ -259,6 +298,11 @@ public class RPCCaller {
         case REDIRECT:
             throw new XtreemFSException("This error (A REDIRECT error was not handled "
                     + "and retried but thrown instead) should never happen. Report this");
+        case INVALID_VIEW:
+            Logging.logMessage(logLevel, Category.replication, e,
+                    "The server %s denied the requested operation because the clients view is outdated. Error: %s",
+                    it.getUUID(), e.getErrorMessage());
+            throw new InvalidViewException(e.getErrorMessage());
         default:
             errorMsg =
                     "The server " + it.getUUID() + "returned an error: " + e.getErrorType().name()

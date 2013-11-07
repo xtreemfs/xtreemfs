@@ -60,6 +60,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_s
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_repair_objectRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
+import com.google.protobuf.Message;
+
 //JCIP import net.jcip.annotations.GuardedBy;
 
 /**
@@ -88,8 +90,8 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
     final private UUIDResolver                      uuidResolver;
 
     /**
-     * Multiple FileHandle may refer to the same File and therefore unique file properties (e.g. Path, FileId,
-     * XlocSet) are stored in a FileInfo object.
+     * Multiple FileHandle may refer to the same File and therefore unique file properties (e.g. Path, FileId, XlocSet)
+     * are stored in a FileInfo object.
      */
     final private FileInfo                          fileInfo;
 
@@ -142,8 +144,8 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
     private boolean                                 asyncWritesEnabled;
 
     /**
-     * Set to true if an async write of this file_handle failed. If true, this file_handle is broken and no
-     * further writes/reads/truncates are possible.
+     * Set to true if an async write of this file_handle failed. If true, this file_handle is broken and no further
+     * writes/reads/truncates are possible.
      */
     private boolean                                 asyncWritesFailed;
 
@@ -160,8 +162,12 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
     final private UserCredentials                   userCredentialsBogus;
 
     /**
-     *
+     * The default XLocSetHandler can be used if the default osdUuidIterator is used and the request contains a
+     * "file_credentials" field.
      */
+    @SuppressWarnings("rawtypes")
+    final XLocSetHandler                            defaultXLocSetHandler;
+
     public FileHandleImplementation(VolumeImplementation volume, String clientUuid, FileInfo fileInfo, XCap xcap,
             UUIDIterator mrcUuidIterator, UUIDIterator osdUuidIterator, UUIDResolver uuidResolver,
             MRCServiceClient mrcServiceClient, OSDServiceClient osdServiceClient,
@@ -184,14 +190,15 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
         xcapRenewalPending = false;
         xcapRenewalPendingLock = new Object();
+
+        defaultXLocSetHandler = new XLocSetHandler<Message>(this, fileInfo);
     }
 
     /*
      * (non-Javadoc)
-     *
-     * @see org.xtreemfs.common.libxtreemfs.FileHandle#read(org.xtreemfs.foundation
-     * .pbrpc.generatedinterfaces.RPC .UserCredentials, org.xtreemfs.foundation.buffer.ReusableBuffer, int,
-     * long)
+     * 
+     * @see org.xtreemfs.common.libxtreemfs.FileHandle#read(org.xtreemfs.foundation .pbrpc.generatedinterfaces.RPC
+     * .UserCredentials, org.xtreemfs.foundation.buffer.ReusableBuffer, int, long)
      */
     @Override
     public int read(UserCredentials userCredentials, byte[] data, int count, long offset) throws IOException,
@@ -201,10 +208,9 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     *
-     * @see org.xtreemfs.common.libxtreemfs.FileHandle#read(org.xtreemfs.foundation
-     * .pbrpc.generatedinterfaces.RPC .UserCredentials, org.xtreemfs.foundation.buffer.ReusableBuffer, int,
-     * long)
+     * 
+     * @see org.xtreemfs.common.libxtreemfs.FileHandle#read(org.xtreemfs.foundation .pbrpc.generatedinterfaces.RPC
+     * .UserCredentials, org.xtreemfs.foundation.buffer.ReusableBuffer, int, long)
      */
     @Override
     public int read(UserCredentials userCredentials, byte[] data, int dataOffset, int count, long offset)
@@ -217,8 +223,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
                         + " write did fail. No more actions on this file handle are allowed.");
             }
             // TODO(mberlin): XCap might expire while retrying a request.
-            // Provide a
-            // mechanism to renew the xcap in the request.
+            // Provide a mechanism to renew the xcap in the request.
             fcBuilder.setXcap(xcap.toBuilder());
         }
         FileCredentials fc = fcBuilder.setXlocs(fileInfo.getXLocSet()).build();
@@ -254,37 +259,47 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
             readRqBuilder.setOffset(operations.get(j).getReqOffset());
             readRqBuilder.setLength(operations.get(j).getReqSize());
 
-            // Differ between striping and the rest (replication, no
-            // replication).
+            // Differ between striping and the rest (replication, no replication).
             UUIDIterator uuidIterator;
+            XLocSetHandler<readRequest> xLocSetHandler;
             if (readRqBuilder.getFileCredentials().getXlocs().getReplicas(0).getOsdUuidsCount() > 1) {
                 // Replica is striped. Pick UUID from xlocset.
-                tempUuidIteratorForStriping.clear();
-                
-                // Replicas may have different stripe widths. However, the current Java client
-                // StripeTranslator code only supports the same stripe width as the first replica has.
-                int stripeWidthFirstReplica = fc.getXlocs().getReplicas(0).getStripingPolicy().getWidth();
+                final int osdOffset = operations.get(j).getOsdOffset();
 
-                for (int replicaIdx = 0; replicaIdx < fc.getXlocs().getReplicasCount(); replicaIdx++) {
-                    if (fc.getXlocs().getReplicas(replicaIdx).getStripingPolicy().getWidth() == stripeWidthFirstReplica) {
-                        tempUuidIteratorForStriping.addUUID(Helper.getOSDUUIDFromXlocSet(fc.getXlocs(),
-                                                            replicaIdx,
-                                                            operations.get(j).getOsdOffset()));
+                xLocSetHandler = new XLocSetHandler<readRequest>(this, fileInfo) {
+                    @Override
+                    public UUIDIterator updateUUIDIterator(UUIDIterator tempUuidIteratorForStriping) {
+                        tempUuidIteratorForStriping.clear();
+
+                        // Replicas may have different stripe widths. However, the current Java client
+                        // StripeTranslator code only supports the same stripe width as the first replica has.
+                        XLocSet xLocSet = getXLocSet();
+                        int stripeWidthFirstReplica = xLocSet.getReplicas(0).getStripingPolicy().getWidth();
+
+                        for (int replicaIdx = 0; replicaIdx < xLocSet.getReplicasCount(); replicaIdx++) {
+                            if (xLocSet.getReplicas(replicaIdx).getStripingPolicy().getWidth() == stripeWidthFirstReplica) {
+                                tempUuidIteratorForStriping.addUUID(Helper.getOSDUUIDFromXlocSet(xLocSet, replicaIdx,
+                                        osdOffset));
+                            }
+                        }
+
+                        return tempUuidIteratorForStriping;
                     }
-                }
-                
+                };
+
+                xLocSetHandler.updateUUIDIterator(tempUuidIteratorForStriping);
                 uuidIterator = tempUuidIteratorForStriping;
             } else {
-                // TODO(mberlin): Enhance UUIDIterator to read from different
-                // replicas.
+                // TODO(mberlin): Enhance UUIDIterator to read from different replicas.
                 uuidIterator = osdUuidIterator;
+                xLocSetHandler = defaultXLocSetHandler;
             }
 
             buf.position(operations.get(j).getBufferStart());
             // If synccall gets a buffer it fill it with data from the response.
             ObjectData objectData = RPCCaller.<readRequest, ObjectData> syncCall(SERVICES.OSD, userCredentialsBogus,
-                    authBogus, volumeOptions, uuidResolver, uuidIterator, false, readRqBuilder.build(), buf,
-                    new CallGenerator<readRequest, ObjectData>() {
+                    authBogus, volumeOptions, uuidResolver, uuidIterator, false, xLocSetHandler, readRqBuilder.build(),
+                    buf, new CallGenerator<readRequest, ObjectData>() {
 
                         @Override
                         public RPCResponse<ObjectData> executeCall(InetSocketAddress server, Auth auth,
@@ -304,10 +319,9 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     *
-     * @see org.xtreemfs.common.libxtreemfs.FileHandle#write(org.xtreemfs.foundation
-     * .pbrpc.generatedinterfaces. RPC.UserCredentials, org.xtreemfs.foundation.buffer.ReusableBuffer, int,
-     * long)
+     * 
+     * @see org.xtreemfs.common.libxtreemfs.FileHandle#write(org.xtreemfs.foundation .pbrpc.generatedinterfaces.
+     * RPC.UserCredentials, org.xtreemfs.foundation.buffer.ReusableBuffer, int, long)
      */
     @Override
     public synchronized int write(UserCredentials userCredentials, byte[] data, int count, long offset)
@@ -318,9 +332,8 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     *
-     * @see
-     * org.xtreemfs.common.libxtreemfs.FileHandle#write(org.xtreemfs.foundation.pbrpc.generatedinterfaces.
+     * 
+     * @see org.xtreemfs.common.libxtreemfs.FileHandle#write(org.xtreemfs.foundation.pbrpc.generatedinterfaces.
      * RPC.UserCredentials, byte[], int, int, long)
      */
     @Override
@@ -361,7 +374,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
         FileCredentials fileCredentials = fcBuilder.build();
 
-        String osdUuid = "";
+        UUIDIterator tempUuidIteratorForStriping = new UUIDIterator();
         writeRequest.Builder request;
 
         if (asyncWritesEnabled) {
@@ -400,8 +413,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
                 // therefore we avoid copying them into writeBuffer.
                 fileInfo.asyncWrite(writeBuffer);
 
-                // Processing of file size updates is handled by the FileInfo's
-                // AsyncWriteHandler.
+                // Processing of file size updates is handled by the FileInfo's AsyncWriteHandler.
             }
         } else {
             // synchroneous write
@@ -419,30 +431,39 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
                 request.setObjectData(objectData);
 
-                // Differ between striping and the rest (replication, no
-                // replication).
+                // Differ between striping and the rest (replication, no replication).
                 UUIDIterator uuidIterator;
+                XLocSetHandler<writeRequest> xLocSetHandler;
                 if (xlocs.getReplicas(0).getOsdUuidsCount() > 1) {
-                    // Replica is striped. Pick UUID from Xlocset. Use first and
-                    // only replica.
-                    osdUuid = Helper.getOSDUUIDFromXlocSet(xlocs, 0, operations.get(j).getOsdOffset());
-                    uuidIterator = new UUIDIterator();
-                    uuidIterator.clearAndAddUUID(osdUuid);
+                    // Replica is striped. Pick UUID from Xlocset. Use first and only replica.
+                    final int osdOffset = operations.get(j).getOsdOffset();
+
+                    xLocSetHandler = new XLocSetHandler<writeRequest>(this, fileInfo) {
+                        @Override
+                        public UUIDIterator updateUUIDIterator(UUIDIterator currentUUIDIterator) {
+                            String osdUuid = Helper.getOSDUUIDFromXlocSet(getXLocSet(), 0, osdOffset);
+                            currentUUIDIterator.clearAndAddUUID(osdUuid);
+                            return currentUUIDIterator;
+                        }
+                    };
+
+                    xLocSetHandler.updateUUIDIterator(tempUuidIteratorForStriping);
+                    uuidIterator = tempUuidIteratorForStriping;
+
                 } else {
-                    // TODO: enhance UUIDIterator to read from different
-                    // replicas.
+                    // TODO: enhance UUIDIterator to read from different replicas.
                     uuidIterator = osdUuidIterator;
+                    xLocSetHandler = defaultXLocSetHandler;
                 }
 
                 final ReusableBuffer writeDataBuffer = operations.get(j).getReqData();
                 OSDWriteResponse response = RPCCaller.<writeRequest, OSDWriteResponse> syncCall(SERVICES.OSD,
-                        userCredentials, authBogus, volumeOptions, uuidResolver, uuidIterator, false, request.build(),
-                        new CallGenerator<writeRequest, OSDWriteResponse>() {
+                        userCredentials, authBogus, volumeOptions, uuidResolver, uuidIterator, false, xLocSetHandler,
+                        request.build(), new CallGenerator<writeRequest, OSDWriteResponse>() {
 
                             @Override
                             public RPCResponse<OSDWriteResponse> executeCall(InetSocketAddress server, Auth authHeader,
                                     UserCredentials userCreds, writeRequest input) throws IOException {
-
                                 return osdServiceClient.write(server, authHeader, userCreds, input,
                                         writeDataBuffer.createViewBuffer());
                             }
@@ -450,10 +471,8 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
                 assert (response != null);
 
-                // If the filesize has changed, remember OSDWriteResponse for
-                // later file
-                // size update towards the MRC (executed by
-                // PeriodicFileSizeUpdateThread)
+                // If the filesize has changed, remember OSDWriteResponse for later file size
+                // update towards the MRC (executed by PeriodicFileSizeUpdateThread).
                 if (response.hasSizeInBytes()) {
                     fileInfo.tryToUpdateOSDWriteResponse(response, xcap);
                 }
@@ -464,7 +483,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.xtreemfs.common.libxtreemfs.FileHandle#flush()
      */
     @Override
@@ -495,9 +514,9 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     *
-     * @see org.xtreemfs.common.libxtreemfs.FileHandle#truncate(org.xtreemfs.foundation
-     * .pbrpc.generatedinterfaces .RPC.UserCredentials, int)
+     * 
+     * @see org.xtreemfs.common.libxtreemfs.FileHandle#truncate(org.xtreemfs.foundation .pbrpc.generatedinterfaces
+     * .RPC.UserCredentials, int)
      */
     @Override
     public void truncate(UserCredentials userCredentials, long newFileSize) throws IOException, PosixErrorException,
@@ -536,9 +555,9 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
     }
 
     /**
-     * Used by truncate() and Volume.openFile() to truncate the file to "newFileSize" on the OSD and update
-     * the file size at the MRC.
-     *
+     * Used by truncate() and Volume.openFile() to truncate the file to "newFileSize" on the OSD and update the file
+     * size at the MRC.
+     * 
      * @throws AddressToUUIDNotFoundException
      * @throws IOException
      * @throws PosixErrorException
@@ -562,7 +581,8 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
             requestBuilder.setNewFileSize(newFileSize);
 
             response = RPCCaller.<truncateRequest, OSDWriteResponse> syncCall(SERVICES.OSD, userCredentials, authBogus,
-                    volumeOptions, uuidResolver, osdUuidIterator, false, requestBuilder.build(),
+                    volumeOptions, uuidResolver, osdUuidIterator, false,
+                    (XLocSetHandler<truncateRequest>) defaultXLocSetHandler, requestBuilder.build(),
                     new CallGenerator<truncateRequest, OSDWriteResponse>() {
                         @Override
                         public RPCResponse<OSDWriteResponse> executeCall(InetSocketAddress server, Auth authHeader,
@@ -591,9 +611,9 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     *
-     * @see org.xtreemfs.common.libxtreemfs.FileHandle#getAttr(org.xtreemfs.foundation
-     * .pbrpc.generatedinterfaces .RPC.UserCredentials)
+     * 
+     * @see org.xtreemfs.common.libxtreemfs.FileHandle#getAttr(org.xtreemfs.foundation .pbrpc.generatedinterfaces
+     * .RPC.UserCredentials)
      */
     @Override
     public Stat getAttr(UserCredentials userCredentials) throws IOException, PosixErrorException,
@@ -603,9 +623,9 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     *
-     * @see org.xtreemfs.common.libxtreemfs.FileHandle#acquireLock(org.xtreemfs.
-     * foundation.pbrpc.generatedinterfaces .RPC.UserCredentials, int, long, long, boolean, boolean)
+     * 
+     * @see org.xtreemfs.common.libxtreemfs.FileHandle#acquireLock(org.xtreemfs. foundation.pbrpc.generatedinterfaces
+     * .RPC.UserCredentials, int, long, long, boolean, boolean)
      */
     @Override
     public Lock acquireLock(UserCredentials userCredentials, int processId, long offset, long length,
@@ -648,6 +668,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
         Lock response = null;
         if (!waitForLock) {
+            // TODO(jdillmann): Use XLocSetHandler, once locking is using views.
             response = RPCCaller.<lockRequest, Lock> syncCall(SERVICES.OSD, userCredentials, authBogus, volumeOptions,
                     uuidResolver, osdUuidIterator, false, request, new CallGenerator<lockRequest, Lock>() {
                         @Override
@@ -662,6 +683,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
             while (retriesLeft >= 0) {
                 retriesLeft--;
                 try {
+                    // TODO(jdillmann): Use XLocSetHandler, once locking is using views.
                     response = RPCCaller.<lockRequest, Lock> syncCall(SERVICES.OSD, userCredentials, authBogus,
                             volumeOptions, uuidResolver, osdUuidIterator, false, true, 1, request,
                             new CallGenerator<lockRequest, Lock>() {
@@ -689,9 +711,9 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     *
-     * @see org.xtreemfs.common.libxtreemfs.FileHandle#checkLock(org.xtreemfs.foundation
-     * .pbrpc.generatedinterfaces .RPC.UserCredentials, int, long, long, boolean)
+     * 
+     * @see org.xtreemfs.common.libxtreemfs.FileHandle#checkLock(org.xtreemfs.foundation .pbrpc.generatedinterfaces
+     * .RPC.UserCredentials, int, long, long, boolean)
      */
     @Override
     public Lock checkLock(UserCredentials userCredentials, int processId, long offset, long length, boolean exclusive)
@@ -728,7 +750,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
         fcBuilder.setXcap(getXcap());
         lockRequest request = lockRequest.newBuilder().setLockRequest(lock).setFileCredentials(fcBuilder.build())
                 .build();
-
+        // TODO(jdillmann): Use XLocSetHandler, once locking is using views.
         Lock response = RPCCaller.<lockRequest, Lock> syncCall(SERVICES.OSD, userCredentials, authBogus, volumeOptions,
                 uuidResolver, osdUuidIterator, false, request, new CallGenerator<lockRequest, Lock>() {
                     @Override
@@ -742,9 +764,9 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     *
-     * @see org.xtreemfs.common.libxtreemfs.FileHandle#releaseLock(org.xtreemfs.
-     * foundation.pbrpc.generatedinterfaces .RPC.UserCredentials, int, long, long, boolean)
+     * 
+     * @see org.xtreemfs.common.libxtreemfs.FileHandle#releaseLock(org.xtreemfs. foundation.pbrpc.generatedinterfaces
+     * .RPC.UserCredentials, int, long, long, boolean)
      */
     @Override
     public void releaseLock(UserCredentials userCredentials, int processId, long offset, long length, boolean exclusive)
@@ -760,10 +782,9 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     *
-     * @see org.xtreemfs.common.libxtreemfs.FileHandle#releaseLock(org.xtreemfs.
-     * foundation.pbrpc.generatedinterfaces .RPC.UserCredentials,
-     * org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock)
+     * 
+     * @see org.xtreemfs.common.libxtreemfs.FileHandle#releaseLock(org.xtreemfs. foundation.pbrpc.generatedinterfaces
+     * .RPC.UserCredentials, org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock)
      */
     @Override
     public void releaseLock(UserCredentials userCredentials, Lock lock) throws IOException, PosixErrorException,
@@ -785,7 +806,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
         lockRequest unlockRequest = lockRequest.newBuilder().setFileCredentials(fcBuilder.build()).setLockRequest(lock)
                 .build();
-
+        // TODO(jdillmann): Use XLocSetHandler, once locking is using views.
         RPCCaller.<lockRequest, emptyResponse> syncCall(SERVICES.OSD, userCredentials, authBogus, volumeOptions,
                 uuidResolver, osdUuidIterator, false, unlockRequest, new CallGenerator<lockRequest, emptyResponse>() {
                     @SuppressWarnings("unchecked")
@@ -800,7 +821,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.xtreemfs.common.libxtreemfs.FileHandle#releaseLockOfProcess(int)
      */
     @Override
@@ -811,7 +832,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /**
      * Releases "lock" with userCredentials from this fileHandle object.
-     *
+     * 
      * @param lock
      */
     protected void releaseLock(Lock lock) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
@@ -820,9 +841,9 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     *
-     * @see org.xtreemfs.common.libxtreemfs.FileHandle#pingReplica(org.xtreemfs.
-     * foundation.pbrpc.generatedinterfaces .RPC.UserCredentials, java.lang.String)
+     * 
+     * @see org.xtreemfs.common.libxtreemfs.FileHandle#pingReplica(org.xtreemfs. foundation.pbrpc.generatedinterfaces
+     * .RPC.UserCredentials, java.lang.String)
      */
     @Override
     public void pingReplica(UserCredentials userCredentials, String osdUuid) throws IOException,
@@ -870,8 +891,11 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
         UUIDIterator tempUuidIterator = new UUIDIterator();
         tempUuidIterator.addUUID(osdUuid);
 
+        // The defaultXLocSetHandler can be used, because it will return the UUIDIterator unmodified.
+        XLocSetHandler<readRequest> xLocSetHandler = defaultXLocSetHandler;
+
         RPCCaller.<readRequest, ObjectData> syncCall(SERVICES.OSD, userCredentialsBogus, authBogus, volumeOptions,
-                uuidResolver, tempUuidIterator, false, readRequestBuilder.build(),
+                uuidResolver, tempUuidIterator, false, xLocSetHandler, readRequestBuilder.build(),
                 new CallGenerator<readRequest, ObjectData>() {
                     @Override
                     public RPCResponse<ObjectData> executeCall(InetSocketAddress server, Auth auth,
@@ -884,7 +908,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see org.xtreemfs.common.libxtreemfs.FileHandle#close()
      */
     @Override
@@ -1026,7 +1050,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     /**
      * Sends pending file size updates synchronous (needed for flush/close).
-     *
+     * 
      * @throws IOException
      */
     protected void writeBackFileSize(OSDWriteResponse response, boolean closeFile) throws IOException,
@@ -1145,9 +1169,9 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
             xtreemfs_internal_get_object_setRequest request = xtreemfs_internal_get_object_setRequest.newBuilder()
                     .setFileId(fileId).setFileCredentials(fcBuilder.build()).build();
 
+            // Remark: GetObjectSetOperation does not validate views, thus no XLocSetHandler is required.
             ObjectList ol = RPCCaller.<xtreemfs_internal_get_object_setRequest, ObjectList> syncCall(SERVICES.OSD,
-                    RPCAuthentication.userService, RPCAuthentication.authNone, volumeOptions, uuidResolver, it,
-                    false,
+                    RPCAuthentication.userService, RPCAuthentication.authNone, volumeOptions, uuidResolver, it, false,
                     request, new CallGenerator<xtreemfs_internal_get_object_setRequest, ObjectList>() {
                         @Override
                         public RPCResponse<ObjectList> executeCall(InetSocketAddress server, Auth authHeader,
@@ -1209,9 +1233,9 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
                     .setFileCredentials(fcBuilder.build()).setFileId(fileId).setObjectNumber(objectNo)
                     .setObjectVersion(0l).build();
 
+            // Remark: CheckObjectOperation does not validate views, thus no XLocSetHandler is required.
             od = RPCCaller.<xtreemfs_check_objectRequest, ObjectData> syncCall(SERVICES.OSD,
-                    RPCAuthentication.userService, RPCAuthentication.authNone, volumeOptions, uuidResolver, it,
-                    false,
+                    RPCAuthentication.userService, RPCAuthentication.authNone, volumeOptions, uuidResolver, it, false,
                     request, new CallGenerator<xtreemfs_check_objectRequest, ObjectData>() {
                         @Override
                         public RPCResponse<ObjectData> executeCall(InetSocketAddress server, Auth authHeader,
@@ -1235,7 +1259,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     @Override
     public long getSizeOnOSD() throws IOException {
-        
+
         // build FC
         FileCredentials.Builder fcBuilder = FileCredentials.newBuilder();
         fcBuilder.setXlocs(fileInfo.getXLocSet());
@@ -1275,12 +1299,12 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     @Override
     public void repairObject(int replicaIndex, long objectNo) throws IOException {
-    	
-    	//check if file is replicated
-    	if (this.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE)) {
-    		//unable to repair object if file is not replicated
-    		throw new IOException("file must be replicated");
-    	} else {
+
+        // check if file is replicated
+        if (this.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE)) {
+            // unable to repair object if file is not replicated
+            throw new IOException("file must be replicated");
+        } else {
             FileCredentials.Builder fcBuilder = FileCredentials.newBuilder();
             fcBuilder.setXlocs(fileInfo.getXLocSet());
             fcBuilder.setXcap(getXcap());
@@ -1308,4 +1332,43 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
                     });
         }
     }
+
+    /**
+     * Renew the xLocSet synchronously and update the fileInfo. <br>
+     * If another renewal is in pending, no additional renewal will be started and the caller will wait until the
+     * pending one finished.
+     */
+    void renewXLocSetSynchronous() throws PosixErrorException, InternalServerErrorException, IOException {
+
+        // If another thread is renewing the xLocSet already, the lock is taken and we will wait until (the other
+        // thread) updates the xLocSet and then continue using the updated xLocSet.
+        boolean lock = fileInfo.lockXLocSetRenewalOrWait();
+
+        if (lock) {
+            try {
+                // The xCap is required to prevent unauthorized access to the XLocSet.
+                XCap xCap = getXcap();
+
+                // TODO(jdillmann): Check if maxRetries should be set to something different from the default.
+                XLocSet newXLocSet = RPCCaller.<XCap, XLocSet> syncCall(SERVICES.MRC, userCredentialsBogus, authBogus,
+                        volumeOptions, uuidResolver, mrcUuidIterator, false, xCap, new CallGenerator<XCap, XLocSet>() {
+
+                            @Override
+                            public RPCResponse<XLocSet> executeCall(InetSocketAddress server, Auth authHeader,
+                                    UserCredentials userCreds, XCap input) throws IOException, PosixErrorException {
+                                return mrcServiceClient.xtreemfs_get_xlocset(server, authHeader, userCreds, input);
+                            }
+                        });
+
+                assert (newXLocSet != null);
+
+                // Update the corresponding fileInfo with the new xLocSet.
+                fileInfo.updateXLocSetAndRest(newXLocSet);
+
+            } finally {
+                fileInfo.unlockXLocSetRenewal();
+            }
+        }
+    }
+
 }

@@ -29,8 +29,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
 
 //JCIP import net.jcip.annotations.GuardedBy;
 /**
- * Stores metadata of the the file as well as the current size. On FileInfo is responsible for all open
- * FileHandles.
+ * Stores metadata of the the file as well as the current size. One FileInfo is responsible for all open FileHandles.
  */
 public class FileInfo {
     /**
@@ -82,6 +81,12 @@ public class FileInfo {
      * Use this to protect "xlocset" and "replicateOnClose".
      */
     Object                                                  xLocSetLock;
+    
+    /**
+     * 
+     */
+    private boolean xLocSetRenewalPending;
+    private Object xLocSetRenewalPendingLock;
 
     /**
      * UUIDIterator which contains the UUIDs of all replicas.
@@ -171,14 +176,15 @@ public class FileInfo {
         pathLock = new Object();
         xLocSetLock = new Object();
 
+        xLocSetRenewalPending = false;
+        xLocSetRenewalPendingLock = new Object();
+
         openFileHandles = new ConcurrentLinkedQueue<FileHandleImplementation>();
         activeLocks = new ConcurrentHashMap<Integer, Lock>();
 
         // Add the UUIDs of all replicas to the UUID Iterator.
         osdUuidIterator = new UUIDIterator();
-        for (int i = 0; i < xlocset.getReplicasCount(); i++) {
-            osdUuidIterator.addUUID(xlocset.getReplicas(i).getOsdUuids(0));
-        }
+        osdUuidIterator.addUUIDs(Helper.getOSDUUIDsFromXlocSet(xlocset));
 
         asyncWriteHandler = new AsyncWriteHandler(this, osdUuidIterator, volume.getUUIDResolver(),
                 volume.getOsdServiceClient(), volume.getAuthBogus(), volume.getUserCredentialsBogus(), volume
@@ -187,6 +193,11 @@ public class FileInfo {
 
         pendingFilesizeUpdates = new ArrayList<FileHandle>(volume.getOptions().getMaxWriteahead());
     }
+
+    /**
+     * @see FileInfo#updateXLocSetAndRest(XLocSet, boolean)
+     */
+
 
     /**
      * Create a copy of "newXlocSet" and save it to the "xlocset" member. "replicateOnClose" will be save in
@@ -203,6 +214,21 @@ public class FileInfo {
             xlocset = XLocSet.newBuilder(newXlocset).build();
             this.replicateOnClose = replicateOnClose;
         }
+
+        // Update the osdUuidIterator to reflect the changes in the xlocset.
+        osdUuidIterator.clearAndAddUUIDs(Helper.getOSDUUIDsFromXlocSet(xlocset));
+    }
+
+    /**
+     * @see FileInfo#updateXLocSetAndRest(XLocSet, boolean)
+     */
+    protected void updateXLocSetAndRest(XLocSet newXlocset) {
+        synchronized (xLocSetLock) {
+            xlocset = XLocSet.newBuilder(newXlocset).build();
+        }
+
+        // Update the osdUuidIterator to reflect the changes in the xlocset.
+        osdUuidIterator.clearAndAddUUIDs(Helper.getOSDUUIDsFromXlocSet(xlocset));
     }
 
     /**
@@ -640,4 +666,56 @@ public class FileInfo {
             return xlocset.toBuilder().build();
         }
     }
+    
+    /**
+     * Tries to acquire a lock, to renew the xLocSet. If another thread already has the lock, it will wait until its
+     * renewal is finished. In the second case the lock is not acquired, but the xLocSet has been renewed by the other
+     * thread.
+     * 
+     * @return true if the lock was acquired. false if another thread is renewing the xLocSet.
+     */
+    boolean lockXLocSetRenewalOrWait() {
+        // TODO(jdillmann): Discuss Usage of java.util.concurrent.locks
+        synchronized (xLocSetRenewalPendingLock) {
+            if (xLocSetRenewalPending) {
+                waitForXLocSetRenewal();
+                return false;
+            } else {
+                xLocSetRenewalPending = true;
+                return true;
+            }
+        }
+    }
+
+    /**
+     * Releases the lock and informs every waiting thread.
+     */
+    void unlockXLocSetRenewal() {
+        synchronized (xLocSetRenewalPendingLock) {
+            xLocSetRenewalPending = false;
+            xLocSetRenewalPendingLock.notifyAll();
+        }
+    }
+    
+    /**
+     * Waits until any pending xLocSet renewals are finished.
+     * 
+     * @return true if a renewal was pending.
+     */
+    boolean waitForXLocSetRenewal() {
+        synchronized (xLocSetRenewalPendingLock) {
+            boolean pending = xLocSetRenewalPending;
+
+            while (xLocSetRenewalPending) {
+                try {
+                    xLocSetRenewalPendingLock.wait();
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+
+            return pending;
+        }
+    }
+
 }

@@ -8,6 +8,8 @@ package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
@@ -118,6 +120,19 @@ public class Helper {
         // Get the UUID for the first replica (r=0) and the head OSD (i.e. the
         // first stripe, s=0).
         return getOSDUUIDFromXlocSet(xlocs, 0, 0);
+    }
+
+    /**
+     * Creates a list containing the UUIDs for the head OSD of every replica in the XLocSet.
+     */
+    public static List<String> getOSDUUIDsFromXlocSet(XLocSet xlocs) {
+        List<String> uuids = new ArrayList<String>(xlocs.getReplicasCount());
+
+        for (int i = 0; i < xlocs.getReplicasCount(); i++) {
+            uuids.add(xlocs.getReplicas(i).getOsdUuids(0));
+        }
+
+        return uuids;
     }
 
     static public long extractFileIdFromXcap(XCap xcap) {

@@ -650,13 +650,13 @@ public class PreprocStage extends Stage {
         String fileId = request.getFileId();
         if (fileId == null || fileId.length() == 0) {
             return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL,
-                    "invalid view. file_id must not be empty");
+                    "Invalid view. file_id must not be empty.");
         }
 
         XLocations xloc = request.getLocationList();
         if (xloc == null) {
             return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL,
-                    "invalid view. xlocset must not be empty");
+                    "Invalid view. xlocset must not be empty.");
         }
 
         XLocSetVersionState state;
@@ -664,20 +664,13 @@ public class PreprocStage extends Stage {
             // TODO(jdillmann): Cache the VersionState
             state = layout.getXLocSetVersionState(fileId);
         } catch (IOException e) {
-            // TODO(jdillmann): do something with the error
             return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
-                    "invalid view. local version could not be read");
+                    "Invalid view. Local version could not be read.");
         }
 
         XLocations locset = request.getLocationList();
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,
-                    "operation: %s, local version: %s, request version: %s, destination: %s", request.getOperation()
-                            .getClass().getSimpleName(), state.getVersion(), locset.getVersion(), master.getConfig()
-                            .getPort());
-        }
-
         if (state.getVersion() == locset.getVersion() && !state.getInvalidated()) {
+            // The request is based on the same (valid) view.
             return null;
         } else if (locset.getVersion() > state.getVersion()) {
             XLocSetVersionState newstate = state.toBuilder()
@@ -686,29 +679,31 @@ public class PreprocStage extends Stage {
                     .build();
             
             try {
-                // persist the view
+                // Persist the view.
                 layout.setXLocSetVersionState(fileId, newstate);
-                // inform flease about the new view
+                // Inform flease about the new view.
                 if (!((locset.getReplicaUpdatePolicy().length() == 0) 
                         || (locset.getNumReplicas() == 1) 
                         || (locset.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)))) {
 
 
                     ASCIIString cellId = ReplicaUpdatePolicy.fileToCellId(fileId);
-
-                    // TODO(jdillmann): think about using a callback which will be called when flease got the message
                     master.getRWReplicationStage().setFleaseView(fileId, cellId, newstate);
                 }
             } catch (IOException e) {
-                // TODO(jdillmann): do something with the error
                 return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
-                        "invalid view. local version could not be written");
+                        "Invalid view. Local version could not be written.");
             }
 
+            // The request is valid, because it is based on a newer view.
             return null;
         }
 
-        return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EAGAIN, "view is not valid");
+        // The request is either based on an outdated view, or the replica is invalidated.
+        String errorMessage = state.getInvalidated() ? "Replica is invalidated."
+                : "The requests is based on an outdated view.";
+        return ErrorUtils.getErrorResponse(ErrorType.INVALID_VIEW, POSIXErrno.POSIX_ERROR_NONE, 
+                "View is not valid. " + errorMessage);
     }
 
     /**
@@ -728,8 +723,7 @@ public class PreprocStage extends Stage {
             // TODO(jdillmann): Cache the VersionState
             state = layout.getXLocSetVersionState(fileId);
         } catch (IOException e) {
-            // TODO(jdillmann): do something with the error or at least log it
-            Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,
                     "VersionState could not be read for fileId: %s", fileId);
             return;
         }
@@ -743,8 +737,7 @@ public class PreprocStage extends Stage {
                 // and pass it back to flease
                 master.getRWReplicationStage().setFleaseView(fileId, cellId, state);
             } catch (IOException e) {
-                // TODO(jdillmann): do something with the error or at least log it
-                Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,
                         "VersionState could not be written for fileId: %s", fileId);
                 return;
             }
@@ -784,9 +777,10 @@ public class PreprocStage extends Stage {
             }
 
         } catch (IOException e) {
-            // TODO(jdillmann): do something with the exception
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,
+                    "VersionState could not be written for fileId: %s", fileId);
             ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
-                    "invalid view. local version could not be written");
+                    "Invalid view. Local version could not be written.");
             callback.invalidateComplete(false, error);
         }
     }
