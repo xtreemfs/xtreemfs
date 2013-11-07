@@ -44,6 +44,7 @@ class ObjectList;
 class ObjectVersion;
 class TruncateRecord;
 class TruncateLog;
+class XLocSetVersionState;
 class ReplicaStatus;
 class ObjectVersionMapping;
 class AuthoritativeReplicaState;
@@ -75,6 +76,8 @@ class lockRequest;
 class xtreemfs_pingMesssage;
 class xtreemfs_rwr_auth_stateRequest;
 class xtreemfs_rwr_reset_completeRequest;
+class xtreemfs_xloc_set_invalidateRequest;
+class xtreemfs_xloc_set_invalidateResponse;
 
 // ===================================================================
 
@@ -782,6 +785,98 @@ class TruncateLog : public ::google::protobuf::Message {
 
   void InitAsDefaultInstance();
   static TruncateLog* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class XLocSetVersionState : public ::google::protobuf::Message {
+ public:
+  XLocSetVersionState();
+  virtual ~XLocSetVersionState();
+
+  XLocSetVersionState(const XLocSetVersionState& from);
+
+  inline XLocSetVersionState& operator=(const XLocSetVersionState& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const XLocSetVersionState& default_instance();
+
+  void Swap(XLocSetVersionState* other);
+
+  // implements Message ----------------------------------------------
+
+  XLocSetVersionState* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const XLocSetVersionState& from);
+  void MergeFrom(const XLocSetVersionState& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required fixed32 version = 1;
+  inline bool has_version() const;
+  inline void clear_version();
+  static const int kVersionFieldNumber = 1;
+  inline ::google::protobuf::uint32 version() const;
+  inline void set_version(::google::protobuf::uint32 value);
+
+  // required bool invalidated = 2;
+  inline bool has_invalidated() const;
+  inline void clear_invalidated();
+  static const int kInvalidatedFieldNumber = 2;
+  inline bool invalidated() const;
+  inline void set_invalidated(bool value);
+
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.XLocSetVersionState)
+ private:
+  inline void set_has_version();
+  inline void clear_has_version();
+  inline void set_has_invalidated();
+  inline void clear_has_invalidated();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::google::protobuf::uint32 version_;
+  bool invalidated_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
+
+  friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fOSD_2eproto();
+
+  void InitAsDefaultInstance();
+  static XLocSetVersionState* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -4200,6 +4295,199 @@ class xtreemfs_rwr_reset_completeRequest : public ::google::protobuf::Message {
   void InitAsDefaultInstance();
   static xtreemfs_rwr_reset_completeRequest* default_instance_;
 };
+// -------------------------------------------------------------------
+
+class xtreemfs_xloc_set_invalidateRequest : public ::google::protobuf::Message {
+ public:
+  xtreemfs_xloc_set_invalidateRequest();
+  virtual ~xtreemfs_xloc_set_invalidateRequest();
+
+  xtreemfs_xloc_set_invalidateRequest(const xtreemfs_xloc_set_invalidateRequest& from);
+
+  inline xtreemfs_xloc_set_invalidateRequest& operator=(const xtreemfs_xloc_set_invalidateRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const xtreemfs_xloc_set_invalidateRequest& default_instance();
+
+  void Swap(xtreemfs_xloc_set_invalidateRequest* other);
+
+  // implements Message ----------------------------------------------
+
+  xtreemfs_xloc_set_invalidateRequest* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const xtreemfs_xloc_set_invalidateRequest& from);
+  void MergeFrom(const xtreemfs_xloc_set_invalidateRequest& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+  inline bool has_file_credentials() const;
+  inline void clear_file_credentials();
+  static const int kFileCredentialsFieldNumber = 1;
+  inline const ::xtreemfs::pbrpc::FileCredentials& file_credentials() const;
+  inline ::xtreemfs::pbrpc::FileCredentials* mutable_file_credentials();
+  inline ::xtreemfs::pbrpc::FileCredentials* release_file_credentials();
+  inline void set_allocated_file_credentials(::xtreemfs::pbrpc::FileCredentials* file_credentials);
+
+  // required string file_id = 2;
+  inline bool has_file_id() const;
+  inline void clear_file_id();
+  static const int kFileIdFieldNumber = 2;
+  inline const ::std::string& file_id() const;
+  inline void set_file_id(const ::std::string& value);
+  inline void set_file_id(const char* value);
+  inline void set_file_id(const char* value, size_t size);
+  inline ::std::string* mutable_file_id();
+  inline ::std::string* release_file_id();
+  inline void set_allocated_file_id(::std::string* file_id);
+
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_xloc_set_invalidateRequest)
+ private:
+  inline void set_has_file_credentials();
+  inline void clear_has_file_credentials();
+  inline void set_has_file_id();
+  inline void clear_has_file_id();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::xtreemfs::pbrpc::FileCredentials* file_credentials_;
+  ::std::string* file_id_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
+
+  friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fOSD_2eproto();
+
+  void InitAsDefaultInstance();
+  static xtreemfs_xloc_set_invalidateRequest* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class xtreemfs_xloc_set_invalidateResponse : public ::google::protobuf::Message {
+ public:
+  xtreemfs_xloc_set_invalidateResponse();
+  virtual ~xtreemfs_xloc_set_invalidateResponse();
+
+  xtreemfs_xloc_set_invalidateResponse(const xtreemfs_xloc_set_invalidateResponse& from);
+
+  inline xtreemfs_xloc_set_invalidateResponse& operator=(const xtreemfs_xloc_set_invalidateResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const xtreemfs_xloc_set_invalidateResponse& default_instance();
+
+  void Swap(xtreemfs_xloc_set_invalidateResponse* other);
+
+  // implements Message ----------------------------------------------
+
+  xtreemfs_xloc_set_invalidateResponse* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const xtreemfs_xloc_set_invalidateResponse& from);
+  void MergeFrom(const xtreemfs_xloc_set_invalidateResponse& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required bool is_primary = 1;
+  inline bool has_is_primary() const;
+  inline void clear_is_primary();
+  static const int kIsPrimaryFieldNumber = 1;
+  inline bool is_primary() const;
+  inline void set_is_primary(bool value);
+
+  // optional .xtreemfs.pbrpc.ReplicaStatus status = 2;
+  inline bool has_status() const;
+  inline void clear_status();
+  static const int kStatusFieldNumber = 2;
+  inline const ::xtreemfs::pbrpc::ReplicaStatus& status() const;
+  inline ::xtreemfs::pbrpc::ReplicaStatus* mutable_status();
+  inline ::xtreemfs::pbrpc::ReplicaStatus* release_status();
+  inline void set_allocated_status(::xtreemfs::pbrpc::ReplicaStatus* status);
+
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_xloc_set_invalidateResponse)
+ private:
+  inline void set_has_is_primary();
+  inline void clear_has_is_primary();
+  inline void set_has_status();
+  inline void clear_has_status();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::xtreemfs::pbrpc::ReplicaStatus* status_;
+  bool is_primary_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
+
+  friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fOSD_2eproto();
+
+  void InitAsDefaultInstance();
+  static xtreemfs_xloc_set_invalidateResponse* default_instance_;
+};
 // ===================================================================
 
 
@@ -4746,6 +5034,54 @@ TruncateLog::records() const {
 inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::TruncateRecord >*
 TruncateLog::mutable_records() {
   return &records_;
+}
+
+// -------------------------------------------------------------------
+
+// XLocSetVersionState
+
+// required fixed32 version = 1;
+inline bool XLocSetVersionState::has_version() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void XLocSetVersionState::set_has_version() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void XLocSetVersionState::clear_has_version() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void XLocSetVersionState::clear_version() {
+  version_ = 0u;
+  clear_has_version();
+}
+inline ::google::protobuf::uint32 XLocSetVersionState::version() const {
+  return version_;
+}
+inline void XLocSetVersionState::set_version(::google::protobuf::uint32 value) {
+  set_has_version();
+  version_ = value;
+}
+
+// required bool invalidated = 2;
+inline bool XLocSetVersionState::has_invalidated() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void XLocSetVersionState::set_has_invalidated() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void XLocSetVersionState::clear_has_invalidated() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void XLocSetVersionState::clear_invalidated() {
+  invalidated_ = false;
+  clear_has_invalidated();
+}
+inline bool XLocSetVersionState::invalidated() const {
+  return invalidated_;
+}
+inline void XLocSetVersionState::set_invalidated(bool value) {
+  set_has_invalidated();
+  invalidated_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -8524,6 +8860,182 @@ inline ::google::protobuf::uint32 xtreemfs_rwr_reset_completeRequest::primary_ep
 inline void xtreemfs_rwr_reset_completeRequest::set_primary_epoch(::google::protobuf::uint32 value) {
   set_has_primary_epoch();
   primary_epoch_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// xtreemfs_xloc_set_invalidateRequest
+
+// required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+inline bool xtreemfs_xloc_set_invalidateRequest::has_file_credentials() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void xtreemfs_xloc_set_invalidateRequest::set_has_file_credentials() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void xtreemfs_xloc_set_invalidateRequest::clear_has_file_credentials() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void xtreemfs_xloc_set_invalidateRequest::clear_file_credentials() {
+  if (file_credentials_ != NULL) file_credentials_->::xtreemfs::pbrpc::FileCredentials::Clear();
+  clear_has_file_credentials();
+}
+inline const ::xtreemfs::pbrpc::FileCredentials& xtreemfs_xloc_set_invalidateRequest::file_credentials() const {
+  return file_credentials_ != NULL ? *file_credentials_ : *default_instance_->file_credentials_;
+}
+inline ::xtreemfs::pbrpc::FileCredentials* xtreemfs_xloc_set_invalidateRequest::mutable_file_credentials() {
+  set_has_file_credentials();
+  if (file_credentials_ == NULL) file_credentials_ = new ::xtreemfs::pbrpc::FileCredentials;
+  return file_credentials_;
+}
+inline ::xtreemfs::pbrpc::FileCredentials* xtreemfs_xloc_set_invalidateRequest::release_file_credentials() {
+  clear_has_file_credentials();
+  ::xtreemfs::pbrpc::FileCredentials* temp = file_credentials_;
+  file_credentials_ = NULL;
+  return temp;
+}
+inline void xtreemfs_xloc_set_invalidateRequest::set_allocated_file_credentials(::xtreemfs::pbrpc::FileCredentials* file_credentials) {
+  delete file_credentials_;
+  file_credentials_ = file_credentials;
+  if (file_credentials) {
+    set_has_file_credentials();
+  } else {
+    clear_has_file_credentials();
+  }
+}
+
+// required string file_id = 2;
+inline bool xtreemfs_xloc_set_invalidateRequest::has_file_id() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void xtreemfs_xloc_set_invalidateRequest::set_has_file_id() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void xtreemfs_xloc_set_invalidateRequest::clear_has_file_id() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void xtreemfs_xloc_set_invalidateRequest::clear_file_id() {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
+    file_id_->clear();
+  }
+  clear_has_file_id();
+}
+inline const ::std::string& xtreemfs_xloc_set_invalidateRequest::file_id() const {
+  return *file_id_;
+}
+inline void xtreemfs_xloc_set_invalidateRequest::set_file_id(const ::std::string& value) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(value);
+}
+inline void xtreemfs_xloc_set_invalidateRequest::set_file_id(const char* value) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(value);
+}
+inline void xtreemfs_xloc_set_invalidateRequest::set_file_id(const char* value, size_t size) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* xtreemfs_xloc_set_invalidateRequest::mutable_file_id() {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  return file_id_;
+}
+inline ::std::string* xtreemfs_xloc_set_invalidateRequest::release_file_id() {
+  clear_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = file_id_;
+    file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void xtreemfs_xloc_set_invalidateRequest::set_allocated_file_id(::std::string* file_id) {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
+    delete file_id_;
+  }
+  if (file_id) {
+    set_has_file_id();
+    file_id_ = file_id;
+  } else {
+    clear_has_file_id();
+    file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// -------------------------------------------------------------------
+
+// xtreemfs_xloc_set_invalidateResponse
+
+// required bool is_primary = 1;
+inline bool xtreemfs_xloc_set_invalidateResponse::has_is_primary() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void xtreemfs_xloc_set_invalidateResponse::set_has_is_primary() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void xtreemfs_xloc_set_invalidateResponse::clear_has_is_primary() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void xtreemfs_xloc_set_invalidateResponse::clear_is_primary() {
+  is_primary_ = false;
+  clear_has_is_primary();
+}
+inline bool xtreemfs_xloc_set_invalidateResponse::is_primary() const {
+  return is_primary_;
+}
+inline void xtreemfs_xloc_set_invalidateResponse::set_is_primary(bool value) {
+  set_has_is_primary();
+  is_primary_ = value;
+}
+
+// optional .xtreemfs.pbrpc.ReplicaStatus status = 2;
+inline bool xtreemfs_xloc_set_invalidateResponse::has_status() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void xtreemfs_xloc_set_invalidateResponse::set_has_status() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void xtreemfs_xloc_set_invalidateResponse::clear_has_status() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void xtreemfs_xloc_set_invalidateResponse::clear_status() {
+  if (status_ != NULL) status_->::xtreemfs::pbrpc::ReplicaStatus::Clear();
+  clear_has_status();
+}
+inline const ::xtreemfs::pbrpc::ReplicaStatus& xtreemfs_xloc_set_invalidateResponse::status() const {
+  return status_ != NULL ? *status_ : *default_instance_->status_;
+}
+inline ::xtreemfs::pbrpc::ReplicaStatus* xtreemfs_xloc_set_invalidateResponse::mutable_status() {
+  set_has_status();
+  if (status_ == NULL) status_ = new ::xtreemfs::pbrpc::ReplicaStatus;
+  return status_;
+}
+inline ::xtreemfs::pbrpc::ReplicaStatus* xtreemfs_xloc_set_invalidateResponse::release_status() {
+  clear_has_status();
+  ::xtreemfs::pbrpc::ReplicaStatus* temp = status_;
+  status_ = NULL;
+  return temp;
+}
+inline void xtreemfs_xloc_set_invalidateResponse::set_allocated_status(::xtreemfs::pbrpc::ReplicaStatus* status) {
+  delete status_;
+  status_ = status;
+  if (status) {
+    set_has_status();
+  } else {
+    clear_has_status();
+  }
 }
 
 
