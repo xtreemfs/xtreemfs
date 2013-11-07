@@ -48,6 +48,7 @@ import org.xtreemfs.mrc.operations.GetSuitableOSDsOperation;
 import org.xtreemfs.mrc.operations.GetXAttrOperation;
 import org.xtreemfs.mrc.operations.GetXAttrsOperation;
 import org.xtreemfs.mrc.operations.GetXLocListOperation;
+import org.xtreemfs.mrc.operations.GetXLocSetOperation;
 import org.xtreemfs.mrc.operations.InternalDebugOperation;
 import org.xtreemfs.mrc.operations.MRCOperation;
 import org.xtreemfs.mrc.operations.MoveOperation;
@@ -151,6 +152,7 @@ public class ProcessingStage extends MRCStage {
                 new SetReplicaUpdatePolicyOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_SET_READ_ONLY_XATTR, new SetReadOnlyXattrOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_GET_FILE_CREDENTIALS, new GetFileCredentialsOperation(master));
+        operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_GET_XLOCSET, new GetXLocSetOperation(master));
     }
     
     public Map<Integer, Integer> get_opCountMap() {
