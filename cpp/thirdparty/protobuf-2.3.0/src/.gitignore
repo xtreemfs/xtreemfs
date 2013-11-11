@@ -1,8 +1,0 @@
-/.deps
-/Makefile
-/protoc
-/unittest_proto_middleman
-/*.o
-/*.lo
-/*.la
-/.libs

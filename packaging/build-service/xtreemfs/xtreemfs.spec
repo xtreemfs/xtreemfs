@@ -220,7 +220,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 /usr/share/java/XtreemFS.jar
 /usr/share/java/Foundation.jar
-/usr/share/java/protobuf-java-2.3.0.jar
+/usr/share/java/protobuf-java-2.5.0.jar
 /usr/share/java/Flease.jar
 /usr/share/java/BabuDB.jar
 /usr/share/java/BabuDB_replication_plugin.jar

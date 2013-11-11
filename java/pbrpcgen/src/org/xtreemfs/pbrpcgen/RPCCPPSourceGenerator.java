@@ -4,9 +4,9 @@ import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.EnumDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type;
-import google.protobuf.compiler.Plugin.CodeGeneratorRequest;
-import google.protobuf.compiler.Plugin.CodeGeneratorResponse;
-import google.protobuf.compiler.Plugin.CodeGeneratorResponse.File;
+import com.google.protobuf.compiler.PluginProtos.CodeGeneratorRequest;
+import com.google.protobuf.compiler.PluginProtos.CodeGeneratorResponse;
+import com.google.protobuf.compiler.PluginProtos.CodeGeneratorResponse.File;
 
 import java.util.List;
 import java.util.Map;
