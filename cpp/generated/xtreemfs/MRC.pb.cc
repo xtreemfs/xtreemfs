@@ -1332,7 +1332,7 @@ void protobuf_AddDesc_xtreemfs_2fMRC_2eproto() {
     "treemfs.pbrpc.KeyValuePair\"2\n\007Volumes\022\'\n"
     "\007volumes\030\001 \003(\0132\026.xtreemfs.pbrpc.Volume\"\310"
     "\002\n\007StatVFS\022\r\n\005bsize\030\001 \002(\007\022\016\n\006bavail\030\002 \002("
-    "\006\022\r\n\005bfree\030\r \002(\006\022\016\n\006blocks\030\003 \002(\006\022\014\n\004fsid"
+    "\006\022\r\n\005bfree\030\r \001(\006\022\016\n\006blocks\030\003 \002(\006\022\014\n\004fsid"
     "\030\004 \002(\t\022\017\n\007namemax\030\005 \002(\007\022F\n\025access_contro"
     "l_policy\030\006 \002(\0162\'.xtreemfs.pbrpc.AccessCo"
     "ntrolPolicyType\022?\n\027default_striping_poli"
@@ -4385,7 +4385,7 @@ bool StatVFS::MergePartialFromCodedStream(
         break;
       }
       
-      // required fixed64 bfree = 13;
+      // optional fixed64 bfree = 13;
       case 13: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
@@ -4497,7 +4497,7 @@ void StatVFS::SerializeWithCachedSizes(
       12, this->owner_user_id(), output);
   }
   
-  // required fixed64 bfree = 13;
+  // optional fixed64 bfree = 13;
   if (_has_bit(2)) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(13, this->bfree(), output);
   }
@@ -4593,7 +4593,7 @@ void StatVFS::SerializeWithCachedSizes(
         12, this->owner_user_id(), target);
   }
   
-  // required fixed64 bfree = 13;
+  // optional fixed64 bfree = 13;
   if (_has_bit(2)) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(13, this->bfree(), target);
   }
@@ -4619,7 +4619,7 @@ int StatVFS::ByteSize() const {
       total_size += 1 + 8;
     }
     
-    // required fixed64 bfree = 13;
+    // optional fixed64 bfree = 13;
     if (has_bfree()) {
       total_size += 1 + 8;
     }
@@ -4772,7 +4772,7 @@ void StatVFS::CopyFrom(const StatVFS& from) {
 }
 
 bool StatVFS::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00001fff) != 0x00001fff) return false;
+  if ((_has_bits_[0] & 0x00001ffb) != 0x00001ffb) return false;
   
   if (has_default_striping_policy()) {
     if (!this->default_striping_policy().IsInitialized()) return false;

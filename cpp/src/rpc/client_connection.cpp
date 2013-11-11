@@ -155,7 +155,10 @@ void ClientConnection::CreateChannel() {
 void ClientConnection::Connect() {
   connection_state_ = CONNECTING;
   last_connect_was_at_ = posix_time::second_clock::local_time();
-  asio::ip::tcp::resolver::query query(server_name_, server_port_);
+  asio::ip::tcp::resolver::query query(
+      server_name_,
+      server_port_,
+      static_cast<asio::ip::resolver_query_base::flags>(0) /* no flags */);
   resolver_.async_resolve(query,
                           boost::bind(&ClientConnection::PostResolve,
                                       this,

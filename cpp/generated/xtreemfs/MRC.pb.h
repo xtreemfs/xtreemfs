@@ -998,7 +998,7 @@ class StatVFS : public ::google::protobuf::Message {
   inline ::google::protobuf::uint64 bavail() const;
   inline void set_bavail(::google::protobuf::uint64 value);
   
-  // required fixed64 bfree = 13;
+  // optional fixed64 bfree = 13;
   inline bool has_bfree() const;
   inline void clear_bfree();
   static const int kBfreeFieldNumber = 13;
@@ -7191,7 +7191,7 @@ inline void StatVFS::set_bavail(::google::protobuf::uint64 value) {
   bavail_ = value;
 }
 
-// required fixed64 bfree = 13;
+// optional fixed64 bfree = 13;
 inline bool StatVFS::has_bfree() const {
   return _has_bit(2);
 }

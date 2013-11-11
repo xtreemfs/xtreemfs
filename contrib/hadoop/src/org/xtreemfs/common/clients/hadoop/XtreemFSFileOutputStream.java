@@ -18,7 +18,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
  * Represents an Outputstream used when writing a file with HDFS.
  */
 public class XtreemFSFileOutputStream extends OutputStream {
-    private int             position = 0;
+    private long            position = 0;
 
     private UserCredentials userCredentials;
 

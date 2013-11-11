@@ -37,6 +37,8 @@ for i in `ls $TEST_DIR/data | grep osd`; do FILE_DIR=`find $TEST_DIR/data/$i -ty
 if [ "$FILE_DIR" == "" ]; then echo "could not find file directory on any OSD"; exit 1
 else echo "Deleting data at $FILE_DIR..."; rm -rf $FILE_DIR/*; fi
 
+sleep 60s
+
 # execute scrub command
 COMMAND="$1/bin/xtfs_scrub -dir $2 $CREDS -repair nomdcache"
 echo "Running ${COMMAND}..."

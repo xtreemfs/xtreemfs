@@ -91,6 +91,7 @@ import org.xtreemfs.osd.operations.LockReleaseOperation;
 import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.operations.RWRNotifyOperation;
 import org.xtreemfs.osd.operations.ReadOperation;
+import org.xtreemfs.osd.operations.RepairObjectOperation;
 import org.xtreemfs.osd.operations.ShutdownOperation;
 import org.xtreemfs.osd.operations.TruncateOperation;
 import org.xtreemfs.osd.operations.VivaldiPingOperation;
@@ -770,6 +771,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         op = new CheckObjectOperation(this);
         operations.put(op.getProcedureId(), op);
         
+        op = new RepairObjectOperation(this);
+        operations.put(op.getProcedureId(), op);
+
         op = new InternalGetFileSizeOperation(this);
         operations.put(op.getProcedureId(), op);
         
@@ -1023,4 +1027,14 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         return heartbeatThread.getLastHeartbeat();
     }
     
+    /**
+     * Returns primary OSD UUID for the file with ID "fileId" (if OSD is primary or backup) or null (if OSD
+     * does not know the file).
+     * 
+     * @param fileId
+     */
+    public String getPrimary(String fileId) {
+        return rwrStage.getPrimary(fileId);
+    }
+
 }

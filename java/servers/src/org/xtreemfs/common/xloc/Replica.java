@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.REPL_FLAG;
 
 /**
  *
@@ -126,6 +127,29 @@ public class Replica {
         return ReplicationFlags.isReplicaComplete(replica.getReplicationFlags());
     }
 
+    /**
+     * Resets the complete Flag and restores the strategy flag.
+     * 
+     */
+    public void resetCompleteFlagAndRestoreStrageyFlag() {
+    	int replFlags = replica.getReplicationFlags();
+    	
+        // Reset complete Flag
+    	replFlags &= ~REPL_FLAG.REPL_FLAG_IS_COMPLETE.getNumber();
+    	
+        // Restore strategy flag from replication flags
+        if (isPartialReplica()) {
+            // Assumption: partial replica -> sequential prefetching
+            replFlags = ReplicationFlags.setSequentialPrefetchingStrategy(replFlags);
+        } else {
+            // Assumption: full replica -> rarest first strategy
+            replFlags = ReplicationFlags.setRarestFirstStrategy(replFlags);
+        }
+    	
+    	//set new replication flags
+    	replica = replica.toBuilder().setReplicationFlags(replFlags).build();
+    }
+    
     /**
      * checks if this replica is a partial (ondemand) or full replica
      * @return true, if partial; false if full
