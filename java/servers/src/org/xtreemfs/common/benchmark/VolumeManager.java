@@ -344,36 +344,43 @@ class VolumeManager {
     }
 
     /* deletes all volumes in the list of created volumes */
-    void deleteCreatedVolumes() throws IOException {
+    void deleteCreatedVolumes() {
         for (Volume volume : createdVolumes) {
             deleteVolumeIfExisting(volume);
         }
     }
 
     /* deletes the given volumes */
-    void deleteVolumes(String... volumeName) throws IOException {
+    void deleteVolumes(String... volumeName) {
         for (String each : volumeName) {
             deleteVolumeIfExisting(each);
         }
     }
 
     /* delete the default volumes */
-    void deleteDefaultVolumes(int numberOfVolumes) throws IOException {
+    void deleteDefaultVolumes(int numberOfVolumes) {
         for (int i = 0; i < numberOfVolumes; i++) {
             deleteVolumeIfExisting(VOLUME_BASE_NAME + i);
         }
     }
 
     /* delete a volume specified by a volume ref */
-    void deleteVolumeIfExisting(Volume volume) throws IOException {
+    void deleteVolumeIfExisting(Volume volume) {
+        volume.close();
         deleteVolumeIfExisting(volume.getVolumeName());
     }
 
     /* delete a volume specified by a string with the volumes name */
-    void deleteVolumeIfExisting(String volumeName) throws IOException {
-        if (new ArrayList<String>(Arrays.asList(client.listVolumeNames())).contains(volumeName)) {
-            client.deleteVolume(config.getAuth(), config.getUserCredentials(), volumeName);
-            Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Deleted volume %s", volumeName);
+    void deleteVolumeIfExisting(String volumeName) {
+
+        try {
+            if (new ArrayList<String>(Arrays.asList(client.listVolumeNames())).contains(volumeName)) {
+                client.deleteVolume(config.getAuth(), config.getUserCredentials(), volumeName);
+                Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Deleted volume %s", volumeName);
+            }
+        } catch (IOException e) {
+            Logging.logMessage(Logging.LEVEL_WARN, Logging.Category.tool, this, "Error while deleting volume %s", volumeName);
+            Logging.logError(Logging.LEVEL_WARN, this, e);
         }
     }
 

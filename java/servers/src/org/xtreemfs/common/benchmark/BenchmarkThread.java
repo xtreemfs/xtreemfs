@@ -31,14 +31,8 @@ class BenchmarkThread implements Runnable {
 
     @Override
     public void run() {
-        try {
-            Thread.currentThread().setName(benchmark.getClass().getSimpleName() + "-Thread");
-            benchmark.benchmark(results);
-        } catch (Exception e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this, "Error while trying to run %s", Thread.currentThread()
-                    .getName());
-            Logging.logError(Logging.LEVEL_ERROR, this, e);
-        }
-    }
+        Thread.currentThread().setName(benchmark.getClass().getSimpleName() + "-Thread");
+        benchmark.benchmark(results);
 
+    }
 }

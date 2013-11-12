@@ -22,11 +22,14 @@ public class BenchmarkResult implements Comparable<BenchmarkResult> {
     private double        timeInSec;
     private long          dataRequestedInBytes;
     private long          byteCount;
+    private boolean       failed;
+    private Throwable     error;
 
     public BenchmarkResult(double timeInSec, long dataRequestedInBytes, long byteCount) {
         this.timeInSec = timeInSec;
         this.dataRequestedInBytes = dataRequestedInBytes;
         this.byteCount = byteCount;
+        this.failed = false;
     }
 
     public BenchmarkResult(double timeInSec, long byteCount, int numberOfReadersOrWriters, BenchmarkType benchmarkType) {
@@ -34,6 +37,11 @@ public class BenchmarkResult implements Comparable<BenchmarkResult> {
         this.numberOfReadersOrWriters = numberOfReadersOrWriters;
         this.timeInSec = timeInSec;
         this.byteCount = byteCount;
+    }
+
+    public BenchmarkResult(Throwable error) {
+        this.failed = true;
+        this.error = error;
     }
 
     void setBenchmarkType(BenchmarkType benchmarkType) {
@@ -111,6 +119,10 @@ public class BenchmarkResult implements Comparable<BenchmarkResult> {
         return byteCount;
     }
 
+    public Throwable getError() {
+        return error;
+    }
+
     /**
      * Returns true, if the benchmark is either a sequential write benchmark, a random write benchmark or a filebased write benchmark.
      *
@@ -129,6 +141,10 @@ public class BenchmarkResult implements Comparable<BenchmarkResult> {
     public boolean isReadBenchmark(){
         return benchmarkType == BenchmarkType.SEQ_READ || benchmarkType == BenchmarkType.RAND_READ
                 || benchmarkType == BenchmarkType.FILES_READ;
+    }
+
+    public boolean isFailed() {
+        return failed;
     }
 
     /* Round doubles to specified number of decimals */

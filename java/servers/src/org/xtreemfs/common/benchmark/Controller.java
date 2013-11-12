@@ -24,11 +24,11 @@ import static org.xtreemfs.foundation.logging.Logging.logMessage;
 /**
  * Controller for the benchmark library.
  * <p/>
- * 
+ *
  * The {@link Controller}, the {@link ConfigBuilder} and {@link Config} represent the API to the benchmark library.
- * 
+ *
  * @author jensvfischer
- * 
+ *
  */
 public class Controller {
 
@@ -59,7 +59,7 @@ public class Controller {
      */
     public void setupVolumes(String... volumeNames) throws Exception {
         if (volumeNames.length < 1)
-                throw new IllegalArgumentException("Number of volumes < 1");
+            throw new IllegalArgumentException("Number of volumes < 1");
         else
             volumeManager.openVolumes(volumeNames);
     }
@@ -186,7 +186,7 @@ public class Controller {
         deleteVolumesAndFiles();
         if (config.isOsdCleanup())
             volumeManager.cleanupOSD();
-        clientManager.shutdownClients();
+        shutdownClients();
     }
 
     private void verifySizesAndThreads(long size, int threads, BenchmarkType type) {
@@ -230,7 +230,11 @@ public class Controller {
         /* reset VolumeManager to prepare for possible consecutive benchmarks */
         volumeManager.reset();
 
-        /* Set BenchmarkResult Type */
+        if (benchmarkHasFailed(results))
+            throw new BenchmarkFailedException(benchmarkType + " benchmark failed");
+
+        /* Set BenchmarkResult type and failure status */
+        boolean failed = benchmarkHasFailed(results);
         for (BenchmarkResult res : results) {
             res.setBenchmarkType(benchmarkType);
             res.setNumberOfReadersOrWriters(numberOfThreads);
@@ -238,12 +242,25 @@ public class Controller {
         return results;
     }
 
+    private boolean benchmarkHasFailed(ConcurrentLinkedQueue<BenchmarkResult> results) {
+        boolean failed = false;
+        for (BenchmarkResult res : results) {
+            if (res.isFailed())
+                failed = true;
+        }
+        return failed;
+    }
+
     /* delete all created volumes and files depending on the noCleanup options */
-    private void deleteVolumesAndFiles() throws Exception {
+    void deleteVolumesAndFiles() {
         if (!config.isNoCleanup() && !config.isNoCleanupOfVolumes()) {
             volumeManager.deleteCreatedFiles(); // is needed in case no volume was created
             volumeManager.deleteCreatedVolumes();
         } else if (!config.isNoCleanup())
             volumeManager.deleteCreatedFiles();
+    }
+
+    void shutdownClients() {
+        clientManager.shutdownClients();
     }
 }

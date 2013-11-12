@@ -40,7 +40,10 @@ class UncaughtExceptionHandlerBenchmark implements Thread.UncaughtExceptionHandl
     public void uncaughtException(Thread t, Throwable e) {
 
         Logging.logMessage(Logging.LEVEL_ERROR, this,
-                "An uncaught exception was thrown in %s. The benchmark tool will be shut down.", t.getName());
-        Logging.logError(Logging.LEVEL_ERROR, this, e.getCause());
+                "An uncaught exception was thrown in %s (Thread-Id: %s). The benchmark tool will be shut down.", t.getName(), t.getId());
+        Logging.logError(Logging.LEVEL_ERROR, this, e);
+
+        controller.deleteVolumesAndFiles();
+        controller.shutdownClients();
     }
 }
