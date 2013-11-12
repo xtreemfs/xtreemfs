@@ -11,8 +11,10 @@ package org.xtreemfs.common.benchmark;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 import org.xtreemfs.utils.DefaultDirConfig;
+import org.xtreemfs.utils.xtfs_benchmark.*;
 
 import java.io.IOException;
+import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static org.xtreemfs.common.benchmark.BenchmarkUtils.BenchmarkType;
@@ -44,6 +46,7 @@ public class Controller {
         this.config = config;
         this.clientManager = new ClientManager(config);
         this.volumeManager = new VolumeManager(config, clientManager.getNewClient());
+        Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandlerBenchmark(this));
     }
 
     /**
