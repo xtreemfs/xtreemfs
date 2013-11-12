@@ -42,7 +42,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
      * Performs a single sequential read- or write-benchmark. Whether a read- or write-benchmark is performed depends on
      * which subclass is instantiated. This method is supposed to be called within its own thread to run a benchmark.
      */
-    void benchmark(ConcurrentLinkedQueue<BenchmarkResult> results) throws Exception {
+    void benchmark(ConcurrentLinkedQueue<BenchmarkResult> results) {
 
         String shortClassname = this.getClass().getName().substring(this.getClass().getName().lastIndexOf('.') + 1);
         Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Starting %s", shortClassname);
@@ -53,18 +53,33 @@ import java.util.concurrent.ConcurrentLinkedQueue;
         long numberOfBlocks = benchmarkSizeInBytes / chunkSize;
         long byteCounter = 0;
 
-        /* Run the AbstractBenchmark */
-        long before = System.currentTimeMillis();
-        byteCounter = performIO(data, numberOfBlocks);
-        long after = System.currentTimeMillis();
 
-        /* Calculate and return results */
-        double timeInSec = (after - before) / 1000.;
+        BenchmarkResult result;
+        try {
+            /* Run the AbstractBenchmark */
+            long before = System.currentTimeMillis();
+            byteCounter = performIO(data, numberOfBlocks);
+            long after = System.currentTimeMillis();
 
-        BenchmarkResult result = new BenchmarkResult(timeInSec, benchmarkSizeInBytes, byteCounter);
+            if (benchmarkSizeInBytes != byteCounter)
+                throw new BenchmarkFailedException("Data written does not equal the requested size");
+
+            /* Calculate results */
+            double timeInSec = (after - before) / 1000.;
+            result = new BenchmarkResult(timeInSec, benchmarkSizeInBytes, byteCounter);
+        } catch (Exception e) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this, "An error occured in a %s", shortClassname);
+            Logging.logError(Logging.LEVEL_ERROR, Logging.Category.tool, e);
+            result = new BenchmarkResult(e);
+        }
         results.add(result);
 
-        finalizeBenchmark();
+        try {
+            finalizeBenchmark();
+        } catch (Exception e) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this, "An error occured finalizing the %s", shortClassname);
+            Logging.logError(Logging.LEVEL_ERROR, Logging.Category.tool, e);
+        }
 
         Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Finished %s", shortClassname);
     }

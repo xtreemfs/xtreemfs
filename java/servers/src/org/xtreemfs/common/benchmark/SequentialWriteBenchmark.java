@@ -61,10 +61,7 @@ class SequentialWriteBenchmark extends SequentialBenchmark {
             assert nextOffset >= 0 : "Offset < 0 not allowed";
             random.nextBytes(data);
             byteCounter += fileHandle.write(config.getUserCredentials(), data, chunkSize, nextOffset);
-            if (volume.getVolumeName().equals("benchmark0"))
-                throw new IOException("bla");
         }
-
         fileHandle.close();
         return byteCounter;
     }
