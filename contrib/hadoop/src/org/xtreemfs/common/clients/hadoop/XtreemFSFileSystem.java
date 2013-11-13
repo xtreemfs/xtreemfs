@@ -56,6 +56,8 @@ public class XtreemFSFileSystem extends FileSystem {
     private long            stripeSize;
     private boolean         useReadBuffer;
     private boolean         useWriteBuffer;
+    private int             readBufferSize;
+    private int             writeBufferSize;
 
     @Override
     public void initialize(URI uri, Configuration conf) throws IOException {
@@ -77,8 +79,17 @@ public class XtreemFSFileSystem extends FileSystem {
         }
 
         useReadBuffer = conf.getBoolean("xtreemfs.io.buffer.read", false);
+    	readBufferSize = conf.getInt("xtreemfs.io.buffer.size.read", 0);     	
+    	if (useReadBuffer && readBufferSize == 0) {
+    		useReadBuffer = false;
+    	}
+    	
         useWriteBuffer = conf.getBoolean("xtreemfs.io.buffer.write", false);
-
+        writeBufferSize = conf.getInt("xtreemfs.io.buffer.size.write", 0);
+    	if (useWriteBuffer && writeBufferSize == 0) {
+    		useWriteBuffer = false;
+    	}
+        
         // create UserCredentials
         if ((conf.get("xtreemfs.client.userid") != null) && (conf.get("xtreemfs.client.groupid") != null)) {
             userCredentials = UserCredentials.newBuilder().setUsername(conf.get("xtreemfs.client.userid"))
@@ -144,7 +155,7 @@ public class XtreemFSFileSystem extends FileSystem {
         }
         statistics.incrementReadOps(1);
         return new FSDataInputStream(new XtreemFSInputStream(userCredentials, fileHandle, pathString, useReadBuffer,
-                bufferSize, statistics));
+                readBufferSize, statistics));
     }
 
     @Override
@@ -177,7 +188,7 @@ public class XtreemFSFileSystem extends FileSystem {
         final FileHandle fileHandle = xtreemfsVolume.openFile(userCredentials, pathString, flags, fp.toShort());
         statistics.incrementWriteOps(1);
         return new FSDataOutputStream(new XtreemFSFileOutputStream(userCredentials, fileHandle, pathString,
-                useWriteBuffer, bufferSize), statistics);
+                useWriteBuffer, writeBufferSize), statistics);
     }
 
     @Override
