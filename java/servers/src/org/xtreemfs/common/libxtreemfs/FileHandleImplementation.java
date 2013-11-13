@@ -652,8 +652,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
         // We allow only one lock per PID, i.e. an existing lock can be always
         // overwritten. In consequence, acquireLock() always has to be executed
-        // except
-        // the new lock is equal to the current lock.
+        // except the new lock is equal to the current lock.
         if (cachedLockForPidEqual) {
             return lock;
         }
@@ -663,14 +662,16 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
         FileCredentials.Builder fcBuilder = FileCredentials.newBuilder();
         fcBuilder.setXlocs(fileInfo.getXLocSet());
         fcBuilder.setXcap(getXcap());
-        lockRequest request = lockRequest.newBuilder().setLockRequest(lock).setFileCredentials(fcBuilder.build())
-                .build();
+        lockRequest request = lockRequest.newBuilder().setLockRequest(lock)
+                .setFileCredentials(fcBuilder.build()).build();
+
+        XLocSetHandler<lockRequest> xLocSetHandler = defaultXLocSetHandler;
 
         Lock response = null;
         if (!waitForLock) {
-            // TODO(jdillmann): Use XLocSetHandler, once locking is using views.
             response = RPCCaller.<lockRequest, Lock> syncCall(SERVICES.OSD, userCredentials, authBogus, volumeOptions,
-                    uuidResolver, osdUuidIterator, false, request, new CallGenerator<lockRequest, Lock>() {
+                    uuidResolver, osdUuidIterator, false, xLocSetHandler, request,
+                    new CallGenerator<lockRequest, Lock>() {
                         @Override
                         public RPCResponse<Lock> executeCall(InetSocketAddress server, Auth authHeader,
                                 UserCredentials userCreds, lockRequest input) throws IOException {
@@ -683,9 +684,8 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
             while (retriesLeft >= 0) {
                 retriesLeft--;
                 try {
-                    // TODO(jdillmann): Use XLocSetHandler, once locking is using views.
                     response = RPCCaller.<lockRequest, Lock> syncCall(SERVICES.OSD, userCredentials, authBogus,
-                            volumeOptions, uuidResolver, osdUuidIterator, false, true, 1, request,
+                            volumeOptions, uuidResolver, osdUuidIterator, false, xLocSetHandler, true, 1, request,
                             new CallGenerator<lockRequest, Lock>() {
                                 @Override
                                 public RPCResponse<Lock> executeCall(InetSocketAddress server, Auth authHeader,
@@ -748,11 +748,13 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
         FileCredentials.Builder fcBuilder = FileCredentials.newBuilder();
         fcBuilder.setXlocs(fileInfo.getXLocSet());
         fcBuilder.setXcap(getXcap());
-        lockRequest request = lockRequest.newBuilder().setLockRequest(lock).setFileCredentials(fcBuilder.build())
-                .build();
-        // TODO(jdillmann): Use XLocSetHandler, once locking is using views.
+        lockRequest request = lockRequest.newBuilder().setLockRequest(lock)
+                .setFileCredentials(fcBuilder.build()).build();
+
+        XLocSetHandler<lockRequest> xLocSetHandler = defaultXLocSetHandler;
+
         Lock response = RPCCaller.<lockRequest, Lock> syncCall(SERVICES.OSD, userCredentials, authBogus, volumeOptions,
-                uuidResolver, osdUuidIterator, false, request, new CallGenerator<lockRequest, Lock>() {
+                uuidResolver, osdUuidIterator, false, xLocSetHandler, request, new CallGenerator<lockRequest, Lock>() {
                     @Override
                     public RPCResponse<Lock> executeCall(InetSocketAddress server, Auth authHeader,
                             UserCredentials userCreds, lockRequest input) throws IOException {
@@ -803,12 +805,14 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
         FileCredentials.Builder fcBuilder = FileCredentials.newBuilder();
         fcBuilder.setXlocs(fileInfo.getXLocSet());
         fcBuilder.setXcap(getXcap());
+        lockRequest unlockRequest = lockRequest.newBuilder().setFileCredentials(fcBuilder.build())
+                .setLockRequest(lock).build();
 
-        lockRequest unlockRequest = lockRequest.newBuilder().setFileCredentials(fcBuilder.build()).setLockRequest(lock)
-                .build();
-        // TODO(jdillmann): Use XLocSetHandler, once locking is using views.
+        XLocSetHandler<lockRequest> xLocSetHandler = defaultXLocSetHandler;
+
         RPCCaller.<lockRequest, emptyResponse> syncCall(SERVICES.OSD, userCredentials, authBogus, volumeOptions,
-                uuidResolver, osdUuidIterator, false, unlockRequest, new CallGenerator<lockRequest, emptyResponse>() {
+                uuidResolver, osdUuidIterator, false, xLocSetHandler, unlockRequest,
+                new CallGenerator<lockRequest, emptyResponse>() {
                     @SuppressWarnings("unchecked")
                     @Override
                     public RPCResponse<emptyResponse> executeCall(InetSocketAddress server, Auth authHeader,

@@ -19,7 +19,6 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
-
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.stages.PreprocStage.LockOperationCompleteCallback;
@@ -99,6 +98,11 @@ public class LockAcquireOperation extends OSDOperation {
 
     @Override
     public boolean requiresCapability() {
+        return true;
+    }
+
+    @Override
+    public boolean requiresValidView() {
         return true;
     }
 
