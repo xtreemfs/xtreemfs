@@ -89,6 +89,7 @@ class VolumeManager {
         for (String each : volumeName) {
             volumes.add(createAndOpenVolume(each));
         }
+        verifyVolumeSizes();
     }
 
     /* opens a single volume (or creates and opens a volume if it does not exist) */
@@ -125,6 +126,21 @@ class VolumeManager {
         return volume;
     }
 
+    private void verifyVolumeSizes() throws IOException {
+        int stripeSize = getVolStripeSize(this.volumes.getFirst());
+        int stripeWidth= getVolStripeWidth(this.volumes.getFirst());
+        boolean flag = false;
+        for (Volume volume : this.volumes){
+            if (stripeSize != getVolStripeSize(volume))
+                flag = true;
+            if (stripeWidth != getVolStripeWidth(volume))
+                flag = true;
+       }
+        if (flag)
+            Logging.logMessage(Logging.LEVEL_WARN, Logging.Category.tool, this,
+                    "The stripe size and width of all volumes is not equal (it should to achieve meaningful benchmarks");
+    }
+
     private void setStripeSizeAndWidth(Volume volume) throws IOException {
         int size, width;
         int sizeConf = config.getStripeSizeInKiB();
@@ -148,13 +164,13 @@ class VolumeManager {
                 size = sizeConf;
                 width = widthConf;
             } else
-                throw new UnknownError("This should not have happened");
+                throw new UnknownError("Logical error. The above if-else statements should have been exhausting");
         }
         String val = "{\"pattern\":\"STRIPING_POLICY_RAID0\",\"width\":" + width + ",\"size\":" + size + "}";
         volume.setXAttr(config.getUserCredentials(), "", "xtreemfs.default_sp", val,
                 MRC.XATTR_FLAGS.XATTR_FLAGS_REPLACE);
 
-        config.setStripeSizeInBytes(size);
+        config.setStripeSizeInBytes(size*BenchmarkUtils.KiB_IN_BYTES);
         config.setStripeWidth(width);
     }
 
