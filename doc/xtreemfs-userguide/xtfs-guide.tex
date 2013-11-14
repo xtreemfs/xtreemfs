@@ -2833,6 +2833,42 @@ This section will help you to set up a simple Hadoop configuration with all nece
     <description>GroupID to be used by Hadoop while accessing XtreemFS.</description>
   </property>
 	\end{verbatim}
+	\newpage
+	Hint: If you want to use the read-/write buffer in the XtreemFSHadoopClient, you have to enable the buffers and specify  
+	the buffer sizes with the following additional properties:
+	\begin{verbatim}
+  <property>
+    <name>xtreemfs.io.read.buffer</name>
+    <value>true</value>
+    <description>
+      Enable/Disable the read buffer in theXtreemFSHadoopClient
+    </description>
+  </property>
+  
+  <property>
+    <name>xtreemfs.io.buffer.size.read</name>
+    <value>bufferSize</value>
+    <description>
+      Buffer size of the read buffer in the XtreemFSHadoopClient
+    </description>
+  </property>
+  
+  <property>
+    <name>xtreemfs.io.write.buffer</name>
+    <value>true</value>
+    <description>
+      Enable/Disable the write buffer in the XtreemFSHadoopClient
+    </description>
+  </property>
+  
+  <property>
+    <name>xtreemfs.io.buffer.size.write</name>
+    <value>bufferSize</value>
+    <description>
+      Buffer size of the write buffer in the XtreemFSHadoopClient
+    </description>
+  </property>	
+	\end{verbatim}	
 	\end{enumerate}
 
 \item To provide the minimum JobTracker configuration for Hadoop you also have to add the following property to the 
