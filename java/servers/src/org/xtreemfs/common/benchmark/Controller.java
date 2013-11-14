@@ -194,10 +194,14 @@ public class Controller {
             if (size % (config.getStripeSizeInBytes() * config.getStripeWidth()) != 0)
                 throw new IllegalArgumentException("size of " + type
                         + " must satisfy: size mod (stripeSize * stripeWidth) == 0");
+            if (size < config.getChunkSizeInBytes())
+                throw new IllegalArgumentException("Chunksize < size of " + type);
         }
         if ((type == BenchmarkType.RAND_READ) || (type == BenchmarkType.RAND_WRITE)) {
             if (config.getBasefileSizeInBytes() < size)
                 throw new IllegalArgumentException("Basefile < size of " + type);
+            if (size < config.getChunkSizeInBytes())
+                throw new IllegalArgumentException("Chunksize < size of " + type);
         }
         if ((type == BenchmarkType.FILES_WRITE) || (type == BenchmarkType.FILES_READ)) {
             if (size % config.getFilesize() != 0)
