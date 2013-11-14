@@ -91,7 +91,7 @@ public class BenchmarkRunner {
     private double measureIOPS(long size) throws Exception {
 
         /* prepare read benchmarks (i.e. create basefiles) */
-        controller.startRandomReadBenchmark(1L*BenchmarkUtils.KiB_IN_BYTES, 1);
+        controller.startRandomReadBenchmark(128L*BenchmarkUtils.KiB_IN_BYTES, 1);
 
         /* perform benchmarks */
         ConcurrentLinkedQueue<BenchmarkResult> resultsFromRepetitions = new ConcurrentLinkedQueue<BenchmarkResult>();
