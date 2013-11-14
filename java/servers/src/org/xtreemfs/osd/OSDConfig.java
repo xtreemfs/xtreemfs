@@ -241,6 +241,7 @@ public class OSDConfig extends ServiceConfig {
      */
     public void checkConfig() {
         super.checkConfig(osdParameter);
+        checkMultihomingConfiguration();
     }
 
     public int getMaxClientQ() {

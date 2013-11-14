@@ -136,5 +136,6 @@ public class MRCConfig extends ServiceConfig {
      */
     public void checkConfig() {
         super.checkConfig(mrcParameter);
+        checkMultihomingConfiguration();
     }
 }

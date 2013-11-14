@@ -719,7 +719,7 @@ public class ServiceConfig extends Config {
      * 
      * @throws RuntimeException
      */
-    private void checkMultihomingConfiguration() {
+    protected void checkMultihomingConfiguration() {
         if (isUsingMultihoming() && getAddress() != null) {
             throw new RuntimeException(ServiceConfig.Parameter.USE_MULTIHOMING.getPropertyString() + " and "
                     + ServiceConfig.Parameter.LISTEN_ADDRESS.getPropertyString() + " parameters are incompatible.");
@@ -735,7 +735,6 @@ public class ServiceConfig extends Config {
             }
         }
         this.checkSSLConfiguration();
-        this.checkMultihomingConfiguration();
     }
 
     public boolean isUsingRenewalSignal() {
