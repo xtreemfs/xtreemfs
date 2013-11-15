@@ -13,34 +13,50 @@ public final class PBRPC {
     registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.interfaceId);
   }
   public static final int PROC_ID_FIELD_NUMBER = 50001;
+  /**
+   * <code>extend .google.protobuf.MethodOptions { ... }</code>
+   */
   public static final
     com.google.protobuf.GeneratedMessage.GeneratedExtension<
       com.google.protobuf.DescriptorProtos.MethodOptions,
-      java.lang.Integer> procId =
-        com.google.protobuf.GeneratedMessage
-          .newGeneratedExtension();
+      java.lang.Integer> procId = com.google.protobuf.GeneratedMessage
+          .newFileScopedGeneratedExtension(
+        java.lang.Integer.class,
+        null);
   public static final int DATA_IN_FIELD_NUMBER = 50004;
+  /**
+   * <code>extend .google.protobuf.MethodOptions { ... }</code>
+   */
   public static final
     com.google.protobuf.GeneratedMessage.GeneratedExtension<
       com.google.protobuf.DescriptorProtos.MethodOptions,
-      java.lang.Boolean> dataIn =
-        com.google.protobuf.GeneratedMessage
-          .newGeneratedExtension();
+      java.lang.Boolean> dataIn = com.google.protobuf.GeneratedMessage
+          .newFileScopedGeneratedExtension(
+        java.lang.Boolean.class,
+        null);
   public static final int DATA_OUT_FIELD_NUMBER = 50003;
+  /**
+   * <code>extend .google.protobuf.MethodOptions { ... }</code>
+   */
   public static final
     com.google.protobuf.GeneratedMessage.GeneratedExtension<
       com.google.protobuf.DescriptorProtos.MethodOptions,
-      java.lang.Boolean> dataOut =
-        com.google.protobuf.GeneratedMessage
-          .newGeneratedExtension();
+      java.lang.Boolean> dataOut = com.google.protobuf.GeneratedMessage
+          .newFileScopedGeneratedExtension(
+        java.lang.Boolean.class,
+        null);
   public static final int INTERFACE_ID_FIELD_NUMBER = 50002;
+  /**
+   * <code>extend .google.protobuf.ServiceOptions { ... }</code>
+   */
   public static final
     com.google.protobuf.GeneratedMessage.GeneratedExtension<
       com.google.protobuf.DescriptorProtos.ServiceOptions,
-      java.lang.Integer> interfaceId =
-        com.google.protobuf.GeneratedMessage
-          .newGeneratedExtension();
-  
+      java.lang.Integer> interfaceId = com.google.protobuf.GeneratedMessage
+          .newFileScopedGeneratedExtension(
+        java.lang.Integer.class,
+        null);
+
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
     return descriptor;
@@ -64,18 +80,10 @@ public final class PBRPC {
         public com.google.protobuf.ExtensionRegistry assignDescriptors(
             com.google.protobuf.Descriptors.FileDescriptor root) {
           descriptor = root;
-          org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.procId.internalInit(
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.getDescriptor().getExtensions().get(0),
-              java.lang.Integer.class);
-          org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.dataIn.internalInit(
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.getDescriptor().getExtensions().get(1),
-              java.lang.Boolean.class);
-          org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.dataOut.internalInit(
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.getDescriptor().getExtensions().get(2),
-              java.lang.Boolean.class);
-          org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.interfaceId.internalInit(
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.getDescriptor().getExtensions().get(3),
-              java.lang.Integer.class);
+          procId.internalInit(descriptor.getExtensions().get(0));
+          dataIn.internalInit(descriptor.getExtensions().get(1));
+          dataOut.internalInit(descriptor.getExtensions().get(2));
+          interfaceId.internalInit(descriptor.getExtensions().get(3));
           return null;
         }
       };
@@ -85,8 +93,6 @@ public final class PBRPC {
           com.google.protobuf.DescriptorProtos.getDescriptor(),
         }, assigner);
   }
-  
-  public static void internalForceInit() {}
-  
+
   // @@protoc_insertion_point(outer_class_scope)
 }

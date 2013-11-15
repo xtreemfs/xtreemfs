@@ -8,228 +8,402 @@ public final class Ping {
   public static void registerAllExtensions(
       com.google.protobuf.ExtensionRegistry registry) {
   }
+  public interface PingRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // required string text = 1;
+    /**
+     * <code>required string text = 1;</code>
+     */
+    boolean hasText();
+    /**
+     * <code>required string text = 1;</code>
+     */
+    java.lang.String getText();
+    /**
+     * <code>required string text = 1;</code>
+     */
+    com.google.protobuf.ByteString
+        getTextBytes();
+
+    // required bool sendError = 2;
+    /**
+     * <code>required bool sendError = 2;</code>
+     */
+    boolean hasSendError();
+    /**
+     * <code>required bool sendError = 2;</code>
+     */
+    boolean getSendError();
+  }
+  /**
+   * Protobuf type {@code xtreemfs.pbrpc.PingRequest}
+   */
   public static final class PingRequest extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements PingRequestOrBuilder {
     // Use PingRequest.newBuilder() to construct.
-    private PingRequest() {
-      initFields();
+    private PingRequest(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
     }
-    private PingRequest(boolean noInit) {}
-    
+    private PingRequest(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
     private static final PingRequest defaultInstance;
     public static PingRequest getDefaultInstance() {
       return defaultInstance;
     }
-    
+
     public PingRequest getDefaultInstanceForType() {
       return defaultInstance;
     }
-    
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private PingRequest(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 10: {
+              bitField0_ |= 0x00000001;
+              text_ = input.readBytes();
+              break;
+            }
+            case 16: {
+              bitField0_ |= 0x00000002;
+              sendError_ = input.readBool();
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
       return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingRequest_descriptor;
     }
-    
+
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingRequest_fieldAccessorTable;
+      return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingRequest_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest.Builder.class);
     }
-    
+
+    public static com.google.protobuf.Parser<PingRequest> PARSER =
+        new com.google.protobuf.AbstractParser<PingRequest>() {
+      public PingRequest parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new PingRequest(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<PingRequest> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
     // required string text = 1;
     public static final int TEXT_FIELD_NUMBER = 1;
-    private boolean hasText;
-    private java.lang.String text_ = "";
-    public boolean hasText() { return hasText; }
-    public java.lang.String getText() { return text_; }
-    
+    private java.lang.Object text_;
+    /**
+     * <code>required string text = 1;</code>
+     */
+    public boolean hasText() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required string text = 1;</code>
+     */
+    public java.lang.String getText() {
+      java.lang.Object ref = text_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          text_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string text = 1;</code>
+     */
+    public com.google.protobuf.ByteString
+        getTextBytes() {
+      java.lang.Object ref = text_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        text_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     // required bool sendError = 2;
     public static final int SENDERROR_FIELD_NUMBER = 2;
-    private boolean hasSendError;
-    private boolean sendError_ = false;
-    public boolean hasSendError() { return hasSendError; }
-    public boolean getSendError() { return sendError_; }
-    
-    private void initFields() {
+    private boolean sendError_;
+    /**
+     * <code>required bool sendError = 2;</code>
+     */
+    public boolean hasSendError() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
     }
+    /**
+     * <code>required bool sendError = 2;</code>
+     */
+    public boolean getSendError() {
+      return sendError_;
+    }
+
+    private void initFields() {
+      text_ = "";
+      sendError_ = false;
+    }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasText) return false;
-      if (!hasSendError) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      if (!hasText()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasSendError()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
-    
+
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasText()) {
-        output.writeString(1, getText());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBytes(1, getTextBytes());
       }
-      if (hasSendError()) {
-        output.writeBool(2, getSendError());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBool(2, sendError_);
       }
       getUnknownFields().writeTo(output);
     }
-    
+
     private int memoizedSerializedSize = -1;
     public int getSerializedSize() {
       int size = memoizedSerializedSize;
       if (size != -1) return size;
-    
+
       size = 0;
-      if (hasText()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(1, getText());
+          .computeBytesSize(1, getTextBytes());
       }
-      if (hasSendError()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(2, getSendError());
+          .computeBoolSize(2, sendError_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
     }
-    
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
+      return PARSER.parseFrom(data);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(data, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
+      return PARSER.parseFrom(data);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(data, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest parseFrom(java.io.InputStream input)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
+      return PARSER.parseFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(input, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
+      return PARSER.parseDelimitedFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
+      return PARSER.parseFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(input, extensionRegistry);
     }
-    
+
     public static Builder newBuilder() { return Builder.create(); }
     public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder(org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest prototype) {
       return newBuilder().mergeFrom(prototype);
     }
     public Builder toBuilder() { return newBuilder(this); }
-    
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code xtreemfs.pbrpc.PingRequest}
+     */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest result;
-      
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingRequest_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingRequest_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest.Builder.class);
+      }
+
       // Construct using org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest();
-        return builder;
+      private Builder() {
+        maybeForceBuilderInitialization();
       }
-      
-      protected org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest internalGetResult() {
-        return result;
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
       }
-      
-      public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
         }
-        result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest();
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        text_ = "";
+        bitField0_ = (bitField0_ & ~0x00000001);
+        sendError_ = false;
+        bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
-      
+
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
-      
+
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest.getDescriptor();
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingRequest_descriptor;
       }
-      
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest getDefaultInstanceForType() {
         return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest.getDefaultInstance();
       }
-      
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
-      
-      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest buildParsed()
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
-          throw newUninitializedMessageException(
-            result).asInvalidProtocolBufferException();
-        }
-        return buildPartial();
-      }
-      
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest returnMe = result;
-        result = null;
-        return returnMe;
+        result.text_ = text_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.sendError_ = sendError_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
-      
+
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest) {
           return mergeFrom((org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest)other);
@@ -238,11 +412,13 @@ public final class Ping {
           return this;
         }
       }
-      
+
       public Builder mergeFrom(org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest other) {
         if (other == org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest.getDefaultInstance()) return this;
         if (other.hasText()) {
-          setText(other.getText());
+          bitField0_ |= 0x00000001;
+          text_ = other.text_;
+          onChanged();
         }
         if (other.hasSendError()) {
           setSendError(other.getSendError());
@@ -250,326 +426,650 @@ public final class Ping {
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
-      
+
+      public final boolean isInitialized() {
+        if (!hasText()) {
+          
+          return false;
+        }
+        if (!hasSendError()) {
+          
+          return false;
+        }
+        return true;
+      }
+
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder(
-            this.getUnknownFields());
-        while (true) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              this.setUnknownFields(unknownFields.build());
-              return this;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                this.setUnknownFields(unknownFields.build());
-                return this;
-              }
-              break;
-            }
-            case 10: {
-              setText(input.readString());
-              break;
-            }
-            case 16: {
-              setSendError(input.readBool());
-              break;
-            }
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
           }
         }
+        return this;
       }
-      
-      
+      private int bitField0_;
+
       // required string text = 1;
+      private java.lang.Object text_ = "";
+      /**
+       * <code>required string text = 1;</code>
+       */
       public boolean hasText() {
-        return result.hasText();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
+      /**
+       * <code>required string text = 1;</code>
+       */
       public java.lang.String getText() {
-        return result.getText();
+        java.lang.Object ref = text_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          text_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
-      public Builder setText(java.lang.String value) {
+      /**
+       * <code>required string text = 1;</code>
+       */
+      public com.google.protobuf.ByteString
+          getTextBytes() {
+        java.lang.Object ref = text_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          text_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string text = 1;</code>
+       */
+      public Builder setText(
+          java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasText = true;
-        result.text_ = value;
+  bitField0_ |= 0x00000001;
+        text_ = value;
+        onChanged();
         return this;
       }
+      /**
+       * <code>required string text = 1;</code>
+       */
       public Builder clearText() {
-        result.hasText = false;
-        result.text_ = getDefaultInstance().getText();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        text_ = getDefaultInstance().getText();
+        onChanged();
         return this;
       }
-      
+      /**
+       * <code>required string text = 1;</code>
+       */
+      public Builder setTextBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        text_ = value;
+        onChanged();
+        return this;
+      }
+
       // required bool sendError = 2;
+      private boolean sendError_ ;
+      /**
+       * <code>required bool sendError = 2;</code>
+       */
       public boolean hasSendError() {
-        return result.hasSendError();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
+      /**
+       * <code>required bool sendError = 2;</code>
+       */
       public boolean getSendError() {
-        return result.getSendError();
+        return sendError_;
       }
+      /**
+       * <code>required bool sendError = 2;</code>
+       */
       public Builder setSendError(boolean value) {
-        result.hasSendError = true;
-        result.sendError_ = value;
+        bitField0_ |= 0x00000002;
+        sendError_ = value;
+        onChanged();
         return this;
       }
+      /**
+       * <code>required bool sendError = 2;</code>
+       */
       public Builder clearSendError() {
-        result.hasSendError = false;
-        result.sendError_ = false;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        sendError_ = false;
+        onChanged();
         return this;
       }
-      
+
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.PingRequest)
     }
-    
+
     static {
       defaultInstance = new PingRequest(true);
-      org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internalForceInit();
       defaultInstance.initFields();
     }
-    
+
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.PingRequest)
   }
-  
+
+  public interface PingResponseOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // optional .xtreemfs.pbrpc.PingResponse.PingResult result = 1;
+    /**
+     * <code>optional .xtreemfs.pbrpc.PingResponse.PingResult result = 1;</code>
+     */
+    boolean hasResult();
+    /**
+     * <code>optional .xtreemfs.pbrpc.PingResponse.PingResult result = 1;</code>
+     */
+    org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult getResult();
+    /**
+     * <code>optional .xtreemfs.pbrpc.PingResponse.PingResult result = 1;</code>
+     */
+    org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResultOrBuilder getResultOrBuilder();
+
+    // optional .xtreemfs.pbrpc.PingResponse.PingError error = 2;
+    /**
+     * <code>optional .xtreemfs.pbrpc.PingResponse.PingError error = 2;</code>
+     */
+    boolean hasError();
+    /**
+     * <code>optional .xtreemfs.pbrpc.PingResponse.PingError error = 2;</code>
+     */
+    org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError getError();
+    /**
+     * <code>optional .xtreemfs.pbrpc.PingResponse.PingError error = 2;</code>
+     */
+    org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingErrorOrBuilder getErrorOrBuilder();
+  }
+  /**
+   * Protobuf type {@code xtreemfs.pbrpc.PingResponse}
+   */
   public static final class PingResponse extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements PingResponseOrBuilder {
     // Use PingResponse.newBuilder() to construct.
-    private PingResponse() {
-      initFields();
+    private PingResponse(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
     }
-    private PingResponse(boolean noInit) {}
-    
+    private PingResponse(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
     private static final PingResponse defaultInstance;
     public static PingResponse getDefaultInstance() {
       return defaultInstance;
     }
-    
+
     public PingResponse getDefaultInstanceForType() {
       return defaultInstance;
     }
-    
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private PingResponse(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 10: {
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.Builder subBuilder = null;
+              if (((bitField0_ & 0x00000001) == 0x00000001)) {
+                subBuilder = result_.toBuilder();
+              }
+              result_ = input.readMessage(org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(result_);
+                result_ = subBuilder.buildPartial();
+              }
+              bitField0_ |= 0x00000001;
+              break;
+            }
+            case 18: {
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.Builder subBuilder = null;
+              if (((bitField0_ & 0x00000002) == 0x00000002)) {
+                subBuilder = error_.toBuilder();
+              }
+              error_ = input.readMessage(org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(error_);
+                error_ = subBuilder.buildPartial();
+              }
+              bitField0_ |= 0x00000002;
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
       return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingResponse_descriptor;
     }
-    
+
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingResponse_fieldAccessorTable;
+      return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingResponse_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.Builder.class);
     }
-    
-    public static final class PingResult extends
-        com.google.protobuf.GeneratedMessage {
-      // Use PingResult.newBuilder() to construct.
-      private PingResult() {
-        initFields();
+
+    public static com.google.protobuf.Parser<PingResponse> PARSER =
+        new com.google.protobuf.AbstractParser<PingResponse>() {
+      public PingResponse parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new PingResponse(input, extensionRegistry);
       }
-      private PingResult(boolean noInit) {}
-      
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<PingResponse> getParserForType() {
+      return PARSER;
+    }
+
+    public interface PingResultOrBuilder
+        extends com.google.protobuf.MessageOrBuilder {
+
+      // required string text = 1;
+      /**
+       * <code>required string text = 1;</code>
+       */
+      boolean hasText();
+      /**
+       * <code>required string text = 1;</code>
+       */
+      java.lang.String getText();
+      /**
+       * <code>required string text = 1;</code>
+       */
+      com.google.protobuf.ByteString
+          getTextBytes();
+    }
+    /**
+     * Protobuf type {@code xtreemfs.pbrpc.PingResponse.PingResult}
+     */
+    public static final class PingResult extends
+        com.google.protobuf.GeneratedMessage
+        implements PingResultOrBuilder {
+      // Use PingResult.newBuilder() to construct.
+      private PingResult(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+        super(builder);
+        this.unknownFields = builder.getUnknownFields();
+      }
+      private PingResult(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
       private static final PingResult defaultInstance;
       public static PingResult getDefaultInstance() {
         return defaultInstance;
       }
-      
+
       public PingResult getDefaultInstanceForType() {
         return defaultInstance;
       }
-      
+
+      private final com.google.protobuf.UnknownFieldSet unknownFields;
+      @java.lang.Override
+      public final com.google.protobuf.UnknownFieldSet
+          getUnknownFields() {
+        return this.unknownFields;
+      }
+      private PingResult(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        initFields();
+        int mutable_bitField0_ = 0;
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+            com.google.protobuf.UnknownFieldSet.newBuilder();
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              default: {
+                if (!parseUnknownField(input, unknownFields,
+                                       extensionRegistry, tag)) {
+                  done = true;
+                }
+                break;
+              }
+              case 10: {
+                bitField0_ |= 0x00000001;
+                text_ = input.readBytes();
+                break;
+              }
+            }
+          }
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(this);
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(
+              e.getMessage()).setUnfinishedMessage(this);
+        } finally {
+          this.unknownFields = unknownFields.build();
+          makeExtensionsImmutable();
+        }
+      }
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingResponse_PingResult_descriptor;
       }
-      
+
       protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
           internalGetFieldAccessorTable() {
-        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingResponse_PingResult_fieldAccessorTable;
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingResponse_PingResult_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.Builder.class);
       }
-      
+
+      public static com.google.protobuf.Parser<PingResult> PARSER =
+          new com.google.protobuf.AbstractParser<PingResult>() {
+        public PingResult parsePartialFrom(
+            com.google.protobuf.CodedInputStream input,
+            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+            throws com.google.protobuf.InvalidProtocolBufferException {
+          return new PingResult(input, extensionRegistry);
+        }
+      };
+
+      @java.lang.Override
+      public com.google.protobuf.Parser<PingResult> getParserForType() {
+        return PARSER;
+      }
+
+      private int bitField0_;
       // required string text = 1;
       public static final int TEXT_FIELD_NUMBER = 1;
-      private boolean hasText;
-      private java.lang.String text_ = "";
-      public boolean hasText() { return hasText; }
-      public java.lang.String getText() { return text_; }
-      
-      private void initFields() {
+      private java.lang.Object text_;
+      /**
+       * <code>required string text = 1;</code>
+       */
+      public boolean hasText() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
+      /**
+       * <code>required string text = 1;</code>
+       */
+      public java.lang.String getText() {
+        java.lang.Object ref = text_;
+        if (ref instanceof java.lang.String) {
+          return (java.lang.String) ref;
+        } else {
+          com.google.protobuf.ByteString bs = 
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            text_ = s;
+          }
+          return s;
+        }
+      }
+      /**
+       * <code>required string text = 1;</code>
+       */
+      public com.google.protobuf.ByteString
+          getTextBytes() {
+        java.lang.Object ref = text_;
+        if (ref instanceof java.lang.String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          text_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+
+      private void initFields() {
+        text_ = "";
+      }
+      private byte memoizedIsInitialized = -1;
       public final boolean isInitialized() {
-        if (!hasText) return false;
+        byte isInitialized = memoizedIsInitialized;
+        if (isInitialized != -1) return isInitialized == 1;
+
+        if (!hasText()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+        memoizedIsInitialized = 1;
         return true;
       }
-      
+
       public void writeTo(com.google.protobuf.CodedOutputStream output)
                           throws java.io.IOException {
         getSerializedSize();
-        if (hasText()) {
-          output.writeString(1, getText());
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+          output.writeBytes(1, getTextBytes());
         }
         getUnknownFields().writeTo(output);
       }
-      
+
       private int memoizedSerializedSize = -1;
       public int getSerializedSize() {
         int size = memoizedSerializedSize;
         if (size != -1) return size;
-      
+
         size = 0;
-        if (hasText()) {
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
           size += com.google.protobuf.CodedOutputStream
-            .computeStringSize(1, getText());
+            .computeBytesSize(1, getTextBytes());
         }
         size += getUnknownFields().getSerializedSize();
         memoizedSerializedSize = size;
         return size;
       }
-      
+
+      private static final long serialVersionUID = 0L;
+      @java.lang.Override
+      protected java.lang.Object writeReplace()
+          throws java.io.ObjectStreamException {
+        return super.writeReplace();
+      }
+
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult parseFrom(
           com.google.protobuf.ByteString data)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return newBuilder().mergeFrom(data).buildParsed();
+        return PARSER.parseFrom(data);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult parseFrom(
           com.google.protobuf.ByteString data,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return newBuilder().mergeFrom(data, extensionRegistry)
-                 .buildParsed();
+        return PARSER.parseFrom(data, extensionRegistry);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult parseFrom(byte[] data)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return newBuilder().mergeFrom(data).buildParsed();
+        return PARSER.parseFrom(data);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult parseFrom(
           byte[] data,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return newBuilder().mergeFrom(data, extensionRegistry)
-                 .buildParsed();
+        return PARSER.parseFrom(data, extensionRegistry);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult parseFrom(java.io.InputStream input)
           throws java.io.IOException {
-        return newBuilder().mergeFrom(input).buildParsed();
+        return PARSER.parseFrom(input);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult parseFrom(
           java.io.InputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        return newBuilder().mergeFrom(input, extensionRegistry)
-                 .buildParsed();
+        return PARSER.parseFrom(input, extensionRegistry);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult parseDelimitedFrom(java.io.InputStream input)
           throws java.io.IOException {
-        Builder builder = newBuilder();
-        if (builder.mergeDelimitedFrom(input)) {
-          return builder.buildParsed();
-        } else {
-          return null;
-        }
+        return PARSER.parseDelimitedFrom(input);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult parseDelimitedFrom(
           java.io.InputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        Builder builder = newBuilder();
-        if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-          return builder.buildParsed();
-        } else {
-          return null;
-        }
+        return PARSER.parseDelimitedFrom(input, extensionRegistry);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult parseFrom(
           com.google.protobuf.CodedInputStream input)
           throws java.io.IOException {
-        return newBuilder().mergeFrom(input).buildParsed();
+        return PARSER.parseFrom(input);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult parseFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        return newBuilder().mergeFrom(input, extensionRegistry)
-                 .buildParsed();
+        return PARSER.parseFrom(input, extensionRegistry);
       }
-      
+
       public static Builder newBuilder() { return Builder.create(); }
       public Builder newBuilderForType() { return newBuilder(); }
       public static Builder newBuilder(org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult prototype) {
         return newBuilder().mergeFrom(prototype);
       }
       public Builder toBuilder() { return newBuilder(this); }
-      
+
+      @java.lang.Override
+      protected Builder newBuilderForType(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        Builder builder = new Builder(parent);
+        return builder;
+      }
+      /**
+       * Protobuf type {@code xtreemfs.pbrpc.PingResponse.PingResult}
+       */
       public static final class Builder extends
-          com.google.protobuf.GeneratedMessage.Builder<Builder> {
-        private org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult result;
-        
+          com.google.protobuf.GeneratedMessage.Builder<Builder>
+         implements org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResultOrBuilder {
+        public static final com.google.protobuf.Descriptors.Descriptor
+            getDescriptor() {
+          return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingResponse_PingResult_descriptor;
+        }
+
+        protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+            internalGetFieldAccessorTable() {
+          return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingResponse_PingResult_fieldAccessorTable
+              .ensureFieldAccessorsInitialized(
+                  org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.Builder.class);
+        }
+
         // Construct using org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.newBuilder()
-        private Builder() {}
-        
-        private static Builder create() {
-          Builder builder = new Builder();
-          builder.result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult();
-          return builder;
+        private Builder() {
+          maybeForceBuilderInitialization();
         }
-        
-        protected org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult internalGetResult() {
-          return result;
+
+        private Builder(
+            com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+          super(parent);
+          maybeForceBuilderInitialization();
         }
-        
-        public Builder clear() {
-          if (result == null) {
-            throw new IllegalStateException(
-              "Cannot call clear() after build().");
+        private void maybeForceBuilderInitialization() {
+          if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
           }
-          result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult();
+        }
+        private static Builder create() {
+          return new Builder();
+        }
+
+        public Builder clear() {
+          super.clear();
+          text_ = "";
+          bitField0_ = (bitField0_ & ~0x00000001);
           return this;
         }
-        
+
         public Builder clone() {
-          return create().mergeFrom(result);
+          return create().mergeFrom(buildPartial());
         }
-        
+
         public com.google.protobuf.Descriptors.Descriptor
             getDescriptorForType() {
-          return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.getDescriptor();
+          return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingResponse_PingResult_descriptor;
         }
-        
+
         public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult getDefaultInstanceForType() {
           return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.getDefaultInstance();
         }
-        
-        public boolean isInitialized() {
-          return result.isInitialized();
-        }
+
         public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult build() {
-          if (result != null && !isInitialized()) {
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult result = buildPartial();
+          if (!result.isInitialized()) {
             throw newUninitializedMessageException(result);
           }
-          return buildPartial();
+          return result;
         }
-        
-        private org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult buildParsed()
-            throws com.google.protobuf.InvalidProtocolBufferException {
-          if (!isInitialized()) {
-            throw newUninitializedMessageException(
-              result).asInvalidProtocolBufferException();
-          }
-          return buildPartial();
-        }
-        
+
         public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult buildPartial() {
-          if (result == null) {
-            throw new IllegalStateException(
-              "build() has already been called on this Builder.");
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult(this);
+          int from_bitField0_ = bitField0_;
+          int to_bitField0_ = 0;
+          if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+            to_bitField0_ |= 0x00000001;
           }
-          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult returnMe = result;
-          result = null;
-          return returnMe;
+          result.text_ = text_;
+          result.bitField0_ = to_bitField0_;
+          onBuilt();
+          return result;
         }
-        
+
         public Builder mergeFrom(com.google.protobuf.Message other) {
           if (other instanceof org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult) {
             return mergeFrom((org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult)other);
@@ -578,286 +1078,477 @@ public final class Ping {
             return this;
           }
         }
-        
+
         public Builder mergeFrom(org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult other) {
           if (other == org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.getDefaultInstance()) return this;
           if (other.hasText()) {
-            setText(other.getText());
+            bitField0_ |= 0x00000001;
+            text_ = other.text_;
+            onChanged();
           }
           this.mergeUnknownFields(other.getUnknownFields());
           return this;
         }
-        
+
+        public final boolean isInitialized() {
+          if (!hasText()) {
+            
+            return false;
+          }
+          return true;
+        }
+
         public Builder mergeFrom(
             com.google.protobuf.CodedInputStream input,
             com.google.protobuf.ExtensionRegistryLite extensionRegistry)
             throws java.io.IOException {
-          com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-            com.google.protobuf.UnknownFieldSet.newBuilder(
-              this.getUnknownFields());
-          while (true) {
-            int tag = input.readTag();
-            switch (tag) {
-              case 0:
-                this.setUnknownFields(unknownFields.build());
-                return this;
-              default: {
-                if (!parseUnknownField(input, unknownFields,
-                                       extensionRegistry, tag)) {
-                  this.setUnknownFields(unknownFields.build());
-                  return this;
-                }
-                break;
-              }
-              case 10: {
-                setText(input.readString());
-                break;
-              }
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult parsedMessage = null;
+          try {
+            parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+          } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+            parsedMessage = (org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult) e.getUnfinishedMessage();
+            throw e;
+          } finally {
+            if (parsedMessage != null) {
+              mergeFrom(parsedMessage);
             }
           }
+          return this;
         }
-        
-        
+        private int bitField0_;
+
         // required string text = 1;
+        private java.lang.Object text_ = "";
+        /**
+         * <code>required string text = 1;</code>
+         */
         public boolean hasText() {
-          return result.hasText();
+          return ((bitField0_ & 0x00000001) == 0x00000001);
         }
+        /**
+         * <code>required string text = 1;</code>
+         */
         public java.lang.String getText() {
-          return result.getText();
+          java.lang.Object ref = text_;
+          if (!(ref instanceof java.lang.String)) {
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            text_ = s;
+            return s;
+          } else {
+            return (java.lang.String) ref;
+          }
         }
-        public Builder setText(java.lang.String value) {
+        /**
+         * <code>required string text = 1;</code>
+         */
+        public com.google.protobuf.ByteString
+            getTextBytes() {
+          java.lang.Object ref = text_;
+          if (ref instanceof String) {
+            com.google.protobuf.ByteString b = 
+                com.google.protobuf.ByteString.copyFromUtf8(
+                    (java.lang.String) ref);
+            text_ = b;
+            return b;
+          } else {
+            return (com.google.protobuf.ByteString) ref;
+          }
+        }
+        /**
+         * <code>required string text = 1;</code>
+         */
+        public Builder setText(
+            java.lang.String value) {
           if (value == null) {
     throw new NullPointerException();
   }
-  result.hasText = true;
-          result.text_ = value;
+  bitField0_ |= 0x00000001;
+          text_ = value;
+          onChanged();
           return this;
         }
+        /**
+         * <code>required string text = 1;</code>
+         */
         public Builder clearText() {
-          result.hasText = false;
-          result.text_ = getDefaultInstance().getText();
+          bitField0_ = (bitField0_ & ~0x00000001);
+          text_ = getDefaultInstance().getText();
+          onChanged();
           return this;
         }
-        
+        /**
+         * <code>required string text = 1;</code>
+         */
+        public Builder setTextBytes(
+            com.google.protobuf.ByteString value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+          text_ = value;
+          onChanged();
+          return this;
+        }
+
         // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.PingResponse.PingResult)
       }
-      
+
       static {
         defaultInstance = new PingResult(true);
-        org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internalForceInit();
         defaultInstance.initFields();
       }
-      
+
       // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.PingResponse.PingResult)
     }
-    
+
+    public interface PingErrorOrBuilder
+        extends com.google.protobuf.MessageOrBuilder {
+
+      // required string errorMessage = 1;
+      /**
+       * <code>required string errorMessage = 1;</code>
+       */
+      boolean hasErrorMessage();
+      /**
+       * <code>required string errorMessage = 1;</code>
+       */
+      java.lang.String getErrorMessage();
+      /**
+       * <code>required string errorMessage = 1;</code>
+       */
+      com.google.protobuf.ByteString
+          getErrorMessageBytes();
+    }
+    /**
+     * Protobuf type {@code xtreemfs.pbrpc.PingResponse.PingError}
+     */
     public static final class PingError extends
-        com.google.protobuf.GeneratedMessage {
+        com.google.protobuf.GeneratedMessage
+        implements PingErrorOrBuilder {
       // Use PingError.newBuilder() to construct.
-      private PingError() {
-        initFields();
+      private PingError(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+        super(builder);
+        this.unknownFields = builder.getUnknownFields();
       }
-      private PingError(boolean noInit) {}
-      
+      private PingError(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
       private static final PingError defaultInstance;
       public static PingError getDefaultInstance() {
         return defaultInstance;
       }
-      
+
       public PingError getDefaultInstanceForType() {
         return defaultInstance;
       }
-      
+
+      private final com.google.protobuf.UnknownFieldSet unknownFields;
+      @java.lang.Override
+      public final com.google.protobuf.UnknownFieldSet
+          getUnknownFields() {
+        return this.unknownFields;
+      }
+      private PingError(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        initFields();
+        int mutable_bitField0_ = 0;
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+            com.google.protobuf.UnknownFieldSet.newBuilder();
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              default: {
+                if (!parseUnknownField(input, unknownFields,
+                                       extensionRegistry, tag)) {
+                  done = true;
+                }
+                break;
+              }
+              case 10: {
+                bitField0_ |= 0x00000001;
+                errorMessage_ = input.readBytes();
+                break;
+              }
+            }
+          }
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(this);
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(
+              e.getMessage()).setUnfinishedMessage(this);
+        } finally {
+          this.unknownFields = unknownFields.build();
+          makeExtensionsImmutable();
+        }
+      }
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingResponse_PingError_descriptor;
       }
-      
+
       protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
           internalGetFieldAccessorTable() {
-        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingResponse_PingError_fieldAccessorTable;
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingResponse_PingError_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.Builder.class);
       }
-      
+
+      public static com.google.protobuf.Parser<PingError> PARSER =
+          new com.google.protobuf.AbstractParser<PingError>() {
+        public PingError parsePartialFrom(
+            com.google.protobuf.CodedInputStream input,
+            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+            throws com.google.protobuf.InvalidProtocolBufferException {
+          return new PingError(input, extensionRegistry);
+        }
+      };
+
+      @java.lang.Override
+      public com.google.protobuf.Parser<PingError> getParserForType() {
+        return PARSER;
+      }
+
+      private int bitField0_;
       // required string errorMessage = 1;
       public static final int ERRORMESSAGE_FIELD_NUMBER = 1;
-      private boolean hasErrorMessage;
-      private java.lang.String errorMessage_ = "";
-      public boolean hasErrorMessage() { return hasErrorMessage; }
-      public java.lang.String getErrorMessage() { return errorMessage_; }
-      
-      private void initFields() {
+      private java.lang.Object errorMessage_;
+      /**
+       * <code>required string errorMessage = 1;</code>
+       */
+      public boolean hasErrorMessage() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
+      /**
+       * <code>required string errorMessage = 1;</code>
+       */
+      public java.lang.String getErrorMessage() {
+        java.lang.Object ref = errorMessage_;
+        if (ref instanceof java.lang.String) {
+          return (java.lang.String) ref;
+        } else {
+          com.google.protobuf.ByteString bs = 
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            errorMessage_ = s;
+          }
+          return s;
+        }
+      }
+      /**
+       * <code>required string errorMessage = 1;</code>
+       */
+      public com.google.protobuf.ByteString
+          getErrorMessageBytes() {
+        java.lang.Object ref = errorMessage_;
+        if (ref instanceof java.lang.String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          errorMessage_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+
+      private void initFields() {
+        errorMessage_ = "";
+      }
+      private byte memoizedIsInitialized = -1;
       public final boolean isInitialized() {
-        if (!hasErrorMessage) return false;
+        byte isInitialized = memoizedIsInitialized;
+        if (isInitialized != -1) return isInitialized == 1;
+
+        if (!hasErrorMessage()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+        memoizedIsInitialized = 1;
         return true;
       }
-      
+
       public void writeTo(com.google.protobuf.CodedOutputStream output)
                           throws java.io.IOException {
         getSerializedSize();
-        if (hasErrorMessage()) {
-          output.writeString(1, getErrorMessage());
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+          output.writeBytes(1, getErrorMessageBytes());
         }
         getUnknownFields().writeTo(output);
       }
-      
+
       private int memoizedSerializedSize = -1;
       public int getSerializedSize() {
         int size = memoizedSerializedSize;
         if (size != -1) return size;
-      
+
         size = 0;
-        if (hasErrorMessage()) {
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
           size += com.google.protobuf.CodedOutputStream
-            .computeStringSize(1, getErrorMessage());
+            .computeBytesSize(1, getErrorMessageBytes());
         }
         size += getUnknownFields().getSerializedSize();
         memoizedSerializedSize = size;
         return size;
       }
-      
+
+      private static final long serialVersionUID = 0L;
+      @java.lang.Override
+      protected java.lang.Object writeReplace()
+          throws java.io.ObjectStreamException {
+        return super.writeReplace();
+      }
+
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError parseFrom(
           com.google.protobuf.ByteString data)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return newBuilder().mergeFrom(data).buildParsed();
+        return PARSER.parseFrom(data);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError parseFrom(
           com.google.protobuf.ByteString data,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return newBuilder().mergeFrom(data, extensionRegistry)
-                 .buildParsed();
+        return PARSER.parseFrom(data, extensionRegistry);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError parseFrom(byte[] data)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return newBuilder().mergeFrom(data).buildParsed();
+        return PARSER.parseFrom(data);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError parseFrom(
           byte[] data,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return newBuilder().mergeFrom(data, extensionRegistry)
-                 .buildParsed();
+        return PARSER.parseFrom(data, extensionRegistry);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError parseFrom(java.io.InputStream input)
           throws java.io.IOException {
-        return newBuilder().mergeFrom(input).buildParsed();
+        return PARSER.parseFrom(input);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError parseFrom(
           java.io.InputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        return newBuilder().mergeFrom(input, extensionRegistry)
-                 .buildParsed();
+        return PARSER.parseFrom(input, extensionRegistry);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError parseDelimitedFrom(java.io.InputStream input)
           throws java.io.IOException {
-        Builder builder = newBuilder();
-        if (builder.mergeDelimitedFrom(input)) {
-          return builder.buildParsed();
-        } else {
-          return null;
-        }
+        return PARSER.parseDelimitedFrom(input);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError parseDelimitedFrom(
           java.io.InputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        Builder builder = newBuilder();
-        if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-          return builder.buildParsed();
-        } else {
-          return null;
-        }
+        return PARSER.parseDelimitedFrom(input, extensionRegistry);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError parseFrom(
           com.google.protobuf.CodedInputStream input)
           throws java.io.IOException {
-        return newBuilder().mergeFrom(input).buildParsed();
+        return PARSER.parseFrom(input);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError parseFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        return newBuilder().mergeFrom(input, extensionRegistry)
-                 .buildParsed();
+        return PARSER.parseFrom(input, extensionRegistry);
       }
-      
+
       public static Builder newBuilder() { return Builder.create(); }
       public Builder newBuilderForType() { return newBuilder(); }
       public static Builder newBuilder(org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError prototype) {
         return newBuilder().mergeFrom(prototype);
       }
       public Builder toBuilder() { return newBuilder(this); }
-      
+
+      @java.lang.Override
+      protected Builder newBuilderForType(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        Builder builder = new Builder(parent);
+        return builder;
+      }
+      /**
+       * Protobuf type {@code xtreemfs.pbrpc.PingResponse.PingError}
+       */
       public static final class Builder extends
-          com.google.protobuf.GeneratedMessage.Builder<Builder> {
-        private org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError result;
-        
+          com.google.protobuf.GeneratedMessage.Builder<Builder>
+         implements org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingErrorOrBuilder {
+        public static final com.google.protobuf.Descriptors.Descriptor
+            getDescriptor() {
+          return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingResponse_PingError_descriptor;
+        }
+
+        protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+            internalGetFieldAccessorTable() {
+          return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingResponse_PingError_fieldAccessorTable
+              .ensureFieldAccessorsInitialized(
+                  org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.Builder.class);
+        }
+
         // Construct using org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.newBuilder()
-        private Builder() {}
-        
-        private static Builder create() {
-          Builder builder = new Builder();
-          builder.result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError();
-          return builder;
+        private Builder() {
+          maybeForceBuilderInitialization();
         }
-        
-        protected org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError internalGetResult() {
-          return result;
+
+        private Builder(
+            com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+          super(parent);
+          maybeForceBuilderInitialization();
         }
-        
-        public Builder clear() {
-          if (result == null) {
-            throw new IllegalStateException(
-              "Cannot call clear() after build().");
+        private void maybeForceBuilderInitialization() {
+          if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
           }
-          result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError();
+        }
+        private static Builder create() {
+          return new Builder();
+        }
+
+        public Builder clear() {
+          super.clear();
+          errorMessage_ = "";
+          bitField0_ = (bitField0_ & ~0x00000001);
           return this;
         }
-        
+
         public Builder clone() {
-          return create().mergeFrom(result);
+          return create().mergeFrom(buildPartial());
         }
-        
+
         public com.google.protobuf.Descriptors.Descriptor
             getDescriptorForType() {
-          return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.getDescriptor();
+          return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingResponse_PingError_descriptor;
         }
-        
+
         public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError getDefaultInstanceForType() {
           return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.getDefaultInstance();
         }
-        
-        public boolean isInitialized() {
-          return result.isInitialized();
-        }
+
         public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError build() {
-          if (result != null && !isInitialized()) {
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError result = buildPartial();
+          if (!result.isInitialized()) {
             throw newUninitializedMessageException(result);
           }
-          return buildPartial();
+          return result;
         }
-        
-        private org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError buildParsed()
-            throws com.google.protobuf.InvalidProtocolBufferException {
-          if (!isInitialized()) {
-            throw newUninitializedMessageException(
-              result).asInvalidProtocolBufferException();
-          }
-          return buildPartial();
-        }
-        
+
         public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError buildPartial() {
-          if (result == null) {
-            throw new IllegalStateException(
-              "build() has already been called on this Builder.");
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError(this);
+          int from_bitField0_ = bitField0_;
+          int to_bitField0_ = 0;
+          if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+            to_bitField0_ |= 0x00000001;
           }
-          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError returnMe = result;
-          result = null;
-          return returnMe;
+          result.errorMessage_ = errorMessage_;
+          result.bitField0_ = to_bitField0_;
+          onBuilt();
+          return result;
         }
-        
+
         public Builder mergeFrom(com.google.protobuf.Message other) {
           if (other instanceof org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError) {
             return mergeFrom((org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError)other);
@@ -866,280 +1557,405 @@ public final class Ping {
             return this;
           }
         }
-        
+
         public Builder mergeFrom(org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError other) {
           if (other == org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.getDefaultInstance()) return this;
           if (other.hasErrorMessage()) {
-            setErrorMessage(other.getErrorMessage());
+            bitField0_ |= 0x00000001;
+            errorMessage_ = other.errorMessage_;
+            onChanged();
           }
           this.mergeUnknownFields(other.getUnknownFields());
           return this;
         }
-        
+
+        public final boolean isInitialized() {
+          if (!hasErrorMessage()) {
+            
+            return false;
+          }
+          return true;
+        }
+
         public Builder mergeFrom(
             com.google.protobuf.CodedInputStream input,
             com.google.protobuf.ExtensionRegistryLite extensionRegistry)
             throws java.io.IOException {
-          com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-            com.google.protobuf.UnknownFieldSet.newBuilder(
-              this.getUnknownFields());
-          while (true) {
-            int tag = input.readTag();
-            switch (tag) {
-              case 0:
-                this.setUnknownFields(unknownFields.build());
-                return this;
-              default: {
-                if (!parseUnknownField(input, unknownFields,
-                                       extensionRegistry, tag)) {
-                  this.setUnknownFields(unknownFields.build());
-                  return this;
-                }
-                break;
-              }
-              case 10: {
-                setErrorMessage(input.readString());
-                break;
-              }
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError parsedMessage = null;
+          try {
+            parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+          } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+            parsedMessage = (org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError) e.getUnfinishedMessage();
+            throw e;
+          } finally {
+            if (parsedMessage != null) {
+              mergeFrom(parsedMessage);
             }
           }
+          return this;
         }
-        
-        
+        private int bitField0_;
+
         // required string errorMessage = 1;
+        private java.lang.Object errorMessage_ = "";
+        /**
+         * <code>required string errorMessage = 1;</code>
+         */
         public boolean hasErrorMessage() {
-          return result.hasErrorMessage();
+          return ((bitField0_ & 0x00000001) == 0x00000001);
         }
+        /**
+         * <code>required string errorMessage = 1;</code>
+         */
         public java.lang.String getErrorMessage() {
-          return result.getErrorMessage();
+          java.lang.Object ref = errorMessage_;
+          if (!(ref instanceof java.lang.String)) {
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            errorMessage_ = s;
+            return s;
+          } else {
+            return (java.lang.String) ref;
+          }
         }
-        public Builder setErrorMessage(java.lang.String value) {
+        /**
+         * <code>required string errorMessage = 1;</code>
+         */
+        public com.google.protobuf.ByteString
+            getErrorMessageBytes() {
+          java.lang.Object ref = errorMessage_;
+          if (ref instanceof String) {
+            com.google.protobuf.ByteString b = 
+                com.google.protobuf.ByteString.copyFromUtf8(
+                    (java.lang.String) ref);
+            errorMessage_ = b;
+            return b;
+          } else {
+            return (com.google.protobuf.ByteString) ref;
+          }
+        }
+        /**
+         * <code>required string errorMessage = 1;</code>
+         */
+        public Builder setErrorMessage(
+            java.lang.String value) {
           if (value == null) {
     throw new NullPointerException();
   }
-  result.hasErrorMessage = true;
-          result.errorMessage_ = value;
+  bitField0_ |= 0x00000001;
+          errorMessage_ = value;
+          onChanged();
           return this;
         }
+        /**
+         * <code>required string errorMessage = 1;</code>
+         */
         public Builder clearErrorMessage() {
-          result.hasErrorMessage = false;
-          result.errorMessage_ = getDefaultInstance().getErrorMessage();
+          bitField0_ = (bitField0_ & ~0x00000001);
+          errorMessage_ = getDefaultInstance().getErrorMessage();
+          onChanged();
           return this;
         }
-        
+        /**
+         * <code>required string errorMessage = 1;</code>
+         */
+        public Builder setErrorMessageBytes(
+            com.google.protobuf.ByteString value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+          errorMessage_ = value;
+          onChanged();
+          return this;
+        }
+
         // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.PingResponse.PingError)
       }
-      
+
       static {
         defaultInstance = new PingError(true);
-        org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internalForceInit();
         defaultInstance.initFields();
       }
-      
+
       // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.PingResponse.PingError)
     }
-    
+
+    private int bitField0_;
     // optional .xtreemfs.pbrpc.PingResponse.PingResult result = 1;
     public static final int RESULT_FIELD_NUMBER = 1;
-    private boolean hasResult;
     private org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult result_;
-    public boolean hasResult() { return hasResult; }
-    public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult getResult() { return result_; }
-    
+    /**
+     * <code>optional .xtreemfs.pbrpc.PingResponse.PingResult result = 1;</code>
+     */
+    public boolean hasResult() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>optional .xtreemfs.pbrpc.PingResponse.PingResult result = 1;</code>
+     */
+    public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult getResult() {
+      return result_;
+    }
+    /**
+     * <code>optional .xtreemfs.pbrpc.PingResponse.PingResult result = 1;</code>
+     */
+    public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResultOrBuilder getResultOrBuilder() {
+      return result_;
+    }
+
     // optional .xtreemfs.pbrpc.PingResponse.PingError error = 2;
     public static final int ERROR_FIELD_NUMBER = 2;
-    private boolean hasError;
     private org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError error_;
-    public boolean hasError() { return hasError; }
-    public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError getError() { return error_; }
-    
+    /**
+     * <code>optional .xtreemfs.pbrpc.PingResponse.PingError error = 2;</code>
+     */
+    public boolean hasError() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>optional .xtreemfs.pbrpc.PingResponse.PingError error = 2;</code>
+     */
+    public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError getError() {
+      return error_;
+    }
+    /**
+     * <code>optional .xtreemfs.pbrpc.PingResponse.PingError error = 2;</code>
+     */
+    public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingErrorOrBuilder getErrorOrBuilder() {
+      return error_;
+    }
+
     private void initFields() {
       result_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.getDefaultInstance();
       error_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.getDefaultInstance();
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
       if (hasResult()) {
-        if (!getResult().isInitialized()) return false;
+        if (!getResult().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
       }
       if (hasError()) {
-        if (!getError().isInitialized()) return false;
+        if (!getError().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
       }
+      memoizedIsInitialized = 1;
       return true;
     }
-    
+
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasResult()) {
-        output.writeMessage(1, getResult());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, result_);
       }
-      if (hasError()) {
-        output.writeMessage(2, getError());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeMessage(2, error_);
       }
       getUnknownFields().writeTo(output);
     }
-    
+
     private int memoizedSerializedSize = -1;
     public int getSerializedSize() {
       int size = memoizedSerializedSize;
       if (size != -1) return size;
-    
+
       size = 0;
-      if (hasResult()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, getResult());
+          .computeMessageSize(1, result_);
       }
-      if (hasError()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(2, getError());
+          .computeMessageSize(2, error_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
     }
-    
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
+      return PARSER.parseFrom(data);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(data, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
+      return PARSER.parseFrom(data);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(data, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse parseFrom(java.io.InputStream input)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
+      return PARSER.parseFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(input, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
+      return PARSER.parseDelimitedFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
+      return PARSER.parseFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(input, extensionRegistry);
     }
-    
+
     public static Builder newBuilder() { return Builder.create(); }
     public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder(org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse prototype) {
       return newBuilder().mergeFrom(prototype);
     }
     public Builder toBuilder() { return newBuilder(this); }
-    
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code xtreemfs.pbrpc.PingResponse}
+     */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse result;
-      
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponseOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingResponse_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingResponse_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.Builder.class);
+      }
+
       // Construct using org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse();
-        return builder;
+      private Builder() {
+        maybeForceBuilderInitialization();
       }
-      
-      protected org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse internalGetResult() {
-        return result;
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
       }
-      
-      public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getResultFieldBuilder();
+          getErrorFieldBuilder();
         }
-        result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse();
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        if (resultBuilder_ == null) {
+          result_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.getDefaultInstance();
+        } else {
+          resultBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
+        if (errorBuilder_ == null) {
+          error_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.getDefaultInstance();
+        } else {
+          errorBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
-      
+
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
-      
+
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.getDescriptor();
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_PingResponse_descriptor;
       }
-      
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse getDefaultInstanceForType() {
         return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.getDefaultInstance();
       }
-      
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
-      
-      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse buildParsed()
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
-          throw newUninitializedMessageException(
-            result).asInvalidProtocolBufferException();
-        }
-        return buildPartial();
-      }
-      
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse returnMe = result;
-        result = null;
-        return returnMe;
+        if (resultBuilder_ == null) {
+          result.result_ = result_;
+        } else {
+          result.result_ = resultBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        if (errorBuilder_ == null) {
+          result.error_ = error_;
+        } else {
+          result.error_ = errorBuilder_.build();
+        }
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
-      
+
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse) {
           return mergeFrom((org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse)other);
@@ -1148,7 +1964,7 @@ public final class Ping {
           return this;
         }
       }
-      
+
       public Builder mergeFrom(org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse other) {
         if (other == org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.getDefaultInstance()) return this;
         if (other.hasResult()) {
@@ -1160,329 +1976,548 @@ public final class Ping {
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
-      
+
+      public final boolean isInitialized() {
+        if (hasResult()) {
+          if (!getResult().isInitialized()) {
+            
+            return false;
+          }
+        }
+        if (hasError()) {
+          if (!getError().isInitialized()) {
+            
+            return false;
+          }
+        }
+        return true;
+      }
+
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder(
-            this.getUnknownFields());
-        while (true) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              this.setUnknownFields(unknownFields.build());
-              return this;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                this.setUnknownFields(unknownFields.build());
-                return this;
-              }
-              break;
-            }
-            case 10: {
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.Builder subBuilder = org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.newBuilder();
-              if (hasResult()) {
-                subBuilder.mergeFrom(getResult());
-              }
-              input.readMessage(subBuilder, extensionRegistry);
-              setResult(subBuilder.buildPartial());
-              break;
-            }
-            case 18: {
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.Builder subBuilder = org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.newBuilder();
-              if (hasError()) {
-                subBuilder.mergeFrom(getError());
-              }
-              input.readMessage(subBuilder, extensionRegistry);
-              setError(subBuilder.buildPartial());
-              break;
-            }
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
           }
         }
+        return this;
       }
-      
-      
+      private int bitField0_;
+
       // optional .xtreemfs.pbrpc.PingResponse.PingResult result = 1;
+      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult result_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.Builder, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResultOrBuilder> resultBuilder_;
+      /**
+       * <code>optional .xtreemfs.pbrpc.PingResponse.PingResult result = 1;</code>
+       */
       public boolean hasResult() {
-        return result.hasResult();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
+      /**
+       * <code>optional .xtreemfs.pbrpc.PingResponse.PingResult result = 1;</code>
+       */
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult getResult() {
-        return result.getResult();
+        if (resultBuilder_ == null) {
+          return result_;
+        } else {
+          return resultBuilder_.getMessage();
+        }
       }
+      /**
+       * <code>optional .xtreemfs.pbrpc.PingResponse.PingResult result = 1;</code>
+       */
       public Builder setResult(org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (resultBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          result_ = value;
+          onChanged();
+        } else {
+          resultBuilder_.setMessage(value);
         }
-        result.hasResult = true;
-        result.result_ = value;
+        bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder setResult(org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.Builder builderForValue) {
-        result.hasResult = true;
-        result.result_ = builderForValue.build();
+      /**
+       * <code>optional .xtreemfs.pbrpc.PingResponse.PingResult result = 1;</code>
+       */
+      public Builder setResult(
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.Builder builderForValue) {
+        if (resultBuilder_ == null) {
+          result_ = builderForValue.build();
+          onChanged();
+        } else {
+          resultBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
         return this;
       }
+      /**
+       * <code>optional .xtreemfs.pbrpc.PingResponse.PingResult result = 1;</code>
+       */
       public Builder mergeResult(org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult value) {
-        if (result.hasResult() &&
-            result.result_ != org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.getDefaultInstance()) {
-          result.result_ =
-            org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.newBuilder(result.result_).mergeFrom(value).buildPartial();
+        if (resultBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              result_ != org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.getDefaultInstance()) {
+            result_ =
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.newBuilder(result_).mergeFrom(value).buildPartial();
+          } else {
+            result_ = value;
+          }
+          onChanged();
         } else {
-          result.result_ = value;
+          resultBuilder_.mergeFrom(value);
         }
-        result.hasResult = true;
+        bitField0_ |= 0x00000001;
         return this;
       }
+      /**
+       * <code>optional .xtreemfs.pbrpc.PingResponse.PingResult result = 1;</code>
+       */
       public Builder clearResult() {
-        result.hasResult = false;
-        result.result_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.getDefaultInstance();
-        return this;
-      }
-      
-      // optional .xtreemfs.pbrpc.PingResponse.PingError error = 2;
-      public boolean hasError() {
-        return result.hasError();
-      }
-      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError getError() {
-        return result.getError();
-      }
-      public Builder setError(org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError value) {
-        if (value == null) {
-          throw new NullPointerException();
-        }
-        result.hasError = true;
-        result.error_ = value;
-        return this;
-      }
-      public Builder setError(org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.Builder builderForValue) {
-        result.hasError = true;
-        result.error_ = builderForValue.build();
-        return this;
-      }
-      public Builder mergeError(org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError value) {
-        if (result.hasError() &&
-            result.error_ != org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.getDefaultInstance()) {
-          result.error_ =
-            org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.newBuilder(result.error_).mergeFrom(value).buildPartial();
+        if (resultBuilder_ == null) {
+          result_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.getDefaultInstance();
+          onChanged();
         } else {
-          result.error_ = value;
+          resultBuilder_.clear();
         }
-        result.hasError = true;
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
       }
+      /**
+       * <code>optional .xtreemfs.pbrpc.PingResponse.PingResult result = 1;</code>
+       */
+      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.Builder getResultBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getResultFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.PingResponse.PingResult result = 1;</code>
+       */
+      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResultOrBuilder getResultOrBuilder() {
+        if (resultBuilder_ != null) {
+          return resultBuilder_.getMessageOrBuilder();
+        } else {
+          return result_;
+        }
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.PingResponse.PingResult result = 1;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.Builder, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResultOrBuilder> 
+          getResultFieldBuilder() {
+        if (resultBuilder_ == null) {
+          resultBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.Builder, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResultOrBuilder>(
+                  result_,
+                  getParentForChildren(),
+                  isClean());
+          result_ = null;
+        }
+        return resultBuilder_;
+      }
+
+      // optional .xtreemfs.pbrpc.PingResponse.PingError error = 2;
+      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError error_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.Builder, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingErrorOrBuilder> errorBuilder_;
+      /**
+       * <code>optional .xtreemfs.pbrpc.PingResponse.PingError error = 2;</code>
+       */
+      public boolean hasError() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.PingResponse.PingError error = 2;</code>
+       */
+      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError getError() {
+        if (errorBuilder_ == null) {
+          return error_;
+        } else {
+          return errorBuilder_.getMessage();
+        }
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.PingResponse.PingError error = 2;</code>
+       */
+      public Builder setError(org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError value) {
+        if (errorBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          error_ = value;
+          onChanged();
+        } else {
+          errorBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000002;
+        return this;
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.PingResponse.PingError error = 2;</code>
+       */
+      public Builder setError(
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.Builder builderForValue) {
+        if (errorBuilder_ == null) {
+          error_ = builderForValue.build();
+          onChanged();
+        } else {
+          errorBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000002;
+        return this;
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.PingResponse.PingError error = 2;</code>
+       */
+      public Builder mergeError(org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError value) {
+        if (errorBuilder_ == null) {
+          if (((bitField0_ & 0x00000002) == 0x00000002) &&
+              error_ != org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.getDefaultInstance()) {
+            error_ =
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.newBuilder(error_).mergeFrom(value).buildPartial();
+          } else {
+            error_ = value;
+          }
+          onChanged();
+        } else {
+          errorBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000002;
+        return this;
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.PingResponse.PingError error = 2;</code>
+       */
       public Builder clearError() {
-        result.hasError = false;
-        result.error_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.getDefaultInstance();
+        if (errorBuilder_ == null) {
+          error_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.getDefaultInstance();
+          onChanged();
+        } else {
+          errorBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
-      
+      /**
+       * <code>optional .xtreemfs.pbrpc.PingResponse.PingError error = 2;</code>
+       */
+      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.Builder getErrorBuilder() {
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return getErrorFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.PingResponse.PingError error = 2;</code>
+       */
+      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingErrorOrBuilder getErrorOrBuilder() {
+        if (errorBuilder_ != null) {
+          return errorBuilder_.getMessageOrBuilder();
+        } else {
+          return error_;
+        }
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.PingResponse.PingError error = 2;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.Builder, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingErrorOrBuilder> 
+          getErrorFieldBuilder() {
+        if (errorBuilder_ == null) {
+          errorBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.Builder, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingErrorOrBuilder>(
+                  error_,
+                  getParentForChildren(),
+                  isClean());
+          error_ = null;
+        }
+        return errorBuilder_;
+      }
+
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.PingResponse)
     }
-    
+
     static {
       defaultInstance = new PingResponse(true);
-      org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internalForceInit();
       defaultInstance.initFields();
     }
-    
+
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.PingResponse)
   }
-  
+
+  public interface Ping_emptyRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+  }
+  /**
+   * Protobuf type {@code xtreemfs.pbrpc.Ping_emptyRequest}
+   */
   public static final class Ping_emptyRequest extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements Ping_emptyRequestOrBuilder {
     // Use Ping_emptyRequest.newBuilder() to construct.
-    private Ping_emptyRequest() {
-      initFields();
+    private Ping_emptyRequest(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
     }
-    private Ping_emptyRequest(boolean noInit) {}
-    
+    private Ping_emptyRequest(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
     private static final Ping_emptyRequest defaultInstance;
     public static Ping_emptyRequest getDefaultInstance() {
       return defaultInstance;
     }
-    
+
     public Ping_emptyRequest getDefaultInstanceForType() {
       return defaultInstance;
     }
-    
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private Ping_emptyRequest(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
       return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_Ping_emptyRequest_descriptor;
     }
-    
+
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_Ping_emptyRequest_fieldAccessorTable;
+      return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_Ping_emptyRequest_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest.Builder.class);
     }
-    
+
+    public static com.google.protobuf.Parser<Ping_emptyRequest> PARSER =
+        new com.google.protobuf.AbstractParser<Ping_emptyRequest>() {
+      public Ping_emptyRequest parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new Ping_emptyRequest(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<Ping_emptyRequest> getParserForType() {
+      return PARSER;
+    }
+
     private void initFields() {
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      memoizedIsInitialized = 1;
       return true;
     }
-    
+
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
       getUnknownFields().writeTo(output);
     }
-    
+
     private int memoizedSerializedSize = -1;
     public int getSerializedSize() {
       int size = memoizedSerializedSize;
       if (size != -1) return size;
-    
+
       size = 0;
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
     }
-    
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
+      return PARSER.parseFrom(data);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(data, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
+      return PARSER.parseFrom(data);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(data, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest parseFrom(java.io.InputStream input)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
+      return PARSER.parseFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(input, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
+      return PARSER.parseDelimitedFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
+      return PARSER.parseFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(input, extensionRegistry);
     }
-    
+
     public static Builder newBuilder() { return Builder.create(); }
     public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder(org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest prototype) {
       return newBuilder().mergeFrom(prototype);
     }
     public Builder toBuilder() { return newBuilder(this); }
-    
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code xtreemfs.pbrpc.Ping_emptyRequest}
+     */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest result;
-      
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_Ping_emptyRequest_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_Ping_emptyRequest_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest.Builder.class);
+      }
+
       // Construct using org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest();
-        return builder;
+      private Builder() {
+        maybeForceBuilderInitialization();
       }
-      
-      protected org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest internalGetResult() {
-        return result;
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
       }
-      
-      public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
         }
-        result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest();
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
         return this;
       }
-      
+
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
-      
+
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest.getDescriptor();
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_Ping_emptyRequest_descriptor;
       }
-      
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest getDefaultInstanceForType() {
         return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest.getDefaultInstance();
       }
-      
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
-      
-      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest buildParsed()
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
-          throw newUninitializedMessageException(
-            result).asInvalidProtocolBufferException();
-        }
-        return buildPartial();
-      }
-      
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
-        }
-        org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest returnMe = result;
-        result = null;
-        return returnMe;
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest(this);
+        onBuilt();
+        return result;
       }
-      
+
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest) {
           return mergeFrom((org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest)other);
@@ -1491,243 +2526,307 @@ public final class Ping {
           return this;
         }
       }
-      
+
       public Builder mergeFrom(org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest other) {
         if (other == org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest.getDefaultInstance()) return this;
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
-      
+
+      public final boolean isInitialized() {
+        return true;
+      }
+
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder(
-            this.getUnknownFields());
-        while (true) {
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.Ping_emptyRequest)
+    }
+
+    static {
+      defaultInstance = new Ping_emptyRequest(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.Ping_emptyRequest)
+  }
+
+  public interface Ping_emptyResponseOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+  }
+  /**
+   * Protobuf type {@code xtreemfs.pbrpc.Ping_emptyResponse}
+   */
+  public static final class Ping_emptyResponse extends
+      com.google.protobuf.GeneratedMessage
+      implements Ping_emptyResponseOrBuilder {
+    // Use Ping_emptyResponse.newBuilder() to construct.
+    private Ping_emptyResponse(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private Ping_emptyResponse(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final Ping_emptyResponse defaultInstance;
+    public static Ping_emptyResponse getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public Ping_emptyResponse getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private Ping_emptyResponse(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
           int tag = input.readTag();
           switch (tag) {
             case 0:
-              this.setUnknownFields(unknownFields.build());
-              return this;
+              done = true;
+              break;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
-                this.setUnknownFields(unknownFields.build());
-                return this;
+                done = true;
               }
               break;
             }
           }
         }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
       }
-      
-      
-      // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.Ping_emptyRequest)
     }
-    
-    static {
-      defaultInstance = new Ping_emptyRequest(true);
-      org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internalForceInit();
-      defaultInstance.initFields();
-    }
-    
-    // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.Ping_emptyRequest)
-  }
-  
-  public static final class Ping_emptyResponse extends
-      com.google.protobuf.GeneratedMessage {
-    // Use Ping_emptyResponse.newBuilder() to construct.
-    private Ping_emptyResponse() {
-      initFields();
-    }
-    private Ping_emptyResponse(boolean noInit) {}
-    
-    private static final Ping_emptyResponse defaultInstance;
-    public static Ping_emptyResponse getDefaultInstance() {
-      return defaultInstance;
-    }
-    
-    public Ping_emptyResponse getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-    
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
       return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_Ping_emptyResponse_descriptor;
     }
-    
+
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_Ping_emptyResponse_fieldAccessorTable;
+      return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_Ping_emptyResponse_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse.Builder.class);
     }
-    
+
+    public static com.google.protobuf.Parser<Ping_emptyResponse> PARSER =
+        new com.google.protobuf.AbstractParser<Ping_emptyResponse>() {
+      public Ping_emptyResponse parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new Ping_emptyResponse(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<Ping_emptyResponse> getParserForType() {
+      return PARSER;
+    }
+
     private void initFields() {
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      memoizedIsInitialized = 1;
       return true;
     }
-    
+
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
       getUnknownFields().writeTo(output);
     }
-    
+
     private int memoizedSerializedSize = -1;
     public int getSerializedSize() {
       int size = memoizedSerializedSize;
       if (size != -1) return size;
-    
+
       size = 0;
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
     }
-    
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
+      return PARSER.parseFrom(data);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(data, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
+      return PARSER.parseFrom(data);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(data, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse parseFrom(java.io.InputStream input)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
+      return PARSER.parseFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(input, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
+      return PARSER.parseDelimitedFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
+      return PARSER.parseFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(input, extensionRegistry);
     }
-    
+
     public static Builder newBuilder() { return Builder.create(); }
     public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder(org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse prototype) {
       return newBuilder().mergeFrom(prototype);
     }
     public Builder toBuilder() { return newBuilder(this); }
-    
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code xtreemfs.pbrpc.Ping_emptyResponse}
+     */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse result;
-      
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponseOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_Ping_emptyResponse_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_Ping_emptyResponse_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse.Builder.class);
+      }
+
       // Construct using org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse();
-        return builder;
+      private Builder() {
+        maybeForceBuilderInitialization();
       }
-      
-      protected org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse internalGetResult() {
-        return result;
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
       }
-      
-      public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
         }
-        result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse();
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
         return this;
       }
-      
+
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
-      
+
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse.getDescriptor();
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internal_static_xtreemfs_pbrpc_Ping_emptyResponse_descriptor;
       }
-      
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse getDefaultInstanceForType() {
         return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse.getDefaultInstance();
       }
-      
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
-      
-      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse buildParsed()
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
-          throw newUninitializedMessageException(
-            result).asInvalidProtocolBufferException();
-        }
-        return buildPartial();
-      }
-      
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
-        }
-        org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse returnMe = result;
-        result = null;
-        return returnMe;
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse(this);
+        onBuilt();
+        return result;
       }
-      
+
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse) {
           return mergeFrom((org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse)other);
@@ -1736,337 +2835,46 @@ public final class Ping {
           return this;
         }
       }
-      
+
       public Builder mergeFrom(org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse other) {
         if (other == org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse.getDefaultInstance()) return this;
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
-      
+
+      public final boolean isInitialized() {
+        return true;
+      }
+
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder(
-            this.getUnknownFields());
-        while (true) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              this.setUnknownFields(unknownFields.build());
-              return this;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                this.setUnknownFields(unknownFields.build());
-                return this;
-              }
-              break;
-            }
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
           }
         }
+        return this;
       }
-      
-      
+
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.Ping_emptyResponse)
     }
-    
+
     static {
       defaultInstance = new Ping_emptyResponse(true);
-      org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.internalForceInit();
       defaultInstance.initFields();
     }
-    
+
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.Ping_emptyResponse)
   }
-  
-  public static abstract class PingService
-      implements com.google.protobuf.Service {
-    protected PingService() {}
-    
-    public interface Interface {
-      public abstract void doPing(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse> done);
-      
-      public abstract void emptyPing(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse> done);
-      
-    }
-    
-    public static com.google.protobuf.Service newReflectiveService(
-        final Interface impl) {
-      return new PingService() {
-        @Override
-        public  void doPing(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse> done) {
-          impl.doPing(controller, request, done);
-        }
-        
-        @Override
-        public  void emptyPing(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse> done) {
-          impl.emptyPing(controller, request, done);
-        }
-        
-      };
-    }
-    
-    public static com.google.protobuf.BlockingService
-        newReflectiveBlockingService(final BlockingInterface impl) {
-      return new com.google.protobuf.BlockingService() {
-        public final com.google.protobuf.Descriptors.ServiceDescriptor
-            getDescriptorForType() {
-          return getDescriptor();
-        }
-        
-        public final com.google.protobuf.Message callBlockingMethod(
-            com.google.protobuf.Descriptors.MethodDescriptor method,
-            com.google.protobuf.RpcController controller,
-            com.google.protobuf.Message request)
-            throws com.google.protobuf.ServiceException {
-          if (method.getService() != getDescriptor()) {
-            throw new java.lang.IllegalArgumentException(
-              "Service.callBlockingMethod() given method descriptor for " +
-              "wrong service type.");
-          }
-          switch(method.getIndex()) {
-            case 0:
-              return impl.doPing(controller, (org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest)request);
-            case 1:
-              return impl.emptyPing(controller, (org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest)request);
-            default:
-              throw new java.lang.AssertionError("Can't get here.");
-          }
-        }
-        
-        public final com.google.protobuf.Message
-            getRequestPrototype(
-            com.google.protobuf.Descriptors.MethodDescriptor method) {
-          if (method.getService() != getDescriptor()) {
-            throw new java.lang.IllegalArgumentException(
-              "Service.getRequestPrototype() given method " +
-              "descriptor for wrong service type.");
-          }
-          switch(method.getIndex()) {
-            case 0:
-              return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest.getDefaultInstance();
-            case 1:
-              return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest.getDefaultInstance();
-            default:
-              throw new java.lang.AssertionError("Can't get here.");
-          }
-        }
-        
-        public final com.google.protobuf.Message
-            getResponsePrototype(
-            com.google.protobuf.Descriptors.MethodDescriptor method) {
-          if (method.getService() != getDescriptor()) {
-            throw new java.lang.IllegalArgumentException(
-              "Service.getResponsePrototype() given method " +
-              "descriptor for wrong service type.");
-          }
-          switch(method.getIndex()) {
-            case 0:
-              return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.getDefaultInstance();
-            case 1:
-              return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse.getDefaultInstance();
-            default:
-              throw new java.lang.AssertionError("Can't get here.");
-          }
-        }
-        
-      };
-    }
-    
-    public abstract void doPing(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse> done);
-    
-    public abstract void emptyPing(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse> done);
-    
-    public static final
-        com.google.protobuf.Descriptors.ServiceDescriptor
-        getDescriptor() {
-      return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.getDescriptor().getServices().get(0);
-    }
-    public final com.google.protobuf.Descriptors.ServiceDescriptor
-        getDescriptorForType() {
-      return getDescriptor();
-    }
-    
-    public final void callMethod(
-        com.google.protobuf.Descriptors.MethodDescriptor method,
-        com.google.protobuf.RpcController controller,
-        com.google.protobuf.Message request,
-        com.google.protobuf.RpcCallback<
-          com.google.protobuf.Message> done) {
-      if (method.getService() != getDescriptor()) {
-        throw new java.lang.IllegalArgumentException(
-          "Service.callMethod() given method descriptor for wrong " +
-          "service type.");
-      }
-      switch(method.getIndex()) {
-        case 0:
-          this.doPing(controller, (org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse>specializeCallback(
-              done));
-          return;
-        case 1:
-          this.emptyPing(controller, (org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse>specializeCallback(
-              done));
-          return;
-        default:
-          throw new java.lang.AssertionError("Can't get here.");
-      }
-    }
-    
-    public final com.google.protobuf.Message
-        getRequestPrototype(
-        com.google.protobuf.Descriptors.MethodDescriptor method) {
-      if (method.getService() != getDescriptor()) {
-        throw new java.lang.IllegalArgumentException(
-          "Service.getRequestPrototype() given method " +
-          "descriptor for wrong service type.");
-      }
-      switch(method.getIndex()) {
-        case 0:
-          return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest.getDefaultInstance();
-        case 1:
-          return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest.getDefaultInstance();
-        default:
-          throw new java.lang.AssertionError("Can't get here.");
-      }
-    }
-    
-    public final com.google.protobuf.Message
-        getResponsePrototype(
-        com.google.protobuf.Descriptors.MethodDescriptor method) {
-      if (method.getService() != getDescriptor()) {
-        throw new java.lang.IllegalArgumentException(
-          "Service.getResponsePrototype() given method " +
-          "descriptor for wrong service type.");
-      }
-      switch(method.getIndex()) {
-        case 0:
-          return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.getDefaultInstance();
-        case 1:
-          return org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse.getDefaultInstance();
-        default:
-          throw new java.lang.AssertionError("Can't get here.");
-      }
-    }
-    
-    public static Stub newStub(
-        com.google.protobuf.RpcChannel channel) {
-      return new Stub(channel);
-    }
-    
-    public static final class Stub extends org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingService implements Interface {
-      private Stub(com.google.protobuf.RpcChannel channel) {
-        this.channel = channel;
-      }
-      
-      private final com.google.protobuf.RpcChannel channel;
-      
-      public com.google.protobuf.RpcChannel getChannel() {
-        return channel;
-      }
-      
-      public  void doPing(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(0),
-          controller,
-          request,
-          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.class,
-            org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.getDefaultInstance()));
-      }
-      
-      public  void emptyPing(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(1),
-          controller,
-          request,
-          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse.class,
-            org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse.getDefaultInstance()));
-      }
-    }
-    
-    public static BlockingInterface newBlockingStub(
-        com.google.protobuf.BlockingRpcChannel channel) {
-      return new BlockingStub(channel);
-    }
-    
-    public interface BlockingInterface {
-      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse doPing(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse emptyPing(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest request)
-          throws com.google.protobuf.ServiceException;
-    }
-    
-    private static final class BlockingStub implements BlockingInterface {
-      private BlockingStub(com.google.protobuf.BlockingRpcChannel channel) {
-        this.channel = channel;
-      }
-      
-      private final com.google.protobuf.BlockingRpcChannel channel;
-      
-      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse doPing(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(0),
-          controller,
-          request,
-          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse emptyPing(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(1),
-          controller,
-          request,
-          org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse.getDefaultInstance());
-      }
-      
-    }
-  }
-  
+
   private static com.google.protobuf.Descriptors.Descriptor
     internal_static_xtreemfs_pbrpc_PingRequest_descriptor;
   private static
@@ -2097,7 +2905,7 @@ public final class Ping {
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_xtreemfs_pbrpc_Ping_emptyResponse_fieldAccessorTable;
-  
+
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
     return descriptor;
@@ -2132,53 +2940,43 @@ public final class Ping {
           internal_static_xtreemfs_pbrpc_PingRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_PingRequest_descriptor,
-              new java.lang.String[] { "Text", "SendError", },
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest.class,
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest.Builder.class);
+              new java.lang.String[] { "Text", "SendError", });
           internal_static_xtreemfs_pbrpc_PingResponse_descriptor =
             getDescriptor().getMessageTypes().get(1);
           internal_static_xtreemfs_pbrpc_PingResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_PingResponse_descriptor,
-              new java.lang.String[] { "Result", "Error", },
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.class,
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.Builder.class);
+              new java.lang.String[] { "Result", "Error", });
           internal_static_xtreemfs_pbrpc_PingResponse_PingResult_descriptor =
             internal_static_xtreemfs_pbrpc_PingResponse_descriptor.getNestedTypes().get(0);
           internal_static_xtreemfs_pbrpc_PingResponse_PingResult_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_PingResponse_PingResult_descriptor,
-              new java.lang.String[] { "Text", },
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.class,
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingResult.Builder.class);
+              new java.lang.String[] { "Text", });
           internal_static_xtreemfs_pbrpc_PingResponse_PingError_descriptor =
             internal_static_xtreemfs_pbrpc_PingResponse_descriptor.getNestedTypes().get(1);
           internal_static_xtreemfs_pbrpc_PingResponse_PingError_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_PingResponse_PingError_descriptor,
-              new java.lang.String[] { "ErrorMessage", },
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.class,
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse.PingError.Builder.class);
+              new java.lang.String[] { "ErrorMessage", });
           internal_static_xtreemfs_pbrpc_Ping_emptyRequest_descriptor =
             getDescriptor().getMessageTypes().get(2);
           internal_static_xtreemfs_pbrpc_Ping_emptyRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_Ping_emptyRequest_descriptor,
-              new java.lang.String[] { },
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest.class,
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyRequest.Builder.class);
+              new java.lang.String[] { });
           internal_static_xtreemfs_pbrpc_Ping_emptyResponse_descriptor =
             getDescriptor().getMessageTypes().get(3);
           internal_static_xtreemfs_pbrpc_Ping_emptyResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_Ping_emptyResponse_descriptor,
-              new java.lang.String[] { },
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse.class,
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.Ping_emptyResponse.Builder.class);
+              new java.lang.String[] { });
           com.google.protobuf.ExtensionRegistry registry =
             com.google.protobuf.ExtensionRegistry.newInstance();
-          registerAllExtensions(registry);
-          org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.registerAllExtensions(registry);
+          registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.procId);
+          registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.dataIn);
+          registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.procId);
+          registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.interfaceId);
           return registry;
         }
       };
@@ -2188,8 +2986,6 @@ public final class Ping {
           org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.getDescriptor(),
         }, assigner);
   }
-  
-  public static void internalForceInit() {}
-  
+
   // @@protoc_insertion_point(outer_class_scope)
 }

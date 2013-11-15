@@ -157,7 +157,7 @@ class Server:
                 classpath = (
                              XtreemFS_jar_file_path,
                              os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "BabuDB.jar")),
-                             os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "protobuf-java-2.3.0.jar")),
+                             os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "protobuf-java-2.5.0.jar")),
                              os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "flease", "dist", "Flease.jar")),
                              os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "foundation", "dist", "Foundation.jar")),
                              os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "jdmkrt.jar")),
@@ -167,7 +167,7 @@ class Server:
                 classpath = (
                              os.path.join("/usr/share/java", "XtreemFS.jar"),
                              os.path.join("/usr/share/java", "BabuDB.jar"),
-                             os.path.join("/usr/share/java", "protobuf-java-2.3.0.jar"),
+                             os.path.join("/usr/share/java", "protobuf-java-2.5.0.jar"),
                              os.path.join("/usr/share/java", "Flease.jar"),
                              os.path.join("/usr/share/java", "Foundation.jar"),
                              os.path.join("/usr/share/java", "jdmkrt.jar"),

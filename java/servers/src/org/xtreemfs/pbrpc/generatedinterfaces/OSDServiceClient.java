@@ -1,17 +1,18 @@
-//automatically generated from OSD.proto at Thu Mar 21 17:09:46 CET 2013
+//automatically generated from OSD.proto at Mon Nov 11 11:46:59 CET 2013
 //(c) 2013. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.List;
-
+import java.net.InetSocketAddress;
+import com.google.protobuf.Message;
+import com.google.protobuf.ByteString;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
-import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
+import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 
 public class OSDServiceClient {
 
