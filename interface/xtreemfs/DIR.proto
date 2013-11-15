@@ -49,8 +49,8 @@ message AddressMapping {
   required string address = 4;
   // TCP/UDP port number.
   required fixed32 port = 5;
-  // Matching network, unused at the moment.
-  // Must be "*".
+  // Matching network. There has to exist exactly one default address 
+  // accessible from any network for which this is set to "*".
   required string match_network = 6;
   // Time to live in seconds before the
   // entry should be evicted from caches.

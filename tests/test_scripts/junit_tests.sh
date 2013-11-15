@@ -21,11 +21,12 @@ then
 fi
 echo "XTREEMFS=$XTREEMFS"
 
-# Method which returns a regex list of possible ports in use by the server webinterfaces.
-function get_webinterface_ports() {
+# Method which returns a regex list of possible ports in use by the server webinterface and RPC server.
+function get_xtreemfs_ports() {
   offset=$(grep "PORT_RANGE_OFFSET = " "${XTREEMFS}/java/servers/test/org/xtreemfs/test/SetupUtils.java" | grep -oE "[0-9]+")
   
-  default_ports="30638 30636 30639 29637 29640 29641 29642 32638 32636 32639 32637 32640 32641 32642"
+  default_ports="30638 30636 30639 29637 29640 29641 29642 29643 29644 29645 29646 29647 29648 29649 29650 29651 32638 32636 32639 32637 32640 32641 32642 32643 32644 32645 32646 32647 32648 32649 32650 32651"
+  
   for port in $default_ports
   do
     default_ports=${default_ports/$port/$(($port + $offset))}
@@ -38,9 +39,11 @@ function get_webinterface_ports() {
 # The used Sun webserver does allow to set the socket option SO_REUSEADDR.
 # Therefore, a subsequent JUnit test may fail with "address already in use"
 # because the webinterface of an XtreemFS server from a previous test is still
-# in the TIME_WAIT state
+# in the TIME_WAIT state.
+# Additionally, it also checks for regular ports since ReplicationTest keeps
+# failing with BindException despite enabled SO_REUSEADDR.
 function wait_for_time_wait_ports() {
-  ports_regex=$(get_webinterface_ports)
+  ports_regex=$(get_xtreemfs_ports)
   
   while [ -n "$(netstat -n -l -t | grep -E "$ports_regex")" ]
   do

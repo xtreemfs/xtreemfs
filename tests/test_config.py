@@ -223,7 +223,8 @@ Tests = [
         'name': 'xtfs_scrub test',
         'file': 'system_scrub_test.sh',
         'VolumeConfigs': ['nomdcache'],
-        'TestSets': [ 'full', 'short', 'short-ssl' ]
+        #'TestSets': [ 'full', 'short', 'short-ssl' ]
+        'TestSets': []
     },
     {
         'name': 'Add and delete replica manually (read-only replication)',

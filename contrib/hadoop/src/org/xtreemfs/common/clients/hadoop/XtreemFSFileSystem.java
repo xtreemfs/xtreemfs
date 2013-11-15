@@ -54,13 +54,17 @@ public class XtreemFSFileSystem extends FileSystem {
     private Path            workingDirectory;
     private UserCredentials userCredentials;
     private long            stripeSize;
+    private boolean         useReadBuffer;
+    private boolean         useWriteBuffer;
+    private int             readBufferSize;
+    private int             writeBufferSize;
 
     @Override
     public void initialize(URI uri, Configuration conf) throws IOException {
         super.initialize(uri, conf);
 
         int logLevel = Logging.LEVEL_WARN;
-        if (conf.getBoolean("xtreemfs.client.debug", false)) {
+        if (conf.getBoolean("xtreemfs.client.debug", true)) {
             logLevel = Logging.LEVEL_DEBUG;
         }
 
@@ -71,33 +75,40 @@ public class XtreemFSFileSystem extends FileSystem {
 
         String volumeName = conf.get("xtreemfs.volumeName");
         if (volumeName == null) {
-            throw new IOException("You have to specify a volume name in"
-                    + " core-site.xml! (xtreemfs.volumeName)");
+            throw new IOException("You have to specify a volume name in" + " core-site.xml! (xtreemfs.volumeName)");
         }
 
+        useReadBuffer = conf.getBoolean("xtreemfs.io.buffer.read", false);
+    	readBufferSize = conf.getInt("xtreemfs.io.buffer.size.read", 0);     	
+    	if (useReadBuffer && readBufferSize == 0) {
+    		useReadBuffer = false;
+    	}
+    	
+        useWriteBuffer = conf.getBoolean("xtreemfs.io.buffer.write", false);
+        writeBufferSize = conf.getInt("xtreemfs.io.buffer.size.write", 0);
+    	if (useWriteBuffer && writeBufferSize == 0) {
+    		useWriteBuffer = false;
+    	}
+        
         // create UserCredentials
         if ((conf.get("xtreemfs.client.userid") != null) && (conf.get("xtreemfs.client.groupid") != null)) {
-            userCredentials =
-                    UserCredentials.newBuilder().setUsername(conf.get("xtreemfs.client.userid"))
-                            .addGroups(conf.get("xtreemfs.client.groupid")).build();
+            userCredentials = UserCredentials.newBuilder().setUsername(conf.get("xtreemfs.client.userid"))
+                    .addGroups(conf.get("xtreemfs.client.groupid")).build();
         }
         if (userCredentials == null) {
             if (System.getProperty("user.name") != null) {
-                userCredentials =
-                        UserCredentials.newBuilder().setUsername(System.getProperty("user.name"))
-                                .addGroups("users").build();
+                userCredentials = UserCredentials.newBuilder().setUsername(System.getProperty("user.name"))
+                        .addGroups("users").build();
             } else {
-                userCredentials =
-                        UserCredentials.newBuilder().setUsername("xtreemfs").addGroups("xtreemfs").build();
+                userCredentials = UserCredentials.newBuilder().setUsername("xtreemfs").addGroups("xtreemfs").build();
             }
         }
 
         // initialize XtreemFS Client with default Options and without SSL.
         Options xtreemfsOptions = new Options();
         xtreemfsOptions.setMetadataCacheSize(0);
-        xtreemfsClient =
-                ClientFactory.createClient(uri.getHost() + ":" + uri.getPort(), userCredentials,
-                        xtreemfsOptions.generateSSLOptions(), xtreemfsOptions);
+        xtreemfsClient = ClientFactory.createClient(uri.getHost() + ":" + uri.getPort(), userCredentials,
+                xtreemfsOptions.generateSSLOptions(), xtreemfsOptions);
         try {
             // TODO: Fix stupid Exception in libxtreemfs
             xtreemfsClient.start();
@@ -137,33 +148,29 @@ public class XtreemFSFileSystem extends FileSystem {
     @Override
     public FSDataInputStream open(Path path, int bufferSize) throws IOException {
         final String pathString = makeAbsolute(path).toUri().getPath();
-        final FileHandle fileHandle =
-                xtreemfsVolume.openFile(userCredentials, pathString,
-                        SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber(), 0);
+        final FileHandle fileHandle = xtreemfsVolume.openFile(userCredentials, pathString,
+                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber(), 0);
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "Opening file %s", pathString);
         }
         statistics.incrementReadOps(1);
-
-        return new FSDataInputStream(new XtreemFSInputStream(userCredentials, fileHandle, pathString,
-                statistics));
+        return new FSDataInputStream(new XtreemFSInputStream(userCredentials, fileHandle, pathString, useReadBuffer,
+                readBufferSize, statistics));
     }
 
     @Override
-    public FSDataOutputStream create(Path path, FsPermission fp, boolean overwrite, int bufferSize,
-            short replication, long blockSize, Progressable p) throws IOException {
+    public FSDataOutputStream create(Path path, FsPermission fp, boolean overwrite, int bufferSize, short replication,
+            long blockSize, Progressable p) throws IOException {
         // block replication for the file
         final String pathString = makeAbsolute(path).toUri().getPath();
-        int flags =
-                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber()
-                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber();
+        int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber()
+                | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber();
         if (overwrite) {
             flags |= SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber();
         }
 
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Creating file %s. Overwrite = %s", pathString,
-                    overwrite);
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Creating file %s. Overwrite = %s", pathString, overwrite);
         }
 
         // If some of the parent directories don't exist they should be created.
@@ -178,11 +185,10 @@ public class XtreemFSFileSystem extends FileSystem {
             }
         }
 
-        final FileHandle fileHandle =
-                xtreemfsVolume.openFile(userCredentials, pathString, flags, fp.toShort());
+        final FileHandle fileHandle = xtreemfsVolume.openFile(userCredentials, pathString, flags, fp.toShort());
         statistics.incrementWriteOps(1);
-        return new FSDataOutputStream(new XtreemFSFileOutputStream(userCredentials, fileHandle, pathString),
-                statistics);
+        return new FSDataOutputStream(new XtreemFSFileOutputStream(userCredentials, fileHandle, pathString,
+                useWriteBuffer, writeBufferSize), statistics);
     }
 
     @Override
@@ -196,8 +202,7 @@ public class XtreemFSFileSystem extends FileSystem {
         final String destPath = makeAbsolute(dest).toUri().getPath();
         xtreemfsVolume.rename(userCredentials, srcPath, destPath);
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Renamed file/dir. src: %s, dst: %s", srcPath,
-                    destPath);
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Renamed file/dir. src: %s, dst: %s", srcPath, destPath);
         }
         statistics.incrementWriteOps(1);
         return true;
@@ -348,14 +353,13 @@ public class XtreemFSFileSystem extends FileSystem {
             if (isDir) {
                 // for directories, set blocksize to 0
                 fileStatus.add(new FileStatus(0, isDir, 1, 0, (long) (stat.getMtimeNs() / 1e6), (long) (stat
-                        .getAtimeNs() / 1e6), new FsPermission((short) stat.getMode()), stat.getUserId(),
-                        stat.getGroupId(), new Path(makeAbsolute(path), entry.getName())));
+                        .getAtimeNs() / 1e6), new FsPermission((short) stat.getMode()), stat.getUserId(), stat
+                        .getGroupId(), new Path(makeAbsolute(path), entry.getName())));
             } else {
                 // for files, set blocksize to stripeSize of the volume
-                fileStatus.add(new FileStatus(stat.getSize(), isDir, 1, stripeSize,
-                        (long) (stat.getMtimeNs() / 1e6), (long) (stat.getAtimeNs() / 1e6), new FsPermission(
-                                (short) stat.getMode()), stat.getUserId(), stat.getGroupId(), new Path(
-                                makeAbsolute(path), entry.getName())));
+                fileStatus.add(new FileStatus(stat.getSize(), isDir, 1, stripeSize, (long) (stat.getMtimeNs() / 1e6),
+                        (long) (stat.getAtimeNs() / 1e6), new FsPermission((short) stat.getMode()), stat.getUserId(),
+                        stat.getGroupId(), new Path(makeAbsolute(path), entry.getName())));
             }
         }
         return fileStatus.toArray(new FileStatus[fileStatus.size()]);
@@ -420,14 +424,13 @@ public class XtreemFSFileSystem extends FileSystem {
         final boolean isDir = isXtreemFSDirectory(stat);
         if (isDir) {
             // for directories, set blocksize to 0
-            return new FileStatus(0, isDir, 1, 0, (long) (stat.getMtimeNs() / 1e6),
-                    (long) (stat.getAtimeNs() / 1e6), new FsPermission((short) stat.getMode()),
-                    stat.getUserId(), stat.getGroupId(), makeAbsolute(path));
+            return new FileStatus(0, isDir, 1, 0, (long) (stat.getMtimeNs() / 1e6), (long) (stat.getAtimeNs() / 1e6),
+                    new FsPermission((short) stat.getMode()), stat.getUserId(), stat.getGroupId(), makeAbsolute(path));
         } else {
             // for files, set blocksize to stripesize of the volume
             return new FileStatus(stat.getSize(), isDir, 1, stripeSize, (long) (stat.getMtimeNs() / 1e6),
-                    (long) (stat.getAtimeNs() / 1e6), new FsPermission((short) stat.getMode()),
-                    stat.getUserId(), stat.getGroupId(), makeAbsolute(path));
+                    (long) (stat.getAtimeNs() / 1e6), new FsPermission((short) stat.getMode()), stat.getUserId(),
+                    stat.getGroupId(), makeAbsolute(path));
         }
     }
 

@@ -7,7 +7,6 @@
  */
 package org.xtreemfs.test.common.uuid;
 
-import com.google.protobuf.Message.Builder;
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.List;

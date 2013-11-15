@@ -43,7 +43,7 @@ PLUGIN_CONFIG_DIR=$(XTREEMFS_CONFIG_DIR)/server-repl-plugin
 
 #Configuration of cpp code thirdparty dependencies.
 # If you edit the next five variables, make sure you also change them in cpp/CMakeLists.txt.
-CLIENT_GOOGLE_PROTOBUF_CPP = cpp/thirdparty/protobuf-2.3.0
+CLIENT_GOOGLE_PROTOBUF_CPP = cpp/thirdparty/protobuf-2.5.0
 CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY = $(CLIENT_GOOGLE_PROTOBUF_CPP)/src/.libs/libprotobuf.a
 CLIENT_GOOGLE_TEST_CPP = cpp/thirdparty/gtest-1.5.0
 CLIENT_GOOGLE_TEST_CPP_LIBRARY = $(CLIENT_GOOGLE_TEST_CPP)/lib/.libs/libgtest.a
@@ -214,7 +214,7 @@ client_thirdparty: $(CLIENT_THIRDPARTY_REQUIREMENTS)
 
 $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY): $(CLIENT_GOOGLE_PROTOBUF_CPP)/src/**
 	@echo "client_thirdparty: Configuring and building required Google protobuf library..."
-	@cd $(CLIENT_GOOGLE_PROTOBUF_CPP) && ./configure $(PROTOBUF_DISABLE_64_BIT_SOLARIS) >/dev/null
+	@cd $(CLIENT_GOOGLE_PROTOBUF_CPP) && LIBS=-lpthread ./configure $(PROTOBUF_DISABLE_64_BIT_SOLARIS) >/dev/null
 	@$(MAKE) -C $(CLIENT_GOOGLE_PROTOBUF_CPP) >/dev/null
 	@echo "client_thirdparty: ...completed building required Google protobuf library."
 	@touch $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY)

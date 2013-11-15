@@ -8,16 +8,69 @@ public final class RPC {
   public static void registerAllExtensions(
       com.google.protobuf.ExtensionRegistry registry) {
   }
+  /**
+   * Protobuf enum {@code xtreemfs.pbrpc.MessageType}
+   *
+   * <pre>
+   * Encodes the type of the RPC message sent.
+   * </pre>
+   */
   public enum MessageType
       implements com.google.protobuf.ProtocolMessageEnum {
+    /**
+     * <code>RPC_REQUEST = 0;</code>
+     *
+     * <pre>
+     * RPC request to execute method.
+     * </pre>
+     */
     RPC_REQUEST(0, 0),
+    /**
+     * <code>RPC_RESPONSE_SUCCESS = 1;</code>
+     *
+     * <pre>
+     * RPC response after successful execution of method.
+     * </pre>
+     */
     RPC_RESPONSE_SUCCESS(1, 1),
+    /**
+     * <code>RPC_RESPONSE_ERROR = 2;</code>
+     *
+     * <pre>
+     * RPC response when execution of a method failed, including POSIX errors.
+     * </pre>
+     */
     RPC_RESPONSE_ERROR(2, 2),
     ;
-    
-    
+
+    /**
+     * <code>RPC_REQUEST = 0;</code>
+     *
+     * <pre>
+     * RPC request to execute method.
+     * </pre>
+     */
+    public static final int RPC_REQUEST_VALUE = 0;
+    /**
+     * <code>RPC_RESPONSE_SUCCESS = 1;</code>
+     *
+     * <pre>
+     * RPC response after successful execution of method.
+     * </pre>
+     */
+    public static final int RPC_RESPONSE_SUCCESS_VALUE = 1;
+    /**
+     * <code>RPC_RESPONSE_ERROR = 2;</code>
+     *
+     * <pre>
+     * RPC response when execution of a method failed, including POSIX errors.
+     * </pre>
+     */
+    public static final int RPC_RESPONSE_ERROR_VALUE = 2;
+
+
     public final int getNumber() { return value; }
-    
+
     public static MessageType valueOf(int value) {
       switch (value) {
         case 0: return RPC_REQUEST;
@@ -26,7 +79,7 @@ public final class RPC {
         default: return null;
       }
     }
-    
+
     public static com.google.protobuf.Internal.EnumLiteMap<MessageType>
         internalGetValueMap() {
       return internalValueMap;
@@ -35,10 +88,10 @@ public final class RPC {
         internalValueMap =
           new com.google.protobuf.Internal.EnumLiteMap<MessageType>() {
             public MessageType findValueByNumber(int number) {
-              return MessageType.valueOf(number)
-    ;        }
+              return MessageType.valueOf(number);
+            }
           };
-    
+
     public final com.google.protobuf.Descriptors.EnumValueDescriptor
         getValueDescriptor() {
       return getDescriptor().getValues().get(index);
@@ -51,10 +104,9 @@ public final class RPC {
         getDescriptor() {
       return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.getDescriptor().getEnumTypes().get(0);
     }
-    
-    private static final MessageType[] VALUES = {
-      RPC_REQUEST, RPC_RESPONSE_SUCCESS, RPC_RESPONSE_ERROR, 
-    };
+
+    private static final MessageType[] VALUES = values();
+
     public static MessageType valueOf(
         com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
       if (desc.getType() != getDescriptor()) {
@@ -63,29 +115,65 @@ public final class RPC {
       }
       return VALUES[desc.getIndex()];
     }
+
     private final int index;
     private final int value;
+
     private MessageType(int index, int value) {
       this.index = index;
       this.value = value;
     }
-    
-    static {
-      org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.getDescriptor();
-    }
-    
+
     // @@protoc_insertion_point(enum_scope:xtreemfs.pbrpc.MessageType)
   }
-  
+
+  /**
+   * Protobuf enum {@code xtreemfs.pbrpc.AuthType}
+   *
+   * <pre>
+   * Authentication type provided for request.
+   * </pre>
+   */
   public enum AuthType
       implements com.google.protobuf.ProtocolMessageEnum {
+    /**
+     * <code>AUTH_NONE = 0;</code>
+     *
+     * <pre>
+     * No authentication.
+     * </pre>
+     */
     AUTH_NONE(0, 0),
+    /**
+     * <code>AUTH_PASSWORD = 1;</code>
+     *
+     * <pre>
+     * Plain text admin password authentication.
+     * </pre>
+     */
     AUTH_PASSWORD(1, 1),
     ;
-    
-    
+
+    /**
+     * <code>AUTH_NONE = 0;</code>
+     *
+     * <pre>
+     * No authentication.
+     * </pre>
+     */
+    public static final int AUTH_NONE_VALUE = 0;
+    /**
+     * <code>AUTH_PASSWORD = 1;</code>
+     *
+     * <pre>
+     * Plain text admin password authentication.
+     * </pre>
+     */
+    public static final int AUTH_PASSWORD_VALUE = 1;
+
+
     public final int getNumber() { return value; }
-    
+
     public static AuthType valueOf(int value) {
       switch (value) {
         case 0: return AUTH_NONE;
@@ -93,7 +181,7 @@ public final class RPC {
         default: return null;
       }
     }
-    
+
     public static com.google.protobuf.Internal.EnumLiteMap<AuthType>
         internalGetValueMap() {
       return internalValueMap;
@@ -102,10 +190,10 @@ public final class RPC {
         internalValueMap =
           new com.google.protobuf.Internal.EnumLiteMap<AuthType>() {
             public AuthType findValueByNumber(int number) {
-              return AuthType.valueOf(number)
-    ;        }
+              return AuthType.valueOf(number);
+            }
           };
-    
+
     public final com.google.protobuf.Descriptors.EnumValueDescriptor
         getValueDescriptor() {
       return getDescriptor().getValues().get(index);
@@ -118,10 +206,9 @@ public final class RPC {
         getDescriptor() {
       return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.getDescriptor().getEnumTypes().get(1);
     }
-    
-    private static final AuthType[] VALUES = {
-      AUTH_NONE, AUTH_PASSWORD, 
-    };
+
+    private static final AuthType[] VALUES = values();
+
     public static AuthType valueOf(
         com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
       if (desc.getType() != getDescriptor()) {
@@ -130,35 +217,163 @@ public final class RPC {
       }
       return VALUES[desc.getIndex()];
     }
+
     private final int index;
     private final int value;
+
     private AuthType(int index, int value) {
       this.index = index;
       this.value = value;
     }
-    
-    static {
-      org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.getDescriptor();
-    }
-    
+
     // @@protoc_insertion_point(enum_scope:xtreemfs.pbrpc.AuthType)
   }
-  
+
+  /**
+   * Protobuf enum {@code xtreemfs.pbrpc.ErrorType}
+   *
+   * <pre>
+   * Error types.
+   * </pre>
+   */
   public enum ErrorType
       implements com.google.protobuf.ProtocolMessageEnum {
+    /**
+     * <code>INVALID_INTERFACE_ID = 1;</code>
+     *
+     * <pre>
+     * Requested interface_id not implemented by server.
+     * </pre>
+     */
     INVALID_INTERFACE_ID(0, 1),
+    /**
+     * <code>INVALID_PROC_ID = 2;</code>
+     *
+     * <pre>
+     * Requested procedure_id not implemented by serevr.
+     * </pre>
+     */
     INVALID_PROC_ID(1, 2),
+    /**
+     * <code>GARBAGE_ARGS = 3;</code>
+     *
+     * <pre>
+     * Server cannot parse the RPC request.
+     * </pre>
+     */
     GARBAGE_ARGS(2, 3),
+    /**
+     * <code>AUTH_FAILED = 4;</code>
+     *
+     * <pre>
+     * Authentication failed, access denied.
+     * </pre>
+     */
     AUTH_FAILED(3, 4),
+    /**
+     * <code>INTERNAL_SERVER_ERROR = 5;</code>
+     *
+     * <pre>
+     * Unspecific internal server error that caused the RPC to fail.
+     * </pre>
+     */
     INTERNAL_SERVER_ERROR(4, 5),
+    /**
+     * <code>ERRNO = 6;</code>
+     *
+     * <pre>
+     * POSIX errno error (not necessarily a failure), e.g. ENOENT.
+     * POSIXErrno contains details that can be passed to an application.
+     * </pre>
+     */
     ERRNO(5, 6),
+    /**
+     * <code>REDIRECT = 7;</code>
+     *
+     * <pre>
+     * Server redirects to another server implementing the same interface.
+     * </pre>
+     */
     REDIRECT(6, 7),
+    /**
+     * <code>IO_ERROR = 100;</code>
+     *
+     * <pre>
+     * Generic IO_ERROR to be used by the RPC implementation.
+     * </pre>
+     */
     IO_ERROR(7, 100),
     ;
-    
-    
+
+    /**
+     * <code>INVALID_INTERFACE_ID = 1;</code>
+     *
+     * <pre>
+     * Requested interface_id not implemented by server.
+     * </pre>
+     */
+    public static final int INVALID_INTERFACE_ID_VALUE = 1;
+    /**
+     * <code>INVALID_PROC_ID = 2;</code>
+     *
+     * <pre>
+     * Requested procedure_id not implemented by serevr.
+     * </pre>
+     */
+    public static final int INVALID_PROC_ID_VALUE = 2;
+    /**
+     * <code>GARBAGE_ARGS = 3;</code>
+     *
+     * <pre>
+     * Server cannot parse the RPC request.
+     * </pre>
+     */
+    public static final int GARBAGE_ARGS_VALUE = 3;
+    /**
+     * <code>AUTH_FAILED = 4;</code>
+     *
+     * <pre>
+     * Authentication failed, access denied.
+     * </pre>
+     */
+    public static final int AUTH_FAILED_VALUE = 4;
+    /**
+     * <code>INTERNAL_SERVER_ERROR = 5;</code>
+     *
+     * <pre>
+     * Unspecific internal server error that caused the RPC to fail.
+     * </pre>
+     */
+    public static final int INTERNAL_SERVER_ERROR_VALUE = 5;
+    /**
+     * <code>ERRNO = 6;</code>
+     *
+     * <pre>
+     * POSIX errno error (not necessarily a failure), e.g. ENOENT.
+     * POSIXErrno contains details that can be passed to an application.
+     * </pre>
+     */
+    public static final int ERRNO_VALUE = 6;
+    /**
+     * <code>REDIRECT = 7;</code>
+     *
+     * <pre>
+     * Server redirects to another server implementing the same interface.
+     * </pre>
+     */
+    public static final int REDIRECT_VALUE = 7;
+    /**
+     * <code>IO_ERROR = 100;</code>
+     *
+     * <pre>
+     * Generic IO_ERROR to be used by the RPC implementation.
+     * </pre>
+     */
+    public static final int IO_ERROR_VALUE = 100;
+
+
     public final int getNumber() { return value; }
-    
+
     public static ErrorType valueOf(int value) {
       switch (value) {
         case 1: return INVALID_INTERFACE_ID;
@@ -172,7 +387,7 @@ public final class RPC {
         default: return null;
       }
     }
-    
+
     public static com.google.protobuf.Internal.EnumLiteMap<ErrorType>
         internalGetValueMap() {
       return internalValueMap;
@@ -181,10 +396,10 @@ public final class RPC {
         internalValueMap =
           new com.google.protobuf.Internal.EnumLiteMap<ErrorType>() {
             public ErrorType findValueByNumber(int number) {
-              return ErrorType.valueOf(number)
-    ;        }
+              return ErrorType.valueOf(number);
+            }
           };
-    
+
     public final com.google.protobuf.Descriptors.EnumValueDescriptor
         getValueDescriptor() {
       return getDescriptor().getValues().get(index);
@@ -197,10 +412,9 @@ public final class RPC {
         getDescriptor() {
       return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.getDescriptor().getEnumTypes().get(2);
     }
-    
-    private static final ErrorType[] VALUES = {
-      INVALID_INTERFACE_ID, INVALID_PROC_ID, GARBAGE_ARGS, AUTH_FAILED, INTERNAL_SERVER_ERROR, ERRNO, REDIRECT, IO_ERROR, 
-    };
+
+    private static final ErrorType[] VALUES = values();
+
     public static ErrorType valueOf(
         com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
       if (desc.getType() != getDescriptor()) {
@@ -209,42 +423,156 @@ public final class RPC {
       }
       return VALUES[desc.getIndex()];
     }
+
     private final int index;
     private final int value;
+
     private ErrorType(int index, int value) {
       this.index = index;
       this.value = value;
     }
-    
-    static {
-      org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.getDescriptor();
-    }
-    
+
     // @@protoc_insertion_point(enum_scope:xtreemfs.pbrpc.ErrorType)
   }
-  
+
+  /**
+   * Protobuf enum {@code xtreemfs.pbrpc.POSIXErrno}
+   *
+   * <pre>
+   * Additional error code which can be passed to applications.
+   * See errno.h for details. Values are equivalent to Linux
+   * values, but are different for other unix platforms such as
+   * Mac OS X and Solaris!
+   * </pre>
+   */
   public enum POSIXErrno
       implements com.google.protobuf.ProtocolMessageEnum {
+    /**
+     * <code>POSIX_ERROR_NONE = 9999;</code>
+     */
     POSIX_ERROR_NONE(0, 9999),
+    /**
+     * <code>POSIX_ERROR_EPERM = 1;</code>
+     */
     POSIX_ERROR_EPERM(1, 1),
+    /**
+     * <code>POSIX_ERROR_ENOENT = 2;</code>
+     */
     POSIX_ERROR_ENOENT(2, 2),
+    /**
+     * <code>POSIX_ERROR_EINTR = 4;</code>
+     */
     POSIX_ERROR_EINTR(3, 4),
+    /**
+     * <code>POSIX_ERROR_EIO = 5;</code>
+     */
     POSIX_ERROR_EIO(4, 5),
+    /**
+     * <code>POSIX_ERROR_EAGAIN = 11;</code>
+     */
     POSIX_ERROR_EAGAIN(5, 11),
+    /**
+     * <code>POSIX_ERROR_EACCES = 13;</code>
+     */
     POSIX_ERROR_EACCES(6, 13),
+    /**
+     * <code>POSIX_ERROR_EEXIST = 17;</code>
+     */
     POSIX_ERROR_EEXIST(7, 17),
+    /**
+     * <code>POSIX_ERROR_EXDEV = 18;</code>
+     */
     POSIX_ERROR_EXDEV(8, 18),
+    /**
+     * <code>POSIX_ERROR_ENODEV = 19;</code>
+     */
     POSIX_ERROR_ENODEV(9, 19),
+    /**
+     * <code>POSIX_ERROR_ENOTDIR = 20;</code>
+     */
     POSIX_ERROR_ENOTDIR(10, 20),
+    /**
+     * <code>POSIX_ERROR_EISDIR = 21;</code>
+     */
     POSIX_ERROR_EISDIR(11, 21),
+    /**
+     * <code>POSIX_ERROR_EINVAL = 22;</code>
+     */
     POSIX_ERROR_EINVAL(12, 22),
+    /**
+     * <code>POSIX_ERROR_ENOTEMPTY = 39;</code>
+     */
     POSIX_ERROR_ENOTEMPTY(13, 39),
+    /**
+     * <code>POSIX_ERROR_ENODATA = 61;</code>
+     */
     POSIX_ERROR_ENODATA(14, 61),
     ;
-    
-    
+
+    /**
+     * <code>POSIX_ERROR_NONE = 9999;</code>
+     */
+    public static final int POSIX_ERROR_NONE_VALUE = 9999;
+    /**
+     * <code>POSIX_ERROR_EPERM = 1;</code>
+     */
+    public static final int POSIX_ERROR_EPERM_VALUE = 1;
+    /**
+     * <code>POSIX_ERROR_ENOENT = 2;</code>
+     */
+    public static final int POSIX_ERROR_ENOENT_VALUE = 2;
+    /**
+     * <code>POSIX_ERROR_EINTR = 4;</code>
+     */
+    public static final int POSIX_ERROR_EINTR_VALUE = 4;
+    /**
+     * <code>POSIX_ERROR_EIO = 5;</code>
+     */
+    public static final int POSIX_ERROR_EIO_VALUE = 5;
+    /**
+     * <code>POSIX_ERROR_EAGAIN = 11;</code>
+     */
+    public static final int POSIX_ERROR_EAGAIN_VALUE = 11;
+    /**
+     * <code>POSIX_ERROR_EACCES = 13;</code>
+     */
+    public static final int POSIX_ERROR_EACCES_VALUE = 13;
+    /**
+     * <code>POSIX_ERROR_EEXIST = 17;</code>
+     */
+    public static final int POSIX_ERROR_EEXIST_VALUE = 17;
+    /**
+     * <code>POSIX_ERROR_EXDEV = 18;</code>
+     */
+    public static final int POSIX_ERROR_EXDEV_VALUE = 18;
+    /**
+     * <code>POSIX_ERROR_ENODEV = 19;</code>
+     */
+    public static final int POSIX_ERROR_ENODEV_VALUE = 19;
+    /**
+     * <code>POSIX_ERROR_ENOTDIR = 20;</code>
+     */
+    public static final int POSIX_ERROR_ENOTDIR_VALUE = 20;
+    /**
+     * <code>POSIX_ERROR_EISDIR = 21;</code>
+     */
+    public static final int POSIX_ERROR_EISDIR_VALUE = 21;
+    /**
+     * <code>POSIX_ERROR_EINVAL = 22;</code>
+     */
+    public static final int POSIX_ERROR_EINVAL_VALUE = 22;
+    /**
+     * <code>POSIX_ERROR_ENOTEMPTY = 39;</code>
+     */
+    public static final int POSIX_ERROR_ENOTEMPTY_VALUE = 39;
+    /**
+     * <code>POSIX_ERROR_ENODATA = 61;</code>
+     */
+    public static final int POSIX_ERROR_ENODATA_VALUE = 61;
+
+
     public final int getNumber() { return value; }
-    
+
     public static POSIXErrno valueOf(int value) {
       switch (value) {
         case 9999: return POSIX_ERROR_NONE;
@@ -265,7 +593,7 @@ public final class RPC {
         default: return null;
       }
     }
-    
+
     public static com.google.protobuf.Internal.EnumLiteMap<POSIXErrno>
         internalGetValueMap() {
       return internalValueMap;
@@ -274,10 +602,10 @@ public final class RPC {
         internalValueMap =
           new com.google.protobuf.Internal.EnumLiteMap<POSIXErrno>() {
             public POSIXErrno findValueByNumber(int number) {
-              return POSIXErrno.valueOf(number)
-    ;        }
+              return POSIXErrno.valueOf(number);
+            }
           };
-    
+
     public final com.google.protobuf.Descriptors.EnumValueDescriptor
         getValueDescriptor() {
       return getDescriptor().getValues().get(index);
@@ -290,10 +618,9 @@ public final class RPC {
         getDescriptor() {
       return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.getDescriptor().getEnumTypes().get(3);
     }
-    
-    private static final POSIXErrno[] VALUES = {
-      POSIX_ERROR_NONE, POSIX_ERROR_EPERM, POSIX_ERROR_ENOENT, POSIX_ERROR_EINTR, POSIX_ERROR_EIO, POSIX_ERROR_EAGAIN, POSIX_ERROR_EACCES, POSIX_ERROR_EEXIST, POSIX_ERROR_EXDEV, POSIX_ERROR_ENODEV, POSIX_ERROR_ENOTDIR, POSIX_ERROR_EISDIR, POSIX_ERROR_EINVAL, POSIX_ERROR_ENOTEMPTY, POSIX_ERROR_ENODATA, 
-    };
+
+    private static final POSIXErrno[] VALUES = values();
+
     public static POSIXErrno valueOf(
         com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
       if (desc.getType() != getDescriptor()) {
@@ -302,100 +629,341 @@ public final class RPC {
       }
       return VALUES[desc.getIndex()];
     }
+
     private final int index;
     private final int value;
+
     private POSIXErrno(int index, int value) {
       this.index = index;
       this.value = value;
     }
-    
-    static {
-      org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.getDescriptor();
-    }
-    
+
     // @@protoc_insertion_point(enum_scope:xtreemfs.pbrpc.POSIXErrno)
   }
-  
+
+  public interface UserCredentialsOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // required string username = 1;
+    /**
+     * <code>required string username = 1;</code>
+     *
+     * <pre>
+     * Globally unique user ID (GUID).
+     * </pre>
+     */
+    boolean hasUsername();
+    /**
+     * <code>required string username = 1;</code>
+     *
+     * <pre>
+     * Globally unique user ID (GUID).
+     * </pre>
+     */
+    java.lang.String getUsername();
+    /**
+     * <code>required string username = 1;</code>
+     *
+     * <pre>
+     * Globally unique user ID (GUID).
+     * </pre>
+     */
+    com.google.protobuf.ByteString
+        getUsernameBytes();
+
+    // repeated string groups = 2;
+    /**
+     * <code>repeated string groups = 2;</code>
+     *
+     * <pre>
+     * List of one or more globally unique group IDs (GGID).
+     * </pre>
+     */
+    java.util.List<java.lang.String>
+    getGroupsList();
+    /**
+     * <code>repeated string groups = 2;</code>
+     *
+     * <pre>
+     * List of one or more globally unique group IDs (GGID).
+     * </pre>
+     */
+    int getGroupsCount();
+    /**
+     * <code>repeated string groups = 2;</code>
+     *
+     * <pre>
+     * List of one or more globally unique group IDs (GGID).
+     * </pre>
+     */
+    java.lang.String getGroups(int index);
+    /**
+     * <code>repeated string groups = 2;</code>
+     *
+     * <pre>
+     * List of one or more globally unique group IDs (GGID).
+     * </pre>
+     */
+    com.google.protobuf.ByteString
+        getGroupsBytes(int index);
+  }
+  /**
+   * Protobuf type {@code xtreemfs.pbrpc.UserCredentials}
+   *
+   * <pre>
+   * File system user credentials for executing an operation.
+   * Might be ignored by some operations.
+   * </pre>
+   */
   public static final class UserCredentials extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements UserCredentialsOrBuilder {
     // Use UserCredentials.newBuilder() to construct.
-    private UserCredentials() {
-      initFields();
+    private UserCredentials(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
     }
-    private UserCredentials(boolean noInit) {}
-    
+    private UserCredentials(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
     private static final UserCredentials defaultInstance;
     public static UserCredentials getDefaultInstance() {
       return defaultInstance;
     }
-    
+
     public UserCredentials getDefaultInstanceForType() {
       return defaultInstance;
     }
-    
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private UserCredentials(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 10: {
+              bitField0_ |= 0x00000001;
+              username_ = input.readBytes();
+              break;
+            }
+            case 18: {
+              if (!((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
+                groups_ = new com.google.protobuf.LazyStringArrayList();
+                mutable_bitField0_ |= 0x00000002;
+              }
+              groups_.add(input.readBytes());
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        if (((mutable_bitField0_ & 0x00000002) == 0x00000002)) {
+          groups_ = new com.google.protobuf.UnmodifiableLazyStringList(groups_);
+        }
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
       return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_UserCredentials_descriptor;
     }
-    
+
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_UserCredentials_fieldAccessorTable;
+      return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_UserCredentials_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.Builder.class);
     }
-    
+
+    public static com.google.protobuf.Parser<UserCredentials> PARSER =
+        new com.google.protobuf.AbstractParser<UserCredentials>() {
+      public UserCredentials parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new UserCredentials(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<UserCredentials> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
     // required string username = 1;
     public static final int USERNAME_FIELD_NUMBER = 1;
-    private boolean hasUsername;
-    private java.lang.String username_ = "";
-    public boolean hasUsername() { return hasUsername; }
-    public java.lang.String getUsername() { return username_; }
-    
+    private java.lang.Object username_;
+    /**
+     * <code>required string username = 1;</code>
+     *
+     * <pre>
+     * Globally unique user ID (GUID).
+     * </pre>
+     */
+    public boolean hasUsername() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required string username = 1;</code>
+     *
+     * <pre>
+     * Globally unique user ID (GUID).
+     * </pre>
+     */
+    public java.lang.String getUsername() {
+      java.lang.Object ref = username_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          username_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string username = 1;</code>
+     *
+     * <pre>
+     * Globally unique user ID (GUID).
+     * </pre>
+     */
+    public com.google.protobuf.ByteString
+        getUsernameBytes() {
+      java.lang.Object ref = username_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        username_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     // repeated string groups = 2;
     public static final int GROUPS_FIELD_NUMBER = 2;
-    private java.util.List<java.lang.String> groups_ =
-      java.util.Collections.emptyList();
-    public java.util.List<java.lang.String> getGroupsList() {
+    private com.google.protobuf.LazyStringList groups_;
+    /**
+     * <code>repeated string groups = 2;</code>
+     *
+     * <pre>
+     * List of one or more globally unique group IDs (GGID).
+     * </pre>
+     */
+    public java.util.List<java.lang.String>
+        getGroupsList() {
       return groups_;
     }
-    public int getGroupsCount() { return groups_.size(); }
+    /**
+     * <code>repeated string groups = 2;</code>
+     *
+     * <pre>
+     * List of one or more globally unique group IDs (GGID).
+     * </pre>
+     */
+    public int getGroupsCount() {
+      return groups_.size();
+    }
+    /**
+     * <code>repeated string groups = 2;</code>
+     *
+     * <pre>
+     * List of one or more globally unique group IDs (GGID).
+     * </pre>
+     */
     public java.lang.String getGroups(int index) {
       return groups_.get(index);
     }
-    
-    private void initFields() {
+    /**
+     * <code>repeated string groups = 2;</code>
+     *
+     * <pre>
+     * List of one or more globally unique group IDs (GGID).
+     * </pre>
+     */
+    public com.google.protobuf.ByteString
+        getGroupsBytes(int index) {
+      return groups_.getByteString(index);
     }
+
+    private void initFields() {
+      username_ = "";
+      groups_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+    }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasUsername) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      if (!hasUsername()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
-    
+
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasUsername()) {
-        output.writeString(1, getUsername());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBytes(1, getUsernameBytes());
       }
-      for (java.lang.String element : getGroupsList()) {
-        output.writeString(2, element);
+      for (int i = 0; i < groups_.size(); i++) {
+        output.writeBytes(2, groups_.getByteString(i));
       }
       getUnknownFields().writeTo(output);
     }
-    
+
     private int memoizedSerializedSize = -1;
     public int getSerializedSize() {
       int size = memoizedSerializedSize;
       if (size != -1) return size;
-    
+
       size = 0;
-      if (hasUsername()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(1, getUsername());
+          .computeBytesSize(1, getUsernameBytes());
       }
       {
         int dataSize = 0;
-        for (java.lang.String element : getGroupsList()) {
+        for (int i = 0; i < groups_.size(); i++) {
           dataSize += com.google.protobuf.CodedOutputStream
-            .computeStringSizeNoTag(element);
+            .computeBytesSizeNoTag(groups_.getByteString(i));
         }
         size += dataSize;
         size += 1 * getGroupsList().size();
@@ -404,153 +972,170 @@ public final class RPC {
       memoizedSerializedSize = size;
       return size;
     }
-    
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
+      return PARSER.parseFrom(data);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(data, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
+      return PARSER.parseFrom(data);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(data, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials parseFrom(java.io.InputStream input)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
+      return PARSER.parseFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(input, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
+      return PARSER.parseDelimitedFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
+      return PARSER.parseFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(input, extensionRegistry);
     }
-    
+
     public static Builder newBuilder() { return Builder.create(); }
     public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials prototype) {
       return newBuilder().mergeFrom(prototype);
     }
     public Builder toBuilder() { return newBuilder(this); }
-    
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code xtreemfs.pbrpc.UserCredentials}
+     *
+     * <pre>
+     * File system user credentials for executing an operation.
+     * Might be ignored by some operations.
+     * </pre>
+     */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials result;
-      
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentialsOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_UserCredentials_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_UserCredentials_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.Builder.class);
+      }
+
       // Construct using org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials();
-        return builder;
+      private Builder() {
+        maybeForceBuilderInitialization();
       }
-      
-      protected org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials internalGetResult() {
-        return result;
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
       }
-      
-      public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
         }
-        result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials();
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        username_ = "";
+        bitField0_ = (bitField0_ & ~0x00000001);
+        groups_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
-      
+
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
-      
+
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.getDescriptor();
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_UserCredentials_descriptor;
       }
-      
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials getDefaultInstanceForType() {
         return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.getDefaultInstance();
       }
-      
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
-      
-      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials buildParsed()
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
-          throw newUninitializedMessageException(
-            result).asInvalidProtocolBufferException();
-        }
-        return buildPartial();
-      }
-      
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        if (result.groups_ != java.util.Collections.EMPTY_LIST) {
-          result.groups_ =
-            java.util.Collections.unmodifiableList(result.groups_);
+        result.username_ = username_;
+        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+          groups_ = new com.google.protobuf.UnmodifiableLazyStringList(
+              groups_);
+          bitField0_ = (bitField0_ & ~0x00000002);
         }
-        org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials returnMe = result;
-        result = null;
-        return returnMe;
+        result.groups_ = groups_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
-      
+
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials) {
           return mergeFrom((org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials)other);
@@ -559,336 +1144,648 @@ public final class RPC {
           return this;
         }
       }
-      
+
       public Builder mergeFrom(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials other) {
         if (other == org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.getDefaultInstance()) return this;
         if (other.hasUsername()) {
-          setUsername(other.getUsername());
+          bitField0_ |= 0x00000001;
+          username_ = other.username_;
+          onChanged();
         }
         if (!other.groups_.isEmpty()) {
-          if (result.groups_.isEmpty()) {
-            result.groups_ = new java.util.ArrayList<java.lang.String>();
+          if (groups_.isEmpty()) {
+            groups_ = other.groups_;
+            bitField0_ = (bitField0_ & ~0x00000002);
+          } else {
+            ensureGroupsIsMutable();
+            groups_.addAll(other.groups_);
           }
-          result.groups_.addAll(other.groups_);
+          onChanged();
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
-      
+
+      public final boolean isInitialized() {
+        if (!hasUsername()) {
+          
+          return false;
+        }
+        return true;
+      }
+
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder(
-            this.getUnknownFields());
-        while (true) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              this.setUnknownFields(unknownFields.build());
-              return this;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                this.setUnknownFields(unknownFields.build());
-                return this;
-              }
-              break;
-            }
-            case 10: {
-              setUsername(input.readString());
-              break;
-            }
-            case 18: {
-              addGroups(input.readString());
-              break;
-            }
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
           }
         }
+        return this;
       }
-      
-      
+      private int bitField0_;
+
       // required string username = 1;
+      private java.lang.Object username_ = "";
+      /**
+       * <code>required string username = 1;</code>
+       *
+       * <pre>
+       * Globally unique user ID (GUID).
+       * </pre>
+       */
       public boolean hasUsername() {
-        return result.hasUsername();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
+      /**
+       * <code>required string username = 1;</code>
+       *
+       * <pre>
+       * Globally unique user ID (GUID).
+       * </pre>
+       */
       public java.lang.String getUsername() {
-        return result.getUsername();
+        java.lang.Object ref = username_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          username_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
-      public Builder setUsername(java.lang.String value) {
+      /**
+       * <code>required string username = 1;</code>
+       *
+       * <pre>
+       * Globally unique user ID (GUID).
+       * </pre>
+       */
+      public com.google.protobuf.ByteString
+          getUsernameBytes() {
+        java.lang.Object ref = username_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          username_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string username = 1;</code>
+       *
+       * <pre>
+       * Globally unique user ID (GUID).
+       * </pre>
+       */
+      public Builder setUsername(
+          java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasUsername = true;
-        result.username_ = value;
+  bitField0_ |= 0x00000001;
+        username_ = value;
+        onChanged();
         return this;
       }
+      /**
+       * <code>required string username = 1;</code>
+       *
+       * <pre>
+       * Globally unique user ID (GUID).
+       * </pre>
+       */
       public Builder clearUsername() {
-        result.hasUsername = false;
-        result.username_ = getDefaultInstance().getUsername();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        username_ = getDefaultInstance().getUsername();
+        onChanged();
         return this;
       }
-      
+      /**
+       * <code>required string username = 1;</code>
+       *
+       * <pre>
+       * Globally unique user ID (GUID).
+       * </pre>
+       */
+      public Builder setUsernameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        username_ = value;
+        onChanged();
+        return this;
+      }
+
       // repeated string groups = 2;
-      public java.util.List<java.lang.String> getGroupsList() {
-        return java.util.Collections.unmodifiableList(result.groups_);
+      private com.google.protobuf.LazyStringList groups_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      private void ensureGroupsIsMutable() {
+        if (!((bitField0_ & 0x00000002) == 0x00000002)) {
+          groups_ = new com.google.protobuf.LazyStringArrayList(groups_);
+          bitField0_ |= 0x00000002;
+         }
       }
+      /**
+       * <code>repeated string groups = 2;</code>
+       *
+       * <pre>
+       * List of one or more globally unique group IDs (GGID).
+       * </pre>
+       */
+      public java.util.List<java.lang.String>
+          getGroupsList() {
+        return java.util.Collections.unmodifiableList(groups_);
+      }
+      /**
+       * <code>repeated string groups = 2;</code>
+       *
+       * <pre>
+       * List of one or more globally unique group IDs (GGID).
+       * </pre>
+       */
       public int getGroupsCount() {
-        return result.getGroupsCount();
+        return groups_.size();
       }
+      /**
+       * <code>repeated string groups = 2;</code>
+       *
+       * <pre>
+       * List of one or more globally unique group IDs (GGID).
+       * </pre>
+       */
       public java.lang.String getGroups(int index) {
-        return result.getGroups(index);
+        return groups_.get(index);
       }
-      public Builder setGroups(int index, java.lang.String value) {
+      /**
+       * <code>repeated string groups = 2;</code>
+       *
+       * <pre>
+       * List of one or more globally unique group IDs (GGID).
+       * </pre>
+       */
+      public com.google.protobuf.ByteString
+          getGroupsBytes(int index) {
+        return groups_.getByteString(index);
+      }
+      /**
+       * <code>repeated string groups = 2;</code>
+       *
+       * <pre>
+       * List of one or more globally unique group IDs (GGID).
+       * </pre>
+       */
+      public Builder setGroups(
+          int index, java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.groups_.set(index, value);
+  ensureGroupsIsMutable();
+        groups_.set(index, value);
+        onChanged();
         return this;
       }
-      public Builder addGroups(java.lang.String value) {
+      /**
+       * <code>repeated string groups = 2;</code>
+       *
+       * <pre>
+       * List of one or more globally unique group IDs (GGID).
+       * </pre>
+       */
+      public Builder addGroups(
+          java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  if (result.groups_.isEmpty()) {
-          result.groups_ = new java.util.ArrayList<java.lang.String>();
-        }
-        result.groups_.add(value);
+  ensureGroupsIsMutable();
+        groups_.add(value);
+        onChanged();
         return this;
       }
+      /**
+       * <code>repeated string groups = 2;</code>
+       *
+       * <pre>
+       * List of one or more globally unique group IDs (GGID).
+       * </pre>
+       */
       public Builder addAllGroups(
-          java.lang.Iterable<? extends java.lang.String> values) {
-        if (result.groups_.isEmpty()) {
-          result.groups_ = new java.util.ArrayList<java.lang.String>();
-        }
-        super.addAll(values, result.groups_);
+          java.lang.Iterable<java.lang.String> values) {
+        ensureGroupsIsMutable();
+        super.addAll(values, groups_);
+        onChanged();
         return this;
       }
+      /**
+       * <code>repeated string groups = 2;</code>
+       *
+       * <pre>
+       * List of one or more globally unique group IDs (GGID).
+       * </pre>
+       */
       public Builder clearGroups() {
-        result.groups_ = java.util.Collections.emptyList();
+        groups_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        onChanged();
         return this;
       }
-      
+      /**
+       * <code>repeated string groups = 2;</code>
+       *
+       * <pre>
+       * List of one or more globally unique group IDs (GGID).
+       * </pre>
+       */
+      public Builder addGroupsBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  ensureGroupsIsMutable();
+        groups_.add(value);
+        onChanged();
+        return this;
+      }
+
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.UserCredentials)
     }
-    
+
     static {
       defaultInstance = new UserCredentials(true);
-      org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internalForceInit();
       defaultInstance.initFields();
     }
-    
+
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.UserCredentials)
   }
-  
+
+  public interface AuthPasswordOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // required string password = 1;
+    /**
+     * <code>required string password = 1;</code>
+     */
+    boolean hasPassword();
+    /**
+     * <code>required string password = 1;</code>
+     */
+    java.lang.String getPassword();
+    /**
+     * <code>required string password = 1;</code>
+     */
+    com.google.protobuf.ByteString
+        getPasswordBytes();
+  }
+  /**
+   * Protobuf type {@code xtreemfs.pbrpc.AuthPassword}
+   *
+   * <pre>
+   * Admin password if AuthType AUTH_PASSWORD.
+   * </pre>
+   */
   public static final class AuthPassword extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements AuthPasswordOrBuilder {
     // Use AuthPassword.newBuilder() to construct.
-    private AuthPassword() {
-      initFields();
+    private AuthPassword(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
     }
-    private AuthPassword(boolean noInit) {}
-    
+    private AuthPassword(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
     private static final AuthPassword defaultInstance;
     public static AuthPassword getDefaultInstance() {
       return defaultInstance;
     }
-    
+
     public AuthPassword getDefaultInstanceForType() {
       return defaultInstance;
     }
-    
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private AuthPassword(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 10: {
+              bitField0_ |= 0x00000001;
+              password_ = input.readBytes();
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
       return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_AuthPassword_descriptor;
     }
-    
+
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_AuthPassword_fieldAccessorTable;
+      return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_AuthPassword_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.Builder.class);
     }
-    
+
+    public static com.google.protobuf.Parser<AuthPassword> PARSER =
+        new com.google.protobuf.AbstractParser<AuthPassword>() {
+      public AuthPassword parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new AuthPassword(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<AuthPassword> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
     // required string password = 1;
     public static final int PASSWORD_FIELD_NUMBER = 1;
-    private boolean hasPassword;
-    private java.lang.String password_ = "";
-    public boolean hasPassword() { return hasPassword; }
-    public java.lang.String getPassword() { return password_; }
-    
-    private void initFields() {
+    private java.lang.Object password_;
+    /**
+     * <code>required string password = 1;</code>
+     */
+    public boolean hasPassword() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
     }
+    /**
+     * <code>required string password = 1;</code>
+     */
+    public java.lang.String getPassword() {
+      java.lang.Object ref = password_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          password_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string password = 1;</code>
+     */
+    public com.google.protobuf.ByteString
+        getPasswordBytes() {
+      java.lang.Object ref = password_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        password_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    private void initFields() {
+      password_ = "";
+    }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasPassword) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      if (!hasPassword()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
-    
+
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasPassword()) {
-        output.writeString(1, getPassword());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBytes(1, getPasswordBytes());
       }
       getUnknownFields().writeTo(output);
     }
-    
+
     private int memoizedSerializedSize = -1;
     public int getSerializedSize() {
       int size = memoizedSerializedSize;
       if (size != -1) return size;
-    
+
       size = 0;
-      if (hasPassword()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(1, getPassword());
+          .computeBytesSize(1, getPasswordBytes());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
     }
-    
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
+      return PARSER.parseFrom(data);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(data, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
+      return PARSER.parseFrom(data);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(data, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword parseFrom(java.io.InputStream input)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
+      return PARSER.parseFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(input, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
+      return PARSER.parseDelimitedFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
+      return PARSER.parseFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(input, extensionRegistry);
     }
-    
+
     public static Builder newBuilder() { return Builder.create(); }
     public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword prototype) {
       return newBuilder().mergeFrom(prototype);
     }
     public Builder toBuilder() { return newBuilder(this); }
-    
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code xtreemfs.pbrpc.AuthPassword}
+     *
+     * <pre>
+     * Admin password if AuthType AUTH_PASSWORD.
+     * </pre>
+     */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword result;
-      
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPasswordOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_AuthPassword_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_AuthPassword_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.Builder.class);
+      }
+
       // Construct using org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword();
-        return builder;
+      private Builder() {
+        maybeForceBuilderInitialization();
       }
-      
-      protected org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword internalGetResult() {
-        return result;
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
       }
-      
-      public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
         }
-        result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword();
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        password_ = "";
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
       }
-      
+
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
-      
+
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.getDescriptor();
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_AuthPassword_descriptor;
       }
-      
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword getDefaultInstanceForType() {
         return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.getDefaultInstance();
       }
-      
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
-      
-      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword buildParsed()
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
-          throw newUninitializedMessageException(
-            result).asInvalidProtocolBufferException();
-        }
-        return buildPartial();
-      }
-      
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword returnMe = result;
-        result = null;
-        return returnMe;
+        result.password_ = password_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
-      
+
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword) {
           return mergeFrom((org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword)other);
@@ -897,319 +1794,622 @@ public final class RPC {
           return this;
         }
       }
-      
+
       public Builder mergeFrom(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword other) {
         if (other == org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.getDefaultInstance()) return this;
         if (other.hasPassword()) {
-          setPassword(other.getPassword());
+          bitField0_ |= 0x00000001;
+          password_ = other.password_;
+          onChanged();
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
-      
+
+      public final boolean isInitialized() {
+        if (!hasPassword()) {
+          
+          return false;
+        }
+        return true;
+      }
+
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder(
-            this.getUnknownFields());
-        while (true) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              this.setUnknownFields(unknownFields.build());
-              return this;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                this.setUnknownFields(unknownFields.build());
-                return this;
-              }
-              break;
-            }
-            case 10: {
-              setPassword(input.readString());
-              break;
-            }
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
           }
         }
+        return this;
       }
-      
-      
+      private int bitField0_;
+
       // required string password = 1;
+      private java.lang.Object password_ = "";
+      /**
+       * <code>required string password = 1;</code>
+       */
       public boolean hasPassword() {
-        return result.hasPassword();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
+      /**
+       * <code>required string password = 1;</code>
+       */
       public java.lang.String getPassword() {
-        return result.getPassword();
+        java.lang.Object ref = password_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          password_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
-      public Builder setPassword(java.lang.String value) {
+      /**
+       * <code>required string password = 1;</code>
+       */
+      public com.google.protobuf.ByteString
+          getPasswordBytes() {
+        java.lang.Object ref = password_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          password_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string password = 1;</code>
+       */
+      public Builder setPassword(
+          java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasPassword = true;
-        result.password_ = value;
+  bitField0_ |= 0x00000001;
+        password_ = value;
+        onChanged();
         return this;
       }
+      /**
+       * <code>required string password = 1;</code>
+       */
       public Builder clearPassword() {
-        result.hasPassword = false;
-        result.password_ = getDefaultInstance().getPassword();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        password_ = getDefaultInstance().getPassword();
+        onChanged();
         return this;
       }
-      
+      /**
+       * <code>required string password = 1;</code>
+       */
+      public Builder setPasswordBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        password_ = value;
+        onChanged();
+        return this;
+      }
+
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.AuthPassword)
     }
-    
+
     static {
       defaultInstance = new AuthPassword(true);
-      org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internalForceInit();
       defaultInstance.initFields();
     }
-    
+
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.AuthPassword)
   }
-  
+
+  public interface AuthOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // required .xtreemfs.pbrpc.AuthType auth_type = 1;
+    /**
+     * <code>required .xtreemfs.pbrpc.AuthType auth_type = 1;</code>
+     *
+     * <pre>
+     * Selected authentication type.
+     * </pre>
+     */
+    boolean hasAuthType();
+    /**
+     * <code>required .xtreemfs.pbrpc.AuthType auth_type = 1;</code>
+     *
+     * <pre>
+     * Selected authentication type.
+     * </pre>
+     */
+    org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType getAuthType();
+
+    // optional .xtreemfs.pbrpc.AuthPassword auth_passwd = 3;
+    /**
+     * <code>optional .xtreemfs.pbrpc.AuthPassword auth_passwd = 3;</code>
+     *
+     * <pre>
+     * Optional data, depends on auth_type selected.
+     * </pre>
+     */
+    boolean hasAuthPasswd();
+    /**
+     * <code>optional .xtreemfs.pbrpc.AuthPassword auth_passwd = 3;</code>
+     *
+     * <pre>
+     * Optional data, depends on auth_type selected.
+     * </pre>
+     */
+    org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword getAuthPasswd();
+    /**
+     * <code>optional .xtreemfs.pbrpc.AuthPassword auth_passwd = 3;</code>
+     *
+     * <pre>
+     * Optional data, depends on auth_type selected.
+     * </pre>
+     */
+    org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPasswordOrBuilder getAuthPasswdOrBuilder();
+
+    // optional bytes auth_data = 2;
+    /**
+     * <code>optional bytes auth_data = 2;</code>
+     */
+    boolean hasAuthData();
+    /**
+     * <code>optional bytes auth_data = 2;</code>
+     */
+    com.google.protobuf.ByteString getAuthData();
+  }
+  /**
+   * Protobuf type {@code xtreemfs.pbrpc.Auth}
+   *
+   * <pre>
+   * RPC Authentication information.
+   * </pre>
+   */
   public static final class Auth extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements AuthOrBuilder {
     // Use Auth.newBuilder() to construct.
-    private Auth() {
-      initFields();
+    private Auth(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
     }
-    private Auth(boolean noInit) {}
-    
+    private Auth(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
     private static final Auth defaultInstance;
     public static Auth getDefaultInstance() {
       return defaultInstance;
     }
-    
+
     public Auth getDefaultInstanceForType() {
       return defaultInstance;
     }
-    
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private Auth(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 8: {
+              int rawValue = input.readEnum();
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType value = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType.valueOf(rawValue);
+              if (value == null) {
+                unknownFields.mergeVarintField(1, rawValue);
+              } else {
+                bitField0_ |= 0x00000001;
+                authType_ = value;
+              }
+              break;
+            }
+            case 18: {
+              bitField0_ |= 0x00000004;
+              authData_ = input.readBytes();
+              break;
+            }
+            case 26: {
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.Builder subBuilder = null;
+              if (((bitField0_ & 0x00000002) == 0x00000002)) {
+                subBuilder = authPasswd_.toBuilder();
+              }
+              authPasswd_ = input.readMessage(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(authPasswd_);
+                authPasswd_ = subBuilder.buildPartial();
+              }
+              bitField0_ |= 0x00000002;
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
       return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_Auth_descriptor;
     }
-    
+
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_Auth_fieldAccessorTable;
+      return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_Auth_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.Builder.class);
     }
-    
+
+    public static com.google.protobuf.Parser<Auth> PARSER =
+        new com.google.protobuf.AbstractParser<Auth>() {
+      public Auth parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new Auth(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<Auth> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
     // required .xtreemfs.pbrpc.AuthType auth_type = 1;
     public static final int AUTH_TYPE_FIELD_NUMBER = 1;
-    private boolean hasAuthType;
     private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType authType_;
-    public boolean hasAuthType() { return hasAuthType; }
-    public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType getAuthType() { return authType_; }
-    
+    /**
+     * <code>required .xtreemfs.pbrpc.AuthType auth_type = 1;</code>
+     *
+     * <pre>
+     * Selected authentication type.
+     * </pre>
+     */
+    public boolean hasAuthType() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required .xtreemfs.pbrpc.AuthType auth_type = 1;</code>
+     *
+     * <pre>
+     * Selected authentication type.
+     * </pre>
+     */
+    public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType getAuthType() {
+      return authType_;
+    }
+
     // optional .xtreemfs.pbrpc.AuthPassword auth_passwd = 3;
     public static final int AUTH_PASSWD_FIELD_NUMBER = 3;
-    private boolean hasAuthPasswd;
     private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword authPasswd_;
-    public boolean hasAuthPasswd() { return hasAuthPasswd; }
-    public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword getAuthPasswd() { return authPasswd_; }
-    
+    /**
+     * <code>optional .xtreemfs.pbrpc.AuthPassword auth_passwd = 3;</code>
+     *
+     * <pre>
+     * Optional data, depends on auth_type selected.
+     * </pre>
+     */
+    public boolean hasAuthPasswd() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>optional .xtreemfs.pbrpc.AuthPassword auth_passwd = 3;</code>
+     *
+     * <pre>
+     * Optional data, depends on auth_type selected.
+     * </pre>
+     */
+    public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword getAuthPasswd() {
+      return authPasswd_;
+    }
+    /**
+     * <code>optional .xtreemfs.pbrpc.AuthPassword auth_passwd = 3;</code>
+     *
+     * <pre>
+     * Optional data, depends on auth_type selected.
+     * </pre>
+     */
+    public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPasswordOrBuilder getAuthPasswdOrBuilder() {
+      return authPasswd_;
+    }
+
     // optional bytes auth_data = 2;
     public static final int AUTH_DATA_FIELD_NUMBER = 2;
-    private boolean hasAuthData;
-    private com.google.protobuf.ByteString authData_ = com.google.protobuf.ByteString.EMPTY;
-    public boolean hasAuthData() { return hasAuthData; }
-    public com.google.protobuf.ByteString getAuthData() { return authData_; }
-    
+    private com.google.protobuf.ByteString authData_;
+    /**
+     * <code>optional bytes auth_data = 2;</code>
+     */
+    public boolean hasAuthData() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>optional bytes auth_data = 2;</code>
+     */
+    public com.google.protobuf.ByteString getAuthData() {
+      return authData_;
+    }
+
     private void initFields() {
       authType_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType.AUTH_NONE;
       authPasswd_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.getDefaultInstance();
+      authData_ = com.google.protobuf.ByteString.EMPTY;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasAuthType) return false;
-      if (hasAuthPasswd()) {
-        if (!getAuthPasswd().isInitialized()) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      if (!hasAuthType()) {
+        memoizedIsInitialized = 0;
+        return false;
       }
+      if (hasAuthPasswd()) {
+        if (!getAuthPasswd().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
-    
+
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasAuthType()) {
-        output.writeEnum(1, getAuthType().getNumber());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeEnum(1, authType_.getNumber());
       }
-      if (hasAuthData()) {
-        output.writeBytes(2, getAuthData());
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeBytes(2, authData_);
       }
-      if (hasAuthPasswd()) {
-        output.writeMessage(3, getAuthPasswd());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeMessage(3, authPasswd_);
       }
       getUnknownFields().writeTo(output);
     }
-    
+
     private int memoizedSerializedSize = -1;
     public int getSerializedSize() {
       int size = memoizedSerializedSize;
       if (size != -1) return size;
-    
+
       size = 0;
-      if (hasAuthType()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeEnumSize(1, getAuthType().getNumber());
+          .computeEnumSize(1, authType_.getNumber());
       }
-      if (hasAuthData()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(2, getAuthData());
+          .computeBytesSize(2, authData_);
       }
-      if (hasAuthPasswd()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(3, getAuthPasswd());
+          .computeMessageSize(3, authPasswd_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
     }
-    
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
+      return PARSER.parseFrom(data);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(data, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
+      return PARSER.parseFrom(data);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(data, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth parseFrom(java.io.InputStream input)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
+      return PARSER.parseFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(input, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
+      return PARSER.parseDelimitedFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
+      return PARSER.parseFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(input, extensionRegistry);
     }
-    
+
     public static Builder newBuilder() { return Builder.create(); }
     public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth prototype) {
       return newBuilder().mergeFrom(prototype);
     }
     public Builder toBuilder() { return newBuilder(this); }
-    
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code xtreemfs.pbrpc.Auth}
+     *
+     * <pre>
+     * RPC Authentication information.
+     * </pre>
+     */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth result;
-      
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_Auth_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_Auth_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.Builder.class);
+      }
+
       // Construct using org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth();
-        return builder;
+      private Builder() {
+        maybeForceBuilderInitialization();
       }
-      
-      protected org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth internalGetResult() {
-        return result;
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
       }
-      
-      public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getAuthPasswdFieldBuilder();
         }
-        result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth();
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        authType_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType.AUTH_NONE;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        if (authPasswdBuilder_ == null) {
+          authPasswd_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.getDefaultInstance();
+        } else {
+          authPasswdBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000002);
+        authData_ = com.google.protobuf.ByteString.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000004);
         return this;
       }
-      
+
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
-      
+
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.getDescriptor();
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_Auth_descriptor;
       }
-      
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth getDefaultInstanceForType() {
         return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.getDefaultInstance();
       }
-      
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
-      
-      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth buildParsed()
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
-          throw newUninitializedMessageException(
-            result).asInvalidProtocolBufferException();
-        }
-        return buildPartial();
-      }
-      
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth returnMe = result;
-        result = null;
-        return returnMe;
+        result.authType_ = authType_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        if (authPasswdBuilder_ == null) {
+          result.authPasswd_ = authPasswd_;
+        } else {
+          result.authPasswd_ = authPasswdBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.authData_ = authData_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
-      
+
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth) {
           return mergeFrom((org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth)other);
@@ -1218,7 +2418,7 @@ public final class RPC {
           return this;
         }
       }
-      
+
       public Builder mergeFrom(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth other) {
         if (other == org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.getDefaultInstance()) return this;
         if (other.hasAuthType()) {
@@ -1233,430 +2433,1137 @@ public final class RPC {
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
-      
+
+      public final boolean isInitialized() {
+        if (!hasAuthType()) {
+          
+          return false;
+        }
+        if (hasAuthPasswd()) {
+          if (!getAuthPasswd().isInitialized()) {
+            
+            return false;
+          }
+        }
+        return true;
+      }
+
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder(
-            this.getUnknownFields());
-        while (true) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              this.setUnknownFields(unknownFields.build());
-              return this;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                this.setUnknownFields(unknownFields.build());
-                return this;
-              }
-              break;
-            }
-            case 8: {
-              int rawValue = input.readEnum();
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType value = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType.valueOf(rawValue);
-              if (value == null) {
-                unknownFields.mergeVarintField(1, rawValue);
-              } else {
-                setAuthType(value);
-              }
-              break;
-            }
-            case 18: {
-              setAuthData(input.readBytes());
-              break;
-            }
-            case 26: {
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.Builder subBuilder = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.newBuilder();
-              if (hasAuthPasswd()) {
-                subBuilder.mergeFrom(getAuthPasswd());
-              }
-              input.readMessage(subBuilder, extensionRegistry);
-              setAuthPasswd(subBuilder.buildPartial());
-              break;
-            }
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
           }
         }
+        return this;
       }
-      
-      
+      private int bitField0_;
+
       // required .xtreemfs.pbrpc.AuthType auth_type = 1;
+      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType authType_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType.AUTH_NONE;
+      /**
+       * <code>required .xtreemfs.pbrpc.AuthType auth_type = 1;</code>
+       *
+       * <pre>
+       * Selected authentication type.
+       * </pre>
+       */
       public boolean hasAuthType() {
-        return result.hasAuthType();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
+      /**
+       * <code>required .xtreemfs.pbrpc.AuthType auth_type = 1;</code>
+       *
+       * <pre>
+       * Selected authentication type.
+       * </pre>
+       */
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType getAuthType() {
-        return result.getAuthType();
+        return authType_;
       }
+      /**
+       * <code>required .xtreemfs.pbrpc.AuthType auth_type = 1;</code>
+       *
+       * <pre>
+       * Selected authentication type.
+       * </pre>
+       */
       public Builder setAuthType(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType value) {
         if (value == null) {
           throw new NullPointerException();
         }
-        result.hasAuthType = true;
-        result.authType_ = value;
+        bitField0_ |= 0x00000001;
+        authType_ = value;
+        onChanged();
         return this;
       }
+      /**
+       * <code>required .xtreemfs.pbrpc.AuthType auth_type = 1;</code>
+       *
+       * <pre>
+       * Selected authentication type.
+       * </pre>
+       */
       public Builder clearAuthType() {
-        result.hasAuthType = false;
-        result.authType_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType.AUTH_NONE;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        authType_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType.AUTH_NONE;
+        onChanged();
         return this;
       }
-      
+
       // optional .xtreemfs.pbrpc.AuthPassword auth_passwd = 3;
+      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword authPasswd_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.Builder, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPasswordOrBuilder> authPasswdBuilder_;
+      /**
+       * <code>optional .xtreemfs.pbrpc.AuthPassword auth_passwd = 3;</code>
+       *
+       * <pre>
+       * Optional data, depends on auth_type selected.
+       * </pre>
+       */
       public boolean hasAuthPasswd() {
-        return result.hasAuthPasswd();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
+      /**
+       * <code>optional .xtreemfs.pbrpc.AuthPassword auth_passwd = 3;</code>
+       *
+       * <pre>
+       * Optional data, depends on auth_type selected.
+       * </pre>
+       */
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword getAuthPasswd() {
-        return result.getAuthPasswd();
-      }
-      public Builder setAuthPasswd(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword value) {
-        if (value == null) {
-          throw new NullPointerException();
-        }
-        result.hasAuthPasswd = true;
-        result.authPasswd_ = value;
-        return this;
-      }
-      public Builder setAuthPasswd(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.Builder builderForValue) {
-        result.hasAuthPasswd = true;
-        result.authPasswd_ = builderForValue.build();
-        return this;
-      }
-      public Builder mergeAuthPasswd(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword value) {
-        if (result.hasAuthPasswd() &&
-            result.authPasswd_ != org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.getDefaultInstance()) {
-          result.authPasswd_ =
-            org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.newBuilder(result.authPasswd_).mergeFrom(value).buildPartial();
+        if (authPasswdBuilder_ == null) {
+          return authPasswd_;
         } else {
-          result.authPasswd_ = value;
+          return authPasswdBuilder_.getMessage();
         }
-        result.hasAuthPasswd = true;
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.AuthPassword auth_passwd = 3;</code>
+       *
+       * <pre>
+       * Optional data, depends on auth_type selected.
+       * </pre>
+       */
+      public Builder setAuthPasswd(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword value) {
+        if (authPasswdBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          authPasswd_ = value;
+          onChanged();
+        } else {
+          authPasswdBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000002;
         return this;
       }
+      /**
+       * <code>optional .xtreemfs.pbrpc.AuthPassword auth_passwd = 3;</code>
+       *
+       * <pre>
+       * Optional data, depends on auth_type selected.
+       * </pre>
+       */
+      public Builder setAuthPasswd(
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.Builder builderForValue) {
+        if (authPasswdBuilder_ == null) {
+          authPasswd_ = builderForValue.build();
+          onChanged();
+        } else {
+          authPasswdBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000002;
+        return this;
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.AuthPassword auth_passwd = 3;</code>
+       *
+       * <pre>
+       * Optional data, depends on auth_type selected.
+       * </pre>
+       */
+      public Builder mergeAuthPasswd(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword value) {
+        if (authPasswdBuilder_ == null) {
+          if (((bitField0_ & 0x00000002) == 0x00000002) &&
+              authPasswd_ != org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.getDefaultInstance()) {
+            authPasswd_ =
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.newBuilder(authPasswd_).mergeFrom(value).buildPartial();
+          } else {
+            authPasswd_ = value;
+          }
+          onChanged();
+        } else {
+          authPasswdBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000002;
+        return this;
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.AuthPassword auth_passwd = 3;</code>
+       *
+       * <pre>
+       * Optional data, depends on auth_type selected.
+       * </pre>
+       */
       public Builder clearAuthPasswd() {
-        result.hasAuthPasswd = false;
-        result.authPasswd_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.getDefaultInstance();
+        if (authPasswdBuilder_ == null) {
+          authPasswd_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.getDefaultInstance();
+          onChanged();
+        } else {
+          authPasswdBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
-      
+      /**
+       * <code>optional .xtreemfs.pbrpc.AuthPassword auth_passwd = 3;</code>
+       *
+       * <pre>
+       * Optional data, depends on auth_type selected.
+       * </pre>
+       */
+      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.Builder getAuthPasswdBuilder() {
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return getAuthPasswdFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.AuthPassword auth_passwd = 3;</code>
+       *
+       * <pre>
+       * Optional data, depends on auth_type selected.
+       * </pre>
+       */
+      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPasswordOrBuilder getAuthPasswdOrBuilder() {
+        if (authPasswdBuilder_ != null) {
+          return authPasswdBuilder_.getMessageOrBuilder();
+        } else {
+          return authPasswd_;
+        }
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.AuthPassword auth_passwd = 3;</code>
+       *
+       * <pre>
+       * Optional data, depends on auth_type selected.
+       * </pre>
+       */
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.Builder, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPasswordOrBuilder> 
+          getAuthPasswdFieldBuilder() {
+        if (authPasswdBuilder_ == null) {
+          authPasswdBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.Builder, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPasswordOrBuilder>(
+                  authPasswd_,
+                  getParentForChildren(),
+                  isClean());
+          authPasswd_ = null;
+        }
+        return authPasswdBuilder_;
+      }
+
       // optional bytes auth_data = 2;
+      private com.google.protobuf.ByteString authData_ = com.google.protobuf.ByteString.EMPTY;
+      /**
+       * <code>optional bytes auth_data = 2;</code>
+       */
       public boolean hasAuthData() {
-        return result.hasAuthData();
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
+      /**
+       * <code>optional bytes auth_data = 2;</code>
+       */
       public com.google.protobuf.ByteString getAuthData() {
-        return result.getAuthData();
+        return authData_;
       }
+      /**
+       * <code>optional bytes auth_data = 2;</code>
+       */
       public Builder setAuthData(com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasAuthData = true;
-        result.authData_ = value;
+  bitField0_ |= 0x00000004;
+        authData_ = value;
+        onChanged();
         return this;
       }
+      /**
+       * <code>optional bytes auth_data = 2;</code>
+       */
       public Builder clearAuthData() {
-        result.hasAuthData = false;
-        result.authData_ = getDefaultInstance().getAuthData();
+        bitField0_ = (bitField0_ & ~0x00000004);
+        authData_ = getDefaultInstance().getAuthData();
+        onChanged();
         return this;
       }
-      
+
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.Auth)
     }
-    
+
     static {
       defaultInstance = new Auth(true);
-      org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internalForceInit();
       defaultInstance.initFields();
     }
-    
+
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.Auth)
   }
-  
+
+  public interface RPCHeaderOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // required fixed32 call_id = 1;
+    /**
+     * <code>required fixed32 call_id = 1;</code>
+     *
+     * <pre>
+     * A unique id to identify the request. The response sent back by the server will have
+     * the same call_id.
+     * The call_id must be unqiue per TCP connection. In addition, clients should start
+     * with a value based e.g. on time to avoid problems after a client restart.
+     * </pre>
+     */
+    boolean hasCallId();
+    /**
+     * <code>required fixed32 call_id = 1;</code>
+     *
+     * <pre>
+     * A unique id to identify the request. The response sent back by the server will have
+     * the same call_id.
+     * The call_id must be unqiue per TCP connection. In addition, clients should start
+     * with a value based e.g. on time to avoid problems after a client restart.
+     * </pre>
+     */
+    int getCallId();
+
+    // required .xtreemfs.pbrpc.MessageType message_type = 2;
+    /**
+     * <code>required .xtreemfs.pbrpc.MessageType message_type = 2;</code>
+     *
+     * <pre>
+     * Type of this RPC message (Request, Response).
+     * </pre>
+     */
+    boolean hasMessageType();
+    /**
+     * <code>required .xtreemfs.pbrpc.MessageType message_type = 2;</code>
+     *
+     * <pre>
+     * Type of this RPC message (Request, Response).
+     * </pre>
+     */
+    org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType getMessageType();
+
+    // optional .xtreemfs.pbrpc.RPCHeader.RequestHeader request_header = 3;
+    /**
+     * <code>optional .xtreemfs.pbrpc.RPCHeader.RequestHeader request_header = 3;</code>
+     *
+     * <pre>
+     * Optional request_header, required if message_type is RPC_REQUEST.
+     * </pre>
+     */
+    boolean hasRequestHeader();
+    /**
+     * <code>optional .xtreemfs.pbrpc.RPCHeader.RequestHeader request_header = 3;</code>
+     *
+     * <pre>
+     * Optional request_header, required if message_type is RPC_REQUEST.
+     * </pre>
+     */
+    org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader getRequestHeader();
+    /**
+     * <code>optional .xtreemfs.pbrpc.RPCHeader.RequestHeader request_header = 3;</code>
+     *
+     * <pre>
+     * Optional request_header, required if message_type is RPC_REQUEST.
+     * </pre>
+     */
+    org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeaderOrBuilder getRequestHeaderOrBuilder();
+
+    // optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error_response = 4;
+    /**
+     * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error_response = 4;</code>
+     *
+     * <pre>
+     * Optional error_response, required if message_type is RPC_ERROR_RESPONSE.
+     * </pre>
+     */
+    boolean hasErrorResponse();
+    /**
+     * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error_response = 4;</code>
+     *
+     * <pre>
+     * Optional error_response, required if message_type is RPC_ERROR_RESPONSE.
+     * </pre>
+     */
+    org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse getErrorResponse();
+    /**
+     * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error_response = 4;</code>
+     *
+     * <pre>
+     * Optional error_response, required if message_type is RPC_ERROR_RESPONSE.
+     * </pre>
+     */
+    org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponseOrBuilder getErrorResponseOrBuilder();
+  }
+  /**
+   * Protobuf type {@code xtreemfs.pbrpc.RPCHeader}
+   *
+   * <pre>
+   * RPC header message sent in the first request fragment.
+   * </pre>
+   */
   public static final class RPCHeader extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements RPCHeaderOrBuilder {
     // Use RPCHeader.newBuilder() to construct.
-    private RPCHeader() {
-      initFields();
+    private RPCHeader(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
     }
-    private RPCHeader(boolean noInit) {}
-    
+    private RPCHeader(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
     private static final RPCHeader defaultInstance;
     public static RPCHeader getDefaultInstance() {
       return defaultInstance;
     }
-    
+
     public RPCHeader getDefaultInstanceForType() {
       return defaultInstance;
     }
-    
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private RPCHeader(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 13: {
+              bitField0_ |= 0x00000001;
+              callId_ = input.readFixed32();
+              break;
+            }
+            case 16: {
+              int rawValue = input.readEnum();
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType value = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType.valueOf(rawValue);
+              if (value == null) {
+                unknownFields.mergeVarintField(2, rawValue);
+              } else {
+                bitField0_ |= 0x00000002;
+                messageType_ = value;
+              }
+              break;
+            }
+            case 26: {
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.Builder subBuilder = null;
+              if (((bitField0_ & 0x00000004) == 0x00000004)) {
+                subBuilder = requestHeader_.toBuilder();
+              }
+              requestHeader_ = input.readMessage(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(requestHeader_);
+                requestHeader_ = subBuilder.buildPartial();
+              }
+              bitField0_ |= 0x00000004;
+              break;
+            }
+            case 34: {
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.Builder subBuilder = null;
+              if (((bitField0_ & 0x00000008) == 0x00000008)) {
+                subBuilder = errorResponse_.toBuilder();
+              }
+              errorResponse_ = input.readMessage(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(errorResponse_);
+                errorResponse_ = subBuilder.buildPartial();
+              }
+              bitField0_ |= 0x00000008;
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
       return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_RPCHeader_descriptor;
     }
-    
+
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_RPCHeader_fieldAccessorTable;
+      return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_RPCHeader_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.Builder.class);
     }
-    
-    public static final class RequestHeader extends
-        com.google.protobuf.GeneratedMessage {
-      // Use RequestHeader.newBuilder() to construct.
-      private RequestHeader() {
-        initFields();
+
+    public static com.google.protobuf.Parser<RPCHeader> PARSER =
+        new com.google.protobuf.AbstractParser<RPCHeader>() {
+      public RPCHeader parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new RPCHeader(input, extensionRegistry);
       }
-      private RequestHeader(boolean noInit) {}
-      
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<RPCHeader> getParserForType() {
+      return PARSER;
+    }
+
+    public interface RequestHeaderOrBuilder
+        extends com.google.protobuf.MessageOrBuilder {
+
+      // required fixed32 interface_id = 1;
+      /**
+       * <code>required fixed32 interface_id = 1;</code>
+       *
+       * <pre>
+       * Interface id of the requested method.
+       * </pre>
+       */
+      boolean hasInterfaceId();
+      /**
+       * <code>required fixed32 interface_id = 1;</code>
+       *
+       * <pre>
+       * Interface id of the requested method.
+       * </pre>
+       */
+      int getInterfaceId();
+
+      // required fixed32 proc_id = 2;
+      /**
+       * <code>required fixed32 proc_id = 2;</code>
+       *
+       * <pre>
+       * Procedure id of the requested method.
+       * </pre>
+       */
+      boolean hasProcId();
+      /**
+       * <code>required fixed32 proc_id = 2;</code>
+       *
+       * <pre>
+       * Procedure id of the requested method.
+       * </pre>
+       */
+      int getProcId();
+
+      // required .xtreemfs.pbrpc.UserCredentials user_creds = 3;
+      /**
+       * <code>required .xtreemfs.pbrpc.UserCredentials user_creds = 3;</code>
+       *
+       * <pre>
+       * File system user credentials for the operation.
+       * </pre>
+       */
+      boolean hasUserCreds();
+      /**
+       * <code>required .xtreemfs.pbrpc.UserCredentials user_creds = 3;</code>
+       *
+       * <pre>
+       * File system user credentials for the operation.
+       * </pre>
+       */
+      org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials getUserCreds();
+      /**
+       * <code>required .xtreemfs.pbrpc.UserCredentials user_creds = 3;</code>
+       *
+       * <pre>
+       * File system user credentials for the operation.
+       * </pre>
+       */
+      org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentialsOrBuilder getUserCredsOrBuilder();
+
+      // required .xtreemfs.pbrpc.Auth auth_data = 4;
+      /**
+       * <code>required .xtreemfs.pbrpc.Auth auth_data = 4;</code>
+       *
+       * <pre>
+       * Authentication details.
+       * </pre>
+       */
+      boolean hasAuthData();
+      /**
+       * <code>required .xtreemfs.pbrpc.Auth auth_data = 4;</code>
+       *
+       * <pre>
+       * Authentication details.
+       * </pre>
+       */
+      org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth getAuthData();
+      /**
+       * <code>required .xtreemfs.pbrpc.Auth auth_data = 4;</code>
+       *
+       * <pre>
+       * Authentication details.
+       * </pre>
+       */
+      org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthOrBuilder getAuthDataOrBuilder();
+    }
+    /**
+     * Protobuf type {@code xtreemfs.pbrpc.RPCHeader.RequestHeader}
+     *
+     * <pre>
+     * Header data for requests, i.e. message_type is RPC_REQUEST.
+     * </pre>
+     */
+    public static final class RequestHeader extends
+        com.google.protobuf.GeneratedMessage
+        implements RequestHeaderOrBuilder {
+      // Use RequestHeader.newBuilder() to construct.
+      private RequestHeader(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+        super(builder);
+        this.unknownFields = builder.getUnknownFields();
+      }
+      private RequestHeader(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
       private static final RequestHeader defaultInstance;
       public static RequestHeader getDefaultInstance() {
         return defaultInstance;
       }
-      
+
       public RequestHeader getDefaultInstanceForType() {
         return defaultInstance;
       }
-      
+
+      private final com.google.protobuf.UnknownFieldSet unknownFields;
+      @java.lang.Override
+      public final com.google.protobuf.UnknownFieldSet
+          getUnknownFields() {
+        return this.unknownFields;
+      }
+      private RequestHeader(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        initFields();
+        int mutable_bitField0_ = 0;
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+            com.google.protobuf.UnknownFieldSet.newBuilder();
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              default: {
+                if (!parseUnknownField(input, unknownFields,
+                                       extensionRegistry, tag)) {
+                  done = true;
+                }
+                break;
+              }
+              case 13: {
+                bitField0_ |= 0x00000001;
+                interfaceId_ = input.readFixed32();
+                break;
+              }
+              case 21: {
+                bitField0_ |= 0x00000002;
+                procId_ = input.readFixed32();
+                break;
+              }
+              case 26: {
+                org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.Builder subBuilder = null;
+                if (((bitField0_ & 0x00000004) == 0x00000004)) {
+                  subBuilder = userCreds_.toBuilder();
+                }
+                userCreds_ = input.readMessage(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.PARSER, extensionRegistry);
+                if (subBuilder != null) {
+                  subBuilder.mergeFrom(userCreds_);
+                  userCreds_ = subBuilder.buildPartial();
+                }
+                bitField0_ |= 0x00000004;
+                break;
+              }
+              case 34: {
+                org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.Builder subBuilder = null;
+                if (((bitField0_ & 0x00000008) == 0x00000008)) {
+                  subBuilder = authData_.toBuilder();
+                }
+                authData_ = input.readMessage(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.PARSER, extensionRegistry);
+                if (subBuilder != null) {
+                  subBuilder.mergeFrom(authData_);
+                  authData_ = subBuilder.buildPartial();
+                }
+                bitField0_ |= 0x00000008;
+                break;
+              }
+            }
+          }
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(this);
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(
+              e.getMessage()).setUnfinishedMessage(this);
+        } finally {
+          this.unknownFields = unknownFields.build();
+          makeExtensionsImmutable();
+        }
+      }
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_RPCHeader_RequestHeader_descriptor;
       }
-      
+
       protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
           internalGetFieldAccessorTable() {
-        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_RPCHeader_RequestHeader_fieldAccessorTable;
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_RPCHeader_RequestHeader_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.Builder.class);
       }
-      
+
+      public static com.google.protobuf.Parser<RequestHeader> PARSER =
+          new com.google.protobuf.AbstractParser<RequestHeader>() {
+        public RequestHeader parsePartialFrom(
+            com.google.protobuf.CodedInputStream input,
+            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+            throws com.google.protobuf.InvalidProtocolBufferException {
+          return new RequestHeader(input, extensionRegistry);
+        }
+      };
+
+      @java.lang.Override
+      public com.google.protobuf.Parser<RequestHeader> getParserForType() {
+        return PARSER;
+      }
+
+      private int bitField0_;
       // required fixed32 interface_id = 1;
       public static final int INTERFACE_ID_FIELD_NUMBER = 1;
-      private boolean hasInterfaceId;
-      private int interfaceId_ = 0;
-      public boolean hasInterfaceId() { return hasInterfaceId; }
-      public int getInterfaceId() { return interfaceId_; }
-      
+      private int interfaceId_;
+      /**
+       * <code>required fixed32 interface_id = 1;</code>
+       *
+       * <pre>
+       * Interface id of the requested method.
+       * </pre>
+       */
+      public boolean hasInterfaceId() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required fixed32 interface_id = 1;</code>
+       *
+       * <pre>
+       * Interface id of the requested method.
+       * </pre>
+       */
+      public int getInterfaceId() {
+        return interfaceId_;
+      }
+
       // required fixed32 proc_id = 2;
       public static final int PROC_ID_FIELD_NUMBER = 2;
-      private boolean hasProcId;
-      private int procId_ = 0;
-      public boolean hasProcId() { return hasProcId; }
-      public int getProcId() { return procId_; }
-      
+      private int procId_;
+      /**
+       * <code>required fixed32 proc_id = 2;</code>
+       *
+       * <pre>
+       * Procedure id of the requested method.
+       * </pre>
+       */
+      public boolean hasProcId() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>required fixed32 proc_id = 2;</code>
+       *
+       * <pre>
+       * Procedure id of the requested method.
+       * </pre>
+       */
+      public int getProcId() {
+        return procId_;
+      }
+
       // required .xtreemfs.pbrpc.UserCredentials user_creds = 3;
       public static final int USER_CREDS_FIELD_NUMBER = 3;
-      private boolean hasUserCreds;
       private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials userCreds_;
-      public boolean hasUserCreds() { return hasUserCreds; }
-      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials getUserCreds() { return userCreds_; }
-      
+      /**
+       * <code>required .xtreemfs.pbrpc.UserCredentials user_creds = 3;</code>
+       *
+       * <pre>
+       * File system user credentials for the operation.
+       * </pre>
+       */
+      public boolean hasUserCreds() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.UserCredentials user_creds = 3;</code>
+       *
+       * <pre>
+       * File system user credentials for the operation.
+       * </pre>
+       */
+      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials getUserCreds() {
+        return userCreds_;
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.UserCredentials user_creds = 3;</code>
+       *
+       * <pre>
+       * File system user credentials for the operation.
+       * </pre>
+       */
+      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentialsOrBuilder getUserCredsOrBuilder() {
+        return userCreds_;
+      }
+
       // required .xtreemfs.pbrpc.Auth auth_data = 4;
       public static final int AUTH_DATA_FIELD_NUMBER = 4;
-      private boolean hasAuthData;
       private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth authData_;
-      public boolean hasAuthData() { return hasAuthData; }
-      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth getAuthData() { return authData_; }
-      
+      /**
+       * <code>required .xtreemfs.pbrpc.Auth auth_data = 4;</code>
+       *
+       * <pre>
+       * Authentication details.
+       * </pre>
+       */
+      public boolean hasAuthData() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.Auth auth_data = 4;</code>
+       *
+       * <pre>
+       * Authentication details.
+       * </pre>
+       */
+      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth getAuthData() {
+        return authData_;
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.Auth auth_data = 4;</code>
+       *
+       * <pre>
+       * Authentication details.
+       * </pre>
+       */
+      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthOrBuilder getAuthDataOrBuilder() {
+        return authData_;
+      }
+
       private void initFields() {
+        interfaceId_ = 0;
+        procId_ = 0;
         userCreds_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.getDefaultInstance();
         authData_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.getDefaultInstance();
       }
+      private byte memoizedIsInitialized = -1;
       public final boolean isInitialized() {
-        if (!hasInterfaceId) return false;
-        if (!hasProcId) return false;
-        if (!hasUserCreds) return false;
-        if (!hasAuthData) return false;
-        if (!getUserCreds().isInitialized()) return false;
-        if (!getAuthData().isInitialized()) return false;
+        byte isInitialized = memoizedIsInitialized;
+        if (isInitialized != -1) return isInitialized == 1;
+
+        if (!hasInterfaceId()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+        if (!hasProcId()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+        if (!hasUserCreds()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+        if (!hasAuthData()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+        if (!getUserCreds().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+        if (!getAuthData().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+        memoizedIsInitialized = 1;
         return true;
       }
-      
+
       public void writeTo(com.google.protobuf.CodedOutputStream output)
                           throws java.io.IOException {
         getSerializedSize();
-        if (hasInterfaceId()) {
-          output.writeFixed32(1, getInterfaceId());
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+          output.writeFixed32(1, interfaceId_);
         }
-        if (hasProcId()) {
-          output.writeFixed32(2, getProcId());
+        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+          output.writeFixed32(2, procId_);
         }
-        if (hasUserCreds()) {
-          output.writeMessage(3, getUserCreds());
+        if (((bitField0_ & 0x00000004) == 0x00000004)) {
+          output.writeMessage(3, userCreds_);
         }
-        if (hasAuthData()) {
-          output.writeMessage(4, getAuthData());
+        if (((bitField0_ & 0x00000008) == 0x00000008)) {
+          output.writeMessage(4, authData_);
         }
         getUnknownFields().writeTo(output);
       }
-      
+
       private int memoizedSerializedSize = -1;
       public int getSerializedSize() {
         int size = memoizedSerializedSize;
         if (size != -1) return size;
-      
+
         size = 0;
-        if (hasInterfaceId()) {
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
           size += com.google.protobuf.CodedOutputStream
-            .computeFixed32Size(1, getInterfaceId());
+            .computeFixed32Size(1, interfaceId_);
         }
-        if (hasProcId()) {
+        if (((bitField0_ & 0x00000002) == 0x00000002)) {
           size += com.google.protobuf.CodedOutputStream
-            .computeFixed32Size(2, getProcId());
+            .computeFixed32Size(2, procId_);
         }
-        if (hasUserCreds()) {
+        if (((bitField0_ & 0x00000004) == 0x00000004)) {
           size += com.google.protobuf.CodedOutputStream
-            .computeMessageSize(3, getUserCreds());
+            .computeMessageSize(3, userCreds_);
         }
-        if (hasAuthData()) {
+        if (((bitField0_ & 0x00000008) == 0x00000008)) {
           size += com.google.protobuf.CodedOutputStream
-            .computeMessageSize(4, getAuthData());
+            .computeMessageSize(4, authData_);
         }
         size += getUnknownFields().getSerializedSize();
         memoizedSerializedSize = size;
         return size;
       }
-      
+
+      private static final long serialVersionUID = 0L;
+      @java.lang.Override
+      protected java.lang.Object writeReplace()
+          throws java.io.ObjectStreamException {
+        return super.writeReplace();
+      }
+
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader parseFrom(
           com.google.protobuf.ByteString data)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return newBuilder().mergeFrom(data).buildParsed();
+        return PARSER.parseFrom(data);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader parseFrom(
           com.google.protobuf.ByteString data,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return newBuilder().mergeFrom(data, extensionRegistry)
-                 .buildParsed();
+        return PARSER.parseFrom(data, extensionRegistry);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader parseFrom(byte[] data)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return newBuilder().mergeFrom(data).buildParsed();
+        return PARSER.parseFrom(data);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader parseFrom(
           byte[] data,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return newBuilder().mergeFrom(data, extensionRegistry)
-                 .buildParsed();
+        return PARSER.parseFrom(data, extensionRegistry);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader parseFrom(java.io.InputStream input)
           throws java.io.IOException {
-        return newBuilder().mergeFrom(input).buildParsed();
+        return PARSER.parseFrom(input);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader parseFrom(
           java.io.InputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        return newBuilder().mergeFrom(input, extensionRegistry)
-                 .buildParsed();
+        return PARSER.parseFrom(input, extensionRegistry);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader parseDelimitedFrom(java.io.InputStream input)
           throws java.io.IOException {
-        Builder builder = newBuilder();
-        if (builder.mergeDelimitedFrom(input)) {
-          return builder.buildParsed();
-        } else {
-          return null;
-        }
+        return PARSER.parseDelimitedFrom(input);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader parseDelimitedFrom(
           java.io.InputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        Builder builder = newBuilder();
-        if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-          return builder.buildParsed();
-        } else {
-          return null;
-        }
+        return PARSER.parseDelimitedFrom(input, extensionRegistry);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader parseFrom(
           com.google.protobuf.CodedInputStream input)
           throws java.io.IOException {
-        return newBuilder().mergeFrom(input).buildParsed();
+        return PARSER.parseFrom(input);
       }
       public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader parseFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        return newBuilder().mergeFrom(input, extensionRegistry)
-                 .buildParsed();
+        return PARSER.parseFrom(input, extensionRegistry);
       }
-      
+
       public static Builder newBuilder() { return Builder.create(); }
       public Builder newBuilderForType() { return newBuilder(); }
       public static Builder newBuilder(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader prototype) {
         return newBuilder().mergeFrom(prototype);
       }
       public Builder toBuilder() { return newBuilder(this); }
-      
+
+      @java.lang.Override
+      protected Builder newBuilderForType(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        Builder builder = new Builder(parent);
+        return builder;
+      }
+      /**
+       * Protobuf type {@code xtreemfs.pbrpc.RPCHeader.RequestHeader}
+       *
+       * <pre>
+       * Header data for requests, i.e. message_type is RPC_REQUEST.
+       * </pre>
+       */
       public static final class Builder extends
-          com.google.protobuf.GeneratedMessage.Builder<Builder> {
-        private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader result;
-        
+          com.google.protobuf.GeneratedMessage.Builder<Builder>
+         implements org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeaderOrBuilder {
+        public static final com.google.protobuf.Descriptors.Descriptor
+            getDescriptor() {
+          return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_RPCHeader_RequestHeader_descriptor;
+        }
+
+        protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+            internalGetFieldAccessorTable() {
+          return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_RPCHeader_RequestHeader_fieldAccessorTable
+              .ensureFieldAccessorsInitialized(
+                  org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.Builder.class);
+        }
+
         // Construct using org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.newBuilder()
-        private Builder() {}
-        
-        private static Builder create() {
-          Builder builder = new Builder();
-          builder.result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader();
-          return builder;
+        private Builder() {
+          maybeForceBuilderInitialization();
         }
-        
-        protected org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader internalGetResult() {
-          return result;
+
+        private Builder(
+            com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+          super(parent);
+          maybeForceBuilderInitialization();
         }
-        
-        public Builder clear() {
-          if (result == null) {
-            throw new IllegalStateException(
-              "Cannot call clear() after build().");
+        private void maybeForceBuilderInitialization() {
+          if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+            getUserCredsFieldBuilder();
+            getAuthDataFieldBuilder();
           }
-          result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader();
+        }
+        private static Builder create() {
+          return new Builder();
+        }
+
+        public Builder clear() {
+          super.clear();
+          interfaceId_ = 0;
+          bitField0_ = (bitField0_ & ~0x00000001);
+          procId_ = 0;
+          bitField0_ = (bitField0_ & ~0x00000002);
+          if (userCredsBuilder_ == null) {
+            userCreds_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.getDefaultInstance();
+          } else {
+            userCredsBuilder_.clear();
+          }
+          bitField0_ = (bitField0_ & ~0x00000004);
+          if (authDataBuilder_ == null) {
+            authData_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.getDefaultInstance();
+          } else {
+            authDataBuilder_.clear();
+          }
+          bitField0_ = (bitField0_ & ~0x00000008);
           return this;
         }
-        
+
         public Builder clone() {
-          return create().mergeFrom(result);
+          return create().mergeFrom(buildPartial());
         }
-        
+
         public com.google.protobuf.Descriptors.Descriptor
             getDescriptorForType() {
-          return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.getDescriptor();
+          return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_RPCHeader_RequestHeader_descriptor;
         }
-        
+
         public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader getDefaultInstanceForType() {
           return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.getDefaultInstance();
         }
-        
-        public boolean isInitialized() {
-          return result.isInitialized();
-        }
+
         public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader build() {
-          if (result != null && !isInitialized()) {
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader result = buildPartial();
+          if (!result.isInitialized()) {
             throw newUninitializedMessageException(result);
           }
-          return buildPartial();
+          return result;
         }
-        
-        private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader buildParsed()
-            throws com.google.protobuf.InvalidProtocolBufferException {
-          if (!isInitialized()) {
-            throw newUninitializedMessageException(
-              result).asInvalidProtocolBufferException();
-          }
-          return buildPartial();
-        }
-        
+
         public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader buildPartial() {
-          if (result == null) {
-            throw new IllegalStateException(
-              "build() has already been called on this Builder.");
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader(this);
+          int from_bitField0_ = bitField0_;
+          int to_bitField0_ = 0;
+          if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+            to_bitField0_ |= 0x00000001;
           }
-          org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader returnMe = result;
-          result = null;
-          return returnMe;
+          result.interfaceId_ = interfaceId_;
+          if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+            to_bitField0_ |= 0x00000002;
+          }
+          result.procId_ = procId_;
+          if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+            to_bitField0_ |= 0x00000004;
+          }
+          if (userCredsBuilder_ == null) {
+            result.userCreds_ = userCreds_;
+          } else {
+            result.userCreds_ = userCredsBuilder_.build();
+          }
+          if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+            to_bitField0_ |= 0x00000008;
+          }
+          if (authDataBuilder_ == null) {
+            result.authData_ = authData_;
+          } else {
+            result.authData_ = authDataBuilder_.build();
+          }
+          result.bitField0_ = to_bitField0_;
+          onBuilt();
+          return result;
         }
-        
+
         public Builder mergeFrom(com.google.protobuf.Message other) {
           if (other instanceof org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader) {
             return mergeFrom((org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader)other);
@@ -1665,7 +3572,7 @@ public final class RPC {
             return this;
           }
         }
-        
+
         public Builder mergeFrom(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader other) {
           if (other == org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.getDefaultInstance()) return this;
           if (other.hasInterfaceId()) {
@@ -1683,494 +3590,644 @@ public final class RPC {
           this.mergeUnknownFields(other.getUnknownFields());
           return this;
         }
-        
+
+        public final boolean isInitialized() {
+          if (!hasInterfaceId()) {
+            
+            return false;
+          }
+          if (!hasProcId()) {
+            
+            return false;
+          }
+          if (!hasUserCreds()) {
+            
+            return false;
+          }
+          if (!hasAuthData()) {
+            
+            return false;
+          }
+          if (!getUserCreds().isInitialized()) {
+            
+            return false;
+          }
+          if (!getAuthData().isInitialized()) {
+            
+            return false;
+          }
+          return true;
+        }
+
         public Builder mergeFrom(
             com.google.protobuf.CodedInputStream input,
             com.google.protobuf.ExtensionRegistryLite extensionRegistry)
             throws java.io.IOException {
-          com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-            com.google.protobuf.UnknownFieldSet.newBuilder(
-              this.getUnknownFields());
-          while (true) {
-            int tag = input.readTag();
-            switch (tag) {
-              case 0:
-                this.setUnknownFields(unknownFields.build());
-                return this;
-              default: {
-                if (!parseUnknownField(input, unknownFields,
-                                       extensionRegistry, tag)) {
-                  this.setUnknownFields(unknownFields.build());
-                  return this;
-                }
-                break;
-              }
-              case 13: {
-                setInterfaceId(input.readFixed32());
-                break;
-              }
-              case 21: {
-                setProcId(input.readFixed32());
-                break;
-              }
-              case 26: {
-                org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.Builder subBuilder = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.newBuilder();
-                if (hasUserCreds()) {
-                  subBuilder.mergeFrom(getUserCreds());
-                }
-                input.readMessage(subBuilder, extensionRegistry);
-                setUserCreds(subBuilder.buildPartial());
-                break;
-              }
-              case 34: {
-                org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.Builder subBuilder = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.newBuilder();
-                if (hasAuthData()) {
-                  subBuilder.mergeFrom(getAuthData());
-                }
-                input.readMessage(subBuilder, extensionRegistry);
-                setAuthData(subBuilder.buildPartial());
-                break;
-              }
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader parsedMessage = null;
+          try {
+            parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+          } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+            parsedMessage = (org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader) e.getUnfinishedMessage();
+            throw e;
+          } finally {
+            if (parsedMessage != null) {
+              mergeFrom(parsedMessage);
             }
           }
+          return this;
         }
-        
-        
+        private int bitField0_;
+
         // required fixed32 interface_id = 1;
+        private int interfaceId_ ;
+        /**
+         * <code>required fixed32 interface_id = 1;</code>
+         *
+         * <pre>
+         * Interface id of the requested method.
+         * </pre>
+         */
         public boolean hasInterfaceId() {
-          return result.hasInterfaceId();
+          return ((bitField0_ & 0x00000001) == 0x00000001);
         }
+        /**
+         * <code>required fixed32 interface_id = 1;</code>
+         *
+         * <pre>
+         * Interface id of the requested method.
+         * </pre>
+         */
         public int getInterfaceId() {
-          return result.getInterfaceId();
+          return interfaceId_;
         }
+        /**
+         * <code>required fixed32 interface_id = 1;</code>
+         *
+         * <pre>
+         * Interface id of the requested method.
+         * </pre>
+         */
         public Builder setInterfaceId(int value) {
-          result.hasInterfaceId = true;
-          result.interfaceId_ = value;
+          bitField0_ |= 0x00000001;
+          interfaceId_ = value;
+          onChanged();
           return this;
         }
+        /**
+         * <code>required fixed32 interface_id = 1;</code>
+         *
+         * <pre>
+         * Interface id of the requested method.
+         * </pre>
+         */
         public Builder clearInterfaceId() {
-          result.hasInterfaceId = false;
-          result.interfaceId_ = 0;
+          bitField0_ = (bitField0_ & ~0x00000001);
+          interfaceId_ = 0;
+          onChanged();
           return this;
         }
-        
+
         // required fixed32 proc_id = 2;
+        private int procId_ ;
+        /**
+         * <code>required fixed32 proc_id = 2;</code>
+         *
+         * <pre>
+         * Procedure id of the requested method.
+         * </pre>
+         */
         public boolean hasProcId() {
-          return result.hasProcId();
+          return ((bitField0_ & 0x00000002) == 0x00000002);
         }
+        /**
+         * <code>required fixed32 proc_id = 2;</code>
+         *
+         * <pre>
+         * Procedure id of the requested method.
+         * </pre>
+         */
         public int getProcId() {
-          return result.getProcId();
+          return procId_;
         }
+        /**
+         * <code>required fixed32 proc_id = 2;</code>
+         *
+         * <pre>
+         * Procedure id of the requested method.
+         * </pre>
+         */
         public Builder setProcId(int value) {
-          result.hasProcId = true;
-          result.procId_ = value;
+          bitField0_ |= 0x00000002;
+          procId_ = value;
+          onChanged();
           return this;
         }
+        /**
+         * <code>required fixed32 proc_id = 2;</code>
+         *
+         * <pre>
+         * Procedure id of the requested method.
+         * </pre>
+         */
         public Builder clearProcId() {
-          result.hasProcId = false;
-          result.procId_ = 0;
+          bitField0_ = (bitField0_ & ~0x00000002);
+          procId_ = 0;
+          onChanged();
           return this;
         }
-        
+
         // required .xtreemfs.pbrpc.UserCredentials user_creds = 3;
+        private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials userCreds_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.getDefaultInstance();
+        private com.google.protobuf.SingleFieldBuilder<
+            org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.Builder, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentialsOrBuilder> userCredsBuilder_;
+        /**
+         * <code>required .xtreemfs.pbrpc.UserCredentials user_creds = 3;</code>
+         *
+         * <pre>
+         * File system user credentials for the operation.
+         * </pre>
+         */
         public boolean hasUserCreds() {
-          return result.hasUserCreds();
+          return ((bitField0_ & 0x00000004) == 0x00000004);
         }
+        /**
+         * <code>required .xtreemfs.pbrpc.UserCredentials user_creds = 3;</code>
+         *
+         * <pre>
+         * File system user credentials for the operation.
+         * </pre>
+         */
         public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials getUserCreds() {
-          return result.getUserCreds();
+          if (userCredsBuilder_ == null) {
+            return userCreds_;
+          } else {
+            return userCredsBuilder_.getMessage();
+          }
         }
+        /**
+         * <code>required .xtreemfs.pbrpc.UserCredentials user_creds = 3;</code>
+         *
+         * <pre>
+         * File system user credentials for the operation.
+         * </pre>
+         */
         public Builder setUserCreds(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials value) {
-          if (value == null) {
-            throw new NullPointerException();
+          if (userCredsBuilder_ == null) {
+            if (value == null) {
+              throw new NullPointerException();
+            }
+            userCreds_ = value;
+            onChanged();
+          } else {
+            userCredsBuilder_.setMessage(value);
           }
-          result.hasUserCreds = true;
-          result.userCreds_ = value;
+          bitField0_ |= 0x00000004;
           return this;
         }
-        public Builder setUserCreds(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.Builder builderForValue) {
-          result.hasUserCreds = true;
-          result.userCreds_ = builderForValue.build();
+        /**
+         * <code>required .xtreemfs.pbrpc.UserCredentials user_creds = 3;</code>
+         *
+         * <pre>
+         * File system user credentials for the operation.
+         * </pre>
+         */
+        public Builder setUserCreds(
+            org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.Builder builderForValue) {
+          if (userCredsBuilder_ == null) {
+            userCreds_ = builderForValue.build();
+            onChanged();
+          } else {
+            userCredsBuilder_.setMessage(builderForValue.build());
+          }
+          bitField0_ |= 0x00000004;
           return this;
         }
+        /**
+         * <code>required .xtreemfs.pbrpc.UserCredentials user_creds = 3;</code>
+         *
+         * <pre>
+         * File system user credentials for the operation.
+         * </pre>
+         */
         public Builder mergeUserCreds(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials value) {
-          if (result.hasUserCreds() &&
-              result.userCreds_ != org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.getDefaultInstance()) {
-            result.userCreds_ =
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.newBuilder(result.userCreds_).mergeFrom(value).buildPartial();
+          if (userCredsBuilder_ == null) {
+            if (((bitField0_ & 0x00000004) == 0x00000004) &&
+                userCreds_ != org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.getDefaultInstance()) {
+              userCreds_ =
+                org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.newBuilder(userCreds_).mergeFrom(value).buildPartial();
+            } else {
+              userCreds_ = value;
+            }
+            onChanged();
           } else {
-            result.userCreds_ = value;
+            userCredsBuilder_.mergeFrom(value);
           }
-          result.hasUserCreds = true;
+          bitField0_ |= 0x00000004;
           return this;
         }
+        /**
+         * <code>required .xtreemfs.pbrpc.UserCredentials user_creds = 3;</code>
+         *
+         * <pre>
+         * File system user credentials for the operation.
+         * </pre>
+         */
         public Builder clearUserCreds() {
-          result.hasUserCreds = false;
-          result.userCreds_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.getDefaultInstance();
-          return this;
-        }
-        
-        // required .xtreemfs.pbrpc.Auth auth_data = 4;
-        public boolean hasAuthData() {
-          return result.hasAuthData();
-        }
-        public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth getAuthData() {
-          return result.getAuthData();
-        }
-        public Builder setAuthData(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth value) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          result.hasAuthData = true;
-          result.authData_ = value;
-          return this;
-        }
-        public Builder setAuthData(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.Builder builderForValue) {
-          result.hasAuthData = true;
-          result.authData_ = builderForValue.build();
-          return this;
-        }
-        public Builder mergeAuthData(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth value) {
-          if (result.hasAuthData() &&
-              result.authData_ != org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.getDefaultInstance()) {
-            result.authData_ =
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.newBuilder(result.authData_).mergeFrom(value).buildPartial();
+          if (userCredsBuilder_ == null) {
+            userCreds_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.getDefaultInstance();
+            onChanged();
           } else {
-            result.authData_ = value;
+            userCredsBuilder_.clear();
           }
-          result.hasAuthData = true;
+          bitField0_ = (bitField0_ & ~0x00000004);
           return this;
         }
+        /**
+         * <code>required .xtreemfs.pbrpc.UserCredentials user_creds = 3;</code>
+         *
+         * <pre>
+         * File system user credentials for the operation.
+         * </pre>
+         */
+        public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.Builder getUserCredsBuilder() {
+          bitField0_ |= 0x00000004;
+          onChanged();
+          return getUserCredsFieldBuilder().getBuilder();
+        }
+        /**
+         * <code>required .xtreemfs.pbrpc.UserCredentials user_creds = 3;</code>
+         *
+         * <pre>
+         * File system user credentials for the operation.
+         * </pre>
+         */
+        public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentialsOrBuilder getUserCredsOrBuilder() {
+          if (userCredsBuilder_ != null) {
+            return userCredsBuilder_.getMessageOrBuilder();
+          } else {
+            return userCreds_;
+          }
+        }
+        /**
+         * <code>required .xtreemfs.pbrpc.UserCredentials user_creds = 3;</code>
+         *
+         * <pre>
+         * File system user credentials for the operation.
+         * </pre>
+         */
+        private com.google.protobuf.SingleFieldBuilder<
+            org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.Builder, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentialsOrBuilder> 
+            getUserCredsFieldBuilder() {
+          if (userCredsBuilder_ == null) {
+            userCredsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+                org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.Builder, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentialsOrBuilder>(
+                    userCreds_,
+                    getParentForChildren(),
+                    isClean());
+            userCreds_ = null;
+          }
+          return userCredsBuilder_;
+        }
+
+        // required .xtreemfs.pbrpc.Auth auth_data = 4;
+        private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth authData_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.getDefaultInstance();
+        private com.google.protobuf.SingleFieldBuilder<
+            org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.Builder, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthOrBuilder> authDataBuilder_;
+        /**
+         * <code>required .xtreemfs.pbrpc.Auth auth_data = 4;</code>
+         *
+         * <pre>
+         * Authentication details.
+         * </pre>
+         */
+        public boolean hasAuthData() {
+          return ((bitField0_ & 0x00000008) == 0x00000008);
+        }
+        /**
+         * <code>required .xtreemfs.pbrpc.Auth auth_data = 4;</code>
+         *
+         * <pre>
+         * Authentication details.
+         * </pre>
+         */
+        public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth getAuthData() {
+          if (authDataBuilder_ == null) {
+            return authData_;
+          } else {
+            return authDataBuilder_.getMessage();
+          }
+        }
+        /**
+         * <code>required .xtreemfs.pbrpc.Auth auth_data = 4;</code>
+         *
+         * <pre>
+         * Authentication details.
+         * </pre>
+         */
+        public Builder setAuthData(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth value) {
+          if (authDataBuilder_ == null) {
+            if (value == null) {
+              throw new NullPointerException();
+            }
+            authData_ = value;
+            onChanged();
+          } else {
+            authDataBuilder_.setMessage(value);
+          }
+          bitField0_ |= 0x00000008;
+          return this;
+        }
+        /**
+         * <code>required .xtreemfs.pbrpc.Auth auth_data = 4;</code>
+         *
+         * <pre>
+         * Authentication details.
+         * </pre>
+         */
+        public Builder setAuthData(
+            org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.Builder builderForValue) {
+          if (authDataBuilder_ == null) {
+            authData_ = builderForValue.build();
+            onChanged();
+          } else {
+            authDataBuilder_.setMessage(builderForValue.build());
+          }
+          bitField0_ |= 0x00000008;
+          return this;
+        }
+        /**
+         * <code>required .xtreemfs.pbrpc.Auth auth_data = 4;</code>
+         *
+         * <pre>
+         * Authentication details.
+         * </pre>
+         */
+        public Builder mergeAuthData(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth value) {
+          if (authDataBuilder_ == null) {
+            if (((bitField0_ & 0x00000008) == 0x00000008) &&
+                authData_ != org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.getDefaultInstance()) {
+              authData_ =
+                org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.newBuilder(authData_).mergeFrom(value).buildPartial();
+            } else {
+              authData_ = value;
+            }
+            onChanged();
+          } else {
+            authDataBuilder_.mergeFrom(value);
+          }
+          bitField0_ |= 0x00000008;
+          return this;
+        }
+        /**
+         * <code>required .xtreemfs.pbrpc.Auth auth_data = 4;</code>
+         *
+         * <pre>
+         * Authentication details.
+         * </pre>
+         */
         public Builder clearAuthData() {
-          result.hasAuthData = false;
-          result.authData_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.getDefaultInstance();
+          if (authDataBuilder_ == null) {
+            authData_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.getDefaultInstance();
+            onChanged();
+          } else {
+            authDataBuilder_.clear();
+          }
+          bitField0_ = (bitField0_ & ~0x00000008);
           return this;
         }
-        
+        /**
+         * <code>required .xtreemfs.pbrpc.Auth auth_data = 4;</code>
+         *
+         * <pre>
+         * Authentication details.
+         * </pre>
+         */
+        public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.Builder getAuthDataBuilder() {
+          bitField0_ |= 0x00000008;
+          onChanged();
+          return getAuthDataFieldBuilder().getBuilder();
+        }
+        /**
+         * <code>required .xtreemfs.pbrpc.Auth auth_data = 4;</code>
+         *
+         * <pre>
+         * Authentication details.
+         * </pre>
+         */
+        public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthOrBuilder getAuthDataOrBuilder() {
+          if (authDataBuilder_ != null) {
+            return authDataBuilder_.getMessageOrBuilder();
+          } else {
+            return authData_;
+          }
+        }
+        /**
+         * <code>required .xtreemfs.pbrpc.Auth auth_data = 4;</code>
+         *
+         * <pre>
+         * Authentication details.
+         * </pre>
+         */
+        private com.google.protobuf.SingleFieldBuilder<
+            org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.Builder, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthOrBuilder> 
+            getAuthDataFieldBuilder() {
+          if (authDataBuilder_ == null) {
+            authDataBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+                org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.Builder, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthOrBuilder>(
+                    authData_,
+                    getParentForChildren(),
+                    isClean());
+            authData_ = null;
+          }
+          return authDataBuilder_;
+        }
+
         // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.RPCHeader.RequestHeader)
       }
-      
+
       static {
         defaultInstance = new RequestHeader(true);
-        org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internalForceInit();
         defaultInstance.initFields();
       }
-      
+
       // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.RPCHeader.RequestHeader)
     }
-    
+
+    public interface ErrorResponseOrBuilder
+        extends com.google.protobuf.MessageOrBuilder {
+
+      // required .xtreemfs.pbrpc.ErrorType error_type = 1;
+      /**
+       * <code>required .xtreemfs.pbrpc.ErrorType error_type = 1;</code>
+       *
+       * <pre>
+       * Error type details.
+       * </pre>
+       */
+      boolean hasErrorType();
+      /**
+       * <code>required .xtreemfs.pbrpc.ErrorType error_type = 1;</code>
+       *
+       * <pre>
+       * Error type details.
+       * </pre>
+       */
+      org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType getErrorType();
+
+      // optional .xtreemfs.pbrpc.POSIXErrno posix_errno = 2 [default = POSIX_ERROR_NONE];
+      /**
+       * <code>optional .xtreemfs.pbrpc.POSIXErrno posix_errno = 2 [default = POSIX_ERROR_NONE];</code>
+       *
+       * <pre>
+       * Optional POSIX errno.
+       * </pre>
+       */
+      boolean hasPosixErrno();
+      /**
+       * <code>optional .xtreemfs.pbrpc.POSIXErrno posix_errno = 2 [default = POSIX_ERROR_NONE];</code>
+       *
+       * <pre>
+       * Optional POSIX errno.
+       * </pre>
+       */
+      org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno getPosixErrno();
+
+      // optional string error_message = 3;
+      /**
+       * <code>optional string error_message = 3;</code>
+       *
+       * <pre>
+       * Optional human readable error message in English (not localized!).
+       * </pre>
+       */
+      boolean hasErrorMessage();
+      /**
+       * <code>optional string error_message = 3;</code>
+       *
+       * <pre>
+       * Optional human readable error message in English (not localized!).
+       * </pre>
+       */
+      java.lang.String getErrorMessage();
+      /**
+       * <code>optional string error_message = 3;</code>
+       *
+       * <pre>
+       * Optional human readable error message in English (not localized!).
+       * </pre>
+       */
+      com.google.protobuf.ByteString
+          getErrorMessageBytes();
+
+      // optional string debug_info = 4;
+      /**
+       * <code>optional string debug_info = 4;</code>
+       *
+       * <pre>
+       * Optional debug information that only makes sense to developers such
+       * as stack traces.
+       * </pre>
+       */
+      boolean hasDebugInfo();
+      /**
+       * <code>optional string debug_info = 4;</code>
+       *
+       * <pre>
+       * Optional debug information that only makes sense to developers such
+       * as stack traces.
+       * </pre>
+       */
+      java.lang.String getDebugInfo();
+      /**
+       * <code>optional string debug_info = 4;</code>
+       *
+       * <pre>
+       * Optional debug information that only makes sense to developers such
+       * as stack traces.
+       * </pre>
+       */
+      com.google.protobuf.ByteString
+          getDebugInfoBytes();
+
+      // optional string redirect_to_server_uuid = 5;
+      /**
+       * <code>optional string redirect_to_server_uuid = 5;</code>
+       *
+       * <pre>
+       * Optional UUID of the server to use instead. Required when error_type is REDIRECT.
+       * </pre>
+       */
+      boolean hasRedirectToServerUuid();
+      /**
+       * <code>optional string redirect_to_server_uuid = 5;</code>
+       *
+       * <pre>
+       * Optional UUID of the server to use instead. Required when error_type is REDIRECT.
+       * </pre>
+       */
+      java.lang.String getRedirectToServerUuid();
+      /**
+       * <code>optional string redirect_to_server_uuid = 5;</code>
+       *
+       * <pre>
+       * Optional UUID of the server to use instead. Required when error_type is REDIRECT.
+       * </pre>
+       */
+      com.google.protobuf.ByteString
+          getRedirectToServerUuidBytes();
+    }
+    /**
+     * Protobuf type {@code xtreemfs.pbrpc.RPCHeader.ErrorResponse}
+     *
+     * <pre>
+     * Header data for error responses, i.e. message_type is RPC_ERROR_RESPONSE.
+     * </pre>
+     */
     public static final class ErrorResponse extends
-        com.google.protobuf.GeneratedMessage {
+        com.google.protobuf.GeneratedMessage
+        implements ErrorResponseOrBuilder {
       // Use ErrorResponse.newBuilder() to construct.
-      private ErrorResponse() {
-        initFields();
+      private ErrorResponse(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+        super(builder);
+        this.unknownFields = builder.getUnknownFields();
       }
-      private ErrorResponse(boolean noInit) {}
-      
+      private ErrorResponse(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
       private static final ErrorResponse defaultInstance;
       public static ErrorResponse getDefaultInstance() {
         return defaultInstance;
       }
-      
+
       public ErrorResponse getDefaultInstanceForType() {
         return defaultInstance;
       }
-      
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_RPCHeader_ErrorResponse_descriptor;
+
+      private final com.google.protobuf.UnknownFieldSet unknownFields;
+      @java.lang.Override
+      public final com.google.protobuf.UnknownFieldSet
+          getUnknownFields() {
+        return this.unknownFields;
       }
-      
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_RPCHeader_ErrorResponse_fieldAccessorTable;
-      }
-      
-      // required .xtreemfs.pbrpc.ErrorType error_type = 1;
-      public static final int ERROR_TYPE_FIELD_NUMBER = 1;
-      private boolean hasErrorType;
-      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType errorType_;
-      public boolean hasErrorType() { return hasErrorType; }
-      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType getErrorType() { return errorType_; }
-      
-      // optional .xtreemfs.pbrpc.POSIXErrno posix_errno = 2 [default = POSIX_ERROR_NONE];
-      public static final int POSIX_ERRNO_FIELD_NUMBER = 2;
-      private boolean hasPosixErrno;
-      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno posixErrno_;
-      public boolean hasPosixErrno() { return hasPosixErrno; }
-      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno getPosixErrno() { return posixErrno_; }
-      
-      // optional string error_message = 3;
-      public static final int ERROR_MESSAGE_FIELD_NUMBER = 3;
-      private boolean hasErrorMessage;
-      private java.lang.String errorMessage_ = "";
-      public boolean hasErrorMessage() { return hasErrorMessage; }
-      public java.lang.String getErrorMessage() { return errorMessage_; }
-      
-      // optional string debug_info = 4;
-      public static final int DEBUG_INFO_FIELD_NUMBER = 4;
-      private boolean hasDebugInfo;
-      private java.lang.String debugInfo_ = "";
-      public boolean hasDebugInfo() { return hasDebugInfo; }
-      public java.lang.String getDebugInfo() { return debugInfo_; }
-      
-      // optional string redirect_to_server_uuid = 5;
-      public static final int REDIRECT_TO_SERVER_UUID_FIELD_NUMBER = 5;
-      private boolean hasRedirectToServerUuid;
-      private java.lang.String redirectToServerUuid_ = "";
-      public boolean hasRedirectToServerUuid() { return hasRedirectToServerUuid; }
-      public java.lang.String getRedirectToServerUuid() { return redirectToServerUuid_; }
-      
-      private void initFields() {
-        errorType_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType.INVALID_INTERFACE_ID;
-        posixErrno_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno.POSIX_ERROR_NONE;
-      }
-      public final boolean isInitialized() {
-        if (!hasErrorType) return false;
-        return true;
-      }
-      
-      public void writeTo(com.google.protobuf.CodedOutputStream output)
-                          throws java.io.IOException {
-        getSerializedSize();
-        if (hasErrorType()) {
-          output.writeEnum(1, getErrorType().getNumber());
-        }
-        if (hasPosixErrno()) {
-          output.writeEnum(2, getPosixErrno().getNumber());
-        }
-        if (hasErrorMessage()) {
-          output.writeString(3, getErrorMessage());
-        }
-        if (hasDebugInfo()) {
-          output.writeString(4, getDebugInfo());
-        }
-        if (hasRedirectToServerUuid()) {
-          output.writeString(5, getRedirectToServerUuid());
-        }
-        getUnknownFields().writeTo(output);
-      }
-      
-      private int memoizedSerializedSize = -1;
-      public int getSerializedSize() {
-        int size = memoizedSerializedSize;
-        if (size != -1) return size;
-      
-        size = 0;
-        if (hasErrorType()) {
-          size += com.google.protobuf.CodedOutputStream
-            .computeEnumSize(1, getErrorType().getNumber());
-        }
-        if (hasPosixErrno()) {
-          size += com.google.protobuf.CodedOutputStream
-            .computeEnumSize(2, getPosixErrno().getNumber());
-        }
-        if (hasErrorMessage()) {
-          size += com.google.protobuf.CodedOutputStream
-            .computeStringSize(3, getErrorMessage());
-        }
-        if (hasDebugInfo()) {
-          size += com.google.protobuf.CodedOutputStream
-            .computeStringSize(4, getDebugInfo());
-        }
-        if (hasRedirectToServerUuid()) {
-          size += com.google.protobuf.CodedOutputStream
-            .computeStringSize(5, getRedirectToServerUuid());
-        }
-        size += getUnknownFields().getSerializedSize();
-        memoizedSerializedSize = size;
-        return size;
-      }
-      
-      public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse parseFrom(
-          com.google.protobuf.ByteString data)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return newBuilder().mergeFrom(data).buildParsed();
-      }
-      public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse parseFrom(
-          com.google.protobuf.ByteString data,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return newBuilder().mergeFrom(data, extensionRegistry)
-                 .buildParsed();
-      }
-      public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse parseFrom(byte[] data)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return newBuilder().mergeFrom(data).buildParsed();
-      }
-      public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse parseFrom(
-          byte[] data,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return newBuilder().mergeFrom(data, extensionRegistry)
-                 .buildParsed();
-      }
-      public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse parseFrom(java.io.InputStream input)
-          throws java.io.IOException {
-        return newBuilder().mergeFrom(input).buildParsed();
-      }
-      public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse parseFrom(
-          java.io.InputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        return newBuilder().mergeFrom(input, extensionRegistry)
-                 .buildParsed();
-      }
-      public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse parseDelimitedFrom(java.io.InputStream input)
-          throws java.io.IOException {
-        Builder builder = newBuilder();
-        if (builder.mergeDelimitedFrom(input)) {
-          return builder.buildParsed();
-        } else {
-          return null;
-        }
-      }
-      public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse parseDelimitedFrom(
-          java.io.InputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        Builder builder = newBuilder();
-        if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-          return builder.buildParsed();
-        } else {
-          return null;
-        }
-      }
-      public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse parseFrom(
-          com.google.protobuf.CodedInputStream input)
-          throws java.io.IOException {
-        return newBuilder().mergeFrom(input).buildParsed();
-      }
-      public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse parseFrom(
+      private ErrorResponse(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        return newBuilder().mergeFrom(input, extensionRegistry)
-                 .buildParsed();
-      }
-      
-      public static Builder newBuilder() { return Builder.create(); }
-      public Builder newBuilderForType() { return newBuilder(); }
-      public static Builder newBuilder(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse prototype) {
-        return newBuilder().mergeFrom(prototype);
-      }
-      public Builder toBuilder() { return newBuilder(this); }
-      
-      public static final class Builder extends
-          com.google.protobuf.GeneratedMessage.Builder<Builder> {
-        private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse result;
-        
-        // Construct using org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.newBuilder()
-        private Builder() {}
-        
-        private static Builder create() {
-          Builder builder = new Builder();
-          builder.result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse();
-          return builder;
-        }
-        
-        protected org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse internalGetResult() {
-          return result;
-        }
-        
-        public Builder clear() {
-          if (result == null) {
-            throw new IllegalStateException(
-              "Cannot call clear() after build().");
-          }
-          result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse();
-          return this;
-        }
-        
-        public Builder clone() {
-          return create().mergeFrom(result);
-        }
-        
-        public com.google.protobuf.Descriptors.Descriptor
-            getDescriptorForType() {
-          return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.getDescriptor();
-        }
-        
-        public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse getDefaultInstanceForType() {
-          return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.getDefaultInstance();
-        }
-        
-        public boolean isInitialized() {
-          return result.isInitialized();
-        }
-        public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse build() {
-          if (result != null && !isInitialized()) {
-            throw newUninitializedMessageException(result);
-          }
-          return buildPartial();
-        }
-        
-        private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse buildParsed()
-            throws com.google.protobuf.InvalidProtocolBufferException {
-          if (!isInitialized()) {
-            throw newUninitializedMessageException(
-              result).asInvalidProtocolBufferException();
-          }
-          return buildPartial();
-        }
-        
-        public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse buildPartial() {
-          if (result == null) {
-            throw new IllegalStateException(
-              "build() has already been called on this Builder.");
-          }
-          org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse returnMe = result;
-          result = null;
-          return returnMe;
-        }
-        
-        public Builder mergeFrom(com.google.protobuf.Message other) {
-          if (other instanceof org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse) {
-            return mergeFrom((org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse)other);
-          } else {
-            super.mergeFrom(other);
-            return this;
-          }
-        }
-        
-        public Builder mergeFrom(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse other) {
-          if (other == org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.getDefaultInstance()) return this;
-          if (other.hasErrorType()) {
-            setErrorType(other.getErrorType());
-          }
-          if (other.hasPosixErrno()) {
-            setPosixErrno(other.getPosixErrno());
-          }
-          if (other.hasErrorMessage()) {
-            setErrorMessage(other.getErrorMessage());
-          }
-          if (other.hasDebugInfo()) {
-            setDebugInfo(other.getDebugInfo());
-          }
-          if (other.hasRedirectToServerUuid()) {
-            setRedirectToServerUuid(other.getRedirectToServerUuid());
-          }
-          this.mergeUnknownFields(other.getUnknownFields());
-          return this;
-        }
-        
-        public Builder mergeFrom(
-            com.google.protobuf.CodedInputStream input,
-            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-            throws java.io.IOException {
-          com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-            com.google.protobuf.UnknownFieldSet.newBuilder(
-              this.getUnknownFields());
-          while (true) {
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        initFields();
+        int mutable_bitField0_ = 0;
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+            com.google.protobuf.UnknownFieldSet.newBuilder();
+        try {
+          boolean done = false;
+          while (!done) {
             int tag = input.readTag();
             switch (tag) {
               case 0:
-                this.setUnknownFields(unknownFields.build());
-                return this;
+                done = true;
+                break;
               default: {
                 if (!parseUnknownField(input, unknownFields,
                                        extensionRegistry, tag)) {
-                  this.setUnknownFields(unknownFields.build());
-                  return this;
+                  done = true;
                 }
                 break;
               }
@@ -2180,7 +4237,8 @@ public final class RPC {
                 if (value == null) {
                   unknownFields.mergeVarintField(1, rawValue);
                 } else {
-                  setErrorType(value);
+                  bitField0_ |= 0x00000001;
+                  errorType_ = value;
                 }
                 break;
               }
@@ -2190,376 +4248,1403 @@ public final class RPC {
                 if (value == null) {
                   unknownFields.mergeVarintField(2, rawValue);
                 } else {
-                  setPosixErrno(value);
+                  bitField0_ |= 0x00000002;
+                  posixErrno_ = value;
                 }
                 break;
               }
               case 26: {
-                setErrorMessage(input.readString());
+                bitField0_ |= 0x00000004;
+                errorMessage_ = input.readBytes();
                 break;
               }
               case 34: {
-                setDebugInfo(input.readString());
+                bitField0_ |= 0x00000008;
+                debugInfo_ = input.readBytes();
                 break;
               }
               case 42: {
-                setRedirectToServerUuid(input.readString());
+                bitField0_ |= 0x00000010;
+                redirectToServerUuid_ = input.readBytes();
                 break;
               }
             }
           }
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(this);
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(
+              e.getMessage()).setUnfinishedMessage(this);
+        } finally {
+          this.unknownFields = unknownFields.build();
+          makeExtensionsImmutable();
         }
-        
-        
+      }
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_RPCHeader_ErrorResponse_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_RPCHeader_ErrorResponse_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.Builder.class);
+      }
+
+      public static com.google.protobuf.Parser<ErrorResponse> PARSER =
+          new com.google.protobuf.AbstractParser<ErrorResponse>() {
+        public ErrorResponse parsePartialFrom(
+            com.google.protobuf.CodedInputStream input,
+            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+            throws com.google.protobuf.InvalidProtocolBufferException {
+          return new ErrorResponse(input, extensionRegistry);
+        }
+      };
+
+      @java.lang.Override
+      public com.google.protobuf.Parser<ErrorResponse> getParserForType() {
+        return PARSER;
+      }
+
+      private int bitField0_;
+      // required .xtreemfs.pbrpc.ErrorType error_type = 1;
+      public static final int ERROR_TYPE_FIELD_NUMBER = 1;
+      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType errorType_;
+      /**
+       * <code>required .xtreemfs.pbrpc.ErrorType error_type = 1;</code>
+       *
+       * <pre>
+       * Error type details.
+       * </pre>
+       */
+      public boolean hasErrorType() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.ErrorType error_type = 1;</code>
+       *
+       * <pre>
+       * Error type details.
+       * </pre>
+       */
+      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType getErrorType() {
+        return errorType_;
+      }
+
+      // optional .xtreemfs.pbrpc.POSIXErrno posix_errno = 2 [default = POSIX_ERROR_NONE];
+      public static final int POSIX_ERRNO_FIELD_NUMBER = 2;
+      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno posixErrno_;
+      /**
+       * <code>optional .xtreemfs.pbrpc.POSIXErrno posix_errno = 2 [default = POSIX_ERROR_NONE];</code>
+       *
+       * <pre>
+       * Optional POSIX errno.
+       * </pre>
+       */
+      public boolean hasPosixErrno() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.POSIXErrno posix_errno = 2 [default = POSIX_ERROR_NONE];</code>
+       *
+       * <pre>
+       * Optional POSIX errno.
+       * </pre>
+       */
+      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno getPosixErrno() {
+        return posixErrno_;
+      }
+
+      // optional string error_message = 3;
+      public static final int ERROR_MESSAGE_FIELD_NUMBER = 3;
+      private java.lang.Object errorMessage_;
+      /**
+       * <code>optional string error_message = 3;</code>
+       *
+       * <pre>
+       * Optional human readable error message in English (not localized!).
+       * </pre>
+       */
+      public boolean hasErrorMessage() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>optional string error_message = 3;</code>
+       *
+       * <pre>
+       * Optional human readable error message in English (not localized!).
+       * </pre>
+       */
+      public java.lang.String getErrorMessage() {
+        java.lang.Object ref = errorMessage_;
+        if (ref instanceof java.lang.String) {
+          return (java.lang.String) ref;
+        } else {
+          com.google.protobuf.ByteString bs = 
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            errorMessage_ = s;
+          }
+          return s;
+        }
+      }
+      /**
+       * <code>optional string error_message = 3;</code>
+       *
+       * <pre>
+       * Optional human readable error message in English (not localized!).
+       * </pre>
+       */
+      public com.google.protobuf.ByteString
+          getErrorMessageBytes() {
+        java.lang.Object ref = errorMessage_;
+        if (ref instanceof java.lang.String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          errorMessage_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+
+      // optional string debug_info = 4;
+      public static final int DEBUG_INFO_FIELD_NUMBER = 4;
+      private java.lang.Object debugInfo_;
+      /**
+       * <code>optional string debug_info = 4;</code>
+       *
+       * <pre>
+       * Optional debug information that only makes sense to developers such
+       * as stack traces.
+       * </pre>
+       */
+      public boolean hasDebugInfo() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>optional string debug_info = 4;</code>
+       *
+       * <pre>
+       * Optional debug information that only makes sense to developers such
+       * as stack traces.
+       * </pre>
+       */
+      public java.lang.String getDebugInfo() {
+        java.lang.Object ref = debugInfo_;
+        if (ref instanceof java.lang.String) {
+          return (java.lang.String) ref;
+        } else {
+          com.google.protobuf.ByteString bs = 
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            debugInfo_ = s;
+          }
+          return s;
+        }
+      }
+      /**
+       * <code>optional string debug_info = 4;</code>
+       *
+       * <pre>
+       * Optional debug information that only makes sense to developers such
+       * as stack traces.
+       * </pre>
+       */
+      public com.google.protobuf.ByteString
+          getDebugInfoBytes() {
+        java.lang.Object ref = debugInfo_;
+        if (ref instanceof java.lang.String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          debugInfo_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+
+      // optional string redirect_to_server_uuid = 5;
+      public static final int REDIRECT_TO_SERVER_UUID_FIELD_NUMBER = 5;
+      private java.lang.Object redirectToServerUuid_;
+      /**
+       * <code>optional string redirect_to_server_uuid = 5;</code>
+       *
+       * <pre>
+       * Optional UUID of the server to use instead. Required when error_type is REDIRECT.
+       * </pre>
+       */
+      public boolean hasRedirectToServerUuid() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <code>optional string redirect_to_server_uuid = 5;</code>
+       *
+       * <pre>
+       * Optional UUID of the server to use instead. Required when error_type is REDIRECT.
+       * </pre>
+       */
+      public java.lang.String getRedirectToServerUuid() {
+        java.lang.Object ref = redirectToServerUuid_;
+        if (ref instanceof java.lang.String) {
+          return (java.lang.String) ref;
+        } else {
+          com.google.protobuf.ByteString bs = 
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            redirectToServerUuid_ = s;
+          }
+          return s;
+        }
+      }
+      /**
+       * <code>optional string redirect_to_server_uuid = 5;</code>
+       *
+       * <pre>
+       * Optional UUID of the server to use instead. Required when error_type is REDIRECT.
+       * </pre>
+       */
+      public com.google.protobuf.ByteString
+          getRedirectToServerUuidBytes() {
+        java.lang.Object ref = redirectToServerUuid_;
+        if (ref instanceof java.lang.String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          redirectToServerUuid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+
+      private void initFields() {
+        errorType_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType.INVALID_INTERFACE_ID;
+        posixErrno_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno.POSIX_ERROR_NONE;
+        errorMessage_ = "";
+        debugInfo_ = "";
+        redirectToServerUuid_ = "";
+      }
+      private byte memoizedIsInitialized = -1;
+      public final boolean isInitialized() {
+        byte isInitialized = memoizedIsInitialized;
+        if (isInitialized != -1) return isInitialized == 1;
+
+        if (!hasErrorType()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+        memoizedIsInitialized = 1;
+        return true;
+      }
+
+      public void writeTo(com.google.protobuf.CodedOutputStream output)
+                          throws java.io.IOException {
+        getSerializedSize();
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+          output.writeEnum(1, errorType_.getNumber());
+        }
+        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+          output.writeEnum(2, posixErrno_.getNumber());
+        }
+        if (((bitField0_ & 0x00000004) == 0x00000004)) {
+          output.writeBytes(3, getErrorMessageBytes());
+        }
+        if (((bitField0_ & 0x00000008) == 0x00000008)) {
+          output.writeBytes(4, getDebugInfoBytes());
+        }
+        if (((bitField0_ & 0x00000010) == 0x00000010)) {
+          output.writeBytes(5, getRedirectToServerUuidBytes());
+        }
+        getUnknownFields().writeTo(output);
+      }
+
+      private int memoizedSerializedSize = -1;
+      public int getSerializedSize() {
+        int size = memoizedSerializedSize;
+        if (size != -1) return size;
+
+        size = 0;
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeEnumSize(1, errorType_.getNumber());
+        }
+        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeEnumSize(2, posixErrno_.getNumber());
+        }
+        if (((bitField0_ & 0x00000004) == 0x00000004)) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeBytesSize(3, getErrorMessageBytes());
+        }
+        if (((bitField0_ & 0x00000008) == 0x00000008)) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeBytesSize(4, getDebugInfoBytes());
+        }
+        if (((bitField0_ & 0x00000010) == 0x00000010)) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeBytesSize(5, getRedirectToServerUuidBytes());
+        }
+        size += getUnknownFields().getSerializedSize();
+        memoizedSerializedSize = size;
+        return size;
+      }
+
+      private static final long serialVersionUID = 0L;
+      @java.lang.Override
+      protected java.lang.Object writeReplace()
+          throws java.io.ObjectStreamException {
+        return super.writeReplace();
+      }
+
+      public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse parseFrom(
+          com.google.protobuf.ByteString data)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data);
+      }
+      public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse parseFrom(
+          com.google.protobuf.ByteString data,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data, extensionRegistry);
+      }
+      public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse parseFrom(byte[] data)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data);
+      }
+      public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse parseFrom(
+          byte[] data,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data, extensionRegistry);
+      }
+      public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse parseFrom(java.io.InputStream input)
+          throws java.io.IOException {
+        return PARSER.parseFrom(input);
+      }
+      public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse parseFrom(
+          java.io.InputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        return PARSER.parseFrom(input, extensionRegistry);
+      }
+      public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse parseDelimitedFrom(java.io.InputStream input)
+          throws java.io.IOException {
+        return PARSER.parseDelimitedFrom(input);
+      }
+      public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse parseDelimitedFrom(
+          java.io.InputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        return PARSER.parseDelimitedFrom(input, extensionRegistry);
+      }
+      public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse parseFrom(
+          com.google.protobuf.CodedInputStream input)
+          throws java.io.IOException {
+        return PARSER.parseFrom(input);
+      }
+      public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse parseFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        return PARSER.parseFrom(input, extensionRegistry);
+      }
+
+      public static Builder newBuilder() { return Builder.create(); }
+      public Builder newBuilderForType() { return newBuilder(); }
+      public static Builder newBuilder(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse prototype) {
+        return newBuilder().mergeFrom(prototype);
+      }
+      public Builder toBuilder() { return newBuilder(this); }
+
+      @java.lang.Override
+      protected Builder newBuilderForType(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        Builder builder = new Builder(parent);
+        return builder;
+      }
+      /**
+       * Protobuf type {@code xtreemfs.pbrpc.RPCHeader.ErrorResponse}
+       *
+       * <pre>
+       * Header data for error responses, i.e. message_type is RPC_ERROR_RESPONSE.
+       * </pre>
+       */
+      public static final class Builder extends
+          com.google.protobuf.GeneratedMessage.Builder<Builder>
+         implements org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponseOrBuilder {
+        public static final com.google.protobuf.Descriptors.Descriptor
+            getDescriptor() {
+          return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_RPCHeader_ErrorResponse_descriptor;
+        }
+
+        protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+            internalGetFieldAccessorTable() {
+          return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_RPCHeader_ErrorResponse_fieldAccessorTable
+              .ensureFieldAccessorsInitialized(
+                  org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.Builder.class);
+        }
+
+        // Construct using org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.newBuilder()
+        private Builder() {
+          maybeForceBuilderInitialization();
+        }
+
+        private Builder(
+            com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+          super(parent);
+          maybeForceBuilderInitialization();
+        }
+        private void maybeForceBuilderInitialization() {
+          if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          }
+        }
+        private static Builder create() {
+          return new Builder();
+        }
+
+        public Builder clear() {
+          super.clear();
+          errorType_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType.INVALID_INTERFACE_ID;
+          bitField0_ = (bitField0_ & ~0x00000001);
+          posixErrno_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno.POSIX_ERROR_NONE;
+          bitField0_ = (bitField0_ & ~0x00000002);
+          errorMessage_ = "";
+          bitField0_ = (bitField0_ & ~0x00000004);
+          debugInfo_ = "";
+          bitField0_ = (bitField0_ & ~0x00000008);
+          redirectToServerUuid_ = "";
+          bitField0_ = (bitField0_ & ~0x00000010);
+          return this;
+        }
+
+        public Builder clone() {
+          return create().mergeFrom(buildPartial());
+        }
+
+        public com.google.protobuf.Descriptors.Descriptor
+            getDescriptorForType() {
+          return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_RPCHeader_ErrorResponse_descriptor;
+        }
+
+        public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse getDefaultInstanceForType() {
+          return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.getDefaultInstance();
+        }
+
+        public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse build() {
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse result = buildPartial();
+          if (!result.isInitialized()) {
+            throw newUninitializedMessageException(result);
+          }
+          return result;
+        }
+
+        public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse buildPartial() {
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse(this);
+          int from_bitField0_ = bitField0_;
+          int to_bitField0_ = 0;
+          if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+            to_bitField0_ |= 0x00000001;
+          }
+          result.errorType_ = errorType_;
+          if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+            to_bitField0_ |= 0x00000002;
+          }
+          result.posixErrno_ = posixErrno_;
+          if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+            to_bitField0_ |= 0x00000004;
+          }
+          result.errorMessage_ = errorMessage_;
+          if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+            to_bitField0_ |= 0x00000008;
+          }
+          result.debugInfo_ = debugInfo_;
+          if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+            to_bitField0_ |= 0x00000010;
+          }
+          result.redirectToServerUuid_ = redirectToServerUuid_;
+          result.bitField0_ = to_bitField0_;
+          onBuilt();
+          return result;
+        }
+
+        public Builder mergeFrom(com.google.protobuf.Message other) {
+          if (other instanceof org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse) {
+            return mergeFrom((org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse)other);
+          } else {
+            super.mergeFrom(other);
+            return this;
+          }
+        }
+
+        public Builder mergeFrom(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse other) {
+          if (other == org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.getDefaultInstance()) return this;
+          if (other.hasErrorType()) {
+            setErrorType(other.getErrorType());
+          }
+          if (other.hasPosixErrno()) {
+            setPosixErrno(other.getPosixErrno());
+          }
+          if (other.hasErrorMessage()) {
+            bitField0_ |= 0x00000004;
+            errorMessage_ = other.errorMessage_;
+            onChanged();
+          }
+          if (other.hasDebugInfo()) {
+            bitField0_ |= 0x00000008;
+            debugInfo_ = other.debugInfo_;
+            onChanged();
+          }
+          if (other.hasRedirectToServerUuid()) {
+            bitField0_ |= 0x00000010;
+            redirectToServerUuid_ = other.redirectToServerUuid_;
+            onChanged();
+          }
+          this.mergeUnknownFields(other.getUnknownFields());
+          return this;
+        }
+
+        public final boolean isInitialized() {
+          if (!hasErrorType()) {
+            
+            return false;
+          }
+          return true;
+        }
+
+        public Builder mergeFrom(
+            com.google.protobuf.CodedInputStream input,
+            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+            throws java.io.IOException {
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse parsedMessage = null;
+          try {
+            parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+          } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+            parsedMessage = (org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse) e.getUnfinishedMessage();
+            throw e;
+          } finally {
+            if (parsedMessage != null) {
+              mergeFrom(parsedMessage);
+            }
+          }
+          return this;
+        }
+        private int bitField0_;
+
         // required .xtreemfs.pbrpc.ErrorType error_type = 1;
+        private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType errorType_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType.INVALID_INTERFACE_ID;
+        /**
+         * <code>required .xtreemfs.pbrpc.ErrorType error_type = 1;</code>
+         *
+         * <pre>
+         * Error type details.
+         * </pre>
+         */
         public boolean hasErrorType() {
-          return result.hasErrorType();
+          return ((bitField0_ & 0x00000001) == 0x00000001);
         }
+        /**
+         * <code>required .xtreemfs.pbrpc.ErrorType error_type = 1;</code>
+         *
+         * <pre>
+         * Error type details.
+         * </pre>
+         */
         public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType getErrorType() {
-          return result.getErrorType();
+          return errorType_;
         }
+        /**
+         * <code>required .xtreemfs.pbrpc.ErrorType error_type = 1;</code>
+         *
+         * <pre>
+         * Error type details.
+         * </pre>
+         */
         public Builder setErrorType(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType value) {
           if (value == null) {
             throw new NullPointerException();
           }
-          result.hasErrorType = true;
-          result.errorType_ = value;
+          bitField0_ |= 0x00000001;
+          errorType_ = value;
+          onChanged();
           return this;
         }
+        /**
+         * <code>required .xtreemfs.pbrpc.ErrorType error_type = 1;</code>
+         *
+         * <pre>
+         * Error type details.
+         * </pre>
+         */
         public Builder clearErrorType() {
-          result.hasErrorType = false;
-          result.errorType_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType.INVALID_INTERFACE_ID;
+          bitField0_ = (bitField0_ & ~0x00000001);
+          errorType_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType.INVALID_INTERFACE_ID;
+          onChanged();
           return this;
         }
-        
+
         // optional .xtreemfs.pbrpc.POSIXErrno posix_errno = 2 [default = POSIX_ERROR_NONE];
+        private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno posixErrno_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno.POSIX_ERROR_NONE;
+        /**
+         * <code>optional .xtreemfs.pbrpc.POSIXErrno posix_errno = 2 [default = POSIX_ERROR_NONE];</code>
+         *
+         * <pre>
+         * Optional POSIX errno.
+         * </pre>
+         */
         public boolean hasPosixErrno() {
-          return result.hasPosixErrno();
+          return ((bitField0_ & 0x00000002) == 0x00000002);
         }
+        /**
+         * <code>optional .xtreemfs.pbrpc.POSIXErrno posix_errno = 2 [default = POSIX_ERROR_NONE];</code>
+         *
+         * <pre>
+         * Optional POSIX errno.
+         * </pre>
+         */
         public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno getPosixErrno() {
-          return result.getPosixErrno();
+          return posixErrno_;
         }
+        /**
+         * <code>optional .xtreemfs.pbrpc.POSIXErrno posix_errno = 2 [default = POSIX_ERROR_NONE];</code>
+         *
+         * <pre>
+         * Optional POSIX errno.
+         * </pre>
+         */
         public Builder setPosixErrno(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno value) {
           if (value == null) {
             throw new NullPointerException();
           }
-          result.hasPosixErrno = true;
-          result.posixErrno_ = value;
+          bitField0_ |= 0x00000002;
+          posixErrno_ = value;
+          onChanged();
           return this;
         }
+        /**
+         * <code>optional .xtreemfs.pbrpc.POSIXErrno posix_errno = 2 [default = POSIX_ERROR_NONE];</code>
+         *
+         * <pre>
+         * Optional POSIX errno.
+         * </pre>
+         */
         public Builder clearPosixErrno() {
-          result.hasPosixErrno = false;
-          result.posixErrno_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno.POSIX_ERROR_NONE;
+          bitField0_ = (bitField0_ & ~0x00000002);
+          posixErrno_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno.POSIX_ERROR_NONE;
+          onChanged();
           return this;
         }
-        
+
         // optional string error_message = 3;
+        private java.lang.Object errorMessage_ = "";
+        /**
+         * <code>optional string error_message = 3;</code>
+         *
+         * <pre>
+         * Optional human readable error message in English (not localized!).
+         * </pre>
+         */
         public boolean hasErrorMessage() {
-          return result.hasErrorMessage();
+          return ((bitField0_ & 0x00000004) == 0x00000004);
         }
+        /**
+         * <code>optional string error_message = 3;</code>
+         *
+         * <pre>
+         * Optional human readable error message in English (not localized!).
+         * </pre>
+         */
         public java.lang.String getErrorMessage() {
-          return result.getErrorMessage();
+          java.lang.Object ref = errorMessage_;
+          if (!(ref instanceof java.lang.String)) {
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            errorMessage_ = s;
+            return s;
+          } else {
+            return (java.lang.String) ref;
+          }
         }
-        public Builder setErrorMessage(java.lang.String value) {
+        /**
+         * <code>optional string error_message = 3;</code>
+         *
+         * <pre>
+         * Optional human readable error message in English (not localized!).
+         * </pre>
+         */
+        public com.google.protobuf.ByteString
+            getErrorMessageBytes() {
+          java.lang.Object ref = errorMessage_;
+          if (ref instanceof String) {
+            com.google.protobuf.ByteString b = 
+                com.google.protobuf.ByteString.copyFromUtf8(
+                    (java.lang.String) ref);
+            errorMessage_ = b;
+            return b;
+          } else {
+            return (com.google.protobuf.ByteString) ref;
+          }
+        }
+        /**
+         * <code>optional string error_message = 3;</code>
+         *
+         * <pre>
+         * Optional human readable error message in English (not localized!).
+         * </pre>
+         */
+        public Builder setErrorMessage(
+            java.lang.String value) {
           if (value == null) {
     throw new NullPointerException();
   }
-  result.hasErrorMessage = true;
-          result.errorMessage_ = value;
+  bitField0_ |= 0x00000004;
+          errorMessage_ = value;
+          onChanged();
           return this;
         }
+        /**
+         * <code>optional string error_message = 3;</code>
+         *
+         * <pre>
+         * Optional human readable error message in English (not localized!).
+         * </pre>
+         */
         public Builder clearErrorMessage() {
-          result.hasErrorMessage = false;
-          result.errorMessage_ = getDefaultInstance().getErrorMessage();
+          bitField0_ = (bitField0_ & ~0x00000004);
+          errorMessage_ = getDefaultInstance().getErrorMessage();
+          onChanged();
           return this;
         }
-        
+        /**
+         * <code>optional string error_message = 3;</code>
+         *
+         * <pre>
+         * Optional human readable error message in English (not localized!).
+         * </pre>
+         */
+        public Builder setErrorMessageBytes(
+            com.google.protobuf.ByteString value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+          errorMessage_ = value;
+          onChanged();
+          return this;
+        }
+
         // optional string debug_info = 4;
+        private java.lang.Object debugInfo_ = "";
+        /**
+         * <code>optional string debug_info = 4;</code>
+         *
+         * <pre>
+         * Optional debug information that only makes sense to developers such
+         * as stack traces.
+         * </pre>
+         */
         public boolean hasDebugInfo() {
-          return result.hasDebugInfo();
+          return ((bitField0_ & 0x00000008) == 0x00000008);
         }
+        /**
+         * <code>optional string debug_info = 4;</code>
+         *
+         * <pre>
+         * Optional debug information that only makes sense to developers such
+         * as stack traces.
+         * </pre>
+         */
         public java.lang.String getDebugInfo() {
-          return result.getDebugInfo();
+          java.lang.Object ref = debugInfo_;
+          if (!(ref instanceof java.lang.String)) {
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            debugInfo_ = s;
+            return s;
+          } else {
+            return (java.lang.String) ref;
+          }
         }
-        public Builder setDebugInfo(java.lang.String value) {
+        /**
+         * <code>optional string debug_info = 4;</code>
+         *
+         * <pre>
+         * Optional debug information that only makes sense to developers such
+         * as stack traces.
+         * </pre>
+         */
+        public com.google.protobuf.ByteString
+            getDebugInfoBytes() {
+          java.lang.Object ref = debugInfo_;
+          if (ref instanceof String) {
+            com.google.protobuf.ByteString b = 
+                com.google.protobuf.ByteString.copyFromUtf8(
+                    (java.lang.String) ref);
+            debugInfo_ = b;
+            return b;
+          } else {
+            return (com.google.protobuf.ByteString) ref;
+          }
+        }
+        /**
+         * <code>optional string debug_info = 4;</code>
+         *
+         * <pre>
+         * Optional debug information that only makes sense to developers such
+         * as stack traces.
+         * </pre>
+         */
+        public Builder setDebugInfo(
+            java.lang.String value) {
           if (value == null) {
     throw new NullPointerException();
   }
-  result.hasDebugInfo = true;
-          result.debugInfo_ = value;
+  bitField0_ |= 0x00000008;
+          debugInfo_ = value;
+          onChanged();
           return this;
         }
+        /**
+         * <code>optional string debug_info = 4;</code>
+         *
+         * <pre>
+         * Optional debug information that only makes sense to developers such
+         * as stack traces.
+         * </pre>
+         */
         public Builder clearDebugInfo() {
-          result.hasDebugInfo = false;
-          result.debugInfo_ = getDefaultInstance().getDebugInfo();
+          bitField0_ = (bitField0_ & ~0x00000008);
+          debugInfo_ = getDefaultInstance().getDebugInfo();
+          onChanged();
           return this;
         }
-        
-        // optional string redirect_to_server_uuid = 5;
-        public boolean hasRedirectToServerUuid() {
-          return result.hasRedirectToServerUuid();
-        }
-        public java.lang.String getRedirectToServerUuid() {
-          return result.getRedirectToServerUuid();
-        }
-        public Builder setRedirectToServerUuid(java.lang.String value) {
+        /**
+         * <code>optional string debug_info = 4;</code>
+         *
+         * <pre>
+         * Optional debug information that only makes sense to developers such
+         * as stack traces.
+         * </pre>
+         */
+        public Builder setDebugInfoBytes(
+            com.google.protobuf.ByteString value) {
           if (value == null) {
     throw new NullPointerException();
   }
-  result.hasRedirectToServerUuid = true;
-          result.redirectToServerUuid_ = value;
+  bitField0_ |= 0x00000008;
+          debugInfo_ = value;
+          onChanged();
           return this;
         }
+
+        // optional string redirect_to_server_uuid = 5;
+        private java.lang.Object redirectToServerUuid_ = "";
+        /**
+         * <code>optional string redirect_to_server_uuid = 5;</code>
+         *
+         * <pre>
+         * Optional UUID of the server to use instead. Required when error_type is REDIRECT.
+         * </pre>
+         */
+        public boolean hasRedirectToServerUuid() {
+          return ((bitField0_ & 0x00000010) == 0x00000010);
+        }
+        /**
+         * <code>optional string redirect_to_server_uuid = 5;</code>
+         *
+         * <pre>
+         * Optional UUID of the server to use instead. Required when error_type is REDIRECT.
+         * </pre>
+         */
+        public java.lang.String getRedirectToServerUuid() {
+          java.lang.Object ref = redirectToServerUuid_;
+          if (!(ref instanceof java.lang.String)) {
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            redirectToServerUuid_ = s;
+            return s;
+          } else {
+            return (java.lang.String) ref;
+          }
+        }
+        /**
+         * <code>optional string redirect_to_server_uuid = 5;</code>
+         *
+         * <pre>
+         * Optional UUID of the server to use instead. Required when error_type is REDIRECT.
+         * </pre>
+         */
+        public com.google.protobuf.ByteString
+            getRedirectToServerUuidBytes() {
+          java.lang.Object ref = redirectToServerUuid_;
+          if (ref instanceof String) {
+            com.google.protobuf.ByteString b = 
+                com.google.protobuf.ByteString.copyFromUtf8(
+                    (java.lang.String) ref);
+            redirectToServerUuid_ = b;
+            return b;
+          } else {
+            return (com.google.protobuf.ByteString) ref;
+          }
+        }
+        /**
+         * <code>optional string redirect_to_server_uuid = 5;</code>
+         *
+         * <pre>
+         * Optional UUID of the server to use instead. Required when error_type is REDIRECT.
+         * </pre>
+         */
+        public Builder setRedirectToServerUuid(
+            java.lang.String value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000010;
+          redirectToServerUuid_ = value;
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>optional string redirect_to_server_uuid = 5;</code>
+         *
+         * <pre>
+         * Optional UUID of the server to use instead. Required when error_type is REDIRECT.
+         * </pre>
+         */
         public Builder clearRedirectToServerUuid() {
-          result.hasRedirectToServerUuid = false;
-          result.redirectToServerUuid_ = getDefaultInstance().getRedirectToServerUuid();
+          bitField0_ = (bitField0_ & ~0x00000010);
+          redirectToServerUuid_ = getDefaultInstance().getRedirectToServerUuid();
+          onChanged();
           return this;
         }
-        
+        /**
+         * <code>optional string redirect_to_server_uuid = 5;</code>
+         *
+         * <pre>
+         * Optional UUID of the server to use instead. Required when error_type is REDIRECT.
+         * </pre>
+         */
+        public Builder setRedirectToServerUuidBytes(
+            com.google.protobuf.ByteString value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000010;
+          redirectToServerUuid_ = value;
+          onChanged();
+          return this;
+        }
+
         // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.RPCHeader.ErrorResponse)
       }
-      
+
       static {
         defaultInstance = new ErrorResponse(true);
-        org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internalForceInit();
         defaultInstance.initFields();
       }
-      
+
       // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.RPCHeader.ErrorResponse)
     }
-    
+
+    private int bitField0_;
     // required fixed32 call_id = 1;
     public static final int CALL_ID_FIELD_NUMBER = 1;
-    private boolean hasCallId;
-    private int callId_ = 0;
-    public boolean hasCallId() { return hasCallId; }
-    public int getCallId() { return callId_; }
-    
+    private int callId_;
+    /**
+     * <code>required fixed32 call_id = 1;</code>
+     *
+     * <pre>
+     * A unique id to identify the request. The response sent back by the server will have
+     * the same call_id.
+     * The call_id must be unqiue per TCP connection. In addition, clients should start
+     * with a value based e.g. on time to avoid problems after a client restart.
+     * </pre>
+     */
+    public boolean hasCallId() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required fixed32 call_id = 1;</code>
+     *
+     * <pre>
+     * A unique id to identify the request. The response sent back by the server will have
+     * the same call_id.
+     * The call_id must be unqiue per TCP connection. In addition, clients should start
+     * with a value based e.g. on time to avoid problems after a client restart.
+     * </pre>
+     */
+    public int getCallId() {
+      return callId_;
+    }
+
     // required .xtreemfs.pbrpc.MessageType message_type = 2;
     public static final int MESSAGE_TYPE_FIELD_NUMBER = 2;
-    private boolean hasMessageType;
     private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType messageType_;
-    public boolean hasMessageType() { return hasMessageType; }
-    public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType getMessageType() { return messageType_; }
-    
+    /**
+     * <code>required .xtreemfs.pbrpc.MessageType message_type = 2;</code>
+     *
+     * <pre>
+     * Type of this RPC message (Request, Response).
+     * </pre>
+     */
+    public boolean hasMessageType() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>required .xtreemfs.pbrpc.MessageType message_type = 2;</code>
+     *
+     * <pre>
+     * Type of this RPC message (Request, Response).
+     * </pre>
+     */
+    public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType getMessageType() {
+      return messageType_;
+    }
+
     // optional .xtreemfs.pbrpc.RPCHeader.RequestHeader request_header = 3;
     public static final int REQUEST_HEADER_FIELD_NUMBER = 3;
-    private boolean hasRequestHeader;
     private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader requestHeader_;
-    public boolean hasRequestHeader() { return hasRequestHeader; }
-    public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader getRequestHeader() { return requestHeader_; }
-    
+    /**
+     * <code>optional .xtreemfs.pbrpc.RPCHeader.RequestHeader request_header = 3;</code>
+     *
+     * <pre>
+     * Optional request_header, required if message_type is RPC_REQUEST.
+     * </pre>
+     */
+    public boolean hasRequestHeader() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>optional .xtreemfs.pbrpc.RPCHeader.RequestHeader request_header = 3;</code>
+     *
+     * <pre>
+     * Optional request_header, required if message_type is RPC_REQUEST.
+     * </pre>
+     */
+    public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader getRequestHeader() {
+      return requestHeader_;
+    }
+    /**
+     * <code>optional .xtreemfs.pbrpc.RPCHeader.RequestHeader request_header = 3;</code>
+     *
+     * <pre>
+     * Optional request_header, required if message_type is RPC_REQUEST.
+     * </pre>
+     */
+    public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeaderOrBuilder getRequestHeaderOrBuilder() {
+      return requestHeader_;
+    }
+
     // optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error_response = 4;
     public static final int ERROR_RESPONSE_FIELD_NUMBER = 4;
-    private boolean hasErrorResponse;
     private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse errorResponse_;
-    public boolean hasErrorResponse() { return hasErrorResponse; }
-    public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse getErrorResponse() { return errorResponse_; }
-    
+    /**
+     * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error_response = 4;</code>
+     *
+     * <pre>
+     * Optional error_response, required if message_type is RPC_ERROR_RESPONSE.
+     * </pre>
+     */
+    public boolean hasErrorResponse() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error_response = 4;</code>
+     *
+     * <pre>
+     * Optional error_response, required if message_type is RPC_ERROR_RESPONSE.
+     * </pre>
+     */
+    public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse getErrorResponse() {
+      return errorResponse_;
+    }
+    /**
+     * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error_response = 4;</code>
+     *
+     * <pre>
+     * Optional error_response, required if message_type is RPC_ERROR_RESPONSE.
+     * </pre>
+     */
+    public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponseOrBuilder getErrorResponseOrBuilder() {
+      return errorResponse_;
+    }
+
     private void initFields() {
+      callId_ = 0;
       messageType_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType.RPC_REQUEST;
       requestHeader_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.getDefaultInstance();
       errorResponse_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.getDefaultInstance();
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasCallId) return false;
-      if (!hasMessageType) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      if (!hasCallId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasMessageType()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
       if (hasRequestHeader()) {
-        if (!getRequestHeader().isInitialized()) return false;
+        if (!getRequestHeader().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
       }
       if (hasErrorResponse()) {
-        if (!getErrorResponse().isInitialized()) return false;
+        if (!getErrorResponse().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
       }
+      memoizedIsInitialized = 1;
       return true;
     }
-    
+
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasCallId()) {
-        output.writeFixed32(1, getCallId());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeFixed32(1, callId_);
       }
-      if (hasMessageType()) {
-        output.writeEnum(2, getMessageType().getNumber());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeEnum(2, messageType_.getNumber());
       }
-      if (hasRequestHeader()) {
-        output.writeMessage(3, getRequestHeader());
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeMessage(3, requestHeader_);
       }
-      if (hasErrorResponse()) {
-        output.writeMessage(4, getErrorResponse());
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeMessage(4, errorResponse_);
       }
       getUnknownFields().writeTo(output);
     }
-    
+
     private int memoizedSerializedSize = -1;
     public int getSerializedSize() {
       int size = memoizedSerializedSize;
       if (size != -1) return size;
-    
+
       size = 0;
-      if (hasCallId()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed32Size(1, getCallId());
+          .computeFixed32Size(1, callId_);
       }
-      if (hasMessageType()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeEnumSize(2, getMessageType().getNumber());
+          .computeEnumSize(2, messageType_.getNumber());
       }
-      if (hasRequestHeader()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(3, getRequestHeader());
+          .computeMessageSize(3, requestHeader_);
       }
-      if (hasErrorResponse()) {
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(4, getErrorResponse());
+          .computeMessageSize(4, errorResponse_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
     }
-    
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
+      return PARSER.parseFrom(data);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(data, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
+      return PARSER.parseFrom(data);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(data, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader parseFrom(java.io.InputStream input)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
+      return PARSER.parseFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(input, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
+      return PARSER.parseDelimitedFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
+      return PARSER.parseFrom(input);
     }
     public static org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
+      return PARSER.parseFrom(input, extensionRegistry);
     }
-    
+
     public static Builder newBuilder() { return Builder.create(); }
     public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader prototype) {
       return newBuilder().mergeFrom(prototype);
     }
     public Builder toBuilder() { return newBuilder(this); }
-    
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code xtreemfs.pbrpc.RPCHeader}
+     *
+     * <pre>
+     * RPC header message sent in the first request fragment.
+     * </pre>
+     */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader result;
-      
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeaderOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_RPCHeader_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_RPCHeader_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.class, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.Builder.class);
+      }
+
       // Construct using org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader();
-        return builder;
+      private Builder() {
+        maybeForceBuilderInitialization();
       }
-      
-      protected org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader internalGetResult() {
-        return result;
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
       }
-      
-      public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getRequestHeaderFieldBuilder();
+          getErrorResponseFieldBuilder();
         }
-        result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader();
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        callId_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        messageType_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType.RPC_REQUEST;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        if (requestHeaderBuilder_ == null) {
+          requestHeader_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.getDefaultInstance();
+        } else {
+          requestHeaderBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000004);
+        if (errorResponseBuilder_ == null) {
+          errorResponse_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.getDefaultInstance();
+        } else {
+          errorResponseBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
-      
+
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
-      
+
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.getDescriptor();
+        return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internal_static_xtreemfs_pbrpc_RPCHeader_descriptor;
       }
-      
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader getDefaultInstanceForType() {
         return org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.getDefaultInstance();
       }
-      
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
-      
-      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader buildParsed()
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
-          throw newUninitializedMessageException(
-            result).asInvalidProtocolBufferException();
-        }
-        return buildPartial();
-      }
-      
+
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader result = new org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader returnMe = result;
-        result = null;
-        return returnMe;
+        result.callId_ = callId_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.messageType_ = messageType_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        if (requestHeaderBuilder_ == null) {
+          result.requestHeader_ = requestHeader_;
+        } else {
+          result.requestHeader_ = requestHeaderBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        if (errorResponseBuilder_ == null) {
+          result.errorResponse_ = errorResponse_;
+        } else {
+          result.errorResponse_ = errorResponseBuilder_.build();
+        }
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
-      
+
       public Builder mergeFrom(com.google.protobuf.Message other) {
         if (other instanceof org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader) {
           return mergeFrom((org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader)other);
@@ -2568,7 +5653,7 @@ public final class RPC {
           return this;
         }
       }
-      
+
       public Builder mergeFrom(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader other) {
         if (other == org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.getDefaultInstance()) return this;
         if (other.hasCallId()) {
@@ -2586,190 +5671,480 @@ public final class RPC {
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
-      
+
+      public final boolean isInitialized() {
+        if (!hasCallId()) {
+          
+          return false;
+        }
+        if (!hasMessageType()) {
+          
+          return false;
+        }
+        if (hasRequestHeader()) {
+          if (!getRequestHeader().isInitialized()) {
+            
+            return false;
+          }
+        }
+        if (hasErrorResponse()) {
+          if (!getErrorResponse().isInitialized()) {
+            
+            return false;
+          }
+        }
+        return true;
+      }
+
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder(
-            this.getUnknownFields());
-        while (true) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              this.setUnknownFields(unknownFields.build());
-              return this;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                this.setUnknownFields(unknownFields.build());
-                return this;
-              }
-              break;
-            }
-            case 13: {
-              setCallId(input.readFixed32());
-              break;
-            }
-            case 16: {
-              int rawValue = input.readEnum();
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType value = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType.valueOf(rawValue);
-              if (value == null) {
-                unknownFields.mergeVarintField(2, rawValue);
-              } else {
-                setMessageType(value);
-              }
-              break;
-            }
-            case 26: {
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.Builder subBuilder = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.newBuilder();
-              if (hasRequestHeader()) {
-                subBuilder.mergeFrom(getRequestHeader());
-              }
-              input.readMessage(subBuilder, extensionRegistry);
-              setRequestHeader(subBuilder.buildPartial());
-              break;
-            }
-            case 34: {
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.Builder subBuilder = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.newBuilder();
-              if (hasErrorResponse()) {
-                subBuilder.mergeFrom(getErrorResponse());
-              }
-              input.readMessage(subBuilder, extensionRegistry);
-              setErrorResponse(subBuilder.buildPartial());
-              break;
-            }
+        org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
           }
         }
+        return this;
       }
-      
-      
+      private int bitField0_;
+
       // required fixed32 call_id = 1;
+      private int callId_ ;
+      /**
+       * <code>required fixed32 call_id = 1;</code>
+       *
+       * <pre>
+       * A unique id to identify the request. The response sent back by the server will have
+       * the same call_id.
+       * The call_id must be unqiue per TCP connection. In addition, clients should start
+       * with a value based e.g. on time to avoid problems after a client restart.
+       * </pre>
+       */
       public boolean hasCallId() {
-        return result.hasCallId();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
+      /**
+       * <code>required fixed32 call_id = 1;</code>
+       *
+       * <pre>
+       * A unique id to identify the request. The response sent back by the server will have
+       * the same call_id.
+       * The call_id must be unqiue per TCP connection. In addition, clients should start
+       * with a value based e.g. on time to avoid problems after a client restart.
+       * </pre>
+       */
       public int getCallId() {
-        return result.getCallId();
+        return callId_;
       }
+      /**
+       * <code>required fixed32 call_id = 1;</code>
+       *
+       * <pre>
+       * A unique id to identify the request. The response sent back by the server will have
+       * the same call_id.
+       * The call_id must be unqiue per TCP connection. In addition, clients should start
+       * with a value based e.g. on time to avoid problems after a client restart.
+       * </pre>
+       */
       public Builder setCallId(int value) {
-        result.hasCallId = true;
-        result.callId_ = value;
+        bitField0_ |= 0x00000001;
+        callId_ = value;
+        onChanged();
         return this;
       }
+      /**
+       * <code>required fixed32 call_id = 1;</code>
+       *
+       * <pre>
+       * A unique id to identify the request. The response sent back by the server will have
+       * the same call_id.
+       * The call_id must be unqiue per TCP connection. In addition, clients should start
+       * with a value based e.g. on time to avoid problems after a client restart.
+       * </pre>
+       */
       public Builder clearCallId() {
-        result.hasCallId = false;
-        result.callId_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        callId_ = 0;
+        onChanged();
         return this;
       }
-      
+
       // required .xtreemfs.pbrpc.MessageType message_type = 2;
+      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType messageType_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType.RPC_REQUEST;
+      /**
+       * <code>required .xtreemfs.pbrpc.MessageType message_type = 2;</code>
+       *
+       * <pre>
+       * Type of this RPC message (Request, Response).
+       * </pre>
+       */
       public boolean hasMessageType() {
-        return result.hasMessageType();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
+      /**
+       * <code>required .xtreemfs.pbrpc.MessageType message_type = 2;</code>
+       *
+       * <pre>
+       * Type of this RPC message (Request, Response).
+       * </pre>
+       */
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType getMessageType() {
-        return result.getMessageType();
+        return messageType_;
       }
+      /**
+       * <code>required .xtreemfs.pbrpc.MessageType message_type = 2;</code>
+       *
+       * <pre>
+       * Type of this RPC message (Request, Response).
+       * </pre>
+       */
       public Builder setMessageType(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType value) {
         if (value == null) {
           throw new NullPointerException();
         }
-        result.hasMessageType = true;
-        result.messageType_ = value;
+        bitField0_ |= 0x00000002;
+        messageType_ = value;
+        onChanged();
         return this;
       }
+      /**
+       * <code>required .xtreemfs.pbrpc.MessageType message_type = 2;</code>
+       *
+       * <pre>
+       * Type of this RPC message (Request, Response).
+       * </pre>
+       */
       public Builder clearMessageType() {
-        result.hasMessageType = false;
-        result.messageType_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType.RPC_REQUEST;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        messageType_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType.RPC_REQUEST;
+        onChanged();
         return this;
       }
-      
+
       // optional .xtreemfs.pbrpc.RPCHeader.RequestHeader request_header = 3;
+      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader requestHeader_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.Builder, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeaderOrBuilder> requestHeaderBuilder_;
+      /**
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.RequestHeader request_header = 3;</code>
+       *
+       * <pre>
+       * Optional request_header, required if message_type is RPC_REQUEST.
+       * </pre>
+       */
       public boolean hasRequestHeader() {
-        return result.hasRequestHeader();
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
+      /**
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.RequestHeader request_header = 3;</code>
+       *
+       * <pre>
+       * Optional request_header, required if message_type is RPC_REQUEST.
+       * </pre>
+       */
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader getRequestHeader() {
-        return result.getRequestHeader();
+        if (requestHeaderBuilder_ == null) {
+          return requestHeader_;
+        } else {
+          return requestHeaderBuilder_.getMessage();
+        }
       }
+      /**
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.RequestHeader request_header = 3;</code>
+       *
+       * <pre>
+       * Optional request_header, required if message_type is RPC_REQUEST.
+       * </pre>
+       */
       public Builder setRequestHeader(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (requestHeaderBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          requestHeader_ = value;
+          onChanged();
+        } else {
+          requestHeaderBuilder_.setMessage(value);
         }
-        result.hasRequestHeader = true;
-        result.requestHeader_ = value;
+        bitField0_ |= 0x00000004;
         return this;
       }
-      public Builder setRequestHeader(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.Builder builderForValue) {
-        result.hasRequestHeader = true;
-        result.requestHeader_ = builderForValue.build();
+      /**
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.RequestHeader request_header = 3;</code>
+       *
+       * <pre>
+       * Optional request_header, required if message_type is RPC_REQUEST.
+       * </pre>
+       */
+      public Builder setRequestHeader(
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.Builder builderForValue) {
+        if (requestHeaderBuilder_ == null) {
+          requestHeader_ = builderForValue.build();
+          onChanged();
+        } else {
+          requestHeaderBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000004;
         return this;
       }
+      /**
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.RequestHeader request_header = 3;</code>
+       *
+       * <pre>
+       * Optional request_header, required if message_type is RPC_REQUEST.
+       * </pre>
+       */
       public Builder mergeRequestHeader(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader value) {
-        if (result.hasRequestHeader() &&
-            result.requestHeader_ != org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.getDefaultInstance()) {
-          result.requestHeader_ =
-            org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.newBuilder(result.requestHeader_).mergeFrom(value).buildPartial();
+        if (requestHeaderBuilder_ == null) {
+          if (((bitField0_ & 0x00000004) == 0x00000004) &&
+              requestHeader_ != org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.getDefaultInstance()) {
+            requestHeader_ =
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.newBuilder(requestHeader_).mergeFrom(value).buildPartial();
+          } else {
+            requestHeader_ = value;
+          }
+          onChanged();
         } else {
-          result.requestHeader_ = value;
+          requestHeaderBuilder_.mergeFrom(value);
         }
-        result.hasRequestHeader = true;
+        bitField0_ |= 0x00000004;
         return this;
       }
+      /**
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.RequestHeader request_header = 3;</code>
+       *
+       * <pre>
+       * Optional request_header, required if message_type is RPC_REQUEST.
+       * </pre>
+       */
       public Builder clearRequestHeader() {
-        result.hasRequestHeader = false;
-        result.requestHeader_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.getDefaultInstance();
-        return this;
-      }
-      
-      // optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error_response = 4;
-      public boolean hasErrorResponse() {
-        return result.hasErrorResponse();
-      }
-      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse getErrorResponse() {
-        return result.getErrorResponse();
-      }
-      public Builder setErrorResponse(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse value) {
-        if (value == null) {
-          throw new NullPointerException();
-        }
-        result.hasErrorResponse = true;
-        result.errorResponse_ = value;
-        return this;
-      }
-      public Builder setErrorResponse(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.Builder builderForValue) {
-        result.hasErrorResponse = true;
-        result.errorResponse_ = builderForValue.build();
-        return this;
-      }
-      public Builder mergeErrorResponse(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse value) {
-        if (result.hasErrorResponse() &&
-            result.errorResponse_ != org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.getDefaultInstance()) {
-          result.errorResponse_ =
-            org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.newBuilder(result.errorResponse_).mergeFrom(value).buildPartial();
+        if (requestHeaderBuilder_ == null) {
+          requestHeader_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.getDefaultInstance();
+          onChanged();
         } else {
-          result.errorResponse_ = value;
+          requestHeaderBuilder_.clear();
         }
-        result.hasErrorResponse = true;
+        bitField0_ = (bitField0_ & ~0x00000004);
         return this;
       }
+      /**
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.RequestHeader request_header = 3;</code>
+       *
+       * <pre>
+       * Optional request_header, required if message_type is RPC_REQUEST.
+       * </pre>
+       */
+      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.Builder getRequestHeaderBuilder() {
+        bitField0_ |= 0x00000004;
+        onChanged();
+        return getRequestHeaderFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.RequestHeader request_header = 3;</code>
+       *
+       * <pre>
+       * Optional request_header, required if message_type is RPC_REQUEST.
+       * </pre>
+       */
+      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeaderOrBuilder getRequestHeaderOrBuilder() {
+        if (requestHeaderBuilder_ != null) {
+          return requestHeaderBuilder_.getMessageOrBuilder();
+        } else {
+          return requestHeader_;
+        }
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.RequestHeader request_header = 3;</code>
+       *
+       * <pre>
+       * Optional request_header, required if message_type is RPC_REQUEST.
+       * </pre>
+       */
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.Builder, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeaderOrBuilder> 
+          getRequestHeaderFieldBuilder() {
+        if (requestHeaderBuilder_ == null) {
+          requestHeaderBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.Builder, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeaderOrBuilder>(
+                  requestHeader_,
+                  getParentForChildren(),
+                  isClean());
+          requestHeader_ = null;
+        }
+        return requestHeaderBuilder_;
+      }
+
+      // optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error_response = 4;
+      private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse errorResponse_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.Builder, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponseOrBuilder> errorResponseBuilder_;
+      /**
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error_response = 4;</code>
+       *
+       * <pre>
+       * Optional error_response, required if message_type is RPC_ERROR_RESPONSE.
+       * </pre>
+       */
+      public boolean hasErrorResponse() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error_response = 4;</code>
+       *
+       * <pre>
+       * Optional error_response, required if message_type is RPC_ERROR_RESPONSE.
+       * </pre>
+       */
+      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse getErrorResponse() {
+        if (errorResponseBuilder_ == null) {
+          return errorResponse_;
+        } else {
+          return errorResponseBuilder_.getMessage();
+        }
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error_response = 4;</code>
+       *
+       * <pre>
+       * Optional error_response, required if message_type is RPC_ERROR_RESPONSE.
+       * </pre>
+       */
+      public Builder setErrorResponse(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse value) {
+        if (errorResponseBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          errorResponse_ = value;
+          onChanged();
+        } else {
+          errorResponseBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000008;
+        return this;
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error_response = 4;</code>
+       *
+       * <pre>
+       * Optional error_response, required if message_type is RPC_ERROR_RESPONSE.
+       * </pre>
+       */
+      public Builder setErrorResponse(
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.Builder builderForValue) {
+        if (errorResponseBuilder_ == null) {
+          errorResponse_ = builderForValue.build();
+          onChanged();
+        } else {
+          errorResponseBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000008;
+        return this;
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error_response = 4;</code>
+       *
+       * <pre>
+       * Optional error_response, required if message_type is RPC_ERROR_RESPONSE.
+       * </pre>
+       */
+      public Builder mergeErrorResponse(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse value) {
+        if (errorResponseBuilder_ == null) {
+          if (((bitField0_ & 0x00000008) == 0x00000008) &&
+              errorResponse_ != org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.getDefaultInstance()) {
+            errorResponse_ =
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.newBuilder(errorResponse_).mergeFrom(value).buildPartial();
+          } else {
+            errorResponse_ = value;
+          }
+          onChanged();
+        } else {
+          errorResponseBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000008;
+        return this;
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error_response = 4;</code>
+       *
+       * <pre>
+       * Optional error_response, required if message_type is RPC_ERROR_RESPONSE.
+       * </pre>
+       */
       public Builder clearErrorResponse() {
-        result.hasErrorResponse = false;
-        result.errorResponse_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.getDefaultInstance();
+        if (errorResponseBuilder_ == null) {
+          errorResponse_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.getDefaultInstance();
+          onChanged();
+        } else {
+          errorResponseBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
-      
+      /**
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error_response = 4;</code>
+       *
+       * <pre>
+       * Optional error_response, required if message_type is RPC_ERROR_RESPONSE.
+       * </pre>
+       */
+      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.Builder getErrorResponseBuilder() {
+        bitField0_ |= 0x00000008;
+        onChanged();
+        return getErrorResponseFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error_response = 4;</code>
+       *
+       * <pre>
+       * Optional error_response, required if message_type is RPC_ERROR_RESPONSE.
+       * </pre>
+       */
+      public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponseOrBuilder getErrorResponseOrBuilder() {
+        if (errorResponseBuilder_ != null) {
+          return errorResponseBuilder_.getMessageOrBuilder();
+        } else {
+          return errorResponse_;
+        }
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error_response = 4;</code>
+       *
+       * <pre>
+       * Optional error_response, required if message_type is RPC_ERROR_RESPONSE.
+       * </pre>
+       */
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.Builder, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponseOrBuilder> 
+          getErrorResponseFieldBuilder() {
+        if (errorResponseBuilder_ == null) {
+          errorResponseBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.Builder, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponseOrBuilder>(
+                  errorResponse_,
+                  getParentForChildren(),
+                  isClean());
+          errorResponse_ = null;
+        }
+        return errorResponseBuilder_;
+      }
+
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.RPCHeader)
     }
-    
+
     static {
       defaultInstance = new RPCHeader(true);
-      org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.internalForceInit();
       defaultInstance.initFields();
     }
-    
+
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.RPCHeader)
   }
-  
+
   private static com.google.protobuf.Descriptors.Descriptor
     internal_static_xtreemfs_pbrpc_UserCredentials_descriptor;
   private static
@@ -2800,7 +6175,7 @@ public final class RPC {
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_xtreemfs_pbrpc_RPCHeader_ErrorResponse_fieldAccessorTable;
-  
+
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
     return descriptor;
@@ -2859,49 +6234,37 @@ public final class RPC {
           internal_static_xtreemfs_pbrpc_UserCredentials_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_UserCredentials_descriptor,
-              new java.lang.String[] { "Username", "Groups", },
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.class,
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.Builder.class);
+              new java.lang.String[] { "Username", "Groups", });
           internal_static_xtreemfs_pbrpc_AuthPassword_descriptor =
             getDescriptor().getMessageTypes().get(1);
           internal_static_xtreemfs_pbrpc_AuthPassword_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_AuthPassword_descriptor,
-              new java.lang.String[] { "Password", },
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.class,
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword.Builder.class);
+              new java.lang.String[] { "Password", });
           internal_static_xtreemfs_pbrpc_Auth_descriptor =
             getDescriptor().getMessageTypes().get(2);
           internal_static_xtreemfs_pbrpc_Auth_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_Auth_descriptor,
-              new java.lang.String[] { "AuthType", "AuthPasswd", "AuthData", },
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.class,
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.Builder.class);
+              new java.lang.String[] { "AuthType", "AuthPasswd", "AuthData", });
           internal_static_xtreemfs_pbrpc_RPCHeader_descriptor =
             getDescriptor().getMessageTypes().get(3);
           internal_static_xtreemfs_pbrpc_RPCHeader_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_RPCHeader_descriptor,
-              new java.lang.String[] { "CallId", "MessageType", "RequestHeader", "ErrorResponse", },
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.class,
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.Builder.class);
+              new java.lang.String[] { "CallId", "MessageType", "RequestHeader", "ErrorResponse", });
           internal_static_xtreemfs_pbrpc_RPCHeader_RequestHeader_descriptor =
             internal_static_xtreemfs_pbrpc_RPCHeader_descriptor.getNestedTypes().get(0);
           internal_static_xtreemfs_pbrpc_RPCHeader_RequestHeader_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_RPCHeader_RequestHeader_descriptor,
-              new java.lang.String[] { "InterfaceId", "ProcId", "UserCreds", "AuthData", },
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.class,
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.Builder.class);
+              new java.lang.String[] { "InterfaceId", "ProcId", "UserCreds", "AuthData", });
           internal_static_xtreemfs_pbrpc_RPCHeader_ErrorResponse_descriptor =
             internal_static_xtreemfs_pbrpc_RPCHeader_descriptor.getNestedTypes().get(1);
           internal_static_xtreemfs_pbrpc_RPCHeader_ErrorResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_RPCHeader_ErrorResponse_descriptor,
-              new java.lang.String[] { "ErrorType", "PosixErrno", "ErrorMessage", "DebugInfo", "RedirectToServerUuid", },
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.class,
-              org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.Builder.class);
+              new java.lang.String[] { "ErrorType", "PosixErrno", "ErrorMessage", "DebugInfo", "RedirectToServerUuid", });
           return null;
         }
       };
@@ -2910,8 +6273,6 @@ public final class RPC {
         new com.google.protobuf.Descriptors.FileDescriptor[] {
         }, assigner);
   }
-  
-  public static void internalForceInit() {}
-  
+
   // @@protoc_insertion_point(outer_class_scope)
 }

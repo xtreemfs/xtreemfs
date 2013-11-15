@@ -30,7 +30,9 @@ import org.xtreemfs.foundation.pbrpc.channels.ChannelIO;
  */
 public class FederationIdX509AuthProvider implements AuthenticationProvider {
 
-    private final static String GROUP_ID = "DC";
+
+    private final static String USER_ID = "CN";
+    private final static String GROUP_ID = "O";
 
     //    String privilegedCertificatePathname = "privileged.txt";
     //    private HashSet<String> privilegedCertificates;
@@ -63,7 +65,18 @@ public class FederationIdX509AuthProvider implements AuthenticationProvider {
                 final X509Certificate cert = ((X509Certificate) certs[0]);
                 String fullDN = cert.getSubjectX500Principal().getName();
 
-                final String globalUID = fullDN;
+                final List<String> globalUIDs = getNamedElements(
+                        cert.getSubjectX500Principal().getName(), USER_ID);
+
+                // only use the UUID of the certificate
+                String globalUID = null;
+                if (!globalUIDs.isEmpty()) {
+                    globalUID = globalUIDs.iterator().next();
+                }
+                else {
+                    globalUID = fullDN;
+                }
+
                 final List<String> globalGIDs = getNamedElements(
                         cert.getSubjectX500Principal().getName(), GROUP_ID);
 

@@ -65,7 +65,7 @@ public class SetXAttrOperation extends MRCOperation {
         // if the attribute is a system attribute, set it
         
         final String attrKey = rqArgs.getName();
-        final byte[] attrVal = rqArgs.hasValueBytes() ? rqArgs.getValueBytes().toByteArray()
+        final byte[] attrVal = rqArgs.hasValueBytesString() ? rqArgs.getValueBytesString().toByteArray()
                 : rqArgs.hasValue() ? rqArgs.getValue().getBytes() : null;
         
         // set a system attribute
