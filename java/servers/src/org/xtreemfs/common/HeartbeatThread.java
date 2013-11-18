@@ -220,12 +220,7 @@ public class HeartbeatThread extends LifeCycleThread {
             while (!quit) {
                 synchronized (pauseLock) {
                     while (pauseNumberOfWaitingThreads > 0) {
-                        try {
-                            pauseLock.wait();
-                        } catch (InterruptedException ex) {
-                            quit = true;
-                            break;
-                        }
+                        pauseLock.wait();
                     }
 
                     paused = false;
@@ -249,9 +244,6 @@ public class HeartbeatThread extends LifeCycleThread {
                             ex.toString());
                     if (Logging.isDebug())
                         Logging.logError(Logging.LEVEL_DEBUG, this, ex);
-                } catch (InterruptedException ex) {
-                    quit = true;
-                    break;
                 }
                 
                 if (addressMappingRenewalPending) {
@@ -268,9 +260,6 @@ public class HeartbeatThread extends LifeCycleThread {
                     } catch (IOException ex) {
                         Logging.logMessage(Logging.LEVEL_ERROR, this,
                                 "requested renewal of address mappings failed: %s", ex.toString());
-                    } catch (InterruptedException ex) {
-                        quit = true;
-                        break;
                     }
                 }
 
@@ -286,17 +275,15 @@ public class HeartbeatThread extends LifeCycleThread {
                 // If no renewal request has been triggered during the loop, this HeartbeatThread can wait for
                 // the next regular UPDATE_INTERVAL.
                 if (!addressMappingRenewalTriggered) {
-                    try {
-                        synchronized (updateIntervalMonitor) {
-                            updateIntervalMonitor.wait(UPDATE_INTERVAL);
-                        }
-                    } catch (InterruptedException e) {
-                        // ignore
-                        // TODO(jdillmann): Revise the exception handling and conditions for termination.
+                    synchronized (updateIntervalMonitor) {
+                        updateIntervalMonitor.wait(UPDATE_INTERVAL);
                     }
                 }
             }
 
+            notifyStopped();
+
+        } catch (InterruptedException e) {
             notifyStopped();
         } catch (Throwable ex) {
             notifyCrashed(ex);
