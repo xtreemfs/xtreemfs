@@ -31,6 +31,7 @@ import org.xtreemfs.mrc.stages.XLocSetCoordinator;
 import org.xtreemfs.mrc.stages.XLocSetCoordinatorCallback;
 import org.xtreemfs.mrc.stages.XLocSetLock;
 import org.xtreemfs.mrc.utils.Converter;
+import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
@@ -99,8 +100,7 @@ public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoord
             res.checkIfFileDoesNotExist();
             file = res.getFile();
 
-            // TODO(jdillmann): Move to MRCHelper.createGlobalFileId(VolumeInfo volume, FileMetadata file)
-            fileId = sMan.getVolumeInfo().getId() + ":" + file.getId();
+            fileId = MRCHelper.createGlobalFileId(sMan.getVolumeInfo(), file);
 
             // Check whether the path prefix is searchable.
             faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser,

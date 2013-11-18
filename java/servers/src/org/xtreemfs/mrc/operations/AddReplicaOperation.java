@@ -89,8 +89,7 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
             res.checkIfFileDoesNotExist();
             file = res.getFile();
 
-            // TODO(jdillmann): Move to MRCHelper.createGlobalFileId(VolumeInfo volume, FileMetadata file)
-            fileId = sMan.getVolumeInfo().getId() + ":" + file.getId();
+            fileId = MRCHelper.createGlobalFileId(sMan.getVolumeInfo(), file);
 
             // Check whether the path prefix is searchable.
             faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq

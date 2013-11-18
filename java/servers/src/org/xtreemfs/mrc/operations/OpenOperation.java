@@ -290,7 +290,7 @@ public class OpenOperation extends MRCOperation {
         xLocSet.setReadOnlyFileSize(file.getSize());
         
         // issue a new capability
-        Capability cap = new Capability(volume.getId() + ":" + file.getId(), rqArgs.getFlags(), master
+        Capability cap = new Capability(MRCHelper.createGlobalFileId(volume, file), rqArgs.getFlags(), master
                 .getConfig().getCapabilityTimeout(), TimeSync.getGlobalTime() / 1000
             + master.getConfig().getCapabilityTimeout(), ((InetSocketAddress) rq.getRPCRequest()
                 .getSenderAddress()).getAddress().getHostAddress(), trEpoch, replicateOnClose, !volume
