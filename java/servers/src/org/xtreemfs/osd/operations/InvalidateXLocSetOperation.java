@@ -53,17 +53,18 @@ public class InvalidateXLocSetOperation extends OSDOperation {
     public void startRequest(final OSDRequest rq) {
         xtreemfs_xloc_set_invalidateRequest rpcrq = (xtreemfs_xloc_set_invalidateRequest) rq.getRequestArgs();
 
-        master.getPreprocStage().invalidateXLocSet(rq, rpcrq.getFileCredentials(), new InvalidateXLocSetCallback() {
-            
-            @Override
-            public void invalidateComplete(boolean isPrimary, ErrorResponse error) {
-                if (error != null) {
-                    rq.sendError(error);
-                } else {
-                    postInvalidation(rq, isPrimary);
-                }
-            }
-        });
+        master.getPreprocStage().invalidateXLocSet(rq, rpcrq.getFileCredentials(), true,
+                new InvalidateXLocSetCallback() {
+
+                    @Override
+                    public void invalidateComplete(boolean isPrimary, ErrorResponse error) {
+                        if (error != null) {
+                            rq.sendError(error);
+                        } else {
+                            postInvalidation(rq, isPrimary);
+                        }
+                    }
+                });
     }
 
     private void postInvalidation(final OSDRequest rq, final boolean isPrimary) {
@@ -126,10 +127,7 @@ public class InvalidateXLocSetOperation extends OSDOperation {
 
     @Override
     public boolean requiresValidView() {
-        // Although the local view will be invalidated it is required to check the request. This will ensure, that the
-        // local version equals the latest one.
-        // If this is not guaranteed, it could be that 'local version' < 'current version' < 'next version' and a
-        // request from an outdated client with 'current version' would reset the INVALIDATED flag and be successful.
-        return true;
+        // View validation will be handled at {@link PreprocStage#invalidateXLocSet()}.
+        return false;
     }
 }

@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
+import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.LRUCache;
 import org.xtreemfs.foundation.TimeSync;
@@ -750,12 +751,14 @@ public class PreprocStage extends Stage {
     }
 
     /**
-     * Invalidate the current XLocSet. The replica will not respond to read/write/truncate or flease
-     * operations until a new XLocSet is installed.
+     * Invalidate the current XLocSet. The replica will not respond to read/write/truncate or flease operations until a
+     * new XLocSet is installed.<br>
+     * If the request is based on a newer XLocSet, the local XLocSet version will be updated. If the request is from an
+     * older one, an error is returned.
      */
-    public void invalidateXLocSet(OSDRequest request, FileCredentials fileCreds,
-            final InvalidateXLocSetCallback listener) {
-        enqueueOperation(STAGEOP_INVALIDATE_XLOC, new Object[] { fileCreds }, request, listener);
+    public void invalidateXLocSet(OSDRequest request, FileCredentials fileCreds, boolean validateView,
+            InvalidateXLocSetCallback listener) {
+        enqueueOperation(STAGEOP_INVALIDATE_XLOC, new Object[] { fileCreds, validateView }, request, listener);
     }
 
     private void doInvalidateXLocSet(StageRequest m) {
@@ -763,11 +766,28 @@ public class PreprocStage extends Stage {
         final String fileId = request.getFileId();
         final XLocations xLoc = request.getLocationList();
         final FileCredentials fileCreds = (FileCredentials) m.getArgs()[0];
+        final boolean validateView = (Boolean) m.getArgs()[1];
         final InvalidateXLocSetCallback callback = (InvalidateXLocSetCallback) m.getCallback();
         
         XLocSetVersionState state;
         try {
-            state = layout.getXLocSetVersionState(fileId).toBuilder().setInvalidated(true).build();
+            XLocSetVersionState.Builder stateBuilder = layout.getXLocSetVersionState(fileId).toBuilder();
+            
+            // Return an error if the local version is newer then the requested one and the replica is not already
+            // invalidated.
+            if (validateView && !stateBuilder.getInvalidated() && stateBuilder.getVersion() > xLoc.getVersion()) {
+                throw new InvalidXLocationsException("View is not valid. The requests is based on an outdated view.");
+            }
+
+            // Update the local version if the request is newer.
+            if (stateBuilder.getVersion() < xLoc.getVersion()) {
+                stateBuilder.setVersion(xLoc.getVersion());
+            }
+            
+            // Invalidate the replica.
+            stateBuilder.setInvalidated(true);
+
+            state = stateBuilder.build();
             layout.setXLocSetVersionState(fileId, state);
             
             if (request.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
@@ -776,6 +796,10 @@ public class PreprocStage extends Stage {
                 master.getRWReplicationStage().invalidateReplica(fileId, fileCreds, xLoc, callback);
             }
 
+        } catch (InvalidXLocationsException e) {
+            ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.INVALID_VIEW, POSIXErrno.POSIX_ERROR_NONE,
+                    e.getMessage(), e);
+            callback.invalidateComplete(false, error);
         } catch (IOException e) {
             Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,
                     "VersionState could not be written for fileId: %s", fileId);

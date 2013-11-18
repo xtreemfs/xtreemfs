@@ -233,7 +233,8 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         final XLocList extXLocList = m.getNewXLocList();
 
         final XLocSet curXLocSet = Converter.xLocListToXLocSet(curXLocList).build();
-        final XLocSet extXLocSet = Converter.xLocListToXLocSet(extXLocList).build();
+        // Ensure the next view won't be propagated until it is installed at the MRC.
+        final XLocSet extXLocSet = Converter.xLocListToXLocSet(extXLocList).setVersion(curXLocSet.getVersion()).build();
 
         if (extXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ)
                 || extXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE)
@@ -303,7 +304,8 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         final XLocList newXLocList = m.getNewXLocList();
 
         final XLocSet curXLocSet = Converter.xLocListToXLocSet(curXLocList).build();
-        final XLocSet newXLocSet = Converter.xLocListToXLocSet(newXLocList).build();
+        // Ensure the next view won't be propagated until it is installed at the MRC.
+        final XLocSet newXLocSet = Converter.xLocListToXLocSet(newXLocList).setVersion(curXLocSet.getVersion()).build();
 
         
         if (curXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ)
@@ -443,7 +445,6 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         int validity = master.getConfig().getCapabilityTimeout();
         long expires = TimeSync.getGlobalTime() / 1000 + master.getConfig().getCapabilityTimeout();
 
-        // TODO(jdillmann): check correct MRC address
         String clientIdentity;
         try {
             clientIdentity = master.getConfig().getAddress() != null ? master.getConfig().getAddress().toString()
