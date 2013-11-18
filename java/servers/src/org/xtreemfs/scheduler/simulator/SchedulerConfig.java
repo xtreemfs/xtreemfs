@@ -31,6 +31,7 @@ public class SchedulerConfig {
     private boolean preferUsedOSDs;
     private double arrivalRate;
     private double leaveRate;
+    private long simulationSteps;
 
     public SchedulerConfig(double seqentialReservationProbability,
             double randomReservationProbability,
@@ -44,7 +45,8 @@ public class SchedulerConfig {
             double streamingGain,
             boolean preferusedOSDs,
             double arrivalRate,
-            double leaveRate) {
+            double leaveRate,
+            long simulationSteps) {
         this.seqentialReservationProbability = seqentialReservationProbability;
         this.randomReservationProbability = randomReservationProbability;
         this.bestEffortProbability = bestEffortProbability;
@@ -58,6 +60,7 @@ public class SchedulerConfig {
         this.preferUsedOSDs = preferusedOSDs;
         this.arrivalRate = arrivalRate;
         this.leaveRate = leaveRate;
+        this.setSimulationSteps(simulationSteps);
     }
     
     /**
@@ -157,5 +160,12 @@ public class SchedulerConfig {
     public double getLeaveRate() {
         return leaveRate;
     }
-    
+
+    public long getSimulationSteps() {
+        return simulationSteps;
+    }
+
+    public void setSimulationSteps(long simulationSteps) {
+        this.simulationSteps = simulationSteps;
+    }
 }
