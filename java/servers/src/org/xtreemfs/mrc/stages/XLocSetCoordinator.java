@@ -81,11 +81,16 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
     private final MRCRequestDispatcher   master;
     private BlockingQueue<RequestMethod> q;
 
+    /** The lease timeout is needed to ensure no primary can exist after invalidating. */
+    private final int                    leaseToMS;
+
     public XLocSetCoordinator(MRCRequestDispatcher master) {
         super("XLocSetCoordinator");
         quit = false;
         q = new LinkedBlockingQueue<RequestMethod>();
         this.master = master;
+
+        leaseToMS = master.getConfig().getFleaseLeaseToMS();
     }
 
     @Override
@@ -570,8 +575,9 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         }
 
         // Wait until either the primary responded, every replica responded or the lease has timed out.
-        // FIXME(jdillmann): Howto get the lease timeout value from the OSD config?
-        long leaseToMS = 15 * 1000;
+        // TODO(jdillmann): Return lease information while invalidating and wait only until the actual lease timed out
+        // iff the primary didn't respond. This will also ensure no unnecessary time is spend waiting if no primary
+        // exists at all.
         long now = System.currentTimeMillis();
         long leaseEndTimeMs = now + leaseToMS;
         synchronized (listener) {
@@ -745,7 +751,6 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
      */
     private int calculateNumRequiredAcks(String fileId, XLocSet xLocSet) {
         // Generate a list of ServiceUUIDs from the XLocSet.
-        // TODO(jdillmann): Replace by a List implementation that is only returning a size().
         int i;
         List<ServiceUUID> OSDUUIDs = new ArrayList<ServiceUUID>(xLocSet.getReplicasCount() - 1);
         for (i = 0; i < xLocSet.getReplicasCount() - 1; i++) {

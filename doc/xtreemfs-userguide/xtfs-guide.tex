@@ -936,9 +936,9 @@ Note that it is possible to specify multiple categories by means of a comma or s
 
 \subsubsection{\texttt{flease.lease\_timeout\_ms} \textit{optional}}
 \begin{tabular}{lp{10cm}}
- Services & OSD\\
+ Services & OSD, MRC\\
  Values   & milliseconds \\
- Default  & 15000 \\
+ Default  & 14000 \\
  Description & Duration of a lease in milliseconds. For read-write-replicated files, the lease timeout specifies the validity time span of a master lease. Shorter lease timeouts guarantee a shorter fail-over period in the event of a server crash, which however comes at the cost of an increased rate of lease negotiations for each open file. The lease timeout should be set to a value at least three times \texttt{flease.message\_to\_ms}.
 \end{tabular}
 
