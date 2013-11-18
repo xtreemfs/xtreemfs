@@ -662,7 +662,6 @@ public class PreprocStage extends Stage {
 
         XLocSetVersionState state;
         try {
-            // TODO(jdillmann): Cache the VersionState
             state = layout.getXLocSetVersionState(fileId);
         } catch (IOException e) {
             return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
@@ -721,7 +720,6 @@ public class PreprocStage extends Stage {
 
         XLocSetVersionState state;
         try {
-            // TODO(jdillmann): Cache the VersionState
             state = layout.getXLocSetVersionState(fileId);
         } catch (IOException e) {
             Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,

@@ -121,6 +121,8 @@ public class HashStorageLayout extends StorageLayout {
 
     private static final String            ERROR_MESSAGE_INCOMPLETE_READ = "Failed to read the requested number of bytes from the file on disk. Maybe there's a media error or the file was modified outside the scope of the OSD by another process?";
 
+    private final LRUCache<String, XLocSetVersionState> xLocSetVSCache;
+
     /** Creates a new instance of HashStorageLayout */
     public HashStorageLayout(OSDConfig config, MetadataCache cache) throws IOException {
         this(config, cache, DEFAULT_HASH, DEFAULT_SUBDIRS, DEFAULT_MAX_DIR_DEPTH);
@@ -182,6 +184,9 @@ public class HashStorageLayout extends StorageLayout {
         _stat_fileInfoLoads = 0;
 
         hashedPathCache = new LRUCache<String, String>(2048);
+
+        // TODO(jdillmann): Discuss if this should be moved to FileMetadata instead.
+        xLocSetVSCache = new LRUCache<String, XLocSetVersionState>(2048);
     }
 
     @Override
@@ -1371,28 +1376,35 @@ public class HashStorageLayout extends StorageLayout {
 
     @Override
     public XLocSetVersionState getXLocSetVersionState(String fileId) throws IOException {
-        // TODO(jdillmann): Implement some cache.
-        XLocSetVersionState.Builder vsbuilder = XLocSetVersionState.newBuilder();
+        XLocSetVersionState state = xLocSetVSCache.get(fileId);
 
-        File fileDir = new File(generateAbsoluteFilePath(fileId));
-        File vsFile = new File(fileDir, XLOC_VERSION_STATE_FILENAME);
-
-        FileInputStream input = null;
-        try {
-            input = new FileInputStream(vsFile);
-            vsbuilder.mergeDelimitedFrom(input);
-
-        } catch (FileNotFoundException e) {
-            // if the file does not exist yet, set the initial state
-            vsbuilder.setInvalidated(true).setVersion(-1);
-
-        } finally {
-            if (input != null) {
-                input.close();
+        if (state == null) {
+            XLocSetVersionState.Builder vsbuilder = XLocSetVersionState.newBuilder();
+    
+            File fileDir = new File(generateAbsoluteFilePath(fileId));
+            File vsFile = new File(fileDir, XLOC_VERSION_STATE_FILENAME);
+    
+            FileInputStream input = null;
+            try {
+                input = new FileInputStream(vsFile);
+                vsbuilder.mergeDelimitedFrom(input);
+    
+            } catch (FileNotFoundException e) {
+                // If the file does not exist yet, set the initial state
+                vsbuilder.setInvalidated(true).setVersion(-1);
+    
+            } finally {
+                if (input != null) {
+                    input.close();
+                }
             }
+
+            // Build the state and store it to the cache.
+            state = vsbuilder.build();
+            xLocSetVSCache.put(fileId, state);
         }
 
-        return vsbuilder.build();
+        return state;
     }
 
     @Override
@@ -1401,12 +1413,13 @@ public class HashStorageLayout extends StorageLayout {
         if (!fileDir.exists()) {
             fileDir.mkdirs();
         }
+
         File vsFile = new File(fileDir, XLOC_VERSION_STATE_FILENAME);
         FileOutputStream output = null;
-
         try {
             output = new FileOutputStream(vsFile);
             versionState.writeDelimitedTo(output);
+            xLocSetVSCache.put(fileId, versionState);
         } finally {
             if (output != null) {
                 output.close();
