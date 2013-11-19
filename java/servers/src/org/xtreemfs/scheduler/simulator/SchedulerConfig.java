@@ -32,6 +32,7 @@ public class SchedulerConfig {
     private double arrivalRate;
     private double leaveRate;
     private long simulationSteps;
+    private int queueCapacity;
 
     public SchedulerConfig(double seqentialReservationProbability,
             double randomReservationProbability,
@@ -46,7 +47,8 @@ public class SchedulerConfig {
             boolean preferusedOSDs,
             double arrivalRate,
             double leaveRate,
-            long simulationSteps) {
+            long simulationSteps,
+            int queueCapacity) {
         this.seqentialReservationProbability = seqentialReservationProbability;
         this.randomReservationProbability = randomReservationProbability;
         this.bestEffortProbability = bestEffortProbability;
@@ -60,7 +62,8 @@ public class SchedulerConfig {
         this.preferUsedOSDs = preferusedOSDs;
         this.arrivalRate = arrivalRate;
         this.leaveRate = leaveRate;
-        this.setSimulationSteps(simulationSteps);
+        this.simulationSteps = simulationSteps;
+        this.setQueueCapacity(queueCapacity);
     }
     
     /**
@@ -167,5 +170,13 @@ public class SchedulerConfig {
 
     public void setSimulationSteps(long simulationSteps) {
         this.simulationSteps = simulationSteps;
+    }
+
+    public int getQueueCapacity() {
+        return queueCapacity;
+    }
+
+    public void setQueueCapacity(int queueCapacity) {
+        this.queueCapacity = queueCapacity;
     }
 }

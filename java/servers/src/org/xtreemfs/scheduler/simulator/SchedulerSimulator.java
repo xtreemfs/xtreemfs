@@ -7,10 +7,7 @@
  */
 package org.xtreemfs.scheduler.simulator;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.xtreemfs.scheduler.algorithm.ReservationScheduler;
 import org.xtreemfs.scheduler.algorithm.ReservationSchedulerFactory;
@@ -22,13 +19,11 @@ import org.xtreemfs.scheduler.data.Reservation;
  * @author Christoph Kleineweber <kleineweber@zib.de>
  */
 public class SchedulerSimulator {
-
-    private final int QUEUE_CAPACITY = 10000;
-
     private List<OSDDescription> osds;
     private SchedulerConfig config;
     private ReservationScheduler scheduler;
     private EventQueue queue;
+    private long lastEvent;
 
     public SchedulerSimulator(SchedulerConfig config) {
         this.osds = new ArrayList<OSDDescription>();
@@ -53,7 +48,8 @@ public class SchedulerSimulator {
                 config.getStreamingGain(), 
                 config.isPreferUsedOSDs());
 
-        this.queue = new EventQueue(QUEUE_CAPACITY);
+        this.queue = new EventQueue(config.getQueueCapacity());
+        this.lastEvent = 0;
     }
 
     public void runSimulation() {
@@ -70,6 +66,8 @@ public class SchedulerSimulator {
     }
 
     private void handleEvent(SchedulerEvent e) {
+        this.lastEvent = e.getTimeStamp();
+
         switch(e.getOperation()) {
             case CREATE_VOLUME:
                 Map<String, Reservation> reservations = new HashMap<String, Reservation>();
