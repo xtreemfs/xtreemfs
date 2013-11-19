@@ -65,9 +65,17 @@ extern "C" int xtreemfs_fuse_setxattr(
     const char *name,
     const char *value,
     size_t size,
-    int flags);
+    int flags
+#ifdef __APPLE__
+    , uint32_t position
+#endif
+    );
 extern "C" int xtreemfs_fuse_getxattr(const char *path, const char *name,
-                                      char *value, size_t size);
+                                      char *value, size_t size
+#ifdef __APPLE__
+                                      , uint32_t position
+#endif
+                                      );
 extern "C" int xtreemfs_fuse_listxattr(const char *path, char *list,
                                        size_t size);
 extern "C" int xtreemfs_fuse_removexattr(const char *path, const char *name);
