@@ -175,11 +175,9 @@ include_directories(${CLIENT_GOOGLE_TEST_CPP}/include)
 
 # Check if this is a 64 Bit system
 if(UNIX AND NOT WIN32)
-  if(CMAKE_SIZEOF_VOID_P MATCHES "8")
-    if(APPLE)
-      set(LIBFUSE "fuse_ino64")
-    endif(APPLE)
-  endif(CMAKE_SIZEOF_VOID_P MATCHES "8")
+  if(APPLE)
+    set(LIBFUSE "osxfuse")
+  endif(APPLE)
 endif(UNIX AND NOT WIN32)
 
 SET(REQUIRED_LIBRARIES ${LIBFUSE} ${LIBATTR} ${LIBCRYPTO} ${LIBSSL} ${LIBPTHREAD})
