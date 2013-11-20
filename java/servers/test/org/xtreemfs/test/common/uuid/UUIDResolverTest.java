@@ -91,10 +91,12 @@ public class UUIDResolverTest extends TestCase {
 
     public void testSimpleMapping() throws Exception {
         List<AddressMapping.Builder> mpgs = NetUtils.getReachableEndpoints(32636, "http");
-        mpgs.get(0).setUuid("MY_TEST_UUID");
+        // Use the first endoint found for testing purposes.
+        AddressMapping testMapping = mpgs.get(0).setUuid("MY_TEST_UUID").build();
+
         AddressMappingSet.Builder ams = AddressMappingSet.newBuilder();
-        for (AddressMapping.Builder b : mpgs)
-            ams.addMappings(b);
+        ams.addMappings(testMapping);
+
         RPCResponse<addressMappingSetResponse> r = testEnv.getDirClient().xtreemfs_address_mappings_set(null,RPCAuthentication.authNone, RPCAuthentication.userService, ams.build());
         r.get();
         ServiceUUID uuid = new ServiceUUID("MY_TEST_UUID");

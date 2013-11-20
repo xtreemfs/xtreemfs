@@ -256,7 +256,11 @@ int xtreemfs_fuse_fsync(const char *path, int datasync,
 
 int xtreemfs_fuse_setxattr(
     const char *path, const char *name,
-    const char *value, size_t size, int flags) {
+    const char *value, size_t size, int flags
+#ifdef __APPLE__
+    , uint32_t position
+#endif
+    ) {
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
      Logging::log->getLog(LEVEL_DEBUG)
          << "xtreemfs_fuse_setxattr " << " " << path << " " << name << endl;
@@ -265,7 +269,11 @@ int xtreemfs_fuse_setxattr(
 }
 
 int xtreemfs_fuse_getxattr(
-    const char *path, const char *name, char *value, size_t size) {
+    const char *path, const char *name, char *value, size_t size
+#ifdef __APPLE__
+    , uint32_t position
+#endif
+    ) {
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
     Logging::log->getLog(LEVEL_DEBUG)
         << "xtreemfs_fuse_getxattr " << " " << path << " " << name << " "
