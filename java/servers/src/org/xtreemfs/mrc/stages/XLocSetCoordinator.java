@@ -478,9 +478,10 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
      * @param xLocSet
      * @param numAcksRequired
      * @throws InterruptedException
+     * @throws MRCException
      */
     private ReplicaStatus[] invalidateReplicas(String fileId, Capability cap, XLocSet xLocSet, int numAcksRequired)
-            throws InterruptedException {
+            throws InterruptedException, MRCException {
 
         @SuppressWarnings("unchecked")
         final RPCResponse<xtreemfs_xloc_set_invalidateResponse>[] responses = new RPCResponse[xLocSet
@@ -503,9 +504,10 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             }
         }
 
-
         /**
-         * TODO(jdillmann): doc
+         * This local class is used to collect responses to the asynchronous invalidate requests. <br>
+         * It counts the number of errors and successful requests and stores an array of returned ReplicaStatus and a
+         * flag indicating if the primary did respond.
          */
         class InvalidatedResponseListener implements RPCResponseAvailableListener<xtreemfs_xloc_set_invalidateResponse> {
             private int             numResponses     = 0;
@@ -567,11 +569,16 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         InvalidatedResponseListener listener = new InvalidatedResponseListener(responses);
 
         // Wait until the majority responded.
+        int numMaxErrors = responses.length - numAcksRequired;
         synchronized (listener) {
             while (listener.numResponses < numAcksRequired) {
                 listener.wait();
+
+                if (listener.numErrors > numMaxErrors) {
+                    throw new MRCException(
+                            "XLocSetCoordinator failed because too many replicas didn't respond to the invalidate request.");
+                }
             }
-            // TODO(jdillmann): Throw an error if numErrors > numAcksRequired.
         }
 
         // Wait until either the primary responded, every replica responded or the lease has timed out.
@@ -604,9 +611,10 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
      * @param numAcksRequired
      * @param replicasUpToDate
      * @throws InterruptedException
+     * @throws MRCException
      */
     private void updateReplicas(String fileId, Capability cap, XLocSet xLocSet, AuthoritativeReplicaState authState,
-            int numAcksRequired, Set<String> replicasUpToDate) throws InterruptedException {
+            int numAcksRequired, Set<String> replicasUpToDate) throws InterruptedException, MRCException {
         final OSDServiceClient client = master.getOSDClient();
 
         // Create a list of OSDs which should be updated. Replicas that are up to date will be filtered.
@@ -641,7 +649,10 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             }
         }
 
-        // TODO(jdillmann): documentation
+        /**
+         * This local class is used to collect responses to the asynchronous update requests.<br>
+         * It counts the number of errors and successful requests.
+         */
         class FetchInvalidatedResponseListener implements RPCResponseAvailableListener<emptyResponse> {
             private int numResponses = 0;
             private int numErrors    = 0;
@@ -672,11 +683,16 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
         // Wait until the required number of updates has been successfully executed.
         int numRequiredUpdates = numAcksRequired - replicasUpToDate.size();
+        int numMaxErrors = OSDServiceUUIDs.size() - numRequiredUpdates;
         synchronized (listener) {
             while (listener.numResponses < numRequiredUpdates) {
                 listener.wait();
+
+                if (listener.numErrors > numMaxErrors) {
+                    throw new MRCException(
+                            "XLocSetCoordinator failed because too many replicas didn't respond to the update request.");
+                }
             }
-            // TODO(jdillmann): Throw an error if (filteredOSDServiceUUIDs.size() - numErrors) < requiredUpdates.
         }
     }
     
@@ -780,18 +796,27 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
     }
 
     /**
-     * Add the RequestMethod saved as context in the local queue when the update operation completes
+     * Add the RequestMethod saved as context in the local queue when the update operation completes. <br />
+     * Attention the context of the DB operation calling this, has to be a {@link RequestMethod}.
      */
     @Override
     public void finished(Object result, Object context) {
-        // TODO(jdillmann): Check if the context is really a RequestMethod
+        if (!(context instanceof RequestMethod)) {
+            throw new RuntimeException(
+                    "The XLocSetCoordinator DBAccessResultListener has to be called with a RequestMethod as the context.");
+        }
+
         RequestMethod m = (RequestMethod) context;
         q.add(m);
     }
 
     @Override
     public void failed(Throwable error, Object context) {
-        // TODO(jdillmann): Check if the context is really a RequestMethod
+        if (!(context instanceof RequestMethod)) {
+            throw new RuntimeException(
+                    "The XLocSetCoordinator DBAccessResultListener has to be called with a RequestMethod as the context.");
+        }
+
         RequestMethod m = (RequestMethod) context;
         master.failed(error, m.getRequest());
     }

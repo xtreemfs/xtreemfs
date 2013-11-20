@@ -611,8 +611,7 @@ public class PreprocStage extends Stage {
             return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES, "capability was issued for another file than the one requested");
         }
         
-        // check if the capability provides sufficient access rights for
-        // requested operation
+        // check if the capability provides sufficient access rights for requested operation
         if (rq.getOperation().getProcedureId() == OSDServiceConstants.PROC_ID_READ) {
             
             if ((rqCap.getAccessMode() & (SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY.getNumber())) != 0)
