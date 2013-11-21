@@ -170,7 +170,8 @@ public class RPCCaller {
                                     it.getUUID(), pbe.getErrorMessage());
                         }
 
-                        if ((attempt <= maxTries || maxTries == 0) && xLocSetHandler != null) {
+                        // If at lease one retry is left, the view will be renewed by requesting it from the MRC.
+                        if ((attempt < maxTries || maxTries == 0) && xLocSetHandler != null) {
                             // TODO(jdillmann): Introduce RetryViewDelay and delay the xLocSet renewal if this isn't the
                             // first invalid_view error.
                             xLocSetHandler.renew();
