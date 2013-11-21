@@ -29,7 +29,7 @@ import org.xtreemfs.common.libxtreemfs.Helper;
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
-import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
+import org.xtreemfs.common.libxtreemfs.exceptions.InvalidViewException;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.json.JSONException;
@@ -37,7 +37,6 @@ import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
@@ -84,6 +83,7 @@ public class VersionedXLocSetTest {
         // cleanup
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
         Logging.start(Logging.LEVEL_WARN);
+        // Logging.start(Logging.LEVEL_INFO);
         // Logging.start(Logging.LEVEL_DEBUG);
 
         testEnv = new TestEnvironment(
@@ -207,9 +207,11 @@ public class VersionedXLocSetTest {
         // Open a fileHandle again and keep it open while removing the primary replica from another client.
         fileHandle = volume.openFile(userCredentials, fileName, Helper.flagsToInt(SYSTEM_V_FCNTL_H_O_RDONLY));
 
-        // Get the primary replica.
+        // Get a replica to remove. This will probably be on a backup. If the replica is on the primary the test will
+        // fail, because lease returnal isn't available yet and the second request will time out due to redirection
+        // errors.
         List<Replica> replicas = fileHandle.getReplicasList();
-        Replica replica = replicas.get(0);
+        Replica replica = replicas.get(1);
         int prevReplicaCount = fileHandle.getReplicasList().size();
 
         // Since striping is disabled there should be only one OSD for this certain replica.
@@ -528,18 +530,19 @@ public class VersionedXLocSetTest {
     }
 
     private static void readInvalidView(AdminFileHandle file) throws AddressToUUIDNotFoundException, IOException {
-        PosixErrorException catched = null;
+        // If no (more) retries are allowed, syncCall won't reload the view and throws an InvalidViewException.
+        int prevMaxTries = options.getMaxTries();
+        options.setMaxTries(1);
+
         try {
             byte[] dataOut = new byte[1];
             file.read(userCredentials, dataOut, 1, 0);
-        } catch (PosixErrorException e) {
-            catched = e;
+        } catch (InvalidViewException e) {
+            // Everything is fine. The InvalidViewException is expected, because the client read with an outdated view.
+        } finally {
+            // Restore the maxRetries.
+            options.setMaxTries(prevMaxTries);
         }
-
-        // TODO(jdillmann): make this more dynamic
-        assertTrue(catched != null);
-        assertEquals(catched.getPosixError(), RPC.POSIXErrno.POSIX_ERROR_EAGAIN);
-        assertTrue(catched.getMessage().contains("view is not valid"));
     }
 
     private SuspendableOSDRequestDispatcher[] replaceWithSuspendableOSDs(int start, int count) throws Exception {
