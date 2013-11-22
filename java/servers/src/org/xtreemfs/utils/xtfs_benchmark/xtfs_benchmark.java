@@ -59,12 +59,10 @@ public class xtfs_benchmark {
             controller.setupDefaultVolumes(cliOptions.getNumberOfThreads());
 
         ConcurrentLinkedQueue<BenchmarkResult> results = repeatBenchmark();
-        ArrayList sortedResults = new ArrayList(results);
-        Collections.sort(sortedResults);
 
-        printResults(sortedResults);
+        printResults(results);
         Thread.sleep(5);
-        printResultsCSV(sortedResults);
+        printResultsCSV(results);
         controller.teardown();
     }
 
@@ -123,7 +121,7 @@ public class xtfs_benchmark {
     }
 
     /* Print the results as csv. */
-    private static void printResultsCSV(ArrayList<BenchmarkResult> results) {
+    private static void printResultsCSV(ConcurrentLinkedQueue<BenchmarkResult> results) {
         System.out.println("Type;NumberOfParallelThreads;TimeInSec;MiB/Sec;DataWrittenInBytes;ByteCount");
         /* print the results */
         for (BenchmarkResult res : results) {
@@ -132,7 +130,7 @@ public class xtfs_benchmark {
     }
 
     /* Print the results in a json like style. */
-    private static void printResults(ArrayList<BenchmarkResult> results) {
+    private static void printResults(ConcurrentLinkedQueue<BenchmarkResult> results) {
         /* print the results */
         for (BenchmarkResult res : results) {
             System.err.println(resultToString(res));
