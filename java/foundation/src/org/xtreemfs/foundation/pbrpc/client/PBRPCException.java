@@ -9,6 +9,7 @@
 package org.xtreemfs.foundation.pbrpc.client;
 
 import java.io.IOException;
+
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 
@@ -69,6 +70,9 @@ public class PBRPCException extends IOException {
             return "";
     }
 
+    public ErrorResponse getErrorResponse() {
+        return response;
+    }
 
     @Override
     public String getMessage() {

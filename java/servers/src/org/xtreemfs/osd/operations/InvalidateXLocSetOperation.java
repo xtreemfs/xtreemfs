@@ -125,8 +125,8 @@ public class InvalidateXLocSetOperation extends OSDOperation {
     }
 
     @Override
-    public boolean requiresValidView() {
+    public boolean bypassViewValidation() {
         // View validation will be handled at {@link PreprocStage#invalidateXLocSet()}.
-        return false;
+        return true;
     }
 }

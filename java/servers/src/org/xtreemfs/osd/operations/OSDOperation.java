@@ -48,9 +48,13 @@ public abstract class OSDOperation {
     public abstract boolean requiresCapability();
 
     /**
-     * Requires that the request is from the same view as the replica. Defaults to false
+     * By default the view contained in the location list stored in a {@link OSDRequest} will be validated (if it is
+     * present). If it is required an operation can be allowed to run, even if the view is outdated or the replica is
+     * invalidated. The view validation will be bypassed by returning true.
+     * 
+     * @return false [default]
      */
-    public boolean requiresValidView() {
+    public boolean bypassViewValidation() {
         return false;
     }
 

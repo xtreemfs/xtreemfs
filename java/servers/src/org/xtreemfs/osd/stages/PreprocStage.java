@@ -157,8 +157,8 @@ public class PreprocStage extends Stage {
             }
         }
         
-        // check if the request is from the same view (same XLocationSet version)
-        if (request.getOperation().requiresValidView()) {
+        // Check if the request is from the same view (same XLocationSet version) and install newer one.
+        if (!request.getOperation().bypassViewValidation() && request.getLocationList() != null) {
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "STAGEOP VIEW");
             ErrorResponse error = processValidateView(request);
@@ -653,12 +653,6 @@ public class PreprocStage extends Stage {
                     "Invalid view. file_id must not be empty.");
         }
 
-        XLocations xloc = request.getLocationList();
-        if (xloc == null) {
-            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL,
-                    "Invalid view. xlocset must not be empty.");
-        }
-
         XLocSetVersionState state;
         try {
             state = layout.getXLocSetVersionState(fileId);
@@ -700,7 +694,8 @@ public class PreprocStage extends Stage {
 
         // The request is either based on an outdated view, or the replica is invalidated.
         String errorMessage = state.getInvalidated() ? "Replica is invalidated."
-                : "The requests is based on an outdated view.";
+                : "The request is based on an outdated view" 
+                        + "(" + locset.getVersion() + " < " + state.getVersion() + ").";
         return ErrorUtils.getErrorResponse(ErrorType.INVALID_VIEW, POSIXErrno.POSIX_ERROR_NONE, 
                 "View is not valid. " + errorMessage);
     }

@@ -139,8 +139,8 @@ public class InternalRWRAuthStateInvalidatedOperation extends OSDOperation {
     }
 
     @Override
-    public boolean requiresValidView() {
-        return false;
+    public boolean bypassViewValidation() {
+        return true;
     }
 
 }

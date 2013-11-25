@@ -105,10 +105,4 @@ public final class InternalRWRAuthStateOperation extends OSDOperation {
     public void startInternalEvent(Object[] args) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    @Override
-    public boolean requiresValidView() {
-        return true;
-    }
-
 }

@@ -157,6 +157,17 @@ public final class DeleteOperation extends OSDOperation {
     }
 
     @Override
+    public boolean bypassViewValidation() {
+        // Object deletion occurs for one thing if a file is unlinked, which does also delete its metadata like the
+        // xLocSet. Therefore it is possible to bypass validation: No more Operation will be possible after a file has
+        // been unlinked.
+        // And it occurs for another thing if a replica is removed. In that case only the objects on the removed replica
+        // will be deleted. It is necessary to bypass validation in that case, because the replica is invalidated and no
+        // longer part of the new view.
+        return true;
+    }
+
+    @Override
     public void startInternalEvent(Object[] args) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
