@@ -751,7 +751,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     file.getFileId(), file.getState(), ReplicaState.OPEN);
         }
         file.setState(ReplicaState.OPEN);
-        if (file.getPendingRequests().size() > 0) {
+        if (file.hasPendingRequests()) {
             doWaitingForLease(file);
         }
     }
@@ -770,9 +770,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 }
                 file.setPrimaryReset(false);
                 file.setState(ReplicaState.PRIMARY);
-                while (!file.getPendingRequests().isEmpty()) {
-                    StageRequest m = file.getPendingRequests().remove(0);
-                    enqueuePrioritized(m);
+                while (file.hasPendingRequests()) {
+                    enqueuePrioritized(file.removePendingRequest());
                 }
             }
         } catch (IOException ex) {
@@ -791,9 +790,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         }
         file.setPrimaryReset(false);
         file.setState(ReplicaState.BACKUP);
-        while (!file.getPendingRequests().isEmpty()) {
-            StageRequest m = file.getPendingRequests().remove(0);
-            enqueuePrioritized(m);
+        while (file.hasPendingRequests()) {
+            enqueuePrioritized(file.removePendingRequest());
         }
         /*} catch (IOException ex) {
             failed(file, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex));
@@ -816,10 +814,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             file.setState(ReplicaState.INVALIDATED);
         }
         file.setPrimaryReset(false);
-
-        while (!file.getPendingRequests().isEmpty()) {
-            StageRequest m = file.getPendingRequests().remove(0);
-            enqueuePrioritized(m);
+        while (file.hasPendingRequests()) {
+            enqueuePrioritized(file.removePendingRequest());
         }
     }
 
@@ -831,13 +827,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         file.setState(ReplicaState.OPEN);
         file.setCellOpen(false);
         fstage.closeCell(file.getPolicy().getCellId(), false);
-        for (StageRequest rq : file.getPendingRequests()) {
-            RWReplicationCallback callback = (RWReplicationCallback) rq.getCallback();
-            if (callback != null) {
-                callback.failed(ex);
-            }
-        }
-        file.getPendingRequests().clear();
+        file.clearPendingRequests(ex);
     }
 
     private void enqueuePrioritized(StageRequest rq) {
@@ -1191,17 +1181,17 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
                                 "enqeue update for %s (state is %s)", fileId, state.getState());
                     }
-                    if (state.getPendingRequests().size() > MAX_PENDING_PER_FILE) {
+                    if (state.sizeOfPendingRequests() > MAX_PENDING_PER_FILE) {
                         if (Logging.isDebug()) {
                             Logging.logMessage(Logging.LEVEL_DEBUG, this,
-                                    "rejecting request: too many requests (is: %d, max %d) in queue for file %s", state
-                                            .getPendingRequests().size(), MAX_PENDING_PER_FILE, fileId);
+                                    "rejecting request: too many requests (is: %d, max %d) in queue for file %s",
+                                    state.sizeOfPendingRequests(), MAX_PENDING_PER_FILE, fileId);
                         }
                         callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR,
                                 POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
                         return;
                     } else {
-                        state.getPendingRequests().add(method);
+                        state.addPendingRequest(method);
                     }
                     if (state.getState() == ReplicaState.OPEN) {
                         // immediately change to backup mode...no need to check the lease
@@ -1223,7 +1213,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                             needsReset);
                 }
                 if (needsReset) {
-                    state.getPendingRequests().add(method);
+                    state.addPendingRequest(method);
                     doReset(state, objVersion);
                 } else {
                     callback.success(0);
@@ -1235,31 +1225,31 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 case WAITING_FOR_LEASE:
                 case INITIALIZING:
                 case RESET: {
-                    if (state.getPendingRequests().size() > MAX_PENDING_PER_FILE) {
+                    if (state.sizeOfPendingRequests() > MAX_PENDING_PER_FILE) {
                         if (Logging.isDebug()) {
                             Logging.logMessage(Logging.LEVEL_DEBUG, this,
-                                    "rejecting request: too many requests (is: %d, max %d) in queue for file %s", state
-                                            .getPendingRequests().size(), MAX_PENDING_PER_FILE, fileId);
+                                    "rejecting request: too many requests (is: %d, max %d) in queue for file %s",
+                                    state.sizeOfPendingRequests(), MAX_PENDING_PER_FILE, fileId);
                         }
                         callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR,
                                 POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
                     } else {
-                        state.getPendingRequests().add(method);
+                        state.addPendingRequest(method);
                     }
                     return;
                 }
                 case OPEN: {
-                    if (state.getPendingRequests().size() > MAX_PENDING_PER_FILE) {
+                    if (state.sizeOfPendingRequests() > MAX_PENDING_PER_FILE) {
                         if (Logging.isDebug()) {
                             Logging.logMessage(Logging.LEVEL_DEBUG, this,
-                                    "rejecting request: too many requests (is: %d, max %d) in queue for file %s", state
-                                            .getPendingRequests().size(), MAX_PENDING_PER_FILE, fileId);
+                                    "rejecting request: too many requests (is: %d, max %d) in queue for file %s",
+                                    state.sizeOfPendingRequests(), MAX_PENDING_PER_FILE, fileId);
                         }
                         callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR,
                                 POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
                         return;
                     } else {
-                        state.getPendingRequests().add(method);
+                        state.addPendingRequest(method);
                     }
                     doWaitingForLease(state);
                     return;
@@ -1301,8 +1291,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 final ASCIIString cellId = fState.getPolicy().getCellId();
                 fStatus.put("policy", fState.getPolicy().getClass().getSimpleName());
                 fStatus.put("peers (OSDs)", fState.getPolicy().getRemoteOSDUUIDs().toString());
-                fStatus.put("pending requests",
-                        fState.getPendingRequests() == null ? "0" : String.valueOf(fState.getPendingRequests().size()));
+                fStatus.put("pending requests", String.valueOf(fState.sizeOfPendingRequests()));
                 fStatus.put("cellId", cellId.toString());
                 String primary = "unknown";
                 if ((fState.getLease() != null) && (!fState.getLease().isEmptyLease())) {
@@ -1433,16 +1422,10 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         cellToFileId.remove(state.getPolicy().getCellId());
 
         // Clear pending requests. This ensures the ReplicaState won't change from now on.
-        if (!state.getPendingRequests().isEmpty()) {
+        if (state.hasPendingRequests()) {
             ErrorResponse er = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
                     "File got invalidated!");
-            for (StageRequest rq : state.getPendingRequests()) {
-                RWReplicationCallback cb = (RWReplicationCallback) rq.getCallback();
-                if (cb != null) {
-                    cb.failed(er);
-                }
-            }
-            state.getPendingRequests().clear();
+            state.clearPendingRequests(er);
         }
 
         // Transfer the view to flease.
@@ -1485,7 +1468,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
             // There should exist no pending requests, because they were cleaned when the replica got invalidated and
             // subsequent requests are denied.
-            if (!state.getPendingRequests().isEmpty()) {
+            if (state.hasPendingRequests()) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
                         "(R:%s) pending requests were queued while the replica for %s has been invalidated.", localID,
                         fileId);
