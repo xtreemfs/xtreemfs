@@ -109,7 +109,9 @@ public class ReservationSchedulerImplementation implements ReservationScheduler 
 			Collections.sort(osds, c);
 
 			for (OSDDescription osd : osds) {
-				if (osd.hasFreeCapacity(stripedReservation) && fittingUsageType(stripedReservation, osd)) {
+				if (osd.hasFreeCapacity(stripedReservation) &&
+                        fittingUsageType(stripedReservation, osd) &&
+                        !result.contains(osd)) {
 					result.add(osd);
 
                     if (result.size() == stripeLength) {
