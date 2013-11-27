@@ -8,6 +8,7 @@
 
 package org.xtreemfs.test;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -360,6 +361,39 @@ public class SetupUtils {
         config.setDefaults();
         
     	return config;
+    }
+
+    public static SchedulerConfig createSchedulerConfigWithCapabilityFile() throws IOException {
+        Properties props = new Properties();
+
+        props.setProperty("dir_service.host", "localhost");
+        props.setProperty("dir_service.port", new Integer(32638 + PORT_RANGE_OFFSET).toString());
+        props.setProperty("scheduler_service.host", "localhost");
+        props.setProperty("scheduler_service.port", new Integer(32842 + PORT_RANGE_OFFSET).toString());
+        props.setProperty("http_port", new Integer(30641 + PORT_RANGE_OFFSET).toString());
+        props.setProperty("debug.level", "" + DEBUG_LEVEL);
+        props.setProperty("debug.categories",
+                "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
+        props.setProperty("ssl.enabled", "" + SSL_ON);
+        props.setProperty("ssl.service_creds", CERT_DIR + "MRC.p12");
+        props.setProperty("ssl.service_creds.pw", "passphrase");
+        props.setProperty("ssl.service_creds.container", "pkcs12");
+        props.setProperty("ssl.trusted_certs", CERT_DIR + "trusted.jks");
+        props.setProperty("ssl.trusted_certs.pw", "passphrase");
+        props.setProperty("ssl.trusted_certs.container", "jks");
+        props.setProperty("authentication_provider", "org.xtreemfs.common.auth.NullAuthProvider");
+        props.setProperty("capability_secret", "secretPassphrase");
+        props.setProperty("listen.port", new Integer(32842 + PORT_RANGE_OFFSET).toString());
+        props.setProperty("remote_time_sync", "60000");
+        props.setProperty("local_clock_renewal", "0");
+        props.setProperty("osd_autodiscover", "false");
+        props.setProperty("osd_capabilities_file", System.getProperty("java.io.tmpdir") + File.separator +
+                "scheduler.osd_capaibities." + new Integer(32842 + PORT_RANGE_OFFSET).toString());
+
+        SchedulerConfig config = new SchedulerConfig(props);
+        config.setDefaults();
+
+        return config;
     }
     
     public static BabuDBConfig createSchedulerdbsConfig() throws IOException {
