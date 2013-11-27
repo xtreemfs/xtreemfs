@@ -491,31 +491,39 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
                 if(line.startsWith("#"))
                     continue;
 
-                String tokens[] = line.split(";");
-
-                if(tokens.length != 4) {
-                    Logging.logMessage(Logging.LEVEL_ERROR, this, "Cannot parse line: " + line);
+                try {
+                    OSDDescription osd = parseOSDCapabilitiesFileLine(line);
+                    osds.add(osd);
+                } catch(IllegalArgumentException e) {
+                    Logging.logError(Logging.LEVEL_ERROR, this, e);
                 }
-
-                String osdName = tokens[0];
-                double capacity = Double.parseDouble(tokens[1]);
-                double iops = Double.parseDouble(tokens[2]);
-                String seqTP = tokens[3];
-                Map<Integer, Double> seqTPMap = new HashMap<Integer, Double>();
-
-                int i = 0;
-                for(String s: seqTP.split(",")){
-                    i++;
-                    seqTPMap.put(i, Double.parseDouble(s));
-                }
-
-                OSDPerformanceDescription osdPerf = new OSDPerformanceDescription(capacity, seqTPMap, iops);
-                OSDDescription osd = new OSDDescription(osdName, osdPerf, OSDDescription.OSDType.UNKNOWN);
-                osds.add(osd);
             }
             reader.close();
         } else {
             throw new IOException("Cannot read OSD capabilities file " + capabilitiesFile.getAbsolutePath());
         }
+    }
+
+    private OSDDescription parseOSDCapabilitiesFileLine(String line) throws IllegalArgumentException {
+        String tokens[] = line.split(";");
+
+        if(tokens.length != 4) {
+            throw new IllegalArgumentException("Cannot parse line" + line);
+        }
+
+        String osdName = tokens[0];
+        double capacity = Double.parseDouble(tokens[1]);
+        double iops = Double.parseDouble(tokens[2]);
+        String seqTP = tokens[3];
+        Map<Integer, Double> seqTPMap = new HashMap<Integer, Double>();
+
+        int i = 0;
+        for(String s: seqTP.split(",")){
+            i++;
+            seqTPMap.put(i, Double.parseDouble(s));
+        }
+
+        OSDPerformanceDescription osdPerf = new OSDPerformanceDescription(capacity, seqTPMap, iops);
+        return new OSDDescription(osdName, osdPerf, OSDDescription.OSDType.UNKNOWN);
     }
 }
