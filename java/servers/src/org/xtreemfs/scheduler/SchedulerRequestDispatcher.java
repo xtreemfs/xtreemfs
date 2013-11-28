@@ -350,6 +350,10 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
         return osds;
     }
 
+    public boolean isOSDAutoDiscover() {
+        return config.getOSDAutodiscover();
+    }
+
 	private void registerOperations() throws BabuDBException {
 		SchedulerOperation op;
 
