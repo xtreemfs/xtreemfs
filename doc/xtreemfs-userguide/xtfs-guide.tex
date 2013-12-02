@@ -41,7 +41,7 @@ Version 1.4.x
 XtreemFS is available from the \href{http://www.XtreemFS.org}{XtreemFS website (www.XtreemFS.org)}.
 
 
-This document is \copyright{} 2009-\the\year{} by Bj\"orn Kolbeck, Jan Stender, Michael Berlin, Matthias Noack, Paul Seiferth, Felix Langner, NEC HPC Europe, Felix Hupfeld, Juan Gonzales. All rights reserved.
+This document is \copyright{} 2009-\the\year{} by Bj\"orn Kolbeck, Jan Stender, Michael Berlin, Matthias Noack, Paul Seiferth, Felix Langner, NEC HPC Europe, Felix Hupfeld, Juan Gonzales, Patrick Sch\"afer. All rights reserved.
 
 \setcounter{tocdepth}{2}
 \tableofcontents
@@ -63,7 +63,7 @@ Summary of important changes in release 1.4:
  \item \textbf{Re-added and improved Vivaldi support}\\
     Vivaldi is directly integrated in the client now and there's a visualization of the coordinates available, even of the client coordinates. See section~\ref{sec:vivaldi}.
  \item \textbf{Support for custom attributes in the OSD Selection policies}\\
-    Added support for OSD Selection based on Custom Attributes e.g., assign a country code to every OSD as custom attribute and limit the placement of files on OSDs based on the attribute (see \ref{sec:customOSDSelection}).
+    Added support for OSD Selection based on Custom Attributes e.g., assign a country code to every OSD as custom attribute and limit the placement of files on OSDs based on the attribute (see \ref{sec:custom_osd_selection}).
 \end{itemize}
 
 Summary of important changes in release 1.3:
@@ -561,7 +561,7 @@ To make use of the increased performance that an SSD can provide, it might be su
 
 All configuration parameters that may be used to define the behavior of the different services are listed in this section. Unless marked as optional, a parameter has to occur (exactly once) in a configuration file. Parameters marked as experimental belong to the DIR and MRC replication feature, which is currently under development. It is not recommended to mess about with these options if you want to use XtreemFS in production.
 
-Aside from using the following predefined parameters to configure services, OSDs also allow to specify \emph{custom configuration parameters}. Such parameters may have arbitrary names that start with the prefix ``\texttt{config.}''. They can be used to enable a fine-grained individual assignment of OSDs to new files and replicas. For further details, please refer to Section \ref{sec:customOSDSelection}.
+Aside from using the following predefined parameters to configure services, OSDs also allow to specify \emph{custom configuration parameters}. Such parameters may have arbitrary names that start with the prefix ``\texttt{config.}''. They can be used to enable a fine-grained individual assignment of OSDs to new files and replicas. For further details, please refer to Section \ref{sec:custom_osd_selection}.
 
 %\makeatletter
 %\renewcommand\paragraph{\@startsection{paragraph}{4}{\z@}%
@@ -2559,7 +2559,7 @@ The following predefined policies exist:
  \begin{itemize}
  \item \emph{free\_capacity\_bytes}: the lower space limit in bytes
  \item \emph{offline\_time\_secs}: the upper response time limit in seconds
- \item custom attributes (see Section \ref{sec:customOSDSelection})
+ \item custom attributes (see Section \ref{sec:custom_osd_selection})
  \end{itemize}
 
  \item \textbf{FQDN-based filter (policy ID 1001)}\\
@@ -2644,13 +2644,15 @@ This policy uses domain names of clients and OSDs to determine the distance betw
 \end{itemize}
 
 \subsection{OSD Selection based on Custom Attributes}
-\label{sec:customOSDSelection}
+\label{sec:custom_osd_selection}
 The default filtering policy (policy ID 1000) supports the use of policy attributes to further refine the filtering of OSDs. Given that different OSDs have individual \emph{custom configuration parameters}, it is possible to restrict the selection based on these attributes and parameters.
 
-To select a subset of all OSDs that has a certain \emph{custom configuration parameter}, it is necessary to define a policy attribute on the volume with the same name as the custom parameter and a value consisting of a space-separated list of matching OSDs.
+To select a subset of all OSDs that have a certain \emph{custom configuration parameter}, it is necessary to define a policy attribute on the volume with the same name as the custom parameter and a value consisting of a space-separated list of matching OSDs.
+
+Using \emph{not.} in front of a \emph{custom configuration parameters} will cause all OSDs to be exluded that match the value of this parameter.
 
 \vspace{0.5cm}
-\emph{Example:} Two OSDs exist with the following configurations:
+\emph{Example:} Three OSDs exist with the following configurations:
 
   \begin{verbatim}
   uuid = OSD1
@@ -2662,15 +2664,38 @@ and
   \begin{verbatim}
   uuid = OSD2
   ...
+  config.country = US\end{verbatim}
+
+and 
+
+  \begin{verbatim}
+  uuid = OSD3
+  ...
   config.country = UK\end{verbatim}
 
-. Executing
+Executing
 
   \begin{verbatim}
   %> xtfsutil --set-pattr 1000.country --value US DE <mountpoint>
   \end{verbatim}
 
-will only cause the former OSD to be regarded as eligible for new files and replicas. For further details on how to define \emph{custom configuration parameters}, please refer to Section \ref{sec:config}. For further details on how to specify policy attributes, please refer to Section \ref{sec:policyAttributes}.
+will cause the first two OSD to be regarded as eligible for new files and replicas. 
+
+\vspace{0.5cm}
+
+Executing
+
+  \begin{verbatim}
+  %> xtfsutil --set-pattr 1000.not.country --value US <mountpoint>
+  \end{verbatim}
+
+will cause the OSDs from DE and UK to be regarded as eligible for new files and replicas. 
+
+\vspace{0.5cm}
+
+For further details on how to define \emph{custom configuration parameters}, please refer to Section \ref{sec:config}. For further details on how to specify policy attributes, please refer to Section \ref{sec:policyAttributes}.
+
+
 
 \subsection{Vivaldi}
 \label{sec:vivaldi}
