@@ -1088,6 +1088,38 @@ public class VolumeImplementation implements Volume, AdminVolume {
     /*
      * (non-Javadoc)
      * 
+     * @see org.xtreemfs.common.libxtreemfs.Volume#setXAttr(
+     * org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials,
+     * org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth,
+     * java.lang.String, java.lang.String, java.lang.String,
+     * org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS)
+     */
+    @Override
+    public void setXAttr(UserCredentials userCredentials, Auth auth, String path, String name, String value,
+            XATTR_FLAGS flags) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+        setxattrRequest request = setxattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
+                .setName(name).setValue(value).setFlags(flags.getNumber()).build();
+
+        timestampResponse response = RPCCaller.<setxattrRequest, timestampResponse> syncCall(SERVICES.MRC,
+                userCredentials, auth, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                new CallGenerator<setxattrRequest, timestampResponse>() {
+                    @Override
+                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server,
+                            Auth authHeader, UserCredentials userCreds, setxattrRequest input)
+                            throws IOException {
+                        return mrcServiceClient.setxattr(server, authHeader, userCreds, input);
+                    }
+                });
+
+        assert (response != null);
+
+        metadataCache.updateXAttr(path, name, value);
+    }
+    
+    
+    /*
+     * (non-Javadoc)
+     * 
      * @see org.xtreemfs.common.libxtreemfs.Volume#setXAttr(org.xtreemfs.foundation
      * .pbrpc.generatedinterfaces.RPC .UserCredentials, java.lang.String, java.lang.String, java.lang.String,
      * org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS)

@@ -70,12 +70,18 @@ public class SetXAttrOperation extends MRCOperation {
         
         // set a system attribute
         if (attrKey.startsWith(StorageManager.SYS_ATTR_KEY_PREFIX)) {
+                        
+            // check for the admin password to match the provided password
+            boolean privileged = false;
+            if (master.getConfig().getAdminPassword().length() > 0
+                 && master.getConfig().getAdminPassword().equals(rq.getDetails().password)) {
+                privileged = true;
+            }
             
-            // when no admin password is provided check whether the user has privileged permissions to set
-            // system attributes
-            if (master.getConfig().getAdminPassword().length() == 0)
-                faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq.getDetails().superUser,
-                    rq.getDetails().groupIds);
+            // whether the user has privileged permissions to set system attributes
+            faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, 
+                rq.getDetails().superUser || privileged, // the admin password accounts for priviledged access
+                rq.getDetails().groupIds);
             
             MRCHelper.setSysAttrValue(sMan, vMan, faMan, res.getParentDirId(), file, attrKey
                     .substring(StorageManager.SYS_ATTR_KEY_PREFIX.length()), new String(attrVal), update);
