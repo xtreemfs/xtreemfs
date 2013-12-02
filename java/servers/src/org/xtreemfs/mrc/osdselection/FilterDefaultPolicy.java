@@ -10,6 +10,7 @@ package org.xtreemfs.mrc.osdselection;
 
 import java.net.InetAddress;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.StringTokenizer;
 
@@ -39,6 +40,7 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
     
     private static final String     FREE_CAPACITY_BYTES = "free_capacity_bytes";
     
+    private static final String     NOT_IN              = "not.";
     // default: 2GB
     private long                    minFreeCapacity     = 2 * 1024 * 1024 * 1024;
     
@@ -46,6 +48,7 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
     private long                    maxOfflineTime      = 300;
     
     private HashMap<String, String> customFilter        = new HashMap<String, String>();
+    private HashMap<String, String> customNotFilter     = new HashMap<String, String>();
     
     @Override
     public ServiceSet.Builder getOSDs(ServiceSet.Builder allOSDs, InetAddress clientIP,
@@ -74,36 +77,72 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
                 
                 // if no custom filters have been assigned, add the OSD to the
                 // list
-                if (customFilter.isEmpty())
-                    filteredOSDs.addServices(osd);
+                if (customFilter.isEmpty()) {
+                    if (customNotFilter.isEmpty() ||
+                        !checkMatch(customNotFilter, filteredOSDs, osd)) {
+                        filteredOSDs.addServices(osd);
+                    }
+                }
                 
                 // otherwise, check if the filters allow the OSD to be added to
                 // the list
-                else
-                    for (Entry<String, String> entry : customFilter.entrySet()) {
-                        String osdParameterValue = KeyValuePairs.getValue(osd.getData().getDataList(),
-                                ServiceConfig.OSD_CUSTOM_PROPERTY_PREFIX + entry.getKey());
-                        if (matches(entry.getValue(), osdParameterValue))
-                            filteredOSDs.addServices(osd);
+                else {                    
+                    // ckeck if a policy prohibits this OSD from being added to the list.
+                    if (checkMatch(customNotFilter, filteredOSDs, osd)) {
+                        continue;
+                    }                   
+                    else if (checkMatch(customFilter, filteredOSDs, osd)) {
+                        filteredOSDs.addServices(osd);
                     }
-                
+                }
             }
         }
         
         return filteredOSDs;
     }
+
+    private static boolean checkMatch(
+            Map<String, String> customFilter, 
+            ServiceSet.Builder filteredOSDs, 
+            Service osd) {
+        for (Entry<String, String> entry : customFilter.entrySet()) {
+            String osdParameterValue 
+                = KeyValuePairs.getValue(osd.getData().getDataList(),
+                    ServiceConfig.OSD_CUSTOM_PROPERTY_PREFIX + entry.getKey());
+
+            if (matches(entry.getValue(), osdParameterValue)) {
+                return true;
+            }
+        }
+        return false;
+    }
     
     @Override
     public void setAttribute(String key, String value) {
-        if (OFFLINE_TIME_SECS.equals(key))
+        if (OFFLINE_TIME_SECS.equals(key)) {
             maxOfflineTime = Long.parseLong(value);
+        }
         else if (FREE_CAPACITY_BYTES.equals(key))
             minFreeCapacity = Long.parseLong(value);
         else {
-            if (value == null)
-                customFilter.remove(key);
-            else
-                customFilter.put(key, value);
+            if (value == null) {
+                if (key.toLowerCase().startsWith(NOT_IN)) {
+                    key = key.substring(NOT_IN.length(), key.length());
+                    customNotFilter.remove(key);
+                } 
+                else {
+                    customFilter.remove(key);
+                }
+            }
+            else {
+                if (key.toLowerCase().startsWith(NOT_IN)) {                    
+                    key = key.substring(NOT_IN.length(), key.length());
+                    customNotFilter.put(key,value);
+                } 
+                else {                
+                    customFilter.put(key, value);
+                }
+            }
         }
     }
     
