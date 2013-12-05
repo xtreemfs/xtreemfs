@@ -132,7 +132,7 @@ public class ServiceConfig extends Config {
         /**
          * number of values the enumeration contains
          */
-        private static final int size = 35;
+        private static final int size = Parameter.values().length;
 
         /**
          * String representation of the parameter in .property file
