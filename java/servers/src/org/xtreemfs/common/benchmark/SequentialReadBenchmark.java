@@ -22,7 +22,7 @@ import java.io.IOException;
 class SequentialReadBenchmark extends SequentialBenchmark {
     private String[] filenames;
 
-    SequentialReadBenchmark(long size, Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
+    SequentialReadBenchmark(long size, BenchmarkConfig config, AdminClient client, VolumeManager volumeManager) throws Exception {
         super(size, config, client, volumeManager);
     }
 

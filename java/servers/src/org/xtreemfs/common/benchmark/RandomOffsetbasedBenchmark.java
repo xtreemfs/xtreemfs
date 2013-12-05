@@ -29,7 +29,7 @@ abstract class RandomOffsetbasedBenchmark extends AbstractBenchmark {
     final long          sizeOfBasefile;
     final static String BASFILE_FILENAME    = "benchmarks/basefile";
 
-    RandomOffsetbasedBenchmark(long size, Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
+    RandomOffsetbasedBenchmark(long size, BenchmarkConfig config, AdminClient client, VolumeManager volumeManager) throws Exception {
         super(size, config, client, volumeManager);
         sizeOfBasefile = config.getBasefileSizeInBytes();
     }
@@ -102,7 +102,7 @@ abstract class RandomOffsetbasedBenchmark extends AbstractBenchmark {
     }
 
     private void addBasefileToCreatedFiles() throws Exception {
-        if (!config.isNoCleanupOfBasefile()) {
+        if (!config.isNoCleanupBasefile()) {
             LinkedList<String> createdFiles = new LinkedList<String>();
             createdFiles.add(BASFILE_FILENAME);
             volumeManager.addCreatedFiles(volume, createdFiles);

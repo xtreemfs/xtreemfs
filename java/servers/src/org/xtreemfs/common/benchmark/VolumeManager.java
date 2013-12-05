@@ -9,6 +9,7 @@
 package org.xtreemfs.common.benchmark;
 
 import org.xtreemfs.common.libxtreemfs.AdminClient;
+import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.foundation.logging.Logging;
@@ -36,7 +37,7 @@ class VolumeManager {
 
     private static final String              VOLUME_BASE_NAME = "benchmark";
 
-    private Config                           config;
+    private BenchmarkConfig                  config;
     private AdminClient                      client;
     private int                              currentPosition;
     private LinkedList<Volume>               volumes;
@@ -45,7 +46,7 @@ class VolumeManager {
     private HashMap<Volume, String[]>        filelistsSequentialBenchmark;
     private HashMap<Volume, String[]>        filelistsRandomBenchmark;
 
-    VolumeManager(Config config, AdminClient client) throws Exception {
+    VolumeManager(BenchmarkConfig config, AdminClient client) throws Exception {
         this.config = config;
         currentPosition = 0;
         this.client = client;
@@ -98,7 +99,7 @@ class VolumeManager {
         Volume volume = null;
         try { /* try creating the volume */
             List<GlobalTypes.KeyValuePair> volumeAttributes = new ArrayList<GlobalTypes.KeyValuePair>();
-            client.createVolume(config.getAuth(), config.getUserCredentials(), volumeName, 511, config.getUserName(),
+            client.createVolume(config.getAuth(), config.getUserCredentials(), volumeName, 511, config.getUsername(),
                     config.getGroup(), GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
                     GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, 128, 1, volumeAttributes);
             volume = client.openVolume(volumeName, config.getSslOptions(), config.getOptions());
@@ -106,7 +107,7 @@ class VolumeManager {
             Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Created volume %s", volumeName);
         } catch (PosixErrorException e) {
             if (e.getPosixError() == POSIXErrno.POSIX_ERROR_EEXIST) { /* i.e. volume already exists */
-                volume = client.openVolume(volumeName, config.getSslOptions(), config.getOptions());                
+                volume = client.openVolume(volumeName, config.getSslOptions(), config.getOptions());
             } else
                 throw e;
         }

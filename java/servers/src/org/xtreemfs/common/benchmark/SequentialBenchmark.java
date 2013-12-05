@@ -19,7 +19,7 @@ abstract class SequentialBenchmark extends AbstractBenchmark {
 
     static final String BENCHMARK_FILENAME = "benchmarks/sequentialBenchmark/benchFile";
 
-    SequentialBenchmark(long size, Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
+    SequentialBenchmark(long size, BenchmarkConfig config, AdminClient client, VolumeManager volumeManager) throws Exception {
         super(size, config, client, volumeManager);
     }
 

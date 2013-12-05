@@ -22,7 +22,7 @@ abstract class FilebasedBenchmark extends AbstractBenchmark {
     static final String BENCHMARK_FILENAME = "benchmarks/randomBenchmark/benchFile";
     final int           filesize;
 
-    FilebasedBenchmark(long size, Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
+    FilebasedBenchmark(long size, BenchmarkConfig config, AdminClient client, VolumeManager volumeManager) throws Exception {
         super(size, config, client, volumeManager);
         this.filesize = config.getFilesize();
     }

@@ -23,7 +23,7 @@ import java.io.IOException;
  */
 class RandomReadBenchmark extends RandomOffsetbasedBenchmark {
 
-    RandomReadBenchmark(long size, Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
+    RandomReadBenchmark(long size, BenchmarkConfig config, AdminClient client, VolumeManager volumeManager) throws Exception {
         super(size, config, client, volumeManager);
     }
 

@@ -25,7 +25,7 @@ class FilebasedWriteBenchmark extends FilebasedBenchmark {
 
     private LinkedList<String> filenames;
 
-    FilebasedWriteBenchmark(long size, Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
+    FilebasedWriteBenchmark(long size, BenchmarkConfig config, AdminClient client, VolumeManager volumeManager) throws Exception {
         super(size, config, client, volumeManager);
         filenames = new LinkedList<String>();
     }

@@ -17,7 +17,7 @@ import org.xtreemfs.common.libxtreemfs.AdminClient;
  */
 class BenchmarkFactory {
 
-    static AbstractBenchmark createBenchmark(long size, BenchmarkUtils.BenchmarkType benchmarkType, Config config, AdminClient client, VolumeManager volumeManager)
+    static AbstractBenchmark createBenchmark(long size, BenchmarkUtils.BenchmarkType benchmarkType, BenchmarkConfig config, AdminClient client, VolumeManager volumeManager)
             throws Exception {
 
         AbstractBenchmark benchmark = null;

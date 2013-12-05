@@ -12,11 +12,8 @@ import static org.xtreemfs.foundation.logging.Logging.Category;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.xtreemfs.common.benchmark.BenchmarkUtils;
+import org.xtreemfs.common.benchmark.*;
 import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.common.benchmark.BenchmarkResult;
-import org.xtreemfs.common.benchmark.Config;
-import org.xtreemfs.common.benchmark.Controller;
 
 /**
  * The commandline benchmark tool.
@@ -50,7 +47,7 @@ public class xtfs_benchmark {
             return;
         }
 
-        Config config = cliOptions.buildParamsFromCLIOptions();
+        BenchmarkConfig config = cliOptions.buildParamsFromCLIOptions();
         controller = new Controller(config);
         controller.tryConnection();
         if (cliOptions.getArguments().size() > 0 )
