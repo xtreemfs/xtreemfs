@@ -24,7 +24,7 @@ class FilebasedReadBenchmark extends FilebasedBenchmark {
 
     private String[] filenames;
 
-    FilebasedReadBenchmark(long size, Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
+    FilebasedReadBenchmark(long size, BenchmarkConfig config, AdminClient client, VolumeManager volumeManager) throws Exception {
         super(size, config, client, volumeManager);
     }
 

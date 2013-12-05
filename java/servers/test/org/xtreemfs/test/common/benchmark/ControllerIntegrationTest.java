@@ -3,6 +3,7 @@ package org.xtreemfs.test.common.benchmark;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.xtreemfs.common.benchmark.BenchmarkConfig.ConfigBuilder;
 import static org.xtreemfs.common.benchmark.BenchmarkUtils.*;
 import static org.xtreemfs.foundation.pbrpc.client.RPCAuthentication.authNone;
 
@@ -34,21 +35,21 @@ import org.xtreemfs.test.TestEnvironment;
 
 public class ControllerIntegrationTest {
 
-    private static DIRRequestDispatcher dir;
-    private static TestEnvironment      testEnv;
-    private static DIRConfig            dirConfig;
-    private static RPC.UserCredentials  userCredentials;
-    private static RPC.Auth             auth           = RPCAuthentication.authNone;
-    private static DIRClient            dirClient;
-    private static final int            NUMBER_OF_OSDS = 2;
-    private static OSDConfig            osdConfigs[];
-    private static OSD                  osds[];
-    private static MRCRequestDispatcher mrc2;
-    private static String               dirAddress;
+    private static DIRRequestDispatcher   dir;
+    private static TestEnvironment        testEnv;
+    private static DIRConfig              dirConfig;
+    private static RPC.UserCredentials    userCredentials;
+    private static RPC.Auth               auth           = RPCAuthentication.authNone;
+    private static DIRClient              dirClient;
+    private static final int              NUMBER_OF_OSDS = 2;
+    private static OSDConfig              osdConfigs[];
+    private static OSD                    osds[];
+    private static MRCRequestDispatcher   mrc2;
+    private static String                 dirAddress;
 
-    private ConfigBuilder               configBuilder;
-    private Controller                  controller;
-    private Client                      client;
+    private ConfigBuilder configBuilder;
+    private Controller                    controller;
+    private Client                        client;
 
     @BeforeClass
     public static void setUpClass() throws Exception {
@@ -80,7 +81,7 @@ public class ControllerIntegrationTest {
 
     @Before
     public void setUp() throws Exception {
-        configBuilder = new ConfigBuilder();
+        configBuilder = BenchmarkConfig.newBuilder();
         configBuilder.setDirAddress(dirAddress);
         configBuilder.setUserName("test").setGroup("test");
         Options options = new Options();
@@ -145,7 +146,7 @@ public class ControllerIntegrationTest {
     @Test
     public void testSequentialBenchmarkSeparatedRuns() throws Exception {
         configBuilder.setNoCleanup();
-        Config config = configBuilder.build();
+        BenchmarkConfig config = configBuilder.build();
         controller = new Controller(config);
         controller.setupVolumes("TestVolA", "TestVolB");
         Queue<BenchmarkResult> results = controller.startSequentialWriteBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, 2);
@@ -175,7 +176,7 @@ public class ControllerIntegrationTest {
     @Test
     public void testRandomBenchmarkSeparateRuns() throws Exception {
         configBuilder.setBasefileSizeInBytes(20L * MiB_IN_BYTES).setNoCleanup();
-        Config config = configBuilder.build();
+        BenchmarkConfig config = configBuilder.build();
 
         controller = new Controller(config);
         controller.setupVolumes("TestVolA", "TestVolB");
@@ -205,7 +206,7 @@ public class ControllerIntegrationTest {
     @Test
     public void testFilebasedBenchmarkSeparateRuns() throws Exception {
         configBuilder.setNoCleanup();
-        Config config = configBuilder.build();
+        BenchmarkConfig config = configBuilder.build();
 
         controller = new Controller(config);
         controller.setupVolumes("TestVolA", "TestVolB");
@@ -364,7 +365,7 @@ public class ControllerIntegrationTest {
         Volume volumeA = performBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, configBuilder, BenchmarkType.SEQ_WRITE);
 
         /* perform benchmark on osd "UUID:localhost:42641" */
-        configBuilder = new ConfigBuilder();
+        configBuilder = BenchmarkConfig.newBuilder();
         configBuilder.setUserName("test").setGroup("test");
         configBuilder.setDirAddress(dirAddress);
         configBuilder.setSelectOsdsByUuid("UUID:localhost:42641").setNoCleanup();
@@ -388,7 +389,7 @@ public class ControllerIntegrationTest {
 
     @Test
     public void testConfigNoCleanupVolumes() throws Exception {
-        configBuilder.setNoCleanupOfVolumes();
+        configBuilder.setNoCleanupVolumes();
         controller = new Controller(configBuilder.build());
         controller.setupVolumes("TestVolA", "TestVolB", "TestVolC");
         controller.startSequentialWriteBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, 3);
@@ -422,8 +423,8 @@ public class ControllerIntegrationTest {
     public void testConfigNoCleanupBasefile() throws Exception {
         long basefileSize = 30L * BenchmarkUtils.MiB_IN_BYTES;
         long randSize = BenchmarkUtils.MiB_IN_BYTES;
-        configBuilder.setNoCleanupOfBasefile().setBasefileSizeInBytes(basefileSize)
-                .setNoCleanupOfVolumes();
+        configBuilder.setNoCleanupBasefile().setBasefileSizeInBytes(basefileSize)
+                .setNoCleanupVolumes();
         controller = new Controller(configBuilder.build());
         controller.setupVolumes("TestVolA");
         controller.startRandomWriteBenchmark(randSize, 1);

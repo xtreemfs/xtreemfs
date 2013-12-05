@@ -26,16 +26,16 @@ import java.util.LinkedList;
 class ClientManager {
 
     private LinkedList<AdminClient> clients;
-    private Config                  config;
+    private BenchmarkConfig         config;
 
-    ClientManager(Config config) {
+    ClientManager(BenchmarkConfig config) {
         this.clients = new LinkedList<AdminClient>();
         this.config = config; 
     }
 
     /* create and start an AdminClient. */
     AdminClient getNewClient() throws Exception {
-        AdminClient client = ClientFactory.createAdminClient(config.getDirAddress(), config.getUserCredentials(),
+        AdminClient client = ClientFactory.createAdminClient(config.getDirAddresses(), config.getUserCredentials(),
                 config.getSslOptions(), config.getOptions());
         clients.add(client);
         client.start();

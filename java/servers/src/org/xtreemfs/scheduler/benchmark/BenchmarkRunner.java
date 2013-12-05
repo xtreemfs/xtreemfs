@@ -25,12 +25,12 @@ public class BenchmarkRunner {
     private final long sequentialSize;
     private final long randomSize;
     private final int maxNumberOfThreads;
-    private final Config config;
+    private final BenchmarkConfig config;
 
     private final Controller controller;
     private ConcurrentLinkedQueue<BenchmarkResult> rawResults;
 
-    public BenchmarkRunner(Config config, long sequentialSize, long randomSize, int maxNumberOfThreads, int maxNumberOfRepetitions) throws Exception {
+    public BenchmarkRunner(BenchmarkConfig config, long sequentialSize, long randomSize, int maxNumberOfThreads, int maxNumberOfRepetitions) throws Exception {
         this.config = config;
         this.randomSize = randomSize;
         this.sequentialSize = sequentialSize;

@@ -22,14 +22,14 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
  abstract class AbstractBenchmark {
 
-    final int           chunkSize;
-    final long          benchmarkSizeInBytes;
-    final Volume        volume;
-    final AdminClient   client;
-    final Config        config;
-    final VolumeManager volumeManager;
+    final int             chunkSize;
+    final long            benchmarkSizeInBytes;
+    final Volume          volume;
+    final AdminClient     client;
+    final BenchmarkConfig config;
+    final VolumeManager   volumeManager;
 
-    AbstractBenchmark(long benchmarkSizeInBytes, Config config, AdminClient client, VolumeManager volumeManager) throws Exception {
+    AbstractBenchmark(long benchmarkSizeInBytes, BenchmarkConfig config, AdminClient client, VolumeManager volumeManager) throws Exception {
         this.client = client;
         this.benchmarkSizeInBytes = benchmarkSizeInBytes;
         this.volume = volumeManager.getNextVolume();

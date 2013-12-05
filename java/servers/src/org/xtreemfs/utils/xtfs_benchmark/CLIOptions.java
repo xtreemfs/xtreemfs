@@ -8,6 +8,7 @@
 
 package org.xtreemfs.utils.xtfs_benchmark;
 
+import static org.xtreemfs.common.benchmark.BenchmarkConfig.ConfigBuilder;
 import static org.xtreemfs.foundation.util.CLIParser.CliOption.OPTIONTYPE.STRING;
 import static org.xtreemfs.foundation.util.CLIParser.CliOption.OPTIONTYPE.SWITCH;
 import static org.xtreemfs.foundation.util.CLIParser.parseCLI;
@@ -16,11 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.xtreemfs.common.benchmark.BenchmarkUtils;
+import org.xtreemfs.common.benchmark.*;
 import org.xtreemfs.foundation.util.CLIParser;
-import org.xtreemfs.common.benchmark.Config;
-import org.xtreemfs.common.benchmark.ConfigBuilder;
-import org.xtreemfs.common.benchmark.Controller;
 import org.xtreemfs.utils.DefaultDirConfig;
 import org.xtreemfs.utils.utils;
 
@@ -88,7 +86,7 @@ class CLIOptions {
 
     CLIOptions() {
         this.options = utils.getDefaultAdminToolOptions(true);
-        this.builder = new ConfigBuilder();
+        this.builder = BenchmarkConfig.newBuilder();
         this.arguments = new ArrayList<String>(20);
     }
 
@@ -97,7 +95,7 @@ class CLIOptions {
         parseCLI(args, options, arguments);
     }
 
-    Config buildParamsFromCLIOptions() throws Exception {
+    BenchmarkConfig buildParamsFromCLIOptions() throws Exception {
         setBasefileSize();
         setFileSize();
         setDirAddress();
@@ -312,13 +310,13 @@ class CLIOptions {
     private void setNoCleanupOfVolumes() {
         boolean switchValue = options.get(NO_CLEANUP_VOLUMES).switchValue;
         if (switchValue)
-            builder.setNoCleanupOfVolumes();
+            builder.setNoCleanupVolumes();
     }
 
     private void setNoCleanupOfBasefile() {
         boolean switchValue = options.get(NO_CLEANUP_BASEFILE).switchValue;
         if (switchValue)
-            builder.setNoCleanupOfBasefile();
+            builder.setNoCleanupBasefile();
     }
 
     private void setOsdCleanup() {

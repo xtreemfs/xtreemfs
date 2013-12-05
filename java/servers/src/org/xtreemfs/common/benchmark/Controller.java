@@ -25,16 +25,16 @@ import static org.xtreemfs.foundation.logging.Logging.logMessage;
  * Controller for the benchmark library.
  * <p/>
  *
- * The {@link Controller}, the {@link ConfigBuilder} and {@link Config} represent the API to the benchmark library.
+ * The {@link Controller} and {@link BenchmarkConfig} represent the API to the benchmark library.
  *
  * @author jensvfischer
  *
  */
 public class Controller {
 
-    private Config        config;
-    private ClientManager clientManager;
-    private VolumeManager volumeManager;
+    private BenchmarkConfig config;
+    private ClientManager   clientManager;
+    private VolumeManager   volumeManager;
 
     /**
      * Create a new controller object.
@@ -42,7 +42,7 @@ public class Controller {
      * @param config
      *            The parameters to be used for the benchmark.
      */
-    public Controller(Config config) throws Exception {
+    public Controller(BenchmarkConfig config) throws Exception {
         this.config = config;
         this.clientManager = new ClientManager(config);
         this.volumeManager = new VolumeManager(config, clientManager.getNewClient());
@@ -66,7 +66,7 @@ public class Controller {
 
     /**
      * Create and open default volumes for the benchmarks. <br/>
-     * The volumes will be created with the options given by {@link Config}.
+     * The volumes will be created with the options given by {@link BenchmarkConfig}.
      *
      * @param numberOfVolumes the number of volumes to be created
      * @throws Exception
@@ -80,7 +80,7 @@ public class Controller {
 
 
     /**
-     * Starts sequential write benchmarks with the parameters specified in the {@link Config}. <br/>
+     * Starts sequential write benchmarks with the parameters specified in the {@link BenchmarkConfig}. <br/>
      *
      * @return the results of the benchmark (see {@link BenchmarkResult})
      * @throws Exception
@@ -91,7 +91,7 @@ public class Controller {
     }
 
     /**
-     * Starts sequential read benchmarks with the parameters specified in the {@link Config}. <br/>
+     * Starts sequential read benchmarks with the parameters specified in the {@link BenchmarkConfig}. <br/>
      *
      * @return the results of the benchmark (see {@link BenchmarkResult})
      * @throws Exception
@@ -102,7 +102,7 @@ public class Controller {
     }
 
     /**
-     * Starts random write benchmarks with the parameters specified in the {@link Config}. <br/>
+     * Starts random write benchmarks with the parameters specified in the {@link BenchmarkConfig}. <br/>
      *
      * @return the results of the benchmark (see {@link BenchmarkResult})
      * @throws Exception
@@ -113,7 +113,7 @@ public class Controller {
     }
 
     /**
-     * Starts random read benchmarks with the parameters specified in the {@link Config}. <br/>
+     * Starts random read benchmarks with the parameters specified in the {@link BenchmarkConfig}. <br/>
      *
      * @return the results of the benchmark (see {@link BenchmarkResult})
      * @throws Exception
@@ -124,7 +124,7 @@ public class Controller {
     }
 
     /**
-     * Starts filebased write benchmarks with the parameters specified in the {@link Config}. <br/>
+     * Starts filebased write benchmarks with the parameters specified in the {@link BenchmarkConfig}. <br/>
      *
      * @return the results of the benchmark (see {@link BenchmarkResult})
      * @throws Exception
@@ -135,7 +135,7 @@ public class Controller {
     }
 
     /**
-     * Starts filebased read benchmarks with the parameters specified in the {@link Config}. <br/>
+     * Starts filebased read benchmarks with the parameters specified in the {@link BenchmarkConfig}. <br/>
      *
      * @return the results of the benchmark (see {@link BenchmarkResult})
      * @throws Exception
@@ -178,7 +178,7 @@ public class Controller {
     /**
      * Deletes all created volumes and files and shuts down all clients. This method should be called when all
      * benchmarks are finished. The deletion of the volumes and files is regulated by the noCleanup options in
-     * {@link Config}.
+     * {@link BenchmarkConfig}.
      *
      * @throws Exception
      */
@@ -257,7 +257,7 @@ public class Controller {
 
     /* delete all created volumes and files depending on the noCleanup options */
     void deleteVolumesAndFiles() {
-        if (!config.isNoCleanup() && !config.isNoCleanupOfVolumes()) {
+        if (!config.isNoCleanup() && !config.isNoCleanupVolumes()) {
             volumeManager.deleteCreatedFiles(); // is needed in case no volume was created
             volumeManager.deleteCreatedVolumes();
         } else if (!config.isNoCleanup())
