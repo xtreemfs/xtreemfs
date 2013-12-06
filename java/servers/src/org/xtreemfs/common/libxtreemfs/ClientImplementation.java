@@ -369,7 +369,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         volumeOptions.setMetadataCacheSize(0);
 
         AdminVolume volume = openVolume(volumeName, null, volumeOptions);
-        volume.setOSDSelectionPolicy(userCredentials, "1002");
+        volume.setOSDSelectionPolicy(userCredentials, "1000,1002,3002");
         volume.setPolicyAttribute(userCredentials, "1002.uuids", osdStr);
     }
 

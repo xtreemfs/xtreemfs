@@ -543,7 +543,7 @@ void ClientImplementation::CreateVolume(
   options.metadata_cache_size = 0;
 
   Volume *v = this->OpenVolume(volume_name, NULL, options);
-  v->SetXAttr(user_credentials, "/", "xtreemfs.osel_policy", "1002", XATTR_FLAGS_REPLACE);
+  v->SetXAttr(user_credentials, "/", "xtreemfs.osel_policy", "1000,1002,3002", XATTR_FLAGS_REPLACE);
   v->SetXAttr(user_credentials, "/", "xtreemfs.policies.1002.uuids", osdUuidsString, XATTR_FLAGS_REPLACE);
 
   v->Close();
