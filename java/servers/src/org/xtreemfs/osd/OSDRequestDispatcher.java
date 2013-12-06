@@ -97,11 +97,7 @@ import org.xtreemfs.osd.operations.TruncateOperation;
 import org.xtreemfs.osd.operations.VivaldiPingOperation;
 import org.xtreemfs.osd.operations.WriteOperation;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
-import org.xtreemfs.osd.stages.DeletionStage;
-import org.xtreemfs.osd.stages.PreprocStage;
-import org.xtreemfs.osd.stages.ReplicationStage;
-import org.xtreemfs.osd.stages.StorageStage;
-import org.xtreemfs.osd.stages.VivaldiStage;
+import org.xtreemfs.osd.stages.*;
 import org.xtreemfs.osd.storage.CleanupThread;
 import org.xtreemfs.osd.storage.CleanupVersionsThread;
 import org.xtreemfs.osd.storage.HashStorageLayout;
@@ -161,6 +157,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     protected final DeletionStage                       delStage;
     
     protected final ReplicationStage                    replStage;
+
+    protected final WFQStage                            wfqStage;
     
     protected final RPCUDPSocketServer                  udpCom;
     
@@ -337,7 +335,14 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         rwrStage = new RWReplicationStage(this, serverSSLopts, config.getMaxRequestsQueueLength());
         rwrStage.setLifeCycleListener(this);
-        
+
+        if(config.useQoS()) {
+            wfqStage = new WFQStage(this, config.getMaxRequestsQueueLength());
+            wfqStage.setLifeCycleListener(this);
+        } else {
+            wfqStage = null;
+        }
+
         // ----------------------------------------
         // initialize TimeSync and Heartbeat thread
         // ----------------------------------------
@@ -496,6 +501,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cThread.start();
             cvThread.start();
             rwrStage.start();
+
+            if(config.useQoS())
+                wfqStage.start();
             
             udpCom.waitForStartup();
             preprocStage.waitForStartup();
@@ -505,6 +513,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cThread.waitForStartup();
             cvThread.waitForStartup();
             rwrStage.waitForStartup();
+
+            if(config.useQoS())
+                wfqStage.waitForStartup();
             
             heartbeatThread.initialize();
             heartbeatThread.start();
@@ -557,6 +568,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cvThread.cleanupStop();
             cvThread.shutdown();
             serviceAvailability.shutdown();
+
+            if(config.useQoS())
+                wfqStage.shutdown();
             
             udpCom.waitForShutdown();
             preprocStage.waitForShutdown();
@@ -567,6 +581,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             vStage.waitForShutdown();
             cThread.waitForShutdown();
             cvThread.waitForShutdown();
+
+            if(config.useQoS())
+                wfqStage.waitForShutdown();
             
             statusServer.shutdown();
             
@@ -607,6 +624,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cvThread.cleanupStop();
             cvThread.shutdown();
             serviceAvailability.shutdown();
+
+            if(config.useQoS())
+                wfqStage.shutdown();
             
             statusServer.shutdown();
             
@@ -723,7 +743,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 @Override
                 public void parseComplete(OSDRequest result, ErrorResponse error) {
                     if (error == null) {
-                        result.getOperation().startRequest(result);
+                        if(config.useQoS())
+                            wfqStage.addOperation(result, new Object[] { result.getRequestArgs() }, null);
+                        else
+                            result.getOperation().startRequest(result);
                     } else {
                         result.getRPCRequest().sendError(error);
                     }

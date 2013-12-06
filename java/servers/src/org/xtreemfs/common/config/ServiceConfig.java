@@ -123,6 +123,7 @@ public class ServiceConfig extends Config {
             VIVALDI_MAX_REQUEST_TIMEOUT_IN_MS("vivaldi.max_request_timeout_ms", 10000, Integer.class, false),
             VIVALDI_TIMER_INTERVAL_IN_MS("vivaldi.timer_interval_ms", 60000, Integer.class, false),
             STORAGE_THREADS("storage_threads", 1, Integer.class, false),
+            WFQ_RESET_PERIOD("wfq_reset_period", 1000, Integer.class, false),
             /*
              * Scheduler specific configuration parameter
              */
@@ -709,7 +710,11 @@ public class ServiceConfig extends Config {
     public boolean useQoS() {
     	return (Boolean) parameter.get(Parameter.USE_QOS);
     }
-    
+
+    public int getWfqResetPeriod() {
+        return (Integer) parameter.get(Parameter.WFQ_RESET_PERIOD);
+    }
+
     /**
      * Checks if the SSL Configuration is valid. If not throws a {@link RuntimeException}.
      * 

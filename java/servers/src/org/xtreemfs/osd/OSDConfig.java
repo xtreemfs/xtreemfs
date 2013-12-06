@@ -79,7 +79,9 @@ public class OSDConfig extends ServiceConfig {
             Parameter.VIVALDI_TIMER_INTERVAL_IN_MS,
             Parameter.STORAGE_THREADS,
             Parameter.USE_RENEWAL_SIGNAL,
-            Parameter.USE_MULTIHOMING
+            Parameter.USE_MULTIHOMING,
+            Parameter.USE_QOS,
+            Parameter.WFQ_RESET_PERIOD
     };
     /*
      * @formatter:on   

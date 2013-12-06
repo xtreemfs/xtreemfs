@@ -8,64 +8,95 @@
 
 package org.xtreemfs.osd.stages;
 
+import org.xtreemfs.foundation.buffer.BufferPool;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.queue.WeightedFairQueue;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.operations.ReadOperation;
+import org.xtreemfs.osd.operations.WriteOperation;
 
 /**
  * @author Christoph Kleineweber <kleineweber@zib.de>
  */
 public class WFQStage extends Stage {
 
-    private class WFQRequest {
-        private StageRequest rq;
-        private Object callback;
+    public final static int                         WFQ_STAGE_OPERATION = 1;
 
-        WFQRequest(StageRequest rq, Object callback) {
-            this.rq = rq;
-            this.callback = callback;
-        }
+    private OSDRequestDispatcher                    master;
 
-        private StageRequest getRequest() {
-            return rq;
-        }
-
-        private Object getCallback() {
-            return callback;
-        }
-    }
-
-    public final static int         WFQ_STAGE_OPERATION = 1;
-
-    private OSDRequestDispatcher    master;
-
-    private WeightedFairQueue<String, WFQRequest> wfqQueue;
+    private WeightedFairQueue<String, StageRequest> wfqQueue;
 
     public WFQStage(OSDRequestDispatcher master, int queueCapacity) {
         super("WFQ Stage", queueCapacity);
         this.master = master;
 
-        this.wfqQueue = new WeightedFairQueue<String, WFQRequest>(queueCapacity, 1000, new WeightedFairQueue.WFQElementInformationProvider<String, WFQRequest>() {
+        this.wfqQueue = new WeightedFairQueue<String, StageRequest>(queueCapacity,
+                master.getConfig().getWfqResetPeriod(),
+                new WeightedFairQueue.WFQElementInformationProvider<String, StageRequest>() {
+
             @Override
-            public int getRequestCost(WFQRequest element) {
-                return 1;  //To change body of implemented methods use File | Settings | File Templates.
+            public int getRequestCost(StageRequest element) {
+                if(element.getRequest().getOperation() instanceof ReadOperation ||
+                        element.getRequest().getOperation() instanceof WriteOperation) {
+                    // TODO(ckleineweber): Determine request cost
+                    return 1;
+                } else {
+                    return 1;
+                }
             }
 
             @Override
-            public String getQualityClass(WFQRequest element) {
-                return "1";  //To change body of implemented methods use File | Settings | File Templates.
+            public String getQualityClass(StageRequest element) {
+                return element.getRequest().getFileId().split(":")[0];
             }
 
             @Override
             public int getWeight(String qualityClass) {
-                return 1;  //To change body of implemented methods use File | Settings | File Templates.
+                return 1;
             }
         });
     }
 
-    public void handleRequest(StageRequest request, Object callback) {
-        // TODO(ckleineweber): set quality class
-        this.wfqQueue.add(new WFQRequest(request, callback));
+    public void addOperation(OSDRequest request, Object[] args, Object callback) {
+        enqueueOperation(WFQ_STAGE_OPERATION, args, request, callback);
+    }
+
+    @Override
+    protected void enqueueOperation(int stageOp, Object[] args, OSDRequest request, ReusableBuffer createdViewBuffer,
+                                    Object callback) {
+        if (request == null) {
+            try {
+                wfqQueue.put(new StageRequest(stageOp, args, request, callback));
+            } catch (InterruptedException e) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.stage, this,
+                        "Failed to queue internal request due to InterruptedException:");
+                Logging.logError(Logging.LEVEL_DEBUG, this, e);
+            }
+        } else {
+            if (wfqQueue.size() < this.getQueueLength()) {
+                try {
+                    wfqQueue.put(new StageRequest(stageOp, args, request, callback));
+                } catch (InterruptedException e) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.stage, this,
+                            "Failed to queue external request due to InterruptedException:");
+                    Logging.logError(Logging.LEVEL_DEBUG, this, e);
+                }
+            } else {
+                // Make sure that the data buffer is returned to the pool if
+                // necessary, as some operations create view buffers on the
+                // data. Otherwise, a 'finalized but not freed before' warning
+                // may occur.
+                if (createdViewBuffer != null) {
+                    assert (createdViewBuffer.getRefCount() >= 2);
+                    BufferPool.free(createdViewBuffer);
+                }
+                Logging.logMessage(Logging.LEVEL_WARN, this, "stage is overloaded, request %d for %s dropped",
+                        request.getRequestId(), request.getFileId());
+                request.sendInternalServerError(new IllegalStateException("server overloaded, request dropped"));
+            }
+        }
     }
 
     @Override
@@ -80,7 +111,7 @@ public class WFQStage extends Stage {
 
         while (!quit) {
             try {
-                final StageRequest op = wfqQueue.take().getRequest();
+                final StageRequest op = wfqQueue.take();
 
                 processMethod(op);
 
