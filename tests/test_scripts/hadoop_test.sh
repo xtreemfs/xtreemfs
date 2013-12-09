@@ -125,7 +125,8 @@ for VERSION in $HADOOP_VERSIONS; do
    #run simple hadoop-job
 
    echo "Start JobTracker and TaskTracker..."
-   $HADOOP_PREFIX/bin/start-mapred.sh
+   $HADOOP_PREFIX/bin/hadoop-daemon.sh start jobtracker
+   $HADOOP_PREFIX/bin/hadoop-daemon.sh start tasktracker
    #wait for complete start up
    sleep 10s
    
@@ -157,7 +158,8 @@ for VERSION in $HADOOP_VERSIONS; do
        
 
          echo "Stop JobTracker and TaskTracker..."
-         $HADOOP_PREFIX/bin/stop-mapred.sh
+         $HADOOP_PREFIX/bin/hadoop-daemon.sh stop jobtracker
+         $HADOOP_PREFIX/bin/hadoop-daemon.sh stop tasktracker
    fi
 done
 
