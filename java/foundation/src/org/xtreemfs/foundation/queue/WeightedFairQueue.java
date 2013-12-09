@@ -121,7 +121,7 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
     @Override
     public void put(E e) throws InterruptedException {
         while(!this.getQueue(e).offer(e)) {
-            Thread.sleep(1);
+            Thread.yield();
         }
     }
 
@@ -131,7 +131,7 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
         boolean result;
 
         while(!(result = offer(e)) && new Date().getTime() - t.getTime() < unit.toMillis(timeout))
-            Thread.sleep(1);
+            Thread.yield();
 
         return result;
     }
@@ -149,7 +149,7 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
             return null;
 
         while((element = q.poll()) == null) {
-            Thread.sleep(1);
+            Thread.yield();
         }
         this.countRequest(element);
         return element;
@@ -165,7 +165,7 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
 
         while((resultQueue = this.getNextQueue()) == null &&
                 new Date().getTime() - t.getTime() < unit.toMillis(timeout))
-            Thread.sleep(1);
+            Thread.yield();
 
         return (resultQueue != null)?resultQueue.poll():null;
     }

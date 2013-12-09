@@ -96,3 +96,5 @@ policy_dir = /etc/xos/xtreemfs/policies
 
 # UUID for the OSD
 uuid = test-localhost-OSD
+
+use_qos = false

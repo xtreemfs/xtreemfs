@@ -128,7 +128,9 @@ public class WFQStage extends Stage {
 
     @Override
     protected void processMethod(StageRequest method) {
-        final OSDRequest request = (OSDRequest) method.getArgs()[0];
-        request.getOperation().startRequest(request);
+        if(method != null && method.getArgs().length > 0) {
+            final OSDRequest request = (OSDRequest) method.getArgs()[0];
+            request.getOperation().startRequest(request);
+        }
     }
 }
