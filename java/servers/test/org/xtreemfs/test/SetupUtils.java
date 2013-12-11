@@ -116,6 +116,14 @@ public class SetupUtils {
         config.setDefaults();
         return config;
     }
+
+    public static OSDConfig createQoSOSDConfig() throws IOException {
+        Properties props = createOSDProperties(32637 + PORT_RANGE_OFFSET, TEST_DIR + "/osdQoS");
+        props.setProperty("use_qos", "true");
+        OSDConfig config = new OSDConfig(props);
+        config.setDefaults();
+        return config;
+    }
     
     public static OSDConfig[] createMultipleOSDConfigs(int number) throws IOException {
         OSDConfig[] configs = new OSDConfig[number];
@@ -445,7 +453,9 @@ public class SetupUtils {
     public static InetSocketAddress getSchedulerAddr() {
         return new InetSocketAddress("localhost", 32842 + PORT_RANGE_OFFSET);
     }
-    
+
+
+
     public static ServiceUUID getMRC1UUID() {
         return new ServiceUUID("UUID:localhost:" + new Integer(32636 + PORT_RANGE_OFFSET).toString());
     }
