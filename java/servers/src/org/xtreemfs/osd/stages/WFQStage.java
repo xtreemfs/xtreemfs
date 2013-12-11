@@ -75,7 +75,7 @@ public class WFQStage extends Stage {
                 Logging.logError(Logging.LEVEL_DEBUG, this, e);
             }
         } else {
-            if (wfqQueue.size() < this.getQueueLength()) {
+            if (wfqQueue.remainingCapacity() > 0) {
                 try {
                     wfqQueue.put(new StageRequest(stageOp, args, request, callback));
                 } catch (InterruptedException e) {
@@ -129,7 +129,7 @@ public class WFQStage extends Stage {
     @Override
     protected void processMethod(StageRequest method) {
         if(method != null && method.getArgs().length > 0) {
-            final OSDRequest request = (OSDRequest) method.getArgs()[0];
+            final OSDRequest request = (OSDRequest) method.getRequest();
             request.getOperation().startRequest(request);
         }
     }
