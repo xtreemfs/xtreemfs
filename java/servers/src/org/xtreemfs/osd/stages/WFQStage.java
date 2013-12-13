@@ -16,6 +16,7 @@ import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.operations.ReadOperation;
 import org.xtreemfs.osd.operations.WriteOperation;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD;
 
 /**
  * @author Christoph Kleineweber <kleineweber@zib.de>
@@ -38,10 +39,12 @@ public class WFQStage extends Stage {
 
             @Override
             public int getRequestCost(StageRequest element) {
-                if(element.getRequest().getOperation() instanceof ReadOperation ||
-                        element.getRequest().getOperation() instanceof WriteOperation) {
-                    // TODO(ckleineweber): Determine request cost
-                    return 1;
+                if(element.getRequest().getOperation() instanceof ReadOperation) {
+                    return ((OSD.readRequest) element.getRequest().getRequestArgs())
+                            .getLength();
+                } else if(element.getRequest().getOperation() instanceof WriteOperation) {
+                    return ((OSD.writeRequest) element.getRequest().getRequestArgs())
+                            .getObjectData().toByteArray().length;
                 } else {
                     return 1;
                 }
@@ -54,6 +57,7 @@ public class WFQStage extends Stage {
 
             @Override
             public int getWeight(String qualityClass) {
+                // TODO(ckleineweber): Determine quality class weight
                 return 1;
             }
         });
