@@ -45,5 +45,6 @@ class UncaughtExceptionHandlerBenchmark implements Thread.UncaughtExceptionHandl
 
         controller.deleteVolumesAndFiles();
         controller.shutdownClients();
+        controller.shutdownThreadPool();
     }
 }

@@ -55,7 +55,7 @@ public class xtfs_benchmark {
         else
             controller.setupDefaultVolumes(cliOptions.getNumberOfThreads());
 
-        ConcurrentLinkedQueue<BenchmarkResult> results = repeatBenchmark();
+        ArrayList<BenchmarkResult> results = repeatBenchmark();
 
         printResults(results);
         Thread.sleep(5);
@@ -64,13 +64,14 @@ public class xtfs_benchmark {
     }
 
     /* Repeat a benchmark multiple times and pack the results. */
-    private static ConcurrentLinkedQueue<BenchmarkResult> repeatBenchmark()
+    private static ArrayList<BenchmarkResult> repeatBenchmark()
             throws Exception {
 
-        ConcurrentLinkedQueue<BenchmarkResult> result;
-        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
+        ArrayList<BenchmarkResult> result;
+        int numberOfRepetitions = cliOptions.getNumberOfRepetitions();
+        ArrayList<BenchmarkResult> results = new ArrayList<BenchmarkResult>(numberOfRepetitions);
 
-        for (int i = 0; i < cliOptions.getNumberOfRepetitions(); i++) {
+        for (int i = 0; i < numberOfRepetitions; i++) {
             result = runBenchmarks();
             results.addAll(result);
         }
@@ -78,10 +79,10 @@ public class xtfs_benchmark {
     }
 
     /* run all benchmarks specified by the CLIOptions */
-    private static ConcurrentLinkedQueue<BenchmarkResult> runBenchmarks() throws Exception {
+    private static ArrayList<BenchmarkResult> runBenchmarks() throws Exception {
 
-        ConcurrentLinkedQueue<BenchmarkResult> result;
-        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
+        ArrayList<BenchmarkResult> result;
+        ArrayList<BenchmarkResult> results = new ArrayList<BenchmarkResult>();
 
         if (cliOptions.sequentialWriteBenchmarkIsSet()) {
             result = controller.startSequentialWriteBenchmark(cliOptions.getSequentialSize(), cliOptions.getNumberOfThreads());
@@ -118,7 +119,7 @@ public class xtfs_benchmark {
     }
 
     /* Print the results as csv. */
-    private static void printResultsCSV(ConcurrentLinkedQueue<BenchmarkResult> results) {
+    private static void printResultsCSV(ArrayList<BenchmarkResult> results) {
         System.out.println("Type;NumberOfParallelThreads;TimeInSec;MiB/Sec;DataWrittenInBytes;ByteCount");
         /* print the results */
         for (BenchmarkResult res : results) {
@@ -127,7 +128,7 @@ public class xtfs_benchmark {
     }
 
     /* Print the results in a json like style. */
-    private static void printResults(ConcurrentLinkedQueue<BenchmarkResult> results) {
+    private static void printResults(ArrayList<BenchmarkResult> results) {
         /* print the results */
         for (BenchmarkResult res : results) {
             System.err.println(resultToString(res));

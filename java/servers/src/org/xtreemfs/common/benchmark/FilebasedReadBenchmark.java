@@ -45,7 +45,7 @@ class FilebasedReadBenchmark extends FilebasedBenchmark {
 
         int flags = GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber();
 
-        for (long i = 0; i < numberOfFilesToRead; i++) {
+        for (long i = 0; !cancelled && i < numberOfFilesToRead; i++) {
             String filename = filenames[random.nextInt(filenamesSize)];
             FileHandle fileHandle = volume.openFile(config.getUserCredentials(), filename, flags);
 

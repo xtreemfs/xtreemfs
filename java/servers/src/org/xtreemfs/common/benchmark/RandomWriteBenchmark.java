@@ -40,7 +40,7 @@ class RandomWriteBenchmark extends RandomOffsetbasedBenchmark {
         int flags = GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY.getNumber();
 
-        for (long j = 0; j < numberOfBlocks; j++) {
+        for (long j = 0; !cancelled && j < numberOfBlocks; j++) {
             FileHandle fileHandle = volume.openFile(config.getUserCredentials(), BASFILE_FILENAME, flags, 511);
             long nextOffset = generateNextRandomOffset();
             random.nextBytes(data);
