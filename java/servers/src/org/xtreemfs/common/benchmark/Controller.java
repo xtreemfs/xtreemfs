@@ -161,13 +161,13 @@ public class Controller {
      *
      * @return the DIR address, or null if default_dir wasn't found or couldn't be accessed.
      */
-    public static String getDefaultDir() {
+    public static String[] getDefaultDir() {
         String[] dirAddresses;
         DefaultDirConfig cfg = null;
         try {
             cfg = new DefaultDirConfig();
             dirAddresses = cfg.getDirectoryServices();
-            return dirAddresses[0];
+            return dirAddresses;
         } catch (IOException e) {
             logMessage(LEVEL_INFO, Logging.Category.tool, Controller.class,
                     "Could not access or find Default DIR Config in %s. Using default (localhost).",

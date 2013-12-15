@@ -81,7 +81,7 @@ public class BenchmarkStage extends Stage<BenchmarkArgs, BenchmarkCompleteCallba
         SchedulerConfig schedConfig = master.getConfig();
         ConfigBuilder builder = BenchmarkConfig.newBuilder();
         InetSocketAddress dir = schedConfig.getDirectoryService();
-        builder.setDirAddress(dir.getHostName()+":"+dir.getPort());
+        builder.setDirAddress(dir.getHostName() + ":" + dir.getPort());
         builder.setAdminPassword(schedConfig.getAdminPassword());
 //      Todo Auth? SSL?
         return builder;
