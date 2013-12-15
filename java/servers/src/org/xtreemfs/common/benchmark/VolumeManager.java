@@ -71,7 +71,7 @@ class VolumeManager {
     }
 
     /* used if no volumes were specified */
-    void createDefaultVolumes(int numberOfVolumes) throws IOException {
+    void createDefaultVolumes(int numberOfVolumes) throws IOException, IllegalAccessException, InstantiationException, ClassNotFoundException {
         for (int i = 0; i < numberOfVolumes; i++) {
             Volume volume = createAndOpenVolume(VOLUME_BASE_NAME + i);
             addToVolumes(volume);
@@ -85,7 +85,7 @@ class VolumeManager {
     }
 
     /* opens multiple volumes (and creates and opens volumes if they do not exist) */
-    void openVolumes(String... volumeName) throws IOException {
+    void openVolumes(String... volumeName) throws IOException, IllegalAccessException, InstantiationException, ClassNotFoundException {
         this.volumes = new LinkedList<Volume>();
         for (String each : volumeName) {
             volumes.add(createAndOpenVolume(each));
@@ -94,7 +94,7 @@ class VolumeManager {
     }
 
     /* opens a single volume (or creates and opens a volume if it does not exist) */
-    private Volume createAndOpenVolume(String volumeName) throws IOException {
+    private Volume createAndOpenVolume(String volumeName) throws IOException, IllegalAccessException, ClassNotFoundException, InstantiationException {
 
         Volume volume = null;
         try { /* try creating the volume */

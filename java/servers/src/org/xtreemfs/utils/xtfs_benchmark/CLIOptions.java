@@ -13,11 +13,14 @@ import static org.xtreemfs.foundation.util.CLIParser.CliOption.OPTIONTYPE.STRING
 import static org.xtreemfs.foundation.util.CLIParser.CliOption.OPTIONTYPE.SWITCH;
 import static org.xtreemfs.foundation.util.CLIParser.parseCLI;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import org.xtreemfs.common.benchmark.*;
+import org.xtreemfs.common.config.ServiceConfig;
+import org.xtreemfs.foundation.pbrpc.Schemes;
 import org.xtreemfs.foundation.util.CLIParser;
 import org.xtreemfs.utils.DefaultDirConfig;
 import org.xtreemfs.utils.utils;
@@ -56,6 +59,7 @@ class CLIOptions {
     private static final String              NO_CLEANUP_VOLUMES;
     private static final String              NO_CLEANUP_BASEFILE;
     private static final String              OSD_CLEANUP;
+    private static final String              CONFIG;
 
     static {
         DIR_ADDRESS = "-dir-address";
@@ -69,7 +73,7 @@ class CLIOptions {
         RAND_READ = "rr";
         FILEBASED_WRITE = "fw";
         FILEBASED_READ = "fr";
-        THREADS = "t";
+        THREADS = "n";
         REPETITIONS = "r";
         CHUNK_SIZE = "-chunk-size";
         STRIPE_SIZE = "-stripe-size";
@@ -82,6 +86,7 @@ class CLIOptions {
         NO_CLEANUP_VOLUMES = "-no-cleanup-volumes";
         NO_CLEANUP_BASEFILE = "-no-cleanup-basefile";
         OSD_CLEANUP = "-osd-cleanup";
+        CONFIG = "-config";
     }
 
     CLIOptions() {
@@ -114,6 +119,7 @@ class CLIOptions {
         setNoCleanupOfVolumes();
         setNoCleanupOfBasefile();
         setOsdCleanup();
+        setConfig();
         return builder.build();
     }
 
@@ -128,10 +134,13 @@ class CLIOptions {
                 "<osd selection policies>"));
         options.put(OSD_SELECTION_UUIDS, new CLIParser.CliOption(STRING,
                         "Set the UUID-based filter policy (ID 1002) as OSD selection policy and set the uuids to be used " +
-                                "by the policy (applied when creating or opening volumes). It is not allowed to use this option " +
-                                "with the -" + OSD_SELECTION_POLICIES + " option. Default: No selection by UUIDs", "<osd uuids to use>"));
+                        "by the policy (applied when creating or opening volumes). It is not allowed to use this option " +
+                        "with the -" + OSD_SELECTION_POLICIES + " option. Default: No selection by UUIDs", "<osd uuids to use>"));
         options.put(USERNAME, new CLIParser.CliOption(STRING, "username to use", "<username>"));
         options.put(GROUPNAME, new CLIParser.CliOption(STRING, "name of group to use", "<group name>"));
+        options.put(CONFIG,new CLIParser.CliOption(STRING, "Config file to use. Mainly connection information like dir " +
+                "address and ssl settings are used. Explicit settings via commandline take precedence over settings " +
+                "from the config file", "<path to config file>"));
 
         /* benchmark switches */
         options.put(SEQ_WRITE, new CLIParser.CliOption(SWITCH, "sequential write benchmark", ""));
@@ -221,6 +230,8 @@ class CLIOptions {
 
     /* if no DirAdress is given, use DirAddress from ConfigFile */
     private void setDirAddress() {
+        // todo multiple dir addresses
+        // todo check parent config before default dir config
         String dirAddressFromCLI = options.get(DIR_ADDRESS).stringValue;
         String dirAddressFromConfig = Controller.getDefaultDir();
         if (null != dirAddressFromCLI)
@@ -269,8 +280,32 @@ class CLIOptions {
         // Todo (jvf) implement?
     }
 
-    private void setSSLOptions() {
-        // Todo (jvf) Implement SSL Options?
+    private void setSSLOptions() throws IOException {
+
+        String[] dirURLs = (options.get(DIR_ADDRESS).stringValue != null) ? options.get(DIR_ADDRESS).stringValue
+                .split(",") : null;
+
+        if (dirURLs != null) {
+            boolean gridSSL = false;
+            String dirURL = dirURLs[0];
+            if (dirURL.contains(Schemes.SCHEME_PBRPCS + "://") || dirURL.contains(Schemes.SCHEME_PBRPCG + "://")) {
+                String serviceCredsFile = options.get(utils.OPTION_USER_CREDS_FILE).stringValue;
+                String serviceCredsPass = options.get(utils.OPTION_USER_CREDS_PASS).stringValue;
+                String trustedCAsFile = options.get(utils.OPTION_TRUSTSTORE_FILE).stringValue;
+                String trustedCAsPass = options.get(utils.OPTION_TRUSTSTORE_PASS).stringValue;
+                if (dirURL.contains(Schemes.SCHEME_PBRPCG + "://")) {
+                    gridSSL = true;
+                }
+                if (null == serviceCredsFile) {
+                    throw new IllegalArgumentException("SSL requires '-" + utils.OPTION_USER_CREDS_FILE
+                            + "' parameter to be specified");
+                } else if (trustedCAsFile == null) {
+                    throw new IllegalArgumentException("SSL requires '-" + utils.OPTION_TRUSTSTORE_FILE
+                            + "' parameter to be specified");
+                }
+                builder.setSslOptions(true, gridSSL, serviceCredsFile, serviceCredsPass, trustedCAsFile, trustedCAsPass);
+            }
+        }
     }
 
     private void setOptions() {
@@ -323,6 +358,16 @@ class CLIOptions {
         boolean switchValue = options.get(OSD_CLEANUP).switchValue;
         if (switchValue)
             builder.setOsdCleanup();
+    }
+
+    private void setConfig() throws IOException {
+        String configPath = options.get(CONFIG).stringValue;
+        if (null != configPath){
+            ServiceConfig config = new ServiceConfig(configPath);
+            config.readParameters(BenchmarkConfig.getBenchmarkParameter());
+            config.setDefaults(BenchmarkConfig.getBenchmarkParameter());
+            builder.setParent(config);
+        }
     }
 
     int getNumberOfThreads() {
