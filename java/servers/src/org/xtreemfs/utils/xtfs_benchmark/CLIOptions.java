@@ -109,9 +109,7 @@ class CLIOptions {
         setUsername();
         setGroup();
         setOSDPassword();
-        setAuth();
         setSSLOptions();
-        setOptions();
         setChunkSize();
         setStripeSize();
         setStripeWidth();
@@ -272,10 +270,6 @@ class CLIOptions {
             builder.setAdminPassword(osdPassword);
     }
 
-    private void setAuth() {
-        // Todo (jvf) implement?
-    }
-
     private void setSSLOptions() throws IOException {
 
         String[] dirURLs = (options.get(DIR_ADDRESSES).stringValue != null) ? options.get(DIR_ADDRESSES).stringValue
@@ -302,10 +296,6 @@ class CLIOptions {
                 builder.setSslOptions(true, gridSSL, serviceCredsFile, serviceCredsPass, trustedCAsFile, trustedCAsPass);
             }
         }
-    }
-
-    private void setOptions() {
-        // Todo (jvf) implement?
     }
 
     private void setChunkSize() {
