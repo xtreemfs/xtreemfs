@@ -8,12 +8,15 @@
 
 package org.xtreemfs.common.benchmark;
 
+import org.xtreemfs.common.config.PolicyContainer;
 import org.xtreemfs.common.config.ServiceConfig;
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,10 +27,19 @@ import java.util.Properties;
  */
 public class BenchmarkConfig extends ServiceConfig {
 
-    private final Parameter[] benchmarkParameter = {
+    private static final Parameter[] benchmarkParameter = {
             Parameter.DEBUG_LEVEL,
             Parameter.DEBUG_CATEGORIES,
             Parameter.DIRECTORY_SERVICE,
+            Parameter.USE_SSL,
+            Parameter.SERVICE_CREDS_FILE,
+            Parameter.SERVICE_CREDS_PASSPHRASE,
+            Parameter.SERVICE_CREDS_CONTAINER,
+            Parameter.TRUSTED_CERTS_FILE,
+            Parameter.TRUSTED_CERTS_CONTAINER,
+            Parameter.TRUSTED_CERTS_PASSPHRASE,
+            Parameter.TRUST_MANAGER,
+            Parameter.USE_GRID_SSL_MODE,
             Parameter.ADMIN_PASSWORD,
             Parameter.BASEFILE_SIZE_IN_BYTES,
             Parameter.FILESIZE,
@@ -45,8 +57,9 @@ public class BenchmarkConfig extends ServiceConfig {
             Parameter.OSD_CLEANUP
     };
 
-    private Options options;
-    private Map<String, String> policyAttributes;
+    private Options                  options;
+    private Map<String, String>      policyAttributes;
+    private SSLOptions               sslOptions         = null;
 
     private BenchmarkConfig(Properties props, Options options, Map<String, String> policyAttributes) {
         super(props);
@@ -63,6 +76,10 @@ public class BenchmarkConfig extends ServiceConfig {
         for(Parameter param : benchmarkParameter) {
             parameter.put(param, readParameter(param));
         }
+    }
+
+    public static Parameter[] getBenchmarkParameter() {
+        return benchmarkParameter;
     }
 
     /**
@@ -148,9 +165,25 @@ public class BenchmarkConfig extends ServiceConfig {
      * Default: null.
      * @return the {@link SSLOptions}
      */
-    public SSLOptions getSslOptions(){
-        // todo implement
-        return null;
+    public SSLOptions getSslOptions() throws IOException, InstantiationException, IllegalAccessException,
+            ClassNotFoundException {
+        if (isUsingSSL()) {
+            if (null == sslOptions) {
+                sslOptions = new SSLOptions(
+                        new FileInputStream(this.getServiceCredsFile()),
+                        this.getServiceCredsPassphrase(),
+                        this.getServiceCredsContainer(),
+                        new FileInputStream(
+                        this.getTrustedCertsFile()),
+                        this.getTrustedCertsPassphrase(),
+                        this.getTrustedCertsContainer(),
+                        false,
+                        this.isGRIDSSLmode(),
+                        new PolicyContainer(this).getTrustManager()
+                );
+            }
+        }
+        return sslOptions;
     }
 
     /**
@@ -288,7 +321,7 @@ public class BenchmarkConfig extends ServiceConfig {
         StringBuilder sb = new StringBuilder();
         for (InetSocketAddress address : getDirectoryServices())
             sb.append(address.getAddress().getHostAddress() + ":" + getDirectoryService().getPort());
-        return sb.toString();       
+        return sb.toString();
     }
 
     /**
@@ -465,11 +498,23 @@ public class BenchmarkConfig extends ServiceConfig {
          * Set the SSL options for SSL Authetification Provider. <br/>
          * Default: null.
          *
-         * @param sslOptions
-         * @return the builder
-         */
-        public ConfigBuilder setSslOptions(SSLOptions sslOptions) {
-            // todo implement
+         * @param useSSL set to true to use SSL, false otherwise
+         * @param useGridSSL set to true to use GridSSL, false otherwise
+         * @param serviceCredsFile the pkcs12 file with the ssl user certificate
+         * @param serviceCredsFile the passphrase for the user certificate
+         * @param trustedCAsFile jks truststore with the CA
+         * @param trustedCAsPass passphrase for the jks truststore
+         */                                                                     
+        public ConfigBuilder setSslOptions(boolean useSSL, boolean useGridSSL, String serviceCredsFile,
+                String serviceCredsPass, String trustedCAsFile, String trustedCAsPass) {
+            props.setProperty(Parameter.USE_SSL.getPropertyString(), Boolean.toString(useSSL));
+            props.setProperty(Parameter.USE_GRID_SSL_MODE.getPropertyString(), Boolean.toString(useGridSSL));
+            props.setProperty(Parameter.SERVICE_CREDS_FILE.getPropertyString(), serviceCredsFile);
+            props.setProperty(Parameter.SERVICE_CREDS_PASSPHRASE.getPropertyString(), serviceCredsPass);
+            props.setProperty(Parameter.SERVICE_CREDS_CONTAINER.getPropertyString(), SSLOptions.PKCS12_CONTAINER);
+            props.setProperty(Parameter.TRUSTED_CERTS_FILE.getPropertyString(), trustedCAsFile);
+            props.setProperty(Parameter.TRUSTED_CERTS_CONTAINER.getPropertyString(), SSLOptions.JKS_CONTAINER);
+            props.setProperty(Parameter.TRUSTED_CERTS_PASSPHRASE.getPropertyString(), trustedCAsPass);
             return this;
         }
 
@@ -682,7 +727,7 @@ public class BenchmarkConfig extends ServiceConfig {
         }
 
         /*
-         * Handles properties which type (the PropertyClass in {@link ServiceConfig.Parameter}) is InetSocketAddress
+         * Handles properties of type InetSocketAddress
          *
          * Because of the String casting on InetSocketAddresses involved in parsing the configs, one ends up with a
          * string looking like "/127.0.0.1:32638" or "localhost/127.0.0.1:32638". Additionally, when handling
