@@ -313,16 +313,18 @@ public class BenchmarkConfig extends ServiceConfig {
     }
 
     /**
-     * Get address of the DIR Server. <br/>
+     * Get addresses of the DIR Servers. <br/>
      * Default: 127.0.0.1:32638
      * @return
      */
-    public String getDirAddresses() {
-        StringBuilder sb = new StringBuilder();
-        for (InetSocketAddress address : getDirectoryServices())
-            sb.append(address.getAddress().getHostAddress() + ":" + getDirectoryService().getPort());
-        return sb.toString();
+    public String[] getDirAddresses() {
+        InetSocketAddress[] directoryServices = getDirectoryServices();
+        String[] dirAddresses = new String[directoryServices.length];
+        for (int i =0; i<dirAddresses.length; i++)
+            dirAddresses[i] = directoryServices[i].getAddress().getHostAddress() + ":" + directoryServices[i].getPort();
+        return dirAddresses;
     }
+
 
     /**
      *
@@ -452,6 +454,7 @@ public class BenchmarkConfig extends ServiceConfig {
             return this;
         }
 
+
         /**
          * Set the address of the DIR Server. <br/>
          * Default: 127.0.0.1:32638
@@ -460,26 +463,49 @@ public class BenchmarkConfig extends ServiceConfig {
          * @return the builder
          */
         public ConfigBuilder setDirAddress(String dirAddress) {
-        /* remove protocol information */
-            if (dirAddress.contains("://"))
-                dirAddress = dirAddress.split("://", 2)[1];
-        /* remove trailing slashes */
-            if (dirAddress.endsWith("/"))
-                dirAddress = dirAddress.substring(0, dirAddress.length()-1);
+            return setDirAddresses(new String[]{dirAddress});
+        }
 
-        /* split address in host and port */
-            String host;
-            String port;
-            try {
-                host = dirAddress.split(":")[0];
-                port = dirAddress.split(":")[1];
-            } catch (IndexOutOfBoundsException e) {
-                throw new IllegalArgumentException(
-                        "DIR Address needs to contain a host and a port, separated by \":\" (was: \"" + dirAddress + "\").");
+
+        /**
+         * Set the addresses of the DIR Servers. <br/>
+         * Default: 127.0.0.1:32638
+         *
+         * @param dirAddresses
+         * @return the builder
+         */
+        public ConfigBuilder setDirAddresses(String[] dirAddresses) {
+            int i =-1;
+            for (String dirAddress : dirAddresses) {
+                
+                /* remove protocol information */
+                if (dirAddress.contains("://"))
+                    dirAddress = dirAddress.split("://", 2)[1];
+                
+                /* remove trailing slashes */
+                if (dirAddress.endsWith("/"))
+                    dirAddress = dirAddress.substring(0, dirAddress.length() - 1);
+
+                /* split address in host and port */
+                String host;
+                String port;
+                try {
+                    host = dirAddress.split(":")[0];
+                    port = dirAddress.split(":")[1];
+                } catch (IndexOutOfBoundsException e) {
+                    throw new IllegalArgumentException(
+                            "DIR Address needs to contain a host and a port, separated by \":\" (was: \"" + dirAddress
+                                    + "\").");
+                }
+                if (dirAddresses.length == 1 || -1 == i) {
+                    props.setProperty("dir_service.host", host);
+                    props.setProperty("dir_service.port", port);                    
+                } else {
+                    props.setProperty("dir_service." + i + ".host", host);
+                    props.setProperty("dir_service." + i + ".port", port);
+                }
+                i++;
             }
-
-            props.setProperty("dir_service.host", host);
-            props.setProperty("dir_service.port", port);
             return this;
         }
 
@@ -685,9 +711,15 @@ public class BenchmarkConfig extends ServiceConfig {
             if (null != this.parent)
                 mergeParent();
 
-            /* set default dir if no dir was set */
+            /*
+             * if no DirAddress is given, either directly or in the parent config, first try the DefaultDirConfig, then
+             * use default
+             */
+            String[] dirAddresses = Controller.getDefaultDir();
+            if (null != dirAddresses)
+                setDirAddresses(dirAddresses);
             if (null == props.getProperty("dir_service.host"))
-                setDirAddress("127.0.0.1:32638");
+                setDirAddresses(new String[]{"127.0.0.1:32638"});
 
             BenchmarkConfig config = new BenchmarkConfig(props, this.options, this.policyAttributes);
             config.setDefaults();

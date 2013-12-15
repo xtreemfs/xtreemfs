@@ -35,7 +35,7 @@ class CLIOptions {
     private List<String>                     arguments;
     private ConfigBuilder builder;
 
-    private static final String              DIR_ADDRESS;
+    private static final String              DIR_ADDRESSES;
     private static final String              OSD_SELECTION_POLICIES;
     private static final String              OSD_SELECTION_UUIDS;
     private static final String              USERNAME;
@@ -62,7 +62,7 @@ class CLIOptions {
     private static final String              CONFIG;
 
     static {
-        DIR_ADDRESS = "-dir-address";
+        DIR_ADDRESSES = "-dir-addresses";
         OSD_SELECTION_POLICIES = "-osd-selection-policies";
         OSD_SELECTION_UUIDS = "-osd-selection-uuids";
         USERNAME = "-user";
@@ -103,7 +103,7 @@ class CLIOptions {
     BenchmarkConfig buildParamsFromCLIOptions() throws Exception {
         setBasefileSize();
         setFileSize();
-        setDirAddress();
+        setDirAddresses();
         setOsdSelectionPolicies();
         setOsdSelectionByUuids();
         setUsername();
@@ -126,9 +126,10 @@ class CLIOptions {
     private void initOptions() {
 
         /* Connection Data */
-        options.put(DIR_ADDRESS, new CLIParser.CliOption(STRING,
-                "directory service to use (e.g. 'localhost:32638'). If no URI is specified, URI and security settings are taken from '"
-                        + DefaultDirConfig.DEFAULT_DIR_CONFIG + "'", "<uri>"));
+        options.put(DIR_ADDRESSES, new CLIParser.CliOption(STRING,
+                        "directory service(s) to use (e.g. 'localhost:32638'). If no URI is specified, URI and " +
+                        "security settings are taken from '" + DefaultDirConfig.DEFAULT_DIR_CONFIG + "' or from "
+                        + CONFIG + ". Also accepts a list of comma-separated DIR services.", "<uri>"));
         options.put(OSD_SELECTION_POLICIES, new CLIParser.CliOption(STRING,
                 "OSD selection policies to use when creating or opening volumes. default: 1000,3002",
                 "<osd selection policies>"));
@@ -229,15 +230,10 @@ class CLIOptions {
     }
 
     /* if no DirAdress is given, use DirAddress from ConfigFile */
-    private void setDirAddress() {
-        // todo multiple dir addresses
-        // todo check parent config before default dir config
-        String dirAddressFromCLI = options.get(DIR_ADDRESS).stringValue;
-        String dirAddressFromConfig = Controller.getDefaultDir();
-        if (null != dirAddressFromCLI)
-            builder.setDirAddress(dirAddressFromCLI);
-        else if (null != dirAddressFromConfig)
-            builder.setDirAddress(dirAddressFromConfig);
+    private void setDirAddresses() {
+        String dirAddresses = options.get(DIR_ADDRESSES).stringValue;
+        if (null != dirAddresses)
+            builder.setDirAddresses(dirAddresses.split(","));
     }
 
     private void setOsdSelectionPolicies() {
@@ -282,7 +278,7 @@ class CLIOptions {
 
     private void setSSLOptions() throws IOException {
 
-        String[] dirURLs = (options.get(DIR_ADDRESS).stringValue != null) ? options.get(DIR_ADDRESS).stringValue
+        String[] dirURLs = (options.get(DIR_ADDRESSES).stringValue != null) ? options.get(DIR_ADDRESSES).stringValue
                 .split(",") : null;
 
         if (dirURLs != null) {
