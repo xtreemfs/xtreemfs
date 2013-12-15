@@ -13,14 +13,16 @@ import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.foundation.logging.Logging;
 
 import java.io.IOException;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Callable;
 
 /**
  * Abstract baseclass for the benchmark classes.
  * 
  * @author jensvfischer
  */
- abstract class AbstractBenchmark {
+ abstract class AbstractBenchmark implements Callable<BenchmarkResult>{
+
+    static volatile boolean cancelled = false;
 
     final int             chunkSize;
     final long            benchmarkSizeInBytes;
@@ -35,17 +37,18 @@ import java.util.concurrent.ConcurrentLinkedQueue;
         this.volume = volumeManager.getNextVolume();
         this.config = config;
         this.chunkSize = config.getChunkSizeInBytes();
-        this.volumeManager = volumeManager;        
+        this.volumeManager = volumeManager;
+        this.cancelled = false; // reset cancellation status
     }
 
     /*
      * Performs a single sequential read- or write-benchmark. Whether a read- or write-benchmark is performed depends on
      * which subclass is instantiated. This method is supposed to be called within its own thread to run a benchmark.
      */
-    void benchmark(ConcurrentLinkedQueue<BenchmarkResult> results) {
+    BenchmarkResult runBenchmark() throws Exception {
 
         String shortClassname = this.getClass().getName().substring(this.getClass().getName().lastIndexOf('.') + 1);
-        Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Starting %s", shortClassname);
+        Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Starting %s on volume %s", shortClassname, volume.getVolumeName());
 
         // Setting up
         byte[] data = new byte[chunkSize];
@@ -53,35 +56,22 @@ import java.util.concurrent.ConcurrentLinkedQueue;
         long numberOfBlocks = benchmarkSizeInBytes / chunkSize;
         long byteCounter = 0;
 
+        /* Run the AbstractBenchmark */
+        long before = System.currentTimeMillis();
+        byteCounter = performIO(data, numberOfBlocks);
+        long after = System.currentTimeMillis();
 
-        BenchmarkResult result;
-        try {
-            /* Run the AbstractBenchmark */
-            long before = System.currentTimeMillis();
-            byteCounter = performIO(data, numberOfBlocks);
-            long after = System.currentTimeMillis();
+        if (benchmarkSizeInBytes != byteCounter)
+            throw new BenchmarkFailedException("Data written does not equal the requested size");
 
-            if (benchmarkSizeInBytes != byteCounter)
-                throw new BenchmarkFailedException("Data written does not equal the requested size");
+        /* Calculate results */
+        double timeInSec = (after - before) / 1000.;
+        BenchmarkResult result = new BenchmarkResult(timeInSec, benchmarkSizeInBytes, byteCounter);
 
-            /* Calculate results */
-            double timeInSec = (after - before) / 1000.;
-            result = new BenchmarkResult(timeInSec, benchmarkSizeInBytes, byteCounter);
-        } catch (Exception e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this, "An error occured in a %s", shortClassname);
-            Logging.logError(Logging.LEVEL_ERROR, Logging.Category.tool, e);
-            result = new BenchmarkResult(e);
-        }
-        results.add(result);
-
-        try {
-            finalizeBenchmark();
-        } catch (Exception e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this, "An error occured finalizing the %s", shortClassname);
-            Logging.logError(Logging.LEVEL_ERROR, Logging.Category.tool, e);
-        }
+        finalizeBenchmark();
 
         Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Finished %s", shortClassname);
+        return result;
     }
 
     /* called before a benchmark thread is started */
@@ -96,12 +86,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
     /* called at the end of every benchmark */
     abstract void finalizeBenchmark() throws Exception;
 
-    /* Starts a benchmark in its own thread. */
-    void startBenchmarkThread(ConcurrentLinkedQueue<BenchmarkResult> results, ConcurrentLinkedQueue<Thread> threads) throws Exception {
-        prepareBenchmark();
-        Thread benchThread = new Thread(new BenchmarkThread(this, results));
-        threads.add(benchThread);
-        benchThread.start();
+    public static void cancel(){
+        cancelled = true;
+    }
+
+    @Override
+    public BenchmarkResult call() throws Exception {
+        return this.runBenchmark();
     }
 
 }

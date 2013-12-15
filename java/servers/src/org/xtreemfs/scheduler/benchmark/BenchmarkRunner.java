@@ -74,10 +74,10 @@ public class BenchmarkRunner {
         /* conduct read benchmarks */
         for (int numberOfThreads = 1; numberOfThreads <= maxNumberOfThreads; numberOfThreads++) {
 
-            ConcurrentLinkedQueue<BenchmarkResult> resultsFromRepetitions = new ConcurrentLinkedQueue<BenchmarkResult>();
+            ArrayList<BenchmarkResult> resultsFromRepetitions = new ArrayList<BenchmarkResult>(maxNumberOfRepetitions);
 
             for (int repetitions = 1; repetitions <= maxNumberOfRepetitions; repetitions++) {
-                ConcurrentLinkedQueue<BenchmarkResult> resultCurrentRun =  controller.startSequentialReadBenchmark(size, numberOfThreads);
+                ArrayList<BenchmarkResult> resultCurrentRun =  controller.startSequentialReadBenchmark(size, numberOfThreads);
                 rawResults.addAll(resultCurrentRun);
                 resultsFromRepetitions.add(averageResults(resultCurrentRun, true));
             }
@@ -94,9 +94,9 @@ public class BenchmarkRunner {
         controller.startRandomReadBenchmark(128L*BenchmarkUtils.KiB_IN_BYTES, 1);
 
         /* perform benchmarks */
-        ConcurrentLinkedQueue<BenchmarkResult> resultsFromRepetitions = new ConcurrentLinkedQueue<BenchmarkResult>();
+        ArrayList<BenchmarkResult> resultsFromRepetitions = new ArrayList<BenchmarkResult>(maxNumberOfRepetitions);
         for (int repetitions = 1; repetitions <= maxNumberOfRepetitions; repetitions++) {
-            BenchmarkResult resultCurrentRun =  controller.startRandomReadBenchmark(size, 1).poll();
+            BenchmarkResult resultCurrentRun =  controller.startRandomReadBenchmark(size, 1).remove(0);
             rawResults.add(resultCurrentRun);
             resultsFromRepetitions.add(resultCurrentRun);
         }
@@ -107,10 +107,10 @@ public class BenchmarkRunner {
         return iops;
     }
 
-    private BenchmarkResult averageResults(ConcurrentLinkedQueue<BenchmarkResult> results, boolean addUpSize) {
+    private BenchmarkResult averageResults(ArrayList<BenchmarkResult> results, boolean addUpSize) {
 
         int numberOfResults = results.size();
-        BenchmarkResult result1 = results.poll();
+        BenchmarkResult result1 = results.remove(0);
         int numberOfThreads = result1.getNumberOfReadersOrWriters();
         long sizeInBytes = result1.getByteCount();
         double timeInSec = result1.getTimeInSec();

@@ -11,14 +11,14 @@ package org.xtreemfs.common.benchmark;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 import org.xtreemfs.utils.DefaultDirConfig;
-import org.xtreemfs.utils.xtfs_benchmark.*;
 
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.ArrayList;
+import java.util.concurrent.*;
 
 import static org.xtreemfs.common.benchmark.BenchmarkUtils.BenchmarkType;
 import static org.xtreemfs.foundation.logging.Logging.LEVEL_INFO;
+import static org.xtreemfs.foundation.logging.Logging.logError;
 import static org.xtreemfs.foundation.logging.Logging.logMessage;
 
 /**
@@ -35,6 +35,7 @@ public class Controller {
     private BenchmarkConfig config;
     private ClientManager   clientManager;
     private VolumeManager   volumeManager;
+    private ThreadPoolExecutor threadPool;
 
     /**
      * Create a new controller object.
@@ -85,7 +86,7 @@ public class Controller {
      * @return the results of the benchmark (see {@link BenchmarkResult})
      * @throws Exception
      */
-    public ConcurrentLinkedQueue<BenchmarkResult> startSequentialWriteBenchmark(long size, int numberOfThreads) throws Exception {
+    public ArrayList<BenchmarkResult> startSequentialWriteBenchmark(long size, int numberOfThreads) throws Exception {
         verifySizesAndThreads(size, numberOfThreads, BenchmarkType.SEQ_WRITE);
         return startBenchmark(size, numberOfThreads, BenchmarkType.SEQ_WRITE);
     }
@@ -96,7 +97,7 @@ public class Controller {
      * @return the results of the benchmark (see {@link BenchmarkResult})
      * @throws Exception
      */
-    public ConcurrentLinkedQueue<BenchmarkResult> startSequentialReadBenchmark(long size, int numberOfThreads) throws Exception {
+    public ArrayList<BenchmarkResult> startSequentialReadBenchmark(long size, int numberOfThreads) throws Exception {
         verifySizesAndThreads(size, numberOfThreads, BenchmarkType.SEQ_READ);
         return startBenchmark(size, numberOfThreads, BenchmarkType.SEQ_READ);
     }
@@ -107,7 +108,7 @@ public class Controller {
      * @return the results of the benchmark (see {@link BenchmarkResult})
      * @throws Exception
      */
-    public ConcurrentLinkedQueue<BenchmarkResult> startRandomWriteBenchmark(long size, int numberOfThreads) throws Exception {
+    public ArrayList<BenchmarkResult> startRandomWriteBenchmark(long size, int numberOfThreads) throws Exception {
         verifySizesAndThreads(size, numberOfThreads, BenchmarkType.RAND_WRITE);
         return startBenchmark(size, numberOfThreads, BenchmarkType.RAND_WRITE);
     }
@@ -118,7 +119,7 @@ public class Controller {
      * @return the results of the benchmark (see {@link BenchmarkResult})
      * @throws Exception
      */
-    public ConcurrentLinkedQueue<BenchmarkResult> startRandomReadBenchmark(long size, int numberOfThreads) throws Exception {
+    public ArrayList<BenchmarkResult> startRandomReadBenchmark(long size, int numberOfThreads) throws Exception {
         verifySizesAndThreads(size, numberOfThreads, BenchmarkType.RAND_READ);
         return startBenchmark(size, numberOfThreads, BenchmarkType.RAND_READ);
     }
@@ -129,7 +130,7 @@ public class Controller {
      * @return the results of the benchmark (see {@link BenchmarkResult})
      * @throws Exception
      */
-    public ConcurrentLinkedQueue<BenchmarkResult> startFilebasedWriteBenchmark(long size, int numberOfThreads) throws Exception {
+    public ArrayList<BenchmarkResult> startFilebasedWriteBenchmark(long size, int numberOfThreads) throws Exception {
         verifySizesAndThreads(size, numberOfThreads, BenchmarkType.FILES_WRITE);
         return startBenchmark(size, numberOfThreads, BenchmarkType.FILES_WRITE);
     }
@@ -140,7 +141,7 @@ public class Controller {
      * @return the results of the benchmark (see {@link BenchmarkResult})
      * @throws Exception
      */
-    public ConcurrentLinkedQueue<BenchmarkResult> startFilebasedReadBenchmark(long size, int numberOfThreads) throws Exception {
+    public ArrayList<BenchmarkResult> startFilebasedReadBenchmark(long size, int numberOfThreads) throws Exception {
         verifySizesAndThreads(size, numberOfThreads, BenchmarkType.FILES_READ);
         return startBenchmark(size, numberOfThreads, BenchmarkType.FILES_READ);
     }
@@ -187,6 +188,7 @@ public class Controller {
         if (config.isOsdCleanup())
             volumeManager.cleanupOSD();
         shutdownClients();
+        shutdownThreadPool();
     }
 
     private void verifySizesAndThreads(long size, int threads, BenchmarkType type) {
@@ -215,44 +217,78 @@ public class Controller {
      * Starts benchmarks in parallel. Every benchmark is started within its own thread. The method waits for all threads
      * to finish.
      */
-    private ConcurrentLinkedQueue<BenchmarkResult> startBenchmark(long size, int numberOfThreads, BenchmarkType benchmarkType)
+    private ArrayList<BenchmarkResult> startBenchmark(long size, int numberOfThreads, BenchmarkType benchmarkType)
             throws Exception {
 
-        ConcurrentLinkedQueue<BenchmarkResult> results = new ConcurrentLinkedQueue<BenchmarkResult>();
-        ConcurrentLinkedQueue<Thread> threads = new ConcurrentLinkedQueue<Thread>();
+        checkThreadPool(numberOfThreads);
 
+        CompletionService<BenchmarkResult> completionService = new ExecutorCompletionService<BenchmarkResult>(threadPool);
+        ArrayList<Future<BenchmarkResult>> futures = new ArrayList<Future<BenchmarkResult>>();
+
+        /* create and start all benchmark tasks (i.e. submit to CompletionService) */
         for (int i = 0; i < numberOfThreads ; i++) {
             AbstractBenchmark benchmark = BenchmarkFactory.createBenchmark(size, benchmarkType, config, clientManager.getNewClient(), volumeManager);
-            benchmark.startBenchmarkThread(results, threads);
+            benchmark.prepareBenchmark();
+            Future<BenchmarkResult> future = completionService.submit(benchmark);
+            futures.add(future);
         }
 
-        /* wait for all threads to finish */
-        for (Thread thread : threads) {
-            thread.join();
+        ArrayList<BenchmarkResult> results = awaitCompletion(numberOfThreads, completionService, futures);
+
+        /* Set BenchmarkResult type and number of threads */
+        for (BenchmarkResult res : results) {
+            res.setBenchmarkType(benchmarkType);
+            res.setNumberOfReadersOrWriters(numberOfThreads);
         }
 
         /* reset VolumeManager to prepare for possible consecutive benchmarks */
         volumeManager.reset();
 
-        if (benchmarkHasFailed(results))
-            throw new BenchmarkFailedException(benchmarkType + " benchmark failed");
-
-        /* Set BenchmarkResult type and failure status */
-        boolean failed = benchmarkHasFailed(results);
-        for (BenchmarkResult res : results) {
-            res.setBenchmarkType(benchmarkType);
-            res.setNumberOfReadersOrWriters(numberOfThreads);
-        }
         return results;
     }
 
-    private boolean benchmarkHasFailed(ConcurrentLinkedQueue<BenchmarkResult> results) {
-        boolean failed = false;
-        for (BenchmarkResult res : results) {
-            if (res.isFailed())
-                failed = true;
+    private void checkThreadPool(int numberOfThreads) throws InterruptedException {
+        /* check if a thread pool is already instantiated */
+        if (null == threadPool)
+            threadPool = new ThreadPoolExecutor(numberOfThreads, numberOfThreads, 0L, TimeUnit.MILLISECONDS,
+                    new LinkedBlockingQueue<Runnable>());
+        /* check if thread pool has the needed number of threads, adjust if necessary */
+        else if (threadPool.getPoolSize() != numberOfThreads){
+            threadPool.setCorePoolSize(numberOfThreads);
+            threadPool.setMaximumPoolSize(numberOfThreads);
         }
-        return failed;
+    }
+
+
+    private ArrayList<BenchmarkResult> awaitCompletion(int numberOfThreads, CompletionService<BenchmarkResult> completionService, ArrayList<Future<BenchmarkResult>> futures) throws InterruptedException {
+        ArrayList<BenchmarkResult> results = new ArrayList<BenchmarkResult>(numberOfThreads);
+        /* wait for all threads to finish */
+        for (int i = 0; i < numberOfThreads; i++) {
+            try {
+                Future<BenchmarkResult> benchmarkResultFuture = completionService.take();
+                futures.remove(benchmarkResultFuture);
+                BenchmarkResult result = benchmarkResultFuture.get();
+                results.add(result);
+            } catch (ExecutionException e) {
+                logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this, "An exception occurred within an benchmark task.");
+                logError(Logging.LEVEL_ERROR, this, e);
+                /* cancel all other running benchmark tasks in case of failure in one task */
+                for (Future future : futures) {future.cancel(true);}
+                /*
+                 * Future.cancel(true) works by setting the interrupted flag. In some cases the cancellation doesn't
+                 * work (the query of the interrupted status returns false). Most likely the interrupted status is
+                 * consumed somewhere without causing the task to stop or to reach the toplevel task code (the code in
+                 * the XYBenchmark classes). This could be due to catching an InterruptedException exception or calling
+                 * Thread.interrupted() (both consumes the flag status) without reestablishing the status with
+                 * Thread.currentThread().interrupt(). Therefore an additional cancellation needs to be deployed...
+                 */
+                AbstractBenchmark.cancel();
+            } catch (CancellationException e) {
+                // consume (planned cancellation from calling future.cancel())
+                logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Benchmark task has been canceled due to an exception in another benchmark task.");
+            }
+        }
+        return results;
     }
 
     /* delete all created volumes and files depending on the noCleanup options */
@@ -266,5 +302,10 @@ public class Controller {
 
     void shutdownClients() {
         clientManager.shutdownClients();
+    }
+
+    void shutdownThreadPool(){
+        if (threadPool != null)
+            threadPool.shutdownNow();
     }
 }

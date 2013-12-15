@@ -56,7 +56,7 @@ class SequentialWriteBenchmark extends SequentialBenchmark {
         this.filenames.add(BENCHMARK_FILENAME + 0);
         long byteCounter = 0;
 
-        for (long j = 0; j < numberOfBlocks; j++) {
+        for (long j = 0; !cancelled && j < numberOfBlocks; j++) {
             long nextOffset = j * chunkSize;
             assert nextOffset >= 0 : "Offset < 0 not allowed";
             random.nextBytes(data);

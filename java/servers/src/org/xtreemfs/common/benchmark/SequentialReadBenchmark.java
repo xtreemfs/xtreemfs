@@ -49,7 +49,7 @@ class SequentialReadBenchmark extends SequentialBenchmark {
 
     private long tryPerformIO(byte[] data, long numberOfBlocks, FileHandle fileHandle) throws IOException {
         long byteCounter = 0;
-        for (long j = 0; j < numberOfBlocks; j++) {
+        for (long j = 0; !cancelled && j < numberOfBlocks; j++) {
             long nextOffset = j * chunkSize;
             assert nextOffset >= 0 : "Offset < 0 not allowed";
             byteCounter += fileHandle.read(config.getUserCredentials(), data, chunkSize, nextOffset);

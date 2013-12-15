@@ -12,7 +12,6 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Queue;
 
 import org.junit.*;
 import org.xtreemfs.common.benchmark.*;
@@ -136,7 +135,7 @@ public class ControllerIntegrationTest {
     public void testSequentialBenchmark() throws Exception {
         controller = new Controller(configBuilder.build());
         controller.setupVolumes("TestVolA", "TestVolB");
-        Queue<BenchmarkResult> results = controller.startSequentialWriteBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, 2);
+        List<BenchmarkResult> results = controller.startSequentialWriteBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("SEQ_WRITE", 2, 10L * MiB_IN_BYTES, 2, results);
         results = controller.startSequentialReadBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("SEQ_READ", 2, 10L * MiB_IN_BYTES, 2, results);
@@ -149,7 +148,7 @@ public class ControllerIntegrationTest {
         BenchmarkConfig config = configBuilder.build();
         controller = new Controller(config);
         controller.setupVolumes("TestVolA", "TestVolB");
-        Queue<BenchmarkResult> results = controller.startSequentialWriteBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, 2);
+        List<BenchmarkResult> results = controller.startSequentialWriteBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("SEQ_WRITE", 2, 10L * MiB_IN_BYTES, 2, results);
         controller.teardown();
 
@@ -166,7 +165,7 @@ public class ControllerIntegrationTest {
         configBuilder.setBasefileSizeInBytes(20L * MiB_IN_BYTES);
         controller = new Controller(configBuilder.build());
         controller.setupVolumes("TestVolA", "TestVolB");
-        Queue<BenchmarkResult> results = controller.startRandomWriteBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
+        List<BenchmarkResult> results = controller.startRandomWriteBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("RAND_WRITE", 2, 1L * MiB_IN_BYTES, 2, results);
         results = controller.startRandomReadBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("RAND_READ", 2, 1L * MiB_IN_BYTES, 2, results);
@@ -180,7 +179,7 @@ public class ControllerIntegrationTest {
 
         controller = new Controller(config);
         controller.setupVolumes("TestVolA", "TestVolB");
-        Queue<BenchmarkResult> results = controller.startRandomWriteBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
+        List<BenchmarkResult> results = controller.startRandomWriteBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("RAND_WRITE", 2, 1L * MiB_IN_BYTES, 2, results);
         controller.teardown();
 
@@ -196,7 +195,7 @@ public class ControllerIntegrationTest {
     public void testFilebasedBenchmark() throws Exception {
         controller = new Controller(configBuilder.build());
         controller.setupVolumes("TestVolA", "TestVolB");
-        Queue<BenchmarkResult> results = controller.startFilebasedWriteBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
+        List<BenchmarkResult> results = controller.startFilebasedWriteBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("FILES_WRITE", 2, 1L * MiB_IN_BYTES, 2, results);
         results = controller.startFilebasedReadBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("FILES_READ", 2, 1L * MiB_IN_BYTES, 2, results);
@@ -210,7 +209,7 @@ public class ControllerIntegrationTest {
 
         controller = new Controller(config);
         controller.setupVolumes("TestVolA", "TestVolB");
-        Queue<BenchmarkResult> results = controller.startFilebasedWriteBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
+        List<BenchmarkResult> results = controller.startFilebasedWriteBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("FILES_WRITE", 2, 1L * MiB_IN_BYTES, 2, results);
         controller.teardown();
 
@@ -462,7 +461,7 @@ public class ControllerIntegrationTest {
         }
     }
 
-    private void compareResults(String type, int threads, long size, int numberOfResults, Queue<BenchmarkResult> results) {
+    private void compareResults(String type, int threads, long size, int numberOfResults, List<BenchmarkResult> results) {
         int resultCounter = 0;
         for (BenchmarkResult result : results) {
             resultCounter++;
@@ -502,7 +501,7 @@ public class ControllerIntegrationTest {
         }
     }
 
-    private void printResults(Queue<BenchmarkResult> results) {
+    private void printResults(List<BenchmarkResult> results) {
         System.err.println("Type\t\t\tThreads\t\tTime\tSpeed\tRequested\t\tCount");
         for (BenchmarkResult res : results) {
             System.err.println(res.getBenchmarkType() + "\t\t" + res.getNumberOfReadersOrWriters() + "\t\t\t"

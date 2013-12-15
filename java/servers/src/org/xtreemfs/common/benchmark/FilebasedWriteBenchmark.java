@@ -46,7 +46,7 @@ class FilebasedWriteBenchmark extends FilebasedBenchmark {
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
 
-        for (long i = 0; i < numberOfFiles; i++) {
+        for (long i = 0; !cancelled && i < numberOfFiles; i++) {
             FileHandle fileHandle = volume.openFile(config.getUserCredentials(), BENCHMARK_FILENAME + i, flags, 511);
             this.filenames.add(BENCHMARK_FILENAME + i);
 
