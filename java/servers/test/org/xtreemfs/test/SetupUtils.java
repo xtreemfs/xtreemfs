@@ -120,6 +120,9 @@ public class SetupUtils {
     public static OSDConfig createQoSOSDConfig() throws IOException {
         Properties props = createOSDProperties(32637 + PORT_RANGE_OFFSET, TEST_DIR + "/osdQoS");
         props.setProperty("use_qos", "true");
+        props.setProperty("scheduler_service.host", "localhost");
+        props.setProperty("scheduler_service.port", new Integer(32842 + PORT_RANGE_OFFSET).toString());
+
         OSDConfig config = new OSDConfig(props);
         config.setDefaults();
         return config;

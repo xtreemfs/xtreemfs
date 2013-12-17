@@ -431,8 +431,7 @@ public class ServiceConfig extends Config {
      * Read configuration parameter from property file and return an Object of the value if the parameter was
      * set. Else return null.
      * 
-     * @param Parameter
-     *            param
+     * @param param
      * @return Object
      */
     protected Object readParameter(Parameter param) {

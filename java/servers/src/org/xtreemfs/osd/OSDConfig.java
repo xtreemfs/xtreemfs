@@ -81,6 +81,7 @@ public class OSDConfig extends ServiceConfig {
             Parameter.USE_RENEWAL_SIGNAL,
             Parameter.USE_MULTIHOMING,
             Parameter.USE_QOS,
+            Parameter.SCHEDULER_SERVICE,
             Parameter.WFQ_RESET_PERIOD
     };
     /*

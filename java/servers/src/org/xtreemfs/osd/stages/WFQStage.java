@@ -8,15 +8,22 @@
 
 package org.xtreemfs.osd.stages;
 
+import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 import org.xtreemfs.foundation.queue.WeightedFairQueue;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.operations.ReadOperation;
 import org.xtreemfs.osd.operations.WriteOperation;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Christoph Kleineweber <kleineweber@zib.de>
@@ -29,9 +36,22 @@ public class WFQStage extends Stage {
 
     private WeightedFairQueue<String, StageRequest> wfqQueue;
 
+    private Map<String, String>                     volumeNames;
+
+    private final RPC.UserCredentials               uc;
+
+    private static RPC.Auth                         authNone;
+
+    static {
+        authNone = RPC.Auth.newBuilder().setAuthType(RPC.AuthType.AUTH_NONE).build();
+    }
+
     public WFQStage(OSDRequestDispatcher master, int queueCapacity) {
         super("WFQ Stage", queueCapacity);
         this.master = master;
+        this.volumeNames = new HashMap<String, String>();
+        this.uc = RPC.UserCredentials.newBuilder().setUsername("wfq-stage").addGroups("xtreemfs-services")
+                .build();
 
         this.wfqQueue = new WeightedFairQueue<String, StageRequest>(queueCapacity,
                 master.getConfig().getWfqResetPeriod(),
@@ -136,5 +156,31 @@ public class WFQStage extends Stage {
             final OSDRequest request = (OSDRequest) method.getRequest();
             request.getOperation().startRequest(request);
         }
+    }
+
+    private String getVolumeName(String uuid) {
+        if(volumeNames.containsKey(uuid)) {
+            return volumeNames.get(uuid);
+        } else {
+            DIRClient dirClient = master.getDIRClient();
+
+            try {
+                DIR.ServiceSet serviceSet = dirClient.xtreemfs_service_get_by_uuid(null, authNone, uc, uuid);
+
+                if(serviceSet.getServicesCount() > 0) {
+                    return serviceSet.getServices(0).getName();
+                } else {
+                    Logging.logMessage(Logging.LEVEL_ERROR, this, "Cannot resolve uuid " + uuid);
+                }
+            } catch(Exception e) {
+                Logging.logMessage(Logging.LEVEL_ERROR, this, "Cannot resolve uuid " + uuid + ", " + e);
+            }
+
+            return null;
+        }
+    }
+
+    private double getQoS(String volumeName) {
+        return 1.0;
     }
 }

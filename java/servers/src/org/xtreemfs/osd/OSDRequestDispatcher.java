@@ -104,19 +104,17 @@ import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.StorageLayout;
 import org.xtreemfs.osd.vivaldi.VivaldiNode;
+import org.xtreemfs.pbrpc.generatedinterfaces.*;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.DirService;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceDataMap;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 import com.google.protobuf.Message;
+import org.xtreemfs.scheduler.SchedulerClient;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener {
     
@@ -133,7 +131,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     protected final OSDConfig                           config;
     
     protected final DIRClient                           dirClient;
-    
+
+    protected final SchedulerClient                     schedulerClient;
+
     protected final MRCServiceClient                    mrcClient;
     
     protected final OSDServiceClient                    osdClient;
@@ -349,6 +349,15 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         DIRServiceClient dirRpcClient = new DIRServiceClient(rpcClient, config.getDirectoryService());
         dirClient = new DIRClient(dirRpcClient, config.getDirectoryServices(), config.getFailoverMaxRetries(), config.getFailoverWait());
+
+        if(config.useQoS()) {
+        SchedulerServiceClient schedulerRpcClient = new SchedulerServiceClient(rpcClient, config.getSchedulerService());
+            schedulerClient = new SchedulerClient(schedulerRpcClient, config.getSchedulerService(),
+                    config.getFailoverMaxRetries(), config.getFailoverWait());
+        } else {
+            schedulerClient = null;
+        }
+
         mrcClient = new MRCServiceClient(rpcClient, null);
         osdClient = new OSDServiceClient(rpcClient, null);
         osdClientForReplication = new OSDServiceClient(rpcClientForReplication, null);
@@ -654,7 +663,11 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     public DIRClient getDIRClient() {
         return dirClient;
     }
-    
+
+    public SchedulerClient getSchedulerClient() {
+        return schedulerClient;
+    }
+
     public MRCServiceClient getMRCClient() {
         return mrcClient;
     }
