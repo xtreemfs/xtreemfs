@@ -21,6 +21,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.xtreemfs.common.HeartbeatThread;
+import org.xtreemfs.common.KeyValuePairs;
+import org.xtreemfs.common.config.ServiceConfig;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.mrc.osdselection.FilterDefaultPolicy;
@@ -178,6 +180,77 @@ public class OSDPolicyTest extends TestCase {
         
         assertEquals(1, filteredOSDs.getServicesCount());
         assertEquals("osd3", filteredOSDs.getServices(0).getUuid());
+    }
+    
+    @Test
+    public void testFilterDefaultPolicyOnCustomProperty() throws Exception {
+        
+        ServiceDataMap.Builder sdm1 = ServiceDataMap.newBuilder();
+        sdm1.addData(KeyValuePair.newBuilder().setKey("free").setValue("10000"));
+        sdm1.addData(KeyValuePair.newBuilder().setKey("seconds_since_last_update").setValue("0"));
+        sdm1.addData(KeyValuePair.newBuilder().setKey(HeartbeatThread.STATUS_ATTR)
+                .setValue(String.valueOf(ServiceStatus.SERVICE_STATUS_AVAIL.getNumber())));
+        sdm1.addData(KeyValuePair.newBuilder().setKey(ServiceConfig.OSD_CUSTOM_PROPERTY_PREFIX+"country")
+                .setValue(String.valueOf("FR")));
+        
+        ServiceDataMap.Builder sdm2 = ServiceDataMap.newBuilder();
+        sdm2.addData(KeyValuePair.newBuilder().setKey("free").setValue("10000"));
+        sdm2.addData(KeyValuePair.newBuilder().setKey("seconds_since_last_update").setValue("0"));
+        sdm2.addData(KeyValuePair.newBuilder().setKey(HeartbeatThread.STATUS_ATTR)
+                .setValue(String.valueOf(ServiceStatus.SERVICE_STATUS_AVAIL.getNumber())));
+
+        sdm2.addData(KeyValuePair.newBuilder().setKey(ServiceConfig.OSD_CUSTOM_PROPERTY_PREFIX+"country")
+                .setValue(String.valueOf("DE")));
+
+        
+        ServiceDataMap.Builder sdm3 = ServiceDataMap.newBuilder();
+        sdm3.addData(KeyValuePair.newBuilder().setKey("free").setValue("10000"));
+        sdm3.addData(KeyValuePair.newBuilder().setKey("seconds_since_last_update").setValue("0"));
+        sdm3.addData(KeyValuePair.newBuilder().setKey(HeartbeatThread.STATUS_ATTR)
+                .setValue(String.valueOf(ServiceStatus.SERVICE_STATUS_AVAIL.getNumber())));
+        sdm3.addData(KeyValuePair.newBuilder().setKey(ServiceConfig.OSD_CUSTOM_PROPERTY_PREFIX+"country")
+                .setValue(String.valueOf("GB")));
+        
+        ServiceSet.Builder servicesBuilder = ServiceSet.newBuilder();
+        servicesBuilder.addServices(Service.newBuilder().setType(ServiceType.SERVICE_TYPE_OSD)
+                .setLastUpdatedS(0).setName("osd1").setVersion(1).setUuid("osd1").setData(sdm1));
+        servicesBuilder.addServices(Service.newBuilder().setType(ServiceType.SERVICE_TYPE_OSD)
+                .setLastUpdatedS(0).setName("osd2").setVersion(1).setUuid("osd2").setData(sdm2));
+        servicesBuilder.addServices(Service.newBuilder().setType(ServiceType.SERVICE_TYPE_OSD)
+                .setLastUpdatedS(0).setName("osd3").setVersion(1).setUuid("osd3").setData(sdm3));
+        ServiceSet services = servicesBuilder.build();
+        
+        // all OSDs but from FR
+        FilterDefaultPolicy pol = new FilterDefaultPolicy();
+        pol.setAttribute("not.country", "FR");
+        ServiceSet.Builder filteredOSDs = pol.getOSDs(services.toBuilder());        
+        
+        assertEquals(2, filteredOSDs.getServicesCount());
+
+        
+        // only OSDs from DE and NOT from FR
+        pol = new FilterDefaultPolicy();
+        pol.setAttribute("country", "DE");
+        pol.setAttribute("not.country", "FR");
+        filteredOSDs = pol.getOSDs(services.toBuilder());
+        
+        assertEquals(1, filteredOSDs.getServicesCount());
+        String osdParameterValue 
+        = KeyValuePairs.getValue(filteredOSDs.getServices(0).getData().getDataList(),
+            ServiceConfig.OSD_CUSTOM_PROPERTY_PREFIX + "country");
+        assertEquals("DE", osdParameterValue);
+
+        // only OSDs not from FR and not from DE
+        pol = new FilterDefaultPolicy();
+        pol.setAttribute("not.country", "FR DE");
+        filteredOSDs = pol.getOSDs(services.toBuilder());
+        
+        assertEquals(1, filteredOSDs.getServicesCount());        
+        osdParameterValue 
+        = KeyValuePairs.getValue(filteredOSDs.getServices(0).getData().getDataList(),
+            ServiceConfig.OSD_CUSTOM_PROPERTY_PREFIX + "country");
+        assertEquals("GB", osdParameterValue);
+
     }
     
     @Test

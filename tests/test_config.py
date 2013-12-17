@@ -238,6 +238,12 @@ Tests = [
         'VolumeConfigs': ['regular', 'nomdcache'],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
     },
+    {
+        'name': 'hadoop_test',
+        'file': 'hadoop_test.sh',
+        'VolumeConfigs': ['regular'],
+        'TestSets': [] 
+    },
     # SYSTEM TESTS
     {
         'name': 'JUnit tests',

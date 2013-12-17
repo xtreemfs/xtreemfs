@@ -137,7 +137,7 @@ git clone https://code.google.com/p/xtreemfs/ . &> $TEST_LOG
 # Build client unit tests.
 export BUILD_CLIENT_TESTS=true
 export CPPFLAGS=-O0
-make client_debug server &>$TEST_LOG
+make client_debug server hadoop-client &>$TEST_LOG
 if [ $? -ne 0 ]; then
   echo "FAILED: cannot make sources!" >> $TEST_LOG
   date >> $TEST_LOG
