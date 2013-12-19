@@ -98,3 +98,5 @@ policy_dir = /etc/xos/xtreemfs/policies
 uuid = test-localhost-OSD
 
 use_qos = true
+scheduler_service.host = localhost
+scheduler_service.port = 32642
