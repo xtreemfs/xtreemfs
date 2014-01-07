@@ -2837,12 +2837,9 @@ This section will help you to set up a simple Hadoop configuration with all nece
   </property>
 
   <property>
-    <name>xtreemfs.volumeNames</name>
-    <value>volumeName1,volumeName2,...</value>
-    <description>
-       Names of the volumes to use within XtreemFS.
-       The first volume is used as the default volume.    
-    </description>
+    <name>xtreemfs.defaultVolumeName</name>
+    <value>volumeName</value>
+    <description>Name of the default volume to use within XtreemFS.</description>
   </property>
   
   <property>
@@ -2859,7 +2856,7 @@ This section will help you to set up a simple Hadoop configuration with all nece
 	\item The next property makes Hadoop use the DIR instead of a 
 	NameNode, therefore address and port of the DIR has to be populated. In this case the DIR is located at 
 	\textit{localhost:32638}. 
-	\item The third property specifies the names of the volumes to use within XtreemFS. The first volume is used as the default 	volume. This volume is used if no volume is specified in a path. Make sure, that the volumes (here named 							\textit{volumeName1,volumeName2,...}) do exist. If the volumes are not available Hadoop will not be able to use XtreemFS.
+	\item The third property specifies the name of the default volume to use within XtreemFS. Make sure, that the volume (here    	named \textit{volumeName}) does exist. If the volume is not available Hadoop will not be able to use XtreemFS.
 	\item The last property tells Hadoop the buffer size that will be used when reading/writing files.
 	This size should be exactly the default stripesize of your volume. Note that this value is measured in bytes while the
 	stripe size of your volume usually is measured in kilo bytes. 

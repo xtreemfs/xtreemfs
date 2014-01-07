@@ -12,8 +12,10 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,6 +46,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntry;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
 
 /**
  * 
@@ -54,13 +57,14 @@ public class XtreemFSFileSystem extends FileSystem {
     private URI                 fileSystemURI;
     private Client              xtreemfsClient;
     private Map<String, Volume> xtreemfsVolumes;
+    Set<String>                 defaultVolumeDirectories;
     private Path                workingDirectory;
     private UserCredentials     userCredentials;
     private boolean             useReadBuffer;
     private boolean             useWriteBuffer;
     private int                 readBufferSize;
     private int                 writeBufferSize;
-    private String              defaultVolumeName;
+    private Volume              defaultVolume;
 
     @Override
     public void initialize(URI uri, Configuration conf) throws IOException {
@@ -76,20 +80,12 @@ public class XtreemFSFileSystem extends FileSystem {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "init : " + uri);
         }
 
-        String[] volumeNames = conf.get("xtreemfs.volumeNames") == null ? null : conf.get("xtreemfs.volumeNames")
-                .split(",");      
-        if (volumeNames == null) {
-            volumeNames = new String[1];
-            volumeNames[0] = conf.get("xtreemfs.volumeName");
-            Logging.logMessage(Logging.LEVEL_WARN, this, "xtreemfs.volumeName is deprecated! Use xtreemfs.volumeNames instead.");
-            if (volumeNames[0] == null) {
-                throw new IOException("You have to specify at least one volume name in"
-                        + " core-site.xml! (xtreemfs.volumeNames)");
-            }
-        }
+        String defaultVolumeName = conf.get("xtreemfs.defaultVolumeName");
 
-        // The first volume in xtreemfs.volumesNames is used as default volume
-        defaultVolumeName = volumeNames[0];
+        if (defaultVolumeName == null) {
+            throw new IOException("You have to specify at least one volume name in"
+                    + " core-site.xml! (xtreemfs.volumeNames)");
+        }
 
         useReadBuffer = conf.getBoolean("xtreemfs.io.buffer.read", false);
         readBufferSize = conf.getInt("xtreemfs.io.buffer.size.read", 0);
@@ -120,6 +116,7 @@ public class XtreemFSFileSystem extends FileSystem {
         // initialize XtreemFS Client with default Options and without SSL.
         Options xtreemfsOptions = new Options();
         xtreemfsOptions.setMetadataCacheSize(0);
+        System.out.println("URI:" + uri.getHost() + ":" + uri.getPort());
         xtreemfsClient = ClientFactory.createClient(uri.getHost() + ":" + uri.getPort(), userCredentials,
                 xtreemfsOptions.generateSSLOptions(), xtreemfsOptions);
         try {
@@ -128,6 +125,9 @@ public class XtreemFSFileSystem extends FileSystem {
         } catch (Exception ex) {
             Logger.getLogger(XtreemFSFileSystem.class.getName()).log(Level.SEVERE, null, ex);
         }
+
+        // Get all available volumes.
+        String[] volumeNames = xtreemfsClient.listVolumeNames();
 
         xtreemfsVolumes = new HashMap<String, Volume>(volumeNames.length);
         for (String volumeName : volumeNames) {
@@ -145,6 +145,16 @@ public class XtreemFSFileSystem extends FileSystem {
                 e.printStackTrace();
             }
         }
+
+        // Get directories in root of defaultVolume.
+        defaultVolumeDirectories = new HashSet<String>();
+        defaultVolume = xtreemfsVolumes.get(defaultVolumeName);
+        for (DirectoryEntry dirEntry : defaultVolume.readDir(userCredentials, "/", 0, 0, true).getEntriesList()) {
+            if (isXtreemFSDirectory("/" + dirEntry.getName(), defaultVolume)) {
+                defaultVolumeDirectories.add(dirEntry.getName());
+            }
+        }
+
         fileSystemURI = uri;
         workingDirectory = getHomeDirectory();
 
@@ -160,8 +170,8 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public FSDataInputStream open(Path path, int bufferSize) throws IOException {
-        Volume xtreemfsVolume = getVolumeFormPath(path);
-        final String pathString = removeVolumeNameFromPathAndMakeAbsolute(path);
+        Volume xtreemfsVolume = getVolumeFromPath(path);
+        final String pathString = preparePath(path, xtreemfsVolume);
         Logging.logMessage(Logging.LEVEL_WARN, Logging.Category.misc, this, "PATH: " + path);
         final FileHandle fileHandle = xtreemfsVolume.openFile(userCredentials, pathString,
                 SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber(), 0);
@@ -177,8 +187,8 @@ public class XtreemFSFileSystem extends FileSystem {
     public FSDataOutputStream create(Path path, FsPermission fp, boolean overwrite, int bufferSize, short replication,
             long blockSize, Progressable p) throws IOException {
         // block replication for the file
-        Volume xtreemfsVolume = getVolumeFormPath(path);
-        final String pathString = removeVolumeNameFromPathAndMakeAbsolute(path);
+        Volume xtreemfsVolume = getVolumeFromPath(path);
+        final String pathString = preparePath(path, xtreemfsVolume);
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber();
         if (overwrite) {
@@ -214,9 +224,9 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public boolean rename(Path src, Path dest) throws IOException {
-        Volume xtreemfsVolume = getVolumeFormPath(src);
-        final String srcPath = removeVolumeNameFromPathAndMakeAbsolute(src);
-        final String destPath = removeVolumeNameFromPathAndMakeAbsolute(dest);
+        Volume xtreemfsVolume = getVolumeFromPath(src);
+        final String srcPath = preparePath(src, xtreemfsVolume);
+        final String destPath = preparePath(dest, xtreemfsVolume);
 
         xtreemfsVolume.rename(userCredentials, srcPath, destPath);
         if (Logging.isDebug()) {
@@ -234,8 +244,8 @@ public class XtreemFSFileSystem extends FileSystem {
     @Override
     public boolean delete(Path path, boolean recursive) throws IOException {
         statistics.incrementWriteOps(1);
-        final String pathString = removeVolumeNameFromPathAndMakeAbsolute(path);
-        Volume xtreemfsVolume = getVolumeFormPath(path);
+        Volume xtreemfsVolume = getVolumeFromPath(path);
+        final String pathString = preparePath(path, xtreemfsVolume);
         if (isXtreemFSFile(pathString, xtreemfsVolume)) {
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "Deleting file %s", pathString);
@@ -350,9 +360,9 @@ public class XtreemFSFileSystem extends FileSystem {
         if (path == null) {
             return null;
         }
+        Volume xtreemfsVolume = getVolumeFromPath(path);
+        final String pathString = preparePath(path, xtreemfsVolume);
 
-        final String pathString = removeVolumeNameFromPathAndMakeAbsolute(path);
-        Volume xtreemfsVolume = getVolumeFormPath(path);
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "ls: " + pathString);
         }
@@ -388,7 +398,14 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public void setWorkingDirectory(Path path) {
-        this.workingDirectory = new Path(removeVolumeNameFromPathAndMakeAbsolute(path));
+        Volume xtreemfsVolume = null;
+        try {
+            xtreemfsVolume = getVolumeFromPath(path);
+            this.workingDirectory = new Path(preparePath(path, xtreemfsVolume));
+        } catch (IOException e) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.misc, this,
+                    "Unable to set working directory. %s does not exist!", makeAbsolute(path).toUri().toString());
+        }
     }
 
     @Override
@@ -406,13 +423,18 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public boolean mkdirs(Path path, FsPermission fp) throws IOException {
-        final String pathString = removeVolumeNameFromPathAndMakeAbsolute(path);
-        Volume xtreemfsVolume = getVolumeFormPath(path);
+        Volume xtreemfsVolume = getVolumeFromPath(path);
+        final String pathString = preparePath(path, xtreemfsVolume);
         final String[] dirs = pathString.split("/");
         statistics.incrementWriteOps(1);
 
         final short mode = fp.toShort();
         String dirString = "";
+
+        if (xtreemfsVolume == defaultVolume) {
+            defaultVolumeDirectories.add(dirs[0]);
+        }
+
         for (String dir : dirs) {
             dirString += dir + "/";
             if (isXtreemFSFile(dirString, xtreemfsVolume)) {
@@ -430,8 +452,8 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public FileStatus getFileStatus(Path path) throws IOException {
-        final String pathString = removeVolumeNameFromPathAndMakeAbsolute(path);
-        Volume xtreemfsVolume = getVolumeFormPath(path);
+        Volume xtreemfsVolume = getVolumeFromPath(path);
+        final String pathString = preparePath(path, xtreemfsVolume);
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "getting file status for file %s", pathString);
         }
@@ -475,8 +497,8 @@ public class XtreemFSFileSystem extends FileSystem {
         if (file == null) {
             return null;
         }
-        String pathString = removeVolumeNameFromPathAndMakeAbsolute(file.getPath());
-        Volume xtreemfsVolume = getVolumeFormPath(file.getPath());
+        Volume xtreemfsVolume = getVolumeFromPath(file.getPath());
+        String pathString = preparePath(file.getPath(), xtreemfsVolume);
         List<StripeLocation> stripeLocations = xtreemfsVolume.getStripeLocations(userCredentials, pathString, start,
                 length);
 
@@ -488,41 +510,48 @@ public class XtreemFSFileSystem extends FileSystem {
         return result;
     }
 
-    private String removeVolumeNameFromPathAndMakeAbsolute(Path path) {
-        String pathString = path.toUri().getPath();
-        String volumeName = getVolumeNameFromPath(path);
-        if (pathString.startsWith("/" + volumeName)) {
+    /**
+     * Make path absolute and remove volume if path starts with a volume
+     * 
+     * @param path
+     * @param volume
+     * @return
+     */
+    private String preparePath(Path path, Volume volume) {
+        String pathString = makeAbsolute(path).toUri().getPath();
+        if (volume == defaultVolume) {
+            return pathString;
+        } else {
             int pathBegin = pathString.indexOf("/", 1);
             String pathStringWithoutVolume = pathString.substring(pathBegin);
-            // path is already absolute
             return pathStringWithoutVolume;
-        } else {
-            return makeAbsolute(path).toUri().getPath();
         }
-    }
-
-    private Volume getVolumeFormPath(Path path) {
-        return xtreemfsVolumes.get(getVolumeNameFromPath(path));
     }
 
     /**
-     * Returns the volume name from the path or the default volume, if the path does not contain a volume name.
+     * Returns the volume name from the path or the default volume, if the path does not contain a volume name or the
+     * default volume has a directory equally named to the volume.
      * 
      * @param path
      * @return
+     * @throws IOException
      */
-    private String getVolumeNameFromPath(Path path) {
-        String pathString = path.toUri().getPath();
-        int volumeNameEnd = pathString.indexOf("/", 1);
-        if (volumeNameEnd == -1) {
-            return defaultVolumeName;
-        }
-        
-        String possibleVolumeName = pathString.substring(1, pathString.indexOf("/", 1));
-        if (xtreemfsVolumes.containsKey(possibleVolumeName)) {
-            return possibleVolumeName;
+    private Volume getVolumeFromPath(Path path) throws IOException {
+        String pathString = makeAbsolute(path).toUri().getPath();
+        if (defaultVolumeDirectories.contains(pathString.split("/")[1]) || pathString.lastIndexOf("/") == 0) {
+            // First part of path is a directory or path is a file in the root of defaultVolume
+            return defaultVolume;
         } else {
-            return defaultVolumeName;
+            // First part of path is a volume
+            String volumeName = pathString.substring(1, pathString.indexOf("/", 1));
+            Volume volume = xtreemfsVolumes.get(volumeName);
+
+            if (volume == null) {
+                // If no volume or directory exist, assume a invalid path on default volume.
+                return defaultVolume;
+            } else {
+                return volume;
+            }
         }
     }
 }
