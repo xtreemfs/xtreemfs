@@ -83,8 +83,8 @@ public class XtreemFSFileSystem extends FileSystem {
         String defaultVolumeName = conf.get("xtreemfs.defaultVolumeName");
 
         if (defaultVolumeName == null) {
-            throw new IOException("You have to specify at least one volume name in"
-                    + " core-site.xml! (xtreemfs.volumeNames)");
+            throw new IOException("You have to specify a default volume name in"
+                    + " core-site.xml! (xtreemfs.defaultVolumeName)");
         }
 
         useReadBuffer = conf.getBoolean("xtreemfs.io.buffer.read", false);
