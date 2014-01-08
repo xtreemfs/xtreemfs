@@ -55,7 +55,7 @@ for VERSION in $HADOOP_VERSIONS; do
    </property>
 
    <property>
-    <name>xtreemfs.volumeName</name>
+    <name>xtreemfs.defaultVolumeName</name>
     <value>$VOLUME</value>
     <description>Name of the volume to use within XtreemFS.</description>
    </property>
