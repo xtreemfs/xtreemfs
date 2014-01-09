@@ -715,11 +715,13 @@ public class BenchmarkConfig extends ServiceConfig {
              * if no DirAddress is given, either directly or in the parent config, first try the DefaultDirConfig, then
              * use default
              */
-            String[] dirAddresses = Controller.getDefaultDir();
-            if (null != dirAddresses)
-                setDirAddresses(dirAddresses);
-            if (null == props.getProperty("dir_service.host"))
-                setDirAddresses(new String[]{"127.0.0.1:32638"});
+            if (null == props.getProperty("dir_service.host")) {
+                String[] dirAddresses = Controller.getDefaultDir();
+                if (null != dirAddresses)
+                    setDirAddresses(dirAddresses);
+                else
+                    setDirAddresses(new String[]{"127.0.0.1:32638"});
+            }
 
             BenchmarkConfig config = new BenchmarkConfig(props, this.options, this.policyAttributes);
             config.setDefaults();
