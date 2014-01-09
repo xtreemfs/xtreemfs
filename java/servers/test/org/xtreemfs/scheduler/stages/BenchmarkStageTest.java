@@ -1,10 +1,11 @@
 package org.xtreemfs.scheduler.stages;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
+import org.xtreemfs.common.benchmark.BenchmarkConfig;
 import org.xtreemfs.common.benchmark.BenchmarkUtils;
+import org.xtreemfs.common.config.ServiceConfig;
 import org.xtreemfs.scheduler.data.OSDPerformanceDescription;
 
 public class BenchmarkStageTest extends StageTest {
@@ -13,7 +14,7 @@ public class BenchmarkStageTest extends StageTest {
     public void testBenchmarkStage() throws Exception {
         final String osd1 = "UUID:localhost:42640";
         final String osd2 = "UUID:localhost:42641";
-        final BenchmarkStage benchStage = new BenchmarkStage("BenchmarkStage", 5, scheduler);
+        final BenchmarkStage benchStage = new BenchmarkStage("BenchmarkStage", 5);
         benchStage.start();
         benchStage.waitForStartup();
 
@@ -24,41 +25,49 @@ public class BenchmarkStageTest extends StageTest {
             public void benchmarkComplete(OSDPerformanceDescription perfDescription) {
                 resultCounter++;
                 if (resultCounter == 2) {
-                    assertTrue(true);
+                    assertNotNull(perfDescription);
                     benchStage.shutdown();
                 }
             }
 
             @Override
             public void benchmarkFailed(Throwable error) {
-                System.out.println(error.getMessage());
-                fail();
+                benchStage.shutdown();
             }
         };
 
+        BenchmarkConfig.ConfigBuilder builder = BenchmarkConfig.newBuilder();
+        builder.setParent(osdConfigs[0]);
+        builder.setBasefileSizeInBytes(10*1024*1024L);
+        BenchmarkConfig benchmarkConfig = builder.build();
+
+
         benchStage.enqueueOperation(0, new BenchmarkArgsImpl(10L * BenchmarkUtils.MiB_IN_BYTES,
-                1L * BenchmarkUtils.MiB_IN_BYTES, 1, 1, osd1), null, cb);
+                1L * BenchmarkUtils.MiB_IN_BYTES, 1, 1, osd1, 3, builder.build()), null, cb);
         benchStage.enqueueOperation(0, new BenchmarkArgsImpl(10L * BenchmarkUtils.MiB_IN_BYTES,
-                1L * BenchmarkUtils.MiB_IN_BYTES, 1, 1, osd2), null, cb);
+                1L * BenchmarkUtils.MiB_IN_BYTES, 1, 1, osd2, 3, builder.build()), null, cb);
 
         benchStage.join();
     }
 
     static class BenchmarkArgsImpl implements BenchmarkArgs {
-        private long   sequentialSize;
-        private long   randomSize;
-        private int    numberOfThreads;
-        private int    numberOfRepetitions;
-        private int    retries;
+        private long sequentialSize;
+        private long randomSize;
+        private int numberOfThreads;
+        private int numberOfRepetitions;
+        private int retries;
         private String osdUuid;
+        private ServiceConfig config;
 
         BenchmarkArgsImpl(long sequentialSize, long randomSize, int numberOfThreads, int numberOfRepetitions,
-                String osdUuid) {
+                String osdUuid, int numberOfRetries, ServiceConfig config) {
             this.sequentialSize = sequentialSize;
             this.randomSize = randomSize;
             this.numberOfThreads = numberOfThreads;
             this.numberOfRepetitions = numberOfRepetitions;
             this.osdUuid = osdUuid;
+            this.retries = numberOfRetries;
+            this.config = config;
         }
 
         @Override
@@ -87,14 +96,17 @@ public class BenchmarkStageTest extends StageTest {
         }
 
         @Override
-        public void incRetries() {
-            retries++;
+        public void decRetries() {
+            retries--;
         }
 
         @Override
         public int getRetries() {
             return retries;
         }
+
+        @Override
+        public ServiceConfig getConfig() { return config; }
     }
 
 }

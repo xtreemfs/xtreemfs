@@ -43,23 +43,30 @@ public class BenchmarkRunner {
     /**
      * Run a suite of benchmarks to measure the performance of an OSD.
      *
-     * @return a rerformance description where streaming performance and iops are set
+     * @return a performance description where streaming performance and iops are set
      * @throws Exception
      */
     public OSDPerformanceDescription runBenchmark() throws Exception {
-        controller.setupDefaultVolumes(maxNumberOfThreads);
-        OSDPerformanceDescription perfDescription = new OSDPerformanceDescription();
+        OSDPerformanceDescription perfDescription = null;
+        try {
+            controller.setupDefaultVolumes(maxNumberOfThreads);
+            perfDescription = new OSDPerformanceDescription();
 
         /* measure stream perfomance */
-        Map<Integer, Double> streamPerf = measureStreamPerformance(sequentialSize, maxNumberOfThreads);
-        perfDescription.setStreamingPerformance(streamPerf);
+            Map<Integer, Double> streamPerf = measureStreamPerformance(sequentialSize, maxNumberOfThreads);
+            perfDescription.setStreamingPerformance(streamPerf);
 
         /* measure iops */
-        double iops = measureIOPS(randomSize);
-        perfDescription.setIops(iops);
+            double iops = measureIOPS(randomSize);
+            perfDescription.setIops(iops);
 
-        /* teardown */
-        controller.teardown();
+
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            /* teardown */
+            controller.teardown();
+        }
 
         return perfDescription;
     }

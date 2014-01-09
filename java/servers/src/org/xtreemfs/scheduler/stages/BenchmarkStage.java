@@ -11,12 +11,8 @@ package org.xtreemfs.scheduler.stages;
 import org.xtreemfs.common.benchmark.BenchmarkConfig;
 import org.xtreemfs.common.benchmark.BenchmarkConfig.ConfigBuilder;
 import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.scheduler.SchedulerConfig;
-import org.xtreemfs.scheduler.SchedulerRequestDispatcher;
 import org.xtreemfs.scheduler.benchmark.BenchmarkRunner;
 import org.xtreemfs.scheduler.data.OSDPerformanceDescription;
-
-import java.net.InetSocketAddress;
 
 /**
 * The benchmark stage starts a performance measurement of the given OSD. <br/>
@@ -31,13 +27,9 @@ import java.net.InetSocketAddress;
 */
 public class BenchmarkStage extends Stage<BenchmarkArgs, BenchmarkCompleteCallback> {
 
-    private final static int MAX_NUMBER_OF_RETRIES = 3;
 
-    private final SchedulerRequestDispatcher master;
-
-    public BenchmarkStage(String stageName, int queueCapacity, SchedulerRequestDispatcher master) {
+    public BenchmarkStage(String stageName, int queueCapacity) {
         super(stageName, queueCapacity);
-        this.master = master;
     }
 
     /**
@@ -50,7 +42,8 @@ public class BenchmarkStage extends Stage<BenchmarkArgs, BenchmarkCompleteCallba
     protected void processMethod(StageRequest<BenchmarkArgs, BenchmarkCompleteCallback> stageRequest) {
         BenchmarkCompleteCallback cb = stageRequest.getCallback();
         BenchmarkArgs args = stageRequest.getArgs();
-        ConfigBuilder builder = parseConfig();
+        ConfigBuilder builder = BenchmarkConfig.newBuilder();
+        builder.setParent(stageRequest.getArgs().getConfig());
         builder.setSelectOsdsByUuid(args.getOsdUuid());
         BenchmarkRunner br;
         try {
@@ -59,32 +52,21 @@ public class BenchmarkStage extends Stage<BenchmarkArgs, BenchmarkCompleteCallba
             OSDPerformanceDescription perfDesc = br.runBenchmark();
             cb.benchmarkComplete(perfDesc);
         } catch (Exception e) {
-            if (args.getRetries() < MAX_NUMBER_OF_RETRIES) {
-                args.incRetries();
+            if (args.getRetries() > 0) {
+                args.decRetries();
                 Logging.logMessage(Logging.LEVEL_WARN, Logging.Category.stage, this,
-                        "The benchmark onf OSD %s failed, the benchmark will be retried later", args.getOsdUuid());
-                Logging.logError(Logging.LEVEL_WARN, this, e);
+                        "The benchmark of OSD %s failed, the benchmark will be retried later", args.getOsdUuid());
                 this.enqueueOperation(0, args, null, cb);
-            } else
+            } else {
                 Logging.logMessage(
                         Logging.LEVEL_WARN,
                         Logging.Category.stage,
                         this,
                         "The benchmark onf OSD %s failed more often than the max number of retries, the benchmark will not be retried later",
                         args.getOsdUuid());
-            Logging.logError(Logging.LEVEL_WARN, this, e);
-            cb.benchmarkFailed(e);
+                cb.benchmarkFailed(e);
+            }
         }
-    }
-
-    private ConfigBuilder parseConfig(){
-        SchedulerConfig schedConfig = master.getConfig();
-        ConfigBuilder builder = BenchmarkConfig.newBuilder();
-        InetSocketAddress dir = schedConfig.getDirectoryService();
-        builder.setDirAddress(dir.getHostName() + ":" + dir.getPort());
-        builder.setAdminPassword(schedConfig.getAdminPassword());
-//      Todo Auth? SSL?
-        return builder;
     }
 
 }

@@ -1,5 +1,7 @@
 package org.xtreemfs.scheduler.stages;
 
+import org.xtreemfs.common.config.ServiceConfig;
+
 /**
  * The interface for the benchmark arguments class for a {@link Stage.StageRequest}.
  *
@@ -43,15 +45,31 @@ public interface BenchmarkArgs {
     public String getOsdUuid();
 
     /**
-     * Increment the number of retries
+     * Decrement the number of retries. <br/>
+     *
+     * The number of retries detemines how often the {@link org.xtreemfs.scheduler.stages.BenchmarkStage} retries to do
+     * the benchmark in case of failure. At each trial, {@link #decRetries()} is called. If {@link #decRetries()}
+     * returns a value greater then zero, the request is re-enqueued
      */
-    public void incRetries();
+    public void decRetries();
 
     /**
-     * Get the number of retries. The number of retries need to be null initially.
+     * Get the number of retries. <br/>
      *
+     * The number of retries detemines how often the {@link org.xtreemfs.scheduler.stages.BenchmarkStage} retries to do
+     * the benchmark in case of failure. At each trial, {@link #decRetries()} is called. If {@link #decRetries()}
+     * returns a value greater then zero, the request is re-enqueued.
+     * 
      * @return the number of retries
      */
     public int getRetries();
+
+
+    /**
+     * Get the {@link org.xtreemfs.common.benchmark.BenchmarkConfig} to use with the request.
+     *
+     * @return
+     */
+    public ServiceConfig getConfig();
 
 }
