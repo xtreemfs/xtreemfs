@@ -260,8 +260,9 @@ public class Controller {
     }
 
 
-    private ArrayList<BenchmarkResult> awaitCompletion(int numberOfThreads, CompletionService<BenchmarkResult> completionService, ArrayList<Future<BenchmarkResult>> futures) throws InterruptedException {
+    private ArrayList<BenchmarkResult> awaitCompletion(int numberOfThreads, CompletionService<BenchmarkResult> completionService, ArrayList<Future<BenchmarkResult>> futures) throws Exception {
         ArrayList<BenchmarkResult> results = new ArrayList<BenchmarkResult>(numberOfThreads);
+        Exception exception = null;
         /* wait for all threads to finish */
         for (int i = 0; i < numberOfThreads; i++) {
             try {
@@ -271,7 +272,7 @@ public class Controller {
                 results.add(result);
             } catch (ExecutionException e) {
                 logMessage(Logging.LEVEL_ERROR, Logging.Category.tool, this, "An exception occurred within an benchmark task.");
-                logError(Logging.LEVEL_ERROR, this, e);
+                logError(Logging.LEVEL_ERROR, this, e.getCause());
                 /* cancel all other running benchmark tasks in case of failure in one task */
                 for (Future future : futures) {future.cancel(true);}
                 /*
@@ -283,11 +284,14 @@ public class Controller {
                  * Thread.currentThread().interrupt(). Therefore an additional cancellation needs to be deployed...
                  */
                 AbstractBenchmark.cancel();
+                exception = e;
             } catch (CancellationException e) {
                 // consume (planned cancellation from calling future.cancel())
                 logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Benchmark task has been canceled due to an exception in another benchmark task.");
             }
         }
+        if (null != exception)
+            throw new BenchmarkFailedException(exception.getCause());
         return results;
     }
 
