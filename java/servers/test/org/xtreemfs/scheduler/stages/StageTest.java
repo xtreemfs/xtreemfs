@@ -27,16 +27,11 @@ public class StageTest {
     static final int                  NUMBER_OF_OSDS = 2;
     static OSDConfig                  osdConfigs[];
     static OSD                        osds[];
-    static SchedulerConfig            config;
-    static BabuDBConfig               dbsConfig;
-    static SchedulerRequestDispatcher scheduler;
 
     @BeforeClass
     public static void setUpClass() throws Exception {
-        Logging.start(Logging.LEVEL_WARN, Logging.Category.all);
+        Logging.start(Logging.LEVEL_INFO, Logging.Category.all);
 
-        config = SetupUtils.createSchedulerConfig();
-        dbsConfig = SetupUtils.createSchedulerdbsConfig();
 
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
 
@@ -52,10 +47,6 @@ public class StageTest {
                 TestEnvironment.Services.SCHEDULER_CLIENT);
         testEnv.start();
 
-        scheduler = new SchedulerRequestDispatcher(config, dbsConfig);
-        scheduler.startup();
-        scheduler.waitForStartup();
-
         dirClient = new DIRClient(new DIRServiceClient(testEnv.getRpcClient(), null),
                 new InetSocketAddress[] { testEnv.getDIRAddress() }, 3, 1000);
 
@@ -67,8 +58,13 @@ public class StageTest {
 
     @AfterClass
     public static void tearDownClass() throws Exception {
-        scheduler.shutdown();
-        scheduler.waitForShutdown();
+        for (int i = 0; i < osds.length; i++) {
+            if (osds[i] != null) {
+                osds[i].shutdown();
+            }
+        }
         testEnv.shutdown();
+        dir.shutdown();
+        dir.waitForShutdown();
     }
 }
