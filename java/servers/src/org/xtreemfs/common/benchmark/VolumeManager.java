@@ -9,7 +9,6 @@
 package org.xtreemfs.common.benchmark;
 
 import org.xtreemfs.common.libxtreemfs.AdminClient;
-import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.foundation.logging.Logging;
@@ -123,6 +122,11 @@ class VolumeManager {
         Map<String, String> attributes = config.getPolicyAttributes();
         for (String attribute : attributes.keySet())
             volume.setPolicyAttribute(config.getUserCredentials(), attribute, attributes.get(attribute));
+
+        if (!config.getReplicationPolicy().equals("")) {
+            volume.setDefaultReplicationPolicy(config.getUserCredentials(), "/", config.getReplicationPolicy(),
+                    config.getReplicationFactor(), 0);
+        }
 
         return volume;
     }
