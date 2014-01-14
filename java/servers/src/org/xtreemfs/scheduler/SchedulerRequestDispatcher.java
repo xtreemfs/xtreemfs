@@ -22,7 +22,10 @@ import org.xtreemfs.babudb.api.database.Database;
 import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.common.KeyValuePairs;
+import org.xtreemfs.common.benchmark.BenchmarkConfig;
+import org.xtreemfs.common.benchmark.BenchmarkUtils;
 import org.xtreemfs.common.config.PolicyContainer;
+import org.xtreemfs.common.config.ServiceConfig;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.foundation.CrashReporter;
 import org.xtreemfs.foundation.LifeCycleListener;
@@ -57,6 +60,9 @@ import org.xtreemfs.scheduler.data.OSDDescription;
 import org.xtreemfs.scheduler.data.OSDPerformanceDescription;
 import org.xtreemfs.scheduler.data.store.ReservationStore;
 import org.xtreemfs.scheduler.operations.*;
+import org.xtreemfs.scheduler.stages.BenchmarkArgs;
+import org.xtreemfs.scheduler.stages.BenchmarkCompleteCallback;
+import org.xtreemfs.scheduler.stages.BenchmarkStage;
 
 public class SchedulerRequestDispatcher extends LifeCycleThread implements
 		RPCServerRequestListener, LifeCycleListener {
@@ -70,6 +76,7 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 	private SSLOptions sslOptions;
 	private SchedulerConfig config;
 	private RPCNIOSocketClient clientStage;
+    private BenchmarkStage benchmarkStage;
 	private static final String DB_NAME = "scheddb";
     private final HttpServer httpServ;
 	private DIRClient dirClient;
@@ -158,6 +165,9 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 
 			TimeSync.initialize(dirClient, config.getRemoteTimeSync(),
 					config.getLocalClockRenew());
+
+            benchmarkStage = new BenchmarkStage("benchmarkStage", 100);
+            benchmarkStage.setLifeCycleListener(this);
 		} catch (Exception ex) {
 			Logging.logMessage(Logging.LEVEL_ERROR, this, "STARTUP FAILED!");
 			Logging.logError(Logging.LEVEL_ERROR, this, ex);
@@ -200,7 +210,9 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 					config.getLocalClockRenew());
 			
 			clientStage.start();
+            benchmarkStage.start();
 			clientStage.waitForStartup();
+            benchmarkStage.waitForStartup();
 
             if(config.getOSDAutodiscover()) {
                 osdMonitor.start();
@@ -227,6 +239,7 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 		server.waitForShutdown();
 		database.shutdown();
 		clientStage.shutdown();
+        benchmarkStage.shutdown();
 
 		this.quit = true;
 		this.interrupt();
@@ -264,14 +277,14 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 	public void shutdownPerformed() {
 	}
 	
-	public void reloadOSDs() throws InterruptedException, IOException {
+	public void reloadOSDs() throws Exception {
 		ServiceSet.Builder knownOSDs = dirClient
 				.xtreemfs_service_get_by_type(null,
 						RPCAuthentication.authNone,
 						RPCAuthentication.userService,
 						ServiceType.SERVICE_TYPE_OSD).toBuilder();
 		
-		for (Service osd : knownOSDs.getServicesList()) {
+		for (final Service osd : knownOSDs.getServicesList()) {
 			boolean osdFound = false;
 
             for(OSDDescription o: this.getOsds()) {
@@ -293,28 +306,55 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
                     Logging.logError(Logging.LEVEL_DEBUG, this, ex);
                 }
             }
-			
-			if(!osdFound) {
-				// TODO(ckleineweber): Benchmark osd
-				OSDPerformanceDescription osdPerf = new OSDPerformanceDescription();
-				
-				// Determine free OSD capacity
 
-				String totalStr = KeyValuePairs.getValue(osd.getData().getDataList(), "free");
-				osdPerf.setCapacity(Double.valueOf(totalStr));
-				
-				// TODO(ckleineweber): Determine osd type
-				OSDDescription.OSDType type = OSDDescription.OSDType.UNKNOWN;
-				OSDDescription osdDescription = new OSDDescription(osd.getUuid(), osdPerf, type);
-				getOsds().add(osdDescription);
-				try {
-					getSchedulerDatabase().singleInsert(INDEX_ID_OSDS, osd.getUuid().getBytes(), osdDescription.getBytes(), null).get();
-				} catch(BabuDBException ex) {
-					Logging.logError(Logging.LEVEL_ERROR, this, ex);
-				}
-			}
-		}
-	}
+            if (!osdFound) {
+
+                /* Build Config */
+                BenchmarkConfig benchmarkConfig = BenchmarkConfig.newBuilder()
+                        .setParent(config)
+                        .setUserName("benchmark")
+                        .setBasefileSizeInBytes(10L * BenchmarkUtils.GiB_IN_BYTES)
+                        .build();
+
+                /* Benchmark Args */
+                BenchmarkArgs benchmarkArgs = new BenchmarkArgsImpl(10L * BenchmarkUtils.MiB_IN_BYTES,
+                        100L * BenchmarkUtils.MiB_IN_BYTES, 5, 3, osd.getUuid(), 3, benchmarkConfig);
+
+                /* Callback */
+                BenchmarkCompleteCallback cb = new BenchmarkCompleteCallback() {
+                    /*
+                     * Write the results of the benchmark to the db
+                     */
+                    @Override
+                    public void benchmarkComplete(OSDPerformanceDescription perfDescription) {
+
+                        // Determine free OSD capacity
+                        String totalStr = KeyValuePairs.getValue(osd.getData().getDataList(), "free");
+                        perfDescription.setCapacity(Double.valueOf(totalStr));
+
+                        // TODO(ckleineweber): Determine osd type
+                        OSDDescription.OSDType type = OSDDescription.OSDType.UNKNOWN;
+                        OSDDescription osdDescription = new OSDDescription(osd.getUuid(), perfDescription, type);
+                        getOsds().add(osdDescription);
+                        try {
+                            getSchedulerDatabase().singleInsert(INDEX_ID_OSDS, osd.getUuid().getBytes(),
+                                    osdDescription.getBytes(), null).get();
+                        } catch (BabuDBException ex) {
+                            Logging.logError(Logging.LEVEL_ERROR, this, ex);
+                        }
+                    }
+
+                    @Override
+                    public void benchmarkFailed(Throwable error) {
+                        Logging.logMessage(Logging.LEVEL_ERROR, this, "Benchmark of OSD %s failed", osd.getUuid());
+                    }
+                };
+
+                /* enqueue the benchmark request */
+                benchmarkStage.enqueueOperation(0, benchmarkArgs, null, cb);
+            }
+        }
+    }
 
 
     public Database getSchedulerDatabase() throws BabuDBException {
@@ -533,5 +573,64 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 
     public SchedulerConfig getConfig() {
         return config;
+    }
+
+    static class BenchmarkArgsImpl implements BenchmarkArgs {
+        private long sequentialSize;
+        private long randomSize;
+        private int numberOfThreads;
+        private int numberOfRepetitions;
+        private int retries;
+        private String osdUuid;
+        private ServiceConfig config;
+
+        BenchmarkArgsImpl(long sequentialSize, long randomSize, int numberOfThreads, int numberOfRepetitions,
+                          String osdUuid, int numberOfRetries, ServiceConfig config) {
+            this.sequentialSize = sequentialSize;
+            this.randomSize = randomSize;
+            this.numberOfThreads = numberOfThreads;
+            this.numberOfRepetitions = numberOfRepetitions;
+            this.osdUuid = osdUuid;
+            this.retries = numberOfRetries;
+            this.config = config;
+        }
+
+        @Override
+        public long getSequentialSize() {
+            return sequentialSize;
+        }
+
+        @Override
+        public long getRandomSize() {
+            return randomSize;
+        }
+
+        @Override
+        public int getNumberOfThreads() {
+            return numberOfThreads;
+        }
+
+        @Override
+        public int getNumberOfRepetitions() {
+            return numberOfRepetitions;
+        }
+
+        @Override
+        public String getOsdUuid() {
+            return osdUuid;
+        }
+
+        @Override
+        public void decRetries() {
+            retries--;
+        }
+
+        @Override
+        public int getRetries() {
+            return retries;
+        }
+
+        @Override
+        public ServiceConfig getConfig() { return config; }
     }
 }

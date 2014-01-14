@@ -52,7 +52,7 @@ public abstract class Stage<Args, Callback> extends LifeCycleThread {
      * @param request
      * @param callback
      */
-    protected void enqueueOperation(int stageOp, Args args, SchedulerRequest request, Callback callback) {
+    public void enqueueOperation(int stageOp, Args args, SchedulerRequest request, Callback callback) {
         enqueueOperation(stageOp, args, request, null, callback);
     }
 
@@ -72,7 +72,7 @@ public abstract class Stage<Args, Callback> extends LifeCycleThread {
      *            an optional additional view buffer to the data, which will be
      *            freed if the request needs to be dropped due to overload
      */
-    protected void enqueueOperation(int stageOp, Args args, SchedulerRequest request, ReusableBuffer createdViewBuffer,
+    public void enqueueOperation(int stageOp, Args args, SchedulerRequest request, ReusableBuffer createdViewBuffer,
             Callback callback) {
 
         if (request == null) {
