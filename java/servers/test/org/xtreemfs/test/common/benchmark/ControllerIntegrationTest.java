@@ -40,7 +40,7 @@ public class ControllerIntegrationTest {
     private static RPC.UserCredentials    userCredentials;
     private static RPC.Auth               auth           = RPCAuthentication.authNone;
     private static DIRClient              dirClient;
-    private static final int              NUMBER_OF_OSDS = 2;
+    private static final int              NUMBER_OF_OSDS = 3;
     private static OSDConfig              osdConfigs[];
     private static OSD                    osds[];
     private static MRCRequestDispatcher   mrc2;
@@ -382,6 +382,42 @@ public class ControllerIntegrationTest {
         assertEquals("UUID:localhost:42641",
                 volumeB.getSuitableOSDs(userCredentials, "benchmarks/sequentialBenchmark/benchFile0", 1).get(0));
         deleteVolumes("TestVolA", "TestVolB");
+    }
+
+    @Test
+    public void testConfigReplicationPolicy() throws Exception {
+        configBuilder.setReplicationPolicy("WqRq");
+        configBuilder.setReplicationFactor(3);
+        Volume volumeA = performBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, configBuilder, BenchmarkType.SEQ_WRITE);
+
+        String default_rp = volumeA.getXAttr(userCredentials,"", "xtreemfs.default_rp");
+        assertEquals("replication-factor:3", default_rp.split(",")[0].replace("\"", "").replace("{", ""));
+        assertEquals("update-policy:WqRq", default_rp.split(",")[2].replace("\"", "").replace("}", ""));
+
+        deleteVolumes("TestVolA");
+    }
+
+    /*
+     * Tests, that performing a benchmark on a volume for which a default replication policy was set does not override the policy
+     */
+    @Test
+    public void testConfigReplicationPolicyNotSet() throws Exception {
+
+        List<GlobalTypes.KeyValuePair> volumeAttributes = new ArrayList<GlobalTypes.KeyValuePair>();
+        client.createVolume(authNone, userCredentials, "TestVolA", 511, "test", "test",
+                GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
+                GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, 128, 1, volumeAttributes);
+        Volume volume = client.openVolume("TestVolA", null, new Options());
+        volume.setDefaultReplicationPolicy(userCredentials, "/", "WqRq", 3, 0);
+        volume.close();
+
+        configBuilder.setUserName("test").setGroup("test");
+        Volume volumeA = performBenchmark(10L * BenchmarkUtils.MiB_IN_BYTES, configBuilder, BenchmarkType.SEQ_WRITE);
+
+        String default_rp = volumeA.getXAttr(userCredentials, "", "xtreemfs.default_rp");
+        assertEquals("replication-factor:3", default_rp.split(",")[0].replace("\"", "").replace("{", ""));
+        assertEquals("update-policy:WqRq", default_rp.split(",")[2].replace("\"", "").replace("}", ""));
+        deleteVolumes("TestVolA");
     }
 
     /* The NoCleanup option is testet implicitly in all the above Config tests */

@@ -130,6 +130,8 @@ public class ServiceConfig extends Config {
         USERNAME("username", "benchmark", String.class, false),
         GROUP("group", "benchmark", String.class, false),
         OSD_SELECTION_POLICIES("osd_selection_policies", "", String.class, false),
+        REPLICATION_POLICY("replication_policy", "", String.class, false),
+        REPLICATION_FACTOR("replication_factor", 3, Integer.class, false),
         CHUNK_SIZE_IN_BYTES("chunk_size_in_bytes", 131072, Integer.class, false), // 131072 = 128 KiB
         STRIPE_SIZE_IN_BYTES("stripe_size_in_bytes", 131072, Integer.class, false), // 131072 = 128 KiB
         STRIPE_SIZE_SET("stripe_size_set", false, Boolean.class, false),

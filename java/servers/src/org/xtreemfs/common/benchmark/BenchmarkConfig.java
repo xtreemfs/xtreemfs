@@ -46,6 +46,8 @@ public class BenchmarkConfig extends ServiceConfig {
             Parameter.USERNAME,
             Parameter.GROUP,
             Parameter.OSD_SELECTION_POLICIES,
+            Parameter.REPLICATION_POLICY,
+            Parameter.REPLICATION_FACTOR,
             Parameter.CHUNK_SIZE_IN_BYTES,
             Parameter.STRIPE_SIZE_IN_BYTES,
             Parameter.STRIPE_SIZE_SET,
@@ -212,6 +214,33 @@ public class BenchmarkConfig extends ServiceConfig {
      */
     public Map<String, String> getPolicyAttributes(){
         return this.policyAttributes;
+    }
+
+    /**
+     * Get the default replication policy (used when creating or opening volumes). <br/>
+     * As the {@code replicationFlags} in
+     * {@link org.xtreemfs.common.libxtreemfs.Volume#setDefaultReplicationPolicy(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials, String, String, int, int)}
+     * is set to 0, this is only intended for write/read replication. <br/>
+     * 
+     * Default: No policy is set. If an existing volume is used this means, that a already set policy of the volume is
+     * used. If a new volume is created, the defaults (no replication policy) is used.
+     * 
+     * @return the replication policy
+     */
+    public String getReplicationPolicy(){
+        return (String) parameter.get(Parameter.REPLICATION_POLICY);
+    }
+
+    /**
+     * Get the replication factor for the replication policy. <br/>
+     * Only used when explicitly setting a replication policy for a volume. <br/>
+     *
+     * Default: 3 (min for WqRq)
+     *
+     * @return the replication policy
+     */
+    public Integer getReplicationFactor(){
+        return (Integer) parameter.get(Parameter.REPLICATION_FACTOR);
     }
 
     /**
@@ -594,6 +623,37 @@ public class BenchmarkConfig extends ServiceConfig {
             else
                 props.setProperty(key, osdSelectionPolicies+",1002");
             this.policyAttributes.put("1002.uuids", uuids);
+            return this;
+        }
+
+        /**
+         * Set the default replication policy, used when creating or opening volumes. <br/>
+         * As the {@code replicationFlags} in
+         * {@link org.xtreemfs.common.libxtreemfs.Volume#setDefaultReplicationPolicy(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials, String, String, int, int)}
+         * is set to 0, this is only intended for write/read replication. <br/>
+         *
+         * Default: No policy is set. If an existing volume is used this means, that a already set policy of the volume is
+         * used. If a new volume is created, the default (no replication) is used.
+         *
+         * @param policy
+         * @return the builder
+         */
+        public ConfigBuilder setReplicationPolicy(String policy) {
+            props.setProperty(Parameter.REPLICATION_POLICY.getPropertyString(), policy);
+            return this;
+        }
+
+        /**
+         * Set the replication factor for the replication policy. <br/>
+         * Only used when explicitly setting a replication policy for a volume. <br/>
+         *
+         * Default: 3 (min for WqRq)
+         *
+         * @param replicationFactor
+         * @return the builder
+         */
+        public ConfigBuilder setReplicationFactor(int replicationFactor) {
+            props.setProperty(Parameter.REPLICATION_FACTOR.getPropertyString(), Integer.toString(replicationFactor));
             return this;
         }
 
