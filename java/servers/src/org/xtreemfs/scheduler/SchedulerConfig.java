@@ -19,7 +19,9 @@ public class SchedulerConfig extends ServiceConfig{
             Parameter.REMOTE_TIME_SYNC,
             Parameter.SCHEDULER_SERVICE,
             Parameter.OSD_AUTODISCOVER,
-            Parameter.OSD_CAPABILITIES_FILE
+            Parameter.OSD_CAPABILITIES_FILE,
+            /* Benchmark */
+            Parameter.BASEFILE_SIZE_IN_BYTES
 	};
 	
 	public SchedulerConfig(String filename) throws IOException {

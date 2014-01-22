@@ -309,16 +309,9 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 
             if (!osdFound) {
 
-                /* Build Config */
-                BenchmarkConfig benchmarkConfig = BenchmarkConfig.newBuilder()
-                        .setParent(config)
-                        .setUserName("benchmark")
-                        .setBasefileSizeInBytes(10L * BenchmarkUtils.GiB_IN_BYTES)
-                        .build();
-
                 /* Benchmark Args */
-                BenchmarkArgs benchmarkArgs = new BenchmarkArgsImpl(10L * BenchmarkUtils.MiB_IN_BYTES,
-                        100L * BenchmarkUtils.MiB_IN_BYTES, 5, 3, osd.getUuid(), 3, benchmarkConfig);
+                BenchmarkArgs benchmarkArgs = new BenchmarkArgsImpl(100L * BenchmarkUtils.MiB_IN_BYTES,
+                        10L * BenchmarkUtils.MiB_IN_BYTES, 3, 1, osd.getUuid(), 3, config);
 
                 /* Callback */
                 BenchmarkCompleteCallback cb = new BenchmarkCompleteCallback() {
