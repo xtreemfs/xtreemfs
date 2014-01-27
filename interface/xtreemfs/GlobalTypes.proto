@@ -101,10 +101,12 @@ message NewFileSize {
 enum StripingPolicyType {
     // Default striping policy (round-robin distribution).
     STRIPING_POLICY_RAID0 = 0;
+    // Erasure code striping policy (.
+    STRIPING_POLICY_ERASURECODE = 1;
 }
 
 message StripingPolicy {
-    // Type, always STRIPING_POLICY_RAID0.
+    // Type (by default STRIPING_POLICY_RAID0).
     required StripingPolicyType type = 1;
     // Size of stripe (objects) in *kB*!
     required fixed32 stripe_size = 2;
