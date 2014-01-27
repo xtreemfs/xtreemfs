@@ -214,8 +214,14 @@ public class VolumeImplementation implements Volume, AdminVolume {
      */
     @Override
     public void start() throws IOException {
+        start(false);
+        
+    }
+    
+    @Override
+    public void start(boolean startThreadsAsDaemons) throws IOException {
         networkClient = new RPCNIOSocketClient(sslOptions, volumeOptions.getRequestTimeout_s() * 1000,
-                volumeOptions.getLingerTimeout_s() * 1000, "Volume");
+                volumeOptions.getLingerTimeout_s() * 1000, "Volume", startThreadsAsDaemons);
         networkClient.start();
         try {
             networkClient.waitForStartup();
@@ -229,10 +235,10 @@ public class VolumeImplementation implements Volume, AdminVolume {
         openFileTable = new ConcurrentHashMap<Long, FileInfo>();
 
         // // Start periodic threads.
-        fileSizeUpdateThread = new PeriodicFileSizeUpdateThread(this);
+        fileSizeUpdateThread = new PeriodicFileSizeUpdateThread(this, startThreadsAsDaemons);
         fileSizeUpdateThread.start();
 
-        xcapRenewalThread = new PeriodicXcapRenewalThread(this);
+        xcapRenewalThread = new PeriodicXcapRenewalThread(this, startThreadsAsDaemons);
         xcapRenewalThread.start();
 
     }

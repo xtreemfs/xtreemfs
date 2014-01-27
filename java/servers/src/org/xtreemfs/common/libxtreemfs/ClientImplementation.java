@@ -119,6 +119,11 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
      * Array with all DIR addresses.
      */
     private String[]                               dirAddresses              = null;
+    
+    /**
+     * If true, all threads (inclusive volumes opened by this client) are daemons. 
+     */
+    private boolean                                startThreadsAsDaemons     = false;
 
     protected ClientImplementation(String[] dirAddresses, UserCredentials userCredentials,
             SSLOptions sslOptions, Options options) {
@@ -147,11 +152,16 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
 
         this.listOpenVolumes = new ConcurrentLinkedQueue<Volume>();
     }
-
     @Override
     public void start() throws Exception {
+        start(false);
+    }
+    @Override
+    public void start(boolean startThreadsAsDaemons) throws Exception {
+        
+        this.startThreadsAsDaemons = startThreadsAsDaemons;
         this.networkClient = new RPCNIOSocketClient(this.dirServiceSSLOptions,
-                this.options.getRequestTimeout_s() * 1000, this.options.getLingerTimeout_s() * 1000, "Client");
+                this.options.getRequestTimeout_s() * 1000, this.options.getLingerTimeout_s() * 1000, "Client", startThreadsAsDaemons);
         this.networkClient.start();
         this.networkClient.waitForStartup();
 
@@ -219,7 +229,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
 
         VolumeImplementation volume = new VolumeImplementation(this, this.clientUUID, mrcUuidIterator,
                 volumeName, sslOptions, options);
-        volume.start();
+        volume.start(startThreadsAsDaemons);
 
         this.listOpenVolumes.add(volume);
         return volume;

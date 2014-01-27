@@ -28,7 +28,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.util.Progressable;
-import org.apache.hadoop.util.StringUtils;
 import org.xtreemfs.common.libxtreemfs.Client;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.FileHandle;
@@ -46,7 +45,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntry;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
 
 /**
  * 
@@ -121,7 +119,7 @@ public class XtreemFSFileSystem extends FileSystem {
                 xtreemfsOptions.generateSSLOptions(), xtreemfsOptions);
         try {
             // TODO: Fix stupid Exception in libxtreemfs
-            xtreemfsClient.start();
+            xtreemfsClient.start(true);
         } catch (Exception ex) {
             Logger.getLogger(XtreemFSFileSystem.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -160,7 +158,7 @@ public class XtreemFSFileSystem extends FileSystem {
 
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "file system init complete: " + uri.getUserInfo());
-        }
+        }       
     }
 
     @Override
@@ -509,7 +507,7 @@ public class XtreemFSFileSystem extends FileSystem {
         }
         return result;
     }
-
+    
     /**
      * Make path absolute and remove volume if path starts with a volume
      * 

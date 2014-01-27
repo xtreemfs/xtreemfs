@@ -31,6 +31,13 @@ public interface Client {
      * Need to be called before client can be used. Initializes required stuff.
      */
     public void start() throws Exception;
+    
+    /**
+     * Same as start(), but add option to start Threads as daemons. Daemon threads are only used by the XtreemFSHadoopClient.
+     * 
+     * @param startThreadsAsDaemons if true, all threads are as daemons.
+     */
+    public void start(boolean startThreadsAsDaemons) throws Exception;
 
     public void shutdown();
 
