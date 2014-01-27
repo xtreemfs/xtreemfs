@@ -37,6 +37,14 @@ public interface Volume {
      * Start this volume, e.g. initialize all required things.
      */
     void start() throws Exception;
+    
+    
+    /**
+     * Same as start(), but add option to start threads as daemons. Daemon threads are only used by the XtreemFSHadoopClient.
+     * 
+     * @param startThreadsAsDaemons if true, all threads are daemons.
+     */
+    void start(boolean startThreadsAsDaemons) throws Exception;
 
     /**
      * Close the volume.

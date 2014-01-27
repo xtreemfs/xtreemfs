@@ -19,8 +19,9 @@ public class PeriodicFileSizeUpdateThread extends Thread {
 
     private VolumeImplementation volume = null;
 
-    public PeriodicFileSizeUpdateThread(VolumeImplementation volume) {
+    public PeriodicFileSizeUpdateThread(VolumeImplementation volume, boolean startAsDaemon) {
         this.volume = volume;
+        setDaemon(startAsDaemon);
     }
 
     /*
