@@ -201,6 +201,7 @@ class TestEnvironment:
                                 dir_uri=self.__dir.getServiceUrl(),
                                 pkcs12_file_path=pkcs12_file_path,
                                 pkcs12_passphrase=pkcs12_passphrase,
+                                striping_policy=v.setdefault('striping_policy', 'RAID0'),
                                 stripe_width=v['stripe_width'],
                                 stripe_size=v['stripe_size'],
                                 rwr_policy=v.setdefault('rwr_policy', 'quorum'),

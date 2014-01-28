@@ -18,6 +18,7 @@ class Volume:
                  dir_uri,
                  pkcs12_file_path,
                  pkcs12_passphrase,
+                 striping_policy,
                  stripe_width,
                  stripe_size,
                  rwr_policy,
@@ -36,6 +37,7 @@ class Volume:
         self.__dir_uri = dir_uri
         self.__pkcs12_file_path = pkcs12_file_path
         self.__pkcs12_passphrase = pkcs12_passphrase
+        self.__striping_policy = striping_policy
         self.__stripe_width = stripe_width
         self.__stripe_size = stripe_size
         self.__rwr_policy = rwr_policy
@@ -50,7 +52,7 @@ class Volume:
 
         mkfs_xtreemfs_args = [mkfs_xtreemfs_file_path]
         mkfs_xtreemfs_args.extend(("-d", DEBUG_LEVELS[int(self.__debug_level)]))
-        mkfs_xtreemfs_args.extend(("-p", 'RAID0'))
+        mkfs_xtreemfs_args.extend(("-p", self.__striping_policy))
         if self.__pkcs12_file_path is not None: mkfs_xtreemfs_args.extend(("--pkcs12-file-path", self.__pkcs12_file_path))
         if self.__pkcs12_passphrase is not None: mkfs_xtreemfs_args.extend(("--pkcs12-passphrase", self.__pkcs12_passphrase))
         mkfs_xtreemfs_args.extend(("-s", str(self.__stripe_size)))
