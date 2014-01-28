@@ -597,6 +597,14 @@ public final class GlobalTypes {
      * </pre>
      */
     STRIPING_POLICY_RAID0(0, 0),
+    /**
+     * <code>STRIPING_POLICY_ERASURECODE = 1;</code>
+     *
+     * <pre>
+     * Erasure code striping policy (.
+     * </pre>
+     */
+    STRIPING_POLICY_ERASURECODE(1, 1),
     ;
 
     /**
@@ -607,6 +615,14 @@ public final class GlobalTypes {
      * </pre>
      */
     public static final int STRIPING_POLICY_RAID0_VALUE = 0;
+    /**
+     * <code>STRIPING_POLICY_ERASURECODE = 1;</code>
+     *
+     * <pre>
+     * Erasure code striping policy (.
+     * </pre>
+     */
+    public static final int STRIPING_POLICY_ERASURECODE_VALUE = 1;
 
 
     public final int getNumber() { return value; }
@@ -614,6 +630,7 @@ public final class GlobalTypes {
     public static StripingPolicyType valueOf(int value) {
       switch (value) {
         case 0: return STRIPING_POLICY_RAID0;
+        case 1: return STRIPING_POLICY_ERASURECODE;
         default: return null;
       }
     }
@@ -1829,7 +1846,7 @@ public final class GlobalTypes {
      * <code>required .xtreemfs.pbrpc.StripingPolicyType type = 1;</code>
      *
      * <pre>
-     * Type, always STRIPING_POLICY_RAID0.
+     * Type (by default STRIPING_POLICY_RAID0).
      * </pre>
      */
     boolean hasType();
@@ -1837,7 +1854,7 @@ public final class GlobalTypes {
      * <code>required .xtreemfs.pbrpc.StripingPolicyType type = 1;</code>
      *
      * <pre>
-     * Type, always STRIPING_POLICY_RAID0.
+     * Type (by default STRIPING_POLICY_RAID0).
      * </pre>
      */
     org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType getType();
@@ -1997,7 +2014,7 @@ public final class GlobalTypes {
      * <code>required .xtreemfs.pbrpc.StripingPolicyType type = 1;</code>
      *
      * <pre>
-     * Type, always STRIPING_POLICY_RAID0.
+     * Type (by default STRIPING_POLICY_RAID0).
      * </pre>
      */
     public boolean hasType() {
@@ -2007,7 +2024,7 @@ public final class GlobalTypes {
      * <code>required .xtreemfs.pbrpc.StripingPolicyType type = 1;</code>
      *
      * <pre>
-     * Type, always STRIPING_POLICY_RAID0.
+     * Type (by default STRIPING_POLICY_RAID0).
      * </pre>
      */
     public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType getType() {
@@ -2353,7 +2370,7 @@ public final class GlobalTypes {
        * <code>required .xtreemfs.pbrpc.StripingPolicyType type = 1;</code>
        *
        * <pre>
-       * Type, always STRIPING_POLICY_RAID0.
+       * Type (by default STRIPING_POLICY_RAID0).
        * </pre>
        */
       public boolean hasType() {
@@ -2363,7 +2380,7 @@ public final class GlobalTypes {
        * <code>required .xtreemfs.pbrpc.StripingPolicyType type = 1;</code>
        *
        * <pre>
-       * Type, always STRIPING_POLICY_RAID0.
+       * Type (by default STRIPING_POLICY_RAID0).
        * </pre>
        */
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType getType() {
@@ -2373,7 +2390,7 @@ public final class GlobalTypes {
        * <code>required .xtreemfs.pbrpc.StripingPolicyType type = 1;</code>
        *
        * <pre>
-       * Type, always STRIPING_POLICY_RAID0.
+       * Type (by default STRIPING_POLICY_RAID0).
        * </pre>
        */
       public Builder setType(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType value) {
@@ -2389,7 +2406,7 @@ public final class GlobalTypes {
        * <code>required .xtreemfs.pbrpc.StripingPolicyType type = 1;</code>
        *
        * <pre>
-       * Type, always STRIPING_POLICY_RAID0.
+       * Type (by default STRIPING_POLICY_RAID0).
        * </pre>
        */
       public Builder clearType() {
@@ -10525,32 +10542,32 @@ public final class GlobalTypes {
       "nPolicyType\022#\n\037REPLICA_SELECTION_POLICY_" +
       "SIMPLE\020\001*i\n\nSnapConfig\022\036\n\032SNAP_CONFIG_SN" +
       "APS_DISABLED\020\000\022\036\n\032SNAP_CONFIG_ACCESS_CUR" +
-      "RENT\020\001\022\033\n\027SNAP_CONFIG_ACCESS_SNAP\020\002*/\n\022S" +
+      "RENT\020\001\022\033\n\027SNAP_CONFIG_ACCESS_SNAP\020\002*P\n\022S" +
       "tripingPolicyType\022\031\n\025STRIPING_POLICY_RAI",
-      "D0\020\000*\270\001\n\005PORTS\022\033\n\025DIR_HTTP_PORT_DEFAULT\020" +
-      "\256\357\001\022\034\n\026DIR_PBRPC_PORT_DEFAULT\020\376\376\001\022\033\n\025MRC" +
-      "_HTTP_PORT_DEFAULT\020\254\357\001\022\034\n\026MRC_PBRPC_PORT" +
-      "_DEFAULT\020\374\376\001\022\033\n\025OSD_HTTP_PORT_DEFAULT\020\260\357" +
-      "\001\022\034\n\026OSD_PBRPC_PORT_DEFAULT\020\200\377\001*+\n\tCONST" +
-      "ANTS\022\036\n\032XCAP_RENEW_INTERVAL_IN_MIN\020\001*\202\003\n" +
-      "\016SYSTEM_V_FCNTL\022\035\n\031SYSTEM_V_FCNTL_H_O_RD" +
-      "ONLY\020\000\022\035\n\031SYSTEM_V_FCNTL_H_O_WRONLY\020\001\022\033\n" +
-      "\027SYSTEM_V_FCNTL_H_O_RDWR\020\002\022\035\n\031SYSTEM_V_F" +
-      "CNTL_H_O_APPEND\020\010\022\035\n\030SYSTEM_V_FCNTL_H_O_",
-      "CREAT\020\200\002\022\035\n\030SYSTEM_V_FCNTL_H_O_TRUNC\020\200\004\022" +
-      "\034\n\027SYSTEM_V_FCNTL_H_O_EXCL\020\200\010\022\033\n\027SYSTEM_" +
-      "V_FCNTL_H_O_SYNC\020\020\022\036\n\030SYSTEM_V_FCNTL_H_S" +
-      "_IFREG\020\200\200\002\022\036\n\030SYSTEM_V_FCNTL_H_S_IFDIR\020\200" +
-      "\200\001\022\036\n\030SYSTEM_V_FCNTL_H_S_IFLNK\020\200\300\002\022\035\n\030SY" +
-      "STEM_V_FCNTL_H_S_IFIFO\020\200 *\330\001\n\tREPL_FLAG\022" +
-      "\032\n\026REPL_FLAG_FULL_REPLICA\020\001\022\031\n\025REPL_FLAG" +
-      "_IS_COMPLETE\020\002\022\035\n\031REPL_FLAG_STRATEGY_RAN" +
-      "DOM\020\004\022#\n\037REPL_FLAG_STRATEGY_RAREST_FIRST" +
-      "\020\010\022!\n\035REPL_FLAG_STRATEGY_SEQUENTIAL\020\020\022-\n",
-      ")REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETCHI" +
-      "NG\020 *%\n\010SERVICES\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n\003OS" +
-      "D\020\003B(\n&org.xtreemfs.pbrpc.generatedinter" +
-      "faces"
+      "D0\020\000\022\037\n\033STRIPING_POLICY_ERASURECODE\020\001*\270\001" +
+      "\n\005PORTS\022\033\n\025DIR_HTTP_PORT_DEFAULT\020\256\357\001\022\034\n\026" +
+      "DIR_PBRPC_PORT_DEFAULT\020\376\376\001\022\033\n\025MRC_HTTP_P" +
+      "ORT_DEFAULT\020\254\357\001\022\034\n\026MRC_PBRPC_PORT_DEFAUL" +
+      "T\020\374\376\001\022\033\n\025OSD_HTTP_PORT_DEFAULT\020\260\357\001\022\034\n\026OS" +
+      "D_PBRPC_PORT_DEFAULT\020\200\377\001*+\n\tCONSTANTS\022\036\n" +
+      "\032XCAP_RENEW_INTERVAL_IN_MIN\020\001*\202\003\n\016SYSTEM" +
+      "_V_FCNTL\022\035\n\031SYSTEM_V_FCNTL_H_O_RDONLY\020\000\022" +
+      "\035\n\031SYSTEM_V_FCNTL_H_O_WRONLY\020\001\022\033\n\027SYSTEM" +
+      "_V_FCNTL_H_O_RDWR\020\002\022\035\n\031SYSTEM_V_FCNTL_H_",
+      "O_APPEND\020\010\022\035\n\030SYSTEM_V_FCNTL_H_O_CREAT\020\200" +
+      "\002\022\035\n\030SYSTEM_V_FCNTL_H_O_TRUNC\020\200\004\022\034\n\027SYST" +
+      "EM_V_FCNTL_H_O_EXCL\020\200\010\022\033\n\027SYSTEM_V_FCNTL" +
+      "_H_O_SYNC\020\020\022\036\n\030SYSTEM_V_FCNTL_H_S_IFREG\020" +
+      "\200\200\002\022\036\n\030SYSTEM_V_FCNTL_H_S_IFDIR\020\200\200\001\022\036\n\030S" +
+      "YSTEM_V_FCNTL_H_S_IFLNK\020\200\300\002\022\035\n\030SYSTEM_V_" +
+      "FCNTL_H_S_IFIFO\020\200 *\330\001\n\tREPL_FLAG\022\032\n\026REPL" +
+      "_FLAG_FULL_REPLICA\020\001\022\031\n\025REPL_FLAG_IS_COM" +
+      "PLETE\020\002\022\035\n\031REPL_FLAG_STRATEGY_RANDOM\020\004\022#" +
+      "\n\037REPL_FLAG_STRATEGY_RAREST_FIRST\020\010\022!\n\035R",
+      "EPL_FLAG_STRATEGY_SEQUENTIAL\020\020\022-\n)REPL_F" +
+      "LAG_STRATEGY_SEQUENTIAL_PREFETCHING\020 *%\n" +
+      "\010SERVICES\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n\003OSD\020\003B(\n&" +
+      "org.xtreemfs.pbrpc.generatedinterfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
