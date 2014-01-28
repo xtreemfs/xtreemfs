@@ -98,6 +98,8 @@ void VolumeImplementation::Start() {
 
   // Register StripingPolicies.
   stripe_translators_[STRIPING_POLICY_RAID0] = new StripeTranslatorRaid0();
+  stripe_translators_[STRIPING_POLICY_ERASURECODE] =
+      new StripeTranslatorErasureCode();
 
   // Start periodic threads.
   xcap_renewal_thread_.reset(new boost::thread(boost::bind(
