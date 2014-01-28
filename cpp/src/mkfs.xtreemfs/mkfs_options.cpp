@@ -201,10 +201,13 @@ void MkfsOptions::ParseCommandLine(int argc, char** argv) {
 
   if (boost::iequals(default_striping_policy_type_string, "RAID0")) {
     default_striping_policy_type = xtreemfs::pbrpc::STRIPING_POLICY_RAID0;
+  } else if (boost::iequals(default_striping_policy_type_string,
+		  	  	  	  	  	"ERASURECODE")) {
+	default_striping_policy_type = xtreemfs::pbrpc::STRIPING_POLICY_ERASURECODE;
   } else {
-    throw InvalidCommandLineParametersException("Currently the RAID0 striping"
-        "policy is the only one available. Set the stripe width (see -w) to 1"
-        " to disable striping at all.");
+    throw InvalidCommandLineParametersException("Currently the RAID0 and "
+        "ERASURECODE striping policy are the only two available. Set the stripe"
+		" width (see -w) to 1 to disable striping at all.");
   }
 
   // Process volume attributes shortcuts.
