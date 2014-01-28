@@ -106,6 +106,15 @@ VolumeConfigs = {
                     'mount_options': [ ],
                     'mkfs_options':  [ '--max-tries=10']
                 },
+    'erasurecode' : {
+                    'striping_policy': 'ERASURECODE',
+                    'stripe_size': 128,
+                    'stripe_width': 2,
+                    'rwr_factor': 0,
+                    'ronly_factor': 0,
+                    'mount_options': [ ],
+                    'mkfs_options':  [ '--max-tries=10']
+                },
     'replicated_wqrq' : {
                     'stripe_size': 128,
                     'stripe_width': 1,
