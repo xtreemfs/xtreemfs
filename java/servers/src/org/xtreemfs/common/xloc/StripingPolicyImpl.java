@@ -9,8 +9,9 @@
 package org.xtreemfs.common.xloc;
 
 import java.util.Iterator;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
+
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 
 
@@ -38,6 +39,8 @@ public abstract class StripingPolicyImpl {
     public static StripingPolicyImpl getPolicy(Replica replica, int relOsdPosition) {
         if (replica.getStripingPolicy().getType() == StripingPolicyType.STRIPING_POLICY_RAID0) {
             return new RAID0Impl(replica,relOsdPosition);
+        } else if (replica.getStripingPolicy().getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE) {
+            return new ErasureCodeImpl(replica, relOsdPosition);
         } else {
             throw new IllegalArgumentException("unknown striping polciy requested");
         }
