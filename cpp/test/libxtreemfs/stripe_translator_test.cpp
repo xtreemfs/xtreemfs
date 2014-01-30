@@ -21,7 +21,23 @@ using namespace std;
 using namespace xtreemfs::pbrpc;
 using namespace xtreemfs::util;
 
+
 namespace xtreemfs {
+
+template<typename T>
+::testing::AssertionResult ArraysMatch(const T expected,
+                                       const T actual,
+                                       size_t size) {
+    for (size_t i(0); i < size; ++i){
+        if (expected[i] != actual[i]){
+            return ::testing::AssertionFailure() << "array[" << i
+                << "] (" << actual[i] << ") != expected[" << i
+                << "] (" << expected[i] << ")";
+        }
+    }
+
+    return ::testing::AssertionSuccess();
+}
 
 class StripeTranslatorTest : public ::testing::Test {
  protected:
@@ -59,13 +75,15 @@ TEST_F(StripeTranslatorTest, ErasureCodeNormalOperation) {
       write_buf.get(), buffer_size, 0, striping_policies, &operations);
 
   vector<xtreemfs::WriteOperation> expected_operations;
+  boost::scoped_array<char> expected_write_buffer(new char[buffer_size]());
 
     for (size_t i = 0; i < chunk_count; ++i) {
       vector<size_t> osd_offsets;
       osd_offsets.push_back(i);
       expected_operations.push_back(xtreemfs::WriteOperation(
-          i, osd_offsets, chunk_size, 0, write_buf.get()+(chunk_size*i)));
+          i, osd_offsets, chunk_size, 0, expected_write_buffer.get()+(chunk_size*i)));
   }
+
     // Verify WriteRequests.
   ASSERT_EQ(expected_operations.size(), operations.size());
   for (size_t i = 0; i < expected_operations.size(); ++i) {
@@ -77,7 +95,7 @@ TEST_F(StripeTranslatorTest, ErasureCodeNormalOperation) {
     }
 
     EXPECT_EQ(expected_operations[i].req_size, operations[i].req_size);
-    EXPECT_EQ(expected_operations[i].data, operations[i].data);
+    EXPECT_TRUE(ArraysMatch(expected_operations[i].data, operations[i].data, chunk_size));
     EXPECT_EQ(expected_operations[i].obj_number, operations[i].obj_number);
     EXPECT_EQ(expected_operations[i].req_offset, operations[i].req_offset);
   }
