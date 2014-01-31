@@ -77,9 +77,12 @@ TEST_F(StripeTranslatorTest, ErasureCodeNormalOperation) {
     vector<size_t> osd_offsets;
     osd_offsets.push_back(i);
     expected_operations.push_back(
-        xtreemfs::WriteOperation(i, osd_offsets, kChunkSize,
-            0 /* file offset */,
-            expected_write_buffer.get() + (kChunkSize * i)));
+        xtreemfs::WriteOperation(i,
+                                 osd_offsets,
+                                 kChunkSize,
+                                 0 /* file offset */,
+                                 expected_write_buffer.get() + (kChunkSize * i))
+                                );
   }
 
   // Verify WriteRequests.
