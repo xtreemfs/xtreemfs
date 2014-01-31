@@ -16,6 +16,7 @@
 #include "util/logging.h"
 #include "xtreemfs/GlobalTypes.pb.h"
 #include "libxtreemfs/stripe_translator.h"
+#include "libxtreemfs/stripe_translator_erasure_code.h"
 
 using namespace std;
 using namespace xtreemfs::pbrpc;
@@ -25,18 +26,16 @@ using namespace xtreemfs::util;
 namespace xtreemfs {
 
 template<typename T>
-::testing::AssertionResult ArraysMatch(const T expected,
-                                       const T actual,
-                                       size_t size) {
-    for (size_t i(0); i < size; ++i){
-        if (expected[i] != actual[i]){
-            return ::testing::AssertionFailure() << "array[" << i
-                << "] (" << actual[i] << ") != expected[" << i
-                << "] (" << expected[i] << ")";
-        }
+::testing::AssertionResult ArraysMatch(const T* expected, const T* actual,
+    size_t size) {
+  for (size_t i = 0; i < size; ++i) {
+    if (expected[i] != actual[i]) {
+      return ::testing::AssertionFailure() << "array[" << i << "] ("
+          << actual[i] << ") != expected[" << i << "] (" << expected[i] << ")";
     }
+  }
 
-    return ::testing::AssertionSuccess();
+  return ::testing::AssertionSuccess();
 }
 
 class StripeTranslatorTest : public ::testing::Test {
@@ -58,7 +57,7 @@ TEST_F(StripeTranslatorTest, ErasureCodeNormalOperation) {
   size_t chunk_size = 1024;
   size_t chunk_count = 2;
   size_t buffer_size = chunk_size * chunk_count;
-  boost::scoped_array<char> write_buf(new char[buffer_size]());
+  boost::scoped_array<char> write_buffer(new char[buffer_size]());
 
   // Define striping policy.
   StripingPolicy striping_policy;
@@ -72,7 +71,7 @@ TEST_F(StripeTranslatorTest, ErasureCodeNormalOperation) {
   // Translate to WriteRequests.
   vector<WriteOperation> operations;
   stripe_translator->TranslateWriteRequest(
-      write_buf.get(), buffer_size, 0, striping_policies, &operations);
+      write_buffer.get(), buffer_size, 0, striping_policies, &operations);
 
   vector<xtreemfs::WriteOperation> expected_operations;
   boost::scoped_array<char> expected_write_buffer(new char[buffer_size]());
