@@ -75,40 +75,6 @@ class StripeTranslator {
       std::vector<ReadOperation>* operations) const = 0;
 };
 
-class StripeTranslatorRaid0 : public StripeTranslator {
- public:
-  virtual void TranslateWriteRequest(
-      const char *buf,
-      size_t size,
-      int64_t offset,
-      PolicyContainer policies,
-      std::vector<WriteOperation>* operations) const;
-
-  virtual void TranslateReadRequest(
-      char *buf,
-      size_t size,
-      int64_t offset,
-      PolicyContainer policies,
-      std::vector<ReadOperation>* operations) const;
-};
-
-class StripeTranslatorErasureCode : public StripeTranslator {
- public:
-  virtual void TranslateWriteRequest(
-      const char *buf,
-      size_t size,
-      int64_t offset,
-      PolicyContainer policies,
-      std::vector<WriteOperation>* operations) const;
-
-  virtual void TranslateReadRequest(
-      char *buf,
-      size_t size,
-      int64_t offset,
-      PolicyContainer policies,
-      std::vector<ReadOperation>* operations) const;
-};
-
 }  // namespace xtreemfs
 
 #endif  // CPP_INCLUDE_LIBXTREEMFS_STRIPE_TRANSLATOR_H_
