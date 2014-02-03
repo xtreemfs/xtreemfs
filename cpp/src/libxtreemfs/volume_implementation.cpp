@@ -20,6 +20,8 @@
 #include "libxtreemfs/file_info.h"
 #include "libxtreemfs/helper.h"
 #include "libxtreemfs/stripe_translator.h"
+#include "libxtreemfs/stripe_translator_erasure_code.h"
+#include "libxtreemfs/stripe_translator_raid0.h"
 #include "libxtreemfs/uuid_iterator.h"
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "rpc/client.h"

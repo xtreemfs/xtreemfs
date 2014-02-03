@@ -4,7 +4,6 @@
  * Licensed under the BSD License, see LICENSE file for details.
  *
  */
-
 #include <gtest/gtest.h>
 
 #include <boost/scoped_array.hpp>
@@ -71,6 +70,7 @@ TEST_F(StripeTranslatorTest, ErasureCodeNormalOperation) {
   stripe_translator->TranslateWriteRequest(
       write_buffer.get(), kBufferSize, 0, striping_policies, &operations);
 
+  // Define expected WriteOperations.
   vector<xtreemfs::WriteOperation> expected_operations;
   boost::scoped_array<char> expected_write_buffer(new char[kBufferSize]());
   for (size_t i = 0; i < kChunkCount; ++i) {

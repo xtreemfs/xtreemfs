@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "libxtreemfs/stripe_translator.h"
+#include "libxtreemfs/stripe_translator_raid0.h"
 #include "libxtreemfs/uuid_container.h"
 #include "libxtreemfs/uuid_item.h"
 #include "libxtreemfs/container_uuid_iterator.h"
