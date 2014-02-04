@@ -61,6 +61,7 @@ TEST_F(StripeTranslatorTest, ErasureCodeNormalOperation) {
   striping_policy.set_type(STRIPING_POLICY_ERASURECODE);
   striping_policy.set_stripe_size(kChunkSize / 1024);
   striping_policy.set_width(kChunkCount);
+  striping_policy.set_parity_width(1);
 
   StripeTranslator::PolicyContainer striping_policies;
   striping_policies.push_back(&striping_policy);
@@ -73,8 +74,8 @@ TEST_F(StripeTranslatorTest, ErasureCodeNormalOperation) {
   // Define expected WriteOperations.
   vector<xtreemfs::WriteOperation> expected_operations;
   boost::scoped_array<char> expected_write_buffer(new char[kBufferSize]());
+  vector<size_t> osd_offsets;
   for (size_t i = 0; i < kChunkCount; ++i) {
-    vector<size_t> osd_offsets;
     osd_offsets.push_back(i);
     expected_operations.push_back(
         xtreemfs::WriteOperation(i,
@@ -84,6 +85,21 @@ TEST_F(StripeTranslatorTest, ErasureCodeNormalOperation) {
                                  expected_write_buffer.get() + (kChunkSize * i))
                                 );
   }
+  // Define expected redundant WriteOperation.
+  boost::scoped_array<char> expected_write_buffer_redundance(new char[kBufferSize]());
+  for (size_t i = 0; i < kBufferSize; ++i) {
+    expected_write_buffer_redundance[i]= expected_operations[0].data[i] ^
+                                         expected_operations[1].data[i];
+  }
+
+  size_t i = 2;
+  osd_offsets.push_back(i);
+  expected_operations.push_back(
+         xtreemfs::WriteOperation(i,
+                                  osd_offsets,
+                                  kChunkSize,
+                                  0 /* file offset */,
+                                  expected_write_buffer_redundance.get()));
 
   // Verify WriteRequests.
   ASSERT_EQ(expected_operations.size(), operations.size());
