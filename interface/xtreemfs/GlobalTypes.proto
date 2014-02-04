@@ -111,10 +111,14 @@ enum StripingPolicyType {
 message StripingPolicy {
     // Type (by default STRIPING_POLICY_RAID0).
     required StripingPolicyType type = 1;
-    // Size of stripe (objects) in *kB*!
+    // Size of a single chunk (object) in *kB*!
+    // The name of the field is wrong: This is not the total size of the stripe.
+    // Instead, the total size of a stripe in XtreemFS is: stripe_size * (width + parity_width)
     required fixed32 stripe_size = 2;
-    // Number of OSDs to distribute stripes on.
+    // Number of OSDs to distribute data chunks on.
     required fixed32 width = 3;
+    // Number of OSDs to distribute parity chunks on.
+    optional fixed32 parity_width = 4;
 }
 
 // Details for a file replica.
