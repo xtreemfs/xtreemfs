@@ -130,7 +130,7 @@ public final class ReusableBuffer {
             
             if (parentBuffer == null) {
                 // wraped buffers
-                ReusableBuffer view = new ReusableBuffer(this.buffer, this.size);
+                ReusableBuffer view = new ReusableBuffer(this.buffer);
                 view.viewParent = this;
                 
                 return view;
@@ -155,7 +155,7 @@ public final class ReusableBuffer {
             
             if (parentBuffer == null) {
                 // wraped buffers
-                ReusableBuffer view = new ReusableBuffer(this.buffer, this.size);
+                ReusableBuffer view = new ReusableBuffer(this.buffer);
                 view.viewParent = this.viewParent;
                 
                 return view;
@@ -627,6 +627,7 @@ public final class ReusableBuffer {
         }
     }
     
+    @Override
     protected void finalize() {
         
         if (!returned && reusable) {
@@ -676,6 +677,7 @@ public final class ReusableBuffer {
         
     }
     
+    @Override
     public String toString() {
         return "ReusableBuffer( capacity=" + this.capacity() + " limit=" + this.limit() + " position="
             + this.position() + ")";
