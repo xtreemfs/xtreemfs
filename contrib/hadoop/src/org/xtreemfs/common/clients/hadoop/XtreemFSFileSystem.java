@@ -114,7 +114,6 @@ public class XtreemFSFileSystem extends FileSystem {
         // initialize XtreemFS Client with default Options and without SSL.
         Options xtreemfsOptions = new Options();
         xtreemfsOptions.setMetadataCacheSize(0);
-        System.out.println("URI:" + uri.getHost() + ":" + uri.getPort());
         xtreemfsClient = ClientFactory.createClient(uri.getHost() + ":" + uri.getPort(), userCredentials,
                 xtreemfsOptions.generateSSLOptions(), xtreemfsOptions);
         try {
@@ -170,7 +169,6 @@ public class XtreemFSFileSystem extends FileSystem {
     public FSDataInputStream open(Path path, int bufferSize) throws IOException {
         Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
-        Logging.logMessage(Logging.LEVEL_WARN, Logging.Category.misc, this, "PATH: " + path);
         final FileHandle fileHandle = xtreemfsVolume.openFile(userCredentials, pathString,
                 SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber(), 0);
         if (Logging.isDebug()) {
@@ -536,7 +534,8 @@ public class XtreemFSFileSystem extends FileSystem {
      */
     private Volume getVolumeFromPath(Path path) throws IOException {
         String pathString = makeAbsolute(path).toUri().getPath();
-        if (defaultVolumeDirectories.contains(pathString.split("/")[1]) || pathString.lastIndexOf("/") == 0) {
+        String[] splittedPath = pathString.split("/");
+        if (splittedPath.length > 1 && defaultVolumeDirectories.contains(splittedPath[1]) || pathString.lastIndexOf("/") == 0) {
             // First part of path is a directory or path is a file in the root of defaultVolume
             return defaultVolume;
         } else {
