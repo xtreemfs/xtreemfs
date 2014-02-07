@@ -118,6 +118,11 @@ public class RPCNIOSocketClient extends LifeCycleThread {
     }
     
     public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout,
+            int sendBufferSize, int receiveBufferSize, SocketAddress localBindPoint, String threadName) throws IOException {
+    	this(sslOptions, requestTimeout, connectionTimeout, sendBufferSize, receiveBufferSize, localBindPoint, threadName, false);
+    }
+    
+    public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout,
         int sendBufferSize, int receiveBufferSize, SocketAddress localBindPoint, String threadName, boolean startAsDaemon) throws IOException {
         super(threadName);
         setDaemon(startAsDaemon);
