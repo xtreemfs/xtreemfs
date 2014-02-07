@@ -164,7 +164,7 @@ public class OSDDescription {
         ResourceSet result = new ResourceSet();
         double freeCapacity = this.getCapabilities().getCapacity();
         double freeIOPS = this.getCapabilities().getIops();
-        double freeSeqTP = this.getCapabilities().getStreamingPerformance().get(this.getReservations().size());
+        double freeSeqTP = this.getCapabilities().getStreamingPerformance().get(this.getReservations().size() + 1);
 
         for(Reservation r: this.getReservations()) {
             freeCapacity -= r.getCapacity();
