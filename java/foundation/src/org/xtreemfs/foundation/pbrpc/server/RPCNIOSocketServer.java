@@ -9,6 +9,7 @@
 package org.xtreemfs.foundation.pbrpc.server;
 
 import java.io.IOException;
+import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
@@ -145,8 +146,13 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
         }
         
         socket.socket().setReuseAddress(true);
-        socket.socket().bind(
-            bindAddr == null ? new InetSocketAddress(bindPort) : new InetSocketAddress(bindAddr, bindPort));
+        try {
+            socket.socket().bind(
+                    bindAddr == null ? new InetSocketAddress(bindPort) : new InetSocketAddress(bindAddr, bindPort));
+        } catch (BindException e) {
+            // Rethrow exception with the failed port number.
+            throw new BindException(e.getMessage() + ". Port number: " + bindPort);
+        }
         this.bindPort = bindPort;
         
         // create a selector and register socket
@@ -173,6 +179,7 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
     /**
      * Stop the server and close all connections.
      */
+    @Override
     public void shutdown() {
         this.quit = true;
         this.interrupt();
@@ -184,6 +191,7 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
      * @param request
      *            the request
      */
+    @Override
     public void sendResponse(RPCServerRequest request, RPCServerResponse response) {
         assert (response != null);
 
@@ -222,6 +230,7 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
         }
     }
     
+    @Override
     public void run() {
         
         notifyStarted();
