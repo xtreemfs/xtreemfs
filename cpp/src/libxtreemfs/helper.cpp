@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2010-2011 by Patrick Schaefer, Zuse Institute Berlin
- *               2011-2012 by Michael Berlin, Zuse Institute Berlin
+ *               2011-2014 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -8,19 +8,16 @@
 
 #include "libxtreemfs/helper.h"
 
+#include <arpa/inet.h>
 #include <cstdio>
 #include <cstdlib>
+#include <ifaddrs.h>
+#include <netdb.h>
 #include <stdint.h>
-#ifdef __APPLE__
-#include <sys/utsname.h>
-#endif  // __APPLE__
-#ifdef WIN32
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif  // WIN32
+#include <sys/socket.h>
 
 #include <boost/lexical_cast.hpp>
+#include <iostream>
 #include <string>
 
 #include "libxtreemfs/options.h"
@@ -30,6 +27,15 @@
 #include "xtreemfs/GlobalTypes.pb.h"
 #include "xtreemfs/MRC.pb.h"
 #include "xtreemfs/OSD.pb.h"
+
+#ifdef __APPLE__
+#include <sys/utsname.h>
+#endif  // __APPLE__
+#ifdef WIN32
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif  // WIN32
 
 using namespace std;
 using namespace xtreemfs::pbrpc;
@@ -393,5 +399,141 @@ void ConvertUTF8ToWindows(const std::string& utf8,
   }
 }
 #endif  // WIN32
+
+/** Returns the number of ones in the array "netmask" as network prefix. */
+int GetNetworkPrefixUnix(const uint32_t* netmask, size_t length) {
+  // Iterate over "netmask" in chunks of uint32_t.
+  int c = 0;
+  for (uint32_t i = 0; i < length / sizeof(uint32_t); i++) {
+    uint32_t v = *(reinterpret_cast<const uint32_t*>(netmask + i));
+    for (; v; c++) {
+      v &= v - 1;  // Clear the least significant bit set.
+    }
+  }
+  return c;
+}
+
+/** Masks "address" with "netmask" (AND) and produces "network_address". */
+void BitwiseAndOfAddressses(
+    char* address, char* netmask, char* network_address, size_t length) {
+  // Process data in chunks of 1 byte chars.
+  for (int i = 0; i < length / sizeof(char); i++) {
+    network_address[i] = address[i] & netmask[i];
+  }
+}
+
+#ifdef __linux__
+std::string GetNetworkStringUnix(const struct ifaddrs* ifaddr) {
+  assert(ifaddr->ifa_addr);
+  assert(ifaddr->ifa_netmask);
+  assert(ifaddr->ifa_addr->sa_family == ifaddr->ifa_netmask->sa_family);
+
+  ostringstream network;
+
+  // Network address.
+  char ip_printable[NI_MAXHOST];
+  int result = -1;
+  if (ifaddr->ifa_netmask->sa_family == AF_INET) {
+    struct sockaddr_in network_address = {};
+    network_address.sin_family = ifaddr->ifa_netmask->sa_family;
+    BitwiseAndOfAddressses(
+        reinterpret_cast<char*>(&reinterpret_cast<struct sockaddr_in*>(
+            ifaddr->ifa_addr)->sin_addr),
+        reinterpret_cast<char*>(&reinterpret_cast<struct sockaddr_in*>(
+            ifaddr->ifa_netmask)->sin_addr),
+        reinterpret_cast<char*>(&network_address.sin_addr),
+        sizeof(network_address.sin_addr));
+    result = getnameinfo(reinterpret_cast<struct sockaddr*>(&network_address),
+                         sizeof(network_address),
+                         ip_printable,
+                         NI_MAXHOST,
+                         NULL,
+                         0,
+                         NI_NUMERICHOST);
+  } else if (ifaddr->ifa_netmask->sa_family == AF_INET6) {
+    struct sockaddr_in6 network_address = {};
+    network_address.sin6_family = ifaddr->ifa_netmask->sa_family;
+    BitwiseAndOfAddressses(
+        reinterpret_cast<char*>(&reinterpret_cast<struct sockaddr_in6*>(
+            ifaddr->ifa_addr)->sin6_addr),
+        reinterpret_cast<char*>(&reinterpret_cast<struct sockaddr_in6*>(
+            ifaddr->ifa_netmask)->sin6_addr),
+        reinterpret_cast<char*>(&network_address.sin6_addr),
+        sizeof(network_address.sin6_addr));
+    result = getnameinfo(reinterpret_cast<struct sockaddr*>(&network_address),
+                         sizeof(network_address),
+                         ip_printable,
+                         NI_MAXHOST,
+                         NULL,
+                         0,
+                         NI_NUMERICHOST);
+  } else {
+    assert(ifaddr->ifa_netmask->sa_family == AF_INET ||
+           ifaddr->ifa_netmask->sa_family == AF_INET6);
+  }
+  if (result == 0) {
+    network << ip_printable;
+  } else {
+    throw XtreemFSException("Failed to convert an IP address from the internal"
+        " network order representation to the printable text presentation."
+        " Error: " + boost::lexical_cast<string>(result));
+  }
+
+  // Separator.
+  network << "/";
+
+  // Prefix.
+  if (ifaddr->ifa_netmask->sa_family == AF_INET) {
+    struct in_addr netmask =
+        reinterpret_cast<struct sockaddr_in*>(ifaddr->ifa_netmask)->sin_addr;
+    network << GetNetworkPrefixUnix(reinterpret_cast<uint32_t*>(&netmask),
+                                    sizeof(netmask));
+  } else if (ifaddr->ifa_netmask->sa_family == AF_INET6) {
+    struct in6_addr netmask =
+        reinterpret_cast<struct sockaddr_in6*>(ifaddr->ifa_netmask)->sin6_addr;
+    network << GetNetworkPrefixUnix(reinterpret_cast<uint32_t*>(&netmask),
+                                    sizeof(netmask));
+  } else {
+    assert(ifaddr->ifa_netmask->sa_family == AF_INET ||
+           ifaddr->ifa_netmask->sa_family == AF_INET6);
+  }
+
+  return network.str();
+}
+#endif  // __linux__
+
+boost::unordered_set<std::string> GetNetworks() {
+  boost::unordered_set<std::string> result;
+
+#ifdef __linux__
+  struct ifaddrs* ifaddr = NULL;
+  if (getifaddrs(&ifaddr) == -1) {
+    freeifaddrs(ifaddr);
+    throw XtreemFSException("Failed to get the list of network interfaces."
+        " Error: " + boost::lexical_cast<string>(errno));
+  }
+  for (struct ifaddrs* ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+    if (ifa->ifa_addr == NULL) {
+      continue;
+    }
+    if (ifa->ifa_addr->sa_family == AF_INET ||
+        ifa->ifa_addr->sa_family == AF_INET6) {
+      try {
+        result.insert(GetNetworkStringUnix(ifa));
+      } catch (const XtreemFSException& e) {
+        if (Logging::log->loggingActive(LEVEL_WARN)) {
+          Logging::log->getLog(LEVEL_WARN) << "Converting the information about"
+              " the network interface: " << ifa->ifa_name << " with the"
+              " family: " << ifa->ifa_addr->sa_family << " failed."
+              " Error: " << e.what() << " The device was ignored." << endl;
+        }
+      }
+    }
+  }
+  freeifaddrs(ifaddr);
+#endif  // __linux__
+
+  return result;
+}
 
 }  // namespace xtreemfs
