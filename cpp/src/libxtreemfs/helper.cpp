@@ -140,7 +140,7 @@ std::string GetOSDUUIDFromXlocSet(const xtreemfs::pbrpc::XLocSet& xlocs,
 std::string GetOSDUUIDFromXlocSet(
     const xtreemfs::pbrpc::XLocSet& xlocs) {
   // Get the UUID for the first replica (r=0) and the head OSD (i.e. the first
-  // stripe, s=0).
+  // chunk, c=0).
   return GetOSDUUIDFromXlocSet(xlocs, 0, 0);
 }
 
