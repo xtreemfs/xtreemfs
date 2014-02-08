@@ -269,7 +269,7 @@ bool CheckIfUnsignedInteger(const std::string& string) {
 }
 
 RPCOptions RPCOptionsFromOptions(const Options& options) {
-  return RPCOptions(options.max_tries, 
+  return RPCOptions(options.max_tries,
                     options.retry_delay_s,
                     false,  // do not delay last attempt
                     options.was_interrupted_function);
@@ -354,7 +354,7 @@ void ConvertUTF8ToWindows(const std::string& utf8,
 }
 
 std::wstring ConvertUTF8ToWindows(const std::string& utf8) {
-  wstring win; 
+  wstring win;
   ConvertUTF8ToWindows(utf8, &win);
   return win;
 }
