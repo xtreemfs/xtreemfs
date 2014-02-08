@@ -19,7 +19,7 @@ public class BufferPoolTest {
         ReusableBuffer buf = null;
 
         assertEquals(
-                "BufferPool must be empty because no buffers were returned yet and therefore nothing can be pooled yet.",
+                "BufferPool must be empty because no buffers were returned yet and there nothing can be pooled yet.",
                 0, BufferPool.getPoolSize(TEST_BUFFER_SIZE));
 
         buf = BufferPool.allocate(TEST_BUFFER_SIZE);
