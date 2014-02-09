@@ -57,6 +57,9 @@ TEST_F(FuseOptionsTest, TestCommandLineMultipleOptionsPerMinusoOption) {
   EXPECT_EQ("allow_other", options.fuse_options[1]);
   EXPECT_EQ("bogus", options.fuse_options[2]);
 
+  for (int i = 0; i < argc; i++) {
+    free(argv[i]);
+  }
   delete[] argv;
 }
 
