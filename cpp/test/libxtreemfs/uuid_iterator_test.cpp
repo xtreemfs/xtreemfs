@@ -78,6 +78,7 @@ class UUIDIteratorTest : public ::testing::Test {
 
   virtual void TearDown() {
     shutdown_logger();
+    atexit(google::protobuf::ShutdownProtobufLibrary);
   }
 
   boost::scoped_ptr<UUIDIterator> uuid_iterator_;

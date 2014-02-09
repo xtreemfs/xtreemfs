@@ -28,6 +28,7 @@ class FuseOptionsTest : public ::testing::Test {
 
   virtual void TearDown() {
     shutdown_logger();
+    atexit(google::protobuf::ShutdownProtobufLibrary);
   }
 };
 

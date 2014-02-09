@@ -59,6 +59,7 @@ class UserMappingGridmapUnicore6Test : public ::testing::Test {
     remove(gridmap_file_path_.c_str());
 
     shutdown_logger();
+    atexit(google::protobuf::ShutdownProtobufLibrary);
   }
   std::string gridmap_file_path_;
 
@@ -166,6 +167,7 @@ class UserMappingGridmapUnicoreTest : public ::testing::Test {
     remove(gridmap_file_path_.c_str());
 
     shutdown_logger();
+    atexit(google::protobuf::ShutdownProtobufLibrary);
   }
   std::string gridmap_file_path_;
 

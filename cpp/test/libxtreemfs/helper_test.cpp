@@ -12,6 +12,8 @@
 #include <netdb.h>
 #include <sys/socket.h>
 
+#include <google/protobuf/stubs/common.h>
+
 #include "libxtreemfs/helper.h"
 #include "util/logging.h"
 
@@ -29,6 +31,7 @@ class HelperTest : public ::testing::Test {
 
   virtual void TearDown() {
     shutdown_logger();
+    atexit(google::protobuf::ShutdownProtobufLibrary);
   }
 };
 
