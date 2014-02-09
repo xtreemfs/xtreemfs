@@ -43,6 +43,7 @@ class UserMappingGridmapGlobusTest : public ::testing::Test {
     ofstream out(gridmap_file_path_.c_str());
     out << "\"/C=DE/O=GridGermany/OU=Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB)/OU=CSR/CN=Michael Berlin\" root\n";
     out.close();
+    ASSERT_FALSE(out.fail());
 
     user_mapping_.reset(new UserMappingGridmapGlobus(
         gridmap_file_path_,
@@ -112,10 +113,10 @@ TEST_F(UserMappingGridmapGlobusTest, GridmapFileReload) {
             uc.groups(1));
 
   // Rewrite file with another entry.
-  boost::this_thread::sleep(boost::posix_time::seconds(1));
   ofstream out(gridmap_file_path_.c_str());
   out << "\"/C=DE/O=GridGermany/OU=Dummy OU 1/CN=Dummy Username\" root\n";
   out.close();
+  ASSERT_FALSE(out.fail());
   // Wait for reload.
   boost::this_thread::sleep(boost::posix_time::seconds(2));
 
