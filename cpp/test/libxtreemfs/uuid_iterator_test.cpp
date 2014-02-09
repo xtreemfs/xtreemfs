@@ -306,7 +306,7 @@ TEST_F(ContainerUUIDIteratorTest, CreateContainerAndGetUUID) {
   std::vector<ReadOperation> operations;
   off_t read_offsets[] = {0, 128 * 1024};
 
-  for (int i = 0; i < sizeof(read_offsets); ++i) {
+  for (int i = 0; i < sizeof(read_offsets) / sizeof(off_t); ++i) {
     operations.clear();
     translator->TranslateReadRequest(NULL,
                                      128 * 1024,
