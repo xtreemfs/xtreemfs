@@ -1,5 +1,6 @@
 package org.xtreemfs.sandbox;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -15,7 +16,6 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.ONCRPCServiceURL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.PORTS;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
-import org.xtreemfs.test.SetupUtils;
 
 /**
  * Minimal example which uses the libxtreemfs for Java and default SSL certificates from tests/certs/ to test
@@ -42,6 +42,9 @@ import org.xtreemfs.test.SetupUtils;
  */
 public class ExampleLibxtreemfsWithSSL {
 
+    /** Directory with testing SSL certificates. Path relative to the root of the repository. */
+    public static final String CERT_DIR = "tests/certs/";
+
     /**
      * @param args
      *            args[0] = URL to existing volume e.g., pbrpcs://localhost/regular
@@ -67,8 +70,10 @@ public class ExampleLibxtreemfsWithSSL {
             final Options options = new Options();
             final UserCredentials userCredentials = UserCredentials.newBuilder()
                     .setUsername(System.getProperty("user.name")).addGroups("root").build();
-            final SSLOptions sslOptions = !url.getProtocol().equals(Schemes.SCHEME_PBRPC) ? SetupUtils
-                    .createClientSSLOptions() : null;
+            final SSLOptions sslOptions = url.getProtocol().equals(Schemes.SCHEME_PBRPC) ? null : new SSLOptions(
+                    new FileInputStream(CERT_DIR + "Client.p12"), "passphrase", SSLOptions.PKCS12_CONTAINER,
+                    new FileInputStream(CERT_DIR + "trusted.jks"), "passphrase", SSLOptions.JKS_CONTAINER, false,
+                    false, null);
 
             // Alternatively, specify own certificate files for debugging:
             // final SSLOptions sslOptions = new SSLOptions(
