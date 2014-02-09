@@ -23,11 +23,11 @@ public class UUIDResolverTest extends TestCase {
 
     private TestEnvironment      testEnv;
 
-    private DIRConfig            dirConfig;
+    private final DIRConfig            dirConfig;
 
     private UserCredentials      userCredentials;
 
-    private Auth                 auth = RPCAuthentication.authNone;
+    private final Auth                 auth = RPCAuthentication.authNone;
 
     /**
      * 
@@ -38,6 +38,7 @@ public class UUIDResolverTest extends TestCase {
         dirConfig = SetupUtils.createDIRConfig();
     }
 
+    @Override
     @Before
     public void setUp() throws Exception {
         System.out.println("TEST: " + getClass().getSimpleName());
@@ -56,6 +57,7 @@ public class UUIDResolverTest extends TestCase {
         userCredentials = UserCredentials.newBuilder().setUsername("test").addGroups("test").build();
     }
 
+    @Override
     @After
     public void tearDown() throws Exception {
         testEnv.shutdown();
@@ -133,6 +135,8 @@ public class UUIDResolverTest extends TestCase {
 
         // if there is no correct connection the resolver cant resolve and
         // should throw an VolumeNotFoundException
+        // Do not retry here to avoid unnecessary lengthy executions.
+        options.setMaxTries(1);
         ClientImplementation clientFail = (ClientImplementation) ClientFactory.createClient(
                 "doesntexists:44444", userCredentials, null, options);
         clientFail.start();
