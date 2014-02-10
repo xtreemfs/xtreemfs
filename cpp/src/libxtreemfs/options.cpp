@@ -41,7 +41,9 @@ Options::Options()
     : general_("General options"),
       optimizations_("Optimizations"),
       error_handling_("Error Handling options"),
+#ifdef HAS_OPENSSL
       ssl_options_("SSL options"),
+#endif  // HAS_OPENSSL
       grid_options_("Grid Support options"),
       vivaldi_options_("Vivaldi Options"),
       xtreemfs_advanced_options_("XtreemFS Advanced options") {
@@ -94,15 +96,17 @@ Options::Options()
   request_timeout_s = 15;
   linger_timeout_s = 600;  // 10 Minutes.
 
+#ifdef HAS_OPENSSL
   // SSL options.
   ssl_pem_cert_path = "";
   ssl_pem_key_path = "";
   ssl_pem_key_pass = "";
   ssl_pkcs12_path = "";
   ssl_pkcs12_pass = "";
+  grid_ssl = false;
+#endif  // HAS_OPENSSL
 
   // Grid Support options.
-  grid_ssl = false;
   grid_auth_mode_globus = false;
   grid_auth_mode_unicore = false;
   grid_gridmap_location = "";
@@ -240,6 +244,7 @@ void Options::GenerateProgramOptionsDescriptions() {
         po::value(&linger_timeout_s)->default_value(linger_timeout_s),
         "Time after which idle connections will be closed (in seconds).");
 
+#ifdef HAS_OPENSSL
   ssl_options_.add_options()
     ("pem-certificate-file-path",
         po::value(&ssl_pem_cert_path)->default_value(ssl_pem_cert_path),
@@ -257,13 +262,14 @@ void Options::GenerateProgramOptionsDescriptions() {
     ("pkcs12-passphrase",
         po::value(&ssl_pkcs12_pass)->default_value(ssl_pkcs12_pass),
         "PKCS#12 passphrase (If the argument is set to '-', the user will be"
-        " prompted for the passphrase.)");
-
-  grid_options_.add_options()
+        " prompted for the passphrase.)")
     ("grid-ssl",
         po::value(&grid_ssl)->zero_tokens(),
         "Explicitly use the XtreemFS Grid-SSL mode. Same as specifying "
-        "pbrpcg:// in the volume URL.")
+        "pbrpcg:// in the volume URL.");
+#endif  // HAS_OPENSSL
+
+  grid_options_.add_options()
     ("globus-gridmap",
         po::value(&grid_auth_mode_globus)->zero_tokens(),
         "Authorize using globus gridmap file.")
@@ -349,11 +355,17 @@ void Options::GenerateProgramOptionsDescriptions() {
 
   // These options are parsed
   all_descriptions_.add(general_).add(optimizations_).add(error_handling_)
-      .add(ssl_options_).add(grid_options_).add(vivaldi_options_)
+#ifdef HAS_OPENSSL
+      .add(ssl_options_)
+#endif  // HAS_OPENSSL
+      .add(grid_options_).add(vivaldi_options_)
       .add(xtreemfs_advanced_options_).add(deprecated_options_);
   // These options are shown in the "-h" output
   visible_descriptions_.add(general_).add(optimizations_).add(error_handling_)
-      .add(ssl_options_).add(grid_options_).add(vivaldi_options_);
+#ifdef HAS_OPENSSL
+      .add(ssl_options_)
+#endif  // HAS_OPENSSL
+      .add(grid_options_).add(vivaldi_options_);
 
 
   all_descriptions_initialized_ = true;
@@ -428,6 +440,7 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
     }
   }
 
+#ifdef HAS_OPENSSL
   // PEM certificate _and_ private key are both required.
   if ((!ssl_pem_cert_path.empty() && ssl_pem_key_path.empty()) ||
       (!ssl_pem_key_path.empty() && ssl_pem_cert_path.empty())) {
@@ -480,6 +493,7 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
         "No PKCS#12 certificate passphrase was given. Please enter it now:",
         &ssl_pkcs12_pass);
   }
+#endif  // HAS_OPENSSL
 
   // Return unparsed options.
   return po::collect_unrecognized(parsed.options, po::include_positional);
@@ -515,7 +529,9 @@ std::string Options::ShowCommandLineHelpVolumeCreationAndDeletion() {
   GenerateProgramOptionsDescriptions();
   ostringstream stream;
   stream << general_ << endl
+#ifdef HAS_OPENSSL
          << ssl_options_ << endl
+#endif  // HAS_OPENSSL
          << grid_options_;
   return stream.str();
 }
@@ -524,7 +540,10 @@ std::string Options::ShowCommandLineHelpVolumeListing() {
   GenerateProgramOptionsDescriptions();
   ostringstream stream;
   stream << general_ << endl
-         << ssl_options_;
+#ifdef HAS_OPENSSL
+         << ssl_options_
+#endif  // HAS_OPENSSL
+         ;
   return stream.str();
 }
 
@@ -533,11 +552,16 @@ std::string Options::ShowVersion(const std::string& component) {
 }
 
 bool Options::SSLEnabled() const {
+#ifdef HAS_OPENSSL
   return !ssl_pem_cert_path.empty() || !ssl_pkcs12_path.empty();
+#else
+  return false;
+#endif  // HAS_OPENSSL
 }
 
 xtreemfs::rpc::SSLOptions* Options::GenerateSSLOptions() const {
   xtreemfs::rpc::SSLOptions* opts = NULL;
+#ifdef HAS_OPENSSL
   if (SSLEnabled()) {
     opts = new xtreemfs::rpc::SSLOptions(
         ssl_pem_key_path, ssl_pem_cert_path, ssl_pem_key_pass,  // PEM.
@@ -545,6 +569,9 @@ xtreemfs::rpc::SSLOptions* Options::GenerateSSLOptions() const {
         boost::asio::ssl::context::pem,
         grid_ssl || protocol == PBRPCURL::SCHEME_PBRPCG);
   }
+#else
+  opts = new xtreemfs::rpc::SSLOptions();
+#endif  // HAS_OPENSSL
 
   return opts;
 }

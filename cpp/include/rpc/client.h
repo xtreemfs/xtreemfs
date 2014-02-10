@@ -12,7 +12,6 @@
 #include <stdint.h>
 
 #include <boost/asio.hpp>
-#include <boost/asio/ssl.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 #include <boost/system/error_code.hpp>
@@ -25,6 +24,10 @@
 #include "rpc/client_connection.h"
 #include "rpc/client_request.h"
 #include "rpc/ssl_options.h"
+
+#ifdef HAS_OPENSSL
+#include <boost/asio/ssl.hpp>
+#endif  // HAS_OPENSSL
 
 #if (BOOST_VERSION / 100000 > 1) || (BOOST_VERSION / 100 % 1000 > 35)
 #include <boost/unordered_map.hpp>
@@ -82,12 +85,8 @@ class Client {
 
   void ShutdownHandler();
 
-  std::string get_pem_password_callback() const;
-  std::string get_pkcs12_password_callback() const;
-
   boost::asio::io_service service_;
-  bool use_gridssl_;
-  boost::asio::ssl::context* ssl_context_;
+
   connection_map connections_;
   /** Contains all pending requests which are uniquely identified by their
    *  call id.
@@ -119,10 +118,16 @@ class Client {
   int32_t connect_timeout_s_;
   int32_t max_con_linger_;
 
-  const SSLOptions* ssl_options;
+#ifdef HAS_OPENSSL
+  std::string get_pem_password_callback() const;
+  std::string get_pkcs12_password_callback() const;
 
+  bool use_gridssl_;
+  const SSLOptions* ssl_options;
   char* pemFileName;
   char* certFileName;
+  boost::asio::ssl::context* ssl_context_;
+#endif  // HAS_OPENSSL
 
   FRIEND_TEST(ClientTestFastLingerTimeout, LingerTests);
   FRIEND_TEST(ClientTestFastLingerTimeoutConnectTimeout, LingerTests);
