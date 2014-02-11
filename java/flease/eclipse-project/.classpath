@@ -4,6 +4,6 @@
 	<classpathentry kind="src" path="test"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/xtreemfs_foundation"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="../lib/test/junit-4.3.1.jar"/>
+	<classpathentry kind="lib" path="../lib/test/junit-4.11.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
