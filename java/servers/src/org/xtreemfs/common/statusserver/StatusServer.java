@@ -31,7 +31,7 @@ public class StatusServer {
      * Block server up to this time if the StatusServer cannot bind the port due to "Address already in use".
      * Necessary because the Sun webserver does not support SO_REUSEADDR.
      */
-    private static final double            MAX_TIME_CHECK_IF_ADDRESS_ALREADY_IN_USE_S = 60.0;
+    private static final double            MAX_TIME_CHECK_IF_ADDRESS_ALREADY_IN_USE_S = 180.0;
     /** Interval between two attempts to start the webserver. */
     private static final double            INTERVAL_CHECK_IF_ADDRESS_ALREADY_IN_USE_S = 0.1;
 
@@ -92,14 +92,19 @@ public class StatusServer {
                 // Port successfully bound, do not retry.
                 break;
             } catch (BindException e) {
-                if (!e.getMessage().contains("Address already in use") ||
-                    (elapsedSeconds + INTERVAL_CHECK_IF_ADDRESS_ALREADY_IN_USE_S) >= MAX_TIME_CHECK_IF_ADDRESS_ALREADY_IN_USE_S) {
-                    throw e;
-                } else {
-                    try {
-                        Thread.sleep((long) (INTERVAL_CHECK_IF_ADDRESS_ALREADY_IN_USE_S * 1000));
-                    } catch (InterruptedException e1) {
+                if (e.getMessage().contains("Address already in use")) {
+                    if ((elapsedSeconds + INTERVAL_CHECK_IF_ADDRESS_ALREADY_IN_USE_S) >= MAX_TIME_CHECK_IF_ADDRESS_ALREADY_IN_USE_S) {
+                        // Retries exceeded. Throw error.
+                        throw new BindException(e.getMessage() + ". Port number: " + statusHttpPort);
+                    } else {
+                        // Wait between two attempts.
+                        try {
+                            Thread.sleep((long) (INTERVAL_CHECK_IF_ADDRESS_ALREADY_IN_USE_S * 1000));
+                        } catch (InterruptedException e1) {
+                        }
                     }
+                } else {
+                    throw e;
                 }
             }
         }
