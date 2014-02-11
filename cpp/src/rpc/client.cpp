@@ -10,18 +10,6 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include <openssl/pem.h>
-#include <openssl/err.h>
-#include <openssl/pkcs12.h>
-#include <openssl/bio.h>
-#include <openssl/rand.h>
-#include <openssl/x509.h>
-#include <openssl/evp.h>
-#ifdef WIN32
-#include <tchar.h>
-#else
-#include <unistd.h>
-#endif  // WIN32
 
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/lexical_cast.hpp>
@@ -33,6 +21,21 @@
 #include <string>
 
 #include "util/logging.h"
+
+#ifdef HAS_OPENSSL
+#include <openssl/pem.h>
+#include <openssl/err.h>
+#include <openssl/pkcs12.h>
+#include <openssl/bio.h>
+#include <openssl/rand.h>
+#include <openssl/x509.h>
+#include <openssl/evp.h>
+#endif  // HAS_OPENSSL
+#ifdef WIN32
+#include <tchar.h>
+#else
+#include <unistd.h>
+#endif  // WIN32
 
 using namespace xtreemfs::pbrpc;
 using namespace xtreemfs::util;
@@ -60,18 +63,24 @@ Client::Client(int32_t connect_timeout_s,
                int32_t max_con_linger,
                const SSLOptions* options)
     : service_(),
-      use_gridssl_(false),
-      ssl_context_(NULL),
       stopped_(false),
       stopped_ioservice_only_(false),
       callid_counter_(1),
       rq_timeout_timer_(service_),
       rq_timeout_s_(request_timeout_s),
       connect_timeout_s_(connect_timeout_s),
-      max_con_linger_(max_con_linger),
+      max_con_linger_(max_con_linger)
+#ifndef HAS_OPENSSL
+{
+  // Delete SSL options because they are not used when not compiled with SSL.
+  delete options;
+}
+#else
+      ,use_gridssl_(false),
       ssl_options(options),
       pemFileName(NULL),
-      certFileName(NULL) {
+      certFileName(NULL),
+      ssl_context_(NULL) {
   // Check if ssl options were passed.
   if (options != NULL) {
     if (Logging::log->loggingActive(LEVEL_INFO)) {
@@ -186,7 +195,7 @@ Client::Client(int32_t connect_timeout_s,
       }
       FILE* pemFile = fdopen(tmpPem, "wb+");
       FILE* certFile = fdopen(tmpCert, "wb+");
-#endif
+#endif  // WIN32
 
       if (Logging::log->loggingActive(LEVEL_DEBUG)) {
         Logging::log->getLog(LEVEL_DEBUG) << "tmp file name:"
@@ -270,6 +279,7 @@ std::string Client::get_pem_password_callback() const {
 std::string Client::get_pkcs12_password_callback() const {
   return ssl_options->pkcs12_file_password();
 }
+#endif  // HAS_OPENSSL
 
 void Client::sendRequest(const string& address,
                          int32_t interface_id,
@@ -358,9 +368,12 @@ void Client::sendInternalRequest() {
                                      service_,
                                      &request_table_,
                                      connect_timeout_s_,
-                                     connect_timeout_s_,
-                                     use_gridssl_,
-                                     ssl_context_);
+                                     connect_timeout_s_
+#ifdef HAS_OPENSSL
+                                     ,use_gridssl_,
+                                     ssl_context_
+#endif  // HAS_OPENSSL
+                                     );
 
           if (Logging::log->loggingActive(LEVEL_DEBUG)) {
             Logging::log->getLog(LEVEL_DEBUG) << "new connection for "
@@ -510,6 +523,9 @@ void Client::run() {
 
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
     Logging::log->getLog(LEVEL_DEBUG) << "Starting RPC client." << endl;
+#ifndef HAS_OPENSSL
+    Logging::log->getLog(LEVEL_DEBUG) << "Running in plain TCP mode."<< endl;
+#else
     if (ssl_context_ != NULL) {
       if (use_gridssl_) {
         Logging::log->getLog(LEVEL_DEBUG) << "Running in GRID SSL mode." << endl;
@@ -519,6 +535,7 @@ void Client::run() {
     } else {
       Logging::log->getLog(LEVEL_DEBUG) << "Running in plain TCP mode."<< endl;
     }
+#endif  // !HAS_OPENSSL
   }
 
   // Does not return as long as there are running timers (e.g.,
@@ -556,8 +573,10 @@ void Client::run() {
   }
   request_table_.clear();
 
+#ifdef HAS_OPENSSL
   // Cleanup thread-local OpenSSL state.
   ERR_remove_state(0);
+#endif  // HAS_OPENSSL
 }
 
 void Client::shutdown() {
@@ -596,6 +615,7 @@ void Client::ShutdownHandler() {
 }
 
 Client::~Client() {
+#ifdef HAS_OPENSSL
   // remove temporary cert and pem files
   if (pemFileName != NULL) {
     unlink(pemFileName);
@@ -613,6 +633,7 @@ Client::~Client() {
   }
   delete ssl_options;
   delete ssl_context_;
+#endif  // HAS_OPENSSL
 }
 
 #ifdef _MSC_VER

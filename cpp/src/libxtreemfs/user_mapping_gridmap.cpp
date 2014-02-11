@@ -12,7 +12,6 @@
 #include <boost/tokenizer.hpp>
 #include <iostream>
 #include <sys/stat.h>
-#include <sys/types.h>
 
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "util/logging.h"
@@ -25,7 +24,9 @@ namespace xtreemfs {
 UserMappingGridmap::UserMappingGridmap(const std::string& gridmap_file,
                                        int gridmap_reload_interval_m)
     : gridmap_file_(gridmap_file),
-      gridmap_reload_interval_s_(gridmap_reload_interval_m) {}
+      gridmap_reload_interval_s_(gridmap_reload_interval_m),
+      date_(0),
+      size_(0) {}
 
 void UserMappingGridmap::LocalToGlobalUsername(
     const std::string& username_local,
@@ -133,6 +134,8 @@ void UserMappingGridmap::Start() {
 
   // read the grid-map-file once
   ReadGridmapFile();
+  date_ = st.st_mtime;
+  size_ = st.st_size;
 
   // monitor changes to the gridmap-file
   monitor_thread_.reset(new boost::thread(
@@ -148,27 +151,30 @@ void UserMappingGridmap::Stop() {
 
 void UserMappingGridmap::PeriodicGridmapFileReload() {
   struct stat st;
-
-  int ierr = stat(gridmap_file_.c_str(), &st);
-  if (ierr != 0) {
-    throw XtreemFSException("Failed to open gridmap file: " + gridmap_file_);
-  }
-  time_t date = st.st_mtime;
-
-  // monitor changes to the gridmap file
+  // Monitor changes to the gridmap file.
   while (true) {
-    // send thread to sleep for user_group_monitor_m minutes
     boost::posix_time::seconds sleep_time(gridmap_reload_interval_s_);
     boost::this_thread::sleep(sleep_time);
 
-    ierr = stat(gridmap_file_.c_str(), &st);
-    if (st.st_mtime != date) {
+    int ierr = stat(gridmap_file_.c_str(), &st);
+    if (ierr) {
+      if (Logging::log->loggingActive(LEVEL_WARN)) {
+        Logging::log->getLog(LEVEL_WARN)
+            << "Failed to check if the gridmap file has changed."
+               " Is it temporarily not available? Path to file: "
+            << gridmap_file_ << " Error: " << ierr << endl;
+      }
+      continue;
+    }
+
+    if (st.st_mtime != date_ || st.st_size != size_) {
       if (Logging::log->loggingActive(LEVEL_INFO)) {
         Logging::log->getLog(LEVEL_INFO)
-            << "file changed. updating all entries." << endl;
+            << "File changed. Updating all entries." << endl;
       }
       ReadGridmapFile();
-      date = st.st_mtime;
+      date_ = st.st_mtime;
+      size_ = st.st_size;
     }
   }
 }

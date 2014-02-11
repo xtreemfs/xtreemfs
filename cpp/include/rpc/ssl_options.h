@@ -8,7 +8,9 @@
 #ifndef CPP_INCLUDE_RPC_SSL_OPTIONS_H_
 #define CPP_INCLUDE_RPC_SSL_OPTIONS_H_
 
+#ifdef HAS_OPENSSL
 #include <boost/asio/ssl.hpp>
+#endif  // HAS_OPENSSL
 
 #include <string>
 
@@ -16,6 +18,7 @@ namespace xtreemfs {
 namespace rpc {
 
 class SSLOptions {
+#ifdef HAS_OPENSSL
  public:
   SSLOptions(const std::string ssl_pem_path,
              const std::string ssl_pem_cert_path,
@@ -72,7 +75,9 @@ class SSLOptions {
 
   boost::asio::ssl::context::file_format cert_format_;
   bool use_grid_ssl_;
+#endif  // HAS_OPENSSL
 };
+
 }  // namespace rpc
 }  // namespace xtreemfs
 

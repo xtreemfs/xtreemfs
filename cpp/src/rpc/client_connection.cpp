@@ -35,8 +35,13 @@ ClientConnection::ClientConnection(
     const string& port,
     asio::io_service& service,
     request_map *request_table,
-    int32_t connect_timeout_s, int32_t max_reconnect_interval_s,
-    bool use_gridssl, boost::asio::ssl::context* ssl_context)
+    int32_t connect_timeout_s,
+    int32_t max_reconnect_interval_s
+#ifdef HAS_OPENSSL
+    ,bool use_gridssl,
+    boost::asio::ssl::context* ssl_context
+#endif  // HAS_OPENSSL
+    )
     : receive_marker_(NULL),
       receive_hdr_(NULL),
       receive_msg_(NULL),
@@ -56,9 +61,12 @@ ClientConnection::ClientConnection(
       max_reconnect_interval_s_(max_reconnect_interval_s),
       next_reconnect_at_(boost::posix_time::not_a_date_time),
       last_connect_was_at_(boost::posix_time::not_a_date_time),
-      reconnect_interval_s_(1),
-      use_gridssl_(use_gridssl),
-      ssl_context_(ssl_context) {
+      reconnect_interval_s_(1)
+#ifdef HAS_OPENSSL
+      ,use_gridssl_(use_gridssl),
+      ssl_context_(ssl_context)
+#endif  // HAS_OPENSSL
+{
   receive_marker_buffer_ = new char[RecordMarker::get_size()];
   CreateChannel();
 }
@@ -143,6 +151,9 @@ void ClientConnection::CreateChannel() {
                               socket_));
     socket_ = NULL;
   }
+#ifndef HAS_OPENSSL
+  socket_ = new TCPSocketChannel(service_);
+#else
   if (ssl_context_ == NULL) {
     socket_ = new TCPSocketChannel(service_);
   } else if (use_gridssl_) {
@@ -150,6 +161,7 @@ void ClientConnection::CreateChannel() {
   } else {
     socket_ = new SSLSocketChannel(service_, *ssl_context_);
   }
+#endif  // !HAS_OPENSSL
 }
 
 void ClientConnection::Connect() {
@@ -244,9 +256,11 @@ void ClientConnection::PostConnect(const boost::system::error_code& err,
     } else {
       Reset();
       string ssl_error_info;
+#ifdef HAS_OPENSSL
       if (err.category() == asio::error::ssl_category) {
         ssl_error_info = ERR_error_string(ERR_get_error(), NULL);
       }
+#endif  // HAS_OPENSSL
       SendError(POSIX_ERROR_EIO,
                 "could not connect to host '" + server_name_ + ":"
                     + server_port_ + "': " + err.message()+" "+ssl_error_info);

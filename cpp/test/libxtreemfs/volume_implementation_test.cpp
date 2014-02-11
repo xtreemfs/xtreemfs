@@ -73,15 +73,15 @@ class VolumeImplementationTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
 #ifdef __linux__
-  const char* dir_url_env = getenv("XTREEMFS_DIR_URL");
-  if (dir_url_env) {
-    dir_url_.xtreemfs_url = string(dir_url_env);
-  }
-  const char* mrc_url_env = getenv("XTREEMFS_MRC_URL");
-  if (mrc_url_env) {
-    mrc_url_.xtreemfs_url = string(mrc_url_env);
-  }
-#endif
+    const char* dir_url_env = getenv("XTREEMFS_DIR_URL");
+    if (dir_url_env) {
+      dir_url_.xtreemfs_url = string(dir_url_env);
+    }
+    const char* mrc_url_env = getenv("XTREEMFS_MRC_URL");
+    if (mrc_url_env) {
+      mrc_url_.xtreemfs_url = string(mrc_url_env);
+    }
+#endif  // __linux__
 
     if (dir_url_.xtreemfs_url.empty()) {
       dir_url_.xtreemfs_url = "pbrpc://localhost:32638/";

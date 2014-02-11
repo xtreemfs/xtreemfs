@@ -67,9 +67,12 @@ class ClientConnection {
                    boost::asio::io_service& service,
                    request_map *request_table,
                    int32_t connect_timeout_s,
-                   int32_t max_reconnect_interval_s,
-                   bool use_gridssl,
-                   boost::asio::ssl::context* ssl_context);
+                   int32_t max_reconnect_interval_s
+#ifdef HAS_OPENSSL
+                   ,bool use_gridssl,
+                   boost::asio::ssl::context* ssl_context
+#endif  // HAS_OPENSSL
+                   );
 
   virtual ~ClientConnection();
 
@@ -124,8 +127,10 @@ class ClientConnection {
   int32_t reconnect_interval_s_;
   boost::posix_time::ptime last_used_;
 
+#ifdef HAS_OPENSSL
   bool use_gridssl_;
   boost::asio::ssl::context* ssl_context_;
+#endif  // HAS_OPENSSL
 
   /** Deletes "socket".
    *

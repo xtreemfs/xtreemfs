@@ -60,8 +60,7 @@ public final class ReusableBuffer {
     AtomicInteger                refCount;
     
     /**
-     * Creates a new instance of ReusableBuffer. A view buffer of size is
-     * created.
+     * Creates a new instance of ReusableBuffer. A view buffer of size is created.
      * 
      * @param buffer
      *            the parent buffer
@@ -130,7 +129,7 @@ public final class ReusableBuffer {
             
             if (parentBuffer == null) {
                 // wraped buffers
-                ReusableBuffer view = new ReusableBuffer(this.buffer, this.size);
+                ReusableBuffer view = new ReusableBuffer(this.buffer.slice());
                 view.viewParent = this;
                 
                 return view;
@@ -155,7 +154,7 @@ public final class ReusableBuffer {
             
             if (parentBuffer == null) {
                 // wraped buffers
-                ReusableBuffer view = new ReusableBuffer(this.buffer, this.size);
+                ReusableBuffer view = new ReusableBuffer(this.buffer.slice());
                 view.viewParent = this.viewParent;
                 
                 return view;
@@ -186,6 +185,15 @@ public final class ReusableBuffer {
         return this.size;
     }
     
+    /**
+     * May be higher than {@link #capacity()} if the parent buffer is from the {@link BufferPool} which may
+     * have returned a larger buffer.
+     */
+    public int capacityUnderlying() {
+        assert (!returned) : "Buffer was already freed and cannot be used anymore" + this.freeStack;
+        return parentBuffer != null ? parentBuffer.capacity() : this.size;
+    }
+
     /**
      * @see java.nio.ByteBuffer#hasArray
      */
@@ -532,47 +540,71 @@ public final class ReusableBuffer {
             oldPos = 0;
         
         // save parent position and limit
-        int position = parentBuffer.position();
-        int limit = parentBuffer.limit();
+        ByteBuffer originalBuffer;
+        if (parentBuffer != null) {
+            originalBuffer = parentBuffer;
+        } else {
+            originalBuffer = buffer;
+        }
+        int position = originalBuffer.position();
+        int limit = originalBuffer.limit();
         
-        parentBuffer.position(0);
-        parentBuffer.limit(newSize);
-        this.buffer = parentBuffer.slice();
+        originalBuffer.position(0);
+        originalBuffer.limit(newSize);
+        this.buffer = originalBuffer.slice();
         buffer.position(oldPos);
         
         // restore parent position and limit
-        parentBuffer.position(position);
-        parentBuffer.limit(limit);
+        originalBuffer.position(position);
+        originalBuffer.limit(limit);
     }
     
+    /*
+     * Increases the capacity of this buffer. Returns false if {@code newSize} is bigger than the capacity of
+     * the underlying buffer.
+     * 
+     * The underlying buffer can be a reusable buffer (parentBuffer != 0) or non-reusable buffer (viewParent
+     * != 0).
+     */
     public boolean enlarge(int newSize) {
         assert (!returned) : "Buffer was already freed and cannot be used anymore" + this.freeStack;
-        if (newSize > this.parentBuffer.capacity()) {
+        if (newSize == this.size) {
+            return true;
+        }
+        if (parentBuffer == null && viewParent == null) {
+            return false;
+        }
+        ByteBuffer underlyingBuffer = parentBuffer != null ? parentBuffer : viewParent.getBuffer();
+        if (newSize > underlyingBuffer.capacity()) {
             return false;
         } else {
-            
             this.size = newSize;
             int oldPos = buffer.position();
             if (oldPos > newSize)
                 oldPos = 0;
             
             // save parent position and limit
-            int position = parentBuffer.position();
-            int limit = parentBuffer.limit();
+            int position = underlyingBuffer.position();
+            int limit = underlyingBuffer.limit();
             
-            parentBuffer.position(0);
-            parentBuffer.limit(newSize);
-            this.buffer = parentBuffer.slice();
+            underlyingBuffer.position(0);
+            underlyingBuffer.limit(newSize);
+            this.buffer = underlyingBuffer.slice();
             buffer.position(oldPos);
             
             // restore parent position and limit
-            parentBuffer.position(position);
-            parentBuffer.limit(limit);
+            underlyingBuffer.position(position);
+            underlyingBuffer.limit(limit);
             
             return true;
         }
     }
     
+    /*
+     * Sets the new range of the buffer starting from {@code offset} going for {@code length} bytes.
+     * 
+     * The new position of the buffer will be 0 and the size/capacity will equal {@code length}.
+     */
     public void range(int offset, int length) {
         assert (!returned) : "Buffer was already freed and cannot be used anymore" + this.freeStack;
         
@@ -580,8 +612,8 @@ public final class ReusableBuffer {
         if ((offset == 0) && (length == this.size))
             return;
         
-        if (offset > size) {
-            throw new IllegalArgumentException("offset must be < size. offset=" + offset + " siz=" + size);
+        if (offset >= size) {
+            throw new IllegalArgumentException("offset must be < size. offset=" + offset + " size=" + size);
         }
         if (offset + length > size) {
             throw new IllegalArgumentException("offset+length must be <= size. size=" + size + " offset="
@@ -591,21 +623,27 @@ public final class ReusableBuffer {
         this.size = length;
         
         // save parent position and limit
-        int position = parentBuffer.position();
-        int limit = parentBuffer.limit();
-        
+        ByteBuffer originalBuffer;
+        if (parentBuffer != null) {
+            originalBuffer = parentBuffer;
+        } else {
+            originalBuffer = buffer;
+        }
+        int position = originalBuffer.position();
+        int limit = originalBuffer.limit();
+
         // ensure that the subsequent 'position' does not fail
         if (offset > limit)
-            parentBuffer.limit(offset);
-        
-        parentBuffer.position(offset);
-        parentBuffer.limit(offset + length);
-        this.buffer = parentBuffer.slice();
+            originalBuffer.limit(offset);
+
+        originalBuffer.position(offset);
+        originalBuffer.limit(offset + length);
+        this.buffer = originalBuffer.slice();
         assert (this.buffer.capacity() == length);
-        
+
         // restore parent position and limit
-        parentBuffer.position(position);
-        parentBuffer.limit(limit);
+        originalBuffer.position(position);
+        originalBuffer.limit(limit);
     }
     
     public ReusableBuffer putBoolean(boolean bool) {
@@ -627,6 +665,7 @@ public final class ReusableBuffer {
         }
     }
     
+    @Override
     protected void finalize() {
         
         if (!returned && reusable) {
@@ -676,6 +715,7 @@ public final class ReusableBuffer {
         
     }
     
+    @Override
     public String toString() {
         return "ReusableBuffer( capacity=" + this.capacity() + " limit=" + this.limit() + " position="
             + this.position() + ")";

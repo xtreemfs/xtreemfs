@@ -45,7 +45,7 @@ public class SetupUtils {
     
     public static final String     TEST_DIR         = "/tmp/xtreemfs-test2";
     
-    public static final String     CERT_DIR         = "test/certs/";
+    public static final String     CERT_DIR          = "tests/certs/";
     
     public static boolean          SSL_ON           = false;
     
@@ -510,9 +510,8 @@ public class SetupUtils {
     }
 
     public static SSLOptions createClientSSLOptions() throws IOException, FileNotFoundException {
-        return new SSLOptions(new FileInputStream(CERT_DIR + "Client.p12"),
-                "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trusted.jks"), "passphrase",
- SSLOptions.JKS_CONTAINER, false, false,
+        return new SSLOptions(new FileInputStream(CERT_DIR + "Client.p12"), "passphrase", SSLOptions.PKCS12_CONTAINER,
+                new FileInputStream(CERT_DIR + "trusted.jks"), "passphrase", SSLOptions.JKS_CONTAINER, false, false,
                 null);
     }
     

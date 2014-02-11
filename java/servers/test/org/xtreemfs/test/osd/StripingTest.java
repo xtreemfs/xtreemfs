@@ -214,7 +214,6 @@ public class StripingTest extends TestCase {
         for (int ts : testSizes) {
             
             ReusableBuffer data = SetupUtils.generateData(ts);
-            data.flip();
             String file = "1:1" + ts;
             final FileCredentials fcred = FileCredentials.newBuilder().setXcap(getCap(file).getXCap())
                     .setXlocs(xloc).build();

@@ -144,6 +144,8 @@ if (NOT OPENSSL_FOUND)
   set(OPENSSL_LIBRARIES ${LIBCRYPTO} ${LIBSSL})
 endif(NOT OPENSSL_FOUND)
 include_directories(${OPENSSL_INCLUDE_DIR})
+# Comment this definition if the XtreemFS source should not depend on OpenSSL.
+add_definitions(-DHAS_OPENSSL)
 
 SET(REQUIRED_STATIC_LIBRARIES ${CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY})
 if(BUILD_CLIENT_TESTS)

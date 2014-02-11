@@ -44,7 +44,7 @@ public final class BufferPool {
     /**
      * stats for num requests and creates of buffers per class
      */
-    private AtomicLong[]                              requests, creates, deletes;
+    private final AtomicLong[]                              requests, creates, deletes;
     
     /**
      * singleton pattern.
@@ -275,6 +275,21 @@ public final class BufferPool {
         }
     }
     
+    /**
+     * Get the current pool size for a specific buffer size.
+     * 
+     * @throws IllegalArgumentException
+     *             when bufferSize is not in the pool
+     */
+    public static int getPoolSize(int bufferSize) {
+        for (int i = 0; i < BUFF_SIZES.length; i++) {
+            if (BUFF_SIZES[i] == bufferSize) {
+                return instance.poolSizes[i].get();
+            }
+        }
+        throw new IllegalArgumentException("Specified buffer size is not pooled. Check BufferPool configuration.");
+    }
+
     /**
      * Returns a textual representation of the pool status.
      * 

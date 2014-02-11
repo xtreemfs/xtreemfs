@@ -8,6 +8,8 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_USER_MAPPING_GRIDMAP_H_
 #define CPP_INCLUDE_LIBXTREEMFS_USER_MAPPING_GRIDMAP_H_
 
+#include <sys/types.h>
+
 #include <boost/bimap.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread/mutex.hpp>
@@ -106,6 +108,11 @@ class UserMappingGridmap : public UserMapping {
    * @remarks   Start() and Stop() have to be executed to start and stop the
    *            thread responsible for the periodic reread. */
   int gridmap_reload_interval_s_;
+
+  /** Last time the gridmap file was modified. If changed, fill be reloaded. */
+  time_t date_;
+  /** Last known size of gridmap file. If changed, fill be reloaded. */
+  off_t size_;
 };
 
 }  // namespace xtreemfs
