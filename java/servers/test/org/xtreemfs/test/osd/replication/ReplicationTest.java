@@ -21,7 +21,9 @@ import junit.textui.TestRunner;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -57,6 +59,9 @@ import org.xtreemfs.test.TestEnvironment;
  * @author clorenz
  */
 public class ReplicationTest {
+    @Rule
+    public TestName         name = new TestName();
+
     OSD[] osds;
     OSDConfig[] configs;
     OSDServiceClient client;
@@ -177,8 +182,14 @@ public class ReplicationTest {
         return new ObjectData(0, false, 0, data.createViewBuffer());
     }*/
 
+    private void printTestName() {
+        System.out.println(".TEST: " + getClass().getSimpleName() + "." + name.getMethodName());
+    }
+
     @Test
     public void testStriped() throws Exception {
+        printTestName();
+        
         FileCredentials fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLoc.getXLocSet()).build();
 
         // write object to replica 3
@@ -239,6 +250,8 @@ public class ReplicationTest {
 
     @Test
     public void testHoleAndEOF() throws Exception {
+        printTestName();
+
         FileCredentials fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLoc.getXLocSet()).build();
 
 
@@ -361,6 +374,13 @@ public class ReplicationTest {
      */
     @Test
     public void testObjectLocalAvailable() throws Exception {
+        printTestName();
+
+        // Default case.
+        helperObjectLocalAvailable();
+    }
+
+    public void helperObjectLocalAvailable() throws Exception {
         ServiceUUID serverID = xLoc.getOSDsForObject(objectNo).get(0);
         FileCredentials fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLoc.getXLocSet()).build();
 
@@ -415,6 +435,12 @@ public class ReplicationTest {
      */
     @Test
     public void testObjectLocalNOTAvailable() throws Exception {
+        printTestName();
+
+        helperObjectLocalNOTAvailable();
+    }
+
+    public void helperObjectLocalNOTAvailable() throws Exception {
         FileCredentials fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLoc.getXLocSet()).build();
 
         // read object, before one has been written
@@ -472,20 +498,26 @@ public class ReplicationTest {
 
     @Test
     public void testObjectLocalAvailableNONStriped() throws Exception {
+        printTestName();
+
         this.xLoc = createLocations(2, 1);
         // reuse test
-        testObjectLocalAvailable();
+        helperObjectLocalAvailable();
     }
 
     @Test
     public void testObjectLocalNOTAvailableNONStriped() throws Exception {
+        printTestName();
+
         this.xLoc = createLocations(2, 1);
         // reuse test
-        testObjectLocalNOTAvailable();
+        helperObjectLocalNOTAvailable();
     }
 
     @Test
     public void testGetObjectList() throws Exception {
+        printTestName();
+
         FileCredentials fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLoc.getXLocSet()).build();
         ObjectData objdata = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false).build();
 
