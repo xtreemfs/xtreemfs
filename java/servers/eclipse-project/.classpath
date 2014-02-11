@@ -8,7 +8,7 @@
 	<classpathentry kind="lib" path="../lib/test/commons-httpclient-3.0.1.jar"/>
 	<classpathentry kind="lib" path="../lib/test/commons-httpclient-3.0.1-contrib.jar"/>
 	<classpathentry kind="lib" path="../lib/test/commons-logging-1.1.jar"/>
-	<classpathentry kind="lib" path="../lib/test/junit-4.3.1.jar"/>
+	<classpathentry kind="lib" path="../lib/test/junit-4.11.jar"/>
 	<classpathentry kind="lib" path="../lib/jdmkrt.jar"/>
 	<classpathentry kind="lib" path="../lib/jdmktk.jar"/>
 	<classpathentry kind="lib" path="../lib/protobuf-java-2.5.0.jar"/>
