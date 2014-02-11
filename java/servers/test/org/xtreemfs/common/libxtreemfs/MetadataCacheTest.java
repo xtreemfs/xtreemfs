@@ -532,7 +532,7 @@ public class MetadataCacheTest {
         assertNull(metadataCache.getXAttr("tttgreg", "wefwe").getFirst());
         assertFalse(metadataCache.getXAttr("tttgreg", "wefwe").getSecond());
         assertNull(metadataCache.getXAttrs("asdf"));
-        assertEquals(0, metadataCache.getXAttrSize("zxcv", "naste").getFirst());
+        assertEquals(0, metadataCache.getXAttrSize("zxcv", "naste").getFirst().intValue());
         assertFalse(metadataCache.getXAttrSize("zxcv", "naste").getSecond());
 
         metadataCache.invalidate("bla");
@@ -778,7 +778,7 @@ public class MetadataCacheTest {
         metadataCache.updateXAttrs("foobar", getDummyXattrs());
         metadataCache.updateXAttr("foobar", "aNewXattr", "0123456789");
         Tupel<Integer, Boolean> tupel = metadataCache.getXAttrSize("foobar", "aNewXattr");
-        assertEquals(10, tupel.getFirst());
+        assertEquals(10, tupel.getFirst().intValue());
         assertTrue(tupel.getSecond());
     }
 
