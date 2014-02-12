@@ -9,6 +9,7 @@ package org.xtreemfs.test;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,6 +22,7 @@ import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.foundation.CrashReporter;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.Schemes;
@@ -438,6 +440,22 @@ public class TestEnvironment {
             }
         } catch (Exception ex) {
             ex.printStackTrace();
+            // Shutdown servers which were already started or they will block ports.
+            shutdown();
+
+            // After shutdown, log remaining threads in case of blocked ports to debug the issue.
+            if (ex instanceof BindException && ex.getMessage().contains("Address already in use")) {
+                Logging.logMessage(
+                        Logging.LEVEL_ERROR,
+                        this,
+                        "TestEnvironment could not be started because: "
+                                + ex.getMessage()
+                                + " Please examine the following dump of threads to check if a previous test method did not correctly stop all servers.");
+                StringBuilder threadStates = new StringBuilder();
+                CrashReporter.reportThreadStates(threadStates);
+                Logging.logMessage(Logging.LEVEL_ERROR, this, "Thread States: %s", threadStates.toString());
+            }
+            
             throw ex;
         }
     }
