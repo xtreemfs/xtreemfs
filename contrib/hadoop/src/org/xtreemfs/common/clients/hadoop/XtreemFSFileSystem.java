@@ -28,7 +28,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.util.Progressable;
-import org.apache.hadoop.util.StringUtils;
 import org.xtreemfs.common.libxtreemfs.Client;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.FileHandle;
@@ -46,7 +45,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntry;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
 
 /**
  * 
@@ -116,12 +114,11 @@ public class XtreemFSFileSystem extends FileSystem {
         // initialize XtreemFS Client with default Options and without SSL.
         Options xtreemfsOptions = new Options();
         xtreemfsOptions.setMetadataCacheSize(0);
-        System.out.println("URI:" + uri.getHost() + ":" + uri.getPort());
         xtreemfsClient = ClientFactory.createClient(uri.getHost() + ":" + uri.getPort(), userCredentials,
                 xtreemfsOptions.generateSSLOptions(), xtreemfsOptions);
         try {
             // TODO: Fix stupid Exception in libxtreemfs
-            xtreemfsClient.start();
+            xtreemfsClient.start(true);
         } catch (Exception ex) {
             Logger.getLogger(XtreemFSFileSystem.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -160,7 +157,7 @@ public class XtreemFSFileSystem extends FileSystem {
 
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "file system init complete: " + uri.getUserInfo());
-        }
+        }       
     }
 
     @Override
@@ -172,7 +169,6 @@ public class XtreemFSFileSystem extends FileSystem {
     public FSDataInputStream open(Path path, int bufferSize) throws IOException {
         Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
-        Logging.logMessage(Logging.LEVEL_WARN, Logging.Category.misc, this, "PATH: " + path);
         final FileHandle fileHandle = xtreemfsVolume.openFile(userCredentials, pathString,
                 SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber(), 0);
         if (Logging.isDebug()) {
@@ -509,7 +505,7 @@ public class XtreemFSFileSystem extends FileSystem {
         }
         return result;
     }
-
+    
     /**
      * Make path absolute and remove volume if path starts with a volume
      * 
@@ -538,7 +534,8 @@ public class XtreemFSFileSystem extends FileSystem {
      */
     private Volume getVolumeFromPath(Path path) throws IOException {
         String pathString = makeAbsolute(path).toUri().getPath();
-        if (defaultVolumeDirectories.contains(pathString.split("/")[1]) || pathString.lastIndexOf("/") == 0) {
+        String[] splittedPath = pathString.split("/");
+        if (splittedPath.length > 1 && defaultVolumeDirectories.contains(splittedPath[1]) || pathString.lastIndexOf("/") == 0) {
             // First part of path is a directory or path is a file in the root of defaultVolume
             return defaultVolume;
         } else {

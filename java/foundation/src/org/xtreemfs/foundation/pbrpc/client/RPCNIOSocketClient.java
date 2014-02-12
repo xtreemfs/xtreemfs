@@ -100,22 +100,32 @@ public class RPCNIOSocketClient extends LifeCycleThread {
 
     public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout)
         throws IOException {
-        this(sslOptions, requestTimeout, connectionTimeout, -1, -1, null, "");
+        this(sslOptions, requestTimeout, connectionTimeout, -1, -1, null, "", false);
     }
 
     public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout, String threadName)
         throws IOException {
-        this(sslOptions, requestTimeout, connectionTimeout, -1, -1, null, threadName);
+        this(sslOptions, requestTimeout, connectionTimeout, -1, -1, null, threadName, false);
     }
     
     public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout,
         int sendBufferSize, int receiveBufferSize, SocketAddress localBindPoint) throws IOException {
-        this(sslOptions, requestTimeout, connectionTimeout, sendBufferSize, receiveBufferSize, localBindPoint, "");
+        this(sslOptions, requestTimeout, connectionTimeout, sendBufferSize, receiveBufferSize, localBindPoint, "", false);
+    }
+    
+    public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout, String threadName, boolean startAsDaemon) throws IOException {
+        this(sslOptions, requestTimeout, connectionTimeout, -1, -1, null, threadName, startAsDaemon);
     }
     
     public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout,
-        int sendBufferSize, int receiveBufferSize, SocketAddress localBindPoint, String threadName) throws IOException {
+            int sendBufferSize, int receiveBufferSize, SocketAddress localBindPoint, String threadName) throws IOException {
+    	this(sslOptions, requestTimeout, connectionTimeout, sendBufferSize, receiveBufferSize, localBindPoint, threadName, false);
+    }
+    
+    public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout,
+        int sendBufferSize, int receiveBufferSize, SocketAddress localBindPoint, String threadName, boolean startAsDaemon) throws IOException {
         super(threadName);
+        setDaemon(startAsDaemon);
         if (requestTimeout >= connectionTimeout - TIMEOUT_GRANULARITY * 2) {
             throw new IllegalArgumentException(
                 "request timeout must be smaller than connection timeout less " + TIMEOUT_GRANULARITY * 2
