@@ -150,6 +150,16 @@ public class ReservationSchedulerImplementation implements ReservationScheduler 
 
 	@Override
 	public void removeReservation(String volumeIdentifier) {
+        for(OSDDescription osd: osds) {
+            for(Reservation res: osd.getReservations()) {
+                if(res.getVolumeIdentifier().equals(volumeIdentifier)) {
+                    osd.getReservations().remove(res);
+                    if(osd.getReservations().isEmpty()) {
+                        osd.setUsage(OSDDescription.OSDUsage.UNUSED);
+                    }
+                }
+            }
+        }
 	}
 
 	@Override
