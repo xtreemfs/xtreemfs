@@ -2876,7 +2876,7 @@ This section will help you to set up a simple Hadoop configuration with all nece
   </property>
 	\end{verbatim}
 	\newpage
-	Hint: The XtreemFSHadoopClient provides an experimental read- and write buffer (disabled by default). The buffers can be used to speed-up small read-/write Requests, but in some cases the overhead of the buffer might slow-down the I/O performance. If you want to use the read-/write buffer in the XtreemFSHadoopClient, you have to enable the buffers and specify the buffer sizes with the following additional properties:
+	Hint: The XtreemFSHadoopClient provides an experimental read- and write buffer (disabled by default). The buffers can be used to speed-up small read-/write requests, but in some cases the overhead of the buffer might slow-down the I/O performance. If you want to use the read-/write buffer in the XtreemFSHadoopClient, you have to enable the buffers and specify the buffer sizes with the following additional properties:
 	\begin{verbatim}
   <property>
     <name>xtreemfs.io.read.buffer</name>
