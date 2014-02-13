@@ -400,11 +400,9 @@ public class TestEnvironment {
 
                 for (int i = 0; i < osdCount; i++) {
                     osds[i] = new OSDRequestDispatcher(osdConfigs[i]);
-                }
-
-                for (int i = 0; i < osdCount; i++) {
                     osds[i].start();
                 }
+
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "OSDs 1-" + osdCount + " running");
             }
             
@@ -475,7 +473,9 @@ public class TestEnvironment {
         if (enabledServs.contains(Services.OSD)) {
             try {
                 for (OSDRequestDispatcher osd : osds) {
-                    osd.shutdown();
+                    if (osd != null) {
+                        osd.shutdown();
+                    }
                 }
                 if (hasAdditionalOsds) {
                     stopAdditionalOSDs();
