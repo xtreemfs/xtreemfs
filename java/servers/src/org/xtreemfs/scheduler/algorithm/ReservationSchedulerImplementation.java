@@ -219,13 +219,19 @@ public class ReservationSchedulerImplementation implements ReservationScheduler 
 			reservedStreamingThroughput += reservation.getStreamingThroughput();
 		}
 
+        double streamingPerformance;
+        if(o.getCapabilities().getStreamingPerformance().size() > o.getReservations().size())
+            streamingPerformance = o.getCapabilities().getStreamingPerformance()
+                    .get(o.getReservations().size() + 1);
+        else
+            streamingPerformance = 0.0;
+
 		return Math
 				.acos((reservedCapacity
 						* (o.getCapabilities().getCapacity() * this.capacityGain)
 						+ reservedRandomThroughput
 						* (o.getCapabilities().getIops() * this.randomIOGain) + reservedStreamingThroughput
-						* (o.getCapabilities().getStreamingPerformance()
-								.get(o.getReservations().size() + 1) * this.streamingGain))
+						* (streamingPerformance * this.streamingGain))
 						/ getUsageVectorLength(o, r)
 						* getCapabilityVectorLength(o));
 	}
@@ -247,8 +253,15 @@ public class ReservationSchedulerImplementation implements ReservationScheduler 
 	}
 
 	static double getCapabilityVectorLength(OSDDescription o) {
-		return Math.sqrt(Math.pow(o.getCapabilities().getStreamingPerformance()
-				.get(o.getReservations().size() + 1), 2.0)
+        double streamingPerformance;
+
+        if(o.getCapabilities().getStreamingPerformance().size() > o.getReservations().size())
+            streamingPerformance = o.getCapabilities().getStreamingPerformance()
+                    .get(o.getReservations().size() + 1);
+        else
+            streamingPerformance = 0.0;
+
+		return Math.sqrt(Math.pow(streamingPerformance, 2.0)
 				+ Math.pow(o.getCapabilities().getIops(), 2.0)
 				+ Math.pow(o.getCapabilities().getCapacity(), 2.0));
 	}

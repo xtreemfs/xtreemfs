@@ -94,7 +94,7 @@ public class ReservationSchedulerImplementationTest {
 		streamingThroughput.put(1, 0.0);
 		OSDPerformanceDescription perf = new OSDPerformanceDescription(1.0, streamingThroughput, 0.0);
 		OSDDescription osd = new OSDDescription("osd1", perf, OSDDescription.OSDType.DISK);
-		assertEquals(scheduler.getAngle(reservation1, osd), 0.0);
+		assertTrue(scheduler.getAngle(reservation1, osd) == 0.0);
 		assertFalse(scheduler.getAngle(reservation2, osd2) == 0.0);
 		assertTrue(scheduler.getAngle(reservation3, osd) < scheduler.getAngle(reservation2, osd));
 	}
