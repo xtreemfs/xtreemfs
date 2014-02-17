@@ -97,14 +97,14 @@ public class WeightedFairQueueTest {
         int element = 1;
 
         assertTrue(queue.add(element));
-        assertEquals(element, queue.take());
+        assertEquals((long) element, (long) queue.take());
     }
 
     @Test
     public void testPoll() throws Exception {
         assertTrue(queue.poll() == null);
         queue.add(1);
-        assertEquals(queue.poll(), 1);
+        assertEquals((long) queue.poll(), 1);
         assertTrue(queue.poll() == null);
     }
 
@@ -112,7 +112,7 @@ public class WeightedFairQueueTest {
     public void testPollWithTimeout() throws Exception {
         assertTrue(queue.poll(100, TimeUnit.MILLISECONDS) == null);
         queue.add(1);
-        assertEquals(queue.poll(100, TimeUnit.MILLISECONDS), 1);
+        assertEquals((long) queue.poll(100, TimeUnit.MILLISECONDS), 1);
 
         new Thread(new Runnable() {
             @Override
@@ -124,7 +124,7 @@ public class WeightedFairQueueTest {
             }
         }).start();
 
-        assertEquals(queue.poll(200, TimeUnit.MILLISECONDS), 2);
+        assertEquals((long) queue.poll(200, TimeUnit.MILLISECONDS), 2);
     }
 
     @Test
@@ -258,11 +258,11 @@ public class WeightedFairQueueTest {
 
         Iterator<Integer> it = queue.iterator();
         assertTrue(it.hasNext());
-        assertEquals(it.next(), 3);
+        assertEquals((long) it.next(), 3);
         assertTrue(it.hasNext());
-        assertEquals(it.next(), 2);
+        assertEquals((long) it.next(), 2);
         assertTrue(it.hasNext());
-        assertEquals(it.next(), 1);
+        assertEquals((long) it.next(), 1);
         assertFalse(it.hasNext());
     }
 
