@@ -30,15 +30,13 @@ for VERSION in $HADOOP_VERSIONS; do
 
    export HADOOP_CONF_DIR=$HADOOP_PREFIX/conf/
    echo "Set HADOOP_CONF_DIR=$HADOOP_CONF_DIR"
-
-   echo "Set JAVA_HOME=$JAVA_HOME"
-   sed -i 's/\(# export JAVA_HOME=\).*/export JAVA_HOME=$JAVA_HOME/' $HADOOP_PREFIX/conf/hadoop-env.sh
- 
-   sed -i 's/\(# export HADOOP_LOG_DIR=\).*/export HADOOP_LOG_DIR=\/tmp\/xtreemfs_xtestenv\/log/' $HADOOP_PREFIX/conf/hadoop-env.sh
    
+   echo "Set HADOOP_LOG_DIR=$HADOOP_LOG_DIR"
+   export HADOOP_LOG_DIR="$TEST_DIR/log/hadoop.log"
+
    echo "Copy XtreeemFSHadoopClient.jar to $HADOOP_PREFIX/lib/"
    cp $XTREEMFS/contrib/hadoop/dist/XtreemFSHadoopClient.jar $HADOOP_PREFIX/lib/
-
+   
    echo "configure core-site.xml"
 
    CORE_SITE="
@@ -178,9 +176,11 @@ for VERSION in $HADOOP_VERSIONS; do
             kill $JOBTRACKER_PID
          fi
 
-         # kill all remaining child processes (workaround)
+         #kill all remaining child processes
          CHILD_PIDS=$(jps | grep Child | cut -d ' ' -f1)
-         kill $CHILD_PIDS         
+         if [[ -n $CHILD_PIDS ]] 
+            then kill $CHILD_PIDS
+         fi
    fi
 done
 
