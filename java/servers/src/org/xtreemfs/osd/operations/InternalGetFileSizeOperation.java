@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -24,7 +25,9 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResp
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.rwre.RWReplicationStage;
 import org.xtreemfs.osd.stages.StorageStage.GetFileSizeCallback;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse;
@@ -32,7 +35,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 public final class InternalGetFileSizeOperation extends OSDOperation {
 
-    final String sharedSecret;
+    final String      sharedSecret;
 
     final ServiceUUID localUUID;
 
@@ -49,31 +52,39 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
 
     @Override
     public void startRequest(final OSDRequest rq) {
-        final xtreemfs_internal_get_file_sizeRequest args = (xtreemfs_internal_get_file_sizeRequest) rq.getRequestArgs();
-
-//        System.out.println("rq: "+args);
-
+        final xtreemfs_internal_get_file_sizeRequest args = (xtreemfs_internal_get_file_sizeRequest) rq
+                .getRequestArgs();
 
         final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
 
-        master.getStorageStage().getFilesize(args.getFileId(), sp, rq.getCapability().getSnapTimestamp(), rq, new GetFileSizeCallback() {
+        final String replUpdatePolicy = args.getFileCredentials().getXlocs().getReplicaUpdatePolicy();
 
-            @Override
-            public void getFileSizeComplete(long fileSize, ErrorResponse error) {
-                step2(rq, args, fileSize, error);
-            }
-        });
+        if (replUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE)
+                || replUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
+            master.getStorageStage().getFilesize(args.getFileId(), sp, rq.getCapability().getSnapTimestamp(), rq,
+                    new GetFileSizeCallback() {
+
+                        @Override
+                        public void getFileSizeComplete(long fileSize, ErrorResponse error) {
+                            step2(rq, args, fileSize, error);
+                        }
+                    });
+        } else {
+            rwReplicatedGetFS(rq, args);
+        }
+
     }
 
-    public void step2(final OSDRequest rq, xtreemfs_internal_get_file_sizeRequest args, long localFS, ErrorResponse error) {
+    public void step2(final OSDRequest rq, xtreemfs_internal_get_file_sizeRequest args, long localFS,
+            ErrorResponse error) {
         if (error != null) {
             rq.sendError(error);
         } else {
             if (rq.getLocationList().getLocalReplica().isStriped()) {
-                //striped read
+                // striped read
                 stripedGetFS(rq, args, localFS);
             } else {
-                //non-striped case
+                // non-striped case
                 sendResponse(rq, localFS);
             }
         }
@@ -86,7 +97,9 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
             int cnt = 0;
             for (ServiceUUID osd : osds) {
                 if (!osd.equals(localUUID)) {
-                    gmaxRPCs[cnt++] = master.getOSDClient().xtreemfs_internal_get_gmax(osd.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, args.getFileCredentials(), args.getFileId());
+                    gmaxRPCs[cnt++] = master.getOSDClient().xtreemfs_internal_get_gmax(osd.getAddress(),
+                            RPCAuthentication.authNone, RPCAuthentication.userService, args.getFileCredentials(),
+                            args.getFileId());
                 }
             }
             this.waitForResponses(gmaxRPCs, new ResponsesListener() {
@@ -100,7 +113,7 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
             rq.sendInternalServerError(ex);
             return;
         }
-        
+
     }
 
     private void stripedReadAnalyzeGmax(final OSDRequest rq, final xtreemfs_internal_get_file_sizeRequest args,
@@ -111,7 +124,7 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
             for (int i = 0; i < gmaxRPCs.length; i++) {
                 InternalGmax gmax = (InternalGmax) gmaxRPCs[i].get();
                 if (gmax.getFileSize() > maxFS) {
-                    //found new max
+                    // found new max
                     maxFS = gmax.getFileSize();
                 }
             }
@@ -124,15 +137,54 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
         }
     }
 
+    private void rwReplicatedGetFS(final OSDRequest rq, final xtreemfs_internal_get_file_sizeRequest args) {
+        master.getRWReplicationStage().prepareOperation(args.getFileCredentials(),
+ rq.getLocationList(), 0, 0,
+                RWReplicationStage.Operation.READ,
+                new RWReplicationStage.RWReplicationCallback() {
+
+                    @Override
+                    public void success(long newObjectVersion) {
+                        final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
+
+                        final long snapVerTS = rq.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_ACCESS_SNAP ? rq
+                                .getCapability().getSnapTimestamp() : 0;
+
+                        master.getStorageStage().getFilesize(args.getFileId(), sp, snapVerTS, rq,
+                                new GetFileSizeCallback() {
+                                    @Override
+                                    public void getFileSizeComplete(long fileSize, ErrorResponse error) {
+                                        if (error != null) {
+                                            rq.sendError(error);
+                                        } else {
+                                            sendResponse(rq, fileSize);
+                                        }
+                                    }
+                                });
+                    }
+
+                    @Override
+                    public void redirect(String redirectTo) {
+                        rq.getRPCRequest().sendRedirect(redirectTo);
+                    }
+
+                    @Override
+                    public void failed(ErrorResponse err) {
+                        rq.sendError(err);
+                    }
+                }, rq);
+    }
+
     public void sendResponse(OSDRequest rq, long fileSize) {
-        xtreemfs_internal_get_file_sizeResponse response = xtreemfs_internal_get_file_sizeResponse.newBuilder().setFileSize(fileSize).build();
-        rq.sendSuccess(response,null);
+        xtreemfs_internal_get_file_sizeResponse response = xtreemfs_internal_get_file_sizeResponse.newBuilder()
+                .setFileSize(fileSize).build();
+        rq.sendSuccess(response, null);
     }
 
     @Override
     public ErrorResponse parseRPCMessage(OSDRequest rq) {
         try {
-            xtreemfs_internal_get_file_sizeRequest rpcrq = (xtreemfs_internal_get_file_sizeRequest)rq.getRequestArgs();
+            xtreemfs_internal_get_file_sizeRequest rpcrq = (xtreemfs_internal_get_file_sizeRequest) rq.getRequestArgs();
             rq.setFileId(rpcrq.getFileId());
             rq.setCapability(new Capability(rpcrq.getFileCredentials().getXcap(), sharedSecret));
             rq.setLocationList(new XLocations(rpcrq.getFileCredentials().getXlocs(), localUUID));

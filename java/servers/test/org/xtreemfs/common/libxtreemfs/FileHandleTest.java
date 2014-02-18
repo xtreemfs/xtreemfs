@@ -15,8 +15,10 @@ import java.io.FileWriter;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.libxtreemfs.exceptions.InvalidChecksumException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
+import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.foundation.logging.Logging;
@@ -25,20 +27,16 @@ import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.FSUtils;
-import org.xtreemfs.osd.OSD;
-import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.REPL_FLAG;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.getattrResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
@@ -69,12 +67,9 @@ public class FileHandleTest {
 
     private static StripingPolicy       defaultStripingPolicy;
 
-    private static OSD[]                osds;
-    private static OSDConfig[]          configs;
-
     private static MRCServiceClient     mrcClient;
 
-    private static ClientImplementation client;
+    private static AdminClient          client;
 
     private static Options              options;
 
@@ -85,15 +80,13 @@ public class FileHandleTest {
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
         Logging.start(Logging.LEVEL_WARN);
 
-        dirConfig = SetupUtils.createDIRConfig();
-        dir = new DIRRequestDispatcher(dirConfig, SetupUtils.createDIRdbsConfig());
-        dir.startup();
-        dir.waitForStartup();
-
-        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_CLIENT,
-                TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.RPC_CLIENT,
-                TestEnvironment.Services.MRC });
+        SetupUtils.CHECKSUMS_ON = true;
+        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_SERVICE,
+                TestEnvironment.Services.DIR_CLIENT, TestEnvironment.Services.TIME_SYNC,
+                TestEnvironment.Services.RPC_CLIENT, TestEnvironment.Services.MRC, TestEnvironment.Services.MRC_CLIENT,
+                TestEnvironment.Services.OSD, TestEnvironment.Services.OSD });
         testEnv.start();
+        SetupUtils.CHECKSUMS_ON = false;
 
         userCredentials = UserCredentials.newBuilder().setUsername("test").addGroups("test").build();
 
@@ -105,35 +98,16 @@ public class FileHandleTest {
         defaultStripingPolicy = StripingPolicy.newBuilder().setType(StripingPolicyType.STRIPING_POLICY_RAID0)
                 .setStripeSize(128).setWidth(1).build();
 
-        SetupUtils.CHECKSUMS_ON = true;
-        osds = new OSD[4];
-        configs = SetupUtils.createMultipleOSDConfigs(4);
-        SetupUtils.CHECKSUMS_ON = false;
-
-        // start two OSDs
-        osds[0] = new OSD(configs[0]);
-        osds[1] = new OSD(configs[1]);
-
-        mrcClient = new MRCServiceClient(testEnv.getRpcClient(), testEnv.getMRCAddress());
+        mrcClient = testEnv.getMrcClient();
 
         options = new Options();
-        client = (ClientImplementation) ClientFactory
-                .createClient(dirAddress, userCredentials, null, options);
+        client = ClientFactory.createAdminClient(dirAddress, userCredentials, null, options);
         client.start();
     }
 
     @AfterClass
     public static void tearDown() throws Exception {
-        for (int i = 0; i < osds.length; i++) {
-            if (osds[i] != null) {
-                osds[i].shutdown();
-            }
-        }
-
         testEnv.shutdown();
-        dir.shutdown();
-        dir.waitForShutdown();
-
         client.shutdown();
     }
 
@@ -405,7 +379,8 @@ public class FileHandleTest {
         OSDWriteResponse response = responseBuilder.build();
         fileHandle.writeBackFileSize(response, false);
 
-        RPCResponse<getattrResponse> r = mrcClient.getattr(null, auth, userCredentials, volumeName, fileName, 0l);
+        RPCResponse<getattrResponse> r = mrcClient.getattr(testEnv.getMRCAddress(), auth, userCredentials, volumeName,
+                fileName, 0l);
         getattrResponse response2 = r.get(); 
 
         assertEquals(response.getSizeInBytes(), response2.getStbuf().getSize());
@@ -436,7 +411,8 @@ public class FileHandleTest {
 
         Thread.sleep(2000);
 
-        RPCResponse<getattrResponse> r = mrcClient.getattr(null, auth, userCredentials, volumeName, fileName, 0l);
+        RPCResponse<getattrResponse> r = mrcClient.getattr(testEnv.getMRCAddress(), auth, userCredentials, volumeName,
+                fileName, 0l);
         getattrResponse response2 = r.get();
 
         assertEquals(response.getSizeInBytes(), response2.getStbuf().getSize());
@@ -692,14 +668,19 @@ public class FileHandleTest {
     public void testMarkReplicaAsComplete() throws Exception {
         String volumeName = "testMarkReplicaAsComplete";
 
-        // Create admin client.
-        AdminClient client = ClientFactory.createAdminClient(dirAddress, userCredentials, null, options);
-        client.start();
+        // start new OSDs
+        testEnv.startAdditionalOSDs(2);
 
         // Create and open volume.
         client.createVolume(mrcAddress, auth, userCredentials, volumeName);
         AdminVolume volume = client.openVolume(volumeName, null, options);
         volume.start();
+
+        // set replica update policy.
+        int replFlags = ReplicationFlags.setFullReplica(0);
+        replFlags = ReplicationFlags.setRarestFirstStrategy(replFlags);
+        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY, 2,
+                replFlags);
 
         // open FileHandle.
         AdminFileHandle fileHandle = volume.openFile(
@@ -718,58 +699,108 @@ public class FileHandleTest {
 
         fileHandle.write(userCredentials, bytesIn, length, 0);
 
-        fileHandle.close();
-
-        // set replica update policy.
-        volume.setXAttr(userCredentials, "/test.txt", "xtreemfs.read_only", Boolean.toString(true),
-                XATTR_FLAGS.XATTR_FLAGS_CREATE);
-
-        // re-open file
-        fileHandle = volume.openFile(userCredentials, "/test.txt",
-                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
-
-        Replica replica = fileHandle.getReplica(0);
-
-        // start new OSDs
-
-        osds[2] = new OSD(configs[2]);
-
-        // create new replica
-        Replica newReplica = replica.toBuilder()
-                .setReplicationFlags(REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber() | REPL_FLAG.REPL_FLAG_STRATEGY_RAREST_FIRST.getNumber())
-                .setOsdUuids(0, configs[2].getUUID().toString()).build();
-
-        volume.addReplica(userCredentials, "/test.txt", newReplica);
-
-        // sleep 10 sec.
-        Thread.sleep(10000);
-
         // mark new replica as complete.
-        fileHandle.checkAndMarkIfReadOnlyReplicaComplete(1, userCredentials);
+        fileHandle.checkAndMarkIfReadOnlyReplicaComplete(0, userCredentials);
 
         // re-open file to get replica with updated flags.
         fileHandle.close();
         fileHandle = volume.openFile(userCredentials, "/test.txt",
                 SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
 
-        assertTrue((fileHandle.getReplica(1).getReplicationFlags() & REPL_FLAG.REPL_FLAG_IS_COMPLETE
+        assertTrue((fileHandle.getReplica(0).getReplicationFlags() & REPL_FLAG.REPL_FLAG_IS_COMPLETE
                 .getNumber()) != 0);
 
         // close volume and file, shut down client and osd
         fileHandle.close();
         volume.close();
-        client.shutdown();
-        osds[2].shutdown();
+        client.deleteVolume(auth, userCredentials, volumeName);
+        testEnv.stopAdditionalOSDs();
+    }
 
+    @Test
+    public void testGetSizeOnOsd() throws Exception {
+        String volumeName = "testGetSizeOnOsd";
+
+        // start new OSDs
+        testEnv.startAdditionalOSDs(2);
+
+        // Create and open volume.
+        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
+        AdminVolume volume = client.openVolume(volumeName, null, options);
+        volume.start();
+
+        // set replica update Policy.
+        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 3,
+                ReplicationFlags.setSequentialStrategy(0));
+
+        // open FileHandle.
+        AdminFileHandle fileHandle = volume.openFile(
+                userCredentials,
+                "/test.txt",
+                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
+                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 0777);
+
+        // get OSD of first replica.
+        String uuid = fileHandle.getReplica(0).getOsdUuids(0);
+        
+        // write some content.
+        String content = "";
+        for (int i = 0; i < 12000; i++) {
+            content = content.concat("Hello World ");
+        }
+        byte[] bytesIn = content.getBytes();
+
+        //stop OSD of first replica
+        testEnv.stopOSD(uuid);
+        
+        int length = bytesIn.length;
+        fileHandle.write(userCredentials, bytesIn, length, 0);
+        
+        // restart OSD with first replica
+        testEnv.restartOSD(uuid);
+        
+        String primary = testEnv.getPrimary(fileHandle.getGlobalFileId());
+        long size = 0;
+        
+        // repeat until first replica is primary
+        do {
+
+            // stop primary
+            testEnv.stopOSD(primary);
+
+            // re-open File
+            fileHandle.close();
+            fileHandle = volume.openFile(userCredentials, "/test.txt",
+                    SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber());
+
+            // wait 15s to avoid flooding
+            Thread.sleep(15000);
+
+            // get size on OSD
+            size = fileHandle.getSizeOnOSD();
+            
+            //start old primary
+            testEnv.restartOSD(primary);
+            
+            // get new primary
+            primary = testEnv.getPrimary(fileHandle.getGlobalFileId());
+
+        } while (primary.equals(uuid));
+        
+        // check if size of the first replica is correct
+        assertEquals(length, size);
+        
+        fileHandle.close();
+        
+        // stop additional OSDs
+        testEnv.stopAdditionalOSDs();
+        
+        client.deleteVolume(auth, userCredentials, volumeName);
     }
 
     @Test
     public void testCheckObjectAndGetSize() throws Exception {
         String volumeName = "testCheckObjectAndGetSize";
-        
-        // Create admin client.
-        AdminClient client = ClientFactory.createAdminClient(dirAddress, userCredentials, null, options);
-        client.start();
 
         // Create and open volume.
         client.createVolume(mrcAddress, auth, userCredentials, volumeName);
@@ -798,15 +829,8 @@ public class FileHandleTest {
 
         assertEquals(length, objSize);
 
-        // change object on osd
-        OSDConfig config = null;
-        for (OSDConfig conf : configs) {
-            if (conf.getUUID().toString().equals(fileHandle.getReplica(0).getOsdUuids(0))) {
-                config = conf;
-                break;
-            }
-        }
-        HashStorageLayout hsl = new HashStorageLayout(config, new MetadataCache());
+        HashStorageLayout hsl = new HashStorageLayout(testEnv.getOSDConfig(fileHandle.getReplica(0).getOsdUuids(0)),
+                new MetadataCache());
         String filePath = hsl.generateAbsoluteFilePath(fileHandle.getGlobalFileId());
 
         File fileDir = new File(filePath);
@@ -821,5 +845,8 @@ public class FileHandleTest {
         } catch (InvalidChecksumException e) {
             assertTrue(true);
         }
+
+        volume.close();
+        client.deleteVolume(auth, userCredentials, volumeName);
     }
 }
