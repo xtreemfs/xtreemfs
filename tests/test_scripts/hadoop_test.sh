@@ -30,9 +30,10 @@ for VERSION in $HADOOP_VERSIONS; do
 
    export HADOOP_CONF_DIR=$HADOOP_PREFIX/conf/
    echo "Set HADOOP_CONF_DIR=$HADOOP_CONF_DIR"
-   
+
+   export HADOOP_LOG_DIR="$TEST_DIR/log/hadoop.log"  
    echo "Set HADOOP_LOG_DIR=$HADOOP_LOG_DIR"
-   export HADOOP_LOG_DIR="$TEST_DIR/log/hadoop.log"
+
 
    echo "Copy XtreeemFSHadoopClient.jar to $HADOOP_PREFIX/lib/"
    cp $XTREEMFS/contrib/hadoop/dist/XtreemFSHadoopClient.jar $HADOOP_PREFIX/lib/
@@ -130,14 +131,14 @@ for VERSION in $HADOOP_VERSIONS; do
    #wait for complete start up
    sleep 10s
    
-   if [[ -z $(jps | grep TaskTracker) || -z $(jps | grep JobTracker) ]]; 
+   if [[ -z "$(jps | grep TaskTracker)" || -z "$(jps | grep JobTracker)" ]] 
       then echo "Hadoop start up failed!"; RESULT=-1;
       else
          echo "Run wordcount without buffer..."
          $HADOOP_PREFIX/bin/hadoop jar $HADOOP_PREFIX/hadoop-examples-$VERSION.jar wordcount /hadoop_test/input /hadoop_test/output
 
          JOB_STATUS=$($HADOOP_PREFIX/bin/hadoop job -list all | grep _0001 | cut -c 23)
-         if [ $JOB_STATUS != "2" ];
+         if [ "$JOB_STATUS" != "2" ]
             then echo "Hadoop job without buffer failed!"; RESULT=-1;
             else echo "Hadoop job without buffer  was successfull";
          fi
@@ -151,7 +152,7 @@ for VERSION in $HADOOP_VERSIONS; do
 
          JOB_STATUS=$($HADOOP_PREFIX/bin/hadoop job -list all | grep _0002 | cut -c 23) 
         
-         if [ $JOB_STATUS != "2" ];
+         if [ "$JOB_STATUS" != "2" ]
             then echo "Hadoop job with buffer failed!"; RESULT=-1;
             else echo "Hadoop job with buffer was successfull";
          fi
@@ -162,14 +163,14 @@ for VERSION in $HADOOP_VERSIONS; do
          $HADOOP_PREFIX/bin/hadoop-daemon.sh stop tasktracker
 
          # check if JobTacker and TaskTracker stop
-         if [[ -n $(jps | grep TaskTracker) ]];
+         if [ -n "$(jps | grep TaskTracker)" ]
          then 
             echo "TaskTracker does not stop, kill manually"
             TASKTRACKER_PID=$(jps | grep TaskTracker | cut -d ' ' -f1)
             kill $TASKTRACKER_PID
          fi 
     
-         if [[ -n $(jps | grep JobTracker) ]];
+         if [ -n "$(jps | grep JobTracker)" ]
          then 
             echo "JobTracker does not stop, kill manually"
             JOBTRACKER_PID=$(jps | grep JobTracker | cut -d ' ' -f1)
@@ -178,7 +179,7 @@ for VERSION in $HADOOP_VERSIONS; do
 
          #kill all remaining child processes
          CHILD_PIDS=$(jps | grep Child | cut -d ' ' -f1)
-         if [[ -n $CHILD_PIDS ]] 
+         if [ -n "$CHILD_PIDS" ] 
             then kill $CHILD_PIDS
          fi
    fi
