@@ -58,7 +58,7 @@ sendresult() {
     # Work-around the problem that 'zip' always stores the complete path :(
     current_dir="$PWD"
     cd "$TEST_DIR""/log"
-    zip -q -9 $ATTACHMENT_ZIP_LOGS *.log
+    zip -r -q -9 $ATTACHMENT_ZIP_LOGS *.log
     cd "$current_dir"
   fi
 
