@@ -22,8 +22,6 @@ SOURCE_BLACK_LIST=(
   "doc"
   "etc/xos/xtreemfs/*test"
   "contrib/server-repl-plugin/config/*-test*"
-  "etc/init.d/xtreemfs-service.template"
-  "etc/init.d/generate_initd_scripts.sh"
   "classfiles"
   "cpp/CMakeFiles"
   "java/pbrpcgen/build"
@@ -161,9 +159,6 @@ $set_version_output
 EOF
   exit 1
 fi
-
-# Generating init.d scripts based on template.
-$XTREEMFS_HOME_DIR/etc/init.d/generate_initd_scripts.sh
 
 BUILD_FILES_DIR=$XTREEMFS_HOME_DIR/packaging/build-service
 SOURCE_TARBALL_NAME="XtreemFS-$VERSION"

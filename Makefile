@@ -115,8 +115,10 @@ install-server:
 	@cp packaging/postinstall_setup.sh $(XTREEMFS_CONFIG_DIR)
 	@chmod a+x $(XTREEMFS_CONFIG_DIR)/postinstall_setup.sh
 
+	# Generating init.d scripts based on template.
+	@etc/init.d/generate_initd_scripts.sh
 	@mkdir -p $(XTREEMFS_INIT_DIR)
-	@cp etc/init.d/xtreemfs-* $(XTREEMFS_INIT_DIR)
+	@cp etc/init.d/xtreemfs-{dir,mrc,osd} $(XTREEMFS_INIT_DIR)
 	@chmod a+x $(XTREEMFS_INIT_DIR)/xtreemfs-*
 
 	@mkdir -p $(XTREEMFS_SHARE_DIR)
