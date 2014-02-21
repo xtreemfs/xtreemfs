@@ -179,7 +179,7 @@ public class OSDDescription {
 
         result.setCapacity(freeCapacity);
         result.setIops(freeIOPS);
-        result.setSeqTP(freeSeqTP);
+        result.setSeqTP(freeSeqTP>0.0?freeSeqTP:0.0);
         return result;
     }
 
