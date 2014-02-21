@@ -142,8 +142,6 @@ rm $RPM_BUILD_ROOT/etc/xos/xtreemfs/postinstall_setup.sh
 
 
 %post server
-XTREEMFS_CONFIG_DIR=/etc/xos/xtreemfs/
-
 #$XTREEMFS_CONFIG_DIR/postinstall_setup.sh
 _POSTINSTALL_
 
