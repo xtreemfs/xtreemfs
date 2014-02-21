@@ -101,8 +101,6 @@ pkg_preinst() {
 }
 
 pkg_postinst() {
-        ${S}/packaging/generate_uuid /etc/xtreemfs/dirconfig.properties
-        ${S}/packaging/generate_uuid /etc/xtreemfs/mrcconfig.properties
-        ${S}/packaging/generate_uuid /etc/xtreemfs/osdconfig.properties
-
+  # This script generates UUIDs for each service and checks that the permissions are set correctly.
+  ${S}/packaging/postinstall_setup.sh
 }

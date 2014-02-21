@@ -6,6 +6,7 @@ XTREEMFS_HOME=/var/lib/xtreemfs
 XTREEMFS_ETC=/etc/xos/xtreemfs
 XTREEMFS_USER=xtreemfs
 XTREEMFS_GROUP=xtreemfs
+XTREEMFS_GENERATE_UUID_SCRIPT="${XTREEMFS_ETC}/generate_uuid"
 
 # When executed during POST installation, do not be verbose.
 VERBOSE=0
@@ -14,6 +15,17 @@ if [ "$script_name" = "postinstall_setup.sh" ]
 then
   VERBOSE=1
 fi
+
+# generate UUIDs
+if [ -x "$XTREEMFS_GENERATE_UUID_SCRIPT" ]; then
+  for service in dir mrc osd; do
+    "$XTREEMFS_GENERATE_UUID_SCRIPT" "${XTREEMFS_ETC}/${service}config.properties"
+    [ $VERBOSE -eq 1 ] && echo "Generated UUID for service: $service"
+  done
+else
+  echo "UUID can't be generated automatically. Please enter a correct UUID in each config file of an XtreemFS service."
+fi
+
 
 group_exists=`grep -c $XTREEMFS_GROUP /etc/group || true`
 if [ $group_exists -eq 0 ]; then
