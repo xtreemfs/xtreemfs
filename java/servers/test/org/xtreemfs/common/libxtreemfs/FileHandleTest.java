@@ -722,7 +722,7 @@ public class FileHandleTest {
         String volumeName = "testGetSizeOnOsd";
 
         // start new OSDs
-        testEnv.startAdditionalOSDs(2);
+        testEnv.startAdditionalOSDs(3);
 
         // Create and open volume.
         client.createVolume(mrcAddress, auth, userCredentials, volumeName);
@@ -730,7 +730,7 @@ public class FileHandleTest {
         volume.start();
 
         // set replica update Policy.
-        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 3,
+        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 5,
                 ReplicationFlags.setSequentialStrategy(0));
 
         // open FileHandle.
@@ -757,7 +757,7 @@ public class FileHandleTest {
         fileHandle.write(userCredentials, bytesIn, length, 0);
         
         // restart OSD with first replica
-        testEnv.restartOSD(uuid);
+        testEnv.startOSD(uuid);
         
         String primary = testEnv.getPrimary(fileHandle.getGlobalFileId());
         long size = 0;
@@ -780,7 +780,7 @@ public class FileHandleTest {
             size = fileHandle.getSizeOnOSD();
             
             //start old primary
-            testEnv.restartOSD(primary);
+            testEnv.startOSD(primary);
             
             // get new primary
             primary = testEnv.getPrimary(fileHandle.getGlobalFileId());

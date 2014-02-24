@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.xtreemfs.common.KeyValuePairs;
 import org.xtreemfs.common.uuids.UUIDResolver;
@@ -85,11 +86,7 @@ public class TestEnvironment {
      * returns always the address of the first OSD
      */
     public InetSocketAddress getOSDAddress() throws UnknownUUIDException {
-        return osds[0].getConfig().getUUID().getAddress();
-    }
-    
-    public InetSocketAddress getOSDAddress(int osdNumber) throws UnknownUUIDException {
-        return osds[osdNumber].getConfig().getUUID().getAddress();
+        return firstOSDAddress;
     }
     
     /**
@@ -99,23 +96,7 @@ public class TestEnvironment {
      * @param osdUuid
      */
     public OSDConfig getOSDConfig(String osdUuid) {
-
-        OSDConfig config = null;
-        for (OSDRequestDispatcher osd : osds) {
-            if (osd.getConfig().getUUID().toString().equals(osdUuid)) {
-                config = osd.getConfig();
-                break;
-            }
-        }
-        if (hasAdditionalOsds && config == null) {
-            for (OSDRequestDispatcher osd : additionalOsds) {
-                if (osd.getConfig().getUUID().toString().equals(osdUuid)) {
-                    config = osd.getConfig();
-                    break;
-                }
-            }
-        }
-        return config;
+        return osds.get(osdUuid).getConfig();
     }
 
     /**
@@ -124,77 +105,58 @@ public class TestEnvironment {
      * @param osdUuid
      */
     public void stopOSD(String osdUuid) {
-        boolean osdStoped = false;
-        for (OSDRequestDispatcher osd : osds) {
-            if (osd.getConfig().getUUID().toString().equals(osdUuid)) {
-                osd.shutdown();
-                osdStoped = true;
-                break;
-            }
-        }
-
-        if (hasAdditionalOsds && !osdStoped) {
-            for (OSDRequestDispatcher osd : additionalOsds) {
-                if (osd.getConfig().getUUID().toString().equals(osdUuid)) {
-                    osd.shutdown();
-                    break;
-                }
-            }
+        OSDRequestDispatcher osd = osds.get(osdUuid);
+        
+        if (osd != null) {
+        	osd.shutdown();
         }
     }
 
     /**
-     * Restarts the OSD with the UUID "osdUuid".
+     * Starts a previously shut downed OSD with the UUID "osdUuid".
      * 
      * @param osdUuid
      * @throws Exception 
      */
-    public void restartOSD(String osdUuid) throws Exception {
-        boolean osdStarted = false;
-        for (int i = 0; i < osds.length; i++) {
-            if (osds[i].getConfig().getUUID().toString().equals(osdUuid)) {
-                osds[i] = new OSDRequestDispatcher(osdConfigs[i]);
-                osds[i].start();
-                break;
-            }
-        }
-        
-        if (hasAdditionalOsds && !osdStarted) {
-            for (int i = 0; i < additionalOsdCount; i++) {
-                if (additionalOsds[i].getConfig().getUUID().toString().equals(osdUuid)) {
-                    additionalOsds[i] = new OSDRequestDispatcher(osdConfigs[osdCount + i]);
-                    additionalOsds[i].start();
-                    break;
-                }
-            }
-        }
+    public void startOSD(String osdUuid) throws Exception {	
+        OSDRequestDispatcher osd = osds.get(osdUuid);
+        if (osd != null) {
+            OSDConfig config = osds.get(osdUuid).getConfig();   
+            
+            //Create new OSDRequestDispatcher with same config.
+            osd = new OSDRequestDispatcher(config);
+            
+            // Replace old OSDRequestDispatcher.
+            osds.put(osdUuid, osd);
+        } 
     }
 
     /**
-     * starts "number" additional OSDs (up to 5).
+     * starts "number" additional OSDs.
      * 
      * @param number
      * @throws Exception
      */
     public void startAdditionalOSDs(int number) throws Exception {
-        assert (number <= 5);
-        hasAdditionalOsds = true;
-        for (int i = 0; i < number; i++) {
-            additionalOsds[i] = new OSDRequestDispatcher(osdConfigs[osdCount + i]);
-            additionalOsds[i].start();
+        OSDConfig[] osdConfigs = SetupUtils.createMultipleOSDConfigs(number);
+        for (OSDConfig config : osdConfigs) {
+        	OSDRequestDispatcher osd = new OSDRequestDispatcher(config);
+        	osd.start();
+        	osds.put(config.getUUID().toString(), osd);
         }
-        additionalOsdCount = number;
     }
 
     /**
      * Stops all additional OSDs
      */
     public void stopAdditionalOSDs() {
-        hasAdditionalOsds = false;
-        for (int i = 0; i < additionalOsdCount; i++) {
-            additionalOsds[i].shutdown();
+        for (String uuid : osds.keySet()) {
+        	// uuid scheme: UUID:localhost:<port>
+        	if (Integer.valueOf(uuid.split(":")[2]) > highestNonAdditionalOsdPort) {
+        		OSDRequestDispatcher osd = osds.remove(uuid);
+        		osd.shutdown();
+        	}
         }
-        additionalOsdCount = 0;
     }
 
     /**
@@ -205,31 +167,15 @@ public class TestEnvironment {
      */
     public String getPrimary(String fileId) {
         String primary = null;
-
-        for (OSDRequestDispatcher osd : osds) {
+        for (OSDRequestDispatcher osd : osds.values()) {
             primary = osd.getPrimary(fileId);
             if (primary != null) {
                 break;
             }
         }
-
-        if (hasAdditionalOsds && primary == null) {
-            for (OSDRequestDispatcher osd : additionalOsds) {
-                primary = osd.getPrimary(fileId);
-                if (primary != null) {
-                    break;
-                }
-            }
-        }
         return primary;
     }
 
-    /**
-     * @return the osdClient
-     */
-    // public OSDClient getOsdClient() {
-    // return osdClient;
-    // }
     public enum Services {
         TIME_SYNC, // time sync facility
         UUID_RESOLVER, // UUID resolver
@@ -260,21 +206,17 @@ public class TestEnvironment {
     
     private MRCRequestDispatcher                                    mrc;
     
-    private OSDRequestDispatcher[]                                  osds;
-    
-    private OSDRequestDispatcher[]                                  additionalOsds;
+    private ConcurrentHashMap<String, OSDRequestDispatcher>         osds;
 
     private final List<Services>                                    enabledServs;
     
     private TimeSync                                                tsInstance;
-
-    private boolean                                                 hasAdditionalOsds = false;
     
     private OSDConfig[]                                             osdConfigs;
     
-    private int                                                     osdCount;
-
-    private int                                                     additionalOsdCount;
+    private int                                                     highestNonAdditionalOsdPort;
+    
+    private InetSocketAddress                                       firstOSDAddress;
 
     public TestEnvironment(Services... servs) {
         enabledServs = new ArrayList(servs.length);
@@ -371,16 +313,19 @@ public class TestEnvironment {
             }
             
             if (enabledServs.contains(Services.OSD)) {
-                osdCount = Collections.frequency(enabledServs, Services.OSD);
-                osds = new OSDRequestDispatcher[osdCount];
-                //for up to 5 additional OSDs
-                additionalOsds = new OSDRequestDispatcher[5];
-                osdConfigs = SetupUtils.createMultipleOSDConfigs(osdCount + 5);
-
-                for (int i = 0; i < osdCount; i++) {
-                    osds[i] = new OSDRequestDispatcher(osdConfigs[i]);
-                    osds[i].start();
+                int osdCount = Collections.frequency(enabledServs, Services.OSD);
+                osds = new ConcurrentHashMap<String, OSDRequestDispatcher>(osdCount);               
+                osdConfigs = SetupUtils.createMultipleOSDConfigs(osdCount);               
+                // Save highest port for later use in stopAdditionalOSDs.
+                highestNonAdditionalOsdPort = osdConfigs[osdConfigs.length - 1].getPort();               
+                for (OSDConfig config : osdConfigs) {
+                	OSDRequestDispatcher osd = new OSDRequestDispatcher(config);
+                    osd.start();
+                    osds.put(config.getUUID().toString(), osd);
                 }
+                
+                // Save address of first OSD for getOSDAdress method.
+                firstOSDAddress = osdConfigs[0].getUUID().getAddress();
 
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "OSDs 1-" + osdCount + " running");
             }
@@ -431,15 +376,12 @@ public class TestEnvironment {
             }
         }
         
-        if (enabledServs.contains(Services.OSD) && osds != null) {
+        if (enabledServs.contains(Services.OSD)) {
             try {
-                for (OSDRequestDispatcher osd : osds) {
+                for (OSDRequestDispatcher osd : osds.values()) {
                     if (osd != null) {
                         osd.shutdown();
                     }
-                }
-                if (hasAdditionalOsds) {
-                    stopAdditionalOSDs();
                 }
             } catch (Throwable th) {
                 th.printStackTrace();
