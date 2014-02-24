@@ -8,6 +8,8 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_UUID_ITEM_H_
 #define CPP_INCLUDE_LIBXTREEMFS_UUID_ITEM_H_
 
+#include <stdint.h>
+
 #include <boost/interprocess/detail/atomic.hpp>
 #include <boost/version.hpp>
 #include <string>
