@@ -103,7 +103,7 @@ install-server:
 
 	@mkdir -p $(XTREEMFS_CONFIG_DIR)
 #	@cp etc/xos/xtreemfs/*config.properties $(XTREEMFS_CONFIG_DIR)
-	# delete UUID from config-files
+# delete UUID from config-files
 	@grep -v '^uuid\W*=\W*\w\+' etc/xos/xtreemfs/dirconfig.properties > $(XTREEMFS_CONFIG_DIR)/dirconfig.properties
 	@grep -v '^uuid\W*=\W*\w\+' etc/xos/xtreemfs/mrcconfig.properties > $(XTREEMFS_CONFIG_DIR)/mrcconfig.properties
 	@grep -v '^uuid\W*=\W*\w\+' etc/xos/xtreemfs/osdconfig.properties > $(XTREEMFS_CONFIG_DIR)/osdconfig.properties
@@ -116,7 +116,7 @@ install-server:
 	@cp packaging/postinstall_setup.sh $(XTREEMFS_CONFIG_DIR)
 	@chmod a+x $(XTREEMFS_CONFIG_DIR)/postinstall_setup.sh
 
-	# Generating init.d scripts based on template.
+# Generating init.d scripts based on template.
 	@etc/init.d/generate_initd_scripts.sh
 	@mkdir -p $(XTREEMFS_INIT_DIR)
 	@cp etc/init.d/xtreemfs-{dir,mrc,osd} $(XTREEMFS_INIT_DIR)
