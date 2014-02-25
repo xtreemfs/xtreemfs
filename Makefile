@@ -75,10 +75,10 @@ install-client:
 	@mkdir -p $(BIN_DIR)
 	@cp   -p  $(XTREEMFS_BINARIES_DIR)/*.xtreemfs $(XTREEMFS_BINARIES_DIR)/xtfsutil $(BIN_DIR)
 
-	# mount -t xtreemfs will be recognized when binaries are present in /sbin/. Only applicable if the Fuse Client was built.
-	@[ -f $(XTREEMFS_BINARIES_DIR)/mount.xtreemfs ] && mkdir -p $(SBIN_DIR)
-	@[ -f $(XTREEMFS_BINARIES_DIR)/mount.xtreemfs ] && ln -s $(BIN_DIR)/mount.xtreemfs $(SBIN_DIR)/mount.xtreemfs
-	@[ -f $(XTREEMFS_BINARIES_DIR)/mount.xtreemfs ] && ln -s $(BIN_DIR)/umount.xtreemfs $(SBIN_DIR)/umount.xtreemfs
+# mount -t xtreemfs will be recognized when binaries are present in /sbin/. Only applicable if the Fuse Client was built.
+	@[ -f $(XTREEMFS_BINARIES_DIR)/mount.xtreemfs ] && mkdir -p $(SBIN_DIR); true
+	@[ -f $(XTREEMFS_BINARIES_DIR)/mount.xtreemfs ] && ln -s $(BIN_DIR)/mount.xtreemfs $(SBIN_DIR)/mount.xtreemfs; true
+	@[ -f $(XTREEMFS_BINARIES_DIR)/mount.xtreemfs ] && ln -s $(BIN_DIR)/umount.xtreemfs $(SBIN_DIR)/umount.xtreemfs; true
 
 	@mkdir -p $(XTREEMFS_CONFIG_DIR)
 	@cp etc/xos/xtreemfs/default_dir $(XTREEMFS_CONFIG_DIR)
