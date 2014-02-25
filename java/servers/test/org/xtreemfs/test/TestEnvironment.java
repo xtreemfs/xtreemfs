@@ -96,7 +96,7 @@ public class TestEnvironment {
      * @param osdUuid
      */
     public OSDConfig getOSDConfig(String osdUuid) {
-        return osds.get(osdUuid).getConfig();
+        return osds.get(osdUuid).osd.getConfig();
     }
 
     /**
@@ -105,9 +105,9 @@ public class TestEnvironment {
      * @param osdUuid
      */
     public void stopOSD(String osdUuid) {
-        OSDRequestDispatcher osd = osds.get(osdUuid);
+        TestOSD osd = osds.get(osdUuid);
         
-        if (osd != null) {
+        if (osd != null && osd.started) {
         	osd.shutdown();
         }
     }
@@ -119,12 +119,12 @@ public class TestEnvironment {
      * @throws Exception 
      */
     public void startOSD(String osdUuid) throws Exception {	
-        OSDRequestDispatcher osd = osds.get(osdUuid);
-        if (osd != null) {
-            OSDConfig config = osds.get(osdUuid).getConfig();   
+        TestOSD osd = osds.get(osdUuid);
+        if (osd != null && !osd.started) {
+            OSDConfig config = osds.get(osdUuid).osd.getConfig();   
             
             //Create new OSDRequestDispatcher with same config.
-            osd = new OSDRequestDispatcher(config);
+            osd = new TestOSD (new OSDRequestDispatcher(config));
             
             // Replace old OSDRequestDispatcher.
             osds.put(osdUuid, osd);
@@ -138,24 +138,11 @@ public class TestEnvironment {
      * @throws Exception
      */
     public void startAdditionalOSDs(int number) throws Exception {
-        OSDConfig[] osdConfigs = SetupUtils.createMultipleOSDConfigs(number);
+        OSDConfig[] osdConfigs = SetupUtils.createMultipleOSDConfigs(number, osds.size());
         for (OSDConfig config : osdConfigs) {
-        	OSDRequestDispatcher osd = new OSDRequestDispatcher(config);
+        	TestOSD osd = new TestOSD ( new OSDRequestDispatcher(config));
         	osd.start();
         	osds.put(config.getUUID().toString(), osd);
-        }
-    }
-
-    /**
-     * Stops all additional OSDs
-     */
-    public void stopAdditionalOSDs() {
-        for (String uuid : osds.keySet()) {
-        	// uuid scheme: UUID:localhost:<port>
-        	if (Integer.valueOf(uuid.split(":")[2]) > highestNonAdditionalOsdPort) {
-        		OSDRequestDispatcher osd = osds.remove(uuid);
-        		osd.shutdown();
-        	}
         }
     }
 
@@ -167,8 +154,8 @@ public class TestEnvironment {
      */
     public String getPrimary(String fileId) {
         String primary = null;
-        for (OSDRequestDispatcher osd : osds.values()) {
-            primary = osd.getPrimary(fileId);
+        for (TestOSD osd : osds.values()) {
+            primary = osd.osd.getPrimary(fileId);
             if (primary != null) {
                 break;
             }
@@ -206,15 +193,13 @@ public class TestEnvironment {
     
     private MRCRequestDispatcher                                    mrc;
     
-    private ConcurrentHashMap<String, OSDRequestDispatcher>         osds;
+    private HashMap<String, TestOSD>                                osds;
 
     private final List<Services>                                    enabledServs;
     
     private TimeSync                                                tsInstance;
     
     private OSDConfig[]                                             osdConfigs;
-    
-    private int                                                     highestNonAdditionalOsdPort;
     
     private InetSocketAddress                                       firstOSDAddress;
 
@@ -314,12 +299,10 @@ public class TestEnvironment {
             
             if (enabledServs.contains(Services.OSD)) {
                 int osdCount = Collections.frequency(enabledServs, Services.OSD);
-                osds = new ConcurrentHashMap<String, OSDRequestDispatcher>(osdCount);               
-                osdConfigs = SetupUtils.createMultipleOSDConfigs(osdCount);               
-                // Save highest port for later use in stopAdditionalOSDs.
-                highestNonAdditionalOsdPort = osdConfigs[osdConfigs.length - 1].getPort();               
+                osds = new HashMap<String, TestOSD>(osdCount);               
+                osdConfigs = SetupUtils.createMultipleOSDConfigs(osdCount, 0);                           
                 for (OSDConfig config : osdConfigs) {
-                	OSDRequestDispatcher osd = new OSDRequestDispatcher(config);
+                	TestOSD osd = new TestOSD(new OSDRequestDispatcher(config));
                     osd.start();
                     osds.put(config.getUUID().toString(), osd);
                 }
@@ -378,7 +361,7 @@ public class TestEnvironment {
         
         if (enabledServs.contains(Services.OSD)) {
             try {
-                for (OSDRequestDispatcher osd : osds.values()) {
+                for (TestOSD osd : osds.values()) {
                     if (osd != null) {
                         osd.shutdown();
                     }
@@ -425,5 +408,25 @@ public class TestEnvironment {
         // cleanup
         File testDir = new File(SetupUtils.TEST_DIR);
         // FSUtils.delTree(testDir);
+    }
+    
+    private class TestOSD {
+    	public OSDRequestDispatcher osd;
+    	public boolean started;
+    	
+    	public TestOSD(OSDRequestDispatcher osd) {
+    		this.osd = osd;
+    		this.started = false;
+    	}
+    	
+    	public void start() {
+    		osd.start();
+    		started = true;
+    	}
+    	
+    	public void shutdown() {
+    		osd.shutdown();
+    		started = false;
+    	}
     }
 }

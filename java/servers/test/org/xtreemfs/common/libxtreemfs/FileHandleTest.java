@@ -12,7 +12,9 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.FileWriter;
 
+import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
@@ -73,8 +75,8 @@ public class FileHandleTest {
 
     private static Options              options;
 
-    @BeforeClass
-    public static void initializeTest() throws Exception {
+    @Before
+    public void initializeTest() throws Exception {
         System.out.println("TEST: " + VolumeTest.class.getSimpleName());
 
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
@@ -105,8 +107,8 @@ public class FileHandleTest {
         client.start();
     }
 
-    @AfterClass
-    public static void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
         testEnv.shutdown();
         client.shutdown();
     }
@@ -710,13 +712,18 @@ public class FileHandleTest {
         assertTrue((fileHandle.getReplica(0).getReplicationFlags() & REPL_FLAG.REPL_FLAG_IS_COMPLETE
                 .getNumber()) != 0);
 
-        // close volume and file, shut down client and osd
+        // close volume and file, shut down client
         fileHandle.close();
         volume.close();
         client.deleteVolume(auth, userCredentials, volumeName);
-        testEnv.stopAdditionalOSDs();
     }
-
+    /**
+     * Creates a rw replicated file and gets the file size from the OSDs.
+     * To obtain a quorum the file has 5 replicas (one will be shut downed and one will be outdated). 
+     * 
+     * @throws Exception
+     */
+    //TODO(lukas) split test in OSD test (internalGetFileSizeOperation test) and client test (getSizeOnOSD test) 
     @Test
     public void testGetSizeOnOsd() throws Exception {
         String volumeName = "testGetSizeOnOsd";
@@ -791,9 +798,6 @@ public class FileHandleTest {
         assertEquals(length, size);
         
         fileHandle.close();
-        
-        // stop additional OSDs
-        testEnv.stopAdditionalOSDs();
         
         client.deleteVolume(auth, userCredentials, volumeName);
     }

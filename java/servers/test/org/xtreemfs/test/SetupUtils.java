@@ -53,15 +53,11 @@ public class SetupUtils {
     public static final Category[] DEBUG_CATEGORIES = new Category[] { Category.all };
     
     public static final int PORT_RANGE_OFFSET = 10000;
-    /**
-     * Used by createMultipleOSDConfigs. Starts at 5 to avoid conflicts with other CreateOSDxConfig methods.
-     */
-    private static int nextOsdNo                           = 5;
     
     /**
      * Analog to nextOsdNo.
      */  
-    private static int nextOsdPort                         = 32643 + PORT_RANGE_OFFSET;
+    private static int offsetNextOsdPort             = 32640 + PORT_RANGE_OFFSET;
     
     private static Properties createOSDProperties(int port, String dir) {
         Properties props = new Properties();
@@ -122,16 +118,29 @@ public class SetupUtils {
         config.setDefaults();
         return config;
     }
-    
+    //TODO(lukas) Remove code duplication.
     public static OSDConfig[] createMultipleOSDConfigs(int number) throws IOException {
+        OSDConfig[] configs = new OSDConfig[number];
+        int startPort = 32640 + PORT_RANGE_OFFSET;
+        
+        for (int i = 0; i < configs.length; i++) {
+            Properties props = createOSDProperties(startPort, TEST_DIR + "/osd" + i);
+            configs[i] = new OSDConfig(props);
+            configs[i].setDefaults();
+            startPort++;
+        }
+        return configs;
+    }
+
+    public static OSDConfig[] createMultipleOSDConfigs(int number, int offsetNextOsd) throws IOException {
         OSDConfig[] configs = new OSDConfig[number];
         
         for (int i = 0; i < configs.length; i++) {
-            Properties props = createOSDProperties(nextOsdPort, TEST_DIR + "/osd" + nextOsdNo);
+            Properties props = createOSDProperties(offsetNextOsdPort, TEST_DIR + "/osd" + offsetNextOsd);
             configs[i] = new OSDConfig(props);
             configs[i].setDefaults();
-            nextOsdPort++;
-            nextOsdNo++;
+            offsetNextOsdPort++;
+            offsetNextOsd++;
         }
         return configs;
     }
