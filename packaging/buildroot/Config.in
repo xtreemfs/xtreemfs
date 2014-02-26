@@ -16,11 +16,6 @@ config BR2_PACKAGE_XTREEMFS
          This is xtreemfs.
          http://www.xtreemfs.org
 
-comment "xtreemsfs needs jamvm"
-        depends on !BR2_PACKAGE_JAMVM
-
-comment "xtreemsfs needs a bash"
-        depends on !BR2_PACKAGE_BASH
-
-comment "xtreemsfs needs coreutils"
-        depends on !BR2_PACKAGE_COREUTILS
+comment "xtreemsfs needs jamvm, bash, core-utils, util-linux binaries"
+        depends on !BR2_PACKAGE_JAMVM || !BR2_PACKAGE_BASH || \
+                !BR2_PACKAGE_COREUTILS || !BR2_PACKAGE_UTIL_LINUX_BINARIES

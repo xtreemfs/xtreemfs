@@ -5,7 +5,7 @@ Quote from http://buildroot.uclibc.org/:
 
 "Buildroot is a set of Makefiles and patches that makes it easy to generate
  a complete embedded Linux system."
- 
+
 In this directory, you find information how to run XtreemFS
 in an buildroot environment. The main purpose of this effort is to
 be able to run and test XtreemFS in a L4 Linux virtual machine.
@@ -48,16 +48,23 @@ Toolchain ->
   Enable C++ support
 
 Target packages ->
-  BusyBox -> show packages that are also provided by busybox
+  BusyBox ->
+    Show packages that are also provided by busybox
 
   Interpreter languages and scripting ->
     jamvm
 
-  Shell and Utilities ->
+  Shell and utilities ->
     bash
 
-System Tools ->
+  System tools ->
     coreutils
+    util-linux ->
+      libuuid
+      install utilities
+
+  Filesystem and flash utilities ->
+    xtreemfs
 
 Start VM
 ========
@@ -72,4 +79,4 @@ Start XtreemFS in VM
 > /etc/init.d/xtreemfs-dir start
 > /etc/init.d/xtreemfs-mrc start
 > /etc/init.d/xtreemfs-osd start
-> mkfs.xtreems pbrpc://localhost/v1
+> mkfs.xtreemfs localhost/v1
