@@ -183,20 +183,25 @@ if(UNIX AND NOT WIN32)
 endif(UNIX AND NOT WIN32)
 
 SET(REQUIRED_LIBRARIES ${LIBATTR} ${LIBCRYPTO} ${LIBSSL} ${LIBPTHREAD})
+if (SKIP_FUSE)
+  MESSAGE(STATUS "INFO: Skipping the XtreemFS Fuse Adapter (mount.xtreemfs) because SKIP_FUSE was defined.")
+else()
+  SET(REQUIRED_LIBRARIES ${REQUIRED_LIBRARIES} ${LIBFUSE})
+endif(SKIP_FUSE)
+
 foreach(LIB ${REQUIRED_LIBRARIES})
   #message(STATUS "checking for library: ${LIB}")
   # For unknown reasons, setting "FIND_LIBRARY_USE_LIB64_PATHS" does not fix the issue that libraries in /usr/lib64/ are not found under openSuse.
   # Therefore we just specify a list of possible library directories.
   find_library(FOUND${LIB} ${LIB} PATHS "/lib64" "/usr/lib64")
   if (NOT FOUND${LIB})
+    if (${LIB} STREQUAL ${LIBFUSE})
+      message(STATUS "INFO: If you want to skip the compilation of the FuseAdapter e.g., because your system does not provide Fuse (library: ${LIBFUSE}), please define SKIP_FUSE e.g., run: SKIP_FUSE=true make client")
+    endif (${LIB} STREQUAL ${LIBFUSE})
     message(FATAL_ERROR "The required library '${LIB}' was not found. Please install it on your system first.")
   #else()
   #  message(STATUS "Result of find_library: ${FOUND${LIB}}")
   endif(NOT FOUND${LIB})
-endforeach(LIB)
-SET(OPTIONAL_LIBRARIES ${LIBFUSE} ${LIBATTR} ${LIBCRYPTO} ${LIBSSL} ${LIBPTHREAD})
-foreach(LIB ${OPTIONAL_LIBRARIES})
-  find_library(FOUND${LIB} ${LIB} PATHS "/lib64" "/usr/lib64")
 endforeach(LIB)
 
 # Define building of binaries.
@@ -243,8 +248,6 @@ if (NOT WIN32)
 
     set(UNITTESTS_REQUIRED_SOURCES_fuse ${SRCS_FUSE_ADAPTER} ${SRCS_XTFS_UTIL} ${SRCS_JSONCPP})
     set(UNITTESTS_REQUIRED_LIBRARIES_fuse ${LIBFUSE})
-  else()
-    MESSAGE(STATUS "WARNING: Did not find the Fuse library ${LIBFUSE}, skipping the XtreemFS Fuse Adapter (mount.xtreemfs).")   
   endif(FOUND${LIBFUSE})
 
   ADD_EXECUTABLE(xtfsutil src/xtfsutil/xtfsutil.cpp ${SRCS_JSONCPP})
