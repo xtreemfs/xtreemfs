@@ -136,6 +136,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         
         // start up babudb
         database = BabuDBFactory.createBabuDB(dbsConfig, new StaticInitialization() {
+            @Override
             public void initialize(DatabaseManager dbMan, SnapshotManager sMan) {
                 initDB(dbMan, sMan);
             }
@@ -187,25 +188,30 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             discoveryThr = null;
         }
         
-        statusServer = new StatusServer(ServiceType.SERVICE_TYPE_DIR, this, config.getHttpPort());
-        statusServer.registerModule(new PrintStackTrace());
-        statusServer.registerModule(new StatusPage(config));
-        statusServer.registerModule(new ReplicaStatusPage());
-        statusServer.registerModule(new VivaldiStatusPage(config));
-        statusServer.registerModule(new BabuDBStatusPage(new BabuDBStatusPage.BabuDBStatusProvider() {
-            @Override
-            public Map<String, Object> getStatus() {
-                // NOTE(jdillmann): Access to the database is not synchronized. This might result in reading stale data.
-                return database.getRuntimeState();
+        if (config.getHttpPort() == -1) {
+            // Webinterface is explicitly disabled.
+            statusServer = null;
+        } else {
+            statusServer = new StatusServer(ServiceType.SERVICE_TYPE_DIR, this, config.getHttpPort());
+            statusServer.registerModule(new PrintStackTrace());
+            statusServer.registerModule(new StatusPage(config));
+            statusServer.registerModule(new ReplicaStatusPage());
+            statusServer.registerModule(new VivaldiStatusPage(config));
+            statusServer.registerModule(new BabuDBStatusPage(new BabuDBStatusPage.BabuDBStatusProvider() {
+                @Override
+                public Map<String, Object> getStatus() {
+                    // NOTE(jdillmann): Access to the database is not synchronized. This might result in
+                    // reading stale data.
+                    return database.getRuntimeState();
+                }
+            }));
+
+            if (config.getAdminPassword().length() > 0) {
+                statusServer.addAuthorizedUser("admin", config.getAdminPassword());
             }
-        }));
-        
 
-        if (config.getAdminPassword().length() > 0) {
-            statusServer.addAuthorizedUser("admin", config.getAdminPassword());
+            statusServer.start();
         }
-
-        statusServer.start();
         
         numRequests = 0;
         
@@ -299,13 +305,16 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         }
     }
     
+    @Override
     public void shutdown() throws Exception {
     	
-    	for (DIRStatusListener listener : statusListener) {
-			listener.shuttingDown();
-		}
+        for (DIRStatusListener listener : statusListener) {
+            listener.shuttingDown();
+        }
     	
-        statusServer.shutdown();
+        if (statusServer != null) {
+            statusServer.shutdown();
+        }
         server.shutdown();
         server.waitForShutdown();
         database.shutdown();
