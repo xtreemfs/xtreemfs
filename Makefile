@@ -159,8 +159,14 @@ uninstall:
 	@rm -f $(SBIN_DIR)/umount.xtreemfs
 
 	@rm -f $(XTREEMFS_JAR_DIR)/XtreemFS.jar
-	@rm -f $(XTREEMFS_JAR_DIR)/BabuDB*.jar
-	@rm -f $(XTREEMFS_JAR_DIR)/yidl.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/Foundation.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/Flease.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/BabuDB.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/commons-codec-1.3.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/jdmkrt.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/jdmktk.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/protobuf-java-2.5.0.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/BabuDB_replication_plugin.jar
 
 	@rm -f $(XTREEMFS_INIT_DIR)/xtreemfs-*
 	
