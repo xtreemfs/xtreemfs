@@ -357,6 +357,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         myCoordinates = new AtomicReference<VivaldiCoordinates>();
         
         ServiceDataGenerator gen = new ServiceDataGenerator() {
+            @Override
             public ServiceSet getServiceData() {
                 
                 OSDConfig config = OSDRequestDispatcher.this.config;
@@ -404,15 +405,16 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 for (Entry<String, String> e : config.getCustomParams().entrySet())
                     dmap.addData(KeyValuePair.newBuilder().setKey(e.getKey()).setValue(e.getValue()));
                 
-                try {
-                    final String address = "".equals(config.getHostName()) ? config.getAddress() == null ? config
-                            .getUUID().getMappings()[0].resolvedAddr.getAddress().getHostAddress()
-                        : config.getAddress().getHostAddress()
-                        : config.getHostName();
-                    dmap.addData(KeyValuePair.newBuilder().setKey("status_page_url").setValue(
-                        "http://" + address + ":" + config.getHttpPort()));
-                } catch (UnknownUUIDException ex) {
-                    // should never happen
+                if (config.getHttpPort() != -1) {
+                    try {
+                        final String address = "".equals(config.getHostName()) ? config.getAddress() == null ? config
+                                .getUUID().getMappings()[0].resolvedAddr.getAddress().getHostAddress() : config
+                                .getAddress().getHostAddress() : config.getHostName();
+                        dmap.addData(KeyValuePair.newBuilder().setKey("status_page_url")
+                                .setValue("http://" + address + ":" + config.getHttpPort()));
+                    } catch (UnknownUUIDException ex) {
+                        // should never happen
+                    }
                 }
                 
                 Service.Builder me = Service.newBuilder();
@@ -430,17 +432,22 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         };
         heartbeatThread = new HeartbeatThread("OSD HB Thr", dirClient, config.getUUID(), gen, config, true);
         
-        statusServer = new StatusServer(ServiceType.SERVICE_TYPE_OSD, this, config.getHttpPort());
-        statusServer.registerModule(new StatusPage());
-        statusServer.registerModule(new PrintStackTrace());
-        statusServer.registerModule(new ReplicatedFileStatusPage());
-        statusServer.registerModule(new ReplicatedFileStatusJSON());
-        
-        if (config.getAdminPassword().length() > 0) {
-            statusServer.addAuthorizedUser("admin", config.getAdminPassword());
+        if (config.getHttpPort() == -1) {
+            // Webinterface is explicitly disabled.
+            statusServer = null;
+        } else {
+            statusServer = new StatusServer(ServiceType.SERVICE_TYPE_OSD, this, config.getHttpPort());
+            statusServer.registerModule(new StatusPage());
+            statusServer.registerModule(new PrintStackTrace());
+            statusServer.registerModule(new ReplicatedFileStatusPage());
+            statusServer.registerModule(new ReplicatedFileStatusJSON());
+
+            if (config.getAdminPassword().length() > 0) {
+                statusServer.addAuthorizedUser("admin", config.getAdminPassword());
+            }
+
+            statusServer.start();
         }
-        
-        statusServer.start();
         
         startupTime = System.currentTimeMillis();
         
@@ -568,7 +575,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cThread.waitForShutdown();
             cvThread.waitForShutdown();
             
-            statusServer.shutdown();
+            if (statusServer != null) {
+                statusServer.shutdown();
+            }
             
             if (Logging.isInfo())
                 Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
@@ -651,14 +660,17 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         return rpcClient;
     }
     
+    @Override
     public void startupPerformed() {
         
     }
     
+    @Override
     public void shutdownPerformed() {
         
     }
     
+    @Override
     public void crashPerformed(Throwable cause) {
         final String report = CrashReporter
                 .createCrashReport("OSD", VersionManagement.RELEASE_VERSION, cause);
