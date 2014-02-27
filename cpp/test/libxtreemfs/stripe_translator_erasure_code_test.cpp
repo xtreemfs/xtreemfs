@@ -51,15 +51,24 @@ TEST_F(StripeTranslatorTest, ErasureCodeNormalOperation) {
   boost::scoped_ptr<StripeTranslator>stripe_translator(new StripeTranslatorErasureCode());
 
   // Define stripe of chunks.
-  size_t kChunkSize = 1024;
+  size_t kChunkSize = 10;
   size_t kChunkCount = 2;
   size_t kBufferSize = kChunkSize * kChunkCount;
   boost::scoped_array<char> write_buffer(new char[kBufferSize]());
+  boost::scoped_array<char> expected_write_buffer_redundance(new char[kChunkSize]());
+
+  string original = "super_flying_monkeys_are_aweseome,_aren't_they?";
+     cout << "Original data = " << original;
+
+
+  for (size_t temp = 0; temp < kBufferSize; temp++) {
+    write_buffer[temp] = original[temp];
+  }
 
   // Define striping policy.
   StripingPolicy striping_policy;
   striping_policy.set_type(STRIPING_POLICY_ERASURECODE);
-  striping_policy.set_stripe_size(kChunkSize / 1024);
+  striping_policy.set_stripe_size(kChunkSize / 10);
   striping_policy.set_width(kChunkCount);
   striping_policy.set_parity_width(1);
 
@@ -74,9 +83,34 @@ TEST_F(StripeTranslatorTest, ErasureCodeNormalOperation) {
   // Define expected WriteOperations.
   vector<xtreemfs::WriteOperation> expected_operations;
   boost::scoped_array<char> expected_write_buffer(new char[kBufferSize]());
-  vector<size_t> osd_offsets;
-  for (size_t i = 0; i < kChunkCount; ++i) {
+
+  for (size_t temp = 0; temp < kBufferSize; temp++){
+    expected_write_buffer[temp] =original[temp];
+      }
+  for (size_t i = 0; i <= kChunkCount; ++i) {
+    vector<size_t> osd_offsets;
+
     osd_offsets.push_back(i);
+
+    if( i == kChunkCount){
+
+
+    // Define expected redundant WriteOperation.
+     for (size_t j = 0; j < kChunkSize; ++j) {
+       expected_write_buffer_redundance[j]= expected_operations[0].data[j] ^
+                                            expected_operations[1].data[j];
+     }
+
+    expected_operations.push_back(
+           xtreemfs::WriteOperation(i,
+                                    osd_offsets,
+                                    kChunkSize,
+                                    0 /* file offset */,
+                                    expected_write_buffer_redundance.get()));
+      continue;
+
+    }
+
     expected_operations.push_back(
         xtreemfs::WriteOperation(i,
                                  osd_offsets,
@@ -84,37 +118,33 @@ TEST_F(StripeTranslatorTest, ErasureCodeNormalOperation) {
                                  0 /* file offset */,
                                  expected_write_buffer.get() + (kChunkSize * i))
                                 );
-  }
-  // Define expected redundant WriteOperation.
-  boost::scoped_array<char> expected_write_buffer_redundance(new char[kBufferSize]());
-  for (size_t i = 0; i < kBufferSize; ++i) {
-    expected_write_buffer_redundance[i]= expected_operations[0].data[i] ^
-                                         expected_operations[1].data[i];
+
   }
 
-  size_t i = 2;
-  osd_offsets.push_back(i);
-  expected_operations.push_back(
-         xtreemfs::WriteOperation(i,
-                                  osd_offsets,
-                                  kChunkSize,
-                                  0 /* file offset */,
-                                  expected_write_buffer_redundance.get()));
 
   // Verify WriteRequests.
   ASSERT_EQ(expected_operations.size(), operations.size());
   for (size_t i = 0; i < expected_operations.size(); ++i) {
     ASSERT_EQ(expected_operations[i].osd_offsets.size(),
               operations[i].osd_offsets.size());
+
     for (size_t j = 0; j < expected_operations[i].osd_offsets.size(); ++j) {
+      cout << "\n ***************Verify Data arrays***************\n";
+
+      cout << "\nexpected_operations [" << i << "]="<<expected_operations[i].data;
+      cout << "\noperations[" << i << "]="<<operations[i].data;
+      cout << "\n ******************************\n";
+
       EXPECT_EQ(expected_operations[i].osd_offsets[j],
                 operations[i].osd_offsets[j]);
     }
 
     EXPECT_EQ(expected_operations[i].req_size, operations[i].req_size);
+
     EXPECT_TRUE(ArraysMatch(expected_operations[i].data,
                             operations[i].data,
                             kChunkSize));
+
     EXPECT_EQ(expected_operations[i].obj_number, operations[i].obj_number);
     EXPECT_EQ(expected_operations[i].req_offset, operations[i].req_offset);
   }
