@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <boost/scoped_array.hpp>
 
 using namespace std;
 using namespace xtreemfs::pbrpc;
@@ -21,26 +22,67 @@ void StripeTranslatorErasureCode::TranslateWriteRequest(
     PolicyContainer policies,
     std::vector<WriteOperation>* operations) const {
   // stripe size is stored in kB
-  unsigned int stripe_size = (*policies.begin())->stripe_size() * 1024;
+  //unsigned int stripe_size = (*policies.begin())->stripe_size() * 1024;
+  unsigned int stripe_size = (*policies.begin())->stripe_size()*10;
+  // number of OSD to distribute parity chunks
+  unsigned int parity_width =(*policies.begin())->parity_width();
+  // number of OSD to distribute chunks
+  unsigned int width =(*policies.begin())->width();
+  //std::vector<char> buf_redundance;
+  //buf_redundance.resize(stripe_size);
+  char *buf_redundance = NULL;
+
+  size_t total_size=size+(size/width);;
 
   size_t start = 0;
-  while (start < size) {
-    size_t obj_number = static_cast<size_t>(start + offset) / stripe_size;
+  size_t global_obj_number = 0;
+  size_t written_blocks = 0;
+
+  while (written_blocks < total_size) {
+    size_t obj_number = max(global_obj_number,
+        static_cast<size_t>(start + offset) / stripe_size);
     size_t req_offset = (start + offset) % stripe_size;
-    size_t req_size
-      = min(size - start, static_cast<size_t>(stripe_size - req_offset));
+    size_t req_size = min(size - start,
+        static_cast<size_t>(stripe_size - req_offset));
+
+    bool parity_block = false;
 
     std::vector<size_t> osd_offsets;
-    for (PolicyContainer::iterator i = policies.begin();
-         i != policies.end();
-         ++i) {
-      osd_offsets.push_back(obj_number % (*i)->width());
+    for (PolicyContainer::iterator i = policies.begin(); i != policies.end();
+        ++i) {
+
+      size_t osd_number = obj_number % ((*i)->width() + parity_width);
+      osd_offsets.push_back(osd_number);
+
+      //is it a parity chunk?
+      if (osd_number == (*i)->width() + parity_width - 1) {
+        buf_redundance = new char[stripe_size];
+
+        for (size_t i = 0; i < stripe_size; ++i) {
+          buf_redundance[i] = buf[start - (width * stripe_size) + i]
+              ^ buf[start - stripe_size + i];
+        }
+
+        operations->push_back(
+            WriteOperation(obj_number, osd_offsets, stripe_size, 0,
+                buf_redundance));
+        global_obj_number = obj_number + 1;
+
+        parity_block = true;
+
+      }
+
     }
 
-    operations->push_back(WriteOperation(
-        obj_number, osd_offsets, req_size, req_offset, buf + start));
+    if (!parity_block) {
+      operations->push_back(
+          WriteOperation(obj_number, osd_offsets, req_size, req_offset,
+              buf + start));
 
-    start += req_size;
+      start += req_size;
+    }
+    written_blocks += stripe_size;
+
   }
 }
 
