@@ -119,6 +119,9 @@ IF(WIN32)
 ENDIF(WIN32)
 
 # Set required thirdparty libraries.
+
+# Boost
+set(REQUIRED_BOOST_LIBRARIES "system" "thread" "program_options" "regex")
 if (BOOST_ROOT)
   message(STATUS "Info: BOOST_ROOT is set to: ${BOOST_ROOT}")
 endif(BOOST_ROOT)
@@ -126,11 +129,15 @@ endif(BOOST_ROOT)
 if(NOT BOOST_ROOT AND EXISTS "/usr/lib64/libboost_system.so")
   set(BOOST_LIBRARYDIR "/usr/lib64")
 endif(NOT BOOST_ROOT AND EXISTS "/usr/lib64/libboost_system.so")
-FIND_PACKAGE(Boost COMPONENTS system thread program_options regex REQUIRED)
-# Since boost 1.50, the thread library requires the chrono library. This dependency has to be filled in manually on Windows.
+# Initial find boost only to retrieve the version number.
+FIND_PACKAGE(Boost)
+# Unset the Boost_FOUND variable because the result of the second find will be checked.
+set(Boost_FOUND)
 if(WIN32 AND Boost_VERSION VERSION_GREATER "104900")
-  find_package(Boost COMPONENTS chrono REQUIRED)
+  set(REQUIRED_BOOST_LIBRARIES ${REQUIRED_BOOST_LIBRARIES} "chrono")
 endif(WIN32 AND Boost_VERSION VERSION_GREATER "104900")
+# Actual find boost including all required libraries.
+FIND_PACKAGE(Boost COMPONENTS ${REQUIRED_BOOST_LIBRARIES} REQUIRED)
 if (NOT Boost_FOUND)
   message(FATAL_ERROR "The boost library was not found on your system. If needed, you can also download and compile it on your own. After compiling boost locally, set the the environment variable BOOST_ROOT to the boost base directory before executing 'make' e.g., 'export BOOST_ROOT=/Users/xyz/boost_1_47_0'.")
 endif(NOT Boost_FOUND)
