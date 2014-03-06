@@ -417,7 +417,7 @@ int GetNetworkPrefixUnix(const uint32_t* netmask, size_t length) {
 void BitwiseAndOfAddressses(
     char* address, char* netmask, char* network_address, size_t length) {
   // Process data in chunks of 1 byte chars.
-  for (int i = 0; i < length / sizeof(char); i++) {
+  for (size_t i = 0; i < length / sizeof(char); i++) {
     network_address[i] = address[i] & netmask[i];
   }
 }
