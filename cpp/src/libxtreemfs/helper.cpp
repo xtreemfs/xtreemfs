@@ -8,13 +8,9 @@
 
 #include "libxtreemfs/helper.h"
 
-#include <arpa/inet.h>
 #include <cstdio>
 #include <cstdlib>
-#include <ifaddrs.h>
-#include <netdb.h>
 #include <stdint.h>
-#include <sys/socket.h>
 
 #include <boost/lexical_cast.hpp>
 #include <iostream>
@@ -31,11 +27,19 @@
 #ifdef __APPLE__
 #include <sys/utsname.h>
 #endif  // __APPLE__
+
 #ifdef WIN32
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif  // WIN32
+
+#ifdef __linux__
+#include <arpa/inet.h>
+#include <ifaddrs.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#endif  // __linux__
 
 using namespace std;
 using namespace xtreemfs::pbrpc;

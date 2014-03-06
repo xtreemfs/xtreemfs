@@ -8,13 +8,16 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_HELPER_H_
 #define CPP_INCLUDE_LIBXTREEMFS_HELPER_H_
 
-#include <ifaddrs.h>
 #include <stdint.h>
 
 #include <boost/unordered_set.hpp>
 #include <string>
 
 #include <libxtreemfs/execute_sync_request.h>
+
+#ifdef __linux__
+#include <ifaddrs.h>
+#endif  // __linux__
 
 namespace xtreemfs {
 
