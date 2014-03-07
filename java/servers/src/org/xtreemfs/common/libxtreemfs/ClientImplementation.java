@@ -17,12 +17,10 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import com.google.protobuf.Message;
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.KeyValuePairs;
 import org.xtreemfs.common.libxtreemfs.RPCCaller.CallGenerator;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
-import org.xtreemfs.common.libxtreemfs.exceptions.InternalServerErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -35,12 +33,10 @@ import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
-import org.xtreemfs.pbrpc.generatedinterfaces.*;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
@@ -52,16 +48,22 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceGetByTypeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceGetByUUIDRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceRegisterRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceRegisterResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SERVICES;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
+import org.xtreemfs.pbrpc.generatedinterfaces.Scheduler;
+import org.xtreemfs.pbrpc.generatedinterfaces.SchedulerServiceClient;
 
 /**
  * Standard implementation of the client. Used only internally.
@@ -105,6 +107,12 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
      */
     private OSDServiceClient                       osdServiceClient          = null;
 
+    /**
+     * A SchedulerServiceClient is a wrapper for an RPC Client
+     */
+    private SchedulerServiceClient                 schedulerClient           = null;
+
+    
     /**
      * The RPC Client processes requests from a queue and executes callbacks in its thread.
      */
@@ -174,7 +182,9 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
 
         this.clientUUID = Helper.generateVersion4UUID();
         assert (this.clientUUID != null && this.clientUUID != "");
-
+       
+        this.schedulerClient = new SchedulerServiceClient(this.networkClient, null);
+        
         // Create nonSingleton uuidResolver to resolve UUIDs.
 
         InetSocketAddress[] isas = new InetSocketAddress[dirAddresses.length];
@@ -295,7 +305,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
             AddressToUUIDNotFoundException {
 
         // access the list of MRCs
-        ServiceSet mrcs = RPCCaller.<String, ServiceSet> syncCall(SERVICES.DIR,
+        ServiceSet mrcs = RPCCaller.syncCall(SERVICES.DIR,
                 this.dirServiceUserCredentials, this.dirServiceAuth, this.options, this,
                 this.dirServiceAddresses, true, null, new CallGenerator<String, ServiceSet>() {
 
@@ -341,7 +351,42 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
                 ownerGroupname, accessPolicyType, defaultStripingPolicyType, defaultStripeSize,
                 defaultStripeWidth, volumeAttributes);
     }
+    
+    @Override
+    public void createVolume(String schedulerAddress, Auth auth, UserCredentials userCredentials,
+            String volumeName, int mode, String ownerUsername, String ownerGroupname,
+            AccessControlPolicyType accessPolicyType, StripingPolicyType defaultStripingPolicyType,
+            int defaultStripeSize, int defaultStripeWidth, List<KeyValuePair> volumeAttributes,
+            int capacity, int randomTP, int seqTP, boolean coldStorage)
+            throws IOException {
+        // access the list of MRCs
+        ServiceSet mrcs = RPCCaller.syncCall(SERVICES.DIR,
+                this.dirServiceUserCredentials, this.dirServiceAuth, this.options, this,
+                this.dirServiceAddresses, true, null, new CallGenerator<String, ServiceSet>() {
 
+                    @Override
+                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, String input) throws IOException {
+                        return ClientImplementation.this.dirServiceClient.xtreemfs_service_get_by_type(
+                                server, authHeader, userCreds, ServiceType.SERVICE_TYPE_MRC);
+                    }
+                });
+
+        if (mrcs.getServicesCount() == 0) {
+            throw new IOException("no MRC available for volume creation");
+        }
+
+        List<String> mrcAddresses = new ArrayList<String>();
+        for (Service uuid : mrcs.getServicesList()) {
+            mrcAddresses.add(uuidToAddress(uuid.getUuid()));
+        }
+        
+        createVolume(mrcAddresses, schedulerAddress, auth, userCredentials, volumeName, mode, ownerUsername, 
+                ownerGroupname, accessPolicyType, defaultStripingPolicyType, defaultStripeSize, defaultStripeWidth, 
+                volumeAttributes, capacity, randomTP, seqTP, coldStorage);
+    }
+
+    
     @Override
     public void createVolume(List<String> mrcAddresses, String schedulerAddress, Auth auth, UserCredentials userCredentials,
             String volumeName, int mode, String ownerUsername, String ownerGroupname,
@@ -398,7 +443,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
                 .setOwnerGroupId(ownerGroupname).setAccessControlPolicy(accessPolicyType)
                 .setDefaultStripingPolicy(sp).addAllAttrs(volumeAttributes).setId("").build();
 
-        RPCCaller.<org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volume, emptyResponse> syncCall(SERVICES.MRC,
+        RPCCaller.syncCall(SERVICES.MRC,
                 userCredentials, auth, this.options, this, mrcAddresses, true, volume,
                 new CallGenerator<org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volume, emptyResponse>() {
                     @SuppressWarnings("unchecked")
@@ -415,8 +460,6 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
             String volumeName, int capacity, int randomTP, int seqTP, boolean coldStorage)
             throws IOException {
         List<String> result = new ArrayList<String>();
-        final SchedulerServiceClient schedulerClient = new SchedulerServiceClient(this.networkClient, null);
-
         UUIDIterator iteratorWithAddresses = new UUIDIterator();
         iteratorWithAddresses.addUUID(schedulerAddress);
 
@@ -438,7 +481,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         else
             resBuilder.setType(Scheduler.reservationType.BEST_EFFORT_RESERVATION);
 
-        Scheduler.osdSet osds = RPCCaller.<Scheduler.reservation, Scheduler.osdSet> syncCall(SERVICES.Scheduler,
+        Scheduler.osdSet osds = RPCCaller.syncCall(SERVICES.Scheduler,
                 userCredentials, auth, this.options, this, iteratorWithAddresses, true, resBuilder.build(),
                 new CallGenerator<Scheduler.reservation, Scheduler.osdSet>() {
                     @Override
@@ -456,15 +499,13 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         return result;
     }
 
-    private void deleteReservation(String schedulerAddress, Auth auth, UserCredentials userCredentials, String volumeName) throws IOException{
-        final SchedulerServiceClient schedulerClient = new SchedulerServiceClient(this.networkClient, null);
-
+    public void deleteReservation(String schedulerAddress, Auth auth, UserCredentials userCredentials, String volumeName) throws IOException{
         UUIDIterator iteratorWithAddresses = new UUIDIterator();
         iteratorWithAddresses.addUUID(schedulerAddress);
 
         Scheduler.volumeIdentifier vol = Scheduler.volumeIdentifier.newBuilder().setUuid(volumeName).build();
 
-        RPCCaller.<Scheduler.volumeIdentifier, emptyResponse> syncCall(SERVICES.Scheduler,
+        RPCCaller.syncCall(SERVICES.Scheduler,
                 userCredentials, auth, this.options, this, iteratorWithAddresses, true, vol,
                 new CallGenerator<Scheduler.volumeIdentifier, emptyResponse>() {
                     @Override
@@ -474,6 +515,25 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
                         return schedulerClient.removeReservation(server, auth, userCreds,  input);
                     }
                 });
+    }
+    
+    public Scheduler.freeResourcesResponse getFreeResources(String schedulerAddress, Auth auth, UserCredentials userCredentials) throws IOException{
+        UUIDIterator iteratorWithAddresses = new UUIDIterator();
+        iteratorWithAddresses.addUUID(schedulerAddress);
+
+        Scheduler.freeResourcesResponse freeResources = RPCCaller.syncCall(SERVICES.Scheduler,
+                userCredentials, auth, this.options, this, iteratorWithAddresses, true, null,
+                new CallGenerator<Scheduler.volumeIdentifier, Scheduler.freeResourcesResponse>() {
+                    @Override
+                    public RPCResponse<Scheduler.freeResourcesResponse> executeCall(InetSocketAddress server, Auth auth,
+                        UserCredentials userCreds, Scheduler.volumeIdentifier input)
+                        throws IOException, PosixErrorException {
+                        return schedulerClient.getFreeResources(server, auth, userCreds);
+                    }
+                });
+        
+                
+        return freeResources;
     }
 
     /*
@@ -487,7 +547,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
     public void deleteVolume(Auth auth, UserCredentials userCredentials, String volumeName)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
 
-        ServiceSet s = RPCCaller.<String, ServiceSet> syncCall(SERVICES.DIR, this.dirServiceUserCredentials,
+        ServiceSet s = RPCCaller.syncCall(SERVICES.DIR, this.dirServiceUserCredentials,
                 this.dirServiceAuth, this.options, this, this.dirServiceAddresses, true, volumeName,
                 new CallGenerator<String, ServiceSet>() {
 
@@ -547,7 +607,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
             String volumeName) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         final MRCServiceClient mrcServiceClient = new MRCServiceClient(this.networkClient, null);
 
-        RPCCaller.<String, emptyResponse> syncCall(SERVICES.MRC, userCredentials, auth, this.options, this,
+        RPCCaller.syncCall(SERVICES.MRC, userCredentials, auth, this.options, this,
                 mrcAddresses, true, volumeName, new CallGenerator<String, emptyResponse>() {
                     @SuppressWarnings("unchecked")
                     @Override
@@ -568,7 +628,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
 
         deleteVolume(mrcAddresses, auth, userCredentials, volumeName);
 
-        RPCCaller.<Scheduler.volumeIdentifier, emptyResponse> syncCall(SERVICES.Scheduler, userCredentials, auth, this.options, this,
+        RPCCaller.syncCall(SERVICES.Scheduler, userCredentials, auth, this.options, this,
                 iteratorWithAddresses, true, vol, new CallGenerator<Scheduler.volumeIdentifier, emptyResponse>() {
             @SuppressWarnings("unchecked")
             @Override
@@ -607,7 +667,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         // use bogus user credentials
         UserCredentials userCredentials = UserCredentials.newBuilder().setUsername("xtreemfs").build();
 
-        Volumes volumes = RPCCaller.<emptyRequest, Volumes> syncCall(SERVICES.MRC, userCredentials,
+        Volumes volumes = RPCCaller.syncCall(SERVICES.MRC, userCredentials,
                 this.authBogus, this.options, this, uuidIteratorWithAddresses, true,
                 emptyRequest.getDefaultInstance(), new CallGenerator<emptyRequest, Volumes>() {
                     @Override
@@ -626,7 +686,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
      */
     @Override
     public Volumes listVolumes() throws IOException {
-        ServiceSet sSet = RPCCaller.<String, ServiceSet> syncCall(SERVICES.DIR,
+        ServiceSet sSet = RPCCaller.syncCall(SERVICES.DIR,
                 this.dirServiceUserCredentials, this.dirServiceAuth, this.options, this,
                 this.dirServiceAddresses, true, null, new CallGenerator<String, ServiceSet>() {
 
@@ -658,7 +718,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
      */
     @Override
     public String[] listVolumeNames() throws IOException {
-        ServiceSet sSet = RPCCaller.<String, ServiceSet> syncCall(SERVICES.DIR,
+        ServiceSet sSet = RPCCaller.syncCall(SERVICES.DIR,
                 this.dirServiceUserCredentials, this.dirServiceAuth, this.options, this,
                 this.dirServiceAddresses, true, null, new CallGenerator<String, ServiceSet>() {
 
@@ -685,7 +745,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
     @Override
     public Map<String, Service> listServers() throws IOException, PosixErrorException {
         // access the list of servers at the DIR
-        ServiceSet osds = RPCCaller.<String, ServiceSet> syncCall(SERVICES.DIR,
+        ServiceSet osds = RPCCaller.syncCall(SERVICES.DIR,
                 this.dirServiceUserCredentials, this.dirServiceAuth, this.options, this,
                 this.dirServiceAddresses, true, null, new CallGenerator<String, ServiceSet>() {
 
@@ -716,7 +776,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
     @Override
     public Map<String, Service> listOSDsAndAttributes() throws IOException, PosixErrorException {
         // access the list of OSDs
-        ServiceSet osds = RPCCaller.<String, ServiceSet> syncCall(SERVICES.DIR,
+        ServiceSet osds = RPCCaller.syncCall(SERVICES.DIR,
                 this.dirServiceUserCredentials, this.dirServiceAuth, this.options, this,
                 this.dirServiceAddresses, true, null, new CallGenerator<String, ServiceSet>() {
 
@@ -731,7 +791,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         Map<String, Service> osdConfigs = new HashMap<String, Service>();
         for (Service service : osds.getServicesList()) {
             // // access the config files of each OSD
-            // Configuration config = RPCCaller.<String, Configuration> syncCall(SERVICES.DIR,
+            // Configuration config = RPCCaller.syncCall(SERVICES.DIR,
             // this.dirServiceUserCredentials,
             // this.dirServiceAuth, this.options, this, this.dirServiceAddresses, true, uuid.getUuid(),
             // new CallGenerator<String, Configuration>() {
@@ -798,7 +858,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         String parsedVolumeName = parseVolumeName(volumeName);
         ServiceSet sSet = null;
         try {
-            sSet = RPCCaller.<String, ServiceSet> syncCall(SERVICES.DIR, this.dirServiceUserCredentials,
+            sSet = RPCCaller.syncCall(SERVICES.DIR, this.dirServiceUserCredentials,
                     this.dirServiceAuth, this.options, this, this.dirServiceAddresses, true,
                     parsedVolumeName, new CallGenerator<String, ServiceSet>() {
 
@@ -876,7 +936,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         String parsedVolumeName = parseVolumeName(volumeName);
         ServiceSet sSet = null;
         try {
-            sSet = RPCCaller.<String, ServiceSet> syncCall(SERVICES.DIR, this.dirServiceUserCredentials,
+            sSet = RPCCaller.syncCall(SERVICES.DIR, this.dirServiceUserCredentials,
                     this.dirServiceAuth, this.options, this, this.dirServiceAddresses, true,
                     parsedVolumeName, new CallGenerator<String, ServiceSet>() {
                         @Override
@@ -962,7 +1022,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
             Auth pw = StringToAuth(password);
             UUIDIterator it = new UUIDIterator();
             it.addUUID(osdUUID);
-            RPCCaller.<xtreemfs_cleanup_startRequest, emptyResponse> syncCall(SERVICES.OSD,
+            RPCCaller.syncCall(SERVICES.OSD,
                     RPCAuthentication.userService, pw, options, this, it, false, request,
                     new CallGenerator<xtreemfs_cleanup_startRequest, emptyResponse>() {
                         @Override
@@ -984,7 +1044,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
             Auth pw = StringToAuth(password);
             UUIDIterator it = new UUIDIterator();
             it.addUUID(osdUUID);
-            RPCCaller.<emptyRequest, emptyResponse> syncCall(SERVICES.OSD, RPCAuthentication.userService, pw,
+            RPCCaller.syncCall(SERVICES.OSD, RPCAuthentication.userService, pw,
                     options, this, it, false, null, new CallGenerator<emptyRequest, emptyResponse>() {
                         @Override
                         @SuppressWarnings("unchecked")
@@ -1005,7 +1065,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         Auth pw = StringToAuth(password);
         UUIDIterator it = new UUIDIterator();
         it.addUUID(osdUUID);
-        RPCCaller.<emptyRequest, emptyResponse> syncCall(SERVICES.OSD, RPCAuthentication.userService, pw,
+        RPCCaller.syncCall(SERVICES.OSD, RPCAuthentication.userService, pw,
                 options, this, it, false, null, new CallGenerator<emptyRequest, emptyResponse>() {
                     @Override
                     @SuppressWarnings("unchecked")
@@ -1021,8 +1081,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         Auth pw = StringToAuth(password);
         UUIDIterator it = new UUIDIterator();
         it.addUUID(osdUUID);
-        xtreemfs_cleanup_is_runningResponse response = RPCCaller
-                .<emptyRequest, xtreemfs_cleanup_is_runningResponse> syncCall(SERVICES.OSD,
+        xtreemfs_cleanup_is_runningResponse response = RPCCaller.syncCall(SERVICES.OSD,
                         RPCAuthentication.userService, pw, options, this, it, false, null,
                         new CallGenerator<emptyRequest, xtreemfs_cleanup_is_runningResponse>() {
                             @Override
@@ -1041,8 +1100,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         Auth pw = StringToAuth(password);
         UUIDIterator it = new UUIDIterator();
         it.addUUID(osdUUID);
-        xtreemfs_cleanup_statusResponse response = RPCCaller
-                .<emptyRequest, xtreemfs_cleanup_statusResponse> syncCall(SERVICES.OSD,
+        xtreemfs_cleanup_statusResponse response = RPCCaller.syncCall(SERVICES.OSD,
                         RPCAuthentication.userService, pw, options, this, it, false, null,
                         new CallGenerator<emptyRequest, xtreemfs_cleanup_statusResponse>() {
                             @Override
@@ -1061,8 +1119,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         Auth pw = StringToAuth(password);
         UUIDIterator it = new UUIDIterator();
         it.addUUID(osdUUID);
-        xtreemfs_cleanup_get_resultsResponse response = RPCCaller
-                .<emptyRequest, xtreemfs_cleanup_get_resultsResponse> syncCall(SERVICES.OSD,
+        xtreemfs_cleanup_get_resultsResponse response = RPCCaller.syncCall(SERVICES.OSD,
                         RPCAuthentication.userService, pw, options, this, it, false, null,
                         new CallGenerator<emptyRequest, xtreemfs_cleanup_get_resultsResponse>() {
                             @Override
@@ -1081,7 +1138,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
     public ServiceSet getServiceByType(ServiceType serviceType) throws IOException {
         serviceGetByTypeRequest request = serviceGetByTypeRequest.newBuilder().setType(serviceType).build();
 
-        ServiceSet sSet = RPCCaller.<serviceGetByTypeRequest, ServiceSet> syncCall(SERVICES.DIR,
+        ServiceSet sSet = RPCCaller.syncCall(SERVICES.DIR,
                 RPCAuthentication.userService, RPCAuthentication.authNone, options, this,
                 dirServiceAddresses, true, request, new CallGenerator<serviceGetByTypeRequest, ServiceSet>() {
                     @Override
@@ -1099,7 +1156,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
     public Service getServiceByUUID(String uuid) throws IOException {
         serviceGetByUUIDRequest request = serviceGetByUUIDRequest.newBuilder().setName(uuid).build();
 
-        ServiceSet sSet = RPCCaller.<serviceGetByUUIDRequest, ServiceSet> syncCall(SERVICES.DIR,
+        ServiceSet sSet = RPCCaller.syncCall(SERVICES.DIR,
                 RPCAuthentication.userService, RPCAuthentication.authNone, options, this,
                 dirServiceAddresses, true, request, new CallGenerator<serviceGetByUUIDRequest, ServiceSet>() {
                     @Override
@@ -1129,7 +1186,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
 
         // Send changed service status to DIR
         serviceRegisterRequest request = serviceRegisterRequest.newBuilder().setService(osdService).build();
-        RPCCaller.<serviceRegisterRequest, serviceRegisterResponse> syncCall(SERVICES.DIR,
+        RPCCaller.syncCall(SERVICES.DIR,
                 RPCAuthentication.userService, RPCAuthentication.authNone, options, this,
                 dirServiceAddresses, true, request,
                 new CallGenerator<serviceRegisterRequest, serviceRegisterResponse>() {

@@ -31,6 +31,7 @@ public class MRCConfig extends ServiceConfig {
             Parameter.HOSTNAME,
             Parameter.OSD_CHECK_INTERVAL,
             Parameter.DIRECTORY_SERVICE,
+            Parameter.SCHEDULER_SERVICE,
             Parameter.NOATIME,
             Parameter.LOCAL_CLOCK_RENEW,
             Parameter.REMOTE_TIME_SYNC,

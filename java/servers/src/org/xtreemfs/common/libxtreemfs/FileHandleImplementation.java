@@ -282,7 +282,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
             buf.position(operations.get(j).getBufferStart());
             // If synccall gets a buffer it fill it with data from the response.
-            ObjectData objectData = RPCCaller.<readRequest, ObjectData> syncCall(SERVICES.OSD, userCredentialsBogus,
+            ObjectData objectData = RPCCaller.syncCall(SERVICES.OSD, userCredentialsBogus,
                     authBogus, volumeOptions, uuidResolver, uuidIterator, false, readRqBuilder.build(), buf,
                     new CallGenerator<readRequest, ObjectData>() {
 
