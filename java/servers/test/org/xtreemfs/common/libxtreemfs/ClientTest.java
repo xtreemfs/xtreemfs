@@ -6,8 +6,9 @@
  */
 package org.xtreemfs.common.libxtreemfs;
 
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.dir.DIRConfig;
@@ -63,11 +64,15 @@ public class ClientTest {
     private static MRCConfig            mrc2Config;
     
     private static MRCRequestDispatcher mrc2;
-    
+
     @BeforeClass
-    public static void setUp() throws Exception {
-        FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
+    public static void init() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
 
         dirConfig = SetupUtils.createDIRConfig();
         osdConfigs = SetupUtils.createMultipleOSDConfigs(NUMBER_OF_OSDS);
@@ -98,8 +103,8 @@ public class ClientTest {
         }
     }
 
-    @AfterClass
-    public static void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
 
         for (int i = 0; i < osds.length; i++) {
             if (osds[i] != null) {
@@ -406,7 +411,7 @@ public class ClientTest {
         // Check osd selection policy to be set
         Options volumeOptions = new Options();
         volumeOptions.setMetadataCacheSize(0);
-        assertTrue(client.openVolume(VOLUME_NAME, null, volumeOptions).getOSDSelectionPolicy(userCredentials).equals("1002"));
+        assertTrue(client.openVolume(VOLUME_NAME, null, volumeOptions).getOSDSelectionPolicy(userCredentials).contains("1002"));
         client.shutdown();
     }
 }
