@@ -64,7 +64,7 @@ Options::Options()
 
   // Optimizations.
   metadata_cache_size = 100000;
-  metadata_cache_ttl_s = 120;
+  metadata_cache_ttl_s = 10;
   enable_async_writes = false;
   async_writes_max_request_size_kb = 128;  // default object size in kB.
   async_writes_max_requests = 10;  // Only 10 pending requests allowed by default.
