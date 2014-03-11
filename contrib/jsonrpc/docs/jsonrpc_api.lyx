@@ -1,0 +1,354 @@
+#LyX 2.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 474
+\begin_document
+\begin_header
+\textclass llncs
+\begin_preamble
+\usepackage{amsmath}
+\end_preamble
+\use_default_options false
+\maintain_unincluded_children false
+\language british
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_math auto
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 0
+\use_package esint 1
+\use_package mathdots 0
+\use_package mathtools 0
+\use_package mhchem 1
+\use_package stackrel 0
+\use_package stmaryrd 0
+\use_package undertilde 0
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language swedish
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Section
+XtreemFS API calls
+\end_layout
+
+\begin_layout Subsection
+getStaticNodeInfo 
+\end_layout
+
+\begin_layout Standard
+JSONString getStaticNodeInfo() 
+\end_layout
+
+\begin_layout Standard
+Return the type of the node.
+ This is always 
+\begin_inset Quotes sld
+\end_inset
+
+storage
+\begin_inset Quotes srd
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Paragraph
+Returns:
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+{
+\begin_inset Quotes sld
+\end_inset
+
+storage
+\begin_inset Quotes srd
+\end_inset
+
+}
+\end_layout
+
+\begin_layout Subsection
+getDynamicNodeInfo 
+\end_layout
+
+\begin_layout Standard
+JSONString getDynamicNodeInfo() 
+\end_layout
+
+\begin_layout Standard
+Return dynamic information of the node.
+ This includes available capacity in MB, random in IOPS and sequential bandwidth
+ in MB/s.
+\end_layout
+
+\begin_layout Paragraph
+Returns: 
+\end_layout
+
+\begin_layout Standard
+a JSONString containing:
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+{ "storage": { "capacity":10, "ranbw":30, "seqbw":10 } }
+\end_layout
+
+\begin_layout Subsection
+isNodeRunning 
+\end_layout
+
+\begin_layout Standard
+boolean isNodeRunning() 
+\end_layout
+
+\begin_layout Standard
+Check whether XtreemFS is running
+\end_layout
+
+\begin_layout Paragraph
+Returns: 
+\end_layout
+
+\begin_layout Standard
+currently always returns true.
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+{true}
+\end_layout
+
+\begin_layout Subsection
+getAvailableNodeList 
+\end_layout
+
+\begin_layout Standard
+JSONString getAvailableNodeList() 
+\end_layout
+
+\begin_layout Standard
+Returns the same information as getDynamicNodeInfo (available capacity in
+ MB, random in IOPS and sequential bandwidth in MB/s).
+\end_layout
+
+\begin_layout Paragraph
+Returns: 
+\end_layout
+
+\begin_layout Standard
+a JSONString containing:
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+{ "storage": { "capacity":10, "ranbw":30, "seqbw":10 } }
+\end_layout
+
+\begin_layout Subsection
+createReservation 
+\end_layout
+
+\begin_layout Standard
+String createReservation(JSONString reservDescriptor) 
+\end_layout
+
+\begin_layout Standard
+Create a reservation for an XtreemFS volume.
+ User credentials can also be put in reservDescriptor if necessary.
+ 
+\end_layout
+
+\begin_layout Paragraph
+Parameters: 
+\end_layout
+
+\begin_layout Standard
+reservDescriptor - a JSON string described a reservation.
+ Possible parameters are:
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+volume_name
+\emph default
+ 
+\series bold
+(required)
+\series default
+: the name of the XtreemFS Volume
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+capacity
+\emph default
+: the required capacity in MB.
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+ranbw
+\emph default
+: the required random bandwidth in IOPS.
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+seqbw
+\emph default
+: the required sequential bandwidth in MB/s
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+coldStorage
+\emph default
+: set this to true for cold storage.
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+mode
+\emph default
+: the mode of the XtreemFS volume.
+ Set to a default value, if not provided.
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+owner
+\emph default
+: the owner of the XtreemFS volume.
+ Set to a default value, if not provided.
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+owner_groupname
+\emph default
+: the groupname of the XtreemFS volume.
+ Set to a default value, if not provided.
+\end_layout
+
+\begin_layout Standard
+Example of a reservDescriptor:
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+{ volume_name:"testVolume", "capacity":10, "ranbw":3, "seqbw":0, "coldStorage":f
+alse, "mode"="700"}
+\end_layout
+
+\begin_layout Paragraph
+Returns: 
+\end_layout
+
+\begin_layout Standard
+returns the volume name if successful, otherwise an error string is returned.
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+{"result":{"volume_name":"localhost:42638
+\backslash
+/testVolume"}} 
+\end_layout
+
+\begin_layout Subsection
+releaseReservation
+\end_layout
+
+\begin_layout Standard
+boolean releaseReservation(String volumeName) Release a given reservation
+ 
+\end_layout
+
+\begin_layout Standard
+Parameters: 
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+volume_name
+\emph default
+ 
+\series bold
+(required)
+\series default
+: the name of the XtreemFS volume.
+\end_layout
+
+\begin_layout Paragraph
+Returns: 
+\end_layout
+
+\begin_layout Standard
+returns a string indicating success, or an error message otherwise
+\end_layout
+
+\end_body
+\end_document
