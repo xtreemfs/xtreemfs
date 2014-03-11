@@ -134,12 +134,12 @@ class Options {
   uint64_t metadata_cache_ttl_s;
   /** Enable asynchronous writes */
   bool enable_async_writes;
+  /** Maximum number of pending async write requests per file. */
+  int async_writes_max_requests;
   /** Maximum write request size per async write. Should be equal to the lowest
    *  upper bound in the system (e.g. an object size, or the FUSE limit). */
-  int async_writes_max_requests;
-  /** Number of retrieved entries per readdir request. */
   int async_writes_max_request_size_kb;
-  /** Maximum number of pending async write requests per file. */
+  /** Number of retrieved entries per readdir request. */
   int readdir_chunk_size;
   /** True, if atime requests are enabled in Fuse/not ignored by the library. */
   bool enable_atime;
