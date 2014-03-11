@@ -381,8 +381,8 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
             mrcAddresses.add(uuidToAddress(uuid.getUuid()));
         }
         
-        createVolume(mrcAddresses, schedulerAddress, auth, userCredentials, volumeName, mode, ownerUsername, 
-                ownerGroupname, accessPolicyType, defaultStripingPolicyType, defaultStripeSize, defaultStripeWidth, 
+        createVolume(mrcAddresses, schedulerAddress, auth, userCredentials, volumeName, mode, ownerUsername,
+                ownerGroupname, accessPolicyType, defaultStripingPolicyType, defaultStripeSize, defaultStripeWidth,
                 volumeAttributes, capacity, randomTP, seqTP, coldStorage);
     }
 
@@ -460,8 +460,6 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
             String volumeName, int capacity, int randomTP, int seqTP, boolean coldStorage)
             throws IOException {
         List<String> result = new ArrayList<String>();
-        UUIDIterator iteratorWithAddresses = new UUIDIterator();
-        iteratorWithAddresses.addUUID(schedulerAddress);
 
         Scheduler.reservation.Builder resBuilder = Scheduler.reservation.newBuilder();
         resBuilder.setVolume(Scheduler.volumeIdentifier.newBuilder().setUuid(volumeName).build());
@@ -481,59 +479,40 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         else
             resBuilder.setType(Scheduler.reservationType.BEST_EFFORT_RESERVATION);
 
-        Scheduler.osdSet osds = RPCCaller.syncCall(SERVICES.Scheduler,
-                userCredentials, auth, this.options, this, iteratorWithAddresses, true, resBuilder.build(),
-                new CallGenerator<Scheduler.reservation, Scheduler.osdSet>() {
-                    @Override
-                    public RPCResponse<Scheduler.osdSet> executeCall(InetSocketAddress server, Auth auth,
-                        UserCredentials userCreds, Scheduler.reservation input)
-                        throws IOException {
-                        return schedulerClient.scheduleReservation(server, auth, userCreds, input);
-                    }
-                });
+        InetSocketAddress server = Helper.stringToInetSocketAddress(schedulerAddress,
+                GlobalTypes.PORTS.SCHEDULER_PBRPC_PORT_DEFAULT.getNumber());
 
-        for(Scheduler.osdIdentifier osd: osds.getOsdList()) {
-            result.add(osd.getUuid());
+        try {
+            Scheduler.osdSet osds = schedulerClient.scheduleReservation(server, auth, userCredentials, resBuilder.build()).get();
+            for(Scheduler.osdIdentifier osd: osds.getOsdList()) {
+                result.add(osd.getUuid());
+            }
+        } catch (InterruptedException ex) {
+            throw new IOException("Cannot schedule reservation: " + ex.getMessage());
         }
 
         return result;
     }
 
     public void deleteReservation(String schedulerAddress, Auth auth, UserCredentials userCredentials, String volumeName) throws IOException{
-        UUIDIterator iteratorWithAddresses = new UUIDIterator();
-        iteratorWithAddresses.addUUID(schedulerAddress);
+        InetSocketAddress server = Helper.stringToInetSocketAddress(schedulerAddress,
+                GlobalTypes.PORTS.SCHEDULER_PBRPC_PORT_DEFAULT.getNumber());
 
         Scheduler.volumeIdentifier vol = Scheduler.volumeIdentifier.newBuilder().setUuid(volumeName).build();
 
-        RPCCaller.syncCall(SERVICES.Scheduler,
-                userCredentials, auth, this.options, this, iteratorWithAddresses, true, vol,
-                new CallGenerator<Scheduler.volumeIdentifier, emptyResponse>() {
-                    @Override
-                    public RPCResponse<emptyResponse> executeCall(InetSocketAddress server, Auth auth,
-                        UserCredentials userCreds, Scheduler.volumeIdentifier input)
-                        throws IOException, PosixErrorException {
-                        return schedulerClient.removeReservation(server, auth, userCreds,  input);
-                    }
-                });
+        schedulerClient.removeReservation(server, auth, userCredentials, vol);
     }
     
     public Scheduler.freeResourcesResponse getFreeResources(String schedulerAddress, Auth auth, UserCredentials userCredentials) throws IOException{
-        UUIDIterator iteratorWithAddresses = new UUIDIterator();
-        iteratorWithAddresses.addUUID(schedulerAddress);
+        InetSocketAddress server = Helper.stringToInetSocketAddress(schedulerAddress,
+                GlobalTypes.PORTS.SCHEDULER_PBRPC_PORT_DEFAULT.getNumber());
 
-        Scheduler.freeResourcesResponse freeResources = RPCCaller.syncCall(SERVICES.Scheduler,
-                userCredentials, auth, this.options, this, iteratorWithAddresses, true, null,
-                new CallGenerator<Scheduler.volumeIdentifier, Scheduler.freeResourcesResponse>() {
-                    @Override
-                    public RPCResponse<Scheduler.freeResourcesResponse> executeCall(InetSocketAddress server, Auth auth,
-                        UserCredentials userCreds, Scheduler.volumeIdentifier input)
-                        throws IOException, PosixErrorException {
-                        return schedulerClient.getFreeResources(server, auth, userCreds);
-                    }
-                });
-        
-                
-        return freeResources;
+        try {
+            return schedulerClient.getFreeResources(server, auth, userCredentials).get();
+
+        } catch (InterruptedException ex) {
+            throw new IOException("Cannot get freeResources: " + ex.getMessage());
+        }
     }
 
     /*
