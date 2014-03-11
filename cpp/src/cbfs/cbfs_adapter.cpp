@@ -640,6 +640,12 @@ void CbFSAdapter::EnumerateDirectory(CallbackFileSystem* Sender,
             enum_ctx->offset,
             options_->readdir_chunk_size,
             false);  // names_only = false
+        enum_ctx->next_index = 0;
+        if (enum_ctx->dir_entries->entries_size() == 0) {
+          // We reached the end of the dir listing.
+          *FileFound = false;
+          break;
+        }
       }
 
       const DirectoryEntry& entry =
