@@ -59,26 +59,26 @@ public class TestEnvironment {
     	private boolean started;
     	
     	public TestOSD(OSDRequestDispatcher osd) {
-    		this.osd = osd;
-    		this.started = false;
+            this.osd = osd;
+            this.started = false;
     	}
     	
     	public void start() {
-    		osd.start();
-    		started = true;
+            osd.start();
+            started = true;
     	}
     	
     	public void shutdown() {
-    		osd.shutdown();
-    		started = false;
+            osd.shutdown();
+            started = false;
     	}
     	
     	public String getPrimary(String fileId) {
-    		return osd.getPrimary(fileId);
+            return osd.getPrimary(fileId);
     	}
     	
     	public OSDConfig getConfig() {
-    		return osd.getConfig(); 
+            return osd.getConfig();
     	}
     }
     
@@ -140,10 +140,14 @@ public class TestEnvironment {
     public void stopOSD(String osdUuid) throws Exception{
         TestOSD osd = osds.get(osdUuid);
         
-        if (osd != null && osd.started) {
-        	osd.shutdown();
+        if (osd == null) {
+            throw new Exception("No OSD with UUID " + osdUuid + " available.");
+        }
+
+        if (osd.started) {
+            osd.shutdown();
         } else {
-        	throw new Exception("OSD "+ osdUuid +" was already stoped!");
+            throw new Exception("OSD " + osdUuid + " was already stoped!");
         }
     }
 
@@ -155,7 +159,12 @@ public class TestEnvironment {
      */
     public void startOSD(String osdUuid) throws Exception {	
         TestOSD osd = osds.get(osdUuid);
-        if (osd != null && !osd.started) {
+
+        if (osd == null) {
+            throw new Exception("No OSD with UUID " + osdUuid + " available.");
+        }
+
+        if (!osd.started) {
             OSDConfig config = getOSDConfig(osdUuid);   
             
             //Create new OSDRequestDispatcher with same config.
@@ -164,7 +173,7 @@ public class TestEnvironment {
             // Replace old OSDRequestDispatcher.
             osds.put(osdUuid, osd);
         } else {
-        	throw new Exception("OSD " + osdUuid + " is already running!");
+            throw new Exception("OSD " + osdUuid + " is already running!");
         }
     }
 
