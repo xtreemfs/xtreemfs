@@ -253,8 +253,6 @@ public class Client {
                 for (Volume v : volumeMap.values())
                     v.shutdown();
                 
-                UUIDResolver.shutdown(uuidRes);
-                
             } catch (Exception ex) {
                 ex.printStackTrace();
             } finally {

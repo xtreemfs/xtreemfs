@@ -54,6 +54,11 @@ public class SetupUtils {
     
     public static final int PORT_RANGE_OFFSET = 10000;
     
+    /**
+     * Analog to nextOsdNo.
+     */  
+    private static final int offsetFirstOsdPort             = 32640 + PORT_RANGE_OFFSET;
+    
     private static Properties createOSDProperties(int port, String dir) {
         Properties props = new Properties();
         props.setProperty("dir_service.host", "localhost");
@@ -113,16 +118,29 @@ public class SetupUtils {
         config.setDefaults();
         return config;
     }
-    
+    /**
+     * 
+     * Creates multiple OSD configs starting at offset 0. 
+     * 
+     */
     public static OSDConfig[] createMultipleOSDConfigs(int number) throws IOException {
+        return createMultipleOSDConfigs(number, 0);
+    }
+
+    /**
+     * 
+     * Creates multiple OSD configs starting at offset "offsetNextOsd". 
+     * 
+     */
+    public static OSDConfig[] createMultipleOSDConfigs(int number, int offsetNextOsd) throws IOException {
         OSDConfig[] configs = new OSDConfig[number];
-        int startPort = 32640 + PORT_RANGE_OFFSET;
-        
+        int offsetNextOsdPort = offsetFirstOsdPort + offsetNextOsd;
         for (int i = 0; i < configs.length; i++) {
-            Properties props = createOSDProperties(startPort, TEST_DIR + "/osd" + i);
+            Properties props = createOSDProperties(offsetNextOsdPort, TEST_DIR + "/osd" + offsetNextOsd);
             configs[i] = new OSDConfig(props);
             configs[i].setDefaults();
-            startPort++;
+            offsetNextOsdPort++;
+            offsetNextOsd++;
         }
         return configs;
     }
@@ -342,7 +360,6 @@ public class SetupUtils {
     
     public static void setupLocalResolver() throws Exception {
         TimeSync.initialize(null, 100000, 50);
-        UUIDResolver.shutdown();
         
         UUIDResolver.start(null, 1000, 1000);
         localResolver();

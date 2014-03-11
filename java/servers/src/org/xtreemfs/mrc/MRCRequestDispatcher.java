@@ -347,8 +347,6 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         procStage.shutdown();
         
-        UUIDResolver.shutdown();
-        
         volumeManager.shutdown();
         
         if (statusServer != null) {
@@ -440,8 +438,6 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         procStage.shutdown();
         procStage.waitForShutdown();
-        
-        UUIDResolver.shutdown();
         
         volumeManager.shutdown();
         

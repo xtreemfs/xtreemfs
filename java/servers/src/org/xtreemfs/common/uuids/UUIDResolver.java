@@ -16,6 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.xtreemfs.common.GlobalConstants;
 import org.xtreemfs.common.util.NetUtils;
@@ -53,7 +54,7 @@ public final class UUIDResolver extends Thread {
     protected static UUIDResolver theInstance;
 
     protected final UserCredentials uc;
-    
+
     protected UUIDResolver(DIRClient client, int cacheCleanInterval, int maxUnusedEntry, boolean singleton)
         throws IOException {
         
@@ -90,19 +91,19 @@ public final class UUIDResolver extends Thread {
      * @throws java.io.IOException
      */
     public static synchronized void start(DIRClient client, int cacheCleanInterval, int maxUnusedEntry)
-        throws IOException {
-        if (theInstance == null) {
-            new UUIDResolver(client, cacheCleanInterval, maxUnusedEntry, true);
-            theInstance.start();
-            if (Logging.isInfo())
-                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null, "started UUIDResolver",
-                    new Object[0]);
-        } else {
-            if (Logging.isInfo())
-                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null,
-                    "UUIDResolver already running!", new Object[0]);
-        }
-    }
+            throws IOException {
+       if (theInstance == null) {
+           new UUIDResolver(client, cacheCleanInterval, maxUnusedEntry, true);
+           theInstance.start();
+           if (Logging.isInfo())
+               Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null, "started UUIDResolver",
+                   new Object[0]);
+       } else {
+           if (Logging.isInfo())
+               Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null,
+                   "UUIDResolver already running!", new Object[0]);
+       }
+   }
     
     public static synchronized UUIDResolver startNonSingelton(DIRClient client, int cacheCleanInterval,
         int maxUnusedEntry) throws IOException {
@@ -307,26 +308,6 @@ public final class UUIDResolver extends Thread {
         
         e.setSticky(true);
         theInstance.cache.put(uuid, e);
-    }
-    
-    public static void shutdown(UUIDResolver nonSingleton) {
-        nonSingleton.quit = true;
-        nonSingleton.interrupt();
-    }
-    
-    public static void shutdown() {
-        if (theInstance != null) {
-            theInstance.quit = true;
-            theInstance.interrupt();
-            theInstance = null;
-            if (Logging.isInfo())
-                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null, "UUIDREsolver shut down",
-                    new Object[0]);
-        } else {
-            if (Logging.isInfo())
-                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null,
-                    "UUIDREsolver was already shut down or is not running", new Object[0]);
-        }
     }
     
     public static String getCache() {

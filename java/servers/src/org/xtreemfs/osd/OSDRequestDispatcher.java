@@ -540,8 +540,6 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             heartbeatThread.shutdown();
             heartbeatThread.waitForShutdown();
             
-            UUIDResolver.shutdown();
-            
             rpcServer.shutdown();
             rpcClient.shutdown();
             rpcClientForReplication.shutdown();
@@ -597,8 +595,6 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             }
             
             heartbeatThread.shutdown();
-            
-            UUIDResolver.shutdown();
             
             rpcServer.shutdown();
             rpcClient.shutdown();
