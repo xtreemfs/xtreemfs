@@ -368,11 +368,9 @@ void CbFSAdapter::CreateFile(CallbackFileSystem* Sender,
 
   if (FileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
     try {
-      // TODO(mberlin): Allow user to specify a file mask.
-      // Decimal 448 = Octal 700.
-
+      // TODO(mberlin): Let user specify a different default mode.
       // TODO(mberlin): Store attributes for directories?
-      volume_->MakeDirectory(user_credentials_, path, 448);
+      volume_->MakeDirectory(user_credentials_, path, 0777);
     } CATCH_AND_CONVERT_ERRORS
   } else {
     // What to do if file exists and this is called? Use O_TRUNC, because:
@@ -389,11 +387,10 @@ void CbFSAdapter::CreateFile(CallbackFileSystem* Sender,
     //                the file. See MSDN description of CreateFile:
     // http://msdn.microsoft.com/en-us/library/windows/desktop/aa363858%28v=vs.85%29.aspx // NOLINT
     try {
-      // TODO(mberlin): Let user specify a umask whose complement is bitwise
-      //                AND'd with 777 instead of the static values used here.
-      uint32_t mode = 384;  // Octal: 600
+      // TODO(mberlin): Let user specify a different default mode.
+      uint32_t mode = 0666;
       if ((FileAttributes & FILE_ATTRIBUTE_READONLY) != 0) {
-        mode = 256;  // Octal: 400
+        mode = 0444;
       }
 
       int open_flags = ConvertFlagsWindowsToXtreemFS(DesiredAccess)
