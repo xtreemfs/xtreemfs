@@ -57,7 +57,7 @@ public class SetupUtils {
     /**
      * Analog to nextOsdNo.
      */  
-    private static int offsetNextOsdPort             = 32640 + PORT_RANGE_OFFSET;
+    private static final int offsetFirstOsdPort             = 32640 + PORT_RANGE_OFFSET;
     
     private static Properties createOSDProperties(int port, String dir) {
         Properties props = new Properties();
@@ -118,23 +118,23 @@ public class SetupUtils {
         config.setDefaults();
         return config;
     }
-    //TODO(lukas) Remove code duplication.
+    /**
+     * 
+     * Creates multiple OSD configs starting at offset 0. 
+     * 
+     */
     public static OSDConfig[] createMultipleOSDConfigs(int number) throws IOException {
-        OSDConfig[] configs = new OSDConfig[number];
-        int startPort = 32640 + PORT_RANGE_OFFSET;
-        
-        for (int i = 0; i < configs.length; i++) {
-            Properties props = createOSDProperties(startPort, TEST_DIR + "/osd" + i);
-            configs[i] = new OSDConfig(props);
-            configs[i].setDefaults();
-            startPort++;
-        }
-        return configs;
+        return createMultipleOSDConfigs(number, 0);
     }
 
+    /**
+     * 
+     * Creates multiple OSD configs starting at offset "offsetNextOsd". 
+     * 
+     */
     public static OSDConfig[] createMultipleOSDConfigs(int number, int offsetNextOsd) throws IOException {
         OSDConfig[] configs = new OSDConfig[number];
-        
+        int offsetNextOsdPort = offsetFirstOsdPort + offsetNextOsd;
         for (int i = 0; i < configs.length; i++) {
             Properties props = createOSDProperties(offsetNextOsdPort, TEST_DIR + "/osd" + offsetNextOsd);
             configs[i] = new OSDConfig(props);

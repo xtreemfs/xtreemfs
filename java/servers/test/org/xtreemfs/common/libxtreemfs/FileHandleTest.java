@@ -13,16 +13,12 @@ import java.io.File;
 import java.io.FileWriter;
 
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.libxtreemfs.exceptions.InvalidChecksumException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.xloc.ReplicationFlags;
-import org.xtreemfs.dir.DIRConfig;
-import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
@@ -36,7 +32,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.REPL_FLAG;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.getattrResponse;
@@ -51,11 +46,8 @@ import org.xtreemfs.test.TestEnvironment;
  * Dec 15, 2011
  */
 public class FileHandleTest {
-    private static DIRRequestDispatcher dir;
 
     private static TestEnvironment      testEnv;
-
-    private static DIRConfig            dirConfig;
 
     private static UserCredentials      userCredentials;
 
@@ -64,8 +56,6 @@ public class FileHandleTest {
     private static String               mrcAddress;
 
     private static String               dirAddress;
-
-    private static VivaldiCoordinates   defaultCoordinates;
 
     private static StripingPolicy       defaultStripingPolicy;
 
@@ -76,7 +66,7 @@ public class FileHandleTest {
     private static Options              options;
 
     @Before
-    public void initializeTest() throws Exception {
+    public void setUp() throws Exception {
         System.out.println("TEST: " + VolumeTest.class.getSimpleName());
 
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
@@ -95,8 +85,6 @@ public class FileHandleTest {
         dirAddress = testEnv.getDIRAddress().getHostName() + ":" + testEnv.getDIRAddress().getPort();
         mrcAddress = testEnv.getMRCAddress().getHostName() + ":" + testEnv.getMRCAddress().getPort();
 
-        defaultCoordinates = VivaldiCoordinates.newBuilder().setXCoordinate(0).setYCoordinate(0)
-                .setLocalError(0).build();
         defaultStripingPolicy = StripingPolicy.newBuilder().setType(StripingPolicyType.STRIPING_POLICY_RAID0)
                 .setStripeSize(128).setWidth(1).build();
 
@@ -718,8 +706,9 @@ public class FileHandleTest {
         client.deleteVolume(auth, userCredentials, volumeName);
     }
     /**
+     * 
      * Creates a rw replicated file and gets the file size from the OSDs.
-     * To obtain a quorum the file has 5 replicas (one will be shut downed and one will be outdated). 
+     * To obtain a quorum the file has 3 replicas (the first replica will be outdated). 
      * 
      * @throws Exception
      */
@@ -728,7 +717,7 @@ public class FileHandleTest {
     public void testGetSizeOnOsd() throws Exception {
         String volumeName = "testGetSizeOnOsd";
 
-        // start new OSDs
+        // Start new OSDs.
         testEnv.startAdditionalOSDs(3);
 
         // Create and open volume.
@@ -736,68 +725,55 @@ public class FileHandleTest {
         AdminVolume volume = client.openVolume(volumeName, null, options);
         volume.start();
 
-        // set replica update Policy.
-        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 5,
+        // Set replica update Policy.
+        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 3,
                 ReplicationFlags.setSequentialStrategy(0));
 
-        // open FileHandle.
+        // Open FileHandle.
         AdminFileHandle fileHandle = volume.openFile(
                 userCredentials,
                 "/test.txt",
                 SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                         | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 0777);
 
-        // get OSD of first replica.
-        String uuid = fileHandle.getReplica(0).getOsdUuids(0);
+        // Get OSD of first replica.
+        String firstReplicaUuid = fileHandle.getReplica(0).getOsdUuids(0);
         
-        // write some content.
+        // Create some content.
         String content = "";
         for (int i = 0; i < 12000; i++) {
             content = content.concat("Hello World ");
         }
         byte[] bytesIn = content.getBytes();
-
-        //stop OSD of first replica
-        testEnv.stopOSD(uuid);
-        
         int length = bytesIn.length;
+        
+        // Stop OSD of first replica.
+        testEnv.stopOSD(firstReplicaUuid);
+        
+        // Write content and close file.
         fileHandle.write(userCredentials, bytesIn, length, 0);
+        fileHandle.close();
         
-        // restart OSD with first replica
-        testEnv.startOSD(uuid);
+        // Restart OSD with first replica.
+        testEnv.startOSD(firstReplicaUuid);
         
-        String primary = testEnv.getPrimary(fileHandle.getGlobalFileId());
         long size = 0;
         
-        // repeat until first replica is primary
+        // Repeat until first replica is primary.
         do {
 
-            // stop primary
-            testEnv.stopOSD(primary);
+        	// Wait until current primary give up lease.
+        	while (testEnv.getPrimary(fileHandle.getGlobalFileId()) != null) {
+        		Thread.sleep(5000);
+        	}
 
-            // re-open File
-            fileHandle.close();
-            fileHandle = volume.openFile(userCredentials, "/test.txt",
-                    SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber());
-
-            // wait 15s to avoid flooding
-            Thread.sleep(15000);
-
-            // get size on OSD
+            // Get size on OSD.
             size = fileHandle.getSizeOnOSD();
-            
-            //start old primary
-            testEnv.startOSD(primary);
-            
-            // get new primary
-            primary = testEnv.getPrimary(fileHandle.getGlobalFileId());
 
-        } while (primary.equals(uuid));
+        } while (testEnv.getPrimary(fileHandle.getGlobalFileId()).equals(firstReplicaUuid));
         
         // check if size of the first replica is correct
         assertEquals(length, size);
-        
-        fileHandle.close();
         
         client.deleteVolume(auth, userCredentials, volumeName);
     }
@@ -818,14 +794,16 @@ public class FileHandleTest {
                 SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                         | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 0777);
 
-        // write some content.
+        // create some content.
         String content = "";
         for (int i = 0; i < 6000; i++)
             content = content.concat("Hello World ");
         byte[] bytesIn = content.getBytes();
-
         int length = bytesIn.length;
+        
+        //write content
         fileHandle.write(userCredentials, bytesIn, length, 0);
+        
         fileHandle.close();
 
         // check Object to get size(File consists of one Object)

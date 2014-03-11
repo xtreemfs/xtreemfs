@@ -16,7 +16,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.xtreemfs.common.KeyValuePairs;
 import org.xtreemfs.common.uuids.UUIDResolver;
@@ -48,6 +47,40 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
  * @author bjko
  */
 public class TestEnvironment {
+    
+	/**
+	 * Wrapper for OSDRequestDispatcher which stores if an OSD is started.
+	 * 
+	 * @author lkairies
+	 *
+	 */
+    private class TestOSD {
+    	private OSDRequestDispatcher osd;
+    	private boolean started;
+    	
+    	public TestOSD(OSDRequestDispatcher osd) {
+    		this.osd = osd;
+    		this.started = false;
+    	}
+    	
+    	public void start() {
+    		osd.start();
+    		started = true;
+    	}
+    	
+    	public void shutdown() {
+    		osd.shutdown();
+    		started = false;
+    	}
+    	
+    	public String getPrimary(String fileId) {
+    		return osd.getPrimary(fileId);
+    	}
+    	
+    	public OSDConfig getConfig() {
+    		return osd.getConfig(); 
+    	}
+    }
     
     public InetSocketAddress getMRCAddress() throws UnknownUUIDException {
         return mrc.getConfig().getUUID().getAddress();
@@ -96,7 +129,7 @@ public class TestEnvironment {
      * @param osdUuid
      */
     public OSDConfig getOSDConfig(String osdUuid) {
-        return osds.get(osdUuid).osd.getConfig();
+        return osds.get(osdUuid).getConfig();
     }
 
     /**
@@ -104,11 +137,13 @@ public class TestEnvironment {
      * 
      * @param osdUuid
      */
-    public void stopOSD(String osdUuid) {
+    public void stopOSD(String osdUuid) throws Exception{
         TestOSD osd = osds.get(osdUuid);
         
         if (osd != null && osd.started) {
         	osd.shutdown();
+        } else {
+        	throw new Exception("OSD "+ osdUuid +" was already stoped!");
         }
     }
 
@@ -121,14 +156,16 @@ public class TestEnvironment {
     public void startOSD(String osdUuid) throws Exception {	
         TestOSD osd = osds.get(osdUuid);
         if (osd != null && !osd.started) {
-            OSDConfig config = osds.get(osdUuid).osd.getConfig();   
+            OSDConfig config = getOSDConfig(osdUuid);   
             
             //Create new OSDRequestDispatcher with same config.
             osd = new TestOSD (new OSDRequestDispatcher(config));
             
             // Replace old OSDRequestDispatcher.
             osds.put(osdUuid, osd);
-        } 
+        } else {
+        	throw new Exception("OSD " + osdUuid + " is already running!");
+        }
     }
 
     /**
@@ -140,7 +177,7 @@ public class TestEnvironment {
     public void startAdditionalOSDs(int number) throws Exception {
         OSDConfig[] osdConfigs = SetupUtils.createMultipleOSDConfigs(number, osds.size());
         for (OSDConfig config : osdConfigs) {
-        	TestOSD osd = new TestOSD ( new OSDRequestDispatcher(config));
+        	TestOSD osd = new TestOSD (new OSDRequestDispatcher(config));
         	osd.start();
         	osds.put(config.getUUID().toString(), osd);
         }
@@ -155,7 +192,7 @@ public class TestEnvironment {
     public String getPrimary(String fileId) {
         String primary = null;
         for (TestOSD osd : osds.values()) {
-            primary = osd.osd.getPrimary(fileId);
+            primary = osd.getPrimary(fileId);
             if (primary != null) {
                 break;
             }
@@ -300,7 +337,7 @@ public class TestEnvironment {
             if (enabledServs.contains(Services.OSD)) {
                 int osdCount = Collections.frequency(enabledServs, Services.OSD);
                 osds = new HashMap<String, TestOSD>(osdCount);               
-                osdConfigs = SetupUtils.createMultipleOSDConfigs(osdCount, 0);                           
+                osdConfigs = SetupUtils.createMultipleOSDConfigs(osdCount);                           
                 for (OSDConfig config : osdConfigs) {
                 	TestOSD osd = new TestOSD(new OSDRequestDispatcher(config));
                     osd.start();
@@ -401,25 +438,5 @@ public class TestEnvironment {
         // cleanup
         File testDir = new File(SetupUtils.TEST_DIR);
         // FSUtils.delTree(testDir);
-    }
-    
-    private class TestOSD {
-    	public OSDRequestDispatcher osd;
-    	public boolean started;
-    	
-    	public TestOSD(OSDRequestDispatcher osd) {
-    		this.osd = osd;
-    		this.started = false;
-    	}
-    	
-    	public void start() {
-    		osd.start();
-    		started = true;
-    	}
-    	
-    	public void shutdown() {
-    		osd.shutdown();
-    		started = false;
-    	}
     }
 }
