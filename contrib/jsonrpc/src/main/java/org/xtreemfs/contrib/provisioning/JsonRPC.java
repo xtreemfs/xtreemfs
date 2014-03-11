@@ -101,11 +101,15 @@ public class JsonRPC implements ResourceLoaderAware {
     
     listACLs, setACL, removeACL,
     
+    
     createReservation, releaseReservation, listReservations,
     
     isNodeRunning, getStaticNodeInfo, getDynamicNodeInfo,
     
-    getAvailableNodeList
+    getAvailableNodeList,
+    
+    createVolume, cancelReservation // TODO ???
+    
   }
 
   public JsonRPC(String defaultDirConfigFile) {
@@ -591,7 +595,7 @@ public class JsonRPC implements ResourceLoaderAware {
 
   /**
    * Implements a handler for the
-   * "createVolume volume_name [policy factor flag]" JSON-RPC method
+   * "createReservation volume_name [policy factor flag]" JSON-RPC method
    */
   public class CreateVolumeHandler extends AbstractRequestHandler {
 
@@ -606,13 +610,13 @@ public class JsonRPC implements ResourceLoaderAware {
       String volume_name = getStringParam(req, "volume_name", false);           // required
       // String password = getStringParam(req, "password", true);               // optional
 
-      String owner = getStringParam(req, "owner", false);                       // required
-      String ownerGroupname = getStringParam(req, "owner_groupname", false);    // required
-      String mode = getStringParam(req, "mode", false);                         // required
+      String owner = getStringParam(req, "owner", true, "user");                     // optional
+      String ownerGroupname = getStringParam(req, "owner_groupname", true, "user");  // optional
+      String mode = getStringParam(req, "mode", true, "700");                        // optional
 
-      String policy = getStringParam(req, "policy", true);                      // optional
+      String policy = getStringParam(req, "policy", true);                       // optional
       
-      Integer capacity = getIntParam(req, "capacity", true, 10);                  // optional
+      Integer capacity = getIntParam(req, "capacity", true, 2);                  // optional
       Integer randomTP = getIntParam(req, "ranbw", true, 2);                     // optional
       Integer seqTP = getIntParam(req, "seqbw", true, 0);                        // optional
       Boolean coldStorage = getBooleanParam(req, "coldStorage", true, false);    // optional      
@@ -789,6 +793,7 @@ public class JsonRPC implements ResourceLoaderAware {
    *  
    * a JSONString containing dynamic information of the node
    * 
+   * TODO same as getAvailableNodeList?!
    */
   public class DynamicNodeInfo extends AbstractRequestHandler {
 
@@ -798,8 +803,13 @@ public class JsonRPC implements ResourceLoaderAware {
 
     // Processes the requests
     @Override
-    public JSONRPC2Response doProcess(JSONRPC2Request req, MessageContext ctx) throws Exception {     
-      return new JSONRPC2Response("storage", req.getID());
+    public JSONRPC2Response doProcess(JSONRPC2Request req, MessageContext ctx) throws Exception {
+      
+      final UserCredentials uc = getGroups();
+      final Auth auth = getAuth(JsonRPC.this.adminPassword);
+      
+      HashMap<String, Double> freeRes = getFreeResources(uc, auth);      
+      return new JSONRPC2Response(freeRes, req.getID());          
     }
   }
   
@@ -821,22 +831,28 @@ public class JsonRPC implements ResourceLoaderAware {
       final UserCredentials uc = getGroups();
       final Auth auth = getAuth(JsonRPC.this.adminPassword);
       
-      freeResourcesResponse freeResources
-        = JsonRPC.this.client.getFreeResources(
-            generateSchedulerAddress(), 
-            auth, 
-            uc);
-
-      HashMap<String, HashMap<String, Double>> resources = new HashMap<String, HashMap<String, Double>>();
-      HashMap<String, Double> freeRes = new HashMap<String, Double>();
-      freeRes.put("capacity", freeResources.getCapacity());
-      freeRes.put("ranbw", freeResources.getRandomThroughput());
-      freeRes.put("seqbw", freeResources.getStreamingThroughput());     
-      resources.put("storage", freeRes);
-      
+      HashMap<String, Double> freeRes = getFreeResources(uc, auth);
       return new JSONRPC2Response(freeRes, req.getID());
-    }
+    }  
   }
   
+  
+  public HashMap<String, Double> getFreeResources(
+      final UserCredentials uc,
+      final Auth auth) throws IOException {
+    freeResourcesResponse freeResources
+      = JsonRPC.this.client.getFreeResources(
+          generateSchedulerAddress(), 
+          auth, 
+          uc);
+
+    HashMap<String, HashMap<String, Double>> resources = new HashMap<String, HashMap<String, Double>>();
+    HashMap<String, Double> freeRes = new HashMap<String, Double>();
+    freeRes.put("capacity", freeResources.getCapacity());
+    freeRes.put("ranbw", freeResources.getRandomThroughput());
+    freeRes.put("seqbw", freeResources.getStreamingThroughput());     
+    resources.put("storage", freeRes);
+    return freeRes;
+  }
   
 }
