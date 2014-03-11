@@ -360,7 +360,6 @@ public class SetupUtils {
     
     public static void setupLocalResolver() throws Exception {
         TimeSync.initialize(null, 100000, 50);
-        UUIDResolver.shutdown();
         
         UUIDResolver.start(null, 1000, 1000);
         localResolver();

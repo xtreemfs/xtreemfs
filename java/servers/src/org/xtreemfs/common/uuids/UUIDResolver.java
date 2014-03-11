@@ -310,26 +310,6 @@ public final class UUIDResolver extends Thread {
         theInstance.cache.put(uuid, e);
     }
     
-    public static void shutdown(UUIDResolver nonSingleton) {
-        nonSingleton.quit = true;
-        nonSingleton.interrupt();
-    }
-    
-    public static void shutdown() {
-        if (theInstance != null) {
-            theInstance.quit = true;
-            theInstance.interrupt();
-            theInstance = null;
-            if (Logging.isInfo())
-                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null, "UUIDREsolver shut down",
-                        new Object[0]);
-        } else {
-            if (Logging.isInfo())
-                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null,
-                        "UUIDREsolver was already shut down or is not running", new Object[0]);
-        }
-    }
-    
     public static String getCache() {
         StringBuilder sb = new StringBuilder();
         for (UUIDCacheEntry e : theInstance.cache.values()) {

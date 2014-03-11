@@ -196,9 +196,6 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
             volume.close();
         }
 
-        // Shutdown UUID resolver
-        org.xtreemfs.common.uuids.UUIDResolver.shutdown(this.uuidResolver);
-
         if (this.dirServiceClient != null) {
             try {
                 this.networkClient.shutdown();
