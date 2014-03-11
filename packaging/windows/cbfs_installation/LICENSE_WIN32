@@ -1,5 +1,6 @@
-Copyright (c) 2008-2012, Michael Berlin, Eugenio Cesario,
-Juan Gonzalez, Björn Kolbeck, Felix Langner, Christian Lorenz,
+Copyright (c) 2008-2014, Michael Berlin, Eugenio Cesario, Johannes Dillmann,
+Jens V. Fischer, Juan Gonzalez, Felix Hupfeld, Lukas Kairies,
+Christoph Kleineweber, Björn Kolbeck, Felix Langner, Christian Lorenz,
 Matthias Noack, Patrick Schäfer, Paul Seiferth, Jan Stender
                     
                     
@@ -36,6 +37,6 @@ POSSIBILITY OF SUCH DAMAGE.
 
 This installer is using a modified version of the modpath.iss script.
 The original script can be obtained here: http://legroom.net/software/modpath
-The modified version can be found in our public SVN repository.
+The modified version can be found in our public Git repository.
 
 The installer ships with OpenSSL (www.openssl.org) which were retrieved from: http://slproweb.com/products/Win32OpenSSL.html
