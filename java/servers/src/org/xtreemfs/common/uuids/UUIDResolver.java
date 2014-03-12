@@ -333,6 +333,21 @@ public final class UUIDResolver extends Thread {
         return sb.toString();
     }
     
+    public static void shutdown() {
+        if (theInstance != null) {
+            theInstance.quit = true;
+            theInstance.interrupt();
+            theInstance = null;
+            if (Logging.isInfo())
+                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null, "UUIDREsolver shut down",
+                        new Object[0]);
+        } else {
+            if (Logging.isInfo())
+                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, null,
+                        "UUIDREsolver was already shut down or is not running", new Object[0]);
+        }
+    }
+
     /**
      * Renew the list of networks available to the service running this UUIDResolver instance.
      * 

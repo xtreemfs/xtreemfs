@@ -417,6 +417,13 @@ public class TestEnvironment {
             }
         }
         
+        if (enabledServs.contains(Services.UUID_RESOLVER)) {
+            try {
+                UUIDResolver.shutdown();
+            } catch (Throwable th) {
+            }
+        }
+
         if (enabledServs.contains(Services.DIR_SERVICE) && dirService != null) {
             try {
                 dirService.shutdown();
