@@ -32,7 +32,7 @@
 \begin{flushleft}
 \sffamily \begin{LARGE}The XtreemFS Installation and User Guide\end{LARGE}
 
-Version 1.4.x
+Version 1.5.x
 \end{flushleft}
 
 
@@ -47,6 +47,27 @@ This document is \copyright{} 2009-\the\year{} by Bj\"orn Kolbeck, Jan Stender, 
 \tableofcontents
 
 \chapter*{Changes}
+Summary of important changes in release 1.5:
+
+\begin{itemize}
+ \item \textbf{Improved Hadoop support}\\
+    Added support for multiple volumes and read and write buffer to speed up performance. See section~\ref{sec:hadoop_integration}.
+ \item \textbf{SSDs support}\\
+    Support for multiple OSD storage threads to increase parallelism. See section~\ref{sec:ssds}.
+ \item \textbf{Replication Status Page}\\
+    Status webpage as part of the DIR webinterface for replicated files to show current primary and backup replicas.
+ \item \textbf{Multi-Homing Support}\\
+    XtreemFS can now be made available for multiple networks and clients will pick the correct address automatically. See option \hyperref[option:multihoming.enabled]{multihoming.enabled}.
+ \item \textbf{Multiple OSDs per Machine}\\
+    Support for multiple OSDs per machine (e.g. one for each disk) through the xtreemfs-osd-farm init.d script. See section~\ref{sec:xtreemfs-osd-farm}.
+ \item \textbf{Improved Checksum Support}\\
+    xtfs_scrub now repairs replicas with an invalid checksum automatically.
+ \item \textbf{Major bugfixes for Read/Write and Read-Only Replication}\\
+    There were problems with the fail-over of replicas which were fixed.
+ \item \textbf{Minor bugfixes and improvements across all components.}\\
+    See the CHANGELOG for more details and references to the issue numbers.
+\end{itemize}
+
 Summary of important changes in release 1.4:
 
 \begin{itemize}
@@ -550,6 +571,7 @@ $> cp SERVICE.p12 /etc/xos/xtreemfs/truststore/certs
 
 
 \subsection{Running XtreemFS on SSDs}
+\label{sec:ssds}
 
 SSDs are replacing spinning hard disk drives increasingly. This trend is also relevant for the area of distributed file systems. As XtreemFS uses an underlying local file system for all services, XtreemFS can be used with SSDs without any modifications.
 
@@ -1374,6 +1396,7 @@ To run init.d scripts, root permissions are required. Note that MRC and OSD will
 % The servers will be executed under the user ID of the user who called the xctl script.
 
 \subsection{Running multiple OSDs per Machine}
+\label{sec:xtreemfs-osd-farm}
 
 Running more than one OSD service per host might be useful in various situations. Use cases for this might be machines with more than one disk as an alternative to a local RAID or testing purposes. We offer an extended \texttt{init.d} script, named \texttt{xtreemfs-osd-farm}, to start or stop a set of OSDs on one host by a single script.
 
@@ -2381,6 +2404,8 @@ To enable read/write replication, it is necessary to specify a respective replic
 A replication policy can either be specified for an existing file or as a default policy for the entire volume. In the former case, replicas need to be added manually. In the latter case, a default replication factor needs to be specified that defines the number of replicas that are initially created. Please be aware that a default replication policy only affects newly created files, i.e.\ does not automatically add replicas to existing files!
 
 For details on how to define replication policies, please refer to Section \ref{sec:xtfsutil_files} and \ref{sec:xtfsutil_volumes}.
+
+The DIR status page has a subpage which shows the replication status for open files. It's accessible at \href{http://localhost:30638/replica_status}{http://localhost:30638/replica_status}. Replace \texttt{localhost} with the hostname of the DIR service if you're not on the same machine.
 
 \section{Read-Only File Replication}
 \label{sec:ronly_replication}
