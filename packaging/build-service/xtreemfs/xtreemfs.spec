@@ -11,7 +11,7 @@ Summary:        XtreemFS base package
 Source0:        XtreemFS-%{version}.tar.gz
 
 #requires for any distribution
-%if 0%{?sles_version} == 10
+%if 0%{?sles_version} == 10 || 0%{?fedora_version} >= 20
 # no need for ant-nodeps for SLE 10
 %else
 BuildRequires:  ant-nodeps >= 1.6.5
