@@ -150,7 +150,7 @@ public abstract class AbstractTestCase {
    * @return
    * @throws JSONRPC2ParseException
    */
-  protected static JSONRPC2Response callJSONRPC(METHOD method, Map<String,String> parameters) throws JSONRPC2ParseException {
+  protected static JSONRPC2Response callJSONRPC(METHOD method, Map<String,?> parameters) throws JSONRPC2ParseException {
     JSONRPC2Request req = new JSONRPC2Request(
         method.toString(),
         parameters,
@@ -159,7 +159,7 @@ public abstract class AbstractTestCase {
     return JSONRPC2Response.parse(xtreemfsRPC.executeMethod(req.toString()), true, true);
   }
 
-  protected static JSONRPC2Response callJSONRPC(String method, Map<String,String> parameters) throws JSONRPC2ParseException {
+  protected static JSONRPC2Response callJSONRPC(String method, Map<String,?> parameters) throws JSONRPC2ParseException {
     JSONRPC2Request req = new JSONRPC2Request(
         method,
         parameters,
@@ -168,7 +168,7 @@ public abstract class AbstractTestCase {
     return JSONRPC2Response.parse(xtreemfsRPC.executeMethod(req.toString()), true, true);
   }
 
-  protected static JSONRPC2Response callJSONRPC(JSONRPC2Session mySession, METHOD method, Map<String,String> parameters) throws JSONRPC2ParseException, JSONRPC2SessionException {
+  protected static JSONRPC2Response callJSONRPC(JSONRPC2Session mySession, METHOD method, Map<String,?> parameters) throws JSONRPC2ParseException, JSONRPC2SessionException {
     JSONRPC2Request req = new JSONRPC2Request(
         method.toString(),
         parameters,

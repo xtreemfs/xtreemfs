@@ -86,7 +86,7 @@ public class JsonRPC implements ResourceLoaderAware {
   protected int dir_port = DEFAULT_DIR_PORT;
   private String adminPassword = "";
 
-  protected ResourceLoader resourceLoader;
+  protected ResourceLoader resourceLoader; 
 
   protected SSLOptions sslOptions = null;
 

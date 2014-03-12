@@ -112,7 +112,7 @@ public abstract class AbstractRequestHandler implements RequestHandler {
   }
 
   public Integer getIntParam(JSONRPC2Request req, String key, boolean nullAllowed, Integer nullValue) throws AccessToNonExistantParameter, JSONRPC2Error {
-    return getInputParam(req, key, Integer.class, nullAllowed, nullValue);
+    return getInputParam(req, key, Long.class, nullAllowed, nullValue != null? new Long(nullValue) : null).intValue();
   }
 
   public Boolean getBooleanParam(JSONRPC2Request req, String key, boolean nullAllowed, Boolean nullValue) throws AccessToNonExistantParameter, JSONRPC2Error {

@@ -152,6 +152,41 @@ public class JSONRPCTest extends AbstractTestCase {
     assertTrue(((List<String>) res.getResult()).isEmpty());
   }
 
+  
+
+  /**
+   * Creates a volume and lists the available resources
+   * @throws JSONRPC2ParseException
+   */
+  @Test
+  public void createListAndCheckReservation() throws JSONRPC2ParseException {
+    System.out.println("createListAndCheckReservation");
+
+    // create volumes
+    Map<String, Object> parametersMap = new HashMap<String, Object>();
+
+    parametersMap.put("volume_name", "testVolume");
+    parametersMap.put("owner", owner);
+    parametersMap.put("owner_groupname", ownerGroup);
+    parametersMap.put("mode", mode);
+    
+    parametersMap.put("capacity", 1024);
+    parametersMap.put("randbw", 100);
+    parametersMap.put("seqbw", 0);
+    parametersMap.put("coldStorage", false);
+
+    // parametersMap.put("password", "");
+    JSONRPC2Response res = callJSONRPC(METHOD.createReservation, parametersMap);
+    checkSuccess(res, false);
+
+    JSONRPC2Response res2 = callJSONRPC(METHOD.listReservations);
+    checkSuccess(res2, false);
+
+    res = callJSONRPC(METHOD.getAvailableNodeList);
+    checkSuccess(res, false);
+  }
+  
+  
   /**
    * Test listing OSDs.
    * @throws JSONRPC2ParseException
