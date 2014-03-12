@@ -2821,7 +2821,7 @@ This section will help you to set up a simple Hadoop configuration with all nece
 \textbf{Required software:}
 \begin{itemize}
 \item XtreemFS (\href{http://code.google.com/p/xtreemfs/downloads/list}{www.XtreemFS.org})
-\item XtreemFSHadoopClient.jar (Download it from \href{http://code.google.com/p/xtreemfs/downloads/list}{www.XtreemFS.org} or build it by yourself by excecuting make hadoop-client)
+\item XtreemFSHadoopClient.jar (Download it from \href{http://www.xtreemfs.org/downloads/XtreemFSHadoopClient.jar}{www.XtreemFS.org} or build it by yourself by excecuting make hadoop-client)
 \item Hadoop (v 1.0.1 or newer) (\href{http://hadoop.apache.org}{hadoop.apache.org})
 \item JDK 1.6+ (\href{http://java.sun.com}{Oracle/SUN})
 \end{itemize}
@@ -3002,11 +3002,10 @@ Please note, that there are currently no build targets provided yet which allow 
 
 In particular, you need boost and libssl-dev. On a Unix plattform, you also need libfuse-dev or you have to comment out the respective portions in the CMake configuration manually. At last, you have to install ``cmake'' which generates the build system.
 
-  \item Check out the XtreemFS trunk.
+  \item Check out the XtreemFS master.
 
 \begin{verbatim}
-svn checkout http://xtreemfs.googlecode.com/svn/trunk/ \
-             xtreemfs-read-only 
+git clone https://code.google.com/p/xtreemfs
 \end{verbatim}
 
   \item Compile the Client.
