@@ -6,9 +6,6 @@ HADOOP_VERSIONS="1.2.1"
 VOLUME="$(basename $(dirname $(pwd)))"
 
 echo "Prepare hadoop input"
-   mkdir input
-   echo "foo foo bar bar foo bar foo" > input/test1.txt
-   echo "foo foo bar bar bar foo bar" > input/test2.txt
 
 for VERSION in $HADOOP_VERSIONS; do
 
@@ -122,6 +119,22 @@ for VERSION in $HADOOP_VERSIONS; do
    </configuration>"
 
    echo $MAPRED_SITE > $HADOOP_PREFIX/conf/mapred-site.xml
+   
+   #prepare input
+   mkdir input
+
+   wget -nv -O test.txt http://www.gutenberg.org/cache/epub/1661/pg1661.txt 
+
+   #test hadoop fs shell
+   if [ -z "$($HADOOP_PREFIX/bin/hadoop fs -ls /hadoop_test | grep test.txt)" ]
+      then echo hadoop fs -ls does not show test file!; RESULT=-1;
+   fi 
+
+   $HADOOP_PREFIX/bin/hadoop fs -copyFromLocal test.txt /hadoop_test/input/
+
+   if [ -z "$(ls | grep test.txt)" ]
+      then echo ls does not show test file!; RESULT=-1;
+   fi
 
    #run simple hadoop-job
 
@@ -143,12 +156,12 @@ for VERSION in $HADOOP_VERSIONS; do
             else echo "Hadoop job without buffer  was successfull";
          fi
 
-         rm -r $VOLUME_DIR/output
-         
+         $HADOOP_PREFIX/bin/hadoop fs -rmr /hadoop_test/output
+
          echo "Run wordcount with buffer..."
          $HADOOP_PREFIX/bin/hadoop jar $HADOOP_PREFIX/hadoop-examples-$VERSION.jar wordcount -D xtreemfs.io.read.buffer=true -D xtreemfs.io.write.buffer=true /hadoop_test/input /hadoop_test/output
 
-         rm -r $VOLUME_DIR/output
+         $HADOOP_PREFIX/bin/hadoop fs -rmr /hadoop_test/output
 
          JOB_STATUS=$($HADOOP_PREFIX/bin/hadoop job -list all | grep _0002 | cut -c 23) 
         
