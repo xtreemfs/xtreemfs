@@ -24,9 +24,11 @@ public class RemoveReservationOperation extends SchedulerOperation {
 	@Override
 	public void startRequest(SchedulerRequest rq) {
 		try {
-			Scheduler.volumeIdentifier request = (Scheduler.volumeIdentifier) rq
-					.getRequestMessage();
-			String volume = request.getUuid();
+            String volume = rq.getRequestMessage().getUnknownFields().toString().split("\"")[1];
+            // TODO(ckleineweber): Fix request parsing (rq contains emptyResponse)
+			//Scheduler.volumeIdentifier request = (Scheduler.volumeIdentifier) rq
+			//		.getRequestMessage();
+			//String volume = request.getUuid();
 			master.getReservationScheduler().removeReservation(volume);
 			master.getStore().removeReservation(master.getStore().getReservation(volume));
 		} catch(Exception ex) {
