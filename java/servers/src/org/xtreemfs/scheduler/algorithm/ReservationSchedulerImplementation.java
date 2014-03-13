@@ -151,13 +151,15 @@ public class ReservationSchedulerImplementation implements ReservationScheduler 
 	@Override
 	public void removeReservation(String volumeIdentifier) {
         for(OSDDescription osd: osds) {
+            Reservation toRemove = null;
             for(Reservation res: osd.getReservations()) {
                 if(res.getVolumeIdentifier().equals(volumeIdentifier)) {
-                    osd.getReservations().remove(res);
-                    if(osd.getReservations().isEmpty()) {
-                        osd.setUsage(OSDDescription.OSDUsage.UNUSED);
-                    }
+                    toRemove = res;
                 }
+            }
+            osd.getReservations().remove(toRemove);
+            if(osd.getReservations().isEmpty()) {
+                osd.setUsage(OSDDescription.OSDUsage.UNUSED);
             }
         }
 	}
@@ -213,11 +215,13 @@ public class ReservationSchedulerImplementation implements ReservationScheduler 
 		double reservedRandomThroughput = r.getRamdomThroughput();
 		double reservedStreamingThroughput = r.getStreamingThroughput();
 
-		for (Reservation reservation : o.getReservations()) {
-			reservedCapacity += reservation.getCapacity();
-			reservedRandomThroughput += reservation.getRamdomThroughput();
-			reservedStreamingThroughput += reservation.getStreamingThroughput();
-		}
+        if(o.getReservations() != null) {
+            for (Reservation reservation : o.getReservations()) {
+                reservedCapacity += reservation.getCapacity();
+                reservedRandomThroughput += reservation.getRamdomThroughput();
+                reservedStreamingThroughput += reservation.getStreamingThroughput();
+            }
+        }
 
         double streamingPerformance;
         if(o.getCapabilities().getStreamingPerformance().size() > o.getReservations().size())

@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common;
@@ -103,14 +104,17 @@ public class SchedulerTest {
         }
         catch(Exception e) {}
 
-		// Test getting an empty schedule after removing the reservation
-		// TODO(ckleineweber): Scheduler receives emptyResponse instead of volumeIdentifier
 		client.removeReservation(null, RPCAuthentication.authNone,
 				RPCAuthentication.userService, volume);
 		response = client.getSchedule(null, RPCAuthentication.authNone,
 				RPCAuthentication.userService, volume);
-		osds = response.get();
-		assertTrue(osds.getOsdCount() == 0);
+        try {
+		    osds = response.get();
+            assertTrue(false);
+        } catch(PBRPCException ex) {
+            // Exception as reservation does not exist
+            assertTrue(true);
+        }
 		response.freeBuffers();
 	}
 	
@@ -148,9 +152,9 @@ public class SchedulerTest {
 		Scheduler.reservationSet reservations = reservationsResponse.get();
 		assertEquals(reservations.getReservationsCount(), 1);
 		Scheduler.reservation r = reservations.getReservations(0);
-		assertEquals(r.getCapacity(), capacity);
-		assertEquals(r.getRandomThroughput(), randomTP);
-		assertEquals(r.getStreamingThroughput(), seqTP);
+		assertTrue(r.getCapacity() == capacity);
+		assertTrue(r.getRandomThroughput() == randomTP);
+		assertTrue(r.getStreamingThroughput() == seqTP);
 		assertTrue(r.getVolume().getUuid().equals(uuid));
 		reservationsResponse.freeBuffers();
 	}

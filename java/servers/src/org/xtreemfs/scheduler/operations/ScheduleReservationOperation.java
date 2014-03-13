@@ -35,6 +35,7 @@ public class ScheduleReservationOperation extends SchedulerOperation {
                 master.reloadOSDs();
             } catch(Exception ex) {
                 rq.sendError(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "Cannot request OSDs from DIR");
+                return;
             }
         }
 		Scheduler.reservation request = (Scheduler.reservation) rq
@@ -46,6 +47,7 @@ public class ScheduleReservationOperation extends SchedulerOperation {
 
 		if(!isValidReservation(r)) {
 			rq.sendError(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "Invalid reservation");
+            return;
 		}
 		
 		try {

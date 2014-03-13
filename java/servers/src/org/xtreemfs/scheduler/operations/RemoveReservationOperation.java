@@ -31,11 +31,11 @@ public class RemoveReservationOperation extends SchedulerOperation {
 			//String volume = request.getUuid();
 			master.getReservationScheduler().removeReservation(volume);
 			master.getStore().removeReservation(master.getStore().getReservation(volume));
+            rq.sendSuccess(emptyResponse.getDefaultInstance());
 		} catch(Exception ex) {
             rq.sendError(RPC.ErrorType.INTERNAL_SERVER_ERROR, RPC.POSIXErrno.POSIX_ERROR_NONE,
                     "Cannot remove reservation: " + ex.getMessage());
         }
-		rq.sendSuccess(emptyResponse.getDefaultInstance());
 	}
 
 	@Override
