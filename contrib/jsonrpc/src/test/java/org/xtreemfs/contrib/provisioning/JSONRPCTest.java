@@ -85,9 +85,9 @@ public class JSONRPCTest extends AbstractTestCase {
     Map<String, String> vol = (Map<String, String>) res.getResult();
     System.out.println(vol.get("volume_name"));
 
-//  TODO not working yet  // create the volume a second time
-//    res = callJSONRPC(METHOD.createReservation, "testVolume", owner, ownerGroup, mode);
-//    checkSuccess(res, true);
+    // create the volume a second time
+    res = callJSONRPC(METHOD.createReservation, "testVolume", owner, ownerGroup, mode);
+    checkSuccess(res, true);
 
     // delete the volume
     res = callJSONRPC(METHOD.releaseReservation, "testVolume");
@@ -97,8 +97,17 @@ public class JSONRPCTest extends AbstractTestCase {
     String policy = ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE;
     Integer factor = 2;
     Integer flags = REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber();
-    res = callJSONRPC(METHOD.createReservation, "testVolume_policies", owner, ownerGroup, mode, policy,
-        factor, flags);
+    
+    Map<String, Object> parametersMap2 = new HashMap<String, Object>();
+    parametersMap2.put("volume_name", "testVolume_policies");
+    parametersMap2.put("owner", owner);
+    parametersMap2.put("owner_groupname", ownerGroup);
+    parametersMap2.put("mode", mode);
+    parametersMap2.put("policy", policy);
+    parametersMap2.put("factor", factor);
+    parametersMap2.put("flag", flags);
+    
+    res = callJSONRPC(METHOD.createReservation, parametersMap2);
     checkSuccess(res, false);
 
     res = callJSONRPC(METHOD.listReservations);
