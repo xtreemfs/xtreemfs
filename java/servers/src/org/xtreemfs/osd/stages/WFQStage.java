@@ -77,9 +77,9 @@ public class WFQStage extends Stage {
 
             @Override
             public int getWeight(String qualityClass) {
-                if (qualityClass.equals("volume1")) {
+                if (qualityClass.equals(getVolumeName("volume1"))) {
                     return 1;
-                } else if (qualityClass.equals("volume2")) {
+                } else if (qualityClass.equals(getVolumeName("volume2"))) {
                     return 2;
                 } else {
                     return 1;
