@@ -41,7 +41,7 @@ public class RPCCaller {
         public RPCResponse<R> executeCall(InetSocketAddress server) throws IOException, PosixErrorException;
     }
 
-    protected static <C, R extends Message> R syncCall(SERVICES service, 
+    protected static <R extends Message> R syncCall(SERVICES service, 
             Options options, UUIDResolver uuidResolver, UUIDIterator it,
             boolean uuidIteratorHasAddresses, CallGenerator<R> callGen) throws IOException,
             PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
@@ -49,7 +49,7 @@ public class RPCCaller {
                 options.getMaxTries(), null, callGen);
     }
 
-    protected static <C, R extends Message> R
+    protected static <R extends Message> R
             syncCall(SERVICES service, Options options,
                     UUIDResolver uuidResolver, UUIDIterator it, boolean uuidIteratorHasAddresses,
                     boolean delayNextTry, int maxRetries, CallGenerator<R> callGen) throws IOException,
@@ -58,7 +58,7 @@ public class RPCCaller {
                 delayNextTry, options.getMaxTries(), null, callGen);
     }
 
-    protected static <C, R extends Message> R syncCall(SERVICES service,
+    protected static <R extends Message> R syncCall(SERVICES service,
             Options options, UUIDResolver uuidResolver, UUIDIterator it,
             boolean uuidIteratorHasAddresses, ReusableBuffer buf, CallGenerator<R> callGen)
             throws IOException, PosixErrorException, InternalServerErrorException,
@@ -67,7 +67,7 @@ public class RPCCaller {
                 options.getMaxTries(), buf, callGen);
     }
 
-    protected static <C, R extends Message> R syncCall(SERVICES service, 
+    protected static <R extends Message> R syncCall(SERVICES service, 
             Options options, UUIDResolver uuidResolver, UUIDIterator it,
             boolean uuidIteratorHasAddresses, boolean delayNextTry, int maxRetries,
             ReusableBuffer buffer, CallGenerator<R> callGen) throws PosixErrorException, IOException,

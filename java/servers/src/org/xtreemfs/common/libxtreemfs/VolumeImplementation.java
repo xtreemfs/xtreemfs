@@ -301,7 +301,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
         final statvfsRequest request = statvfsRequest.newBuilder().setKnownEtag(0).setVolumeName(volumeName)
                 .build();
 
-        StatVFS stat = RPCCaller.<statvfsRequest, StatVFS> syncCall(SERVICES.MRC, 
+        StatVFS stat = RPCCaller.syncCall(SERVICES.MRC, 
                 volumeOptions, uuidResolver, mrcUUIDIterator, false,
                 new CallGenerator<StatVFS>() {
                     @Override
@@ -324,7 +324,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
         final readlinkRequest request = readlinkRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .build();
 
-        readlinkResponse response = RPCCaller.<readlinkRequest, readlinkResponse> syncCall(SERVICES.MRC,
+        readlinkResponse response = RPCCaller.syncCall(SERVICES.MRC,
                 volumeOptions, uuidResolver, mrcUUIDIterator, false,
                 new CallGenerator<readlinkResponse>() {
                     @Override
@@ -352,7 +352,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
         final symlinkRequest request = symlinkRequest.newBuilder().setLinkPath(linkPath).setTargetPath(targetPath)
                 .setVolumeName(volumeName).build();
 
-        timestampResponse response = RPCCaller.<symlinkRequest, timestampResponse> syncCall(SERVICES.MRC,
+        timestampResponse response = RPCCaller.syncCall(SERVICES.MRC,
                 volumeOptions, uuidResolver, mrcUUIDIterator, false,
                 new CallGenerator<timestampResponse>() {
                     @Override
@@ -384,7 +384,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
         final linkRequest request = linkRequest.newBuilder().setLinkPath(linkPath).setTargetPath(targetPath)
                 .setVolumeName(volumeName).build();
 
-        timestampResponse response = RPCCaller.<linkRequest, timestampResponse> syncCall(SERVICES.MRC,
+        timestampResponse response = RPCCaller.syncCall(SERVICES.MRC,
                 volumeOptions, uuidResolver, mrcUUIDIterator, false, 
                 new CallGenerator<timestampResponse>() {
                     @Override
@@ -420,7 +420,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
             PosixErrorException, AddressToUUIDNotFoundException {
         final accessRequest request = accessRequest.newBuilder().setFlags(flags).setPath(path)
                 .setVolumeName(volumeName).build();
-        RPCCaller.<accessRequest, emptyResponse> syncCall(SERVICES.MRC, 
+        RPCCaller.syncCall(SERVICES.MRC, 
                 volumeOptions, uuidResolver, mrcUUIDIterator, false,
                 new CallGenerator<emptyResponse>() {
                     @SuppressWarnings("unchecked")
@@ -482,7 +482,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
         final openRequest request = openRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setFlags(flags).setMode(mode).setAttributes(0).build();
 
-        openResponse response = RPCCaller.<openRequest, openResponse> syncCall(SERVICES.MRC, 
+        openResponse response = RPCCaller.syncCall(SERVICES.MRC, 
                 volumeOptions, uuidResolver, mrcUUIDIterator, false,
                 new CallGenerator<openResponse>() {
                     @Override
@@ -624,7 +624,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
             final getattrRequest request = getattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                     .setKnownEtag(0).build();
 
-            getattrResponse response = RPCCaller.<getattrRequest, getattrResponse> syncCall(SERVICES.MRC,
+            getattrResponse response = RPCCaller.syncCall(SERVICES.MRC,
                     volumeOptions, uuidResolver, mrcUUIDIterator, false,
                     new CallGenerator<getattrResponse>() {
                         @Override
@@ -659,7 +659,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
         final setattrRequest request = setattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setStbuf(stat).setToSet(toSet).build();
 
-        timestampResponse response = RPCCaller.<setattrRequest, timestampResponse> syncCall(SERVICES.MRC,
+        timestampResponse response = RPCCaller.syncCall(SERVICES.MRC,
                 volumeOptions, uuidResolver, mrcUUIDIterator, false,
                 new CallGenerator<timestampResponse>() {
                     @Override
@@ -710,7 +710,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
         // 1. Delete file at MRC.
         final unlinkRequest request = unlinkRequest.newBuilder().setPath(path).setVolumeName(volumeName).build();
 
-        unlinkResponse response = RPCCaller.<unlinkRequest, unlinkResponse> syncCall(SERVICES.MRC,
+        unlinkResponse response = RPCCaller.syncCall(SERVICES.MRC,
                 volumeOptions, uuidResolver, mrcUUIDIterator, false,
                 new CallGenerator<unlinkResponse>() {
                     @Override
@@ -746,7 +746,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
             String headOsd = Helper.getOSDUUIDFromXlocSet(fc.getXlocs(), i, 0);
 
             osdUuidIterator.clearAndAddUUID(headOsd);
-            RPCCaller.<unlink_osd_Request, emptyResponse> syncCall(SERVICES.OSD, 
+            RPCCaller.syncCall(SERVICES.OSD, 
                     volumeOptions, uuidResolver, osdUuidIterator, false,
                     new CallGenerator<emptyResponse>() {
                         @SuppressWarnings("unchecked")
@@ -776,7 +776,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
         final renameRequest request = renameRequest.newBuilder().setVolumeName(volumeName).setSourcePath(path)
                 .setTargetPath(newPath).build();
 
-        renameResponse response = RPCCaller.<renameRequest, renameResponse> syncCall(SERVICES.MRC,
+        renameResponse response = RPCCaller.syncCall(SERVICES.MRC,
                 volumeOptions, uuidResolver, mrcUUIDIterator, false,
                 new CallGenerator<renameResponse>() {
                     @Override
@@ -857,7 +857,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
             final mkdirRequest request = mkdirRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                     .setMode(mode).build();
 
-            timestampResponse response = RPCCaller.<mkdirRequest, timestampResponse> syncCall(SERVICES.MRC,
+            timestampResponse response = RPCCaller.syncCall(SERVICES.MRC,
                     volumeOptions, uuidResolver, mrcUUIDIterator, false,
                     new CallGenerator<timestampResponse>() {
                         @Override
@@ -915,7 +915,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
             PosixErrorException, AddressToUUIDNotFoundException {
         final rmdirRequest request = rmdirRequest.newBuilder().setVolumeName(volumeName).setPath(path).build();
 
-        timestampResponse response = RPCCaller.<rmdirRequest, timestampResponse> syncCall(SERVICES.MRC,
+        timestampResponse response = RPCCaller.syncCall(SERVICES.MRC,
                 volumeOptions, uuidResolver, mrcUUIDIterator, false,
                 new CallGenerator<timestampResponse>() {
                     @Override
@@ -968,7 +968,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
                     .setNamesOnly(namesOnly).setKnownEtag(0).setSeenDirectoryEntriesCount(currentOffset)
                     .setLimitDirectoryEntriesCount(limitDirEntriesCount).build();
 
-            DirectoryEntries readDirResponse = RPCCaller.<readdirRequest, DirectoryEntries> syncCall(SERVICES.MRC,
+            DirectoryEntries readDirResponse = RPCCaller.syncCall(SERVICES.MRC,
                     volumeOptions, uuidResolver, mrcUUIDIterator, false,
                     new CallGenerator<DirectoryEntries>() {
                         @Override
@@ -1058,7 +1058,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
         final listxattrRequest request = listxattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setNamesOnly(false).build();
 
-        response = RPCCaller.<listxattrRequest, listxattrResponse> syncCall(SERVICES.MRC, 
+        response = RPCCaller.syncCall(SERVICES.MRC, 
                 volumeOptions, uuidResolver, mrcUUIDIterator, false,
                 new CallGenerator<listxattrResponse>() {
                     @Override
@@ -1090,7 +1090,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
         final setxattrRequest request = setxattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setName(name).setValue(value).setFlags(flags.getNumber()).build();
 
-        timestampResponse response = RPCCaller.<setxattrRequest, timestampResponse> syncCall(SERVICES.MRC,
+        timestampResponse response = RPCCaller.syncCall(SERVICES.MRC,
                 volumeOptions, uuidResolver, mrcUUIDIterator, false,
                 new CallGenerator<timestampResponse>() {
                     @Override
@@ -1119,7 +1119,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
         final setxattrRequest request = setxattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setName(name).setValue(value).setFlags(flags.getNumber()).build();
 
-        timestampResponse response = RPCCaller.<setxattrRequest, timestampResponse> syncCall(SERVICES.MRC,
+        timestampResponse response = RPCCaller.syncCall(SERVICES.MRC,
                 volumeOptions, uuidResolver, mrcUUIDIterator, false,
                 new CallGenerator<timestampResponse>() {
                     @Override
@@ -1151,7 +1151,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
             final getxattrRequest request = getxattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                     .setName(name).build();
 
-            getxattrResponse response = RPCCaller.<getxattrRequest, getxattrResponse> syncCall(SERVICES.MRC,
+            getxattrResponse response = RPCCaller.syncCall(SERVICES.MRC,
                     volumeOptions, uuidResolver, mrcUUIDIterator, false,
                     new CallGenerator<getxattrResponse>() {
                         @Override
@@ -1261,7 +1261,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
         final removexattrRequest request = removexattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setName(name).build();
 
-        RPCCaller.<removexattrRequest, timestampResponse> syncCall(SERVICES.MRC, 
+        RPCCaller.syncCall(SERVICES.MRC, 
                 volumeOptions, uuidResolver, mrcUUIDIterator, false,
                 new CallGenerator<timestampResponse>() {
                     @Override
@@ -1286,7 +1286,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
         final xtreemfs_replica_addRequest request = xtreemfs_replica_addRequest.newBuilder()
                 .setVolumeName(volumeName).setPath(path).setNewReplica(newReplica).build();
 
-        RPCCaller.<xtreemfs_replica_addRequest, emptyResponse> syncCall(SERVICES.MRC, 
+        RPCCaller.syncCall(SERVICES.MRC, 
                 volumeOptions, uuidResolver, mrcUUIDIterator, false,
                 new CallGenerator<emptyResponse>() {
                     @SuppressWarnings("unchecked")
@@ -1315,7 +1315,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
         final xtreemfs_replica_listRequest request = xtreemfs_replica_listRequest.newBuilder()
                 .setVolumeName(volumeName).setPath(path).build();
 
-        Replicas response = RPCCaller.<xtreemfs_replica_listRequest, Replicas> syncCall(SERVICES.MRC,
+        Replicas response = RPCCaller.syncCall(SERVICES.MRC,
                 volumeOptions, uuidResolver, mrcUUIDIterator, false,
                 new CallGenerator<Replicas>() {
                     @Override
@@ -1342,7 +1342,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
         final xtreemfs_replica_removeRequest request = xtreemfs_replica_removeRequest.newBuilder()
                 .setVolumeName(volumeName).setPath(path).setOsdUuid(osdUuid).build();
 
-        FileCredentials response = RPCCaller.<xtreemfs_replica_removeRequest, FileCredentials> syncCall(
+        FileCredentials response = RPCCaller.syncCall(
                 SERVICES.MRC, volumeOptions, uuidResolver, mrcUUIDIterator,
                 false, new CallGenerator<FileCredentials>() {
                     @Override
@@ -1361,7 +1361,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
         final unlink_osd_Request request2 = unlink_osd_Request.newBuilder()
                 .setFileId(response.getXcap().getFileId()).setFileCredentials(response).build();
 
-        RPCCaller.<unlink_osd_Request, emptyResponse> syncCall(SERVICES.OSD,
+        RPCCaller.syncCall(SERVICES.OSD,
                 volumeOptions, uuidResolver, osdUuidIterator, false,
                 new CallGenerator<emptyResponse>() {
                     @SuppressWarnings("unchecked")
@@ -1429,8 +1429,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
         final xtreemfs_get_suitable_osdsRequest request = xtreemfs_get_suitable_osdsRequest.newBuilder()
                 .setVolumeName(volumeName).setPath(path).setNumOsds(numberOfOsds).build();
 
-        xtreemfs_get_suitable_osdsResponse response = RPCCaller
-                .<xtreemfs_get_suitable_osdsRequest, xtreemfs_get_suitable_osdsResponse> syncCall(
+        xtreemfs_get_suitable_osdsResponse response = RPCCaller.syncCall(
                         SERVICES.MRC,                        
                         volumeOptions,
                         uuidResolver,

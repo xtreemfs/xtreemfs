@@ -437,7 +437,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
 
                 final ReusableBuffer writeDataBuffer = operations.get(j).getReqData();
-                OSDWriteResponse response = RPCCaller.<writeRequest, OSDWriteResponse> syncCall(
+                OSDWriteResponse response = RPCCaller.syncCall(
                         SERVICES.OSD,
                         volumeOptions, 
                         uuidResolver, 
@@ -522,7 +522,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
         final XCap xcapCopy = getXcap();
 
         // 1. Call truncate at the MRC (in order to increase the trunc epoch).
-        XCap truncateXCap = RPCCaller.<XCap, XCap> syncCall(SERVICES.MRC, volumeOptions,
+        XCap truncateXCap = RPCCaller.syncCall(SERVICES.MRC, volumeOptions,
                 uuidResolver, mrcUuidIterator, false, new CallGenerator<XCap>() {
                     @Override
                     public RPCResponse<XCap> executeCall(InetSocketAddress server) throws IOException {
@@ -562,7 +562,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
             requestBuilder.setFileCredentials(fileCredentialsBuilder.build());
             requestBuilder.setNewFileSize(newFileSize);
 
-            response = RPCCaller.<truncateRequest, OSDWriteResponse> syncCall(SERVICES.OSD, 
+            response = RPCCaller.syncCall(SERVICES.OSD, 
                     volumeOptions, uuidResolver, osdUuidIterator, false, 
                     new CallGenerator<OSDWriteResponse>() {
                         @Override
@@ -648,7 +648,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
         Lock response = null;
         if (!waitForLock) {
-            response = RPCCaller.<lockRequest, Lock> syncCall(SERVICES.OSD, volumeOptions,
+            response = RPCCaller.syncCall(SERVICES.OSD, volumeOptions,
                     uuidResolver, osdUuidIterator, false, new CallGenerator<Lock>() {
                         @Override
                         public RPCResponse<Lock> executeCall(InetSocketAddress server) throws IOException {
@@ -661,7 +661,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
             while (retriesLeft >= 0) {
                 retriesLeft--;
                 try {
-                    response = RPCCaller.<lockRequest, Lock> syncCall(SERVICES.OSD, 
+                    response = RPCCaller.<Lock> syncCall(SERVICES.OSD, 
                             volumeOptions, uuidResolver, osdUuidIterator, false, true, 1, 
                             new CallGenerator<Lock>() {
                                 @Override
@@ -727,7 +727,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
         final lockRequest request = lockRequest.newBuilder().setLockRequest(lock).setFileCredentials(fcBuilder.build())
                 .build();
 
-        Lock response = RPCCaller.<lockRequest, Lock> syncCall(SERVICES.OSD, volumeOptions,
+        Lock response = RPCCaller.syncCall(SERVICES.OSD, volumeOptions,
                 uuidResolver, osdUuidIterator, false, new CallGenerator<Lock>() {
                     @Override
                     public RPCResponse<Lock> executeCall(InetSocketAddress server) throws IOException {
@@ -783,7 +783,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
         final lockRequest unlockRequest = lockRequest.newBuilder().setFileCredentials(fcBuilder.build()).setLockRequest(lock)
                 .build();
 
-        RPCCaller.<lockRequest, emptyResponse> syncCall(SERVICES.OSD, volumeOptions,
+        RPCCaller.syncCall(SERVICES.OSD, volumeOptions,
                 uuidResolver, osdUuidIterator, false, new CallGenerator<emptyResponse>() {
                     @SuppressWarnings("unchecked")
                     @Override
@@ -866,7 +866,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
         UUIDIterator tempUuidIterator = new UUIDIterator();
         tempUuidIterator.addUUID(osdUuid);
 
-        RPCCaller.<readRequest, ObjectData> syncCall(SERVICES.OSD, volumeOptions,
+        RPCCaller.syncCall(SERVICES.OSD, volumeOptions,
                 uuidResolver, tempUuidIterator, false, 
                 new CallGenerator<ObjectData>() {
                     @Override
@@ -1041,7 +1041,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
         requestBuilder.setOsdWriteResponse(response.toBuilder().build());
         requestBuilder.setCloseFile(closeFile);
 
-        RPCCaller.<xtreemfs_update_file_sizeRequest, timestampResponse> syncCall(SERVICES.MRC, 
+        RPCCaller.syncCall(SERVICES.MRC, 
                 volumeOptions, uuidResolver, mrcUuidIterator, false,
                 new CallGenerator<timestampResponse>() {
                     @Override
@@ -1139,7 +1139,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
             final xtreemfs_internal_get_object_setRequest request = xtreemfs_internal_get_object_setRequest.newBuilder()
                     .setFileId(fileId).setFileCredentials(fcBuilder.build()).build();
 
-            ObjectList ol = RPCCaller.<xtreemfs_internal_get_object_setRequest, ObjectList> syncCall(SERVICES.OSD,
+            ObjectList ol = RPCCaller.syncCall(SERVICES.OSD,
                     volumeOptions, uuidResolver, it,
                     false,
                     new CallGenerator<ObjectList>() {
@@ -1202,7 +1202,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
                     .setFileCredentials(fcBuilder.build()).setFileId(fileId).setObjectNumber(objectNo)
                     .setObjectVersion(0l).build();
 
-            od = RPCCaller.<xtreemfs_check_objectRequest, ObjectData> syncCall(SERVICES.OSD,
+            od = RPCCaller.syncCall(SERVICES.OSD,
                     volumeOptions, uuidResolver, it,
                     false,
                     new CallGenerator<ObjectData>() {
@@ -1240,7 +1240,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
                 .setFileCredentials(fcBuilder.build()).setFileId(fileId).build();
 
         xtreemfs_internal_get_file_sizeResponse response = RPCCaller
-                .<xtreemfs_internal_get_file_sizeRequest, xtreemfs_internal_get_file_sizeResponse> syncCall(
+                .syncCall(
                         SERVICES.OSD,                        
                         volumeOptions,
                         uuidResolver,
@@ -1284,7 +1284,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
                     .setFileCredentials(fcBuilder.build()).setFileId(fileId).setObjectNumber(objectNo)
                     .setObjectVersion(0l).build();
 
-            emptyResponse response = RPCCaller.<xtreemfs_repair_objectRequest, emptyResponse> syncCall(SERVICES.OSD,
+            emptyResponse response = RPCCaller.syncCall(SERVICES.OSD,
                     volumeOptions, uuidResolver, it, false,
                     new CallGenerator<emptyResponse>() {
                         @Override

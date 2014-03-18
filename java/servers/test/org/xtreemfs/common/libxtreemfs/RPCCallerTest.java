@@ -133,7 +133,7 @@ public class RPCCallerTest {
                                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber()).setMode(0777)
                 .setAttributes(0).build();
 
-        openResponse response = RPCCaller.<openRequest, openResponse> syncCall(SERVICES.MRC,    
+        openResponse response = RPCCaller.syncCall(SERVICES.MRC,    
                 options, client, mrcUUIDIterator, true,
                 new CallGenerator<openResponse>() {
                     @Override
@@ -172,7 +172,7 @@ public class RPCCallerTest {
                 .setZeroPadding(0).build();
         writeReq.setObjectData(objectData);
 
-        RPCCaller.<writeRequest, OSDWriteResponse> syncCall(SERVICES.OSD, options,
+        RPCCaller.syncCall(SERVICES.OSD, options,
                 client, uuidIterator, false, 
                 new CallGenerator<OSDWriteResponse>() {
 
