@@ -17,6 +17,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import javax.naming.ldap.PagedResultsControl;
+
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.KeyValuePairs;
 import org.xtreemfs.common.libxtreemfs.RPCCaller.CallGenerator;
@@ -305,15 +307,13 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
             AddressToUUIDNotFoundException {
 
         // access the list of MRCs
-        ServiceSet mrcs = RPCCaller.syncCall(SERVICES.DIR,
-                this.dirServiceUserCredentials, this.dirServiceAuth, this.options, this,
-                this.dirServiceAddresses, true, null, new CallGenerator<String, ServiceSet>() {
+        ServiceSet mrcs = RPCCaller.syncCall(SERVICES.DIR, this.options, this,
+                this.dirServiceAddresses, true, null, new CallGenerator<ServiceSet>() {
 
                     @Override
-                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, String input) throws IOException {
+                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server) throws IOException {
                         return ClientImplementation.this.dirServiceClient.xtreemfs_service_get_by_type(
-                                server, authHeader, userCreds, ServiceType.SERVICE_TYPE_MRC);
+                                server, dirServiceAuth, dirServiceUserCredentials, ServiceType.SERVICE_TYPE_MRC);
                     }
                 });
 
@@ -360,15 +360,13 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
             int capacity, int randomTP, int seqTP, boolean coldStorage)
             throws IOException {
         // access the list of MRCs
-        ServiceSet mrcs = RPCCaller.syncCall(SERVICES.DIR,
-                this.dirServiceUserCredentials, this.dirServiceAuth, this.options, this,
-                this.dirServiceAddresses, true, null, new CallGenerator<String, ServiceSet>() {
+        ServiceSet mrcs = RPCCaller.syncCall(SERVICES.DIR, this.options, this,
+                this.dirServiceAddresses, true, null, new CallGenerator<ServiceSet>() {
 
                     @Override
-                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, String input) throws IOException {
+                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server) throws IOException {
                         return ClientImplementation.this.dirServiceClient.xtreemfs_service_get_by_type(
-                                server, authHeader, userCreds, ServiceType.SERVICE_TYPE_MRC);
+                                server, dirServiceAuth, dirServiceUserCredentials, ServiceType.SERVICE_TYPE_MRC);
                     }
                 });
 
@@ -428,7 +426,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         volume.setPolicyAttribute(userCredentials, "1002.uuids", osdStr);
     }
 
-    private void createVolume(UUIDIterator mrcAddresses, Auth auth, UserCredentials userCredentials,
+    private void createVolume(UUIDIterator mrcAddresses, final Auth auth, final UserCredentials userCredentials,
             String volumeName, int mode, String ownerUsername, String ownerGroupname,
             AccessControlPolicyType accessPolicyType, StripingPolicyType defaultStripingPolicyType,
             int defaultStripeSize, int defaultStripeWidth, List<KeyValuePair> volumeAttributes)
@@ -438,20 +436,18 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         StripingPolicy sp = StripingPolicy.newBuilder().setType(defaultStripingPolicyType)
                 .setStripeSize(defaultStripeSize).setWidth(defaultStripeWidth).build();
 
-        org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volume volume = org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volume
+        final org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volume volume = org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volume
                 .newBuilder().setName(volumeName).setMode(mode).setOwnerUserId(ownerUsername)
                 .setOwnerGroupId(ownerGroupname).setAccessControlPolicy(accessPolicyType)
                 .setDefaultStripingPolicy(sp).addAllAttrs(volumeAttributes).setId("").build();
 
-        RPCCaller.syncCall(SERVICES.MRC,
-                userCredentials, auth, this.options, this, mrcAddresses, true, volume,
-                new CallGenerator<org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volume, emptyResponse>() {
+        RPCCaller.syncCall(SERVICES.MRC, this.options, this, mrcAddresses, true,
+                new CallGenerator<emptyResponse>() {
                     @SuppressWarnings("unchecked")
                     @Override
-                    public RPCResponse<emptyResponse> executeCall(InetSocketAddress server, Auth auth,
-                            UserCredentials userCreds, org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volume input)
+                    public RPCResponse<emptyResponse> executeCall(InetSocketAddress server)
                             throws IOException {
-                        return mrcClient.xtreemfs_mkvol(server, auth, userCreds, input);
+                        return mrcClient.xtreemfs_mkvol(server, auth, userCredentials, volume);
                     };
                 });
     }
@@ -523,18 +519,16 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
      * java.lang.String)
      */
     @Override
-    public void deleteVolume(Auth auth, UserCredentials userCredentials, String volumeName)
+    public void deleteVolume(Auth auth, UserCredentials userCredentials, final String volumeName)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
 
-        ServiceSet s = RPCCaller.syncCall(SERVICES.DIR, this.dirServiceUserCredentials,
-                this.dirServiceAuth, this.options, this, this.dirServiceAddresses, true, volumeName,
-                new CallGenerator<String, ServiceSet>() {
+        ServiceSet s = RPCCaller.syncCall(SERVICES.DIR, this.options, this, this.dirServiceAddresses, true,
+                new CallGenerator<ServiceSet>() {
 
                     @Override
-                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, String volumeName) throws IOException {
+                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server) throws IOException {
                         return ClientImplementation.this.dirServiceClient.xtreemfs_service_get_by_name(
-                                server, authHeader, userCreds, volumeName);
+                                server, dirServiceAuth, dirServiceUserCredentials, volumeName);
                     }
                 });
 
@@ -582,38 +576,36 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         deleteVolume(iteratorWithAddresses, auth, userCredentials, volumeName);
     }
 
-    private void deleteVolume(UUIDIterator mrcAddresses, Auth auth, UserCredentials userCredentials,
-            String volumeName) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+    private void deleteVolume(UUIDIterator mrcAddresses, final Auth auth, final UserCredentials userCredentials,
+            final String volumeName) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         final MRCServiceClient mrcServiceClient = new MRCServiceClient(this.networkClient, null);
 
-        RPCCaller.syncCall(SERVICES.MRC, userCredentials, auth, this.options, this,
-                mrcAddresses, true, volumeName, new CallGenerator<String, emptyResponse>() {
+        RPCCaller.syncCall(SERVICES.MRC, this.options, this,
+                mrcAddresses, true, new CallGenerator<emptyResponse>() {
                     @SuppressWarnings("unchecked")
                     @Override
-                    public RPCResponse<emptyResponse> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, String input) throws IOException {
-                        return mrcServiceClient.xtreemfs_rmvol(server, authHeader, userCreds, input);
+                    public RPCResponse<emptyResponse> executeCall(InetSocketAddress server) throws IOException {
+                        return mrcServiceClient.xtreemfs_rmvol(server, auth, userCredentials, volumeName);
                     }
                 });
     }
 
-    public void deleteVolume(List<String> mrcAddresses, Auth auth, String schedulerAddress, UserCredentials userCredentials,
+    public void deleteVolume(List<String> mrcAddresses, final Auth auth, String schedulerAddress, final UserCredentials userCredentials,
                              String volumeName) throws IOException, PosixErrorException, AddressToUUIDNotFoundException
     {
         final SchedulerServiceClient schedulerServiceClient = new SchedulerServiceClient(this.networkClient, null);
-        Scheduler.volumeIdentifier vol = Scheduler.volumeIdentifier.newBuilder().setUuid(volumeName).build();
+        final Scheduler.volumeIdentifier vol = Scheduler.volumeIdentifier.newBuilder().setUuid(volumeName).build();
         UUIDIterator iteratorWithAddresses = new UUIDIterator();
         iteratorWithAddresses.addUUID(schedulerAddress);
 
         deleteVolume(mrcAddresses, auth, userCredentials, volumeName);
 
-        RPCCaller.syncCall(SERVICES.Scheduler, userCredentials, auth, this.options, this,
-                iteratorWithAddresses, true, vol, new CallGenerator<Scheduler.volumeIdentifier, emptyResponse>() {
+        RPCCaller.syncCall(SERVICES.Scheduler, this.options, this,
+                iteratorWithAddresses, true, new CallGenerator<emptyResponse>() {
             @SuppressWarnings("unchecked")
             @Override
-            public RPCResponse<emptyResponse> executeCall(InetSocketAddress server, Auth authHeader,
-                UserCredentials userCreds, Scheduler.volumeIdentifier input) throws IOException {
-                return schedulerServiceClient.removeReservation(server, authHeader, userCreds, input);
+            public RPCResponse<emptyResponse> executeCall(InetSocketAddress server) throws IOException {
+                return schedulerServiceClient.removeReservation(server, auth, userCredentials, vol);
             }
         });
     }
@@ -644,15 +636,13 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         final MRCServiceClient mrcServiceClient = new MRCServiceClient(this.networkClient, null);
 
         // use bogus user credentials
-        UserCredentials userCredentials = UserCredentials.newBuilder().setUsername("xtreemfs").build();
+        final UserCredentials userCredentials = UserCredentials.newBuilder().setUsername("xtreemfs").build();
 
-        Volumes volumes = RPCCaller.syncCall(SERVICES.MRC, userCredentials,
-                this.authBogus, this.options, this, uuidIteratorWithAddresses, true,
-                emptyRequest.getDefaultInstance(), new CallGenerator<emptyRequest, Volumes>() {
+        Volumes volumes = RPCCaller.syncCall(SERVICES.MRC, this.options, this, uuidIteratorWithAddresses, true,
+                new CallGenerator<Volumes>() {
                     @Override
-                    public RPCResponse<Volumes> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, emptyRequest input) throws IOException {
-                        return mrcServiceClient.xtreemfs_lsvol(server, authHeader, userCreds, input);
+                    public RPCResponse<Volumes> executeCall(InetSocketAddress server) throws IOException {
+                        return mrcServiceClient.xtreemfs_lsvol(server, authBogus, userCredentials, emptyRequest.getDefaultInstance());
                     };
                 });
         return volumes;
@@ -665,15 +655,13 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
      */
     @Override
     public Volumes listVolumes() throws IOException {
-        ServiceSet sSet = RPCCaller.syncCall(SERVICES.DIR,
-                this.dirServiceUserCredentials, this.dirServiceAuth, this.options, this,
-                this.dirServiceAddresses, true, null, new CallGenerator<String, ServiceSet>() {
+        ServiceSet sSet = RPCCaller.syncCall(SERVICES.DIR, this.options, this,
+                this.dirServiceAddresses, true, null, new CallGenerator<ServiceSet>() {
 
                     @Override
-                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, String input) throws IOException {
+                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server) throws IOException {
                         return ClientImplementation.this.dirServiceClient.xtreemfs_service_get_by_type(
-                                server, authHeader, userCreds, ServiceType.SERVICE_TYPE_VOLUME);
+                                server, dirServiceAuth, dirServiceUserCredentials, ServiceType.SERVICE_TYPE_VOLUME);
                     }
                 });
 
@@ -697,15 +685,13 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
      */
     @Override
     public String[] listVolumeNames() throws IOException {
-        ServiceSet sSet = RPCCaller.syncCall(SERVICES.DIR,
-                this.dirServiceUserCredentials, this.dirServiceAuth, this.options, this,
-                this.dirServiceAddresses, true, null, new CallGenerator<String, ServiceSet>() {
+        ServiceSet sSet = RPCCaller.syncCall(SERVICES.DIR, this.options, this,
+                this.dirServiceAddresses, true, null, new CallGenerator<ServiceSet>() {
 
                     @Override
-                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, String input) throws IOException {
+                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server) throws IOException {
                         return ClientImplementation.this.dirServiceClient.xtreemfs_service_get_by_type(
-                                server, authHeader, userCreds, ServiceType.SERVICE_TYPE_VOLUME);
+                                server, dirServiceAuth, dirServiceUserCredentials, ServiceType.SERVICE_TYPE_VOLUME);
                     }
                 });
 
@@ -724,15 +710,13 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
     @Override
     public Map<String, Service> listServers() throws IOException, PosixErrorException {
         // access the list of servers at the DIR
-        ServiceSet osds = RPCCaller.syncCall(SERVICES.DIR,
-                this.dirServiceUserCredentials, this.dirServiceAuth, this.options, this,
-                this.dirServiceAddresses, true, null, new CallGenerator<String, ServiceSet>() {
+        ServiceSet osds = RPCCaller.syncCall(SERVICES.DIR, this.options, this,
+                this.dirServiceAddresses, true, null, new CallGenerator<ServiceSet>() {
 
                     @Override
-                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, String input) throws IOException {
+                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server) throws IOException {
                         return ClientImplementation.this.dirServiceClient.xtreemfs_service_get_by_type(
-                                server, authHeader, userCreds, ServiceType.SERVICE_TYPE_MIXED);
+                                server, dirServiceAuth, dirServiceUserCredentials, ServiceType.SERVICE_TYPE_MIXED);
                     }
                 });
 
@@ -755,15 +739,13 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
     @Override
     public Map<String, Service> listOSDsAndAttributes() throws IOException, PosixErrorException {
         // access the list of OSDs
-        ServiceSet osds = RPCCaller.syncCall(SERVICES.DIR,
-                this.dirServiceUserCredentials, this.dirServiceAuth, this.options, this,
-                this.dirServiceAddresses, true, null, new CallGenerator<String, ServiceSet>() {
+        ServiceSet osds = RPCCaller.syncCall(SERVICES.DIR, this.options, this,
+                this.dirServiceAddresses, true, null, new CallGenerator<ServiceSet>() {
 
                     @Override
-                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, String input) throws IOException {
+                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server) throws IOException {
                         return ClientImplementation.this.dirServiceClient.xtreemfs_service_get_by_type(
-                                server, authHeader, userCreds, ServiceType.SERVICE_TYPE_OSD);
+                                server, dirServiceAuth, dirServiceUserCredentials, ServiceType.SERVICE_TYPE_OSD);
                     }
                 });
 
@@ -834,18 +816,16 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         // Check if there is an '@' in the volume. Everything behind the '@' is
         // the snapshot,
         // cut if off.
-        String parsedVolumeName = parseVolumeName(volumeName);
+        final String parsedVolumeName = parseVolumeName(volumeName);
         ServiceSet sSet = null;
         try {
-            sSet = RPCCaller.syncCall(SERVICES.DIR, this.dirServiceUserCredentials,
-                    this.dirServiceAuth, this.options, this, this.dirServiceAddresses, true,
-                    parsedVolumeName, new CallGenerator<String, ServiceSet>() {
+            sSet = RPCCaller.syncCall(SERVICES.DIR, this.options, this, this.dirServiceAddresses, true,
+                    new CallGenerator<ServiceSet>() {
 
                         @Override
-                        public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
-                                UserCredentials userCreds, String input) throws IOException {
+                        public RPCResponse<ServiceSet> executeCall(InetSocketAddress server) throws IOException {
                             return ClientImplementation.this.dirServiceClient.xtreemfs_service_get_by_name(
-                                    server, authHeader, userCreds, input);
+                                    server, dirServiceAuth, dirServiceUserCredentials, parsedVolumeName);
                         }
                     });
         } catch (IOException e) {
@@ -912,17 +892,15 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         // Check if there is a @ in the volume_name.
         // Everything behind the @ has to be removed as it identifies the
         // snapshot.
-        String parsedVolumeName = parseVolumeName(volumeName);
+        final String parsedVolumeName = parseVolumeName(volumeName);
         ServiceSet sSet = null;
         try {
-            sSet = RPCCaller.syncCall(SERVICES.DIR, this.dirServiceUserCredentials,
-                    this.dirServiceAuth, this.options, this, this.dirServiceAddresses, true,
-                    parsedVolumeName, new CallGenerator<String, ServiceSet>() {
+            sSet = RPCCaller.syncCall(SERVICES.DIR, this.options, this, this.dirServiceAddresses, true,
+                    new CallGenerator<ServiceSet>() {
                         @Override
-                        public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
-                                UserCredentials userCreds, String input) throws IOException {
+                        public RPCResponse<ServiceSet> executeCall(InetSocketAddress server) throws IOException {
                             return ClientImplementation.this.dirServiceClient.xtreemfs_service_get_by_name(
-                                    server, authHeader, userCreds, input);
+                                    server, dirServiceAuth, dirServiceUserCredentials, parsedVolumeName);
                         }
                     });
         } catch (IOException e) {
@@ -995,22 +973,19 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
     public void startCleanUp(String osdUUID, String password, boolean remove, boolean deleteVolumes,
             boolean restore) throws IOException {
         try {
-            xtreemfs_cleanup_startRequest request = xtreemfs_cleanup_startRequest.newBuilder()
+            final xtreemfs_cleanup_startRequest request = xtreemfs_cleanup_startRequest.newBuilder()
                     .setRemoveZombies(remove).setRemoveUnavailVolume(deleteVolumes).setLostAndFound(restore)
                     .build();
-            Auth pw = StringToAuth(password);
+            final Auth pw = StringToAuth(password);
             UUIDIterator it = new UUIDIterator();
             it.addUUID(osdUUID);
-            RPCCaller.syncCall(SERVICES.OSD,
-                    RPCAuthentication.userService, pw, options, this, it, false, request,
-                    new CallGenerator<xtreemfs_cleanup_startRequest, emptyResponse>() {
+            RPCCaller.syncCall(SERVICES.OSD, options, this, it, false,
+                    new CallGenerator<emptyResponse>() {
                         @Override
                         @SuppressWarnings("unchecked")
-                        public RPCResponse<emptyResponse> executeCall(InetSocketAddress server,
-                                Auth authHeader, UserCredentials userCreds,
-                                xtreemfs_cleanup_startRequest input) throws IOException {
-                            return osdServiceClient.xtreemfs_cleanup_start(server, authHeader, userCreds,
-                                    input);
+                        public RPCResponse<emptyResponse> executeCall(InetSocketAddress server) throws IOException {
+                            return osdServiceClient.xtreemfs_cleanup_start(server, pw, RPCAuthentication.userService,
+                                    request);
                         }
                     });
         } catch (Exception e) {
@@ -1020,18 +995,17 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
 
     public void startVersionCleanUp(String osdUUID, String password) throws IOException {
         try {
-            Auth pw = StringToAuth(password);
+            final Auth pw = StringToAuth(password);
             UUIDIterator it = new UUIDIterator();
             it.addUUID(osdUUID);
-            RPCCaller.syncCall(SERVICES.OSD, RPCAuthentication.userService, pw,
-                    options, this, it, false, null, new CallGenerator<emptyRequest, emptyResponse>() {
+            RPCCaller.syncCall(SERVICES.OSD, 
+                    options, this, it, false, null, new CallGenerator<emptyResponse>() {
                         @Override
                         @SuppressWarnings("unchecked")
-                        public RPCResponse<emptyResponse> executeCall(InetSocketAddress server,
-                                Auth authHeader, UserCredentials userCreds, emptyRequest input)
+                        public RPCResponse<emptyResponse> executeCall(InetSocketAddress server)
                                 throws IOException {
-                            return osdServiceClient.xtreemfs_cleanup_versions_start(server, authHeader,
-                                    userCreds);
+                            return osdServiceClient.xtreemfs_cleanup_versions_start(server, pw,
+                                    RPCAuthentication.userService);
                         }
                     });
         } catch (Exception e) {
@@ -1041,34 +1015,32 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
     }
 
     public void stopCleanUp(String osdUUID, String password) throws IOException {
-        Auth pw = StringToAuth(password);
+        final Auth pw = StringToAuth(password);
         UUIDIterator it = new UUIDIterator();
         it.addUUID(osdUUID);
-        RPCCaller.syncCall(SERVICES.OSD, RPCAuthentication.userService, pw,
-                options, this, it, false, null, new CallGenerator<emptyRequest, emptyResponse>() {
+        RPCCaller.syncCall(SERVICES.OSD, 
+                options, this, it, false, null, new CallGenerator<emptyResponse>() {
                     @Override
                     @SuppressWarnings("unchecked")
-                    public RPCResponse<emptyResponse> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, emptyRequest input) throws IOException,
+                    public RPCResponse<emptyResponse> executeCall(InetSocketAddress server) throws IOException,
                             PosixErrorException {
-                        return osdServiceClient.xtreemfs_cleanup_stop(server, authHeader, userCreds);
+                        return osdServiceClient.xtreemfs_cleanup_stop(server, pw, RPCAuthentication.userService);
                     }
                 });
     }
 
     public boolean isRunningCleanUp(String osdUUID, String password) throws IOException {
-        Auth pw = StringToAuth(password);
+        final Auth pw = StringToAuth(password);
         UUIDIterator it = new UUIDIterator();
         it.addUUID(osdUUID);
         xtreemfs_cleanup_is_runningResponse response = RPCCaller.syncCall(SERVICES.OSD,
-                        RPCAuthentication.userService, pw, options, this, it, false, null,
-                        new CallGenerator<emptyRequest, xtreemfs_cleanup_is_runningResponse>() {
+                        options, this, it, false, null,
+                        new CallGenerator<xtreemfs_cleanup_is_runningResponse>() {
                             @Override
                             public RPCResponse<xtreemfs_cleanup_is_runningResponse> executeCall(
-                                    InetSocketAddress server, Auth authHeader, UserCredentials userCreds,
-                                    emptyRequest input) throws IOException, PosixErrorException {
-                                return osdServiceClient.xtreemfs_cleanup_is_running(server, authHeader,
-                                        userCreds);
+                                    InetSocketAddress server) throws IOException, PosixErrorException {
+                                return osdServiceClient.xtreemfs_cleanup_is_running(server, pw,
+                                        RPCAuthentication.userService);
                             }
                         });
         assert (response != null);
@@ -1076,18 +1048,17 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
     }
 
     public String getCleanUpState(String osdUUID, String password) throws IOException {
-        Auth pw = StringToAuth(password);
+        final Auth pw = StringToAuth(password);
         UUIDIterator it = new UUIDIterator();
         it.addUUID(osdUUID);
         xtreemfs_cleanup_statusResponse response = RPCCaller.syncCall(SERVICES.OSD,
-                        RPCAuthentication.userService, pw, options, this, it, false, null,
-                        new CallGenerator<emptyRequest, xtreemfs_cleanup_statusResponse>() {
+                        options, this, it, false, null,
+                        new CallGenerator<xtreemfs_cleanup_statusResponse>() {
                             @Override
                             public RPCResponse<xtreemfs_cleanup_statusResponse> executeCall(
-                                    InetSocketAddress server, Auth authHeader, UserCredentials userCreds,
-                                    emptyRequest input) throws IOException, PosixErrorException {
+                                    InetSocketAddress server) throws IOException, PosixErrorException {
                                 return osdServiceClient
-                                        .xtreemfs_cleanup_status(server, authHeader, userCreds);
+                                        .xtreemfs_cleanup_status(server, pw, RPCAuthentication.userService);
                             }
                         });
         assert (response != null);
@@ -1095,18 +1066,17 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
     }
 
     public List<String> getCleanUpResult(String osdUUID, String password) throws IOException {
-        Auth pw = StringToAuth(password);
+        final Auth pw = StringToAuth(password);
         UUIDIterator it = new UUIDIterator();
         it.addUUID(osdUUID);
         xtreemfs_cleanup_get_resultsResponse response = RPCCaller.syncCall(SERVICES.OSD,
-                        RPCAuthentication.userService, pw, options, this, it, false, null,
-                        new CallGenerator<emptyRequest, xtreemfs_cleanup_get_resultsResponse>() {
+                        options, this, it, false, null,
+                        new CallGenerator<xtreemfs_cleanup_get_resultsResponse>() {
                             @Override
                             public RPCResponse<xtreemfs_cleanup_get_resultsResponse> executeCall(
-                                    InetSocketAddress server, Auth authHeader, UserCredentials userCreds,
-                                    emptyRequest input) throws IOException, PosixErrorException {
-                                return osdServiceClient.xtreemfs_cleanup_get_results(server, authHeader,
-                                        userCreds);
+                                    InetSocketAddress server) throws IOException, PosixErrorException {
+                                return osdServiceClient.xtreemfs_cleanup_get_results(server, pw,
+                                        RPCAuthentication.userService);
                             }
                         });
 
@@ -1115,16 +1085,14 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
     }
 
     public ServiceSet getServiceByType(ServiceType serviceType) throws IOException {
-        serviceGetByTypeRequest request = serviceGetByTypeRequest.newBuilder().setType(serviceType).build();
+        final serviceGetByTypeRequest request = serviceGetByTypeRequest.newBuilder().setType(serviceType).build();
 
-        ServiceSet sSet = RPCCaller.syncCall(SERVICES.DIR,
-                RPCAuthentication.userService, RPCAuthentication.authNone, options, this,
-                dirServiceAddresses, true, request, new CallGenerator<serviceGetByTypeRequest, ServiceSet>() {
+        ServiceSet sSet = RPCCaller.syncCall(SERVICES.DIR, options, this,
+                dirServiceAddresses, true, new CallGenerator<ServiceSet>() {
                     @Override
-                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, serviceGetByTypeRequest input) throws IOException {
-                        return dirServiceClient.xtreemfs_service_get_by_type(server, authHeader, userCreds,
-                                input);
+                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server) throws IOException {
+                        return dirServiceClient.xtreemfs_service_get_by_type(server, RPCAuthentication.authNone, RPCAuthentication.userService,
+                                request);
                     }
                 });
 
@@ -1133,16 +1101,14 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
     }
 
     public Service getServiceByUUID(String uuid) throws IOException {
-        serviceGetByUUIDRequest request = serviceGetByUUIDRequest.newBuilder().setName(uuid).build();
+        final serviceGetByUUIDRequest request = serviceGetByUUIDRequest.newBuilder().setName(uuid).build();
 
-        ServiceSet sSet = RPCCaller.syncCall(SERVICES.DIR,
-                RPCAuthentication.userService, RPCAuthentication.authNone, options, this,
-                dirServiceAddresses, true, request, new CallGenerator<serviceGetByUUIDRequest, ServiceSet>() {
+        ServiceSet sSet = RPCCaller.syncCall(SERVICES.DIR, options, this,
+                dirServiceAddresses, true, new CallGenerator<ServiceSet>() {
                     @Override
-                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, serviceGetByUUIDRequest input) throws IOException {
-                        return dirServiceClient.xtreemfs_service_get_by_uuid(server, authHeader, userCreds,
-                                input);
+                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server) throws IOException {
+                        return dirServiceClient.xtreemfs_service_get_by_uuid(server, RPCAuthentication.authNone, RPCAuthentication.userService,
+                                request);
                     }
                 });
 
@@ -1164,17 +1130,15 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         osdService = osdService.toBuilder().setData(dataMap).build();
 
         // Send changed service status to DIR
-        serviceRegisterRequest request = serviceRegisterRequest.newBuilder().setService(osdService).build();
-        RPCCaller.syncCall(SERVICES.DIR,
-                RPCAuthentication.userService, RPCAuthentication.authNone, options, this,
-                dirServiceAddresses, true, request,
-                new CallGenerator<serviceRegisterRequest, serviceRegisterResponse>() {
+        final serviceRegisterRequest request = serviceRegisterRequest.newBuilder().setService(osdService).build();
+        RPCCaller.syncCall(SERVICES.DIR, options, this,
+                dirServiceAddresses, true,
+                new CallGenerator<serviceRegisterResponse>() {
                     @Override
-                    public RPCResponse<serviceRegisterResponse> executeCall(InetSocketAddress server,
-                            Auth authHeader, UserCredentials userCreds, serviceRegisterRequest input)
+                    public RPCResponse<serviceRegisterResponse> executeCall(InetSocketAddress server)
                             throws IOException {
                         return dirServiceClient.xtreemfs_service_register(server, RPCAuthentication.authNone,
-                                userCreds, input);
+                                RPCAuthentication.userService, request);
                     }
                 });
     }

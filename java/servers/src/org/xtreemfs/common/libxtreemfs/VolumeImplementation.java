@@ -296,18 +296,17 @@ public class VolumeImplementation implements Volume, AdminVolume {
      * .pbrpc.generatedinterfaces.RPC .UserCredentials)
      */
     @Override
-    public StatVFS statFS(UserCredentials userCredentials) throws IOException, PosixErrorException,
+    public StatVFS statFS(final UserCredentials userCredentials) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException, AddressToUUIDNotFoundException {
-        statvfsRequest request = statvfsRequest.newBuilder().setKnownEtag(0).setVolumeName(volumeName)
+        final statvfsRequest request = statvfsRequest.newBuilder().setKnownEtag(0).setVolumeName(volumeName)
                 .build();
 
-        StatVFS stat = RPCCaller.<statvfsRequest, StatVFS> syncCall(SERVICES.MRC, userCredentials, authBogus,
-                volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                new CallGenerator<statvfsRequest, StatVFS>() {
+        StatVFS stat = RPCCaller.<statvfsRequest, StatVFS> syncCall(SERVICES.MRC, 
+                volumeOptions, uuidResolver, mrcUUIDIterator, false,
+                new CallGenerator<StatVFS>() {
                     @Override
-                    public RPCResponse<StatVFS> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, statvfsRequest input) throws IOException {
-                        return mrcServiceClient.statvfs(server, authHeader, userCreds, input);
+                    public RPCResponse<StatVFS> executeCall(InetSocketAddress server) throws IOException {
+                        return mrcServiceClient.statvfs(server, authBogus, userCredentials, request);
                     }
                 });
         return stat;
@@ -320,19 +319,18 @@ public class VolumeImplementation implements Volume, AdminVolume {
      * .pbrpc.generatedinterfaces.RPC .UserCredentials, java.lang.String, java.lang.String)
      */
     @Override
-    public String readLink(UserCredentials userCredentials, String path) throws IOException,
+    public String readLink(final UserCredentials userCredentials, String path) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException, AddressToUUIDNotFoundException {
-        readlinkRequest request = readlinkRequest.newBuilder().setVolumeName(volumeName).setPath(path)
+        final readlinkRequest request = readlinkRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .build();
 
         readlinkResponse response = RPCCaller.<readlinkRequest, readlinkResponse> syncCall(SERVICES.MRC,
-                userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                new CallGenerator<readlinkRequest, readlinkResponse>() {
+                volumeOptions, uuidResolver, mrcUUIDIterator, false,
+                new CallGenerator<readlinkResponse>() {
                     @Override
-                    public RPCResponse<readlinkResponse> executeCall(InetSocketAddress server,
-                            Auth authHeader, UserCredentials userCreds, readlinkRequest input)
+                    public RPCResponse<readlinkResponse> executeCall(InetSocketAddress server)
                             throws IOException {
-                        return mrcServiceClient.readlink(server, authHeader, userCreds, input);
+                        return mrcServiceClient.readlink(server, authBogus, userCredentials, request);
                     }
                 });
         // The XtreemFS MRC always returns one resolved target or throws an
@@ -349,19 +347,18 @@ public class VolumeImplementation implements Volume, AdminVolume {
      * .pbrpc.generatedinterfaces.RPC .UserCredentials, java.lang.String, java.lang.String)
      */
     @Override
-    public void symlink(UserCredentials userCredentials, String targetPath, String linkPath)
+    public void symlink(final UserCredentials userCredentials, String targetPath, String linkPath)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
-        symlinkRequest request = symlinkRequest.newBuilder().setLinkPath(linkPath).setTargetPath(targetPath)
+        final symlinkRequest request = symlinkRequest.newBuilder().setLinkPath(linkPath).setTargetPath(targetPath)
                 .setVolumeName(volumeName).build();
 
         timestampResponse response = RPCCaller.<symlinkRequest, timestampResponse> syncCall(SERVICES.MRC,
-                userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                new CallGenerator<symlinkRequest, timestampResponse>() {
+                volumeOptions, uuidResolver, mrcUUIDIterator, false,
+                new CallGenerator<timestampResponse>() {
                     @Override
-                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server,
-                            Auth authHeader, UserCredentials userCreds, symlinkRequest input)
+                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server)
                             throws IOException {
-                        return mrcServiceClient.symlink(server, authHeader, userCreds, input);
+                        return mrcServiceClient.symlink(server, authBogus, userCredentials, request);
                     }
                 });
 
@@ -382,18 +379,17 @@ public class VolumeImplementation implements Volume, AdminVolume {
      * .generatedinterfaces.RPC. UserCredentials, java.lang.String, java.lang.String)
      */
     @Override
-    public void link(UserCredentials userCredentials, String targetPath, String linkPath) throws IOException,
+    public void link(final UserCredentials userCredentials, String targetPath, String linkPath) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException {
-        linkRequest request = linkRequest.newBuilder().setLinkPath(linkPath).setTargetPath(targetPath)
+        final linkRequest request = linkRequest.newBuilder().setLinkPath(linkPath).setTargetPath(targetPath)
                 .setVolumeName(volumeName).build();
 
         timestampResponse response = RPCCaller.<linkRequest, timestampResponse> syncCall(SERVICES.MRC,
-                userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                new CallGenerator<linkRequest, timestampResponse>() {
+                volumeOptions, uuidResolver, mrcUUIDIterator, false, 
+                new CallGenerator<timestampResponse>() {
                     @Override
-                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server,
-                            Auth authHeader, UserCredentials userCreds, linkRequest input) throws IOException {
-                        return mrcServiceClient.link(server, authHeader, userCreds, input);
+                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server) throws IOException {
+                        return mrcServiceClient.link(server, authBogus, userCredentials, request);
                     }
                 });
 
@@ -420,18 +416,17 @@ public class VolumeImplementation implements Volume, AdminVolume {
      * org.xtreemfs.pbrpc.generatedinterfaces.MRC.ACCESS_FLAGS)
      */
     @Override
-    public void access(UserCredentials userCredentials, String path, int flags) throws IOException,
+    public void access(final UserCredentials userCredentials, String path, int flags) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException {
-        accessRequest request = accessRequest.newBuilder().setFlags(flags).setPath(path)
+        final accessRequest request = accessRequest.newBuilder().setFlags(flags).setPath(path)
                 .setVolumeName(volumeName).build();
-        RPCCaller.<accessRequest, emptyResponse> syncCall(SERVICES.MRC, userCredentials, authBogus,
-                volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                new CallGenerator<accessRequest, emptyResponse>() {
+        RPCCaller.<accessRequest, emptyResponse> syncCall(SERVICES.MRC, 
+                volumeOptions, uuidResolver, mrcUUIDIterator, false,
+                new CallGenerator<emptyResponse>() {
                     @SuppressWarnings("unchecked")
                     @Override
-                    public RPCResponse<emptyResponse> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, accessRequest input) throws IOException {
-                        return mrcServiceClient.access(server, authHeader, userCreds, input);
+                    public RPCResponse<emptyResponse> executeCall(InetSocketAddress server) throws IOException {
+                        return mrcServiceClient.access(server, authBogus, userCredentials, request);
                     }
                 });
     }
@@ -472,7 +467,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
      * @param truncateNewFileSize
      * @return
      */
-    public AdminFileHandle openFile(UserCredentials userCredentials, String path, int flags, int mode,
+    public AdminFileHandle openFile(final UserCredentials userCredentials, String path, int flags, int mode,
             int truncateNewFileSize) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         boolean asyncWritesEnabled = (volumeOptions.getMaxWriteahead() > 0);
 
@@ -484,16 +479,15 @@ public class VolumeImplementation implements Volume, AdminVolume {
             asyncWritesEnabled = false;
         }
 
-        openRequest request = openRequest.newBuilder().setVolumeName(volumeName).setPath(path)
+        final openRequest request = openRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setFlags(flags).setMode(mode).setAttributes(0).build();
 
-        openResponse response = RPCCaller.<openRequest, openResponse> syncCall(SERVICES.MRC, userCredentials,
-                authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                new CallGenerator<openRequest, openResponse>() {
+        openResponse response = RPCCaller.<openRequest, openResponse> syncCall(SERVICES.MRC, 
+                volumeOptions, uuidResolver, mrcUUIDIterator, false,
+                new CallGenerator<openResponse>() {
                     @Override
-                    public RPCResponse<openResponse> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, openRequest input) throws IOException {
-                        return mrcServiceClient.open(server, authHeader, userCreds, input);
+                    public RPCResponse<openResponse> executeCall(InetSocketAddress server) throws IOException {
+                        return mrcServiceClient.open(server, authBogus, userCredentials, request);
                     }
                 });
 
@@ -613,7 +607,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
         return stat;
     }
 
-    private Stat getAttrHelper(UserCredentials userCredentials, String path) throws IOException,
+    private Stat getAttrHelper(final UserCredentials userCredentials, String path) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException {
         // Check if Stat object is cached.
         Stat stat = metadataCache.getStat(path);
@@ -627,17 +621,16 @@ public class VolumeImplementation implements Volume, AdminVolume {
         } else {
 
             // if not, retrive stat from MRC
-            getattrRequest request = getattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
+            final getattrRequest request = getattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                     .setKnownEtag(0).build();
 
             getattrResponse response = RPCCaller.<getattrRequest, getattrResponse> syncCall(SERVICES.MRC,
-                    userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                    new CallGenerator<getattrRequest, getattrResponse>() {
+                    volumeOptions, uuidResolver, mrcUUIDIterator, false,
+                    new CallGenerator<getattrResponse>() {
                         @Override
-                        public RPCResponse<getattrResponse> executeCall(InetSocketAddress server,
-                                Auth authHeader, UserCredentials userCreds, getattrRequest input)
+                        public RPCResponse<getattrResponse> executeCall(InetSocketAddress server)
                                 throws IOException {
-                            return mrcServiceClient.getattr(server, authHeader, userCreds, input);
+                            return mrcServiceClient.getattr(server, authBogus, userCredentials, request);
                         }
                     });
 
@@ -661,19 +654,18 @@ public class VolumeImplementation implements Volume, AdminVolume {
      * org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat, org.xtreemfs.pbrpc.generatedinterfaces.MRC.Setattrs)
      */
     @Override
-    public void setAttr(UserCredentials userCredentials, String path, Stat stat, int toSet)
+    public void setAttr(final UserCredentials userCredentials, String path, Stat stat, int toSet)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
-        setattrRequest request = setattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
+        final setattrRequest request = setattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setStbuf(stat).setToSet(toSet).build();
 
         timestampResponse response = RPCCaller.<setattrRequest, timestampResponse> syncCall(SERVICES.MRC,
-                userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                new CallGenerator<setattrRequest, timestampResponse>() {
+                volumeOptions, uuidResolver, mrcUUIDIterator, false,
+                new CallGenerator<timestampResponse>() {
                     @Override
-                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server,
-                            Auth authHeader, UserCredentials userCreds, setattrRequest input)
+                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server)
                             throws IOException {
-                        return mrcServiceClient.setattr(server, authHeader, userCreds, input);
+                        return mrcServiceClient.setattr(server, authBogus, userCredentials, request);
                     }
                 });
 
@@ -713,18 +705,17 @@ public class VolumeImplementation implements Volume, AdminVolume {
      * .pbrpc.generatedinterfaces.RPC .UserCredentials, java.lang.String)
      */
     @Override
-    public void unlink(UserCredentials userCredentials, String path, boolean unlinkOnlyAtMrc)
+    public void unlink(final UserCredentials userCredentials, String path, boolean unlinkOnlyAtMrc)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         // 1. Delete file at MRC.
-        unlinkRequest request = unlinkRequest.newBuilder().setPath(path).setVolumeName(volumeName).build();
+        final unlinkRequest request = unlinkRequest.newBuilder().setPath(path).setVolumeName(volumeName).build();
 
         unlinkResponse response = RPCCaller.<unlinkRequest, unlinkResponse> syncCall(SERVICES.MRC,
-                userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                new CallGenerator<unlinkRequest, unlinkResponse>() {
+                volumeOptions, uuidResolver, mrcUUIDIterator, false,
+                new CallGenerator<unlinkResponse>() {
                     @Override
-                    public RPCResponse<unlinkResponse> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, unlinkRequest input) throws IOException {
-                        return mrcServiceClient.unlink(server, authHeader, userCreds, input);
+                    public RPCResponse<unlinkResponse> executeCall(InetSocketAddress server) throws IOException {
+                        return mrcServiceClient.unlink(server, authBogus, userCredentials, request);
                     }
                 });
 
@@ -745,7 +736,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
 
     private void unlinkAtOsd(FileCredentials fc, String path) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException {
-        unlink_osd_Request request = unlink_osd_Request.newBuilder().setFileCredentials(fc)
+        final unlink_osd_Request request = unlink_osd_Request.newBuilder().setFileCredentials(fc)
                 .setFileId(fc.getXcap().getFileId()).build();
 
         UUIDIterator osdUuidIterator = new UUIDIterator();
@@ -755,15 +746,14 @@ public class VolumeImplementation implements Volume, AdminVolume {
             String headOsd = Helper.getOSDUUIDFromXlocSet(fc.getXlocs(), i, 0);
 
             osdUuidIterator.clearAndAddUUID(headOsd);
-            RPCCaller.<unlink_osd_Request, emptyResponse> syncCall(SERVICES.OSD, userCredentialsBogus,
-                    authBogus, volumeOptions, uuidResolver, osdUuidIterator, false, request,
-                    new CallGenerator<unlink_osd_Request, emptyResponse>() {
+            RPCCaller.<unlink_osd_Request, emptyResponse> syncCall(SERVICES.OSD, 
+                    volumeOptions, uuidResolver, osdUuidIterator, false,
+                    new CallGenerator<emptyResponse>() {
                         @SuppressWarnings("unchecked")
                         @Override
-                        public RPCResponse<emptyResponse> executeCall(InetSocketAddress server,
-                                Auth authHeader, UserCredentials userCreds, unlink_osd_Request input)
+                        public RPCResponse<emptyResponse> executeCall(InetSocketAddress server)
                                 throws IOException {
-                            return osdServiceClient.unlink(server, authHeader, userCreds, input);
+                            return osdServiceClient.unlink(server, authBogus, userCredentialsBogus, request);
                         }
                     });
         }
@@ -776,23 +766,22 @@ public class VolumeImplementation implements Volume, AdminVolume {
      * .pbrpc.generatedinterfaces.RPC .UserCredentials, java.lang.String, java.lang.String)
      */
     @Override
-    public void rename(UserCredentials userCredentials, String path, String newPath) throws IOException,
+    public void rename(final UserCredentials userCredentials, String path, String newPath) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException {
         if (path.equals(newPath)) {
             return; // Do nothing.
         }
 
         // 1. Issue rename at MRC.
-        renameRequest request = renameRequest.newBuilder().setVolumeName(volumeName).setSourcePath(path)
+        final renameRequest request = renameRequest.newBuilder().setVolumeName(volumeName).setSourcePath(path)
                 .setTargetPath(newPath).build();
 
         renameResponse response = RPCCaller.<renameRequest, renameResponse> syncCall(SERVICES.MRC,
-                userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                new CallGenerator<renameRequest, renameResponse>() {
+                volumeOptions, uuidResolver, mrcUUIDIterator, false,
+                new CallGenerator<renameResponse>() {
                     @Override
-                    public RPCResponse<renameResponse> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, renameRequest input) throws IOException {
-                        return mrcServiceClient.rename(server, authHeader, userCreds, input);
+                    public RPCResponse<renameResponse> executeCall(InetSocketAddress server) throws IOException {
+                        return mrcServiceClient.rename(server, authBogus, userCredentials, request);
                     }
                 });
 
@@ -848,7 +837,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
      * .RPC.UserCredentials, java.lang.String, int, boolean)
      */
     @Override
-    public void createDirectory(UserCredentials userCredentials, String path, int mode, boolean recursive)
+    public void createDirectory(final UserCredentials userCredentials, String path, int mode, boolean recursive)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         if (recursive) {
             if (path.equals("/")) {
@@ -865,17 +854,16 @@ public class VolumeImplementation implements Volume, AdminVolume {
                 createDirectory(userCredentials, path, mode, false);
             }
         } else {
-            mkdirRequest request = mkdirRequest.newBuilder().setVolumeName(volumeName).setPath(path)
+            final mkdirRequest request = mkdirRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                     .setMode(mode).build();
 
             timestampResponse response = RPCCaller.<mkdirRequest, timestampResponse> syncCall(SERVICES.MRC,
-                    userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                    new CallGenerator<mkdirRequest, timestampResponse>() {
+                    volumeOptions, uuidResolver, mrcUUIDIterator, false,
+                    new CallGenerator<timestampResponse>() {
                         @Override
-                        public RPCResponse<timestampResponse> executeCall(InetSocketAddress server,
-                                Auth authHeader, UserCredentials userCreds, mkdirRequest input)
+                        public RPCResponse<timestampResponse> executeCall(InetSocketAddress server)
                                 throws IOException {
-                            return mrcServiceClient.mkdir(server, authHeader, userCreds, input);
+                            return mrcServiceClient.mkdir(server, authBogus, userCredentials, request);
                         }
                     });
 
@@ -923,18 +911,17 @@ public class VolumeImplementation implements Volume, AdminVolume {
      * foundation.pbrpc.generatedinterfaces .RPC.UserCredentials, java.lang.String)
      */
     @Override
-    public void removeDirectory(UserCredentials userCredentials, String path) throws IOException,
+    public void removeDirectory(final UserCredentials userCredentials, String path) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException {
-        rmdirRequest request = rmdirRequest.newBuilder().setVolumeName(volumeName).setPath(path).build();
+        final rmdirRequest request = rmdirRequest.newBuilder().setVolumeName(volumeName).setPath(path).build();
 
         timestampResponse response = RPCCaller.<rmdirRequest, timestampResponse> syncCall(SERVICES.MRC,
-                userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                new CallGenerator<rmdirRequest, timestampResponse>() {
+                volumeOptions, uuidResolver, mrcUUIDIterator, false,
+                new CallGenerator<timestampResponse>() {
                     @Override
-                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server,
-                            Auth authHeader, UserCredentials userCreds, rmdirRequest input)
+                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server)
                             throws IOException {
-                        return mrcServiceClient.rmdir(server, authHeader, userCreds, input);
+                        return mrcServiceClient.rmdir(server, authBogus, userCredentials, request);
                     }
                 });
 
@@ -955,7 +942,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
      * .pbrpc.generatedinterfaces.RPC .UserCredentials, java.lang.String, long, long, boolean)
      */
     @Override
-    public DirectoryEntries readDir(UserCredentials userCredentials, String path, int offset, int count,
+    public DirectoryEntries readDir(final UserCredentials userCredentials, String path, int offset, int count,
             boolean namesOnly) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         DirectoryEntries result = null;
         if (count == 0) {
@@ -977,19 +964,17 @@ public class VolumeImplementation implements Volume, AdminVolume {
             int limitDirEntriesCount = (currentOffset > offset + count) ? (currentOffset - offset - count)
                     : volumeOptions.getReaddirChunkSize();
 
-            readdirRequest request = readdirRequest.newBuilder().setPath(path).setVolumeName(volumeName)
+            final readdirRequest request = readdirRequest.newBuilder().setPath(path).setVolumeName(volumeName)
                     .setNamesOnly(namesOnly).setKnownEtag(0).setSeenDirectoryEntriesCount(currentOffset)
                     .setLimitDirectoryEntriesCount(limitDirEntriesCount).build();
 
             DirectoryEntries readDirResponse = RPCCaller.<readdirRequest, DirectoryEntries> syncCall(SERVICES.MRC,
-                    userCredentials,
-                    authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                    new CallGenerator<readdirRequest, DirectoryEntries>() {
+                    volumeOptions, uuidResolver, mrcUUIDIterator, false,
+                    new CallGenerator<DirectoryEntries>() {
                         @Override
-                        public RPCResponse<DirectoryEntries> executeCall(InetSocketAddress server,
-                                Auth authHeader, UserCredentials userCreds, readdirRequest input)
+                        public RPCResponse<DirectoryEntries> executeCall(InetSocketAddress server)
                                 throws IOException {
-                            return mrcServiceClient.readdir(server, authHeader, userCreds, input);
+                            return mrcServiceClient.readdir(server, authBogus, userCredentials, request);
                         }
                     });
 
@@ -1059,7 +1044,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
      * .pbrpc.generatedinterfaces .RPC.UserCredentials, java.lang.String, boolean)
      */
     @Override
-    public listxattrResponse listXAttrs(UserCredentials userCredentials, String path, boolean useCache)
+    public listxattrResponse listXAttrs(final UserCredentials userCredentials, String path, boolean useCache)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         // Check if information was cached.
         listxattrResponse response = null;
@@ -1070,17 +1055,16 @@ public class VolumeImplementation implements Volume, AdminVolume {
             }
         }
 
-        listxattrRequest request = listxattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
+        final listxattrRequest request = listxattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setNamesOnly(false).build();
 
-        response = RPCCaller.<listxattrRequest, listxattrResponse> syncCall(SERVICES.MRC, userCredentials,
-                authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                new CallGenerator<listxattrRequest, listxattrResponse>() {
+        response = RPCCaller.<listxattrRequest, listxattrResponse> syncCall(SERVICES.MRC, 
+                volumeOptions, uuidResolver, mrcUUIDIterator, false,
+                new CallGenerator<listxattrResponse>() {
                     @Override
-                    public RPCResponse<listxattrResponse> executeCall(InetSocketAddress server,
-                            Auth authHeader, UserCredentials userCreds, listxattrRequest input)
+                    public RPCResponse<listxattrResponse> executeCall(InetSocketAddress server)
                             throws IOException {
-                        return mrcServiceClient.listxattr(server, authHeader, userCreds, input);
+                        return mrcServiceClient.listxattr(server, authBogus, userCredentials, request);
                     }
                 });
 
@@ -1101,19 +1085,18 @@ public class VolumeImplementation implements Volume, AdminVolume {
      * org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS)
      */
     @Override
-    public void setXAttr(UserCredentials userCredentials, Auth auth, String path, String name, String value,
+    public void setXAttr(final UserCredentials userCredentials, final Auth auth, String path, String name, String value,
             XATTR_FLAGS flags) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
-        setxattrRequest request = setxattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
+        final setxattrRequest request = setxattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setName(name).setValue(value).setFlags(flags.getNumber()).build();
 
         timestampResponse response = RPCCaller.<setxattrRequest, timestampResponse> syncCall(SERVICES.MRC,
-                userCredentials, auth, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                new CallGenerator<setxattrRequest, timestampResponse>() {
+                volumeOptions, uuidResolver, mrcUUIDIterator, false,
+                new CallGenerator<timestampResponse>() {
                     @Override
-                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server,
-                            Auth authHeader, UserCredentials userCreds, setxattrRequest input)
+                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server)
                             throws IOException {
-                        return mrcServiceClient.setxattr(server, authHeader, userCreds, input);
+                        return mrcServiceClient.setxattr(server, auth, userCredentials, request);
                     }
                 });
 
@@ -1131,19 +1114,18 @@ public class VolumeImplementation implements Volume, AdminVolume {
      * org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS)
      */
     @Override
-    public void setXAttr(UserCredentials userCredentials, String path, String name, String value,
+    public void setXAttr(final UserCredentials userCredentials, String path, String name, String value,
             XATTR_FLAGS flags) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
-        setxattrRequest request = setxattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
+        final setxattrRequest request = setxattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setName(name).setValue(value).setFlags(flags.getNumber()).build();
 
         timestampResponse response = RPCCaller.<setxattrRequest, timestampResponse> syncCall(SERVICES.MRC,
-                userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                new CallGenerator<setxattrRequest, timestampResponse>() {
+                volumeOptions, uuidResolver, mrcUUIDIterator, false,
+                new CallGenerator<timestampResponse>() {
                     @Override
-                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server,
-                            Auth authHeader, UserCredentials userCreds, setxattrRequest input)
+                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server)
                             throws IOException {
-                        return mrcServiceClient.setxattr(server, authHeader, userCreds, input);
+                        return mrcServiceClient.setxattr(server, authBogus, userCredentials, request);
                     }
                 });
 
@@ -1159,24 +1141,23 @@ public class VolumeImplementation implements Volume, AdminVolume {
      * .pbrpc.generatedinterfaces.RPC .UserCredentials, java.lang.String, java.lang.String, java.lang.String)
      */
     @Override
-    public String getXAttr(UserCredentials userCredentials, String path, String name) throws IOException,
+    public String getXAttr(final UserCredentials userCredentials, String path, String name) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException {
         boolean xtreemfsAttrRequest = name.substring(0, 9).equals("xtreemfs.");
 
         if (xtreemfsAttrRequest) {
             // Retrive only the value of the requested attribute, not the whole
             // list.
-            getxattrRequest request = getxattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
+            final getxattrRequest request = getxattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                     .setName(name).build();
 
             getxattrResponse response = RPCCaller.<getxattrRequest, getxattrResponse> syncCall(SERVICES.MRC,
-                    userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                    new CallGenerator<getxattrRequest, getxattrResponse>() {
+                    volumeOptions, uuidResolver, mrcUUIDIterator, false,
+                    new CallGenerator<getxattrResponse>() {
                         @Override
-                        public RPCResponse<getxattrResponse> executeCall(InetSocketAddress server,
-                                Auth authHeader, UserCredentials userCreds, getxattrRequest input)
+                        public RPCResponse<getxattrResponse> executeCall(InetSocketAddress server)
                                 throws IOException {
-                            return mrcServiceClient.getxattr(server, authHeader, userCreds, input);
+                            return mrcServiceClient.getxattr(server, authBogus, userCredentials, request);
                         }
                     });
 
@@ -1275,19 +1256,18 @@ public class VolumeImplementation implements Volume, AdminVolume {
      * .pbrpc.generatedinterfaces .RPC.UserCredentials, java.lang.String, java.lang.String)
      */
     @Override
-    public void removeXAttr(UserCredentials userCredentials, String path, String name) throws IOException,
+    public void removeXAttr(final UserCredentials userCredentials, String path, String name) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException {
-        removexattrRequest request = removexattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
+        final removexattrRequest request = removexattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setName(name).build();
 
-        RPCCaller.<removexattrRequest, timestampResponse> syncCall(SERVICES.MRC, userCredentials, authBogus,
-                volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                new CallGenerator<removexattrRequest, timestampResponse>() {
+        RPCCaller.<removexattrRequest, timestampResponse> syncCall(SERVICES.MRC, 
+                volumeOptions, uuidResolver, mrcUUIDIterator, false,
+                new CallGenerator<timestampResponse>() {
                     @Override
-                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server,
-                            Auth authHeader, UserCredentials userCreds, removexattrRequest input)
+                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server)
                             throws IOException {
-                        return mrcServiceClient.removexattr(server, authHeader, userCreds, input);
+                        return mrcServiceClient.removexattr(server, authBogus, userCredentials, request);
                     }
                 });
         metadataCache.invalidateXAttr(path, name);
@@ -1301,19 +1281,18 @@ public class VolumeImplementation implements Volume, AdminVolume {
      * org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica)
      */
     @Override
-    public void addReplica(UserCredentials userCredentials, String path, Replica newReplica)
+    public void addReplica(final UserCredentials userCredentials, String path, Replica newReplica)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
-        xtreemfs_replica_addRequest request = xtreemfs_replica_addRequest.newBuilder()
+        final xtreemfs_replica_addRequest request = xtreemfs_replica_addRequest.newBuilder()
                 .setVolumeName(volumeName).setPath(path).setNewReplica(newReplica).build();
 
-        RPCCaller.<xtreemfs_replica_addRequest, emptyResponse> syncCall(SERVICES.MRC, userCredentials,
-                authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                new CallGenerator<xtreemfs_replica_addRequest, emptyResponse>() {
+        RPCCaller.<xtreemfs_replica_addRequest, emptyResponse> syncCall(SERVICES.MRC, 
+                volumeOptions, uuidResolver, mrcUUIDIterator, false,
+                new CallGenerator<emptyResponse>() {
                     @SuppressWarnings("unchecked")
                     @Override
-                    public RPCResponse<emptyResponse> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, xtreemfs_replica_addRequest input) throws IOException {
-                        return mrcServiceClient.xtreemfs_replica_add(server, authHeader, userCreds, input);
+                    public RPCResponse<emptyResponse> executeCall(InetSocketAddress server) throws IOException {
+                        return mrcServiceClient.xtreemfs_replica_add(server, authBogus, userCredentials, request);
                     }
                 });
 
@@ -1331,18 +1310,17 @@ public class VolumeImplementation implements Volume, AdminVolume {
      * .pbrpc.generatedinterfaces .RPC.UserCredentials, java.lang.String)
      */
     @Override
-    public Replicas listReplicas(UserCredentials userCredentials, String path) throws IOException,
+    public Replicas listReplicas(final UserCredentials userCredentials, String path) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException {
-        xtreemfs_replica_listRequest request = xtreemfs_replica_listRequest.newBuilder()
+        final xtreemfs_replica_listRequest request = xtreemfs_replica_listRequest.newBuilder()
                 .setVolumeName(volumeName).setPath(path).build();
 
         Replicas response = RPCCaller.<xtreemfs_replica_listRequest, Replicas> syncCall(SERVICES.MRC,
-                userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                new CallGenerator<xtreemfs_replica_listRequest, Replicas>() {
+                volumeOptions, uuidResolver, mrcUUIDIterator, false,
+                new CallGenerator<Replicas>() {
                     @Override
-                    public RPCResponse<Replicas> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, xtreemfs_replica_listRequest input) throws IOException {
-                        return mrcServiceClient.xtreemfs_replica_list(server, authHeader, userCreds, input);
+                    public RPCResponse<Replicas> executeCall(InetSocketAddress server) throws IOException {
+                        return mrcServiceClient.xtreemfs_replica_list(server, authBogus, userCredentials, request);
                     }
                 });
 
@@ -1358,20 +1336,19 @@ public class VolumeImplementation implements Volume, AdminVolume {
      * .pbrpc.generatedinterfaces .RPC.UserCredentials, java.lang.String, java.lang.String)
      */
     @Override
-    public void removeReplica(UserCredentials userCredentials, String path, String osdUuid)
+    public void removeReplica(final UserCredentials userCredentials, String path, String osdUuid)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         // remove the replica
-        xtreemfs_replica_removeRequest request = xtreemfs_replica_removeRequest.newBuilder()
+        final xtreemfs_replica_removeRequest request = xtreemfs_replica_removeRequest.newBuilder()
                 .setVolumeName(volumeName).setPath(path).setOsdUuid(osdUuid).build();
 
         FileCredentials response = RPCCaller.<xtreemfs_replica_removeRequest, FileCredentials> syncCall(
-                SERVICES.MRC, userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator,
-                false, request, new CallGenerator<xtreemfs_replica_removeRequest, FileCredentials>() {
+                SERVICES.MRC, volumeOptions, uuidResolver, mrcUUIDIterator,
+                false, new CallGenerator<FileCredentials>() {
                     @Override
-                    public RPCResponse<FileCredentials> executeCall(InetSocketAddress server,
-                            Auth authHeader, UserCredentials userCreds, xtreemfs_replica_removeRequest input)
+                    public RPCResponse<FileCredentials> executeCall(InetSocketAddress server)
                             throws IOException {
-                        return mrcServiceClient.xtreemfs_replica_remove(server, authHeader, userCreds, input);
+                        return mrcServiceClient.xtreemfs_replica_remove(server, authBogus, userCredentials, request);
                     }
                 });
 
@@ -1381,17 +1358,16 @@ public class VolumeImplementation implements Volume, AdminVolume {
         UUIDIterator osdUuidIterator = new UUIDIterator();
         osdUuidIterator.addUUID(osdUuid);
 
-        unlink_osd_Request request2 = unlink_osd_Request.newBuilder()
+        final unlink_osd_Request request2 = unlink_osd_Request.newBuilder()
                 .setFileId(response.getXcap().getFileId()).setFileCredentials(response).build();
 
-        RPCCaller.<unlink_osd_Request, emptyResponse> syncCall(SERVICES.OSD, userCredentials, authBogus,
-                volumeOptions, uuidResolver, osdUuidIterator, false, request2,
-                new CallGenerator<unlink_osd_Request, emptyResponse>() {
+        RPCCaller.<unlink_osd_Request, emptyResponse> syncCall(SERVICES.OSD,
+                volumeOptions, uuidResolver, osdUuidIterator, false,
+                new CallGenerator<emptyResponse>() {
                     @SuppressWarnings("unchecked")
                     @Override
-                    public RPCResponse<emptyResponse> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, unlink_osd_Request input) throws IOException {
-                        return osdServiceClient.unlink(server, authHeader, userCreds, input);
+                    public RPCResponse<emptyResponse> executeCall(InetSocketAddress server) throws IOException {
+                        return osdServiceClient.unlink(server, authBogus, userCredentials, request2);
                     }
                 });
     }
@@ -1448,28 +1424,24 @@ public class VolumeImplementation implements Volume, AdminVolume {
      * foundation.pbrpc.generatedinterfaces .RPC.UserCredentials, java.lang.String, int, java.util.List)
      */
     @Override
-    public List<String> getSuitableOSDs(UserCredentials userCredentials, String path, int numberOfOsds)
+    public List<String> getSuitableOSDs(final UserCredentials userCredentials, String path, int numberOfOsds)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
-        xtreemfs_get_suitable_osdsRequest request = xtreemfs_get_suitable_osdsRequest.newBuilder()
+        final xtreemfs_get_suitable_osdsRequest request = xtreemfs_get_suitable_osdsRequest.newBuilder()
                 .setVolumeName(volumeName).setPath(path).setNumOsds(numberOfOsds).build();
 
         xtreemfs_get_suitable_osdsResponse response = RPCCaller
                 .<xtreemfs_get_suitable_osdsRequest, xtreemfs_get_suitable_osdsResponse> syncCall(
-                        SERVICES.MRC,
-                        userCredentials,
-                        authBogus,
+                        SERVICES.MRC,                        
                         volumeOptions,
                         uuidResolver,
                         mrcUUIDIterator,
                         false,
-                        request,
-                        new CallGenerator<xtreemfs_get_suitable_osdsRequest, xtreemfs_get_suitable_osdsResponse>() {
+                        new CallGenerator<xtreemfs_get_suitable_osdsResponse>() {
                             @Override
                             public RPCResponse<xtreemfs_get_suitable_osdsResponse> executeCall(
-                                    InetSocketAddress server, Auth authHeader, UserCredentials userCreds,
-                                    xtreemfs_get_suitable_osdsRequest input) throws IOException {
-                                return mrcServiceClient.xtreemfs_get_suitable_osds(server, authHeader,
-                                        userCreds, input);
+                                    InetSocketAddress server) throws IOException {
+                                return mrcServiceClient.xtreemfs_get_suitable_osds(server, authBogus,
+                                        userCredentials, request);
                             }
                         });
 

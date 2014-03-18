@@ -123,7 +123,7 @@ public class RPCCallerTest {
         UUIDIterator mrcUUIDIterator = new UUIDIterator();
         mrcUUIDIterator.addUUID(mrcServiceAddress);
 
-        openRequest request = openRequest
+        final openRequest request = openRequest
                 .newBuilder()
                 .setVolumeName(VOLUME_NAME)
                 .setPath(FILE_PATH)
@@ -133,13 +133,12 @@ public class RPCCallerTest {
                                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber()).setMode(0777)
                 .setAttributes(0).build();
 
-        openResponse response = RPCCaller.<openRequest, openResponse> syncCall(SERVICES.MRC, userCredentials,
-                auth, options, client, mrcUUIDIterator, true, request,
-                new CallGenerator<openRequest, openResponse>() {
+        openResponse response = RPCCaller.<openRequest, openResponse> syncCall(SERVICES.MRC,    
+                options, client, mrcUUIDIterator, true,
+                new CallGenerator<openResponse>() {
                     @Override
-                    public RPCResponse<openResponse> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, openRequest input) throws IOException {
-                        return mrcServiceClient.open(server, authHeader, userCreds, input);
+                    public RPCResponse<openResponse> executeCall(InetSocketAddress server) throws IOException {
+                        return mrcServiceClient.open(server, auth, userCredentials, request);
                     }
                 });
 
@@ -161,7 +160,7 @@ public class RPCCallerTest {
         // make a write with the new uuidIterator
         String overwriteData = "1111111111111111111111111111111111111111111111111111";
         final ReusableBuffer overwriteBuf = ReusableBuffer.wrap(overwriteData.getBytes());
-        writeRequest.Builder writeReq = writeRequest.newBuilder();
+        final writeRequest.Builder writeReq = writeRequest.newBuilder();
         writeReq.setFileCredentials(response.getCreds());
         writeReq.setFileId(response.getCreds().getXcap().getFileId());
         writeReq.setObjectNumber(0);
@@ -173,16 +172,15 @@ public class RPCCallerTest {
                 .setZeroPadding(0).build();
         writeReq.setObjectData(objectData);
 
-        RPCCaller.<writeRequest, OSDWriteResponse> syncCall(SERVICES.OSD, userCredentials, auth, options,
-                client, uuidIterator, false, writeReq.build(),
-                new CallGenerator<writeRequest, OSDWriteResponse>() {
+        RPCCaller.<writeRequest, OSDWriteResponse> syncCall(SERVICES.OSD, options,
+                client, uuidIterator, false, 
+                new CallGenerator<OSDWriteResponse>() {
 
                     @Override
-                    public RPCResponse<OSDWriteResponse> executeCall(InetSocketAddress server,
-                            Auth authHeader, UserCredentials userCreds, writeRequest input)
+                    public RPCResponse<OSDWriteResponse> executeCall(InetSocketAddress server)
                             throws IOException {
                         // TODO Auto-generated method stub
-                        return osdServiceClient.write(server, authHeader, userCreds, input, overwriteBuf);
+                        return osdServiceClient.write(server, auth, userCredentials, writeReq.build(), overwriteBuf);
                     }
                 });
 

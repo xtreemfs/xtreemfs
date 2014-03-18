@@ -37,41 +37,40 @@ public class RPCCaller {
     /**
      * Interface for syncCall which generates the calls. Will be called for each retry.
      */
-    protected interface CallGenerator<C, R extends Message> {
-        public RPCResponse<R> executeCall(InetSocketAddress server, Auth authHeader,
-                UserCredentials userCreds, C input) throws IOException, PosixErrorException;
+    protected interface CallGenerator<R extends Message> {
+        public RPCResponse<R> executeCall(InetSocketAddress server) throws IOException, PosixErrorException;
     }
 
-    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
-            Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
-            boolean uuidIteratorHasAddresses, C callRequest, CallGenerator<C, R> callGen) throws IOException,
+    protected static <C, R extends Message> R syncCall(SERVICES service, 
+            Options options, UUIDResolver uuidResolver, UUIDIterator it,
+            boolean uuidIteratorHasAddresses, CallGenerator<R> callGen) throws IOException,
             PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
-        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, false,
-                options.getMaxTries(), callRequest, null, callGen);
+        return syncCall(service, options, uuidResolver, it, uuidIteratorHasAddresses, false,
+                options.getMaxTries(), null, callGen);
     }
 
     protected static <C, R extends Message> R
-            syncCall(SERVICES service, UserCredentials userCreds, Auth auth, Options options,
+            syncCall(SERVICES service, Options options,
                     UUIDResolver uuidResolver, UUIDIterator it, boolean uuidIteratorHasAddresses,
-                    boolean delayNextTry, int maxRetries, C callRequest, CallGenerator<C, R> callGen) throws IOException,
+                    boolean delayNextTry, int maxRetries, CallGenerator<R> callGen) throws IOException,
                     PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
-        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses,
-                delayNextTry, options.getMaxTries(), callRequest, null, callGen);
+        return syncCall(service, options, uuidResolver, it, uuidIteratorHasAddresses,
+                delayNextTry, options.getMaxTries(), null, callGen);
     }
 
-    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
-            Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
-            boolean uuidIteratorHasAddresses, C callRequest, ReusableBuffer buf, CallGenerator<C, R> callGen)
+    protected static <C, R extends Message> R syncCall(SERVICES service,
+            Options options, UUIDResolver uuidResolver, UUIDIterator it,
+            boolean uuidIteratorHasAddresses, ReusableBuffer buf, CallGenerator<R> callGen)
             throws IOException, PosixErrorException, InternalServerErrorException,
             AddressToUUIDNotFoundException {
-        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, false,
-                options.getMaxTries(), callRequest, buf, callGen);
+        return syncCall(service, options, uuidResolver, it, uuidIteratorHasAddresses, false,
+                options.getMaxTries(), buf, callGen);
     }
 
-    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
-            Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
-            boolean uuidIteratorHasAddresses, boolean delayNextTry, int maxRetries, C callRequest,
-            ReusableBuffer buffer, CallGenerator<C, R> callGen) throws PosixErrorException, IOException,
+    protected static <C, R extends Message> R syncCall(SERVICES service, 
+            Options options, UUIDResolver uuidResolver, UUIDIterator it,
+            boolean uuidIteratorHasAddresses, boolean delayNextTry, int maxRetries,
+            ReusableBuffer buffer, CallGenerator<R> callGen) throws PosixErrorException, IOException,
             InternalServerErrorException, AddressToUUIDNotFoundException {
         int maxTries = maxRetries;
         int attempt = 0;
@@ -91,7 +90,7 @@ public class RPCCaller {
                         server = getInetSocketAddressFromAddress(address, service);
                     }
 
-                    r = callGen.executeCall(server, auth, userCreds, callRequest);
+                    r = callGen.executeCall(server);
                     response = r.get();
 
                     // If the buffer is not null it should be filled with data
