@@ -148,9 +148,10 @@ void protobuf_AssignDesc_xtreemfs_2fScheduler_2eproto() {
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(osdSet));
   freeResourcesResponse_descriptor_ = file->message_type(6);
-  static const int freeResourcesResponse_offsets_[3] = {
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(freeResourcesResponse, capacity_),
+  static const int freeResourcesResponse_offsets_[4] = {
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(freeResourcesResponse, streamingcapacity_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(freeResourcesResponse, streamingthroughput_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(freeResourcesResponse, randomcapacity_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(freeResourcesResponse, randomthroughput_),
   };
   freeResourcesResponse_reflection_ =
@@ -235,28 +236,29 @@ void protobuf_AddDesc_xtreemfs_2fScheduler_2eproto() {
     "(\001\022\030\n\020randomThroughput\030\005 \001(\001\"C\n\016reservat"
     "ionSet\0221\n\014reservations\030\001 \003(\0132\033.xtreemfs."
     "pbrpc.reservation\"4\n\006osdSet\022*\n\003osd\030\001 \003(\013"
-    "2\035.xtreemfs.pbrpc.osdIdentifier\"`\n\025freeR"
-    "esourcesResponse\022\020\n\010capacity\030\001 \002(\001\022\033\n\023st"
-    "reamingThroughput\030\002 \002(\001\022\030\n\020randomThrough"
-    "put\030\003 \002(\001*\202\001\n\017reservationType\022\031\n\025STREAMI"
-    "NG_RESERVATION\020\001\022\031\n\025RANDOM_IO_RESERVATIO"
-    "N\020\002\022\033\n\027BEST_EFFORT_RESERVATION\020\003\022\034\n\030COLD"
-    "_STORAGE_RESERVATION\020\0042\254\004\n\020SchedulerServ"
-    "ice\022S\n\023scheduleReservation\022\033.xtreemfs.pb"
-    "rpc.reservation\032\026.xtreemfs.pbrpc.osdSet\""
-    "\007\215\265\030e\000\000\000\022]\n\021removeReservation\022 .xtreemfs"
-    ".pbrpc.volumeIdentifier\032\035.xtreemfs.pbrpc"
-    ".emptyResponse\"\007\215\265\030f\000\000\000\022P\n\013getSchedule\022 "
-    ".xtreemfs.pbrpc.volumeIdentifier\032\026.xtree"
-    "mfs.pbrpc.osdSet\"\007\215\265\030g\000\000\000\022O\n\ngetVolumes\022"
-    "\035.xtreemfs.pbrpc.osdIdentifier\032\031.xtreemf"
-    "s.pbrpc.volumeSet\"\007\215\265\030h\000\000\000\022V\n\rgetAllVolu"
-    "mes\022\034.xtreemfs.pbrpc.emptyRequest\032\036.xtre"
-    "emfs.pbrpc.reservationSet\"\007\215\265\030i\000\000\000\022`\n\020ge"
-    "tFreeResources\022\034.xtreemfs.pbrpc.emptyReq"
-    "uest\032%.xtreemfs.pbrpc.freeResourcesRespo"
-    "nse\"\007\215\265\030j\000\000\000\032\007\225\265\030A\234\000\000B(\n&org.xtreemfs.pb"
-    "rpc.generatedinterfaces", 1383);
+    "2\035.xtreemfs.pbrpc.osdIdentifier\"\201\001\n\025free"
+    "ResourcesResponse\022\031\n\021streamingCapacity\030\001"
+    " \002(\001\022\033\n\023streamingThroughput\030\002 \002(\001\022\026\n\016ran"
+    "domCapacity\030\003 \002(\001\022\030\n\020randomThroughput\030\004 "
+    "\002(\001*\202\001\n\017reservationType\022\031\n\025STREAMING_RES"
+    "ERVATION\020\001\022\031\n\025RANDOM_IO_RESERVATION\020\002\022\033\n"
+    "\027BEST_EFFORT_RESERVATION\020\003\022\034\n\030COLD_STORA"
+    "GE_RESERVATION\020\0042\254\004\n\020SchedulerService\022S\n"
+    "\023scheduleReservation\022\033.xtreemfs.pbrpc.re"
+    "servation\032\026.xtreemfs.pbrpc.osdSet\"\007\215\265\030e\000"
+    "\000\000\022]\n\021removeReservation\022 .xtreemfs.pbrpc"
+    ".volumeIdentifier\032\035.xtreemfs.pbrpc.empty"
+    "Response\"\007\215\265\030f\000\000\000\022P\n\013getSchedule\022 .xtree"
+    "mfs.pbrpc.volumeIdentifier\032\026.xtreemfs.pb"
+    "rpc.osdSet\"\007\215\265\030g\000\000\000\022O\n\ngetVolumes\022\035.xtre"
+    "emfs.pbrpc.osdIdentifier\032\031.xtreemfs.pbrp"
+    "c.volumeSet\"\007\215\265\030h\000\000\000\022V\n\rgetAllVolumes\022\034."
+    "xtreemfs.pbrpc.emptyRequest\032\036.xtreemfs.p"
+    "brpc.reservationSet\"\007\215\265\030i\000\000\000\022`\n\020getFreeR"
+    "esources\022\034.xtreemfs.pbrpc.emptyRequest\032%"
+    ".xtreemfs.pbrpc.freeResourcesResponse\"\007\215"
+    "\265\030j\000\000\000\032\007\225\265\030A\234\000\000B(\n&org.xtreemfs.pbrpc.ge"
+    "neratedinterfaces", 1417);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "xtreemfs/Scheduler.proto", &protobuf_RegisterTypes);
   osdIdentifier::default_instance_ = new osdIdentifier();
@@ -1749,8 +1751,9 @@ void osdSet::Swap(osdSet* other) {
 // ===================================================================
 
 #ifndef _MSC_VER
-const int freeResourcesResponse::kCapacityFieldNumber;
+const int freeResourcesResponse::kStreamingCapacityFieldNumber;
 const int freeResourcesResponse::kStreamingThroughputFieldNumber;
+const int freeResourcesResponse::kRandomCapacityFieldNumber;
 const int freeResourcesResponse::kRandomThroughputFieldNumber;
 #endif  // !_MSC_VER
 
@@ -1770,8 +1773,9 @@ freeResourcesResponse::freeResourcesResponse(const freeResourcesResponse& from)
 
 void freeResourcesResponse::SharedCtor() {
   _cached_size_ = 0;
-  capacity_ = 0;
+  streamingcapacity_ = 0;
   streamingthroughput_ = 0;
+  randomcapacity_ = 0;
   randomthroughput_ = 0;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
@@ -1808,8 +1812,9 @@ freeResourcesResponse* freeResourcesResponse::New() const {
 
 void freeResourcesResponse::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    capacity_ = 0;
+    streamingcapacity_ = 0;
     streamingthroughput_ = 0;
+    randomcapacity_ = 0;
     randomthroughput_ = 0;
   }
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
@@ -1822,14 +1827,14 @@ bool freeResourcesResponse::MergePartialFromCodedStream(
   ::google::protobuf::uint32 tag;
   while ((tag = input->ReadTag()) != 0) {
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // required double capacity = 1;
+      // required double streamingCapacity = 1;
       case 1: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
-                 input, &capacity_)));
-          set_has_capacity();
+                 input, &streamingcapacity_)));
+          set_has_streamingcapacity();
         } else {
           goto handle_uninterpreted;
         }
@@ -1849,12 +1854,28 @@ bool freeResourcesResponse::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(25)) goto parse_randomThroughput;
+        if (input->ExpectTag(25)) goto parse_randomCapacity;
         break;
       }
 
-      // required double randomThroughput = 3;
+      // required double randomCapacity = 3;
       case 3: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
+         parse_randomCapacity:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
+                 input, &randomcapacity_)));
+          set_has_randomcapacity();
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(33)) goto parse_randomThroughput;
+        break;
+      }
+
+      // required double randomThroughput = 4;
+      case 4: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
          parse_randomThroughput:
@@ -1887,9 +1908,9 @@ bool freeResourcesResponse::MergePartialFromCodedStream(
 
 void freeResourcesResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // required double capacity = 1;
-  if (has_capacity()) {
-    ::google::protobuf::internal::WireFormatLite::WriteDouble(1, this->capacity(), output);
+  // required double streamingCapacity = 1;
+  if (has_streamingcapacity()) {
+    ::google::protobuf::internal::WireFormatLite::WriteDouble(1, this->streamingcapacity(), output);
   }
 
   // required double streamingThroughput = 2;
@@ -1897,9 +1918,14 @@ void freeResourcesResponse::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteDouble(2, this->streamingthroughput(), output);
   }
 
-  // required double randomThroughput = 3;
+  // required double randomCapacity = 3;
+  if (has_randomcapacity()) {
+    ::google::protobuf::internal::WireFormatLite::WriteDouble(3, this->randomcapacity(), output);
+  }
+
+  // required double randomThroughput = 4;
   if (has_randomthroughput()) {
-    ::google::protobuf::internal::WireFormatLite::WriteDouble(3, this->randomthroughput(), output);
+    ::google::protobuf::internal::WireFormatLite::WriteDouble(4, this->randomthroughput(), output);
   }
 
   if (!unknown_fields().empty()) {
@@ -1910,9 +1936,9 @@ void freeResourcesResponse::SerializeWithCachedSizes(
 
 ::google::protobuf::uint8* freeResourcesResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
-  // required double capacity = 1;
-  if (has_capacity()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(1, this->capacity(), target);
+  // required double streamingCapacity = 1;
+  if (has_streamingcapacity()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(1, this->streamingcapacity(), target);
   }
 
   // required double streamingThroughput = 2;
@@ -1920,9 +1946,14 @@ void freeResourcesResponse::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(2, this->streamingthroughput(), target);
   }
 
-  // required double randomThroughput = 3;
+  // required double randomCapacity = 3;
+  if (has_randomcapacity()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(3, this->randomcapacity(), target);
+  }
+
+  // required double randomThroughput = 4;
   if (has_randomthroughput()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(3, this->randomthroughput(), target);
+    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(4, this->randomthroughput(), target);
   }
 
   if (!unknown_fields().empty()) {
@@ -1936,8 +1967,8 @@ int freeResourcesResponse::ByteSize() const {
   int total_size = 0;
 
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    // required double capacity = 1;
-    if (has_capacity()) {
+    // required double streamingCapacity = 1;
+    if (has_streamingcapacity()) {
       total_size += 1 + 8;
     }
 
@@ -1946,7 +1977,12 @@ int freeResourcesResponse::ByteSize() const {
       total_size += 1 + 8;
     }
 
-    // required double randomThroughput = 3;
+    // required double randomCapacity = 3;
+    if (has_randomcapacity()) {
+      total_size += 1 + 8;
+    }
+
+    // required double randomThroughput = 4;
     if (has_randomthroughput()) {
       total_size += 1 + 8;
     }
@@ -1978,11 +2014,14 @@ void freeResourcesResponse::MergeFrom(const ::google::protobuf::Message& from) {
 void freeResourcesResponse::MergeFrom(const freeResourcesResponse& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from.has_capacity()) {
-      set_capacity(from.capacity());
+    if (from.has_streamingcapacity()) {
+      set_streamingcapacity(from.streamingcapacity());
     }
     if (from.has_streamingthroughput()) {
       set_streamingthroughput(from.streamingthroughput());
+    }
+    if (from.has_randomcapacity()) {
+      set_randomcapacity(from.randomcapacity());
     }
     if (from.has_randomthroughput()) {
       set_randomthroughput(from.randomthroughput());
@@ -2004,15 +2043,16 @@ void freeResourcesResponse::CopyFrom(const freeResourcesResponse& from) {
 }
 
 bool freeResourcesResponse::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000007) != 0x00000007) return false;
+  if ((_has_bits_[0] & 0x0000000f) != 0x0000000f) return false;
 
   return true;
 }
 
 void freeResourcesResponse::Swap(freeResourcesResponse* other) {
   if (other != this) {
-    std::swap(capacity_, other->capacity_);
+    std::swap(streamingcapacity_, other->streamingcapacity_);
     std::swap(streamingthroughput_, other->streamingthroughput_);
+    std::swap(randomcapacity_, other->randomcapacity_);
     std::swap(randomthroughput_, other->randomthroughput_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);

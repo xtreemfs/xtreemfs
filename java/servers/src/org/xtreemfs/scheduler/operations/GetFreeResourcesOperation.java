@@ -36,38 +36,41 @@ public class GetFreeResourcesOperation extends SchedulerOperation {
         Scheduler.freeResourcesResponse.Builder resultBuilder = Scheduler.freeResourcesResponse.newBuilder();
         ReservationStore reservations = master.getStore();
 
-        double freeCapacity = 0.0;
+        double freeStreamingCapacity = 0.0;
+        double freeRandomCapacity = 0.0;
+
         double freeIOPS = 0.0;
         double freeSeq = 0.0;
 
         for(OSDDescription osd: master.getOsds()) {
-            freeCapacity += osd.getCapabilities().getCapacity();
-
             if(osd.getUsage() == OSDDescription.OSDUsage.STREAMING ||
                     osd.getUsage() == OSDDescription.OSDUsage.UNUSED ||
                     osd.getUsage() == OSDDescription.OSDUsage.ALL) {
                 freeSeq += osd.getCapabilities().getStreamingPerformance().get(osd.getReservations().size() + 1);
+                freeStreamingCapacity += osd.getCapabilities().getCapacity();
             }
 
             if(osd.getUsage() == OSDDescription.OSDUsage.RANDOM_IO ||
                     osd.getUsage() == OSDDescription.OSDUsage.UNUSED ||
                     osd.getUsage() == OSDDescription.OSDUsage.ALL) {
                 freeIOPS += osd.getCapabilities().getIops();
+                freeRandomCapacity += osd.getCapabilities().getCapacity();
             }
         }
 
         for(Reservation r: reservations.getReservations()) {
-            freeCapacity -= r.getCapacity();
-
             if(r.getType() == Reservation.ReservationType.STREAMING_RESERVATION) {
                 freeSeq -= r.getStreamingThroughput();
+                freeStreamingCapacity -= r.getCapacity();
             }
             if(r.getType() == Reservation.ReservationType.RANDOM_IO_RESERVATION) {
                 freeIOPS -= r.getRamdomThroughput();
+                freeRandomCapacity -= r.getCapacity();
             }
         }
 
-        resultBuilder.setCapacity(freeCapacity);
+        resultBuilder.setStreamingCapacity(freeStreamingCapacity);
+        resultBuilder.setRandomCapacity(freeRandomCapacity);
         resultBuilder.setRandomThroughput(freeIOPS);
         resultBuilder.setStreamingThroughput(freeSeq);
         rq.sendSuccess(resultBuilder.build());

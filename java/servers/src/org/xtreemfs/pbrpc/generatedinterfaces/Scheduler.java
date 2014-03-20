@@ -3999,15 +3999,15 @@ public final class Scheduler {
   public interface freeResourcesResponseOrBuilder
       extends com.google.protobuf.MessageOrBuilder {
 
-    // required double capacity = 1;
+    // required double streamingCapacity = 1;
     /**
-     * <code>required double capacity = 1;</code>
+     * <code>required double streamingCapacity = 1;</code>
      */
-    boolean hasCapacity();
+    boolean hasStreamingCapacity();
     /**
-     * <code>required double capacity = 1;</code>
+     * <code>required double streamingCapacity = 1;</code>
      */
-    double getCapacity();
+    double getStreamingCapacity();
 
     // required double streamingThroughput = 2;
     /**
@@ -4019,13 +4019,23 @@ public final class Scheduler {
      */
     double getStreamingThroughput();
 
-    // required double randomThroughput = 3;
+    // required double randomCapacity = 3;
     /**
-     * <code>required double randomThroughput = 3;</code>
+     * <code>required double randomCapacity = 3;</code>
+     */
+    boolean hasRandomCapacity();
+    /**
+     * <code>required double randomCapacity = 3;</code>
+     */
+    double getRandomCapacity();
+
+    // required double randomThroughput = 4;
+    /**
+     * <code>required double randomThroughput = 4;</code>
      */
     boolean hasRandomThroughput();
     /**
-     * <code>required double randomThroughput = 3;</code>
+     * <code>required double randomThroughput = 4;</code>
      */
     double getRandomThroughput();
   }
@@ -4082,7 +4092,7 @@ public final class Scheduler {
             }
             case 9: {
               bitField0_ |= 0x00000001;
-              capacity_ = input.readDouble();
+              streamingCapacity_ = input.readDouble();
               break;
             }
             case 17: {
@@ -4092,6 +4102,11 @@ public final class Scheduler {
             }
             case 25: {
               bitField0_ |= 0x00000004;
+              randomCapacity_ = input.readDouble();
+              break;
+            }
+            case 33: {
+              bitField0_ |= 0x00000008;
               randomThroughput_ = input.readDouble();
               break;
             }
@@ -4135,20 +4150,20 @@ public final class Scheduler {
     }
 
     private int bitField0_;
-    // required double capacity = 1;
-    public static final int CAPACITY_FIELD_NUMBER = 1;
-    private double capacity_;
+    // required double streamingCapacity = 1;
+    public static final int STREAMINGCAPACITY_FIELD_NUMBER = 1;
+    private double streamingCapacity_;
     /**
-     * <code>required double capacity = 1;</code>
+     * <code>required double streamingCapacity = 1;</code>
      */
-    public boolean hasCapacity() {
+    public boolean hasStreamingCapacity() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
     }
     /**
-     * <code>required double capacity = 1;</code>
+     * <code>required double streamingCapacity = 1;</code>
      */
-    public double getCapacity() {
-      return capacity_;
+    public double getStreamingCapacity() {
+      return streamingCapacity_;
     }
 
     // required double streamingThroughput = 2;
@@ -4167,25 +4182,42 @@ public final class Scheduler {
       return streamingThroughput_;
     }
 
-    // required double randomThroughput = 3;
-    public static final int RANDOMTHROUGHPUT_FIELD_NUMBER = 3;
-    private double randomThroughput_;
+    // required double randomCapacity = 3;
+    public static final int RANDOMCAPACITY_FIELD_NUMBER = 3;
+    private double randomCapacity_;
     /**
-     * <code>required double randomThroughput = 3;</code>
+     * <code>required double randomCapacity = 3;</code>
      */
-    public boolean hasRandomThroughput() {
+    public boolean hasRandomCapacity() {
       return ((bitField0_ & 0x00000004) == 0x00000004);
     }
     /**
-     * <code>required double randomThroughput = 3;</code>
+     * <code>required double randomCapacity = 3;</code>
+     */
+    public double getRandomCapacity() {
+      return randomCapacity_;
+    }
+
+    // required double randomThroughput = 4;
+    public static final int RANDOMTHROUGHPUT_FIELD_NUMBER = 4;
+    private double randomThroughput_;
+    /**
+     * <code>required double randomThroughput = 4;</code>
+     */
+    public boolean hasRandomThroughput() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>required double randomThroughput = 4;</code>
      */
     public double getRandomThroughput() {
       return randomThroughput_;
     }
 
     private void initFields() {
-      capacity_ = 0D;
+      streamingCapacity_ = 0D;
       streamingThroughput_ = 0D;
+      randomCapacity_ = 0D;
       randomThroughput_ = 0D;
     }
     private byte memoizedIsInitialized = -1;
@@ -4193,11 +4225,15 @@ public final class Scheduler {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized != -1) return isInitialized == 1;
 
-      if (!hasCapacity()) {
+      if (!hasStreamingCapacity()) {
         memoizedIsInitialized = 0;
         return false;
       }
       if (!hasStreamingThroughput()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasRandomCapacity()) {
         memoizedIsInitialized = 0;
         return false;
       }
@@ -4213,13 +4249,16 @@ public final class Scheduler {
                         throws java.io.IOException {
       getSerializedSize();
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeDouble(1, capacity_);
+        output.writeDouble(1, streamingCapacity_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         output.writeDouble(2, streamingThroughput_);
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        output.writeDouble(3, randomThroughput_);
+        output.writeDouble(3, randomCapacity_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeDouble(4, randomThroughput_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -4232,7 +4271,7 @@ public final class Scheduler {
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeDoubleSize(1, capacity_);
+          .computeDoubleSize(1, streamingCapacity_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
@@ -4240,7 +4279,11 @@ public final class Scheduler {
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeDoubleSize(3, randomThroughput_);
+          .computeDoubleSize(3, randomCapacity_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeDoubleSize(4, randomThroughput_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -4358,12 +4401,14 @@ public final class Scheduler {
 
       public Builder clear() {
         super.clear();
-        capacity_ = 0D;
+        streamingCapacity_ = 0D;
         bitField0_ = (bitField0_ & ~0x00000001);
         streamingThroughput_ = 0D;
         bitField0_ = (bitField0_ & ~0x00000002);
-        randomThroughput_ = 0D;
+        randomCapacity_ = 0D;
         bitField0_ = (bitField0_ & ~0x00000004);
+        randomThroughput_ = 0D;
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
 
@@ -4395,13 +4440,17 @@ public final class Scheduler {
         if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
           to_bitField0_ |= 0x00000001;
         }
-        result.capacity_ = capacity_;
+        result.streamingCapacity_ = streamingCapacity_;
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
         }
         result.streamingThroughput_ = streamingThroughput_;
         if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
           to_bitField0_ |= 0x00000004;
+        }
+        result.randomCapacity_ = randomCapacity_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
         }
         result.randomThroughput_ = randomThroughput_;
         result.bitField0_ = to_bitField0_;
@@ -4420,11 +4469,14 @@ public final class Scheduler {
 
       public Builder mergeFrom(org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse other) {
         if (other == org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse.getDefaultInstance()) return this;
-        if (other.hasCapacity()) {
-          setCapacity(other.getCapacity());
+        if (other.hasStreamingCapacity()) {
+          setStreamingCapacity(other.getStreamingCapacity());
         }
         if (other.hasStreamingThroughput()) {
           setStreamingThroughput(other.getStreamingThroughput());
+        }
+        if (other.hasRandomCapacity()) {
+          setRandomCapacity(other.getRandomCapacity());
         }
         if (other.hasRandomThroughput()) {
           setRandomThroughput(other.getRandomThroughput());
@@ -4434,11 +4486,15 @@ public final class Scheduler {
       }
 
       public final boolean isInitialized() {
-        if (!hasCapacity()) {
+        if (!hasStreamingCapacity()) {
           
           return false;
         }
         if (!hasStreamingThroughput()) {
+          
+          return false;
+        }
+        if (!hasRandomCapacity()) {
           
           return false;
         }
@@ -4468,35 +4524,35 @@ public final class Scheduler {
       }
       private int bitField0_;
 
-      // required double capacity = 1;
-      private double capacity_ ;
+      // required double streamingCapacity = 1;
+      private double streamingCapacity_ ;
       /**
-       * <code>required double capacity = 1;</code>
+       * <code>required double streamingCapacity = 1;</code>
        */
-      public boolean hasCapacity() {
+      public boolean hasStreamingCapacity() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       /**
-       * <code>required double capacity = 1;</code>
+       * <code>required double streamingCapacity = 1;</code>
        */
-      public double getCapacity() {
-        return capacity_;
+      public double getStreamingCapacity() {
+        return streamingCapacity_;
       }
       /**
-       * <code>required double capacity = 1;</code>
+       * <code>required double streamingCapacity = 1;</code>
        */
-      public Builder setCapacity(double value) {
+      public Builder setStreamingCapacity(double value) {
         bitField0_ |= 0x00000001;
-        capacity_ = value;
+        streamingCapacity_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>required double capacity = 1;</code>
+       * <code>required double streamingCapacity = 1;</code>
        */
-      public Builder clearCapacity() {
+      public Builder clearStreamingCapacity() {
         bitField0_ = (bitField0_ & ~0x00000001);
-        capacity_ = 0D;
+        streamingCapacity_ = 0D;
         onChanged();
         return this;
       }
@@ -4534,34 +4590,67 @@ public final class Scheduler {
         return this;
       }
 
-      // required double randomThroughput = 3;
-      private double randomThroughput_ ;
+      // required double randomCapacity = 3;
+      private double randomCapacity_ ;
       /**
-       * <code>required double randomThroughput = 3;</code>
+       * <code>required double randomCapacity = 3;</code>
        */
-      public boolean hasRandomThroughput() {
+      public boolean hasRandomCapacity() {
         return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       /**
-       * <code>required double randomThroughput = 3;</code>
+       * <code>required double randomCapacity = 3;</code>
+       */
+      public double getRandomCapacity() {
+        return randomCapacity_;
+      }
+      /**
+       * <code>required double randomCapacity = 3;</code>
+       */
+      public Builder setRandomCapacity(double value) {
+        bitField0_ |= 0x00000004;
+        randomCapacity_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required double randomCapacity = 3;</code>
+       */
+      public Builder clearRandomCapacity() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        randomCapacity_ = 0D;
+        onChanged();
+        return this;
+      }
+
+      // required double randomThroughput = 4;
+      private double randomThroughput_ ;
+      /**
+       * <code>required double randomThroughput = 4;</code>
+       */
+      public boolean hasRandomThroughput() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>required double randomThroughput = 4;</code>
        */
       public double getRandomThroughput() {
         return randomThroughput_;
       }
       /**
-       * <code>required double randomThroughput = 3;</code>
+       * <code>required double randomThroughput = 4;</code>
        */
       public Builder setRandomThroughput(double value) {
-        bitField0_ |= 0x00000004;
+        bitField0_ |= 0x00000008;
         randomThroughput_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>required double randomThroughput = 3;</code>
+       * <code>required double randomThroughput = 4;</code>
        */
       public Builder clearRandomThroughput() {
-        bitField0_ = (bitField0_ & ~0x00000004);
+        bitField0_ = (bitField0_ & ~0x00000008);
         randomThroughput_ = 0D;
         onChanged();
         return this;
@@ -4635,28 +4724,29 @@ public final class Scheduler {
       "(\001\022\030\n\020randomThroughput\030\005 \001(\001\"C\n\016reservat" +
       "ionSet\0221\n\014reservations\030\001 \003(\0132\033.xtreemfs." +
       "pbrpc.reservation\"4\n\006osdSet\022*\n\003osd\030\001 \003(\013" +
-      "2\035.xtreemfs.pbrpc.osdIdentifier\"`\n\025freeR" +
-      "esourcesResponse\022\020\n\010capacity\030\001 \002(\001\022\033\n\023st" +
-      "reamingThroughput\030\002 \002(\001\022\030\n\020randomThrough" +
-      "put\030\003 \002(\001*\202\001\n\017reservationType\022\031\n\025STREAMI" +
-      "NG_RESERVATION\020\001\022\031\n\025RANDOM_IO_RESERVATIO" +
-      "N\020\002\022\033\n\027BEST_EFFORT_RESERVATION\020\003\022\034\n\030COLD" +
-      "_STORAGE_RESERVATION\020\0042\254\004\n\020SchedulerServ",
-      "ice\022S\n\023scheduleReservation\022\033.xtreemfs.pb" +
-      "rpc.reservation\032\026.xtreemfs.pbrpc.osdSet\"" +
-      "\007\215\265\030e\000\000\000\022]\n\021removeReservation\022 .xtreemfs" +
-      ".pbrpc.volumeIdentifier\032\035.xtreemfs.pbrpc" +
-      ".emptyResponse\"\007\215\265\030f\000\000\000\022P\n\013getSchedule\022 " +
-      ".xtreemfs.pbrpc.volumeIdentifier\032\026.xtree" +
-      "mfs.pbrpc.osdSet\"\007\215\265\030g\000\000\000\022O\n\ngetVolumes\022" +
-      "\035.xtreemfs.pbrpc.osdIdentifier\032\031.xtreemf" +
-      "s.pbrpc.volumeSet\"\007\215\265\030h\000\000\000\022V\n\rgetAllVolu" +
-      "mes\022\034.xtreemfs.pbrpc.emptyRequest\032\036.xtre",
-      "emfs.pbrpc.reservationSet\"\007\215\265\030i\000\000\000\022`\n\020ge" +
-      "tFreeResources\022\034.xtreemfs.pbrpc.emptyReq" +
-      "uest\032%.xtreemfs.pbrpc.freeResourcesRespo" +
-      "nse\"\007\215\265\030j\000\000\000\032\007\225\265\030A\234\000\000B(\n&org.xtreemfs.pb" +
-      "rpc.generatedinterfaces"
+      "2\035.xtreemfs.pbrpc.osdIdentifier\"\201\001\n\025free" +
+      "ResourcesResponse\022\031\n\021streamingCapacity\030\001" +
+      " \002(\001\022\033\n\023streamingThroughput\030\002 \002(\001\022\026\n\016ran" +
+      "domCapacity\030\003 \002(\001\022\030\n\020randomThroughput\030\004 " +
+      "\002(\001*\202\001\n\017reservationType\022\031\n\025STREAMING_RES" +
+      "ERVATION\020\001\022\031\n\025RANDOM_IO_RESERVATION\020\002\022\033\n" +
+      "\027BEST_EFFORT_RESERVATION\020\003\022\034\n\030COLD_STORA",
+      "GE_RESERVATION\020\0042\254\004\n\020SchedulerService\022S\n" +
+      "\023scheduleReservation\022\033.xtreemfs.pbrpc.re" +
+      "servation\032\026.xtreemfs.pbrpc.osdSet\"\007\215\265\030e\000" +
+      "\000\000\022]\n\021removeReservation\022 .xtreemfs.pbrpc" +
+      ".volumeIdentifier\032\035.xtreemfs.pbrpc.empty" +
+      "Response\"\007\215\265\030f\000\000\000\022P\n\013getSchedule\022 .xtree" +
+      "mfs.pbrpc.volumeIdentifier\032\026.xtreemfs.pb" +
+      "rpc.osdSet\"\007\215\265\030g\000\000\000\022O\n\ngetVolumes\022\035.xtre" +
+      "emfs.pbrpc.osdIdentifier\032\031.xtreemfs.pbrp" +
+      "c.volumeSet\"\007\215\265\030h\000\000\000\022V\n\rgetAllVolumes\022\034.",
+      "xtreemfs.pbrpc.emptyRequest\032\036.xtreemfs.p" +
+      "brpc.reservationSet\"\007\215\265\030i\000\000\000\022`\n\020getFreeR" +
+      "esources\022\034.xtreemfs.pbrpc.emptyRequest\032%" +
+      ".xtreemfs.pbrpc.freeResourcesResponse\"\007\215" +
+      "\265\030j\000\000\000\032\007\225\265\030A\234\000\000B(\n&org.xtreemfs.pbrpc.ge" +
+      "neratedinterfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -4704,7 +4794,7 @@ public final class Scheduler {
           internal_static_xtreemfs_pbrpc_freeResourcesResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_freeResourcesResponse_descriptor,
-              new java.lang.String[] { "Capacity", "StreamingThroughput", "RandomThroughput", });
+              new java.lang.String[] { "StreamingCapacity", "StreamingThroughput", "RandomCapacity", "RandomThroughput", });
           com.google.protobuf.ExtensionRegistry registry =
             com.google.protobuf.ExtensionRegistry.newInstance();
           registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.procId);

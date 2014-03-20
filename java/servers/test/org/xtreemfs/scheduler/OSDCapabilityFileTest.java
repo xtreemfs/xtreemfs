@@ -70,9 +70,9 @@ public class OSDCapabilityFileTest {
         SchedulerServiceClient schedulerClient = testEnv.getSchedulerClient();
         Scheduler.freeResourcesResponse resources = schedulerClient.getFreeResources(null,
                 RPCAuthentication.authNone, RPCAuthentication.userService).get();
-        assertEquals(resources.getCapacity(), 100.0);
-        assertEquals(resources.getRandomThroughput(), 100.0);
-        assertEquals(resources.getStreamingThroughput(), 100.0);
+        assertTrue(resources.getRandomCapacity() == 100.0);
+        assertTrue(resources.getRandomThroughput() == 100.0);
+        assertTrue(resources.getStreamingThroughput() == 100.0);
     }
 
     @Test

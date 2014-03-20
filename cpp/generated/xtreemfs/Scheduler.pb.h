@@ -676,12 +676,12 @@ class freeResourcesResponse : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // required double capacity = 1;
-  inline bool has_capacity() const;
-  inline void clear_capacity();
-  static const int kCapacityFieldNumber = 1;
-  inline double capacity() const;
-  inline void set_capacity(double value);
+  // required double streamingCapacity = 1;
+  inline bool has_streamingcapacity() const;
+  inline void clear_streamingcapacity();
+  static const int kStreamingCapacityFieldNumber = 1;
+  inline double streamingcapacity() const;
+  inline void set_streamingcapacity(double value);
 
   // required double streamingThroughput = 2;
   inline bool has_streamingthroughput() const;
@@ -690,30 +690,40 @@ class freeResourcesResponse : public ::google::protobuf::Message {
   inline double streamingthroughput() const;
   inline void set_streamingthroughput(double value);
 
-  // required double randomThroughput = 3;
+  // required double randomCapacity = 3;
+  inline bool has_randomcapacity() const;
+  inline void clear_randomcapacity();
+  static const int kRandomCapacityFieldNumber = 3;
+  inline double randomcapacity() const;
+  inline void set_randomcapacity(double value);
+
+  // required double randomThroughput = 4;
   inline bool has_randomthroughput() const;
   inline void clear_randomthroughput();
-  static const int kRandomThroughputFieldNumber = 3;
+  static const int kRandomThroughputFieldNumber = 4;
   inline double randomthroughput() const;
   inline void set_randomthroughput(double value);
 
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.freeResourcesResponse)
  private:
-  inline void set_has_capacity();
-  inline void clear_has_capacity();
+  inline void set_has_streamingcapacity();
+  inline void clear_has_streamingcapacity();
   inline void set_has_streamingthroughput();
   inline void clear_has_streamingthroughput();
+  inline void set_has_randomcapacity();
+  inline void clear_has_randomcapacity();
   inline void set_has_randomthroughput();
   inline void clear_has_randomthroughput();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
-  double capacity_;
+  double streamingcapacity_;
   double streamingthroughput_;
+  double randomcapacity_;
   double randomthroughput_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(4 + 31) / 32];
 
   friend void  protobuf_AddDesc_xtreemfs_2fScheduler_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fScheduler_2eproto();
@@ -1095,26 +1105,26 @@ osdSet::mutable_osd() {
 
 // freeResourcesResponse
 
-// required double capacity = 1;
-inline bool freeResourcesResponse::has_capacity() const {
+// required double streamingCapacity = 1;
+inline bool freeResourcesResponse::has_streamingcapacity() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void freeResourcesResponse::set_has_capacity() {
+inline void freeResourcesResponse::set_has_streamingcapacity() {
   _has_bits_[0] |= 0x00000001u;
 }
-inline void freeResourcesResponse::clear_has_capacity() {
+inline void freeResourcesResponse::clear_has_streamingcapacity() {
   _has_bits_[0] &= ~0x00000001u;
 }
-inline void freeResourcesResponse::clear_capacity() {
-  capacity_ = 0;
-  clear_has_capacity();
+inline void freeResourcesResponse::clear_streamingcapacity() {
+  streamingcapacity_ = 0;
+  clear_has_streamingcapacity();
 }
-inline double freeResourcesResponse::capacity() const {
-  return capacity_;
+inline double freeResourcesResponse::streamingcapacity() const {
+  return streamingcapacity_;
 }
-inline void freeResourcesResponse::set_capacity(double value) {
-  set_has_capacity();
-  capacity_ = value;
+inline void freeResourcesResponse::set_streamingcapacity(double value) {
+  set_has_streamingcapacity();
+  streamingcapacity_ = value;
 }
 
 // required double streamingThroughput = 2;
@@ -1139,15 +1149,37 @@ inline void freeResourcesResponse::set_streamingthroughput(double value) {
   streamingthroughput_ = value;
 }
 
-// required double randomThroughput = 3;
-inline bool freeResourcesResponse::has_randomthroughput() const {
+// required double randomCapacity = 3;
+inline bool freeResourcesResponse::has_randomcapacity() const {
   return (_has_bits_[0] & 0x00000004u) != 0;
 }
-inline void freeResourcesResponse::set_has_randomthroughput() {
+inline void freeResourcesResponse::set_has_randomcapacity() {
   _has_bits_[0] |= 0x00000004u;
 }
-inline void freeResourcesResponse::clear_has_randomthroughput() {
+inline void freeResourcesResponse::clear_has_randomcapacity() {
   _has_bits_[0] &= ~0x00000004u;
+}
+inline void freeResourcesResponse::clear_randomcapacity() {
+  randomcapacity_ = 0;
+  clear_has_randomcapacity();
+}
+inline double freeResourcesResponse::randomcapacity() const {
+  return randomcapacity_;
+}
+inline void freeResourcesResponse::set_randomcapacity(double value) {
+  set_has_randomcapacity();
+  randomcapacity_ = value;
+}
+
+// required double randomThroughput = 4;
+inline bool freeResourcesResponse::has_randomthroughput() const {
+  return (_has_bits_[0] & 0x00000008u) != 0;
+}
+inline void freeResourcesResponse::set_has_randomthroughput() {
+  _has_bits_[0] |= 0x00000008u;
+}
+inline void freeResourcesResponse::clear_has_randomthroughput() {
+  _has_bits_[0] &= ~0x00000008u;
 }
 inline void freeResourcesResponse::clear_randomthroughput() {
   randomthroughput_ = 0;

@@ -73,9 +73,10 @@ message osdSet {
 }
 
 message freeResourcesResponse {
-  required double capacity = 1;
+  required double streamingCapacity = 1;
   required double streamingThroughput = 2;
-  required double randomThroughput = 3;
+  required double randomCapacity = 3;
+  required double randomThroughput = 4;
 }
 
 service SchedulerService {

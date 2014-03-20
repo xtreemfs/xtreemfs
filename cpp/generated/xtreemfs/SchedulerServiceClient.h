@@ -1,5 +1,5 @@
-//automatically generated from Scheduler.proto at Fri Nov 15 15:18:56 CET 2013
-//(c) 2013. See LICENSE file for details.
+//automatically generated from Scheduler.proto at Thu Mar 20 13:34:54 CET 2014
+//(c) 2014. See LICENSE file for details.
 
 #ifndef SCHEDULERSERVICECLIENT_H
 #define SCHEDULERSERVICECLIENT_H

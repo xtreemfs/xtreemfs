@@ -170,7 +170,7 @@ public class SchedulerTest {
 
         Scheduler.freeResourcesResponse freeRes = response.get();
 
-        double initialCapacity = freeRes.getCapacity();
+        double initialCapacity = freeRes.getStreamingCapacity();
         double initialRandTp = freeRes.getRandomThroughput();
         double initialSeqTp = freeRes.getStreamingThroughput();
         response.freeBuffers();
@@ -208,7 +208,7 @@ public class SchedulerTest {
 
         Scheduler.freeResourcesResponse newFreeRes = newResponse.get();
 
-        double newCapacity = newFreeRes.getCapacity();
+        double newCapacity = newFreeRes.getStreamingCapacity();
         double newRandomTP = newFreeRes.getRandomThroughput();
         double newSeqTP = newFreeRes.getStreamingThroughput();
 
