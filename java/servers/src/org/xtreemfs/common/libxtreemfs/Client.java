@@ -147,14 +147,8 @@ public interface Client {
      *            Name of the owner user.
      * @param ownerGroupname
      *            Name of the owner group.
-     * @param accessPolicy_type
-     *            Access policy type (Null, Posix, Volume, ...).
-     * @param defaultStripingPolicyType
-     *            Only RAID0 so far.
      * @param defaultStripeSize
      *            Size of an object on the OSD (in kBytes).
-     * @param defaultStripeWidth
-     *            Number of OSDs objects of a file are striped across.
      * @param volumeAttributes
      *            Reference to a list of key-value pairs of volume attributes which will bet set at creation
      *            time of the volume.
@@ -171,10 +165,9 @@ public interface Client {
      * @throws PosixErrorException
      */
     public void createVolume(String schedulerAddress, Auth auth, UserCredentials userCredentials,
-            String volumeName, int mode, String ownerUsername, String ownerGroupname,
-            AccessControlPolicyType accessPolicyType, StripingPolicyType defaultStripingPolicyType,
-            int defaultStripeSize, int defaultStripeWidth, List<KeyValuePair> volumeAttributes,
-            int capacity, int randomTP, int seqTP, boolean coldStorage)
+                             String volumeName, int mode, String ownerUsername, String ownerGroupname,
+                             AccessControlPolicyType accessPolicyType, int defaultStripeSize, List<KeyValuePair> volumeAttributes,
+                             int capacity, int randomTP, int seqTP, boolean coldStorage)
             throws IOException;
 
     
@@ -297,10 +290,9 @@ public interface Client {
      * @throws PosixErrorException
      */
     public void createVolume(List<String> mrcAddresses, String schedulerAddress, Auth auth, UserCredentials userCredentials,
-            String volumeName, int mode, String ownerUsername, String ownerGroupname,
-            AccessControlPolicyType accessPolicyType, StripingPolicyType defaultStripingPolicyType,
-            int defaultStripeSize, int defaultStripeWidth, List<KeyValuePair> volumeAttributes,
-            int capacity, int randomTP, int seqTP, boolean coldStorage)
+                             String volumeName, int mode, String ownerUsername, String ownerGroupname,
+                             AccessControlPolicyType accessPolicyType, int defaultStripeSize, List<KeyValuePair> volumeAttributes,
+                             int capacity, int randomTP, int seqTP, boolean coldStorage)
             throws IOException;
 
     /**

@@ -399,8 +399,8 @@ public class ClientTest {
         // Create volume with QoS reservation
         client.createVolume(mrcAddresses, schedulerAddress, auth, userCredentials,
                 VOLUME_NAME, 0777, userCredentials.getUsername(), userCredentials.getGroupsList().get(0),
-                AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, StripingPolicyType.STRIPING_POLICY_RAID0,
-                4, 2, new ArrayList<KeyValuePair>(), 10, 10, 0, false);
+                AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL,
+                128, new ArrayList<KeyValuePair>(), 10, 10, 0, false);
 
         // Check volume for being scheduled to at least one osd
         SchedulerServiceClient schedulerClient = testEnv.getSchedulerClient();

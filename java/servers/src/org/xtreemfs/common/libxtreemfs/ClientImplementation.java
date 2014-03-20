@@ -355,8 +355,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
     @Override
     public void createVolume(String schedulerAddress, Auth auth, UserCredentials userCredentials,
             String volumeName, int mode, String ownerUsername, String ownerGroupname,
-            AccessControlPolicyType accessPolicyType, StripingPolicyType defaultStripingPolicyType,
-            int defaultStripeSize, int defaultStripeWidth, List<KeyValuePair> volumeAttributes,
+            AccessControlPolicyType accessPolicyType, int defaultStripeSize, List<KeyValuePair> volumeAttributes,
             int capacity, int randomTP, int seqTP, boolean coldStorage)
             throws IOException {
         // access the list of MRCs
@@ -380,7 +379,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         }
         
         createVolume(mrcAddresses, schedulerAddress, auth, userCredentials, volumeName, mode, ownerUsername,
-                ownerGroupname, accessPolicyType, defaultStripingPolicyType, defaultStripeSize, defaultStripeWidth,
+                ownerGroupname, accessPolicyType, defaultStripeSize,
                 volumeAttributes, capacity, randomTP, seqTP, coldStorage);
     }
 
@@ -388,22 +387,27 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
     @Override
     public void createVolume(List<String> mrcAddresses, String schedulerAddress, Auth auth, UserCredentials userCredentials,
             String volumeName, int mode, String ownerUsername, String ownerGroupname,
-            AccessControlPolicyType accessPolicyType, StripingPolicyType defaultStripingPolicyType,
-            int defaultStripeSize, int defaultStripeWidth, List<KeyValuePair> volumeAttributes,
+            AccessControlPolicyType accessPolicyType, int defaultStripeSize, List<KeyValuePair> volumeAttributes,
             int capacity, int randomTP, int seqTP, boolean coldStorage)
             throws IOException {
-        List<String> osds = createReservation(schedulerAddress, auth, userCredentials, volumeName, capacity, randomTP, seqTP, coldStorage);
-        if(osds.size() <= 0) {
-            throw new IOException("OSD reservation failed");
+        List<String> osds = null;
+
+        try {
+            osds = createReservation(schedulerAddress, auth, userCredentials, volumeName, capacity, randomTP, seqTP, coldStorage);
+        } catch(IOException ex) {
+            throw new IOException("OSD reservation failed: " + ex.getMessage());
         }
 
+        if(osds == null || osds.size() == 0) {
+            throw new IOException("OSD reservation failed");
+        }
 
         UUIDIterator iteratorWithAddresses = new UUIDIterator();
         iteratorWithAddresses.addUUIDs(mrcAddresses);
         try {
             createVolume(iteratorWithAddresses, auth, userCredentials, volumeName, mode, ownerUsername,
-                    ownerGroupname, accessPolicyType, defaultStripingPolicyType, defaultStripeSize,
-                    defaultStripeWidth, volumeAttributes);
+                    ownerGroupname, accessPolicyType, StripingPolicyType.STRIPING_POLICY_RAID0, defaultStripeSize,
+                    osds.size(), volumeAttributes);
         } catch(Exception ex) {
             deleteReservation(schedulerAddress, auth, userCredentials, volumeName);
             throw new IOException("Volume creation failed");
