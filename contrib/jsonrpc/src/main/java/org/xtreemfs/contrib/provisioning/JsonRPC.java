@@ -635,9 +635,7 @@ public class JsonRPC implements ResourceLoaderAware {
           octalMode,
           owner,
           ownerGroupname,
-          AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
-          StripingPolicyType.STRIPING_POLICY_RAID0,
-          1,
+          AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,          
           128*1024,          
           new ArrayList<KeyValuePair>(),  // volume attributes
           capacity,
@@ -848,9 +846,10 @@ public class JsonRPC implements ResourceLoaderAware {
 
     HashMap<String, HashMap<String, Double>> resources = new HashMap<String, HashMap<String, Double>>();
     HashMap<String, Double> freeRes = new HashMap<String, Double>();
-    freeRes.put("capacity", freeResources.getCapacity());
-    freeRes.put("ranbw", freeResources.getRandomThroughput());
-    freeRes.put("seqbw", freeResources.getStreamingThroughput());     
+    freeRes.put("ran_capacity", freeResources.getRandomCapacity());
+    freeRes.put("seq_capacity", freeResources.getStreamingCapacity());
+    freeRes.put("ran_throughput", freeResources.getRandomThroughput());
+    freeRes.put("seq_throughput", freeResources.getStreamingThroughput());     
     resources.put("storage", freeRes);
     return freeRes;
   }

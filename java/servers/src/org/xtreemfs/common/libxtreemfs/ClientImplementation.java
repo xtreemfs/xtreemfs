@@ -17,8 +17,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import javax.naming.ldap.PagedResultsControl;
-
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.KeyValuePairs;
 import org.xtreemfs.common.libxtreemfs.RPCCaller.CallGenerator;
@@ -408,26 +406,29 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
             createVolume(iteratorWithAddresses, auth, userCredentials, volumeName, mode, ownerUsername,
                     ownerGroupname, accessPolicyType, StripingPolicyType.STRIPING_POLICY_RAID0, defaultStripeSize,
                     osds.size(), volumeAttributes);
+            
+            String osdStr = "";
+            for(String osd: osds) {
+                if (osdStr.equals("")) {
+                    osdStr = osd;
+                } else {
+                    osdStr += "," + osd;
+                }
+            }
+
+            Options volumeOptions = new Options();
+            volumeOptions.setMetadataCacheSize(0);
+
+            AdminVolume volume = openVolume(volumeName, null, volumeOptions);
+            volume.setOSDSelectionPolicy(userCredentials, "1000,1002,3002");
+            volume.setPolicyAttribute(userCredentials, "1002.uuids", osdStr);
+            
         } catch(Exception ex) {
             deleteReservation(schedulerAddress, auth, userCredentials, volumeName);
             throw new IOException("Volume creation failed");
         }
 
-        String osdStr = "";
-        for(String osd: osds) {
-            if (osdStr.equals("")) {
-                osdStr = osd;
-            } else {
-                osdStr += "," + osd;
-            }
-        }
 
-        Options volumeOptions = new Options();
-        volumeOptions.setMetadataCacheSize(0);
-
-        AdminVolume volume = openVolume(volumeName, null, volumeOptions);
-        volume.setOSDSelectionPolicy(userCredentials, "1000,1002,3002");
-        volume.setPolicyAttribute(userCredentials, "1002.uuids", osdStr);
     }
 
     private void createVolume(UUIDIterator mrcAddresses, final Auth auth, final UserCredentials userCredentials,

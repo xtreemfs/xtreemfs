@@ -27,7 +27,6 @@ import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
@@ -1183,7 +1182,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     public int checkObjectAndGetSize(int replicaIndex, long objectNo) throws IOException, InvalidChecksumException {
         ObjectData od = null;
-        RPCResponse<ObjectData> osdRsp = null;
+//        RPCResponse<ObjectData> osdRsp = null;
         try {
 
             FileCredentials.Builder fcBuilder = FileCredentials.newBuilder();
