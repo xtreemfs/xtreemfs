@@ -1,8 +1,7 @@
 package org.xtreemfs.test.common.benchmark;
 
+import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.xtreemfs.common.benchmark.BenchmarkConfig.ConfigBuilder;
 import static org.xtreemfs.common.benchmark.BenchmarkUtils.*;
 import static org.xtreemfs.foundation.pbrpc.client.RPCAuthentication.authNone;
@@ -445,12 +444,12 @@ public class ControllerIntegrationTest {
          * after the teardown (which includes the deletion of the benchmark volumes and files), only the volumes are
          * present
          */
-        assertEquals(0, Integer.valueOf(volumeA.getXAttr(userCredentials, "", "xtreemfs.num_files")));
-        assertEquals(0, Integer.valueOf(volumeB.getXAttr(userCredentials, "", "xtreemfs.num_files")));
-        assertEquals(0, Integer.valueOf(volumeC.getXAttr(userCredentials, "", "xtreemfs.num_files")));
-        assertEquals(0, Integer.valueOf(volumeA.getXAttr(userCredentials, "", "xtreemfs.used_space")));
-        assertEquals(0, Integer.valueOf(volumeB.getXAttr(userCredentials, "", "xtreemfs.used_space")));
-        assertEquals(0, Integer.valueOf(volumeC.getXAttr(userCredentials, "", "xtreemfs.used_space")));
+        assertSame(0, Integer.valueOf(volumeA.getXAttr(userCredentials, "", "xtreemfs.num_files")));
+        assertSame(0, Integer.valueOf(volumeB.getXAttr(userCredentials, "", "xtreemfs.num_files")));
+        assertSame(0, Integer.valueOf(volumeC.getXAttr(userCredentials, "", "xtreemfs.num_files")));
+        assertSame(0, Integer.valueOf(volumeA.getXAttr(userCredentials, "", "xtreemfs.used_space")));
+        assertSame(0, Integer.valueOf(volumeB.getXAttr(userCredentials, "", "xtreemfs.used_space")));
+        assertSame(0, Integer.valueOf(volumeC.getXAttr(userCredentials, "", "xtreemfs.used_space")));
         deleteVolumes("TestVolA", "TestVolB", "TestVolC");
     }
 
@@ -471,9 +470,9 @@ public class ControllerIntegrationTest {
 
         /* number of files from filebased benchmark + basefile */
         int numberOfFiles = (int) (randSize / (4 * BenchmarkUtils.KiB_IN_BYTES)) + 1;
-        assertEquals(numberOfFiles, Integer.valueOf(volume.getXAttr(userCredentials, "", "xtreemfs.num_files")));
+        assertEquals(numberOfFiles, (int) Integer.valueOf(volume.getXAttr(userCredentials, "", "xtreemfs.num_files")));
         assertEquals(basefileSize + randSize,
-                Integer.valueOf(volume.getXAttr(userCredentials, "", "xtreemfs.used_space")));
+                (int) Integer.valueOf(volume.getXAttr(userCredentials, "", "xtreemfs.used_space")));
 
         controller.teardown();
 
@@ -482,8 +481,8 @@ public class ControllerIntegrationTest {
          * still present
          */
         assertEquals(basefileSize, volume.getAttr(userCredentials, "benchmarks/basefile").getSize());
-        assertEquals(1, Integer.valueOf(volume.getXAttr(userCredentials, "", "xtreemfs.num_files")));
-        assertEquals(basefileSize, Integer.valueOf(volume.getXAttr(userCredentials, "", "xtreemfs.used_space")));
+        assertSame(1, Integer.valueOf(volume.getXAttr(userCredentials, "", "xtreemfs.num_files")));
+        assertEquals(basefileSize, (int) Integer.valueOf(volume.getXAttr(userCredentials, "", "xtreemfs.used_space")));
     }
 
     private void assertNoVolumes(String... volumes) throws Exception {
