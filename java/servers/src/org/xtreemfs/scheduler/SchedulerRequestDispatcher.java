@@ -530,4 +530,8 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
         OSDPerformanceDescription osdPerf = new OSDPerformanceDescription(capacity, seqTPMap, iops);
         return new OSDDescription(osdName, osdPerf, OSDDescription.OSDType.UNKNOWN);
     }
+
+    public SchedulerConfig getConfig() {
+        return config;
+    }
 }
