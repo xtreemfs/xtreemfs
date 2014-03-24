@@ -2,10 +2,7 @@ package org.xtreemfs.scheduler;
 
 import java.io.*;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -22,7 +19,6 @@ import org.xtreemfs.babudb.api.database.Database;
 import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.common.KeyValuePairs;
-import org.xtreemfs.common.benchmark.BenchmarkConfig;
 import org.xtreemfs.common.benchmark.BenchmarkUtils;
 import org.xtreemfs.common.config.PolicyContainer;
 import org.xtreemfs.common.config.ServiceConfig;
@@ -72,6 +68,7 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 	private static final int RPC_TIMEOUT = 15000;
 	private static final int CONNECTION_TIMEOUT = 5 * 60 * 1000;
 	public static final int DB_VERSION = 1;
+    private static HashSet<String> requestedBenchmarks = new HashSet<String>();
 
 	private SSLOptions sslOptions;
 	private SchedulerConfig config;
@@ -307,6 +304,11 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
                 }
             }
 
+            if(!osdFound){
+                if(requestedBenchmarks.contains(osd.getUuid()))
+                    osdFound=true;
+            }
+
             if (!osdFound) {
 
                 /* Benchmark Args */
@@ -335,16 +337,19 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
                         } catch (BabuDBException ex) {
                             Logging.logError(Logging.LEVEL_ERROR, this, ex);
                         }
+                        requestedBenchmarks.remove(osd.getUuid());
                     }
 
                     @Override
                     public void benchmarkFailed(Throwable error) {
                         Logging.logMessage(Logging.LEVEL_ERROR, this, "Benchmark of OSD %s failed", osd.getUuid());
+                        requestedBenchmarks.remove(osd.getUuid());
                     }
                 };
 
                 /* enqueue the benchmark request */
                 benchmarkStage.enqueueOperation(0, benchmarkArgs, null, cb);
+                requestedBenchmarks.add(osd.getUuid());
             }
         }
     }

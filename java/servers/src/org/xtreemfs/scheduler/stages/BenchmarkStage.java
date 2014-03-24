@@ -46,11 +46,15 @@ public class BenchmarkStage extends Stage<BenchmarkArgs, BenchmarkCompleteCallba
         builder.setParent(stageRequest.getArgs().getConfig());
         builder.setSelectOsdsByUuid(args.getOsdUuid());
         BenchmarkRunner br;
+        Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.stage, this,
+                "Starting Benchmark of OSD %s", args.getOsdUuid());
         try {
             br = new BenchmarkRunner(builder.build(), args.getSequentialSize(), args.getRandomSize(),
                     args.getNumberOfThreads(), args.getNumberOfRepetitions());
             OSDPerformanceDescription perfDesc = br.runBenchmark();
             cb.benchmarkComplete(perfDesc);
+            Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.stage, this,
+                    "Finished Benchmark of OSD %s", args.getOsdUuid());
         } catch (Exception e) {
             if (args.getRetries() > 0) {
                 args.decRetries();
