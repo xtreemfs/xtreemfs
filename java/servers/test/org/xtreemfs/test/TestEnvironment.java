@@ -169,6 +169,7 @@ public class TestEnvironment {
             
             //Create new OSDRequestDispatcher with same config.
             osd = new TestOSD (new OSDRequestDispatcher(config));
+            osd.start();
             
             // Replace old OSDRequestDispatcher.
             osds.put(osdUuid, osd);
@@ -408,7 +409,7 @@ public class TestEnvironment {
         if (enabledServs.contains(Services.OSD)) {
             try {
                 for (TestOSD osd : osds.values()) {
-                    if (osd != null) {
+                    if (osd != null && osd.started) {
                         osd.shutdown();
                     }
                 }
