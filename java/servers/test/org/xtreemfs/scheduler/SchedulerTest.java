@@ -3,6 +3,7 @@ package org.xtreemfs.scheduler;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
@@ -12,8 +13,12 @@ import org.xtreemfs.pbrpc.generatedinterfaces.Common;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 import org.xtreemfs.pbrpc.generatedinterfaces.Scheduler;
 import org.xtreemfs.pbrpc.generatedinterfaces.SchedulerServiceClient;
+import org.xtreemfs.scheduler.data.OSDDescription;
+import org.xtreemfs.scheduler.data.OSDPerformanceDescription;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -41,11 +46,14 @@ public class SchedulerTest {
 		testEnv.start();
 		client = testEnv.getSchedulerClient();
 		scheduler = new SchedulerRequestDispatcher(config, dbsConfig);
-		scheduler.startup();
-		scheduler.waitForStartup();
+        writeDefaultOsdDescriptions();
+
+
+        scheduler.startup();
+        scheduler.waitForStartup();
 	}
 
-	@After
+    @After
 	public void tearDown() throws Exception {
 		scheduler.shutdown();
 		scheduler.waitForShutdown();
@@ -285,5 +293,27 @@ public class SchedulerTest {
 
         resResponse.freeBuffers();
         newResponse.freeBuffers();
+    }
+
+    /**
+     * Write default OSD descriptions to the DB to prevent benchmarking of the OSDs
+     * @throws java.io.IOException
+     * @throws InterruptedException
+     */
+    private void writeDefaultOsdDescriptions() throws java.io.IOException, InterruptedException {
+        List<DIR.Service> osds = testEnv
+                .getDirClient()
+                .xtreemfs_service_get_by_type(null, RPCAuthentication.authNone, RPCAuthentication.userService,
+                        DIR.ServiceType.SERVICE_TYPE_OSD).get().getServicesList();
+        for (DIR.Service osd : osds) {
+            OSDDescription.OSDType type = OSDDescription.OSDType.UNKNOWN;
+            OSDPerformanceDescription perfDescription = new OSDPerformanceDescription();
+            OSDDescription osdDescription = new OSDDescription(osd.getUuid(), perfDescription, type);
+            try {
+                scheduler.getSchedulerDatabase().singleInsert(1, osd.getUuid().getBytes(), osdDescription.getBytes(), null).get();
+            } catch (BabuDBException ex) {
+                Logging.logError(Logging.LEVEL_ERROR, this, ex);
+            }
+        }
     }
 }
