@@ -2782,11 +2782,11 @@ Therefore it replaces the NameNode and the DataNodes provided by HDFS in a commo
  \centering
  \includegraphics[width=0.80\linewidth]{images/cluster_setup.png}
  % screenshot_status.png: 783x444 pixel, 72dpi, 28.82x29.88 cm, bb=0 0 783 444
- \caption{Hadoop cluster setup recommendation}
+ \caption{Hadoop 1.x cluster setup recommendation}
  \label{fig:cluster_setup}
 \end{figure}
 
-The three master services JobTracker, DIR and MRC are required in a Hadoop configuration. They can run alone or in arbitrary combinations on the same machine. Hadoop can be used with an arbitrary number of Slaves. It is recommended to run a TaskTracker together with an OSD on each Slave machine to improve performance, but it is not mandatory.
+The three master services JobTracker (Hadoop 1.x) or Resourcemanager (Hadoop 2.x), DIR and MRC are required in a Hadoop configuration. They can run alone or in arbitrary combinations on the same machine. Hadoop can be used with an arbitrary number of Slaves. It is recommended to run a TaskTracker (Hadoop 1.x) or NodeManager (Hadoop 2.x) together with an OSD on each Slave machine to improve performance, but it is not mandatory.
 
 \section{Quick Start}
 \label{sec:hadoop_quickstart}
@@ -2805,21 +2805,44 @@ This section will help you to set up a simple Hadoop configuration with all nece
 \begin{enumerate}
 \item Install and start XtreemFS:\\
 	Follow the instructions given by the quick start guide for XtreemFS, available at Sec.\ref{sec:quick_start}. Notice 	
-	that the DIR is reachable at \textit{localhost:32638}, beause this information will be important later.
+	that the DIR is reachable at \textit{localhost:32638}, because this information will be important later.
 
 \item Download and extract Hadoop
+
+\item Setup Hadoop environment variables:\\
+For Hadoop you have so set the following environment variable:
+   \begin{itemize}
+   \item Hadoop 1.x:
+      \begin{verbatim}
+		export HADOOP_HOME=<path to Hadoop directory>
+      \end{verbatim}
+      
+   \item Hadoop 2.x:
+      \begin{verbatim}
+		export HADOOP_HOME=<path to Hadoop directory>
+		export HADOOP_MAPRED_HOME=$HADOOP_HOME
+		export HADOOP_COMMON_HOME=$HADOOP_HOME
+		export HADOOP_HDFS_HOME=$HADOOP_HOME
+		export HADOOP_YARN_HOME=$HADOOP_HOME
+		export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
+      \end{verbatim}
+   \end{itemize}
 
 \item Configure Hadoop to use XtreemFS instead of HDFS:
 	\begin{enumerate}
 	\item After downloading and extracting Hadoop you have to make sure it will find the XtreemFSHadoopClient package. 
-	The easiest way to do so is to download XtreemFSHadoopClient.jar into Hadoop's \textit{lib} directory, or to symlink it there.
+	The easiest way to do so is to download XtreemFSHadoopClient.jar into Hadoop's \textit{lib} directory for Hadoop 1.x or \textit{share/hadoop/common/} directory for Hadoop 2.x, or to symlink it there.
 
 	Alternativly, you can add it to Hadoop's classpath. It can be edited in \textit{hadoop-env.sh} which can be found in the \textit{conf} directory of Hadoop. Assuming you put XtreemFSHadoopClient.jar to the other jar-libraries located at '\textit{/usr/share/java/}', the resulting line should look like this.
 	\begin{verbatim}
 	export HADOOP_CLASSPATH="/usr/share/XtreemFSHadoopClient.jar"
 	\end{verbatim}
-		
-	\item Now you have to specify some properties in \textit{core-site.xml} (in the \textit{conf} 
+Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the -libjars parameter to the XtreemFSHadoopClient.jar path if you use the hadoop jar command, e.g.
+    \begin{verbatim}
+	hadoop jar <jar> [mainClass] \
+	-libjars=/usr/share/XtreemFSHadoopClient.jar ...
+    \end{verbatim} 
+	\item Now you have to specify some properties in \textit{core-site.xml} (in the \textit{conf} (Hadoop 1.x) or \textit{etc/hadoop} (Hadoop 2.x)
 	directory of Hadoop). If this file does not exist you can safely create it.
 	\begin{verbatim}
 <configuration>
@@ -2829,6 +2852,14 @@ This section will help you to set up a simple Hadoop configuration with all nece
     <value>org.xtreemfs.common.clients.hadoop.XtreemFSFileSystem</value>
     <description>The file system for xtreemfs: URIs.</description>
   </property>
+
+  <property>
+    <name>fs.AbstractFileSystem.xtreemfs.impl</name>
+    <value>org.xtreemfs.common.clients.hadoop.XtfsFileSystem</value>
+    <description>
+       The abstract file system for xtreemfs: URIs. (Hadoop 2.x only)
+    </description>
+</property>
 
   <property>
     <name>fs.default.name</name>
@@ -2867,16 +2898,19 @@ This section will help you to set up a simple Hadoop configuration with all nece
   <property>
     <name>xtreemfs.client.userid</name>
     <value>hadoopUserID</value>
-    <description>UserID to be used by Hadoop while accessing XtreemFS.</description>
+    <description>
+      UserID to be used by Hadoop while accessing XtreemFS.
+    </description>
   </property>
 
   <property>
     <name>xtreemfs.client.groupid</name>
     <value>hadoopGroupID</value>
-    <description>GroupID to be used by Hadoop while accessing XtreemFS.</description>
+    <description>
+      GroupID to be used by Hadoop while accessing XtreemFS.
+    </description>
   </property>
 	\end{verbatim}
-	\newpage
 	Hint: If you want to use the read-/write buffer in the XtreemFSHadoopClient, you have to enable the buffers and specify  
 	the buffer sizes with the following additional properties:
 	\begin{verbatim}
@@ -2914,23 +2948,41 @@ This section will help you to set up a simple Hadoop configuration with all nece
 	\end{verbatim}	
 	\end{enumerate}
 
-\item To provide the minimum JobTracker configuration for Hadoop you also have to add the following property to the 
+\item To provide the minimum JobTracker configuration for Hadoop 1.x you also have to add the following property to the 
 	\textit{conf/mapred-site.xml}:
 	
 	\begin{verbatim}
-<configuration>
-
   <property>
     <name>mapred.job.tracker</name>
     <value>localhost:9001</value>
     <description>Listening address for the JobTracker.</description>
   </property>
-
-</configuration>
 	\end{verbatim}
 	This specifies the address where the JobTracker will be running at.
 
-\item Finally you are now able to start the JobTracker and the TaskTracker by running '\textit{bin/start-mapred.sh}' from within the Hadoop root-directory.
+For Hadoop 2.x you have to add the following property to the \textit{etc/hadoop/mapred-site.xml}:
+
+	\begin{verbatim}
+  <property>
+    <name>mapreduce.framework.name</name>
+    <value>yarn</value>
+  </property>	
+	\end{verbatim}
+	
+    and the following properties to \textit{etc/hadoop/yarn-site.xml}:
+
+   \begin{verbatim}
+  <property>
+    <name>yarn.nodemanager.aux-services</name>
+    <value>mapreduce_shuffle</value>
+  </property>
+
+  <property>
+    <name>yarn.nodemanager.aux-services.mapreduce_shuffle.class</name>
+    <value>org.apache.hadoop.mapred.ShuffleHandler</value>
+  </property>
+   \end{verbatim}
+\item Finally you are now able to start the JobTracker and the TaskTracker by running '\textit{bin/start-mapred.sh}' (Hadoop 1.x) or the ResourceManager and Nodemanager by running '\textit{sbin/start-yarn.sh} (Hadoop 2.x) from within the Hadoop root-directory.
 
 \end{enumerate}
 Congratulations! You successfully finished the quick start guide of the XtreemFS-Hadoop integration and are now able to use your Hadoop applications like as is well known or go on with the tutorials available on \href{http://hadoop.apache.org}{hadoop.apache.org}.
