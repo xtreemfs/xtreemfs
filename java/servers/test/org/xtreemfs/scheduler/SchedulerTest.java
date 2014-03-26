@@ -217,6 +217,23 @@ public class SchedulerTest {
         assertTrue(initialRandTp >= newRandomTP);
         assertTrue(initialSeqTp > newSeqTP);
 
+        // schedule reservation requiring all available resources to verify that reported resources
+        // are actually available
+        resBuilder = Scheduler.reservation.newBuilder();
+        resBuilder.setCapacity(newCapacity);
+        resBuilder.setRandomThroughput(randomTP);
+        resBuilder.setStreamingThroughput(newSeqTP);
+        resBuilder.setType(Scheduler.reservationType.STREAMING_RESERVATION);
+        volBuilder = Scheduler.volumeIdentifier
+                .newBuilder();
+        volBuilder.setUuid(uuid + "-1");
+        volume = volBuilder.build();
+        resResponse = client.scheduleReservation(
+                null, RPCAuthentication.authNone,
+                RPCAuthentication.userService, res);
+        assertTrue(resResponse.get().getOsdCount() > 0);
+
+        resResponse.freeBuffers();
         newResponse.freeBuffers();
     }
 }

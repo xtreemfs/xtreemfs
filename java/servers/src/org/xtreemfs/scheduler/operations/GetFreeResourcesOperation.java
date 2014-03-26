@@ -15,8 +15,11 @@ import org.xtreemfs.pbrpc.generatedinterfaces.SchedulerServiceConstants;
 import org.xtreemfs.scheduler.SchedulerRequest;
 import org.xtreemfs.scheduler.SchedulerRequestDispatcher;
 import org.xtreemfs.scheduler.data.OSDDescription;
-import org.xtreemfs.scheduler.data.Reservation;
 import org.xtreemfs.scheduler.data.store.ReservationStore;
+
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * @author Christoph Kleineweber <kleineweber@zib.de>
@@ -34,38 +37,76 @@ public class GetFreeResourcesOperation extends SchedulerOperation {
     @Override
     public void startRequest(SchedulerRequest rq) {
         Scheduler.freeResourcesResponse.Builder resultBuilder = Scheduler.freeResourcesResponse.newBuilder();
-        ReservationStore reservations = master.getStore();
+        List<OSDDescription> osds = master.getOsds();
 
         double freeStreamingCapacity = 0.0;
         double freeRandomCapacity = 0.0;
-
         double freeIOPS = 0.0;
         double freeSeq = 0.0;
 
-        for(OSDDescription osd: master.getOsds()) {
-            if(osd.getUsage() == OSDDescription.OSDUsage.STREAMING ||
-                    osd.getUsage() == OSDDescription.OSDUsage.UNUSED ||
-                    osd.getUsage() == OSDDescription.OSDUsage.ALL) {
-                freeSeq += osd.getCapabilities().getStreamingPerformance().get(osd.getReservations().size() + 1);
-                freeStreamingCapacity += osd.getCapabilities().getCapacity();
+        // Get sequential throughput and capacity
+        Collections.sort(osds, new Comparator<OSDDescription>() {
+            @Override
+            public int compare(OSDDescription o1, OSDDescription o2) {
+                if(getFreeSeqTp(o1) > getFreeSeqTp(o2))
+                    return -1;
+                else if(getFreeSeqTp(o1) < getFreeSeqTp(o2))
+                    return 1;
+                else
+                    return 0;
+            }
+        });
+
+        for(int i = 0; i < osds.size(); i++) {
+            OSDDescription o = osds.get(i);
+            double minCapacity = getFreeSeqCapacity(o);
+            int num = 0;
+
+            for(int j = 0; j < osds.size(); j++) {
+                if(getFreeSeqTp(osds.get(j)) >= getFreeSeqTp(osds.get(i))) {
+                    num++;
+                    minCapacity = Math.min(getFreeSeqCapacity(osds.get(i)), getFreeSeqCapacity(osds.get(j)));
+                }
             }
 
-            if(osd.getUsage() == OSDDescription.OSDUsage.RANDOM_IO ||
-                    osd.getUsage() == OSDDescription.OSDUsage.UNUSED ||
-                    osd.getUsage() == OSDDescription.OSDUsage.ALL) {
-                freeIOPS += osd.getCapabilities().getIops();
-                freeRandomCapacity += osd.getCapabilities().getCapacity();
+            if(getFreeSeqTp(osds.get(i)) > freeSeq) {
+                freeSeq = getFreeSeqTp(osds.get(i)) * num;
+                freeStreamingCapacity = minCapacity * num;
+            } else if(getFreeSeqTp(osds.get(i)) == freeSeq && freeStreamingCapacity < minCapacity * num) {
+                freeStreamingCapacity = minCapacity * num;
             }
         }
 
-        for(Reservation r: reservations.getReservations()) {
-            if(r.getType() == Reservation.ReservationType.STREAMING_RESERVATION) {
-                freeSeq -= r.getStreamingThroughput();
-                freeStreamingCapacity -= r.getCapacity();
+        // Get random throughput and capacity
+        Collections.sort(osds, new Comparator<OSDDescription>() {
+            @Override
+            public int compare(OSDDescription o1, OSDDescription o2) {
+                if(getFreeIOPS(o1) > getFreeIOPS(o2))
+                    return -1;
+                else if(getFreeIOPS(o1) < getFreeIOPS(o2))
+                    return 1;
+                else
+                    return 0;
             }
-            if(r.getType() == Reservation.ReservationType.RANDOM_IO_RESERVATION) {
-                freeIOPS -= r.getRamdomThroughput();
-                freeRandomCapacity -= r.getCapacity();
+        });
+
+        for(int i = 0; i < osds.size(); i++) {
+            OSDDescription o = osds.get(i);
+            double minCapacity = getFreeRandomCapacity(o);
+            int num = 0;
+
+            for(int j = 0; j < osds.size(); j++) {
+                if(getFreeIOPS(osds.get(j)) >= getFreeIOPS(osds.get(i))) {
+                    num++;
+                    minCapacity = Math.min(getFreeRandomCapacity(osds.get(i)), getFreeRandomCapacity(osds.get(j)));
+                }
+            }
+
+            if(getFreeIOPS(osds.get(i)) > freeIOPS) {
+                freeIOPS = getFreeIOPS(osds.get(i)) * num;
+                freeRandomCapacity = minCapacity * num;
+            } else if(getFreeIOPS(osds.get(i)) == freeIOPS && freeRandomCapacity < minCapacity * num) {
+                freeRandomCapacity = minCapacity * num;
             }
         }
 
@@ -89,5 +130,45 @@ public class GetFreeResourcesOperation extends SchedulerOperation {
     @Override
     void requestFinished(Object result, SchedulerRequest rq) {
         rq.sendSuccess((Scheduler.freeResourcesResponse) result);
+    }
+
+    private double getFreeSeqTp(OSDDescription osd) {
+        if(osd.getUsage() == OSDDescription.OSDUsage.STREAMING ||
+                osd.getUsage() == OSDDescription.OSDUsage.UNUSED ||
+                osd.getUsage() == OSDDescription.OSDUsage.ALL) {
+            return osd.getFreeResources().getSeqTP();
+        } else {
+            return 0.0;
+        }
+    }
+
+    private double getFreeSeqCapacity(OSDDescription osd) {
+        if(osd.getUsage() == OSDDescription.OSDUsage.STREAMING ||
+                osd.getUsage() == OSDDescription.OSDUsage.UNUSED ||
+                osd.getUsage() == OSDDescription.OSDUsage.ALL) {
+            return osd.getFreeResources().getCapacity();
+        } else {
+            return 0.0;
+        }
+    }
+
+    private double getFreeIOPS(OSDDescription osd) {
+        if(osd.getUsage() == OSDDescription.OSDUsage.RANDOM_IO ||
+                osd.getUsage() == OSDDescription.OSDUsage.UNUSED ||
+                osd.getUsage() == OSDDescription.OSDUsage.ALL) {
+            return osd.getFreeResources().getIops();
+        } else {
+            return 0.0;
+        }
+    }
+
+    private double getFreeRandomCapacity(OSDDescription osd) {
+        if(osd.getUsage() == OSDDescription.OSDUsage.RANDOM_IO ||
+                osd.getUsage() == OSDDescription.OSDUsage.UNUSED ||
+                osd.getUsage() == OSDDescription.OSDUsage.ALL) {
+            return osd.getFreeResources().getCapacity();
+        } else {
+            return 0.0;
+        }
     }
 }
