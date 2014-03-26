@@ -20,7 +20,7 @@ package org.xtreemfs.foundation;
  */
 public class VersionManagement {
     
-    public static final String RELEASE_VERSION   = "1.4.0-trunk";
+    public static final String RELEASE_VERSION   = "1.5.0-master";
     
     private static final long  mrcDataVersion    = 10;
     
