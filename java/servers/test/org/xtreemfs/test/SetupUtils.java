@@ -367,6 +367,12 @@ public class SetupUtils {
         props.setProperty("listen.port", new Integer(32842 + PORT_RANGE_OFFSET).toString());
         props.setProperty("remote_time_sync", "60000");
         props.setProperty("local_clock_renewal", "0");
+        props.setProperty("basefilesize_in_bytes", "10485760"); // 10 MiB
+        props.setProperty("benchmark_sequential_size", "1048576"); // 1 MiB
+        props.setProperty("benchmark_random_size", "262144"); // 256 KiB
+        props.setProperty("benchmark_threads", "3");
+        props.setProperty("benchmark_repetitions", "2");
+        props.setProperty("benchmark_retries", "3");
         
         SchedulerConfig config = new SchedulerConfig(props);
         config.setDefaults();
