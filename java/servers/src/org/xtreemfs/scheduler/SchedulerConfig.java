@@ -21,6 +21,11 @@ public class SchedulerConfig extends ServiceConfig{
             Parameter.OSD_AUTODISCOVER,
             Parameter.OSD_CAPABILITIES_FILE,
             /* Benchmark */
+            Parameter.BENCHMARK_SEQUENTIAL_SIZE,
+            Parameter.BENCHMARK_RANDOM_SIZE,
+            Parameter.BENCHMARK_THREADS,
+            Parameter.BENCHMARK_REPETITIONS,
+            Parameter.BENCHMARK_RETRIES,
             Parameter.BASEFILE_SIZE_IN_BYTES
 	};
 	
@@ -58,4 +63,10 @@ public class SchedulerConfig extends ServiceConfig{
     public int getRemoteTimeSync() {
         return (Integer) parameter.get(Parameter.REMOTE_TIME_SYNC);
     }
+
+    public long getBenchmarkSequentialSizeInBytes() { return (Long) parameter.get(Parameter.BENCHMARK_SEQUENTIAL_SIZE); };
+    public long getBenchmarkRandomSizeInBytes() { return (Long) parameter.get(Parameter.BENCHMARK_RANDOM_SIZE); };
+    public int getBenchmarkThreads() { return (Integer) parameter.get(Parameter.BENCHMARK_THREADS); };
+    public int getBenchmarkRepetitions() { return (Integer) parameter.get(Parameter.BENCHMARK_REPETITIONS); };
+    public int  getBenchmarkRetries() { return (Integer) parameter.get(Parameter.BENCHMARK_RETRIES); };
 }
