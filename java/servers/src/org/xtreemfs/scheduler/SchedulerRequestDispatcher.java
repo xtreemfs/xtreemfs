@@ -19,7 +19,6 @@ import org.xtreemfs.babudb.api.database.Database;
 import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.common.KeyValuePairs;
-import org.xtreemfs.common.benchmark.BenchmarkUtils;
 import org.xtreemfs.common.config.PolicyContainer;
 import org.xtreemfs.common.config.ServiceConfig;
 import org.xtreemfs.dir.DIRClient;
@@ -312,8 +311,9 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
             if (!osdFound) {
 
                 /* Benchmark Args */
-                BenchmarkArgs benchmarkArgs = new BenchmarkArgsImpl(100L * BenchmarkUtils.MiB_IN_BYTES,
-                        10L * BenchmarkUtils.MiB_IN_BYTES, 3, 1, osd.getUuid(), 3, config);
+                BenchmarkArgs benchmarkArgs = new BenchmarkArgsImpl(config.getBenchmarkSequentialSizeInBytes(),
+                        config.getBenchmarkRandomSizeInBytes(), config.getBenchmarkThreads(),
+                        config.getBenchmarkRepetitions(), osd.getUuid(), config.getBenchmarkRetries(), config);
 
                 /* Callback */
                 BenchmarkCompleteCallback cb = new BenchmarkCompleteCallback() {
