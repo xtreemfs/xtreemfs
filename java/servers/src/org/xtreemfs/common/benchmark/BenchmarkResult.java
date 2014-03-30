@@ -98,7 +98,7 @@ public class BenchmarkResult implements Comparable<BenchmarkResult> {
      * @return the speed of the benchmark in MiB/Sec
      */
     public double getSpeedInMiBPerSec() {
-        return round((byteCount / BenchmarkUtils.MiB_IN_BYTES) / timeInSec, 2);
+        return round(((double) byteCount / BenchmarkUtils.MiB_IN_BYTES) / timeInSec, 2);
     }
 
     /**
