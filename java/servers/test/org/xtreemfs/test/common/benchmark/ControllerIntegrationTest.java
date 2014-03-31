@@ -1,8 +1,7 @@
 package org.xtreemfs.test.common.benchmark;
 
+import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.xtreemfs.common.benchmark.BenchmarkConfig.ConfigBuilder;
 import static org.xtreemfs.common.benchmark.BenchmarkUtils.*;
 import static org.xtreemfs.foundation.pbrpc.client.RPCAuthentication.authNone;
@@ -88,7 +87,7 @@ public class ControllerIntegrationTest {
         client.start();
 
         /* check that all volumes have been deleted properly by previous tests (prevent error masking) */
-        assertNoVolumes("TestVolA", "TestVolB", "TestVolC");
+        assertNoVolumes("BenchVolA", "BenchVolB", "BenchVolC");
     }
 
     @After
@@ -119,12 +118,12 @@ public class ControllerIntegrationTest {
     public void testSetupVolumes() throws Exception {
         controller = new Controller(configBuilder.build());
 
-        controller.setupVolumes("TestVolA", "TestVolB", "TestVolC");
+        controller.setupVolumes("BenchVolA", "BenchVolB", "BenchVolC");
 
         List volumes = Arrays.asList(client.listVolumeNames());
-        assertTrue(volumes.contains("TestVolA"));
-        assertTrue(volumes.contains("TestVolB"));
-        assertTrue(volumes.contains("TestVolC"));
+        assertTrue(volumes.contains("BenchVolA"));
+        assertTrue(volumes.contains("BenchVolB"));
+        assertTrue(volumes.contains("BenchVolC"));
 
         controller.teardown();
         volumes = Arrays.asList(client.listVolumeNames());
@@ -134,7 +133,7 @@ public class ControllerIntegrationTest {
     @Test
     public void testSequentialBenchmark() throws Exception {
         controller = new Controller(configBuilder.build());
-        controller.setupVolumes("TestVolA", "TestVolB");
+        controller.setupVolumes("BenchVolA", "BenchVolB");
         List<BenchmarkResult> results = controller.startSequentialWriteBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("SEQ_WRITE", 2, 10L * MiB_IN_BYTES, 2, results);
         results = controller.startSequentialReadBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, 2);
@@ -147,24 +146,24 @@ public class ControllerIntegrationTest {
         configBuilder.setNoCleanup();
         BenchmarkConfig config = configBuilder.build();
         controller = new Controller(config);
-        controller.setupVolumes("TestVolA", "TestVolB");
+        controller.setupVolumes("BenchVolA", "BenchVolB");
         List<BenchmarkResult> results = controller.startSequentialWriteBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("SEQ_WRITE", 2, 10L * MiB_IN_BYTES, 2, results);
         controller.teardown();
 
         controller = new Controller(config);
-        controller.setupVolumes("TestVolA", "TestVolB");
+        controller.setupVolumes("BenchVolA", "BenchVolB");
         results = controller.startSequentialReadBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("SEQ_READ", 2, 10L * MiB_IN_BYTES, 2, results);
         controller.teardown();
-        deleteVolumes("TestVolA", "TestVolB");
+        deleteVolumes("BenchVolA", "BenchVolB");
     }
 
     @Test
     public void testRandomBenchmark() throws Exception {
         configBuilder.setBasefileSizeInBytes(20L * MiB_IN_BYTES);
         controller = new Controller(configBuilder.build());
-        controller.setupVolumes("TestVolA", "TestVolB");
+        controller.setupVolumes("BenchVolA", "BenchVolB");
         List<BenchmarkResult> results = controller.startRandomWriteBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("RAND_WRITE", 2, 1L * MiB_IN_BYTES, 2, results);
         results = controller.startRandomReadBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
@@ -178,23 +177,23 @@ public class ControllerIntegrationTest {
         BenchmarkConfig config = configBuilder.build();
 
         controller = new Controller(config);
-        controller.setupVolumes("TestVolA", "TestVolB");
+        controller.setupVolumes("BenchVolA", "BenchVolB");
         List<BenchmarkResult> results = controller.startRandomWriteBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("RAND_WRITE", 2, 1L * MiB_IN_BYTES, 2, results);
         controller.teardown();
 
         controller = new Controller(config);
-        controller.setupVolumes("TestVolA", "TestVolB");
+        controller.setupVolumes("BenchVolA", "BenchVolB");
         results = controller.startRandomReadBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("RAND_READ", 2, 1L * MiB_IN_BYTES, 2, results);
         controller.teardown();
-        deleteVolumes("TestVolA", "TestVolB");
+        deleteVolumes("BenchVolA", "BenchVolB");
     }
 
     @Test
     public void testFilebasedBenchmark() throws Exception {
         controller = new Controller(configBuilder.build());
-        controller.setupVolumes("TestVolA", "TestVolB");
+        controller.setupVolumes("BenchVolA", "BenchVolB");
         List<BenchmarkResult> results = controller.startFilebasedWriteBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("FILES_WRITE", 2, 1L * MiB_IN_BYTES, 2, results);
         results = controller.startFilebasedReadBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
@@ -208,17 +207,17 @@ public class ControllerIntegrationTest {
         BenchmarkConfig config = configBuilder.build();
 
         controller = new Controller(config);
-        controller.setupVolumes("TestVolA", "TestVolB");
+        controller.setupVolumes("BenchVolA", "BenchVolB");
         List<BenchmarkResult> results = controller.startFilebasedWriteBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("FILES_WRITE", 2, 1L * MiB_IN_BYTES, 2, results);
         controller.teardown();
 
         controller = new Controller(config);
-        controller.setupVolumes("TestVolA", "TestVolB");
+        controller.setupVolumes("BenchVolA", "BenchVolB");
         results = controller.startFilebasedReadBenchmark(1L*BenchmarkUtils.MiB_IN_BYTES, 2);
         compareResults("FILES_READ", 2, 1L * MiB_IN_BYTES, 2, results);
         controller.teardown();
-        deleteVolumes("TestVolA", "TestVolB");
+        deleteVolumes("BenchVolA", "BenchVolB");
     }
 
     @Test
@@ -226,7 +225,7 @@ public class ControllerIntegrationTest {
         configBuilder.setUserName("test");
         Volume volume = performBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, configBuilder, BenchmarkType.SEQ_WRITE);
         assertEquals("test", volume.getAttr(userCredentials, "benchmarks/sequentialBenchmark/benchFile0").getUserId());
-        deleteVolumes("TestVolA");
+        deleteVolumes("BenchVolA");
     }
 
     @Test
@@ -234,7 +233,7 @@ public class ControllerIntegrationTest {
         configBuilder.setGroup("test");
         Volume volume = performBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, configBuilder, BenchmarkType.SEQ_WRITE);
         assertEquals("test", volume.getAttr(userCredentials, "benchmarks/sequentialBenchmark/benchFile0").getGroupId());
-        deleteVolumes("TestVolA");
+        deleteVolumes("BenchVolA");
     }
 
     @Test
@@ -242,7 +241,7 @@ public class ControllerIntegrationTest {
         long seqSize = 2L * MiB_IN_BYTES;
         Volume volume = performBenchmark(seqSize, configBuilder, BenchmarkType.SEQ_WRITE);
         assertEquals(seqSize, volume.getAttr(userCredentials, "benchmarks/sequentialBenchmark/benchFile0").getSize());
-        deleteVolumes("TestVolA");
+        deleteVolumes("BenchVolA");
     }
 
     @Test
@@ -252,7 +251,7 @@ public class ControllerIntegrationTest {
         configBuilder.setBasefileSizeInBytes(basefileSize);
         Volume volume = performBenchmark(randSize, configBuilder, BenchmarkType.RAND_WRITE);
         assertEquals(basefileSize, volume.getAttr(userCredentials, "benchmarks/basefile").getSize());
-        deleteVolumes("TestVolA");
+        deleteVolumes("BenchVolA");
     }
 
     @Test
@@ -265,7 +264,7 @@ public class ControllerIntegrationTest {
             long fileSizeActual = volume.getAttr(userCredentials, "benchmarks/randomBenchmark/benchFile" + i).getSize();
             assertEquals(fileSize, fileSizeActual);
         }
-        deleteVolumes("TestVolA");
+        deleteVolumes("BenchVolA");
     }
 
     @Test
@@ -277,7 +276,7 @@ public class ControllerIntegrationTest {
         String sp_values = volume.getXAttr(userCredentials, "", "xtreemfs.default_sp");
         assertEquals("size:64", sp_values.split(",")[2].replace("\"", "").replace("}", ""));
 
-        deleteVolumes("TestVolA");
+        deleteVolumes("BenchVolA");
     }
 
     @Test
@@ -288,7 +287,7 @@ public class ControllerIntegrationTest {
 
         assertEquals("width:2", sp_values.split(",")[1].replace("\"", ""));
 
-        deleteVolumes("TestVolA");
+        deleteVolumes("BenchVolA");
     }
 
     /*
@@ -298,7 +297,7 @@ public class ControllerIntegrationTest {
     public void testConfigStripeSizeWidthNotSet() throws Exception {
 
         List<GlobalTypes.KeyValuePair> volumeAttributes = new ArrayList<GlobalTypes.KeyValuePair>();
-        client.createVolume(authNone, userCredentials, "TestVolA", 511, "test", "test", GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
+        client.createVolume(authNone, userCredentials, "BenchVolA", 511, "test", "test", GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
                 GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, 1024, 2, volumeAttributes);
 
         Volume volume = performBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, configBuilder, BenchmarkType.SEQ_WRITE);
@@ -307,7 +306,7 @@ public class ControllerIntegrationTest {
         assertEquals("width:2", sp_values.split(",")[1].replace("\"", ""));
         assertEquals("size:1024", sp_values.split(",")[2].replace("\"", "").replace("}", ""));
 
-        deleteVolumes("TestVolA");
+        deleteVolumes("BenchVolA");
     }
 
     /*
@@ -316,7 +315,7 @@ public class ControllerIntegrationTest {
     @Test
     public void testConfigStripeSizeWidthSet() throws Exception {
         List<GlobalTypes.KeyValuePair> volumeAttributes = new ArrayList<GlobalTypes.KeyValuePair>();
-        client.createVolume(authNone, userCredentials, "TestVolA", 511, "test", "test", GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
+        client.createVolume(authNone, userCredentials, "BenchVolA", 511, "test", "test", GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
                 GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, 128, 1, volumeAttributes);
 
         configBuilder.setStripeSizeInBytes(256*1024).setStripeWidth(2);
@@ -326,7 +325,7 @@ public class ControllerIntegrationTest {
         assertEquals("width:2", sp_values.split(",")[1].replace("\"", ""));
         assertEquals("size:256", sp_values.split(",")[2].replace("\"", "").replace("}", ""));
 
-        deleteVolumes("TestVolA");
+        deleteVolumes("BenchVolA");
     }
 
     @Test
@@ -334,7 +333,7 @@ public class ControllerIntegrationTest {
         configBuilder.setOsdSelectionPolicies("1001,3003");
         Volume volumeA = performBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, configBuilder, BenchmarkType.SEQ_WRITE);
         assertEquals("1001,3003", volumeA.getOSDSelectionPolicy(userCredentials));
-        deleteVolumes("TestVolA");
+        deleteVolumes("BenchVolA");
     }
 
 
@@ -345,16 +344,16 @@ public class ControllerIntegrationTest {
     public void testConfigOSDSelectionPolicyNotSet() throws Exception {
 
         List<GlobalTypes.KeyValuePair> volumeAttributes = new ArrayList<GlobalTypes.KeyValuePair>();
-        client.createVolume(authNone, userCredentials, "TestVolA", 511, "test", "test", GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
+        client.createVolume(authNone, userCredentials, "BenchVolA", 511, "test", "test", GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
                 GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, 128, 1, volumeAttributes);
-        Volume volume = client.openVolume("TestVolA", null, new Options());
+        Volume volume = client.openVolume("BenchVolA", null, new Options());
         volume.setOSDSelectionPolicy(userCredentials, "1001,3003");
         volume.close();
 
         configBuilder.setUserName("test").setGroup("test");
         Volume volumeA = performBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, configBuilder, BenchmarkType.SEQ_WRITE);
         assertEquals("1001,3003", volumeA.getOSDSelectionPolicy(userCredentials));
-        deleteVolumes("TestVolA");
+        deleteVolumes("BenchVolA");
     }
 
     @Test
@@ -369,10 +368,10 @@ public class ControllerIntegrationTest {
         configBuilder.setDirAddress(dirAddress);
         configBuilder.setSelectOsdsByUuid("UUID:localhost:42641").setNoCleanup();
         controller = new Controller(configBuilder.build());
-        controller.setupVolumes("TestVolB");
+        controller.setupVolumes("BenchVolB");
         controller.startSequentialWriteBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, 1);
         controller.teardown();
-        Volume volumeB = client.openVolume("TestVolB", null, new Options());
+        Volume volumeB = client.openVolume("BenchVolB", null, new Options());
 
         /* assert, that the benchmark files were created on the correct osd */
         assertEquals("1002", volumeA.getOSDSelectionPolicy(userCredentials));
@@ -381,7 +380,7 @@ public class ControllerIntegrationTest {
         assertEquals("1002", volumeB.getOSDSelectionPolicy(userCredentials));
         assertEquals("UUID:localhost:42641",
                 volumeB.getSuitableOSDs(userCredentials, "benchmarks/sequentialBenchmark/benchFile0", 1).get(0));
-        deleteVolumes("TestVolA", "TestVolB");
+        deleteVolumes("BenchVolA", "BenchVolB");
     }
 
     @Test
@@ -394,7 +393,7 @@ public class ControllerIntegrationTest {
         assertEquals("replication-factor:3", default_rp.split(",")[0].replace("\"", "").replace("{", ""));
         assertEquals("update-policy:WqRq", default_rp.split(",")[2].replace("\"", "").replace("}", ""));
 
-        deleteVolumes("TestVolA");
+        deleteVolumes("BenchVolA");
     }
 
     /*
@@ -404,10 +403,10 @@ public class ControllerIntegrationTest {
     public void testConfigReplicationPolicyNotSet() throws Exception {
 
         List<GlobalTypes.KeyValuePair> volumeAttributes = new ArrayList<GlobalTypes.KeyValuePair>();
-        client.createVolume(authNone, userCredentials, "TestVolA", 511, "test", "test",
+        client.createVolume(authNone, userCredentials, "BenchVolA", 511, "test", "test",
                 GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
                 GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, 128, 1, volumeAttributes);
-        Volume volume = client.openVolume("TestVolA", null, new Options());
+        Volume volume = client.openVolume("BenchVolA", null, new Options());
         volume.setDefaultReplicationPolicy(userCredentials, "/", "WqRq", 3, 0);
         volume.close();
 
@@ -417,7 +416,7 @@ public class ControllerIntegrationTest {
         String default_rp = volumeA.getXAttr(userCredentials, "", "xtreemfs.default_rp");
         assertEquals("replication-factor:3", default_rp.split(",")[0].replace("\"", "").replace("{", ""));
         assertEquals("update-policy:WqRq", default_rp.split(",")[2].replace("\"", "").replace("}", ""));
-        deleteVolumes("TestVolA");
+        deleteVolumes("BenchVolA");
     }
 
     /* The NoCleanup option is testet implicitly in all the above Config tests */
@@ -426,12 +425,12 @@ public class ControllerIntegrationTest {
     public void testConfigNoCleanupVolumes() throws Exception {
         configBuilder.setNoCleanupVolumes();
         controller = new Controller(configBuilder.build());
-        controller.setupVolumes("TestVolA", "TestVolB", "TestVolC");
+        controller.setupVolumes("BenchVolA", "BenchVolB", "BenchVolC");
         controller.startSequentialWriteBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, 3);
 
-        Volume volumeA = client.openVolume("TestVolA", null, new Options());
-        Volume volumeB = client.openVolume("TestVolB", null, new Options());
-        Volume volumeC = client.openVolume("TestVolC", null, new Options());
+        Volume volumeA = client.openVolume("BenchVolA", null, new Options());
+        Volume volumeB = client.openVolume("BenchVolB", null, new Options());
+        Volume volumeC = client.openVolume("BenchVolC", null, new Options());
 
         /* the benchFiles are still there after the benchmark */
         long seqSize = 10L * BenchmarkUtils.MiB_IN_BYTES;
@@ -445,13 +444,13 @@ public class ControllerIntegrationTest {
          * after the teardown (which includes the deletion of the benchmark volumes and files), only the volumes are
          * present
          */
-        assertEquals(0, Integer.valueOf(volumeA.getXAttr(userCredentials, "", "xtreemfs.num_files")));
-        assertEquals(0, Integer.valueOf(volumeB.getXAttr(userCredentials, "", "xtreemfs.num_files")));
-        assertEquals(0, Integer.valueOf(volumeC.getXAttr(userCredentials, "", "xtreemfs.num_files")));
-        assertEquals(0, Integer.valueOf(volumeA.getXAttr(userCredentials, "", "xtreemfs.used_space")));
-        assertEquals(0, Integer.valueOf(volumeB.getXAttr(userCredentials, "", "xtreemfs.used_space")));
-        assertEquals(0, Integer.valueOf(volumeC.getXAttr(userCredentials, "", "xtreemfs.used_space")));
-        deleteVolumes("TestVolA", "TestVolB", "TestVolC");
+        assertSame(0, Integer.valueOf(volumeA.getXAttr(userCredentials, "", "xtreemfs.num_files")));
+        assertSame(0, Integer.valueOf(volumeB.getXAttr(userCredentials, "", "xtreemfs.num_files")));
+        assertSame(0, Integer.valueOf(volumeC.getXAttr(userCredentials, "", "xtreemfs.num_files")));
+        assertSame(0, Integer.valueOf(volumeA.getXAttr(userCredentials, "", "xtreemfs.used_space")));
+        assertSame(0, Integer.valueOf(volumeB.getXAttr(userCredentials, "", "xtreemfs.used_space")));
+        assertSame(0, Integer.valueOf(volumeC.getXAttr(userCredentials, "", "xtreemfs.used_space")));
+        deleteVolumes("BenchVolA", "BenchVolB", "BenchVolC");
     }
 
     @Test
@@ -461,19 +460,19 @@ public class ControllerIntegrationTest {
         configBuilder.setNoCleanupBasefile().setBasefileSizeInBytes(basefileSize)
                 .setNoCleanupVolumes();
         controller = new Controller(configBuilder.build());
-        controller.setupVolumes("TestVolA");
+        controller.setupVolumes("BenchVolA");
         controller.startRandomWriteBenchmark(randSize, 1);
 
         /* the filebased benchmark is used to show, that really files are (created and) deleted, except the basefile */
         controller.startFilebasedWriteBenchmark(randSize, 1);
 
-        Volume volume = client.openVolume("TestVolA", null, new Options());
+        Volume volume = client.openVolume("BenchVolA", null, new Options());
 
         /* number of files from filebased benchmark + basefile */
         int numberOfFiles = (int) (randSize / (4 * BenchmarkUtils.KiB_IN_BYTES)) + 1;
-        assertEquals(numberOfFiles, Integer.valueOf(volume.getXAttr(userCredentials, "", "xtreemfs.num_files")));
+        assertEquals(numberOfFiles, (int) Integer.valueOf(volume.getXAttr(userCredentials, "", "xtreemfs.num_files")));
         assertEquals(basefileSize + randSize,
-                Integer.valueOf(volume.getXAttr(userCredentials, "", "xtreemfs.used_space")));
+                (int) Integer.valueOf(volume.getXAttr(userCredentials, "", "xtreemfs.used_space")));
 
         controller.teardown();
 
@@ -482,8 +481,8 @@ public class ControllerIntegrationTest {
          * still present
          */
         assertEquals(basefileSize, volume.getAttr(userCredentials, "benchmarks/basefile").getSize());
-        assertEquals(1, Integer.valueOf(volume.getXAttr(userCredentials, "", "xtreemfs.num_files")));
-        assertEquals(basefileSize, Integer.valueOf(volume.getXAttr(userCredentials, "", "xtreemfs.used_space")));
+        assertSame(1, Integer.valueOf(volume.getXAttr(userCredentials, "", "xtreemfs.num_files")));
+        assertEquals(basefileSize, (int) Integer.valueOf(volume.getXAttr(userCredentials, "", "xtreemfs.used_space")));
     }
 
     private void assertNoVolumes(String... volumes) throws Exception {
@@ -513,7 +512,7 @@ public class ControllerIntegrationTest {
     private Volume performBenchmark(long size, ConfigBuilder configBuilder, BenchmarkType type) throws Exception {
         configBuilder.setNoCleanup();
         controller = new Controller(configBuilder.build());
-        controller.setupVolumes("TestVolA");
+        controller.setupVolumes("BenchVolA");
         switch (type) {
         case SEQ_WRITE:
             controller.startSequentialWriteBenchmark(size, 1);
@@ -527,7 +526,7 @@ public class ControllerIntegrationTest {
         }
         controller.teardown();
 
-        Volume volume = client.openVolume("TestVolA", null, new Options());
+        Volume volume = client.openVolume("BenchVolA", null, new Options());
         return volume;
     }
 
