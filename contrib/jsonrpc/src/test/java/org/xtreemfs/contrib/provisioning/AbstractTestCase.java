@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -15,6 +16,9 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.xtreemfs.contrib.provisioning.JsonRPC.METHOD;
+import org.xtreemfs.foundation.json.JSONException;
+import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.osd.OSD;
@@ -45,6 +49,8 @@ public abstract class AbstractTestCase {
   static String ownerGroup = "CN=Patrick Schaefer,OU=CSR,OU=Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB),O=GridGermany,C=DE";//"myGroup"; // TODO!!
   static String mode = "777";
 
+  static String dirAddress = "";
+  
   @BeforeClass public static void setUp() throws Exception {
     Logging.start(Logging.LEVEL_WARN, Category.all);
     requestId = 0;
@@ -75,7 +81,8 @@ public abstract class AbstractTestCase {
               TestEnvironment.Services.SCHEDULER_SERVICE});
 
       testEnv.start();
-
+      dirAddress = testEnv.getDIRAddress().getHostName();
+      
       osds = new OSD[NUMBER_OF_OSDS];
       for (int i = 0; i < osds.length; i++) {
         osdConfigs[i].getCustomParams().put(OSDConfig.OSD_CUSTOM_PROPERTY_PREFIX+"country", "DE");
@@ -133,8 +140,9 @@ public abstract class AbstractTestCase {
 
         List<Map<String, Object>> volumes = (List<Map<String, Object>>) res.getResult();
         for (Map<String, Object> v : volumes) {
-          String volume = (String) v.get("name");
-          res = callJSONRPC(METHOD.releaseReservation, volume);
+          HashMap<String, Object> parametersMap = new HashMap<String, Object>();
+          parametersMap.put("InfReservID", (String) v.get("InfReservID"));
+          res = callJSONRPC(METHOD.releaseReservation, parametersMap);
           checkSuccess(res, false);
         }
       } catch (Exception e) {
@@ -143,6 +151,27 @@ public abstract class AbstractTestCase {
     }
   }
 
+  @SuppressWarnings("unchecked")
+  protected static JSONRPC2Response callJSONRPC(METHOD method, String jsonRPC) throws JSONRPC2ParseException, JSONException {
+    try {
+      Map<String, Object> parameters = (Map<String, Object>) JSONParser.parseJSON(new JSONString(jsonRPC));
+      
+      JSONRPC2Request req = new JSONRPC2Request(
+          method.toString(),
+          parameters,
+          "id-"+(++requestId));
+      
+      System.out.println("\tRequest: \n\t" + jsonRPC);
+      return JSONRPC2Response.parse(xtreemfsRPC.executeMethod(req.toString()), true, true);
+    } catch (JSONRPC2ParseException e) { 
+      e.printStackTrace();
+      throw e;
+    } catch (JSONException e) { 
+      e.printStackTrace();
+      throw e;
+    }
+  }
+  
   /**
    * Helper method for calling JSONRPCs
    * @param method

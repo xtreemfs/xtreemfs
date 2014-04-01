@@ -1,6 +1,7 @@
 package org.xtreemfs.contrib.provisioning;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -119,17 +120,65 @@ public abstract class AbstractRequestHandler implements RequestHandler {
     return getInputParam(req, key, Boolean.class, nullAllowed, nullValue);
   }
 
-  @SuppressWarnings({ "unchecked" })
-  public <T> T getInputParam(JSONRPC2Request req, String key, final Class<T> clazz, boolean nullAllowed, T nullValue) throws AccessToNonExistantParameter, JSONRPC2Error {
-    Object value = null;
+  public Object getObjectParam(Object req, String key,
+      boolean nullAllowed) throws AccessToNonExistantParameter, JSONRPC2Error {
+    return getInputParam(req, key, Object.class, nullAllowed, "");
+  }
+  
+  @SuppressWarnings("rawtypes")
+  public Map getMapParam(Object req, String key,
+      boolean nullAllowed) throws AccessToNonExistantParameter, JSONRPC2Error {
+    return getInputParam(req, key, Map.class, nullAllowed, new LinkedHashMap());
+  }
 
+  public String getStringParam(Object req, String key, boolean nullAllowed) throws AccessToNonExistantParameter, JSONRPC2Error {
+    return getInputParam(req, key, String.class, nullAllowed, "");
+  }
+
+  public String getStringParam(Object req, String key, boolean nullAllowed, String nullValue) throws AccessToNonExistantParameter, JSONRPC2Error {
+    return getInputParam(req, key, String.class, nullAllowed, nullValue);
+  }
+
+  public Long getLongParam(Object req, String key, boolean nullAllowed, Long nullValue) throws AccessToNonExistantParameter, JSONRPC2Error {
+    return getInputParam(req, key, Long.class, nullAllowed, nullValue);
+  }
+
+  public Integer getIntParam(Object req, String key, boolean nullAllowed, Integer nullValue) throws AccessToNonExistantParameter, JSONRPC2Error {
+    return getInputParam(req, key, Long.class, nullAllowed, nullValue != null? new Long(nullValue) : null).intValue();
+  }
+
+  public Boolean getBooleanParam(Object req, String key, boolean nullAllowed, Boolean nullValue) throws AccessToNonExistantParameter, JSONRPC2Error {
+    return getInputParam(req, key, Boolean.class, nullAllowed, nullValue);
+  }
+  
+  public <T> T getInputParam(JSONRPC2Request req, String keys, final Class<T> clazz, boolean nullAllowed, T nullValue) 
+      throws AccessToNonExistantParameter, JSONRPC2Error {
     if (req.getParamsType() == JSONRPC2ParamsType.NO_PARAMS
         && !nullAllowed) {
-      throw new AccessToNonExistantParameter("Param '" + key + "' not available.");
+      throw new AccessToNonExistantParameter("Param '" + keys + "' not available.");
+    }   
+    
+    return getInputParam(req.getParams(), keys, clazz, nullAllowed, nullValue);
+  }
+  
+  @SuppressWarnings({ "unchecked" })
+  public <T> T getInputParam(Object currentParams, String keys, final Class<T> clazz, boolean nullAllowed, T nullValue) 
+      throws AccessToNonExistantParameter, JSONRPC2Error {
+    Object value = null;    
+    String key = keys;
+
+    // split the key and search for the corresponding attribute.
+    if (keys.contains("/")) {
+      String[] keysArray = keys.split("/");
+      for (int i = 0; i < keysArray.length-1; i++) {
+        currentParams = ((Map<String, Object>)currentParams).get(keysArray[i]);
+      }    
+      key = keysArray[keysArray.length-1];
     }
+        
     // positional parameters
-    else if (req.getParamsType() == JSONRPC2ParamsType.ARRAY) {
-      List<Object> params = (List<Object>) req.getParams();
+    if (currentParams.getClass().isArray()) {
+      List<Object> params = (List<Object>) currentParams;
 
       if (params.isEmpty() && nullAllowed) {
         return nullValue;
@@ -141,8 +190,8 @@ public abstract class AbstractRequestHandler implements RequestHandler {
       value = params.remove(0);
     }
     // parameters by name
-    else if (req.getParamsType() == JSONRPC2ParamsType.OBJECT) {
-      Map<String, Object> params = (Map<String, Object>) req.getParams();
+    else if (currentParams instanceof Map) {
+      Map<String, Object> params = (Map<String, Object>) currentParams;
       value = params.get(key);
 
       // check for null value
