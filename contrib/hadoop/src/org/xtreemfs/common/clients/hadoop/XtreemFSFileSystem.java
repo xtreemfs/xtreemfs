@@ -99,7 +99,7 @@ public class XtreemFSFileSystem extends FileSystem {
             useWriteBuffer = false;
         }
 
-        // create UserCredentials
+        // Create UserCredentials.
         if ((conf.get("xtreemfs.client.userid") != null) && (conf.get("xtreemfs.client.groupid") != null)) {
             userCredentials = UserCredentials.newBuilder().setUsername(conf.get("xtreemfs.client.userid"))
                     .addGroups(conf.get("xtreemfs.client.groupid")).build();
@@ -113,48 +113,39 @@ public class XtreemFSFileSystem extends FileSystem {
             }
         }
 
-        // create SSLOptions
+        // Create SSLOptions.
         SSLOptions sslOptions = null;
 
         if (conf.getBoolean("xtreemfs.ssl.enabled", false)) {
 
-            String serverCredentialFilePath = conf.get("xtreemfs.ssl.serverCredentialFile");
-            if (serverCredentialFilePath == null) {
+            // Get credentials from config.
+            String credentialFilePath = conf.get("xtreemfs.ssl.credentialFile");
+            if (credentialFilePath == null) {
                 throw new IOException("You have to specify a server credential file in"
                         + " core-site.xml! (xtreemfs.ssl.serverCredentialFile)");
             }
-            FileInputStream serverCredentialFile = new FileInputStream(serverCredentialFilePath);
+            FileInputStream credentialFile = new FileInputStream(credentialFilePath);
+            String credentialFilePassphrase = conf.get("xtreemfs.ssl.credentialFile.passphrase");
 
-            String serverCredentialFilePassphrase = conf.get("xtreemfs.ssl.serverCredentialFile.passphrase");
-            if (serverCredentialFilePassphrase == null) {
-                serverCredentialFile.close();
-                throw new IOException("You have to specify the passphrase for the server credential file in"
-                        + " core-site.xml! (xtreemfs.ssl.serverCredentialFile.passphrase)");
-            }
-
+            // Get trusted certificates form config.
             String trustedCertificatesFilePath = conf.get("xtreemfs.ssl.trustedCertificatesFile");
-            if (trustedCertificatesFilePath == null) {
-                serverCredentialFile.close();
-                throw new IOException("You have to specify a trusted certifcates file in"
-                        + " core-site.xml! (xtreemfs.ssl.trustedCertificatesFile)");
-            }
-            FileInputStream trustedCertificatesFile = new FileInputStream(trustedCertificatesFilePath);
-
             String trustedCertificatesFilePassphrase = conf.get("xtreemfs.ssl.trustedCertificatesFile.passphrase");
-            if (trustedCertificatesFilePassphrase == null) {
-                serverCredentialFile.close();
-                trustedCertificatesFile.close();
-                throw new IOException("You have to specify the passphrase for the trusted certifcates file in"
-                        + " core-site.xml! (xtreemfs.ssl.trustedCertificatesFile.passphrase)");
+            String trustedCertificatesFileContainer = null;
+            FileInputStream trustedCertificatesFile = null;
+            if (trustedCertificatesFilePath == null) {
+                trustedCertificatesFileContainer = "none";
+            } else {
+                trustedCertificatesFile = new FileInputStream(trustedCertificatesFilePath);
+                trustedCertificatesFileContainer = SSLOptions.JKS_CONTAINER;
             }
 
-            sslOptions = new SSLOptions(serverCredentialFile, serverCredentialFilePassphrase,
+            sslOptions = new SSLOptions(credentialFile, credentialFilePassphrase,
                     SSLOptions.PKCS12_CONTAINER, trustedCertificatesFile, trustedCertificatesFilePassphrase,
-                    SSLOptions.JKS_CONTAINER, conf.getBoolean("xtreemfs.ssl.authenticationWithoutEncryption", false),
-                    false, null);
+                    trustedCertificatesFileContainer, conf.getBoolean("xtreemfs.ssl.authenticationWithoutEncryption",
+                            false), false, null);
         }
 
-        // initialize XtreemFS Client with default Options.
+        // Initialize XtreemFS Client with default Options.
         Options xtreemfsOptions = new Options();
         xtreemfsOptions.setMetadataCacheSize(0);
         xtreemfsClient = ClientFactory.createClient(uri.getHost() + ":" + uri.getPort(), userCredentials, sslOptions,
