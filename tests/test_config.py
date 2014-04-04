@@ -244,6 +244,12 @@ Tests = [
         'VolumeConfigs': ['regular'],
         'TestSets': [ 'full' ] 
     },
+    {
+        'name': 'xtfs_benchmark',
+        'file': '14_xtfs_benchmark.sh',
+        'VolumeConfigs': [ 'regular', 'regular_two_osds', 'nomdcache', 'directio', 'striped2', 'replicated_wqrq', 'replicated_wqrq_asyncwrites', 'replicated_war1'],
+        'TestSets': [ 'full' ]
+    },
     # SYSTEM TESTS
     {
         'name': 'JUnit tests',
@@ -281,4 +287,4 @@ Tests = [
         'VolumeConfigs': [],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
     }
-]
+ ]

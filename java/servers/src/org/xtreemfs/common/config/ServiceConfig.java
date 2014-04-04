@@ -31,96 +31,117 @@ public class ServiceConfig extends Config {
     final private static Category[] debugCategoryDefault = { Category.all };
 
     public static enum Parameter {
-            /*
-             * general configuration parameter
-             */
-            DEBUG_LEVEL("debug.level", 6, Integer.class, false),
-            DEBUG_CATEGORIES("debug.categories", debugCategoryDefault, Category[].class, false),
-            DIRECTORY_SERVICE("dir_service.host", null, InetSocketAddress.class, true),
-            DIRECTORY_SERVICE0("dir_service.0.host", null, InetSocketAddress.class, false),
-            DIRECTORY_SERVICE1("dir_service.1.host", null, InetSocketAddress.class, false),
-            DIRECTORY_SERVICE2("dir_service.2.host", null, InetSocketAddress.class, false),
-            DIRECTORY_SERVICE3("dir_service.3.host", null, InetSocketAddress.class, false),
-            DIRECTORY_SERVICE4("dir_service.4.host", null, InetSocketAddress.class, false),
-            PORT("listen.port", null, Integer.class, true),
-            HTTP_PORT("http_port", null, Integer.class, true),
-            LISTEN_ADDRESS("listen.address", null, InetAddress.class, false),
-            USE_SSL("ssl.enabled", false, Boolean.class, false),
-            SERVICE_CREDS_FILE("ssl.service_creds", null, String.class, false ),
-            SERVICE_CREDS_PASSPHRASE("ssl.service_creds.pw", null, String.class, false),
-            SERVICE_CREDS_CONTAINER("ssl.service_creds.container", null, String.class, false),
-            TRUSTED_CERTS_FILE("ssl.trusted_certs", null, String.class, false),
-            TRUSTED_CERTS_CONTAINER("ssl.trusted_certs.container", null, String.class, false),
-            TRUSTED_CERTS_PASSPHRASE("ssl.trusted_certs.pw", null, String.class, false),
-            TRUST_MANAGER("ssl.trust_manager", "", String.class, false),
-            GEO_COORDINATES("geographic_coordinates", "", String.class, false ),
-            ADMIN_PASSWORD("admin_password", "", String.class, false),
-            HOSTNAME("hostname", "", String.class, false ),
-            USE_GRID_SSL_MODE("ssl.grid_ssl", false, Boolean.class, false),
-            WAIT_FOR_DIR("startup.wait_for_dir", 30, Integer.class, false),
-            POLICY_DIR("policy_dir", "/etc/xos/xtreemfs/policies/", String.class, false),
-            USE_SNMP("snmp.enabled", false, Boolean.class, false),
-            SNMP_ADDRESS("snmp.address", null, InetAddress.class, false),
-            SNMP_PORT("snmp.port", null, Integer.class, false),
-            SNMP_ACL("snmp.aclfile", null, String.class, false),
-            FAILOVER_MAX_RETRIES("failover.retries", 15, Integer.class, false),
-            FAILOVER_WAIT("failover.wait_ms", 15 * 1000, Integer.class, false),
-            MAX_CLIENT_Q("max_client_queue", 100, Integer.class, false),
-            MAX_REQUEST_QUEUE_LENGTH("max_requests_queue_length", 1000, Integer.class, false),
-            USE_MULTIHOMING("multihoming.enabled", false, Boolean.class, false),
-            USE_RENEWAL_SIGNAL("multihoming.renewal_signal", false, Boolean.class, false ),
-            
-            /*
-             * DIR specific configuration parameter
-             */
-            AUTODISCOVER_ENABLED("discover", true, Boolean.class, false),
-            MONITORING_ENABLED("monitoring.enabled", false, Boolean.class, false ),
-            ADMIN_EMAIL("monitoring.email.receiver", "", String.class, false),
-            SENDER_ADDRESS("monitoring.email.sender", "XtreemFS DIR monitoring <dir@localhost>", String.class, false),
-            MAX_WARNINGS("monitoring.max_warnings", 1, Integer.class, false),
-            SENDMAIL_BIN("monitoring.email.programm", "/usr/sbin/sendmail", String.class, false),
-            TIMEOUT_SECONDS("monitoring.service_timeout_s", 5 * 60, Integer.class, false),
-            VIVALDI_MAX_CLIENTS("vivaldi.max_clients", 32, Integer.class, false),
-            VIVALDI_CLIENT_TIMEOUT("vivaldi.client_timeout", 600000, Integer.class, false), // default: twice the recalculation interval
+        /*
+         * general configuration parameter
+         */
+        DEBUG_LEVEL("debug.level", 6, Integer.class, false),
+        DEBUG_CATEGORIES("debug.categories", debugCategoryDefault, Category[].class, false),
+        DIRECTORY_SERVICE("dir_service.host", null, InetSocketAddress.class, true),
+        DIRECTORY_SERVICE0("dir_service.0.host", null, InetSocketAddress.class, false),
+        DIRECTORY_SERVICE1("dir_service.1.host", null, InetSocketAddress.class, false),
+        DIRECTORY_SERVICE2("dir_service.2.host", null, InetSocketAddress.class, false),
+        DIRECTORY_SERVICE3("dir_service.3.host", null, InetSocketAddress.class, false),
+        DIRECTORY_SERVICE4("dir_service.4.host", null, InetSocketAddress.class, false),
+        PORT("listen.port", null, Integer.class, true),
+        HTTP_PORT("http_port", null, Integer.class, true),
+        LISTEN_ADDRESS("listen.address", null, InetAddress.class, false),
+        USE_SSL("ssl.enabled", false, Boolean.class, false),
+        SERVICE_CREDS_FILE("ssl.service_creds", null, String.class, false ),
+        SERVICE_CREDS_PASSPHRASE("ssl.service_creds.pw", null, String.class, false),
+        SERVICE_CREDS_CONTAINER("ssl.service_creds.container", null, String.class, false),
+        TRUSTED_CERTS_FILE("ssl.trusted_certs", null, String.class, false),
+        TRUSTED_CERTS_CONTAINER("ssl.trusted_certs.container", null, String.class, false),
+        TRUSTED_CERTS_PASSPHRASE("ssl.trusted_certs.pw", null, String.class, false),
+        TRUST_MANAGER("ssl.trust_manager", "", String.class, false),
+        GEO_COORDINATES("geographic_coordinates", "", String.class, false ),
+        ADMIN_PASSWORD("admin_password", "", String.class, false),
+        HOSTNAME("hostname", "", String.class, false ),
+        USE_GRID_SSL_MODE("ssl.grid_ssl", false, Boolean.class, false),
+        WAIT_FOR_DIR("startup.wait_for_dir", 30, Integer.class, false),
+        POLICY_DIR("policy_dir", "/etc/xos/xtreemfs/policies/", String.class, false),
+        USE_SNMP("snmp.enabled", false, Boolean.class, false),
+        SNMP_ADDRESS("snmp.address", null, InetAddress.class, false),
+        SNMP_PORT("snmp.port", null, Integer.class, false),
+        SNMP_ACL("snmp.aclfile", null, String.class, false),
+        FAILOVER_MAX_RETRIES("failover.retries", 15, Integer.class, false),
+        FAILOVER_WAIT("failover.wait_ms", 15 * 1000, Integer.class, false),
+        MAX_CLIENT_Q("max_client_queue", 100, Integer.class, false),
+        MAX_REQUEST_QUEUE_LENGTH("max_requests_queue_length", 1000, Integer.class, false),
+        USE_MULTIHOMING("multihoming.enabled", false, Boolean.class, false),
+        USE_RENEWAL_SIGNAL("multihoming.renewal_signal", false, Boolean.class, false ),
 
-            
-            /*
-             * MRC specific configuration parameter
-             */
-            UUID("uuid", null, ServiceUUID.class, true),
-            LOCAL_CLOCK_RENEW("local_clock_renewal", null, Integer.class, true),
-            REMOTE_TIME_SYNC("remote_time_sync", null, Integer.class, true),
-            OSD_CHECK_INTERVAL("osd_check_interval", null, Integer.class, true),
-            NOATIME("no_atime", null, Boolean.class, true),
-            AUTHENTICATION_PROVIDER("authentication_provider", null, String.class, true),
-            CAPABILITY_SECRET("capability_secret", null, String.class, true),
-            CAPABILITY_TIMEOUT("capability_timeout", 600, Integer.class, false),
-            RENEW_TIMED_OUT_CAPS("renew_to_caps", false, Boolean.class, false),
-            
-            /*
-             * OSD specific configuration parameter
-             */
-            OBJECT_DIR("object_dir", null, String.class, true),
-            REPORT_FREE_SPACE("report_free_space", null, Boolean.class, true),
-            CHECKSUM_ENABLED("checksums.enabled", false, Boolean.class, false),
-            CHECKSUM_PROVIDER("checksums.algorithm", null, String.class, false),
-            STORAGE_LAYOUT("storage_layout", "HashStorageLayout", String.class, false),
-            IGNORE_CAPABILITIES("ignore_capabilities", false, Boolean.class, false),
-            /** Maximum assumed drift between two server clocks. If the drift is higher, the system may not function properly. */
-            FLEASE_DMAX_MS("flease.dmax_ms", 1000, Integer.class, false),
-            FLEASE_LEASE_TIMEOUT_MS("flease.lease_timeout_ms", 14000, Integer.class, false),
-            /** Message timeout. Maximum allowed in-transit time for a Flease message. */
-            FLEASE_MESSAGE_TO_MS("flease.message_to_ms", 500, Integer.class, false),
-            FLEASE_RETRIES("flease.retries", 3, Integer.class, false),
-            SOCKET_SEND_BUFFER_SIZE("socket.send_buffer_size", -1, Integer.class, false),
-            SOCKET_RECEIVE_BUFFER_SIZE("socket.recv_buffer_size", -1, Integer.class, false),
-            VIVALDI_RECALCULATION_INTERVAL_IN_MS("vivaldi.recalculation_interval_ms", 300000, Integer.class, false),
-            VIVALDI_RECALCULATION_EPSILON_IN_MS("vivaldi.recalculation_epsilon_ms", 30000, Integer.class, false),
-            VIVALDI_ITERATIONS_BEFORE_UPDATING("vivaldi.iterations_before_updating", 12, Integer.class, false),
-            VIVALDI_MAX_RETRIES_FOR_A_REQUEST("vivaldi.max_retries_for_a_request", 2, Integer.class, false),
-            VIVALDI_MAX_REQUEST_TIMEOUT_IN_MS("vivaldi.max_request_timeout_ms", 10000, Integer.class, false),
-            VIVALDI_TIMER_INTERVAL_IN_MS("vivaldi.timer_interval_ms", 60000, Integer.class, false),
-            STORAGE_THREADS("storage_threads", 1, Integer.class, false);
+        /*
+         * DIR specific configuration parameter
+         */
+        AUTODISCOVER_ENABLED("discover", true, Boolean.class, false),
+        MONITORING_ENABLED("monitoring.enabled", false, Boolean.class, false ),
+        ADMIN_EMAIL("monitoring.email.receiver", "", String.class, false),
+        SENDER_ADDRESS("monitoring.email.sender", "XtreemFS DIR monitoring <dir@localhost>", String.class, false),
+        MAX_WARNINGS("monitoring.max_warnings", 1, Integer.class, false),
+        SENDMAIL_BIN("monitoring.email.programm", "/usr/sbin/sendmail", String.class, false),
+        TIMEOUT_SECONDS("monitoring.service_timeout_s", 5 * 60, Integer.class, false),
+        VIVALDI_MAX_CLIENTS("vivaldi.max_clients", 32, Integer.class, false),
+        VIVALDI_CLIENT_TIMEOUT("vivaldi.client_timeout", 600000, Integer.class, false), // default: twice the recalculation interval
+
+
+        /*
+         * MRC specific configuration parameter
+         */
+        UUID("uuid", null, ServiceUUID.class, true),
+        LOCAL_CLOCK_RENEW("local_clock_renewal", null, Integer.class, true),
+        REMOTE_TIME_SYNC("remote_time_sync", null, Integer.class, true),
+        OSD_CHECK_INTERVAL("osd_check_interval", null, Integer.class, true),
+        NOATIME("no_atime", null, Boolean.class, true),
+        AUTHENTICATION_PROVIDER("authentication_provider", null, String.class, true),
+        CAPABILITY_SECRET("capability_secret", null, String.class, true),
+        CAPABILITY_TIMEOUT("capability_timeout", 600, Integer.class, false),
+        RENEW_TIMED_OUT_CAPS("renew_to_caps", false, Boolean.class, false),
+
+        /*
+         * OSD specific configuration parameter
+         */
+        OBJECT_DIR("object_dir", null, String.class, true),
+        REPORT_FREE_SPACE("report_free_space", null, Boolean.class, true),
+        CHECKSUM_ENABLED("checksums.enabled", false, Boolean.class, false),
+        CHECKSUM_PROVIDER("checksums.algorithm", null, String.class, false),
+        STORAGE_LAYOUT("storage_layout", "HashStorageLayout", String.class, false),
+        IGNORE_CAPABILITIES("ignore_capabilities", false, Boolean.class, false),
+        /** Maximum assumed drift between two server clocks. If the drift is higher, the system may not function properly. */
+        FLEASE_DMAX_MS("flease.dmax_ms", 1000, Integer.class, false),
+        FLEASE_LEASE_TIMEOUT_MS("flease.lease_timeout_ms", 14000, Integer.class, false),
+        /** Message timeout. Maximum allowed in-transit time for a Flease message. */
+        FLEASE_MESSAGE_TO_MS("flease.message_to_ms", 500, Integer.class, false),
+        FLEASE_RETRIES("flease.retries", 3, Integer.class, false),
+        SOCKET_SEND_BUFFER_SIZE("socket.send_buffer_size", -1, Integer.class, false),
+        SOCKET_RECEIVE_BUFFER_SIZE("socket.recv_buffer_size", -1, Integer.class, false),
+        VIVALDI_RECALCULATION_INTERVAL_IN_MS("vivaldi.recalculation_interval_ms", 300000, Integer.class, false),
+        VIVALDI_RECALCULATION_EPSILON_IN_MS("vivaldi.recalculation_epsilon_ms", 30000, Integer.class, false),
+        VIVALDI_ITERATIONS_BEFORE_UPDATING("vivaldi.iterations_before_updating", 12, Integer.class, false),
+        VIVALDI_MAX_RETRIES_FOR_A_REQUEST("vivaldi.max_retries_for_a_request", 2, Integer.class, false),
+        VIVALDI_MAX_REQUEST_TIMEOUT_IN_MS("vivaldi.max_request_timeout_ms", 10000, Integer.class, false),
+        VIVALDI_TIMER_INTERVAL_IN_MS("vivaldi.timer_interval_ms", 60000, Integer.class, false),
+        STORAGE_THREADS("storage_threads", 1, Integer.class, false),
+
+        /*
+         * Benchmark specific configuration parameter
+         */
+        BASEFILE_SIZE_IN_BYTES("basefilesize_in_bytes", 3221225472L, Long.class, false), // 3221225472L = 3 GiB
+        FILESIZE("filesize", 4096, Integer.class, false), // 4096 = 4 KiB
+        USERNAME("username", "benchmark", String.class, false),
+        GROUP("group", "benchmark", String.class, false),
+        OSD_SELECTION_POLICIES("osd_selection_policies", "", String.class, false),
+        REPLICATION_POLICY("replication_policy", "", String.class, false),
+        REPLICATION_FACTOR("replication_factor", 3, Integer.class, false),
+        CHUNK_SIZE_IN_BYTES("chunk_size_in_bytes", 131072, Integer.class, false), // 131072 = 128 KiB
+        STRIPE_SIZE_IN_BYTES("stripe_size_in_bytes", 131072, Integer.class, false), // 131072 = 128 KiB
+        STRIPE_SIZE_SET("stripe_size_set", false, Boolean.class, false),
+        STRIPE_WIDTH("stripe_width", 1, Integer.class, false),
+        STRIPE_WIDTH_SET("stripe_width_set", false, Boolean.class, false),
+        NO_CLEANUP("no_cleanup", false, Boolean.class, false),
+        NO_CLEANUP_VOLUMES("no_cleanup_volumes", false, Boolean.class, false),
+        NO_CLEANUP_BASEFILE("no_cleanup_basefile", false, Boolean.class, false),
+        OSD_CLEANUP("osd_cleanup", false, Boolean.class, false);
+
 
         Parameter(String propString, Object defaultValue, Class propClass, Boolean req) {
             propertyString = propString;
@@ -132,7 +153,7 @@ public class ServiceConfig extends Config {
         /**
          * number of values the enumeration contains
          */
-        private static final int size = 35;
+        private static final int size = Parameter.values().length;
 
         /**
          * String representation of the parameter in .property file
@@ -191,7 +212,7 @@ public class ServiceConfig extends Config {
     }
     /**
      * Parameter which are required to connect to the DIR.
-     * 
+     *
      */
     private final Parameter[] connectionParameter = {
             Parameter.DEBUG_CATEGORIES,
@@ -207,7 +228,7 @@ public class ServiceConfig extends Config {
     /**
      * Checks if there are all required configuration parameter to initialize a connection to the DIR and
      * request the rest of the configuration
-     * 
+     *
      * @return {@link Boolean}
      */
     public Boolean isInitializable() {
@@ -227,7 +248,7 @@ public class ServiceConfig extends Config {
 
     /**
      * reads only the given Parameters from the config file
-     * 
+     *
      * @throws IOException
      */
     public void readParameters(Parameter[] params) throws IOException {
@@ -277,6 +298,11 @@ public class ServiceConfig extends Config {
             /* Integer values */
             if (Integer.class == param.getPropertyClass()) {
                 parameter.put(param, Integer.parseInt(entry.getValue()));
+            }
+
+            /* Long values */
+            if (Long.class == param.getPropertyClass()) {
+                parameter.put(param, Long.parseLong(entry.getValue()));
             }
 
             /* String values */
@@ -343,7 +369,7 @@ public class ServiceConfig extends Config {
     /**
      * Merges a second configuration in this one. Only required parameters which aren't set will be used from
      * the new configuration.
-     * 
+     *
      * @param conf
      */
     public void mergeConfig(ServiceConfig conf) {
@@ -356,7 +382,7 @@ public class ServiceConfig extends Config {
 
     /**
      * Set the default value for a specific Parameter
-     * 
+     *
      * @param param
      *            - {@link Parameter}
      */
@@ -368,7 +394,7 @@ public class ServiceConfig extends Config {
 
     /**
      * Set the default values for the parameter in p
-     * 
+     *
      * @param p
      */
     public void setDefaults(Parameter[] p) {
@@ -421,9 +447,9 @@ public class ServiceConfig extends Config {
     /**
      * Read configuration parameter from property file and return an Object of the value if the parameter was
      * set. Else return null.
-     * 
-     * @param Parameter
-     *            param
+     *
+     * @param param the parameter
+     *
      * @return Object
      */
     protected Object readParameter(Parameter param) {
@@ -437,6 +463,13 @@ public class ServiceConfig extends Config {
         if (Integer.class == param.getPropertyClass()) {
             return Integer.parseInt(tmpString.trim());
         }
+
+
+        /* Long values */
+        if (Long.class == param.getPropertyClass()) {
+            return(Long.parseLong(tmpString.trim()));
+        }
+
 
         // Boolean values
         if (Boolean.class == param.getPropertyClass()) {
@@ -688,7 +721,7 @@ public class ServiceConfig extends Config {
 
     /**
      * Checks if the SSL Configuration is valid. If not throws a {@link RuntimeException}.
-     * 
+     *
      * @throws RuntimeException
      */
     public void checkSSLConfiguration() {
@@ -716,7 +749,7 @@ public class ServiceConfig extends Config {
 
     /**
      * Checks if the multihoming configuration is valid. If not throws a {@link RuntimeException}.
-     * 
+     *
      * @throws RuntimeException
      */
     protected void checkMultihomingConfiguration() {

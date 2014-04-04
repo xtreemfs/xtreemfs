@@ -29,7 +29,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrResponse;
 /**
  * Represents a volume. A volume object can be obtain by opening a volume with a client.
  */
-public interface Volume {
+public interface  Volume {
 
     public void internalShutdown();
 
@@ -752,6 +752,12 @@ public interface Volume {
      * @throws IOException
      */
     public void setPolicyAttribute(UserCredentials userCreds, String attribute, String value) throws IOException;
+
+    /**
+     * Get the name of the volume.
+     * @return The name of the volume.
+     */
+    public String getVolumeName();
     
     /**
      * Used only for HDFS Interface.
