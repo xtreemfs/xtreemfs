@@ -109,8 +109,8 @@ public class JSONRPCTest extends AbstractTestCase {
    
     res = callJSONRPC(METHOD.listReservations);
     checkSuccess(res, false);
-
-    List<Map<String, Object>> volumes = (List<Map<String, Object>>) res.getResult();
+    
+    Map<String, List<String>> volumes = (Map<String, List<String>>) res.getResult();
     assertTrue(volumes.size() == 1);
     
     String volume1 = JsonRPC.stripVolumeName(vol.get("InfReservID"));
@@ -152,24 +152,46 @@ public class JSONRPCTest extends AbstractTestCase {
       // parametersMap.put("password", "");
       JSONRPC2Response res = callJSONRPC(METHOD.createReservation, json);
       checkSuccess(res, false);
+      Map<String, String> result = (Map<String, String>) res.getResult();
+      String volumeName = result.get("InfReservID");
+      
+      String json2 = 
+           "{"
+          +  "\"InfReservID\": \""+volumeName+"\""
+          +"}";
+      
+      JSONRPC2Response res2 = callJSONRPC(METHOD.checkReservation, json2);
+      checkSuccess(res2, false);
+
+      boolean found = false;
+      Map<String, List<String>> result2 = (Map<String, List<String>>) res2.getResult();
+      for (String s : result2.get("Addresses")) {
+        if (s.equals(volumeName)) {
+          found = true;
+          break;
+        }
+      }
+      assertTrue(found);
     }
 
     JSONRPC2Response res = callJSONRPC(METHOD.listReservations);
     checkSuccess(res, false);
 
-    List<Map<String, Object>> volumes = (List<Map<String, Object>>) res.getResult();
-    for (Map<String, Object> v : volumes) {
-      System.out.println("deleting Volume " + v.get("InfReservID"));
-      HashMap<String, Object> parametersMap = new HashMap<String, Object>();
-      parametersMap.put("InfReservID", v.get("InfReservID"));      
-      res = callJSONRPC(METHOD.releaseReservation, parametersMap);
-      checkSuccess(res, false);
+    Map<String, List<String>> volumes = (Map<String, List<String>>) res.getResult();
+    for (List<String> v : volumes.values()) {
+      for (String volume : v) {
+        System.out.println("deleting Volume " + volume);
+        HashMap<String, Object> parametersMap = new HashMap<String, Object>();
+        parametersMap.put("InfReservID", volume);      
+        res = callJSONRPC(METHOD.releaseReservation, parametersMap);
+        checkSuccess(res, false);
+      }
     }
 
     System.out.println("List volumes ");
     res = callJSONRPC(METHOD.listReservations);
     checkSuccess(res, false);
-    assertTrue(((List<String>) res.getResult()).isEmpty());
+    assertTrue(((Map<String, List<String>>) res.getResult()).get("Addresses").isEmpty());
   }
 
   

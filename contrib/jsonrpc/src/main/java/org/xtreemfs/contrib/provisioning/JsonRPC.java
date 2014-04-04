@@ -81,13 +81,13 @@ public class JsonRPC implements ResourceLoaderAware {
   protected SSLOptions sslOptions = null;
 
   enum METHOD {
-    listReservations, // TODO!!! 
+    listReservations, 
 
     createReservation, 
 
     releaseReservation, 
 
-    checkReservation, 
+    checkReservation,
 
     isNodeRunning,
 
@@ -163,7 +163,7 @@ public class JsonRPC implements ResourceLoaderAware {
                 null, null, "none", false, gridSSL, null);
       }
 
-      String[] dirAddressesString = generateDirAdresses();
+      String[] dirAddressesString = generateDirAddresses();
 
       this.client = ClientFactory.createClient(dirAddressesString, AbstractRequestHandler.getGroups(), this.sslOptions, options);
       this.client.start();            
@@ -194,7 +194,7 @@ public class JsonRPC implements ResourceLoaderAware {
   }
 
   public String createNormedVolumeName(String volume_name) {
-    String[] dirAddressesString = generateDirAdresses();
+    String[] dirAddressesString = generateDirAddresses();
     StringBuffer normed_volume_names = new StringBuffer();
     for (String s : dirAddressesString) {
       normed_volume_names.append(s);
@@ -206,7 +206,7 @@ public class JsonRPC implements ResourceLoaderAware {
     return normed_volume_names.toString();
   }
 
-  public String[] generateDirAdresses() {
+  public String[] generateDirAddresses() {
     String[] dirAddressesString = new String[this.dirAddresses.length];
     for (int i = 0; i < this.dirAddresses.length; i++) {
       InetSocketAddress address = this.dirAddresses[i];
@@ -368,7 +368,7 @@ public class JsonRPC implements ResourceLoaderAware {
           volume_name);
 
       Map<String, String[]> success = new HashMap<String, String[]>();
-      success.put("Adresses", new String[]{volume_name});
+      success.put("Addresses", new String[]{volume_name});
 
       return new JSONRPC2Response(success, req.getID());
     }
@@ -406,7 +406,7 @@ public class JsonRPC implements ResourceLoaderAware {
       // return a string like
       // [<protocol>://]<DIR-server-address>[:<DIR-server-port>]/<Volume Name>
       Map<String, String[]> success = new HashMap<String, String[]>();
-      success.put("Adresses", new String[]{createNormedVolumeName(volume_name)});
+      success.put("Addresses", new String[]{createNormedVolumeName(volume_name)});
 
       return new JSONRPC2Response(success, req.getID());
     }
@@ -425,29 +425,29 @@ public class JsonRPC implements ResourceLoaderAware {
     }
 
     // Processes the requests
-    @SuppressWarnings("unchecked")
     @Override
     public JSONRPC2Response doProcess(JSONRPC2Request req, MessageContext ctx) throws Exception {
-      final UserCredentials uc = getGroups();
+//      final UserCredentials uc = getGroups();
 
-      // FIXME !!
-
+  
       // list volumes
-      List<Map<String, Object>> volumesMap = new LinkedList<Map<String,Object>>();
+      Map<String, ArrayList<String>> volumesMap = new HashMap<String, ArrayList<String>>();
+      ArrayList<String> volumeNames = new ArrayList<String>();
+      volumesMap.put("Addresses", volumeNames);
+      
       String[] volumes = JsonRPC.this.client.listVolumeNames();
       for (String volume_name : volumes) {
+        volumeNames.add(createNormedVolumeName(volume_name));
+        
         // open volume and get Xattr
-        Volume v = openVolume(volume_name, JsonRPC.this.sslOptions);
-        listxattrResponse response = v.listXAttrs(uc, "/");
-        Map<String, Object> keys = new LinkedHashMap<String, Object>();
-        keys.put("InfReservID", createNormedVolumeName(volume_name));
-        volumesMap.add(keys);
-        for (XAttr xattr : response.getXattrsList()) {
-          if (xattr.getName().equals(org.xtreemfs.common.clients.File.XTREEMFS_DEFAULT_RP)) {
-            Map<String, Object> values = (Map<String, Object>) JSONParser.parseJSON(new JSONString(xattr.getValue()));
-            keys.putAll(values);
-          }
-        }
+//        Volume v = openVolume(volume_name, JsonRPC.this.sslOptions);
+//        listxattrResponse response = v.listXAttrs(uc, "/");
+//        for (XAttr xattr : response.getXattrsList()) {
+//          if (xattr.getName().equals(org.xtreemfs.common.clients.File.XTREEMFS_DEFAULT_RP)) {
+//            Map<String, Object> values = (Map<String, Object>) JSONParser.parseJSON(new JSONString(xattr.getValue()));
+//            keys.putAll(values);
+//          }
+//        }
       }
       return new JSONRPC2Response(volumesMap, req.getID());
     }

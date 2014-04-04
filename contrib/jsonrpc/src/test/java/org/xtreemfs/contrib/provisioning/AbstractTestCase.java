@@ -138,13 +138,16 @@ public abstract class AbstractTestCase {
         JSONRPC2Response res = callJSONRPC(METHOD.listReservations);
         checkSuccess(res, false);
 
-        List<Map<String, Object>> volumes = (List<Map<String, Object>>) res.getResult();
-        for (Map<String, Object> v : volumes) {
-          HashMap<String, Object> parametersMap = new HashMap<String, Object>();
-          parametersMap.put("InfReservID", (String) v.get("InfReservID"));
-          res = callJSONRPC(METHOD.releaseReservation, parametersMap);
-          checkSuccess(res, false);
-        }
+        Map<String, List<String>> volumes = (Map<String, List<String>>) res.getResult();
+        for (List<String> v : volumes.values()) {
+          for (String volume : v) {
+            System.out.println("deleting Volume " + volume);
+            HashMap<String, Object> parametersMap = new HashMap<String, Object>();
+            parametersMap.put("InfReservID", volume);      
+            res = callJSONRPC(METHOD.releaseReservation, parametersMap);
+            checkSuccess(res, false);
+          }
+        }        
       } catch (Exception e) {
         e.printStackTrace();
       }
@@ -161,7 +164,7 @@ public abstract class AbstractTestCase {
           parameters,
           "id-"+(++requestId));
       
-      System.out.println("\tRequest: \n\t" + jsonRPC);
+      System.out.println("\tRequest: \n\t" + req);
       return JSONRPC2Response.parse(xtreemfsRPC.executeMethod(req.toString()), true, true);
     } catch (JSONRPC2ParseException e) { 
       e.printStackTrace();
