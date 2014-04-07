@@ -13,7 +13,6 @@ import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
-import org.xtreemfs.contrib.provisioning.JsonRPC.METHOD;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
@@ -21,11 +20,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyTyp
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse;
 
-public abstract class LibJSON extends AbstractRequestHandler {
-
-  public LibJSON(Client c, METHOD[] methodNames) {
-    super(c, methodNames);
-  }
+public class LibJSON {
 
 
   public static Volume openVolume(
@@ -38,6 +33,13 @@ public abstract class LibJSON extends AbstractRequestHandler {
     return client.openVolume(volume_name, sslOptions, options);
   }
 
+  public static String stripVolumeName(String volume_name) {
+    if (volume_name.contains("/")) {
+      String[] parts = volume_name.split("/");
+      volume_name = parts[parts.length-1];
+    }
+    return volume_name;
+  }
 
 
   public static String generateSchedulerAddress(InetSocketAddress schedulerAddress) {
@@ -119,7 +121,7 @@ public abstract class LibJSON extends AbstractRequestHandler {
       Client client) throws IOException,
       PosixErrorException, AddressToUUIDNotFoundException {
     String volume_name = res.InfReservID;
-    volume_name = AbstractRequestHandler.stripVolumeName(volume_name);
+    volume_name = stripVolumeName(volume_name);
 
     // first delete the volume
     client.deleteVolume(
@@ -150,7 +152,7 @@ public abstract class LibJSON extends AbstractRequestHandler {
       )
           throws AddressToUUIDNotFoundException, VolumeNotFoundException, IOException {
     String volume_name = res.InfReservID; // required
-    volume_name = AbstractRequestHandler.stripVolumeName(volume_name);
+    volume_name = stripVolumeName(volume_name);
 
     LibJSON.openVolume(volume_name, sslOptions, client);
 

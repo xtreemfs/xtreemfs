@@ -16,6 +16,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.xtreemfs.contrib.provisioning.JsonRPC.METHOD;
+import org.xtreemfs.contrib.provisioning.LibJSON.Reservation;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
@@ -26,6 +27,7 @@ import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
+import com.google.gson.Gson;
 import com.thetransactioncompany.jsonrpc2.JSONRPC2ParseException;
 import com.thetransactioncompany.jsonrpc2.JSONRPC2Request;
 import com.thetransactioncompany.jsonrpc2.JSONRPC2Response;
@@ -50,6 +52,8 @@ public abstract class AbstractTestCase {
   static String mode = "777";
 
   static String dirAddress = "";
+  
+  public Gson gson = new Gson();
   
   @BeforeClass public static void setUp() throws Exception {
     Logging.start(Logging.LEVEL_WARN, Category.all);
@@ -142,9 +146,12 @@ public abstract class AbstractTestCase {
         for (List<String> v : volumes.values()) {
           for (String volume : v) {
             System.out.println("deleting Volume " + volume);
-            HashMap<String, Object> parametersMap = new HashMap<String, Object>();
-            parametersMap.put("InfReservID", volume);      
-            res = callJSONRPC(METHOD.releaseReservation, parametersMap);
+            
+            Reservation addresses = new Reservation(volume);
+            res = callJSONRPC(
+                METHOD.releaseReservation, 
+                new JSONString(gson.toJson(addresses)));
+            
             checkSuccess(res, false);
           }
         }        
@@ -173,6 +180,24 @@ public abstract class AbstractTestCase {
       e.printStackTrace();
       throw e;
     }
+  }
+  
+  /**
+   * Helper method for calling JSONRPCs
+   * @param method
+   * @param parameters
+   * @return
+   * @throws JSONRPC2ParseException
+   * @throws JSONException 
+   */
+  protected static JSONRPC2Response callJSONRPC(METHOD method, JSONString parameters) throws JSONRPC2ParseException, JSONException {
+    @SuppressWarnings("unchecked")
+    JSONRPC2Request req = new JSONRPC2Request(
+        method.toString(),
+        (HashMap<String, ?>)JSONParser.parseJSON(parameters),
+        "id-"+(++requestId));
+    System.out.println("\tRequest: \n\t" + req);
+    return JSONRPC2Response.parse(xtreemfsRPC.executeMethod(req.toString()), true, true);
   }
   
   /**
