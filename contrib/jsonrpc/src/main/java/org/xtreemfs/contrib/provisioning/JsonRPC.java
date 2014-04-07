@@ -12,13 +12,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,22 +31,14 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.xtreemfs.common.libxtreemfs.Client;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.Options;
-import org.xtreemfs.contrib.provisioning.JsonRPC.Attributes.ReservationTypes;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.mrc.MRCConfig;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
-import org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse;
-import org.xtreemfs.scheduler.data.Reservation.ReservationType;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonParser;
 import com.thetransactioncompany.jsonrpc2.JSONRPC2Error;
 import com.thetransactioncompany.jsonrpc2.JSONRPC2ParseException;
 import com.thetransactioncompany.jsonrpc2.JSONRPC2Request;
@@ -84,7 +70,7 @@ public class JsonRPC implements ResourceLoaderAware {
   protected SSLOptions sslOptions = null;
 
   protected Gson gson = new Gson();
-  
+
   enum METHOD {
     listReservations, 
 
@@ -168,7 +154,7 @@ public class JsonRPC implements ResourceLoaderAware {
                 null, null, "none", false, gridSSL, null);
       }
 
-      String[] dirAddressesString = generateDirAddresses();
+      String[] dirAddressesString = LibJSON.generateDirAddresses(dirAddresses);
 
       this.client = ClientFactory.createClient(dirAddressesString, AbstractRequestHandler.getGroups(), this.sslOptions, options);
       this.client.start();            
@@ -196,33 +182,6 @@ public class JsonRPC implements ResourceLoaderAware {
 
       throw new IOException("client.start() failed (threw an exception)");
     }
-  }
-
-  public String createNormedVolumeName(String volume_name) {
-    String[] dirAddressesString = generateDirAddresses();
-    StringBuffer normed_volume_names = new StringBuffer();
-    for (String s : dirAddressesString) {
-      normed_volume_names.append(s);
-      normed_volume_names.append(",");
-    }
-    normed_volume_names.deleteCharAt(normed_volume_names.length() - 1);
-    normed_volume_names.append("/" + volume_name);
-
-    return normed_volume_names.toString();
-  }
-
-  public String[] generateDirAddresses() {
-    String[] dirAddressesString = new String[this.dirAddresses.length];
-    for (int i = 0; i < this.dirAddresses.length; i++) {
-      InetSocketAddress address = this.dirAddresses[i];
-      dirAddressesString[i] = address.getHostName() + ":" + address.getPort();
-    }
-    return dirAddressesString;
-  }
-
-  public String generateSchedulerAddress() {
-    InetSocketAddress address = this.schedulerAddress;
-    return address.getHostName() + ":" + address.getPort();
   }
 
   @PreDestroy
@@ -258,12 +217,12 @@ public class JsonRPC implements ResourceLoaderAware {
     // Write JSON response
     return resp.toJSONString();
   }
- 
-  
+
+
   /**
    * Implements a handler for the
    */
-  public class CreateReservationHandler extends AbstractRequestHandler {
+  public class CreateReservationHandler extends LibJSON {
 
     public CreateReservationHandler(Client c) {
       super(c, new METHOD[]{METHOD.createReservation});
@@ -281,44 +240,17 @@ public class JsonRPC implements ResourceLoaderAware {
         if (resource.Type.toLowerCase().equals("storage")) {          
           // check for datacenter ID to match DIR ID:
           if (resource.ID.contains(dirAddresses[0].getAddress().getCanonicalHostName())) {
-       
-            String volume_name = "volume-"+UUID.randomUUID().toString();            
-            Integer capacity = (int)resource.Attributes.Capacity;
-            Integer throughput = (int)resource.Attributes.Throughput;
-            ReservationTypes accessType = resource.Attributes.ReservationType;
 
-            boolean randomAccess = accessType == ReservationTypes.RANDOM;
+            Reservation result = createReservation(
+                resource, 
+                LibJSON.generateSchedulerAddress(schedulerAddress), 
+                dirAddresses,
+                getGroups(), 
+                getAuth(JsonRPC.this.adminPassword), 
+                client);
 
-            int octalMode = Integer.parseInt("700", 8);
-
-            final UserCredentials uc = getGroups();
-            final Auth auth = getAuth(JsonRPC.this.adminPassword);
-
-            // Create volume.
-            JsonRPC.this.client.createVolume(
-                generateSchedulerAddress(), 
-                auth,
-                uc,
-                volume_name,
-                octalMode,
-                "user",
-                "user",
-                AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,          
-                128*1024,          
-                new ArrayList<KeyValuePair>(),  // volume attributes
-                capacity,
-                randomAccess? throughput : 0,
-                    !randomAccess? throughput : 0,
-                        false);
-
-            // create a string similar to:
-            // [<protocol>://]<DIR-server-address>[:<DIR-server-port>]/<Volume Name>
-            Reservation result = new Reservation(
-                createNormedVolumeName(volume_name)
-                );
-                        
-            String json = gson.toJson(result);            
-            return new JSONRPC2Response(JSONParser.parseJSON(new JSONString(json)), req.getID());                
+            JSONString json = new JSONString(gson.toJson(result));            
+            return new JSONRPC2Response(JSONParser.parseJSON(json), req.getID());                
           }
         }
       }
@@ -331,7 +263,7 @@ public class JsonRPC implements ResourceLoaderAware {
   /**
    * Implements a handler for the "releaseReservation" JSON-RPC method
    */
-  public class ReleaseReservationHandler extends AbstractRequestHandler {
+  public class ReleaseReservationHandler extends LibJSON {
 
     public ReleaseReservationHandler(Client c) {
       super(c, new METHOD[]{METHOD.releaseReservation});
@@ -342,47 +274,23 @@ public class JsonRPC implements ResourceLoaderAware {
     public JSONRPC2Response doProcess(JSONRPC2Request req, MessageContext ctx) throws Exception {
       Reservation res = gson.fromJson(JSONObject.toJSONString((Map<String, ?>)req.getParams()), Reservation.class);      
 
-      String volume_name = res.InfReservID;
-      volume_name = stripVolumeName(volume_name);
-      
-      final Auth auth = getAuth(JsonRPC.this.adminPassword);
-      final UserCredentials uc = getGroups();
-
-      JsonRPC.this.client.deleteVolume(
-          auth,
-          getGroups(), 
-          volume_name);
-
-
-      JsonRPC.this.client.deleteReservation(
-          generateSchedulerAddress(), 
-          auth, 
-          uc, 
-          volume_name);
-
-      Addresses addresses = new Addresses(
-            volume_name 
+      Addresses addresses = releaseReservation(
+          res,
+          LibJSON.generateSchedulerAddress(schedulerAddress),
+          getGroups(),
+          getAuth(JsonRPC.this.adminPassword),
+          client
           );
-      
-      String json = gson.toJson(addresses);      
-      return new JSONRPC2Response(JSONParser.parseJSON(new JSONString(json)), req.getID());      
-    }
 
+      JSONString json = new JSONString(gson.toJson(addresses));      
+      return new JSONRPC2Response(JSONParser.parseJSON(json), req.getID());      
+    }   
   }
 
-
-  public static String stripVolumeName(String volume_name) {
-    if (volume_name.contains("/")) {
-      String[] parts = volume_name.split("/");
-      volume_name = parts[parts.length-1];
-    }
-    return volume_name;
-  }
-  
   /**
    * Implements a handler for the "checkReservation" JSON-RPC method
    */
-  public class CheckReservationHandler extends AbstractRequestHandler {
+  public class CheckReservationHandler extends LibJSON {
 
     public CheckReservationHandler(Client c) {
       super(c, new METHOD[]{METHOD.checkReservation});
@@ -393,29 +301,23 @@ public class JsonRPC implements ResourceLoaderAware {
     public JSONRPC2Response doProcess(JSONRPC2Request req, MessageContext ctx) throws Exception {
       Reservation res = gson.fromJson(JSONObject.toJSONString((Map<String, ?>)req.getParams()), Reservation.class);      
 
-      String volume_name = res.InfReservID; // required
-      volume_name = stripVolumeName(volume_name);
+      Addresses addresses = checkReservation(
+          res, 
+          dirAddresses, 
+          sslOptions, 
+          this.client);
 
-      openVolume(volume_name, sslOptions);
-
-      // return a string like
-      // [<protocol>://]<DIR-server-address>[:<DIR-server-port>]/<Volume Name>
-      Addresses addresses = new Addresses(
-          createNormedVolumeName(volume_name)
-          );
-      
-      String json = gson.toJson(addresses);      
-      return new JSONRPC2Response(JSONParser.parseJSON(new JSONString(json)), req.getID());
+      JSONString json = new JSONString(gson.toJson(addresses));      
+      return new JSONRPC2Response(JSONParser.parseJSON(json), req.getID());     
     }
   }
-
 
   /**
    * Implements a handler for the
    *    "listReservations"
    * JSON-RPC method
    */
-  public class ListReservationsHandler extends AbstractRequestHandler {
+  public class ListReservationsHandler extends LibJSON {
 
     public ListReservationsHandler(Client c) {
       super(c, new METHOD[]{METHOD.listReservations});
@@ -423,27 +325,13 @@ public class JsonRPC implements ResourceLoaderAware {
 
     // Processes the requests
     @Override
-    public JSONRPC2Response doProcess(JSONRPC2Request req, MessageContext ctx) throws Exception {
-//      final UserCredentials uc = getGroups();
+    public JSONRPC2Response doProcess(JSONRPC2Request req, MessageContext ctx) throws Exception {  
+      Addresses addresses = listReservations(dirAddresses, client);
 
-  
-      // list volumes           
-      ArrayList<String> volumeNames = new ArrayList<String>();
-      
-      String[] volumes = JsonRPC.this.client.listVolumeNames();
-      for (String volume_name : volumes) {
-        volumeNames.add(createNormedVolumeName(volume_name));
-      }
-      
-      Addresses addresses = new Addresses(
-          volumeNames
-      );
-      
-      String json = gson.toJson(addresses);      
-      return new JSONRPC2Response(JSONParser.parseJSON(new JSONString(json)), req.getID());
+      JSONString json = new JSONString(gson.toJson(addresses));      
+      return new JSONRPC2Response(JSONParser.parseJSON(json), req.getID());
     }
   }
-
 
   /**
    *  Implements a handler for the
@@ -464,13 +352,13 @@ public class JsonRPC implements ResourceLoaderAware {
       return new JSONRPC2Response(true, req.getID());
     }
   }    
-  
+
   /**
    *  Implements a handler for the
    *    "getAvailableResources"  
    *  JSON-RPC method
    */
-  public class AvailableResources extends AbstractRequestHandler {
+  public class AvailableResources extends LibJSON {
 
     public AvailableResources(Client c) {
       super(c, new METHOD[]{METHOD.getAvailableResources});
@@ -480,153 +368,17 @@ public class JsonRPC implements ResourceLoaderAware {
     @Override
     public JSONRPC2Response doProcess(JSONRPC2Request req, MessageContext ctx) throws Exception {
 
-      final UserCredentials uc = getGroups();
-      final Auth auth = getAuth(JsonRPC.this.adminPassword);
+      Resources res = getAvailableResources(
+          LibJSON.generateSchedulerAddress(schedulerAddress),
+          dirAddresses,
+          getGroups(), 
+          getAuth(adminPassword),
+          client);
 
-      freeResourcesResponse freeResources
-      = JsonRPC.this.client.getFreeResources(
-          generateSchedulerAddress(), 
-          auth, 
-          uc);    
+      JSONString json = new JSONString(gson.toJson(res));
 
-      Resources res = new Resources();
-      
-      // random
-      res.addResource(
-          new Resource(
-              dirAddresses[0].getAddress().getCanonicalHostName()+"/storage/random",
-              dirAddresses[0].getAddress().getHostAddress(),
-              "Storage",
-              new Attributes(
-                  freeResources.getRandomCapacity(),
-                  freeResources.getRandomThroughput(),
-                  ReservationTypes.RANDOM
-                  ),
-              new Costs(
-                  0,
-                  0
-                  )
-              ));
-      
-      // sequential
-      res.addResource(
-          new Resource(
-              dirAddresses[0].getAddress().getCanonicalHostName()+"/storage/sequential",
-              dirAddresses[0].getAddress().getHostAddress(),
-              "Storage",
-              new Attributes(
-                  freeResources.getStreamingCapacity(),
-                  freeResources.getStreamingThroughput(),
-                  ReservationTypes.SEQUENTIAL
-                  ),
-              new Costs(
-                  0,
-                  0
-                  )
-              ));
-      
-      String json = gson.toJson(res);
+      return new JSONRPC2Response(JSONParser.parseJSON(json), req.getID());
+    }
    
-      return new JSONRPC2Response(JSONParser.parseJSON(new JSONString(json)), req.getID());
-    }  
   }
-
-  
-  
-  public static class Addresses {
-    public List<String> Addresses;
-    public Addresses() {
-      // no-args constructor
-    }
-    public Addresses(List<String> addresses) {
-      this.Addresses = addresses;
-    }
-    public Addresses(String[] addresses) {
-      this.Addresses = Arrays.asList(addresses);
-    }
-    public Addresses(String address) {
-      this.Addresses = new ArrayList<String>();
-      this.Addresses.add(address);
-    }
-  }
-  
-  public static class Reservation {
-    public String InfReservID;
-    public Reservation() {
-      // no-args constructor
-    }
-    public Reservation(String reservationID) {
-      this.InfReservID = reservationID;
-    }
-  }
-
-  public static class Resources {
-    public List<Resource> Resources;
-    public Resources() {
-      // no-args constructor
-    }
-    public void addResource(Resource r) {
-      if (Resources == null) {
-        Resources = new ArrayList<Resource>();
-      }
-      Resources.add(r);
-    }
-  }
-  
-  public static class Resource {
-    public String ID;
-    public String IP;
-    public String Type;
-    public Attributes Attributes;
-    public Costs Costs;
-    public Resource() {
-      // no-args constructor
-    }
-    public Resource(
-        String id,
-        String ip,
-        String type,
-        Attributes attributes,
-        Costs costs) {
-      this.ID = id;
-      this.IP = ip;
-      this.Type = type;
-      this.Attributes = attributes;
-      this.Costs = costs;
-    }
-  }
-  
-  public static class Attributes {
-    public double Capacity;
-    public double Throughput;
-    public enum ReservationTypes {
-      SEQUENTIAL, RANDOM
-    }
-    public ReservationTypes ReservationType;
-    public Attributes() {
-      // no-args constructor
-    }
-    public Attributes(
-        double capacity,
-        double throughput,
-        ReservationTypes reservationType) {
-      // no-args constructor
-      this.Capacity = capacity;
-      this.Throughput = throughput;
-      this.ReservationType = reservationType;
-    }
-  }
-  
-  public static class Costs {
-    public double Capacity;
-    public double Throughput;
-    public Costs() {
-      // no-args constructor
-    }
-    public Costs(double capacity, double throughput) {
-      this.Capacity = capacity;
-      this.Throughput= throughput;
-    }
-  }
-  
 }

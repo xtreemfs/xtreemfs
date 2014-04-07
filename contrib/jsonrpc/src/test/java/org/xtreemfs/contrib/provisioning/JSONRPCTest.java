@@ -105,8 +105,8 @@ public class JSONRPCTest extends AbstractTestCase {
     Map<String, List<String>> volumes = (Map<String, List<String>>) res.getResult();
     assertTrue(volumes.size() == 1);
     
-    String volume1 = JsonRPC.stripVolumeName(vol.get("InfReservID"));
-    String volume2 = JsonRPC.stripVolumeName(vol2.get("InfReservID"));
+    String volume1 = AbstractRequestHandler.stripVolumeName(vol.get("InfReservID"));
+    String volume2 = AbstractRequestHandler.stripVolumeName(vol2.get("InfReservID"));
     String response = res.toString();
     assertTrue(response.contains(volume1));
     assertFalse(response.contains(volume2));
