@@ -7,26 +7,18 @@
  */
 
 package org.xtreemfs.contrib.provisioning;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
-import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.contrib.provisioning.JsonRPC.METHOD;
 import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.osd.OSDConfig;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.REPL_FLAG;
-import org.xtreemfs.test.SetupUtils;
 
 import com.thetransactioncompany.jsonrpc2.JSONRPC2ParseException;
 import com.thetransactioncompany.jsonrpc2.JSONRPC2Response;
@@ -86,7 +78,7 @@ public class JSONRPCTest extends AbstractTestCase {
         +  "{"
         +  "  \"Capacity\": 100,"
         +  "  \"Throughput\": 10,"
-        +  "  \"AccessType\": \"RANDOM\""
+        +  "  \"ReservationType\": \"RANDOM\""
         +  "}"    
         + "}]}";   
 
@@ -145,7 +137,7 @@ public class JSONRPCTest extends AbstractTestCase {
           +  "{"
           +  "  \"Capacity\": 100,"
           +  "  \"Throughput\": 10,"
-          +  "  \"AccessType\": \"RANDOM\""
+          +  "  \"ReservationType\": \"RANDOM\""
           +  "}"    
           + "}]}";   
       
@@ -215,8 +207,15 @@ public class JSONRPCTest extends AbstractTestCase {
         +  "{"
         +  "  \"Capacity\": 1024,"
         +  "  \"Throughput\": 100,"
-        +  "  \"AccessType\": \"SEQUENTIAL\""
+        +  "  \"ReservationType\": \"SEQUENTIAL\""
         +  "}"    
+        + "},"
+        + "{"
+        +  "\"ID\": \"/DataCenter1/Rack1/IP2\","
+        +  "\"IP\": \"xxx.xxx.xxx.xxx\"," 
+        +  "\"Type\": \"FPGA\","
+        +  "\"Number\": 5,"
+        +  "\"Cost\": \"0.001\","
         + "}]}";  
 
     // parametersMap.put("password", "");

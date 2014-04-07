@@ -20,6 +20,12 @@
 			<version>2.5.0</version>
 			<type>jar</type>
 		</dependency>
+                <dependency>
+                        <groupId>com.google.code.gson</groupId>
+                        <artifactId>gson</artifactId>
+                        <version>2.2.4</version>
+                        <type>jar</type>
+                </dependency>
 		<dependency>
 			<groupId>org.xtreemfs</groupId>
 			<artifactId>xtreemfs</artifactId>
