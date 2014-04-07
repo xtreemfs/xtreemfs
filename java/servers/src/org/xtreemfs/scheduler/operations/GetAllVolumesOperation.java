@@ -39,7 +39,13 @@ public class GetAllVolumesOperation extends SchedulerOperation {
 			volBuilder.setUuid(r.getVolumeIdentifier());
 			reservationBuilder.setVolume(volBuilder.build());
 			reservationBuilder.setType(SchedulerUtils.convertReservationTypeFromPB(r.getType()));
-			
+
+            Scheduler.osdSet.Builder schedule = Scheduler.osdSet.newBuilder();
+            for(String osd: r.getSchedule()) {
+                schedule.addOsd(Scheduler.osdIdentifier.newBuilder().setUuid(osd).build());
+            }
+            reservationBuilder.setSchedule(schedule.build());
+
 			resultBuilder.addReservations(reservationBuilder.build());
 		}
 		

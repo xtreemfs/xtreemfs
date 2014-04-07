@@ -1752,878 +1752,6 @@ public final class Scheduler {
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.volumeSet)
   }
 
-  public interface reservationOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
-
-    // required .xtreemfs.pbrpc.volumeIdentifier volume = 1;
-    /**
-     * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
-     */
-    boolean hasVolume();
-    /**
-     * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
-     */
-    org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier getVolume();
-    /**
-     * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
-     */
-    org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifierOrBuilder getVolumeOrBuilder();
-
-    // required .xtreemfs.pbrpc.reservationType type = 2;
-    /**
-     * <code>required .xtreemfs.pbrpc.reservationType type = 2;</code>
-     */
-    boolean hasType();
-    /**
-     * <code>required .xtreemfs.pbrpc.reservationType type = 2;</code>
-     */
-    org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType getType();
-
-    // required double capacity = 3;
-    /**
-     * <code>required double capacity = 3;</code>
-     */
-    boolean hasCapacity();
-    /**
-     * <code>required double capacity = 3;</code>
-     */
-    double getCapacity();
-
-    // optional double streamingThroughput = 4;
-    /**
-     * <code>optional double streamingThroughput = 4;</code>
-     */
-    boolean hasStreamingThroughput();
-    /**
-     * <code>optional double streamingThroughput = 4;</code>
-     */
-    double getStreamingThroughput();
-
-    // optional double randomThroughput = 5;
-    /**
-     * <code>optional double randomThroughput = 5;</code>
-     */
-    boolean hasRandomThroughput();
-    /**
-     * <code>optional double randomThroughput = 5;</code>
-     */
-    double getRandomThroughput();
-  }
-  /**
-   * Protobuf type {@code xtreemfs.pbrpc.reservation}
-   */
-  public static final class reservation extends
-      com.google.protobuf.GeneratedMessage
-      implements reservationOrBuilder {
-    // Use reservation.newBuilder() to construct.
-    private reservation(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
-      super(builder);
-      this.unknownFields = builder.getUnknownFields();
-    }
-    private reservation(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
-
-    private static final reservation defaultInstance;
-    public static reservation getDefaultInstance() {
-      return defaultInstance;
-    }
-
-    public reservation getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-
-    private final com.google.protobuf.UnknownFieldSet unknownFields;
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet
-        getUnknownFields() {
-      return this.unknownFields;
-    }
-    private reservation(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      initFields();
-      int mutable_bitField0_ = 0;
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
-            case 10: {
-              org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.Builder subBuilder = null;
-              if (((bitField0_ & 0x00000001) == 0x00000001)) {
-                subBuilder = volume_.toBuilder();
-              }
-              volume_ = input.readMessage(org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.PARSER, extensionRegistry);
-              if (subBuilder != null) {
-                subBuilder.mergeFrom(volume_);
-                volume_ = subBuilder.buildPartial();
-              }
-              bitField0_ |= 0x00000001;
-              break;
-            }
-            case 16: {
-              int rawValue = input.readEnum();
-              org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType value = org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType.valueOf(rawValue);
-              if (value == null) {
-                unknownFields.mergeVarintField(2, rawValue);
-              } else {
-                bitField0_ |= 0x00000002;
-                type_ = value;
-              }
-              break;
-            }
-            case 25: {
-              bitField0_ |= 0x00000004;
-              capacity_ = input.readDouble();
-              break;
-            }
-            case 33: {
-              bitField0_ |= 0x00000008;
-              streamingThroughput_ = input.readDouble();
-              break;
-            }
-            case 41: {
-              bitField0_ |= 0x00000010;
-              randomThroughput_ = input.readDouble();
-              break;
-            }
-          }
-        }
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(
-            e.getMessage()).setUnfinishedMessage(this);
-      } finally {
-        this.unknownFields = unknownFields.build();
-        makeExtensionsImmutable();
-      }
-    }
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.internal_static_xtreemfs_pbrpc_reservation_descriptor;
-    }
-
-    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.internal_static_xtreemfs_pbrpc_reservation_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation.class, org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation.Builder.class);
-    }
-
-    public static com.google.protobuf.Parser<reservation> PARSER =
-        new com.google.protobuf.AbstractParser<reservation>() {
-      public reservation parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return new reservation(input, extensionRegistry);
-      }
-    };
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<reservation> getParserForType() {
-      return PARSER;
-    }
-
-    private int bitField0_;
-    // required .xtreemfs.pbrpc.volumeIdentifier volume = 1;
-    public static final int VOLUME_FIELD_NUMBER = 1;
-    private org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier volume_;
-    /**
-     * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
-     */
-    public boolean hasVolume() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
-    }
-    /**
-     * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
-     */
-    public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier getVolume() {
-      return volume_;
-    }
-    /**
-     * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
-     */
-    public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifierOrBuilder getVolumeOrBuilder() {
-      return volume_;
-    }
-
-    // required .xtreemfs.pbrpc.reservationType type = 2;
-    public static final int TYPE_FIELD_NUMBER = 2;
-    private org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType type_;
-    /**
-     * <code>required .xtreemfs.pbrpc.reservationType type = 2;</code>
-     */
-    public boolean hasType() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
-    }
-    /**
-     * <code>required .xtreemfs.pbrpc.reservationType type = 2;</code>
-     */
-    public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType getType() {
-      return type_;
-    }
-
-    // required double capacity = 3;
-    public static final int CAPACITY_FIELD_NUMBER = 3;
-    private double capacity_;
-    /**
-     * <code>required double capacity = 3;</code>
-     */
-    public boolean hasCapacity() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
-    }
-    /**
-     * <code>required double capacity = 3;</code>
-     */
-    public double getCapacity() {
-      return capacity_;
-    }
-
-    // optional double streamingThroughput = 4;
-    public static final int STREAMINGTHROUGHPUT_FIELD_NUMBER = 4;
-    private double streamingThroughput_;
-    /**
-     * <code>optional double streamingThroughput = 4;</code>
-     */
-    public boolean hasStreamingThroughput() {
-      return ((bitField0_ & 0x00000008) == 0x00000008);
-    }
-    /**
-     * <code>optional double streamingThroughput = 4;</code>
-     */
-    public double getStreamingThroughput() {
-      return streamingThroughput_;
-    }
-
-    // optional double randomThroughput = 5;
-    public static final int RANDOMTHROUGHPUT_FIELD_NUMBER = 5;
-    private double randomThroughput_;
-    /**
-     * <code>optional double randomThroughput = 5;</code>
-     */
-    public boolean hasRandomThroughput() {
-      return ((bitField0_ & 0x00000010) == 0x00000010);
-    }
-    /**
-     * <code>optional double randomThroughput = 5;</code>
-     */
-    public double getRandomThroughput() {
-      return randomThroughput_;
-    }
-
-    private void initFields() {
-      volume_ = org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.getDefaultInstance();
-      type_ = org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType.STREAMING_RESERVATION;
-      capacity_ = 0D;
-      streamingThroughput_ = 0D;
-      randomThroughput_ = 0D;
-    }
-    private byte memoizedIsInitialized = -1;
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
-
-      if (!hasVolume()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasType()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasCapacity()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!getVolume().isInitialized()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      getSerializedSize();
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeMessage(1, volume_);
-      }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeEnum(2, type_.getNumber());
-      }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        output.writeDouble(3, capacity_);
-      }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        output.writeDouble(4, streamingThroughput_);
-      }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        output.writeDouble(5, randomThroughput_);
-      }
-      getUnknownFields().writeTo(output);
-    }
-
-    private int memoizedSerializedSize = -1;
-    public int getSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, volume_);
-      }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeEnumSize(2, type_.getNumber());
-      }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeDoubleSize(3, capacity_);
-      }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeDoubleSize(4, streamingThroughput_);
-      }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeDoubleSize(5, randomThroughput_);
-      }
-      size += getUnknownFields().getSerializedSize();
-      memoizedSerializedSize = size;
-      return size;
-    }
-
-    private static final long serialVersionUID = 0L;
-    @java.lang.Override
-    protected java.lang.Object writeReplace()
-        throws java.io.ObjectStreamException {
-      return super.writeReplace();
-    }
-
-    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input);
-    }
-    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input, extensionRegistry);
-    }
-    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return PARSER.parseDelimitedFrom(input);
-    }
-    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return PARSER.parseDelimitedFrom(input, extensionRegistry);
-    }
-    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input);
-    }
-    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input, extensionRegistry);
-    }
-
-    public static Builder newBuilder() { return Builder.create(); }
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation prototype) {
-      return newBuilder().mergeFrom(prototype);
-    }
-    public Builder toBuilder() { return newBuilder(this); }
-
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    /**
-     * Protobuf type {@code xtreemfs.pbrpc.reservation}
-     */
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.internal_static_xtreemfs_pbrpc_reservation_descriptor;
-      }
-
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.internal_static_xtreemfs_pbrpc_reservation_fieldAccessorTable
-            .ensureFieldAccessorsInitialized(
-                org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation.class, org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation.Builder.class);
-      }
-
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-
-      private Builder(
-          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-          getVolumeFieldBuilder();
-        }
-      }
-      private static Builder create() {
-        return new Builder();
-      }
-
-      public Builder clear() {
-        super.clear();
-        if (volumeBuilder_ == null) {
-          volume_ = org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.getDefaultInstance();
-        } else {
-          volumeBuilder_.clear();
-        }
-        bitField0_ = (bitField0_ & ~0x00000001);
-        type_ = org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType.STREAMING_RESERVATION;
-        bitField0_ = (bitField0_ & ~0x00000002);
-        capacity_ = 0D;
-        bitField0_ = (bitField0_ & ~0x00000004);
-        streamingThroughput_ = 0D;
-        bitField0_ = (bitField0_ & ~0x00000008);
-        randomThroughput_ = 0D;
-        bitField0_ = (bitField0_ & ~0x00000010);
-        return this;
-      }
-
-      public Builder clone() {
-        return create().mergeFrom(buildPartial());
-      }
-
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.internal_static_xtreemfs_pbrpc_reservation_descriptor;
-      }
-
-      public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation getDefaultInstanceForType() {
-        return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation.getDefaultInstance();
-      }
-
-      public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation build() {
-        org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-
-      public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation buildPartial() {
-        org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation result = new org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation(this);
-        int from_bitField0_ = bitField0_;
-        int to_bitField0_ = 0;
-        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
-          to_bitField0_ |= 0x00000001;
-        }
-        if (volumeBuilder_ == null) {
-          result.volume_ = volume_;
-        } else {
-          result.volume_ = volumeBuilder_.build();
-        }
-        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
-          to_bitField0_ |= 0x00000002;
-        }
-        result.type_ = type_;
-        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
-          to_bitField0_ |= 0x00000004;
-        }
-        result.capacity_ = capacity_;
-        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
-          to_bitField0_ |= 0x00000008;
-        }
-        result.streamingThroughput_ = streamingThroughput_;
-        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
-          to_bitField0_ |= 0x00000010;
-        }
-        result.randomThroughput_ = randomThroughput_;
-        result.bitField0_ = to_bitField0_;
-        onBuilt();
-        return result;
-      }
-
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation) {
-          return mergeFrom((org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-
-      public Builder mergeFrom(org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation other) {
-        if (other == org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation.getDefaultInstance()) return this;
-        if (other.hasVolume()) {
-          mergeVolume(other.getVolume());
-        }
-        if (other.hasType()) {
-          setType(other.getType());
-        }
-        if (other.hasCapacity()) {
-          setCapacity(other.getCapacity());
-        }
-        if (other.hasStreamingThroughput()) {
-          setStreamingThroughput(other.getStreamingThroughput());
-        }
-        if (other.hasRandomThroughput()) {
-          setRandomThroughput(other.getRandomThroughput());
-        }
-        this.mergeUnknownFields(other.getUnknownFields());
-        return this;
-      }
-
-      public final boolean isInitialized() {
-        if (!hasVolume()) {
-          
-          return false;
-        }
-        if (!hasType()) {
-          
-          return false;
-        }
-        if (!hasCapacity()) {
-          
-          return false;
-        }
-        if (!getVolume().isInitialized()) {
-          
-          return false;
-        }
-        return true;
-      }
-
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation parsedMessage = null;
-        try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation) e.getUnfinishedMessage();
-          throw e;
-        } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
-        }
-        return this;
-      }
-      private int bitField0_;
-
-      // required .xtreemfs.pbrpc.volumeIdentifier volume = 1;
-      private org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier volume_ = org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.getDefaultInstance();
-      private com.google.protobuf.SingleFieldBuilder<
-          org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier, org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.Builder, org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifierOrBuilder> volumeBuilder_;
-      /**
-       * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
-       */
-      public boolean hasVolume() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
-      }
-      /**
-       * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
-       */
-      public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier getVolume() {
-        if (volumeBuilder_ == null) {
-          return volume_;
-        } else {
-          return volumeBuilder_.getMessage();
-        }
-      }
-      /**
-       * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
-       */
-      public Builder setVolume(org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier value) {
-        if (volumeBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          volume_ = value;
-          onChanged();
-        } else {
-          volumeBuilder_.setMessage(value);
-        }
-        bitField0_ |= 0x00000001;
-        return this;
-      }
-      /**
-       * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
-       */
-      public Builder setVolume(
-          org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.Builder builderForValue) {
-        if (volumeBuilder_ == null) {
-          volume_ = builderForValue.build();
-          onChanged();
-        } else {
-          volumeBuilder_.setMessage(builderForValue.build());
-        }
-        bitField0_ |= 0x00000001;
-        return this;
-      }
-      /**
-       * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
-       */
-      public Builder mergeVolume(org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier value) {
-        if (volumeBuilder_ == null) {
-          if (((bitField0_ & 0x00000001) == 0x00000001) &&
-              volume_ != org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.getDefaultInstance()) {
-            volume_ =
-              org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.newBuilder(volume_).mergeFrom(value).buildPartial();
-          } else {
-            volume_ = value;
-          }
-          onChanged();
-        } else {
-          volumeBuilder_.mergeFrom(value);
-        }
-        bitField0_ |= 0x00000001;
-        return this;
-      }
-      /**
-       * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
-       */
-      public Builder clearVolume() {
-        if (volumeBuilder_ == null) {
-          volume_ = org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.getDefaultInstance();
-          onChanged();
-        } else {
-          volumeBuilder_.clear();
-        }
-        bitField0_ = (bitField0_ & ~0x00000001);
-        return this;
-      }
-      /**
-       * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
-       */
-      public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.Builder getVolumeBuilder() {
-        bitField0_ |= 0x00000001;
-        onChanged();
-        return getVolumeFieldBuilder().getBuilder();
-      }
-      /**
-       * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
-       */
-      public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifierOrBuilder getVolumeOrBuilder() {
-        if (volumeBuilder_ != null) {
-          return volumeBuilder_.getMessageOrBuilder();
-        } else {
-          return volume_;
-        }
-      }
-      /**
-       * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
-       */
-      private com.google.protobuf.SingleFieldBuilder<
-          org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier, org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.Builder, org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifierOrBuilder> 
-          getVolumeFieldBuilder() {
-        if (volumeBuilder_ == null) {
-          volumeBuilder_ = new com.google.protobuf.SingleFieldBuilder<
-              org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier, org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.Builder, org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifierOrBuilder>(
-                  volume_,
-                  getParentForChildren(),
-                  isClean());
-          volume_ = null;
-        }
-        return volumeBuilder_;
-      }
-
-      // required .xtreemfs.pbrpc.reservationType type = 2;
-      private org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType type_ = org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType.STREAMING_RESERVATION;
-      /**
-       * <code>required .xtreemfs.pbrpc.reservationType type = 2;</code>
-       */
-      public boolean hasType() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
-      }
-      /**
-       * <code>required .xtreemfs.pbrpc.reservationType type = 2;</code>
-       */
-      public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType getType() {
-        return type_;
-      }
-      /**
-       * <code>required .xtreemfs.pbrpc.reservationType type = 2;</code>
-       */
-      public Builder setType(org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType value) {
-        if (value == null) {
-          throw new NullPointerException();
-        }
-        bitField0_ |= 0x00000002;
-        type_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>required .xtreemfs.pbrpc.reservationType type = 2;</code>
-       */
-      public Builder clearType() {
-        bitField0_ = (bitField0_ & ~0x00000002);
-        type_ = org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType.STREAMING_RESERVATION;
-        onChanged();
-        return this;
-      }
-
-      // required double capacity = 3;
-      private double capacity_ ;
-      /**
-       * <code>required double capacity = 3;</code>
-       */
-      public boolean hasCapacity() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
-      }
-      /**
-       * <code>required double capacity = 3;</code>
-       */
-      public double getCapacity() {
-        return capacity_;
-      }
-      /**
-       * <code>required double capacity = 3;</code>
-       */
-      public Builder setCapacity(double value) {
-        bitField0_ |= 0x00000004;
-        capacity_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>required double capacity = 3;</code>
-       */
-      public Builder clearCapacity() {
-        bitField0_ = (bitField0_ & ~0x00000004);
-        capacity_ = 0D;
-        onChanged();
-        return this;
-      }
-
-      // optional double streamingThroughput = 4;
-      private double streamingThroughput_ ;
-      /**
-       * <code>optional double streamingThroughput = 4;</code>
-       */
-      public boolean hasStreamingThroughput() {
-        return ((bitField0_ & 0x00000008) == 0x00000008);
-      }
-      /**
-       * <code>optional double streamingThroughput = 4;</code>
-       */
-      public double getStreamingThroughput() {
-        return streamingThroughput_;
-      }
-      /**
-       * <code>optional double streamingThroughput = 4;</code>
-       */
-      public Builder setStreamingThroughput(double value) {
-        bitField0_ |= 0x00000008;
-        streamingThroughput_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional double streamingThroughput = 4;</code>
-       */
-      public Builder clearStreamingThroughput() {
-        bitField0_ = (bitField0_ & ~0x00000008);
-        streamingThroughput_ = 0D;
-        onChanged();
-        return this;
-      }
-
-      // optional double randomThroughput = 5;
-      private double randomThroughput_ ;
-      /**
-       * <code>optional double randomThroughput = 5;</code>
-       */
-      public boolean hasRandomThroughput() {
-        return ((bitField0_ & 0x00000010) == 0x00000010);
-      }
-      /**
-       * <code>optional double randomThroughput = 5;</code>
-       */
-      public double getRandomThroughput() {
-        return randomThroughput_;
-      }
-      /**
-       * <code>optional double randomThroughput = 5;</code>
-       */
-      public Builder setRandomThroughput(double value) {
-        bitField0_ |= 0x00000010;
-        randomThroughput_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional double randomThroughput = 5;</code>
-       */
-      public Builder clearRandomThroughput() {
-        bitField0_ = (bitField0_ & ~0x00000010);
-        randomThroughput_ = 0D;
-        onChanged();
-        return this;
-      }
-
-      // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.reservation)
-    }
-
-    static {
-      defaultInstance = new reservation(true);
-      defaultInstance.initFields();
-    }
-
-    // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.reservation)
-  }
-
   public interface reservationSetOrBuilder
       extends com.google.protobuf.MessageOrBuilder {
 
@@ -3996,6 +3124,1082 @@ public final class Scheduler {
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.osdSet)
   }
 
+  public interface reservationOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // required .xtreemfs.pbrpc.volumeIdentifier volume = 1;
+    /**
+     * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
+     */
+    boolean hasVolume();
+    /**
+     * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
+     */
+    org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier getVolume();
+    /**
+     * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
+     */
+    org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifierOrBuilder getVolumeOrBuilder();
+
+    // required .xtreemfs.pbrpc.reservationType type = 2;
+    /**
+     * <code>required .xtreemfs.pbrpc.reservationType type = 2;</code>
+     */
+    boolean hasType();
+    /**
+     * <code>required .xtreemfs.pbrpc.reservationType type = 2;</code>
+     */
+    org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType getType();
+
+    // required double capacity = 3;
+    /**
+     * <code>required double capacity = 3;</code>
+     */
+    boolean hasCapacity();
+    /**
+     * <code>required double capacity = 3;</code>
+     */
+    double getCapacity();
+
+    // optional double streamingThroughput = 4;
+    /**
+     * <code>optional double streamingThroughput = 4;</code>
+     */
+    boolean hasStreamingThroughput();
+    /**
+     * <code>optional double streamingThroughput = 4;</code>
+     */
+    double getStreamingThroughput();
+
+    // optional double randomThroughput = 5;
+    /**
+     * <code>optional double randomThroughput = 5;</code>
+     */
+    boolean hasRandomThroughput();
+    /**
+     * <code>optional double randomThroughput = 5;</code>
+     */
+    double getRandomThroughput();
+
+    // optional .xtreemfs.pbrpc.osdSet schedule = 6;
+    /**
+     * <code>optional .xtreemfs.pbrpc.osdSet schedule = 6;</code>
+     */
+    boolean hasSchedule();
+    /**
+     * <code>optional .xtreemfs.pbrpc.osdSet schedule = 6;</code>
+     */
+    org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet getSchedule();
+    /**
+     * <code>optional .xtreemfs.pbrpc.osdSet schedule = 6;</code>
+     */
+    org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSetOrBuilder getScheduleOrBuilder();
+  }
+  /**
+   * Protobuf type {@code xtreemfs.pbrpc.reservation}
+   */
+  public static final class reservation extends
+      com.google.protobuf.GeneratedMessage
+      implements reservationOrBuilder {
+    // Use reservation.newBuilder() to construct.
+    private reservation(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private reservation(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final reservation defaultInstance;
+    public static reservation getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public reservation getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private reservation(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 10: {
+              org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.Builder subBuilder = null;
+              if (((bitField0_ & 0x00000001) == 0x00000001)) {
+                subBuilder = volume_.toBuilder();
+              }
+              volume_ = input.readMessage(org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(volume_);
+                volume_ = subBuilder.buildPartial();
+              }
+              bitField0_ |= 0x00000001;
+              break;
+            }
+            case 16: {
+              int rawValue = input.readEnum();
+              org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType value = org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType.valueOf(rawValue);
+              if (value == null) {
+                unknownFields.mergeVarintField(2, rawValue);
+              } else {
+                bitField0_ |= 0x00000002;
+                type_ = value;
+              }
+              break;
+            }
+            case 25: {
+              bitField0_ |= 0x00000004;
+              capacity_ = input.readDouble();
+              break;
+            }
+            case 33: {
+              bitField0_ |= 0x00000008;
+              streamingThroughput_ = input.readDouble();
+              break;
+            }
+            case 41: {
+              bitField0_ |= 0x00000010;
+              randomThroughput_ = input.readDouble();
+              break;
+            }
+            case 50: {
+              org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet.Builder subBuilder = null;
+              if (((bitField0_ & 0x00000020) == 0x00000020)) {
+                subBuilder = schedule_.toBuilder();
+              }
+              schedule_ = input.readMessage(org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(schedule_);
+                schedule_ = subBuilder.buildPartial();
+              }
+              bitField0_ |= 0x00000020;
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.internal_static_xtreemfs_pbrpc_reservation_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.internal_static_xtreemfs_pbrpc_reservation_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation.class, org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<reservation> PARSER =
+        new com.google.protobuf.AbstractParser<reservation>() {
+      public reservation parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new reservation(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<reservation> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
+    // required .xtreemfs.pbrpc.volumeIdentifier volume = 1;
+    public static final int VOLUME_FIELD_NUMBER = 1;
+    private org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier volume_;
+    /**
+     * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
+     */
+    public boolean hasVolume() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
+     */
+    public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier getVolume() {
+      return volume_;
+    }
+    /**
+     * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
+     */
+    public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifierOrBuilder getVolumeOrBuilder() {
+      return volume_;
+    }
+
+    // required .xtreemfs.pbrpc.reservationType type = 2;
+    public static final int TYPE_FIELD_NUMBER = 2;
+    private org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType type_;
+    /**
+     * <code>required .xtreemfs.pbrpc.reservationType type = 2;</code>
+     */
+    public boolean hasType() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>required .xtreemfs.pbrpc.reservationType type = 2;</code>
+     */
+    public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType getType() {
+      return type_;
+    }
+
+    // required double capacity = 3;
+    public static final int CAPACITY_FIELD_NUMBER = 3;
+    private double capacity_;
+    /**
+     * <code>required double capacity = 3;</code>
+     */
+    public boolean hasCapacity() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>required double capacity = 3;</code>
+     */
+    public double getCapacity() {
+      return capacity_;
+    }
+
+    // optional double streamingThroughput = 4;
+    public static final int STREAMINGTHROUGHPUT_FIELD_NUMBER = 4;
+    private double streamingThroughput_;
+    /**
+     * <code>optional double streamingThroughput = 4;</code>
+     */
+    public boolean hasStreamingThroughput() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>optional double streamingThroughput = 4;</code>
+     */
+    public double getStreamingThroughput() {
+      return streamingThroughput_;
+    }
+
+    // optional double randomThroughput = 5;
+    public static final int RANDOMTHROUGHPUT_FIELD_NUMBER = 5;
+    private double randomThroughput_;
+    /**
+     * <code>optional double randomThroughput = 5;</code>
+     */
+    public boolean hasRandomThroughput() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <code>optional double randomThroughput = 5;</code>
+     */
+    public double getRandomThroughput() {
+      return randomThroughput_;
+    }
+
+    // optional .xtreemfs.pbrpc.osdSet schedule = 6;
+    public static final int SCHEDULE_FIELD_NUMBER = 6;
+    private org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet schedule_;
+    /**
+     * <code>optional .xtreemfs.pbrpc.osdSet schedule = 6;</code>
+     */
+    public boolean hasSchedule() {
+      return ((bitField0_ & 0x00000020) == 0x00000020);
+    }
+    /**
+     * <code>optional .xtreemfs.pbrpc.osdSet schedule = 6;</code>
+     */
+    public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet getSchedule() {
+      return schedule_;
+    }
+    /**
+     * <code>optional .xtreemfs.pbrpc.osdSet schedule = 6;</code>
+     */
+    public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSetOrBuilder getScheduleOrBuilder() {
+      return schedule_;
+    }
+
+    private void initFields() {
+      volume_ = org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.getDefaultInstance();
+      type_ = org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType.STREAMING_RESERVATION;
+      capacity_ = 0D;
+      streamingThroughput_ = 0D;
+      randomThroughput_ = 0D;
+      schedule_ = org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet.getDefaultInstance();
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      if (!hasVolume()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasType()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasCapacity()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getVolume().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (hasSchedule()) {
+        if (!getSchedule().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, volume_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeEnum(2, type_.getNumber());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeDouble(3, capacity_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeDouble(4, streamingThroughput_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeDouble(5, randomThroughput_);
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        output.writeMessage(6, schedule_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(1, volume_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(2, type_.getNumber());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeDoubleSize(3, capacity_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeDoubleSize(4, streamingThroughput_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeDoubleSize(5, randomThroughput_);
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(6, schedule_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code xtreemfs.pbrpc.reservation}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.internal_static_xtreemfs_pbrpc_reservation_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.internal_static_xtreemfs_pbrpc_reservation_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation.class, org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation.Builder.class);
+      }
+
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getVolumeFieldBuilder();
+          getScheduleFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        if (volumeBuilder_ == null) {
+          volume_ = org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.getDefaultInstance();
+        } else {
+          volumeBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
+        type_ = org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType.STREAMING_RESERVATION;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        capacity_ = 0D;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        streamingThroughput_ = 0D;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        randomThroughput_ = 0D;
+        bitField0_ = (bitField0_ & ~0x00000010);
+        if (scheduleBuilder_ == null) {
+          schedule_ = org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet.getDefaultInstance();
+        } else {
+          scheduleBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000020);
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.internal_static_xtreemfs_pbrpc_reservation_descriptor;
+      }
+
+      public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation getDefaultInstanceForType() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation.getDefaultInstance();
+      }
+
+      public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation build() {
+        org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation buildPartial() {
+        org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation result = new org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        if (volumeBuilder_ == null) {
+          result.volume_ = volume_;
+        } else {
+          result.volume_ = volumeBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.type_ = type_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.capacity_ = capacity_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.streamingThroughput_ = streamingThroughput_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.randomThroughput_ = randomThroughput_;
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000020;
+        }
+        if (scheduleBuilder_ == null) {
+          result.schedule_ = schedule_;
+        } else {
+          result.schedule_ = scheduleBuilder_.build();
+        }
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation) {
+          return mergeFrom((org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation other) {
+        if (other == org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation.getDefaultInstance()) return this;
+        if (other.hasVolume()) {
+          mergeVolume(other.getVolume());
+        }
+        if (other.hasType()) {
+          setType(other.getType());
+        }
+        if (other.hasCapacity()) {
+          setCapacity(other.getCapacity());
+        }
+        if (other.hasStreamingThroughput()) {
+          setStreamingThroughput(other.getStreamingThroughput());
+        }
+        if (other.hasRandomThroughput()) {
+          setRandomThroughput(other.getRandomThroughput());
+        }
+        if (other.hasSchedule()) {
+          mergeSchedule(other.getSchedule());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        if (!hasVolume()) {
+          
+          return false;
+        }
+        if (!hasType()) {
+          
+          return false;
+        }
+        if (!hasCapacity()) {
+          
+          return false;
+        }
+        if (!getVolume().isInitialized()) {
+          
+          return false;
+        }
+        if (hasSchedule()) {
+          if (!getSchedule().isInitialized()) {
+            
+            return false;
+          }
+        }
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservation) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      // required .xtreemfs.pbrpc.volumeIdentifier volume = 1;
+      private org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier volume_ = org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier, org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.Builder, org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifierOrBuilder> volumeBuilder_;
+      /**
+       * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
+       */
+      public boolean hasVolume() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
+       */
+      public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier getVolume() {
+        if (volumeBuilder_ == null) {
+          return volume_;
+        } else {
+          return volumeBuilder_.getMessage();
+        }
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
+       */
+      public Builder setVolume(org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier value) {
+        if (volumeBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          volume_ = value;
+          onChanged();
+        } else {
+          volumeBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000001;
+        return this;
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
+       */
+      public Builder setVolume(
+          org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.Builder builderForValue) {
+        if (volumeBuilder_ == null) {
+          volume_ = builderForValue.build();
+          onChanged();
+        } else {
+          volumeBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
+        return this;
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
+       */
+      public Builder mergeVolume(org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier value) {
+        if (volumeBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              volume_ != org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.getDefaultInstance()) {
+            volume_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.newBuilder(volume_).mergeFrom(value).buildPartial();
+          } else {
+            volume_ = value;
+          }
+          onChanged();
+        } else {
+          volumeBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000001;
+        return this;
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
+       */
+      public Builder clearVolume() {
+        if (volumeBuilder_ == null) {
+          volume_ = org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.getDefaultInstance();
+          onChanged();
+        } else {
+          volumeBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
+        return this;
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
+       */
+      public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.Builder getVolumeBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getVolumeFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
+       */
+      public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifierOrBuilder getVolumeOrBuilder() {
+        if (volumeBuilder_ != null) {
+          return volumeBuilder_.getMessageOrBuilder();
+        } else {
+          return volume_;
+        }
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.volumeIdentifier volume = 1;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier, org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.Builder, org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifierOrBuilder> 
+          getVolumeFieldBuilder() {
+        if (volumeBuilder_ == null) {
+          volumeBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier, org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifier.Builder, org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.volumeIdentifierOrBuilder>(
+                  volume_,
+                  getParentForChildren(),
+                  isClean());
+          volume_ = null;
+        }
+        return volumeBuilder_;
+      }
+
+      // required .xtreemfs.pbrpc.reservationType type = 2;
+      private org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType type_ = org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType.STREAMING_RESERVATION;
+      /**
+       * <code>required .xtreemfs.pbrpc.reservationType type = 2;</code>
+       */
+      public boolean hasType() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.reservationType type = 2;</code>
+       */
+      public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType getType() {
+        return type_;
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.reservationType type = 2;</code>
+       */
+      public Builder setType(org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType value) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        bitField0_ |= 0x00000002;
+        type_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.reservationType type = 2;</code>
+       */
+      public Builder clearType() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        type_ = org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.reservationType.STREAMING_RESERVATION;
+        onChanged();
+        return this;
+      }
+
+      // required double capacity = 3;
+      private double capacity_ ;
+      /**
+       * <code>required double capacity = 3;</code>
+       */
+      public boolean hasCapacity() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>required double capacity = 3;</code>
+       */
+      public double getCapacity() {
+        return capacity_;
+      }
+      /**
+       * <code>required double capacity = 3;</code>
+       */
+      public Builder setCapacity(double value) {
+        bitField0_ |= 0x00000004;
+        capacity_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required double capacity = 3;</code>
+       */
+      public Builder clearCapacity() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        capacity_ = 0D;
+        onChanged();
+        return this;
+      }
+
+      // optional double streamingThroughput = 4;
+      private double streamingThroughput_ ;
+      /**
+       * <code>optional double streamingThroughput = 4;</code>
+       */
+      public boolean hasStreamingThroughput() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>optional double streamingThroughput = 4;</code>
+       */
+      public double getStreamingThroughput() {
+        return streamingThroughput_;
+      }
+      /**
+       * <code>optional double streamingThroughput = 4;</code>
+       */
+      public Builder setStreamingThroughput(double value) {
+        bitField0_ |= 0x00000008;
+        streamingThroughput_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional double streamingThroughput = 4;</code>
+       */
+      public Builder clearStreamingThroughput() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        streamingThroughput_ = 0D;
+        onChanged();
+        return this;
+      }
+
+      // optional double randomThroughput = 5;
+      private double randomThroughput_ ;
+      /**
+       * <code>optional double randomThroughput = 5;</code>
+       */
+      public boolean hasRandomThroughput() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <code>optional double randomThroughput = 5;</code>
+       */
+      public double getRandomThroughput() {
+        return randomThroughput_;
+      }
+      /**
+       * <code>optional double randomThroughput = 5;</code>
+       */
+      public Builder setRandomThroughput(double value) {
+        bitField0_ |= 0x00000010;
+        randomThroughput_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional double randomThroughput = 5;</code>
+       */
+      public Builder clearRandomThroughput() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        randomThroughput_ = 0D;
+        onChanged();
+        return this;
+      }
+
+      // optional .xtreemfs.pbrpc.osdSet schedule = 6;
+      private org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet schedule_ = org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet, org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet.Builder, org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSetOrBuilder> scheduleBuilder_;
+      /**
+       * <code>optional .xtreemfs.pbrpc.osdSet schedule = 6;</code>
+       */
+      public boolean hasSchedule() {
+        return ((bitField0_ & 0x00000020) == 0x00000020);
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.osdSet schedule = 6;</code>
+       */
+      public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet getSchedule() {
+        if (scheduleBuilder_ == null) {
+          return schedule_;
+        } else {
+          return scheduleBuilder_.getMessage();
+        }
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.osdSet schedule = 6;</code>
+       */
+      public Builder setSchedule(org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet value) {
+        if (scheduleBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          schedule_ = value;
+          onChanged();
+        } else {
+          scheduleBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000020;
+        return this;
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.osdSet schedule = 6;</code>
+       */
+      public Builder setSchedule(
+          org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet.Builder builderForValue) {
+        if (scheduleBuilder_ == null) {
+          schedule_ = builderForValue.build();
+          onChanged();
+        } else {
+          scheduleBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000020;
+        return this;
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.osdSet schedule = 6;</code>
+       */
+      public Builder mergeSchedule(org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet value) {
+        if (scheduleBuilder_ == null) {
+          if (((bitField0_ & 0x00000020) == 0x00000020) &&
+              schedule_ != org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet.getDefaultInstance()) {
+            schedule_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet.newBuilder(schedule_).mergeFrom(value).buildPartial();
+          } else {
+            schedule_ = value;
+          }
+          onChanged();
+        } else {
+          scheduleBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000020;
+        return this;
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.osdSet schedule = 6;</code>
+       */
+      public Builder clearSchedule() {
+        if (scheduleBuilder_ == null) {
+          schedule_ = org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet.getDefaultInstance();
+          onChanged();
+        } else {
+          scheduleBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000020);
+        return this;
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.osdSet schedule = 6;</code>
+       */
+      public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet.Builder getScheduleBuilder() {
+        bitField0_ |= 0x00000020;
+        onChanged();
+        return getScheduleFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.osdSet schedule = 6;</code>
+       */
+      public org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSetOrBuilder getScheduleOrBuilder() {
+        if (scheduleBuilder_ != null) {
+          return scheduleBuilder_.getMessageOrBuilder();
+        } else {
+          return schedule_;
+        }
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.osdSet schedule = 6;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet, org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet.Builder, org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSetOrBuilder> 
+          getScheduleFieldBuilder() {
+        if (scheduleBuilder_ == null) {
+          scheduleBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet, org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSet.Builder, org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.osdSetOrBuilder>(
+                  schedule_,
+                  getParentForChildren(),
+                  isClean());
+          schedule_ = null;
+        }
+        return scheduleBuilder_;
+      }
+
+      // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.reservation)
+    }
+
+    static {
+      defaultInstance = new reservation(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.reservation)
+  }
+
   public interface freeResourcesResponseOrBuilder
       extends com.google.protobuf.MessageOrBuilder {
 
@@ -4683,11 +4887,6 @@ public final class Scheduler {
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_xtreemfs_pbrpc_volumeSet_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_xtreemfs_pbrpc_reservation_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_xtreemfs_pbrpc_reservation_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_xtreemfs_pbrpc_reservationSet_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
@@ -4697,6 +4896,11 @@ public final class Scheduler {
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_xtreemfs_pbrpc_osdSet_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_xtreemfs_pbrpc_reservation_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_xtreemfs_pbrpc_reservation_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
     internal_static_xtreemfs_pbrpc_freeResourcesResponse_descriptor;
   private static
@@ -4717,36 +4921,37 @@ public final class Scheduler {
       "Identifier\022\014\n\004uuid\030\001 \002(\t\" \n\020volumeIdenti" +
       "fier\022\014\n\004uuid\030\001 \002(\t\">\n\tvolumeSet\0221\n\007volum" +
       "es\030\001 \003(\0132 .xtreemfs.pbrpc.volumeIdentifi" +
-      "er\"\267\001\n\013reservation\0220\n\006volume\030\001 \002(\0132 .xtr" +
-      "eemfs.pbrpc.volumeIdentifier\022-\n\004type\030\002 \002" +
-      "(\0162\037.xtreemfs.pbrpc.reservationType\022\020\n\010c" +
-      "apacity\030\003 \002(\001\022\033\n\023streamingThroughput\030\004 \001",
-      "(\001\022\030\n\020randomThroughput\030\005 \001(\001\"C\n\016reservat" +
-      "ionSet\0221\n\014reservations\030\001 \003(\0132\033.xtreemfs." +
-      "pbrpc.reservation\"4\n\006osdSet\022*\n\003osd\030\001 \003(\013" +
-      "2\035.xtreemfs.pbrpc.osdIdentifier\"\201\001\n\025free" +
-      "ResourcesResponse\022\031\n\021streamingCapacity\030\001" +
-      " \002(\001\022\033\n\023streamingThroughput\030\002 \002(\001\022\026\n\016ran" +
-      "domCapacity\030\003 \002(\001\022\030\n\020randomThroughput\030\004 " +
-      "\002(\001*\202\001\n\017reservationType\022\031\n\025STREAMING_RES" +
-      "ERVATION\020\001\022\031\n\025RANDOM_IO_RESERVATION\020\002\022\033\n" +
-      "\027BEST_EFFORT_RESERVATION\020\003\022\034\n\030COLD_STORA",
-      "GE_RESERVATION\020\0042\254\004\n\020SchedulerService\022S\n" +
-      "\023scheduleReservation\022\033.xtreemfs.pbrpc.re" +
-      "servation\032\026.xtreemfs.pbrpc.osdSet\"\007\215\265\030e\000" +
-      "\000\000\022]\n\021removeReservation\022 .xtreemfs.pbrpc" +
-      ".volumeIdentifier\032\035.xtreemfs.pbrpc.empty" +
-      "Response\"\007\215\265\030f\000\000\000\022P\n\013getSchedule\022 .xtree" +
-      "mfs.pbrpc.volumeIdentifier\032\026.xtreemfs.pb" +
-      "rpc.osdSet\"\007\215\265\030g\000\000\000\022O\n\ngetVolumes\022\035.xtre" +
-      "emfs.pbrpc.osdIdentifier\032\031.xtreemfs.pbrp" +
-      "c.volumeSet\"\007\215\265\030h\000\000\000\022V\n\rgetAllVolumes\022\034.",
-      "xtreemfs.pbrpc.emptyRequest\032\036.xtreemfs.p" +
-      "brpc.reservationSet\"\007\215\265\030i\000\000\000\022`\n\020getFreeR" +
-      "esources\022\034.xtreemfs.pbrpc.emptyRequest\032%" +
-      ".xtreemfs.pbrpc.freeResourcesResponse\"\007\215" +
-      "\265\030j\000\000\000\032\007\225\265\030A\234\000\000B(\n&org.xtreemfs.pbrpc.ge" +
-      "neratedinterfaces"
+      "er\"C\n\016reservationSet\0221\n\014reservations\030\001 \003" +
+      "(\0132\033.xtreemfs.pbrpc.reservation\"4\n\006osdSe" +
+      "t\022*\n\003osd\030\001 \003(\0132\035.xtreemfs.pbrpc.osdIdent" +
+      "ifier\"\341\001\n\013reservation\0220\n\006volume\030\001 \002(\0132 .",
+      "xtreemfs.pbrpc.volumeIdentifier\022-\n\004type\030" +
+      "\002 \002(\0162\037.xtreemfs.pbrpc.reservationType\022\020" +
+      "\n\010capacity\030\003 \002(\001\022\033\n\023streamingThroughput\030" +
+      "\004 \001(\001\022\030\n\020randomThroughput\030\005 \001(\001\022(\n\010sched" +
+      "ule\030\006 \001(\0132\026.xtreemfs.pbrpc.osdSet\"\201\001\n\025fr" +
+      "eeResourcesResponse\022\031\n\021streamingCapacity" +
+      "\030\001 \002(\001\022\033\n\023streamingThroughput\030\002 \002(\001\022\026\n\016r" +
+      "andomCapacity\030\003 \002(\001\022\030\n\020randomThroughput\030" +
+      "\004 \002(\001*\202\001\n\017reservationType\022\031\n\025STREAMING_R" +
+      "ESERVATION\020\001\022\031\n\025RANDOM_IO_RESERVATION\020\002\022",
+      "\033\n\027BEST_EFFORT_RESERVATION\020\003\022\034\n\030COLD_STO" +
+      "RAGE_RESERVATION\020\0042\254\004\n\020SchedulerService\022" +
+      "S\n\023scheduleReservation\022\033.xtreemfs.pbrpc." +
+      "reservation\032\026.xtreemfs.pbrpc.osdSet\"\007\215\265\030" +
+      "e\000\000\000\022]\n\021removeReservation\022 .xtreemfs.pbr" +
+      "pc.volumeIdentifier\032\035.xtreemfs.pbrpc.emp" +
+      "tyResponse\"\007\215\265\030f\000\000\000\022P\n\013getSchedule\022 .xtr" +
+      "eemfs.pbrpc.volumeIdentifier\032\026.xtreemfs." +
+      "pbrpc.osdSet\"\007\215\265\030g\000\000\000\022O\n\ngetVolumes\022\035.xt" +
+      "reemfs.pbrpc.osdIdentifier\032\031.xtreemfs.pb",
+      "rpc.volumeSet\"\007\215\265\030h\000\000\000\022V\n\rgetAllVolumes\022" +
+      "\034.xtreemfs.pbrpc.emptyRequest\032\036.xtreemfs" +
+      ".pbrpc.reservationSet\"\007\215\265\030i\000\000\000\022`\n\020getFre" +
+      "eResources\022\034.xtreemfs.pbrpc.emptyRequest" +
+      "\032%.xtreemfs.pbrpc.freeResourcesResponse\"" +
+      "\007\215\265\030j\000\000\000\032\007\225\265\030A\234\000\000B(\n&org.xtreemfs.pbrpc." +
+      "generatedinterfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -4771,24 +4976,24 @@ public final class Scheduler {
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_volumeSet_descriptor,
               new java.lang.String[] { "Volumes", });
-          internal_static_xtreemfs_pbrpc_reservation_descriptor =
-            getDescriptor().getMessageTypes().get(3);
-          internal_static_xtreemfs_pbrpc_reservation_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_xtreemfs_pbrpc_reservation_descriptor,
-              new java.lang.String[] { "Volume", "Type", "Capacity", "StreamingThroughput", "RandomThroughput", });
           internal_static_xtreemfs_pbrpc_reservationSet_descriptor =
-            getDescriptor().getMessageTypes().get(4);
+            getDescriptor().getMessageTypes().get(3);
           internal_static_xtreemfs_pbrpc_reservationSet_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_reservationSet_descriptor,
               new java.lang.String[] { "Reservations", });
           internal_static_xtreemfs_pbrpc_osdSet_descriptor =
-            getDescriptor().getMessageTypes().get(5);
+            getDescriptor().getMessageTypes().get(4);
           internal_static_xtreemfs_pbrpc_osdSet_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_osdSet_descriptor,
               new java.lang.String[] { "Osd", });
+          internal_static_xtreemfs_pbrpc_reservation_descriptor =
+            getDescriptor().getMessageTypes().get(5);
+          internal_static_xtreemfs_pbrpc_reservation_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_xtreemfs_pbrpc_reservation_descriptor,
+              new java.lang.String[] { "Volume", "Type", "Capacity", "StreamingThroughput", "RandomThroughput", "Schedule", });
           internal_static_xtreemfs_pbrpc_freeResourcesResponse_descriptor =
             getDescriptor().getMessageTypes().get(6);
           internal_static_xtreemfs_pbrpc_freeResourcesResponse_fieldAccessorTable = new

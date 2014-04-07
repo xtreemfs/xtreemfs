@@ -56,20 +56,21 @@ message volumeSet {
   repeated volumeIdentifier volumes = 1;
 }
 
-message reservation {
-  required volumeIdentifier volume = 1;
-  required reservationType type = 2;
-  required double capacity = 3;
-  optional double streamingThroughput = 4;
-  optional double randomThroughput = 5;
-}
-
 message reservationSet {
   repeated reservation reservations = 1;
 }
 
 message osdSet {
   repeated osdIdentifier osd=1;
+}
+
+message reservation {
+  required volumeIdentifier volume = 1;
+  required reservationType type = 2;
+  required double capacity = 3;
+  optional double streamingThroughput = 4;
+  optional double randomThroughput = 5;
+  optional osdSet schedule = 6;
 }
 
 message freeResourcesResponse {

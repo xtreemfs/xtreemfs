@@ -20,6 +20,7 @@ import org.xtreemfs.osd.operations.ReadOperation;
 import org.xtreemfs.osd.operations.WriteOperation;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD;
+import org.xtreemfs.pbrpc.generatedinterfaces.Scheduler;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -42,6 +43,8 @@ public class WFQStage extends Stage {
 
     private static RPC.Auth                         authNone;
 
+    private Map<String, Integer>                    qualityClasses;
+
     static {
         authNone = RPC.Auth.newBuilder().setAuthType(RPC.AuthType.AUTH_NONE).build();
     }
@@ -52,6 +55,7 @@ public class WFQStage extends Stage {
         this.volumeNames = new HashMap<String, String>();
         this.uc = RPC.UserCredentials.newBuilder().setUsername("wfq-stage").addGroups("xtreemfs-services")
                 .build();
+        this.qualityClasses = new HashMap<String, Integer>();
 
         this.wfqQueue = new WeightedFairQueue<String, StageRequest>(queueCapacity,
                 master.getConfig().getWfqResetPeriod(),
@@ -77,13 +81,12 @@ public class WFQStage extends Stage {
 
             @Override
             public int getWeight(String qualityClass) {
-                if (qualityClass.equals(getVolumeName("volume1"))) {
+                String volume = getVolumeName((qualityClass));
+
+                if(volume == null)
                     return 1;
-                } else if (qualityClass.equals(getVolumeName("volume2"))) {
-                    return 2;
-                } else {
-                    return 1;
-                }
+                else
+                    return WFQStage.this.getQualityClass(volume);
             }
         });
     }
@@ -185,7 +188,41 @@ public class WFQStage extends Stage {
         }
     }
 
-    private double getQoS(String volumeName) {
-        return 1.0;
+    private int getQualityClass(String volume) {
+        if(this.qualityClasses.containsKey(volume)) {
+            return this.qualityClasses.get(volume);
+        } else {
+            updateQualityClasses();
+            if(this.qualityClasses.containsKey(volume)) {
+                return this.qualityClasses.get(volume);
+            } else {
+                return 1;
+            }
+        }
+    }
+
+    synchronized private void updateQualityClasses() {
+        String myUuid = master.getConfig().getUUID().toString();
+        Scheduler.osdIdentifier thisOSD = Scheduler.osdIdentifier.newBuilder().setUuid(myUuid).build();
+
+        try {
+            Scheduler.reservationSet reservations = master.getSchedulerClient().getAllVolumes(null, authNone, uc);
+
+            for (Scheduler.reservation r : reservations.getReservationsList()) {
+                if (r.getSchedule().getOsdList().contains(thisOSD)) {
+                    Integer throughput = 1;
+
+                    if (r.getType() == Scheduler.reservationType.STREAMING_RESERVATION) {
+                        throughput = (int) (r.getStreamingThroughput() * 100.0);
+                    } else if (r.getType() == Scheduler.reservationType.RANDOM_IO_RESERVATION) {
+                        throughput = (int) (r.getRandomThroughput() * 100.0);
+                    }
+
+                    this.qualityClasses.put(r.getVolume().getUuid(), throughput);
+                }
+            }
+        } catch (Exception ex) {
+            Logging.logMessage(Logging.LEVEL_ERROR, this, "Cannot get schedule " + ex);
+        }
     }
 }

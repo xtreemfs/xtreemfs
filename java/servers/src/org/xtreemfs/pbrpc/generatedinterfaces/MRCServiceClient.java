@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Thu Mar 20 13:34:54 CET 2014
+//automatically generated from MRC.proto at Mon Apr 07 15:30:40 CEST 2014
 //(c) 2014. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -6,16 +6,13 @@ package org.xtreemfs.pbrpc.generatedinterfaces;
 import java.io.IOException;
 import java.util.List;
 import java.net.InetSocketAddress;
-
 import com.google.protobuf.Message;
 import com.google.protobuf.ByteString;
-
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest;
 
 public class MRCServiceClient {
 

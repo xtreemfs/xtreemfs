@@ -1,4 +1,4 @@
-//automatically generated from Scheduler.proto at Thu Mar 20 13:34:54 CET 2014
+//automatically generated from Scheduler.proto at Mon Apr 07 15:30:40 CEST 2014
 //(c) 2014. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -32,8 +32,8 @@ public class SchedulerServiceClient {
          return response;
     }
 
-    public RPCResponse<Scheduler.osdSet> scheduleReservation(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, Scheduler.volumeIdentifier volume, Scheduler.reservationType type, double capacity, double streamingThroughput, double randomThroughput) throws IOException {
-         final Scheduler.reservation msg = Scheduler.reservation.newBuilder().setVolume(volume).setType(type).setCapacity(capacity).setStreamingThroughput(streamingThroughput).setRandomThroughput(randomThroughput).build();
+    public RPCResponse<Scheduler.osdSet> scheduleReservation(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, Scheduler.volumeIdentifier volume, Scheduler.reservationType type, double capacity, double streamingThroughput, double randomThroughput, Scheduler.osdSet schedule) throws IOException {
+         final Scheduler.reservation msg = Scheduler.reservation.newBuilder().setVolume(volume).setType(type).setCapacity(capacity).setStreamingThroughput(streamingThroughput).setRandomThroughput(randomThroughput).setSchedule(schedule).build();
          return scheduleReservation(server, authHeader, userCreds,msg);
     }
 
