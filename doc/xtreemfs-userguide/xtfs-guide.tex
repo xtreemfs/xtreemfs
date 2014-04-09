@@ -2814,17 +2814,17 @@ For Hadoop you have so set the following environment variable:
    \begin{itemize}
    \item Hadoop 1.x:
       \begin{verbatim}
-		export HADOOP_HOME=<path to Hadoop directory>
+		export HADOOP_PREFIX=<path to Hadoop directory>
       \end{verbatim}
       
    \item Hadoop 2.x:
       \begin{verbatim}
-		export HADOOP_HOME=<path to Hadoop directory>
-		export HADOOP_MAPRED_HOME=$HADOOP_HOME
-		export HADOOP_COMMON_HOME=$HADOOP_HOME
-		export HADOOP_HDFS_HOME=$HADOOP_HOME
-		export HADOOP_YARN_HOME=$HADOOP_HOME
-		export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
+		export HADOOP_PREFIX=<path to Hadoop directory>
+		export HADOOP_MAPRED_HOME=$HADOOP_PREFIX
+		export HADOOP_COMMON_HOME=$HADOOP_PREFIX
+		export HADOOP_HDFS_HOME=$HADOOP_PREFIX
+		export HADOOP_YARN_HOME=$HADOOP_PREFIX
+		export HADOOP_CONF_DIR=$HADOOP_PREFIX/etc/hadoop
       \end{verbatim}
    \end{itemize}
 
