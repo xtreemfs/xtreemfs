@@ -247,7 +247,7 @@ Tests = [
     {
         'name': 'xtfs_benchmark',
         'file': '14_xtfs_benchmark.sh',
-        'VolumeConfigs': [ 'regular', 'regular_two_osds', 'nomdcache', 'directio', 'striped2', 'replicated_wqrq', 'replicated_wqrq_asyncwrites', 'replicated_war1'],
+        'VolumeConfigs': [ 'regular', 'regular_two_osds', 'nomdcache', 'directio', 'striped2', 'replicated_wqrq', 'replicated_wqrq_asyncwrites'],
         'TestSets': [ 'full' ]
     },
     # SYSTEM TESTS
