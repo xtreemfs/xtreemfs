@@ -332,3 +332,12 @@ hadoop-client_distclean:
 
 test: check_test client server
 	python ./tests/xtestenv -c ./tests/test_config.py short
+
+pbrpcgen:
+	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/pbrpcgen/build.xml
+
+pbrpcgen_clean:
+	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/pbrpcgen/build.xml clean || exit 1
+
+interfaces: pbrpcgen
+	$(MAKE) -C interface
