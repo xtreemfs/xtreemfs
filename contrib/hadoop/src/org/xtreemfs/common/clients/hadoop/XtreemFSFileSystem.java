@@ -63,11 +63,13 @@ public class XtreemFSFileSystem extends FileSystem {
     private int                 readBufferSize;
     private int                 writeBufferSize;
     private Volume              defaultVolume;
+    private Configuration       conf;
 
     @Override
     public void initialize(URI uri, Configuration conf) throws IOException {
         super.initialize(uri, conf);
-
+        this.conf = conf;
+        
         int logLevel = Logging.LEVEL_WARN;
         if (conf.getBoolean("xtreemfs.client.debug", false)) {
             logLevel = Logging.LEVEL_DEBUG;
@@ -164,6 +166,11 @@ public class XtreemFSFileSystem extends FileSystem {
     public URI getUri() {
         return this.fileSystemURI;
     }
+    
+    @Override
+    public Configuration getConf() {
+    	return conf;
+    }
 
     @Override
     public FSDataInputStream open(Path path, int bufferSize) throws IOException {
@@ -194,21 +201,10 @@ public class XtreemFSFileSystem extends FileSystem {
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "Creating file %s. Overwrite = %s", pathString, overwrite);
         }
-
-        // If some of the parent directories don't exist they should be created.
-        final String[] dirs = pathString.split("/");
-        String tempPath = "";
-        for (int i = 0; i < dirs.length - 1; i++) {
-            if (dirs[i].isEmpty() == false) {
-                tempPath = tempPath + "/" + dirs[i];
-                if (isXtreemFSDirectory(tempPath, xtreemfsVolume) == false) {
-                    xtreemfsVolume.createDirectory(userCredentials, tempPath, fp.toShort());
-                }
-            }
-        }
+        // If some of the parent directories don't exist they should be created (with default permissions for directory).
+        mkdirs(path.getParent());
 
         final FileHandle fileHandle = xtreemfsVolume.openFile(userCredentials, pathString, flags, fp.toShort());
-        statistics.incrementWriteOps(1);
         return new FSDataOutputStream(new XtreemFSFileOutputStream(userCredentials, fileHandle, pathString,
                 useWriteBuffer, writeBufferSize), statistics);
     }
@@ -394,14 +390,8 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public void setWorkingDirectory(Path path) {
-        Volume xtreemfsVolume = null;
-        try {
-            xtreemfsVolume = getVolumeFromPath(path);
-            this.workingDirectory = new Path(preparePath(path, xtreemfsVolume));
-        } catch (IOException e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.misc, this,
-                    "Unable to set working directory. %s does not exist!", makeAbsolute(path).toUri().toString());
-        }
+        Volume xtreemfsVolume = getVolumeFromPath(path);
+        this.workingDirectory = new Path(preparePath(path, xtreemfsVolume));
     }
 
     @Override
@@ -466,13 +456,13 @@ public class XtreemFSFileSystem extends FileSystem {
         if (isDir) {
             // for directories, set blocksize to 0
             return new FileStatus(0, isDir, 1, 0, (long) (stat.getMtimeNs() / 1e6), (long) (stat.getAtimeNs() / 1e6),
-                    new FsPermission((short) stat.getMode()), stat.getUserId(), stat.getGroupId(), makeAbsolute(path));
+                    new FsPermission((short) stat.getMode()), stat.getUserId(), stat.getGroupId(), makeQualified(path));
         } else {
             // for files, set blocksize to stripesize of the volume
             return new FileStatus(stat.getSize(), isDir, 1, xtreemfsVolume.statFS(userCredentials)
                     .getDefaultStripingPolicy().getStripeSize() * 1024, (long) (stat.getMtimeNs() / 1e6),
                     (long) (stat.getAtimeNs() / 1e6), new FsPermission((short) stat.getMode()), stat.getUserId(),
-                    stat.getGroupId(), makeAbsolute(path));
+                    stat.getGroupId(), makeQualified(path));
         }
     }
 
@@ -487,7 +477,7 @@ public class XtreemFSFileSystem extends FileSystem {
         }
         xtreemfsClient.shutdown();
     }
-
+    
     @Override
     public BlockLocation[] getFileBlockLocations(FileStatus file, long start, long length) throws IOException {
         if (file == null) {
@@ -532,10 +522,11 @@ public class XtreemFSFileSystem extends FileSystem {
      * @return
      * @throws IOException
      */
-    private Volume getVolumeFromPath(Path path) throws IOException {
+    private Volume getVolumeFromPath(Path path) {
         String pathString = makeAbsolute(path).toUri().getPath();
         String[] splittedPath = pathString.split("/");
-        if (splittedPath.length > 1 && defaultVolumeDirectories.contains(splittedPath[1]) || pathString.lastIndexOf("/") == 0) {
+        if (splittedPath.length > 1 && defaultVolumeDirectories.contains(splittedPath[1])
+                || pathString.lastIndexOf("/") == 0) {
             // First part of path is a directory or path is a file in the root of defaultVolume
             return defaultVolume;
         } else {
