@@ -61,7 +61,7 @@ Summary of important changes in release 1.5:
  \item \textbf{Multiple OSDs per Machine}\\
     Support for multiple OSDs per machine (e.g. one for each disk) through the xtreemfs-osd-farm init.d script. See section~\ref{sec:xtreemfs-osd-farm}.
  \item \textbf{Improved Checksum Support}\\
-    xtfs_scrub now repairs replicas with an invalid checksum automatically.
+    xtfs\_scrub now repairs replicas with an invalid checksum automatically.
  \item \textbf{Major bugfixes for Read/Write and Read-Only Replication}\\
     There were problems with the fail-over of replicas which were fixed.
  \item \textbf{Minor bugfixes and improvements across all components.}\\
@@ -2405,7 +2405,7 @@ A replication policy can either be specified for an existing file or as a defaul
 
 For details on how to define replication policies, please refer to Section \ref{sec:xtfsutil_files} and \ref{sec:xtfsutil_volumes}.
 
-The DIR status page has a subpage which shows the replication status for open files. It's accessible at \href{http://localhost:30638/replica_status}{http://localhost:30638/replica_status}. Replace \texttt{localhost} with the hostname of the DIR service if you're not on the same machine.
+The DIR status page has a subpage which shows the replication status for open files. It's accessible at \url{http://localhost:30638/replica_status}. Replace \texttt{localhost} with the hostname of the DIR service if you're not on the same machine.
 
 \section{Read-Only File Replication}
 \label{sec:ronly_replication}
@@ -2900,7 +2900,48 @@ This section will help you to set up a simple Hadoop configuration with all nece
     <description>GroupID to be used by Hadoop while accessing XtreemFS.</description>
   </property>
 	\end{verbatim}
-	\newpage
+	
+		Hint: If you want to use the XtreemFSHadoopClient with a SSL encrypted XtreemFS installation, you have to specify the following additional properties: 
+	\begin{verbatim}
+  <property>
+    <name>xtreemfs.ssl.enabled</name>
+    <value>true</value>
+    <description>Enable/Disable SSL for the XtreemFSHadoopClient</description>
+  </property>
+
+  <property>
+    <name>xtreemfs.ssl.credentialFile</name>
+    <value>credentialFile.p12</value>
+    <description>Path to a PKCS#12 credential file.</description>
+   </property>
+
+  <property>
+    <name>xtreemfs.ssl.credentialFile.passphrase</name>
+    <value>passphrase</value>
+    <description>Passphrase for the credential file.</description>
+  </property>
+
+  <property>
+    <name>xtreemfs.ssl.trustedCertificatesFile</name>
+    <value>trustedCertificates.jks</value>
+    <description>Optional. Path to a JKS trusted certificates file.</description>
+  </property>
+
+  <property>
+    <name>xtreemfs.ssl.trustedCertificatesFile.passphrase</name>
+    <value>passphrase</value>
+    <description>Optional. Passphrase for the JKS trusted certificates file.</description>
+  </property>
+
+  <property>
+    <name>xtreemfs.ssl.authenticationWithoutEncryption</name>
+    <value>true/false</value>
+    <description>Enable/Disable grid SSL mode (disabled by default).</description>
+  </property>
+	\end{verbatim}
+
+  For more information about SSL encryption in XtreemFS see section \ref{sec:cfg_ssl}
+  
 	Hint: The XtreemFSHadoopClient provides an experimental read- and write buffer (disabled by default). The buffers can be used to speed-up small read-/write requests, but in some cases the overhead of the buffer might slow-down the I/O performance. If you want to use the read-/write buffer in the XtreemFSHadoopClient, you have to enable the buffers and specify the buffer sizes with the following additional properties:
 	\begin{verbatim}
   <property>
