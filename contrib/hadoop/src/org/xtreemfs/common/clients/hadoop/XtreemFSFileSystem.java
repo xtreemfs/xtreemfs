@@ -171,10 +171,6 @@ public class XtreemFSFileSystem extends FileSystem {
     public Configuration getConf() {
     	return conf;
     }
-    
-    public void setConf(Configuration conf) {
-        this.conf = conf;
-      }
 
     @Override
     public FSDataInputStream open(Path path, int bufferSize) throws IOException {
@@ -526,9 +522,11 @@ public class XtreemFSFileSystem extends FileSystem {
      * @return
      * @throws IOException
      */
-    private Volume getVolumeFromPath(Path path){
+    private Volume getVolumeFromPath(Path path) {
         String pathString = makeAbsolute(path).toUri().getPath();
-        if (defaultVolumeDirectories.contains(pathString.split("/")[1]) || pathString.lastIndexOf("/") == 0) {
+        String[] splittedPath = pathString.split("/");
+        if (splittedPath.length > 1 && defaultVolumeDirectories.contains(splittedPath[1])
+                || pathString.lastIndexOf("/") == 0) {
             // First part of path is a directory or path is a file in the root of defaultVolume
             return defaultVolume;
         } else {
