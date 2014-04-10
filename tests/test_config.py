@@ -239,10 +239,16 @@ Tests = [
         'TestSets': [ 'full', 'short', 'short-ssl' ]
     },
     {
-        'name': 'hadoop_test',
+        'name': 'hadoop test',
         'file': 'hadoop_test.sh',
         'VolumeConfigs': ['regular'],
         'TestSets': [ 'full' ] 
+    },
+    {
+        'name': 'hadoop with ssl test',
+        'file': 'hadoop_ssl_test.sh',
+        'VolumeConfigs': ['regular_two_osds'],
+        'TestSets': [ 'short-ssl' ]
     },
     {
         'name': 'xtfs_benchmark',

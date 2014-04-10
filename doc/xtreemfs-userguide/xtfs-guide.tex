@@ -2936,6 +2936,55 @@ Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the
   </property>
 	\end{verbatim}
 
+		Hint: If you want to use the XtreemFSHadoopClient with a SSL encrypted XtreemFS installation, you have to specify the following additional properties: 
+	\begin{verbatim}
+  <property>
+    <name>xtreemfs.ssl.enabled</name>
+    <value>true</value>
+    <description>
+       Enable/Disable SSL for the XtreemFSHadoopClient
+    </description>
+  </property>
+
+  <property>
+    <name>xtreemfs.ssl.credentialFile</name>
+    <value>credentialFile.p12</value>
+    <description>Path to a PKCS#12 credential file.</description>
+   </property>
+
+  <property>
+    <name>xtreemfs.ssl.credentialFile.passphrase</name>
+    <value>passphrase</value>
+    <description>Passphrase for the credential file.</description>
+  </property>
+
+  <property>
+    <name>xtreemfs.ssl.trustedCertificatesFile</name>
+    <value>trustedCertificates.jks</value>
+    <description>
+       Optional. Path to a JKS trusted certificates file.
+    </description>
+  </property>
+
+  <property>
+    <name>xtreemfs.ssl.trustedCertificatesFile.passphrase</name>
+    <value>passphrase</value>
+    <description>
+       Optional. Passphrase for the JKS trusted certificates file.
+    </description>
+  </property>
+
+  <property>
+    <name>xtreemfs.ssl.authenticationWithoutEncryption</name>
+    <value>true/false</value>
+    <description>
+       Enable/Disable grid SSL mode (disabled by default).
+    </description>
+  </property>
+	\end{verbatim}
+
+  For more information about SSL encryption in XtreemFS see section \ref{sec:cfg_ssl}
+
 	Hint: The XtreemFSHadoopClient provides an experimental read- and write buffer (disabled by default). The buffers can be used to speed-up small read-/write requests, but in some cases the overhead of the buffer might slow-down the I/O performance. If you want to use the read-/write buffer in the XtreemFSHadoopClient, you have to enable the buffers and specify the buffer sizes with the following additional properties:
 	\begin{verbatim}
   <property>

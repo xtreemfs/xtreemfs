@@ -7,6 +7,7 @@
  */
 package org.xtreemfs.common.clients.hadoop;
 
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
@@ -38,6 +39,7 @@ import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
+import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
@@ -99,7 +101,7 @@ public class XtreemFSFileSystem extends FileSystem {
             useWriteBuffer = false;
         }
 
-        // create UserCredentials
+        // Create UserCredentials.
         if ((conf.get("xtreemfs.client.userid") != null) && (conf.get("xtreemfs.client.groupid") != null)) {
             userCredentials = UserCredentials.newBuilder().setUsername(conf.get("xtreemfs.client.userid"))
                     .addGroups(conf.get("xtreemfs.client.groupid")).build();
@@ -113,11 +115,43 @@ public class XtreemFSFileSystem extends FileSystem {
             }
         }
 
-        // initialize XtreemFS Client with default Options and without SSL.
+        // Create SSLOptions.
+        SSLOptions sslOptions = null;
+
+        if (conf.getBoolean("xtreemfs.ssl.enabled", false)) {
+
+            // Get credentials from config.
+            String credentialFilePath = conf.get("xtreemfs.ssl.credentialFile");
+            if (credentialFilePath == null) {
+                throw new IOException("You have to specify a server credential file in"
+                        + " core-site.xml! (xtreemfs.ssl.serverCredentialFile)");
+            }
+            FileInputStream credentialFile = new FileInputStream(credentialFilePath);
+            String credentialFilePassphrase = conf.get("xtreemfs.ssl.credentialFile.passphrase");
+
+            // Get trusted certificates form config.
+            String trustedCertificatesFilePath = conf.get("xtreemfs.ssl.trustedCertificatesFile");
+            String trustedCertificatesFilePassphrase = conf.get("xtreemfs.ssl.trustedCertificatesFile.passphrase");
+            String trustedCertificatesFileContainer = null;
+            FileInputStream trustedCertificatesFile = null;
+            if (trustedCertificatesFilePath == null) {
+                trustedCertificatesFileContainer = "none";
+            } else {
+                trustedCertificatesFile = new FileInputStream(trustedCertificatesFilePath);
+                trustedCertificatesFileContainer = SSLOptions.JKS_CONTAINER;
+            }
+
+            sslOptions = new SSLOptions(credentialFile, credentialFilePassphrase,
+                    SSLOptions.PKCS12_CONTAINER, trustedCertificatesFile, trustedCertificatesFilePassphrase,
+                    trustedCertificatesFileContainer, conf.getBoolean("xtreemfs.ssl.authenticationWithoutEncryption",
+                            false), false, null);
+        }
+
+        // Initialize XtreemFS Client with default Options.
         Options xtreemfsOptions = new Options();
         xtreemfsOptions.setMetadataCacheSize(0);
-        xtreemfsClient = ClientFactory.createClient(uri.getHost() + ":" + uri.getPort(), userCredentials,
-                xtreemfsOptions.generateSSLOptions(), xtreemfsOptions);
+        xtreemfsClient = ClientFactory.createClient(uri.getHost() + ":" + uri.getPort(), userCredentials, sslOptions,
+                xtreemfsOptions);
         try {
             // TODO: Fix stupid Exception in libxtreemfs
             xtreemfsClient.start(true);
@@ -131,7 +165,7 @@ public class XtreemFSFileSystem extends FileSystem {
         xtreemfsVolumes = new HashMap<String, Volume>(volumeNames.length);
         for (String volumeName : volumeNames) {
             try {
-                xtreemfsVolumes.put(volumeName, xtreemfsClient.openVolume(volumeName, null, xtreemfsOptions));
+                xtreemfsVolumes.put(volumeName, xtreemfsClient.openVolume(volumeName, sslOptions, xtreemfsOptions));
             } catch (VolumeNotFoundException ve) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.misc, this,
                         "Unable to open volume %s. Make sure this volume exists!", volumeName);
@@ -495,7 +529,7 @@ public class XtreemFSFileSystem extends FileSystem {
         }
         return result;
     }
-    
+
     /**
      * Make path absolute and remove volume if path starts with a volume
      * 
