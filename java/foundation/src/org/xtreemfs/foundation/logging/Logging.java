@@ -144,8 +144,8 @@ public class Logging {
             
             char levelName = getLevelName(level);
                  
-            out.println(String.format(FORMAT_PATTERN, levelName, 
-                    me == null ? "-" : truncateString(me.getClass().getSimpleName(), 20), 
+            out.println(String.format(FORMAT_PATTERN, levelName,
+                    me == null ? "-" : truncateString(me instanceof Class ? ((Class) me).getSimpleName(): me.getClass().getSimpleName(), 20),
                     truncateString(Thread.currentThread().getName(), 15),
                     Thread.currentThread().getId(),
                     getTimeStamp(), 
@@ -171,9 +171,10 @@ public class Logging {
         if (level <= instance.level) {
             
             char levelName = getLevelName(level);
-            
-            out.println(String.format(FORMAT_PATTERN, levelName, me == null ? "-" : me.getClass()
-                    .getSimpleName(), Thread.currentThread().getName(), Thread.currentThread().getId(),
+
+            out.println(String.format(FORMAT_PATTERN, levelName,
+                    me == null ? "-" : (me instanceof Class ? ((Class) me).getSimpleName(): me.getClass().getSimpleName()),
+                    Thread.currentThread().getName(), Thread.currentThread().getId(),
                 getTimeStamp(), msg.toString()));
             for (StackTraceElement elem : msg.getStackTrace()) {
                 out.println(" ...                                           " + elem.toString());

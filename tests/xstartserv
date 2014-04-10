@@ -101,6 +101,7 @@ class Server:
 
             #print "xctl: starting", self.__class__.__name__, "server with UUID", self.get_uuid(), "on port", self.get_rpc_port(), "with", " ".join(java_args)
 
+
             p = subprocess.Popen(java_args, stdout=stdout, stderr=stderr) # No shell=True: we only want one process (java), not two (/bin/sh and java)
             if p.returncode is not None:
                 raise RuntimeError(self.get_uuid() + " failed to start: " + str(p.returncode))
@@ -179,7 +180,7 @@ if __name__ == "__main__":
     option_parser.add_option(  "--osd-suffix", action="store", dest="osd_suffix")
 
     options, positional_args = option_parser.parse_args()
-    
+
     if options.dir_suffix:
         dir_string = "dir" + options.dir_suffix
     else:
@@ -208,7 +209,7 @@ if __name__ == "__main__":
             os.mkdir(os.path.join(options.base_dir, "log"))
         except:
             pass
-        
+
 
     if options.dir_start:
         if not options.config_file_path:
