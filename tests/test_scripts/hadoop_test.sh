@@ -154,22 +154,36 @@ for VERSION in $HADOOP_VERSIONS; do
          if [ "$JOB_STATUS" != "2" ]
             then echo "Hadoop job without buffer failed!"; RESULT=-1;
             else echo "Hadoop job without buffer  was successfull";
+   
+            #verify output
+            sed "s/^\(.*\)[[:space:]*]\(.*\)/\2 \1/" output/part-r-00000 | sort -bnr > hadoop_tmp.txt
+            cat input/test.txt | tr -s [:space:] '\n' | grep -v "^\s*$" | sort | uniq -c | sort -bnr > cross_check.txt
+            if [ -n "$(diff -w hadoop_tmp.txt cross_check.txt)" ]
+               then echo "Hadoop produced wrong output!"; RESULT=-1;
+            fi
          fi
-
+         
          $HADOOP_PREFIX/bin/hadoop fs -rmr /hadoop_test/output
 
          echo "Run wordcount with buffer..."
          $HADOOP_PREFIX/bin/hadoop jar $HADOOP_PREFIX/hadoop-examples-$VERSION.jar wordcount -D xtreemfs.io.read.buffer=true -D xtreemfs.io.write.buffer=true /hadoop_test/input /hadoop_test/output
-
-         $HADOOP_PREFIX/bin/hadoop fs -rmr /hadoop_test/output
-
+          
          JOB_STATUS=$($HADOOP_PREFIX/bin/hadoop job -list all | grep _0002 | cut -c 23) 
-        
+       
          if [ "$JOB_STATUS" != "2" ]
             then echo "Hadoop job with buffer failed!"; RESULT=-1;
-            else echo "Hadoop job with buffer was successfull";
+            else 
+               echo "Hadoop job with buffer was successfull"
+
+            #verify output
+            sed "s/^\(.*\)[[:space:]*]\(.*\)/\2 \1/" output/part-r-00000 | sort -bnr > hadoop_tmp.txt
+            cat input/test.txt | tr -s [:space:] '\n' | grep -v "^\s*$" | sort | uniq -c | sort -bnr > cross_check.txt
+            if [ -n "$(diff -w hadoop_tmp.txt cross_check.txt)" ]
+               then echo "Hadoop produced wrong output!"; RESULT=-1;
+            fi
          fi
-       
+
+         $HADOOP_PREFIX/bin/hadoop fs -rmr /hadoop_test/output      
          
          echo "Stop JobTracker and TaskTracker..."
          $HADOOP_PREFIX/bin/hadoop-daemon.sh stop jobtracker
