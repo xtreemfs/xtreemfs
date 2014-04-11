@@ -30,15 +30,15 @@ const ::google::protobuf::internal::GeneratedMessageReflection*
 const ::google::protobuf::Descriptor* volumeSet_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   volumeSet_reflection_ = NULL;
-const ::google::protobuf::Descriptor* reservation_descriptor_ = NULL;
-const ::google::protobuf::internal::GeneratedMessageReflection*
-  reservation_reflection_ = NULL;
 const ::google::protobuf::Descriptor* reservationSet_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   reservationSet_reflection_ = NULL;
 const ::google::protobuf::Descriptor* osdSet_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   osdSet_reflection_ = NULL;
+const ::google::protobuf::Descriptor* reservation_descriptor_ = NULL;
+const ::google::protobuf::internal::GeneratedMessageReflection*
+  reservation_reflection_ = NULL;
 const ::google::protobuf::Descriptor* freeResourcesResponse_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   freeResourcesResponse_reflection_ = NULL;
@@ -98,26 +98,7 @@ void protobuf_AssignDesc_xtreemfs_2fScheduler_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(volumeSet));
-  reservation_descriptor_ = file->message_type(3);
-  static const int reservation_offsets_[5] = {
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(reservation, volume_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(reservation, type_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(reservation, capacity_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(reservation, streamingthroughput_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(reservation, randomthroughput_),
-  };
-  reservation_reflection_ =
-    new ::google::protobuf::internal::GeneratedMessageReflection(
-      reservation_descriptor_,
-      reservation::default_instance_,
-      reservation_offsets_,
-      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(reservation, _has_bits_[0]),
-      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(reservation, _unknown_fields_),
-      -1,
-      ::google::protobuf::DescriptorPool::generated_pool(),
-      ::google::protobuf::MessageFactory::generated_factory(),
-      sizeof(reservation));
-  reservationSet_descriptor_ = file->message_type(4);
+  reservationSet_descriptor_ = file->message_type(3);
   static const int reservationSet_offsets_[1] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(reservationSet, reservations_),
   };
@@ -132,7 +113,7 @@ void protobuf_AssignDesc_xtreemfs_2fScheduler_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(reservationSet));
-  osdSet_descriptor_ = file->message_type(5);
+  osdSet_descriptor_ = file->message_type(4);
   static const int osdSet_offsets_[1] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(osdSet, osd_),
   };
@@ -147,6 +128,26 @@ void protobuf_AssignDesc_xtreemfs_2fScheduler_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(osdSet));
+  reservation_descriptor_ = file->message_type(5);
+  static const int reservation_offsets_[6] = {
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(reservation, volume_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(reservation, type_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(reservation, capacity_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(reservation, streamingthroughput_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(reservation, randomthroughput_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(reservation, schedule_),
+  };
+  reservation_reflection_ =
+    new ::google::protobuf::internal::GeneratedMessageReflection(
+      reservation_descriptor_,
+      reservation::default_instance_,
+      reservation_offsets_,
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(reservation, _has_bits_[0]),
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(reservation, _unknown_fields_),
+      -1,
+      ::google::protobuf::DescriptorPool::generated_pool(),
+      ::google::protobuf::MessageFactory::generated_factory(),
+      sizeof(reservation));
   freeResourcesResponse_descriptor_ = file->message_type(6);
   static const int freeResourcesResponse_offsets_[4] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(freeResourcesResponse, streamingcapacity_),
@@ -185,11 +186,11 @@ void protobuf_RegisterTypes(const ::std::string&) {
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
     volumeSet_descriptor_, &volumeSet::default_instance());
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
-    reservation_descriptor_, &reservation::default_instance());
-  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
     reservationSet_descriptor_, &reservationSet::default_instance());
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
     osdSet_descriptor_, &osdSet::default_instance());
+  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
+    reservation_descriptor_, &reservation::default_instance());
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
     freeResourcesResponse_descriptor_, &freeResourcesResponse::default_instance());
 }
@@ -203,12 +204,12 @@ void protobuf_ShutdownFile_xtreemfs_2fScheduler_2eproto() {
   delete volumeIdentifier_reflection_;
   delete volumeSet::default_instance_;
   delete volumeSet_reflection_;
-  delete reservation::default_instance_;
-  delete reservation_reflection_;
   delete reservationSet::default_instance_;
   delete reservationSet_reflection_;
   delete osdSet::default_instance_;
   delete osdSet_reflection_;
+  delete reservation::default_instance_;
+  delete reservation_reflection_;
   delete freeResourcesResponse::default_instance_;
   delete freeResourcesResponse_reflection_;
 }
@@ -229,51 +230,52 @@ void protobuf_AddDesc_xtreemfs_2fScheduler_2eproto() {
     "Identifier\022\014\n\004uuid\030\001 \002(\t\" \n\020volumeIdenti"
     "fier\022\014\n\004uuid\030\001 \002(\t\">\n\tvolumeSet\0221\n\007volum"
     "es\030\001 \003(\0132 .xtreemfs.pbrpc.volumeIdentifi"
-    "er\"\267\001\n\013reservation\0220\n\006volume\030\001 \002(\0132 .xtr"
-    "eemfs.pbrpc.volumeIdentifier\022-\n\004type\030\002 \002"
-    "(\0162\037.xtreemfs.pbrpc.reservationType\022\020\n\010c"
-    "apacity\030\003 \002(\001\022\033\n\023streamingThroughput\030\004 \001"
-    "(\001\022\030\n\020randomThroughput\030\005 \001(\001\"C\n\016reservat"
-    "ionSet\0221\n\014reservations\030\001 \003(\0132\033.xtreemfs."
-    "pbrpc.reservation\"4\n\006osdSet\022*\n\003osd\030\001 \003(\013"
-    "2\035.xtreemfs.pbrpc.osdIdentifier\"\201\001\n\025free"
-    "ResourcesResponse\022\031\n\021streamingCapacity\030\001"
-    " \002(\001\022\033\n\023streamingThroughput\030\002 \002(\001\022\026\n\016ran"
-    "domCapacity\030\003 \002(\001\022\030\n\020randomThroughput\030\004 "
-    "\002(\001*\202\001\n\017reservationType\022\031\n\025STREAMING_RES"
-    "ERVATION\020\001\022\031\n\025RANDOM_IO_RESERVATION\020\002\022\033\n"
-    "\027BEST_EFFORT_RESERVATION\020\003\022\034\n\030COLD_STORA"
-    "GE_RESERVATION\020\0042\254\004\n\020SchedulerService\022S\n"
-    "\023scheduleReservation\022\033.xtreemfs.pbrpc.re"
-    "servation\032\026.xtreemfs.pbrpc.osdSet\"\007\215\265\030e\000"
-    "\000\000\022]\n\021removeReservation\022 .xtreemfs.pbrpc"
-    ".volumeIdentifier\032\035.xtreemfs.pbrpc.empty"
-    "Response\"\007\215\265\030f\000\000\000\022P\n\013getSchedule\022 .xtree"
-    "mfs.pbrpc.volumeIdentifier\032\026.xtreemfs.pb"
-    "rpc.osdSet\"\007\215\265\030g\000\000\000\022O\n\ngetVolumes\022\035.xtre"
-    "emfs.pbrpc.osdIdentifier\032\031.xtreemfs.pbrp"
-    "c.volumeSet\"\007\215\265\030h\000\000\000\022V\n\rgetAllVolumes\022\034."
-    "xtreemfs.pbrpc.emptyRequest\032\036.xtreemfs.p"
-    "brpc.reservationSet\"\007\215\265\030i\000\000\000\022`\n\020getFreeR"
-    "esources\022\034.xtreemfs.pbrpc.emptyRequest\032%"
-    ".xtreemfs.pbrpc.freeResourcesResponse\"\007\215"
-    "\265\030j\000\000\000\032\007\225\265\030A\234\000\000B(\n&org.xtreemfs.pbrpc.ge"
-    "neratedinterfaces", 1417);
+    "er\"C\n\016reservationSet\0221\n\014reservations\030\001 \003"
+    "(\0132\033.xtreemfs.pbrpc.reservation\"4\n\006osdSe"
+    "t\022*\n\003osd\030\001 \003(\0132\035.xtreemfs.pbrpc.osdIdent"
+    "ifier\"\341\001\n\013reservation\0220\n\006volume\030\001 \002(\0132 ."
+    "xtreemfs.pbrpc.volumeIdentifier\022-\n\004type\030"
+    "\002 \002(\0162\037.xtreemfs.pbrpc.reservationType\022\020"
+    "\n\010capacity\030\003 \002(\001\022\033\n\023streamingThroughput\030"
+    "\004 \001(\001\022\030\n\020randomThroughput\030\005 \001(\001\022(\n\010sched"
+    "ule\030\006 \001(\0132\026.xtreemfs.pbrpc.osdSet\"\201\001\n\025fr"
+    "eeResourcesResponse\022\031\n\021streamingCapacity"
+    "\030\001 \002(\001\022\033\n\023streamingThroughput\030\002 \002(\001\022\026\n\016r"
+    "andomCapacity\030\003 \002(\001\022\030\n\020randomThroughput\030"
+    "\004 \002(\001*\202\001\n\017reservationType\022\031\n\025STREAMING_R"
+    "ESERVATION\020\001\022\031\n\025RANDOM_IO_RESERVATION\020\002\022"
+    "\033\n\027BEST_EFFORT_RESERVATION\020\003\022\034\n\030COLD_STO"
+    "RAGE_RESERVATION\020\0042\254\004\n\020SchedulerService\022"
+    "S\n\023scheduleReservation\022\033.xtreemfs.pbrpc."
+    "reservation\032\026.xtreemfs.pbrpc.osdSet\"\007\215\265\030"
+    "e\000\000\000\022]\n\021removeReservation\022 .xtreemfs.pbr"
+    "pc.volumeIdentifier\032\035.xtreemfs.pbrpc.emp"
+    "tyResponse\"\007\215\265\030f\000\000\000\022P\n\013getSchedule\022 .xtr"
+    "eemfs.pbrpc.volumeIdentifier\032\026.xtreemfs."
+    "pbrpc.osdSet\"\007\215\265\030g\000\000\000\022O\n\ngetVolumes\022\035.xt"
+    "reemfs.pbrpc.osdIdentifier\032\031.xtreemfs.pb"
+    "rpc.volumeSet\"\007\215\265\030h\000\000\000\022V\n\rgetAllVolumes\022"
+    "\034.xtreemfs.pbrpc.emptyRequest\032\036.xtreemfs"
+    ".pbrpc.reservationSet\"\007\215\265\030i\000\000\000\022`\n\020getFre"
+    "eResources\022\034.xtreemfs.pbrpc.emptyRequest"
+    "\032%.xtreemfs.pbrpc.freeResourcesResponse\""
+    "\007\215\265\030j\000\000\000\032\007\225\265\030A\234\000\000B(\n&org.xtreemfs.pbrpc."
+    "generatedinterfaces", 1459);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "xtreemfs/Scheduler.proto", &protobuf_RegisterTypes);
   osdIdentifier::default_instance_ = new osdIdentifier();
   volumeIdentifier::default_instance_ = new volumeIdentifier();
   volumeSet::default_instance_ = new volumeSet();
-  reservation::default_instance_ = new reservation();
   reservationSet::default_instance_ = new reservationSet();
   osdSet::default_instance_ = new osdSet();
+  reservation::default_instance_ = new reservation();
   freeResourcesResponse::default_instance_ = new freeResourcesResponse();
   osdIdentifier::default_instance_->InitAsDefaultInstance();
   volumeIdentifier::default_instance_->InitAsDefaultInstance();
   volumeSet::default_instance_->InitAsDefaultInstance();
-  reservation::default_instance_->InitAsDefaultInstance();
   reservationSet::default_instance_->InitAsDefaultInstance();
   osdSet::default_instance_->InitAsDefaultInstance();
+  reservation::default_instance_->InitAsDefaultInstance();
   freeResourcesResponse::default_instance_->InitAsDefaultInstance();
   ::google::protobuf::internal::OnShutdown(&protobuf_ShutdownFile_xtreemfs_2fScheduler_2eproto);
 }
@@ -962,383 +964,6 @@ void volumeSet::Swap(volumeSet* other) {
 // ===================================================================
 
 #ifndef _MSC_VER
-const int reservation::kVolumeFieldNumber;
-const int reservation::kTypeFieldNumber;
-const int reservation::kCapacityFieldNumber;
-const int reservation::kStreamingThroughputFieldNumber;
-const int reservation::kRandomThroughputFieldNumber;
-#endif  // !_MSC_VER
-
-reservation::reservation()
-  : ::google::protobuf::Message() {
-  SharedCtor();
-}
-
-void reservation::InitAsDefaultInstance() {
-  volume_ = const_cast< ::xtreemfs::pbrpc::volumeIdentifier*>(&::xtreemfs::pbrpc::volumeIdentifier::default_instance());
-}
-
-reservation::reservation(const reservation& from)
-  : ::google::protobuf::Message() {
-  SharedCtor();
-  MergeFrom(from);
-}
-
-void reservation::SharedCtor() {
-  _cached_size_ = 0;
-  volume_ = NULL;
-  type_ = 1;
-  capacity_ = 0;
-  streamingthroughput_ = 0;
-  randomthroughput_ = 0;
-  ::memset(_has_bits_, 0, sizeof(_has_bits_));
-}
-
-reservation::~reservation() {
-  SharedDtor();
-}
-
-void reservation::SharedDtor() {
-  if (this != default_instance_) {
-    delete volume_;
-  }
-}
-
-void reservation::SetCachedSize(int size) const {
-  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
-  _cached_size_ = size;
-  GOOGLE_SAFE_CONCURRENT_WRITES_END();
-}
-const ::google::protobuf::Descriptor* reservation::descriptor() {
-  protobuf_AssignDescriptorsOnce();
-  return reservation_descriptor_;
-}
-
-const reservation& reservation::default_instance() {
-  if (default_instance_ == NULL) protobuf_AddDesc_xtreemfs_2fScheduler_2eproto();
-  return *default_instance_;
-}
-
-reservation* reservation::default_instance_ = NULL;
-
-reservation* reservation::New() const {
-  return new reservation;
-}
-
-void reservation::Clear() {
-  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (has_volume()) {
-      if (volume_ != NULL) volume_->::xtreemfs::pbrpc::volumeIdentifier::Clear();
-    }
-    type_ = 1;
-    capacity_ = 0;
-    streamingthroughput_ = 0;
-    randomthroughput_ = 0;
-  }
-  ::memset(_has_bits_, 0, sizeof(_has_bits_));
-  mutable_unknown_fields()->Clear();
-}
-
-bool reservation::MergePartialFromCodedStream(
-    ::google::protobuf::io::CodedInputStream* input) {
-#define DO_(EXPRESSION) if (!(EXPRESSION)) return false
-  ::google::protobuf::uint32 tag;
-  while ((tag = input->ReadTag()) != 0) {
-    switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // required .xtreemfs.pbrpc.volumeIdentifier volume = 1;
-      case 1: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
-          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-               input, mutable_volume()));
-        } else {
-          goto handle_uninterpreted;
-        }
-        if (input->ExpectTag(16)) goto parse_type;
-        break;
-      }
-
-      // required .xtreemfs.pbrpc.reservationType type = 2;
-      case 2: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
-         parse_type:
-          int value;
-          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-                   int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
-                 input, &value)));
-          if (::xtreemfs::pbrpc::reservationType_IsValid(value)) {
-            set_type(static_cast< ::xtreemfs::pbrpc::reservationType >(value));
-          } else {
-            mutable_unknown_fields()->AddVarint(2, value);
-          }
-        } else {
-          goto handle_uninterpreted;
-        }
-        if (input->ExpectTag(25)) goto parse_capacity;
-        break;
-      }
-
-      // required double capacity = 3;
-      case 3: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
-         parse_capacity:
-          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-                   double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
-                 input, &capacity_)));
-          set_has_capacity();
-        } else {
-          goto handle_uninterpreted;
-        }
-        if (input->ExpectTag(33)) goto parse_streamingThroughput;
-        break;
-      }
-
-      // optional double streamingThroughput = 4;
-      case 4: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
-         parse_streamingThroughput:
-          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-                   double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
-                 input, &streamingthroughput_)));
-          set_has_streamingthroughput();
-        } else {
-          goto handle_uninterpreted;
-        }
-        if (input->ExpectTag(41)) goto parse_randomThroughput;
-        break;
-      }
-
-      // optional double randomThroughput = 5;
-      case 5: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
-         parse_randomThroughput:
-          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-                   double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
-                 input, &randomthroughput_)));
-          set_has_randomthroughput();
-        } else {
-          goto handle_uninterpreted;
-        }
-        if (input->ExpectAtEnd()) return true;
-        break;
-      }
-
-      default: {
-      handle_uninterpreted:
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_END_GROUP) {
-          return true;
-        }
-        DO_(::google::protobuf::internal::WireFormat::SkipField(
-              input, tag, mutable_unknown_fields()));
-        break;
-      }
-    }
-  }
-  return true;
-#undef DO_
-}
-
-void reservation::SerializeWithCachedSizes(
-    ::google::protobuf::io::CodedOutputStream* output) const {
-  // required .xtreemfs.pbrpc.volumeIdentifier volume = 1;
-  if (has_volume()) {
-    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      1, this->volume(), output);
-  }
-
-  // required .xtreemfs.pbrpc.reservationType type = 2;
-  if (has_type()) {
-    ::google::protobuf::internal::WireFormatLite::WriteEnum(
-      2, this->type(), output);
-  }
-
-  // required double capacity = 3;
-  if (has_capacity()) {
-    ::google::protobuf::internal::WireFormatLite::WriteDouble(3, this->capacity(), output);
-  }
-
-  // optional double streamingThroughput = 4;
-  if (has_streamingthroughput()) {
-    ::google::protobuf::internal::WireFormatLite::WriteDouble(4, this->streamingthroughput(), output);
-  }
-
-  // optional double randomThroughput = 5;
-  if (has_randomthroughput()) {
-    ::google::protobuf::internal::WireFormatLite::WriteDouble(5, this->randomthroughput(), output);
-  }
-
-  if (!unknown_fields().empty()) {
-    ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
-        unknown_fields(), output);
-  }
-}
-
-::google::protobuf::uint8* reservation::SerializeWithCachedSizesToArray(
-    ::google::protobuf::uint8* target) const {
-  // required .xtreemfs.pbrpc.volumeIdentifier volume = 1;
-  if (has_volume()) {
-    target = ::google::protobuf::internal::WireFormatLite::
-      WriteMessageNoVirtualToArray(
-        1, this->volume(), target);
-  }
-
-  // required .xtreemfs.pbrpc.reservationType type = 2;
-  if (has_type()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
-      2, this->type(), target);
-  }
-
-  // required double capacity = 3;
-  if (has_capacity()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(3, this->capacity(), target);
-  }
-
-  // optional double streamingThroughput = 4;
-  if (has_streamingthroughput()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(4, this->streamingthroughput(), target);
-  }
-
-  // optional double randomThroughput = 5;
-  if (has_randomthroughput()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(5, this->randomthroughput(), target);
-  }
-
-  if (!unknown_fields().empty()) {
-    target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
-        unknown_fields(), target);
-  }
-  return target;
-}
-
-int reservation::ByteSize() const {
-  int total_size = 0;
-
-  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    // required .xtreemfs.pbrpc.volumeIdentifier volume = 1;
-    if (has_volume()) {
-      total_size += 1 +
-        ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-          this->volume());
-    }
-
-    // required .xtreemfs.pbrpc.reservationType type = 2;
-    if (has_type()) {
-      total_size += 1 +
-        ::google::protobuf::internal::WireFormatLite::EnumSize(this->type());
-    }
-
-    // required double capacity = 3;
-    if (has_capacity()) {
-      total_size += 1 + 8;
-    }
-
-    // optional double streamingThroughput = 4;
-    if (has_streamingthroughput()) {
-      total_size += 1 + 8;
-    }
-
-    // optional double randomThroughput = 5;
-    if (has_randomthroughput()) {
-      total_size += 1 + 8;
-    }
-
-  }
-  if (!unknown_fields().empty()) {
-    total_size +=
-      ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
-        unknown_fields());
-  }
-  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
-  _cached_size_ = total_size;
-  GOOGLE_SAFE_CONCURRENT_WRITES_END();
-  return total_size;
-}
-
-void reservation::MergeFrom(const ::google::protobuf::Message& from) {
-  GOOGLE_CHECK_NE(&from, this);
-  const reservation* source =
-    ::google::protobuf::internal::dynamic_cast_if_available<const reservation*>(
-      &from);
-  if (source == NULL) {
-    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
-  } else {
-    MergeFrom(*source);
-  }
-}
-
-void reservation::MergeFrom(const reservation& from) {
-  GOOGLE_CHECK_NE(&from, this);
-  if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from.has_volume()) {
-      mutable_volume()->::xtreemfs::pbrpc::volumeIdentifier::MergeFrom(from.volume());
-    }
-    if (from.has_type()) {
-      set_type(from.type());
-    }
-    if (from.has_capacity()) {
-      set_capacity(from.capacity());
-    }
-    if (from.has_streamingthroughput()) {
-      set_streamingthroughput(from.streamingthroughput());
-    }
-    if (from.has_randomthroughput()) {
-      set_randomthroughput(from.randomthroughput());
-    }
-  }
-  mutable_unknown_fields()->MergeFrom(from.unknown_fields());
-}
-
-void reservation::CopyFrom(const ::google::protobuf::Message& from) {
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-void reservation::CopyFrom(const reservation& from) {
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-bool reservation::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000007) != 0x00000007) return false;
-
-  if (has_volume()) {
-    if (!this->volume().IsInitialized()) return false;
-  }
-  return true;
-}
-
-void reservation::Swap(reservation* other) {
-  if (other != this) {
-    std::swap(volume_, other->volume_);
-    std::swap(type_, other->type_);
-    std::swap(capacity_, other->capacity_);
-    std::swap(streamingthroughput_, other->streamingthroughput_);
-    std::swap(randomthroughput_, other->randomthroughput_);
-    std::swap(_has_bits_[0], other->_has_bits_[0]);
-    _unknown_fields_.Swap(&other->_unknown_fields_);
-    std::swap(_cached_size_, other->_cached_size_);
-  }
-}
-
-::google::protobuf::Metadata reservation::GetMetadata() const {
-  protobuf_AssignDescriptorsOnce();
-  ::google::protobuf::Metadata metadata;
-  metadata.descriptor = reservation_descriptor_;
-  metadata.reflection = reservation_reflection_;
-  return metadata;
-}
-
-
-// ===================================================================
-
-#ifndef _MSC_VER
 const int reservationSet::kReservationsFieldNumber;
 #endif  // !_MSC_VER
 
@@ -1744,6 +1369,431 @@ void osdSet::Swap(osdSet* other) {
   ::google::protobuf::Metadata metadata;
   metadata.descriptor = osdSet_descriptor_;
   metadata.reflection = osdSet_reflection_;
+  return metadata;
+}
+
+
+// ===================================================================
+
+#ifndef _MSC_VER
+const int reservation::kVolumeFieldNumber;
+const int reservation::kTypeFieldNumber;
+const int reservation::kCapacityFieldNumber;
+const int reservation::kStreamingThroughputFieldNumber;
+const int reservation::kRandomThroughputFieldNumber;
+const int reservation::kScheduleFieldNumber;
+#endif  // !_MSC_VER
+
+reservation::reservation()
+  : ::google::protobuf::Message() {
+  SharedCtor();
+}
+
+void reservation::InitAsDefaultInstance() {
+  volume_ = const_cast< ::xtreemfs::pbrpc::volumeIdentifier*>(&::xtreemfs::pbrpc::volumeIdentifier::default_instance());
+  schedule_ = const_cast< ::xtreemfs::pbrpc::osdSet*>(&::xtreemfs::pbrpc::osdSet::default_instance());
+}
+
+reservation::reservation(const reservation& from)
+  : ::google::protobuf::Message() {
+  SharedCtor();
+  MergeFrom(from);
+}
+
+void reservation::SharedCtor() {
+  _cached_size_ = 0;
+  volume_ = NULL;
+  type_ = 1;
+  capacity_ = 0;
+  streamingthroughput_ = 0;
+  randomthroughput_ = 0;
+  schedule_ = NULL;
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+}
+
+reservation::~reservation() {
+  SharedDtor();
+}
+
+void reservation::SharedDtor() {
+  if (this != default_instance_) {
+    delete volume_;
+    delete schedule_;
+  }
+}
+
+void reservation::SetCachedSize(int size) const {
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+}
+const ::google::protobuf::Descriptor* reservation::descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return reservation_descriptor_;
+}
+
+const reservation& reservation::default_instance() {
+  if (default_instance_ == NULL) protobuf_AddDesc_xtreemfs_2fScheduler_2eproto();
+  return *default_instance_;
+}
+
+reservation* reservation::default_instance_ = NULL;
+
+reservation* reservation::New() const {
+  return new reservation;
+}
+
+void reservation::Clear() {
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    if (has_volume()) {
+      if (volume_ != NULL) volume_->::xtreemfs::pbrpc::volumeIdentifier::Clear();
+    }
+    type_ = 1;
+    capacity_ = 0;
+    streamingthroughput_ = 0;
+    randomthroughput_ = 0;
+    if (has_schedule()) {
+      if (schedule_ != NULL) schedule_->::xtreemfs::pbrpc::osdSet::Clear();
+    }
+  }
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+  mutable_unknown_fields()->Clear();
+}
+
+bool reservation::MergePartialFromCodedStream(
+    ::google::protobuf::io::CodedInputStream* input) {
+#define DO_(EXPRESSION) if (!(EXPRESSION)) return false
+  ::google::protobuf::uint32 tag;
+  while ((tag = input->ReadTag()) != 0) {
+    switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
+      // required .xtreemfs.pbrpc.volumeIdentifier volume = 1;
+      case 1: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
+               input, mutable_volume()));
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(16)) goto parse_type;
+        break;
+      }
+
+      // required .xtreemfs.pbrpc.reservationType type = 2;
+      case 2: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
+         parse_type:
+          int value;
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
+                 input, &value)));
+          if (::xtreemfs::pbrpc::reservationType_IsValid(value)) {
+            set_type(static_cast< ::xtreemfs::pbrpc::reservationType >(value));
+          } else {
+            mutable_unknown_fields()->AddVarint(2, value);
+          }
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(25)) goto parse_capacity;
+        break;
+      }
+
+      // required double capacity = 3;
+      case 3: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
+         parse_capacity:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
+                 input, &capacity_)));
+          set_has_capacity();
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(33)) goto parse_streamingThroughput;
+        break;
+      }
+
+      // optional double streamingThroughput = 4;
+      case 4: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
+         parse_streamingThroughput:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
+                 input, &streamingthroughput_)));
+          set_has_streamingthroughput();
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(41)) goto parse_randomThroughput;
+        break;
+      }
+
+      // optional double randomThroughput = 5;
+      case 5: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
+         parse_randomThroughput:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
+                 input, &randomthroughput_)));
+          set_has_randomthroughput();
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(50)) goto parse_schedule;
+        break;
+      }
+
+      // optional .xtreemfs.pbrpc.osdSet schedule = 6;
+      case 6: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_schedule:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
+               input, mutable_schedule()));
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectAtEnd()) return true;
+        break;
+      }
+
+      default: {
+      handle_uninterpreted:
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_END_GROUP) {
+          return true;
+        }
+        DO_(::google::protobuf::internal::WireFormat::SkipField(
+              input, tag, mutable_unknown_fields()));
+        break;
+      }
+    }
+  }
+  return true;
+#undef DO_
+}
+
+void reservation::SerializeWithCachedSizes(
+    ::google::protobuf::io::CodedOutputStream* output) const {
+  // required .xtreemfs.pbrpc.volumeIdentifier volume = 1;
+  if (has_volume()) {
+    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
+      1, this->volume(), output);
+  }
+
+  // required .xtreemfs.pbrpc.reservationType type = 2;
+  if (has_type()) {
+    ::google::protobuf::internal::WireFormatLite::WriteEnum(
+      2, this->type(), output);
+  }
+
+  // required double capacity = 3;
+  if (has_capacity()) {
+    ::google::protobuf::internal::WireFormatLite::WriteDouble(3, this->capacity(), output);
+  }
+
+  // optional double streamingThroughput = 4;
+  if (has_streamingthroughput()) {
+    ::google::protobuf::internal::WireFormatLite::WriteDouble(4, this->streamingthroughput(), output);
+  }
+
+  // optional double randomThroughput = 5;
+  if (has_randomthroughput()) {
+    ::google::protobuf::internal::WireFormatLite::WriteDouble(5, this->randomthroughput(), output);
+  }
+
+  // optional .xtreemfs.pbrpc.osdSet schedule = 6;
+  if (has_schedule()) {
+    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
+      6, this->schedule(), output);
+  }
+
+  if (!unknown_fields().empty()) {
+    ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
+        unknown_fields(), output);
+  }
+}
+
+::google::protobuf::uint8* reservation::SerializeWithCachedSizesToArray(
+    ::google::protobuf::uint8* target) const {
+  // required .xtreemfs.pbrpc.volumeIdentifier volume = 1;
+  if (has_volume()) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      WriteMessageNoVirtualToArray(
+        1, this->volume(), target);
+  }
+
+  // required .xtreemfs.pbrpc.reservationType type = 2;
+  if (has_type()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
+      2, this->type(), target);
+  }
+
+  // required double capacity = 3;
+  if (has_capacity()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(3, this->capacity(), target);
+  }
+
+  // optional double streamingThroughput = 4;
+  if (has_streamingthroughput()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(4, this->streamingthroughput(), target);
+  }
+
+  // optional double randomThroughput = 5;
+  if (has_randomthroughput()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(5, this->randomthroughput(), target);
+  }
+
+  // optional .xtreemfs.pbrpc.osdSet schedule = 6;
+  if (has_schedule()) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      WriteMessageNoVirtualToArray(
+        6, this->schedule(), target);
+  }
+
+  if (!unknown_fields().empty()) {
+    target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
+        unknown_fields(), target);
+  }
+  return target;
+}
+
+int reservation::ByteSize() const {
+  int total_size = 0;
+
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    // required .xtreemfs.pbrpc.volumeIdentifier volume = 1;
+    if (has_volume()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
+          this->volume());
+    }
+
+    // required .xtreemfs.pbrpc.reservationType type = 2;
+    if (has_type()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::EnumSize(this->type());
+    }
+
+    // required double capacity = 3;
+    if (has_capacity()) {
+      total_size += 1 + 8;
+    }
+
+    // optional double streamingThroughput = 4;
+    if (has_streamingthroughput()) {
+      total_size += 1 + 8;
+    }
+
+    // optional double randomThroughput = 5;
+    if (has_randomthroughput()) {
+      total_size += 1 + 8;
+    }
+
+    // optional .xtreemfs.pbrpc.osdSet schedule = 6;
+    if (has_schedule()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
+          this->schedule());
+    }
+
+  }
+  if (!unknown_fields().empty()) {
+    total_size +=
+      ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
+        unknown_fields());
+  }
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = total_size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+  return total_size;
+}
+
+void reservation::MergeFrom(const ::google::protobuf::Message& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  const reservation* source =
+    ::google::protobuf::internal::dynamic_cast_if_available<const reservation*>(
+      &from);
+  if (source == NULL) {
+    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
+  } else {
+    MergeFrom(*source);
+  }
+}
+
+void reservation::MergeFrom(const reservation& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    if (from.has_volume()) {
+      mutable_volume()->::xtreemfs::pbrpc::volumeIdentifier::MergeFrom(from.volume());
+    }
+    if (from.has_type()) {
+      set_type(from.type());
+    }
+    if (from.has_capacity()) {
+      set_capacity(from.capacity());
+    }
+    if (from.has_streamingthroughput()) {
+      set_streamingthroughput(from.streamingthroughput());
+    }
+    if (from.has_randomthroughput()) {
+      set_randomthroughput(from.randomthroughput());
+    }
+    if (from.has_schedule()) {
+      mutable_schedule()->::xtreemfs::pbrpc::osdSet::MergeFrom(from.schedule());
+    }
+  }
+  mutable_unknown_fields()->MergeFrom(from.unknown_fields());
+}
+
+void reservation::CopyFrom(const ::google::protobuf::Message& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void reservation::CopyFrom(const reservation& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool reservation::IsInitialized() const {
+  if ((_has_bits_[0] & 0x00000007) != 0x00000007) return false;
+
+  if (has_volume()) {
+    if (!this->volume().IsInitialized()) return false;
+  }
+  if (has_schedule()) {
+    if (!this->schedule().IsInitialized()) return false;
+  }
+  return true;
+}
+
+void reservation::Swap(reservation* other) {
+  if (other != this) {
+    std::swap(volume_, other->volume_);
+    std::swap(type_, other->type_);
+    std::swap(capacity_, other->capacity_);
+    std::swap(streamingthroughput_, other->streamingthroughput_);
+    std::swap(randomthroughput_, other->randomthroughput_);
+    std::swap(schedule_, other->schedule_);
+    std::swap(_has_bits_[0], other->_has_bits_[0]);
+    _unknown_fields_.Swap(&other->_unknown_fields_);
+    std::swap(_cached_size_, other->_cached_size_);
+  }
+}
+
+::google::protobuf::Metadata reservation::GetMetadata() const {
+  protobuf_AssignDescriptorsOnce();
+  ::google::protobuf::Metadata metadata;
+  metadata.descriptor = reservation_descriptor_;
+  metadata.reflection = reservation_reflection_;
   return metadata;
 }
 

@@ -41,9 +41,9 @@ void protobuf_ShutdownFile_xtreemfs_2fScheduler_2eproto();
 class osdIdentifier;
 class volumeIdentifier;
 class volumeSet;
-class reservation;
 class reservationSet;
 class osdSet;
+class reservation;
 class freeResourcesResponse;
 
 enum reservationType {
@@ -328,130 +328,6 @@ class volumeSet : public ::google::protobuf::Message {
 };
 // -------------------------------------------------------------------
 
-class reservation : public ::google::protobuf::Message {
- public:
-  reservation();
-  virtual ~reservation();
-
-  reservation(const reservation& from);
-
-  inline reservation& operator=(const reservation& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _unknown_fields_;
-  }
-
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return &_unknown_fields_;
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const reservation& default_instance();
-
-  void Swap(reservation* other);
-
-  // implements Message ----------------------------------------------
-
-  reservation* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const reservation& from);
-  void MergeFrom(const reservation& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
-  int GetCachedSize() const { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  public:
-
-  ::google::protobuf::Metadata GetMetadata() const;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // required .xtreemfs.pbrpc.volumeIdentifier volume = 1;
-  inline bool has_volume() const;
-  inline void clear_volume();
-  static const int kVolumeFieldNumber = 1;
-  inline const ::xtreemfs::pbrpc::volumeIdentifier& volume() const;
-  inline ::xtreemfs::pbrpc::volumeIdentifier* mutable_volume();
-  inline ::xtreemfs::pbrpc::volumeIdentifier* release_volume();
-  inline void set_allocated_volume(::xtreemfs::pbrpc::volumeIdentifier* volume);
-
-  // required .xtreemfs.pbrpc.reservationType type = 2;
-  inline bool has_type() const;
-  inline void clear_type();
-  static const int kTypeFieldNumber = 2;
-  inline ::xtreemfs::pbrpc::reservationType type() const;
-  inline void set_type(::xtreemfs::pbrpc::reservationType value);
-
-  // required double capacity = 3;
-  inline bool has_capacity() const;
-  inline void clear_capacity();
-  static const int kCapacityFieldNumber = 3;
-  inline double capacity() const;
-  inline void set_capacity(double value);
-
-  // optional double streamingThroughput = 4;
-  inline bool has_streamingthroughput() const;
-  inline void clear_streamingthroughput();
-  static const int kStreamingThroughputFieldNumber = 4;
-  inline double streamingthroughput() const;
-  inline void set_streamingthroughput(double value);
-
-  // optional double randomThroughput = 5;
-  inline bool has_randomthroughput() const;
-  inline void clear_randomthroughput();
-  static const int kRandomThroughputFieldNumber = 5;
-  inline double randomthroughput() const;
-  inline void set_randomthroughput(double value);
-
-  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.reservation)
- private:
-  inline void set_has_volume();
-  inline void clear_has_volume();
-  inline void set_has_type();
-  inline void clear_has_type();
-  inline void set_has_capacity();
-  inline void clear_has_capacity();
-  inline void set_has_streamingthroughput();
-  inline void clear_has_streamingthroughput();
-  inline void set_has_randomthroughput();
-  inline void clear_has_randomthroughput();
-
-  ::google::protobuf::UnknownFieldSet _unknown_fields_;
-
-  ::xtreemfs::pbrpc::volumeIdentifier* volume_;
-  double capacity_;
-  double streamingthroughput_;
-  double randomthroughput_;
-  int type_;
-
-  mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(5 + 31) / 32];
-
-  friend void  protobuf_AddDesc_xtreemfs_2fScheduler_2eproto();
-  friend void protobuf_AssignDesc_xtreemfs_2fScheduler_2eproto();
-  friend void protobuf_ShutdownFile_xtreemfs_2fScheduler_2eproto();
-
-  void InitAsDefaultInstance();
-  static reservation* default_instance_;
-};
-// -------------------------------------------------------------------
-
 class reservationSet : public ::google::protobuf::Message {
  public:
   reservationSet();
@@ -619,6 +495,142 @@ class osdSet : public ::google::protobuf::Message {
 
   void InitAsDefaultInstance();
   static osdSet* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class reservation : public ::google::protobuf::Message {
+ public:
+  reservation();
+  virtual ~reservation();
+
+  reservation(const reservation& from);
+
+  inline reservation& operator=(const reservation& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const reservation& default_instance();
+
+  void Swap(reservation* other);
+
+  // implements Message ----------------------------------------------
+
+  reservation* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const reservation& from);
+  void MergeFrom(const reservation& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required .xtreemfs.pbrpc.volumeIdentifier volume = 1;
+  inline bool has_volume() const;
+  inline void clear_volume();
+  static const int kVolumeFieldNumber = 1;
+  inline const ::xtreemfs::pbrpc::volumeIdentifier& volume() const;
+  inline ::xtreemfs::pbrpc::volumeIdentifier* mutable_volume();
+  inline ::xtreemfs::pbrpc::volumeIdentifier* release_volume();
+  inline void set_allocated_volume(::xtreemfs::pbrpc::volumeIdentifier* volume);
+
+  // required .xtreemfs.pbrpc.reservationType type = 2;
+  inline bool has_type() const;
+  inline void clear_type();
+  static const int kTypeFieldNumber = 2;
+  inline ::xtreemfs::pbrpc::reservationType type() const;
+  inline void set_type(::xtreemfs::pbrpc::reservationType value);
+
+  // required double capacity = 3;
+  inline bool has_capacity() const;
+  inline void clear_capacity();
+  static const int kCapacityFieldNumber = 3;
+  inline double capacity() const;
+  inline void set_capacity(double value);
+
+  // optional double streamingThroughput = 4;
+  inline bool has_streamingthroughput() const;
+  inline void clear_streamingthroughput();
+  static const int kStreamingThroughputFieldNumber = 4;
+  inline double streamingthroughput() const;
+  inline void set_streamingthroughput(double value);
+
+  // optional double randomThroughput = 5;
+  inline bool has_randomthroughput() const;
+  inline void clear_randomthroughput();
+  static const int kRandomThroughputFieldNumber = 5;
+  inline double randomthroughput() const;
+  inline void set_randomthroughput(double value);
+
+  // optional .xtreemfs.pbrpc.osdSet schedule = 6;
+  inline bool has_schedule() const;
+  inline void clear_schedule();
+  static const int kScheduleFieldNumber = 6;
+  inline const ::xtreemfs::pbrpc::osdSet& schedule() const;
+  inline ::xtreemfs::pbrpc::osdSet* mutable_schedule();
+  inline ::xtreemfs::pbrpc::osdSet* release_schedule();
+  inline void set_allocated_schedule(::xtreemfs::pbrpc::osdSet* schedule);
+
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.reservation)
+ private:
+  inline void set_has_volume();
+  inline void clear_has_volume();
+  inline void set_has_type();
+  inline void clear_has_type();
+  inline void set_has_capacity();
+  inline void clear_has_capacity();
+  inline void set_has_streamingthroughput();
+  inline void clear_has_streamingthroughput();
+  inline void set_has_randomthroughput();
+  inline void clear_has_randomthroughput();
+  inline void set_has_schedule();
+  inline void clear_has_schedule();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::xtreemfs::pbrpc::volumeIdentifier* volume_;
+  double capacity_;
+  double streamingthroughput_;
+  double randomthroughput_;
+  ::xtreemfs::pbrpc::osdSet* schedule_;
+  int type_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(6 + 31) / 32];
+
+  friend void  protobuf_AddDesc_xtreemfs_2fScheduler_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fScheduler_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fScheduler_2eproto();
+
+  void InitAsDefaultInstance();
+  static reservation* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -914,6 +926,64 @@ volumeSet::mutable_volumes() {
 
 // -------------------------------------------------------------------
 
+// reservationSet
+
+// repeated .xtreemfs.pbrpc.reservation reservations = 1;
+inline int reservationSet::reservations_size() const {
+  return reservations_.size();
+}
+inline void reservationSet::clear_reservations() {
+  reservations_.Clear();
+}
+inline const ::xtreemfs::pbrpc::reservation& reservationSet::reservations(int index) const {
+  return reservations_.Get(index);
+}
+inline ::xtreemfs::pbrpc::reservation* reservationSet::mutable_reservations(int index) {
+  return reservations_.Mutable(index);
+}
+inline ::xtreemfs::pbrpc::reservation* reservationSet::add_reservations() {
+  return reservations_.Add();
+}
+inline const ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::reservation >&
+reservationSet::reservations() const {
+  return reservations_;
+}
+inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::reservation >*
+reservationSet::mutable_reservations() {
+  return &reservations_;
+}
+
+// -------------------------------------------------------------------
+
+// osdSet
+
+// repeated .xtreemfs.pbrpc.osdIdentifier osd = 1;
+inline int osdSet::osd_size() const {
+  return osd_.size();
+}
+inline void osdSet::clear_osd() {
+  osd_.Clear();
+}
+inline const ::xtreemfs::pbrpc::osdIdentifier& osdSet::osd(int index) const {
+  return osd_.Get(index);
+}
+inline ::xtreemfs::pbrpc::osdIdentifier* osdSet::mutable_osd(int index) {
+  return osd_.Mutable(index);
+}
+inline ::xtreemfs::pbrpc::osdIdentifier* osdSet::add_osd() {
+  return osd_.Add();
+}
+inline const ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::osdIdentifier >&
+osdSet::osd() const {
+  return osd_;
+}
+inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::osdIdentifier >*
+osdSet::mutable_osd() {
+  return &osd_;
+}
+
+// -------------------------------------------------------------------
+
 // reservation
 
 // required .xtreemfs.pbrpc.volumeIdentifier volume = 1;
@@ -1043,62 +1113,42 @@ inline void reservation::set_randomthroughput(double value) {
   randomthroughput_ = value;
 }
 
-// -------------------------------------------------------------------
-
-// reservationSet
-
-// repeated .xtreemfs.pbrpc.reservation reservations = 1;
-inline int reservationSet::reservations_size() const {
-  return reservations_.size();
+// optional .xtreemfs.pbrpc.osdSet schedule = 6;
+inline bool reservation::has_schedule() const {
+  return (_has_bits_[0] & 0x00000020u) != 0;
 }
-inline void reservationSet::clear_reservations() {
-  reservations_.Clear();
+inline void reservation::set_has_schedule() {
+  _has_bits_[0] |= 0x00000020u;
 }
-inline const ::xtreemfs::pbrpc::reservation& reservationSet::reservations(int index) const {
-  return reservations_.Get(index);
+inline void reservation::clear_has_schedule() {
+  _has_bits_[0] &= ~0x00000020u;
 }
-inline ::xtreemfs::pbrpc::reservation* reservationSet::mutable_reservations(int index) {
-  return reservations_.Mutable(index);
+inline void reservation::clear_schedule() {
+  if (schedule_ != NULL) schedule_->::xtreemfs::pbrpc::osdSet::Clear();
+  clear_has_schedule();
 }
-inline ::xtreemfs::pbrpc::reservation* reservationSet::add_reservations() {
-  return reservations_.Add();
+inline const ::xtreemfs::pbrpc::osdSet& reservation::schedule() const {
+  return schedule_ != NULL ? *schedule_ : *default_instance_->schedule_;
 }
-inline const ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::reservation >&
-reservationSet::reservations() const {
-  return reservations_;
+inline ::xtreemfs::pbrpc::osdSet* reservation::mutable_schedule() {
+  set_has_schedule();
+  if (schedule_ == NULL) schedule_ = new ::xtreemfs::pbrpc::osdSet;
+  return schedule_;
 }
-inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::reservation >*
-reservationSet::mutable_reservations() {
-  return &reservations_;
+inline ::xtreemfs::pbrpc::osdSet* reservation::release_schedule() {
+  clear_has_schedule();
+  ::xtreemfs::pbrpc::osdSet* temp = schedule_;
+  schedule_ = NULL;
+  return temp;
 }
-
-// -------------------------------------------------------------------
-
-// osdSet
-
-// repeated .xtreemfs.pbrpc.osdIdentifier osd = 1;
-inline int osdSet::osd_size() const {
-  return osd_.size();
-}
-inline void osdSet::clear_osd() {
-  osd_.Clear();
-}
-inline const ::xtreemfs::pbrpc::osdIdentifier& osdSet::osd(int index) const {
-  return osd_.Get(index);
-}
-inline ::xtreemfs::pbrpc::osdIdentifier* osdSet::mutable_osd(int index) {
-  return osd_.Mutable(index);
-}
-inline ::xtreemfs::pbrpc::osdIdentifier* osdSet::add_osd() {
-  return osd_.Add();
-}
-inline const ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::osdIdentifier >&
-osdSet::osd() const {
-  return osd_;
-}
-inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::osdIdentifier >*
-osdSet::mutable_osd() {
-  return &osd_;
+inline void reservation::set_allocated_schedule(::xtreemfs::pbrpc::osdSet* schedule) {
+  delete schedule_;
+  schedule_ = schedule;
+  if (schedule) {
+    set_has_schedule();
+  } else {
+    clear_has_schedule();
+  }
 }
 
 // -------------------------------------------------------------------

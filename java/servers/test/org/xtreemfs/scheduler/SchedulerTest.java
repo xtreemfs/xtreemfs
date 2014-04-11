@@ -9,6 +9,7 @@ import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 import org.xtreemfs.pbrpc.generatedinterfaces.Scheduler;
 import org.xtreemfs.pbrpc.generatedinterfaces.SchedulerServiceClient;
 import org.xtreemfs.test.SetupUtils;
@@ -156,8 +157,57 @@ public class SchedulerTest {
 		assertTrue(r.getRandomThroughput() == randomTP);
 		assertTrue(r.getStreamingThroughput() == seqTP);
 		assertTrue(r.getVolume().getUuid().equals(uuid));
+        assertTrue(r.getSchedule().getOsdCount() > 0);
 		reservationsResponse.freeBuffers();
 	}
+
+    /*@Test
+    public void testGetVolumes() throws Exception {
+        // Create reservation
+        Scheduler.reservation.Builder resBuilder = Scheduler.reservation
+                .newBuilder();
+        double capacity = 100.0;
+        double randomTP = 0.0;
+        double seqTP = 10.0;
+        String uuid = "asdf";
+        resBuilder.setCapacity(capacity);
+        resBuilder.setRandomThroughput(randomTP);
+        resBuilder.setStreamingThroughput(seqTP);
+        resBuilder.setType(Scheduler.reservationType.STREAMING_RESERVATION);
+        Scheduler.volumeIdentifier.Builder volBuilder = Scheduler.volumeIdentifier
+                .newBuilder();
+        volBuilder.setUuid(uuid);
+        Scheduler.volumeIdentifier volume = volBuilder.build();
+        resBuilder.setVolume(volume);
+        Scheduler.reservation res = resBuilder.build();
+
+        // Schedule reservation
+        RPCResponse<Scheduler.osdSet> response = client.scheduleReservation(
+                null, RPCAuthentication.authNone,
+                RPCAuthentication.userService, res);
+        Scheduler.osdSet osds = response.get();
+        int numOSDs = osds.getOsdCount();
+        assertTrue(numOSDs > 0);
+        response.freeBuffers();
+
+        DIR.ServiceSet availableOSDs = testEnv.getDirClient().xtreemfs_service_get_by_type( null,
+                RPCAuthentication.authNone, RPCAuthentication.userService, DIR.ServiceType.SERVICE_TYPE_OSD).get();
+
+        boolean found = false;
+
+        for(DIR.Service osd: availableOSDs.getServicesList()) {
+            Scheduler.volumeSet volumes = client.getVolumes(null, RPCAuthentication.authNone,
+                    RPCAuthentication.userService, osd.getUuid()).get();
+            for(Scheduler.volumeIdentifier v: volumes.getVolumesList()) {
+                if(v.getUuid().equals(uuid)){
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        assertTrue(found);
+    }*/
 
     @Test
     public void testGetFreeResources() throws Exception {
