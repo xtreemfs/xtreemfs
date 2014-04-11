@@ -14,14 +14,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.minidev.json.JSONObject;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.contrib.provisioning.JsonRPC.METHOD;
 import org.xtreemfs.contrib.provisioning.LibJSON.Addresses;
 import org.xtreemfs.contrib.provisioning.LibJSON.Reservation;
+import org.xtreemfs.contrib.provisioning.LibJSON.ReservationStatus;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONString;
 
@@ -68,7 +67,6 @@ public class JSONRPCTest extends AbstractTestCase {
    * @throws JSONRPC2ParseException
    * @throws JSONException 
    */
-  @SuppressWarnings("unchecked")
   @Test
   public void createAndDeleteVolumes() throws JSONRPC2ParseException, JSONException {
     System.out.println("createAndDeleteVolumes");
@@ -89,38 +87,30 @@ public class JSONRPCTest extends AbstractTestCase {
 
     JSONRPC2Response res = callJSONRPC(METHOD.createReservation, json);
     checkSuccess(res, false);
-    Reservation volumeName = gson.fromJson(
-        JSONObject.toJSONString((Map<String, ?>)res.getResult()), 
-        Reservation.class);   
-    System.out.println("InfReservID: " + volumeName.InfReservID);
+    Reservation volumeName = parseResult(res, Reservation.class);   
+    System.out.println("IResID: " + volumeName.IResID);
     
     // create a second volume
     res = callJSONRPC(METHOD.createReservation, json);
     checkSuccess(res, false);
-    Reservation volumeName2 = gson.fromJson(
-        JSONObject.toJSONString((Map<String, ?>)res.getResult()), 
-        Reservation.class);   
-    System.out.println("InfReservID: " + volumeName2.InfReservID);
+    Reservation volumeName2 = parseResult(res, Reservation.class);
+    System.out.println("IResID: " + volumeName2.IResID);
     
     // delete the second volume
     HashMap<String, Object> parametersMap = new HashMap<String, Object>();
-    parametersMap.put("InfReservID", volumeName2.InfReservID);
+    parametersMap.put("IResID", volumeName2.IResID);
     res = callJSONRPC(METHOD.releaseReservation, parametersMap);
     checkSuccess(res, false);
    
+    // check if there is only one volume left
     res = callJSONRPC(METHOD.listReservations);
     checkSuccess(res, false);
-    
-
-    // check if there is only one volume left
-    Addresses volumes = gson.fromJson(
-        JSONObject.toJSONString((Map<String, ?>) res.getResult()), 
-        Addresses.class);   
+    Addresses volumes = parseResult(res, Addresses.class);   
     
     assertTrue(volumes.Addresses.size() == 1);
     
-    String volume1 = LibJSON.stripVolumeName(volumeName.InfReservID);
-    String volume2 = LibJSON.stripVolumeName(volumeName2.InfReservID);
+    String volume1 = LibJSON.stripVolumeName(volumeName.IResID);
+    String volume2 = LibJSON.stripVolumeName(volumeName2.IResID);
     String response = res.toString();
     assertTrue(response.contains(volume1));
     assertFalse(response.contains(volume2));
@@ -158,23 +148,18 @@ public class JSONRPCTest extends AbstractTestCase {
       // create a volume
       JSONRPC2Response res = callJSONRPC(METHOD.createReservation, json);
       checkSuccess(res, false);     
-      Reservation volumeName = gson.fromJson(
-          JSONObject.toJSONString((Map<String, ?>)res.getResult()), 
-          Reservation.class);      
+      Reservation volumeName = parseResult(res, Reservation.class);      
             
       // check if the volume was created
       JSONRPC2Response res2 = callJSONRPC(
           METHOD.checkReservation, 
           new JSONString(gson.toJson(volumeName)));
       checkSuccess(res2, false);
-
-      Addresses result2 = gson.fromJson(
-          JSONObject.toJSONString((Map<String, ?>)res2.getResult()), 
-          Addresses.class);
+      ReservationStatus result2 = parseResult(res2, ReservationStatus.class);
       
       boolean found = false;
       for (String s : result2.Addresses) {
-        if (s.equals(volumeName.InfReservID)) {
+        if (s.equals(volumeName.IResID)) {
           found = true;
           break;
         }
@@ -204,9 +189,7 @@ public class JSONRPCTest extends AbstractTestCase {
     res = callJSONRPC(METHOD.listReservations);
     checkSuccess(res, false);
 
-    Addresses result2 = gson.fromJson(
-        JSONObject.toJSONString((Map<String, ?>)res.getResult()), 
-        Addresses.class);
+    Addresses result2 = parseResult(res, Addresses.class);   
     assertTrue(result2.Addresses.isEmpty());
   }
 
@@ -238,8 +221,7 @@ public class JSONRPCTest extends AbstractTestCase {
         +  "\"ID\": \"/DataCenter1/Rack1/IP2\","
         +  "\"IP\": \"xxx.xxx.xxx.xxx\"," 
         +  "\"Type\": \"FPGA\","
-        +  "\"Number\": 5,"
-        +  "\"Cost\": \"0.001\","
+        +  "\"Number\": 5"
         + "}]}";  
 
     // parametersMap.put("password", "");

@@ -11,6 +11,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.minidev.json.JSONObject;
+
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -161,6 +163,14 @@ public abstract class AbstractTestCase {
     }
   }
 
+
+  @SuppressWarnings("unchecked")
+  public <E> E parseResult(JSONRPC2Response res, Class<E> classType) {
+    return (E) gson.fromJson(
+        JSONObject.toJSONString((Map<String, ?>)res.getResult()), 
+        classType);
+  }
+  
   @SuppressWarnings("unchecked")
   protected static JSONRPC2Response callJSONRPC(METHOD method, String jsonRPC) throws JSONRPC2ParseException, JSONException {
     try {

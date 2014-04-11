@@ -33,6 +33,7 @@ import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.contrib.provisioning.LibJSON.Addresses;
 import org.xtreemfs.contrib.provisioning.LibJSON.Reservation;
+import org.xtreemfs.contrib.provisioning.LibJSON.ReservationStatus;
 import org.xtreemfs.contrib.provisioning.LibJSON.Resource;
 import org.xtreemfs.contrib.provisioning.LibJSON.Resources;
 import org.xtreemfs.foundation.SSLOptions;
@@ -172,9 +173,7 @@ public class JsonRPC implements ResourceLoaderAware {
       this.dispatcher.register(new CreateReservationHandler(this.client));
       this.dispatcher.register(new ReleaseReservationHandler(this.client));
       this.dispatcher.register(new CheckReservationHandler(this.client));
-
-      // Harness handlers
-      this.dispatcher.register(new NodeRunningHandler(this.client));
+//      this.dispatcher.register(new NodeRunningHandler(this.client));
       this.dispatcher.register(new AvailableResources(this.client));
 
 
@@ -202,6 +201,7 @@ public class JsonRPC implements ResourceLoaderAware {
       method = RequestMethod.POST,
       produces = "application/json")
   public @ResponseBody String executeMethod(@RequestBody String json_string) {
+    
     JSONRPC2Response resp = null;
     try {      
       Logger.getLogger(JsonRPC.class.getName()).log(
@@ -278,7 +278,7 @@ public class JsonRPC implements ResourceLoaderAware {
     public JSONRPC2Response doProcess(JSONRPC2Request req, MessageContext ctx) throws Exception {
       Reservation res = gson.fromJson(JSONObject.toJSONString((Map<String, ?>)req.getParams()), Reservation.class);      
 
-      Addresses addresses = LibJSON.releaseReservation(
+      LibJSON.releaseReservation(
           res,
           LibJSON.generateSchedulerAddress(schedulerAddress),
           getGroups(),
@@ -286,8 +286,8 @@ public class JsonRPC implements ResourceLoaderAware {
           client
           );
 
-      JSONString json = new JSONString(gson.toJson(addresses));      
-      return new JSONRPC2Response(JSONParser.parseJSON(json), req.getID());      
+//      JSONString json = new JSONString(gson.toJson(addresses));      
+      return new JSONRPC2Response("", req.getID());      
     }   
   }
 
@@ -305,13 +305,14 @@ public class JsonRPC implements ResourceLoaderAware {
     public JSONRPC2Response doProcess(JSONRPC2Request req, MessageContext ctx) throws Exception {
       Reservation res = gson.fromJson(JSONObject.toJSONString((Map<String, ?>)req.getParams()), Reservation.class);      
 
-      Addresses addresses = LibJSON.checkReservation(
+      
+      ReservationStatus reservStat = LibJSON.checkReservation(
           res, 
           dirAddresses, 
           sslOptions, 
           this.client);
 
-      JSONString json = new JSONString(gson.toJson(addresses));      
+      JSONString json = new JSONString(gson.toJson(reservStat));      
       return new JSONRPC2Response(JSONParser.parseJSON(json), req.getID());     
     }
   }
@@ -337,25 +338,25 @@ public class JsonRPC implements ResourceLoaderAware {
     }
   }
 
-  /**
-   *  Implements a handler for the
-   *    "isNodeRunning"
-   *  JSON-RPC method
-   *  
-   *  returns true if it is running, false otherwise
-   */
-  public class NodeRunningHandler extends AbstractRequestHandler {
-
-    public NodeRunningHandler(Client c) {
-      super(c, new METHOD[]{METHOD.isNodeRunning});
-    }
-
-    // Processes the requests
-    @Override
-    public JSONRPC2Response doProcess(JSONRPC2Request req, MessageContext ctx) throws Exception {     
-      return new JSONRPC2Response(true, req.getID());
-    }
-  }    
+//  /**
+//   *  Implements a handler for the
+//   *    "isNodeRunning"
+//   *  JSON-RPC method
+//   *  
+//   *  returns true if it is running, false otherwise
+//   */
+//  public class NodeRunningHandler extends AbstractRequestHandler {
+//
+//    public NodeRunningHandler(Client c) {
+//      super(c, new METHOD[]{METHOD.isNodeRunning});
+//    }
+//
+//    // Processes the requests
+//    @Override
+//    public JSONRPC2Response doProcess(JSONRPC2Request req, MessageContext ctx) throws Exception {     
+//      return new JSONRPC2Response(true, req.getID());
+//    }
+//  }    
 
   /**
    *  Implements a handler for the
