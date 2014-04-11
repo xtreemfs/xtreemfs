@@ -93,14 +93,5 @@ public abstract class AbstractRequestHandler implements RequestHandler {
     final UserCredentials uc = UserCredentials.newBuilder()
         .setUsername("root").addAllGroups(groups).build();
     return uc;
-  }  
-
-  public static String stripVolumeName(String volume_name) {
-    if (volume_name.contains("/")) {
-      String[] parts = volume_name.split("/");
-      volume_name = parts[parts.length-1];
-    }
-    return volume_name;
-  }
-  
+  }    
 }

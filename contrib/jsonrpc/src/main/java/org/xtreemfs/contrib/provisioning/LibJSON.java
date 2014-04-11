@@ -1,11 +1,14 @@
 package org.xtreemfs.contrib.provisioning;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+
+import javax.xml.bind.annotation.XmlRootElement;
 
 import org.xtreemfs.common.libxtreemfs.Client;
 import org.xtreemfs.common.libxtreemfs.Options;
@@ -13,7 +16,6 @@ import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
-import org.xtreemfs.contrib.provisioning.JsonRPC.METHOD;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
@@ -21,11 +23,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyTyp
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse;
 
-public abstract class LibJSON extends AbstractRequestHandler {
-
-  public LibJSON(Client c, METHOD[] methodNames) {
-    super(c, methodNames);
-  }
+public class LibJSON {
 
 
   public static Volume openVolume(
@@ -38,6 +36,13 @@ public abstract class LibJSON extends AbstractRequestHandler {
     return client.openVolume(volume_name, sslOptions, options);
   }
 
+  public static String stripVolumeName(String volume_name) {
+    if (volume_name.contains("/")) {
+      String[] parts = volume_name.split("/");
+      volume_name = parts[parts.length-1];
+    }
+    return volume_name;
+  }
 
 
   public static String generateSchedulerAddress(InetSocketAddress schedulerAddress) {
@@ -118,8 +123,8 @@ public abstract class LibJSON extends AbstractRequestHandler {
       Auth auth, 
       Client client) throws IOException,
       PosixErrorException, AddressToUUIDNotFoundException {
-    String volume_name = res.InfReservID;
-    volume_name = AbstractRequestHandler.stripVolumeName(volume_name);
+    String volume_name = res.IResID;
+    volume_name = stripVolumeName(volume_name);
 
     // first delete the volume
     client.deleteVolume(
@@ -142,24 +147,27 @@ public abstract class LibJSON extends AbstractRequestHandler {
   }
   
   
-  public static Addresses checkReservation(
+  public static ReservationStatus checkReservation(
       Reservation res,
       InetSocketAddress[] dirAddresses,
       SSLOptions sslOptions,
       Client client
       )
           throws AddressToUUIDNotFoundException, VolumeNotFoundException, IOException {
-    String volume_name = res.InfReservID; // required
-    volume_name = AbstractRequestHandler.stripVolumeName(volume_name);
+        
+    String volume_name = res.IResID; // required
+    volume_name = stripVolumeName(volume_name);
 
     LibJSON.openVolume(volume_name, sslOptions, client);
 
     // return a string like
     // [<protocol>://]<DIR-server-address>[:<DIR-server-port>]/<Volume Name>
-    Addresses addresses = new Addresses(
+    ReservationStatus reservStatus = new ReservationStatus(
+        true, 
         createNormedVolumeName(volume_name, dirAddresses)
         );
-    return addresses;
+    
+    return reservStatus;
   }
   
   
@@ -206,7 +214,7 @@ public abstract class LibJSON extends AbstractRequestHandler {
                 freeResources.getRandomThroughput(),
                 ReservationTypes.RANDOM
                 ),
-                new Costs(
+                new Cost(
                     0,
                     0
                     )
@@ -223,7 +231,7 @@ public abstract class LibJSON extends AbstractRequestHandler {
                 freeResources.getStreamingThroughput(),
                 ReservationTypes.SEQUENTIAL
                 ),
-                new Costs(
+                new Cost(
                     0,
                     0
                     )
@@ -232,7 +240,40 @@ public abstract class LibJSON extends AbstractRequestHandler {
     return res;
   }  
   
-  public static class Addresses {
+  @XmlRootElement(name="ReservationStatus")
+  public static class ReservationStatus implements Serializable {
+    private static final long serialVersionUID = -5811456962763091947L;
+    public boolean Ready;
+    public List<String> Addresses;
+    public ReservationStatus() {
+      // no-args constructor
+    }    
+    public ReservationStatus(boolean ready, List<String> addresses) {
+      this.Ready = ready;
+      this.Addresses = addresses;
+    }
+    public ReservationStatus(boolean ready, String address) {
+      this.Ready = ready;
+      this.Addresses = new ArrayList<String>();
+      this.Addresses.add(address);
+    }
+    public boolean isReady() {
+      return Ready;
+    }
+    public void setReady(boolean ready) {
+      Ready = ready;
+    }
+    public List<String> getAddresses() {
+      return Addresses;
+    }
+    public void setAddresses(List<String> addresses) {
+      Addresses = addresses;
+    } 
+  }
+  
+  @XmlRootElement(name="Addresses")
+  public static class Addresses implements Serializable {
+    private static final long serialVersionUID = -6291321674682669013L;
     public List<String> Addresses;
     public Addresses() {
       // no-args constructor
@@ -247,19 +288,35 @@ public abstract class LibJSON extends AbstractRequestHandler {
       this.Addresses = new ArrayList<String>();
       this.Addresses.add(address);
     }
+    public List<String> getAddresses() {
+      return Addresses;
+    }
+    public void setAddresses(List<String> addresses) {
+      Addresses = addresses;
+    }
   }
   
-  public static class Reservation {
-    public String InfReservID;
+  @XmlRootElement(name="Reservation")
+  public static class Reservation implements Serializable {
+    private static final long serialVersionUID = 5629110247326464140L;
+    public String IResID;
     public Reservation() {
       // no-args constructor
     }
     public Reservation(String reservationID) {
-      this.InfReservID = reservationID;
+      this.IResID = reservationID;
+    }
+    public String getIResID() {
+      return IResID;
+    }
+    public void setIResID(String infReservID) {
+      IResID = infReservID;
     }
   }
 
-  public static class Resources {
+  @XmlRootElement(name="Resources")
+  public static class Resources implements Serializable {
+    private static final long serialVersionUID = 9199843708622395018L;
     public List<Resource> Resources;
     public Resources() {
       // no-args constructor
@@ -270,14 +327,22 @@ public abstract class LibJSON extends AbstractRequestHandler {
       }
       Resources.add(r);
     }
+    public List<Resource> getResources() {
+      return Resources;
+    }
+    public void setResources(List<Resource> resources) {
+      Resources = resources;
+    }
   }
   
-  public static class Resource {
+  @XmlRootElement(name="Resource")
+  public static class Resource implements Serializable {
+    private static final long serialVersionUID = 831790831396236645L;
     public String ID;
     public String IP;
     public String Type;
     public Attributes Attributes;
-    public Costs Costs;
+    public Cost Cost;
     public Resource() {
       // no-args constructor
     }
@@ -286,20 +351,53 @@ public abstract class LibJSON extends AbstractRequestHandler {
         String ip,
         String type,
         Attributes attributes,
-        Costs costs) {
+        Cost costs) {
       this.ID = id;
       this.IP = ip;
       this.Type = type;
       this.Attributes = attributes;
-      this.Costs = costs;
+      this.Cost = costs;
+    }
+    public String getID() {
+      return ID;
+    }
+    public void setID(String iD) {
+      ID = iD;
+    }
+    public String getIP() {
+      return IP;
+    }
+    public void setIP(String iP) {
+      IP = iP;
+    }
+    public String getType() {
+      return Type;
+    }
+    public void setType(String type) {
+      Type = type;
+    }
+    public Attributes getAttributes() {
+      return Attributes;
+    }
+    public void setAttributes(Attributes attributes) {
+      Attributes = attributes;
+    }
+    public Cost getCost() {
+      return Cost;
+    }
+    public void setCost(Cost costs) {
+      Cost = costs;
     }
   }
 
-  public static enum ReservationTypes {
+  @XmlRootElement(name="ReservationTypes")
+  public static enum ReservationTypes implements Serializable {
     SEQUENTIAL, RANDOM
   }
 
-  public static class Attributes {
+  @XmlRootElement(name="Attributes")
+  public static class Attributes implements Serializable {
+    private static final long serialVersionUID = -5867485593384557874L;
     public double Capacity;
     public double Throughput;
     public ReservationTypes ReservationType;
@@ -315,17 +413,49 @@ public abstract class LibJSON extends AbstractRequestHandler {
       this.Throughput = throughput;
       this.ReservationType = reservationType;
     }
+    public double getCapacity() {
+      return Capacity;
+    }
+    public void setCapacity(double capacity) {
+      Capacity = capacity;
+    }
+    public double getThroughput() {
+      return Throughput;
+    }
+    public void setThroughput(double throughput) {
+      Throughput = throughput;
+    }
+    public ReservationTypes getReservationType() {
+      return ReservationType;
+    }
+    public void setReservationType(ReservationTypes reservationType) {
+      ReservationType = reservationType;
+    }
   }
   
-  public static class Costs {
+  @XmlRootElement(name="Cost")
+  public static class Cost implements Serializable {
+    private static final long serialVersionUID = -1952012295370219752L;
     public double Capacity;
     public double Throughput;
-    public Costs() {
+    public Cost() {
       // no-args constructor
     }
-    public Costs(double capacity, double throughput) {
+    public Cost(double capacity, double throughput) {
       this.Capacity = capacity;
       this.Throughput= throughput;
+    }
+    public double getCapacity() {
+      return Capacity;
+    }
+    public void setCapacity(double capacity) {
+      Capacity = capacity;
+    }
+    public double getThroughput() {
+      return Throughput;
+    }
+    public void setThroughput(double throughput) {
+      Throughput = throughput;
     }
   }
 
