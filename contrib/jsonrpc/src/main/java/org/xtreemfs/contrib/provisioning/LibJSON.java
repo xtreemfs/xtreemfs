@@ -74,45 +74,52 @@ public class LibJSON {
     return normed_volume_names.toString();
   }
   
-  public static Reservation createReservation(
+  public static List<Reservation> createReservation(
       Resource resource, 
       String schedulerAddress,
       InetSocketAddress[] dirAddresses,
       UserCredentials uc, 
       Auth auth, 
       Client client) throws IOException {
-    String volume_name = "volume-"+UUID.randomUUID().toString();            
     Integer capacity = (int)resource.Attributes.Capacity;
     Integer throughput = (int)resource.Attributes.Throughput;
     ReservationTypes accessType = resource.Attributes.ReservationType;
-
     boolean randomAccess = accessType == ReservationTypes.RANDOM;
 
     int octalMode = Integer.parseInt("700", 8);
+    List<Reservation> volumes = new ArrayList<Reservation>();
+    
+    for (int i = 0; i < resource.NumInstances; i++) {
+      String volume_name = "volume-"+UUID.randomUUID().toString();            
 
-    // Create volume.
-    client.createVolume(
-        schedulerAddress, 
-        auth,
-        uc,
-        volume_name,
-        octalMode,
-        "user",
-        "user",
-        AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,          
-        128*1024,          
-        new ArrayList<KeyValuePair>(),  // volume attributes
-        capacity,
-        randomAccess? throughput : 0,
-            !randomAccess? throughput : 0,
-                false);
-
-    // create a string similar to:
-    // [<protocol>://]<DIR-server-address>[:<DIR-server-port>]/<Volume Name>
-    Reservation result = new Reservation(
-        createNormedVolumeName(volume_name, dirAddresses)
-        );
-    return result;
+      // Create the volumes
+      client.createVolume(
+          schedulerAddress, 
+          auth,
+          uc,
+          volume_name,
+          octalMode,
+          "user",
+          "user",
+          AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,          
+          128*1024,          
+          new ArrayList<KeyValuePair>(),  // volume attributes
+          capacity,
+          randomAccess? throughput : 0,
+              !randomAccess? throughput : 0,
+                  false);
+      
+      // create a string similar to:
+      // [<protocol>://]<DIR-server-address>[:<DIR-server-port>]/<Volume Name>
+      volumes.add(
+          new Reservation(
+              createNormedVolumeName(volume_name, dirAddresses)
+              )
+          );
+          
+    }
+    
+    return volumes;
   }
   
 
@@ -214,6 +221,7 @@ public class LibJSON {
                 freeResources.getRandomThroughput(),
                 ReservationTypes.RANDOM
                 ),
+                1,
                 new Cost(
                     0,
                     0
@@ -231,6 +239,7 @@ public class LibJSON {
                 freeResources.getStreamingThroughput(),
                 ReservationTypes.SEQUENTIAL
                 ),
+                1,
                 new Cost(
                     0,
                     0
@@ -296,6 +305,24 @@ public class LibJSON {
     }
   }
   
+  @XmlRootElement(name="Machines")
+  public static class Machines implements Serializable {
+    private static final long serialVersionUID = -7391050821048296071L;
+    public List<Reservation> Machines;
+    public Machines() {
+      // no-args constructor
+    }
+    public Machines(List<Reservation> machines) {
+      this.Machines = machines;
+    }
+    public List<Reservation> getMachines() {
+      return Machines;
+    }
+    public void setMachines(List<Reservation> machines) {
+      Machines = machines;
+    }
+  }
+  
   @XmlRootElement(name="Reservation")
   public static class Reservation implements Serializable {
     private static final long serialVersionUID = 5629110247326464140L;
@@ -342,6 +369,7 @@ public class LibJSON {
     public String IP;
     public String Type;
     public Attributes Attributes;
+    public int NumInstances;
     public Cost Cost;
     public Resource() {
       // no-args constructor
@@ -351,11 +379,13 @@ public class LibJSON {
         String ip,
         String type,
         Attributes attributes,
+        int numInstances,
         Cost costs) {
       this.ID = id;
       this.IP = ip;
       this.Type = type;
       this.Attributes = attributes;
+      this.NumInstances = numInstances;
       this.Cost = costs;
     }
     public String getID() {
@@ -387,6 +417,12 @@ public class LibJSON {
     }
     public void setCost(Cost costs) {
       Cost = costs;
+    }
+    public int getNumInstances() {
+      return NumInstances;
+    }
+    public void setNumInstances(int numInstances) {
+      NumInstances = numInstances;
     }
   }
 

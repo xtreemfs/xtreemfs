@@ -151,7 +151,7 @@ public abstract class AbstractTestCase {
             
             Reservation addresses = new Reservation(volume);
             res = callJSONRPC(
-                METHOD.releaseReservation, 
+                METHOD.releaseResources, 
                 new JSONString(gson.toJson(addresses)));
             
             checkSuccess(res, false);

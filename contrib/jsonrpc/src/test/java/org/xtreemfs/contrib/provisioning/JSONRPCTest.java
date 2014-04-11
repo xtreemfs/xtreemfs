@@ -19,6 +19,7 @@ import org.junit.Test;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.contrib.provisioning.JsonRPC.METHOD;
 import org.xtreemfs.contrib.provisioning.LibJSON.Addresses;
+import org.xtreemfs.contrib.provisioning.LibJSON.Machines;
 import org.xtreemfs.contrib.provisioning.LibJSON.Reservation;
 import org.xtreemfs.contrib.provisioning.LibJSON.ReservationStatus;
 import org.xtreemfs.foundation.json.JSONException;
@@ -51,14 +52,14 @@ public class JSONRPCTest extends AbstractTestCase {
     checkSuccess(res, true);
 
     // missing parameters
-    res = callJSONRPC(METHOD.createReservation);
+    res = callJSONRPC(METHOD.reserveResources);
     checkSuccess(res, true);
 
-    res = callJSONRPC(METHOD.releaseReservation);
+    res = callJSONRPC(METHOD.releaseResources);
     checkSuccess(res, true);
 
     String policy = ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE;
-    res = callJSONRPC(METHOD.createReservation, "testVolume_policies", owner, ownerGroup, mode, policy, "2", "2");
+    res = callJSONRPC(METHOD.reserveResources, "testVolume_policies", owner, ownerGroup, mode, policy, "2", "2");
     checkSuccess(res, true);
   }
 
@@ -77,6 +78,7 @@ public class JSONRPCTest extends AbstractTestCase {
         +  "\"ID\": \"/"+dirAddress+"/storage/random\","
         +  "\"IP\": \"xxx.xxx.xxx.xxx\"," 
         +  "\"Type\": \"Storage\","
+        +  "\"NumInstances\": 1,"
         +  "\"Attributes\": "
         +  "{"
         +  "  \"Capacity\": 100,"
@@ -85,21 +87,21 @@ public class JSONRPCTest extends AbstractTestCase {
         +  "}"    
         + "}]}";   
 
-    JSONRPC2Response res = callJSONRPC(METHOD.createReservation, json);
+    JSONRPC2Response res = callJSONRPC(METHOD.reserveResources, json);
     checkSuccess(res, false);
-    Reservation volumeName = parseResult(res, Reservation.class);   
-    System.out.println("IResID: " + volumeName.IResID);
+    Machines volumeName = parseResult(res, Machines.class);   
+    System.out.println("IResID: " + volumeName.getMachines().iterator().next().IResID);
     
     // create a second volume
-    res = callJSONRPC(METHOD.createReservation, json);
+    res = callJSONRPC(METHOD.reserveResources, json);
     checkSuccess(res, false);
-    Reservation volumeName2 = parseResult(res, Reservation.class);
-    System.out.println("IResID: " + volumeName2.IResID);
+    Machines volumeName2 = parseResult(res, Machines.class);
+    System.out.println("IResID: " + volumeName2.getMachines().iterator().next().IResID);
     
     // delete the second volume
     HashMap<String, Object> parametersMap = new HashMap<String, Object>();
-    parametersMap.put("IResID", volumeName2.IResID);
-    res = callJSONRPC(METHOD.releaseReservation, parametersMap);
+    parametersMap.put("IResID", volumeName2.getMachines().iterator().next().IResID);
+    res = callJSONRPC(METHOD.releaseResources, parametersMap);
     checkSuccess(res, false);
    
     // check if there is only one volume left
@@ -109,8 +111,8 @@ public class JSONRPCTest extends AbstractTestCase {
     
     assertTrue(volumes.Addresses.size() == 1);
     
-    String volume1 = LibJSON.stripVolumeName(volumeName.IResID);
-    String volume2 = LibJSON.stripVolumeName(volumeName2.IResID);
+    String volume1 = LibJSON.stripVolumeName(volumeName.getMachines().iterator().next().IResID);
+    String volume2 = LibJSON.stripVolumeName(volumeName2.getMachines().iterator().next().IResID);
     String response = res.toString();
     assertTrue(response.contains(volume1));
     assertFalse(response.contains(volume2));
@@ -137,6 +139,7 @@ public class JSONRPCTest extends AbstractTestCase {
           +  "\"ID\": \"/"+dirAddress+"/storage/random\","
           +  "\"IP\": \"xxx.xxx.xxx.xxx\"," 
           +  "\"Type\": \"Storage\","
+          +  "\"NumInstances\": 1,"
           +  "\"Attributes\": "
           +  "{"
           +  "  \"Capacity\": 100,"
@@ -146,20 +149,20 @@ public class JSONRPCTest extends AbstractTestCase {
           + "}]}";   
       
       // create a volume
-      JSONRPC2Response res = callJSONRPC(METHOD.createReservation, json);
+      JSONRPC2Response res = callJSONRPC(METHOD.reserveResources, json);
       checkSuccess(res, false);     
-      Reservation volumeName = parseResult(res, Reservation.class);      
-            
+      Machines volumeName = parseResult(res, Machines.class);      
+      
       // check if the volume was created
       JSONRPC2Response res2 = callJSONRPC(
-          METHOD.checkReservation, 
-          new JSONString(gson.toJson(volumeName)));
+          METHOD.checkReservationStatus, 
+          new JSONString(gson.toJson(volumeName.Machines.iterator().next())));
       checkSuccess(res2, false);
       ReservationStatus result2 = parseResult(res2, ReservationStatus.class);
       
       boolean found = false;
       for (String s : result2.Addresses) {
-        if (s.equals(volumeName.IResID)) {
+        if (s.equals(volumeName.getMachines().iterator().next().IResID)) {
           found = true;
           break;
         }
@@ -179,7 +182,7 @@ public class JSONRPCTest extends AbstractTestCase {
         // remove each volume
         Reservation addresses = new Reservation(volume);
         res = callJSONRPC(
-            METHOD.releaseReservation, 
+            METHOD.releaseResources, 
             new JSONString(gson.toJson(addresses)));
         checkSuccess(res, false);
       }
@@ -210,6 +213,7 @@ public class JSONRPCTest extends AbstractTestCase {
         +  "\"ID\": \"/"+dirAddress+"/storage/random\","
         +  "\"IP\": \"xxx.xxx.xxx.xxx\"," 
         +  "\"Type\": \"Storage\","
+        +  "\"NumInstances\": 1,"        
         +  "\"Attributes\": "
         +  "{"
         +  "  \"Capacity\": 1024,"
@@ -225,7 +229,7 @@ public class JSONRPCTest extends AbstractTestCase {
         + "}]}";  
 
     // parametersMap.put("password", "");
-    JSONRPC2Response res = callJSONRPC(METHOD.createReservation, json);
+    JSONRPC2Response res = callJSONRPC(METHOD.reserveResources, json);
     checkSuccess(res, false);
 
     JSONRPC2Response res2 = callJSONRPC(METHOD.listReservations);
