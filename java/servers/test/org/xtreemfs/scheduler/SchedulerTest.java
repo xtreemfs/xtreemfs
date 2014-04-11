@@ -240,7 +240,7 @@ public class SchedulerTest {
         // Schedule reservation
         Scheduler.reservation.Builder resBuilder = Scheduler.reservation
                 .newBuilder();
-        double capacity = 100.0;
+        double capacity = 10.0;
         double randomTP = 0.0;
         double seqTP = 10.0;
         String uuid = "asdf";
@@ -286,9 +286,10 @@ public class SchedulerTest {
                 .newBuilder();
         volBuilder.setUuid(uuid + "-1");
         volume = volBuilder.build();
+        resBuilder.setVolume(volume);
         resResponse = client.scheduleReservation(
                 null, RPCAuthentication.authNone,
-                RPCAuthentication.userService, res);
+                RPCAuthentication.userService, resBuilder.build());
         assertTrue(resResponse.get().getOsdCount() > 0);
 
         resResponse.freeBuffers();
