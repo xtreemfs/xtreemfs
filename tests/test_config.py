@@ -245,6 +245,12 @@ Tests = [
         'TestSets': [ 'full' ] 
     },
     {
+        'name': 'hadoop2 test',
+        'file': 'hadoop2_test.sh',
+        'VolumeConfigs': ['regular'],
+        'TestSets': [ 'full' ] 
+    },
+    {
         'name': 'hadoop with ssl test',
         'file': 'hadoop_ssl_test.sh',
         'VolumeConfigs': ['regular_two_osds'],
