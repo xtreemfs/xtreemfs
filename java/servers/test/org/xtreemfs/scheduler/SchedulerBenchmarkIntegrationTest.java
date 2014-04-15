@@ -75,7 +75,10 @@ public class SchedulerBenchmarkIntegrationTest {
             resources = client.getFreeResources(null, RPCAuthentication.authNone, RPCAuthentication.userService).get();
         }
 
-        assertTrue(resources.getRandomThroughput() != 0.0);
+        assertTrue(resources.getRandomThroughput() > 0.0);
+        assertTrue(resources.getStreamingThroughput() > 0.0);
+        assertTrue(resources.getRandomCapacity() > 0.0);
+        assertTrue(resources.getStreamingCapacity() > 0.0);
 
         /* Get requestedBenchmark field */
         Field requestedBenchmarksField = SchedulerRequestDispatcher.class.getDeclaredField("requestedBenchmarks");
