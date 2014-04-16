@@ -491,6 +491,16 @@ public class MRCHelper {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EPERM,
                             "cannot remove the volume's default striping policy");
                 
+                // check if striping + rw replication would be set
+                String replPolicy = sMan.getDefaultReplicationPolicy(file.getId()).getName();
+                if (sp != null
+                        && sp.getWidth() > 1
+                        && (replPolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE) || replPolicy
+                                .equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ))) {
+                    throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
+                            "striping + rw-replication is not support yet.");
+                }
+
                 sMan.setDefaultStripingPolicy(file.getId(), sp, update);
                 
             } catch (JSONException exc) {
@@ -732,7 +742,7 @@ public class MRCHelper {
                     POSIXErrno.POSIX_ERROR_EINVAL,
                     "Currently, it is not possible to change from a read-only to a read/write replication policy or vise versa.");
             }
-            
+
             // Update replication policy in new xloc list.
             newXLocList = sMan.createXLocList(xlocArray, value, xlocs.getVersion() + 1);
             
@@ -743,6 +753,14 @@ public class MRCHelper {
                         ReplicationFlags.setFullReplica(ReplicationFlags.setReplicaIsComplete(newXLocList.getReplica(0)
                                 .getReplicationFlags())));
                 file.setReadOnly(true);
+            }
+
+            // check if striping + rw replication would be set
+            StripingPolicy stripingPolicy = file.getXLocList().getReplica(0).getStripingPolicy();
+            if (stripingPolicy.getWidth() > 1
+                    && (value.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE) || value
+                            .equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ))) {
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "striping + rw-replication is not support yet.");
             }
             
             // Remove read only state of file if readonly policy gets reverted.
@@ -773,6 +791,14 @@ public class MRCHelper {
                             "a default replication policy requires a replication factor >= 2");
                 }
                 
+                // check if rw replication + striping would be set
+                if (sMan.getDefaultStripingPolicy(file.getId()).getWidth() > 1
+                        && (rp.getName().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE) || rp.getName().equals(
+                                ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ))) {
+                    throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
+                            "striping + rw-replication is not support yet.");
+                }
+
                 sMan.setDefaultReplicationPolicy(file.getId(), rp, update);
                 
             } catch (JSONException exc) {
