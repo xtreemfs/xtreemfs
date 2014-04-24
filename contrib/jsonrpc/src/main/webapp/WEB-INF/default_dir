@@ -1,10 +1,12 @@
 # The dir to contact by the GAFS manager component
 dir_service.host = localhost
-dir_service.port = 32638
+dir_service.port = 42638
+#32638
 
 # The scheduler service contacted by the jsonrpc component 
 scheduler_service.host = localhost
-scheduler_service.port = 32642 
+scheduler_service.port = 42842 
+#32642 
 
 # administrator password for privileged operations
 # set this to the same value as in the mrcconfig.properties

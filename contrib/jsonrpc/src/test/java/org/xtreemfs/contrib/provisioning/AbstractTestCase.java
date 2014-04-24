@@ -182,7 +182,7 @@ public abstract class AbstractTestCase {
           "id-"+(++requestId));
       
       System.out.println("\tRequest: \n\t" + req);
-      return JSONRPC2Response.parse(xtreemfsRPC.executeMethod(req.toString()), true, true);
+      return JSONRPC2Response.parse(xtreemfsRPC.execute(req.toString()), true, true);
     } catch (JSONRPC2ParseException e) { 
       e.printStackTrace();
       throw e;
@@ -207,7 +207,7 @@ public abstract class AbstractTestCase {
         (HashMap<String, ?>)JSONParser.parseJSON(parameters),
         "id-"+(++requestId));
     System.out.println("\tRequest: \n\t" + req);
-    return JSONRPC2Response.parse(xtreemfsRPC.executeMethod(req.toString()), true, true);
+    return JSONRPC2Response.parse(xtreemfsRPC.execute(req.toString()), true, true);
   }
   
   /**
@@ -223,7 +223,7 @@ public abstract class AbstractTestCase {
         parameters,
         "id-"+(++requestId));
     System.out.println("\tRequest: \n\t" + req);
-    return JSONRPC2Response.parse(xtreemfsRPC.executeMethod(req.toString()), true, true);
+    return JSONRPC2Response.parse(xtreemfsRPC.execute(req.toString()), true, true);
   }
 
   protected static JSONRPC2Response callJSONRPC(String method, Map<String,?> parameters) throws JSONRPC2ParseException {
@@ -232,7 +232,7 @@ public abstract class AbstractTestCase {
         parameters,
         "id-"+(++requestId));
     System.out.println("\tRequest: \n\t" + req);
-    return JSONRPC2Response.parse(xtreemfsRPC.executeMethod(req.toString()), true, true);
+    return JSONRPC2Response.parse(xtreemfsRPC.execute(req.toString()), true, true);
   }
 
   protected static JSONRPC2Response callJSONRPC(JSONRPC2Session mySession, METHOD method, Map<String,?> parameters) throws JSONRPC2ParseException, JSONRPC2SessionException {
@@ -258,7 +258,7 @@ public abstract class AbstractTestCase {
         parameters != null? Arrays.asList(parameters):new ArrayList<String>(),
             "id-"+(++requestId));
     System.out.println("\tRequest: \n\t" + req);
-    return JSONRPC2Response.parse(xtreemfsRPC.executeMethod(req.toString()), true, true);
+    return JSONRPC2Response.parse(xtreemfsRPC.execute(req.toString()), true, true);
   }
 
   protected static JSONRPC2Response callJSONRPC(String method, Object... parameters) throws JSONRPC2ParseException {
@@ -267,7 +267,7 @@ public abstract class AbstractTestCase {
         parameters != null? Arrays.asList(parameters):new ArrayList<String>(),
             "id-"+(++requestId));
     System.out.println("\tRequest: \n\t" + req);
-    return JSONRPC2Response.parse(xtreemfsRPC.executeMethod(req.toString()), true, true);
+    return JSONRPC2Response.parse(xtreemfsRPC.execute(req.toString()), true, true);
   }
 
   protected static JSONRPC2Response callJSONRPC(JSONRPC2Session mySession, METHOD method, Object... parameters) throws JSONRPC2ParseException, JSONRPC2SessionException {

@@ -26,10 +26,8 @@ import net.minidev.json.JSONObject;
 import org.springframework.context.ResourceLoaderAware;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.xtreemfs.common.libxtreemfs.Client;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.Options;
@@ -71,7 +69,7 @@ public class JsonRPC implements ResourceLoaderAware {
   protected InetSocketAddress schedulerAddress = null;
 
   protected int dir_port = DEFAULT_DIR_PORT;
-  private String adminPassword = "";
+  protected String adminPassword = "";
 
   protected ResourceLoader resourceLoader; 
 
@@ -91,8 +89,6 @@ public class JsonRPC implements ResourceLoaderAware {
 //    isNodeRunning,
 
     getAvailableResources,
-
-    createVolume
   }
 
   public JsonRPC(String defaultDirConfigFile) {
@@ -198,13 +194,11 @@ public class JsonRPC implements ResourceLoaderAware {
     }
   }
 
-
   @RequestMapping(
       value = "/executeMethod",
       method = RequestMethod.POST,
       produces = "application/json")
-  public @ResponseBody String executeMethod(@RequestBody String json_string) {
-    
+  public String execute(String json_string) {
     JSONRPC2Response resp = null;
     try {      
       Logger.getLogger(JsonRPC.class.getName()).log(

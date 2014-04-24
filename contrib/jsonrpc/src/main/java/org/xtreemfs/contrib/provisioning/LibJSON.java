@@ -10,6 +10,8 @@ import java.util.UUID;
 
 import javax.xml.bind.annotation.XmlRootElement;
 
+import org.codehaus.jackson.annotate.JsonAutoDetect;
+import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
 import org.xtreemfs.common.libxtreemfs.Client;
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.common.libxtreemfs.Volume;
@@ -22,7 +24,6 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse;
-
 public class LibJSON {
 
 
@@ -250,6 +251,7 @@ public class LibJSON {
   }  
   
   @XmlRootElement(name="ReservationStatus")
+  @JsonAutoDetect(fieldVisibility = Visibility.ANY, isGetterVisibility = Visibility.NONE, getterVisibility = Visibility.NONE, setterVisibility = Visibility.NONE)
   public static class ReservationStatus implements Serializable {
     private static final long serialVersionUID = -5811456962763091947L;
     public boolean Ready;
@@ -281,6 +283,7 @@ public class LibJSON {
   }
   
   @XmlRootElement(name="Addresses")
+  @JsonAutoDetect(fieldVisibility = Visibility.ANY, isGetterVisibility = Visibility.NONE, getterVisibility = Visibility.NONE, setterVisibility = Visibility.NONE)
   public static class Addresses implements Serializable {
     private static final long serialVersionUID = -6291321674682669013L;
     public List<String> Addresses;
@@ -306,24 +309,26 @@ public class LibJSON {
   }
   
   @XmlRootElement(name="Machines")
+  @JsonAutoDetect(fieldVisibility = Visibility.ANY, isGetterVisibility = Visibility.NONE, getterVisibility = Visibility.NONE, setterVisibility = Visibility.NONE)
   public static class Machines implements Serializable {
     private static final long serialVersionUID = -7391050821048296071L;
-    public List<Reservation> Machines;
+    public List<Reservation> Resources;
     public Machines() {
       // no-args constructor
     }
     public Machines(List<Reservation> machines) {
-      this.Machines = machines;
+      this.Resources = machines;
     }
-    public List<Reservation> getMachines() {
-      return Machines;
+    public List<Reservation> getResources() {
+      return Resources;
     }
-    public void setMachines(List<Reservation> machines) {
-      Machines = machines;
+    public void setResources(List<Reservation> machines) {
+      Resources = machines;
     }
   }
   
   @XmlRootElement(name="Reservation")
+  @JsonAutoDetect(fieldVisibility = Visibility.ANY, isGetterVisibility = Visibility.NONE, getterVisibility = Visibility.NONE, setterVisibility = Visibility.NONE)
   public static class Reservation implements Serializable {
     private static final long serialVersionUID = 5629110247326464140L;
     public String IResID;
@@ -342,6 +347,7 @@ public class LibJSON {
   }
 
   @XmlRootElement(name="Resources")
+  @JsonAutoDetect(fieldVisibility = Visibility.ANY, isGetterVisibility = Visibility.NONE, getterVisibility = Visibility.NONE, setterVisibility = Visibility.NONE)  
   public static class Resources implements Serializable {
     private static final long serialVersionUID = 9199843708622395018L;
     public List<Resource> Resources;
@@ -363,6 +369,7 @@ public class LibJSON {
   }
   
   @XmlRootElement(name="Resource")
+  @JsonAutoDetect(fieldVisibility = Visibility.ANY, isGetterVisibility = Visibility.NONE, getterVisibility = Visibility.NONE, setterVisibility = Visibility.NONE)
   public static class Resource implements Serializable {
     private static final long serialVersionUID = 831790831396236645L;
     public String ID;
@@ -432,6 +439,7 @@ public class LibJSON {
   }
 
   @XmlRootElement(name="Attributes")
+  @JsonAutoDetect(fieldVisibility = Visibility.ANY, isGetterVisibility = Visibility.NONE, getterVisibility = Visibility.NONE, setterVisibility = Visibility.NONE)
   public static class Attributes implements Serializable {
     private static final long serialVersionUID = -5867485593384557874L;
     public double Capacity;
@@ -470,6 +478,7 @@ public class LibJSON {
   }
   
   @XmlRootElement(name="Cost")
+  @JsonAutoDetect(fieldVisibility = Visibility.ANY, isGetterVisibility = Visibility.NONE, getterVisibility = Visibility.NONE, setterVisibility = Visibility.NONE)
   public static class Cost implements Serializable {
     private static final long serialVersionUID = -1952012295370219752L;
     public double Capacity;
