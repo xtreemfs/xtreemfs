@@ -14,6 +14,9 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.clients.File;
@@ -47,7 +50,8 @@ public class SetReplicaUpdatePolicyTest extends TestCase {
     public SetReplicaUpdatePolicyTest() {
         Logging.start(SetupUtils.DEBUG_LEVEL);
     }
-    
+
+    @Before
     public void setUp() throws Exception {
         
         java.io.File testDir = new java.io.File(SetupUtils.TEST_DIR);
@@ -65,17 +69,19 @@ public class SetReplicaUpdatePolicyTest extends TestCase {
         // it to a new file on 'open')
         
         testEnv = new TestEnvironment(Services.DIR_CLIENT, Services.TIME_SYNC, Services.UUID_RESOLVER,
-            Services.MRC_CLIENT, Services.DIR_SERVICE, Services.MRC, Services.OSD);
+                Services.MRC_CLIENT, Services.DIR_SERVICE, Services.MRC, Services.OSD, Services.OSD);
         testEnv.start();
         
         client = testEnv.getMrcClient();
     }
-    
+
+    @After
     protected void tearDown() throws Exception {
         testEnv.shutdown();
         Logging.logMessage(Logging.LEVEL_DEBUG, this, BufferPool.getStatus());
     }
-    
+
+    @Test
     public void  testSetReplicaUpdatePolicyOperation() throws Exception {
         final String uid = "root";
         final List<String> gids = createGIDs("root");
@@ -125,6 +131,39 @@ public class SetReplicaUpdatePolicyTest extends TestCase {
                 ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ).get();
         assert(f.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ));
         
+    }
+  
+    @Test
+    public void testDeniedRequestforRwWithStriping() throws Exception {      
+        final String uid = "root";
+        final List<String> gids = createGIDs("root");
+        final String volumeName = "testVolume";
+        final UserCredentials uc = createUserCredentials(uid, gids);
+        Auth passwd = Auth.newBuilder().setAuthType(AuthType.AUTH_PASSWORD)
+                .setAuthPasswd(AuthPassword.newBuilder().setPassword("")).build();
+
+        StripingPolicy sp = SetupUtils.getStripingPolicy(2, 128);
+
+        Client c = new Client(new InetSocketAddress[] { testEnv.getDIRAddress() }, 15000, 60000, null);
+        c.start();
+        c.createVolume(volumeName, passwd, uc, sp, AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, 0777);
+
+        Volume v = c.getVolume(volumeName, uc);
+        Path p = new Path("foo.txt");
+
+        File f = v.getFile(p.toString());
+        f.createFile();
+        f.setReplicaUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE);
+
+        final String fileId = f.getxattr("xtreemfs.file_id");        
+        
+        //TODO(lukas): Handle expected Exception
+        // try to set replica update policy to WQRQ
+        client.xtreemfs_set_replica_update_policy(mrcAddress, passwd, uc, fileId,
+                ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ).get();
+
+        // replica update policy should not changed
+        assertTrue(f.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE));
     }
     
     
