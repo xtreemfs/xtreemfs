@@ -33,3 +33,7 @@ http://localhost:8080/xtreemfs-jsonrpc/method/releaseResources
 {
    "IResID": "volume-2d31dbc4-3c24-4481-868f-d59a65f38c34" 
 }
+
+
+
+http://localhost:8080/xtreemfs-jsonrpc/method/listReservations

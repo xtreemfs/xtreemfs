@@ -504,4 +504,57 @@ public class LibJSON {
     }
   }
 
+  @XmlRootElement(name="Response")
+  @JsonAutoDetect(fieldVisibility = Visibility.ANY, isGetterVisibility = Visibility.NONE, getterVisibility = Visibility.NONE, setterVisibility = Visibility.NONE)
+  public static class Response<E> implements Serializable {
+    private static final long serialVersionUID = 4850691130923087378L;
+    public E result;
+    public Error error;
+    public Response() {
+      // no-args constructor
+    }
+    public Response(E result, Error error) {
+      this.error = error;
+      this.result = result;
+    }
+    public Response(E result) {
+      this.result = result;
+      this.error = null;
+    }
+    public Object getResult() {
+      return result;
+    }
+    public void setResult(E result) {
+      this.result = result;
+    }
+    public Error getError() {
+      return error;
+    }
+    public void setError(Error error) {
+      this.error = error;
+    }
+  }
+  
+  
+  @XmlRootElement(name="Error")
+  @JsonAutoDetect(fieldVisibility = Visibility.ANY, isGetterVisibility = Visibility.NONE, getterVisibility = Visibility.NONE, setterVisibility = Visibility.NONE)
+  public static class Error implements Serializable {
+    private static final long serialVersionUID = -2989036582502777333L;
+    public String message;
+    public int code;
+    public Error() {
+      // no-args constructor
+    }
+    public Error(String message, int code) {
+      this.message = message;
+      this.code = code;
+    }
+    public String getMessage() {
+      return message;
+    }
+    public void setMessage(String message) {
+      this.message = message;
+    }
+  }
+  
 }
