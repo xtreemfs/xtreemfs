@@ -236,7 +236,9 @@ public class XtreemFSFileSystem extends FileSystem {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "Creating file %s. Overwrite = %s", pathString, overwrite);
         }
         // If some of the parent directories don't exist they should be created (with default permissions for directory).
-        mkdirs(path.getParent());
+        if (pathString.lastIndexOf("/") != 0) {
+            mkdirs(path.getParent());
+        }
 
         final FileHandle fileHandle = xtreemfsVolume.openFile(userCredentials, pathString, flags, fp.toShort());
         return new FSDataOutputStream(new XtreemFSFileOutputStream(userCredentials, fileHandle, pathString,
@@ -244,7 +246,7 @@ public class XtreemFSFileSystem extends FileSystem {
     }
 
     @Override
-    public FSDataOutputStream append(Path path, int i, Progressable p) throws IOException {
+    public FSDataOutputStream append(Path path, int bufferSize, Progressable p) throws IOException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
