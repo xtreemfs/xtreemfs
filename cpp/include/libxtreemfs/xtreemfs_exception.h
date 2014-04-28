@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 
+#include <boost/lexical_cast.hpp>
 #include <stdexcept>
 #include <string>
 
@@ -62,7 +63,7 @@ class FileInfoNotFoundException : public XtreemFSException {
  public:
   explicit FileInfoNotFoundException(uint64_t file_id)
     : XtreemFSException("The FileInfo object was not found in the OpenFileTable"
-        " for the FileId: " + file_id) {}
+        " for the FileId: " + boost::lexical_cast<std::string>(file_id)) {}
 };
 
 /** Thrown if FileHandle for given file_id was not found in FileHandleList. */
