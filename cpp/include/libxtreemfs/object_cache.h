@@ -131,7 +131,7 @@ class ObjectCache {
 
  private:
   CachedObject* LookupObject(int object_no,
-                             const ObjectWriterFunction& writer);
+                             const ObjectWriterFunction& writer)
       LOCKS_EXCLUDED(mutex_);
 
   void EvictObjects(const ObjectWriterFunction& writer)
