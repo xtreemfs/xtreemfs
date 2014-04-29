@@ -214,7 +214,7 @@ public class LibJSON {
     // random
     res.addResource(
         new Resource(
-            dirAddresses[0].getAddress().getCanonicalHostName()+"/storage/random",
+            "/" + dirAddresses[0].getAddress().getCanonicalHostName()+"/storage/random",
             dirAddresses[0].getAddress().getHostAddress(),
             "Storage",
             new Attributes(
@@ -232,7 +232,7 @@ public class LibJSON {
     // sequential
     res.addResource(
         new Resource(
-            dirAddresses[0].getAddress().getCanonicalHostName()+"/storage/sequential",
+            "/" + dirAddresses[0].getAddress().getCanonicalHostName()+"/storage/sequential",
             dirAddresses[0].getAddress().getHostAddress(),
             "Storage",
             new Attributes(
