@@ -23,6 +23,7 @@ import org.xtreemfs.common.clients.File;
 import org.xtreemfs.common.clients.Volume;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
@@ -132,7 +133,7 @@ public class SetReplicaUpdatePolicyTest extends TestCase {
         assert(f.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ));
         
     }
-  
+    
     @Test
     public void testDeniedRequestforRwWithStriping() throws Exception {      
         final String uid = "root";
@@ -155,15 +156,17 @@ public class SetReplicaUpdatePolicyTest extends TestCase {
         f.createFile();
         f.setReplicaUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE);
 
-        final String fileId = f.getxattr("xtreemfs.file_id");        
+        final String fileId = f.getxattr("xtreemfs.file_id");
         
-        //TODO(lukas): Handle expected Exception
-        // try to set replica update policy to WQRQ
-        client.xtreemfs_set_replica_update_policy(mrcAddress, passwd, uc, fileId,
-                ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ).get();
-
-        // replica update policy should not changed
-        assertTrue(f.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE));
+        try {
+            // try to set replica update policy to WQRQ (expect PBRPCException).
+            client.xtreemfs_set_replica_update_policy(mrcAddress, passwd, uc, fileId,
+                    ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ).get();
+            assertTrue(false);
+        } catch (PBRPCException e) {
+            // replica update policy should not changed
+            assertTrue(f.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE));
+        }
     }
     
     
