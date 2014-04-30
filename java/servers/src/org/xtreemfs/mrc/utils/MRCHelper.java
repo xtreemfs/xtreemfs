@@ -498,7 +498,7 @@ public class MRCHelper {
                         && (replPolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE) || replPolicy
                                 .equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ))) {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
-                            "striping + rw-replication is not support yet.");
+                            "Striping of rw-replicated Files is not supported yet.");
                 }
 
                 sMan.setDefaultStripingPolicy(file.getId(), sp, update);
@@ -760,7 +760,7 @@ public class MRCHelper {
             if (stripingPolicy.getWidth() > 1
                     && (value.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE) || value
                             .equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ))) {
-                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "striping + rw-replication is not support yet.");
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "RW-replication of striped files is not supported yet.");
             }
             
             // Remove read only state of file if readonly policy gets reverted.
@@ -796,7 +796,7 @@ public class MRCHelper {
                         && (rp.getName().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE) || rp.getName().equals(
                                 ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ))) {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
-                            "striping + rw-replication is not support yet.");
+                            "RW-replication of striped files is not supported yet.");
                 }
 
                 sMan.setDefaultReplicationPolicy(file.getId(), rp, update);

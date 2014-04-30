@@ -98,7 +98,7 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
         if (stripingPolicy.getWidth() > 1
                 && (newReplUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE) || newReplUpdatePolicy
                         .equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ))) {
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "striping + rw-replication is not support yet.");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "RW-replication of striped files is not supported yet.");
         }
 
         // Get old ReplicaUpdatePolicy for response
