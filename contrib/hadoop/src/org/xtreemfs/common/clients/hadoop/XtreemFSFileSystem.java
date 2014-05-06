@@ -257,7 +257,7 @@ public class XtreemFSFileSystem extends FileSystem {
                 SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber());
 
         return new FSDataOutputStream(new XtreemFSFileOutputStream(userCredentials, fileHandle, pathString,
-                useWriteBuffer, writeBufferSize), statistics);
+                useWriteBuffer, writeBufferSize, true), statistics);
     }
 
     @Override

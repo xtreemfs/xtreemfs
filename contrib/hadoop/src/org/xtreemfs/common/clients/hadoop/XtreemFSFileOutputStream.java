@@ -33,6 +33,11 @@ public class XtreemFSFileOutputStream extends OutputStream {
 
     public XtreemFSFileOutputStream(UserCredentials userCredentials, FileHandle fileHandle, String fileName,
             boolean useBuffer, int bufferSize) throws IOException {
+        this(userCredentials, fileHandle, fileName, useBuffer, bufferSize, false);
+    }
+
+    public XtreemFSFileOutputStream(UserCredentials userCredentials, FileHandle fileHandle, String fileName,
+            boolean useBuffer, int bufferSize, boolean append) throws IOException {
         this.userCredentials = userCredentials;
         this.fileHandle = fileHandle;
         this.fileName = fileName;
@@ -40,8 +45,9 @@ public class XtreemFSFileOutputStream extends OutputStream {
         if (useBuffer) {
             this.buffer = ByteBuffer.allocateDirect(bufferSize);
         }
-        // Append new content if file already has content.
-        if (fileHandle.getAttr(userCredentials).getSize() > 0) {
+
+        // Set position to end of file for append operation.
+        if (append) {
             position = fileHandle.getAttr(userCredentials).getSize();
         }
     }
