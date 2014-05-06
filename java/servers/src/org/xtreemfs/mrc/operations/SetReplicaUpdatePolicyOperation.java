@@ -18,6 +18,7 @@ import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
@@ -91,6 +92,14 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
                 && !ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ.equals(newReplUpdatePolicy))
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "invalid replica update policy: "
                     + newReplUpdatePolicy);
+
+        // check if striping + rw replication would be set
+        StripingPolicy stripingPolicy = file.getXLocList().getReplica(0).getStripingPolicy();
+        if (stripingPolicy.getWidth() > 1
+                && (newReplUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE) || newReplUpdatePolicy
+                        .equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ))) {
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "RW-replication of striped files is not supported yet.");
+        }
 
         // Get old ReplicaUpdatePolicy for response
         String oldPolicy = file.getXLocList().getReplUpdatePolicy();
