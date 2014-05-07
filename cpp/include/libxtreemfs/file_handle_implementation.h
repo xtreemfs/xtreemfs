@@ -23,6 +23,7 @@
 #include "xtreemfs/MRC.pb.h"
 #include "libxtreemfs/client_implementation.h"
 #include "libxtreemfs/file_handle.h"
+#include "libxtreemfs/object_encryptor.h"
 #include "libxtreemfs/xcap_handler.h"
 
 namespace xtreemfs {
@@ -312,6 +313,9 @@ class FileHandleImplementation
 
   /** The object cache, or NULL if not enabled. */
   ObjectCache* object_cache_;
+
+  /** The object encryptor. */
+  ObjectEncryptor object_encryptor_;
 
   const Options& volume_options_;
 
