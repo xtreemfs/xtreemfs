@@ -29,6 +29,7 @@ class TestEnvironment:
         self.__dir = None
         self.__mrc = None
         self.__osds = list()
+        self.__scheduler = None
         self.__storage_threads = storage_threads
 
     def start(self):
@@ -104,6 +105,7 @@ class TestEnvironment:
                         raise Exception("Cannot get free TCP port")
             print 'xtestenv: DIR port :', dir_port
             print 'xtestenv: MRC port :', dir_port - 2
+            print 'xtestenv: Scheduler port:', dir_port - 6
             print 'xtestenv: OSD ports:', dir_port + 2
 
             print 'xtestenv: Starting services...'
@@ -152,6 +154,30 @@ class TestEnvironment:
                                        os.path.join(self.__xtreemfs_dir,"config","snmp.acl"))
             
             self.__mrc.write_config_file()
+            
+            self.__scheduler = test_server.Scheduler(START_STOP_SERVICE_RETRIES,
+                                         os.path.join(self.__test_dir, "config", "scheduler.properties"),
+                                         os.path.join(self.__test_dir, "run"),
+                                         self.__xtreemfs_dir,
+                                         os.path.join(self.__test_dir, "data", "scheduler"),
+                                         dir_port - 6,
+                                         "test-scheduler",
+                                         self.__storage_threads)
+            
+            self.__scheduler.configure("localhost", self.__dir.get_rpc_port())
+            self.__scheduler.set_debug_level(self.__debug_level)
+            if ssl_enabled:
+                self.__scheduler.enable_ssl(False,
+                                      os.path.join(self.__xtreemfs_dir, "tests", "certs", "Scheduler.p12"),
+                                      'passphrase',
+                                      os.path.join(self.__xtreemfs_dir, "tests", "certs", "trusted.jks"),
+                                      'passphrase')
+            if snmp_enabled:
+                self.__scheduler.enable_snmp(dir_port - 6 +2000,'localhost', 
+                                       os.path.join(self.__xtreemfs_dir,"config","snmp.acl"))
+            
+            self.__scheduler.write_config_file()
+            self.__scheduler.create_osd_capabilities_file(maxOsds)
 
             for osdNum in range(maxOsds):
                 osd = test_server.OSD(START_STOP_SERVICE_RETRIES,
@@ -179,6 +205,8 @@ class TestEnvironment:
 
             self.__dir.start(os.path.join(self.__test_dir, "log", "dir.log"))
             self.__mrc.start(os.path.join(self.__test_dir, "log", "mrc.log"))
+            self.__scheduler.start(os.path.join(self.__test_dir, "log", "scheduler.log"))
+
             for osdNum in range(maxOsds):
                 self.__osds[osdNum].start(os.path.join(self.__test_dir, "log", "osd"+str(osdNum)+".log"))
 
@@ -205,7 +233,12 @@ class TestEnvironment:
                                 stripe_size=v['stripe_size'],
                                 rwr_policy=v.setdefault('rwr_policy', 'quorum'),
                                 rwr_factor=v['rwr_factor'],
-                                ronly_factor=v['ronly_factor'])
+                                ronly_factor=v['ronly_factor'],
+                                xtreemfs_scheduler = 'localhost:' + str(dir_port - 6),
+                                capacity = 50,
+                                iops = 50,
+                                res_type = 'RANDOM_IO')
+                                 
                 self.__volumes[k] = volume
 
             for k in self.__volumes.keys():
@@ -232,6 +265,7 @@ class TestEnvironment:
             self.__osds[osdNum].stop()
             
         self.__mrc.stop()
+        self.__scheduler.stop()
         self.__dir.stop()
         print 'xtestenv: All services stopped.'
 
