@@ -42,13 +42,18 @@ RmfsOptions::RmfsOptions() : Options(),
   admin_password = "";
   force = false;
 
+  scheduler_service = "";
+
   rmfs_descriptions_.add_options()
       ("admin_password",
         po::value(&admin_password)->default_value(admin_password),
         "MRC's admin_password (not required if not set at the MRC).")
       ("force,f",
         po::value(&force)->default_value(force)->zero_tokens(),
-        "Never prompt. Overrides safety questions.");
+        "Never prompt. Overrides safety questions.")
+      ("scheduler-service",
+        po::value(&scheduler_service)->default_value(scheduler_service),
+        "Scheduler service");
 
   // TODO(mberlin): Add an option to specify the triggering of the cleanup
   //                process to immediately free (now) orphaned objects.

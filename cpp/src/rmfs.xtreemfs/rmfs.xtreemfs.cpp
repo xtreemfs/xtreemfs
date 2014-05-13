@@ -28,6 +28,8 @@ int main(int argc, char* argv[]) {
   // Parse command line options.
   RmfsOptions options;
   bool invalid_commandline_parameters = false;
+  bool delete_reservation = false;
+
   try {
     options.ParseCommandLine(argc, argv);
   } catch(const XtreemFSException& e) {
@@ -47,6 +49,11 @@ int main(int argc, char* argv[]) {
   if (options.show_version) {
     cout << options.ShowVersion("rmfs.xtreemfs") << endl;
     return 1;
+  }
+  if (options.scheduler_service != "") {
+    delete_reservation = true;
+  } else {
+    cout << "No reservation scheduler given, existing QoS reservation will not be deleted." << endl;
   }
 
   // Safety question
@@ -111,10 +118,18 @@ int main(int argc, char* argv[]) {
     }
     cout << "Trying to delete the volume: " << options.xtreemfs_url << endl;
 
-    client->DeleteVolume(options.mrc_service_address,
-                         auth,
-                         user_credentials,
-                         options.volume_name);
+    if(delete_reservation) {
+      client->DeleteVolume(options.mrc_service_address,
+                           auth,
+                           user_credentials,
+                           options.volume_name,
+                           options.scheduler_service);
+    } else {
+      client->DeleteVolume(options.mrc_service_address,
+                           auth,
+                           user_credentials,
+                           options.volume_name);
+    }
   } catch (const XtreemFSException& e) {
     success = false;
     cout << "Failed to delete the volume, error:\n"

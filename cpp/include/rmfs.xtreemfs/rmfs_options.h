@@ -49,6 +49,9 @@ class RmfsOptions : public Options {
   /** If true, no questions will be asked. */
   bool force;
 
+  /** Scheduler service */
+  std::string scheduler_service;
+
  private:
   /** Contains all available rmfs options and its descriptions. */
   boost::program_options::options_description rmfs_descriptions_;
