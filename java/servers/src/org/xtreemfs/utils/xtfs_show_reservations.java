@@ -34,6 +34,10 @@ public class xtfs_show_reservations {
 	public static void main(String[] args) {
 		Logging.start(Logging.LEVEL_WARN);
 		options = utils.getDefaultAdminToolOptions(false);
+
+        options.put("r", new CliOption(CliOption.OPTIONTYPE.SWITCH,
+                "Get free resources", ""));
+
         List<String> arguments = new ArrayList<String>(1);
         CLIParser.parseCLI(args, options, arguments);
         
@@ -97,6 +101,13 @@ public class xtfs_show_reservations {
 
             printReservations(reservations);
 
+            if(options.get("r").switchValue) {
+                Scheduler.freeResourcesResponse freeRes =
+                        schedulerClient.getFreeResources(schedulerSocket, authHeader, userCreds);
+                System.out.println("\nFree Resources:");
+                printFreeResources(freeRes);
+            }
+
             client.shutdown();
             client.waitForShutdown();
         } catch (Exception e) {
@@ -133,6 +144,13 @@ public class xtfs_show_reservations {
         } else {
             System.out.println("No reservations");
         }
+    }
+
+    private static void printFreeResources(Scheduler.freeResourcesResponse freeResources) {
+        System.out.println("Sequential Capacity:\t\t" + freeResources.getStreamingCapacity());
+        System.out.println("Sequential Throughput:\t\t" + freeResources.getStreamingThroughput());
+        System.out.println("Random Capacity:\t\t" + freeResources.getRandomCapacity());
+        System.out.println("Random Throughput:\t\t" + freeResources.getRandomThroughput());
     }
 
     private static String typeToString(Scheduler.reservationType type) {

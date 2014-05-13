@@ -109,6 +109,19 @@ public class SchedulerClient {
 		return (Scheduler.reservationSet) response;
 	}
 
+    public Scheduler.freeResourcesResponse getFreeResources(InetSocketAddress server, Auth authHeader,
+            UserCredentials userCreds) throws IOException, InterruptedException {
+        Object response = syncCall(new CallGenerator<Scheduler.freeResourcesResponse>() {
+            @Override
+            public RPCResponse<Scheduler.freeResourcesResponse> executeCall(
+                    SchedulerServiceClient client, InetSocketAddress server)
+                    throws IOException {
+                return client.getFreeResources(server, auth, user);
+            }
+        }, maxRetries);
+        return (Scheduler.freeResourcesResponse) response;
+    }
+
 	/**
 	 * Interface for syncCall which generates the calls. Will be called for each
 	 * retry.
