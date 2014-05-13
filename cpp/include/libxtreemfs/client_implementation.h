@@ -142,6 +142,13 @@ class ClientImplementation : public Client {
       const pbrpc::UserCredentials& user_credentials,
       const std::string& volume_name);
 
+  virtual void DeleteVolume(
+      const ServiceAddresses& mrc_address,
+      const pbrpc::Auth& auth,
+      const pbrpc::UserCredentials& user_credentials,
+      const std::string& volume_name,
+      const ServiceAddresses &scheduler_address);
+
   virtual pbrpc::Volumes* ListVolumes(
       const ServiceAddresses& mrc_addresses,
       const pbrpc::Auth& auth);

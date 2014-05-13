@@ -597,6 +597,38 @@ void ClientImplementation::DeleteVolume(
   response->DeleteBuffers();
 }
 
+void ClientImplementation::DeleteVolume(
+    const ServiceAddresses& mrc_address,
+    const xtreemfs::pbrpc::Auth& auth,
+    const xtreemfs::pbrpc::UserCredentials& user_credentials,
+    const std::string& volume_name,
+    const ServiceAddresses &scheduler_address) {
+  SchedulerServiceClient scheduler_service_client(network_client_.get());
+  SimpleUUIDIterator temp_uuid_iterator_with_addresses;
+  AddAddresses(scheduler_address, &temp_uuid_iterator_with_addresses);
+
+  xtreemfs::pbrpc::volumeIdentifier volume;
+  volume.set_uuid(volume_name);
+
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
+          boost::bind(
+              &xtreemfs::pbrpc::SchedulerServiceClient::removeReservation_sync,
+              &scheduler_service_client,
+              _1,
+              boost::cref(auth),
+              boost::cref(user_credentials),
+              &volume),
+          &temp_uuid_iterator_with_addresses,
+          NULL,
+          RPCOptionsFromOptions(options_),
+          true));
+
+  response->response();
+
+  DeleteVolume(mrc_address, auth, user_credentials, volume_name);
+}
+
 xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(
     const ServiceAddresses& mrc_addresses,
     const xtreemfs::pbrpc::Auth& auth) {
