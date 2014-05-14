@@ -1,15 +1,19 @@
 package org.xtreemfs.scheduler;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import com.sun.net.httpserver.HttpContext;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
 import org.xtreemfs.babudb.BabuDBFactory;
 import org.xtreemfs.babudb.api.BabuDB;
 import org.xtreemfs.babudb.api.DatabaseManager;
@@ -21,6 +25,8 @@ import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.common.KeyValuePairs;
 import org.xtreemfs.common.config.PolicyContainer;
 import org.xtreemfs.common.config.ServiceConfig;
+import org.xtreemfs.common.statusserver.PrintStackTrace;
+import org.xtreemfs.common.statusserver.StatusServer;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.foundation.CrashReporter;
 import org.xtreemfs.foundation.LifeCycleListener;
@@ -54,7 +60,13 @@ import org.xtreemfs.scheduler.algorithm.ReservationSchedulerFactory;
 import org.xtreemfs.scheduler.data.OSDDescription;
 import org.xtreemfs.scheduler.data.OSDPerformanceDescription;
 import org.xtreemfs.scheduler.data.store.ReservationStore;
-import org.xtreemfs.scheduler.operations.*;
+import org.xtreemfs.scheduler.operations.GetAllVolumesOperation;
+import org.xtreemfs.scheduler.operations.GetFreeResourcesOperation;
+import org.xtreemfs.scheduler.operations.GetScheduleOperation;
+import org.xtreemfs.scheduler.operations.GetVolumesOperation;
+import org.xtreemfs.scheduler.operations.RemoveReservationOperation;
+import org.xtreemfs.scheduler.operations.ScheduleReservationOperation;
+import org.xtreemfs.scheduler.operations.SchedulerOperation;
 import org.xtreemfs.scheduler.stages.BenchmarkArgs;
 import org.xtreemfs.scheduler.stages.BenchmarkCompleteCallback;
 import org.xtreemfs.scheduler.stages.BenchmarkStage;
@@ -62,29 +74,29 @@ import org.xtreemfs.scheduler.stages.BenchmarkStage;
 public class SchedulerRequestDispatcher extends LifeCycleThread implements
 		RPCServerRequestListener, LifeCycleListener {
 
-	public static final int INDEX_ID_RESERVATIONS = 0;
-	public static final int INDEX_ID_OSDS = 1;
-	private static final int RPC_TIMEOUT = 15000;
-	private static final int CONNECTION_TIMEOUT = 5 * 60 * 1000;
-	public static final int DB_VERSION = 1;
-    private static HashSet<String> requestedBenchmarks = new HashSet<String>();
+    public static final int                        INDEX_ID_RESERVATIONS = 0;
+    public static final int                        INDEX_ID_OSDS         = 1;
+    private static final int                       RPC_TIMEOUT           = 15000;
+    private static final int                       CONNECTION_TIMEOUT    = 5 * 60 * 1000;
+    public static final int                        DB_VERSION            = 1;
+    private static HashSet<String>                 requestedBenchmarks   = new HashSet<String>();
 
-	private SSLOptions sslOptions;
-	private SchedulerConfig config;
-	private RPCNIOSocketClient clientStage;
-    private BenchmarkStage benchmarkStage;
-	private static final String DB_NAME = "scheddb";
-    private final HttpServer httpServ;
-	private DIRClient dirClient;
-	private List<OSDDescription> osds;
-	private ReservationScheduler reservationScheduler;
-	private final BlockingQueue<RPCServerRequest> queue;
-	private volatile boolean quit;
-	private final BabuDB database;
-	private final RPCNIOSocketServer server;
-	private final Map<Integer, SchedulerOperation> registry;
-	private ReservationStore reservationStore;
-    private OSDMonitor osdMonitor;
+    private SSLOptions                             sslOptions;
+    private SchedulerConfig                        config;
+    private RPCNIOSocketClient                     clientStage;
+    private BenchmarkStage                         benchmarkStage;
+    private static final String                    DB_NAME               = "scheddb";
+    private final StatusServer                     statusServer;
+    private DIRClient                              dirClient;
+    private List<OSDDescription>                   osds;
+    private ReservationScheduler                   reservationScheduler;
+    private final BlockingQueue<RPCServerRequest>  queue;
+    private volatile boolean                       quit;
+    private final BabuDB                           database;
+    private final RPCNIOSocketServer               server;
+    private final Map<Integer, SchedulerOperation> registry;
+    private ReservationStore                       reservationStore;
+    private OSDMonitor                             osdMonitor;
 
 	public SchedulerRequestDispatcher(SchedulerConfig config,
 			final BabuDBConfig dbsConfig) throws BabuDBException, IOException {
@@ -184,19 +196,16 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
             readOSDCapabilitiesFile();
         }
 
-        httpServ = HttpServer.create(new InetSocketAddress(config.getHttpPort()), 0);
+        statusServer = new StatusServer(ServiceType.SERVICE_TYPE_SCHEDULER, this, config.getHttpPort());
+        statusServer.registerModule(new StatusPage(config));
+        statusServer.registerModule(new PrintStackTrace());
 
-        final HttpContext ctx = httpServ.createContext("/", new HttpHandler() {
-            public void handle(HttpExchange httpExchange) throws IOException {
-                byte[] content;
-                content = SchedulerStatusPage.getStatusPage(SchedulerRequestDispatcher.this).getBytes("ascii");
-                httpExchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
-                httpExchange.sendResponseHeaders(200, content.length);
-                httpExchange.getResponseBody().write(content);
-                httpExchange.getResponseBody().close();
-            }
-        });
-	}
+         if (config.getAdminPassword() != null && config.getAdminPassword().length() > 0) {
+             statusServer.addAuthorizedUser("admin", config.getAdminPassword());
+         }
+
+        statusServer.start();
+    }
 
 	public void startup() {
 		this.start();
@@ -230,7 +239,7 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 
 	@Override
 	public void shutdown() throws Exception {
-        httpServ.stop(0);
+        statusServer.shutdown();
 		server.shutdown();
 		server.waitForShutdown();
 		database.shutdown();
@@ -391,7 +400,15 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
     public boolean isOSDAutoDiscover() {
         return config.getOSDAutodiscover();
     }
-
+    
+    public int getNumConnections() {
+        return server.getNumConnections();
+    }
+    
+    public long getPendingRequests() {
+        return server.getPendingRequests();
+    }
+    
 	private void registerOperations() throws BabuDBException {
 		SchedulerOperation op;
 
