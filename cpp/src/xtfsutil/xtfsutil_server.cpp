@@ -109,6 +109,8 @@ void XtfsUtilServer::ParseAndExecute(const xtreemfs::pbrpc::UserCredentials& uc,
       OpListSnapshots(uc, input, &result);
     } else if (op_name == "createDeleteSnapshot") {
       OpCreateDeleteSnapshot(uc, input, &result);
+    } else if (op_name == "enableDisableTracing") {
+      OpEnableDisableTracing(uc, input, &result);
     } else if (op_name == "setRemoveACL") {
       OpSetRemoveACL(uc, input, &result);
     } else {
@@ -549,6 +551,45 @@ void XtfsUtilServer::OpEnableDisableSnapshots(
                     "xtreemfs.snapshots_enabled",
                     input["snapshots_enabled"].asString(),
                     xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
+  (*output)["result"] = Json::Value(Json::objectValue);
+}
+
+void XtfsUtilServer::OpEnableDisableTracing(
+    const xtreemfs::pbrpc::UserCredentials& uc,
+    const Json::Value& input,
+    Json::Value* output) {
+  if ((!input.isMember("path") || !input["path"].isString())
+      || (!input.isMember("enable_tracing") || !input["enable_tracing"].isString())) {
+    (*output)["error"] = Json::Value(
+        "One of the following fields is missing or has an invalid value:"
+        " path or tracing_enabled.");
+    return;
+  }
+
+  const string path = input["path"].asString();
+
+  volume_->SetXAttr(uc,
+                    path,
+                    "xtreemfs.tracing.tracing_enabled",
+                    input["tracing_enabled"].asString(),
+                    xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
+
+  if (input.isMember("target_volume") && input["target_volume"].isString()) {
+    volume_->SetXAttr(uc,
+                      path,
+                      "xtreemfs.tracing.target_volume",
+                      input["target_volume"].asString(),
+                      xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
+  }
+
+  if (input.isMember("tracing_policy") && input["tracing_policy"].isString()) {
+    volume_->SetXAttr(uc,
+                      path,
+                      "xtreemfs.tracing.tracing_policy",
+                      input["tracing_policy"].asString(),
+                      xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
+  }
+
   (*output)["result"] = Json::Value(Json::objectValue);
 }
 

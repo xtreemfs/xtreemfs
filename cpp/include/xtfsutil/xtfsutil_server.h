@@ -217,6 +217,10 @@ class XtfsUtilServer {
                               const Json::Value& input,
                               Json::Value* output);
 
+  void OpEnableDisableTracing(const xtreemfs::pbrpc::UserCredentials& uc,
+                              const Json::Value& input,
+                              Json::Value* output);
+
   void OpSetRemoveACL(const xtreemfs::pbrpc::UserCredentials& uc,
                       const Json::Value& input,
                       Json::Value* output);
