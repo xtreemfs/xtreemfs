@@ -199,7 +199,7 @@ public class StatusPage extends StatusServerModule {
         // Max possible reservations
         ResourceSet freeResources = master.getReservationScheduler().getFreeResources();
         values.put(Vars.MPRCAPACITY, Double.toString(freeResources.getCapacity()) + " MiB");
-        values.put(Vars.MPRIOPS, Double.toString(freeResources.getIops()) + " MiB/s");
+        values.put(Vars.MPRIOPS, Double.toString(freeResources.getIops()));
         values.put(Vars.MPRSEQTHROUGHPUT, Double.toString(freeResources.getSeqTP()) + " MiB/s");
 
         String html = statusPageTemplate;
