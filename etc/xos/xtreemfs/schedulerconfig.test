@@ -131,5 +131,11 @@ osd_capabilities_file = etc/xos/xtreemfs/scheduler.osd_capaibities
 # Benchmark configuration                                           #
 #####################################################################
 
-# 209715200 Bytes = 200 MiB
-basefilesize_in_bytes = 209715200
+# Small benchmark size for testing
+basefilesize_in_bytes = 10485760
+benchmark_sequential_size = 1048576
+benchmark_random_size = 262144
+benchmark_treads = 3
+benchmark_repetitions = 3
+benchmark_retries = 3
+
