@@ -130,8 +130,8 @@ public class ServiceConfig extends Config {
          */
         OSD_AUTODISCOVER("osd_autodiscover", true, Boolean.class, false),
         OSD_CAPABILITIES_FILE("osd_capabilities_file", "/etc/xos/xtreemfs/scheduler.osd_capaibities", String.class, false),
-        BENCHMARK_SEQUENTIAL_SIZE("benchmark_sequential_size", 1073741824, Long.class, false),  // 1073741824 = 1 GiB
-        BENCHMARK_RANDOM_SIZE("benchmark_random_size", 104857600, Long.class, false),   // 104857600 = 100 MiB
+        BENCHMARK_SEQUENTIAL_SIZE("benchmark_sequential_size", 1073741824L, Long.class, false),  // 1073741824 = 1 GiB
+        BENCHMARK_RANDOM_SIZE("benchmark_random_size", 104857600L, Long.class, false),   // 104857600 = 100 MiB
         BENCHMARK_THREADS("benchmark_treads", 5, Integer.class, false),
         BENCHMARK_REPETITIONS("benchmark_repetitions", 3, Integer.class, false),
         BENCHMARK_RETRIES("benchmark_retries", 3, Integer.class, false),
