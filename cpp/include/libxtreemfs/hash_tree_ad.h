@@ -22,9 +22,13 @@ namespace xtreemfs {
  */
 class HashTreeAD {
  public:
-  HashTreeAD(int max_leaf_number);
+  explicit HashTreeAD(FileHandle* meta_file);
+
+  ~HashTreeAD();
 
   void FetchHashes(int start_leaf, int end_leaf);
+
+  void SetSize(int max_leaf_number);
 
  private:
   friend class HashTreeADTest_Node_Sibling_Test;
@@ -43,7 +47,7 @@ class HashTreeAD {
    public:
     Node(int level, int n);
 
-    Node(int node_number);
+    explicit Node(int node_number);
 
     int NodeNumber(const HashTreeAD* tree) const;
 
@@ -94,20 +98,24 @@ class HashTreeAD {
    * Number of leafs in the hash tree. Equivalent to the File size in Number
    * of encrypted Blocks.
    */
-  int max_leaf_number;
+  int max_leaf_number_;
 
-  int max_level;
+  int max_level_;
 
-  int max_node_number;
+  int max_node_number_;
 
   /**
    * Storage for the nodes.
    */
-  std::map<Node, std::string> nodes;
+  std::map<Node, std::string> nodes_;
 
-//  FileHandleImplementation meta_file;
+  /**
+   * File handle for the meta file. Not owned by this class. Close is called on
+   * destruction.
+   */
+  FileHandle* meta_file_;
 };
 
 } /* namespace xtreemfs */
 
-#endif /* CPP_INCLUDE_LIBXTREEMFS_HASH_TREE_AD_H_ */
+#endif  // CPP_INCLUDE_LIBXTREEMFS_HASH_TREE_AD_H_

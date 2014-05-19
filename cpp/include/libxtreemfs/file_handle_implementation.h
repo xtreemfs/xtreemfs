@@ -228,6 +228,8 @@ class FileHandleImplementation
   /** XCapHandler: Get current capability.*/
   virtual void GetXCap(xtreemfs::pbrpc::XCap* xcap);
 
+  void SetObjectEncryptor(std::auto_ptr<ObjectEncryptor> object_encryptor);
+
  private:
   /** Implements callback for an async xtreemfs_update_file_size request. */
   virtual void CallFinished(
@@ -315,7 +317,7 @@ class FileHandleImplementation
   ObjectCache* object_cache_;
 
   /** The object encryptor. */
-  ObjectEncryptor object_encryptor_;
+  std::auto_ptr<ObjectEncryptor> object_encryptor_;
 
   const Options& volume_options_;
 

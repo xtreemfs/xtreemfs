@@ -7,18 +7,28 @@
 
 #include "libxtreemfs/object_encryptor.h"
 
+#include "xtreemfs/GlobalTypes.pb.h"
+
 namespace xtreemfs {
 
 /**
  * Creates an ObjectEncryptor
  *
- * @param fileInfo    Ownership is not transfered.
- * @param volume_options
+ * @param user_credentials
+ * @param volume    Ownership is not transfered.
+ * @param file_id   XtreemFS File ID of the file to encrypt.
  */
-ObjectEncryptor::ObjectEncryptor(FileInfo* fileInfo,
-                                 const Options& volume_options)
-    : fileInfo(fileInfo),
-      volume_options(volume_options) {
+ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
+                                 VolumeImplementation* volume, uint64_t file_id)
+    : hash_tree_(
+          volume->OpenFile(
+              user_credentials,
+              "/.xtreemfs_enc_meta_files/" + file_id,
+              static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
+                  | pbrpc::SYSTEM_V_FCNTL_H_O_WRONLY),
+              true)),
+      volume_(volume),
+      volume_options_(volume->volume_options()) {
 }
 
 /**

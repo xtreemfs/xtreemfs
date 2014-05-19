@@ -34,10 +34,11 @@
 
 #include "libxtreemfs/hash_tree_ad.h"
 
-#include <algorithm>
+#include <math.h>
+
 #include <boost/foreach.hpp>
 #include <boost/smart_ptr/scoped_array.hpp>
-#include <math.h>
+#include <algorithm>
 
 namespace xtreemfs {
 
@@ -76,8 +77,8 @@ HashTreeAD::Node::Node(int node_number)
  * @return The node number of the node. This is not the same as Node::n.
  */
 int HashTreeAD::Node::NodeNumber(const HashTreeAD* tree) const {
-  if (level == tree->max_level) {
-    return tree->max_node_number;
+  if (level == tree->max_level_) {
+    return tree->max_node_number_;
   }
   return LevelStart(level) + (n / 2) * NodeGroupDistance(level) + n % 2;
 }
@@ -87,10 +88,10 @@ int HashTreeAD::Node::NodeNumber(const HashTreeAD* tree) const {
  * @return The Parent of the node.
  */
 HashTreeAD::Node HashTreeAD::Node::Parent(const HashTreeAD* tree) const {
-  assert(level < tree->max_level);
+  assert(level < tree->max_level_);
   Node parent = Node(level + 1, n / 2);
-  if (parent.level != tree->max_level
-      && parent.NodeNumber(tree) >= tree->max_node_number) {
+  if (parent.level != tree->max_level_
+      && parent.NodeNumber(tree) >= tree->max_node_number_) {
     return parent.Parent(tree);
   } else {
     return parent;
@@ -103,8 +104,8 @@ HashTreeAD::Node HashTreeAD::Node::Parent(const HashTreeAD* tree) const {
  * @return The common ancestor (with the lowest level) of the node and the
  *         given on.
  */
-HashTreeAD::Node HashTreeAD::Node::CommonAncestor(
-    const HashTreeAD* tree, HashTreeAD::Node node) const {
+HashTreeAD::Node HashTreeAD::Node::CommonAncestor(const HashTreeAD* tree,
+                                                  HashTreeAD::Node node) const {
   assert(level == node.level);
   // Let r be the position of the most significant bit there the n of both
   // nodes differs from each other.
@@ -123,11 +124,10 @@ HashTreeAD::Node HashTreeAD::Node::CommonAncestor(
  * @param tree    The tree the node belongs to.
  * @return The left child of the node.
  */
-HashTreeAD::Node HashTreeAD::Node::LeftChild(
-    const HashTreeAD* tree) const {
+HashTreeAD::Node HashTreeAD::Node::LeftChild(const HashTreeAD* tree) const {
   assert(level > 0);
   Node leftChild = Node(level - 1, n * 2);
-  if (leftChild.NodeNumber(tree) >= tree->max_node_number) {
+  if (leftChild.NodeNumber(tree) >= tree->max_node_number_) {
     return leftChild.LeftChild(tree);
   } else {
     return leftChild;
@@ -139,11 +139,10 @@ HashTreeAD::Node HashTreeAD::Node::LeftChild(
  * @return The right child of the node. If the right child does not exist, the
  *         left is returned.
  */
-HashTreeAD::Node HashTreeAD::Node::RightChild(
-    const HashTreeAD* tree) const {
+HashTreeAD::Node HashTreeAD::Node::RightChild(const HashTreeAD* tree) const {
   assert(level > 0);
   Node rightChild = Node(level - 1, (n * 2) + 1);
-  if (rightChild.NodeNumber(tree) >= tree->max_node_number) {
+  if (rightChild.NodeNumber(tree) >= tree->max_node_number_) {
     return LeftChild(tree);
   } else {
     return rightChild;
@@ -167,10 +166,16 @@ HashTreeAD::Node HashTreeAD::Node::RightSibling() const {
   return Node(level, n + (n + 1) % 2);
 }
 
-HashTreeAD::HashTreeAD(int max_leaf_number)
-    : max_leaf_number(max_leaf_number),
-      max_level(MostSignificantBitSet(max_leaf_number) + 1),
-      max_node_number(Node(0, max_leaf_number).NodeNumber(this) + 1) {
+HashTreeAD::HashTreeAD(FileHandle* meta_file)
+    : max_leaf_number_(0),
+      max_level_(0),
+      max_node_number_(0),
+      meta_file_(meta_file) {
+  assert(meta_file);
+}
+
+HashTreeAD::~HashTreeAD() {
+  meta_file_->Close();
 }
 
 void HashTreeAD::FetchHashes(int start_leaf, int end_leaf) {
@@ -181,12 +186,14 @@ void HashTreeAD::FetchHashes(int start_leaf, int end_leaf) {
   int read_size;
   boost::scoped_array<char> buffer;
   int buffer_size = 0;
-  BOOST_FOREACH(boost::icl::interval_set<int>::interval_type range, nodeNumbers) {
+  BOOST_FOREACH(
+      boost::icl::interval_set<int>::interval_type range,
+      nodeNumbers) {
     read_size = range.upper() - range.lower();
     if (buffer_size < read_size) {
       buffer.reset(new char[read_size]);
     }
-    // TODO (plieser): construct nodes from buffer
+    // TODO(plieser): construct nodes from buffer
 //    meta_file.Read(buffer.get(), range.lower(), read_size);
 //    std::cout << range << std::endl;
 //    std::cout << "start in bytes:" << GetNodeStartInBytes(range.lower())
@@ -195,7 +202,13 @@ void HashTreeAD::FetchHashes(int start_leaf, int end_leaf) {
 //              << std::endl;
   }
 
-  // TODO (plieser): validate hash tree
+  // TODO(plieser): validate hash tree
+}
+
+void HashTreeAD::SetSize(int max_leaf_number) {
+  max_leaf_number_ = max_leaf_number;
+  max_level_ = MostSignificantBitSet(max_leaf_number) + 1;
+  max_node_number_ = Node(0, max_leaf_number).NodeNumber(this) + 1;
 }
 
 /**
@@ -205,7 +218,7 @@ void HashTreeAD::FetchHashes(int start_leaf, int end_leaf) {
  *         start_leaf and end_leaf.
  */
 boost::icl::interval_set<int> HashTreeAD::RequiredNodes(int start_leaf,
-                                                          int end_leaf) {
+                                                        int end_leaf) {
   Node start_node(0, start_leaf);
   Node end_node(0, end_leaf);
 
@@ -216,13 +229,13 @@ boost::icl::interval_set<int> HashTreeAD::RequiredNodes(int start_leaf,
       boost::icl::interval<int>::closed(
           std::max(start_node.LeftSibling().NodeNumber(this) - 2, 0),
           std::min(end_node.RightSibling().NodeNumber(this) + 2,
-                   max_node_number)));
+                   max_node_number_)));
 // 2. Get the rest of the needed nodes. This are, starting from the common
 // ancestor: the sibling and the parent. The same for the parent, until the
 // root-node is reached
   Node i_node = start_node.CommonAncestor(this, end_node);
   int i_node_number;
-  while (i_node.level < max_level) {
+  while (i_node.level < max_level_) {
     i_node_number = i_node.LeftSibling().NodeNumber(this);
     nodeNumbers.add(
         boost::icl::interval<int>::closed(i_node_number, i_node_number + 1));
@@ -272,7 +285,7 @@ int HashTreeAD::NodeGroupDistance(int level) {
  * @return The size of a node of the level in bytes.
  */
 int HashTreeAD::NodeSize(int level) {
-  // TODO (plieser): return size based on size of hash and additional data
+  // TODO(plieser): return size based on size of hash and additional data
   return pow(10, level);
 }
 

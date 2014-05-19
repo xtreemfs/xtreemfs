@@ -11,8 +11,9 @@
 #include <boost/function.hpp>
 #include <boost/thread/future.hpp>
 
-#include "libxtreemfs/file_info.h"
+#include "libxtreemfs/hash_tree_ad.h"
 #include "libxtreemfs/options.h"
+#include "libxtreemfs/volume_implementation.h"
 
 namespace xtreemfs {
 
@@ -37,7 +38,9 @@ typedef boost::function<
  */
 class ObjectEncryptor {
  public:
-  ObjectEncryptor(FileInfo* fileInfo, const Options& volume_options);
+  ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
+                  VolumeImplementation* volume, uint64_t file_id);
+
   boost::unique_future<int> Read(int object_no, char* buffer,
                                  int offset_in_object, int bytes_to_read,
                                  PartialObjectReaderFunction reader,
@@ -66,17 +69,17 @@ class ObjectEncryptor {
       PartialObjectWriterFunction_sync writer_sync, int object_no,
       const char* buffer, int offset_in_object, int bytes_to_write);
 
-  /**
-   * Pointer to FileInfo of the file.
-   * Not owned by the class.
-   */
-  FileInfo* fileInfo;
+  HashTreeAD hash_tree_;
 
   /**
-   * Reference to volume options.
-   * Not owned by class.
+   * Pointer to the volume. Not owned by the class.
    */
-  const Options& volume_options;
+  VolumeImplementation* volume_;
+
+  /**
+   * Reference to volume options. Not owned by class.
+   */
+  const Options& volume_options_;
 };
 
 }  // namespace xtreemfs

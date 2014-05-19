@@ -107,6 +107,12 @@ class VolumeImplementation : public Volume {
       uint32_t mode,
       uint32_t attributes);
 
+  virtual FileHandle* OpenFile(
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      const std::string& path,
+      const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
+      bool disable_encryption);
+
   /** Used by Volume->Truncate(). Otherwise truncate_new_file_size = 0. */
   FileHandle* OpenFileWithTruncateSize(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
@@ -114,7 +120,8 @@ class VolumeImplementation : public Volume {
       const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
       uint32_t mode,
       uint32_t attributes,
-      int truncate_new_file_size);
+      int truncate_new_file_size,
+      bool disable_encryption = false);
 
   virtual void Truncate(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,

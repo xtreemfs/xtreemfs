@@ -19,6 +19,7 @@
 #include "libxtreemfs/file_handle_implementation.h"
 #include "libxtreemfs/file_info.h"
 #include "libxtreemfs/helper.h"
+#include "libxtreemfs/object_encryptor.h"
 #include "libxtreemfs/stripe_translator.h"
 #include "libxtreemfs/uuid_iterator.h"
 #include "libxtreemfs/xtreemfs_exception.h"
@@ -317,7 +318,18 @@ FileHandle* VolumeImplementation::OpenFile(
   return OpenFileWithTruncateSize(user_credentials, path, flags, mode, attributes, 0);
 }
 
+FileHandle* VolumeImplementation::OpenFile(
+    const xtreemfs::pbrpc::UserCredentials& user_credentials,
+    const std::string& path,
+    const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
+    bool disable_encryption) {
+  return OpenFileWithTruncateSize(user_credentials, path, flags, 0, 0, 0,
+                                  disable_encryption);
+}
+
 /**
+ * @param disable_encryption    Disable encryption for the file. Used for meta
+ *                              files.
  * @throws IOException
  */
 FileHandle* VolumeImplementation::OpenFileWithTruncateSize(
@@ -326,7 +338,8 @@ FileHandle* VolumeImplementation::OpenFileWithTruncateSize(
     const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
     uint32_t mode,
     uint32_t attributes,
-    int truncate_new_file_size) {
+    int truncate_new_file_size,
+    bool disable_encryption) {
   bool async_writes_enabled = volume_options_.enable_async_writes;
 
   if (flags & SYSTEM_V_FCNTL_H_O_SYNC) {
@@ -387,6 +400,15 @@ FileHandle* VolumeImplementation::OpenFileWithTruncateSize(
         open_response->creds().xlocs());
     file_handle = file_info->CreateFileHandle(open_response->creds().xcap(),
                                               async_writes_enabled);
+  }
+
+  // TODO(plieser): if encyption enabled
+  if (!disable_encryption) {
+    file_handle->SetObjectEncryptor(
+        std::auto_ptr<ObjectEncryptor>(
+            new ObjectEncryptor(
+                user_credentials, this,
+                ExtractFileIdFromXCap(open_response->creds().xcap()))));
   }
 
   // Copy timestamp and free response memory.

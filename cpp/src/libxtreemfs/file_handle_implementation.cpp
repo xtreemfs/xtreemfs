@@ -78,7 +78,6 @@ FileHandleImplementation::FileHandleImplementation(
       async_writes_enabled_(async_writes_enabled),
       async_writes_failed_(false),
       object_cache_(object_cache),
-      object_encryptor_(file_info, options),
       volume_options_(options),
       auth_bogus_(auth_bogus),
       user_credentials_bogus_(user_credentials_bogus),
@@ -179,12 +178,12 @@ int FileHandleImplementation::Read(
       // TODO(plieser): if encryption enabled
       if (true) {
         reader = boost::bind(&xtreemfs::ObjectEncryptor::Read_sync,
-                             &object_encryptor_, _1, _2, 0,
+                             object_encryptor_.get(), _1, _2, 0,
                              object_cache_->object_size(), reader_partial,
                              writer_partial);
         writer = boost::bind(&xtreemfs::ObjectEncryptor::Write_sync,
-                             &object_encryptor_, _1, _2, 0, _3, reader_partial,
-                             writer_partial);
+                             object_encryptor_.get(), _1, _2, 0, _3,
+                             reader_partial, writer_partial);
       } else {
         reader = boost::bind(
             &FileHandleImplementation::ReadFromOSD,
@@ -208,7 +207,7 @@ int FileHandleImplementation::Read(
     } else {
       // TODO(plieser): if encryption enabled
       if (true) {
-        received_data += object_encryptor_.Read_sync(
+        received_data += object_encryptor_->Read_sync(
             operations[j].obj_number,
             operations[j].data,
             operations[j].req_offset,
@@ -216,10 +215,11 @@ int FileHandleImplementation::Read(
             reader_partial, writer_partial);
       } else {
         // TODO(mberlin): Update xloc list if newer version found (on OSD?).
-        received_data +=
-            ReadFromOSD(uuid_iterator, file_credentials, operations[j].obj_number,
-            operations[j].data, operations[j].req_offset,
-            operations[j].req_size);
+        received_data += ReadFromOSD(uuid_iterator, file_credentials,
+                                     operations[j].obj_number,
+                                     operations[j].data,
+                                     operations[j].req_offset,
+                                     operations[j].req_size);
       }
     }
   }
@@ -400,11 +400,11 @@ int FileHandleImplementation::Write(
         // TODO(plieser): if encryption enabled
         if (true) {
           reader = boost::bind(&xtreemfs::ObjectEncryptor::Read_sync,
-                               &object_encryptor_, _1, _2, 0,
+                               object_encryptor_.get(), _1, _2, 0,
                                object_cache_->object_size(), reader_partial,
                                writer_partial);
           writer = boost::bind(&xtreemfs::ObjectEncryptor::Write_sync,
-                               &object_encryptor_, _1, _2, 0, _3,
+                               object_encryptor_.get(), _1, _2, 0, _3,
                                reader_partial, writer_partial);
         } else {
           ObjectReaderFunction reader = boost::bind(
@@ -428,11 +428,11 @@ int FileHandleImplementation::Write(
       } else {
         // TODO(plieser): if encryption enabled
         if (true) {
-          object_encryptor_.Write_sync(operations[j].obj_number,
-                                       operations[j].data,
-                                       operations[j].req_offset,
-                                       operations[j].req_size, reader_partial,
-                                       writer_partial);
+          object_encryptor_->Write_sync(operations[j].obj_number,
+                                        operations[j].data,
+                                        operations[j].req_offset,
+                                        operations[j].req_size, reader_partial,
+                                        writer_partial);
         } else {
             WriteToOSD(uuid_iterator, file_credentials,
                        operations[j].obj_number, operations[j].req_offset,
@@ -513,7 +513,7 @@ void FileHandleImplementation::Flush(bool close_file) {
     FileCredentials file_credentials;
     xcap_manager_.GetXCap(file_credentials.mutable_xcap());
     file_info_->GetXLocSet(file_credentials.mutable_xlocs());
-    // TODO (plieser): check if this needs to be changed for encryption
+    // TODO(plieser): check if this needs to be changed for encryption
     ObjectWriterFunction writer = boost::bind(
         &FileHandleImplementation::WriteToOSD,
         this,
@@ -888,7 +888,7 @@ void FileHandleImplementation::PingReplica(
   SimpleUUIDIterator temp_uuid_iterator;
   temp_uuid_iterator.AddUUID(osd_uuid);
 
-  // TODO (plieser): check if this needs to be changed for encryption
+  // TODO(plieser): check if this needs to be changed for encryption
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
           boost::bind(&xtreemfs::pbrpc::OSDServiceClient::read_sync,
@@ -1092,6 +1092,11 @@ void FileHandleImplementation::ExecutePeriodTasks(const RPCOptions& options) {
 void FileHandleImplementation::GetXCap(xtreemfs::pbrpc::XCap* xcap) {
   assert(xcap);
   xcap_manager_.GetXCap(xcap);
+}
+
+void FileHandleImplementation::SetObjectEncryptor(
+    std::auto_ptr<ObjectEncryptor> object_encryptor) {
+  object_encryptor_ = object_encryptor;
 }
 
 XCapManager::XCapManager(
