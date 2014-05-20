@@ -84,6 +84,7 @@ enum ServiceType {
   SERVICE_TYPE_OSD = 2;
   SERVICE_TYPE_VOLUME = 3;
   SERVICE_TYPE_DIR = 4;
+  SERVICE_TYPE_SCHEDULER = 5;
 }
 
 enum ServiceStatus {

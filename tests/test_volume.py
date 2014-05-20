@@ -22,7 +22,11 @@ class Volume:
                  stripe_size,
                  rwr_policy,
                  rwr_factor,
-                 ronly_factor):
+                 ronly_factor,
+                 xtreemfs_scheduler,
+                 capacity,
+                 iops,
+                 res_type):
         self.__mount_point_dir_path = os.path.abspath(mount_point_dir_path)
         self.__name = name
         self.__debug_level = debug_level
@@ -41,7 +45,10 @@ class Volume:
         self.__rwr_policy = rwr_policy
         self.__rwr_factor = rwr_factor
         self.__ronly_factor = ronly_factor
-        
+        self.__xtreemfs_scheduler = xtreemfs_scheduler
+        self.__capacity = capacity
+        self.__iops = iops
+        self.__res_type = res_type
 
     def create(self):
         mkfs_xtreemfs_file_path = os.path.abspath(os.path.join(self.__xtreemfs_dir, "bin", "mkfs.xtreemfs"))
@@ -55,8 +62,12 @@ class Volume:
         if self.__pkcs12_passphrase is not None: mkfs_xtreemfs_args.extend(("--pkcs12-passphrase", self.__pkcs12_passphrase))
         mkfs_xtreemfs_args.extend(("-s", str(self.__stripe_size)))
         mkfs_xtreemfs_args.extend(("-w", str(self.__stripe_width)))
+        mkfs_xtreemfs_args.extend(("--scheduler-service", self.__xtreemfs_scheduler))
+        mkfs_xtreemfs_args.extend(("--capacity", str(self.__capacity)))
+        mkfs_xtreemfs_args.extend(("--iops", str(self.__iops)))
+        mkfs_xtreemfs_args.extend(("--res-type", self.__res_type))
         mkfs_xtreemfs_args.extend(self.__mkfs_options)
-
+        
         mkfs_xtreemfs_args.append(self.__mrc_uri + self.__name)
         mkfs_xtreemfs_args = " ".join(mkfs_xtreemfs_args)
         print "xtestenv: creating volume", self.__name, "with", mkfs_xtreemfs_args
