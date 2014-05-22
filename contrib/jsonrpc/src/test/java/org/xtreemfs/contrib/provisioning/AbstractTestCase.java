@@ -5,6 +5,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -74,6 +76,16 @@ public abstract class AbstractTestCase {
       System.out.println("Scheduler port: " + SetupUtils.getSchedulerAddr().getPort());
 
       osdConfigs = SetupUtils.createMultipleOSDConfigs(NUMBER_OF_OSDS);
+
+      String capabilityFile = SetupUtils.createSchedulerConfig(false).getOSDCapabilitiesFile();
+      OSDConfig[] osdConfigs = SetupUtils.createMultipleOSDConfigs(NUMBER_OF_OSDS);
+      BufferedWriter output = new BufferedWriter(new FileWriter(capabilityFile));
+      if(osdConfigs != null) {
+        for (OSDConfig osdConfig : osdConfigs) {
+          output.write(osdConfig.getUUID() + ";100.0;100.0;100.0,99.0,98.0,97.0,96.0,95.0");
+        }
+      }
+      output.close();
 
       System.out.println("OSD port: " + osdConfigs[0].getPort());
 
