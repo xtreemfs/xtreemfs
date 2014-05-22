@@ -49,13 +49,25 @@ namespace xtreemfs {
 HashTreeAD::Node::Node(int level, int n)
     : level(level),
       n(n) {
+  assert(level >= 0);
+  assert(n >= 0);
 }
 
 /**
- * @param node_number   The node number.
+ * @param node_number   The node number. If bigger than the max node number,
+ *                      the root node gets constructed.
  */
-HashTreeAD::Node::Node(int node_number)
+HashTreeAD::Node::Node(int node_number, const HashTreeAD* tree)
     : level(0) {
+  assert(node_number >= 0);
+
+  // special case for root node
+  if (node_number >= tree->max_node_number_) {
+    level = tree->max_level_;
+    n = 0;
+    return;
+  }
+
   int node_distance;
   // find level
   while (true) {
@@ -72,11 +84,16 @@ HashTreeAD::Node::Node(int node_number)
   n = 2 * (node_number / node_distance) + node_number % 2;
 }
 
+bool operator<(HashTreeAD::Node const& lhs, HashTreeAD::Node const& rhs) {
+  return lhs.level < rhs.level || (lhs.level == rhs.level && lhs.n < rhs.n);
+}
+
 /**
  * @param tree    The tree the node belongs to.
  * @return The node number of the node. This is not the same as Node::n.
  */
 int HashTreeAD::Node::NodeNumber(const HashTreeAD* tree) const {
+  // special case for root node
   if (level == tree->max_level_) {
     return tree->max_node_number_;
   }
@@ -85,13 +102,14 @@ int HashTreeAD::Node::NodeNumber(const HashTreeAD* tree) const {
 
 /**
  * @param tree    The tree the node belongs to.
- * @return The Parent of the node.
+ * @return The rth Parent of the node.
  */
-HashTreeAD::Node HashTreeAD::Node::Parent(const HashTreeAD* tree) const {
-  assert(level < tree->max_level_);
-  Node parent = Node(level + 1, n / 2);
+HashTreeAD::Node HashTreeAD::Node::Parent(const HashTreeAD* tree, int r) const {
+  assert(level + r <= tree->max_level_);
+  Node parent = Node(level + r, n / (2 * r));
   if (parent.level != tree->max_level_
       && parent.NodeNumber(tree) >= tree->max_node_number_) {
+    // Incomplete tree, the node does not exist, so return it's parent instead
     return parent.Parent(tree);
   } else {
     return parent;
@@ -113,11 +131,28 @@ HashTreeAD::Node HashTreeAD::Node::CommonAncestor(const HashTreeAD* tree,
   int x = n ^ node.n;
   int r = MostSignificantBitSet(x);
   // return (r+1)th parent
-  if (r) {
-    return Node(level + r, n / (2 * r)).Parent(tree);
-  } else {
-    return Parent(tree);
+  return Parent(tree, r + 1);
+}
+
+/**
+ * @param tree    The tree the node belongs to.
+ * @return The node numbers of all ancestors (including the node) an their
+ *         siblings.
+ */
+boost::icl::interval_set<int> HashTreeAD::Node::AncestorsWithSiblings(
+    const HashTreeAD* tree) const {
+  Node i_node(*this);
+  boost::icl::interval_set<int> nodeNumbers;
+  int i_node_number;
+  while (i_node.level < tree->max_level_) {
+    i_node_number = i_node.LeftSibling().NodeNumber(tree);
+    nodeNumbers.add(
+        boost::icl::interval<int>::closed(i_node_number, i_node_number + 1));
+    i_node = i_node.Parent(tree);
   }
+  i_node_number = i_node.NodeNumber(tree);
+  nodeNumbers.add(i_node_number);
+  return nodeNumbers;
 }
 
 /**
@@ -128,6 +163,8 @@ HashTreeAD::Node HashTreeAD::Node::LeftChild(const HashTreeAD* tree) const {
   assert(level > 0);
   Node leftChild = Node(level - 1, n * 2);
   if (leftChild.NodeNumber(tree) >= tree->max_node_number_) {
+    // Incomplete tree, the node does not exist, so return it's left child
+    // instead
     return leftChild.LeftChild(tree);
   } else {
     return leftChild;
@@ -143,6 +180,8 @@ HashTreeAD::Node HashTreeAD::Node::RightChild(const HashTreeAD* tree) const {
   assert(level > 0);
   Node rightChild = Node(level - 1, (n * 2) + 1);
   if (rightChild.NodeNumber(tree) >= tree->max_node_number_) {
+    // Incomplete tree, the node does not exist, so return the left child
+    // instead of the right child
     return LeftChild(tree);
   } else {
     return rightChild;
@@ -178,31 +217,59 @@ HashTreeAD::~HashTreeAD() {
   meta_file_->Close();
 }
 
-void HashTreeAD::FetchHashes(int start_leaf, int end_leaf) {
-  boost::icl::interval_set<int> nodeNumbers = RequiredNodes(start_leaf,
-                                                            end_leaf);
+void HashTreeAD::StartRead(int start_leaf, int end_leaf) {
+  assert(start_leaf <= end_leaf);
+  assert(end_leaf <= max_leaf_number_);
 
-  // read nodes from meta file
-  int read_size;
-  boost::scoped_array<char> buffer;
-  int buffer_size = 0;
-  BOOST_FOREACH(
-      boost::icl::interval_set<int>::interval_type range,
-      nodeNumbers) {
-    read_size = range.upper() - range.lower();
-    if (buffer_size < read_size) {
-      buffer.reset(new char[read_size]);
-    }
-    // TODO(plieser): construct nodes from buffer
-//    meta_file.Read(buffer.get(), range.lower(), read_size);
-//    std::cout << range << std::endl;
-//    std::cout << "start in bytes:" << GetNodeStartInBytes(range.lower())
-//              << std::endl;
-//    std::cout << "end in bytes:" << GetNodeStartInBytes(range.upper() + 1)
-//              << std::endl;
-  }
-
+  boost::icl::interval_set<int> nodeNumbers = RequiredNodesForRead(start_leaf,
+                                                                   end_leaf);
+  ReadNodesFromFile(nodeNumbers);
   // TODO(plieser): validate hash tree
+}
+
+void HashTreeAD::StartWrite(int start_leaf, int end_leaf) {
+  assert(start_leaf <= end_leaf);
+
+  boost::icl::interval_set<int> nodeNumbers = RequiredNodesForRead(start_leaf,
+                                                                   end_leaf);
+  ReadNodesFromFile(nodeNumbers);
+  // TODO(plieser): validate hash tree
+
+  if (end_leaf > max_leaf_number_) {
+    // TODO(plieser): update last root node necessary?
+    changed_nodes_ += max_leaf_number_;
+    SetSize(end_leaf);
+  }
+}
+
+void HashTreeAD::FinishWrite() {
+  // TODO(plieser): recalculate hash tree
+  WriteNodesToFile();
+}
+
+/**
+ * Returns the value of a leaf.
+ * Should only be called after a call to StartRead.
+ *
+ * @throws std::out_of_range    If leaf is not fetched from meta file.
+ */
+std::vector<char> HashTreeAD::GetLeaf(int leaf) {
+  assert(leaf <= max_leaf_number_);
+
+  return nodes_.at(Node(0, leaf));
+}
+
+/**
+ * Sets the value of a leaf.
+ * Should only be called after a call to StartWrite.
+ *
+ * @param leaf
+ * @param
+ */
+void HashTreeAD::SetLeaf(int leaf, std::vector<char> leaf_value) {
+  assert(leaf <= max_leaf_number_);
+
+  nodes_[Node(0, leaf)] = leaf_value;
 }
 
 void HashTreeAD::SetSize(int max_leaf_number) {
@@ -212,38 +279,109 @@ void HashTreeAD::SetSize(int max_leaf_number) {
 }
 
 /**
- * @param start_leaf
- * @param end_leaf
- * @return The node numbers of the required nodes to validate the leafs between
+ * Reads nodes from the meta file and stores them.
+ *
+ * @param nodeNumbers   The node numbers of the nodes to read.
+ */
+void HashTreeAD::ReadNodesFromFile(boost::icl::interval_set<int> nodeNumbers) {
+  nodes_.clear();
+  boost::scoped_array<char> buffer;
+  int buffer_size = 0;
+
+  BOOST_FOREACH(
+      boost::icl::interval_set<int>::interval_type range,
+      nodeNumbers) {
+    int read_start = GetNodeStartInBytes(range.lower());
+    int read_end = GetNodeStartInBytes(range.upper() + 1);
+    int read_size = read_end - read_start;
+    int read_count = 0;
+    if (buffer_size < read_size) {
+      buffer.reset(new char[read_size]);
+    }
+    int bytes_read = meta_file_->Read(buffer.get(), read_size, read_start);
+    assert(bytes_read == read_size);
+
+    for (int i = range.lower(); i <= range.upper(); i++) {
+      Node node(i, this);
+      int node_size = NodeSize(node.level);
+      nodes_.insert(
+          Nodes_t::value_type(
+              node,
+              std::vector<char>(buffer.get() + read_count,
+                                buffer.get() + read_count + node_size)));
+      read_count += node_size;
+    }
+  }
+  return;
+}
+
+/**
+ * Writes changed nodes to meta file.
+ */
+void HashTreeAD::WriteNodesToFile() {
+  BOOST_FOREACH(
+      boost::icl::interval_set<int>::interval_type range,
+      changed_nodes_) {
+    int write_start = GetNodeStartInBytes(range.lower());
+    std::vector<char> buffer;
+    for (int i = range.lower(); i <= range.upper(); i++) {
+      Node node(i, this);
+      buffer.insert(buffer.end(), nodes_[node].begin(), nodes_[node].end());
+    }
+    meta_file_->Write(buffer.data(), buffer.size(), write_start);
+  }
+}
+
+/**
+ * @param start_leaf  Must be smaller or equal to end_leaf.
+ * @param end_leaf    Must be smaller or equal to the max leaf number.
+ * @return The node numbers of the required nodes to fetch for a read between
  *         start_leaf and end_leaf.
  */
-boost::icl::interval_set<int> HashTreeAD::RequiredNodes(int start_leaf,
-                                                        int end_leaf) {
+boost::icl::interval_set<int> HashTreeAD::RequiredNodesForRead(int start_leaf,
+                                                               int end_leaf) {
+  assert(start_leaf <= end_leaf);
+  assert(end_leaf <= max_leaf_number_);
+
   Node start_node(0, start_leaf);
   Node end_node(0, end_leaf);
 
-// 1. All needed nodes under the common ancestor from start_leaf and end_leaf
-// are stored in a continuous block.
+  // 1. All needed nodes under the common ancestor from start_leaf and end_leaf
+  // are stored in a continuous block.
   boost::icl::interval_set<int> nodeNumbers;
   nodeNumbers.add(
       boost::icl::interval<int>::closed(
           std::max(start_node.LeftSibling().NodeNumber(this) - 2, 0),
           std::min(end_node.RightSibling().NodeNumber(this) + 2,
                    max_node_number_)));
-// 2. Get the rest of the needed nodes. This are, starting from the common
-// ancestor: the sibling and the parent. The same for the parent, until the
-// root-node is reached
-  Node i_node = start_node.CommonAncestor(this, end_node);
-  int i_node_number;
-  while (i_node.level < max_level_) {
-    i_node_number = i_node.LeftSibling().NodeNumber(this);
-    nodeNumbers.add(
-        boost::icl::interval<int>::closed(i_node_number, i_node_number + 1));
-    i_node = i_node.Parent(this);
+  // 2. Get the rest of the needed nodes. This are, starting from the common
+  // ancestor: the sibling and the parent. The same for the parent, until the
+  // root-node is reached
+  nodeNumbers +=
+      start_node.CommonAncestor(this, end_node).AncestorsWithSiblings(this);
+
+  return nodeNumbers;
+}
+
+/**
+ * @param start_leaf  Must be smaller or equal to end_leaf.
+ * @param end_leaf
+ * @return The node numbers of the required nodes to fetch for a write between
+ *         start_leaf and end_leaf.
+ */
+boost::icl::interval_set<int> HashTreeAD::RequiredNodesForWrite(int start_leaf,
+                                                                int end_leaf) {
+  assert(start_leaf <= end_leaf);
+
+  int node_number_left_to_start_leaf = Node(0, start_leaf).NodeNumber(this) - 1;
+  Node node_right_to_end_leaf(Node(0, end_leaf).NodeNumber(this) + 1, this);
+
+  boost::icl::interval_set<int> nodeNumbers = node_right_to_end_leaf
+      .AncestorsWithSiblings(this);
+  if (node_number_left_to_start_leaf >= 0) {
+    nodeNumbers += Node(node_number_left_to_start_leaf, this)
+        .AncestorsWithSiblings(this);
   }
-  i_node_number = i_node.NodeNumber(this);
-  nodeNumbers.add(
-      boost::icl::interval<int>::closed(i_node_number, i_node_number));
 
   return nodeNumbers;
 }
@@ -286,7 +424,8 @@ int HashTreeAD::NodeGroupDistance(int level) {
  */
 int HashTreeAD::NodeSize(int level) {
   // TODO(plieser): return size based on size of hash and additional data
-  return pow(10, level);
+//  return pow(10, level);
+  return 3;
 }
 
 /**

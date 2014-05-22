@@ -9,7 +9,6 @@
 
 #include <boost/icl/interval_set.hpp>
 #include <map>
-#include <string>
 #include <vector>
 
 #include "libxtreemfs/file_handle.h"
@@ -26,9 +25,15 @@ class HashTreeAD {
 
   ~HashTreeAD();
 
-  void FetchHashes(int start_leaf, int end_leaf);
+  void StartRead(int start_leaf, int end_leaf);
 
-  void SetSize(int max_leaf_number);
+  void StartWrite(int start_leaf, int end_leaf);
+
+  void FinishWrite();
+
+  std::vector<char> GetLeaf(int leaf);
+
+  void SetLeaf(int leaf, std::vector<char> leaf_value);
 
  private:
   friend class HashTreeADTest_Node_Sibling_Test;
@@ -37,7 +42,8 @@ class HashTreeAD {
   friend class HashTreeADTest_Node_NodeNumber_Test;
   friend class HashTreeADTest_Node_NumberOfNodes_Test;
   friend class HashTreeADTest_Node_CommonAncestor_Test;
-  friend class HashTreeADTest_RequiredNodes_Test;
+  friend class HashTreeADTest_Offline_RequiredNodes_Test;
+  friend class HashTreeADTest_TmpTest_Test;
 
   /**
    * Abstract representation of a node in the hash tree.
@@ -47,13 +53,16 @@ class HashTreeAD {
    public:
     Node(int level, int n);
 
-    explicit Node(int node_number);
+    Node(int node_number, const HashTreeAD* tree);
 
     int NodeNumber(const HashTreeAD* tree) const;
 
-    Node Parent(const HashTreeAD* tree) const;
+    Node Parent(const HashTreeAD* tree, int r = 1) const;
 
     Node CommonAncestor(const HashTreeAD* tree, Node) const;
+
+    boost::icl::interval_set<int> AncestorsWithSiblings(
+        const HashTreeAD* tree) const;
 
     Node LeftChild(const HashTreeAD* tree) const;
 
@@ -74,19 +83,25 @@ class HashTreeAD {
     int n;
   };
 
-  boost::icl::interval_set<int> RequiredNodes(int start_leaf, int end_leaf);
+  friend bool operator<(Node const& lhs, Node const& rhs);
+
+  void SetSize(int max_leaf_number);
+
+  void ReadNodesFromFile(boost::icl::interval_set<int> nodeNumbers);
+
+  void WriteNodesToFile();
+
+  boost::icl::interval_set<int> RequiredNodesForRead(int start_leaf,
+                                                     int end_leaf);
+
+  boost::icl::interval_set<int> RequiredNodesForWrite(int start_leaf,
+                                                      int end_leaf);
 
   int GetNodeStartInBytes(int node_number);
 
-  std::pair<int, int> GetRangeOfNode(Node);
-
   static int LevelStart(int level);
 
-  int LevelStartInBytes(int level);
-
   static int NodeGroupDistance(int level);
-
-  int NodeGroupDistanceInBytes(int level);
 
   int NodeSize(int level);
 
@@ -107,7 +122,13 @@ class HashTreeAD {
   /**
    * Storage for the nodes.
    */
-  std::map<Node, std::string> nodes_;
+  typedef std::map<Node, std::vector<char> > Nodes_t;
+  Nodes_t nodes_;
+
+  /**
+   * The node numbers of the changed nodes.
+   */
+  boost::icl::interval_set<int> changed_nodes_;
 
   /**
    * File handle for the meta file. Not owned by this class. Close is called on
