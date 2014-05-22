@@ -11,9 +11,9 @@ package org.xtreemfs.mrc.database.babudb;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
+import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeInfo;
-import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.utils.Converter;
 
 /**
@@ -104,7 +104,7 @@ public class BabuDBVolumeInfo implements VolumeInfo {
             
             if (allowSnapsAttr != null)
                 allowSnaps = "true".equalsIgnoreCase(new String(allowSnapsAttr));
-            
+
         } catch (NumberFormatException exc) {
             Logging.logError(Logging.LEVEL_ERROR, this, exc);
             throw new DatabaseException("corrupted MRC database", ExceptionType.INTERNAL_DB_ERROR);
@@ -194,5 +194,9 @@ public class BabuDBVolumeInfo implements VolumeInfo {
     public long getCreationTime() throws DatabaseException {
         return 0;
     }
-    
+
+    @Override
+    public long getVolumeQuota() throws DatabaseException{
+        return sMan.getVolumeQuota();
+    }  
 }

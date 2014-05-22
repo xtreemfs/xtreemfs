@@ -11,9 +11,9 @@ package org.xtreemfs.mrc.database.babudb;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
+import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeInfo;
-import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.utils.Converter;
 
 /**
@@ -105,7 +105,7 @@ public class BabuDBSnapshotVolumeInfo implements VolumeInfo {
     public void updateVolumeSize(long diff, AtomicDBUpdate update) throws DatabaseException {
         sMan.throwException();
     }
-    
+
     @Override
     public long getNumFiles() throws DatabaseException {
         return 0;
@@ -135,5 +135,9 @@ public class BabuDBSnapshotVolumeInfo implements VolumeInfo {
     public long getCreationTime() throws DatabaseException {
         return creationTimestamp;
     }
-    
+
+    @Override
+    public long getVolumeQuota() throws DatabaseException{
+        return sMan.getVolumeQuota();
+    }  
 }

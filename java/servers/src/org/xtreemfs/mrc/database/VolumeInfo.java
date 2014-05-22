@@ -68,6 +68,12 @@ public interface VolumeInfo {
     public long getVolumeSize() throws DatabaseException;
     
     /**
+     * Returns the volume quota in bytes.
+     * 
+     * @return the volume quota
+     */
+    public long getVolumeQuota() throws DatabaseException;
+    /**
      * Returns the number of files currently stored in the volume.
      * 
      * @return the number of files
@@ -127,7 +133,7 @@ public interface VolumeInfo {
      *            a flag specifying whether snapshots may be created
      */
     public void setAllowSnaps(boolean allowSnaps, AtomicDBUpdate update) throws DatabaseException;
-    
+
     /**
      * Adds <code>diff</code> to the current volume size.
      * 
