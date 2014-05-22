@@ -79,6 +79,8 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     
     protected static final String          VOL_ID_ATTR_NAME           = "volId";
     
+    protected static final String            VOL_QUOTA                  = "quota";
+    
     protected static final int[]           ALL_INDICES                = { FILE_INDEX, XATTRS_INDEX,
         ACL_INDEX, FILE_ID_INDEX, VOLUME_INDEX                       };
     
@@ -373,6 +375,19 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
             byte[] sizeBytes = BabuDBStorageHelper.getVolumeMetadata(database, VOL_SIZE_KEY);
             return ByteBuffer.wrap(sizeBytes).getLong(0);
             
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+    
+    protected long getVolumeQuota() throws DatabaseException {
+        try {
+            byte[] quotaBytes = BabuDBStorageHelper.getVolumeMetadata(database, VOL_QUOTA.getBytes());
+            if (quotaBytes == null) {
+                return 0;
+            } else {
+                return ByteBuffer.wrap(quotaBytes).getLong(0); 
+            }           
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }
