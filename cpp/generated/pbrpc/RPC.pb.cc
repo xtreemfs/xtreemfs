@@ -237,7 +237,7 @@ void protobuf_AddDesc_pbrpc_2fRPC_2eproto() {
     "INVALID_INTERFACE_ID\020\001\022\023\n\017INVALID_PROC_I"
     "D\020\002\022\020\n\014GARBAGE_ARGS\020\003\022\017\n\013AUTH_FAILED\020\004\022\031"
     "\n\025INTERNAL_SERVER_ERROR\020\005\022\t\n\005ERRNO\020\006\022\014\n\010"
-    "REDIRECT\020\007\022\014\n\010IO_ERROR\020d*\362\002\n\nPOSIXErrno\022"
+    "REDIRECT\020\007\022\014\n\010IO_ERROR\020d*\212\003\n\nPOSIXErrno\022"
     "\025\n\020POSIX_ERROR_NONE\020\217N\022\025\n\021POSIX_ERROR_EP"
     "ERM\020\001\022\026\n\022POSIX_ERROR_ENOENT\020\002\022\025\n\021POSIX_E"
     "RROR_EINTR\020\004\022\023\n\017POSIX_ERROR_EIO\020\005\022\026\n\022POS"
@@ -245,10 +245,10 @@ void protobuf_AddDesc_pbrpc_2fRPC_2eproto() {
     "\r\022\026\n\022POSIX_ERROR_EEXIST\020\021\022\025\n\021POSIX_ERROR"
     "_EXDEV\020\022\022\026\n\022POSIX_ERROR_ENODEV\020\023\022\027\n\023POSI"
     "X_ERROR_ENOTDIR\020\024\022\026\n\022POSIX_ERROR_EISDIR\020"
-    "\025\022\026\n\022POSIX_ERROR_EINVAL\020\026\022\031\n\025POSIX_ERROR"
-    "_ENOTEMPTY\020\'\022\027\n\023POSIX_ERROR_ENODATA\020=B3\n"
-    "1org.xtreemfs.foundation.pbrpc.generated"
-    "interfaces", 1530);
+    "\025\022\026\n\022POSIX_ERROR_EINVAL\020\026\022\026\n\022POSIX_ERROR"
+    "_ENOSPC\020\034\022\031\n\025POSIX_ERROR_ENOTEMPTY\020\'\022\027\n\023"
+    "POSIX_ERROR_ENODATA\020=B3\n1org.xtreemfs.fo"
+    "undation.pbrpc.generatedinterfaces", 1554);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "pbrpc/RPC.proto", &protobuf_RegisterTypes);
   UserCredentials::default_instance_ = new UserCredentials();
@@ -339,6 +339,7 @@ bool POSIXErrno_IsValid(int value) {
     case 20:
     case 21:
     case 22:
+    case 28:
     case 39:
     case 61:
     case 9999:
