@@ -38,7 +38,7 @@ public class SchedulerBenchmarkIntegrationTest {
     public SchedulerBenchmarkIntegrationTest() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
 
-        config = SetupUtils.createSchedulerConfig();
+        config = SetupUtils.createSchedulerConfig(true);
         dbsConfig = SetupUtils.createSchedulerdbsConfig();
     }
 

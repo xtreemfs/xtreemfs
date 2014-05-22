@@ -7,7 +7,9 @@
 
 package org.xtreemfs.test;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
@@ -42,6 +44,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.SchedulerServiceClient;
+import org.xtreemfs.scheduler.SchedulerConfig;
 import org.xtreemfs.scheduler.SchedulerRequestDispatcher;
 
 /**
@@ -59,7 +62,7 @@ public class TestEnvironment {
     }
 
     public InetSocketAddress getSchedulerAddress() throws IOException {
-        return new InetSocketAddress("localhost", SetupUtils.createSchedulerConfig().getPort());
+        return new InetSocketAddress("localhost", SetupUtils.createSchedulerConfig(false).getPort());
     }
     
     /**
@@ -423,7 +426,17 @@ public class TestEnvironment {
             }
             
             if (enabledServs.contains(Services.SCHEDULER_SERVICE)) {
-            	scheduler = new SchedulerRequestDispatcher(SetupUtils.createSchedulerConfig(), SetupUtils.createSchedulerdbsConfig());
+                SchedulerConfig schedulerConfig = SetupUtils.createSchedulerConfig(false);
+                String capabilityFile = schedulerConfig.getOSDCapabilitiesFile();
+                BufferedWriter output = new BufferedWriter(new FileWriter(capabilityFile));
+                if(osdConfigs != null) {
+                    for (OSDConfig osdConfig : osdConfigs) {
+                        output.write(osdConfig.getUUID() + ";100.0;100.0;100.0,99.0,98.0,97.0,96.0,95.0");
+                    }
+                }
+                output.close();
+
+            	scheduler = new SchedulerRequestDispatcher(schedulerConfig, SetupUtils.createSchedulerdbsConfig());
             	scheduler.startup();
             	scheduler.waitForStartup();
             	Logging.logMessage(Logging.LEVEL_DEBUG, this, "Scheduler running");

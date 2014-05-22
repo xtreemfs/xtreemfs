@@ -9,6 +9,7 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
+import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 import org.xtreemfs.pbrpc.generatedinterfaces.Scheduler;
@@ -18,6 +19,8 @@ import org.xtreemfs.scheduler.data.OSDPerformanceDescription;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -32,7 +35,7 @@ public class SchedulerTest {
 	public SchedulerTest() throws Exception {
 		Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
 
-		config = SetupUtils.createSchedulerConfig();
+		config = SetupUtils.createSchedulerConfig(false);
 		dbsConfig = SetupUtils.createSchedulerdbsConfig();
 	}
 
@@ -45,6 +48,17 @@ public class SchedulerTest {
 				TestEnvironment.Services.SCHEDULER_CLIENT,});
 		testEnv.start();
 		client = testEnv.getSchedulerClient();
+
+        String capabilityFile = SetupUtils.createSchedulerConfig(false).getOSDCapabilitiesFile();
+        OSDConfig[] osdConfigs = SetupUtils.createMultipleOSDConfigs(1);
+        BufferedWriter output = new BufferedWriter(new FileWriter(capabilityFile));
+        if(osdConfigs != null) {
+            for (OSDConfig osdConfig : osdConfigs) {
+                output.write(osdConfig.getUUID() + ";100.0;100.0;100.0,99.0,98.0,97.0,96.0,95.0");
+            }
+        }
+        output.close();
+
 		scheduler = new SchedulerRequestDispatcher(config, dbsConfig);
         writeDefaultOsdDescriptions();
 

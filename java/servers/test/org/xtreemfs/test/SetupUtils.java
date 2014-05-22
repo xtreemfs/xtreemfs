@@ -344,9 +344,9 @@ public class SetupUtils {
         return new BabuDBConfig(props);
     }
 
-    public static SchedulerConfig createSchedulerConfig() throws IOException {
-    	Properties props = new Properties();
-    	
+    public static SchedulerConfig createSchedulerConfig(boolean autodiscover) throws IOException {
+        Properties props = new Properties();
+
         props.setProperty("dir_service.host", "localhost");
         props.setProperty("dir_service.port", new Integer(32638 + PORT_RANGE_OFFSET).toString());
         props.setProperty("scheduler_service.host", "localhost");
@@ -367,13 +367,19 @@ public class SetupUtils {
         props.setProperty("listen.port", new Integer(32842 + PORT_RANGE_OFFSET).toString());
         props.setProperty("remote_time_sync", "60000");
         props.setProperty("local_clock_renewal", "0");
-        props.setProperty("basefilesize_in_bytes", "10485760"); // 10 MiB
-        props.setProperty("benchmark_sequential_size", "1048576"); // 1 MiB
-        props.setProperty("benchmark_random_size", "262144"); // 256 KiB
-        props.setProperty("benchmark_threads", "3");
-        props.setProperty("benchmark_repetitions", "2");
-        props.setProperty("benchmark_retries", "3");
-        
+
+        if (autodiscover) {
+            props.setProperty("osd_autodiscover", "true");
+            props.setProperty("basefilesize_in_bytes", "10485760"); // 10 MiB
+            props.setProperty("benchmark_sequential_size", "1048576"); // 1 MiB
+            props.setProperty("benchmark_random_size", "262144"); // 256 KiB
+            props.setProperty("benchmark_threads", "3");
+            props.setProperty("benchmark_repetitions", "2");
+            props.setProperty("benchmark_retries", "3");
+        } else {
+            props.setProperty("osd_autodiscover", "false");
+            props.setProperty("osd_capabilities_file", TEST_DIR + "/" + "scheduler.osd_capaibities");
+        }
         SchedulerConfig config = new SchedulerConfig(props);
         config.setDefaults();
         
