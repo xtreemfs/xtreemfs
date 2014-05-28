@@ -100,7 +100,7 @@ public class OpenOperation extends MRCOperation {
             
             // check if volume is full
             long volumeQuota = volume.getVolumeQuota();
-            if ((write || create) && volumeQuota <= volume.getVolumeSize() ) {
+            if ((write || create) && volumeQuota != 0 && volumeQuota <= volume.getVolumeSize()) {
                 throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "the volume's quota is reached");
             }
             
