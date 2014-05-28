@@ -113,7 +113,8 @@ public class MRCHelper {
             read_only,
             mark_replica_complete,
             set_repl_update_policy,
-            default_rp
+            default_rp,
+            quota
     }
     
     public enum FileType {
@@ -451,6 +452,9 @@ public class MRCHelper {
                     return "";
                 
                 return Converter.replicationPolicyToJSONString(rp);
+
+            case quota:
+                return String.valueOf(sMan.getVolumeInfo().getVolumeQuota());
             }
         }
         
@@ -813,6 +817,14 @@ public class MRCHelper {
             
             break;
         
+        case quota:
+            if (file.getId() != 1)
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "quota can only be set on volumes");
+
+            sMan.getVolumeInfo().setVolumeQuota((long) Long.valueOf(value), update);
+
+            break;
+
         default:
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "system attribute '" + keyString + "' is immutable");
         }

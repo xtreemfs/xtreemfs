@@ -68,9 +68,9 @@ public interface VolumeInfo {
     public long getVolumeSize() throws DatabaseException;
     
     /**
-     * Returns the volume quota in bytes.
+     * Returns the volume's quota in bytes.
      * 
-     * @return the volume quota
+     * @return the volume's quota in bytes
      */
     public long getVolumeQuota() throws DatabaseException;
     /**
@@ -133,6 +133,15 @@ public interface VolumeInfo {
      *            a flag specifying whether snapshots may be created
      */
     public void setAllowSnaps(boolean allowSnaps, AtomicDBUpdate update) throws DatabaseException;
+
+    /**
+     * Set the volume's quota.
+     * 
+     * @param quota
+     *            quota in bytes
+     * @throws DatabaseException
+     */
+    public void setVolumeQuota(long quota, AtomicDBUpdate update) throws DatabaseException;
 
     /**
      * Adds <code>diff</code> to the current volume size.
