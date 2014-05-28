@@ -965,4 +965,38 @@ public class VolumeTest {
         assertEquals(stripeLocations.get(0).getUuids()[1], stripeLocations.get(1).getUuids()[1]);
         assertNotSame(stripeLocations.get(0).getUuids()[2], stripeLocations.get(1).getUuids()[2]);
     }
+
+    @Test
+    public void testVolumeQuota() throws Exception {
+        final String VOLUME_NAME = "testVolumeQuota";
+
+        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME, 0, userCredentials.getUsername(),
+                userCredentials.getGroups(0), AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL,
+                StripingPolicyType.STRIPING_POLICY_RAID0, defaultStripingPolicy.getStripeSize(),
+                defaultStripingPolicy.getWidth(), new ArrayList<KeyValuePair>());
+
+        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+        volume.setXAttr(userCredentials, "/", "xtreemfs.quota", "8", XATTR_FLAGS.XATTR_FLAGS_CREATE);
+
+        assertEquals("8", volume.getXAttr(userCredentials, "/", "xtreemfs.quota"));
+
+        int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
+                | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
+
+        byte[] content = "foo foo foo".getBytes();
+
+        FileHandle file = volume.openFile(userCredentials, "/test1.txt", flags, 0777);
+        file.write(userCredentials, content, content.length, 0);
+        file.close();
+
+        try {
+            file = volume.openFile(userCredentials, "/test2.txt", flags, 0777);
+            assertTrue(false);
+        } catch (PosixErrorException exc) {
+            // check if right exception was thrown
+            if (!exc.getMessage().contains("POSIX_ERROR_ENOSPC")) {
+                assertTrue(false);
+            }
+        }
+    }
 }
