@@ -560,6 +560,23 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
+    public long getVolumeQuota() throws DatabaseException {
+        try {
+            byte[] quota = getXAttr(1, SYSTEM_UID, VOL_QUOTA);
+            if (quota == null)
+                return 0;
+            else {
+                return Long.valueOf(new String(quota));
+            }
+
+        } catch (DatabaseException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
     public FileMetadata getMetadata(long fileId) throws DatabaseException {
         
         try {
@@ -790,6 +807,11 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
+    public void setVolumeQuota(long quota, AtomicDBUpdate update) throws DatabaseException {
+        setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_QUOTA, String.valueOf(quota).getBytes(), update);
+    }
+
+    @Override
     public void setMetadata(FileMetadata metadata, byte type, AtomicDBUpdate update) throws DatabaseException {
         
         assert (metadata instanceof BufferBackedFileMetadata);
@@ -989,19 +1011,6 @@ public class BabuDBStorageManager implements StorageManager {
         }
     }
     
-    protected long getVolumeQuota() throws DatabaseException {
-        try{
-            byte[] quotaBytes = BabuDBStorageHelper.getVolumeMetadata(database, VOL_QUOTA.getBytes());
-            if (quotaBytes == null) {
-                return 0;
-            } else {
-                return ByteBuffer.wrap(quotaBytes).getLong(0);
-            }
-        } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
-        }
-    }
-    
     protected long getNumFiles() throws DatabaseException {
         try {
             byte[] sizeBytes = BabuDBStorageHelper.getVolumeMetadata(database, NUM_FILES_KEY);
@@ -1058,5 +1067,4 @@ public class BabuDBStorageManager implements StorageManager {
         
         update.addUpdate(VOLUME_INDEX, key, countBytes);
     }
-    
 }

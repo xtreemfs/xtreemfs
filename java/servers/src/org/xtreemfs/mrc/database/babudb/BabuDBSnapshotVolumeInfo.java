@@ -82,6 +82,11 @@ public class BabuDBSnapshotVolumeInfo implements VolumeInfo {
     }
     
     @Override
+    public long getVolumeQuota() throws DatabaseException {
+        return sMan.getVolumeQuota();
+    }
+
+    @Override
     public short getAcPolicyId() {
         return acPolicy;
     }
@@ -96,6 +101,11 @@ public class BabuDBSnapshotVolumeInfo implements VolumeInfo {
         sMan.throwException();
     }
     
+    @Override
+    public void setVolumeQuota(long quota, AtomicDBUpdate update) throws DatabaseException {
+        sMan.throwException();
+    }
+
     @Override
     public void setAllowSnaps(boolean allowSnaps, AtomicDBUpdate update) throws DatabaseException {
         sMan.throwException();
@@ -135,9 +145,4 @@ public class BabuDBSnapshotVolumeInfo implements VolumeInfo {
     public long getCreationTime() throws DatabaseException {
         return creationTimestamp;
     }
-
-    @Override
-    public long getVolumeQuota() throws DatabaseException{
-        return sMan.getVolumeQuota();
-    }  
 }
