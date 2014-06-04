@@ -266,7 +266,11 @@ public class OpenOperation extends MRCOperation {
         xLocSet.clearReplicas();
         xLocSet.addAllReplicas(sortedReplList);
         xLocSet.setReadOnlyFileSize(file.getSize());
-        
+
+        boolean enableTracing = volume.isTracingEnabled();
+        String traceTarget = volume.getTraceTarget();
+        String tracingPolicy = volume.getTracingPolicy();
+
         // issue a new capability
         Capability cap = new Capability(volume.getId() + ":" + file.getId(), rqArgs.getFlags(), master
                 .getConfig().getCapabilityTimeout(), TimeSync.getGlobalTime() / 1000
@@ -274,8 +278,8 @@ public class OpenOperation extends MRCOperation {
                 .getSenderAddress()).getAddress().getHostAddress(), trEpoch, replicateOnClose, !volume
                 .isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
             : volume.isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP
-                : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, volume.getCreationTime(), master.getConfig()
-                .getCapabilitySecret());
+                : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, volume.getCreationTime(), enableTracing, traceTarget,
+                tracingPolicy, master.getConfig().getCapabilitySecret());
         
         if (Logging.isDebug())
             Logging

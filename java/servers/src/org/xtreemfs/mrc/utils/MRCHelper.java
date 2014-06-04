@@ -113,7 +113,10 @@ public class MRCHelper {
             read_only,
             mark_replica_complete,
             set_repl_update_policy,
-            default_rp
+            default_rp,
+            tracing_enabled,
+            trace_target,
+            tracing_policy
     }
     
     public enum FileType {
@@ -536,7 +539,7 @@ public class MRCHelper {
             if (file.getId() != 1)
                 throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
                         "replica selection policies can only be set and configured on volumes");
-            
+
             try {
                 short[] newPol = Converter.stringToShortArray(value);
                 sMan.getVolumeInfo().setReplicaPolicy(newPol, update);
@@ -812,7 +815,22 @@ public class MRCHelper {
             }
             
             break;
-        
+
+        case tracing_enabled:
+            if (file.getId() != 1)
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
+                        "tracing can only be enabled or disabled on volumes");
+            boolean enableTracing = value.equals("1") ? true : false;
+            sMan.getVolumeInfo().setTracing(enableTracing, update);
+
+            break;
+        case trace_target:
+            sMan.getVolumeInfo().setTraceTarget(value, update);
+            break;
+        case tracing_policy:
+            sMan.getVolumeInfo().setTracingPolicy(value, update);
+            break;
+
         default:
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "system attribute '" + keyString + "' is immutable");
         }

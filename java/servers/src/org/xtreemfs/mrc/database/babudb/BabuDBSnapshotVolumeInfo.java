@@ -100,7 +100,22 @@ public class BabuDBSnapshotVolumeInfo implements VolumeInfo {
     public void setAllowSnaps(boolean allowSnaps, AtomicDBUpdate update) throws DatabaseException {
         sMan.throwException();
     }
-    
+
+    @Override
+    public void setTracing(boolean enableTracing, AtomicDBUpdate update) throws DatabaseException {
+        sMan.throwException();
+    }
+
+    @Override
+    public void setTraceTarget(String traceTarget, AtomicDBUpdate update) throws DatabaseException {
+        sMan.throwException();
+    }
+
+    @Override
+    public void setTracingPolicy(String tracingPolicy, AtomicDBUpdate update) throws DatabaseException {
+        sMan.throwException();
+    }
+
     @Override
     public void updateVolumeSize(long diff, AtomicDBUpdate update) throws DatabaseException {
         sMan.throwException();
@@ -130,7 +145,22 @@ public class BabuDBSnapshotVolumeInfo implements VolumeInfo {
     public boolean isSnapshotsEnabled() throws DatabaseException {
         return true;
     }
-    
+
+    @Override
+    public boolean isTracingEnabled() throws DatabaseException {
+        return false;
+    }
+
+    @Override
+    public String getTraceTarget() throws DatabaseException {
+        return "";
+    }
+
+    @Override
+    public String getTracingPolicy() throws DatabaseException {
+        return "";
+    }
+
     @Override
     public long getCreationTime() throws DatabaseException {
         return creationTimestamp;

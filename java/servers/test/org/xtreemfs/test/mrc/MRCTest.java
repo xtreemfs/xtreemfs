@@ -1337,6 +1337,44 @@ public class MRCTest {
         }
         
     }
+
+    @Test
+    public void testEnableTracing() throws Exception {
+        final String uid = "userXY";
+        final List<String> gids = createGIDs("groupZ");
+        final String volumeName = "testVolume";
+        final String traceTarget = "testVolume2";
+        final String tracingPolicy = "defaultTracingPolicy";
+        final UserCredentials uc = createUserCredentials(uid, gids);
+
+
+        invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
+                AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, getDefaultStripingPolicy(), "", 0775,
+                volumeName, "", "", getKVList()));
+
+        invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
+                AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, getDefaultStripingPolicy(), "", 0775,
+                traceTarget, "", "", getKVList()));
+
+        invokeSync(client.open(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test.txt",
+                FileAccessManager.O_CREAT, 0774, 0, getDefaultCoordinates()));
+
+        invokeSync(client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "/",
+                "xtreemfs.tracing_enabled", "1", ByteString.copyFrom("1".getBytes()), 0));
+        invokeSync(client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "/",
+                "xtreemfs.trace_target", traceTarget, ByteString.copyFrom(traceTarget.getBytes()), 0));
+        invokeSync(client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "/",
+                "xtreemfs.tracing_policy", tracingPolicy, ByteString.copyFrom(tracingPolicy.getBytes()), 0));
+        Thread.sleep(1000);
+
+        // open a file in order to obtain a capability
+        XCap xcap = invokeSync(
+                client.open(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test.txt",
+                        FileAccessManager.O_RDONLY, 0, 0, getDefaultCoordinates())).getCreds().getXcap();
+
+        assertTrue(xcap.getTraceConfig().getTraceRequests());
+
+    }
     
     private void assertTree(InetSocketAddress server, String uid, List<String> gids, String volumeName,
         String... paths) throws Exception {

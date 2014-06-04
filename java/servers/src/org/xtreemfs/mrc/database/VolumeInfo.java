@@ -96,7 +96,29 @@ public interface VolumeInfo {
      *         <code>false</code>, otherwise
      */
     public boolean isSnapshotsEnabled() throws DatabaseException;
-    
+
+    /**
+     * Check whether tracing is enabled for this volume
+     *
+     * @return <code>true</code>, if tracing is enabled,
+     *         <code>false</code>, otherwise
+     */
+    public boolean isTracingEnabled() throws DatabaseException;
+
+    /**
+     * Get target volume to write trace
+     *
+     * @return target volume
+     */
+    public String getTraceTarget() throws DatabaseException;
+
+    /**
+     * Get tracing policy
+     *
+     * @return tracing policy
+     */
+    public String getTracingPolicy() throws DatabaseException;
+
     /**
      * Returns the time at which the volume was created in milliseconds since 1970
      * 
@@ -127,7 +149,29 @@ public interface VolumeInfo {
      *            a flag specifying whether snapshots may be created
      */
     public void setAllowSnaps(boolean allowSnaps, AtomicDBUpdate update) throws DatabaseException;
-    
+
+    /**
+     * Specifies whether tracing is enabled on this volume.
+     *
+     * @param enableTracing
+     *            a flag specifying whether is enabled
+     */
+    public void setTracing(boolean enableTracing, AtomicDBUpdate update) throws DatabaseException;
+
+    /**
+     * Specifies target volume to write trace on
+     *
+     * @param traceTarget trace target volume
+     */
+    public void setTraceTarget(String traceTarget, AtomicDBUpdate update) throws DatabaseException;
+
+    /**
+     * Specifies tracing policy
+     *
+     * @param tracingPolicy tracing policy
+     */
+    public void setTracingPolicy(String tracingPolicy, AtomicDBUpdate update) throws DatabaseException;
+
     /**
      * Adds <code>diff</code> to the current volume size.
      * 

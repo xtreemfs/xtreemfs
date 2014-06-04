@@ -37,6 +37,12 @@ public class BabuDBVolumeInfo implements VolumeInfo {
     private short                acPolicy;
     
     private boolean              allowSnaps;
+
+    private boolean              enableTracing;
+
+    private String               traceTarget;
+
+    private String               tracingPolicy;
     
     public void init(BabuDBStorageManager sMan, String id, String name, short[] osdPolicy, short[] replicaPolicy,
             short acPolicy, boolean allowSnaps, AtomicDBUpdate update) throws DatabaseException {
@@ -48,6 +54,9 @@ public class BabuDBVolumeInfo implements VolumeInfo {
         this.replicaPolicy = replicaPolicy;
         this.acPolicy = acPolicy;
         this.allowSnaps = allowSnaps;
+        this.enableTracing = false;
+        this.traceTarget = "";
+        this.tracingPolicy = "";
         
         // set the policies
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_ID_ATTR_NAME, id.getBytes(), true, update);
@@ -75,6 +84,9 @@ public class BabuDBVolumeInfo implements VolumeInfo {
             byte[] osdPolicyAttr = sMan.getXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.OSD_POL_ATTR_NAME);
             byte[] replicaPolicyAttr = sMan.getXAttr(1, StorageManager.SYSTEM_UID,
                     BabuDBStorageManager.REPL_POL_ATTR_NAME);
+            byte[] enableTracingAttr = sMan.getXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.ENABLE_TRACING);
+            byte[] traceTargetAttr = sMan.getXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.TRACE_TARGET);
+            byte[] tracingPolicyAttr = sMan.getXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.TRACING_POLICY);
             
             if (idAttr != null)
                 id = new String(idAttr);
@@ -104,6 +116,19 @@ public class BabuDBVolumeInfo implements VolumeInfo {
             
             if (allowSnapsAttr != null)
                 allowSnaps = "true".equalsIgnoreCase(new String(allowSnapsAttr));
+
+            if (tracingPolicyAttr != null)
+                enableTracing = "true".equalsIgnoreCase(new String(enableTracingAttr));
+
+            if (traceTargetAttr != null)
+                traceTarget = new String(traceTargetAttr);
+            else
+                traceTarget = "";
+
+            if (tracingPolicyAttr != null)
+                tracingPolicy = new String(tracingPolicyAttr);
+            else
+                tracingPolicy = "";
             
         } catch (NumberFormatException exc) {
             Logging.logError(Logging.LEVEL_ERROR, this, exc);
@@ -159,7 +184,31 @@ public class BabuDBVolumeInfo implements VolumeInfo {
                 String.valueOf(allowSnaps).getBytes(), update);
         sMan.notifyVolumeChange(this);
     }
-    
+
+    @Override
+    public void setTracing(boolean enableTracing, AtomicDBUpdate update) throws DatabaseException {
+        this.enableTracing = enableTracing;
+        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.ENABLE_TRACING,
+                String.valueOf(enableTracing).getBytes(), update);
+        sMan.notifyVolumeChange(this);
+    }
+
+    @Override
+    public void setTraceTarget(String traceTarget, AtomicDBUpdate update) throws DatabaseException {
+        this.traceTarget = traceTarget;
+        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.TRACE_TARGET,
+                traceTarget.getBytes(), update);
+        sMan.notifyVolumeChange(this);
+    }
+
+    @Override
+    public void setTracingPolicy(String tracingPolicy, AtomicDBUpdate update) throws DatabaseException {
+        this.tracingPolicy = tracingPolicy;
+        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.TRACING_POLICY,
+                tracingPolicy.getBytes(), update);
+        sMan.notifyVolumeChange(this);
+    }
+
     @Override
     public void updateVolumeSize(long diff, AtomicDBUpdate update) throws DatabaseException {
         sMan.updateVolumeSize(diff, update);
@@ -189,7 +238,22 @@ public class BabuDBVolumeInfo implements VolumeInfo {
     public boolean isSnapshotsEnabled() throws DatabaseException {
         return allowSnaps;
     }
-    
+
+    @Override
+    public boolean isTracingEnabled() throws DatabaseException {
+        return this.enableTracing;
+    }
+
+    @Override
+    public String getTraceTarget() throws DatabaseException {
+        return this.traceTarget;
+    }
+
+    @Override
+    public String getTracingPolicy() throws DatabaseException {
+        return this.tracingPolicy;
+    }
+
     @Override
     public long getCreationTime() throws DatabaseException {
         return 0;
