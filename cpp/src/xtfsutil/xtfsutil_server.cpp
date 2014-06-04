@@ -204,6 +204,10 @@ void XtfsUtilServer::OpStat(const xtreemfs::pbrpc::UserCredentials& uc,
       result["num_dirs"] = Json::Value(xtfs_attrs["xtreemfs.num_dirs"]);
       result["num_files"] = Json::Value(xtfs_attrs["xtreemfs.num_files"]);
       result["snapshots_enabled"] = Json::Value(xtfs_attrs["xtreemfs.snapshots_enabled"]);
+      result["tracing_enabled"] = Json::Value(xtfs_attrs["xtreemfs.tracing_enabled"]);
+      result["trace_target"] = Json::Value(xtfs_attrs["xtreemfs.trace_target"]);
+      result["tracing_policy"] = Json::Value(xtfs_attrs["xtreemfs.tracing_policy"]);
+
       Json::Value usable_osds_json;
       if (reader.parse(xtfs_attrs["xtreemfs.usable_osds"],
                        usable_osds_json,
@@ -562,7 +566,7 @@ void XtfsUtilServer::OpEnableDisableTracing(
       || (!input.isMember("enable_tracing") || !input["enable_tracing"].isString())) {
     (*output)["error"] = Json::Value(
         "One of the following fields is missing or has an invalid value:"
-        " path or tracing_enabled.");
+        " path or enable_tracing.");
     return;
   }
 
@@ -570,14 +574,14 @@ void XtfsUtilServer::OpEnableDisableTracing(
 
   volume_->SetXAttr(uc,
                     path,
-                    "xtreemfs.tracing.tracing_enabled",
-                    input["tracing_enabled"].asString(),
+                    "xtreemfs.tracing_enabled",
+                    input["enable_tracing"].asString(),
                     xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
 
   if (input.isMember("target_volume") && input["target_volume"].isString()) {
     volume_->SetXAttr(uc,
                       path,
-                      "xtreemfs.tracing.target_volume",
+                      "xtreemfs.trace_target",
                       input["target_volume"].asString(),
                       xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
   }
@@ -585,7 +589,7 @@ void XtfsUtilServer::OpEnableDisableTracing(
   if (input.isMember("tracing_policy") && input["tracing_policy"].isString()) {
     volume_->SetXAttr(uc,
                       path,
-                      "xtreemfs.tracing.tracing_policy",
+                      "xtreemfs.tracing_policy",
                       input["tracing_policy"].asString(),
                       xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
   }

@@ -313,6 +313,22 @@ bool getattr(const string& xctl_file,
           cout << "unknown" << endl;
         }
 
+        cout << "Tracing enabled      ";
+        if (stat.isMember("tracing_enabled")) {
+          if(stat["tracing_enabled"].asString() == "true" &&
+            stat.isMember("trace_target") && stat.isMember("tracing_policy")) {
+            cout << "yes" << endl;
+            cout << "Trace target         "
+              << stat["trace_target"].asString() << endl;
+            cout << "Tracing policy       "
+              << stat["tracing_policy"].asString() << endl;
+          } else {
+            cout << "no" << endl;
+          }
+        } else {
+          cout << "unknown" << endl;
+        }
+
         if (path == "/") {
           cout << "Selectable OSDs      ";
           if (stat.isMember("usable_osds") && stat["usable_osds"].size() > 0) {
@@ -871,14 +887,14 @@ bool EnableDisableTracing(const string& xctl_file,
   }
   if (vm.count("enable-tracing") > 0) {
     request["enable_tracing"] = "1";
+    request["target_volume"] = vm["target-volume"].as<string>();
+    if (vm.count("tracing-policy") > 0) {
+      request["tracing_policy"] = vm["tracing-policy"].as<string>();
+    } else {
+      request["tracing_policy"] = "default";
+    }
   }
   request["path"] = path;
-  request["target_volume"] = vm["target-volume"].as<string>();
-  if (vm.count("tracing-policy") > 0) {
-    request["tracing_policy"] = vm["tracing-policy"].as<string>();
-  } else {
-    request["tracing_policy"] = "default";
-  }
 
   Json::Value response;
   if (executeOperation(xctl_file, request, &response)) {
@@ -1093,9 +1109,9 @@ int main(int argc, char **argv) {
   options_description tracing_desc("Tracing Options");
   tracing_desc.add_options()
       ("enable-tracing",
-       "Enable tracing on the file, directory or volume.")
+       "Enable tracing on the volume.")
       ("disable-tracing",
-       "disable tracing on the file, directory or volume.")
+       "disable tracing on the volume.")
       ("target-volume",
        value<string>(),
        "Volume to write trace")
