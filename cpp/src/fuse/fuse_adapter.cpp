@@ -449,6 +449,8 @@ int FuseAdapter::ConvertXtreemFSErrnoToFuse(
       return ENOTEMPTY;
     case POSIX_ERROR_ENODATA:
       return ENODATA;
+    case POSIX_ERROR_ENOSPC:
+      return ENOSPC;
 
     default:
       return xtreemfs_errno;
