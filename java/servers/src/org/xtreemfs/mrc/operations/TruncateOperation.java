@@ -88,7 +88,9 @@ public class TruncateOperation extends MRCOperation {
                 writeCap.isReplicateOnClose(),
                 !sMan.getVolumeInfo().isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED : sMan
                         .getVolumeInfo().isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP
-                        : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, sMan.getVolumeInfo().getCreationTime(), master
+                        : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, sMan.getVolumeInfo().getCreationTime(),
+                        writeCap.getTraceConfig().getTraceRequests(), writeCap.getTraceConfig().getTargetVolume(),
+                        writeCap.getTraceConfig().getTracingPolicy(), master
                         .getConfig().getCapabilitySecret());
         
         // set the response
