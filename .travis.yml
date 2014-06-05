@@ -1,0 +1,16 @@
+language: java
+
+jdk: oraclejdk7
+
+install:
+  - make server
+  - sudo apt-get install fuse libfuse-dev libboost-all-dev libattr1-dev automake
+  - BUILD_CLIENT_TESTS=true make client_debug
+
+script:
+  - source contrib/travis/unit_tests.sh
+
+after_failure:
+  - if [ $JUNIT_FAILED = "true" ]; then cat /tmp/xtreemfs-junit/log/junit.log; fi
+  - if [ $CPP_FAILED = "true" ]; then cat cpp/build/Testing/Temporary/LastTest.log; fi
+
