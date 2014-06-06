@@ -825,6 +825,9 @@ public class MRCHelper {
 
             break;
         case trace_target:
+            if(value.equals(sMan.getVolumeInfo().getName())) {
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "trace target is equal to volume");
+            }
             sMan.getVolumeInfo().setTraceTarget(value, update);
             break;
         case tracing_policy:

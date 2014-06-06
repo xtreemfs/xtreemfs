@@ -1374,6 +1374,12 @@ public class MRCTest {
 
         assertTrue(xcap.getTraceConfig().getTraceRequests());
 
+        try {
+            // Setting the current volume as trace target should not be possible
+            invokeSync(client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "/",
+                    "xtreemfs.trace_target", volumeName, ByteString.copyFrom(volumeName.getBytes()), 0));
+            assertTrue(false);
+        } catch (Exception e) { }
     }
     
     private void assertTree(InetSocketAddress server, String uid, List<String> gids, String volumeName,
