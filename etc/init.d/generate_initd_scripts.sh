@@ -1,27 +1,24 @@
-#!/bin/bash
+#!/bin/bash -e
 
 # This script generates the /etc/init.d/xtreemfs-{dir,mrc,osd} scripts
 # based on the file 'xtreemfs-service.template'.
 
 
 # Settings
-services="dir mrc osd"
-
-declare -A long_service_names
-long_service_names["dir"]="Directory Service"
-long_service_names["mrc"]="Metadata and Replica Catalog"
-long_service_names["osd"]="Object Storage Device"
+services=( "dir" "mrc" "osd" )
+long_service_names=( "Directory Service" "Metadata and Replica Catalog" "Object Storage Device" )
 
 template_file="xtreemfs-service.template"
 
 # Create files
 script_directory=$(dirname "$0")
 
-for service in $services
+for i in $(seq 0 $((${#services[@]} - 1)))
 do
+  service=${services[$i]}
   short_service_name_lowercase=$service
   short_service_name_uppercase=$(echo $service | tr [[:lower:]] [[:upper:]])
-  long_service_name=${long_service_names[$service]}
+  long_service_name=${long_service_names[$i]}
   if [ "$service" = "dir" ]
   then
     should_start="\$null"

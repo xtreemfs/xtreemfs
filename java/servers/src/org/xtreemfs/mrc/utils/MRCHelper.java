@@ -492,11 +492,11 @@ public class MRCHelper {
                             "cannot remove the volume's default striping policy");
                 
                 // check if striping + rw replication would be set
-                String replPolicy = sMan.getDefaultReplicationPolicy(file.getId()).getName();
+                ReplicationPolicy replPolicy = sMan.getDefaultReplicationPolicy(file.getId());
                 if (sp != null
                         && sp.getWidth() > 1
-                        && (replPolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE) || replPolicy
-                                .equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ))) {
+                        && replPolicy != null && (replPolicy.getName().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE) || replPolicy
+                                .getName().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ))) {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
                             "Striping of rw-replicated Files is not supported yet.");
                 }
