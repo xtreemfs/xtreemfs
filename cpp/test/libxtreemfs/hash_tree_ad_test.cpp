@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2014 by Philippe Lieser, Zuse Institute Berlin
  *
- *  Licensed under the BSD License, see LICENSE file for details.
+ * Licensed under the BSD License, see LICENSE file for details.
  */
 
 #include <gtest/gtest.h>
@@ -17,6 +17,7 @@
 #include "libxtreemfs/hash_tree_ad.h"
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/volume.h"
+#include "libxtreemfs/xtreemfs_exception.h"
 
 namespace xtreemfs {
 
@@ -156,7 +157,7 @@ class HashTreeADTest : public OnlineTest {
                 | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_TRUNC
                 | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR));
 
-    tree = new HashTreeAD(file);
+    tree = new HashTreeAD(file, 4);
   }
 
   virtual void TearDown() {
@@ -183,7 +184,7 @@ class HashTreeADTest_Offline : public OfflineTest {
                 | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_TRUNC
                 | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR));
 
-    tree = new HashTreeAD(file);
+    tree = new HashTreeAD(file, 4);
   }
 
   virtual void TearDown() {
@@ -416,10 +417,27 @@ TEST_F(HashTreeADTest_Node, NumberOfNodes) {
   EXPECT_EQ(2, x);
 }
 
-TEST_F(HashTreeADTest_Offline, RequiredNodes) {
-  tree->SetSize(15);
+TEST_F(HashTreeADTest_Offline, RequiredNodesForRead) {
   boost::icl::interval_set<int> nodeNumbers;
   boost::icl::interval_set<int> x;
+
+  tree->SetSize(2);
+  EXPECT_EQ(5, tree->max_node_number_);
+
+  x = tree->RequiredNodesForRead(0, 2);
+  nodeNumbers.clear();
+  nodeNumbers.add(boost::icl::interval<int>::closed(0, 5));
+  EXPECT_EQ(nodeNumbers, x);
+
+  tree->SetSize(11);
+
+  x = tree->RequiredNodesForRead(11, 11);
+  nodeNumbers.clear();
+  nodeNumbers.add(boost::icl::interval<int>::closed(14, 15));
+  nodeNumbers.add(boost::icl::interval<int>::closed(18, 22));
+  EXPECT_EQ(nodeNumbers, x);
+
+  tree->SetSize(15);
 
   x = tree->RequiredNodesForRead(1, 1);
   nodeNumbers.clear();
@@ -440,143 +458,210 @@ TEST_F(HashTreeADTest_Offline, RequiredNodes) {
   nodeNumbers.add(boost::icl::interval<int>::closed(6, 23));
   nodeNumbers.add(boost::icl::interval<int>::closed(30, 30));
   EXPECT_EQ(nodeNumbers, x);
+}
 
-  tree->SetSize(11);
+TEST_F(HashTreeADTest_Offline, RequiredNodesForWrite) {
+  boost::icl::interval_set<int> nodeNumbers;
+  boost::icl::interval_set<int> x;
 
-  x = tree->RequiredNodesForRead(11, 11);
+  tree->max_leaf_number_ = -1;
+  tree->max_level_ = 0;
+  tree->max_node_number_ = -1;
+  EXPECT_EQ(-1, tree->max_node_number_);
+
+  x = tree->RequiredNodesForWrite(1, true, 2, true);
   nodeNumbers.clear();
-  nodeNumbers.add(boost::icl::interval<int>::closed(14, 15));
-  nodeNumbers.add(boost::icl::interval<int>::closed(18, 22));
   EXPECT_EQ(nodeNumbers, x);
 
-  tree->SetSize(2);
-  EXPECT_EQ(5, tree->max_node_number_);
+  tree->SetSize(-1);
+  EXPECT_EQ(0, tree->max_node_number_);
 
-  x = tree->RequiredNodesForRead(0, 2);
+  x = tree->RequiredNodesForWrite(1, true, 2, true);
   nodeNumbers.clear();
-  nodeNumbers.add(boost::icl::interval<int>::closed(0, 5));
+  nodeNumbers.add(0);
+  EXPECT_EQ(nodeNumbers, x);
+
+  tree->SetSize(0);
+  EXPECT_EQ(1, tree->max_node_number_);
+
+  x = tree->RequiredNodesForWrite(1, true, 2, true);
+  nodeNumbers.clear();
+  nodeNumbers.add(boost::icl::interval<int>::closed(0, 1));
   EXPECT_EQ(nodeNumbers, x);
 
   tree->SetSize(1);
   EXPECT_EQ(2, tree->max_node_number_);
 
-  x = tree->RequiredNodesForWrite(4, 5);
+  x = tree->RequiredNodesForWrite(4, true, 5, true);
   nodeNumbers.clear();
-  nodeNumbers.add(boost::icl::interval<int>::closed(2, 2));
+  nodeNumbers.add(boost::icl::interval<int>::closed(0, 2));
   EXPECT_EQ(nodeNumbers, x);
 
-  x = tree->RequiredNodesForWrite(4, 6);
+  x = tree->RequiredNodesForWrite(4, true, 6, true);
   nodeNumbers.clear();
-  nodeNumbers.add(boost::icl::interval<int>::closed(2, 2));
+  nodeNumbers.add(boost::icl::interval<int>::closed(0, 2));
   EXPECT_EQ(nodeNumbers, x);
 
   tree->SetSize(2);
   EXPECT_EQ(5, tree->max_node_number_);
 
-  x = tree->RequiredNodesForWrite(4, 5);
+  x = tree->RequiredNodesForWrite(0, true, 2, true);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(5, 5));
   EXPECT_EQ(nodeNumbers, x);
 
-  tree->SetSize(7);
-  EXPECT_EQ(14, tree->max_node_number_);
+  x = tree->RequiredNodesForWrite(0, true, 3, true);
+  nodeNumbers.clear();
+  nodeNumbers.add(boost::icl::interval<int>::closed(5, 5));
+  EXPECT_EQ(nodeNumbers, x);
 
-  x = tree->RequiredNodesForWrite(2, 5);
+  x = tree->RequiredNodesForWrite(1, true, 2, true);
+  nodeNumbers.clear();
+  nodeNumbers.add(boost::icl::interval<int>::closed(0, 3));
+  nodeNumbers.add(5);
+  EXPECT_EQ(nodeNumbers, x);
+
+  x = tree->RequiredNodesForWrite(2, true, 2, true);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(2, 3));
-  nodeNumbers.add(boost::icl::interval<int>::closed(6, 7));
-  nodeNumbers.add(boost::icl::interval<int>::closed(10, 11));
-  nodeNumbers.add(14);
+  nodeNumbers.add(5);
   EXPECT_EQ(nodeNumbers, x);
 
-//  x = tree->RequiredNodesForWrite(0, 3);
-//  nodeNumbers.clear();
-//  nodeNumbers.add(boost::icl::interval<int>::closed(6, 7));
-//  nodeNumbers.add(14);
-//  EXPECT_EQ(nodeNumbers, x);
-
-  x = tree->RequiredNodesForWrite(4, 7);
+  x = tree->RequiredNodesForWrite(3, true, 3, true);
   nodeNumbers.clear();
-  nodeNumbers.add(boost::icl::interval<int>::closed(6, 7));
-  nodeNumbers.add(14);
+  nodeNumbers.add(boost::icl::interval<int>::closed(2, 5));
   EXPECT_EQ(nodeNumbers, x);
 
-  x = tree->RequiredNodesForWrite(2, 3);
+  x = tree->RequiredNodesForWrite(4, true, 5, true);
   nodeNumbers.clear();
-  nodeNumbers.add(boost::icl::interval<int>::closed(2, 3));
-  nodeNumbers.add(boost::icl::interval<int>::closed(6, 7));
-  nodeNumbers.add(14);
+  nodeNumbers.add(boost::icl::interval<int>::closed(2, 5));
   EXPECT_EQ(nodeNumbers, x);
 
-  x = tree->RequiredNodesForWrite(3, 5);
+  tree->SetSize(3);
+  EXPECT_EQ(6, tree->max_node_number_);
+
+  x = tree->RequiredNodesForWrite(4, true, 4, true);
   nodeNumbers.clear();
-  nodeNumbers.add(boost::icl::interval<int>::closed(2, 7));
-  nodeNumbers.add(boost::icl::interval<int>::closed(10, 11));
-  nodeNumbers.add(14);
+  nodeNumbers.add(boost::icl::interval<int>::closed(2, 6));
+  EXPECT_EQ(nodeNumbers, x);
+
+  tree->SetSize(4);
+  EXPECT_EQ(9, tree->max_node_number_);
+
+  x = tree->RequiredNodesForWrite(4, true, 4, true);
+  nodeNumbers.clear();
+  nodeNumbers.add(boost::icl::interval<int>::closed(6, 7));
+  nodeNumbers.add(9);
+  EXPECT_EQ(nodeNumbers, x);
+
+  x = tree->RequiredNodesForWrite(5, true, 5, true);
+  nodeNumbers.clear();
+  nodeNumbers.add(boost::icl::interval<int>::closed(6, 9));
   EXPECT_EQ(nodeNumbers, x);
 
   tree->SetSize(5);
   EXPECT_EQ(10, tree->max_node_number_);
 
-  x = tree->RequiredNodesForWrite(4, 5);
+  x = tree->RequiredNodesForWrite(0, true, 5, true);
+  nodeNumbers.clear();
+  nodeNumbers.add(10);
+  EXPECT_EQ(nodeNumbers, x);
+
+  x = tree->RequiredNodesForWrite(2, true, 5, true);
+  nodeNumbers.clear();
+  nodeNumbers.add(boost::icl::interval<int>::closed(2, 3));
+  nodeNumbers.add(boost::icl::interval<int>::closed(6, 7));
+  nodeNumbers.add(10);
+  EXPECT_EQ(nodeNumbers, x);
+
+  x = tree->RequiredNodesForWrite(4, true, 4, true);
+  nodeNumbers.clear();
+  nodeNumbers.add(boost::icl::interval<int>::closed(6, 10));
+  EXPECT_EQ(nodeNumbers, x);
+
+  x = tree->RequiredNodesForWrite(4, true, 5, true);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(6, 7));
   nodeNumbers.add(10);
   EXPECT_EQ(nodeNumbers, x);
 
-  x = tree->RequiredNodesForWrite(4, 4);
+  x = tree->RequiredNodesForWrite(6, true, 6, true);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(6, 10));
   EXPECT_EQ(nodeNumbers, x);
+
+  tree->SetSize(7);
+  EXPECT_EQ(14, tree->max_node_number_);
+
+  x = tree->RequiredNodesForWrite(2, true, 5, true);
+  nodeNumbers.clear();
+  nodeNumbers.add(boost::icl::interval<int>::closed(2, 3));
+  nodeNumbers.add(boost::icl::interval<int>::closed(6, 7));
+  nodeNumbers.add(boost::icl::interval<int>::closed(10, 11));
+  nodeNumbers.add(14);
+  EXPECT_EQ(nodeNumbers, x);
+
+  x = tree->RequiredNodesForWrite(4, true, 7, true);
+  nodeNumbers.clear();
+  nodeNumbers.add(boost::icl::interval<int>::closed(6, 7));
+  nodeNumbers.add(14);
+  EXPECT_EQ(nodeNumbers, x);
+
+  x = tree->RequiredNodesForWrite(2, true, 3, true);
+  nodeNumbers.clear();
+  nodeNumbers.add(boost::icl::interval<int>::closed(2, 3));
+  nodeNumbers.add(boost::icl::interval<int>::closed(6, 7));
+  nodeNumbers.add(14);
+  EXPECT_EQ(nodeNumbers, x);
+
+  x = tree->RequiredNodesForWrite(3, true, 5, true);
+  nodeNumbers.clear();
+  nodeNumbers.add(boost::icl::interval<int>::closed(2, 7));
+  nodeNumbers.add(boost::icl::interval<int>::closed(10, 11));
+  nodeNumbers.add(14);
+  EXPECT_EQ(nodeNumbers, x);
+}
+
+TEST_F(HashTreeADTest_Offline, DISABLED_TmpTestOffline) {
 }
 
 TEST_F(HashTreeADTest, TmpTest) {
-  tree->SetSize(2);
-
-  std::vector<char> x(3);
+  std::vector<unsigned char> x(4);
   x[0] = '#';
   x[1] = '0';
-
   x[2] = '0';
-  tree->nodes_.insert(
-      HashTreeAD::Nodes_t::value_type(HashTreeAD::Node(0, 0), x));
-  x[2] = '1';
-  tree->nodes_.insert(
-      HashTreeAD::Nodes_t::value_type(HashTreeAD::Node(0, 1), x));
-  x[2] = '2';
-  tree->nodes_.insert(
-      HashTreeAD::Nodes_t::value_type(HashTreeAD::Node(1, 0), x));
-  x[2] = '3';
-  tree->nodes_.insert(
-      HashTreeAD::Nodes_t::value_type(HashTreeAD::Node(1, 1), x));
-  x[2] = '4';
-  tree->nodes_.insert(
-      HashTreeAD::Nodes_t::value_type(HashTreeAD::Node(0, 2), x));
-  x[2] = '5';
-  tree->nodes_.insert(
-      HashTreeAD::Nodes_t::value_type(HashTreeAD::Node(2, 0), x));
 
-  BOOST_FOREACH(HashTreeAD::Nodes_t::value_type node, tree->nodes_) {
-    int node_number = node.first.NodeNumber(tree);
-    tree->changed_nodes_.add(
-        boost::icl::interval<int>::closed(node_number, node_number));
-  }
+  ASSERT_NO_THROW({
+    tree->StartWrite(1, true, 2, true);
+  });
+  x[3] = '1';
+  tree->SetLeaf(1, x, boost::asio::buffer("#001"));
+  x[3] = '2';
+  tree->SetLeaf(2, x, boost::asio::buffer("#002"));
+  tree->FinishWrite();
 
-  tree->WriteNodesToFile();
+  ASSERT_NO_THROW({
+    tree->StartRead(0, 1);
+  });
+  ASSERT_NO_THROW({
+    tree->GetLeaf(0, boost::asio::buffer(std::string(32, '\0')));
+  });
+  ASSERT_NO_THROW({
+    tree->GetLeaf(1, boost::asio::buffer("#001"));
+  });
+  ASSERT_THROW({
+    tree->GetLeaf(1, boost::asio::buffer("#002"));
+  }, XtreemFSException);
 
-  tree->nodes_.clear();
+  tree->StartTruncate(-1, true);
+  tree->FinishTruncate(user_credentials_);
 
-  tree->StartRead(0, 3);
-
-  for (HashTreeAD::Nodes_t::const_iterator it = tree->nodes_.begin();
-      it != tree->nodes_.end(); ++it) {
-    std::cout << "NN: " << it->first.NodeNumber(tree) << " level: "
-              << it->first.level << " n: " << it->first.n << " ";
-    std::copy(it->second.begin(), it->second.end(),
-         std::ostream_iterator<char>(std::cout, ""));
-//    << it->second
-    std::cout << " " << std::endl;
-  }
+  ASSERT_NO_THROW({
+  tree->StartWrite(0, true, 0, true);
+  });
+  x[3] = '0';
+  tree->SetLeaf(0, x, boost::asio::buffer("#000"));
+  tree->FinishWrite();
 }
 
 }  // namespace xtreemfs

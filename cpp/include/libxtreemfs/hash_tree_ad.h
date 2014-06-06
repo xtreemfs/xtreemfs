@@ -1,17 +1,20 @@
 /*
  * Copyright (c) 2014 by Philippe Lieser, Zuse Institute Berlin
  *
- *  Licensed under the BSD License, see LICENSE file for details.
+ * Licensed under the BSD License, see LICENSE file for details.
  */
 
 #ifndef CPP_INCLUDE_LIBXTREEMFS_HASH_TREE_AD_H_
 #define CPP_INCLUDE_LIBXTREEMFS_HASH_TREE_AD_H_
 
+#include <boost/asio/buffer.hpp>
 #include <boost/icl/interval_set.hpp>
 #include <map>
 #include <vector>
 
 #include "libxtreemfs/file_handle.h"
+#include "libxtreemfs/message_digest.h"
+#include "xtreemfs/GlobalTypes.pb.h"
 
 namespace xtreemfs {
 
@@ -21,19 +24,25 @@ namespace xtreemfs {
  */
 class HashTreeAD {
  public:
-  explicit HashTreeAD(FileHandle* meta_file);
+  HashTreeAD(FileHandle* meta_file, int leaf_adata_size);
 
   ~HashTreeAD();
 
   void StartRead(int start_leaf, int end_leaf);
 
-  void StartWrite(int start_leaf, int end_leaf);
+  void StartWrite(int start_leaf, bool complete_start_leaf, int end_leaf,
+                  bool complete_end_leaf);
 
   void FinishWrite();
 
-  std::vector<char> GetLeaf(int leaf);
+  void StartTruncate(int max_leaf_number, bool complete_leaf);
 
-  void SetLeaf(int leaf, std::vector<char> leaf_value);
+  void FinishTruncate(const xtreemfs::pbrpc::UserCredentials& user_credentials);
+
+  std::vector<unsigned char> GetLeaf(int leaf, boost::asio::const_buffer data);
+
+  void SetLeaf(int leaf, std::vector<unsigned char> adata,
+               boost::asio::const_buffer data);
 
  private:
   friend class HashTreeADTest_Node_Sibling_Test;
@@ -42,7 +51,8 @@ class HashTreeAD {
   friend class HashTreeADTest_Node_NodeNumber_Test;
   friend class HashTreeADTest_Node_NumberOfNodes_Test;
   friend class HashTreeADTest_Node_CommonAncestor_Test;
-  friend class HashTreeADTest_Offline_RequiredNodes_Test;
+  friend class HashTreeADTest_Offline_RequiredNodesForRead_Test;
+  friend class HashTreeADTest_Offline_RequiredNodesForWrite_Test;
   friend class HashTreeADTest_TmpTest_Test;
 
   /**
@@ -85,6 +95,10 @@ class HashTreeAD {
 
   friend bool operator<(Node const& lhs, Node const& rhs);
 
+  friend bool operator!=(Node const& lhs, Node const& rhs);
+
+  void ChangeSize(int max_leaf_number);
+
   void SetSize(int max_leaf_number);
 
   void ReadNodesFromFile(boost::icl::interval_set<int> nodeNumbers);
@@ -95,7 +109,15 @@ class HashTreeAD {
                                                      int end_leaf);
 
   boost::icl::interval_set<int> RequiredNodesForWrite(int start_leaf,
-                                                      int end_leaf);
+                                                      bool complete_start_leaf,
+                                                      int end_leaf,
+                                                      bool complete_end_leaf);
+
+  void ValidateTree();
+
+  void UpdateTree(int start_leaf, int end_leaf, int max_leaf);
+
+  std::vector<unsigned char> HashOfNode(Node left_child, Node right_child);
 
   int GetNodeStartInBytes(int node_number);
 
@@ -107,22 +129,55 @@ class HashTreeAD {
 
   int NumberOfNodes(int level, int pos);
 
-  static int MostSignificantBitSet(int x);
-
   /**
-   * Number of leafs in the hash tree. Equivalent to the File size in Number
-   * of encrypted Blocks.
+   * Max leaf number in the hash tree.
+   * -1 for empty file.
    */
   int max_leaf_number_;
 
+  /**
+   * Max level of the hash tree.
+   * 0 for empty file.
+   */
   int max_level_;
 
+  /**
+   * Max node number.
+   */
   int max_node_number_;
+
+  /**
+   * Size (in bytes) of additional data in leaf.
+   */
+  int leaf_adata_size_;
+
+  /**
+   * State of the hash tree. Used to enforce correct calling order of functions
+   * 0: neutral
+   * 1: write started with StartWrite()
+   * 2: truncate started with StartTruncate()
+   */
+  int state_;
+
+  /**
+   * Helper variable for write, storing the start_leaf parameter of StartWrite.
+   */
+  int start_leaf_;
+
+  /**
+   * Helper variable for write, storing the end_leaf parameter of StartWrite.
+   */
+  int end_leaf_;
+
+  /**
+   * Helper variable for a size change of tree, storing the old max leaf number.
+   */
+  int old_max_leaf_;
 
   /**
    * Storage for the nodes.
    */
-  typedef std::map<Node, std::vector<char> > Nodes_t;
+  typedef std::map<Node, std::vector<unsigned char> > Nodes_t;
   Nodes_t nodes_;
 
   /**
@@ -135,6 +190,8 @@ class HashTreeAD {
    * destruction.
    */
   FileHandle* meta_file_;
+
+  MessageDigest hasher_;
 };
 
 } /* namespace xtreemfs */

@@ -26,7 +26,7 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
               "/.xtreemfs_enc_meta_files/" + file_id,
               static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
                   | pbrpc::SYSTEM_V_FCNTL_H_O_WRONLY),
-              true)),
+              true), 0),
       volume_(volume),
       volume_options_(volume->volume_options()) {
 }
