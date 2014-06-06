@@ -59,14 +59,12 @@ public class RPCCaller {
                 false, options.getMaxTries(), callRequest, null, callGen);
     }
 
-    // TODO(jdillmann): Check if this can be removed, since it is no longer called
-    // without the additional xLocSetHandler parameter.
     protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds, Auth auth,
             Options options, UUIDResolver uuidResolver, UUIDIterator it, boolean uuidIteratorHasAddresses,
             boolean delayNextTry, int maxRetries, C callRequest, CallGenerator<C, R> callGen) throws IOException,
             PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
         return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, null,
-                delayNextTry, options.getMaxTries(), callRequest, null, callGen);
+                delayNextTry, maxRetries, callRequest, null, callGen);
     }
 
     protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds, Auth auth,
@@ -75,11 +73,9 @@ public class RPCCaller {
             CallGenerator<C, R> callGen) throws IOException, PosixErrorException, InternalServerErrorException,
             AddressToUUIDNotFoundException {
         return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, xLocSetHandler,
-                delayNextTry, options.getMaxTries(), callRequest, null, callGen);
+                delayNextTry, maxRetries, callRequest, null, callGen);
     }
 
-    // TODO(jdillmann): Check if this can be removed, since it is no longer called
-    // without the additional xLocSetHandler parameter.
     protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds, Auth auth,
             Options options, UUIDResolver uuidResolver, UUIDIterator it, boolean uuidIteratorHasAddresses,
             C callRequest, ReusableBuffer buf, CallGenerator<C, R> callGen) throws IOException, PosixErrorException,
