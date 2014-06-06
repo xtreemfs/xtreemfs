@@ -1353,9 +1353,9 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
                 // The xCap is required to prevent unauthorized access to the XLocSet.
                 XCap xCap = getXcap();
 
-                // TODO(jdillmann): Check if maxRetries should be set to something different from the default.
                 XLocSet newXLocSet = RPCCaller.<XCap, XLocSet> syncCall(SERVICES.MRC, userCredentialsBogus, authBogus,
-                        volumeOptions, uuidResolver, mrcUuidIterator, false, xCap, new CallGenerator<XCap, XLocSet>() {
+                        volumeOptions, uuidResolver, mrcUuidIterator, false, false, 1, xCap,
+                        new CallGenerator<XCap, XLocSet>() {
 
                             @Override
                             public RPCResponse<XLocSet> executeCall(InetSocketAddress server, Auth authHeader,
