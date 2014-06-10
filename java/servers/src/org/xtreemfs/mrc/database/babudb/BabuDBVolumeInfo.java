@@ -38,8 +38,10 @@ public class BabuDBVolumeInfo implements VolumeInfo {
     
     private boolean              allowSnaps;
 
+    private long                 quota;
+
     public void init(BabuDBStorageManager sMan, String id, String name, short[] osdPolicy, short[] replicaPolicy,
-            short acPolicy, boolean allowSnaps, AtomicDBUpdate update) throws DatabaseException {
+            short acPolicy, boolean allowSnaps, long quota, AtomicDBUpdate update) throws DatabaseException {
         
         this.sMan = sMan;
         this.id = id;
@@ -48,6 +50,7 @@ public class BabuDBVolumeInfo implements VolumeInfo {
         this.replicaPolicy = replicaPolicy;
         this.acPolicy = acPolicy;
         this.allowSnaps = allowSnaps;
+        this.quota = quota;
         
         // set the policies
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_ID_ATTR_NAME, id.getBytes(), true, update);
@@ -59,6 +62,9 @@ public class BabuDBVolumeInfo implements VolumeInfo {
                 .getBytes(), true, update);
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.ALLOW_SNAPS_ATTR_NAME,
                 String.valueOf(allowSnaps).getBytes(), true, update);
+        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_QUOTA_ATTR_NAME, String.valueOf(quota)
+                .getBytes(),
+                true, update);
     }
     
     public void init(BabuDBStorageManager sMan) throws DatabaseException {
@@ -75,6 +81,7 @@ public class BabuDBVolumeInfo implements VolumeInfo {
             byte[] osdPolicyAttr = sMan.getXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.OSD_POL_ATTR_NAME);
             byte[] replicaPolicyAttr = sMan.getXAttr(1, StorageManager.SYSTEM_UID,
                     BabuDBStorageManager.REPL_POL_ATTR_NAME);
+            byte[] quotaAttr = sMan.getXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_QUOTA_ATTR_NAME);
             
             if (idAttr != null)
                 id = new String(idAttr);
@@ -104,6 +111,9 @@ public class BabuDBVolumeInfo implements VolumeInfo {
             
             if (allowSnapsAttr != null)
                 allowSnaps = "true".equalsIgnoreCase(new String(allowSnapsAttr));
+
+            if (quotaAttr != null)
+                quota = Long.valueOf(new String(quotaAttr));
 
         } catch (NumberFormatException exc) {
             Logging.logError(Logging.LEVEL_ERROR, this, exc);
@@ -138,7 +148,7 @@ public class BabuDBVolumeInfo implements VolumeInfo {
     
     @Override
     public long getVolumeQuota() throws DatabaseException {
-        return sMan.getVolumeQuota();
+        return quota;
     }
 
     @Override
@@ -167,7 +177,9 @@ public class BabuDBVolumeInfo implements VolumeInfo {
     
     @Override
     public void setVolumeQuota(long quota, AtomicDBUpdate update) throws DatabaseException {
-        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_QUOTA, String.valueOf(quota).getBytes(),
+        this.quota = quota;
+        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_QUOTA_ATTR_NAME, String.valueOf(quota)
+                .getBytes(),
                 update);
         sMan.notifyVolumeChange(this);
     }

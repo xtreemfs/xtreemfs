@@ -62,6 +62,8 @@ public interface VolumeManager {
      *            the default striping policy
      * @param initialAccessMode
      *            the initial access mode for the volume's root directory
+     * @param volumeQuota
+     *            the volume quota
      * @param attrs
      *            a list of user-defined attributes for the volume
      * @throws UserException
@@ -69,7 +71,8 @@ public interface VolumeManager {
      */
     public void createVolume(FileAccessManager faMan, String volumeId, String volumeName,
         short fileAccessPolicyId, String ownerId, String owningGroupId, StripingPolicy defaultStripingPolicy,
-        int initialAccessMode, List<KeyValuePair> attrs) throws UserException, DatabaseException;
+ int initialAccessMode,
+            long volumeQuota, List<KeyValuePair> attrs) throws UserException, DatabaseException;
     
     /**
      * Checks whether a volume with the given name is known locally.

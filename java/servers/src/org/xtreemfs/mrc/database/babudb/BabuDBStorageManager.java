@@ -95,7 +95,7 @@ public class BabuDBStorageManager implements StorageManager {
     
     protected static final String            VOL_ID_ATTR_NAME           = "volId";
     
-    protected static final String            VOL_QUOTA                  = "quota";
+    protected static final String            VOL_QUOTA_ATTR_NAME        = "quota";
     
     protected static final int[]             ALL_INDICES                = { FILE_INDEX, XATTRS_INDEX, ACL_INDEX,
             FILE_ID_INDEX, VOLUME_INDEX                                };
@@ -161,7 +161,7 @@ public class BabuDBStorageManager implements StorageManager {
     public BabuDBStorageManager(BabuDB dbs, String volumeId, String volumeName, short fileAccessPolicyId,
             short[] osdPolicy, short[] replPolicy, String ownerId, String owningGroupId, int perms, ACLEntry[] acl,
             org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy rootDirDefSp, boolean allowSnaps,
-            Map<String, String> attrs) throws DatabaseException {
+            long volumeQuota, Map<String, String> attrs) throws DatabaseException {
         
         this.dbMan = dbs.getDatabaseManager();
         this.snapMan = dbs.getSnapshotManager();
@@ -179,7 +179,7 @@ public class BabuDBStorageManager implements StorageManager {
         setLastFileId(1, update);
         
         volume.init(this, update.getDatabaseName(), volumeName, osdPolicy, replPolicy, fileAccessPolicyId, allowSnaps,
-                update);
+                volumeQuota, update);
         
         // set the default striping policy
         if (rootDirDefSp != null)
@@ -562,7 +562,7 @@ public class BabuDBStorageManager implements StorageManager {
     @Override
     public long getVolumeQuota() throws DatabaseException {
         try {
-            byte[] quota = getXAttr(1, SYSTEM_UID, VOL_QUOTA);
+            byte[] quota = getXAttr(1, SYSTEM_UID, VOL_QUOTA_ATTR_NAME);
             if (quota == null)
                 return 0;
             else {
@@ -808,7 +808,7 @@ public class BabuDBStorageManager implements StorageManager {
     
     @Override
     public void setVolumeQuota(long quota, AtomicDBUpdate update) throws DatabaseException {
-        setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_QUOTA, String.valueOf(quota).getBytes(), update);
+        setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_QUOTA_ATTR_NAME, String.valueOf(quota).getBytes(), update);
     }
 
     @Override
