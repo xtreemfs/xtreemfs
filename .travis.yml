@@ -1,0 +1,13 @@
+language: java
+
+jdk: oraclejdk7
+
+install:
+  - make server
+
+script:
+  - source contrib/travis/unit_tests.sh
+
+after_failure:
+  - if [ $JUNIT_FAILED = "true" ]; then cat /tmp/xtreemfs-junit/log/junit.log; fi
+

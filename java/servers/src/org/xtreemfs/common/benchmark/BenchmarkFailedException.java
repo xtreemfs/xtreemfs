@@ -67,22 +67,4 @@ public class BenchmarkFailedException extends Exception {
     public BenchmarkFailedException(Throwable cause) {
         super(cause);
     }
-
-    /**
-     * Constructs a new exception with the specified detail message,
-     * cause, suppression enabled or disabled, and writable stack
-     * trace enabled or disabled.
-     *
-     * @param message            the detail message.
-     * @param cause              the cause.  (A {@code null} value is permitted,
-     *                           and indicates that the cause is nonexistent or unknown.)
-     * @param enableSuppression  whether or not suppression is enabled
-     *                           or disabled
-     * @param writableStackTrace whether or not the stack trace should
-     *                           be writable
-     * @since 1.7
-     */
-    public BenchmarkFailedException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
-    }
 }
