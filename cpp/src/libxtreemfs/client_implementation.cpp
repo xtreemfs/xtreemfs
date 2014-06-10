@@ -432,6 +432,7 @@ void ClientImplementation::CreateVolume(
     const std::string& owner_username,
     const std::string& owner_groupname,
     const xtreemfs::pbrpc::AccessControlPolicyType& access_policy,
+    long volume_quota,
     const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
     int default_stripe_size,
     int default_stripe_width,
@@ -445,6 +446,7 @@ void ClientImplementation::CreateVolume(
   new_volume.set_owner_user_id(owner_username);
   new_volume.set_owner_group_id(owner_groupname);
   new_volume.set_access_control_policy(access_policy);
+  new_volume.set_quota(volume_quota);
   new_volume.mutable_default_striping_policy()
       ->set_type(default_striping_policy_type);
   new_volume.mutable_default_striping_policy()
