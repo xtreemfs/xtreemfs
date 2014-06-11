@@ -932,7 +932,7 @@ const StripeTranslator* FileHandleImplementation::GetStripeTranslator(
 
   // Type not found.
   if (it == stripe_translators_.end()) {
-    throw XtreemFSException("No StripingPolicy found for type: " + type);
+    throw XtreemFSException("No StripingPolicy found for type: " + StripePolicyTypeToString(type));
   } else {
     // Type found.
     return it->second;

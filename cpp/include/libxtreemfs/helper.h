@@ -13,6 +13,8 @@
 #include <boost/unordered_set.hpp>
 #include <string>
 
+#include "xtreemfs/GlobalTypes.pb.h"
+
 #include <libxtreemfs/execute_sync_request.h>
 
 #ifdef __linux__
@@ -69,6 +71,9 @@ std::string GetOSDUUIDFromXlocSet(const xtreemfs::pbrpc::XLocSet& xlocs,
 
 /** Returns UUID of the head OSD (block = 0) of the first replica (r = 0). */
 std::string GetOSDUUIDFromXlocSet(const xtreemfs::pbrpc::XLocSet& xlocs);
+
+/** Convert StripePolicyType to string */
+std::string StripePolicyTypeToString(xtreemfs::pbrpc::StripingPolicyType policy);
 
 /** Generates a random UUID (needed to distinguish clients for locks). */
 void GenerateVersion4UUID(std::string* result);
