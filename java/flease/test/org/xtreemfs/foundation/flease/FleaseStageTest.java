@@ -7,6 +7,7 @@
 
 package org.xtreemfs.foundation.flease;
 
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Map;
@@ -19,6 +20,7 @@ import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.flease.proposer.FleaseException;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.util.FSUtils;
 
 /**
  *
@@ -27,7 +29,8 @@ import org.xtreemfs.foundation.logging.Logging.Category;
 public class FleaseStageTest extends TestCase {
 
     private final FleaseConfig cfg;
-    
+    private final File testDir;
+
     public FleaseStageTest(String testName) {
         super(testName);
 
@@ -35,11 +38,14 @@ public class FleaseStageTest extends TestCase {
         TimeSync.initializeLocal(50);
 
         cfg = new FleaseConfig(10000, 500, 500, new InetSocketAddress(12345), "localhost:12345",5);
+        testDir = new File("/tmp/xtreemfs-test/");
     }
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
+        FSUtils.delTree(testDir);
+        testDir.mkdirs();
     }
 
     @Override

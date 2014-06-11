@@ -7,15 +7,6 @@
 
 package org.xtreemfs.foundation.flease.proposer;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import javax.security.auth.login.FailedLoginException;
-
 import junit.framework.TestCase;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.buffer.ASCIIString;
@@ -28,6 +19,15 @@ import org.xtreemfs.foundation.flease.comm.FleaseCommunicationInterface;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.util.FSUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -40,11 +40,15 @@ public class FleaseProposerTest extends TestCase {
     private final static ASCIIString TESTCELL = new ASCIIString("testcell");
 
     private final FleaseConfig cfg;
+    private final File testDir;
 
     private final AtomicReference<Flease> result;
     
     public FleaseProposerTest(String testName) {
         super(testName);
+        testDir = new File("/tmp/xtreemfs-test/");
+        FSUtils.delTree(testDir);
+        testDir.mkdirs();
 
         result = new AtomicReference();
         Logging.start(Logging.LEVEL_WARN, Category.all);
