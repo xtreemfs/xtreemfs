@@ -14,7 +14,6 @@ import static org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL.
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.AfterClass;
@@ -31,10 +30,8 @@ import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.InvalidViewException;
 import org.xtreemfs.common.xloc.ReplicationFlags;
+import org.xtreemfs.common.xloc.ReplicationPolicy;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
-import org.xtreemfs.foundation.json.JSONException;
-import org.xtreemfs.foundation.json.JSONParser;
-import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
@@ -507,15 +504,8 @@ public class VersionedXLocSetTest {
         int currentReplicaNumber = volume.listReplicas(userCredentials, fileName).getReplicasCount();
 
         // Get the default replication flags.
-        int repl_flags;
-        try {
-            String rpAsJSON = volume.getXAttr(userCredentials, "/", "xtreemfs.default_rp");
-            Map<String, Object> rp = (Map<String, Object>) JSONParser.parseJSON(new JSONString(rpAsJSON));
-            long temp = ((Long) rp.get("replication-flags"));
-            repl_flags = (int) temp;
-        } catch (JSONException e) {
-            throw new IOException(e);
-        }
+        ReplicationPolicy rp = volume.getDefaultReplicationPolicy(userCredentials, "/");
+        int repl_flags = rp.getFlags();
 
         // Add the required number of new replicas.
         for (int i = 0; i < replicaNumber; i++) {

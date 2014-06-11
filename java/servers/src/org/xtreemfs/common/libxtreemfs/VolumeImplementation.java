@@ -24,6 +24,7 @@ import org.xtreemfs.common.libxtreemfs.RPCCaller.CallGenerator;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
+import org.xtreemfs.common.xloc.ReplicationPolicy;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
@@ -1507,6 +1508,47 @@ public class VolumeImplementation implements Volume, AdminVolume {
                 + "\"update-policy\": " + "\"" + replicationPolicy + "\"," + "\"replication-flags\": "
                 + String.valueOf(replicationFlags) + " }";
         setXAttr(userCredentials, directory, XTREEMFS_DEFAULT_RP, JSON, XATTR_FLAGS.XATTR_FLAGS_CREATE);
+    }
+
+    @SuppressWarnings("unchecked")
+    public ReplicationPolicy getDefaultReplicationPolicy(UserCredentials userCredentials, String directory)
+            throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+
+        Object replicationPolicyObject;
+        Map<String, Object> replicationPolicyMap;
+
+        try {
+            String rpAsJSON = getXAttr(userCredentials, directory, XTREEMFS_DEFAULT_RP);
+            replicationPolicyObject = JSONParser.parseJSON(new JSONString(rpAsJSON));
+        } catch (JSONException e) {
+            throw new IOException(e);
+        }
+
+        try {
+            replicationPolicyMap = (Map<String, Object>) replicationPolicyObject;
+        } catch (ClassCastException e) {
+            throw new IOException("JSON response does not contain a Map.", e);
+        }
+
+        if (!(replicationPolicyMap.containsKey("replication-factor")
+                && replicationPolicyMap.containsKey("update-policy") 
+                && replicationPolicyMap.containsKey("replication-flags"))) {
+            throw new IOException("Incomplete JSON response from MRC.");
+        }
+
+        final String updatePolicy;
+        final int replicationFactor;
+        final int replicationFlags;
+        try {
+            // The JSONParser returns every number as a Long object.
+            replicationFlags = ((Long) replicationPolicyMap.get("replication-flags")).intValue();
+            replicationFactor = ((Long) replicationPolicyMap.get("replication-factor")).intValue();
+            updatePolicy = (String) replicationPolicyMap.get("update-policy");
+        } catch (ClassCastException e) {
+            throw new IOException(e);
+        }
+
+        return new ReplicationPolicy(updatePolicy, replicationFactor, replicationFlags);
     }
 
     /**
