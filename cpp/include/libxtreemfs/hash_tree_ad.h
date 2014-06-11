@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "libxtreemfs/file_handle.h"
-#include "libxtreemfs/message_digest.h"
+#include "util/crypto/message_digest.h"
 #include "xtreemfs/GlobalTypes.pb.h"
 
 namespace xtreemfs {

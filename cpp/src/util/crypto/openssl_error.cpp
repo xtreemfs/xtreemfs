@@ -4,7 +4,7 @@
  * Licensed under the BSD License, see LICENSE file for details.
  */
 
-#include "util/openssl_error.h"
+#include "util/crypto/openssl_error.h"
 
 #include <openssl/err.h>
 

@@ -4,13 +4,13 @@
  * Licensed under the BSD License, see LICENSE file for details.
  */
 
-#include "libxtreemfs/message_digest.h"
+#include "util/crypto/message_digest.h"
 
 #include <boost/scope_exit.hpp>
 #include <string>
 #include <vector>
 
-#include "util/openssl_error.h"
+#include "util/crypto/openssl_error.h"
 
 using xtreemfs::util::LogAndThrowOpenSSLError;
 
