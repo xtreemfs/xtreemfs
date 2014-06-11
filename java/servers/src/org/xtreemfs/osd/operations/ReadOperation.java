@@ -30,6 +30,7 @@ import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
+import org.xtreemfs.osd.rwre.ReplicaUpdatePolicy;
 import org.xtreemfs.osd.stages.ReplicationStage.FetchObjectCallback;
 import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.storage.ObjectInformation;
@@ -82,10 +83,9 @@ public final class ReadOperation extends OSDOperation {
             return;
         }
 
-        if ( (rq.getLocationList().getReplicaUpdatePolicy().length() == 0)
-            || (rq.getLocationList().getNumReplicas() == 1)
-            || (rq.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY))){
-
+        if (ReplicaUpdatePolicy.requiresCoordination(rq.getLocationList())) {
+            rwReplicatedRead(rq, args);
+        } else {
             final long snapVerTS = rq.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_ACCESS_SNAP? rq.getCapability().getSnapTimestamp(): 0;
 
             master.getStorageStage().readObject(args.getFileId(), args.getObjectNumber(), sp,
@@ -96,8 +96,6 @@ public final class ReadOperation extends OSDOperation {
                     postRead(rq, args, result, error);
                 }
             });
-        } else {
-            rwReplicatedRead(rq,args);
         }
     }
 
