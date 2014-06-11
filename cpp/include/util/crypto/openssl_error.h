@@ -4,8 +4,8 @@
  * Licensed under the BSD License, see LICENSE file for details.
  */
 
-#ifndef CPP_INCLUDE_UTIL_OPENSSL_ERROR_H_
-#define CPP_INCLUDE_UTIL_OPENSSL_ERROR_H_
+#ifndef CPP_INCLUDE_UTIL_CRYPTO_OPENSSL_ERROR_H_
+#define CPP_INCLUDE_UTIL_CRYPTO_OPENSSL_ERROR_H_
 
 
 namespace xtreemfs {
@@ -16,4 +16,4 @@ void LogAndThrowOpenSSLError();
 } /* namespace util */
 } /* namespace xtreemfs */
 
-#endif  // CPP_INCLUDE_UTIL_OPENSSL_ERROR_H_
+#endif  // CPP_INCLUDE_UTIL_CRYPTO_OPENSSL_ERROR_H_

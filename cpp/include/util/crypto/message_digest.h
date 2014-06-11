@@ -4,8 +4,8 @@
  * Licensed under the BSD License, see LICENSE file for details.
  */
 
-#ifndef CPP_INCLUDE_LIBXTREEMFS_MESSAGE_DIGEST_H_
-#define CPP_INCLUDE_LIBXTREEMFS_MESSAGE_DIGEST_H_
+#ifndef CPP_INCLUDE_UTIL_CRYPTO_MESSAGE_DIGEST_H_
+#define CPP_INCLUDE_UTIL_CRYPTO_MESSAGE_DIGEST_H_
 
 #include <openssl/evp.h>
 
@@ -35,4 +35,4 @@ class MessageDigest {
 
 } /* namespace xtreemfs */
 
-#endif  // CPP_INCLUDE_LIBXTREEMFS_MESSAGE_DIGEST_H_
+#endif  // CPP_INCLUDE_UTIL_CRYPTO_MESSAGE_DIGEST_H_
