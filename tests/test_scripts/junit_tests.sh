@@ -98,9 +98,16 @@ while read LINE; do
   # run each JUnit test separately in its own JVM
   JAVA_CALL="$JAVA_HOME/bin/java -ea -cp $CLASSPATH org.junit.runner.JUnitCore $TEST"
 
-  echo -n "Running test `expr $COUNTER + 1`: $TEST ... "
-  $JAVA_CALL >> "$JUNIT_LOG_FILE" 2>&1
-  RESULT=$?
+  RESULT=1
+  i=0
+  while [ $i -le 3 -a $RESULT -ne 0 ]
+  do
+    echo -n "Running test `expr $COUNTER + 1`: $TEST ... "
+    $JAVA_CALL >> "$JUNIT_LOG_FILE" 2>&1
+    RESULT=$?
+    i=`expr $i + 1`
+  done
+
   if [ "$RESULT" -ne "0" ]; then
     echo "FAILURE"
     FAILED=`expr $FAILED + 1`
