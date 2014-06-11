@@ -154,6 +154,11 @@ std::string GetOSDUUIDFromXlocSet(
   return GetOSDUUIDFromXlocSet(xlocs, 0, 0);
 }
 
+std::string StripePolicyTypeToString(xtreemfs::pbrpc::StripingPolicyType policy) {
+  std::string policyMap[] = { "STRIPING_POLICY_RAID0" };
+  return policyMap[policy];
+}
+
 /**
  * By default this function does read random data from /dev/urandom and falls
  * back to using C's rand() if /dev/random is not available.

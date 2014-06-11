@@ -18,6 +18,7 @@ endif
 
 SHELL := $(shell which bash)
 WHICH_GPP = $(shell which g++)
+WHICH_CLANGPP = $(shell which clang++)
 
 ifeq "$(shell uname)" "SunOS"
   PROTOBUF_DISABLE_64_BIT_SOLARIS = "--disable-64bit-solaris"
@@ -189,9 +190,9 @@ check_server:
 	@echo "ant ok"
 
 check_client:
-	@if [ ! $(WHICH_GPP) ]; then echo "g++ not found";exit 1; fi;
+	@if [ ! $(WHICH_GPP) -a ! $(WHICH_CLANGPP) ]; then echo "C++ compiler not found";exit 1; fi;
 	@if [ ! $(CMAKE_BIN) ]; then echo "cmake not found";exit 1; fi;
-	@echo "g++ ok"
+	@echo "C++ ok"
 	
 
 check_test:
