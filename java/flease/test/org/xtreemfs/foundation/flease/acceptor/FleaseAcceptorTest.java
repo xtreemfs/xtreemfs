@@ -7,7 +7,6 @@
 
 package org.xtreemfs.foundation.flease.acceptor;
 
-import java.net.InetSocketAddress;
 import junit.framework.TestCase;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.buffer.ASCIIString;
@@ -17,6 +16,10 @@ import org.xtreemfs.foundation.flease.comm.FleaseMessage.MsgType;
 import org.xtreemfs.foundation.flease.comm.ProposalNumber;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.util.FSUtils;
+
+import java.io.File;
+import java.net.InetSocketAddress;
 
 /**
  *
@@ -28,9 +31,13 @@ public class FleaseAcceptorTest extends TestCase {
     private final static ASCIIString TESTCELL = new ASCIIString("testcell");
 
     private final FleaseConfig cfg;
+    private final File testDir;
     
     public FleaseAcceptorTest(String testName) {
         super(testName);
+        testDir = new File("/tmp/xtreemfs-test/");
+        FSUtils.delTree(testDir);
+        testDir.mkdirs();
         Logging.start(Logging.LEVEL_WARN, Category.all);
         TimeSync.initializeLocal(50);
 
