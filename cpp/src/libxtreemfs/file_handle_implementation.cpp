@@ -1014,6 +1014,54 @@ void FileHandleImplementation::GetXCap(xtreemfs::pbrpc::XCap* xcap) {
   xcap_manager_.GetXCap(xcap);
 }
 
+void FileHandleImplementation::GetXLocSet(xtreemfs::pbrpc::XLocSet* new_xlocset) {
+  file_info_->GetXLocSet(new_xlocset);
+}
+
+void FileHandleImplementation::RenewXLocSet() {
+  XLocSet xlocset_to_renew, xlocset_current;
+
+  // Store the current xLocSet before entering the renewal mutex section.
+  GetXLocSet(&xlocset_to_renew);
+
+  {
+    boost::mutex::scoped_lock lock(file_info_->xlocset_renewal_mutex());
+
+    // Renew the xLocSet only if the xLocSet has not been renewed yet by another process.
+    GetXLocSet(&xlocset_current);
+    if (xlocset_current.version() <= xlocset_to_renew.version()) {
+      //XLocSet xlocset_new;
+
+      // Build the request and call the MRC synchronously.
+      XCap xcap;
+      GetXCap(&xcap);
+
+      boost::scoped_ptr<rpc::SyncCallbackBase> response(
+          ExecuteSyncRequest(
+              boost::bind(
+                  &xtreemfs::pbrpc::MRCServiceClient::xtreemfs_get_xlocset_sync,
+                  mrc_service_client_,
+                  _1,
+                  boost::cref(auth_bogus_),
+                  boost::cref(user_credentials_bogus_),
+                  &xcap),
+              mrc_uuid_iterator_,
+              uuid_resolver_,
+              RPCOptionsFromOptions(volume_options_),
+              false,
+              &xcap_manager_,
+              &xcap));
+
+      xtreemfs::pbrpc::XLocSet* xlocset_new = static_cast<xtreemfs::pbrpc::XLocSet*>(
+          response->response());
+
+      file_info_->UpdateXLocSetAndRest(*xlocset_new);
+
+      response->DeleteBuffers();
+    }
+  }
+}
+
 XCapManager::XCapManager(
     const xtreemfs::pbrpc::XCap& xcap,
     xtreemfs::pbrpc::MRCServiceClient* mrc_service_client,
@@ -1130,5 +1178,34 @@ void XCapManager::CallFinished(
   xcap_renewal_pending_ = false;
   xcap_renewal_pending_cond_.notify_all();
 }
+//
+//XLocSetManager::XLocSetManager(
+//    const xtreemfs::pbrpc::XLocSet& xlocset,
+//    pbrpc::MRCServiceClient* mrc_service_client, UUIDResolver* uuid_resolver,
+//    UUIDIterator* mrc_uuid_iterator, const pbrpc::Auth& auth_bogus,
+//    const pbrpc::UserCredentials& user_credentials_bogus)
+//    : xlocset_(xlocset),
+//      xlocset_renewal_pending_(false),
+//      mrc_service_client_(mrc_service_client),
+//      uuid_resolver_(uuid_resolver),
+//      mrc_uuid_iterator_(mrc_uuid_iterator),
+//      auth_bogus_(auth_bogus),
+//      user_credentials_bogus_(user_credentials_bogus) {}
+//
+//void XLocSetManager::renewXLocSetSync() {
+//  boost::mutex::scoped_lock lock(mutex_);
+//}
+//
+//void XLocSetManager::SetXLocSet(const xtreemfs::pbrpc::XLocSet& xlocset) {
+//  boost::mutex::scoped_lock lock(mutex_);
+//  xlocset_.CopyFrom(xlocset);
+//}
+//
+//void XLocSetManager::GetXLocSet(xtreemfs::pbrpc::XLocSet* xlocset) {
+//  assert(xlocset);
+//
+//  boost::mutex::scoped_lock lock(mutex_);
+//  xlocset->CopyFrom(xlocset_);
+//}
 
 }  // namespace xtreemfs

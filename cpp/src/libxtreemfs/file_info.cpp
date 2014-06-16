@@ -466,5 +466,4 @@ bool FileInfo::WaitForPendingAsyncWritesNonBlocking(
                                       wait_completed_mutex);
 }
 
-
 }  // namespace xtreemfs
