@@ -1338,41 +1338,27 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
     }
 
     /**
-     * Renew the xLocSet synchronously and update the fileInfo. <br>
-     * If another renewal is in pending, no additional renewal will be started and the caller will wait until the
-     * pending one finished.
+     * Renew the xLocSet synchronously and return the new xLocSet. <br>
+     * Attention: This does not update the xLocSet for this fileHandle stored in its fileHandle automatically.
+     * 
+     * @return {@link XLocSet}
      */
-    void renewXLocSetSynchronous() throws PosixErrorException, InternalServerErrorException, IOException {
+    XLocSet renewXLocSetSynchronous() throws PosixErrorException, InternalServerErrorException, IOException {
+        // The xCap is required to prevent unauthorized access to the XLocSet.
+        XCap xCap = getXcap();
 
-        // If another thread is renewing the xLocSet already, the lock is taken and we will wait until (the other
-        // thread) updates the xLocSet and then continue using the updated xLocSet.
-        boolean lock = fileInfo.lockXLocSetRenewalOrWait();
+        XLocSet newXLocSet = RPCCaller.<XCap, XLocSet> syncCall(SERVICES.MRC, userCredentialsBogus, authBogus,
+                volumeOptions, uuidResolver, mrcUuidIterator, false, false, 1, xCap,
+                new CallGenerator<XCap, XLocSet>() {
 
-        if (lock) {
-            try {
-                // The xCap is required to prevent unauthorized access to the XLocSet.
-                XCap xCap = getXcap();
+                    @Override
+                    public RPCResponse<XLocSet> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, XCap input) throws IOException, PosixErrorException {
+                        return mrcServiceClient.xtreemfs_get_xlocset(server, authHeader, userCreds, input);
+                    }
+                });
 
-                XLocSet newXLocSet = RPCCaller.<XCap, XLocSet> syncCall(SERVICES.MRC, userCredentialsBogus, authBogus,
-                        volumeOptions, uuidResolver, mrcUuidIterator, false, false, 1, xCap,
-                        new CallGenerator<XCap, XLocSet>() {
-
-                            @Override
-                            public RPCResponse<XLocSet> executeCall(InetSocketAddress server, Auth authHeader,
-                                    UserCredentials userCreds, XCap input) throws IOException, PosixErrorException {
-                                return mrcServiceClient.xtreemfs_get_xlocset(server, authHeader, userCreds, input);
-                            }
-                        });
-
-                assert (newXLocSet != null);
-
-                // Update the corresponding fileInfo with the new xLocSet.
-                fileInfo.updateXLocSetAndRest(newXLocSet);
-
-            } finally {
-                fileInfo.unlockXLocSetRenewal();
-            }
-        }
+        return newXLocSet;
     }
 
 }
