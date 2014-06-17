@@ -111,6 +111,8 @@ void XtfsUtilServer::ParseAndExecute(const xtreemfs::pbrpc::UserCredentials& uc,
       OpCreateDeleteSnapshot(uc, input, &result);
     } else if (op_name == "setRemoveACL") {
       OpSetRemoveACL(uc, input, &result);
+    } else if (op_name == "setVolumeQuota") {
+      OpSetVolumeQuota(uc, input, &result);
     } else {
       file->set_last_result(
           "{ \"error\":\"Unknown operation '" + op_name + "'.\" }\n");
@@ -616,6 +618,28 @@ void XtfsUtilServer::OpSetRemoveACL(
                     input["acl"].asString(),
                     xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
   (*output)["result"] = Json::Value(Json::objectValue);
+}
+
+void XtfsUtilServer::OpSetVolumeQuota(
+	    const xtreemfs::pbrpc::UserCredentials& uc,
+	    const Json::Value& input,
+	    Json::Value* output) {
+
+	  if (!input.isMember("path") || !input["path"].isString() ||
+	      !input.isMember("quota") || !input["quota"].isString()) {
+	    (*output)["error"] = Json::Value("One of the following fields is missing or"
+	                                     " has an invalid value: path, quota.");
+	    return;
+	  }
+	  const string path = input["path"].asString();
+	  const string quota = input["quota"].asString();
+
+	  volume_->SetXAttr(uc,
+			  	  	  	path,
+			            "xtreemfs.quota",
+			            quota,
+			            xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
+	  (*output)["result"] = Json::Value(Json::objectValue);
 }
 
 bool XtfsUtilServer::checkXctlFile(const std::string& path) {

@@ -393,6 +393,37 @@ bool SetDefaultSP(const string& xctl_file,
   }
 }
 
+// Sets the volume quota
+bool SetVolumeQuota(const string& xctl_file,
+                  const string& path,
+                  const variables_map& vm) {
+
+	const long quota = vm["set-quota"].as<long>();
+
+	if (path != "/") {
+		cerr << "Quota must be set on volume." << endl;
+		return false;
+	}
+
+	if (quota < 0) {
+		cerr << "The minimal quota must be 0 (was set to: " << quota << ")." << endl;
+		return false;
+	}
+
+	Json::Value request(Json::objectValue);
+	request["operation"] = "setVolumeQuota";
+	request["path"] = path;
+	request["quota"] = boost::lexical_cast<string>(quota);
+	Json::Value response;
+	if (executeOperation(xctl_file, request, &response)) {
+	    cout << "Set volume quota to " << quota << "." << endl;
+	    return true;
+	} else {
+	    cerr << "FAILED" << endl;
+	    return false;
+	}
+}
+
 // Sets the default replication policy.
 bool SetDefaultRP(const string& xctl_file,
                   const string& path,
@@ -1040,7 +1071,9 @@ int main(int argc, char **argv) {
       ("set-acl", value<string>(),
        "adds/modifies an ACL entry, format: u|g|m|o:[<name>]:[<rwx>|<octal>]")
       ("del-acl", value<string>(),
-       "removes an ACL entry, format: u|g|m|o:<name>");
+       "removes an ACL entry, format: u|g|m|o:<name>")
+      ("set-quota", value<long>(),
+       "sets the volume quota in bytes (set quota to 0 to disable the quota)");
 
   options_description snapshot_desc("Snapshot Options");
   snapshot_desc.add_options()
@@ -1219,6 +1252,8 @@ int main(int argc, char **argv) {
     return CreateDeleteSnapshot(xctl_file, path_on_volume, vm) ? 0 : 1;
   } else if (vm.count("errors") > 0) {
     return ShowErrors(xctl_file, path_on_volume, vm) ? 0 : 1;
+  } else if (vm.count("set-quota") > 0) {
+	return SetVolumeQuota(xctl_file, path_on_volume, vm) ? 0 : 1;
   } else {
     return getattr(xctl_file, path_on_volume) ? 0 : 1;
   }
