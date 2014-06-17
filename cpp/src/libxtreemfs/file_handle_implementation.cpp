@@ -216,7 +216,9 @@ int FileHandleImplementation::ReadFromOSD(
                volume_options_.was_interrupted_function),
     false,
     &xcap_manager_,
-    rq.mutable_file_credentials()->mutable_xcap()));
+    rq.mutable_file_credentials()->mutable_xcap(),
+    this,
+    rq.mutable_file_credentials()->mutable_xlocs()));
 
   xtreemfs::pbrpc::ObjectData* data =
       static_cast<xtreemfs::pbrpc::ObjectData*>(response->response());
@@ -404,7 +406,9 @@ void FileHandleImplementation::WriteToOSD(
                       volume_options_.was_interrupted_function),
           false,
           &xcap_manager_,
-          write_request.mutable_file_credentials()->mutable_xcap()));
+          write_request.mutable_file_credentials()->mutable_xcap(),
+          this,
+          write_request.mutable_file_credentials()->mutable_xlocs()));
 
   xtreemfs::pbrpc::OSDWriteResponse* write_response =
       static_cast<xtreemfs::pbrpc::OSDWriteResponse*>(response->response());
@@ -516,7 +520,9 @@ void FileHandleImplementation::TruncatePhaseTwoAndThree(
           RPCOptionsFromOptions(volume_options_),
           false,
           &xcap_manager_,
-          truncate_rq.mutable_file_credentials()->mutable_xcap()));
+          truncate_rq.mutable_file_credentials()->mutable_xcap(),
+          this,
+          truncate_rq.mutable_file_credentials()->mutable_xlocs()));
   xtreemfs::pbrpc::OSDWriteResponse* write_response =
       static_cast<xtreemfs::pbrpc::OSDWriteResponse*>(response->response());
 
@@ -601,7 +607,9 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
         RPCOptionsFromOptions(volume_options_),
         false,
         &xcap_manager_,
-        lock_request.mutable_file_credentials()->mutable_xcap()));
+        lock_request.mutable_file_credentials()->mutable_xcap(),
+        this,
+        lock_request.mutable_file_credentials()->mutable_xlocs()));
   } else {
     // Retry to obtain the lock in case of EAGAIN responses.
     int retries_left = volume_options_.max_tries;
@@ -623,7 +631,9 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
                        volume_options_.was_interrupted_function),
             false,  // UUIDIterator contains UUIDs and not addresses.
             &xcap_manager_,
-            lock_request.mutable_file_credentials()->mutable_xcap()));
+            lock_request.mutable_file_credentials()->mutable_xcap(),
+            this,
+            lock_request.mutable_file_credentials()->mutable_xlocs()));
         break;  // If successful, do not retry again.
       } catch(const PosixErrorException& e) {
         if (e.posix_errno() != POSIX_ERROR_EAGAIN) {
@@ -698,7 +708,9 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::CheckLock(
         RPCOptionsFromOptions(volume_options_),
         false,
         &xcap_manager_,
-        lock_request.mutable_file_credentials()->mutable_xcap()));
+        lock_request.mutable_file_credentials()->mutable_xcap(),
+        this,
+        lock_request.mutable_file_credentials()->mutable_xlocs()));
   // Delete everything except the response.
   delete[] response->data();
   delete response->error();
@@ -754,7 +766,9 @@ void FileHandleImplementation::ReleaseLock(
         RPCOptionsFromOptions(volume_options_),
         false,
         &xcap_manager_,
-        unlock_request.mutable_file_credentials()->mutable_xcap()));
+        unlock_request.mutable_file_credentials()->mutable_xcap(),
+        this,
+        unlock_request.mutable_file_credentials()->mutable_xlocs()));
   response->DeleteBuffers();
 
   file_info_->DelLock(lock);
@@ -822,7 +836,9 @@ void FileHandleImplementation::PingReplica(
           RPCOptionsFromOptions(volume_options_),
           false,
           &xcap_manager_,
-          read_request.mutable_file_credentials()->mutable_xcap()));
+          read_request.mutable_file_credentials()->mutable_xcap(),
+          this,
+          read_request.mutable_file_credentials()->mutable_xlocs()));
   // We don't care about the result.
   response->DeleteBuffers();
 }
@@ -1178,34 +1194,5 @@ void XCapManager::CallFinished(
   xcap_renewal_pending_ = false;
   xcap_renewal_pending_cond_.notify_all();
 }
-//
-//XLocSetManager::XLocSetManager(
-//    const xtreemfs::pbrpc::XLocSet& xlocset,
-//    pbrpc::MRCServiceClient* mrc_service_client, UUIDResolver* uuid_resolver,
-//    UUIDIterator* mrc_uuid_iterator, const pbrpc::Auth& auth_bogus,
-//    const pbrpc::UserCredentials& user_credentials_bogus)
-//    : xlocset_(xlocset),
-//      xlocset_renewal_pending_(false),
-//      mrc_service_client_(mrc_service_client),
-//      uuid_resolver_(uuid_resolver),
-//      mrc_uuid_iterator_(mrc_uuid_iterator),
-//      auth_bogus_(auth_bogus),
-//      user_credentials_bogus_(user_credentials_bogus) {}
-//
-//void XLocSetManager::renewXLocSetSync() {
-//  boost::mutex::scoped_lock lock(mutex_);
-//}
-//
-//void XLocSetManager::SetXLocSet(const xtreemfs::pbrpc::XLocSet& xlocset) {
-//  boost::mutex::scoped_lock lock(mutex_);
-//  xlocset_.CopyFrom(xlocset);
-//}
-//
-//void XLocSetManager::GetXLocSet(xtreemfs::pbrpc::XLocSet* xlocset) {
-//  assert(xlocset);
-//
-//  boost::mutex::scoped_lock lock(mutex_);
-//  xlocset->CopyFrom(xlocset_);
-//}
 
 }  // namespace xtreemfs

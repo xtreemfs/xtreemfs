@@ -28,5 +28,4 @@ class XLocSetHandler {
 
 }  // namespace xtreemfs
 
-
 #endif  // CPP_INCLUDE_LIBXTREEMFS_XLOCSET_HANDLER_H_

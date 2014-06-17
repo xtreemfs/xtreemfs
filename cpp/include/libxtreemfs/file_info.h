@@ -67,8 +67,8 @@ class FileInfo {
     boost::mutex::scoped_lock lock(xlocset_mutex_);
 
     xlocset_.CopyFrom(new_xlocset);
-
     // TODO(jdillmann): Update the osd_uuid_iterator_ if the xlocset is newer.
+
   }
 
   /** Copies the XlocSet into new_xlocset. */
@@ -207,13 +207,6 @@ class FileInfo {
       boost::condition* condition_variable,
       bool* wait_completed,
       boost::mutex* wait_completed_mutex);
-
-  /**
-   * Renew the xLocSet synchronously.<br>
-   * If another renewal is in pending, no additional renewal will be started and the caller will wait until the
-   * pending one finished.
-   */
-//  void RenewXLocSetSync(FileHandleImplementation* fileHandle);
 
   /** Get the mutex, that can be used for xLocSet renewals from multiple FileHandles. */
   inline boost::mutex& xlocset_renewal_mutex() {

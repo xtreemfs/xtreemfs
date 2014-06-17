@@ -49,7 +49,6 @@ class UUIDIterator;
 class UUIDResolver;
 class Volume;
 class XCapManager;
-//class XLocSetManager;
 
 class XCapManager :
     public rpc::CallbackInterface<xtreemfs::pbrpc::XCap>,
@@ -109,50 +108,6 @@ class XCapManager :
   /** For same reason needed as auth_bogus_. Always set to user "xtreemfs". */
   const pbrpc::UserCredentials user_credentials_bogus_;
 };
-
-/** TODO(jdillmann): doc **/
-//class XLocSetManager {
-// public:
-//  XLocSetManager(const  xtreemfs::pbrpc::XLocSet& xlocset,
-//                 pbrpc::MRCServiceClient* mrc_service_client,
-//                 UUIDResolver* uuid_resolver, UUIDIterator* mrc_uuid_iterator,
-//                 const pbrpc::Auth& auth_bogus,
-//                 const pbrpc::UserCredentials& user_credentials_bogus);
-//
-//  /** Renew the xLocSet synchronously. **/
-//  void renewXLocSetSync();  // const RPCOptions& options);
-//
-//  /** Update the saved xLocSet with the provided one. **/
-//  void SetXLocSet(const xtreemfs::pbrpc::XLocSet& xlocset);
-//
-//  /** Get the current xLocSet and update the given one. **/
-//  void GetXLocSet(xtreemfs::pbrpc::XLocSet* xlocset);
-//
-// private:
-//  /** Any modification to the object must obtain a lock first. */
-//  boost::mutex mutex_;
-//
-//  /** xLocSet  */
-//  xtreemfs::pbrpc::XLocSet& xlocset_;
-//
-//  /** True if there is an outstanding xcap_renew callback. */
-//  bool xlocset_renewal_pending_;
-//
-//  /** Used to wait for pending XCap renewal callbacks. */
-//  // boost::condition xcap_renewal_pending_cond_;
-//
-//  /** UUIDIterator of the MRC. */
-//  pbrpc::MRCServiceClient* mrc_service_client_;
-//  UUIDResolver* uuid_resolver_;
-//  UUIDIterator* mrc_uuid_iterator_;
-//
-//  /** Auth needed for ServiceClients. Always set to AUTH_NONE by Volume. */
-//  const pbrpc::Auth auth_bogus_;
-//
-//  /** For same reason needed as auth_bogus_. Always set to user "xtreemfs". */
-//  const pbrpc::UserCredentials user_credentials_bogus_;
-//};
-
 
 /** Default implementation of the FileHandle Interface. */
 class FileHandleImplementation
