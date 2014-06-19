@@ -679,7 +679,21 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                     volTableBuf.append("</td></tr><tr></tr><tr><td class=\"subtitle\">#directories</td><td>");
                     volTableBuf.append(v.getNumDirs());
                     volTableBuf.append("</td></tr><tr><td class=\"subtitle\">free disk space:</td><td>");
-                    volTableBuf.append(OutputUtils.formatBytes(osdMonitor.getFreeSpace(v.getId())));
+
+                    // Use minimum of quota and free space on osds as free disk space.
+                    long quota = v.getVolumeQuota();
+                    long freeSpaceOnOsds = osdMonitor.getFreeSpace(v.getId());
+                    if (quota == 0 || quota > freeSpaceOnOsds) {
+                        volTableBuf.append(OutputUtils.formatBytes(freeSpaceOnOsds));
+                    } else {
+                        long freeSpace = quota - v.getVolumeSize();
+                        if (freeSpace < 0) {
+                            volTableBuf.append("0 bytes");
+                        } else {
+                            volTableBuf.append(OutputUtils.formatBytes(freeSpace));
+                        }
+                    }
+
                     volTableBuf.append("</td></tr><tr><td class=\"subtitle\">occupied disk space:</td><td>");
                     volTableBuf.append(OutputUtils.formatBytes(v.getVolumeSize()));
                     volTableBuf.append("</td></tr></table></td></tr>");
