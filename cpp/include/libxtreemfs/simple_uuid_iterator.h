@@ -17,16 +17,22 @@
 #include "libxtreemfs/uuid_item.h"
 #include "libxtreemfs/uuid_iterator.h"
 #include "libxtreemfs/uuid_container.h"
+#include "xtreemfs/GlobalTypes.pb.h"
 
 namespace xtreemfs {
 
 class SimpleUUIDIterator : public UUIDIterator {
  public:
+  SimpleUUIDIterator() {};
+  SimpleUUIDIterator(const xtreemfs::pbrpc::XLocSet& xlocs);
   virtual ~SimpleUUIDIterator();
   virtual void SetCurrentUUID(const std::string& uuid);
   virtual void Clear();
   /** Appends "uuid" to the list of UUIDs. Does not change the current UUID. */
   virtual void AddUUID(const std::string& uuid);
+
+  /** Clear the list and add the head OSD UUIDs of all replicas from the xLocSet. */
+  virtual void ClearAndGetOSDUUIDsFromXlocSet(const xtreemfs::pbrpc::XLocSet& xlocs);
 
   FRIEND_TEST(SimpleUUIDIteratorTest, ConcurrentSetAndMarkAsFailed);
 };

@@ -58,17 +58,20 @@ class FileInfo {
     boost::mutex::scoped_lock lock(xlocset_mutex_);
 
     xlocset_.CopyFrom(new_xlocset);
-    replicate_on_close_ = replicate_on_close;
+    osd_uuid_iterator_.ClearAndGetOSDUUIDsFromXlocSet(new_xlocset);
+    // TODO(jdillmann): Updating the osd_uuid_container_ is problematic because every
+    // derived container_uuid_iterator_ has references to the UUIDs.
 
-    // TODO(jdillmann): Update the osd_uuid_iterator_ if the xlocset is newer.
+    replicate_on_close_ = replicate_on_close;
   }
 
   inline void UpdateXLocSetAndRest(const xtreemfs::pbrpc::XLocSet& new_xlocset) {
     boost::mutex::scoped_lock lock(xlocset_mutex_);
 
     xlocset_.CopyFrom(new_xlocset);
-    // TODO(jdillmann): Update the osd_uuid_iterator_ if the xlocset is newer.
-
+    osd_uuid_iterator_.ClearAndGetOSDUUIDsFromXlocSet(new_xlocset);
+    // TODO(jdillmann): Updating the osd_uuid_container_ is problematic because every
+    // derived container_uuid_iterator_ has references to the UUIDs.
   }
 
   /** Copies the XlocSet into new_xlocset. */

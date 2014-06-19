@@ -176,7 +176,6 @@ int FileHandleImplementation::Read(
           operations[j].req_size,
           reader, writer);
     } else {
-      // TODO(mberlin): Update xloc list if newer version found (on OSD?).
       received_data +=
           ReadFromOSD(uuid_iterator, file_credentials, operations[j].obj_number,
           operations[j].data, operations[j].req_offset,
@@ -200,6 +199,11 @@ int FileHandleImplementation::ReadFromOSD(
   rq.set_offset(offset_in_object);
   rq.set_length(bytes_to_read);
 
+  // XLocSet renewal is not possible, if striping is enabled.
+  xtreemfs::pbrpc::XLocSet* xlocset_in_req;
+  xlocset_in_req = rq.mutable_file_credentials()->mutable_xlocs();
+  const bool striped = (xlocset_in_req->replicas(0)).osd_uuids_size() > 1;
+
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
           boost::bind(&xtreemfs::pbrpc::OSDServiceClient::read_sync,
@@ -208,17 +212,17 @@ int FileHandleImplementation::ReadFromOSD(
                       boost::cref(auth_bogus_),
                       boost::cref(user_credentials_bogus_),
                       &rq),
-    uuid_iterator,
-    uuid_resolver_,
-    RPCOptions(volume_options_.max_read_tries,
-               volume_options_.retry_delay_s,
-               false,
-               volume_options_.was_interrupted_function),
-    false,
-    &xcap_manager_,
-    rq.mutable_file_credentials()->mutable_xcap(),
-    this,
-    rq.mutable_file_credentials()->mutable_xlocs()));
+                      uuid_iterator,
+                      uuid_resolver_,
+                      RPCOptions(volume_options_.max_read_tries,
+                                 volume_options_.retry_delay_s,
+                                 false,
+                                 volume_options_.was_interrupted_function),
+                      false,
+                      &xcap_manager_,
+                      rq.mutable_file_credentials()->mutable_xcap(),
+                      striped ? NULL : this,
+                      striped ? NULL : xlocset_in_req));
 
   xtreemfs::pbrpc::ObjectData* data =
       static_cast<xtreemfs::pbrpc::ObjectData*>(response->response());
@@ -387,6 +391,11 @@ void FileHandleImplementation::WriteToOSD(
   data->set_invalid_checksum_on_osd(false);
   data->set_zero_padding(0);
 
+  // XLocSet renewal is not possible, if striping is enabled.
+  xtreemfs::pbrpc::XLocSet* xlocset_in_req;
+  xlocset_in_req = write_request.mutable_file_credentials()->mutable_xlocs();
+  const bool striped = (xlocset_in_req->replicas(0)).osd_uuids_size() > 1;
+
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
           boost::bind(
@@ -407,8 +416,8 @@ void FileHandleImplementation::WriteToOSD(
           false,
           &xcap_manager_,
           write_request.mutable_file_credentials()->mutable_xcap(),
-          this,
-          write_request.mutable_file_credentials()->mutable_xlocs()));
+          striped ? NULL : this,
+          striped ? NULL : xlocset_in_req));
 
   xtreemfs::pbrpc::OSDWriteResponse* write_response =
       static_cast<xtreemfs::pbrpc::OSDWriteResponse*>(response->response());
