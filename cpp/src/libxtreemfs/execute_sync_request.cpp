@@ -128,6 +128,7 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
   int attempt = 0;
   int redirects_in_a_row = 0;
   bool max_redirects_in_a_row_exceeded = false;
+  bool renew_xlocset = false;
   rpc::SyncCallbackBase* response = NULL;
   string service_uuid = "";
   string service_address;
@@ -161,7 +162,13 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
       xcap_handler->GetXCap(xcap_in_req);
     }
 
+    // Renew the xLocSet if the request failed in the previous try due to an invalid view.  // NOLINT
     if (attempt > 1 && xlocset_handler && xlocset_in_req) {
+      if (renew_xlocset) {
+        xlocset_handler->RenewXLocSet();
+        renew_xlocset = false;
+      }
+
       xlocset_handler->GetXLocSet(xlocset_in_req);
     }
 
@@ -257,26 +264,17 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
         }
       }
 
+      // If the view of this request is invalid (outdated xlocset), the view
+      // (and the UUIDIterator) has to be updated and the request retried.
       if (err.error_type() == INVALID_VIEW && xlocset_handler != NULL) {
-    	  // TODO(jdillmann): logging
+        delay_error = "The server "
+            + (uuid_iterator_has_addresses ? service_address
+                : ( service_address + " (" + service_uuid + ")"))
+            + " denied the requested operation because the clients view is " +
+            + "outdated. The request will be retried once the view is renewed.";  // NOLINT
 
-        if (attempt < options.max_retries() || options.max_retries() == 0) {
-          delay_error = "The server "
-              + (uuid_iterator_has_addresses ? service_address
-                  : ( service_address + " (" + service_uuid + ")"))
-              + " denied the requested operation because the clients view is outdated. "
-              + "The request will be retried once the view is renewed.";
-          // TODO(jdillmann): Introduce RetryViewDelay.
-          DelayNextRetry(options, request_sent_time, delay_error, level, response);
-
-          xlocset_handler->RenewXLocSet();
-
-          continue;
-        } else if (attempt == options.max_retries() && options.delay_last_attempt()) {
-          // This last retry should be delayed.
-          DelayNextRetry(options, request_sent_time, delay_error, level, response);
-        }
-
+        retry = true;
+        renew_xlocset = true;
       }
 
       // Retry (and delay)?
