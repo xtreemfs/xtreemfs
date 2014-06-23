@@ -497,10 +497,10 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
                         RPCAuthentication.authNone,
                         RPCAuthentication.userService, creds, fileId);
             } catch (IOException ex) {
-                // TODO(jdillmann): Do something with the error
                 if (Logging.isDebug()) {
                     Logging.logError(Logging.LEVEL_DEBUG, this, ex);
                 }
+                throw new MRCException(ex);
             }
         }
 
@@ -642,10 +642,10 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
                         OSDUUID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, authStateRequest);
                 responses[i] = rpcResponse;
             } catch (IOException ex) {
-                // TODO(jdillmann): Do something with the error
                 if (Logging.isDebug()) {
                     Logging.logError(Logging.LEVEL_DEBUG, this, ex);
                 }
+                throw new MRCException(ex);
             }
         }
 

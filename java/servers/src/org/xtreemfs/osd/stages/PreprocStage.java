@@ -640,8 +640,6 @@ public class PreprocStage extends Stage {
             
         }
 
-        // TODO(jdillmann): check rights for invalidate, install, and internal fetch invalidated
-
         return null;
     }
     

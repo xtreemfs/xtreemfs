@@ -185,7 +185,6 @@ public class HashStorageLayout extends StorageLayout {
 
         hashedPathCache = new LRUCache<String, String>(2048);
 
-        // TODO(jdillmann): Discuss if this should be moved to FileMetadata instead.
         xLocSetVSCache = new LRUCache<String, XLocSetVersionState>(2048);
     }
 

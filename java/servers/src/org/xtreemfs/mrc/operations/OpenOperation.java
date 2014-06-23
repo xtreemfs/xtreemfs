@@ -172,7 +172,6 @@ public class OpenOperation extends MRCOperation {
                 // Unlock the replica.
                 master.getXLocSetCoordinator().unlockXLocSet(file, sMan, update);
             } else {
-                // TODO(jdillmann): Custom exception.
                 throw new UserException(POSIXErrno.POSIX_ERROR_EAGAIN,
                         "xLocSet change already in progress. Please retry.");
             }
