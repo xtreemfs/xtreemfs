@@ -515,6 +515,36 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         }
     }
 
+    public Scheduler.reservationSet getAllVolumes(String schedulerAddress, Auth auth, UserCredentials userCredentials) throws IOException{
+        InetSocketAddress server = Helper.stringToInetSocketAddress(schedulerAddress,
+                GlobalTypes.PORTS.SCHEDULER_PBRPC_PORT_DEFAULT.getNumber());
+
+        try {
+            return schedulerClient.getAllVolumes(server, auth, userCredentials).get();
+
+        } catch (InterruptedException ex) {
+            throw new IOException("Cannot list all volumes: " + ex.getMessage());
+        }
+    }
+    
+    public Scheduler.reservation getReservation(String schedulerAddress, Auth auth, UserCredentials userCredentials, String volumeName) throws IOException{
+        InetSocketAddress server = Helper.stringToInetSocketAddress(schedulerAddress,
+                GlobalTypes.PORTS.SCHEDULER_PBRPC_PORT_DEFAULT.getNumber());
+
+        try {
+            Scheduler.reservationSet schedulerSet = schedulerClient.getAllVolumes(server, auth, userCredentials).get();
+            for (Scheduler.reservation reservation : schedulerSet.getReservationsList()) {
+                if (reservation.getVolume().getUuid().equals(volumeName)) {
+                    return reservation;
+                }
+            }
+        } catch (InterruptedException ex) {
+            throw new IOException("Cannot get resources: " + ex.getMessage());
+        }
+        
+        throw new IOException("No reservation for volume " + volumeName + " present.");
+    }
+    
     /*
      * (non-Javadoc)
      * 

@@ -1,8 +1,6 @@
 package org.xtreemfs.contrib.provisioning;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -10,15 +8,15 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
-import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
 import org.xtreemfs.contrib.provisioning.LibJSON.Addresses;
-import org.xtreemfs.contrib.provisioning.LibJSON.Machines;
-import org.xtreemfs.contrib.provisioning.LibJSON.Reservation;
-import org.xtreemfs.contrib.provisioning.LibJSON.ReservationStatus;
+import org.xtreemfs.contrib.provisioning.LibJSON.ReservationStati;
+import org.xtreemfs.contrib.provisioning.LibJSON.Reservations;
 import org.xtreemfs.contrib.provisioning.LibJSON.Resource;
+import org.xtreemfs.contrib.provisioning.LibJSON.ResourceCapacity;
 import org.xtreemfs.contrib.provisioning.LibJSON.Resources;
 import org.xtreemfs.contrib.provisioning.LibJSON.Response;
+import org.xtreemfs.contrib.provisioning.LibJSON.Types;
 
 
 @Consumes("application/json")
@@ -27,35 +25,18 @@ public class Rest extends JsonRPC {
 
   @POST
   @Path("/reserveResources")
-  public Response<Machines> reserveResources(Resources res) {
+  public Response<Reservations> reserveResources(Resources res) {
     try {
-
-      List<Reservation> reservations = new ArrayList<Reservation>();
-      
-      // search for storage resource
-      for (Resource resource : res.Resources) {
-        if (resource.Type.toLowerCase().equals("storage")) {          
-          // check for datacenter ID to match DIR ID:
-          if (resource.ID.contains(dirAddresses[0].getAddress().getCanonicalHostName())) {
-  
-            List<Reservation> currentResult = LibJSON.createReservation(
-                resource, 
+      return new Response<Reservations>(LibJSON.reserveResources(
+                res, 
                 LibJSON.generateSchedulerAddress(schedulerAddress), 
                 dirAddresses,
                 AbstractRequestHandler.getGroups(), 
                 AbstractRequestHandler.getAuth(this.adminPassword), 
-                client);
+                client));
   
-            reservations.addAll(currentResult);
-          }
-        }
-      }
-      return new Response<Machines>(
-                new Machines(reservations)
-             );
-      
-    } catch (Exception e) {
-      return new Response<Machines>(
+    } catch (Exception e) {      
+      return new Response<Reservations>(
             null, new LibJSON.Error(e.getLocalizedMessage(), -1)
             );
     }  
@@ -63,36 +44,63 @@ public class Rest extends JsonRPC {
   
   @POST
   @Path("/releaseResources")
-  public Response<Object> releaseResources(Reservation res) {
+  public Response<Object> releaseResources(Reservations res) {
     try {
-      LibJSON.releaseReservation(
-          res,
-          LibJSON.generateSchedulerAddress(schedulerAddress),
-          AbstractRequestHandler.getGroups(),
-          AbstractRequestHandler.getAuth(this.adminPassword),
-          client
-          );
-      return new Response<Object>(null);
+        LibJSON.releaseResources(
+            res,
+            LibJSON.generateSchedulerAddress(schedulerAddress),
+            AbstractRequestHandler.getGroups(),
+            AbstractRequestHandler.getAuth(this.adminPassword),
+            client
+            );
     } catch (Exception e) {
       return new Response<Object>(
+            null, new LibJSON.Error(e.getLocalizedMessage(), -1)
+            );
+    }
+    return new Response<Object>(null);
+  }
+  
+  @POST
+  @Path("/calculateResourceCapacity")
+  public Response<Resource> calculateResourceCapacity(ResourceCapacity res) {
+    try {
+        return new Response<Resource>(LibJSON.calculateResourceCapacity(res));
+    } catch (Exception e) {
+      return new Response<Resource>(
             null, new LibJSON.Error(e.getLocalizedMessage(), -1)
             );
     }
   }
   
   @POST
-  @Path("/checkReservationStatus")
-  public Response<ReservationStatus> checkReservationStatus(Reservation res) throws AddressToUUIDNotFoundException, VolumeNotFoundException, IOException {
-    try {
-      return new Response<ReservationStatus>(
-          LibJSON.checkReservation(
-            res, 
-            dirAddresses, 
-            sslOptions, 
-            this.client)
-          );    
+  @Path("/getResourceTypes")
+  public Response<Types> getResourceTypes() {
+    try {      
+      return new Response<Types>(LibJSON.getResourceTypes());
     } catch (Exception e) {
-      return new Response<ReservationStatus>(
+      return new Response<Types>(
+            null, new LibJSON.Error(e.getLocalizedMessage(), -1)
+            );
+    }
+  }
+  
+  @POST
+  @Path("/verifyResources")
+  public Response<ReservationStati> verifyResources(Reservations res) 
+      throws AddressToUUIDNotFoundException, VolumeNotFoundException, IOException {
+    try {
+        return new Response<ReservationStati>(LibJSON.verifyResources(
+                  res, 
+                  LibJSON.generateSchedulerAddress(schedulerAddress),
+                  dirAddresses, 
+                  sslOptions,
+                  AbstractRequestHandler.getGroups(),
+                  AbstractRequestHandler.getAuth(this.adminPassword),            
+                  this.client
+                ));
+    } catch (Exception e) {
+      return new Response<ReservationStati>(
             null, new LibJSON.Error(e.getLocalizedMessage(), -1)
             );
     }

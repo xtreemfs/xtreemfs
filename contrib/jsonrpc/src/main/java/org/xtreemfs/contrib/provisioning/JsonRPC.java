@@ -12,8 +12,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,11 +30,12 @@ import org.xtreemfs.common.libxtreemfs.Client;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.contrib.provisioning.LibJSON.Addresses;
-import org.xtreemfs.contrib.provisioning.LibJSON.Machines;
-import org.xtreemfs.contrib.provisioning.LibJSON.Reservation;
-import org.xtreemfs.contrib.provisioning.LibJSON.ReservationStatus;
+import org.xtreemfs.contrib.provisioning.LibJSON.ReservationStati;
+import org.xtreemfs.contrib.provisioning.LibJSON.Reservations;
 import org.xtreemfs.contrib.provisioning.LibJSON.Resource;
+import org.xtreemfs.contrib.provisioning.LibJSON.ResourceCapacity;
 import org.xtreemfs.contrib.provisioning.LibJSON.Resources;
+import org.xtreemfs.contrib.provisioning.LibJSON.Types;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
@@ -78,17 +77,21 @@ public class JsonRPC implements ResourceLoaderAware {
   protected Gson gson = new Gson();
 
   enum METHOD {
-    listReservations, 
-
+    getResourceTypes,
+    
+    calculateResourceCapacity,
+    
+    calculateResourceAgg,
+    
+    getAvailableResources,
+    
     reserveResources, 
 
-    releaseResources, 
-
-    checkReservationStatus,
-
-//    isNodeRunning,
-
-    getAvailableResources,
+    verifyResources,
+    
+    releaseResources,
+    
+    listReservations
   }
 
   public JsonRPC(String defaultDirConfigFile) {
@@ -171,9 +174,11 @@ public class JsonRPC implements ResourceLoaderAware {
       this.dispatcher.register(new ListReservationsHandler(this.client));
       this.dispatcher.register(new ReserveResourcesHandler(this.client));
       this.dispatcher.register(new ReleaseResourcesHandler(this.client));
-      this.dispatcher.register(new CheckReservationStatusHandler(this.client));
-//      this.dispatcher.register(new NodeRunningHandler(this.client));
+      this.dispatcher.register(new VerifyResources(this.client));
       this.dispatcher.register(new AvailableResources(this.client));
+
+      this.dispatcher.register(new ResourceTypesHandler(this.client));
+      this.dispatcher.register(new CalculateResourceCapacityHandler(this.client));
 
 
     } catch (Exception e) {
@@ -223,6 +228,48 @@ public class JsonRPC implements ResourceLoaderAware {
   /**
    * Implements a handler for the
    */
+  public class CalculateResourceCapacityHandler extends AbstractRequestHandler {
+
+    public CalculateResourceCapacityHandler(Client c) {
+      super(c, new METHOD[]{METHOD.calculateResourceCapacity});
+    }
+
+    // Processes the requests
+    @SuppressWarnings("unchecked")
+    @Override
+    public JSONRPC2Response doProcess(JSONRPC2Request req, MessageContext ctx) throws Exception {
+
+      ResourceCapacity res = gson.fromJson(JSONObject.toJSONString((Map<String, ?>)req.getParams()), ResourceCapacity.class);      
+
+      Resource resource = LibJSON.calculateResourceCapacity(res);
+
+      JSONString json = new JSONString(gson.toJson(resource));            
+      return new JSONRPC2Response(JSONParser.parseJSON(json), req.getID());                
+    }
+  }
+  
+  /**
+   * Implements a handler for the
+   */
+  public class ResourceTypesHandler extends AbstractRequestHandler {
+
+    public ResourceTypesHandler(Client c) {
+      super(c, new METHOD[]{METHOD.getResourceTypes});
+    }
+
+    // Processes the requests
+    @Override
+    public JSONRPC2Response doProcess(JSONRPC2Request req, MessageContext ctx) throws Exception {
+      Types resource = LibJSON.getResourceTypes();
+      JSONString json = new JSONString(gson.toJson(resource));            
+      return new JSONRPC2Response(JSONParser.parseJSON(json), req.getID());                
+    }
+  }
+  
+  
+  /**
+   * Implements a handler for the
+   */
   public class ReserveResourcesHandler extends AbstractRequestHandler {
 
     public ReserveResourcesHandler(Client c) {
@@ -236,27 +283,15 @@ public class JsonRPC implements ResourceLoaderAware {
 
       Resources res = gson.fromJson(JSONObject.toJSONString((Map<String, ?>)req.getParams()), Resources.class);      
 
-      List<Reservation> reservations = new ArrayList<Reservation>();
-      
-      // search for storage resource
-      for (Resource resource : res.Resources) {
-        if (resource.Type.toLowerCase().equals("storage")) {          
-          // check for datacenter ID to match DIR ID:
-          if (resource.ID.contains(dirAddresses[0].getAddress().getCanonicalHostName())) {
+      Reservations reservations = LibJSON.reserveResources(
+          res, 
+          LibJSON.generateSchedulerAddress(schedulerAddress), 
+          dirAddresses,
+          getGroups(), 
+          getAuth(JsonRPC.this.adminPassword), 
+          client);
 
-            List<Reservation> currentResult = LibJSON.createReservation(
-                resource, 
-                LibJSON.generateSchedulerAddress(schedulerAddress), 
-                dirAddresses,
-                getGroups(), 
-                getAuth(JsonRPC.this.adminPassword), 
-                client);
-
-            reservations.addAll(currentResult);
-          }
-        }
-      }
-      JSONString json = new JSONString(gson.toJson(new Machines(reservations)));            
+      JSONString json = new JSONString(gson.toJson(reservations));            
       return new JSONRPC2Response(JSONParser.parseJSON(json), req.getID());                
     }
   }
@@ -264,7 +299,7 @@ public class JsonRPC implements ResourceLoaderAware {
 
 
   /**
-   * Implements a handler for the "releaseReservation" JSON-RPC method
+   * Implements a handler for the "releaseResources" JSON-RPC method
    */
   public class ReleaseResourcesHandler extends AbstractRequestHandler {
 
@@ -274,10 +309,11 @@ public class JsonRPC implements ResourceLoaderAware {
 
     // Processes the requests
     @Override
+    @SuppressWarnings("unchecked")
     public JSONRPC2Response doProcess(JSONRPC2Request req, MessageContext ctx) throws Exception {
-      Reservation res = gson.fromJson(JSONObject.toJSONString((Map<String, ?>)req.getParams()), Reservation.class);      
+      Reservations res = gson.fromJson(JSONObject.toJSONString((Map<String, ?>)req.getParams()), Reservations.class);      
 
-      LibJSON.releaseReservation(
+      LibJSON.releaseResources(
           res,
           LibJSON.generateSchedulerAddress(schedulerAddress),
           getGroups(),
@@ -285,7 +321,6 @@ public class JsonRPC implements ResourceLoaderAware {
           client
           );
 
-//      JSONString json = new JSONString(gson.toJson(addresses));      
       return new JSONRPC2Response("", req.getID());      
     }   
   }
@@ -293,22 +328,26 @@ public class JsonRPC implements ResourceLoaderAware {
   /**
    * Implements a handler for the "checkReservation" JSON-RPC method
    */
-  public class CheckReservationStatusHandler extends AbstractRequestHandler {
+  public class VerifyResources extends AbstractRequestHandler {
 
-    public CheckReservationStatusHandler(Client c) {
-      super(c, new METHOD[]{METHOD.checkReservationStatus});
+    public VerifyResources(Client c) {
+      super(c, new METHOD[]{METHOD.verifyResources});
     }
 
     // Processes the requests
     @Override
+    @SuppressWarnings("unchecked")    
     public JSONRPC2Response doProcess(JSONRPC2Request req, MessageContext ctx) throws Exception {
-      Reservation res = gson.fromJson(JSONObject.toJSONString((Map<String, ?>)req.getParams()), Reservation.class);      
+      Reservations res = gson.fromJson(JSONObject.toJSONString((Map<String, ?>)req.getParams()), Reservations.class);      
 
       
-      ReservationStatus reservStat = LibJSON.checkReservation(
+      ReservationStati reservStat = LibJSON.verifyResources(
           res, 
+          LibJSON.generateSchedulerAddress(schedulerAddress),
           dirAddresses, 
           sslOptions, 
+          getGroups(),
+          getAuth(JsonRPC.this.adminPassword),          
           this.client);
 
       JSONString json = new JSONString(gson.toJson(reservStat));      
@@ -336,26 +375,6 @@ public class JsonRPC implements ResourceLoaderAware {
       return new JSONRPC2Response(JSONParser.parseJSON(json), req.getID());
     }
   }
-
-//  /**
-//   *  Implements a handler for the
-//   *    "isNodeRunning"
-//   *  JSON-RPC method
-//   *  
-//   *  returns true if it is running, false otherwise
-//   */
-//  public class NodeRunningHandler extends AbstractRequestHandler {
-//
-//    public NodeRunningHandler(Client c) {
-//      super(c, new METHOD[]{METHOD.isNodeRunning});
-//    }
-//
-//    // Processes the requests
-//    @Override
-//    public JSONRPC2Response doProcess(JSONRPC2Request req, MessageContext ctx) throws Exception {     
-//      return new JSONRPC2Response(true, req.getID());
-//    }
-//  }    
 
   /**
    *  Implements a handler for the

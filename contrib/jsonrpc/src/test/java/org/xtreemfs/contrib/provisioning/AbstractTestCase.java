@@ -10,7 +10,6 @@ import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import net.minidev.json.JSONObject;
@@ -20,7 +19,8 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.xtreemfs.contrib.provisioning.JsonRPC.METHOD;
-import org.xtreemfs.contrib.provisioning.LibJSON.Reservation;
+import org.xtreemfs.contrib.provisioning.LibJSON.Addresses;
+import org.xtreemfs.contrib.provisioning.LibJSON.Reservations;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
@@ -57,7 +57,7 @@ public abstract class AbstractTestCase {
 
   static String dirAddress = "";
   
-  public Gson gson = new Gson();
+  public static Gson gson = new Gson();
   
   @BeforeClass public static void setUp() throws Exception {
     Logging.start(Logging.LEVEL_WARN, Category.all);
@@ -156,18 +156,20 @@ public abstract class AbstractTestCase {
         JSONRPC2Response res = callJSONRPC(METHOD.listReservations);
         checkSuccess(res, false);
 
-        Map<String, List<String>> volumes = (Map<String, List<String>>) res.getResult();
-        for (List<String> v : volumes.values()) {
-          for (String volume : v) {
-            System.out.println("deleting Volume " + volume);
-            
-            Reservation addresses = new Reservation(volume);
-            res = callJSONRPC(
-                METHOD.releaseResources, 
-                new JSONString(gson.toJson(addresses)));
-            
-            checkSuccess(res, false);
-          }
+        Addresses volumes = parseResult(res, Addresses.class);
+        for (String volume: volumes.getAddresses()) {
+          System.out.println("deleting Volume " + volume);
+          
+          // delete the second volume
+          Reservations reservations = new Reservations(
+                volume
+              );
+          
+          res = callJSONRPC(
+              METHOD.releaseResources, 
+              reservations);
+          
+          checkSuccess(res, false);          
         }        
       } catch (Exception e) {
         e.printStackTrace();
@@ -256,7 +258,11 @@ public abstract class AbstractTestCase {
     System.out.println("\tRequest: \n\t" + req);
     return mySession.send(req);
   }
-
+  
+  protected static JSONRPC2Response callJSONRPC(METHOD method, Object parameters) throws JSONRPC2ParseException, JSONException {
+    return callJSONRPC(method, gson.toJson(parameters));
+  }
+  
   /**
    * Helper method for calling JSONRPCs
    * @param method

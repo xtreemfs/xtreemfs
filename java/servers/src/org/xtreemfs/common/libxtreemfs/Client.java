@@ -16,6 +16,7 @@ import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.Scheduler;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
@@ -385,6 +386,31 @@ public interface Client {
     public freeResourcesResponse getFreeResources(String schedulerAddress, Auth auth, UserCredentials userCredentials) throws IOException;
 
 
+    /**
+     * List all volumes at the Scheduler
+     * 
+     * @param schedulerAddress
+     * @param auth
+     * @param userCredentials
+     * @param volumeName
+     * @throws IOException
+     */
+    public Scheduler.reservationSet getAllVolumes(String schedulerAddress, Auth auth, UserCredentials userCredentials) throws IOException;
+        
+    
+    /**
+     * Get the reservation details for a specific volume at the Scheduler
+     * 
+     * @param schedulerAddress
+     * @param auth
+     * @param userCredentials
+     * @param volumeName
+     * @throws IOException
+     */
+    public Scheduler.reservation getReservation(String schedulerAddress, Auth auth, UserCredentials userCredentials, String volumeName) throws IOException;
+       
+    
+    
     /**
      * Deletes a reservation at the Scheduler
      * 
