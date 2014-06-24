@@ -62,6 +62,18 @@ public class Rest extends JsonRPC {
   }
   
   @POST
+  @Path("/calculateResourceAgg")
+  public Response<Resource> calculateResourceAgg(Resources res) {
+    try {
+        return new Response<Resource>(LibJSON.calculateResourceAgg(res));
+    } catch (Exception e) {
+      return new Response<Resource>(
+            null, new LibJSON.Error(e.getLocalizedMessage(), -1)
+            );
+    }
+  }
+  
+  @POST
   @Path("/calculateResourceCapacity")
   public Response<Resource> calculateResourceCapacity(ResourceCapacity res) {
     try {

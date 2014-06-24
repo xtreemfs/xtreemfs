@@ -83,7 +83,7 @@ public class JsonRPC implements ResourceLoaderAware {
     
     calculateResourceAgg,
     
-    getAvailableResources,
+    getAvailableResources,   
     
     reserveResources, 
 
@@ -179,7 +179,7 @@ public class JsonRPC implements ResourceLoaderAware {
 
       this.dispatcher.register(new ResourceTypesHandler(this.client));
       this.dispatcher.register(new CalculateResourceCapacityHandler(this.client));
-
+      this.dispatcher.register(new CalculateResourceAggHandler(this.client));
 
     } catch (Exception e) {
       e.printStackTrace();
@@ -224,6 +224,28 @@ public class JsonRPC implements ResourceLoaderAware {
     return resp.toJSONString();
   }
 
+  /**
+   * Implements a handler for the
+   */
+  public class CalculateResourceAggHandler extends AbstractRequestHandler {
+
+    public CalculateResourceAggHandler(Client c) {
+      super(c, new METHOD[]{METHOD.calculateResourceAgg});
+    }
+
+    // Processes the requests
+    @SuppressWarnings("unchecked")
+    @Override
+    public JSONRPC2Response doProcess(JSONRPC2Request req, MessageContext ctx) throws Exception {
+
+      Resources res = gson.fromJson(JSONObject.toJSONString((Map<String, ?>)req.getParams()), Resources.class);      
+      Resource resource = LibJSON.calculateResourceAgg(res);
+
+      JSONString json = new JSONString(gson.toJson(resource));            
+      return new JSONRPC2Response(JSONParser.parseJSON(json), req.getID());                
+    }
+  }
+  
 
   /**
    * Implements a handler for the

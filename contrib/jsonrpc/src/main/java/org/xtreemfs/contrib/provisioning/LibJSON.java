@@ -275,6 +275,40 @@ public class LibJSON {
     return addresses;
   }
   
+  
+  public static Resource calculateResourceAgg(Resources resources) {
+
+    double newThroughput = 0.0;
+    double newCapacity = 0.0;
+    
+    for (Resource resource : resources.getResources()) {
+      try {
+        newCapacity += resource.getAttributes().getCapacity();
+      } catch (Exception e) {
+        // silent
+      }
+      try {
+        newThroughput += resource.getAttributes().getThroughput();
+      } catch (Exception e) {
+        // silent
+      }
+    }
+        
+    Resource firstResource = resources.getResources().iterator().next();
+    return new Resource(
+        firstResource.getID(),
+        firstResource.getIP(),
+        "Storage",
+        new Attributes(
+            newCapacity, 
+            newThroughput, 
+            firstResource.getAttributes().getAccessType()
+        ),
+        firstResource.getCost()
+    );
+  }
+  
+  
   public static Resource calculateResourceCapacity(ResourceCapacity resourceCapacity) {
     
     ReserveResource reserve = resourceCapacity.getReserve();
