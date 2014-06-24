@@ -18,6 +18,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.contrib.provisioning.JsonRPC.METHOD;
 import org.xtreemfs.contrib.provisioning.LibJSON.Addresses;
 import org.xtreemfs.contrib.provisioning.LibJSON.Reservations;
@@ -28,6 +29,8 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
+import org.xtreemfs.scheduler.SchedulerConfig;
+import org.xtreemfs.scheduler.SchedulerRequestDispatcher;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
@@ -45,6 +48,9 @@ public abstract class AbstractTestCase {
 
   static JsonRPC xtreemfsRPC = null;
   static TestEnvironment testEnv = null;
+  
+  static SchedulerRequestDispatcher scheduler;
+
   static int requestId = 0;
 
   static OSD osds[];
@@ -69,6 +75,7 @@ public abstract class AbstractTestCase {
    * @throws Exception
    */
   @Before public void setUpServers() throws Exception {
+    try {
     if (!INITIALIZED && STARTUP_LOCAL) {
       System.out.println("Starting xtreemfs-services on ports: ");
       System.out.println("DIR port: " + SetupUtils.getDIRAddr().getPort());
@@ -77,15 +84,7 @@ public abstract class AbstractTestCase {
 
       osdConfigs = SetupUtils.createMultipleOSDConfigs(NUMBER_OF_OSDS);
 
-      String capabilityFile = SetupUtils.createSchedulerConfig(false).getOSDCapabilitiesFile();
-      OSDConfig[] osdConfigs = SetupUtils.createMultipleOSDConfigs(NUMBER_OF_OSDS);
-      BufferedWriter output = new BufferedWriter(new FileWriter(capabilityFile));
-      if(osdConfigs != null) {
-        for (OSDConfig osdConfig : osdConfigs) {
-          output.write(osdConfig.getUUID() + ";100.0;100.0;100.0,99.0,98.0,97.0,96.0,95.0");
-        }
-      }
-      output.close();
+      SchedulerConfig config = SetupUtils.createSchedulerConfig(false);
 
       System.out.println("OSD port: " + osdConfigs[0].getPort());
 
@@ -96,21 +95,43 @@ public abstract class AbstractTestCase {
               TestEnvironment.Services.TIME_SYNC,
               TestEnvironment.Services.UUID_RESOLVER,
               TestEnvironment.Services.MRC,
-              TestEnvironment.Services.SCHEDULER_SERVICE});
+              //TestEnvironment.Services.SCHEDULER_SERVICE
+              });
 
       testEnv.start();
-      dirAddress = testEnv.getDIRAddress().getHostName();
       
+      String capabilityFile = config.getOSDCapabilitiesFile();
+      OSDConfig[] osdConfigs = SetupUtils.createMultipleOSDConfigs(NUMBER_OF_OSDS);
+      BufferedWriter output = new BufferedWriter(new FileWriter(capabilityFile));
+      if(osdConfigs != null) {
+        for (OSDConfig osdConfig : osdConfigs) {
+          output.write(osdConfig.getUUID() + ";100.0;100.0;100.0,99.0,98.0,97.0,96.0,95.0\n");
+        }
+      }
+      output.flush();
+      output.close();
+      
+      dirAddress = testEnv.getDIRAddress().getHostName();
+            
       osds = new OSD[NUMBER_OF_OSDS];
       for (int i = 0; i < osds.length; i++) {
         osdConfigs[i].getCustomParams().put(OSDConfig.OSD_CUSTOM_PROPERTY_PREFIX+"country", "DE");
         osds[i] = new OSD(osdConfigs[i]);
       }
 
+      BabuDBConfig dbsConfig = SetupUtils.createSchedulerdbsConfig();
+      scheduler = new SchedulerRequestDispatcher(config, dbsConfig);
+      scheduler.start();
+      scheduler.waitForStartup();
+      
       // initialize JSONPRC for local installation
       xtreemfsRPC = new JsonRPC("junit_dir");
       xtreemfsRPC.init();
       INITIALIZED = true;
+    }
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw e;
     }
   }
 
@@ -133,12 +154,21 @@ public abstract class AbstractTestCase {
       }
 
       try {
+        if (scheduler != null) {
+          scheduler.shutdown();
+          scheduler.waitForShutdown();        
+        }
+      } catch (Exception e) {
+        //        e.printStackTrace();
+      }
+      
+      try {
         if (testEnv != null) {
           testEnv.shutdown();
         }
       } catch (Exception e) {
         //        e.printStackTrace();
-      }
+      }     
 
     }
     INITIALIZED = false;
