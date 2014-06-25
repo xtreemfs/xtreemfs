@@ -280,7 +280,7 @@ public class TestEnvironment {
     
     private OSDRequestDispatcher[]                                  osds;
     
-    private SchedulerRequestDispatcher								scheduler;
+    private SchedulerRequestDispatcher                              scheduler;
 
     private OSDRequestDispatcher[]                                  additionalOsds;
 
@@ -431,7 +431,7 @@ public class TestEnvironment {
                 BufferedWriter output = new BufferedWriter(new FileWriter(capabilityFile));
                 if(osdConfigs != null) {
                     for (OSDConfig osdConfig : osdConfigs) {
-                        output.write(osdConfig.getUUID() + ";100.0;100.0;100.0,99.0,98.0,97.0,96.0,95.0");
+                        output.write(osdConfig.getUUID() + ";100.0;100.0;100.0,99.0,98.0,97.0,96.0,95.0\n");
                     }
                 }
                 output.close();

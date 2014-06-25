@@ -199,7 +199,6 @@ public class JSONRPCTest extends AbstractTestCase {
   public void getAvailableResources() throws JSONRPC2ParseException, JSONException {
     System.out.println("getAvailableResources");
 
-    // create a volume    
     JSONRPC2Response res = callJSONRPC(METHOD.getAvailableResources);
     checkSuccess(res, false);
   }
@@ -214,6 +213,9 @@ public class JSONRPCTest extends AbstractTestCase {
   public void createListAndCheckReservation() throws JSONRPC2ParseException, JSONException {
     System.out.println("createListAndCheckReservation");
 
+    JSONRPC2Response res = callJSONRPC(METHOD.getAvailableResources);
+    checkSuccess(res, false);
+
     // create a volume
     Resources resource = new Resources(
         new Resource(
@@ -221,7 +223,7 @@ public class JSONRPCTest extends AbstractTestCase {
             "xxx.xxx.xxx.xxx",
             "Storage",
             new Attributes(
-                1024.0,
+                100.0,
                 100.0,
                 AccessTypes.SEQUENTIAL),
             null));
@@ -247,7 +249,7 @@ public class JSONRPCTest extends AbstractTestCase {
 //        + "}]}";  
 
     // parametersMap.put("password", "");
-    JSONRPC2Response res = callJSONRPC(METHOD.reserveResources, resource);
+    res = callJSONRPC(METHOD.reserveResources, resource);
     checkSuccess(res, false);
 
     JSONRPC2Response res2 = callJSONRPC(METHOD.listReservations);

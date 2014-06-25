@@ -55,7 +55,7 @@ public abstract class AbstractTestCase {
 
   static OSD osds[];
   static OSDConfig osdConfigs[];
-  static int NUMBER_OF_OSDS = 3;
+  static int NUMBER_OF_OSDS = 1;
 
   static String owner = "CN=Patrick Schaefer,OU=CSR,OU=Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB),O=GridGermany,C=DE";//"myUser"; // TODO!!
   static String ownerGroup = "CN=Patrick Schaefer,OU=CSR,OU=Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB),O=GridGermany,C=DE";//"myGroup"; // TODO!!
@@ -84,9 +84,7 @@ public abstract class AbstractTestCase {
 
       osdConfigs = SetupUtils.createMultipleOSDConfigs(NUMBER_OF_OSDS);
 
-      SchedulerConfig config = SetupUtils.createSchedulerConfig(false);
-
-      System.out.println("OSD port: " + osdConfigs[0].getPort());
+//      System.out.println("OSD port: " + osdConfigs[0].getPort());
 
       // startup: DIR && MRC
       testEnv = new TestEnvironment(
@@ -95,34 +93,37 @@ public abstract class AbstractTestCase {
               TestEnvironment.Services.TIME_SYNC,
               TestEnvironment.Services.UUID_RESOLVER,
               TestEnvironment.Services.MRC,
-              //TestEnvironment.Services.SCHEDULER_SERVICE
+              TestEnvironment.Services.SCHEDULER_SERVICE,
+              TestEnvironment.Services.OSD
               });
 
-      testEnv.start();
-      
-      String capabilityFile = config.getOSDCapabilitiesFile();
-      OSDConfig[] osdConfigs = SetupUtils.createMultipleOSDConfigs(NUMBER_OF_OSDS);
-      BufferedWriter output = new BufferedWriter(new FileWriter(capabilityFile));
-      if(osdConfigs != null) {
-        for (OSDConfig osdConfig : osdConfigs) {
-          output.write(osdConfig.getUUID() + ";100.0;100.0;100.0,99.0,98.0,97.0,96.0,95.0\n");
-        }
-      }
-      output.flush();
-      output.close();
-      
-      dirAddress = testEnv.getDIRAddress().getHostName();
-            
-      osds = new OSD[NUMBER_OF_OSDS];
-      for (int i = 0; i < osds.length; i++) {
-        osdConfigs[i].getCustomParams().put(OSDConfig.OSD_CUSTOM_PROPERTY_PREFIX+"country", "DE");
-        osds[i] = new OSD(osdConfigs[i]);
-      }
+      testEnv.start();           
 
-      BabuDBConfig dbsConfig = SetupUtils.createSchedulerdbsConfig();
-      scheduler = new SchedulerRequestDispatcher(config, dbsConfig);
-      scheduler.start();
-      scheduler.waitForStartup();
+//      osds = new OSD[NUMBER_OF_OSDS];
+//      for (int i = 0; i < osds.length; i++) {
+//        osdConfigs[i].getCustomParams().put(OSDConfig.OSD_CUSTOM_PROPERTY_PREFIX+"country", "DE");
+//        osds[i] = new OSD(osdConfigs[i]);
+//        System.out.println("OSD port: " + osdConfigs[i].getPort());
+//      }
+      
+//      SchedulerConfig config = SetupUtils.createSchedulerConfig(false);
+//      String capabilityFile = config.getOSDCapabilitiesFile();
+//      System.out.println("Scheduler capability file: " + capabilityFile);
+//      BufferedWriter output = new BufferedWriter(new FileWriter(capabilityFile));
+//      for (OSDConfig osdConfig : osdConfigs) {
+//        output.write(osdConfig.getUUID() + ";100.0;100.0;100.0,99.0,98.0,97.0,96.0,95.0\n");
+//      }
+//      output.flush();
+//      output.close();
+      
+//      scheduler = new SchedulerRequestDispatcher(config, SetupUtils.createSchedulerdbsConfig());
+//      scheduler.start();
+//      scheduler.waitForStartup();
+      
+//      System.out.println("Scheduler port: " + scheduler.getConfig().getPort());
+//      System.out.println("Scheduler DIR port: " + scheduler.getConfig().getDirectoryService().getPort());
+      
+      dirAddress = testEnv.getDIRAddress().getHostName();            
       
       // initialize JSONPRC for local installation
       xtreemfsRPC = new JsonRPC("junit_dir");
