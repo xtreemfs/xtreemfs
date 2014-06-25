@@ -315,28 +315,36 @@ public class LibJSON {
     ReleaseResource release = resourceCapacity.getRelease();
     
     
-    double remainingCapacity = resourceCapacity.getResource().getAttributes().getCapacity();   
-    try {
-      remainingCapacity -= reserve != null && reserve.getAttributes() != null ? reserve.getAttributes().getCapacity() : 0;
-    } catch (Exception e) {
-      // silent
-    }
-    try {
-      remainingCapacity += release != null && release.getAttributes() != null ? release.getAttributes().getCapacity() : 0;
-    } catch (Exception e) {
-      // silent
-    }    
-    
+    double remainingCapacity = resourceCapacity.getResource().getAttributes().getCapacity();
     double remainingThrough = resourceCapacity.getResource().getAttributes().getThroughput();
-    try {
-      remainingThrough -= reserve != null && reserve.getAttributes() != null ? reserve.getAttributes().getThroughput() : 0;
-    } catch (Exception e) {
-      // silent
-    }   
-    try {
-      remainingThrough += release != null && release.getAttributes() != null ? release.getAttributes().getThroughput() : 0;      
-    } catch (Exception e) {
-      // silent
+    if (reserve != null && reserve.getAttributes() != null) {
+      for (Attributes attr : reserve.getAttributes()) {
+        try {
+          remainingCapacity -= attr.getCapacity();
+        } catch (Exception e) {
+          // silent
+        }
+        try {
+          remainingThrough -= attr.getThroughput();
+        } catch (Exception e) {
+          // silent
+        } 
+      }
+    }
+    
+    if (release != null && release.getAttributes() != null) {
+      for (Attributes attr : release.getAttributes()) {
+        try {
+          remainingCapacity += attr.getCapacity();
+        } catch (Exception e) {
+          // silent
+        }
+        try {
+          remainingThrough += attr.getThroughput();
+        } catch (Exception e) {
+          // silent
+        } 
+      }
     }
     
     return new Resource(
@@ -360,7 +368,7 @@ public class LibJSON {
           new AttributesDesc(
               new CapacityDesc("The capacity of the storage device.", "double"),
               new ThroughputDesc("The throughput of the storage device. Either in MB/s or IOPS.", "double"),
-              new AccessTypeDesc("The access type of the storage device. One of 'SEQUENTIAL' or 'RANDOM'", "string"))
+              new AccessTypeDesc("The access type of the storage device. One of SEQUENTIAL or RANDOM", "string"))
         ));
     return types;
   }
@@ -771,19 +779,22 @@ public class LibJSON {
   @JsonAutoDetect(fieldVisibility = Visibility.ANY, isGetterVisibility = Visibility.NONE, getterVisibility = Visibility.NONE, setterVisibility = Visibility.NONE)  
   public static class ReserveResource implements Serializable {
     private static final long serialVersionUID = 6310585568556634805L;
-    public Attributes Attributes;
+    public List<Attributes> Attributes;
 
     public ReserveResource() {
       // no-args constructor
     }   
     public ReserveResource(Attributes attributes) {
-      this.Attributes = attributes;
+      setAttributes(attributes);      
     }
-    public Attributes getAttributes() {
+    public List<Attributes> getAttributes() {
       return Attributes;
     }
     public void setAttributes(Attributes attributes) {
-      Attributes = attributes;
+      if (this.Attributes == null) {
+        this.Attributes = new ArrayList<LibJSON.Attributes>();
+      }
+      this.Attributes.add(attributes);
     }
   }
   
@@ -791,20 +802,22 @@ public class LibJSON {
   @JsonAutoDetect(fieldVisibility = Visibility.ANY, isGetterVisibility = Visibility.NONE, getterVisibility = Visibility.NONE, setterVisibility = Visibility.NONE)  
   public static class ReleaseResource implements Serializable {
     private static final long serialVersionUID = 8910269518815734323L;
-    public Attributes Attributes;
+    public List<Attributes> Attributes;
 
     public ReleaseResource() {
       // no-args constructor
     }    
     public ReleaseResource(Attributes attributes) {
-      this.Attributes = attributes;
+      setAttributes(attributes);      
     }
-    public Attributes getAttributes() {
+    public List<Attributes> getAttributes() {
       return Attributes;
     }
     public void setAttributes(Attributes attributes) {
-      Attributes = attributes;
-    }
+      if (this.Attributes == null) {
+        this.Attributes = new ArrayList<LibJSON.Attributes>();
+      }
+      this.Attributes.add(attributes);    }
   }
 
   

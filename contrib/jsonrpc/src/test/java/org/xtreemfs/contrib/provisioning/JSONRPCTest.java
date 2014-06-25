@@ -21,6 +21,7 @@ import org.xtreemfs.contrib.provisioning.LibJSON.ReservationStati;
 import org.xtreemfs.contrib.provisioning.LibJSON.ReservationStatus;
 import org.xtreemfs.contrib.provisioning.LibJSON.Reservations;
 import org.xtreemfs.contrib.provisioning.LibJSON.Resource;
+import org.xtreemfs.contrib.provisioning.LibJSON.ResourceCapacity;
 import org.xtreemfs.contrib.provisioning.LibJSON.Resources;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONString;
@@ -63,6 +64,74 @@ public class JSONRPCTest extends AbstractTestCase {
     checkSuccess(res, true);
   }
 
+  /**
+   * Test resource aggregation.
+   * @throws JSONRPC2ParseException
+   * @throws JSONException 
+   */
+  @Test
+  public void calculateResourceCapacity() throws JSONRPC2ParseException, JSONException {
+    System.out.println("getResourceTypes");
+
+    double originalThroughput = 10.0;
+    double reserveThroughput = 8.0;
+    double releaseThroughput = 9.0;
+
+    double originalCapacity = 100.0;
+    double reserveCapacity = 80.0;
+    double releaseCapacity = 90.0;
+
+    ResourceCapacity rc = new ResourceCapacity(
+          new Resource(
+              "/"+dirAddress+"/storage/random",
+              "xxx.xxx.xxx.xxx",
+              "Storage",
+              new Attributes(
+                  originalCapacity,
+                  originalThroughput,
+                  AccessTypes.RANDOM),
+              new LibJSON.Cost()
+              ), 
+          new LibJSON.ReserveResource(
+              new Attributes(
+                  reserveCapacity,
+                  reserveThroughput,
+                  AccessTypes.RANDOM)
+              ), 
+          new LibJSON.ReleaseResource(
+              new Attributes(
+                  releaseCapacity,
+                  releaseThroughput,
+                  AccessTypes.RANDOM)
+              )
+        );
+    
+    JSONRPC2Response res = callJSONRPC(METHOD.calculateResourceCapacity, rc);
+    Resource resources = parseResult(res, Resource.class);   
+    double capacity = resources.getAttributes().getCapacity();
+    double throughput = resources.getAttributes().getThroughput();
+    
+    assertTrue(capacity == (originalCapacity + releaseCapacity - reserveCapacity));
+    assertTrue(throughput == (originalThroughput + releaseThroughput - reserveThroughput));
+
+    checkSuccess(res, false);
+  }
+  
+  
+  /**
+   * Test getting all resource types.
+   * @throws JSONRPC2ParseException
+   * @throws JSONException 
+   */
+  @Test
+  public void getResourceTypes() throws JSONRPC2ParseException, JSONException {
+    System.out.println("getResourceTypes");
+
+    JSONRPC2Response res = callJSONRPC(METHOD.getResourceTypes);
+    checkSuccess(res, false);
+  }
+  
+  
   /**
    * Test creating volumes.
    * @throws JSONRPC2ParseException
@@ -213,9 +282,6 @@ public class JSONRPCTest extends AbstractTestCase {
   public void createListAndCheckReservation() throws JSONRPC2ParseException, JSONException {
     System.out.println("createListAndCheckReservation");
 
-    JSONRPC2Response res = callJSONRPC(METHOD.getAvailableResources);
-    checkSuccess(res, false);
-
     // create a volume
     Resources resource = new Resources(
         new Resource(
@@ -249,7 +315,7 @@ public class JSONRPCTest extends AbstractTestCase {
 //        + "}]}";  
 
     // parametersMap.put("password", "");
-    res = callJSONRPC(METHOD.reserveResources, resource);
+    JSONRPC2Response res = callJSONRPC(METHOD.reserveResources, resource);
     checkSuccess(res, false);
 
     JSONRPC2Response res2 = callJSONRPC(METHOD.listReservations);
