@@ -5,8 +5,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -18,7 +16,6 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.contrib.provisioning.JsonRPC.METHOD;
 import org.xtreemfs.contrib.provisioning.LibJSON.Addresses;
 import org.xtreemfs.contrib.provisioning.LibJSON.Reservations;
@@ -29,7 +26,6 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
-import org.xtreemfs.scheduler.SchedulerConfig;
 import org.xtreemfs.scheduler.SchedulerRequestDispatcher;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
@@ -179,7 +175,6 @@ public abstract class AbstractTestCase {
   /**
    * Delete all volumes after each testcase
    */
-  @SuppressWarnings("unchecked")
   @After
   public void cleanUp() throws Exception {
     if (STARTUP_LOCAL) {

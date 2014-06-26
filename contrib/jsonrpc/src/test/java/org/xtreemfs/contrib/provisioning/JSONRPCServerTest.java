@@ -26,6 +26,7 @@ public class JSONRPCServerTest {
   // - start tomcat
   // - run tomcat:redeploy
   // - uncomment the @Test annotation
+  @SuppressWarnings("unchecked")
   public void testCreateListDeleteVolume() throws JSONRPC2ParseException, JSONRPC2SessionException {
     try {
       String owner = "myUser";

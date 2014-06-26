@@ -215,7 +215,7 @@ public class LibJSON {
           uc, 
           volume_name);
       
-      boolean sequential = reservation.getType() == Scheduler.reservationType.STREAMING_RESERVATION;
+//      boolean sequential = reservation.getType() == Scheduler.reservationType.STREAMING_RESERVATION;
       boolean random = reservation.getType() == Scheduler.reservationType.RANDOM_IO_RESERVATION;   
       
       // return a string like
