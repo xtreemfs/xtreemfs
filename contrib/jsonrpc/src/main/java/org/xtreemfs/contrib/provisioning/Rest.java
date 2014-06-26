@@ -14,6 +14,7 @@ import org.xtreemfs.contrib.provisioning.LibJSON.ReservationStati;
 import org.xtreemfs.contrib.provisioning.LibJSON.Reservations;
 import org.xtreemfs.contrib.provisioning.LibJSON.Resource;
 import org.xtreemfs.contrib.provisioning.LibJSON.ResourceCapacity;
+import org.xtreemfs.contrib.provisioning.LibJSON.ResourceMapper;
 import org.xtreemfs.contrib.provisioning.LibJSON.Resources;
 import org.xtreemfs.contrib.provisioning.LibJSON.Response;
 import org.xtreemfs.contrib.provisioning.LibJSON.Types;
@@ -65,7 +66,12 @@ public class Rest extends JsonRPC {
   @Path("/calculateResourceAgg")
   public Response<Resource> calculateResourceAgg(Resources res) {
     try {
-        return new Response<Resource>(LibJSON.calculateResourceAgg(res));
+        return new Response<Resource>(LibJSON.calculateResourceAgg(
+            res,
+            LibJSON.generateSchedulerAddress(schedulerAddress),
+            AbstractRequestHandler.getGroups(),
+            AbstractRequestHandler.getAuth(this.adminPassword),
+            client));
     } catch (Exception e) {
       return new Response<Resource>(
             null, new LibJSON.Error(e.getLocalizedMessage(), -1)
@@ -75,11 +81,16 @@ public class Rest extends JsonRPC {
   
   @POST
   @Path("/calculateResourceCapacity")
-  public Response<Resource> calculateResourceCapacity(ResourceCapacity res) {
+  public Response<ResourceMapper> calculateResourceCapacity(ResourceCapacity res) {
     try {
-        return new Response<Resource>(LibJSON.calculateResourceCapacity(res));
+        return new Response<ResourceMapper>(LibJSON.calculateResourceCapacity(
+            res,
+            LibJSON.generateSchedulerAddress(schedulerAddress),
+            AbstractRequestHandler.getGroups(),
+            AbstractRequestHandler.getAuth(this.adminPassword),
+            client));
     } catch (Exception e) {
-      return new Response<Resource>(
+      return new Response<ResourceMapper>(
             null, new LibJSON.Error(e.getLocalizedMessage(), -1)
             );
     }

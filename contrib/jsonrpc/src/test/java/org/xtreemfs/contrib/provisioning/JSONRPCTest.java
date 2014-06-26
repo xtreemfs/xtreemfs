@@ -22,6 +22,7 @@ import org.xtreemfs.contrib.provisioning.LibJSON.ReservationStatus;
 import org.xtreemfs.contrib.provisioning.LibJSON.Reservations;
 import org.xtreemfs.contrib.provisioning.LibJSON.Resource;
 import org.xtreemfs.contrib.provisioning.LibJSON.ResourceCapacity;
+import org.xtreemfs.contrib.provisioning.LibJSON.ResourceMapper;
 import org.xtreemfs.contrib.provisioning.LibJSON.Resources;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONString;
@@ -71,7 +72,7 @@ public class JSONRPCTest extends AbstractTestCase {
    */
   @Test
   public void calculateResourceCapacity() throws JSONRPC2ParseException, JSONException {
-    System.out.println("getResourceTypes");
+    System.out.println("calculateResourceCapacity");
 
     double originalThroughput = 10.0;
     double reserveThroughput = 8.0;
@@ -107,9 +108,9 @@ public class JSONRPCTest extends AbstractTestCase {
         );
     
     JSONRPC2Response res = callJSONRPC(METHOD.calculateResourceCapacity, rc);
-    Resource resources = parseResult(res, Resource.class);   
-    double capacity = resources.getAttributes().getCapacity();
-    double throughput = resources.getAttributes().getThroughput();
+    ResourceMapper resources = parseResult(res, ResourceMapper.class);   
+    double capacity = resources.getResource().getAttributes().getCapacity();
+    double throughput = resources.getResource().getAttributes().getThroughput();
     
     assertTrue(capacity == (originalCapacity + releaseCapacity - reserveCapacity));
     assertTrue(throughput == (originalThroughput + releaseThroughput - reserveThroughput));
@@ -269,6 +270,32 @@ public class JSONRPCTest extends AbstractTestCase {
     System.out.println("getAvailableResources");
 
     JSONRPC2Response res = callJSONRPC(METHOD.getAvailableResources);
+    checkSuccess(res, false);
+  }
+  
+  
+  /**
+   * Creates a volume and lists the available resources
+   * @throws JSONRPC2ParseException
+   * @throws JSONException 
+   */
+  @Test
+  public void calculateResourceAgg() throws JSONRPC2ParseException, JSONException {
+    System.out.println("calculateResourceAgg");
+
+    // create a volume
+    Resources resource = new Resources(
+        new Resource(
+            "/"+dirAddress+"/storage/random",
+            "xxx.xxx.xxx.xxx",
+            "Storage",
+            new Attributes(
+                100.0,
+                100.0,
+                AccessTypes.SEQUENTIAL),
+            null));
+
+    JSONRPC2Response res = callJSONRPC(METHOD.calculateResourceAgg, resource);
     checkSuccess(res, false);
   }
   

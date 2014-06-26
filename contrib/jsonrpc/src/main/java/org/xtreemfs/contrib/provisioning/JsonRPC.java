@@ -34,6 +34,7 @@ import org.xtreemfs.contrib.provisioning.LibJSON.ReservationStati;
 import org.xtreemfs.contrib.provisioning.LibJSON.Reservations;
 import org.xtreemfs.contrib.provisioning.LibJSON.Resource;
 import org.xtreemfs.contrib.provisioning.LibJSON.ResourceCapacity;
+import org.xtreemfs.contrib.provisioning.LibJSON.ResourceMapper;
 import org.xtreemfs.contrib.provisioning.LibJSON.Resources;
 import org.xtreemfs.contrib.provisioning.LibJSON.Types;
 import org.xtreemfs.foundation.SSLOptions;
@@ -239,7 +240,12 @@ public class JsonRPC implements ResourceLoaderAware {
     public JSONRPC2Response doProcess(JSONRPC2Request req, MessageContext ctx) throws Exception {
 
       Resources res = gson.fromJson(JSONObject.toJSONString((Map<String, ?>)req.getParams()), Resources.class);      
-      Resource resource = LibJSON.calculateResourceAgg(res);
+      Resource resource = LibJSON.calculateResourceAgg(
+          res,
+          LibJSON.generateSchedulerAddress(schedulerAddress), 
+          getGroups(), 
+          getAuth(JsonRPC.this.adminPassword), 
+          client);
 
       JSONString json = new JSONString(gson.toJson(resource));            
       return new JSONRPC2Response(JSONParser.parseJSON(json), req.getID());                
@@ -263,7 +269,12 @@ public class JsonRPC implements ResourceLoaderAware {
 
       ResourceCapacity res = gson.fromJson(JSONObject.toJSONString((Map<String, ?>)req.getParams()), ResourceCapacity.class);      
 
-      Resource resource = LibJSON.calculateResourceCapacity(res);
+      ResourceMapper resource = LibJSON.calculateResourceCapacity(
+          res,
+          LibJSON.generateSchedulerAddress(schedulerAddress), 
+          getGroups(), 
+          getAuth(JsonRPC.this.adminPassword), 
+          client);
 
       JSONString json = new JSONString(gson.toJson(resource));            
       return new JSONRPC2Response(JSONParser.parseJSON(json), req.getID());                

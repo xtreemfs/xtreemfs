@@ -207,13 +207,6 @@ public class LibJSON {
       volume_name = stripVolumeName(volume_name);
   
       LibJSON.openVolume(volume_name, sslOptions, client);
-  
-  //    //       compare xtfs_show_reservations
-  //    freeResourcesResponse freeResources
-  //      = client.getFreeResources(
-  //          schedulerAddress, 
-  //          auth, 
-  //          uc);  
       
       // obtain the size of the reservation
       Scheduler.reservation reservation = client.getReservation(
@@ -276,11 +269,27 @@ public class LibJSON {
   }
   
   
-  public static Resource calculateResourceAgg(Resources resources) {
+  public static Resource calculateResourceAgg(      
+      Resources resources,
+      String schedulerAddress,
+      UserCredentials uc, 
+      Auth auth,
+      Client client) throws IOException {
 
+    // obtain the free resources as upper limit
+    freeResourcesResponse freeResources
+    = client.getFreeResources(
+        schedulerAddress, 
+        auth, 
+        uc);   
+    
     double newThroughput = 0.0;
     double newCapacity = 0.0;
     
+    Resource firstResource = resources.getResources().iterator().next();
+    AccessTypes type = firstResource.getAttributes().getAccessType();
+
+    // calculate the aggregation
     for (Resource resource : resources.getResources()) {
       try {
         newCapacity += resource.getAttributes().getCapacity();
@@ -288,13 +297,20 @@ public class LibJSON {
         // silent
       }
       try {
-        newThroughput += resource.getAttributes().getThroughput();
+        newThroughput = Math.max(resource.getAttributes().getThroughput(), newThroughput);
       } catch (Exception e) {
         // silent
       }
     }
+    
+    // limit by available resources
+    newCapacity = Math.min(
+        type == AccessTypes.RANDOM ? freeResources.getRandomCapacity() : freeResources.getStreamingCapacity(), 
+            newCapacity);      
+    newThroughput = Math.min(
+        type == AccessTypes.RANDOM ? freeResources.getRandomThroughput() : freeResources.getStreamingThroughput(), 
+            newThroughput);
         
-    Resource firstResource = resources.getResources().iterator().next();
     return new Resource(
         firstResource.getID(),
         firstResource.getIP(),
@@ -302,21 +318,33 @@ public class LibJSON {
         new Attributes(
             newCapacity, 
             newThroughput, 
-            firstResource.getAttributes().getAccessType()
+            type
         ),
         firstResource.getCost()
     );
   }
   
   
-  public static Resource calculateResourceCapacity(ResourceCapacity resourceCapacity) {
+  public static ResourceMapper calculateResourceCapacity(
+      ResourceCapacity resourceCapacity,
+      String schedulerAddress,
+      UserCredentials uc, 
+      Auth auth,
+      Client client) throws IOException {
+    
+    freeResourcesResponse freeResources
+    = client.getFreeResources(
+        schedulerAddress, 
+        auth, 
+        uc);   
     
     ReserveResource reserve = resourceCapacity.getReserve();
     ReleaseResource release = resourceCapacity.getRelease();
     
-    
+    AccessTypes type = resourceCapacity.getResource().getAttributes().getAccessType();
     double remainingCapacity = resourceCapacity.getResource().getAttributes().getCapacity();
     double remainingThrough = resourceCapacity.getResource().getAttributes().getThroughput();
+    
     if (reserve != null && reserve.getAttributes() != null) {
       for (Attributes attr : reserve.getAttributes()) {
         try {
@@ -347,16 +375,25 @@ public class LibJSON {
       }
     }
     
-    return new Resource(
-        resourceCapacity.getResource().getID(),
-        resourceCapacity.getResource().getIP(),
-        resourceCapacity.getResource().getType(),
-        new Attributes(
-            remainingCapacity, 
-            remainingThrough, 
-            resourceCapacity.getResource().getAttributes().getAccessType()
-        ),
-        resourceCapacity.getResource().getCost()
+    remainingCapacity = Math.min(
+        type == AccessTypes.RANDOM ? freeResources.getRandomCapacity() : freeResources.getStreamingCapacity(), 
+        remainingCapacity);      
+    remainingThrough = Math.min(
+        type == AccessTypes.RANDOM ? freeResources.getRandomThroughput() : freeResources.getStreamingThroughput(), 
+        remainingThrough);
+    
+    return new ResourceMapper(
+          new Resource(
+          resourceCapacity.getResource().getID(),
+          resourceCapacity.getResource().getIP(),
+          resourceCapacity.getResource().getType(),
+          new Attributes(
+              remainingCapacity, 
+              remainingThrough, 
+              type
+          ),
+          resourceCapacity.getResource().getCost()
+          )
         );
   }
   
@@ -844,6 +881,27 @@ public class LibJSON {
     public void setResources(List<Resource> resources) {
       this.Resources = resources;
     }
+  }
+  
+
+  @XmlRootElement(name="ResourceMapper")
+  @JsonAutoDetect(fieldVisibility = Visibility.ANY, isGetterVisibility = Visibility.NONE, getterVisibility = Visibility.NONE, setterVisibility = Visibility.NONE)
+  public static class ResourceMapper implements Serializable {
+    private static final long serialVersionUID = 3787591243319192070L;
+    public Resource Resource;
+    public ResourceMapper() {
+      // no-args constructor
+    }
+    public ResourceMapper(
+        Resource resource) {
+      this.Resource = resource;
+    }
+    public Resource getResource() {
+      return Resource;
+    }
+    public void setResource(Resource resource) {
+      Resource = resource;
+    }    
   }
   
   @XmlRootElement(name="Resource")
