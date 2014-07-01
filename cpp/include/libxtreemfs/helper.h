@@ -138,6 +138,11 @@ boost::unordered_set<std::string> GetNetworks();
 std::string GetNetworkStringUnix(const struct ifaddrs* ifaddr);
 #endif  // __linux__
 
+/**
+ *  Parses human-readable byte numbers to byte counts
+ */
+long parseByteNumber(const char *byte_number);
+
 }  // namespace xtreemfs
 
 #endif  // CPP_INCLUDE_LIBXTREEMFS_HELPER_H_

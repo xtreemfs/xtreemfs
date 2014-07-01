@@ -128,8 +128,14 @@ int main(int argc, char* argv[]) {
       return 1;
     }
 
-    if (options.volume_quota < 0) {
+    if (options.volume_quota[0] == '-') {
     	cout << "Error: Quota has to be greater or equal zero \n";
+        return 1;
+    }
+
+    long volume_quota = parseByteNumber(options.volume_quota.c_str());
+    if (volume_quota == -1) {
+    	cout << "Error: " << options.volume_quota << " is not a valid Quota \n";
         return 1;
     }
 
@@ -206,7 +212,7 @@ int main(int argc, char* argv[]) {
                          options.owner_username,
                          options.owner_groupname,
                          options.access_policy_type,
-                         options.volume_quota,
+                         volume_quota,
                          options.default_striping_policy_type,
                          options.default_stripe_size,
                          options.default_stripe_width,

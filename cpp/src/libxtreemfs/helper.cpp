@@ -539,5 +539,29 @@ boost::unordered_set<std::string> GetNetworks() {
 
   return result;
 }
+/**
+ *  Parses human-readable byte numbers to byte counts
+ */
+long parseByteNumber(const char *byte_number) {
+	    char *expptr;
+	    double coeff = strtod(byte_number, &expptr);
+
+	    int exp  = 0;
+	        int unit = 1024;
+	        switch (toupper(*expptr)) {
+	            case 'B':  exp =  0; break;
+	            case 'K':  exp =  3; break;
+	            case 'M':  exp =  6; break;
+	            case 'G':  exp =  9; break;
+	            case 'T':  exp =  12; break;
+
+	            case '\0': exp =  0; goto done;
+
+	            default:   return -1;
+	        }
+
+	    done:
+	    	return exp ? coeff * pow(unit, exp / 3) : coeff;
+}
 
 }  // namespace xtreemfs
