@@ -856,20 +856,30 @@ class XLocSetVersionState : public ::google::protobuf::Message {
   inline bool invalidated() const;
   inline void set_invalidated(bool value);
 
+  // optional fixed64 modified_time = 3;
+  inline bool has_modified_time() const;
+  inline void clear_modified_time();
+  static const int kModifiedTimeFieldNumber = 3;
+  inline ::google::protobuf::uint64 modified_time() const;
+  inline void set_modified_time(::google::protobuf::uint64 value);
+
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.XLocSetVersionState)
  private:
   inline void set_has_version();
   inline void clear_has_version();
   inline void set_has_invalidated();
   inline void clear_has_invalidated();
+  inline void set_has_modified_time();
+  inline void clear_has_modified_time();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
   ::google::protobuf::uint32 version_;
   bool invalidated_;
+  ::google::protobuf::uint64 modified_time_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
 
   friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
@@ -5082,6 +5092,28 @@ inline bool XLocSetVersionState::invalidated() const {
 inline void XLocSetVersionState::set_invalidated(bool value) {
   set_has_invalidated();
   invalidated_ = value;
+}
+
+// optional fixed64 modified_time = 3;
+inline bool XLocSetVersionState::has_modified_time() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void XLocSetVersionState::set_has_modified_time() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void XLocSetVersionState::clear_has_modified_time() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void XLocSetVersionState::clear_modified_time() {
+  modified_time_ = GOOGLE_ULONGLONG(0);
+  clear_has_modified_time();
+}
+inline ::google::protobuf::uint64 XLocSetVersionState::modified_time() const {
+  return modified_time_;
+}
+inline void XLocSetVersionState::set_modified_time(::google::protobuf::uint64 value) {
+  set_has_modified_time();
+  modified_time_ = value;
 }
 
 // -------------------------------------------------------------------

@@ -110,6 +110,7 @@ message TruncateLog {
 message XLocSetVersionState {
   required fixed32 version = 1;
   required bool invalidated = 2;
+  optional fixed64 modified_time = 3;
 }
 
 // Full status of a replica. Used by the read-write
