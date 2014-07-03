@@ -135,7 +135,7 @@ int main(int argc, char* argv[]) {
 
     long volume_quota = parseByteNumber(options.volume_quota.c_str());
     if (volume_quota == -1) {
-    	cout << "Error: " << options.volume_quota << " is not a valid Quota \n";
+    	cout << "Error: " << options.volume_quota << " is not a valid quota.\n";
         return 1;
     }
 
