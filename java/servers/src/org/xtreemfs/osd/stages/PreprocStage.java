@@ -666,6 +666,7 @@ public class PreprocStage extends Stage {
             XLocSetVersionState newstate = state.toBuilder()
                     .setInvalidated(false)
                     .setVersion(locset.getVersion())
+                    .setModifiedTime(TimeSync.getGlobalTime())
                     .build();
             
             try {
@@ -716,7 +717,11 @@ public class PreprocStage extends Stage {
 
         // If a response from a newer View is encountered, we have to install it and leave the invalidated state.
         if (state.getVersion() < version) {
-            state = state.toBuilder().setInvalidated(false).setVersion(version).build();
+            state = state.toBuilder()
+                        .setInvalidated(false)
+                        .setVersion(version)
+                        .setModifiedTime(TimeSync.getGlobalTime())
+                        .build();
             try {
                 // persist the version
                 layout.setXLocSetVersionState(fileId, state);
@@ -770,7 +775,8 @@ public class PreprocStage extends Stage {
             }
             
             // Invalidate the replica.
-            stateBuilder.setInvalidated(true);
+            stateBuilder.setInvalidated(true)
+                        .setModifiedTime(TimeSync.getGlobalTime());
 
             state = stateBuilder.build();
             layout.setXLocSetVersionState(fileId, state);
