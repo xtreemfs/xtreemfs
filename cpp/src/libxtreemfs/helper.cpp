@@ -542,9 +542,9 @@ boost::unordered_set<std::string> GetNetworks() {
 /**
  *  Parses human-readable byte numbers to byte counts
  */
-long parseByteNumber(const char *byte_number) {
+long parseByteNumber(string byte_number) {
 	char *expptr;
-	double coeff = strtod(byte_number, &expptr);
+	double coeff = strtod(byte_number.c_str(), &expptr);
 
 	int exp  = 0;
 	int unit = 1024;

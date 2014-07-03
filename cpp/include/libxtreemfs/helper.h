@@ -141,7 +141,7 @@ std::string GetNetworkStringUnix(const struct ifaddrs* ifaddr);
 /**
  *  Parses human-readable byte numbers to byte counts
  */
-long parseByteNumber(const char *byte_number);
+long parseByteNumber(std::string byte_number);
 
 }  // namespace xtreemfs
 

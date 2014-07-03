@@ -405,12 +405,6 @@ bool SetVolumeQuota(const string& xctl_file,
     return false;
   }
 
-  if (quota[0] == '-') {
-    cerr << "The minimal quota must be 0 (was set to: " << quota << ")."
-        << endl;
-    return false;
-  }
-
   Json::Value request(Json::objectValue);
   request["operation"] = "setVolumeQuota";
   request["path"] = path;

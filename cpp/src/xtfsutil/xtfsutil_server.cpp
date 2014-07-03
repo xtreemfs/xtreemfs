@@ -645,17 +645,22 @@ void XtfsUtilServer::OpSetVolumeQuota(
   }
 
   const string path = input["path"].asString();
-  const string quota = boost::lexical_cast<std::string>(
-      parseByteNumber(input["quota"].asCString()));
+  const long quota = parseByteNumber(input["quota"].asString());
 
-  if (quota == "-1") {
+  if (quota == -1) {
     (*output)["error"] = Json::Value(
         input["quota"].asString() + " is not a valid quota.");
     return;
   }
 
-  volume_->SetXAttr(uc, path, "xtreemfs.quota", quota,
-      xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
+  if (quota < 0) {
+    (*output)["error"] = "Quota has to be greater or equal zero (was set to: "
+        + boost::lexical_cast<std::string>(quota) + ")";
+    return;
+  }
+
+  volume_->SetXAttr(uc, path, "xtreemfs.quota",
+      boost::lexical_cast<std::string>(quota), xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
   (*output)["result"] = Json::Value(Json::objectValue);
 }
 
