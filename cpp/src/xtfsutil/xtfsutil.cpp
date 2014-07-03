@@ -398,30 +398,31 @@ bool SetVolumeQuota(const string& xctl_file,
                   const string& path,
                   const variables_map& vm) {
 
-	const long quota = vm["set-quota"].as<long>();
+  const string quota = vm["set-quota"].as<string>();
 
-	if (path != "/") {
-		cerr << "Quota must be set on volume." << endl;
-		return false;
-	}
+  if (path != "/") {
+    cerr << "Quota must be set on volume root." << endl;
+    return false;
+  }
 
-	if (quota < 0) {
-		cerr << "The minimal quota must be 0 (was set to: " << quota << ")." << endl;
-		return false;
-	}
+  if (quota[0] == '-') {
+    cerr << "The minimal quota must be 0 (was set to: " << quota << ")."
+        << endl;
+    return false;
+  }
 
-	Json::Value request(Json::objectValue);
-	request["operation"] = "setVolumeQuota";
-	request["path"] = path;
-	request["quota"] = boost::lexical_cast<string>(quota);
-	Json::Value response;
-	if (executeOperation(xctl_file, request, &response)) {
-	    cout << "Set volume quota to " << quota << "." << endl;
-	    return true;
-	} else {
-	    cerr << "FAILED" << endl;
-	    return false;
-	}
+  Json::Value request(Json::objectValue);
+  request["operation"] = "setVolumeQuota";
+  request["path"] = path;
+  request["quota"] = quota;
+  Json::Value response;
+  if (executeOperation(xctl_file, request, &response)) {
+    cout << "Set volume quota to " << quota << "." << endl;
+    return true;
+  } else {
+    cerr << "FAILED" << endl;
+    return false;
+  }
 }
 
 // Sets the default replication policy.
@@ -1072,8 +1073,8 @@ int main(int argc, char **argv) {
        "adds/modifies an ACL entry, format: u|g|m|o:[<name>]:[<rwx>|<octal>]")
       ("del-acl", value<string>(),
        "removes an ACL entry, format: u|g|m|o:<name>")
-      ("set-quota", value<long>(),
-       "sets the volume quota in bytes (set quota to 0 to disable the quota)");
+      ("set-quota", value<string>(),
+       "sets the volume quota in bytes (set quota to 0 to disable the quota), format: <value>B|KB|MB|GB|TB");
 
   options_description snapshot_desc("Snapshot Options");
   snapshot_desc.add_options()

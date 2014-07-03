@@ -22,6 +22,7 @@
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/volume.h"
 #include "libxtreemfs/xtreemfs_exception.h"
+#include "libxtreemfs/helper.h"
 #include "util/error_log.h"
 #include "util/logging.h"
 
@@ -636,21 +637,26 @@ void XtfsUtilServer::OpSetVolumeQuota(
 	    const Json::Value& input,
 	    Json::Value* output) {
 
-	  if (!input.isMember("path") || !input["path"].isString() ||
-	      !input.isMember("quota") || !input["quota"].isString()) {
-	    (*output)["error"] = Json::Value("One of the following fields is missing or"
-	                                     " has an invalid value: path, quota.");
-	    return;
-	  }
-	  const string path = input["path"].asString();
-	  const string quota = input["quota"].asString();
+  if (!input.isMember("path") || !input["path"].isString()
+      || !input.isMember("quota") || !input["quota"].isString()) {
+    (*output)["error"] = Json::Value("One of the following fields is missing or"
+        " has an invalid value: path, quota.");
+    return;
+  }
 
-	  volume_->SetXAttr(uc,
-			  	  	  	path,
-			            "xtreemfs.quota",
-			            quota,
-			            xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
-	  (*output)["result"] = Json::Value(Json::objectValue);
+  const string path = input["path"].asString();
+  const string quota = boost::lexical_cast<std::string>(
+      parseByteNumber(input["quota"].asCString()));
+
+  if (quota == "-1") {
+    (*output)["error"] = Json::Value(
+        input["quota"].asString() + " is not a valid quota.");
+    return;
+  }
+
+  volume_->SetXAttr(uc, path, "xtreemfs.quota", quota,
+      xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
+  (*output)["result"] = Json::Value(Json::objectValue);
 }
 
 bool XtfsUtilServer::checkXctlFile(const std::string& path) {
