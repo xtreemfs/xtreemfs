@@ -128,6 +128,19 @@ public class MRCHelper {
         String volSize = null;
         try {
             volSize = String.valueOf(sMan.getVolumeInfo().getVolumeSize());
+            try {
+                // Use minimum of free space relative to the quota and free space on osds as free disk space.
+                long quota = vol.getVolumeQuota();
+                long quotaFreeSpace = quota - vol.getVolumeSize();
+                if (quota != 0 && quotaFreeSpace < Long.valueOf(free)) {
+                    quotaFreeSpace = quotaFreeSpace < 0 ? 0 : quotaFreeSpace;
+                    free = String.valueOf(quotaFreeSpace);
+                }
+            } catch (DatabaseException e) {
+                Logging.logMessage(Logging.LEVEL_WARN, Category.storage, null,
+                        "could not retrieve volume quota from database for volume '%s': %s",
+                        new Object[] { vol.getName(), e.toString() });
+            }
         } catch (DatabaseException e) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.storage, null,
                     "could not retrieve volume size from database for volume '%s': %s",
