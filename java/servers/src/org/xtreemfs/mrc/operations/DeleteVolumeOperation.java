@@ -9,8 +9,6 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
-import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
@@ -68,53 +66,40 @@ public class DeleteVolumeOperation extends MRCOperation {
         
         // Pause the HeartbeatThread while we are deleting the volume. Otherwise, the thread may re-register a
         // volume at the DIR which was already deregistered.
-        try {
-            master.pauseHeartbeatThread();
-        } catch (InterruptedException ex) {
-            finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
-                    "An error has occurred. The server is probably shutting down.", ex));
-        }
+        master.pauseHeartbeatThread();
 
-        // deregister the volume from the Directory Service
-        // Ugly workaround for async call.
-        Runnable rqThr = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    master.getDirClient().xtreemfs_service_deregister(null, rq.getDetails().auth,
-                            RPCAuthentication.userService, volume.getId());
-                    processStep2(rqArgs, volume.getId(), rq);
-                } catch (Exception ex) {
-                    master.resumeHeartbeatThread();
-
-                    finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
-                            "an error has occurred", ex));
-                }
-            }
-        };
-        Thread thr = new Thread(rqThr);
-        thr.start();
-    }
-    
-    private void processStep2(xtreemfs_rmvolRequest rqArgs, final String volumeId, final MRCRequest rq) {
+        // Selete the volume from the local database.
         try {
-            // delete the volume from the local database
-            master.getVolumeManager().deleteVolume(volumeId, master, rq);
-            master.notifyVolumeDeleted();
-            
-            // set the response
-            rq.setResponse(emptyResponse.getDefaultInstance());
-            finishRequest(rq);
-            
-        } catch (UserException exc) {
-            if (Logging.isDebug())
-                Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorType.ERRNO, exc.getErrno(), exc.getMessage(), exc));
-        } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
-                    "an error has occurred", exc));
+            master.getVolumeManager().deleteVolume(volume.getId(), master, rq);
+            master.notifyVolumeDeleted();   
         } finally {
             master.resumeHeartbeatThread();
         }
+        
+        master.getDirClient().xtreemfs_service_deregister(null, rq.getDetails().auth, RPCAuthentication.userService,
+                volume.getId());
+        
+
+        // Deregister the volume from the Directory Service asynchronously.
+        // Ugly workaround for async call.
+        Runnable asyncDeregisterRunner = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    // Deregister from the DIR.
+                    master.getDirClient().xtreemfs_service_deregister(null, rq.getDetails().auth,
+                            RPCAuthentication.userService, volume.getId());
+                    
+                    // Set the response.
+                    rq.setResponse(emptyResponse.getDefaultInstance());
+                    finishRequest(rq);
+                    
+                } catch (Exception exc) {
+                    finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
+                            "An error has occurred at the MRC. Details: " + exc.getMessage(), exc));
+                }
+            }
+        };
+        (new Thread(asyncDeregisterRunner)).start();
     }
 }
