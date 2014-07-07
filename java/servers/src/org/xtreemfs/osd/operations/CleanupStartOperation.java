@@ -41,7 +41,7 @@ public final class CleanupStartOperation extends OSDOperation {
         }
         xtreemfs_cleanup_startRequest args = (xtreemfs_cleanup_startRequest) rq.getRequestArgs();
         master.getCleanupThread().cleanupStart(args.getRemoveZombies(), args.getRemoveUnavailVolume(),
-                args.getLostAndFound(), rq.getRPCRequest().getHeader().getRequestHeader().getUserCreds());
+                args.getLostAndFound(), -1, rq.getRPCRequest().getHeader().getRequestHeader().getUserCreds());
         rq.sendSuccess(null, null);
     }
 

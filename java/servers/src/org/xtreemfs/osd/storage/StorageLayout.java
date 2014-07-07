@@ -483,12 +483,19 @@ public abstract class StorageLayout {
     
     public static final class FileData {
         final long size;
-        
         final int  objectSize;
-        
+        final boolean metaDataOnly;
+
         FileData(long size, int objectSize) {
             this.size = size;
             this.objectSize = objectSize;
+            this.metaDataOnly = false;
+        }
+
+        FileData(boolean metaDataOnly) {
+            this.size = 0;
+            this.objectSize = 0;
+            this.metaDataOnly = metaDataOnly;
         }
     }
 }
