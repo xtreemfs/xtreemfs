@@ -139,7 +139,7 @@ class Client {
       const std::string& owner_username,
       const std::string& owner_groupname,
       const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
-      long volume_quota,
+      long quota,
       const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
       int default_stripe_size,
       int default_stripe_width,
