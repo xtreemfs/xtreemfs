@@ -832,7 +832,7 @@ public class MRCHelper {
         
         case quota:
             if (file.getId() != 1)
-                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "quota can only be set on volumes");
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "quota must be set on volume root");
 
             sMan.getVolumeInfo().setVolumeQuota((long) Long.valueOf(value), update);
 
