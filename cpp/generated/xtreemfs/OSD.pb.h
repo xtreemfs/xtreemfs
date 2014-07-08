@@ -2330,6 +2330,20 @@ class xtreemfs_cleanup_startRequest : public ::google::protobuf::Message {
   inline bool lost_and_found() const;
   inline void set_lost_and_found(bool value);
 
+  // required bool delete_metadata = 4;
+  inline bool has_delete_metadata() const;
+  inline void clear_delete_metadata();
+  static const int kDeleteMetadataFieldNumber = 4;
+  inline bool delete_metadata() const;
+  inline void set_delete_metadata(bool value);
+
+  // required fixed32 metadata_timeout = 5;
+  inline bool has_metadata_timeout() const;
+  inline void clear_metadata_timeout();
+  static const int kMetadataTimeoutFieldNumber = 5;
+  inline ::google::protobuf::uint32 metadata_timeout() const;
+  inline void set_metadata_timeout(::google::protobuf::uint32 value);
+
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_cleanup_startRequest)
  private:
   inline void set_has_remove_zombies();
@@ -2338,15 +2352,21 @@ class xtreemfs_cleanup_startRequest : public ::google::protobuf::Message {
   inline void clear_has_remove_unavail_volume();
   inline void set_has_lost_and_found();
   inline void clear_has_lost_and_found();
+  inline void set_has_delete_metadata();
+  inline void clear_has_delete_metadata();
+  inline void set_has_metadata_timeout();
+  inline void clear_has_metadata_timeout();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
   bool remove_zombies_;
   bool remove_unavail_volume_;
   bool lost_and_found_;
+  bool delete_metadata_;
+  ::google::protobuf::uint32 metadata_timeout_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(5 + 31) / 32];
 
   friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
@@ -6663,6 +6683,50 @@ inline bool xtreemfs_cleanup_startRequest::lost_and_found() const {
 inline void xtreemfs_cleanup_startRequest::set_lost_and_found(bool value) {
   set_has_lost_and_found();
   lost_and_found_ = value;
+}
+
+// required bool delete_metadata = 4;
+inline bool xtreemfs_cleanup_startRequest::has_delete_metadata() const {
+  return (_has_bits_[0] & 0x00000008u) != 0;
+}
+inline void xtreemfs_cleanup_startRequest::set_has_delete_metadata() {
+  _has_bits_[0] |= 0x00000008u;
+}
+inline void xtreemfs_cleanup_startRequest::clear_has_delete_metadata() {
+  _has_bits_[0] &= ~0x00000008u;
+}
+inline void xtreemfs_cleanup_startRequest::clear_delete_metadata() {
+  delete_metadata_ = false;
+  clear_has_delete_metadata();
+}
+inline bool xtreemfs_cleanup_startRequest::delete_metadata() const {
+  return delete_metadata_;
+}
+inline void xtreemfs_cleanup_startRequest::set_delete_metadata(bool value) {
+  set_has_delete_metadata();
+  delete_metadata_ = value;
+}
+
+// required fixed32 metadata_timeout = 5;
+inline bool xtreemfs_cleanup_startRequest::has_metadata_timeout() const {
+  return (_has_bits_[0] & 0x00000010u) != 0;
+}
+inline void xtreemfs_cleanup_startRequest::set_has_metadata_timeout() {
+  _has_bits_[0] |= 0x00000010u;
+}
+inline void xtreemfs_cleanup_startRequest::clear_has_metadata_timeout() {
+  _has_bits_[0] &= ~0x00000010u;
+}
+inline void xtreemfs_cleanup_startRequest::clear_metadata_timeout() {
+  metadata_timeout_ = 0u;
+  clear_has_metadata_timeout();
+}
+inline ::google::protobuf::uint32 xtreemfs_cleanup_startRequest::metadata_timeout() const {
+  return metadata_timeout_;
+}
+inline void xtreemfs_cleanup_startRequest::set_metadata_timeout(::google::protobuf::uint32 value) {
+  set_has_metadata_timeout();
+  metadata_timeout_ = value;
 }
 
 // -------------------------------------------------------------------
