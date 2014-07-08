@@ -461,10 +461,10 @@ public class CleanupThread extends LifeCycleThread {
      * @param fileName
      * @param cowEnabled
      */
-    private void deleteFile(final String fileName, final boolean cowEnabled, final boolean deleteMetaDirs) {
+    private void deleteFile(final String fileName, final boolean cowEnabled, final boolean deleteMetadata) {
         openDeletes.incrementAndGet();
 
-        master.getDeletionStage().deleteObjects(fileName, null, cowEnabled, null,
+        master.getDeletionStage().deleteObjects(fileName, null, cowEnabled, null, deleteMetadata,
                 new DeletionStage.DeleteObjectsCallback() {
 
                     @Override

@@ -702,19 +702,15 @@ public class HashStorageLayout extends StorageLayout {
     }
 
     @Override
-    public void deleteFile(String fileId, boolean deleteMetadata) throws IOException {
-        deleteFile(fileId, deleteMetadata, false);
-    }
-
-    public void deleteFile(String fileId, boolean deleteMetadata, final boolean deleteXLocVersionState)
-            throws IOException {
-
+    public void deleteFile(String fileId, final boolean deleteMetadata) throws IOException {
         File fileDir = new File(generateAbsoluteFilePath(fileId));
-        File[] objs = fileDir.listFiles(new FileFilter() {
+
+        // Filter metadata from the fileList, if deleteMetadata is not set.
+        File[] fileList = fileDir.listFiles(new FileFilter() {
 
             @Override
             public boolean accept(File pathname) {
-                if (!deleteXLocVersionState && pathname.getPath().endsWith(XLOC_VERSION_STATE_FILENAME)) {
+                if (!deleteMetadata && pathname.getName().startsWith(".")) {
                     return false;
                 }
 
@@ -722,22 +718,19 @@ public class HashStorageLayout extends StorageLayout {
             }
         });
 
-        if (objs == null) {
+        // Stop the execution if the directory does not exist.
+        if (fileList == null) {
             return;
         }
 
-        // otherwise, delete the file including its metadata
-        else {
+        // Delete the filtered files.
+        for (File file : fileList) {
+            file.delete();
+        }
 
-            for (File obj : objs) {
-                obj.delete();
-            }
-
-            // delete all empty dirs along the path
-            if (deleteMetadata) {
-                del(fileDir);
-            }
-
+        // Try to delete the data directory if it is empty.
+        if (deleteMetadata) {
+            del(fileDir);
         }
     }
 

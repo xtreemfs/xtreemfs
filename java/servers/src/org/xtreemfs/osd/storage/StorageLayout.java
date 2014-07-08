@@ -235,10 +235,13 @@ public abstract class StorageLayout {
         long newVersion, boolean cow) throws IOException;
     
     /**
-     * Deletes all versions of all objects of a file.
+     * Deletes all versions of all objects of a file. <br>
+     * Metadata (like the MasterEpoch, XLocSetVersionState, TruncateLog, ...) are kept unless deleteMetadata is set.
      * 
      * @param fileId
-     *            the ID of the file
+     *            the ID of the file.
+     * @param deleteMetadata
+     *            delete metadata and empty directories.
      * @throws IOException
      *             if an error occurred while deleting the objects
      */
