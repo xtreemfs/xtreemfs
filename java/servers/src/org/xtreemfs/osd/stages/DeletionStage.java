@@ -189,7 +189,7 @@ public class DeletionStage extends Stage {
 
                         // otherwise ...
                         else
-                            layout.deleteFile(fileId, true);
+                            layout.deleteFile(fileId, deleteMetadata);
                         
                         yield();
                         

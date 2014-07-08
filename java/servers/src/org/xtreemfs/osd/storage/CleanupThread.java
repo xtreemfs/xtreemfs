@@ -7,6 +7,7 @@
 
 package org.xtreemfs.osd.storage;
 
+import java.io.IOException;
 import java.text.DateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -78,6 +79,8 @@ public class CleanupThread extends LifeCycleThread {
      */
     private volatile boolean           lostAndFound;
 
+    private volatile boolean           removeMetadata;
+
     private volatile int               metaDataTimeoutS;
 
     private final List<String>         results;
@@ -111,10 +114,12 @@ public class CleanupThread extends LifeCycleThread {
         this.filesChecked = 0L;
         this.mrcClient = new MRCServiceClient(master.getRPCClient(), null);
         this.openDeletes = new AtomicLong(0L);
+        this.removeMetadata = false;
+        this.metaDataTimeoutS = 0;
     }
 
     public boolean cleanupStart(boolean removeZombies, boolean removeDeadVolumes, boolean lostAndFound,
-            int metaDataTimeoutS, UserCredentials uc) {
+            boolean removeMetaData, int metaDataTimeoutS, UserCredentials uc) {
 
         synchronized (this) {
             if (isRunning) {
@@ -123,6 +128,7 @@ public class CleanupThread extends LifeCycleThread {
                 this.removeZombies = removeZombies;
                 this.removeDeadVolumes = removeDeadVolumes;
                 this.lostAndFound = lostAndFound;
+                this.removeMetadata = removeMetaData;
                 this.metaDataTimeoutS = metaDataTimeoutS;
                 this.uc = uc;
                 isRunning = true;
@@ -290,7 +296,7 @@ public class CleanupThread extends LifeCycleThread {
                             for (int i = 0; i < files.size(); i++) {
                                 final FILE_STATE fileState = response.getFileStates(i);
                                 if (fileState == FILE_STATE.ABANDONED || fileState == FILE_STATE.DELETED) {
-                                    // remove abandoned replicas immediately TODO(jdillmann)
+                                    // remove abandoned replicas immediately
                                     final boolean abandoned = (fileState == FILE_STATE.ABANDONED);
 
                                     // retrieve the fileName
@@ -316,7 +322,7 @@ public class CleanupThread extends LifeCycleThread {
 
                                                     // deal with the unrestoreable replica
                                                     if (!isDeleteOnClose && abandoned) {
-                                                        deleteFile(fName, cowEnabled, false);
+                                                        deleteFile(fName, cowEnabled);
                                                     }
                                                     
                                                     if (openOFTChecks.decrementAndGet() <= 0) {
@@ -396,43 +402,34 @@ public class CleanupThread extends LifeCycleThread {
                     final boolean cowEnabled = false; // FIXME: fetch COW policy for current volume
                     
                     for (final String fileName : zombieFiles.keySet()) {
-                        deleteFile(fileName, cowEnabled, false);
+                        deleteFile(fileName, cowEnabled);
                     }
 
-                    synchronized (openDeletes) {
-                        while (openDeletes.get() > 0)
-                            openDeletes.wait();
-                    }
                     results.add(String.format(ZOMBIES_DELETED_FORMAT, zombieFiles.keySet().size(),
                             (volume.isDead() ? "dead" : "existing"), volume.id));
                 }
             }
 
             // Deal with metaData only directories.
-            for (Volume volume : zombieFilesPerVolume.keySet()) {
-                final boolean cowEnabled = false; // FIXME: fetch COW policy for current volume
-                
-                if (metaDataTimeoutS >= 0) {
-                    long toTimeMs = TimeSync.getGlobalTime() - (metaDataTimeoutS * 1000);
+            if (removeMetadata) {
+                for (Volume volume : metaOnlyPerVolume.keySet()) {
+                    final boolean cowEnabled = false; // FIXME: fetch COW policy for current volume
+
                     List<String> metaDataDirs = metaOnlyPerVolume.get(volume);
-
-                    for (String fName : metaDataDirs) {
-                        XLocSetVersionState vs = layout.getXLocSetVersionState(fName);
-
-                        // Delete the directory if the version is too old.
-                        if (!vs.hasModifiedTime() || vs.getModifiedTime() < toTimeMs) {
-                            deleteFile(fName, cowEnabled, true);
-                        }
+                    for (String fileId : metaDataDirs) {
+                        // retrieve the fileName
+                        final String fName = volume.id + ":" + fileId;
+                        deleteFile(fName, cowEnabled);
                     }
+                    // TODO(jdillmann): results.add(...)
+                    // results.add(String.format(ZOMBIES_DELETED_FORMAT, zombieFiles.keySet().size(),
+                    // (volume.isDead() ? "dead" : "existing"), volume.id));
                 }
+            }
 
-                synchronized (openDeletes) {
-                    while (openDeletes.get() > 0)
-                        openDeletes.wait();
-                }
-                // TODO(jdillmann): results.add(...)
-                // results.add(String.format(ZOMBIES_DELETED_FORMAT, zombieFiles.keySet().size(),
-                // (volume.isDead() ? "dead" : "existing"), volume.id));
+            synchronized (openDeletes) {
+                while (openDeletes.get() > 0)
+                    openDeletes.wait();
             }
 
             synchronized (this) {
@@ -456,14 +453,22 @@ public class CleanupThread extends LifeCycleThread {
     /**
      * Pass the fileName to the deletion stage, which will eventually delete the file. <br>
      * The openDeletes variable will be updated on progress and notified if no more deletes are open. <br>
-     * Errors will be stored in the results.
+     * Errors will be stored in the results. <br>
+     * Metadata will be deleted if the XLocVersionState happened longer then metaDataTimeoutS seconds before.
      * 
      * @param fileName
      * @param cowEnabled
      */
-    private void deleteFile(final String fileName, final boolean cowEnabled, final boolean deleteMetadata) {
+    private void deleteFile(final String fileName, final boolean cowEnabled) {
+        boolean deleteMetadata;
+        try {
+            deleteMetadata = checkXLocVersionStateTimeout(fileName);
+        } catch (IOException e) {
+            deleteMetadata = false;
+        }
+        
         openDeletes.incrementAndGet();
-
+        
         master.getDeletionStage().deleteObjects(fileName, null, cowEnabled, null, deleteMetadata,
                 new DeletionStage.DeleteObjectsCallback() {
 
@@ -480,6 +485,37 @@ public class CleanupThread extends LifeCycleThread {
                         }
                     }
                 });
+    }
+
+    /**
+     * Check if the XLocVersionState's last update happend more then metaDataTimeoutS seconds before.
+     * 
+     * @param fileName
+     * @return
+     * @throws IOException
+     */
+    private boolean checkXLocVersionStateTimeout(final String fileName) throws IOException {
+        if (!removeMetadata) {
+            return false;
+        }
+
+        if (metaDataTimeoutS == 0) {
+            return true;
+        }
+
+        if (metaDataTimeoutS > 0) {
+            long toTimeMs = TimeSync.getGlobalTime() - (metaDataTimeoutS * 1000);
+            XLocSetVersionState vs = layout.getXLocSetVersionState(fileName);
+
+            // Delete the metaData if the version is too old.
+            if (!vs.hasModifiedTime() || vs.getModifiedTime() < toTimeMs) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        return false;
     }
 
     /**

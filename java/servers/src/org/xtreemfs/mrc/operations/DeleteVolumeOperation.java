@@ -68,16 +68,13 @@ public class DeleteVolumeOperation extends MRCOperation {
         // volume at the DIR which was already deregistered.
         master.pauseHeartbeatThread();
 
-        // Selete the volume from the local database.
+        // Delete the volume from the local database.
         try {
             master.getVolumeManager().deleteVolume(volume.getId(), master, rq);
             master.notifyVolumeDeleted();   
         } finally {
             master.resumeHeartbeatThread();
         }
-        
-        master.getDirClient().xtreemfs_service_deregister(null, rq.getDetails().auth, RPCAuthentication.userService,
-                volume.getId());
         
 
         // Deregister the volume from the Directory Service asynchronously.

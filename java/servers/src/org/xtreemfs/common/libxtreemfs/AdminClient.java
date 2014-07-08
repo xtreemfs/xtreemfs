@@ -45,10 +45,14 @@ public interface AdminClient extends Client {
      *            deletes volumes that might be dead
      * @param restore
      *            restore zombies found on the OSD
+     * @param removeMetadata
+     *            remove metadata from deleted or abandoned files
+     * @param metaDataTimeoutS
+     *            time in seconds to wait after the last view update before deleting metadata
      * @throws IOException
      */
-    public void startCleanUp(String osdUUID, String password, boolean remove, boolean deleteVolumes,
-            boolean restore) throws IOException;
+    public void startCleanUp(String osdUUID, String password, boolean remove, boolean deleteVolumes, boolean restore,
+            boolean removeMetadata, int metaDataTimeoutS) throws IOException;
 
     /**
      * Run a version cleanup (only if file content versioning is enabled).

@@ -52,6 +52,10 @@ public class xtfs_cleanup_osd {
         options.put("e", new CliOption(CliOption.OPTIONTYPE.SWITCH, "erase potential zombies", ""));
         options.put("delete_volumes", new CliOption(CliOption.OPTIONTYPE.SWITCH,
                 "!dangerous! deletes volumes that might be dead", ""));
+        CliOption oDelMeta = new CliOption(CliOption.OPTIONTYPE.NUMBER,
+                "delete metadata of zombie files, if the view has not been updated during the last <timeout> seconds",
+                "<timeout>");
+        options.put("delete_metadata", oDelMeta);
         options.put("i", new CliOption(CliOption.OPTIONTYPE.SWITCH, "interactive mode", ""));
         options.put("stop", new CliOption(CliOption.OPTIONTYPE.SWITCH,
                 "suspends the currently running cleanup process", ""));
@@ -82,6 +86,13 @@ public class xtfs_cleanup_osd {
         boolean stop = options.get("stop").switchValue;
         boolean waitForFinish = options.get("wait").switchValue;
         boolean versionCleanup = options.get("v").switchValue;
+
+        int metaDataTimeoutS = 0;
+        boolean removeMetadata = false;
+        if (options.get("delete_metadata").numValue != null) {
+            removeMetadata = true;
+            metaDataTimeoutS = options.get("delete_metadata").numValue.intValue();
+        }
 
         String[] dirURLs = (options.get("dir").stringValue != null) ? options.get("dir").stringValue
                 .split(",") : null;
@@ -195,7 +206,7 @@ public class xtfs_cleanup_osd {
             } else if (interactive) {
                 if (client.isRunningCleanUp(osdUUID, password))
                     client.stopCleanUp(osdUUID, password);
-                client.startCleanUp(osdUUID, password, remove, deleteVolumes, restore);
+                client.startCleanUp(osdUUID, password, remove, deleteVolumes, restore, removeMetadata, metaDataTimeoutS);
 
                 while (client.isRunningCleanUp(osdUUID, password)) {
                     System.out.print(client.getCleanUpState(osdUUID, password) + "\r");
@@ -210,7 +221,7 @@ public class xtfs_cleanup_osd {
                 if (client.isRunningCleanUp(osdUUID, password)) {
                     client.stopCleanUp(osdUUID, password);
                 }
-                client.startCleanUp(osdUUID, password, remove, deleteVolumes, restore);
+                client.startCleanUp(osdUUID, password, remove, deleteVolumes, restore, removeMetadata, metaDataTimeoutS);
                 System.out.println("Cleanup is running.");
             }
 
