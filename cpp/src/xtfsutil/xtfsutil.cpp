@@ -1068,7 +1068,7 @@ int main(int argc, char **argv) {
       ("del-acl", value<string>(),
        "removes an ACL entry, format: u|g|m|o:<name>")
       ("set-quota", value<string>(),
-       "sets the volume quota in bytes (set quota to 0 to disable the quota), format: <value>B|KB|MB|GB|TB");
+       "sets the volume quota in bytes (set quota to 0 to disable the quota), format: <value>M|G|T");
 
   options_description snapshot_desc("Snapshot Options");
   snapshot_desc.add_options()

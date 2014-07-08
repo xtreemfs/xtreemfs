@@ -75,7 +75,7 @@ MkfsOptions::MkfsOptions() : Options() {
          ->default_value(access_policy_type_string),
      "Access-control-policy=NULL|POSIX|VOLUME")
      ("quota,q", po::value(&volume_quota)->default_value(volume_quota),
-       "Quota of the volume in bytes (default value 0, i.e. quota is disabled), format: <value>B|MB|GB|TB");
+       "Quota of the volume in bytes (default value 0, i.e. quota is disabled), format: <value>M|G|T");
 
   // Striping policy options.
   default_striping_policy_type = xtreemfs::pbrpc::STRIPING_POLICY_RAID0;
