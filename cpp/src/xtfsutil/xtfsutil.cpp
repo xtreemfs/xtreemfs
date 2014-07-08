@@ -400,11 +400,6 @@ bool SetVolumeQuota(const string& xctl_file,
 
   const string quota = vm["set-quota"].as<string>();
 
-  if (path != "/") {
-    cerr << "Quota must be set on volume root." << endl;
-    return false;
-  }
-
   Json::Value request(Json::objectValue);
   request["operation"] = "setVolumeQuota";
   request["path"] = path;
