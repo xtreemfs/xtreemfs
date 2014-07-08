@@ -198,7 +198,7 @@ void XtfsUtilServer::OpStat(const xtreemfs::pbrpc::UserCredentials& uc,
       // Get more volume details.
 
       uint64_t quota = boost::lexical_cast<uint64_t>(xtfs_attrs["xtreemfs.quota"]);
-	  uint64_t quota_free_space = quota - boost::lexical_cast<uint64_t>(xtfs_attrs["xtreemfs.used_space"]);
+	    uint64_t quota_free_space = quota - boost::lexical_cast<uint64_t>(xtfs_attrs["xtreemfs.used_space"]);
 
       // Use minimum of free space relative to the quota and free space on osds as free space.
       if (quota != 0 && quota_free_space < boost::lexical_cast<uint64_t>(xtfs_attrs["xtreemfs.free_space"])) {
