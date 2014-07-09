@@ -59,9 +59,23 @@ public class StatFSOperation extends MRCOperation {
         final FileMetadata volumeRoot = sMan.getMetadata(1);
         
         int blockSize = sMan.getDefaultStripingPolicy(1).getStripeSize() * 1024;
-        long bavail = master.getOSDStatusManager().getUsableSpace(volume.getId()) / blockSize;
-        long bfree = master.getOSDStatusManager().getFreeSpace(volume.getId()) / blockSize;
-        long blocks = master.getOSDStatusManager().getTotalSpace(volume.getId()) / blockSize;
+
+        long availSpace = master.getOSDStatusManager().getUsableSpace(volume.getId());
+        long freeSpace = master.getOSDStatusManager().getFreeSpace(volume.getId());
+        long totalSpace = master.getOSDStatusManager().getTotalSpace(volume.getId());
+        long quota = sMan.getVolumeQuota();
+
+        // Use minimum of free space relative to the quota and free space on OSDs as free/available space.
+        if (quota != 0) {
+            long quotaFreeSpace = quota - sMan.getVolumeInfo().getVolumeSize();
+            quotaFreeSpace = quotaFreeSpace < 0 ? 0 : quotaFreeSpace;
+            freeSpace = freeSpace < quotaFreeSpace ? freeSpace : quotaFreeSpace;
+            availSpace = availSpace < quotaFreeSpace ? availSpace : quotaFreeSpace;
+        }
+
+        long bavail = availSpace / blockSize;
+        long bfree = freeSpace / blockSize;
+        long blocks = totalSpace / blockSize;
         String volumeId = volume.getId();
         AccessControlPolicyType acPolId = AccessControlPolicyType.valueOf(volume.getAcPolicyId());
         StripingPolicy.Builder defaultStripingPolicy = Converter.stripingPolicyToStripingPolicy(sMan

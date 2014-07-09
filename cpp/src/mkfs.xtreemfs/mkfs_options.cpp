@@ -53,6 +53,7 @@ MkfsOptions::MkfsOptions() : Options() {
   // Volume options.
   volume_mode_decimal = 511;
   volume_mode_octal = 777;
+  volume_quota = "0";
   owner_username = "";
   owner_groupname = "";
   access_policy_type = xtreemfs::pbrpc::ACCESS_CONTROL_POLICY_POSIX;
@@ -72,7 +73,9 @@ MkfsOptions::MkfsOptions() : Options() {
     ("access-control-policy,a",
      po::value(&access_policy_type_string)
          ->default_value(access_policy_type_string),
-     "Access-control-policy=NULL|POSIX|VOLUME");
+     "Access-control-policy=NULL|POSIX|VOLUME")
+     ("quota,q", po::value(&volume_quota)->default_value(volume_quota),
+       "Quota of the volume in bytes (default value 0, i.e. quota is disabled), format: <value>M|G|T");
 
   // Striping policy options.
   default_striping_policy_type = xtreemfs::pbrpc::STRIPING_POLICY_RAID0;
