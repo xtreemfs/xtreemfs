@@ -18,6 +18,7 @@
 
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/xtreemfs_exception.h"
+#include <boost/algorithm/string.hpp>
 #include "rpc/sync_callback.h"
 #include "util/logging.h"
 #include "xtreemfs/GlobalTypes.pb.h"
@@ -541,7 +542,7 @@ boost::unordered_set<std::string> GetNetworks() {
 }
 
 /**
- *  Parses human-readable byte number to byte count
+ *  Parses human-readable byte number to byte count. Returns -1 if byte_number is not parsable.
  */
 long parseByteNumber(std::string byte_number) {
 	std::string multiplier;
@@ -550,6 +551,7 @@ long parseByteNumber(std::string byte_number) {
   ss << byte_number;
   ss >> coeff;
   ss >> multiplier;
+  boost::to_upper(multiplier);
 
   if (multiplier.length() == 0 || multiplier == "B"){
     return coeff;
