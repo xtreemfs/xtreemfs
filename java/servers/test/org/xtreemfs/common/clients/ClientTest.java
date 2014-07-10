@@ -61,7 +61,7 @@ public class ClientTest {
 
         RPCResponse r = testEnv.getMrcClient().xtreemfs_mkvol(testEnv.getMRCAddress(), RPCAuthentication.authNone, uc,
                 AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, SetupUtils.getStripingPolicy(64, 1), "", 0777,
-                VOLUME_NAME, "test", "test", new LinkedList<KeyValuePair>());
+                VOLUME_NAME, "test", "test", new LinkedList<KeyValuePair>(), 0);
         r.get();
         r.freeBuffers();
     }
