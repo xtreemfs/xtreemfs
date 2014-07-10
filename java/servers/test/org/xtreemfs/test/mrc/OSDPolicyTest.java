@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.KeyValuePairs;
 import org.xtreemfs.common.config.ServiceConfig;
+import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.mrc.osdselection.FilterDefaultPolicy;
@@ -32,6 +33,7 @@ import org.xtreemfs.mrc.osdselection.GroupFQDNPolicy;
 import org.xtreemfs.mrc.osdselection.Inet4AddressMatcher;
 import org.xtreemfs.mrc.osdselection.SortDCMapPolicy;
 import org.xtreemfs.mrc.osdselection.SortFQDNPolicy;
+import org.xtreemfs.mrc.osdselection.SortHostRoundRobinPolicy;
 import org.xtreemfs.mrc.osdselection.SortVivaldiPolicy;
 import org.xtreemfs.osd.vivaldi.VivaldiNode;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
@@ -558,6 +560,42 @@ public class OSDPolicyTest extends TestCase {
         assertEquals("osd1", sortedList.getServices(4).getUuid());
     }
     
+    public void testSortHostRoundRobinPolicy() throws Exception {
+
+        SortHostRoundRobinPolicy policy = new SortHostRoundRobinPolicy();
+
+        ServiceSet.Builder osds = ServiceSet.newBuilder();
+        osds.addServices(Service.newBuilder().setType(ServiceType.SERVICE_TYPE_OSD)
+                .setLastUpdatedS(System.currentTimeMillis() / 1000 - 1000).setName("osd1").setVersion(1)
+                .setUuid("osd1").setData(getDefaultServiceDataMap()));
+        osds.addServices(Service.newBuilder().setType(ServiceType.SERVICE_TYPE_OSD)
+                .setLastUpdatedS(System.currentTimeMillis() / 1000 - 5000).setName("osd2").setVersion(1)
+                .setUuid("osd2").setData(getDefaultServiceDataMap()));
+        osds.addServices(Service.newBuilder().setType(ServiceType.SERVICE_TYPE_OSD)
+                .setLastUpdatedS(System.currentTimeMillis() / 1000 - 1000).setName("osd3").setVersion(1)
+                .setUuid("osd3").setData(getDefaultServiceDataMap()));
+        osds.addServices(Service.newBuilder().setType(ServiceType.SERVICE_TYPE_OSD)
+                .setLastUpdatedS(System.currentTimeMillis() / 1000 - 1000).setName("osd4").setVersion(1)
+                .setUuid("osd4").setData(getDefaultServiceDataMap()));
+        osds.addServices(Service.newBuilder().setType(ServiceType.SERVICE_TYPE_OSD)
+                .setLastUpdatedS(System.currentTimeMillis() / 1000 - 1000).setName("osd5").setVersion(1)
+                .setUuid("osd5").setData(getDefaultServiceDataMap()));
+
+        UUIDResolver.addTestMapping("osd1", "test.xyz.org", 32640, false);
+        UUIDResolver.addTestMapping("osd2", "test.xyz.org", 32642, false);
+        UUIDResolver.addTestMapping("osd3", "test2.xyz.org", 32640, false);
+        UUIDResolver.addTestMapping("osd4", "test2.xyz.org", 32642, false);
+        UUIDResolver.addTestMapping("osd5", "test3.xyz.org", 32640, false);
+        
+        ServiceSet.Builder sortedList = policy.getOSDs(osds);
+        
+        for (int i = 0; i < sortedList.getServicesCount()-1 ; i++) {
+            String host1 = new ServiceUUID(sortedList.getServices(i).getUuid()).getAddress().getHostName();
+            String host2 = new ServiceUUID(sortedList.getServices(i + 1).getUuid()).getAddress().getHostName();
+            assertNotSame(host1, host2);
+        }
+    }
+
     private static ServiceDataMap getDefaultServiceDataMap() {
         return ServiceDataMap.newBuilder().build();
     }
