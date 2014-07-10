@@ -21,6 +21,7 @@ import org.xtreemfs.foundation.pbrpc.Schemes;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.CLIParser;
 import org.xtreemfs.foundation.util.CLIParser.CliOption;
+import org.xtreemfs.foundation.util.CLIParser.CliOption.OPTIONTYPE;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.PORTS;
 
 /**
@@ -53,9 +54,11 @@ public class xtfs_cleanup_osd {
         options.put("delete_volumes", new CliOption(CliOption.OPTIONTYPE.SWITCH,
                 "!dangerous! deletes volumes that might be dead", ""));
         CliOption oDelMeta = new CliOption(CliOption.OPTIONTYPE.NUMBER,
-                "delete metadata of zombie files, if the view has not been updated during the last <timeout> seconds",
+                "delete metadata of zombie files, if the XLocSet has not been updated during the last <timeout> seconds (default: 600)",
                 "<timeout>");
-        options.put("delete_metadata", oDelMeta);
+        options.put("metadata_delete", oDelMeta);
+        options.put("metadata_keep", new CliOption(OPTIONTYPE.SWITCH,
+                "keep metadata (by default metadata is deleted after <timeout> seconds)", ""));
         options.put("i", new CliOption(CliOption.OPTIONTYPE.SWITCH, "interactive mode", ""));
         options.put("stop", new CliOption(CliOption.OPTIONTYPE.SWITCH,
                 "suspends the currently running cleanup process", ""));
@@ -87,11 +90,10 @@ public class xtfs_cleanup_osd {
         boolean waitForFinish = options.get("wait").switchValue;
         boolean versionCleanup = options.get("v").switchValue;
 
-        int metaDataTimeoutS = 0;
-        boolean removeMetadata = false;
-        if (options.get("delete_metadata").numValue != null) {
-            removeMetadata = true;
-            metaDataTimeoutS = options.get("delete_metadata").numValue.intValue();
+        boolean removeMetadata = !options.get("metadata_keep").switchValue;
+        int metaDataTimeoutS = 600;
+        if (options.get("metadata_delete").numValue != null) {
+            metaDataTimeoutS = options.get("metadata_delete").numValue.intValue();
         }
 
         String[] dirURLs = (options.get("dir").stringValue != null) ? options.get("dir").stringValue

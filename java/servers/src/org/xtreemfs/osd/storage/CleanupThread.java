@@ -488,7 +488,7 @@ public class CleanupThread extends LifeCycleThread {
     }
 
     /**
-     * Check if the XLocVersionState's last update happend more then metaDataTimeoutS seconds before.
+     * Check if the XLocVersionState's last update happened more then metaDataTimeoutS seconds before.
      * 
      * @param fileName
      * @return

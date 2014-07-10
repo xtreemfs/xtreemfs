@@ -22,9 +22,6 @@ Path to a PKCS#12 credentials file (private key + certificate) to use for SSL au
 \fB-cpass \fI<creds_passphrase>
 An optional passphrase to access the credentials file.
 .TP
-\fB-delete_metadata \fI<timeout>
-Include metadata in file deletion and search for orphaned metadata. Metadata will be kept, unless the last view update was more then \fI<timeout>\fR seconds ago.
-.TP
 \fB-delete_volumes
 Deletes volumes that might be dead.
 .TP
@@ -39,6 +36,12 @@ Shows usage info.
 .TP
 \fB-i
 Enables the interactive mode and displays the cleanup progress.
+.TP
+\fB-metadata_delete \fI<timeout>
+Metadata will only be deleted, if the last XLocSet update was more than \fI<timeout>\fR seconds ago. The default \fI<timeout>\fR is equal to the default capability timeout: 600. If \fI<timeout>\fR is 0, metadata will be deleted instantly.
+.TP
+\fB-metadata_keep
+Keep metadata when files are deleted and don't search for orphaned metadata. By default metadata will be deleted after \fI<timeout>\fR seconds.
 .TP
 \fB-r
 Restores all orphaned files to a directory '/lost+found/' in the volume root directory.
