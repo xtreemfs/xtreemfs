@@ -32,7 +32,7 @@
 \begin{flushleft}
 \sffamily \begin{LARGE}The XtreemFS Installation and User Guide\end{LARGE}
 
-Version 1.5.x
+Version 1.4.x
 \end{flushleft}
 
 
@@ -41,33 +41,12 @@ Version 1.5.x
 XtreemFS is available from the \href{http://www.XtreemFS.org}{XtreemFS website (www.XtreemFS.org)}.
 
 
-This document is \copyright{} 2009-\the\year{} by Bj\"orn Kolbeck, Jan Stender, Michael Berlin, Christoph Kleineweber, Matthias Noack, Paul Seiferth, Felix Langner, NEC HPC Europe, Felix Hupfeld, Juan Gonzales, Patrick Sch\"afer, Lukas Kairies, Jens V. Fischer. All rights reserved.
+This document is \copyright{} 2009-\the\year{} by Bj\"orn Kolbeck, Jan Stender, Michael Berlin, Matthias Noack, Paul Seiferth, Felix Langner, NEC HPC Europe, Felix Hupfeld, Juan Gonzales, Patrick Sch\"afer. All rights reserved.
 
 \setcounter{tocdepth}{2}
 \tableofcontents
 
 \chapter*{Changes}
-Summary of important changes in release 1.5:
-
-\begin{itemize}
- \item \textbf{Improved Hadoop support}\\
-    Added support for multiple volumes and read and write buffer to speed up performance. See section~\ref{sec:hadoop_integration}.
- \item \textbf{SSDs support}\\
-    Support for multiple OSD storage threads to increase parallelism. See section~\ref{sec:ssds}.
- \item \textbf{Replication Status Page}\\
-    Status webpage as part of the DIR webinterface for replicated files to show current primary and backup replicas.
- \item \textbf{Multi-Homing Support}\\
-    XtreemFS can now be made available for multiple networks and clients will pick the correct address automatically. See option \hyperref[option:multihoming.enabled]{multihoming.enabled}.
- \item \textbf{Multiple OSDs per Machine}\\
-    Support for multiple OSDs per machine (e.g. one for each disk) through the xtreemfs-osd-farm init.d script. See section~\ref{sec:xtreemfs-osd-farm}.
- \item \textbf{Improved Checksum Support}\\
-    xtfs\_scrub now repairs replicas with an invalid checksum automatically.
- \item \textbf{Major bugfixes for Read/Write and Read-Only Replication}\\
-    There were problems with the fail-over of replicas which were fixed.
- \item \textbf{Minor bugfixes and improvements across all components.}\\
-    See the CHANGELOG for more details and references to the issue numbers.
-\end{itemize}
-
 Summary of important changes in release 1.4:
 
 \begin{itemize}
@@ -571,7 +550,6 @@ $> cp SERVICE.p12 /etc/xos/xtreemfs/truststore/certs
 
 
 \subsection{Running XtreemFS on SSDs}
-\label{sec:ssds}
 
 SSDs are replacing spinning hard disk drives increasingly. This trend is also relevant for the area of distributed file systems. As XtreemFS uses an underlying local file system for all services, XtreemFS can be used with SSDs without any modifications.
 
@@ -1396,7 +1374,6 @@ To run init.d scripts, root permissions are required. Note that MRC and OSD will
 % The servers will be executed under the user ID of the user who called the xctl script.
 
 \subsection{Running multiple OSDs per Machine}
-\label{sec:xtreemfs-osd-farm}
 
 Running more than one OSD service per host might be useful in various situations. Use cases for this might be machines with more than one disk as an alternative to a local RAID or testing purposes. We offer an extended \texttt{init.d} script, named \texttt{xtreemfs-osd-farm}, to start or stop a set of OSDs on one host by a single script.
 
@@ -1830,7 +1807,7 @@ If one of these limits is reached, subsequent write() requests will block.
 \label{sec:object_cache}
 The client supports a per-file write-back object cache with LRU policy. This cache is enabled with \texttt{----object-cache-size=<N>} where N is the maximum number of objects it may cache. The cache is currently mutually exclusive with async. writes.
 
-The cache is still experimental and therefore disabled by default.
+We recommend enabling the cache for most workloads.
 
 \section{Troubleshooting}
 
@@ -2405,8 +2382,6 @@ A replication policy can either be specified for an existing file or as a defaul
 
 For details on how to define replication policies, please refer to Section \ref{sec:xtfsutil_files} and \ref{sec:xtfsutil_volumes}.
 
-The DIR status page has a subpage which shows the replication status for open files. It's accessible at \url{http://localhost:30638/replica_status}. Replace \texttt{localhost} with the hostname of the DIR service if you're not on the same machine.
-
 \section{Read-Only File Replication}
 \label{sec:ronly_replication}
 The read-only is designed for use-cases where you have many replicas that are not modified. Since files cannot be changed, the replicas don't need to be coordinated. Therefore, this replication mode can handle as many replicas as you like, e.g. to create copies of files close to consumers. One use-case for the read-only replication is to build a content-distribution network (CDN) like infrastructure.
@@ -2666,6 +2641,8 @@ This policy uses domain names of clients and OSDs to determine the distance betw
  \item \textbf{Vivaldi network coordinates based sorting (policy ID 3003)}\\
  Sorts the list of OSDs in ascending order of their distance to the client, according to the vivaldi coordinates of the client and OSDs. This policy requires to enable vivaldi in the client (see section~\ref{sec:vivaldi} for details).
 
+ \item \textbf{Host round robin based sorting (policy ID 3004)}\\
+  Sorts the list of OSDs in a round robin manner regarding the host name of the OSDs. If multiple OSDs run per host, this policy guarantees a distribution over multiple hosts.
 \end{itemize}
 
 \subsection{OSD Selection based on Custom Attributes}
@@ -2807,11 +2784,11 @@ Therefore it replaces the NameNode and the DataNodes provided by HDFS in a commo
  \centering
  \includegraphics[width=0.80\linewidth]{images/cluster_setup.png}
  % screenshot_status.png: 783x444 pixel, 72dpi, 28.82x29.88 cm, bb=0 0 783 444
- \caption{Hadoop 1.x cluster setup recommendation}
+ \caption{Hadoop cluster setup recommendation}
  \label{fig:cluster_setup}
 \end{figure}
 
-The three master services JobTracker (Hadoop 1.x) or Resourcemanager (Hadoop 2.x), DIR and MRC are required in a Hadoop configuration. They can run alone or in arbitrary combinations on the same machine. Hadoop can be used with an arbitrary number of Slaves. It is recommended to run a TaskTracker (Hadoop 1.x) or NodeManager (Hadoop 2.x) together with an OSD on each Slave machine to improve performance, but it is not mandatory.
+The three master services JobTracker, DIR and MRC are required in a Hadoop configuration. They can run alone or in arbitrary combinations on the same machine. Hadoop can be used with an arbitrary number of Slaves. It is recommended to run a TaskTracker together with an OSD on each Slave machine to improve performance, but it is not mandatory.
 
 \section{Quick Start}
 \label{sec:hadoop_quickstart}
@@ -2821,7 +2798,7 @@ This section will help you to set up a simple Hadoop configuration with all nece
 \textbf{Required software:}
 \begin{itemize}
 \item XtreemFS (\href{http://code.google.com/p/xtreemfs/downloads/list}{www.XtreemFS.org})
-\item XtreemFSHadoopClient.jar (Download it from \href{http://www.xtreemfs.org/downloads/XtreemFSHadoopClient.jar}{www.XtreemFS.org} or build it by yourself by excecuting make hadoop-client)
+\item XtreemFSHadoopClient.jar (Download it from \href{http://code.google.com/p/xtreemfs/downloads/list}{www.XtreemFS.org} or build it by yourself by excecuting make hadoop-client)
 \item Hadoop (v 1.0.1 or newer) (\href{http://hadoop.apache.org}{hadoop.apache.org})
 \item JDK 1.6+ (\href{http://java.sun.com}{Oracle/SUN})
 \end{itemize}
@@ -2830,44 +2807,21 @@ This section will help you to set up a simple Hadoop configuration with all nece
 \begin{enumerate}
 \item Install and start XtreemFS:\\
 	Follow the instructions given by the quick start guide for XtreemFS, available at Sec.\ref{sec:quick_start}. Notice 	
-	that the DIR is reachable at \textit{localhost:32638}, because this information will be important later.
+	that the DIR is reachable at \textit{localhost:32638}, beause this information will be important later.
 
 \item Download and extract Hadoop
-
-\item Setup Hadoop environment variables:\\
-For Hadoop you have so set the following environment variable:
-   \begin{itemize}
-   \item Hadoop 1.x:
-      \begin{verbatim}
-		export HADOOP_PREFIX=<path to Hadoop directory>
-      \end{verbatim}
-      
-   \item Hadoop 2.x:
-      \begin{verbatim}
-		export HADOOP_PREFIX=<path to Hadoop directory>
-		export HADOOP_MAPRED_HOME=$HADOOP_PREFIX
-		export HADOOP_COMMON_HOME=$HADOOP_PREFIX
-		export HADOOP_HDFS_HOME=$HADOOP_PREFIX
-		export HADOOP_YARN_HOME=$HADOOP_PREFIX
-		export HADOOP_CONF_DIR=$HADOOP_PREFIX/etc/hadoop
-      \end{verbatim}
-   \end{itemize}
 
 \item Configure Hadoop to use XtreemFS instead of HDFS:
 	\begin{enumerate}
 	\item After downloading and extracting Hadoop you have to make sure it will find the XtreemFSHadoopClient package. 
-	The easiest way to do so is to download XtreemFSHadoopClient.jar into Hadoop's \textit{lib} directory for Hadoop 1.x or \textit{share/hadoop/common/} directory for Hadoop 2.x, or to symlink it there.
+	The easiest way to do so is to download XtreemFSHadoopClient.jar into Hadoop's \textit{lib} directory, or to symlink it there.
 
 	Alternativly, you can add it to Hadoop's classpath. It can be edited in \textit{hadoop-env.sh} which can be found in the \textit{conf} directory of Hadoop. Assuming you put XtreemFSHadoopClient.jar to the other jar-libraries located at '\textit{/usr/share/java/}', the resulting line should look like this.
 	\begin{verbatim}
 	export HADOOP_CLASSPATH="/usr/share/XtreemFSHadoopClient.jar"
 	\end{verbatim}
-Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the -libjars parameter to the XtreemFSHadoopClient.jar path if you use the hadoop jar command, e.g.
-    \begin{verbatim}
-	hadoop jar <jar> [mainClass] \
-	-libjars=/usr/share/XtreemFSHadoopClient.jar ...
-    \end{verbatim} 
-	\item Now you have to specify some properties in \textit{core-site.xml} (in the \textit{conf} (Hadoop 1.x) or \textit{etc/hadoop} (Hadoop 2.x)
+		
+	\item Now you have to specify some properties in \textit{core-site.xml} (in the \textit{conf} 
 	directory of Hadoop). If this file does not exist you can safely create it.
 	\begin{verbatim}
 <configuration>
@@ -2877,14 +2831,6 @@ Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the
     <value>org.xtreemfs.common.clients.hadoop.XtreemFSFileSystem</value>
     <description>The file system for xtreemfs: URIs.</description>
   </property>
-
-  <property>
-    <name>fs.AbstractFileSystem.xtreemfs.impl</name>
-    <value>org.xtreemfs.common.clients.hadoop.XtreemFS</value>
-    <description>
-       The abstract file system for xtreemfs: URIs. (Hadoop 2.x only)
-    </description>
-</property>
 
   <property>
     <name>fs.default.name</name>
@@ -2922,69 +2868,16 @@ Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the
   <property>
     <name>xtreemfs.client.userid</name>
     <value>hadoopUserID</value>
-    <description>
-      UserID to be used by Hadoop while accessing XtreemFS.
-    </description>
+    <description>UserID to be used by Hadoop while accessing XtreemFS.</description>
   </property>
 
   <property>
     <name>xtreemfs.client.groupid</name>
     <value>hadoopGroupID</value>
-    <description>
-      GroupID to be used by Hadoop while accessing XtreemFS.
-    </description>
+    <description>GroupID to be used by Hadoop while accessing XtreemFS.</description>
   </property>
 	\end{verbatim}
-
-		Hint: If you want to use the XtreemFSHadoopClient with a SSL encrypted XtreemFS installation, you have to specify the following additional properties: 
-	\begin{verbatim}
-  <property>
-    <name>xtreemfs.ssl.enabled</name>
-    <value>true</value>
-    <description>
-       Enable/Disable SSL for the XtreemFSHadoopClient
-    </description>
-  </property>
-
-  <property>
-    <name>xtreemfs.ssl.credentialFile</name>
-    <value>credentialFile.p12</value>
-    <description>Path to a PKCS#12 credential file.</description>
-   </property>
-
-  <property>
-    <name>xtreemfs.ssl.credentialFile.passphrase</name>
-    <value>passphrase</value>
-    <description>Passphrase for the credential file.</description>
-  </property>
-
-  <property>
-    <name>xtreemfs.ssl.trustedCertificatesFile</name>
-    <value>trustedCertificates.jks</value>
-    <description>
-       Optional. Path to a JKS trusted certificates file.
-    </description>
-  </property>
-
-  <property>
-    <name>xtreemfs.ssl.trustedCertificatesFile.passphrase</name>
-    <value>passphrase</value>
-    <description>
-       Optional. Passphrase for the JKS trusted certificates file.
-    </description>
-  </property>
-
-  <property>
-    <name>xtreemfs.ssl.authenticationWithoutEncryption</name>
-    <value>true/false</value>
-    <description>
-       Enable/Disable grid SSL mode (disabled by default).
-    </description>
-  </property>
-	\end{verbatim}
-
-  For more information about SSL encryption in XtreemFS see section \ref{sec:cfg_ssl}
-
+	\newpage
 	Hint: The XtreemFSHadoopClient provides an experimental read- and write buffer (disabled by default). The buffers can be used to speed-up small read-/write requests, but in some cases the overhead of the buffer might slow-down the I/O performance. If you want to use the read-/write buffer in the XtreemFSHadoopClient, you have to enable the buffers and specify the buffer sizes with the following additional properties:
 	\begin{verbatim}
   <property>
@@ -3021,41 +2914,23 @@ Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the
 	\end{verbatim}	
 	\end{enumerate}
 
-\item To provide the minimum JobTracker configuration for Hadoop 1.x you also have to add the following property to the 
+\item To provide the minimum JobTracker configuration for Hadoop you also have to add the following property to the 
 	\textit{conf/mapred-site.xml}:
 	
 	\begin{verbatim}
+<configuration>
+
   <property>
     <name>mapred.job.tracker</name>
     <value>localhost:9001</value>
     <description>Listening address for the JobTracker.</description>
   </property>
+
+</configuration>
 	\end{verbatim}
 	This specifies the address where the JobTracker will be running at.
 
-For Hadoop 2.x you have to add the following property to the \textit{etc/hadoop/mapred-site.xml}:
-
-	\begin{verbatim}
-  <property>
-    <name>mapreduce.framework.name</name>
-    <value>yarn</value>
-  </property>	
-	\end{verbatim}
-	
-    and the following properties to \textit{etc/hadoop/yarn-site.xml}:
-
-   \begin{verbatim}
-  <property>
-    <name>yarn.nodemanager.aux-services</name>
-    <value>mapreduce_shuffle</value>
-  </property>
-
-  <property>
-    <name>yarn.nodemanager.aux-services.mapreduce_shuffle.class</name>
-    <value>org.apache.hadoop.mapred.ShuffleHandler</value>
-  </property>
-   \end{verbatim}
-\item Finally you are now able to start the JobTracker and the TaskTracker by running '\textit{bin/start-mapred.sh}' (Hadoop 1.x) or the ResourceManager and Nodemanager by running '\textit{sbin/start-yarn.sh} (Hadoop 2.x) from within the Hadoop root-directory.
+\item Finally you are now able to start the JobTracker and the TaskTracker by running '\textit{bin/start-mapred.sh}' from within the Hadoop root-directory.
 
 \end{enumerate}
 Congratulations! You successfully finished the quick start guide of the XtreemFS-Hadoop integration and are now able to use your Hadoop applications like as is well known or go on with the tutorials available on \href{http://hadoop.apache.org}{hadoop.apache.org}.
@@ -3104,10 +2979,11 @@ Please note, that there are currently no build targets provided yet which allow 
 
 In particular, you need boost and libssl-dev. On a Unix plattform, you also need libfuse-dev or you have to comment out the respective portions in the CMake configuration manually. At last, you have to install ``cmake'' which generates the build system.
 
-  \item Check out the XtreemFS master.
+  \item Check out the XtreemFS trunk.
 
 \begin{verbatim}
-git clone https://code.google.com/p/xtreemfs
+svn checkout http://xtreemfs.googlecode.com/svn/trunk/ \
+             xtreemfs-read-only 
 \end{verbatim}
 
   \item Compile the Client.
