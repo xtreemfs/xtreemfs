@@ -174,8 +174,10 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 			TimeSync.initialize(dirClient, config.getRemoteTimeSync(),
 					config.getLocalClockRenew());
 
-            benchmarkStage = new BenchmarkStage("benchmarkStage", 100);
-            benchmarkStage.setLifeCycleListener(this);
+            if(config.getOSDAutodiscover()) {
+                benchmarkStage = new BenchmarkStage("benchmarkStage", 100);
+                benchmarkStage.setLifeCycleListener(this);
+            }
 		} catch (Exception ex) {
 			Logging.logMessage(Logging.LEVEL_ERROR, this, "STARTUP FAILED!");
 			Logging.logError(Logging.LEVEL_ERROR, this, ex);
@@ -215,9 +217,13 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 					config.getLocalClockRenew());
 			
 			clientStage.start();
-            benchmarkStage.start();
+            if(config.getOSDAutodiscover()) {
+                benchmarkStage.start();
+            }
 			clientStage.waitForStartup();
-            benchmarkStage.waitForStartup();
+            if(config.getOSDAutodiscover()) {
+                benchmarkStage.waitForStartup();
+            }
 
             if(config.getOSDAutodiscover()) {
                 osdMonitor.start();
@@ -244,7 +250,9 @@ public class SchedulerRequestDispatcher extends LifeCycleThread implements
 		server.waitForShutdown();
 		database.shutdown();
 		clientStage.shutdown();
-        benchmarkStage.shutdown();
+        if(config.getOSDAutodiscover()) {
+            benchmarkStage.shutdown();
+        }
 
 		this.quit = true;
 		this.interrupt();
