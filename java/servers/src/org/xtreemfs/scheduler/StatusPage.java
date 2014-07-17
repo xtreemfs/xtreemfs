@@ -125,7 +125,7 @@ public class StatusPage extends StatusServerModule {
             OsdTableBuf.append("<tr><td width=\"30%\">");
             OsdTableBuf.append("capacity");
             OsdTableBuf.append("</td><td><b>");
-            OsdTableBuf.append(capabilities.getCapacity() + " MiB");
+            OsdTableBuf.append(formatMegaBytes(capabilities.getCapacity()));
             OsdTableBuf.append("</b></td></tr>");
 
             OsdTableBuf.append("<tr><td width=\"30%\">");
@@ -174,7 +174,7 @@ public class StatusPage extends StatusServerModule {
             reservationTableBuf.append("<tr><td width=\"30%\">");
             reservationTableBuf.append("capacity");
             reservationTableBuf.append("</td><td><b>");
-            reservationTableBuf.append(reservation.getCapacity() + " MiB");
+            reservationTableBuf.append(formatMegaBytes(reservation.getCapacity()));
             reservationTableBuf.append("</b></td></tr>");
             
             if (reservation.getType() == ReservationType.STREAMING_RESERVATION) {
@@ -198,7 +198,7 @@ public class StatusPage extends StatusServerModule {
 
         // Max possible reservations
         ResourceSet freeResources = master.getReservationScheduler().getFreeResources();
-        values.put(Vars.MPRCAPACITY, Double.toString(freeResources.getCapacity()) + " MiB");
+        values.put(Vars.MPRCAPACITY, formatMegaBytes(freeResources.getCapacity()));
         values.put(Vars.MPRIOPS, Double.toString(freeResources.getIops()));
         values.put(Vars.MPRSEQTHROUGHPUT, Double.toString(freeResources.getSeqTP()) + " MiB/s");
 
@@ -226,5 +226,9 @@ public class StatusPage extends StatusServerModule {
 
     @Override
     public void shutdown() {
+    }
+
+    private String formatMegaBytes(double mBytes) {
+        return OutputUtils.formatBytes((long) (mBytes * 1024 * 1024));
     }
 }
