@@ -2266,6 +2266,7 @@ sets a data center map-based OSD selection policy, which is invoked each time a 
  \item[\texttt{fqdn}] Selects OSDs based on the size of the post-fix match of the fully qualified domain names and on the free space.
  \item[\texttt{dcmap}] Selects OSDs based on the distance defined in the datacenter map and on the free space.
  \item[\texttt{vivaldi}] Selects OSDs based on the distance of the Vivaldi coordinates between client and OSD and on the free space.
+  \item[\texttt{roundrobin}] Selects OSDs based on a round robin manner regarding the host name of the OSDs.
 \end{description}
 
 In addition, custom policies can be set by passing a list of basic policy IDs to be successively applied instead of a predefined policy name.
@@ -2665,6 +2666,9 @@ This policy uses domain names of clients and OSDs to determine the distance betw
 
  \item \textbf{Vivaldi network coordinates based sorting (policy ID 3003)}\\
  Sorts the list of OSDs in ascending order of their distance to the client, according to the vivaldi coordinates of the client and OSDs. This policy requires to enable vivaldi in the client (see section~\ref{sec:vivaldi} for details).
+ 
+ \item \textbf{Host round robin based sorting (policy ID 3004)}\\
+ Sorts the list of OSDs in a round robin manner regarding the host name of the OSDs. If multiple OSDs run per host, this policy guarantees a distribution over multiple hosts.
 
 \end{itemize}
 
