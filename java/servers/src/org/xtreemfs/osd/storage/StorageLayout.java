@@ -5,12 +5,8 @@
  * Licensed under the BSD License, see LICENSE file for details.
  *
  */
-
 package org.xtreemfs.osd.storage;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,146 +14,101 @@ import java.util.Map;
 import java.util.Stack;
 
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
-import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
-import org.xtreemfs.osd.InternalObjectData;
-import org.xtreemfs.osd.OSDConfig;
+import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.replication.ObjectSet;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog;
 
 /**
- * Abstracts object data access from underlying on-disk storage layout.
- * 
- * @author bjko
- */
+ * Abstracts object data access from underlying on-disk or in-memory storage layout. <br>
+ * Handles the metadata caching which is common to every StorageLayout.
+ **/
 public abstract class StorageLayout {
-    
+
     /**
-     * read the full object (all available data)
+     * Pass this constant to {@link #readObject()} instead of an actual length to read the the full object (all
+     * available data).
      */
     public static final int       FULL_OBJECT_LENGTH = -1;
-    
+
     /**
-     * read the full object (all available data)
+     * Pass this constant to {@link #deleteObject()} instead of an actual version to delete the latest version.
      */
     public static final int       LATEST_VERSION     = -1;
-    
+
     /**
-     * file to store the layout and version used to create on disk data
-     */
-    public static final String    VERSION_FILENAME   = ".version";
-    
-    /**
-     * true, if we are on a windows platform
-     */
-    public final static boolean   WIN                = System.getProperty("os.name").toLowerCase().contains(
-                                                         "win");
-    
-    /**
-     * base directory in which to store files
-     */
-    protected final String        storageDir;
-    
-    /**
-     * file metadata cache
+     * File metadata cache, which is used in other stages (see {@link OSDRequestDispatcher#OSDRequestDispatcher()}).
      */
     protected final MetadataCache cache;
-    
-    protected StorageLayout(OSDConfig config, MetadataCache cache) throws IOException {
-        
+
+    /**
+     * Initialize the MetadataCache.
+     * 
+     * @param cache
+     */
+    protected StorageLayout(MetadataCache cache) {
         this.cache = cache;
-        
-        // initialize the storage directory
-        String tmp = config.getObjDir();
-        if (!tmp.endsWith("/"))
-            tmp = tmp + "/";
-        storageDir = tmp;
-        File stdir = new File(storageDir);
-        stdir.mkdirs();
-        
-        // check the data version
-        File versionMetaFile = new File(storageDir, VERSION_FILENAME);
-        if (versionMetaFile.exists()) {
-            FileReader in = new FileReader(versionMetaFile);
-            char[] text = new char[(int) versionMetaFile.length()];
-            in.read(text);
-            in.close();
-            int versionOnDisk = Integer.valueOf(new String(text));
-            if (!isCompatibleVersion(versionOnDisk)) {
-                throw new IOException("the OSD storage layout used to create the data on disk ("
-                    + versionOnDisk + ") is not compatible with the storage layout loaded: "
-                    + this.getClass().getSimpleName());
-            }
-        }
-
-        final File tmpFile = new File(versionMetaFile+".tmp");
-
-        FileWriter out = new FileWriter(tmpFile);
-        out.write(Integer.toString(getLayoutVersionTag()));
-        out.close();
-        
-        tmpFile.renameTo(versionMetaFile);
-
     }
-    
+
     /**
      * Returns cached file metadata, or loads and caches it if it is not cached.
-     * 
-     * @param sp
-     * @param fileId
-     * @return
-     * @throws IOException
-     */
-    public FileMetadata getFileMetadata(final StripingPolicyImpl sp, final String fileId) throws IOException {
-        
-        // try to retrieve metadata from cache
-        FileMetadata fi = cache.getFileInfo(fileId);
-        
-        // if metadata is not cached ...
-        if (fi == null) {
-            
-            // ... load metadata from disk
-            fi = loadFileMetadata(fileId, sp);
-            
-            // ... cache metadata to speed up further accesses
-            cache.setFileInfo(fileId, fi);
-        }
-        
-        return fi;
-    }
-    
-    /**
-     * Returns cached file metadata, or loads it if it is not cached.
-     * 
-     * @param sp
-     * @param fileId
-     * @return
-     * @throws IOException
-     */
-    public FileMetadata getFileMetadataNoCaching(final StripingPolicyImpl sp, final String fileId) throws IOException {
-        
-        // try to retrieve metadata from cache
-        FileMetadata fi = cache.getFileInfo(fileId);
-        
-        // if metadata is not cached, load it
-        if (fi == null)
-            fi = loadFileMetadata(fileId, sp);
-        
-        return fi;
-    }
-    
-    /**
-     * Loads all metadata associated with a file on the OSD from the storage
-     * device. Amongst others, such metadata may comprise object version numbers
-     * and checksums.
      * 
      * @param fileId
      *            the file ID
      * @param sp
      *            the striping policy assigned to the file
-     * @return a <code>FileInfo</code> object comprising all metadata associated
-     *         with the file
+     * @return a {@link FileMetadata} object comprising all metadata associated with the file
+     * @throws IOException
+     *             if an error occurred while trying to read the metadata
+     */
+    public FileMetadata getFileMetadata(final StripingPolicyImpl sp, final String fileId) throws IOException {
+        // Try to retrieve metadata from cache.
+        FileMetadata fi = cache.getFileInfo(fileId);
+
+        // If metadata is not cached ...
+        if (fi == null) {
+            // ... load metadata from disk
+            fi = loadFileMetadata(fileId, sp);
+
+            // ... cache metadata to speed up further accesses.
+            cache.setFileInfo(fileId, fi);
+        }
+
+        return fi;
+    }
+
+    /**
+     * Returns cached file metadata, or loads it if it is not cached.
+     * 
+     * @param fileId
+     *            the file ID
+     * @param sp
+     *            the striping policy assigned to the file
+     * @return a {@link FileMetadata} object comprising all metadata associated with the file
+     * @throws IOException
+     *             if an error occurred while trying to read the metadata
+     */
+    public FileMetadata getFileMetadataNoCaching(final StripingPolicyImpl sp, final String fileId) throws IOException {
+        // Try to retrieve metadata from cache
+        FileMetadata fi = cache.getFileInfo(fileId);
+
+        // if metadata is not cached, load it
+        if (fi == null) {
+            fi = loadFileMetadata(fileId, sp);
+        }
+
+        return fi;
+    }
+
+    /**
+     * Loads all metadata associated with a file on the OSD from the storage device. Amongst others, such metadata may
+     * comprise object version numbers and checksums.
+     * 
+     * @param fileId
+     *            the file ID
+     * @param sp
+     *            the striping policy assigned to the file
+     * @return a {@link FileMetadata} object comprising all metadata associated with the file
      * @throws IOException
      *             if an error occurred while trying to read the metadata
      */
@@ -165,12 +116,11 @@ public abstract class StorageLayout {
 
     /**
      * must be called when a file is closed
+     * 
      * @param metadata
      */
-    public void closeFile(FileMetadata metadata) {
-        //do nothing
-    }
-    
+    public abstract void closeFile(FileMetadata metadata);
+
     /**
      * Reads a complete object from the storage device.
      * 
@@ -188,13 +138,12 @@ public abstract class StorageLayout {
      *            the number of the OSD assigned to the object
      * @throws java.io.IOException
      *             when the object cannot be read
-     * @return a buffer containing the object, or a <code>null</code> if the
-     *         object does not exist
+     * @return a buffer containing the object, or a <code>null</code> if the object does not exist
      */
-    
-    public abstract ObjectInformation readObject(String fileId, FileMetadata md, long objNo, int offset,
-        int length, long version) throws IOException;
-    
+
+    public abstract ObjectInformation readObject(String fileId, FileMetadata md, long objNo, int offset, int length,
+            long version) throws IOException;
+
     /**
      * Writes a partial object to the storage device.
      * 
@@ -209,8 +158,8 @@ public abstract class StorageLayout {
      * @param offset
      *            the relative offset in the object at which to write the buffer
      * @param currentChecksum
-     *            the checksum currently assigned to the object; if OSD
-     *            checksums are disabled, <code>null</code> can be used
+     *            the checksum currently assigned to the object; if OSD checksums are disabled, <code>null</code> can be
+     *            used
      * @param sp
      *            the striping policy assigned to the file
      * @param osdNumber
@@ -218,9 +167,9 @@ public abstract class StorageLayout {
      * @throws java.io.IOException
      *             when the object cannot be written
      */
-    public abstract void writeObject(String fileId, FileMetadata md, ReusableBuffer data, long objNo,
-        int offset, long newVersion, boolean sync, boolean cow) throws IOException;
-    
+    public abstract void writeObject(String fileId, FileMetadata md, ReusableBuffer data, long objNo, int offset,
+            long newVersion, boolean sync, boolean cow) throws IOException;
+
     /**
      * Truncates an object on the storage device.
      * 
@@ -231,9 +180,9 @@ public abstract class StorageLayout {
      * @param cow
      * @throws IOException
      */
-    public abstract void truncateObject(String fileId, FileMetadata md, long objNo, int newLength,
-        long newVersion, boolean cow) throws IOException;
-    
+    public abstract void truncateObject(String fileId, FileMetadata md, long objNo, int newLength, long newVersion,
+            boolean cow) throws IOException;
+
     /**
      * Deletes all versions of all objects of a file.
      * 
@@ -243,7 +192,7 @@ public abstract class StorageLayout {
      *             if an error occurred while deleting the objects
      */
     public abstract void deleteFile(String fileId, boolean deleteMetadata) throws IOException;
-    
+
     /**
      * Deletes a single version of a single object of a file.
      * 
@@ -256,9 +205,8 @@ public abstract class StorageLayout {
      * @throws IOException
      *             if an error occurred while deleting the object
      */
-    public abstract void deleteObject(String fileId, FileMetadata md, long objNo, long version)
-        throws IOException;
-    
+    public abstract void deleteObject(String fileId, FileMetadata md, long objNo, long version) throws IOException;
+
     /**
      * Creates and stores a zero-padded object.
      * 
@@ -272,14 +220,13 @@ public abstract class StorageLayout {
      *            the version of the object to create
      * @param size
      *            the size of the object to create
-     * @return if OSD checksums are enabled, the newly calculated checksum;
-     *         <code>null</code>, otherwise
+     * @return if OSD checksums are enabled, the newly calculated checksum; <code>null</code>, otherwise
      * @throws IOException
      *             if an error occurred when storing the object
      */
-    public abstract void createPaddingObject(String fileId, FileMetadata md, long objNo, long version,
-        int size) throws IOException;
-    
+    public abstract void createPaddingObject(String fileId, FileMetadata md, long objNo, long version, int size)
+            throws IOException;
+
     /**
      * Persistently stores a new truncate epoch for a file.
      * 
@@ -291,127 +238,40 @@ public abstract class StorageLayout {
      *             if an error occurred while storing the new epoch number
      */
     public abstract void setTruncateEpoch(String fileId, long newTruncateEpoch) throws IOException;
-    
+
     /**
      * Checks whether the file with the given ID exists.
      * 
      * @param fileId
      *            the ID of the file
-     * @return <code>true</code>, if the file exists, <code>false</code>,
-     *         otherwise
+     * @return <code>true</code>, if the file exists, <code>false</code>, otherwise
      */
     public abstract boolean fileExists(String fileId);
-    
-    protected ReusableBuffer unwrapObjectData(String fileId, FileMetadata md, long objNo, long oldVersion)
-        throws IOException {
-        ReusableBuffer data;
-        final int stripeSize = md.getStripingPolicy().getStripeSizeForObject(objNo);
-        final boolean isLastObj = (md.getLastObjectNumber() == objNo) || ((objNo == 0) && (md.getLastObjectNumber() == -1));
-        ObjectInformation obj = readObject(fileId, md, objNo, 0, FULL_OBJECT_LENGTH, oldVersion);
-        InternalObjectData oldObject = obj.getObjectData(isLastObj, 0, stripeSize);
-        if (obj.getData() == null) {
-            if (oldObject.getZero_padding() > 0) {
-                // create a zero padded object
-                data = BufferPool.allocate(oldObject.getZero_padding());
-                for (int i = 0; i < oldObject.getZero_padding(); i++) {
-                    data.put((byte) 0);
-                }
-                data.position(0);
-            } else {
-                data = BufferPool.allocate(0);
-            }
-        } else {
-            if (oldObject.getZero_padding() > 0) {
-                data = BufferPool.allocate(obj.getData().capacity() + oldObject.getZero_padding());
-                data.put(obj.getData());
-                for (int i = 0; i < oldObject.getZero_padding(); i++) {
-                    data.put((byte) 0);
-                }
-            } else {
-                data = obj.getData();
-            }
-        }
-        return data;
-    }
-    
-    protected ReusableBuffer cow(String fileId, FileMetadata md, long objNo, ReusableBuffer data, int offset,
-        long oldVersion) throws IOException {
-        ReusableBuffer writeData = null;
-        final int stripeSize = md.getStripingPolicy().getStripeSizeForObject(objNo);
-        ObjectInformation obj = readObject(fileId, md, objNo, 0, FULL_OBJECT_LENGTH, oldVersion);
-        final boolean isLastObj = (md.getLastObjectNumber() == objNo) || ((objNo == 0) && (md.getLastObjectNumber() == -1));
-        InternalObjectData oldObject = obj.getObjectData(isLastObj, 0, stripeSize);
-        if (obj.getData() == null) {
-            if (oldObject.getZero_padding() > 0) {
-                // create a zero padded object
-                writeData = BufferPool.allocate(stripeSize);
-                for (int i = 0; i < stripeSize; i++) {
-                    writeData.put((byte) 0);
-                }
-                writeData.position(offset);
-                writeData.put(data);
-                writeData.position(0);
-                BufferPool.free(data);
-            } else {
-                // write beyond EOF
-                if (offset > 0) {
-                    writeData = BufferPool.allocate(offset + data.capacity());
-                    for (int i = 0; i < offset; i++) {
-                        writeData.put((byte) 0);
-                    }
-                    writeData.put(data);
-                    writeData.position(0);
-                    BufferPool.free(data);
-                } else {
-                    writeData = data;
-                }
-            }
-        } else {
-            // object data exists on disk
-            if (obj.getData().capacity() >= offset + data.capacity()) {
-                // old object is large enough
-                writeData = obj.getData();
-                writeData.position(offset);
-                writeData.put(data);
-                BufferPool.free(data);
-            } else {
-                // copy old data and then new data
-                writeData = BufferPool.allocate(offset + data.capacity());
-                writeData.put(obj.getData());
-                BufferPool.free(obj.getData());
-                writeData.position(offset);
-                writeData.put(data);
-                BufferPool.free(data);
-            }
-        }
-        return writeData;
-    }
-    
+
     /**
-     * Updates a single object in the current version of the file. If
-     * copy-on-write is enabled, this method has to be invoked when a new object
-     * version is written.
+     * Updates a single object in the current version of the file. If copy-on-write is enabled, this method has to be
+     * invoked when a new object version is written.
      * 
      * @param fileId
      * @param objNo
      * @param newVersion
      * @throws IOException
      */
-    public abstract void updateCurrentObjVersion(String fileId, long objNo, long newVersion)
-        throws IOException;
-    
+    public abstract void updateCurrentObjVersion(String fileId, long objNo, long newVersion) throws IOException;
+
     /**
-     * Updates the size of current version of the file. If copy-on-write is
-     * enabled, this method has to be invoked when the file is truncated.
+     * Updates the size of current version of the file. If copy-on-write is enabled, this method has to be invoked when
+     * the file is truncated.
      * 
      * @param fileId
      * @param newLastObject
      * @throws IOException
      */
     public abstract void updateCurrentVersionSize(String fileId, long newLastObject) throws IOException;
-    
+
+    // TODO(jdillmann): doc
     public abstract long getFileInfoLoadCount();
-    
+
     /**
      * returns a list of all local saved objects of this file
      * 
@@ -419,15 +279,19 @@ public abstract class StorageLayout {
      * @return null, if file does not exist, otherwise objectList
      */
     public abstract ObjectSet getObjectSet(String fileId, FileMetadata md);
-    
+
+    // TODO(jdillmann): doc
     public abstract FileList getFileList(FileList l, int maxNumEntries);
-    
+
+    // TODO(jdillmann): doc
     public abstract int getLayoutVersionTag();
-    
+
+    // TODO(jdillmann): doc
     public abstract boolean isCompatibleVersion(int layoutVersionTag);
 
     /**
      * Retrieves the FleaseM master epoch stored for a file.
+     * 
      * @param fileId
      * @return current master epoch stored on disk.
      */
@@ -435,41 +299,47 @@ public abstract class StorageLayout {
 
     /**
      * Stores the master epoch for a file on stable storage.
+     * 
      * @param fileId
      * @param masterEpoch
      */
     public abstract void setMasterEpoch(String fileId, int masterEpoch) throws IOException;
 
+    // TODO(jdillmann): doc
     public abstract TruncateLog getTruncateLog(String fileId) throws IOException;
 
+    // TODO(jdillmann): doc
     public abstract void setTruncateLog(String fileId, TruncateLog log) throws IOException;
+
     /**
      * returns a list of all files on OSD as fileID
      * 
      * @return {@link HashMap}<String, String>
      */
     public abstract ArrayList<String> getFileIDList();
-    
+
+    // TODO(jdillmann): doc
     public static final class FileList {
         // directories to scan
         final Stack<String>         status;
-        
+
         // fileName->fileDetails
         final Map<String, FileData> files;
-        
+
         boolean                     hasMore;
-        
+
         public FileList(Stack<String> status, Map<String, FileData> files) {
             this.status = status;
             this.files = files;
         }
     }
-    
+
+    // TODO(jdillmann): doc
     public static final class FileData {
         final long size;
-        
+
         final int  objectSize;
-        
+
         FileData(long size, int objectSize) {
             this.size = size;
             this.objectSize = objectSize;

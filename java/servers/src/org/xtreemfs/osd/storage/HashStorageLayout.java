@@ -43,7 +43,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog;
  * 
  * @author clorenz
  */
-public class HashStorageLayout extends StorageLayout {
+public class HashStorageLayout extends FileStorageLayout {
 
     /**
      * file to store the truncate epoch in (metadata)
@@ -191,7 +191,7 @@ public class HashStorageLayout extends StorageLayout {
         ReusableBuffer bbuf = null;
         boolean checkChecksum = false;
 
-        if (length == -1) {
+        if (length == FULL_OBJECT_LENGTH) {
             assert (offset == 0) : "if length is -1 offset must be 0 but is " + offset;
             length = stripeSize;
             if (checksumsEnabled) {

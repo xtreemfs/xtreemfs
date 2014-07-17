@@ -16,8 +16,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Stack;
 import java.util.Map.Entry;
+import java.util.Stack;
+
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.LRUCache;
 import org.xtreemfs.foundation.buffer.BufferPool;
@@ -35,7 +36,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog;
  *
  * @author bjko
  */
-public class SingleFileStorageLayout extends StorageLayout {
+public class SingleFileStorageLayout extends FileStorageLayout {
 
     public static final int   SL_TAG = 0x00020001;
 
