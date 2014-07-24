@@ -16,6 +16,7 @@ import java.util.Map.Entry;
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
+import org.xtreemfs.osd.storage.FileVersionTable;
 import org.xtreemfs.osd.storage.VersionTable;
 
 /**
@@ -50,7 +51,7 @@ public class VersionTableTest extends TestCase {
         map.put(12000L, new int[] { 5, 5 });
         map.put(32000L, new int[] {});
         
-        VersionTable vt = new VersionTable(VT_FILE);
+        VersionTable vt = new FileVersionTable(VT_FILE);
         for (Entry<Long, int[]> entry : map.entrySet())
             vt.addVersion(entry.getKey(), entry.getValue(), entry.getValue().length * 1024);
         
@@ -81,7 +82,7 @@ public class VersionTableTest extends TestCase {
         map.put(12000L, new int[] { 5, 5 });
         map.put(32000L, new int[] {});
         
-        VersionTable vt = new VersionTable(VT_FILE);
+        VersionTable vt = new FileVersionTable(VT_FILE);
         for (Entry<Long, int[]> entry : map.entrySet())
             vt.addVersion(entry.getKey(), entry.getValue(), entry.getValue().length * 1024);
         
