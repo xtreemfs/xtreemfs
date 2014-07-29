@@ -11,9 +11,6 @@ package org.xtreemfs.test.osd;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
 
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
@@ -29,6 +26,7 @@ import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.osd.storage.FileMetadata;
 import org.xtreemfs.osd.storage.HashStorageLayout;
+import org.xtreemfs.osd.storage.InMemoryStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.ObjectInformation;
 import org.xtreemfs.osd.storage.SingleFileStorageLayout;
@@ -112,6 +110,31 @@ public class StorageLayoutTest extends TestCase {
     public void testSingleFileStorageLayoutGetFileIDList() throws Exception {
 
         SingleFileStorageLayout layout = new SingleFileStorageLayout(config, new MetadataCache());
+        getFileIDListTest(layout);
+    }
+
+    public void testInMemoryStorageLayoutBasics() throws Exception {
+        InMemoryStorageLayout layout = new InMemoryStorageLayout(config, new MetadataCache());
+        basicTests(layout);
+    }
+
+    // public void testInMemoryStorageLayoutWithChecksumsBasics() throws Exception {
+    // JavaChecksumProvider j = new JavaChecksumProvider();
+    // ChecksumFactory.getInstance().addProvider(j);
+    // SetupUtils.CHECKSUMS_ON = true;
+    // OSDConfig configCSUM = SetupUtils.createOSD1Config();
+    // SetupUtils.CHECKSUMS_ON = false;
+    // InMemoryStorageLayout layout = new InMemoryStorageLayout(configCSUM, new MetadataCache());
+    // basicTests(layout);
+    // }
+
+    public void testInMemoryStorageLayoutGetObjectList() throws Exception {
+        InMemoryStorageLayout layout = new InMemoryStorageLayout(config, new MetadataCache());
+        getObjectListTest(layout);
+    }
+
+    public void testInMemoryStorageLayoutGetFileIDList() throws Exception {
+        InMemoryStorageLayout layout = new InMemoryStorageLayout(config, new MetadataCache());
         getFileIDListTest(layout);
     }
 

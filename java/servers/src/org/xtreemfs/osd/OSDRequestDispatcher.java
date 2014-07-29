@@ -105,6 +105,7 @@ import org.xtreemfs.osd.stages.VivaldiStage;
 import org.xtreemfs.osd.storage.CleanupThread;
 import org.xtreemfs.osd.storage.CleanupVersionsThread;
 import org.xtreemfs.osd.storage.HashStorageLayout;
+import org.xtreemfs.osd.storage.InMemoryStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.StorageLayout;
 import org.xtreemfs.osd.vivaldi.VivaldiNode;
@@ -310,13 +311,13 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         StorageLayout storageLayout = null;
         if (config.getStorageLayout().equalsIgnoreCase(HashStorageLayout.class.getSimpleName())) {
             storageLayout = new HashStorageLayout(config, metadataCache);
-            /*
-             * } else if
-             * (config.getStorageLayout().equalsIgnoreCase(SingleFileStorageLayout
-             * .class.getSimpleName())) { storageLayout = new
-             * SingleFileStorageLayout(config, metadataCache);
-             */
-        } else {
+        } else if (config.getStorageLayout().equalsIgnoreCase(InMemoryStorageLayout.class.getSimpleName())) {
+            storageLayout = new InMemoryStorageLayout(config, metadataCache);
+        }
+        // else if (config.getStorageLayout().equalsIgnoreCase(SingleFileStorageLayout.class.getSimpleName())) {
+        // storageLayout = new SingleFileStorageLayout(config, metadataCache);
+        // }
+        else {
             throw new RuntimeException("unknown storage layout in config file: " + config.getStorageLayout());
         }
         
