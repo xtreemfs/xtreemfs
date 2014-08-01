@@ -59,9 +59,13 @@ public class UsedCapacityTraceAnalyzer {
 
         @Override
         protected void cleanup(Context context)  throws IOException, InterruptedException {
+            long sum = 0;
+
             for(String key: this.maxOffsets.keySet()) {
-                context.write(new Text(key), new LongWritable(this.maxOffsets.get(key)));
+                sum += this.maxOffsets.get(key);
             }
+
+            context.write(new Text("Used capacity"), new LongWritable(sum));
         }
 
         @Override
@@ -78,6 +82,17 @@ public class UsedCapacityTraceAnalyzer {
         }
     }
 
+    private class UsedCapacityTraceAnalyzerCombiner extends Reducer<Text, LongWritable, Text, LongWritable> {
+        @Override
+        protected void reduce(Text key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
+            long maxOffset = 0;
+            for(LongWritable value: values) {
+                maxOffset = Math.max(value.get(), maxOffset);
+            }
+            context.write(key, new LongWritable(maxOffset));
+        }
+    }
+
     public static void main(String args[]) throws Exception {
         Configuration conf = new Configuration();
 
@@ -88,7 +103,7 @@ public class UsedCapacityTraceAnalyzer {
 
         job.setMapperClass(UsedCapacityTraceAnalyzerMapper.class);
         job.setReducerClass(UsedCapacityTraceAnalyzerReducer.class);
-        job.setCombinerClass(UsedCapacityTraceAnalyzerReducer.class);
+        job.setCombinerClass(UsedCapacityTraceAnalyzerCombiner.class);
 
         job.setInputFormatClass(TextInputFormat.class);
         job.setOutputFormatClass(TextOutputFormat.class);
