@@ -366,11 +366,21 @@ XtreemFS services are configured via Java properties files that can be modified 
 
 XtreemFS uses UUIDs\index{UUID} (Universally Unique Identifiers) to be able to identify services and their associated state independently from the machine they are installed on. This implies that you cannot change the UUID of an MRC or OSD after it has been used for the first time!
 
-The Directory Service resolves UUIDs to service endpoints, where each service endpoint consists of an IP address or hostname and port number. Each endpoint is associated with a netmask that indicates the subnet in which the mapping is valid. In theory, multiple endpoints can be assigned to a single UUID if endpoints are associated with different netmasks. However, it is currently only possible to assign a single endpoint to each UUID; the netmask must be ``*'', which means that the mapping is valid in all networks. Upon first start-up, OSDs and MRCs will auto-generate the mapping if it does not exist, by using the first available network device with a public address.
+The Directory Service resolves UUIDs to service endpoints, where each service endpoint consists of an IP address or hostname and port number. Each endpoint is associated with a netmask that indicates the subnet in which the mapping is valid. If \hyperref[option:multihoming.enabled]{multihoming} is enabled, multiple endpoints with different netmasks are assigned to a single UUID. In addition one default mapping, which is valid in all networks with the netmask ``*'', will be assigned. By default this will be the first available network device with a public address.
 
-Changing the IP address, hostname or port is possible at any time. Due to the caching of UUIDs in all components, it can take some time until the new UUID mapping is used by all OSDs, MRCs and clients. The TTL (time-to-live) of a mapping defines how long an XtreemFS component is allowed to keep entries cached. The default value is 3600 seconds (1 hour). It should be set to shorter durations if services change their IP address frequently.
+Changes to the IP address, hostname or port are possible at any time, but have to be propagated to the Directory Service by a \hyperref[option:multihoming.renewalsignal]{manual signal}. Due to the caching of UUIDs in all components, it can take some time until the new UUID mapping is used by all OSDs, MRCs and clients. The TTL (time-to-live) of a mapping defines how long an XtreemFS component is allowed to keep entries cached. The default value is 3600 seconds (1 hour). It should be set to shorter durations if services change their IP address frequently.
 
 To create a globally unique UUID you can use tools like \texttt{uuidgen}. During installation, the post-install script will automatically create a UUID for each OSD and MRC if it does not have a UUID assigned.
+
+
+\subsection{Configuration for mixed IPv4 / IPv6 networks and NATs}
+
+XtreemFS is IPv6 ready, but requires a hostname based configuration for mixed networks due to the way UUIDs are resolved. If no hostname is configured, the default endpoint will be set to the first available network device with a public address. If this is an IPv6 address, clients or services in IPv4 networks won't be able to access the service with the resolved UUID. Additional IPv4 endpoints may be available, but will be bound to a specific netmask.
+
+To enable mixed networks each service has to be configured with a \hyperref[options:hostname]{\texttt{hostname}}, which is resolvable to the IPv4 address as well as to the IPv6 address by clients and other services. This can be achieved by using the Domain Name System and setting the \texttt{A} and \texttt{AAAA} records for each hostname.
+
+Analogous problems occur in systems with NAT (network address translation) like on Amazon Virtual Private Cloud or OpenStack. By default each service will register its local address which is unreachable from other networks. To enable services with NAT you can add the external address to the internal network device with a corresponding route and use the DNS to resolve hostnames as described above. To ensure services from the same network are using a direct route it is advised to enable \hyperref[option:multihoming.enabled]{multihoming}. 
+
 
 \subsection{Automatic DIR Discovery}
 \label{sec:autodiscover}
@@ -967,6 +977,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
 \end{tabular}
 
 \subsubsection{\texttt{hostname} \textit{optional}}
+\label{options:hostname}
 \begin{tabular}{lp{10cm}}
  Services & MRC, OSD\\
  Values   & String \\
@@ -1083,6 +1094,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
 \end{tabular}
 
 \subsubsection{\texttt{multihoming.renewal\_signal} \textit{optional}}
+\label{option:multihoming.renewalsignal}
 \begin{tabular}{lp{10cm}}
  Services & MRC, OSD\\
  Values   & true, false\\
@@ -2266,6 +2278,7 @@ sets a data center map-based OSD selection policy, which is invoked each time a 
  \item[\texttt{fqdn}] Selects OSDs based on the size of the post-fix match of the fully qualified domain names and on the free space.
  \item[\texttt{dcmap}] Selects OSDs based on the distance defined in the datacenter map and on the free space.
  \item[\texttt{vivaldi}] Selects OSDs based on the distance of the Vivaldi coordinates between client and OSD and on the free space.
+  \item[\texttt{roundrobin}] Selects OSDs based on a round robin manner regarding the host name of the OSDs.
 \end{description}
 
 In addition, custom policies can be set by passing a list of basic policy IDs to be successively applied instead of a predefined policy name.
@@ -2665,6 +2678,9 @@ This policy uses domain names of clients and OSDs to determine the distance betw
 
  \item \textbf{Vivaldi network coordinates based sorting (policy ID 3003)}\\
  Sorts the list of OSDs in ascending order of their distance to the client, according to the vivaldi coordinates of the client and OSDs. This policy requires to enable vivaldi in the client (see section~\ref{sec:vivaldi} for details).
+ 
+ \item \textbf{Host round robin based sorting (policy ID 3004)}\\
+ Sorts the list of OSDs in a round robin manner regarding the host name of the OSDs. If multiple OSDs run per host, this policy guarantees a distribution over multiple hosts.
 
 \end{itemize}
 

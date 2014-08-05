@@ -128,6 +128,17 @@ int main(int argc, char* argv[]) {
       return 1;
     }
 
+    long quota = parseByteNumber(options.volume_quota);
+    if (quota == -1) {
+      cout << "Error: " << options.volume_quota << " is not a valid quota.\n";
+        return 1;
+    }
+
+    if (quota < 0) {
+    	cout << "Error: Quota has to be greater or equal zero \n";
+        return 1;
+    }
+
     Auth auth;
     if (options.admin_password.empty()) {
       auth.set_auth_type(AUTH_NONE);
@@ -165,6 +176,7 @@ int main(int argc, char* argv[]) {
     cout << "  Mode:\t\t\t\t" << options.volume_mode_octal << "\n"
          << "  Access Control Policy:\t" << options.access_policy_type_string
              << "\n"
+         << "  Quota:\t\t\t" << options.volume_quota << "\n"
          << "\n"
          << "  Default striping policy:\t\t"
              << options.default_striping_policy_type_string << "\n"
@@ -200,6 +212,7 @@ int main(int argc, char* argv[]) {
                          options.owner_username,
                          options.owner_groupname,
                          options.access_policy_type,
+                         quota,
                          options.default_striping_policy_type,
                          options.default_stripe_size,
                          options.default_stripe_width,

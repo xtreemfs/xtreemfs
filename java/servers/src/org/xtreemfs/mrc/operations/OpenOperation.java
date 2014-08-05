@@ -24,10 +24,10 @@ import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
+import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.VolumeManager;
-import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.metadata.XLoc;
@@ -97,6 +97,12 @@ public class OpenOperation extends MRCOperation {
         
         // check whether the file/directory exists
         try {
+            
+            // check if volume is full
+            long volumeQuota = volume.getVolumeQuota();
+            if ((write || create) && volumeQuota != 0 && volumeQuota <= volume.getVolumeSize()) {
+                throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "the volume's quota is reached");
+            }
             
             res.checkIfFileDoesNotExist();
             

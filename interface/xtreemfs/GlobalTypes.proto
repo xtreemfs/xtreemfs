@@ -70,6 +70,9 @@ enum OSDSelectionPolicyType {
     // Sorts the OSDs by proximity of vivalid network
     // coordinates of the client.
     OSD_SELECTION_POLICY_SORT_VIVALDI = 3003;
+    // Sorts the OSDs in a round robin manner for
+    // multiple OSDs per host.
+    OSD_SELECTION_POLICY_SORT_HOST_ROUND_ROBIN = 3004;
     // Sortes the OSDs by their UUID.
     OSD_SELECTION_POLICY_SORT_UUID = 3998;
     // Reverse given list. Used only internally by unit tests.

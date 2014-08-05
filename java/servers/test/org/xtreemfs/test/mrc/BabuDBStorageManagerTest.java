@@ -96,7 +96,8 @@ public class BabuDBStorageManagerTest extends TestCase {
         database = BabuDBFactory.createBabuDB(new BabuDBConfig(DB_DIRECTORY, DB_DIRECTORY, 2,
             1024 * 1024 * 16, 5 * 60, SyncMode.FDATASYNC, 300, 1000, false, 16, 1024 * 1024 * 512));
         mngr = new BabuDBStorageManager(database, "volId", "volume", (short) 1, new short[] { 1 },
-            new short[0], "me", "myGrp", 511, null, null, false, null);
+ new short[0], "me",
+                "myGrp", 511, null, null, false, 0, null);
         
         exc = null;
     }
