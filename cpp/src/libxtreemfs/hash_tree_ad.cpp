@@ -354,7 +354,6 @@ void HashTreeAD::StartTruncate(int max_leaf_number, bool complete_leaf) {
   assert(state_ == 0);
   assert(max_leaf_number >= -1);
 
-  // TODO(plieser): fix for empty file
   if (max_leaf_number > 0) {
     boost::icl::interval_set<int> nodeNumbers;
 
@@ -644,9 +643,10 @@ boost::icl::interval_set<int> HashTreeAD::RequiredNodesForWrite(
 void HashTreeAD::ValidateTree() {
   // TODO(plieser): validate siganture of root hash
   if (max_node_number_ == 0) {
-    std::vector<unsigned char> stored_hash = nodes_.at(Node(0,0));
-    std::vector<unsigned char> calc_hash = hasher_.digest(boost::asio::const_buffer());
-    if (nodes_.at(Node(0,0)) != hasher_.digest(boost::asio::const_buffer())) {
+    std::vector<unsigned char> stored_hash = nodes_.at(Node(0, 0));
+    std::vector<unsigned char> calc_hash = hasher_.digest(
+        boost::asio::const_buffer());
+    if (nodes_.at(Node(0, 0)) != hasher_.digest(boost::asio::const_buffer())) {
       throw XtreemFSException("Hash mismatch in hash tree");
     }
     return;

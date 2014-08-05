@@ -322,8 +322,9 @@ FileHandle* VolumeImplementation::OpenFile(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path,
     const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
+    uint32_t mode,
     bool disable_encryption) {
-  return OpenFileWithTruncateSize(user_credentials, path, flags, 0, 0, 0,
+  return OpenFileWithTruncateSize(user_credentials, path, flags, mode, 0, 0,
                                   disable_encryption);
 }
 
@@ -389,11 +390,12 @@ FileHandle* VolumeImplementation::OpenFileWithTruncateSize(
   }
 
   FileHandleImplementation* file_handle = NULL;
+  FileInfo* file_info = NULL;
   // Create a FileInfo object if it does not exist yet.
   {
     boost::mutex::scoped_lock lock(open_file_table_mutex_);
 
-    FileInfo* file_info = GetFileInfoOrCreateUnmutexed(
+    file_info = GetFileInfoOrCreateUnmutexed(
         ExtractFileIdFromXCap(open_response->creds().xcap()),
         path,
         open_response->creds().xcap().replicate_on_close(),
@@ -403,12 +405,16 @@ FileHandle* VolumeImplementation::OpenFileWithTruncateSize(
   }
 
   // TODO(plieser): if encyption enabled
-  if (!disable_encryption) {
+  if (true && !disable_encryption) {
     file_handle->SetObjectEncryptor(
         std::auto_ptr<ObjectEncryptor>(
             new ObjectEncryptor(
-                user_credentials, this,
-                ExtractFileIdFromXCap(open_response->creds().xcap()))));
+                user_credentials,
+                this,
+                ExtractFileIdFromXCap(open_response->creds().xcap()),
+                file_info,
+                open_response->creds().xlocs().replicas(0).striping_policy()
+                    .stripe_size())));
   }
 
   // Copy timestamp and free response memory.

@@ -111,6 +111,7 @@ class VolumeImplementation : public Volume {
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& path,
       const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
+      uint32_t mode,
       bool disable_encryption);
 
   /** Used by Volume->Truncate(). Otherwise truncate_new_file_size = 0. */

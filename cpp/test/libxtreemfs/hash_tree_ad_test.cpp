@@ -10,6 +10,7 @@
 
 #include <boost/foreach.hpp>
 #include <string>
+#include <vector>
 
 #include "common/test_environment.h"
 #include "libxtreemfs/client.h"
@@ -152,10 +153,11 @@ class HashTreeADTest : public OnlineTest {
     file =
         volume_->OpenFile(
             user_credentials_,
-            "/test_file",
-            static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
+            "/test_meta_file",
+            static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_CREAT // NOLINT
                 | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_TRUNC
-                | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR));
+                | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
+            0777, true);
 
     tree = new HashTreeAD(file, 4);
   }
@@ -180,7 +182,7 @@ class HashTreeADTest_Offline : public OfflineTest {
         volume_->OpenFile(
             user_credentials_,
             "/test_file",
-            static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
+            static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_CREAT // NOLINT
                 | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_TRUNC
                 | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR));
 
@@ -657,7 +659,7 @@ TEST_F(HashTreeADTest, TmpTest) {
   tree->FinishTruncate(user_credentials_);
 
   ASSERT_NO_THROW({
-  tree->StartWrite(0, true, 0, true);
+    tree->StartWrite(0, true, 0, true);
   });
   x[3] = '0';
   tree->SetLeaf(0, x, boost::asio::buffer("#000"));

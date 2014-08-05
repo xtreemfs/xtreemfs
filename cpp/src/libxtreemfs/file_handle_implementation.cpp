@@ -141,6 +141,11 @@ int FileHandleImplementation::Read(
 
   boost::scoped_ptr<ContainerUUIDIterator> temp_uuid_iterator_for_striping;
 
+  // if encryption is enabled
+  if (object_encryptor_.get() != NULL) {
+    object_encryptor_->StartRead(offset, count);
+  }
+
   // Read all objects.
   for (size_t j = 0; j < operations.size(); j++) {
     // Differ between striping and the rest (replication, no replication).
@@ -161,8 +166,8 @@ int FileHandleImplementation::Read(
     // so we define them here.
     PartialObjectReaderFunction_sync reader_partial;
     PartialObjectWriterFunction_sync writer_partial;
-    // TODO(plieser): if encryption enabled
-    if (true) {
+    // if encryption is enabled
+    if (object_encryptor_.get() != NULL) {
       reader_partial = boost::bind(&FileHandleImplementation::ReadFromOSD, this,
                                    uuid_iterator, file_credentials, _1, _2, _3,
                                    _4);
@@ -175,8 +180,8 @@ int FileHandleImplementation::Read(
       ObjectReaderFunction reader;
       ObjectWriterFunction writer;
 
-      // TODO(plieser): if encryption enabled
-      if (true) {
+      // if encryption is enabled
+      if (object_encryptor_.get() != NULL) {
         reader = boost::bind(&xtreemfs::ObjectEncryptor::Read_sync,
                              object_encryptor_.get(), _1, _2, 0,
                              object_cache_->object_size(), reader_partial,
@@ -205,8 +210,8 @@ int FileHandleImplementation::Read(
           operations[j].req_size,
           reader, writer);
     } else {
-      // TODO(plieser): if encryption enabled
-      if (true) {
+      // if encryption is enabled
+      if (object_encryptor_.get() != NULL) {
         received_data += object_encryptor_->Read_sync(
             operations[j].obj_number,
             operations[j].data,
@@ -359,6 +364,10 @@ int FileHandleImplementation::Write(
       // AsyncWriteHandler.
     }
   } else {
+    // if encryption is enabled
+    if (object_encryptor_.get() != NULL) {
+      object_encryptor_->StartWrite(offset, count);
+    }
     // Synchronous writes.
     string osd_uuid = "";
     // Write all objects.
@@ -383,8 +392,8 @@ int FileHandleImplementation::Write(
       // so we define them here.
       PartialObjectReaderFunction_sync reader_partial;
       PartialObjectWriterFunction_sync writer_partial;
-      // TODO(plieser): if encryption enabled
-      if (true) {
+      // if encryption is enabled
+      if (object_encryptor_.get() != NULL) {
         reader_partial = boost::bind(&FileHandleImplementation::ReadFromOSD,
                                      this, uuid_iterator, file_credentials, _1,
                                      _2, _3, _4);
@@ -397,8 +406,8 @@ int FileHandleImplementation::Write(
         ObjectReaderFunction reader;
         ObjectWriterFunction writer;
 
-        // TODO(plieser): if encryption enabled
-        if (true) {
+        // if encryption is enabled
+        if (object_encryptor_.get() != NULL) {
           reader = boost::bind(&xtreemfs::ObjectEncryptor::Read_sync,
                                object_encryptor_.get(), _1, _2, 0,
                                object_cache_->object_size(), reader_partial,
@@ -426,8 +435,8 @@ int FileHandleImplementation::Write(
                              operations[j].req_size,
                              reader, writer);
       } else {
-        // TODO(plieser): if encryption enabled
-        if (true) {
+        // if encryption is enabled
+        if (object_encryptor_.get() != NULL) {
           object_encryptor_->Write_sync(operations[j].obj_number,
                                         operations[j].data,
                                         operations[j].req_offset,
@@ -439,6 +448,10 @@ int FileHandleImplementation::Write(
                        operations[j].data, operations[j].req_size);
         }
       }
+    }
+    // if encryption is enabled
+    if (object_encryptor_.get() != NULL) {
+      object_encryptor_->FinishWrite();
     }
   }
 
