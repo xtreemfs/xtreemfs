@@ -244,7 +244,7 @@ public class StorageThread extends Stage {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
                     "removed file info from cache for file %s", fileId);
             
-            cback.cachesFlushed(null);
+            cback.cachesFlushed(null, md);
         } catch (Exception ex) {
             rq.sendInternalServerError(ex);
             return;
