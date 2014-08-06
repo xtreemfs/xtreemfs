@@ -163,6 +163,15 @@ public class DeletionStage extends Stage {
                         // if copy-on-write is enabled ...
                         if (cow) {
                             
+                            if (fi == null) {
+                                Logging.logMessage(
+                                        Logging.LEVEL_ERROR,
+                                        this,
+                                        "Deleting objects failed for COW enabled file %s, because FileMetadata is missing.",
+                                        fileId);
+                                continue;
+                            }
+
                             // if no previous versions exist, delete the file
                             // including all its metadata
                             if (fi.getVersionTable().getVersionCount() == 0)
