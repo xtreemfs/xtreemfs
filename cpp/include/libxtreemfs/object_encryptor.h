@@ -108,6 +108,8 @@ class ObjectEncryptor {
 
   int64_t file_size_;
 
+  int64_t old_file_size_;
+
   /**
    * Pointer to the volume. Not owned by the class.
    */

@@ -46,7 +46,7 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
                                  VolumeImplementation* volume, uint64_t file_id,
                                  FileInfo* file_info, int object_size)
     // TODO(plieser): option for enc_block_size; cipher
-    : enc_block_size_(1),
+    : enc_block_size_(4),
       cipher_("aes-256-ctr"),
       // TODO(plieser): files in one dir (creat if not exist yet)
       hash_tree_(
@@ -55,11 +55,13 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
               "/.xtreemfs_enc_meta_files_"
                   + boost::lexical_cast<std::string>(file_id),
               static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
-                  | pbrpc::SYSTEM_V_FCNTL_H_O_WRONLY),
+                  | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR
+                  | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_TRUNC),
               0777, true),
           16),
       object_size_(object_size * 1024),
       file_info_(file_info),
+      old_file_size_(0),
       volume_(volume),
       volume_options_(volume->volume_options()) {
   // TODO(plieser): file enc key
@@ -74,15 +76,20 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
 }
 
 void ObjectEncryptor::StartRead(int64_t offset, int count) {
+  if (offset >= file_size_ || count == 0) {
+    return;
+  }
   hash_tree_.StartRead(offset / enc_block_size_,
-                       (offset + count) / enc_block_size_);
+                       (offset + count - 1) / enc_block_size_);
 }
 
 void ObjectEncryptor::StartWrite(int64_t offset, int count) {
+  assert(count > 0);
   hash_tree_.StartWrite(offset / enc_block_size_, offset % enc_block_size_ == 0,
-                        (offset + count) / enc_block_size_,
+                        (offset + count - 1) / enc_block_size_,
                         (offset + count) % enc_block_size_ == 0);
   // increase file size if end of write is behind current file size
+  old_file_size_ = file_size_;
   file_size_ = std::max(file_size_, offset + count);
 }
 
@@ -215,6 +222,7 @@ boost::unique_future<void> ObjectEncryptor::CallSyncWriterAsynchronously(
     const char* buffer, int offset_in_object, int bytes_to_write) {
   writer_sync(object_no, buffer, offset_in_object, bytes_to_write);
   boost::promise<void> p;
+  p.set_value();
   return p.get_future();
 }
 
@@ -254,7 +262,17 @@ int ObjectEncryptor::DecryptEncBlock(int block_number,
 boost::unique_future<int> ObjectEncryptor::Read(
     int object_no, char* buffer, int offset_in_object, int bytes_to_read,
     PartialObjectReaderFunction reader, PartialObjectWriterFunction writer) {
+  assert(bytes_to_read > 0);
+  int object_offset = object_no * object_size_;
+  if (file_size_ <= object_offset + offset_in_object) {
+    // return if read start is behind file size
+    boost::promise<int> promise;
+    promise.set_value(0);
+    return promise.get_future();
+  }
   int ct_offset_in_object = RoundDown(offset_in_object, enc_block_size_);
+  int ct_offset_diff = offset_in_object - ct_offset_in_object;
+  // ciphertext bytes to read without regards to the file size
   int ct_bytes_to_read = RoundUp((offset_in_object + bytes_to_read),
                                  enc_block_size_) - ct_offset_in_object;
 
@@ -271,8 +289,11 @@ boost::unique_future<int> ObjectEncryptor::Read(
   int ct_end_offset_in_object = ct_offset_in_object + bytes_read.get();
   int end_offset_in_object = std::min(ct_end_offset_in_object,
                                       offset_in_object + bytes_to_read);
-  int start_enc_block = ct_offset_in_object / enc_block_size_;
-  int end_enc_block = ct_end_offset_in_object / enc_block_size_;
+  int ct_end_offset_diff = ct_end_offset_in_object - end_offset_in_object;
+  int start_enc_block = (object_offset + ct_offset_in_object) / enc_block_size_;
+  int end_enc_block = std::max(
+      start_enc_block,
+      (object_offset + ct_end_offset_in_object - 1) / enc_block_size_);
   int buffer_offset = 0;
   int ciphertext_offset = 0;
 
@@ -284,48 +305,50 @@ boost::unique_future<int> ObjectEncryptor::Read(
                                                              ct_block_len);
     DecryptEncBlock(start_enc_block, ct_block,
                     boost::asio::buffer(tmp_pt_block));
-    int pt_not_to_read_len = offset_in_object - ct_offset_in_object;
-    std::copy(tmp_pt_block.begin() + pt_not_to_read_len, tmp_pt_block.end(),
-              buffer);
-    read_plaintext_len += tmp_pt_block.size() - pt_not_to_read_len;
+    buffer_offset = std::min(enc_block_size_ - ct_offset_diff, bytes_to_read);
+    std::copy(tmp_pt_block.begin() + ct_offset_diff,
+              tmp_pt_block.begin() + ct_offset_diff + buffer_offset, buffer);
+    read_plaintext_len += buffer_offset;
 
     // set start enc block, buffer_offset and ciphertext_offset for the rest
     start_enc_block++;
-    buffer_offset += tmp_pt_block.size() - pt_not_to_read_len;
     ciphertext_offset += ct_block_len;
   }
 
   if (end_enc_block >= start_enc_block) {
     // last enc block is either not the same as the first or was not yet handled
-    if (ct_end_offset_in_object != end_offset_in_object) {
+    if (ct_end_offset_diff != 0) {
       // last enc block is only partly read
-      int ct_block_len = enc_block_size_
-          - (ct_bytes_to_read - bytes_read.get());
-      std::vector<unsigned char> tmp_pt_block(ct_block_len);
+      int offset_end_enc_block = (end_enc_block - start_enc_block)
+          * enc_block_size_;
+      int ct_block_len = bytes_read.get() - offset_end_enc_block;
+      assert(ct_block_len > 0);
+      assert(ct_block_len <= enc_block_size_);
       boost::asio::const_buffer ct_block = boost::asio::buffer(
-          ciphertext.data() + ct_bytes_to_read - enc_block_size_, ct_block_len);
-      DecryptEncBlock(end_enc_block, ct_block,
-                      boost::asio::buffer(tmp_pt_block));
-      int pt_not_to_read_len = ct_end_offset_in_object - end_offset_in_object;
-      std::copy(tmp_pt_block.begin(), tmp_pt_block.end() - pt_not_to_read_len,
-                buffer + bytes_to_read - ct_block_len);
-      read_plaintext_len += tmp_pt_block.size() - pt_not_to_read_len;
-
-      // set end enc block for the rest
-      end_enc_block--;
-    } else if (bytes_read.get() != ct_bytes_to_read) {
-      // last enc block is at the end of the file and incomplete
-      int ct_block_len = enc_block_size_
-          - (ct_bytes_to_read - bytes_read.get());
-      boost::asio::const_buffer ct_block = boost::asio::buffer(
-          ciphertext.data() + ct_bytes_to_read - enc_block_size_, ct_block_len);
-      DecryptEncBlock(
-          end_enc_block,
-          ct_block,
-          boost::asio::buffer(
-              buffer + end_offset_in_object - offset_in_object - ct_block_len,
-              ct_block_len));
-      read_plaintext_len += ct_block_len;
+          ciphertext.data() + offset_end_enc_block, ct_block_len);
+      int buffer_offset_end_enc_block = buffer_offset
+          + std::max(0, offset_end_enc_block - enc_block_size_);
+      if (ct_end_offset_diff != 0) {
+        std::vector<unsigned char> tmp_pt_block(ct_block_len);
+        DecryptEncBlock(end_enc_block, ct_block,
+                        boost::asio::buffer(tmp_pt_block));
+        assert(
+            bytes_to_read
+                >= buffer_offset_end_enc_block + tmp_pt_block.size()
+                    - ct_end_offset_diff);
+        std::copy(tmp_pt_block.begin(), tmp_pt_block.end() - ct_end_offset_diff,
+                  buffer + buffer_offset_end_enc_block);
+        read_plaintext_len += tmp_pt_block.size() - ct_end_offset_diff;
+      } else {
+        // last enc block is at the end of the file and incomplete
+        assert(bytes_to_read >= buffer_offset_end_enc_block + ct_block_len);
+        DecryptEncBlock(
+            end_enc_block,
+            ct_block,
+            boost::asio::buffer(buffer + buffer_offset_end_enc_block,
+                                ct_block_len));
+        read_plaintext_len += ct_block_len;
+      }
 
       // set end enc block for the rest
       end_enc_block--;
@@ -347,9 +370,6 @@ boost::unique_future<int> ObjectEncryptor::Read(
   assert(read_plaintext_len <= ciphertext.size());
   assert(read_plaintext_len <= bytes_to_read);
   assert(read_plaintext_len == end_offset_in_object - offset_in_object);
-  assert(
-      read_plaintext_len
-          == ciphertext.size() - (bytes_read.get() - ciphertext.size()));
 //  return boost::make_ready_future(end_offset_in_object - offset_in_object);
 //  return boost::make_future(end_offset_in_object - offset_in_object);
   boost::promise<int> promise;
@@ -371,6 +391,7 @@ boost::unique_future<int> ObjectEncryptor::Read(
 boost::unique_future<void> ObjectEncryptor::Write(
     int object_no, const char* buffer, int offset_in_object, int bytes_to_write,
     PartialObjectReaderFunction reader, PartialObjectWriterFunction writer) {
+  int object_offset = object_no * object_size_;
   int ct_offset_in_object = RoundDown(offset_in_object, enc_block_size_);
   int ct_offset_diff = offset_in_object - ct_offset_in_object;
   // ciphertext bytes to write without regards to the file size
@@ -378,40 +399,44 @@ boost::unique_future<void> ObjectEncryptor::Write(
                                    enc_block_size_) - ct_offset_in_object;
   int ct_bytes_to_write = std::min(
       ct_bytes_to_write_,
-      static_cast<int>(file_size_ - (object_no * object_size_)
-          - ct_offset_in_object));
+      static_cast<int>(file_size_ - object_offset - ct_offset_in_object));
   int ct_end_offset_in_object = ct_offset_in_object + ct_bytes_to_write;
   int end_offset_in_object = offset_in_object + bytes_to_write;  // ???
   int ct_end_offset_diff = ct_end_offset_in_object - end_offset_in_object;
-  int start_enc_block = ct_offset_in_object / enc_block_size_;
-  int end_enc_block = std::max(start_enc_block,
-                               (ct_end_offset_in_object - 1) / enc_block_size_);
+  int start_enc_block = (object_offset + ct_offset_in_object) / enc_block_size_;
+  int end_enc_block = std::max(
+      start_enc_block,
+      (object_offset + ct_end_offset_in_object - 1) / enc_block_size_);
   int buffer_offset = 0;
   int ciphertext_offset = 0;
 
   std::vector<unsigned char> ciphertext(ct_bytes_to_write);
 
   if (ct_offset_diff != 0) {
+    // TODO(plieser): optimization if block at end of file and no read is
+    //                needed
     // first enc block is only partly written, handle it differently
 
-    // 1. read the old enc block
-    std::vector<unsigned char> old_ct_block(enc_block_size_);
-    boost::unique_future<int> bytes_read = reader(
-        object_no, reinterpret_cast<char*>(old_ct_block.data()),
-        ct_offset_in_object, enc_block_size_);
-    // TODO(plieser): no wait
-    bytes_read.wait();
-    old_ct_block.resize(bytes_read.get());
-
-    // 2. decrypt the old enc block
     std::vector<unsigned char> new_pt_block(enc_block_size_);
-    DecryptEncBlock(start_enc_block, boost::asio::buffer(old_ct_block),
-                    boost::asio::buffer(new_pt_block));
+    if (old_file_size_ > object_offset + ct_offset_in_object) {
+      // 1. read the old enc block if it is not behind old file size
+      std::vector<unsigned char> old_ct_block(enc_block_size_);
+      boost::unique_future<int> bytes_read = reader(
+          object_no, reinterpret_cast<char*>(old_ct_block.data()),
+          ct_offset_in_object, enc_block_size_);
+      // TODO(plieser): no wait
+      bytes_read.wait();
+      old_ct_block.resize(bytes_read.get());
+
+      // 2. decrypt the old enc block
+      DecryptEncBlock(start_enc_block, boost::asio::buffer(old_ct_block),
+                      boost::asio::buffer(new_pt_block));
+    }
     new_pt_block.resize(std::min(enc_block_size_, ct_bytes_to_write));
 
     // 3. get plaintext for new enc block by overwriting part of the old
     // plaintext
-    buffer_offset = new_pt_block.size() - ct_offset_diff;
+    buffer_offset = std::max(enc_block_size_, bytes_to_write) - ct_offset_diff;
     assert(buffer_offset <= bytes_to_write);
     std::copy(buffer, buffer + buffer_offset,
               new_pt_block.begin() + ct_offset_diff);
@@ -428,30 +453,38 @@ boost::unique_future<void> ObjectEncryptor::Write(
   if (end_enc_block >= start_enc_block) {
     // last enc block is either not the same as the first or was not yet handled
     if (ct_end_offset_diff != 0 || ct_bytes_to_write_ != ct_bytes_to_write) {
-      // TODO(plieser): optimization if block at end of file
+      // TODO(plieser): optimization if block at end of file and no read is
+      //                needed
       // last enc block is only partly written
-      int new_pt_block_len = std::min(
-          enc_block_size_, ct_bytes_to_write - end_enc_block * enc_block_size_);
 
-      // 1. read the old enc block
-      std::vector<unsigned char> old_ct_block(enc_block_size_);
-      boost::unique_future<int> bytes_read = reader(
-          object_no, reinterpret_cast<char*>(old_ct_block.data()),
-          ct_end_offset_in_object - new_pt_block_len, enc_block_size_);
-      // TODO(plieser): no wait
-      bytes_read.wait();
-      old_ct_block.resize(bytes_read.get());
-
-      // 2. decrypt the old enc block
+      int offset_end_enc_block = (end_enc_block - start_enc_block)
+          * enc_block_size_;
+      int new_pt_block_len = ct_bytes_to_write - offset_end_enc_block;
+      assert(new_pt_block_len > 0);
+      assert(new_pt_block_len <= enc_block_size_);
       std::vector<unsigned char> new_pt_block(new_pt_block_len);
-      DecryptEncBlock(end_enc_block, boost::asio::buffer(old_ct_block),
-                      boost::asio::buffer(new_pt_block));
+      if (old_file_size_
+          > object_offset + ct_offset_in_object + offset_end_enc_block) {
+        // 1. read the old enc block if it is not behind old file size
+        std::vector<unsigned char> old_ct_block(enc_block_size_);
+        boost::unique_future<int> bytes_read = reader(
+            object_no, reinterpret_cast<char*>(old_ct_block.data()),
+            ct_end_offset_in_object - new_pt_block_len, enc_block_size_);
+        // TODO(plieser): no wait
+        bytes_read.wait();
+        old_ct_block.resize(bytes_read.get());
+
+        // 2. decrypt the old enc block
+        std::vector<unsigned char> new_pt_block(new_pt_block_len);
+        DecryptEncBlock(end_enc_block, boost::asio::buffer(old_ct_block),
+                        boost::asio::buffer(new_pt_block));
+      }
 
       // 3. get plaintext for new enc block by overwriting part of the old
       // plaintext
       std::copy(
           buffer + buffer_offset
-              + std::max(0, end_enc_block - 1) * enc_block_size_,
+              + std::max(0, offset_end_enc_block - enc_block_size_),
           buffer + bytes_to_write, new_pt_block.begin());
 
       // 4. encrypt the new enc block and store the ciphertext in the write

@@ -294,7 +294,7 @@ HashTreeAD::~HashTreeAD() {
 void HashTreeAD::StartRead(int start_leaf, int end_leaf) {
   assert(state_ == 0);
   assert(start_leaf <= end_leaf);
-  assert(end_leaf <= max_leaf_number_);
+  end_leaf = std::min(end_leaf, max_leaf_number_);
 
   boost::icl::interval_set<int> nodeNumbers = RequiredNodesForRead(start_leaf,
                                                                    end_leaf);
@@ -308,7 +308,7 @@ void HashTreeAD::StartRead(int start_leaf, int end_leaf) {
  * @param start_leaf    The beginning of the write.
  * @param complete_start_leaf   true if complete start leaf will be overwritten.
  * @param end_leaf    The end of the write.
- * @param complete_end_leaf   true if complete start leaf will be overwritten.
+ * @param complete_end_leaf   true if complete end leaf will be overwritten.
  *
  * @throws XtreemFSException    If stored hash tree is invalid.
  */
