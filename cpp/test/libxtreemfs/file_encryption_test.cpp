@@ -290,5 +290,128 @@ TEST_F(EncryptionTest, Read_02) {
   EXPECT_STREQ("CDEFGHI", buffer);
 }
 
+TEST_F(EncryptionTest, Write_01) {
+  char buffer[50];
+  int x;
+
+  // full write to first 2. block
+  ASSERT_NO_THROW({
+    file->Write("EFGH", 4, 4);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 10, 0);
+  });
+  EXPECT_EQ(8, x);
+  buffer[x] = 0;
+  for (int i = 0; i < 4; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
+  EXPECT_STREQ("EFGH", buffer+4);
+
+  // write from middle 1. block to middle 2. block
+  ASSERT_NO_THROW({
+    file->Write("BCefgH", 6, 2);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 10, 0);
+  });
+  EXPECT_EQ(8, x);
+  buffer[x] = 0;
+  for (int i = 0; i < 2; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
+  EXPECT_STREQ("BCefgH", buffer+2);
+
+  // write from middle 4. block to middle 6. block
+  ASSERT_NO_THROW({
+    file->Write("NOPQRSTU", 8, 13);
+  });
+
+  // full read
+
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 40, 0);
+  });
+  EXPECT_EQ(21, x);
+  buffer[x] = 0;
+  for (int i = 0; i < 2; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
+  EXPECT_STREQ("BCefgH", buffer+2);
+  for (int i = 8; i < 12; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
+  EXPECT_STREQ("NOPQRSTU", buffer+13);
+}
+
+TEST_F(EncryptionTest, Write_02) {
+  char buffer[50];
+  int x;
+
+  // write from middle 3. block to middle 3. block
+  ASSERT_NO_THROW({
+    file->Write("JK", 2, 9);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 30, 0);
+  });
+  EXPECT_EQ(11, x);
+  buffer[x] = 0;
+  for (int i = 0; i < 9; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
+  EXPECT_STREQ("JK", buffer+9);
+
+  // write from middle 1. block to middle 1. block
+  ASSERT_NO_THROW({
+    file->Write("C", 1, 2);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 30, 0);
+  });
+  EXPECT_EQ(11, x);
+  buffer[x] = 0;
+  for (int i = 0; i < 2; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
+  EXPECT_STREQ("C", buffer+2);
+  for (int i = 3; i < 9; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
+  EXPECT_STREQ("JK", buffer+9);
+
+  // write from middle 1. block to middle 2. block
+  ASSERT_NO_THROW({
+    file->Write("DEF", 3, 3);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 30, 0);
+  });
+  EXPECT_EQ(11, x);
+  buffer[x] = 0;
+  for (int i = 0; i < 2; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
+  EXPECT_STREQ("CDEF", buffer+2);
+  for (int i = 6; i < 9; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
+  EXPECT_STREQ("JK", buffer+9);
+}
+
+// 0000 0000 0011 1111 1111 2222 22
+// 0123 4567 8901 2345 6789 0134 56
+// ABCD EFGH IJKL MNOP QRST UVWX YZ
+
 }  // namespace xtreemfs
 
