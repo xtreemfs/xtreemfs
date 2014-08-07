@@ -257,17 +257,20 @@ public class StorageStage extends Stage {
             th.waitForShutdown();
     }
     
-    private int getTaskId(String fileId) {
-        
+    public static int getTaskId(String fileId, int numStorageThreads) {
         // calculate a hash value from the file ID and return the responsible
         // thread
+        if (numStorageThreads == 1) {
+            return 0;
+        }
+
         assert (fileId != null);
         int hash = fileId.hashCode();
         if (hash == Integer.MIN_VALUE) {
             return 0;
         }
         int key = Math.abs(hash);
-        int index = (key % storageThreads.length);
+        int index = (key % numStorageThreads);
         
         // String objId = rq.getDetails().getFileId()
         // + rq.getDetails().getObjectNumber();
@@ -277,6 +280,10 @@ public class StorageStage extends Stage {
         return index;
     }
     
+    private int getTaskId(String fileId) {
+        return getTaskId(fileId, storageThreads.length);
+    }
+
     @Override
     protected void processMethod(StageRequest method) {
         throw new UnsupportedOperationException("Not supported yet.");

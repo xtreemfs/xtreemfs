@@ -21,6 +21,7 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.replication.ObjectSet;
+import org.xtreemfs.osd.stages.StorageStage;
 import org.xtreemfs.osd.storage.VersionTable.Version;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog;
 
@@ -31,33 +32,41 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog;
 /** Performance oriented StorageLayout, which keeps everything in memory. */
 public class InMemoryStorageLayout extends StorageLayout {
 
+    final static int   FILE_INIT_CAP   = 16;
+    final static float FILE_LOAD_FAC   = (float) 0.75;
+
+    final static int   OBJECT_INIT_CAP = 16;
+    final static float OBJECT_LOAD_FAC = (float) 0.75;
+
     // ================================================================================
     // In-memory storage structures
     // ================================================================================
 
     private final static class InMemoryData {
         /** Metadata **/
-        private final InMemoryMetadata             metadata      = new InMemoryMetadata();
+        // TODO(jdillmann): move members to this and provide get/set.
+        private final InMemoryMetadata              metadata              = new InMemoryMetadata();
 
-        /** Mapping from hash(objNo, objVersion) -> object **/
-        private final Map<Integer, InMemoryObject> objects       = new HashMap<Integer, InMemoryObject>();
+        /** Mapping from ObjectId(objNo, objVersion) -> object **/
+        private final Map<ObjectId, InMemoryObject> objects               = new HashMap<ObjectId, InMemoryObject>(
+                                                                                  OBJECT_INIT_CAP, OBJECT_LOAD_FAC);
 
         /**
          * Mapping from objNo -> currentObject <br>
          * Contains information which version of a object is currently used.
          **/
-        private Map<Long, InMemoryObject>          currentObjectVersions = null;
+        private Map<Long, InMemoryObject>           currentObjectVersions = null;
 
         InMemoryObject getObject(long objNo, long objVersion) {
-            return objects.get(objHash(objNo, objVersion));
+            return objects.get(new ObjectId(objNo, objVersion));
         }
 
         void putObject(InMemoryObject object) {
-            objects.put(objHash(object.objNo, object.objVersion), object);
+            objects.put(new ObjectId(object), object);
         }
 
         InMemoryObject removeObject(long objNo, long objVersion) {
-            return objects.remove(objHash(objNo, objVersion));
+            return objects.remove(new ObjectId(objNo, objVersion));
         }
 
         Collection<InMemoryObject> getAllObjects() {
@@ -68,12 +77,49 @@ public class InMemoryStorageLayout extends StorageLayout {
             return objects.size();
         }
 
-        int objHash(long objNo, long objVersion) {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + (int) (objNo ^ (objNo >>> 32));
-            result = prime * result + (int) (objVersion ^ (objVersion >>> 32));
-            return result;
+        /**
+         * Required to find objects in the map.
+         * 
+         */
+        private final static class ObjectId {
+            final long objNo;
+            final long objVersion;
+
+            public ObjectId(long objNo, long objVersion) {
+                this.objNo = objNo;
+                this.objVersion = objVersion;
+            }
+
+            public ObjectId(InMemoryObject object) {
+                super();
+                this.objNo = object.objNo;
+                this.objVersion = object.objVersion;
+            }
+
+            @Override
+            public int hashCode() {
+                final int prime = 31;
+                int result = 1;
+                result = prime * result + (int) (objNo ^ (objNo >>> 32));
+                result = prime * result + (int) (objVersion ^ (objVersion >>> 32));
+                return result;
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj)
+                    return true;
+                if (obj == null)
+                    return false;
+                if (getClass() != obj.getClass())
+                    return false;
+                ObjectId other = (ObjectId) obj;
+                if (objNo != other.objNo)
+                    return false;
+                if (objVersion != other.objVersion)
+                    return false;
+                return true;
+            }
         }
     }
 
@@ -101,6 +147,7 @@ public class InMemoryStorageLayout extends StorageLayout {
          * @param length
          * @return true if the buffer could be be resized.
          */
+        // TODO(jdillmann): Set length could allocate new buffers.
         public void setLength(int newLength) throws IOException {
             if (data == null) {
                 if (newLength == 0) {
@@ -114,11 +161,12 @@ public class InMemoryStorageLayout extends StorageLayout {
             }
 
             if (data.capacity() < newLength) {
-                // Try to enlarge the buffer. Fails if the underlying buffer is to small.
+                // Try to enlarge the buffer. Fails if the underlying buffer is too small.
                 if (!data.enlarge(newLength)) {
-                    throw new IOException(String.format(
-                            "Object data buffer can't be resized to %d, because the underlying buffer is to small (objNo='%s', objVersion='%s').",
-                            newLength, objNo, objVersion));
+                    throw new IOException(
+                            String.format(
+                                    "Object data buffer can't be resized to %d, because the underlying buffer is too small (objNo='%s', objVersion='%s').",
+                                    newLength, objNo, objVersion));
                 }
             }
 
@@ -143,32 +191,89 @@ public class InMemoryStorageLayout extends StorageLayout {
     // ================================================================================
 
     /**
-     * Primary in memory data structure. <br>
-     * Mapping from fileId -> InMemoryData
-     **/
-    private final Map<String, InMemoryData> dataStore;
+     * Each StorageThread is responsible for a certain subset of fileIds, which will be stored in different containers
+     * to allow concurrent access. Every storage container contains mappings from fileIds to InMemoryData objects.
+     */
+    private final Map<String, InMemoryData>[] storage;
 
-    private final boolean checksumsEnabled;
-
+    /** Number of StorageThreads used to by the OSD **/
+    private final int                         numStorageThreads;
 
     // ================================================================================
     // Constructors
     // ================================================================================
 
+    @SuppressWarnings("unchecked")
     public InMemoryStorageLayout(OSDConfig config, MetadataCache cache) {
         super(cache);
-        dataStore = new HashMap<String, InMemoryData>();
 
         if (config.isUseChecksums()) {
             throw new UnsupportedOperationException("Checksums are not available with the In-Memory storage.");
         }
-        checksumsEnabled = false;
-    }
 
+        if (config.getStorageThreads() == 0) {
+            // If 0 is configured, the StorageStage is using 5 threads as a default.
+            numStorageThreads = 5;
+        } else {
+            numStorageThreads = config.getStorageThreads();
+        }
+
+        storage = new Map[numStorageThreads];
+        for (int i = 0; i < storage.length; i++) {
+            storage[i] = new HashMap<String, InMemoryData>(FILE_INIT_CAP, FILE_LOAD_FAC);
+        }
+    }
 
     // ================================================================================
     // Helper methods for accessing the in-memory storage.
     // ================================================================================
+
+    /**
+     * Returns the {@link InMemoryData} from the suitable storage container for fileId.
+     * 
+     * @see #storage
+     * 
+     * @param fileId
+     * @return {@link InMemoryData} stored at the container or null.
+     */
+    private InMemoryData getData(String fileId) {
+        int taskId = StorageStage.getTaskId(fileId, numStorageThreads);
+        return storage[taskId].get(fileId);
+    }
+
+    /**
+     * Associates the {@link InMemoryData} with the fileId in the suitable storage container.
+     * 
+     * @see #storage
+     * @see Map#put(Object, Object)
+     * 
+     * @param fileId
+     *            Must not be null.
+     * @param data
+     *            Must not be null.
+     * @return the previous InMemoryData associated with fileId, or null if there was no mapping.
+     */
+    private InMemoryData putData(String fileId, InMemoryData data) {
+        assert (fileId != null);
+        assert (data != null);
+
+        int taskId = StorageStage.getTaskId(fileId, numStorageThreads);
+        return storage[taskId].put(fileId, data);
+    }
+
+    /**
+     * Removes the mapping for the fileId from the suitable storage container if it is present.
+     * 
+     * @see #storage
+     * @see Map#remove(Object, Object)
+     * 
+     * @param fileId
+     * @return the previous InMemoryData associated with fileId, or null if there was no mapping.
+     */
+    private InMemoryData removeData(String fileId) {
+        int taskId = StorageStage.getTaskId(fileId, numStorageThreads);
+        return storage[taskId].remove(fileId);
+    }
 
     /**
      * Check if there is in-memory data stored for fileId and return it or throw an IOException.
@@ -177,8 +282,8 @@ public class InMemoryStorageLayout extends StorageLayout {
      * @return
      * @throws IOException
      */
-    private InMemoryData getData(String fileId) throws IOException {
-        InMemoryData f = dataStore.get(fileId);
+    private InMemoryData getDataOrThrow(String fileId) throws IOException {
+        InMemoryData f = getData(fileId);
         if (f == null) {
             throw new IOException("No data stored in memory for fileId: " + fileId);
         }
@@ -193,13 +298,13 @@ public class InMemoryStorageLayout extends StorageLayout {
      * @return
      */
     private InMemoryData getOrCreateData(String fileId) {
-        InMemoryData f = dataStore.get(fileId);
+        InMemoryData f = getData(fileId);
         if (f == null) {
             // Create a new data object with default values.
             f = new InMemoryData();
 
             // Store it to the data map.
-            dataStore.put(fileId, f);
+            putData(fileId, f);
         }
 
         return f;
@@ -212,8 +317,8 @@ public class InMemoryStorageLayout extends StorageLayout {
      * @return
      * @throws IOException
      */
-    private InMemoryMetadata getMetadata(String fileId) throws IOException {
-        return getData(fileId).metadata;
+    private InMemoryMetadata getMetadataOrThrow(String fileId) throws IOException {
+        return getDataOrThrow(fileId).metadata;
     }
 
     /**
@@ -227,7 +332,6 @@ public class InMemoryStorageLayout extends StorageLayout {
         return getOrCreateData(fileId).metadata;
     }
 
-
     // ================================================================================
     // Implementation of abstract StorageLayout methods
     // ================================================================================
@@ -236,15 +340,7 @@ public class InMemoryStorageLayout extends StorageLayout {
     protected FileMetadata loadFileMetadata(String fileId, StripingPolicyImpl sp) throws IOException {
         FileMetadata info = new FileMetadata(sp);
 
-        InMemoryData file = null;
-        try {
-            file = getData(fileId);
-        } catch (IOException e) {
-            if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "Trying to load metadata for inexisting file '%s'",
-                        fileId);
-            }
-        }
+        InMemoryData file = getData(fileId);
 
         if (file != null) {
             InMemoryMetadata m = file.metadata;
@@ -333,6 +429,11 @@ public class InMemoryStorageLayout extends StorageLayout {
             vt.load();
             info.initVersionTable(vt);
         } else {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "Trying to load metadata for inexisting file '%s'",
+                        fileId);
+            }
+
             // FileMetadata does not exist: create it.
             info.setFilesize(0);
             info.setLastObjectNumber(-1);
@@ -378,10 +479,8 @@ public class InMemoryStorageLayout extends StorageLayout {
         }
 
         // Check if there is data stored for the fileId.
-        InMemoryData fileData;
-        try {
-            fileData = getData(fileId);
-        } catch (IOException e) {
+        InMemoryData fileData = getData(fileId);
+        if (fileData == null) {
             return new ObjectInformation(ObjectInformation.ObjectStatus.DOES_NOT_EXIST, null, stripeSize);
         }
 
@@ -467,6 +566,7 @@ public class InMemoryStorageLayout extends StorageLayout {
                 InMemoryObject oldObject = file.getObject(objNo, oldVersion);
                 if (oldObject.data != null && oldObject.getLength() > 0) {
                     // Allocate a new buffer.
+                    // TODO(jdillmann): stripeSize or oldObject.data.capacity()
                     object.data = BufferPool.allocate(stripeSize);
 
                     // Copy the buffer.
@@ -555,6 +655,7 @@ public class InMemoryStorageLayout extends StorageLayout {
             if (oldObject.data != null && oldLength > 0 && newLength > 0) { // objectLength > 0
 
                 // Allocate a new buffer.
+                // TODO(jdillmann): stripeSize or oldObject.data.capacity()/limit()
                 object.data = BufferPool.allocate(stripeSize);
                 object.setLength(oldLength);
 
@@ -586,9 +687,9 @@ public class InMemoryStorageLayout extends StorageLayout {
         } else if (newLength > oldLength) {
             // Keep the buffer, increase its limit and fill with zeros.
             if (object.data == null) {
+                // TODO(jdillmann): or newSize?
                 object.data = BufferPool.allocate(stripeSize);
             }
-
 
             // Fill with zeros.
             object.setLength(newLength);
@@ -608,10 +709,9 @@ public class InMemoryStorageLayout extends StorageLayout {
 
     @Override
     public void deleteFile(String fileId, boolean deleteMetadata) throws IOException {
-        InMemoryData file;
-        try {
-            file = getData(fileId);
-        } catch (IOException e) {
+        InMemoryData file = getData(fileId);
+
+        if (file == null) {
             // If no data is stored, deletion is unnecessary.
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "Requested deletion of non existing file '%s'.", fileId);
@@ -632,16 +732,14 @@ public class InMemoryStorageLayout extends StorageLayout {
 
         // Delete the metadata, if requested.
         if (deleteMetadata) {
-            dataStore.remove(fileId);
+            removeData(fileId);
         }
     }
 
     @Override
     public void deleteObject(String fileId, FileMetadata md, long objNo, long version) throws IOException {
-        InMemoryData file;
-        try {
-            file = getData(fileId);
-        } catch (IOException e) {
+        InMemoryData file = getData(fileId);
+        if (file == null) {
             // If no data is stored, deletion is unnecessary.
             return;
         }
@@ -686,7 +784,7 @@ public class InMemoryStorageLayout extends StorageLayout {
 
     @Override
     public boolean fileExists(String fileId) {
-        return dataStore.containsKey(fileId);
+        return (getData(fileId) != null);
     }
 
     @Override
@@ -701,7 +799,7 @@ public class InMemoryStorageLayout extends StorageLayout {
 
     @Override
     public TruncateLog getTruncateLog(String fileId) throws IOException {
-        return getMetadata(fileId).truncateLog;
+        return getMetadataOrThrow(fileId).truncateLog;
     }
 
     @Override
@@ -711,12 +809,12 @@ public class InMemoryStorageLayout extends StorageLayout {
 
     @Override
     public int getMasterEpoch(String fileId) throws IOException {
-        return getMetadata(fileId).masterEpoch;
+        return getMetadataOrThrow(fileId).masterEpoch;
     }
 
     @Override
     public void updateCurrentObjVersion(String fileId, long objNo, long newVersion) throws IOException {
-        InMemoryData file = getData(fileId);
+        InMemoryData file = getDataOrThrow(fileId);
         InMemoryObject object = file.getObject(objNo, newVersion);
 
         if (file.currentObjectVersions == null) {
@@ -731,12 +829,13 @@ public class InMemoryStorageLayout extends StorageLayout {
      */
     @Override
     public void updateCurrentVersionSize(String fileId, long newLastObject) throws IOException {
-        InMemoryData file = getData(fileId);
+        InMemoryData file = getDataOrThrow(fileId);
 
         if (file.currentObjectVersions == null) {
+            // TODO(jdillmann): use getter with generator.
             file.currentObjectVersions = new HashMap<Long, InMemoryObject>();
         }
-        
+
         // If the newLastObject is < 0 the file has been deleted, but there are still older versions around.
         // Thus the currentObjectVersions can be truncated.
         if (newLastObject < 0) {
@@ -744,7 +843,7 @@ public class InMemoryStorageLayout extends StorageLayout {
         }
 
         // Remove objectVersions for objects with a number higher than the newLastObject's one.
-        for(Iterator<Long> it = file.currentObjectVersions.keySet().iterator(); it.hasNext(); ) {
+        for (Iterator<Long> it = file.currentObjectVersions.keySet().iterator(); it.hasNext();) {
             Long objNo = it.next();
             if (objNo > newLastObject) {
                 it.remove();
@@ -763,14 +862,24 @@ public class InMemoryStorageLayout extends StorageLayout {
         return true;
     }
 
+    /**
+     * Warning: This is not thread-safe! <br>
+     * Used from OSDDrain (GetFileIDListOperation).
+     */
     @Override
     public ArrayList<String> getFileIDList() {
-        return new ArrayList<String>(dataStore.keySet());
+        ArrayList<String> fileIdList = new ArrayList<String>();
+
+        for (int i = 0; i < storage.length; i++) {
+            fileIdList.addAll(storage[i].keySet());
+        }
+
+        return fileIdList;
     }
 
     @Override
     public ObjectSet getObjectSet(String fileId, FileMetadata md) {
-        InMemoryData fileData = dataStore.get(fileId);
+        InMemoryData fileData = getData(fileId);
 
         // If no data is stored, return an empty ObjectSet.
         if (fileData == null) {
@@ -806,7 +915,7 @@ public class InMemoryStorageLayout extends StorageLayout {
      *             if no metadata for fileId exists.
      */
     SortedMap<Long, Version> getVersionTable(String fileId) throws IOException {
-        InMemoryMetadata metadata = getMetadata(fileId);
+        InMemoryMetadata metadata = getMetadataOrThrow(fileId);
         return metadata.versionTable;
     }
 
@@ -819,7 +928,7 @@ public class InMemoryStorageLayout extends StorageLayout {
      *             if no metadata for fileId exists.
      */
     void setVersionTable(String fileId, SortedMap<Long, Version> versionTable) throws IOException {
-        InMemoryMetadata metadata = getMetadata(fileId);
+        InMemoryMetadata metadata = getMetadataOrThrow(fileId);
         metadata.versionTable = versionTable;
     }
 
