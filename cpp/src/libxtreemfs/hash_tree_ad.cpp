@@ -391,6 +391,7 @@ void HashTreeAD::FinishTruncate(
 /**
  * Validates the hash of the data and returns the additional data of a leaf.
  * StartRead must be called first.
+ * Returns empty vector in case of the unencrypted 0 of a sparse file are read.
  *
  * @param leaf    Leaf number.
  * @param data    Data of the leaf.
@@ -683,16 +684,27 @@ void HashTreeAD::ValidateTree() {
  * Updates the hash tree.
  *
  * @param start_leaf    Beginning of the changed leafs. -1 if no leafs changed.
- * @param end_leaf    End of the changed leafs.
- * @param max_leaf    Old/new max leaf number if it was changed, otherwise -1
+ * @param end_leaf      End of the changed leafs.
+ * @param old_max_leaf  Old max leaf number if it was changed, otherwise -1
  */
-void HashTreeAD::UpdateTree(int start_leaf, int end_leaf, int max_leaf) {
+void HashTreeAD::UpdateTree(int start_leaf, int end_leaf, int old_max_leaf) {
   if (start_leaf > -1) {
+    // update the ancestors hashes for the leafs written to
     int start_n = start_leaf_;
     int end_n = end_leaf_;
+    Node skiped_node = Node(0, 0);
     for (int level = 1; level < max_level_; level++) {
       start_n = Node(level - 1, start_n).Parent(this).n;
-      end_n = Node(level - 1, end_n).Parent(this).n;
+      Node end_parent = Node(level - 1, end_n).Parent(this);
+      if (skiped_node.level == level) {
+        end_n = skiped_node.n;
+      } else if (end_parent.level == level) {
+        end_n = end_parent.n;
+      } else {
+        assert(skiped_node.level < level);
+        skiped_node = end_parent;
+        end_n = Node(level - 1, end_n - 2).Parent(this).n;
+      }
       for (int n = start_n; n <= end_n; n++) {
         Node node(level, n);
         nodes_[node] = HashOfNode(node.LeftChild(this), node.RightChild(this));
@@ -701,15 +713,18 @@ void HashTreeAD::UpdateTree(int start_leaf, int end_leaf, int max_leaf) {
     }
   }
 
-  if (max_leaf != -1 && (max_leaf + 1 < start_leaf || (max_leaf % 2) == 1)) {
-    int n = max_leaf;
+  if (old_max_leaf != -1
+      && (old_max_leaf + 1 < start_leaf || (old_max_leaf % 2) == 1)) {
+    // the write was behind the last max leaf
+    // update the ancestors of the old max leaf as 0's may have been added to
+    // complete it
     // TODO(plieser): optimization if old last block was complete
-//    for (int level = LeastSignificantBitUnset(max_leaf);
-//         level < max_level_ - 1; level++) {
+    Node node(0, old_max_leaf);
     for (int level = 0; level < max_level_ - 1; level++) {
-      Node node(level, n);
-      nodes_[node] = HashOfNode(node.LeftSibling(), node.RightSibling());
-      changed_nodes_ += node.NodeNumber(this);
+      Node parent = node.Parent(this);
+      nodes_[parent] = HashOfNode(node.LeftSibling(), node.RightSibling());
+      changed_nodes_ += parent.NodeNumber(this);
+      node = parent;
     }
   }
 

@@ -243,6 +243,12 @@ int ObjectEncryptor::DecryptEncBlock(int block_number,
                                      boost::asio::const_buffer ciphertext,
                                      boost::asio::mutable_buffer plaintext) {
   std::vector<unsigned char> iv = hash_tree_.GetLeaf(block_number, ciphertext);
+  if (iv.size() == 0) {
+    // block contains unencrypted 0 of a sparse file
+    memset(boost::asio::buffer_cast<void*>(plaintext), 0,
+           boost::asio::buffer_size(plaintext));
+    return boost::asio::buffer_size(ciphertext);
+  }
   int plaintext_len = cipher_.decrypt(ciphertext, file_enc_key_, iv, plaintext);
   assert(plaintext_len == boost::asio::buffer_size(ciphertext));
   return plaintext_len;
@@ -317,7 +323,8 @@ boost::unique_future<int> ObjectEncryptor::Read(
     ciphertext_offset += ct_block_len;
   }
 
-  if (end_enc_block >= start_enc_block && ct_end_offset_diff != 0) {
+  if (end_enc_block >= start_enc_block
+      && (ct_end_offset_diff != 0 || ct_bytes_to_read != bytes_read.get())) {
     // last enc block is either not the same as the first or was not yet handled
     // and is only partly read
     int ct_block_len = bytes_read.get() - offset_end_enc_block;
@@ -436,7 +443,7 @@ boost::unique_future<void> ObjectEncryptor::Write(
 
     // 3. get plaintext for new enc block by overwriting part of the old
     // plaintext
-    buffer_offset = std::max(enc_block_size_, bytes_to_write) - ct_offset_diff;
+    buffer_offset = std::min(enc_block_size_ - ct_offset_diff, bytes_to_write);
     assert(buffer_offset <= bytes_to_write);
     std::copy(buffer, buffer + buffer_offset,
               new_pt_block.begin() + ct_offset_diff);
@@ -481,8 +488,8 @@ boost::unique_future<void> ObjectEncryptor::Write(
     // plaintext
     int buffer_offset_end_enc_block = buffer_offset
         + (end_enc_block - start_enc_block) * enc_block_size_;
-    std::copy(buffer + buffer_offset + buffer_offset_end_enc_block,
-              buffer + bytes_to_write, new_pt_block.begin());
+    std::copy(buffer + buffer_offset_end_enc_block, buffer + bytes_to_write,
+              new_pt_block.begin());
 
     // 4. encrypt the new enc block and store the ciphertext in the write
     //    buffer
