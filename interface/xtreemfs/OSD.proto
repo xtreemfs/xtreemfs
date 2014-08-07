@@ -334,6 +334,15 @@ message xtreemfs_rwr_reset_completeRequest {
   required fixed32 primary_epoch = 3;
 }
 
+// Status of S.M.A.R.T health test
+enum SmartTestResult {
+   SMART_TEST_RESULT_PASSED = 0;
+   SMART_TEST_RESULT_FAILED = 1;
+   // Status is not available,
+   // i.e. the test is disabled or an error occurred
+   SMART_TEST_RESULT_NOT_AVAIL = 2;
+}
+
 service OSDService {
   
   option(interface_id)=30001;

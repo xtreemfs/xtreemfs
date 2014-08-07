@@ -23,6 +23,7 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/repeated_field.h>
 #include <google/protobuf/extension_set.h>
+#include <google/protobuf/generated_enum_reflection.h>
 #include <google/protobuf/unknown_field_set.h>
 #include "include/PBRPC.pb.h"
 #include "include/Common.pb.h"
@@ -76,6 +77,26 @@ class xtreemfs_pingMesssage;
 class xtreemfs_rwr_auth_stateRequest;
 class xtreemfs_rwr_reset_completeRequest;
 
+enum SmartTestResult {
+  SMART_TEST_RESULT_PASSED = 0,
+  SMART_TEST_RESULT_FAILED = 1,
+  SMART_TEST_RESULT_NOT_AVAIL = 2
+};
+bool SmartTestResult_IsValid(int value);
+const SmartTestResult SmartTestResult_MIN = SMART_TEST_RESULT_PASSED;
+const SmartTestResult SmartTestResult_MAX = SMART_TEST_RESULT_NOT_AVAIL;
+const int SmartTestResult_ARRAYSIZE = SmartTestResult_MAX + 1;
+
+const ::google::protobuf::EnumDescriptor* SmartTestResult_descriptor();
+inline const ::std::string& SmartTestResult_Name(SmartTestResult value) {
+  return ::google::protobuf::internal::NameOfEnum(
+    SmartTestResult_descriptor(), value);
+}
+inline bool SmartTestResult_Parse(
+    const ::std::string& name, SmartTestResult* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<SmartTestResult>(
+    SmartTestResult_descriptor(), name, value);
+}
 // ===================================================================
 
 class InternalGmax : public ::google::protobuf::Message {
@@ -8536,6 +8557,10 @@ inline void xtreemfs_rwr_reset_completeRequest::set_primary_epoch(::google::prot
 namespace google {
 namespace protobuf {
 
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::xtreemfs::pbrpc::SmartTestResult>() {
+  return ::xtreemfs::pbrpc::SmartTestResult_descriptor();
+}
 
 }  // namespace google
 }  // namespace protobuf
