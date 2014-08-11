@@ -24,7 +24,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDSelectionPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.SmartTestResult;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.OSDHealthResult;
 
 /**
  * Filters all those OSDs that haven't been assigned to the current XLoc list
@@ -178,11 +178,12 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
     }
     
     private boolean isHealthy(Service osd) {
-        String smartTestResult = KeyValuePairs.getValue(osd.getData().getDataList(), "smart_health_test");
+        String smartTestResult = KeyValuePairs.getValue(osd.getData().getDataList(), "osd_health_test");
         if (smartTestResult == null) {
             return true;
         }
-        return Integer.valueOf(smartTestResult) != SmartTestResult.SMART_TEST_RESULT_FAILED_VALUE;
+        return Integer.valueOf(smartTestResult) != OSDHealthResult.OSD_HEALTH_RESULT_FAILED_VALUE
+                || Integer.valueOf(smartTestResult) != OSDHealthResult.OSD_HEALTH_RESULT_WARNING_VALUE;
     }
     
     private static boolean matches(String filterString, String customProperty) {
