@@ -32,13 +32,13 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog;
 /** Performance oriented StorageLayout, which keeps everything in memory. */
 public class InMemoryStorageLayout extends StorageLayout {
 
-    final static int   FILE_INIT_CAP   = 16;
-    final static float FILE_LOAD_FAC   = (float) 0.75;
+    final static int   FILE_INIT_CAP   = 1024;
+    final static float FILE_LOAD_FAC   = 0.75f;
 
-    final static int   OBJECT_INIT_CAP = 16;
-    final static float OBJECT_LOAD_FAC = (float) 0.75;
+    final static int   OBJECT_INIT_CAP = 1024; // 218500
+    final static float OBJECT_LOAD_FAC = 0.75f;
 
-    // ================================================================================
+    // =================================================================== =============
     // In-memory storage structures
     // ================================================================================
 
@@ -774,10 +774,10 @@ public class InMemoryStorageLayout extends StorageLayout {
 
         // Set the fileSize and ensure it is filled with zeros.
         // TODO(jdillmann): is this really necessary, HashStorageLayout doesn't care.
-        object.data.position(0);
-        while (object.data.hasRemaining()) {
-            object.data.put((byte) 0);
-        }
+        // object.data.position(0);
+        // while (object.data.hasRemaining()) {
+        // object.data.put((byte) 0);
+        // }
 
         md.updateObjectVersion(objNo, version);
     }
