@@ -42,7 +42,7 @@ bool executeOperation(const string& xctl_file,
   Json::FastWriter writer;
   const string json_out = writer.write(request);
 
-  int fd = open(xctl_file.c_str(), O_CREAT | O_RDWR);
+  int fd = open(xctl_file.c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
   if (fd == -1) {
     cerr << "Cannot open xctl file: " << strerror(errno) << endl;
     unlink(xctl_file.c_str());
