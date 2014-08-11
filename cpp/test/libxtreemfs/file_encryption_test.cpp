@@ -409,6 +409,41 @@ TEST_F(EncryptionTest, Write_02) {
   EXPECT_STREQ("JK", buffer+9);
 }
 
+TEST_F(EncryptionTest, Write_03) {
+  char buffer[50];
+  int x;
+
+  // write from start 1. block to middle 1. block
+  ASSERT_NO_THROW({
+    file->Write("A", 1, 0);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 30, 0);
+  });
+  EXPECT_EQ(1, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("A", buffer);
+
+  // write from middle 2. block to end 2. block
+  ASSERT_NO_THROW({
+    file->Write("IJKL", 4, 8);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 30, 0);
+  });
+  EXPECT_EQ(12, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("A", buffer);
+  for (int i = 1; i < 8; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
+  EXPECT_STREQ("IJKL", buffer+8);
+
+}
 // 0000 0000 0011 1111 1111 2222 22
 // 0123 4567 8901 2345 6789 0134 56
 // ABCD EFGH IJKL MNOP QRST UVWX YZ
