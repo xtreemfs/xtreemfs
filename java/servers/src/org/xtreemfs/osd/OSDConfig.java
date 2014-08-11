@@ -80,7 +80,7 @@ public class OSDConfig extends ServiceConfig {
             Parameter.STORAGE_THREADS,
             Parameter.USE_RENEWAL_SIGNAL,
             Parameter.USE_MULTIHOMING,
-            Parameter.SMART_SCRIPT
+            Parameter.HEALTH_SCRIPT
     };
     /*
      * @formatter:on   
@@ -288,6 +288,6 @@ public class OSDConfig extends ServiceConfig {
     }
     
     public String getSmartScript() {
-        return (String) parameter.get(Parameter.SMART_SCRIPT);
+        return (String) parameter.get(Parameter.HEALTH_SCRIPT);
     }
 }
