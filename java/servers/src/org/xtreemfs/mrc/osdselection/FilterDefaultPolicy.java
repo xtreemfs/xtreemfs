@@ -178,8 +178,11 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
     }
     
     private boolean isHealthy(Service osd) {
-        int smartTestResult = Integer.valueOf(KeyValuePairs.getValue(osd.getData().getDataList(), "smart_health_test"));
-        return smartTestResult != SmartTestResult.SMART_TEST_RESULT_FAILED_VALUE;
+        String smartTestResult = KeyValuePairs.getValue(osd.getData().getDataList(), "smart_health_test");
+        if (smartTestResult == null) {
+            return true;
+        }
+        return Integer.valueOf(smartTestResult) != SmartTestResult.SMART_TEST_RESULT_FAILED_VALUE;
     }
     
     private static boolean matches(String filterString, String customProperty) {
