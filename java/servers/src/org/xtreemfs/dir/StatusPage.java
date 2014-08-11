@@ -38,7 +38,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.SmartTestResult;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.OSDHealthResult;
 
 import com.sun.net.httpserver.HttpExchange;
 
@@ -215,7 +215,7 @@ public class StatusPage extends StatusServerModule {
                     }
 
                     if (!(dataEntry.getKey().equals(HeartbeatThread.STATUS_ATTR) || dataEntry.getKey().equals(
-                            "smart_health_test"))) {
+                            "osd_health_test"))) {
                         dump.append(dataEntry.getValue());
                     }
 
@@ -252,16 +252,19 @@ public class StatusPage extends StatusServerModule {
                         dump.append(" err ");
                         dump.append(coord.getLocalError());
                         dump.append(")");
-                    } else if (dataEntry.getKey().equals("smart_health_test")) {
-                        switch (SmartTestResult.valueOf(Integer.valueOf(dataEntry.getValue()))) {
-                        case SMART_TEST_RESULT_PASSED:
-                            dump.append("passed");
+                    } else if (dataEntry.getKey().equals("osd_health_test")) {
+                        switch (OSDHealthResult.valueOf(Integer.valueOf(dataEntry.getValue()))) {
+                        case OSD_HEALTH_RESULT_PASSED:
+                            dump.append("passed (" + dataEntry.getValue() + ")");
                             break;
-                        case SMART_TEST_RESULT_FAILED:
-                            dump.append("failed");
+                        case OSD_HEALTH_RESULT_FAILED:
+                            dump.append("<font color=#FF0000>failed (" + dataEntry.getValue() + ")</font>");
                             break;
-                        case SMART_TEST_RESULT_NOT_AVAIL:
-                            dump.append("Not available");
+                        case OSD_HEALTH_RESULT_WARNING:
+                            dump.append("<font color=#FFFF00>warning (" + dataEntry.getValue() + ")</font>");
+                            break;
+                        case OSD_HEALTH_RESULT_NOT_AVAIL:
+                            dump.append("Not available (" + dataEntry.getValue() + ")");
                         }
                     }
                     dump.append("</b></td></tr>");
