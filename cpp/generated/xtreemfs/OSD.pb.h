@@ -77,25 +77,26 @@ class xtreemfs_pingMesssage;
 class xtreemfs_rwr_auth_stateRequest;
 class xtreemfs_rwr_reset_completeRequest;
 
-enum SmartTestResult {
-  SMART_TEST_RESULT_PASSED = 0,
-  SMART_TEST_RESULT_FAILED = 1,
-  SMART_TEST_RESULT_NOT_AVAIL = 2
+enum OSDHealthResult {
+  OSD_HEALTH_RESULT_PASSED = 0,
+  OSD_HEALTH_RESULT_FAILED = 1,
+  OSD_HEALTH_RESULT_WARNING = 2,
+  OSD_HEALTH_RESULT_NOT_AVAIL = 3
 };
-bool SmartTestResult_IsValid(int value);
-const SmartTestResult SmartTestResult_MIN = SMART_TEST_RESULT_PASSED;
-const SmartTestResult SmartTestResult_MAX = SMART_TEST_RESULT_NOT_AVAIL;
-const int SmartTestResult_ARRAYSIZE = SmartTestResult_MAX + 1;
+bool OSDHealthResult_IsValid(int value);
+const OSDHealthResult OSDHealthResult_MIN = OSD_HEALTH_RESULT_PASSED;
+const OSDHealthResult OSDHealthResult_MAX = OSD_HEALTH_RESULT_NOT_AVAIL;
+const int OSDHealthResult_ARRAYSIZE = OSDHealthResult_MAX + 1;
 
-const ::google::protobuf::EnumDescriptor* SmartTestResult_descriptor();
-inline const ::std::string& SmartTestResult_Name(SmartTestResult value) {
+const ::google::protobuf::EnumDescriptor* OSDHealthResult_descriptor();
+inline const ::std::string& OSDHealthResult_Name(OSDHealthResult value) {
   return ::google::protobuf::internal::NameOfEnum(
-    SmartTestResult_descriptor(), value);
+    OSDHealthResult_descriptor(), value);
 }
-inline bool SmartTestResult_Parse(
-    const ::std::string& name, SmartTestResult* value) {
-  return ::google::protobuf::internal::ParseNamedEnum<SmartTestResult>(
-    SmartTestResult_descriptor(), name, value);
+inline bool OSDHealthResult_Parse(
+    const ::std::string& name, OSDHealthResult* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<OSDHealthResult>(
+    OSDHealthResult_descriptor(), name, value);
 }
 // ===================================================================
 
@@ -8558,8 +8559,8 @@ namespace google {
 namespace protobuf {
 
 template <>
-inline const EnumDescriptor* GetEnumDescriptor< ::xtreemfs::pbrpc::SmartTestResult>() {
-  return ::xtreemfs::pbrpc::SmartTestResult_descriptor();
+inline const EnumDescriptor* GetEnumDescriptor< ::xtreemfs::pbrpc::OSDHealthResult>() {
+  return ::xtreemfs::pbrpc::OSDHealthResult_descriptor();
 }
 
 }  // namespace google
