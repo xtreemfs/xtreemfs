@@ -118,7 +118,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.SmartTestResult;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.OSDHealthResult;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
@@ -386,19 +386,19 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 long totalRAM = Runtime.getRuntime().maxMemory();
                 long usedRAM = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
                 
-                // Get SMART health test result from user-defined script.
-                SmartTestResult smartTestResult = SmartTestResult.SMART_TEST_RESULT_NOT_AVAIL;
+                // Get OSD health result from user-defined script.
+                OSDHealthResult smartTestResult = OSDHealthResult.OSD_HEALTH_RESULT_NOT_AVAIL;
                 InputStreamReader scriptOutputStream = null;
                 if (!config.getSmartScript().equals("")) {
                     try {
                         scriptOutputStream = new InputStreamReader(Runtime.getRuntime()
                                 .exec(new String[] { config.getSmartScript(), config.getObjDir() }).getInputStream());
                         int scriptOutput = Integer.parseInt(String.valueOf((char) scriptOutputStream.read()));
-                        smartTestResult = SmartTestResult.valueOf(scriptOutput);
+                        smartTestResult = OSDHealthResult.valueOf(scriptOutput);
                         if (smartTestResult == null) {
                             Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
                                     "SMART script returns invalid value (" + scriptOutput + ")");
-                            smartTestResult = SmartTestResult.SMART_TEST_RESULT_NOT_AVAIL;
+                            smartTestResult = OSDHealthResult.OSD_HEALTH_RESULT_NOT_AVAIL;
                         }
                     } catch (IOException e) {
                         Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
@@ -425,7 +425,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                         .build());
                 dmap.addData(KeyValuePair.newBuilder().setKey("usedRAM").setValue(Long.toString(usedRAM))
                         .build());
-                dmap.addData(KeyValuePair.newBuilder().setKey("smart_health_test")
+                dmap.addData(KeyValuePair.newBuilder().setKey("osd_health_test")
                         .setValue(String.valueOf(smartTestResult.getNumber())).build());
                 dmap.addData(KeyValuePair.newBuilder().setKey("proto_version").setValue(
                     Integer.toString(OSDServiceConstants.INTERFACE_ID)).build());
