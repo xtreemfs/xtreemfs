@@ -366,7 +366,13 @@ int FileHandleImplementation::Write(
   } else {
     // if encryption is enabled
     if (object_encryptor_.get() != NULL) {
-      object_encryptor_->StartWrite(offset, count);
+      object_encryptor_->StartWrite(
+          offset,
+          count,
+          boost::bind(&FileHandleImplementation::ReadFromOSD, this,
+                      osd_uuid_iterator_, file_credentials, _1, _2, _3, _4),
+          boost::bind(&FileHandleImplementation::WriteToOSD, this,
+                      osd_uuid_iterator_, file_credentials, _1, _3, _2, _4));
     }
     // Synchronous writes.
     string osd_uuid = "";

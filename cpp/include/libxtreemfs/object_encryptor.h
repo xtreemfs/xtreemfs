@@ -47,7 +47,8 @@ class ObjectEncryptor {
 
   void StartRead(int64_t offset, int count);
 
-  void StartWrite(int64_t offset, int count);
+  void StartWrite(int64_t offset, int count, PartialObjectReaderFunction_sync reader,
+                  PartialObjectWriterFunction_sync writer);
 
   void FinishWrite();
 

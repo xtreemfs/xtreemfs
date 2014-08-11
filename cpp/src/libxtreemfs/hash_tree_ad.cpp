@@ -456,6 +456,12 @@ void HashTreeAD::ChangeSize(int max_leaf_number) {
   if (max_leaf_number > max_leaf_number_) {
     // TODO(plieser): overwrite old root node if layout is different from normal
     //                node.
+    if (max_node_number_ > 0) {
+      std::vector<unsigned char> leaf_value(NodeSize(0));
+      nodes_[Node(0, old_max_leaf_ + 1)] = leaf_value;
+      changed_nodes_ += max_node_number_;
+    }
+
     SetSize(max_leaf_number);
     if (old_max_leaf_ >= 0 && !IsPowerOfTwo(old_max_leaf_ + 1)) {
       int r = LeastSignificantBitUnset(old_max_leaf_);
