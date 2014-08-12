@@ -11,7 +11,7 @@ else
 endif
 
 ifeq "$(CMAKE_HOME)" ""
-        CMAKE_BIN = /usr/bin/cmake
+        CMAKE_BIN = cmake
 else
         CMAKE_BIN = $(CMAKE_HOME)/bin/cmake
 endif
