@@ -100,10 +100,10 @@ void DIRUUIDResolver::UUIDToAddressWithOptions(const std::string& uuid,
   AddressMapping found_address_mapping;
   for (int i = 0; i < set->mappings_size(); i++) {
     const AddressMapping& am = set->mappings(i);
-    if (am.protocol() != PBRPCURL::SCHEME_PBRPC
-        && am.protocol() != PBRPCURL::SCHEME_PBRPCS
-        && am.protocol() != PBRPCURL::SCHEME_PBRPCG
-        && am.protocol() != PBRPCURL::SCHEME_PBRPCU) {
+    if (am.protocol() != PBRPCURL::GetSchemePBRPC()
+        && am.protocol() != PBRPCURL::GetSchemePBRPCS()
+        && am.protocol() != PBRPCURL::GetSchemePBRPCG()
+        && am.protocol() != PBRPCURL::GetSchemePBRPCU()) {
       Logging::log->getLog(LEVEL_ERROR)
           << "Unknown scheme: " << am.protocol() << endl;
       response->DeleteBuffers();
@@ -355,7 +355,8 @@ void ClientImplementation::Start() {
   }
 
   async_write_callback_thread_.reset(
-      new boost::thread(&xtreemfs::AsyncWriteHandler::ProcessCallbacks));
+      new boost::thread(&xtreemfs::AsyncWriteHandler::ProcessCallbacks, 
+                        boost::ref(async_write_callback_queue_)));
 }
 
 void ClientImplementation::Shutdown() {
@@ -557,6 +558,10 @@ std::string ClientImplementation::UUIDToAddress(const std::string& uuid) {
 
 const VivaldiCoordinates& ClientImplementation::GetVivaldiCoordinates() const {
   return vivaldi_->GetVivaldiCoordinates();
+}
+
+util::SynchronizedQueue<AsyncWriteHandler::CallbackEntry>& ClientImplementation::GetAsyncWriteCallbackQueue() {
+  return async_write_callback_queue_;
 }
 
 }  // namespace xtreemfs

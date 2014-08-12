@@ -27,7 +27,7 @@ class PBRPCURLTest : public ::testing::Test {
     initialize_logger(LEVEL_WARN);
 
     volume_name = "test";
-    default_scheme = PBRPCURL::SCHEME_PBRPC;
+    default_scheme = PBRPCURL::GetSchemePBRPC();
     default_port = DIR_PBRPC_PORT_DEFAULT;
 
     servers.push_back("localhost");
@@ -66,7 +66,7 @@ TEST_F(PBRPCURLTest, URLWithOneAddressAndVolume) {
 
   EXPECT_FALSE(addresses.empty());
   EXPECT_EQ(volume_name, pbrpc_url_->volume());
-  EXPECT_EQ(PBRPCURL::SCHEME_PBRPC, pbrpc_url_->scheme());
+  EXPECT_EQ(PBRPCURL::GetSchemePBRPC(), pbrpc_url_->scheme());
 
   stringstream expected_address;
   expected_address << "localhost:" << DIR_PBRPC_PORT_DEFAULT;
@@ -214,7 +214,7 @@ TEST_F(PBRPCURLTest, URLWithMultipleAddressesProtocolsAndVolume) {
 TEST_F(PBRPCURLTest, URLAddressesWithDifferentProtocols) {
   EXPECT_THROW({
       pbrpc_url_->ParseURL("pbrpc://localhost,pbrpcg://remote/" + volume_name,
-                           PBRPCURL::SCHEME_PBRPC,
+                           PBRPCURL::GetSchemePBRPC(),
                            DIR_PBRPC_PORT_DEFAULT);
       }, InvalidURLException);
 }

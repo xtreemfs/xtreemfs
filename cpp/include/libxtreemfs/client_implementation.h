@@ -19,6 +19,8 @@
 #include "libxtreemfs/simple_uuid_iterator.h"
 #include "libxtreemfs/typedefs.h"
 #include "libxtreemfs/uuid_resolver.h"
+#include "util/synchronized_queue.h"
+#include "libxtreemfs/async_write_handler.h"
 
 namespace boost {
 class thread;
@@ -134,6 +136,8 @@ class ClientImplementation : public Client {
 
   const pbrpc::VivaldiCoordinates& GetVivaldiCoordinates() const;
 
+  util::SynchronizedQueue<AsyncWriteHandler::CallbackEntry>& GetAsyncWriteCallbackQueue();
+
  private:
   /** True if Shutdown() was executed. */
   bool was_shutdown_;
@@ -167,6 +171,9 @@ class ClientImplementation : public Client {
 
   /** Thread that handles the callbacks for asynchronous writes. */
   boost::scoped_ptr<boost::thread> async_write_callback_thread_;
+  /** Holds the Callbacks enqueued be CallFinished() (producer). They are
+   *  processed by ProcessCallbacks(consumer), running in its own thread. */
+  util::SynchronizedQueue<AsyncWriteHandler::CallbackEntry> async_write_callback_queue_;
 
   FRIEND_TEST(rpc::ClientTestFastLingerTimeout, LingerTests);
   FRIEND_TEST(rpc::ClientTestFastLingerTimeoutConnectTimeout, LingerTests);
