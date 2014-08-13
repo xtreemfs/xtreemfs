@@ -154,7 +154,9 @@ class FileHandleImplementation
    * @throws PosixErrorException
    * @throws UnknownAddressSchemeException
    **/
-  void TruncatePhaseTwoAndThree(int64_t new_file_size);
+  void TruncatePhaseTwoAndThree(
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      int64_t new_file_size);
 
   virtual void GetAttr(
       const pbrpc::UserCredentials& user_credentials,

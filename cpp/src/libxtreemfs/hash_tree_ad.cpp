@@ -453,7 +453,7 @@ void HashTreeAD::ChangeSize(int max_leaf_number) {
   assert(max_leaf_number >= -1);
 
   old_max_leaf_ = max_leaf_number_;
-  if (max_leaf_number > max_leaf_number_) {
+  if (max_leaf_number > old_max_leaf_) {
     // TODO(plieser): overwrite old root node if layout is different from normal
     //                node.
     if (max_node_number_ > 0) {
@@ -471,7 +471,7 @@ void HashTreeAD::ChangeSize(int max_leaf_number) {
         changed_nodes_ += tmp_node.NodeNumber(this);
       }
     }
-  } else if (max_leaf_number < max_leaf_number_) {
+  } else if (max_leaf_number < old_max_leaf_) {
     if (max_leaf_number >= 0 && !IsPowerOfTwo(max_leaf_number + 1)) {
       int r = LeastSignificantBitUnset(max_leaf_number);
       if (r > 0) {

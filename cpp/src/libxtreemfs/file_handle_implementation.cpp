@@ -564,7 +564,6 @@ void FileHandleImplementation::Truncate(
 
   XCap xcap;
   xcap_manager_.GetXCap(&xcap);
-
   // 1. Call truncate at the MRC (in order to increase the trunc epoch).
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
     ExecuteSyncRequest(
@@ -587,11 +586,25 @@ void FileHandleImplementation::Truncate(
   xcap_manager_.SetXCap(*updated_xcap);
   response->DeleteBuffers();
 
-  TruncatePhaseTwoAndThree(new_file_size);
+  TruncatePhaseTwoAndThree(user_credentials, new_file_size);
 }
 
 void FileHandleImplementation::TruncatePhaseTwoAndThree(
+    const xtreemfs::pbrpc::UserCredentials& user_credentials,
     int64_t new_file_size) {
+  // if encryption is enabled
+  if (object_encryptor_.get() != NULL) {
+    FileCredentials file_credentials;
+    xcap_manager_.GetXCap(file_credentials.mutable_xcap());
+    file_info_->GetXLocSet(file_credentials.mutable_xlocs());
+
+    object_encryptor_->Truncate(user_credentials, new_file_size,
+        boost::bind(&FileHandleImplementation::ReadFromOSD, this,
+                    osd_uuid_iterator_, file_credentials, _1, _2, _3, _4),
+        boost::bind(&FileHandleImplementation::WriteToOSD, this,
+                    osd_uuid_iterator_, file_credentials, _1, _3, _2, _4));
+  }
+
   // 2. Call truncate at the head OSD.
   truncateRequest truncate_rq;
   file_info_->GetXLocSet(

@@ -47,14 +47,16 @@ class ObjectEncryptor {
 
   void StartRead(int64_t offset, int count);
 
-  void StartWrite(int64_t offset, int count, PartialObjectReaderFunction_sync reader,
+  void StartWrite(int64_t offset, int count,
+                  PartialObjectReaderFunction_sync reader,
                   PartialObjectWriterFunction_sync writer);
 
   void FinishWrite();
 
   void Truncate(const xtreemfs::pbrpc::UserCredentials& user_credentials,
-                int64_t new_file_size, PartialObjectReaderFunction reader,
-                PartialObjectWriterFunction writer);
+                int64_t new_file_size,
+                PartialObjectReaderFunction_sync reader_sync,
+                PartialObjectWriterFunction_sync writer_sync);
 
   void FinishTruncate(const xtreemfs::pbrpc::UserCredentials& user_credentials);
 

@@ -450,7 +450,8 @@ FileHandle* VolumeImplementation::OpenFileWithTruncateSize(
         static_cast<Setattrs>(SETATTR_CTIME | SETATTR_MTIME));
 
     try {
-      file_handle->TruncatePhaseTwoAndThree(truncate_new_file_size);
+      file_handle->TruncatePhaseTwoAndThree(user_credentials,
+                                            truncate_new_file_size);
     } catch(const XtreemFSException&) {
       // Truncate did fail, close file again.
       file_handle->Close();

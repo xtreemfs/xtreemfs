@@ -55,8 +55,7 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
               "/.xtreemfs_enc_meta_files_"
                   + boost::lexical_cast<std::string>(file_id),
               static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
-                  | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR
-                  | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_TRUNC),
+                  | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
               0777, true),
           16),
       object_size_(object_size * 1024),
@@ -84,8 +83,8 @@ void ObjectEncryptor::StartRead(int64_t offset, int count) {
 }
 
 void ObjectEncryptor::StartWrite(int64_t offset, int count,
-                                 PartialObjectReaderFunction_sync reader,
-                                 PartialObjectWriterFunction_sync writer) {
+                                 PartialObjectReaderFunction_sync reader_sync,
+                                 PartialObjectWriterFunction_sync writer_sync) {
   assert(count > 0);
   hash_tree_.StartWrite(offset / enc_block_size_, offset % enc_block_size_ == 0,
                         (offset + count - 1) / enc_block_size_,
@@ -93,14 +92,14 @@ void ObjectEncryptor::StartWrite(int64_t offset, int count,
   // increase file size if end of write is behind current file size
   old_file_size_ = file_size_;
   file_size_ = std::max(file_size_, offset + count);
-  if (file_size_ > old_file_size_
-      && old_file_size_ % enc_block_size_ != 0
+  if (file_size_ > old_file_size_ && old_file_size_ % enc_block_size_ != 0
       && file_size_ / enc_block_size_ != old_file_size_ / enc_block_size_) {
     // write is behind the old last enc block and it was incomplete,
     // so it's hash must be updated
     int old_end_object_no = old_file_size_ / object_size_;
     int old_end_object_size = old_file_size_ % object_size_;
-    Write_sync(old_end_object_no, NULL, old_end_object_size, 0, reader, writer);
+    Write_sync(old_end_object_no, NULL, old_end_object_size, 0, reader_sync,
+               writer_sync);
   }
 }
 
@@ -110,35 +109,42 @@ void ObjectEncryptor::FinishWrite() {
 
 void ObjectEncryptor::Truncate(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
-    int64_t new_file_size, PartialObjectReaderFunction reader,
-    PartialObjectWriterFunction writer) {
+    int64_t new_file_size, PartialObjectReaderFunction_sync reader_sync,
+    PartialObjectWriterFunction_sync writer_sync) {
   int old_end_object_no = file_size_ / object_size_;
   int new_end_object_no = new_file_size / object_size_;
   int old_end_object_size = file_size_ % object_size_;
   int new_end_object_size = new_file_size % object_size_;
+  int new_end_enc_block_no;
+  if (new_file_size > 0) {
+    new_end_enc_block_no = (new_file_size - 1) / enc_block_size_;
+  } else {
+    new_end_enc_block_no = -1;
+  }
 
+  old_file_size_ = file_size_;
   if (new_file_size > file_size_) {
     if (file_size_ % enc_block_size_ == 0) {
-      hash_tree_.StartTruncate(new_end_object_no, true);
+      hash_tree_.StartTruncate(new_end_enc_block_no, true);
       file_size_ = new_file_size;
       hash_tree_.FinishTruncate(user_credentials);
     } else {
-      hash_tree_.StartTruncate(new_end_object_no, false);
+      hash_tree_.StartTruncate(new_end_enc_block_no, false);
       file_size_ = new_file_size;
-      Write(old_end_object_no, NULL, old_end_object_size, 0, reader, writer)
-          .wait();
+      Write_sync(old_end_object_no, NULL, old_end_object_size, 0, reader_sync,
+                 writer_sync);
       hash_tree_.FinishTruncate(user_credentials);
     }
   } else if (new_file_size < file_size_) {
     if (new_file_size % enc_block_size_ == 0) {
-      hash_tree_.StartTruncate(new_end_object_no, true);
+      hash_tree_.StartTruncate(new_end_enc_block_no, true);
       file_size_ = new_file_size;
       hash_tree_.FinishTruncate(user_credentials);
     } else {
-      hash_tree_.StartTruncate(new_end_object_no, false);
+      hash_tree_.StartTruncate(new_end_enc_block_no, false);
       file_size_ = new_file_size;
-      Write(new_end_object_no, NULL, new_end_object_size, 0, reader, writer)
-          .wait();
+      Write_sync(new_end_object_no, NULL, new_end_object_size, 0, reader_sync,
+                 writer_sync);
       hash_tree_.FinishTruncate(user_credentials);
     }
   }
