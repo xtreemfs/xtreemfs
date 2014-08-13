@@ -123,7 +123,6 @@ class EncryptionTest : public OnlineTest {
             user_credentials_,
             "/test_file",
             static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_CREAT // NOLINT
-                | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_TRUNC
                 | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR));
   }
 
@@ -426,7 +425,7 @@ TEST_F(EncryptionTest, Write_03) {
   buffer[x] = 0;
   EXPECT_STREQ("A", buffer);
 
-  // write from middle 2. block to end 2. block
+  // write from start 3. block to end 3. block
   ASSERT_NO_THROW({
     file->Write("IJKL", 4, 8);
   });
@@ -443,6 +442,128 @@ TEST_F(EncryptionTest, Write_03) {
   }
   EXPECT_STREQ("IJKL", buffer+8);
 
+}
+
+TEST_F(EncryptionTest, Truncate_01) {
+  char buffer[50];
+  int x;
+
+  // truncate to middle 2. block
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 6);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 30, 0);
+  });
+  EXPECT_EQ(6, x);
+  buffer[x] = 0;
+  for (int i = 0; i <= 6; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
+
+  // write from middle 2. block to end 2. block
+  ASSERT_NO_THROW({
+    file->Write("FGH", 3, 5);
+  });
+
+  // truncate to middle 5. block
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 16);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 30, 0);
+  });
+  EXPECT_EQ(16, x);
+  buffer[x] = 0;
+  for (int i = 0; i <= 4; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
+  EXPECT_STREQ("FGH", buffer+5);
+  for (int i = 8; i <= 16; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
+
+  // truncate to middle 2. block
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 6);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 30, 0);
+  });
+  EXPECT_EQ(6, x);
+  buffer[x] = 0;
+  for (int i = 0; i <= 4; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
+  EXPECT_STREQ("F", buffer+5);
+
+  // truncate to empty file
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 0);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 30, 0);
+  });
+  EXPECT_EQ(0, x);
+}
+
+TEST_F(EncryptionTest, Truncate_02) {
+  char buffer[50];
+  int x;
+
+  // write from start 1. block to end 2. block
+  ASSERT_NO_THROW({
+    file->Write("ABCDEFGH", 8, 0);
+  });
+
+  // truncate to end  1. block
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 4);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 30, 0);
+  });
+  EXPECT_EQ(4, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("ABCD", buffer);
+}
+
+TEST_F(EncryptionTest, Truncate_03) {
+  char buffer[50];
+  int x;
+
+  // write from start 1. block to end 1. block
+  ASSERT_NO_THROW({
+    file->Write("ABCD", 4, 0);
+  });
+
+  // write from start 1. block to middle 1. block
+  ASSERT_NO_THROW({
+    file->Write("ab", 2, 0);
+  });
+
+  // truncate to middle 1. block
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 2);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 30, 0);
+  });
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("ab", buffer);
 }
 // 0000 0000 0011 1111 1111 2222 22
 // 0123 4567 8901 2345 6789 0134 56
