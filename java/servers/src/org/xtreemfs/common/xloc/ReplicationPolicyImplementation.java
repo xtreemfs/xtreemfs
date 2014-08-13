@@ -6,13 +6,15 @@
  */
 package org.xtreemfs.common.xloc;
 
-public class ReplicationPolicy implements org.xtreemfs.mrc.metadata.ReplicationPolicy {
+import org.xtreemfs.mrc.metadata.ReplicationPolicy;
+
+public class ReplicationPolicyImplementation implements ReplicationPolicy {
 
     final String updatePolicy;
     final int    replicationFactor;
     final int    replicationFlags;
 
-    public ReplicationPolicy(String updatePolicy, int replicationFactor, int replicationFlags) {
+    public ReplicationPolicyImplementation(String updatePolicy, int replicationFactor, int replicationFlags) {
         this.updatePolicy = updatePolicy;
         this.replicationFactor = replicationFactor;
         this.replicationFlags = replicationFlags;

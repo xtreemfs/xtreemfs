@@ -56,7 +56,7 @@ public class xtfs_cleanup_osd {
         CliOption oDelMeta = new CliOption(CliOption.OPTIONTYPE.NUMBER,
                 "delete metadata of zombie files, if the XLocSet has not been updated during the last <timeout> seconds (default: 600)",
                 "<timeout>");
-        options.put("metadata_delete", oDelMeta);
+        options.put("metadata_timeout", oDelMeta);
         options.put("metadata_keep", new CliOption(OPTIONTYPE.SWITCH,
                 "keep metadata (by default metadata is deleted after <timeout> seconds)", ""));
         options.put("i", new CliOption(CliOption.OPTIONTYPE.SWITCH, "interactive mode", ""));
@@ -92,8 +92,8 @@ public class xtfs_cleanup_osd {
 
         boolean removeMetadata = !options.get("metadata_keep").switchValue;
         int metaDataTimeoutS = 600;
-        if (options.get("metadata_delete").numValue != null) {
-            metaDataTimeoutS = options.get("metadata_delete").numValue.intValue();
+        if (options.get("metadata_timeout").numValue != null) {
+            metaDataTimeoutS = options.get("metadata_timeout").numValue.intValue();
         }
 
         String[] dirURLs = (options.get("dir").stringValue != null) ? options.get("dir").stringValue

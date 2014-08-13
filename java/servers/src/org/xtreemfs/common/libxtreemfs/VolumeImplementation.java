@@ -24,7 +24,7 @@ import org.xtreemfs.common.libxtreemfs.RPCCaller.CallGenerator;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
-import org.xtreemfs.common.xloc.ReplicationPolicy;
+import org.xtreemfs.common.xloc.ReplicationPolicyImplementation;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
@@ -37,6 +37,7 @@ import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
@@ -1548,7 +1549,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
             throw new IOException(e);
         }
 
-        return new ReplicationPolicy(updatePolicy, replicationFactor, replicationFlags);
+        return new ReplicationPolicyImplementation(updatePolicy, replicationFactor, replicationFlags);
     }
 
     /**
