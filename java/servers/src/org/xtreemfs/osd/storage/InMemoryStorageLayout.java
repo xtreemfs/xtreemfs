@@ -124,9 +124,11 @@ public class InMemoryStorageLayout extends StorageLayout {
     }
 
     private final static class InMemoryObject {
-        long           objNo      = 0L;
-        long           objVersion = 0L;
-        ReusableBuffer data       = null;
+        long   objNo      = 0L;
+        long   objVersion = 0L;
+        byte[] data       = null;
+
+        int    length     = 0;
 
         public InMemoryObject(long objNo, long objVersion) {
             this.objNo = objNo;
@@ -134,7 +136,7 @@ public class InMemoryStorageLayout extends StorageLayout {
         }
 
         public int getLength() {
-            return (data != null ? data.capacity() : 0);
+            return length;
         }
 
         /**
@@ -160,19 +162,18 @@ public class InMemoryStorageLayout extends StorageLayout {
                 }
             }
 
-            if (data.capacity() < newLength) {
+            if (data.length < newLength) {
                 // Try to enlarge the buffer. Fails if the underlying buffer is too small.
-                if (!data.enlarge(newLength)) {
-                    throw new IOException(
-                            String.format(
-                                    "Object data buffer can't be resized to %d, because the underlying buffer is too small (objNo='%s', objVersion='%s').",
-                                    newLength, objNo, objVersion));
-                }
+                throw new IOException(
+                        String.format(
+                                "Object data buffer can't be resized to %d, because the underlying buffer is too small (objNo='%s', objVersion='%s').",
+                                newLength, objNo, objVersion));
+
             }
 
-            if (data.capacity() > newLength) {
+            if (data.length > newLength) {
                 // Shrink the buffer.
-                data.shrink(newLength);
+                length = newLength;
             }
         }
     }
@@ -517,11 +518,11 @@ public class InMemoryStorageLayout extends StorageLayout {
         }
 
         byte[] buf = new byte[bufLen];
-        object.data.get(buf, offset, bufLen);
-        
+        System.arraycopy(object.data, offset, buf, 0, bufLen);
+
         ReusableBuffer dataOut = BufferPool.allocate(bufLen);
-        dataOut.put(buf, 0, bufLen);
-        // dataOut = ReusableBuffer.wrap(buf);
+        // dataOut.put(buf, 0, bufLen);
+        dataOut = ReusableBuffer.wrap(buf);
 
         // Reset the output buffer and return the ObjectInformation.
         dataOut.position(0);
@@ -566,13 +567,11 @@ public class InMemoryStorageLayout extends StorageLayout {
                 if (oldObject.data != null && oldObject.getLength() > 0) {
                     // Allocate a new buffer.
                     // TODO(jdillmann): stripeSize or oldObject.data.capacity()
-                    object.data = BufferPool.allocate(stripeSize);
+                    object.data = new byte[stripeSize];
 
                     // Copy the buffer.
                     // Could be optimized by copying from 0->offset, offset+length->capacity
-                    object.data.position(0);
-                    oldObject.data.position(0);
-                    object.data.put(oldObject.data);
+                    System.arraycopy(oldObject.data, 0, object.data, 0, oldObject.getLength());
                 }
             } else {
                 // Reuse the old buffer, but remove it from the map.
@@ -596,19 +595,14 @@ public class InMemoryStorageLayout extends StorageLayout {
         // Allocate a new ByteBuffer if none exists yet.
         if (object.data == null) {
             // TODO(jdillmann): Only use required size (which is <= stripeSize)
-            object.data = BufferPool.allocate(stripeSize);
+            object.data = new byte[stripeSize];
         }
 
         // Update the object length. Throws an Exception if the underlying buffer is to small.
         object.setLength(lastOffset);
 
         // Copy bytes from the input to the in memory buffer.
-        // dataIn.position(0);
-        // object.data.position(offset);
-        // object.data.put(dataIn);
-        byte[] buf = new byte[dataIn.capacity()];
-        dataIn.get(buf);
-        object.data.put(buf, offset, buf.length);
+        System.arraycopy(dataIn.array(), 0, object.data, offset, dataIn.capacity());
 
         // Free the input buffer.
         BufferPool.free(dataIn);
@@ -658,14 +652,12 @@ public class InMemoryStorageLayout extends StorageLayout {
 
                 // Allocate a new buffer.
                 // TODO(jdillmann): stripeSize or oldObject.data.capacity()/limit()
-                object.data = BufferPool.allocate(stripeSize);
+                object.data = new byte[stripeSize];
                 object.setLength(oldLength);
 
                 // Copy the buffer.
                 // Could be optimized by copying from 0->newSize
-                object.data.position(0);
-                oldObject.data.position(0);
-                object.data.put(oldObject.data);
+                System.arraycopy(oldObject.data, 0, object.data, 0, oldObject.getLength());
             }
 
         } else {
@@ -678,7 +670,6 @@ public class InMemoryStorageLayout extends StorageLayout {
         if (newLength == 0) {
             // Free the buffer.
             if (object.data != null) {
-                BufferPool.free(object.data);
                 object.data = null;
             }
 
@@ -690,14 +681,13 @@ public class InMemoryStorageLayout extends StorageLayout {
             // Keep the buffer, increase its limit and fill with zeros.
             if (object.data == null) {
                 // TODO(jdillmann): or newSize?
-                object.data = BufferPool.allocate(stripeSize);
+                object.data = new byte[stripeSize];
             }
 
             // Fill with zeros.
             object.setLength(newLength);
-            object.data.position(oldLength);
-            while (object.data.hasRemaining()) {
-                object.data.put((byte) 0);
+            for (int i = oldLength; i < newLength; i++) {
+                object.data[i] = (byte) 0;
             }
         }
 
@@ -725,7 +715,7 @@ public class InMemoryStorageLayout extends StorageLayout {
         // Free the buffers.
         for (InMemoryObject object : file.getAllObjects()) {
             if (object.data != null) {
-                BufferPool.free(object.data);
+                object.data = null;
             }
         }
 
@@ -749,7 +739,7 @@ public class InMemoryStorageLayout extends StorageLayout {
         final long verToDel = (version == LATEST_VERSION) ? md.getLatestObjectVersion(objNo) : version;
         InMemoryObject object = file.removeObject(objNo, verToDel);
         if (object.data != null) {
-            BufferPool.free(object.data);
+            object.data = null;
         }
     }
 
@@ -768,7 +758,7 @@ public class InMemoryStorageLayout extends StorageLayout {
         }
 
         if (object.data == null) {
-            object.data = BufferPool.allocate(stripeSize);
+            object.data = new byte[stripeSize];
         }
 
         // Try to set the length of the object.

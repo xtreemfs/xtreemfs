@@ -180,6 +180,8 @@ public class DeletionStage extends Stage {
                                         layout.deleteObject(fileId, fi, objNo, objVer);
                                 }
                                 
+                                // TODO(jdillmann): If this is called, the FileVersionTable does still exist, but only
+                                // has a single entry for the first objNum left.
                                 layout.updateCurrentVersionSize(fileId, 0);
                             }
                             
