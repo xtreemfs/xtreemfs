@@ -462,8 +462,6 @@ public class InMemoryStorageLayout extends StorageLayout {
                     objNo);
         }
 
-        ReusableBuffer dataOut = null;
-
         if (length == FULL_OBJECT_LENGTH) {
             assert (offset == 0) : "if length is FULL_OBJECT_LENGTH offset must be 0 but is " + offset;
             length = stripeSize;
@@ -497,7 +495,7 @@ public class InMemoryStorageLayout extends StorageLayout {
         // Return an empty buffer, if the offset is beyond the objects length.
         if (object.getLength() <= offset) {
 
-            dataOut = BufferPool.allocate(0);
+            ReusableBuffer dataOut = BufferPool.allocate(0);
 
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
@@ -511,18 +509,19 @@ public class InMemoryStorageLayout extends StorageLayout {
         int lastoffset = offset + length;
         assert (lastoffset <= stripeSize);
 
+        int bufLen;
         if (lastoffset > object.getLength()) {
-            dataOut = BufferPool.allocate(object.getLength() - offset);
+            bufLen = object.getLength() - offset;
         } else {
-            dataOut = BufferPool.allocate(length);
+            bufLen = length;
         }
 
-        // Copy bytes from the in memory to the output buffer.
-        dataOut.position(0);
-        object.data.position(offset);
-        while (dataOut.hasRemaining()) {
-            dataOut.put(object.data.get());
-        }
+        byte[] buf = new byte[bufLen];
+        object.data.get(buf, offset, bufLen);
+        
+        ReusableBuffer dataOut = BufferPool.allocate(bufLen);
+        dataOut.put(buf, 0, bufLen);
+        // dataOut = ReusableBuffer.wrap(buf);
 
         // Reset the output buffer and return the ObjectInformation.
         dataOut.position(0);
@@ -604,9 +603,12 @@ public class InMemoryStorageLayout extends StorageLayout {
         object.setLength(lastOffset);
 
         // Copy bytes from the input to the in memory buffer.
-        dataIn.position(0);
-        object.data.position(offset);
-        object.data.put(dataIn);
+        // dataIn.position(0);
+        // object.data.position(offset);
+        // object.data.put(dataIn);
+        byte[] buf = new byte[dataIn.capacity()];
+        dataIn.get(buf);
+        object.data.put(buf, offset, buf.length);
 
         // Free the input buffer.
         BufferPool.free(dataIn);
