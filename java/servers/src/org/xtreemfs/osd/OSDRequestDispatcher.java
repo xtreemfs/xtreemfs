@@ -400,7 +400,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                                     "SMART script returns invalid value (" + scriptOutput + ")");
                             smartTestResult = OSDHealthResult.OSD_HEALTH_RESULT_NOT_AVAIL;
                         }
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
                                 "Exception while reading SMART health result: " + e.getMessage());
                     } finally {
