@@ -974,6 +974,13 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & If specified and \texttt{multihoming.enabled} is \texttt{false}, it defines the host name that is used to register the service at the directory service. If neither \texttt{hostname} nor \texttt{listen.address} are specified, the service itself will search for an externally reachable network interface and advertise its address. To use multiple interfaces see \hyperref[option:multihoming.enabled]{multihoming.enabled}.
 \end{tabular}
 
+\subsubsection{\texttt{health\_script} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & OSD\\
+ Values   & String \\
+ Default  & \\
+ Description & If specified, the OSD will use this script to determine the health status of the storage devices which stores the \texttt{object\_dir}. See section~\ref{sec:xtreemfs-osd-farm} for more information.
+\end{tabular}
 \subsubsection{\texttt{http\_port}}
 \begin{tabular}{lp{10cm}}
  Services & DIR, MRC, OSD\\
@@ -1404,6 +1411,20 @@ The \texttt{xtreemfs-osd-farm} script can be found in the /usr/share/xtreemfs di
 
 Using the \texttt{xtreemfs-osd-farm} script demands two steps. First, a list names for all of the used OSDs hat to be set to the OSD\_INSTANCES variable in the script. The list elements have to be separated by spaces. In the second step, a configuration file with the name \texttt{<osdname>.config.properties} has to be created in \texttt{/etc/xos/xtreemfs} for all of the defined OSD names, whereas <osdname> has to be replaced by the particular OSD name. After these steps, the \texttt{init.d} script can be executed with the usual arguments \texttt{start}, \texttt{stop}, \texttt{status}, \texttt{restart}, and \texttt{try-restart}. A single OSD can be controlled by \texttt{xtreemfs-osd-farm <osdname> <argument>}.
 
+\subsection{Monitoring OSD's storage devices}
+\label{sec:osd-health-script}
+The health status of OSDs storage devices (e.g. SMART health test) can be used to determine if an OSD will fail soon or actually failed. If the health status is available, the default OSD selection policy will use it to exclude OSDs with a critical status (WARNING or FAILED). To test the health status, the OSD executes a user-defined script, that can be configurated in the OSD config with the \texttt{health\_script} parameter. If you want to write such a script you must consider the following thinks:
+\begin{itemize}
+\item The script will be executed with the object dir as the first (and only) parameter
+\item The script must print one of the following numbers to stdout:
+\begin{itemize}
+\item \texttt{0} - PASSED: Storage device is in an uncritical state. The OSD will not filtered out when the default OSD selection policy is used.
+\item \texttt{1} - FAILED: Storage device is in an critical state. The OSD will filtered out when the default OSD selection policy is used.
+\item \texttt{2} - WARNING: Storage could be in an critical state soon. The OSD will filtered out when the default OSD selection policy is used.
+\item \texttt{3} - Not Available: The health status is not available. Also used when an error occurs or an invalid value is returned from the script.
+\end{itemize}
+\end{itemize}
+An example script for Linux systems is provided in \texttt{/usr/share/xtreemfs/osd\_health\_example\_script.sh}. This script uses the SMART health test result of the devices which stores the object dir. The Script supports software RAID configurations (\texttt{/dev/md*}) and single devices(\texttt{/dev/sd*} or \texttt{/dev/hd*}). In order to use this script the package smartmontools must be installed.
 
 \subsection{Web-based Status Page}
 
