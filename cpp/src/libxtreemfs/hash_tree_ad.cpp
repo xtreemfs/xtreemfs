@@ -309,16 +309,20 @@ void HashTreeAD::StartRead(int start_leaf, int end_leaf) {
  * @param complete_start_leaf   true if complete start leaf will be overwritten.
  * @param end_leaf    The end of the write.
  * @param complete_end_leaf   true if complete end leaf will be overwritten.
+ * @param complete_max_leaf   Optional, uses for write after current max leaf.
+ *                            True if old max leaf will not be changed.
  *
  * @throws XtreemFSException    If stored hash tree is invalid.
  */
 void HashTreeAD::StartWrite(int start_leaf, bool complete_start_leaf,
-                            int end_leaf, bool complete_end_leaf) {
+                            int end_leaf, bool complete_end_leaf,
+                            bool complete_max_leaf) {
   assert(state_ == 0);
   assert(start_leaf <= end_leaf);
 
   boost::icl::interval_set<int> nodeNumbers = RequiredNodesForWrite(
-      start_leaf, complete_start_leaf, end_leaf, complete_end_leaf);
+      start_leaf, complete_start_leaf, end_leaf, complete_end_leaf,
+      complete_max_leaf);
   ReadNodesFromFile(nodeNumbers);
   ValidateTree();
 
@@ -348,21 +352,24 @@ void HashTreeAD::FinishWrite() {
  * Starts a truncate to max_leaf_number.
  *
  * @param max_leaf_number   -1 for empty tree.
- * @param complete_leaf   For shrinking. True if max leaf will not be changed.
+ * @param complete_leaf   For shrinking, true if new max leaf will not be
+ *                        changed.
+ *                        For extending, true if old max leaf will not be
+ *                        changed.
  */
 void HashTreeAD::StartTruncate(int max_leaf_number, bool complete_leaf) {
   assert(state_ == 0);
   assert(max_leaf_number >= -1);
 
-  if (max_leaf_number > 0) {
+  if (max_leaf_number >= 0) {
     boost::icl::interval_set<int> nodeNumbers;
 
-    if (max_leaf_number < max_leaf_number_) {
+    if (max_leaf_number <= max_leaf_number_) {
       nodeNumbers = RequiredNodesForWrite(0, true, max_leaf_number,
                                           complete_leaf);
     } else {
       nodeNumbers = RequiredNodesForWrite(max_leaf_number, true,
-                                          max_leaf_number, true);
+                                          max_leaf_number, true, complete_leaf);
     }
 
     ReadNodesFromFile(nodeNumbers);
@@ -381,7 +388,7 @@ void HashTreeAD::StartTruncate(int max_leaf_number, bool complete_leaf) {
 void HashTreeAD::FinishTruncate(
     const xtreemfs::pbrpc::UserCredentials& user_credentials) {
   assert(state_ == 2);
-  UpdateTree(-1, -1, old_max_leaf_);
+  UpdateTree(-1, -1, std::min(old_max_leaf_, max_leaf_number_));
   meta_file_->Truncate(user_credentials,
                        GetNodeStartInBytes(max_node_number_ + 1));
   WriteNodesToFile();
@@ -454,16 +461,21 @@ void HashTreeAD::ChangeSize(int max_leaf_number) {
 
   old_max_leaf_ = max_leaf_number_;
   if (max_leaf_number > old_max_leaf_) {
-    // TODO(plieser): overwrite old root node if layout is different from normal
-    //                node.
-    if (max_node_number_ > 0) {
-      std::vector<unsigned char> leaf_value(NodeSize(0));
-      nodes_[Node(0, old_max_leaf_ + 1)] = leaf_value;
-      changed_nodes_ += max_node_number_;
-    }
-
+    int old_max_node_number = max_node_number_;
     SetSize(max_leaf_number);
-    if (old_max_leaf_ >= 0 && !IsPowerOfTwo(old_max_leaf_ + 1)) {
+    if (old_max_leaf_ >= 0
+        && (!IsPowerOfTwo(old_max_leaf_ + 1) || old_max_leaf_ == 0)) {
+      // old tree was incomplete
+
+      // overwrite old root node in meta file with 0
+      // TODO(plieser): overwrite old root node if layout is different from
+      //                normal node.
+      Node tmp_node = Node(old_max_node_number, this);
+      std::vector<unsigned char> leaf_value(NodeSize(tmp_node.level));
+      nodes_[tmp_node] = leaf_value;
+      changed_nodes_ += old_max_node_number;
+
+      // TODO(plieser): needed? possible optimization?
       int r = LeastSignificantBitUnset(old_max_leaf_);
       if (r > 0) {
         Node tmp_node = Node(0, old_max_leaf_).Parent(this, r);
@@ -473,6 +485,7 @@ void HashTreeAD::ChangeSize(int max_leaf_number) {
     }
   } else if (max_leaf_number < old_max_leaf_) {
     if (max_leaf_number >= 0 && !IsPowerOfTwo(max_leaf_number + 1)) {
+      // TODO(plieser): needed? possible optimization?
       int r = LeastSignificantBitUnset(max_leaf_number);
       if (r > 0) {
         Node tmp_node = Node(0, max_leaf_number).Parent(this, r);
@@ -590,14 +603,18 @@ boost::icl::interval_set<int> HashTreeAD::RequiredNodesForRead(int start_leaf,
 }
 
 /**
- * @param start_leaf  Must be smaller or equal to end_leaf.
- * @param end_leaf
+ * @param start_leaf  Start leaf of write. Must be smaller or equal to end_leaf.
+ * @param complete_start_leaf   True if complete start leaf will be overwritten.
+ * @param end_leaf    End leaf of write.
+ * @param complete_end_leaf   True if complete end leaf will be overwritten.
+ * @param complete_max_leaf   Optional, uses for write after current max leaf.
+ *                            True if old max leaf will not be changed.
  * @return The node numbers of the required nodes to fetch for a write between
  *         start_leaf and end_leaf.
  */
 boost::icl::interval_set<int> HashTreeAD::RequiredNodesForWrite(
     int start_leaf, bool complete_start_leaf, int end_leaf,
-    bool complete_end_leaf) {
+    bool complete_end_leaf, bool complete_max_leaf) {
   assert(start_leaf <= end_leaf);
 
   if (max_node_number_ < 0) {
@@ -609,11 +626,13 @@ boost::icl::interval_set<int> HashTreeAD::RequiredNodesForWrite(
   if (max_leaf_number_ < 0) {
     nodeNumbers += max_node_number_;
   } else if (start_leaf > max_leaf_number_) {
-    nodeNumbers += Node(0, max_leaf_number_).AncestorsWithSiblings(this);
-    // TODO(plieser): optimization if old last block was complete
-//      nodeNumbers += Node(0, max_leaf_number_).Parent(
-//          this, LeastSignificantBitUnset(max_leaf_number_))
-//          .AncestorsWithSiblings(this);
+    if (complete_max_leaf) {
+      nodeNumbers += Node(0, max_leaf_number_).Parent(
+          this, LeastSignificantBitUnset(max_leaf_number_))
+          .AncestorsWithSiblings(this);
+    } else {
+      nodeNumbers += Node(0, max_leaf_number_).AncestorsWithSiblings(this);
+    }
   } else {
     if (complete_start_leaf) {
       if (start_leaf == 0) {
@@ -691,11 +710,11 @@ void HashTreeAD::ValidateTree() {
  *
  * @param start_leaf    Beginning of the changed leafs. -1 if no leafs changed.
  * @param end_leaf      End of the changed leafs.
- * @param old_max_leaf  Old max leaf number if it was changed, otherwise -1
+ * @param max_leaf    Old/new max leaf number if it was changed, otherwise -1
  */
-void HashTreeAD::UpdateTree(int start_leaf, int end_leaf, int old_max_leaf) {
+void HashTreeAD::UpdateTree(int start_leaf, int end_leaf, int max_leaf) {
   if (start_leaf > -1) {
-    // update the ancestors hashes for the leafs written to
+    // update the ancestors hashes for the leafs written to, root node excluded
     int start_n = start_leaf_;
     int end_n = end_leaf_;
     Node skiped_node = Node(0, 0);
@@ -719,14 +738,17 @@ void HashTreeAD::UpdateTree(int start_leaf, int end_leaf, int old_max_leaf) {
     }
   }
 
-  if (old_max_leaf != -1
-      && (old_max_leaf + 1 < start_leaf || (old_max_leaf % 2) == 1)) {
-    // the write was behind the last max leaf
-    // update the ancestors of the old max leaf as 0's may have been added to
-    // complete it
-    // TODO(plieser): optimization if old last block was complete
-    Node node(0, old_max_leaf);
-    for (int level = 0; level < max_level_ - 1; level++) {
+  if (max_leaf != -1
+      && (start_leaf == -1 || Node(0, start_leaf).LeftSibling().n > max_leaf)) {
+    // the write was behind the last max leaf or truncate
+    // update the ancestors (root node excluded) of the old/new max leaf
+    Node node(0, max_leaf);
+    if (!boost::icl::contains(changed_nodes_, node.NodeNumber(this))) {
+      // the old max leaf was not changed, start at the lowest ancestors that
+      // needs to be changed
+      node = node.Parent(this, LeastSignificantBitUnset(max_leaf));
+    }
+    while (node.level < max_level_ - 1) {
       Node parent = node.Parent(this);
       nodes_[parent] = HashOfNode(node.LeftSibling(), node.RightSibling());
       changed_nodes_ += parent.NodeNumber(this);
@@ -734,6 +756,7 @@ void HashTreeAD::UpdateTree(int start_leaf, int end_leaf, int old_max_leaf) {
     }
   }
 
+  // update root node
   Node root(max_level_, 0);
   if (max_level_ > 0) {
     nodes_[root] = HashOfNode(root.LeftChild(this), root.RightChild(this));

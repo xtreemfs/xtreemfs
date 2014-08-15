@@ -86,12 +86,16 @@ void ObjectEncryptor::StartWrite(int64_t offset, int count,
                                  PartialObjectReaderFunction_sync reader_sync,
                                  PartialObjectWriterFunction_sync writer_sync) {
   assert(count > 0);
-  hash_tree_.StartWrite(offset / enc_block_size_, offset % enc_block_size_ == 0,
-                        (offset + count - 1) / enc_block_size_,
-                        (offset + count) % enc_block_size_ == 0);
+
   // increase file size if end of write is behind current file size
   old_file_size_ = file_size_;
   file_size_ = std::max(file_size_, offset + count);
+
+  hash_tree_.StartWrite(offset / enc_block_size_, offset % enc_block_size_ == 0,
+                        (offset + count - 1) / enc_block_size_,
+                        (offset + count) % enc_block_size_ == 0,
+                        old_file_size_ % enc_block_size_ == 0);
+
   if (file_size_ > old_file_size_ && old_file_size_ % enc_block_size_ != 0
       && file_size_ / enc_block_size_ != old_file_size_ / enc_block_size_) {
     // write is behind the old last enc block and it was incomplete,
@@ -498,7 +502,6 @@ boost::unique_future<void> ObjectEncryptor::Write(
       old_ct_block.resize(bytes_read.get());
 
       // 2. decrypt the old enc block
-      std::vector<unsigned char> new_pt_block(new_pt_block_len);
       DecryptEncBlock(end_enc_block, boost::asio::buffer(old_ct_block),
                       boost::asio::buffer(new_pt_block));
     }

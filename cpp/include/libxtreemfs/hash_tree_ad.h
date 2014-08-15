@@ -31,7 +31,7 @@ class HashTreeAD {
   void StartRead(int start_leaf, int end_leaf);
 
   void StartWrite(int start_leaf, bool complete_start_leaf, int end_leaf,
-                  bool complete_end_leaf);
+                  bool complete_end_leaf, bool complete_max_leaf = false);
 
   void FinishWrite();
 
@@ -111,7 +111,9 @@ class HashTreeAD {
   boost::icl::interval_set<int> RequiredNodesForWrite(int start_leaf,
                                                       bool complete_start_leaf,
                                                       int end_leaf,
-                                                      bool complete_end_leaf);
+                                                      bool complete_end_leaf,
+                                                      bool complete_max_leaf =
+                                                          false);
 
   void ValidateTree();
 

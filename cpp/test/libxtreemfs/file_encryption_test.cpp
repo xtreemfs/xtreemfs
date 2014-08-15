@@ -311,7 +311,7 @@ TEST_F(EncryptionTest, Write_01) {
 
   // write from middle 1. block to middle 2. block
   ASSERT_NO_THROW({
-    file->Write("BCefgH", 6, 2);
+    file->Write("BCDefg", 6, 1);
   });
 
   // full read
@@ -320,10 +320,10 @@ TEST_F(EncryptionTest, Write_01) {
   });
   EXPECT_EQ(8, x);
   buffer[x] = 0;
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 1; i++) {
     EXPECT_EQ(*(buffer + i), 0);
   }
-  EXPECT_STREQ("BCefgH", buffer+2);
+  EXPECT_STREQ("BCDefgH", buffer+1);
 
   // write from middle 4. block to middle 6. block
   ASSERT_NO_THROW({
@@ -331,17 +331,16 @@ TEST_F(EncryptionTest, Write_01) {
   });
 
   // full read
-
   ASSERT_NO_THROW({
      x = file->Read(buffer, 40, 0);
   });
   EXPECT_EQ(21, x);
   buffer[x] = 0;
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i <= 0; i++) {
     EXPECT_EQ(*(buffer + i), 0);
   }
-  EXPECT_STREQ("BCefgH", buffer+2);
-  for (int i = 8; i < 12; i++) {
+  EXPECT_STREQ("BCDefgH", buffer+1);
+  for (int i = 8; i <= 12; i++) {
     EXPECT_EQ(*(buffer + i), 0);
   }
   EXPECT_STREQ("NOPQRSTU", buffer+13);
@@ -441,7 +440,6 @@ TEST_F(EncryptionTest, Write_03) {
     EXPECT_EQ(*(buffer + i), 0);
   }
   EXPECT_STREQ("IJKL", buffer+8);
-
 }
 
 TEST_F(EncryptionTest, Truncate_01) {
@@ -523,6 +521,14 @@ TEST_F(EncryptionTest, Truncate_02) {
   ASSERT_NO_THROW({
     file->Write("ABCDEFGH", 8, 0);
   });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 30, 0);
+  });
+  EXPECT_EQ(8, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("ABCDEFGH", buffer);
 
   // truncate to end  1. block
   ASSERT_NO_THROW({
