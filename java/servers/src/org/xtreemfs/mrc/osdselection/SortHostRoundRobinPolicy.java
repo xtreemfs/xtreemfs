@@ -32,7 +32,7 @@ public class SortHostRoundRobinPolicy implements OSDSelectionPolicy {
         for (Service osd : allOSDs.getServicesList()) {
 
             try {
-                String host = new ServiceUUID(osd.getUuid()).getAddress().getHostString();
+                String host = new ServiceUUID(osd.getUuid()).getAddress().getHostName();
                 if (hostToOsdsMap.containsKey(host)) {
                     hostToOsdsMap.get(host).add(osd);
                 } else {

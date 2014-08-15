@@ -138,8 +138,7 @@ public class StorageStage extends Stage {
     }
     
     public static interface CachesFlushedCallback {
-        
-        public void cachesFlushed(ErrorResponse error);
+        public void cachesFlushed(ErrorResponse error, FileMetadata md);
     }
     
     public void receivedGMAX_ASYNC(String fileId, long epoch, long lastObject) {

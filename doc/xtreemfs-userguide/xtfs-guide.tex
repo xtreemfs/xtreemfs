@@ -2343,8 +2343,8 @@ $> xtfsutil --enable-snapshots /path/to/mounted/volume
 Once snapshots have been enabled, a snapshot named \texttt{mySnapshot} can be taken as follows:
 
 \begin{verbatim}
-$> xtfsutil --create-snapshot /path/to/mounted/volume/directory \
-   mySnapshot
+$> xtfsutil --create-snapshot mySnapshot \
+   /path/to/mounted/volume/directory 
 \end{verbatim}
 
 Note that capturing snapshots requires privileged access rights (ownership or superuser rights) on the volume.
@@ -2352,8 +2352,8 @@ Note that capturing snapshots requires privileged access rights (ownership or su
 It is also possible to capture a snapshot of a given directory without including any subdirectories:
 
 \begin{verbatim}
-$> xtfsutil --create-snapshot-non-recursive \
-   /path/to/mounted/volume/directory mySnapshot
+$> xtfsutil --create-snapshot-non-recursive mySnapshot \
+   /path/to/mounted/volume/directory
 \end{verbatim}
 
 A list of all snapshots that exist on the volume can be displayed as follows:
@@ -2374,7 +2374,7 @@ A mounted volume snapshot can be browsed normally, and all files can be read as 
 A snapshot \texttt{mySnapshot} that is no longer needed can be removed as follows:
 
 \begin{verbatim}
-$> xtfsutil --delete-snapshot /path/to/mounted/volume mySnapshot
+$> xtfsutil --delete-snapshot mySnapshot /path/to/mounted/volume
 \end{verbatim}
 
 Please be aware that removing a snapshot does not automatically reclaim any storage space occupied by prior versions. To dispose of obsolete and redundant versions on a specific OSD, it is necessary to perform a version cleanup run with the \texttt{xtfs\_cleanup} tool:
