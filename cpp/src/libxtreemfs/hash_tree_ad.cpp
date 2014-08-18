@@ -465,13 +465,23 @@ void HashTreeAD::ChangeSize(int max_leaf_number) {
   assert(max_leaf_number >= -1);
 
   old_max_leaf_ = max_leaf_number_;
+  bool move_node = false;
+  Node node_to_move(0, 0);
   if (max_leaf_number > old_max_leaf_) {
     int old_max_node_number = max_node_number_;
+    if (old_max_leaf_ >= 0 && !IsPowerOfTwo(old_max_leaf_ + 1)) {
+      // old tree was incomplete
+      int r = LeastSignificantBitUnset(old_max_leaf_);
+      if (r > 0) {
+        // move node downwards
+        move_node = true;
+        node_to_move = Node(0, old_max_leaf_).Parent(this, r);
+      }
+    }
     SetSize(max_leaf_number);
     if (old_max_leaf_ >= 0
         && (!IsPowerOfTwo(old_max_leaf_ + 1) || old_max_leaf_ == 0)) {
       // old tree was incomplete
-
       // overwrite old root node in meta file with 0
       // TODO(plieser): overwrite old root node if layout is different from
       //                normal node.
@@ -479,26 +489,30 @@ void HashTreeAD::ChangeSize(int max_leaf_number) {
       std::vector<unsigned char> leaf_value(NodeSize(tmp_node.level));
       nodes_[tmp_node] = leaf_value;
       changed_nodes_ += old_max_node_number;
-
-      // TODO(plieser): needed? possible optimization?
-      int r = LeastSignificantBitUnset(old_max_leaf_);
-      if (r > 0) {
-        Node tmp_node = Node(0, old_max_leaf_).Parent(this, r);
-        nodes_[tmp_node] = nodes_.at(tmp_node.Parent(this));
-        changed_nodes_ += tmp_node.NodeNumber(this);
-      }
+    }
+    if (move_node) {
+      Node tmp_node = Node(0, old_max_leaf_).Parent(
+          this, LeastSignificantBitUnset(old_max_leaf_));
+      nodes_[tmp_node] = nodes_.at(node_to_move);
+      changed_nodes_ += tmp_node.NodeNumber(this);
     }
   } else if (max_leaf_number < old_max_leaf_) {
     if (max_leaf_number >= 0 && !IsPowerOfTwo(max_leaf_number + 1)) {
-      // TODO(plieser): needed? possible optimization?
+      // new tree is incomplete
       int r = LeastSignificantBitUnset(max_leaf_number);
       if (r > 0) {
-        Node tmp_node = Node(0, max_leaf_number).Parent(this, r);
-        nodes_[tmp_node.Parent(this)] = nodes_.at(tmp_node);
-        changed_nodes_ += tmp_node.NodeNumber(this);
+        // move node upwards
+        move_node = true;
+        node_to_move = Node(0, max_leaf_number).Parent(this, r);
       }
     }
     SetSize(max_leaf_number);
+    if (move_node) {
+      Node tmp_node = Node(0, max_leaf_number).Parent(
+          this, LeastSignificantBitUnset(max_leaf_number));
+      nodes_[tmp_node] = nodes_.at(node_to_move);
+      changed_nodes_ += tmp_node.NodeNumber(this);
+    }
   }
 }
 
