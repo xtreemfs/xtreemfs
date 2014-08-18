@@ -442,6 +442,37 @@ TEST_F(EncryptionTest, Write_03) {
   EXPECT_STREQ("IJKL", buffer+8);
 }
 
+TEST_F(EncryptionTest, Write_04) {
+  char buffer[50];
+  int x;
+
+  // write from start 1. block to end 10. block
+  ASSERT_NO_THROW({
+    file->Write("ABCDEFGHIJKLMNOPQRSTUVWXabcdefghijklmnop", 40, 0);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 50, 0);
+  });
+  EXPECT_EQ(40, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("ABCDEFGHIJKLMNOPQRSTUVWXabcdefghijklmnop", buffer);
+
+  // write from start 11. block to end 12. block
+  ASSERT_NO_THROW({
+    file->Write("qrstuvwx", 8, 40);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 50, 0);
+  });
+  EXPECT_EQ(48, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("ABCDEFGHIJKLMNOPQRSTUVWXabcdefghijklmnopqrstuvwx", buffer);
+}
+
 TEST_F(EncryptionTest, Truncate_01) {
   char buffer[50];
   int x;
@@ -570,6 +601,41 @@ TEST_F(EncryptionTest, Truncate_03) {
   EXPECT_EQ(2, x);
   buffer[x] = 0;
   EXPECT_STREQ("ab", buffer);
+}
+
+TEST_F(EncryptionTest, Truncate_04) {
+  char buffer[50];
+  int x;
+
+  // truncate to start 13. block
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 49);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 50, 0);
+  });
+  EXPECT_EQ(49, x);
+  buffer[x] = 0;
+  for (int i = 0; i <= 49; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
+
+  // truncate to end 9. block
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 36);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 50, 0);
+  });
+  EXPECT_EQ(36, x);
+  buffer[x] = 0;
+  for (int i = 0; i <= 36; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
 }
 // 0000 0000 0011 1111 1111 2222 22
 // 0123 4567 8901 2345 6789 0134 56
