@@ -618,7 +618,7 @@ TEST_F(EncryptionTest, Truncate_04) {
   });
   EXPECT_EQ(49, x);
   buffer[x] = 0;
-  for (int i = 0; i <= 49; i++) {
+  for (int i = 0; i < 49; i++) {
     EXPECT_EQ(*(buffer + i), 0);
   }
 
@@ -633,7 +633,88 @@ TEST_F(EncryptionTest, Truncate_04) {
   });
   EXPECT_EQ(36, x);
   buffer[x] = 0;
-  for (int i = 0; i <= 36; i++) {
+  for (int i = 0; i < 36; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
+}
+
+TEST_F(EncryptionTest, Truncate_05) {
+  char buffer[50];
+  int x;
+
+  // write from start 1. block to start 13. block
+  ASSERT_NO_THROW({
+    file->Write("ABCDEFGHIJKLMNOPQRSTUVWXabcdefghijklmnopqrstuvwxy", 49, 0);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 50, 0);
+  });
+  EXPECT_EQ(49, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("ABCDEFGHIJKLMNOPQRSTUVWXabcdefghijklmnopqrstuvwxy", buffer);
+
+  // truncate to end 10. block
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 40);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 50, 0);
+  });
+  EXPECT_EQ(40, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("ABCDEFGHIJKLMNOPQRSTUVWXabcdefghijklmnop", buffer);
+}
+
+TEST_F(EncryptionTest, Truncate_06) {
+  char buffer[200];
+  int x;
+
+  // truncate to end 18. block
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 72);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 200, 0);
+  });
+  EXPECT_EQ(72, x);
+  buffer[x] = 0;
+  for (int i = 0; i < 72; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
+
+  // truncate to end 25. block
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 100);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 200, 0);
+  });
+  EXPECT_EQ(100, x);
+  buffer[x] = 0;
+  for (int i = 0; i < 100; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
+
+  // truncate to end 18. block
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 72);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 200, 0);
+  });
+  EXPECT_EQ(72, x);
+  buffer[x] = 0;
+  for (int i = 0; i < 72; i++) {
     EXPECT_EQ(*(buffer + i), 0);
   }
 }
