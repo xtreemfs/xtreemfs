@@ -163,76 +163,95 @@ void Vivaldi::Run() {
         SimpleUUIDIterator pinged_osd;
         pinged_osd.AddUUID(chosen_osd_service->GetUUID());
 
-        // start timing
-        boost::posix_time::ptime start_time(boost::posix_time
-            ::microsec_clock::local_time());
-
         // execute sync ping
-        ping_response.reset(
-            ExecuteSyncRequest(
-                boost::bind(
-                    &xtreemfs::pbrpc::OSDServiceClient::xtreemfs_ping_sync,
-                    osd_client_.get(),
-                    _1,
-                    boost::cref(auth_bogus_),
-                    boost::cref(user_credentials_bogus_),
-                    &ping_message),
-                &pinged_osd,
-                uuid_resolver_,
-                RPCOptionsFromOptions(vivaldi_options_)));
+        try {
+          // start timing
+          boost::posix_time::ptime start_time(boost::posix_time
+              ::microsec_clock::local_time());
 
-        // stop timing
-        boost::posix_time::ptime end_time(
-            boost::posix_time::microsec_clock::local_time());
-        boost::posix_time::time_duration rtt = end_time - start_time;
-        uint64_t measured_rtt = rtt.total_milliseconds();
+          ping_response.reset(
+              ExecuteSyncRequest(
+                  boost::bind(
+                      &xtreemfs::pbrpc::OSDServiceClient::xtreemfs_ping_sync,
+                      osd_client_.get(),
+                      _1,
+                      boost::cref(auth_bogus_),
+                      boost::cref(user_credentials_bogus_),
+                      &ping_message),
+                  &pinged_osd,
+                  uuid_resolver_,
+                  RPCOptionsFromOptions(vivaldi_options_)));
 
-        xtreemfs::pbrpc::xtreemfs_pingMesssage* ping_response_obj =
-            static_cast<xtreemfs::pbrpc::xtreemfs_pingMesssage*>(
-            ping_response->response());
-        random_osd_vivaldi_coordinates = ping_response_obj->mutable_coordinates();
+          // stop timing
+          boost::posix_time::ptime end_time(
+              boost::posix_time::microsec_clock::local_time());
+          boost::posix_time::time_duration rtt = end_time - start_time;
+          uint64_t measured_rtt = rtt.total_milliseconds();
 
-        if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-          Logging::log->getLog(LEVEL_DEBUG)
-              << "Vivaldi: ping response received. Measured time: "
-              << measured_rtt << " ms" << endl;
-        }
+          xtreemfs::pbrpc::xtreemfs_pingMesssage* ping_response_obj =
+              static_cast<xtreemfs::pbrpc::xtreemfs_pingMesssage*>(
+              ping_response->response());
+          random_osd_vivaldi_coordinates = ping_response_obj->mutable_coordinates();
 
-        // Recalculate coordinates here
-        if (retries_in_a_row < vivaldi_options_.vivaldi_max_request_retries) {
-          if (!own_node.RecalculatePosition(*random_osd_vivaldi_coordinates,
-                                            measured_rtt,
-                                            false)) {
-            // The movement has been postponed because the measured RTT
-            // seems to be a peak
-            current_retries.push_back(measured_rtt);
-            retries_in_a_row++;
+          if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+            Logging::log->getLog(LEVEL_DEBUG)
+                << "Vivaldi: ping response received. Measured time: "
+                << measured_rtt << " ms" << endl;
+          }
+
+          // Recalculate coordinates here
+          if (retries_in_a_row < vivaldi_options_.vivaldi_max_request_retries) {
+            if (!own_node.RecalculatePosition(*random_osd_vivaldi_coordinates,
+                                              measured_rtt,
+                                              false)) {
+              // The movement has been postponed because the measured RTT
+              // seems to be a peak
+              current_retries.push_back(measured_rtt);
+              retries_in_a_row++;
+            } else {
+              // The movement has been accepted
+              current_retries.clear();
+              retries_in_a_row = 0;
+            }
           } else {
-            // The movement has been accepted
+            // Choose the lowest RTT
+            uint64_t lowest_rtt = measured_rtt;
+            for (vector<uint64_t>::iterator retries_iterator =
+                     current_retries.begin();
+                retries_iterator < current_retries.end();
+                ++retries_iterator) {
+              if (*retries_iterator < lowest_rtt) {
+                lowest_rtt = *retries_iterator;
+              }
+            }
+
+            // Force recalculation after too many retries
+            own_node.RecalculatePosition(*random_osd_vivaldi_coordinates,
+                                         lowest_rtt,
+                                         true);
             current_retries.clear();
             retries_in_a_row = 0;
+
+            // set measured_rtt to the actually used one for trace output
+            measured_rtt = lowest_rtt;
           }
-        } else {
-          // Choose the lowest RTT
-          uint64_t lowest_rtt = measured_rtt;
-          for (vector<uint64_t>::iterator retries_iterator =
-                   current_retries.begin();
-              retries_iterator < current_retries.end();
-              ++retries_iterator) {
-            if (*retries_iterator < lowest_rtt) {
-              lowest_rtt = *retries_iterator;
-            }
+        } catch (const XtreemFSException& e) {
+          if (ping_response.get()) {
+           ping_response->DeleteBuffers();
           }
 
-          // Force recalculation after too many retries
-          own_node.RecalculatePosition(*random_osd_vivaldi_coordinates,
-                                       lowest_rtt,
-                                       true);
-          current_retries.clear();
-          retries_in_a_row = 0;
+          Logging::log->getLog(LEVEL_ERROR)
+               << "Vivaldi: could not ping OSDs: " << e.what() << endl;
 
-          // set measured_rtt to the actually used one for trace output
-          measured_rtt = lowest_rtt;
+          // We must avoid to keep retrying indefinitely against an OSD which is not
+          // responding
+          if (retries_in_a_row > 0
+             && (++retries_in_a_row >=
+                 vivaldi_options_.vivaldi_max_request_retries)) {
+           // If the last retry times out all the previous retries are discarded
+           current_retries.clear();
+           retries_in_a_row = 0;
+          }
         }
 
         // update local coordinate copy here
@@ -375,23 +394,6 @@ void Vivaldi::Run() {
       }
 
       boost::this_thread::sleep(boost::posix_time::seconds(sleep_in_s));
-    } catch (const XtreemFSException& e) {
-      if (ping_response.get()) {
-        ping_response->DeleteBuffers();
-      }
-
-      Logging::log->getLog(LEVEL_ERROR)
-            << "Vivaldi: could not ping OSDs: " << e.what() << endl;
-
-      // We must avoid to keep retrying indefinitely against an OSD which is not
-      // responding
-      if (retries_in_a_row > 0
-          && (++retries_in_a_row >=
-              vivaldi_options_.vivaldi_max_request_retries)) {
-        // If the last retry times out all the previous retries are discarded
-        current_retries.clear();
-        retries_in_a_row = 0;
-      }
     } catch(const boost::thread_interrupted&) {
       if (ping_response.get()) {
         ping_response->DeleteBuffers();
