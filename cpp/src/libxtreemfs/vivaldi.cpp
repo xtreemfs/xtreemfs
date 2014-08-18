@@ -73,29 +73,33 @@ void Vivaldi::Run() {
   assert(dir_client_.get() != NULL);
   assert(osd_client_.get() != NULL);
 
-  // Initialized to (0,0) by default
-  my_vivaldi_coordinates_.set_local_error(0.0);
-  my_vivaldi_coordinates_.set_x_coordinate(0.0);
-  my_vivaldi_coordinates_.set_y_coordinate(0.0);
-
+  bool loaded_from_file = false;
   ifstream vivaldi_coordinates_file(vivaldi_options_.vivaldi_filename.c_str());
   if (vivaldi_coordinates_file.is_open()) {
     my_vivaldi_coordinates_.ParseFromIstream(&vivaldi_coordinates_file);
-    if (!my_vivaldi_coordinates_.IsInitialized()) {
+    loaded_from_file = my_vivaldi_coordinates_.IsInitialized();
+    if (!loaded_from_file) {
         Logging::log->getLog(LEVEL_ERROR)
             << "Vivaldi: Could not load coordinates from file: "
             << my_vivaldi_coordinates_.InitializationErrorString() << endl;
       my_vivaldi_coordinates_.Clear();
     }
-  } else {
+    vivaldi_coordinates_file.close();
+  }
+
+  if (!loaded_from_file) {
     if (Logging::log->loggingActive(LEVEL_INFO)) {
       Logging::log->getLog(LEVEL_INFO)
-          << "Vivaldi: Coordinates file does not exist,"
+          << "Vivaldi: Coordinates file does not exist or could not be parsed,"
           << "starting with empty coordinates." << endl
           << "Initialization might take some time." << endl;
     }
+
+    // Initialize coordinates to (0,0) by default
+    my_vivaldi_coordinates_.set_local_error(0.0);
+    my_vivaldi_coordinates_.set_x_coordinate(0.0);
+    my_vivaldi_coordinates_.set_y_coordinate(0.0);
   }
-  vivaldi_coordinates_file.close();
 
   VivaldiNode own_node(my_vivaldi_coordinates_);
 
