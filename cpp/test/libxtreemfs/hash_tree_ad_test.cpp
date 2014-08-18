@@ -227,15 +227,16 @@ TEST_F(HashTreeADTest_Node, Sibling) {
   EXPECT_EQ(2, x.level);
   EXPECT_EQ(0, x.n);
 
-  x = HashTreeAD::Node(0, 2).RightSibling();
+  tree->SetSize(15);
+  x = HashTreeAD::Node(0, 2).RightSibling(tree);
   EXPECT_EQ(0, x.level);
   EXPECT_EQ(3, x.n);
 
-  x = HashTreeAD::Node(0, 11).RightSibling();
+  x = HashTreeAD::Node(0, 11).RightSibling(tree);
   EXPECT_EQ(0, x.level);
   EXPECT_EQ(11, x.n);
 
-  x = HashTreeAD::Node(2, 1).RightSibling();
+  x = HashTreeAD::Node(2, 1).RightSibling(tree);
   EXPECT_EQ(2, x.level);
   EXPECT_EQ(1, x.n);
 }

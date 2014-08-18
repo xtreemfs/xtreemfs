@@ -80,7 +80,7 @@ class HashTreeAD {
 
     Node LeftSibling() const;
 
-    Node RightSibling() const;
+    Node RightSibling(const HashTreeAD* tree) const;
 
     /**
      * The level of the node. The lowest level is 0.

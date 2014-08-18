@@ -243,7 +243,7 @@ HashTreeAD::Node HashTreeAD::Node::RightChild(const HashTreeAD* tree) const {
   if (rightChild.NodeNumber(tree) >= tree->max_node_number_) {
     // Incomplete tree, the node does not exist, so return the left child
     // instead of the right child.
-    return LeftChild(tree);
+    return LeftChild(tree).RightSibling(tree);
   } else {
     return rightChild;
   }
@@ -258,12 +258,17 @@ HashTreeAD::Node HashTreeAD::Node::LeftSibling() const {
 }
 
 /**
+ * @param tree    The tree the node belongs to.
  * @return The right sibling of the node or the node itself if it is the right
  *         one.
- *         The node is not guaranteed to exist.
  */
-HashTreeAD::Node HashTreeAD::Node::RightSibling() const {
-  return Node(level, n + (n + 1) % 2);
+HashTreeAD::Node HashTreeAD::Node::RightSibling(const HashTreeAD* tree) const {
+  Node tmp_node = Node(level, n + (n + 1) % 2);
+  if (tmp_node.level == 0 && tmp_node.n > tree->max_leaf_number_) {
+    assert(tmp_node.n - 1 == tree->max_leaf_number_);
+    return Node(0, tmp_node.n - 1);
+  }
+  return tmp_node;
 }
 
 HashTreeAD::HashTreeAD(FileHandle* meta_file, int leaf_adata_size)
@@ -591,7 +596,7 @@ boost::icl::interval_set<int> HashTreeAD::RequiredNodesForRead(int start_leaf,
   nodeNumbers.add(
       boost::icl::interval<int>::closed(
           std::max(start_node.LeftSibling().NodeNumber(this) - 2, 0),
-          std::min(end_node.RightSibling().NodeNumber(this) + 2,
+          std::min(end_node.RightSibling(this).NodeNumber(this) + 2,
                    max_node_number_)));
   // 2. Get the rest of the needed nodes. This are, starting from the common
   // ancestor: the sibling and the parent. The same for the parent, until the
@@ -719,16 +724,23 @@ void HashTreeAD::UpdateTree(int start_leaf, int end_leaf, int max_leaf) {
     int end_n = end_leaf_;
     Node skiped_node = Node(0, 0);
     for (int level = 1; level < max_level_; level++) {
-      start_n = Node(level - 1, start_n).Parent(this).n;
-      Node end_parent = Node(level - 1, end_n).Parent(this);
-      if (skiped_node.level == level) {
-        end_n = skiped_node.n;
-      } else if (end_parent.level == level) {
-        end_n = end_parent.n;
+      Node start_parent = Node(level - 1, start_n).Parent(this);
+      start_n = start_parent.n;
+      if (start_parent.level != level) {
+        // skip all levels till level of start_parent
+        level = start_parent.level;
+        end_n = start_n;
       } else {
-        assert(skiped_node.level < level);
-        skiped_node = end_parent;
-        end_n = Node(level - 1, end_n - 2).Parent(this).n;
+        Node end_parent = Node(level - 1, end_n).Parent(this);
+        if (skiped_node.level == level) {
+          end_n = skiped_node.n;
+        } else if (end_parent.level == level) {
+          end_n = end_parent.n;
+        } else {
+          assert(skiped_node.level < level);
+          skiped_node = end_parent;
+          end_n = Node(level - 1, end_n - 2).Parent(this).n;
+        }
       }
       for (int n = start_n; n <= end_n; n++) {
         Node node(level, n);
@@ -750,7 +762,7 @@ void HashTreeAD::UpdateTree(int start_leaf, int end_leaf, int max_leaf) {
     }
     while (node.level < max_level_ - 1) {
       Node parent = node.Parent(this);
-      nodes_[parent] = HashOfNode(node.LeftSibling(), node.RightSibling());
+      nodes_[parent] = HashOfNode(node.LeftSibling(), node.RightSibling(this));
       changed_nodes_ += parent.NodeNumber(this);
       node = parent;
     }
