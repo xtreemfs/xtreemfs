@@ -427,7 +427,6 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
         ErrorLog::error_log->AppendError(error);
         throw XtreemFSException(error);
       }
-      // TODO(jdillmann): case INVALID_VIEW:
       default:  {
         string error_type_name
             = boost::lexical_cast<string>(error_type);

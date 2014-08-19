@@ -1050,12 +1050,11 @@ void FileHandleImplementation::RenewXLocSet() {
   GetXLocSet(&xlocset_to_renew);
 
   {
-    boost::mutex::scoped_lock lock(file_info_->xlocset_renewal_mutex());
+    FileInfo::XLocSetRenewalLock lock(file_info_);
 
     // Renew the xLocSet only if the xLocSet has not been renewed yet by another process.
     GetXLocSet(&xlocset_current);
     if (xlocset_current.version() <= xlocset_to_renew.version()) {
-      //XLocSet xlocset_new;
 
       // Build the request and call the MRC synchronously.
       XCap xcap;

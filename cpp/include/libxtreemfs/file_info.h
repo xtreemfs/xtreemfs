@@ -211,9 +211,24 @@ class FileInfo {
       bool* wait_completed,
       boost::mutex* wait_completed_mutex);
 
-  /** Get the mutex, that can be used for xLocSet renewals from multiple FileHandles. */
-  inline boost::mutex& xlocset_renewal_mutex() {
-    return xlocset_renewal_mutex_;
+  /** Non-recursive scoped lock which is used to prevent concurrent XLocSet
+   *  renewals from multiple FileHandles associated to the same FileInfo.
+   *
+   *  @see FileHandleImplementation::RenewXLocSet
+   */
+  class XLocSetRenewalLock {
+    private:
+      boost::mutex& m_;
+
+    public:
+      XLocSetRenewalLock(FileInfo* file_info) :
+          m_(file_info->xlocset_renewal_mutex_) {
+        m_.lock();
+      }
+
+      ~XLocSetRenewalLock() {
+        m_.unlock();
+      }
   };
 
  private:
