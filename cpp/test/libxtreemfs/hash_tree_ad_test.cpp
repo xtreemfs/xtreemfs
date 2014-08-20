@@ -287,6 +287,37 @@ TEST_F(HashTreeADTest_Node, Parent) {
   x = HashTreeAD::Node(0, 5).Parent(tree);
   EXPECT_EQ(2, x.level);
   EXPECT_EQ(1, x.n);
+
+  tree->SetSize(40);
+  EXPECT_EQ(81, tree->max_node_number_);
+
+  x = HashTreeAD::Node(0, 39).Parent(tree, 0);
+  EXPECT_EQ(0, x.level);
+  EXPECT_EQ(39, x.n);
+
+  x = HashTreeAD::Node(0, 39).Parent(tree, 1);
+  EXPECT_EQ(1, x.level);
+  EXPECT_EQ(19, x.n);
+
+  x = HashTreeAD::Node(0, 39).Parent(tree, 2);
+  EXPECT_EQ(2, x.level);
+  EXPECT_EQ(9, x.n);
+
+  x = HashTreeAD::Node(0, 39).Parent(tree, 3);
+  EXPECT_EQ(3, x.level);
+  EXPECT_EQ(4, x.n);
+
+  x = HashTreeAD::Node(0, 39).Parent(tree, 4);
+  EXPECT_EQ(5, x.level);
+  EXPECT_EQ(1, x.n);
+
+  x = HashTreeAD::Node(0, 39).Parent(tree, 5);
+  EXPECT_EQ(5, x.level);
+  EXPECT_EQ(1, x.n);
+
+  x = HashTreeAD::Node(0, 39).Parent(tree, 6);
+  EXPECT_EQ(6, x.level);
+  EXPECT_EQ(0, x.n);
 }
 
 TEST_F(HashTreeADTest_Node, Child) {

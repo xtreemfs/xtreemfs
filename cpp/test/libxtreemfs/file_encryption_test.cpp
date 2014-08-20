@@ -72,7 +72,7 @@ class OnlineTest : public ::testing::Test {
 
     // set options for encryption
     options_.encryption = true;
-//    options_.encryption_block_size = 4;
+    options_.encryption_block_size = 4;
 
     // Create a new instance of a client using the DIR service at 'localhost'
     // at port 32638 using the default implementation.
@@ -722,9 +722,37 @@ TEST_F(EncryptionTest, Truncate_06) {
     EXPECT_EQ(*(buffer + i), 0);
   }
 }
-// 0000 0000 0011 1111 1111 2222 22
-// 0123 4567 8901 2345 6789 0134 56
-// ABCD EFGH IJKL MNOP QRST UVWX YZ
+
+TEST_F(EncryptionTest, Truncate_07) {
+  char buffer[200];
+  int x;
+
+  // write from start 1. block to start 13. block
+  ASSERT_NO_THROW({
+    file->Write("ABCDEFGHIJKLMNOPQRSTUVWXabcdefghijklmnopqrstuvwxy", 49, 0);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 50, 0);
+  });
+  EXPECT_EQ(49, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("ABCDEFGHIJKLMNOPQRSTUVWXabcdefghijklmnopqrstuvwxy", buffer);
+
+  // truncate to end 2. block
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 8);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 200, 0);
+  });
+  EXPECT_EQ(8, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("ABCDEFGH", buffer);
+}
 
 }  // namespace xtreemfs
 
