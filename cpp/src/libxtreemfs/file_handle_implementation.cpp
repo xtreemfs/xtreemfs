@@ -422,13 +422,13 @@ int FileHandleImplementation::Write(
                                object_encryptor_.get(), _1, _2, 0, _3,
                                reader_partial, writer_partial);
         } else {
-          ObjectReaderFunction reader = boost::bind(
+          reader = boost::bind(
               &FileHandleImplementation::ReadFromOSD,
               this,
               uuid_iterator,
               file_credentials,
               _1, _2, 0, object_cache_->object_size());
-          ObjectWriterFunction writer = boost::bind(
+          writer = boost::bind(
               &FileHandleImplementation::WriteToOSD,
               this,
               osd_uuid_iterator_,

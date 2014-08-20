@@ -161,14 +161,14 @@ int HashTreeAD::Node::NodeNumber(const HashTreeAD* tree) const {
 
 /**
  * @param tree    The tree the node belongs to.
- * @return The rth Parent of the node.
+ * @return The lowest ancestor at least r level above the node.
  */
 HashTreeAD::Node HashTreeAD::Node::Parent(const HashTreeAD* tree, int r) const {
   assert(level + r <= tree->max_level_);
   if (r == 0) {
     return Node(*this);
   }
-  Node parent = Node(level + r, n / (2 * r));
+  Node parent = Node(level + r, n / pow(2, r));
   if (parent.level != tree->max_level_
       && parent.NodeNumber(tree) >= tree->max_node_number_) {
     // Incomplete tree, the node does not exist, so return it's parent instead
@@ -731,6 +731,9 @@ void HashTreeAD::ValidateTree() {
  * @param start_leaf    Beginning of the changed leafs. -1 if no leafs changed.
  * @param end_leaf      End of the changed leafs.
  * @param max_leaf    Old/new max leaf number if it was changed, otherwise -1
+ * @param max_leaf    Old max leaf number if it was increased,
+ *                    new max leaf number if it was decreased,
+ *                    -1 if it was not changed
  */
 void HashTreeAD::UpdateTree(int start_leaf, int end_leaf, int max_leaf) {
   if (start_leaf > -1) {
@@ -786,7 +789,14 @@ void HashTreeAD::UpdateTree(int start_leaf, int end_leaf, int max_leaf) {
   // update root node
   Node root(max_level_, 0);
   if (max_level_ > 0) {
-    nodes_[root] = HashOfNode(root.LeftChild(this), root.RightChild(this));
+    // don't update the root hash if shrink truncate to complete tree and
+    // last leaf was not changed
+    if (max_leaf != max_leaf_number_
+        || (!IsPowerOfTwo(max_leaf_number_ + 1) || max_leaf_number_ == 0)
+        || boost::icl::contains(changed_nodes_,
+                                Node(0, max_leaf).NodeNumber(this))) {
+      nodes_[root] = HashOfNode(root.LeftChild(this), root.RightChild(this));
+    }
   } else {
     nodes_[root] = hasher_.digest(boost::asio::const_buffer());
   }

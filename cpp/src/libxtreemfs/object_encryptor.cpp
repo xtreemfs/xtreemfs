@@ -62,6 +62,8 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
       old_file_size_(0),
       volume_(volume),
       volume_options_(volume->volume_options()) {
+  assert(object_size_ >= enc_block_size_);
+  assert(object_size_ % enc_block_size_ == 0);
   // TODO(plieser): file enc key
   std::string key_str = "01234567890123456789012345678901";
   file_enc_key_ = std::vector<unsigned char>(key_str.begin(), key_str.end());
@@ -335,7 +337,8 @@ boost::unique_future<int> ObjectEncryptor::Read(
                                                              ct_block_len);
     DecryptEncBlock(start_enc_block, ct_block,
                     boost::asio::buffer(tmp_pt_block));
-    buffer_offset = std::min(enc_block_size_ - ct_offset_diff, bytes_to_read);
+    buffer_offset = std::min(
+        static_cast<int>(tmp_pt_block.size()) - ct_offset_diff, bytes_to_read);
     std::copy(tmp_pt_block.begin() + ct_offset_diff,
               tmp_pt_block.begin() + ct_offset_diff + buffer_offset, buffer);
     read_plaintext_len += buffer_offset;
@@ -467,6 +470,7 @@ boost::unique_future<void> ObjectEncryptor::Write(
     // plaintext
     buffer_offset = std::min(enc_block_size_ - ct_offset_diff, bytes_to_write);
     assert(buffer_offset <= bytes_to_write);
+    assert(buffer_offset + ct_offset_diff <= new_pt_block.size());
     std::copy(buffer, buffer + buffer_offset,
               new_pt_block.begin() + ct_offset_diff);
 
