@@ -45,9 +45,8 @@ int RoundUp(int num, int multiple) {
 ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
                                  VolumeImplementation* volume, uint64_t file_id,
                                  FileInfo* file_info, int object_size)
-    // TODO(plieser): option for enc_block_size; cipher
-    : enc_block_size_(4),
-      cipher_("aes-256-ctr"),
+    : enc_block_size_(volume->volume_options().encryption_block_size),
+      cipher_(volume->volume_options().encryption_cipher),
       // TODO(plieser): files in one dir (creat if not exist yet)
       hash_tree_(
           volume->OpenFile(
@@ -57,7 +56,7 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
               static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
                   | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
               0777, true),
-          16),
+          cipher_.iv_size(), volume->volume_options()),
       object_size_(object_size * 1024),
       file_info_(file_info),
       old_file_size_(0),

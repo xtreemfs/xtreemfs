@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "libxtreemfs/file_handle.h"
+#include "libxtreemfs/options.h"
 #include "util/crypto/message_digest.h"
 #include "xtreemfs/GlobalTypes.pb.h"
 
@@ -24,7 +25,8 @@ namespace xtreemfs {
  */
 class HashTreeAD {
  public:
-  HashTreeAD(FileHandle* meta_file, int leaf_adata_size);
+  HashTreeAD(FileHandle* meta_file, int leaf_adata_size,
+             Options volume_options);
 
   ~HashTreeAD();
 

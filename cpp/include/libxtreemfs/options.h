@@ -173,6 +173,12 @@ class Options {
   /** True, if the XtreemFS Grid-SSL Mode (only SSL handshake, no encryption of
    *  data itself) shall be used. */
   bool grid_ssl;
+
+  // encryption options.
+  bool encryption;
+  int encryption_block_size;
+  std::string encryption_cipher;
+  std::string encryption_hash;
 #endif  // HAS_OPENSSL
 
   // Grid Support options.
@@ -283,6 +289,9 @@ class Options {
 #ifdef HAS_OPENSSL
   /** Description of SSL related options. */
   boost::program_options::options_description ssl_options_;
+
+  /** Description of encryption related options. */
+  boost::program_options::options_description encryption_options_;
 #endif  // HAS_OPENSSL
 
   /** Description of options of the Grid support. */

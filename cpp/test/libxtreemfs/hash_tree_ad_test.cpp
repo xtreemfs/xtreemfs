@@ -159,7 +159,7 @@ class HashTreeADTest : public OnlineTest {
                 | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
             0777, true);
 
-    tree = new HashTreeAD(file, 4);
+    tree = new HashTreeAD(file, 4, options_);
   }
 
   virtual void TearDown() {
@@ -186,7 +186,7 @@ class HashTreeADTest_Offline : public OfflineTest {
                 | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_TRUNC
                 | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR));
 
-    tree = new HashTreeAD(file, 4);
+    tree = new HashTreeAD(file, 4, test_env.options);
   }
 
   virtual void TearDown() {

@@ -43,6 +43,7 @@ Options::Options()
       error_handling_("Error Handling options"),
 #ifdef HAS_OPENSSL
       ssl_options_("SSL options"),
+      encryption_options_("Encryption options"),
 #endif  // HAS_OPENSSL
       grid_options_("Grid Support options"),
       vivaldi_options_("Vivaldi Options"),
@@ -104,6 +105,12 @@ Options::Options()
   ssl_pkcs12_path = "";
   ssl_pkcs12_pass = "";
   grid_ssl = false;
+
+  // encryption options.
+  encryption = false;
+  encryption_block_size = 4096;
+  encryption_cipher = "aes-256-ctr";
+  encryption_hash = "sha256";
 #endif  // HAS_OPENSSL
 
   // Grid Support options.
@@ -267,6 +274,20 @@ void Options::GenerateProgramOptionsDescriptions() {
         po::value(&grid_ssl)->zero_tokens(),
         "Explicitly use the XtreemFS Grid-SSL mode. Same as specifying "
         "pbrpcg:// in the volume URL.");
+
+  encryption_options_.add_options()
+    ("encryption",
+        po::value(&encryption)->zero_tokens(),
+        "Enable encryption")
+    ("encryption-block-size",
+        po::value(&encryption_block_size)->default_value(encryption_block_size),
+        "Block size for the encryption")
+    ("encryption-cipher",
+        po::value(&encryption_cipher)->default_value(encryption_cipher),
+        "The cipher to use")
+    ("encryption-hash",
+        po::value(&encryption_hash)->default_value(encryption_hash),
+        "The hash function to use");
 #endif  // HAS_OPENSSL
 
   grid_options_.add_options()
@@ -356,14 +377,14 @@ void Options::GenerateProgramOptionsDescriptions() {
   // These options are parsed
   all_descriptions_.add(general_).add(optimizations_).add(error_handling_)
 #ifdef HAS_OPENSSL
-      .add(ssl_options_)
+      .add(ssl_options_).add(encryption_options_)
 #endif  // HAS_OPENSSL
       .add(grid_options_).add(vivaldi_options_)
       .add(xtreemfs_advanced_options_).add(deprecated_options_);
   // These options are shown in the "-h" output
   visible_descriptions_.add(general_).add(optimizations_).add(error_handling_)
 #ifdef HAS_OPENSSL
-      .add(ssl_options_)
+      .add(ssl_options_).add(encryption_options_)
 #endif  // HAS_OPENSSL
       .add(grid_options_).add(vivaldi_options_);
 

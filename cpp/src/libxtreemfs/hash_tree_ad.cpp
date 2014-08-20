@@ -271,7 +271,8 @@ HashTreeAD::Node HashTreeAD::Node::RightSibling(const HashTreeAD* tree) const {
   return tmp_node;
 }
 
-HashTreeAD::HashTreeAD(FileHandle* meta_file, int leaf_adata_size)
+HashTreeAD::HashTreeAD(FileHandle* meta_file, int leaf_adata_size,
+                       Options volume_options)
     : max_leaf_number_(-1),
       max_level_(0),
       max_node_number_(-1),
@@ -281,7 +282,7 @@ HashTreeAD::HashTreeAD(FileHandle* meta_file, int leaf_adata_size)
       end_leaf_(0),
       old_max_leaf_(0),
       meta_file_(meta_file),
-      hasher_("sha256") {
+      hasher_(volume_options.encryption_hash) {
   assert(meta_file);
   // TODO(plieser): set member variables according to file size; difference
   //                between created file an file of file size 0

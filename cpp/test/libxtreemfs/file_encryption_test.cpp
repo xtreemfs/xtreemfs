@@ -70,6 +70,10 @@ class OnlineTest : public ::testing::Test {
     user_credentials_.set_username("volume_implementation_test");
     user_credentials_.add_groups("volume_implementation_test");
 
+    // set options for encryption
+    options_.encryption = true;
+//    options_.encryption_block_size = 4;
+
     // Create a new instance of a client using the DIR service at 'localhost'
     // at port 32638 using the default implementation.
     options_.log_level_string = "WARN";
