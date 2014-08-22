@@ -404,7 +404,6 @@ FileHandle* VolumeImplementation::OpenFileWithTruncateSize(
                                               async_writes_enabled);
   }
 
-  // TODO(plieser): if encyption enabled
   if (volume_options_.encryption && !disable_encryption) {
     file_handle->SetObjectEncryptor(
         std::auto_ptr<ObjectEncryptor>(

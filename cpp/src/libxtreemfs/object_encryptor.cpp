@@ -92,10 +92,13 @@ void ObjectEncryptor::StartWrite(int64_t offset, int count,
   old_file_size_ = file_size_;
   file_size_ = std::max(file_size_, offset + count);
 
-  hash_tree_.StartWrite(offset / enc_block_size_, offset % enc_block_size_ == 0,
-                        (offset + count - 1) / enc_block_size_,
-                        (offset + count) % enc_block_size_ == 0,
-                        old_file_size_ % enc_block_size_ == 0);
+  hash_tree_.StartWrite(
+      offset / enc_block_size_,
+      offset % enc_block_size_ == 0,
+      (offset + count - 1) / enc_block_size_,
+      (offset + count) % enc_block_size_ == 0
+          || (offset + count) >= old_file_size_,
+      old_file_size_ % enc_block_size_ == 0);
 
   if (file_size_ > old_file_size_ && old_file_size_ % enc_block_size_ != 0
       && file_size_ / enc_block_size_ != old_file_size_ / enc_block_size_) {
@@ -445,10 +448,7 @@ boost::unique_future<void> ObjectEncryptor::Write(
   std::vector<unsigned char> ciphertext(ct_bytes_to_write);
 
   if (ct_offset_diff != 0) {
-    // TODO(plieser): optimization if block at end of file and no read is
-    //                needed
     // first enc block is only partly written, handle it differently
-
     std::vector<unsigned char> new_pt_block(enc_block_size_);
     if (old_file_size_ > object_offset + ct_offset_in_object) {
       // 1. read the old enc block if it is not behind old file size
@@ -487,15 +487,13 @@ boost::unique_future<void> ObjectEncryptor::Write(
       && (ct_end_offset_diff != 0 || ct_bytes_to_write_ != ct_bytes_to_write)) {
     // last enc block is either not the same as the first or was not yet handled
     // and is only partly written
-    // TODO(plieser): optimization if block at end of file and no read is
-    //                needed
     int new_pt_block_len = ct_bytes_to_write - offset_end_enc_block;
     assert(new_pt_block_len > 0);
     assert(new_pt_block_len <= enc_block_size_);
     std::vector<unsigned char> new_pt_block(new_pt_block_len);
-    if (old_file_size_
-        > object_offset + ct_offset_in_object + offset_end_enc_block) {
-      // 1. read the old enc block if it is not behind old file size
+    if (old_file_size_ > object_offset + end_offset_in_object) {
+      // 1. read the old enc block if it is not behind old file size or
+      // is not getting completely overwritten
       std::vector<unsigned char> old_ct_block(enc_block_size_);
       boost::unique_future<int> bytes_read = reader(
           object_no, reinterpret_cast<char*>(old_ct_block.data()),
