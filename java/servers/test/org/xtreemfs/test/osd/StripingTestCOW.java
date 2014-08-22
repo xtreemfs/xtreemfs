@@ -8,26 +8,26 @@
 
 package org.xtreemfs.test.osd;
 
-import java.io.File;
-import java.io.IOException;
+import static org.junit.Assert.assertEquals;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import junit.framework.TestCase;
-import junit.textui.TestRunner;
-
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.dir.DIRConfig;
-import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
-import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
@@ -40,9 +40,12 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 import org.xtreemfs.test.osd.StripingTest.MRCDummy;
 
-public class StripingTestCOW extends TestCase {
+public class StripingTestCOW {
+    @Rule
+    public final TestRule        testLog    = TestHelper.testLog;
     
     private static final boolean COW = true;
     
@@ -114,15 +117,15 @@ public class StripingTestCOW extends TestCase {
     
     private static final byte[] ZEROS      = new byte[SIZE];
     
-    private final DIRConfig     dirConfig;
+    private static DIRConfig     dirConfig;
     
-    private final OSDConfig     osdCfg1;
+    private static OSDConfig     osdCfg1;
     
-    private final OSDConfig     osdCfg2;
+    private static OSDConfig     osdCfg2;
     
-    private final OSDConfig     osdCfg3;
+    private static OSDConfig     osdCfg3;
     
-    private final String        capSecret;
+    private static String        capSecret;
     
     private List<OSD>           osdServer;
     
@@ -132,11 +135,10 @@ public class StripingTestCOW extends TestCase {
     
     private StripingPolicyImpl  sp;
     
-    private XLocSet             xloc;
+    private XLocSet              xloc;
     
-    /** Creates a new instance of StripingTest */
-    public StripingTestCOW(String testName) throws IOException {
-        super(testName);
+    @BeforeClass
+    public static void setUpClass() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
         
         osdCfg1 = SetupUtils.createOSD1Config();
@@ -144,21 +146,11 @@ public class StripingTestCOW extends TestCase {
         osdCfg3 = SetupUtils.createOSD3Config();
         
         capSecret = osdCfg1.getCapabilitySecret();
-
-        Replica r = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(3, KB)).setReplicationFlags(0).build();
-        xloc = XLocSet.newBuilder().setReadOnlyFileSize(0).setVersion(1).addReplicas(r).setReplicaUpdatePolicy("").build();
-
         dirConfig = SetupUtils.createDIRConfig();
-        
     }
     
-    @Override
-    protected void setUp() throws Exception {
-        
-        System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
-        
-        FSUtils.delTree(new File(SetupUtils.TEST_DIR));
-        
+    @Before
+    public void setUp() throws Exception {
         // startup: DIR
         testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_SERVICE,
             TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.UUID_RESOLVER,
@@ -192,8 +184,8 @@ public class StripingTestCOW extends TestCase {
                 COW ? SnapConfig.SNAP_CONFIG_ACCESS_CURRENT : SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, capSecret);
     }
     
-    @Override
-    protected void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
         
         osdServer.get(0).shutdown();
         osdServer.get(1).shutdown();
@@ -204,6 +196,7 @@ public class StripingTestCOW extends TestCase {
     
     /* TODO: test delete/truncate epochs! */
 
+    @Test
     public void testInterleavedWriteAndTruncate() throws Exception {
         
         final int numIterations = 20;

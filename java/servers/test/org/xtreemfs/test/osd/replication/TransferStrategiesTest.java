@@ -8,16 +8,22 @@
 
 package org.xtreemfs.test.osd.replication;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import junit.framework.TestCase;
-
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
-import org.xtreemfs.common.Capability;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.ServiceAvailability;
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -33,10 +39,9 @@ import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy;
 import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy.NextRequest;
 import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy.TransferStrategyException;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestHelper;
 
 /**
  * 
@@ -44,34 +49,24 @@ import org.xtreemfs.test.SetupUtils;
  * 
  * @author clorenz
  */
-public class TransferStrategiesTest extends TestCase {
-    private Capability                       cap;
-    private String                           fileID;
-    private XLocations                       xLoc;
-    private org.xtreemfs.common.xloc.Replica localReplica;
+public class TransferStrategiesTest {
+    @Rule
+    public final TestRule       testLog    = TestHelper.testLog;
+
+    private final static String fileID     = "1:1";
+    private static XLocations   xLoc;
 
     // needed for dummy classes
-    private int                              stripeSize;
+    private final static int    stripeSize = 128 * 1024;        // byte
 
-    private TransferStrategy                 strategy;
-    private int                              osdNumber;
-    private long                             objectNo;
-    private long                             filesize;
+    private TransferStrategy    strategy;
+    private final static int    osdNumber  = 12;
+    private final static long   objectNo   = 2;
+    private final static long   filesize   = 1024 * 1024 * 128; // byte
 
-    /**
-     * @throws InvalidXLocationsException
-     * 
-     */
-    public TransferStrategiesTest() throws InvalidXLocationsException {
+    @BeforeClass
+    public static void setUpClass() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
-
-        fileID = "1:1";
-        cap = new Capability(fileID, 0, 60, System.currentTimeMillis(), "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, "secretPassphrase");
-
-        this.stripeSize = 128 * 1024; // byte
-        osdNumber = 12;
-        objectNo = 2;
-        filesize = 1024 * 1024 * 128; // byte
 
         xLoc = createLocations(4, 3);
     }
@@ -79,7 +74,7 @@ public class TransferStrategiesTest extends TestCase {
     /*
      * copied from org.xtreemfs.test.osd.replication.ReplicationTest
      */
-    private XLocations createLocations(int numberOfReplicas, int numberOfStripedOSDs)
+    private static XLocations createLocations(int numberOfReplicas, int numberOfStripedOSDs)
             throws InvalidXLocationsException {
         assert (numberOfReplicas * numberOfStripedOSDs <= osdNumber);
 
@@ -98,24 +93,26 @@ public class TransferStrategiesTest extends TestCase {
             else
                 flags = ReplicationFlags.setPartialReplica(ReplicationFlags.setRandomStrategy(0));
 
-            Replica r = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(osdset.size(), stripeSize / 1024)).setReplicationFlags(flags).addAllOsdUuids(osdset).build();
+            Replica r = Replica.newBuilder()
+                    .setStripingPolicy(SetupUtils.getStripingPolicy(osdset.size(), stripeSize / 1024))
+                    .setReplicationFlags(flags).addAllOsdUuids(osdset).build();
             rlist.add(r);
 
         }
 
-        XLocSet locSet = XLocSet.newBuilder().setReadOnlyFileSize(1024 * 1024 * 100).setReplicaUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE).setVersion(1).addAllReplicas(rlist).build();
+        XLocSet locSet = XLocSet.newBuilder().setReadOnlyFileSize(1024 * 1024 * 100)
+                .setReplicaUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE).setVersion(1).addAllReplicas(rlist)
+                .build();
         // set the first replica as current replica
 
         // set the first replica as current replica
-        XLocations locations = new XLocations(locSet,
-                new ServiceUUID(locSet.getReplicas(0).getOsdUuids(0)));
+        XLocations locations = new XLocations(locSet, new ServiceUUID(locSet.getReplicas(0).getOsdUuids(0)));
 
         return locations;
     }
 
     @Before
     public void setUp() throws Exception {
-        System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
         this.strategy = new RandomStrategy(fileID, xLoc, new ServiceAvailability());
     }
 
@@ -124,8 +121,8 @@ public class TransferStrategiesTest extends TestCase {
     }
 
     /**
-     * Test method for {@link org.xtreemfs.osd.replication.transferStrategies.TransferStrategy#addRequiredObject(long)} and
-     * {@link org.xtreemfs.osd.replication.transferStrategies.TransferStrategy#removeRequiredObject(long)} .
+     * Test method for {@link org.xtreemfs.osd.replication.transferStrategies.TransferStrategy#addRequiredObject(long)}
+     * and {@link org.xtreemfs.osd.replication.transferStrategies.TransferStrategy#removeRequiredObject(long)} .
      */
     @Test
     public void testAddAndRemoveRequiredObject() {
@@ -134,8 +131,8 @@ public class TransferStrategiesTest extends TestCase {
     }
 
     /**
-     * Test method for {@link org.xtreemfs.osd.replication.transferStrategies.TransferStrategy#addPreferredObject(long)} and
-     * {@link org.xtreemfs.osd.replication.transferStrategies.TransferStrategy#removePreferredObject(long)} .
+     * Test method for {@link org.xtreemfs.osd.replication.transferStrategies.TransferStrategy#addPreferredObject(long)}
+     * and {@link org.xtreemfs.osd.replication.transferStrategies.TransferStrategy#removePreferredObject(long)} .
      */
     @Test
     public void testAddAndRemovePreferredObject() {
@@ -144,7 +141,8 @@ public class TransferStrategiesTest extends TestCase {
     }
 
     /**
-     * Test method for {@link org.xtreemfs.osd.replication.transferStrategies.TransferStrategy#getRequiredObjectsCount()} and
+     * Test method for
+     * {@link org.xtreemfs.osd.replication.transferStrategies.TransferStrategy#getRequiredObjectsCount()} and
      * {@link org.xtreemfs.osd.replication.transferStrategies.TransferStrategy#getPreferredObjectsCount()} .
      */
     @Test
@@ -161,8 +159,7 @@ public class TransferStrategiesTest extends TestCase {
     }
 
     /**
-     * No assert in this test possible due to information hiding. Check debug output for correctness. Test
-     * method for
+     * No assert in this test possible due to information hiding. Check debug output for correctness. Test method for
      * {@link org.xtreemfs.osd.replication.transferStrategies.TransferStrategy#setOSDsObjectSet(set, osd)} .
      */
     @Test
@@ -312,7 +309,8 @@ public class TransferStrategiesTest extends TestCase {
     }
 
     /**
-     * Test method for {@link org.xtreemfs.osd.replication.transferStrategies.SequentialPrefetchingStrategy#selectNext()}.
+     * Test method for
+     * {@link org.xtreemfs.osd.replication.transferStrategies.SequentialPrefetchingStrategy#selectNext()}.
      */
     @Test
     public void testSelectNextForSequentialPrefetchingTransfer() {
@@ -352,77 +350,77 @@ public class TransferStrategiesTest extends TestCase {
             this.strategy.selectNext();
             next = this.strategy.getNext();
             assertEquals(3, next.objectNo);
-            
+
             // ... and more
         } catch (TransferStrategyException e) {
             fail(e.getLocalizedMessage());
         }
     }
-    
-//    /**
-//     * Test method for {@link org.xtreemfs.osd.replication.transferStrategies.RarestFirstStrategy#selectNext()}.
-//     */
-//    @Test
-//    public void testSelectNextForRarestFirstTransfer() {
-//        this.strategy = new RarestFirstStrategy(fileID, xLoc, new ServiceAvailability());
-//
-//        // prepare objects to fetch
-//        long[] objectsToRequest = { 0, 1, 2, 3, 4, 5, 6, 7, 8,9,10,11,12,13 };
-//        this.strategy.addObject(0, false);
-//        this.strategy.addObject(1, true);
-//        this.strategy.addObject(2, true);
-//        for(int i=3; i< objectsToRequest.length-1; i++)
-//            this.strategy.addObject(i, false);
-//
-//        // prepare object sets of OSDs
-//        ObjectSet set = fillObjectSet(0, 2, 4);
-//        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(0).getOSDs().get(0));
-//        set = fillObjectSet(1, 3);
-//        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(0).getOSDs().get(1));
-//        set = fillObjectSet(0, 2, 10);
-//        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(2).getOSDs().get(0));
-//        set = fillObjectSet(1, 7, 9);
-//        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(2).getOSDs().get(1));
-//        set = fillObjectSet(0, 4, 6, 10, 12);
-//        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(3).getOSDs().get(0));
-//        set = fillObjectSet(1, 7, 9, 11);
-//        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(3).getOSDs().get(1));
-//
-//        // set complete replica set later
-//        set = fillObjectSet(0, 2, 4, 6, 8, 10, 12);
-//        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(1).getOSDs().get(0)); // complete replica
-//        set = fillObjectSet(1, 3, 5, 7, 9, 11, 13);
-//        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(1).getOSDs().get(1)); // complete replica
-//
-//        ArrayList<Long> requestedObjects = new ArrayList<Long>();
-//
-//        try {
-//            NextRequest next;
-//            for (int i = 0; i < objectsToRequest.length; i++) {
-//                this.strategy.selectNext();
-//                next = this.strategy.getNext();
-//                requestedObjects.add(Long.valueOf(next.objectNo));
-//                boolean contained = false;
-//                for (org.xtreemfs.common.xloc.Replica r : xLoc.getReplicas()) {
-//                    if (r.getOSDs().contains(next.osd))
-//                        contained = true;
-//                }
-//                assertTrue(contained);
-//            }
-//
-////            for (int i = 0; i < objectsToRequest.length; i++)
-////                assertTrue(requestedObjects.contains(objectsToRequest.get(i)));
-//
-//            // no more requests possible
-//            this.strategy.selectNext();
-//            next = this.strategy.getNext();
-//            assertNull(next);
-//        } catch (TransferStrategyException e) {
-//            fail(e.getLocalizedMessage());
-//        }
-//    }
 
-    private ObjectSet fillObjectSet(long...objects) {
+    // /**
+    // * Test method for {@link org.xtreemfs.osd.replication.transferStrategies.RarestFirstStrategy#selectNext()}.
+    // */
+    // @Test
+    // public void testSelectNextForRarestFirstTransfer() {
+    // this.strategy = new RarestFirstStrategy(fileID, xLoc, new ServiceAvailability());
+    //
+    // // prepare objects to fetch
+    // long[] objectsToRequest = { 0, 1, 2, 3, 4, 5, 6, 7, 8,9,10,11,12,13 };
+    // this.strategy.addObject(0, false);
+    // this.strategy.addObject(1, true);
+    // this.strategy.addObject(2, true);
+    // for(int i=3; i< objectsToRequest.length-1; i++)
+    // this.strategy.addObject(i, false);
+    //
+    // // prepare object sets of OSDs
+    // ObjectSet set = fillObjectSet(0, 2, 4);
+    // this.strategy.setOSDsObjectSet(set, xLoc.getReplica(0).getOSDs().get(0));
+    // set = fillObjectSet(1, 3);
+    // this.strategy.setOSDsObjectSet(set, xLoc.getReplica(0).getOSDs().get(1));
+    // set = fillObjectSet(0, 2, 10);
+    // this.strategy.setOSDsObjectSet(set, xLoc.getReplica(2).getOSDs().get(0));
+    // set = fillObjectSet(1, 7, 9);
+    // this.strategy.setOSDsObjectSet(set, xLoc.getReplica(2).getOSDs().get(1));
+    // set = fillObjectSet(0, 4, 6, 10, 12);
+    // this.strategy.setOSDsObjectSet(set, xLoc.getReplica(3).getOSDs().get(0));
+    // set = fillObjectSet(1, 7, 9, 11);
+    // this.strategy.setOSDsObjectSet(set, xLoc.getReplica(3).getOSDs().get(1));
+    //
+    // // set complete replica set later
+    // set = fillObjectSet(0, 2, 4, 6, 8, 10, 12);
+    // this.strategy.setOSDsObjectSet(set, xLoc.getReplica(1).getOSDs().get(0)); // complete replica
+    // set = fillObjectSet(1, 3, 5, 7, 9, 11, 13);
+    // this.strategy.setOSDsObjectSet(set, xLoc.getReplica(1).getOSDs().get(1)); // complete replica
+    //
+    // ArrayList<Long> requestedObjects = new ArrayList<Long>();
+    //
+    // try {
+    // NextRequest next;
+    // for (int i = 0; i < objectsToRequest.length; i++) {
+    // this.strategy.selectNext();
+    // next = this.strategy.getNext();
+    // requestedObjects.add(Long.valueOf(next.objectNo));
+    // boolean contained = false;
+    // for (org.xtreemfs.common.xloc.Replica r : xLoc.getReplicas()) {
+    // if (r.getOSDs().contains(next.osd))
+    // contained = true;
+    // }
+    // assertTrue(contained);
+    // }
+    //
+    // // for (int i = 0; i < objectsToRequest.length; i++)
+    // // assertTrue(requestedObjects.contains(objectsToRequest.get(i)));
+    //
+    // // no more requests possible
+    // this.strategy.selectNext();
+    // next = this.strategy.getNext();
+    // assertNull(next);
+    // } catch (TransferStrategyException e) {
+    // fail(e.getLocalizedMessage());
+    // }
+    // }
+
+    private ObjectSet fillObjectSet(long... objects) {
         ObjectSet set = new ObjectSet(objects.length);
         for (long object : objects)
             set.add(object);

@@ -7,14 +7,21 @@
 
 package org.xtreemfs.test.osd;
 
-import java.io.IOException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import junit.framework.TestCase;
-
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.clients.File;
@@ -28,8 +35,6 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
-import org.xtreemfs.foundation.util.FSUtils;
-import org.xtreemfs.mrc.MRC;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.osd.OSD;
@@ -43,6 +48,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 /**
  * @author bzcseife
@@ -51,38 +57,41 @@ import org.xtreemfs.test.TestEnvironment;
  *         Mar 31, 2011
  */
 
-public class OSDDrainTest extends TestCase {
-    private TestEnvironment       testEnv;
+public class OSDDrainTest {
+    @Rule
+    public final TestRule             testLog    = TestHelper.testLog;
 
-    private static final String   VOLNAME    = "testvolume";
-    private static final String   VOLNAME2   = "testvolume2";
+    private TestEnvironment           testEnv;
 
-    private final int             STRIPESIZE = 1024;
+    private static final String       VOLNAME    = "testvolume";
+    private static final String       VOLNAME2   = "testvolume2";
 
-    private final OSDConfig       osdConfig1;
-    private final OSDConfig       osdConfig2;
-    private final OSDConfig       osdConfig3;
+    private static int                STRIPESIZE = 1024;
 
-    private List<OSD>             osdServer;
+    private static OSDConfig          osdConfig1;
+    private static OSDConfig          osdConfig2;
+    private static OSDConfig          osdConfig3;
 
-    private MRCServiceClient      mrcClient;
+    private List<OSD>                 osdServer;
 
-    private StripingPolicyImpl    sp;
+    private MRCServiceClient          mrcClient;
 
-    private final Auth            authHeader = RPCAuthentication.authNone;
+    private static StripingPolicyImpl sp;
 
-    private final UserCredentials uc         = RPCAuthentication.userService;
+    private final Auth                authHeader = RPCAuthentication.authNone;
 
-    private UUIDResolver          resolver;
+    private final UserCredentials     uc         = RPCAuthentication.userService;
 
-    private OSDDrain              osdDrain;
+    private UUIDResolver              resolver;
 
-    private MRCConfig             mrc2Config;
-    
-    private MRCRequestDispatcher mrc2;
+    private OSDDrain                  osdDrain;
 
-    public OSDDrainTest(String testName) throws IOException {
-        super(testName);
+    private MRCConfig                 mrc2Config;
+
+    private MRCRequestDispatcher      mrc2;
+
+    @BeforeClass
+    public static void setUpClass() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
 
         osdConfig1 = SetupUtils.createOSD1Config();
@@ -94,20 +103,16 @@ public class OSDDrainTest extends TestCase {
         sp = StripingPolicyImpl.getPolicy(r, 0);
     }
 
-    protected void setUp() throws Exception {
-        System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
-
-        FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
-
+    @Before
+    public void setUp() throws Exception {
         // startup: DIR
         testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_SERVICE,
                 TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.UUID_RESOLVER,
-                TestEnvironment.Services.MRC_CLIENT, TestEnvironment.Services.OSD_CLIENT,
-                TestEnvironment.Services.MRC,
+                TestEnvironment.Services.MRC_CLIENT, TestEnvironment.Services.OSD_CLIENT, TestEnvironment.Services.MRC,
 
         });
         testEnv.start();
-        
+
         mrc2Config = SetupUtils.createMRC2Config();
         mrc2 = new MRCRequestDispatcher(mrc2Config, SetupUtils.createMRC2dbsConfig());
         mrc2.startup();
@@ -116,20 +121,21 @@ public class OSDDrainTest extends TestCase {
 
         mrcClient = testEnv.getMrcClient();
 
-
-        DIRClient dir = new DIRClient(testEnv.getDirClient(), new InetSocketAddress[]{testEnv.getDIRAddress()}, 10, 1000 * 5);
+        DIRClient dir = new DIRClient(testEnv.getDirClient(), new InetSocketAddress[] { testEnv.getDIRAddress() }, 10,
+                1000 * 5);
         resolver = UUIDResolver.startNonSingelton(dir, 1000, 10 * 10 * 1000);
 
-        osdDrain = new OSDDrain(dir, testEnv.getOSDClient(), testEnv.getMrcClient(),
-                osdConfig1.getUUID(), authHeader, uc, resolver);
+        osdDrain = new OSDDrain(dir, testEnv.getOSDClient(), testEnv.getMrcClient(), osdConfig1.getUUID(), authHeader,
+                uc, resolver);
 
     }
 
-    protected void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
         if (mrc2 != null) {
             mrc2.shutdown();
         }
-        
+
         testEnv.shutdown();
     }
 
@@ -138,6 +144,7 @@ public class OSDDrainTest extends TestCase {
      * 
      * @throws Exception
      */
+    @Test
     public void testHandleNonExistingFile() throws Exception {
 
         osdServer.add(new OSD(osdConfig1));
@@ -145,8 +152,8 @@ public class OSDDrainTest extends TestCase {
         final Client c = new Client(new InetSocketAddress[] { testEnv.getDIRAddress() }, 15000, 300000, null);
         c.start();
 
-        c.createVolume(VOLNAME, authHeader, uc, sp.getPolicy(),
-                AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, 0777);
+        c.createVolume(VOLNAME, authHeader, uc, sp.getPolicy(), AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL,
+                0777);
 
         Volume volume = c.getVolume(VOLNAME, uc);
 
@@ -186,7 +193,7 @@ public class OSDDrainTest extends TestCase {
 
         raf1.close();
         file1.delete();
-        
+
         c.deleteVolume(VOLNAME, authHeader, uc);
         c.stop();
 
@@ -199,6 +206,7 @@ public class OSDDrainTest extends TestCase {
 
     }
 
+    @Test
     public void testRemoveOSD() throws Exception {
 
         // start only one OSD to ensure that all file lay on the same OSD (easier to make assertions)
@@ -215,8 +223,8 @@ public class OSDDrainTest extends TestCase {
         final Client c = new Client(new InetSocketAddress[] { testEnv.getDIRAddress() }, 15000, 300000, null);
         c.start();
 
-        c.createVolume(VOLNAME, authHeader, uc, sp.getPolicy(),
-                AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, 0777);
+        c.createVolume(VOLNAME, authHeader, uc, sp.getPolicy(), AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL,
+                0777);
 
         Volume volume = c.getVolume(VOLNAME, uc);
 
@@ -310,7 +318,7 @@ public class OSDDrainTest extends TestCase {
         } catch (OSDDrainException e) {
             osdDrain.handleException(e, true);
         }
-        
+
         // test if files are the samel like before
         for (int i = 0; i < NUMBER_OF_FILES; i++) {
             RandomAccessFile raf = files[i].open("r", 0777);
@@ -327,7 +335,7 @@ public class OSDDrainTest extends TestCase {
         for (File file : files) {
             file.delete();
         }
-        
+
         c.deleteVolume(VOLNAME, authHeader, uc);
         c.stop();
 
@@ -340,27 +348,27 @@ public class OSDDrainTest extends TestCase {
 
     }
 
+    @Test
     public void testMultipleMRCs() throws Exception {
         osdServer.add(new OSD(osdConfig1));
         osdServer.add(new OSD(osdConfig2));
         osdServer.add(new OSD(osdConfig3));
-        
+
         String mrc2UUID = mrc2Config.getUUID().toString();
-        
+
         final int NUMBER_OF_FILES = 10;
         LinkedList<String> fileNames = new LinkedList<String>();
         for (int i = 0; i < NUMBER_OF_FILES; i++) {
-            fileNames.add("foo"+i);
+            fileNames.add("foo" + i);
         }
 
         final Client c = new Client(new InetSocketAddress[] { testEnv.getDIRAddress() }, 15000, 300000, null);
         c.start();
-        
-        c.createVolume(VOLNAME, authHeader, uc, sp.getPolicy(),
-                AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, 0777, 
-                SetupUtils.getMRC1UUID().toString());
-        c.createVolume(VOLNAME2, authHeader, uc, sp.getPolicy(), 
-                AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL , 0777, mrc2UUID);
+
+        c.createVolume(VOLNAME, authHeader, uc, sp.getPolicy(), AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL,
+                0777, SetupUtils.getMRC1UUID().toString());
+        c.createVolume(VOLNAME2, authHeader, uc, sp.getPolicy(), AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL,
+                0777, mrc2UUID);
 
         Volume volume1 = c.getVolume(VOLNAME, uc);
         Volume volume2 = c.getVolume(VOLNAME2, uc);
@@ -371,12 +379,12 @@ public class OSDDrainTest extends TestCase {
         File files[] = new File[NUMBER_OF_FILES];
 
         for (int i = 0; i < NUMBER_OF_FILES; i++) {
-            if (i%2 == 0) {
-                files[i] = volume1.getFile(fileNames.get(i));    
+            if (i % 2 == 0) {
+                files[i] = volume1.getFile(fileNames.get(i));
             } else {
                 files[i] = volume2.getFile(fileNames.get(i));
             }
-            
+
             files[i].createFile();
 
             for (int j = 0; j < SIZE; j++) {
@@ -388,7 +396,7 @@ public class OSDDrainTest extends TestCase {
             raf.flush();
             raf.close();
         }
-        
+
         // remove first osd
         List<FileInformation> fileInfos = null;
         try {
@@ -397,7 +405,7 @@ public class OSDDrainTest extends TestCase {
 
             // get all files the OSD has
             fileInfos = osdDrain.getFileListOfOSD();
-            
+
             // get address of MRC which is responsible for every file
             osdDrain.updateMRCAddresses(fileInfos);
 
@@ -459,7 +467,7 @@ public class OSDDrainTest extends TestCase {
         for (File file : files) {
             file.delete();
         }
-        
+
         c.deleteVolume(VOLNAME, authHeader, uc);
         c.deleteVolume(VOLNAME2, authHeader, uc);
         c.stop();
@@ -468,7 +476,7 @@ public class OSDDrainTest extends TestCase {
             osd.shutdown();
         }
         osdServer.clear();
-        
+
         TimeSync.initializeLocal(50).waitForStartup();
     }
 

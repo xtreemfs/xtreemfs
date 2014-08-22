@@ -8,18 +8,23 @@
 
 package org.xtreemfs.test.mrc;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.util.Properties;
-
-import junit.framework.TestCase;
-import junit.textui.TestRunner;
 
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.KeyValuePairs;
 import org.xtreemfs.common.config.ServiceConfig;
@@ -46,21 +51,21 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestEnvironment.Services;
+import org.xtreemfs.test.TestHelper;
 
 /**
  * 
  * @author bjko
  */
-public class OSDPolicyTest extends TestCase {
+public class OSDPolicyTest {
+    @Rule
+    public final TestRule   testLog = TestHelper.testLog;
     
     private TestEnvironment testEnv;
     
-    public OSDPolicyTest() {
-        Logging.start(SetupUtils.DEBUG_LEVEL);
-    }
-    
     @BeforeClass
     public static void setUpClass() throws Exception {
+        Logging.start(SetupUtils.DEBUG_LEVEL);
     }
     
     @AfterClass
@@ -69,9 +74,6 @@ public class OSDPolicyTest extends TestCase {
     
     @Before
     public void setUp() throws Exception {
-        
-        System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
-        
         testEnv = new TestEnvironment(Services.TIME_SYNC, Services.UUID_RESOLVER);
         testEnv.start();
     }
@@ -560,6 +562,7 @@ public class OSDPolicyTest extends TestCase {
         assertEquals("osd1", sortedList.getServices(4).getUuid());
     }
     
+    @Test
     public void testSortHostRoundRobinPolicy() throws Exception {
 
         SortHostRoundRobinPolicy policy = new SortHostRoundRobinPolicy();
@@ -606,9 +609,5 @@ public class OSDPolicyTest extends TestCase {
                 .setValue(String.valueOf(status.getNumber())).build()).build();
         return sdm;
     }
-    
-    public static void main(String[] args) {
-        TestRunner.run(OSDPolicyTest.class);
-    }
-    
+
 }

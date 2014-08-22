@@ -9,44 +9,55 @@
 
 package org.xtreemfs.test.common.striping;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Iterator;
 
-import junit.framework.TestCase;
-
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestHelper;
 
 /**
  * It tests the RAID0 class
  * 
  * @author clorenz
  */
-public class RAID0Test extends TestCase {
+public class RAID0Test {
+    @Rule
+    public final TestRule     testLog  = TestHelper.testLog;
 
     private static final long KILOBYTE = 1024L;
 
-    /** Creates a new instance of RAID0Test */
-    public RAID0Test(String testName) {
-        super(testName);
+    @BeforeClass
+    public static void setUpClass() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL);
     }
 
-    protected void setUp() throws Exception {
-        System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
+    @Before
+    public void setUp() throws Exception {
     }
 
-    protected void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
     }
 
-
+    @Test
     public void testGetObjectsAndBytes() throws Exception {
 
-        Replica r = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(3, 128)).setReplicationFlags(0).build();
+        Replica r = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(3, 128)).setReplicationFlags(0)
+                .build();
 
-        StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r,0);
+        StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r, 0);
 
         long objectID, offset;
 
@@ -72,9 +83,11 @@ public class RAID0Test extends TestCase {
         assertEquals(768 * KILOBYTE, offset);
     }
 
+    @Test
     public void testGetOSDs() throws Exception {
-        Replica r = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(8, 128)).setReplicationFlags(0).build();
-        StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r,0);
+        Replica r = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(8, 128)).setReplicationFlags(0)
+                .build();
+        StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r, 0);
 
         int osd0 = policy.getOSDforObject(0);
         assertEquals(0, osd0);
@@ -107,32 +120,38 @@ public class RAID0Test extends TestCase {
         assertEquals(osd21, osd21b);
     }
 
+    @Test
     public void testGetStripeSize() throws Exception {
-        Replica r = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(3, 256)).setReplicationFlags(0).build();
-        StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r,0);
+        Replica r = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(3, 256)).setReplicationFlags(0)
+                .build();
+        StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r, 0);
         assertEquals(256 * KILOBYTE, policy.getStripeSizeForObject(5));
     }
 
+    @Test
     public void testCalculateLastObject() throws Exception {
-        Replica r = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(3, 256)).setReplicationFlags(0).build();
-        StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r,0);
-        assertEquals(41, policy.getObjectNoForOffset(256L * KILOBYTE * 42-1)); // filesize
+        Replica r = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(3, 256)).setReplicationFlags(0)
+                .build();
+        StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r, 0);
+        assertEquals(41, policy.getObjectNoForOffset(256L * KILOBYTE * 42 - 1)); // filesize
         // =
         // offset
         // +
         // 1
-        assertEquals(42, policy.getObjectNoForOffset(256L * KILOBYTE * 42 + 32000-1));
-        assertEquals(42, policy.getObjectNoForOffset(256L * KILOBYTE * 43 - 1-1));
+        assertEquals(42, policy.getObjectNoForOffset(256L * KILOBYTE * 42 + 32000 - 1));
+        assertEquals(42, policy.getObjectNoForOffset(256L * KILOBYTE * 43 - 1 - 1));
     }
 
+    @Test
     public void testGetObjectsOfOSDiterator() throws Exception {
-        Replica r = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(3, 128)).setReplicationFlags(0).build();
-        StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r,0);
+        Replica r = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(3, 128)).setReplicationFlags(0)
+                .build();
+        StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r, 0);
 
         long startObject = 0, endObject = 12;
         Iterator<Long> objectsIt = policy.getObjectsOfOSD(0, startObject, endObject);
         long objectNo = startObject;
-        while(objectsIt.hasNext()) {
+        while (objectsIt.hasNext()) {
             assertEquals(objectNo, objectsIt.next().longValue());
             assertTrue(objectNo <= endObject);
             objectNo += policy.getWidth();
@@ -142,7 +161,7 @@ public class RAID0Test extends TestCase {
         endObject = 25;
         objectsIt = policy.getObjectsOfOSD(2, startObject, endObject);
         objectNo = startObject;
-        while(objectsIt.hasNext()) {
+        while (objectsIt.hasNext()) {
             assertEquals(objectNo, objectsIt.next().longValue());
             assertTrue(objectNo <= endObject);
             objectNo += policy.getWidth();
@@ -152,7 +171,7 @@ public class RAID0Test extends TestCase {
         endObject = 5;
         objectsIt = policy.getObjectsOfOSD(0, startObject, endObject);
         objectNo = startObject;
-        while(objectsIt.hasNext()) {
+        while (objectsIt.hasNext()) {
             assertEquals(objectNo, objectsIt.next().longValue());
             assertTrue(objectNo <= endObject);
             objectNo += policy.getWidth();
@@ -162,7 +181,7 @@ public class RAID0Test extends TestCase {
         endObject = 4;
         objectsIt = policy.getObjectsOfOSD(1, startObject, endObject);
         objectNo = 1;
-        while(objectsIt.hasNext()) {
+        while (objectsIt.hasNext()) {
             assertEquals(objectNo, objectsIt.next().longValue());
             assertTrue(objectNo <= endObject);
             objectNo += policy.getWidth();
@@ -178,7 +197,7 @@ public class RAID0Test extends TestCase {
         endObject = 32435;
         objectsIt = policy.getObjectsOfOSD(0, startObject, endObject);
         objectNo = 32214;
-        while(objectsIt.hasNext()) {
+        while (objectsIt.hasNext()) {
             assertEquals(objectNo, objectsIt.next().longValue());
             assertTrue(objectNo <= endObject);
             objectNo += policy.getWidth();

@@ -7,15 +7,18 @@
 
 package org.xtreemfs.test.osd;
 
+import static org.junit.Assert.assertEquals;
+
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetSocketAddress;
-import junit.framework.TestCase;
+
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
@@ -29,35 +32,34 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestEnvironment.Services;
+import org.xtreemfs.test.TestHelper;
 
 /**
- *
+ * 
  * @author bjko
  */
-public class SimpleVivaldiStageTest extends TestCase {
-    
-    TestEnvironment env;
+public class SimpleVivaldiStageTest {
+    @Rule
+    public final TestRule testLog = TestHelper.testLog;
 
-    public SimpleVivaldiStageTest() {
-        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
-    }
+    TestEnvironment       env;
 
     @BeforeClass
     public static void setUpClass() throws Exception {
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
     }
 
     @AfterClass
     public static void tearDownClass() throws Exception {
     }
 
-    @Override
     @Before
     public void setUp() throws Exception {
-        env = new TestEnvironment(new TestEnvironment.Services[]{Services.DIR_SERVICE,Services.OSD, Services.OSD_CLIENT});
+        env = new TestEnvironment(new TestEnvironment.Services[] { Services.DIR_SERVICE, Services.OSD,
+                Services.OSD_CLIENT });
         env.start();
     }
 
-    @Override
     @After
     public void tearDown() {
         env.shutdown();
@@ -65,12 +67,18 @@ public class SimpleVivaldiStageTest extends TestCase {
 
     @Test
     public void testVivaldiPing() throws Exception {
-        xtreemfs_pingMesssage payload = xtreemfs_pingMesssage.newBuilder().setRequestResponse(true).setCoordinates(VivaldiCoordinates.newBuilder().setXCoordinate(1.1).setYCoordinate(1.2).setLocalError(0.5)).build();
+        xtreemfs_pingMesssage payload = xtreemfs_pingMesssage
+                .newBuilder()
+                .setRequestResponse(true)
+                .setCoordinates(
+                        VivaldiCoordinates.newBuilder().setXCoordinate(1.1).setYCoordinate(1.2).setLocalError(0.5))
+                .build();
 
-        RPCHeader.RequestHeader rqHdr = RPCHeader.RequestHeader.newBuilder().setAuthData(RPCAuthentication.authNone).
-                setUserCreds(RPCAuthentication.userService).setInterfaceId(OSDServiceConstants.INTERFACE_ID).
-                setProcId(OSDServiceConstants.PROC_ID_XTREEMFS_PING).build();
-        RPCHeader hdr = RPCHeader.newBuilder().setCallId(5).setMessageType(MessageType.RPC_REQUEST).setRequestHeader(rqHdr).build();
+        RPCHeader.RequestHeader rqHdr = RPCHeader.RequestHeader.newBuilder().setAuthData(RPCAuthentication.authNone)
+                .setUserCreds(RPCAuthentication.userService).setInterfaceId(OSDServiceConstants.INTERFACE_ID)
+                .setProcId(OSDServiceConstants.PROC_ID_XTREEMFS_PING).build();
+        RPCHeader hdr = RPCHeader.newBuilder().setCallId(5).setMessageType(MessageType.RPC_REQUEST)
+                .setRequestHeader(rqHdr).build();
 
         PBRPCDatagramPacket dpack = new PBRPCDatagramPacket(hdr, payload);
 
@@ -91,24 +99,25 @@ public class SimpleVivaldiStageTest extends TestCase {
         dsock.close();
     }
 
-    /*@Test
-    public void testVivaldiPingTCP() throws Exception {
-        RPCResponse<VivaldiCoordinates> vc = env.getOSDClient().internal_vivaldi_ping(env.getOSDAddress(), new VivaldiCoordinates(1.1, 1.2, 0.5));
-        VivaldiCoordinates rv = vc.get();
-        vc.freeBuffers();
-        
-
-    }*/
+    /*
+     * @Test public void testVivaldiPingTCP() throws Exception { RPCResponse<VivaldiCoordinates> vc =
+     * env.getOSDClient().internal_vivaldi_ping(env.getOSDAddress(), new VivaldiCoordinates(1.1, 1.2, 0.5));
+     * VivaldiCoordinates rv = vc.get(); vc.freeBuffers();
+     * 
+     * 
+     * }
+     */
 
     @Test
     public void testVivaldiCoordinates() throws Exception {
-        final VivaldiCoordinates c1 = VivaldiCoordinates.newBuilder().setXCoordinate(1.1).setYCoordinate(1.2).setLocalError(0.5).build();
+        final VivaldiCoordinates c1 = VivaldiCoordinates.newBuilder().setXCoordinate(1.1).setYCoordinate(1.2)
+                .setLocalError(0.5).build();
         final String c1s = VivaldiNode.coordinatesToString(c1);
         final VivaldiCoordinates c2 = VivaldiNode.stringToCoordinates(c1s);
 
-        assertEquals(c1.getXCoordinate(),c2.getXCoordinate());
-        assertEquals(c1.getYCoordinate(),c2.getYCoordinate());
-        assertEquals(c1.getLocalError(),c2.getLocalError());
+        assertEquals((Double) c1.getXCoordinate(), (Double) c2.getXCoordinate());
+        assertEquals((Double) c1.getYCoordinate(), (Double) c2.getYCoordinate());
+        assertEquals((Double) c1.getLocalError(), (Double) c2.getLocalError());
     }
     // public void hello() {}
 

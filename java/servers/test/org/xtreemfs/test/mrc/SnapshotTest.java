@@ -24,9 +24,11 @@ import java.util.Random;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import junit.framework.TestCase;
-import junit.textui.TestRunner;
-
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
@@ -47,6 +49,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestEnvironment.Services;
+import org.xtreemfs.test.TestHelper;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
@@ -56,7 +59,9 @@ import com.google.protobuf.Message;
  * 
  * @author stender
  */
-public class SnapshotTest extends TestCase {
+public class SnapshotTest {
+    @Rule
+    public final TestRule testLog = TestHelper.testLog;
 
     static class TreeEntry implements Comparable<TreeEntry>, Serializable {
 
@@ -106,12 +111,8 @@ public class SnapshotTest extends TestCase {
         Logging.start(SetupUtils.DEBUG_LEVEL);
     }
 
-    protected void setUp() throws Exception {
-
-        System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
-
-        mrcAddress = SetupUtils.getMRC1Addr();
-
+    @Before
+    public void setUp() throws Exception {
         uid = "userXY";
         gids = createGIDs("groupZ");
 
@@ -124,14 +125,17 @@ public class SnapshotTest extends TestCase {
                 Services.MRC_CLIENT, Services.DIR_SERVICE, Services.MRC, Services.OSD);
         testEnv.start();
 
+        mrcAddress = testEnv.getMRCAddress();
         client = testEnv.getMrcClient();
     }
 
-    protected void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
         testEnv.shutdown();
         Logging.logMessage(Logging.LEVEL_DEBUG, this, BufferPool.getStatus());
     }
 
+    @Test
     public void testSnapshots() throws Exception {
 
         final int maxFilesPerDir = 4;
@@ -272,10 +276,6 @@ public class SnapshotTest extends TestCase {
             }
 
         }
-    }
-
-    public static void main(String[] args) {
-        TestRunner.run(SnapshotTest.class);
     }
 
     private static StripingPolicy getDefaultStripingPolicy() {

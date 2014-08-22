@@ -8,21 +8,26 @@
 
 package org.xtreemfs.test.mrc;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import junit.framework.TestCase;
-import junit.textui.TestRunner;
-
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.babudb.BabuDBFactory;
 import org.xtreemfs.babudb.api.BabuDB;
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
 import org.xtreemfs.dir.DIRConfig;
-import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
@@ -33,14 +38,15 @@ import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
-public class BabuDBStorageManagerTest extends TestCase {
+public class BabuDBStorageManagerTest {
+    @Rule
+    public final TestRule                  testLog      = TestHelper.testLog;
     
     public static final String             DB_DIRECTORY = "/tmp/xtreemfs-test";
     
     private BabuDBStorageManager           mngr;
-    
-    private DIRRequestDispatcher           dir;
     
     private BabuDB                         database;
     
@@ -75,20 +81,17 @@ public class BabuDBStorageManagerTest extends TestCase {
         Logging.start(SetupUtils.DEBUG_LEVEL);
     }
     
-    protected void setUp() throws Exception {
-        
-        System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
-        
+    @Before
+    public void setUp() throws Exception {
         // initialize Directory Service (for synchronized clocks...)
         DIRConfig config = SetupUtils.createDIRConfig();
         BabuDBConfig dbsConfig = SetupUtils.createDIRdbsConfig();
-        dir = new DIRRequestDispatcher(config, dbsConfig);
-        dir.startup();
         
-        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_CLIENT,
-            TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.UUID_RESOLVER });
+        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_SERVICE,
+                TestEnvironment.Services.DIR_CLIENT, TestEnvironment.Services.TIME_SYNC,
+                TestEnvironment.Services.UUID_RESOLVER });
         testEnv.start();
-        
+
         // reset database
         File dbDir = new File(DB_DIRECTORY);
         FSUtils.delTree(dbDir);
@@ -102,13 +105,14 @@ public class BabuDBStorageManagerTest extends TestCase {
         exc = null;
     }
     
-    protected void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
         database.shutdown();
-        dir.shutdown();
         
         testEnv.shutdown();
     }
     
+    @Test
     public void testCreateDelete() throws Exception {
         
         // retrieve root directory
@@ -220,7 +224,8 @@ public class BabuDBStorageManagerTest extends TestCase {
         assertTrue(tmp.contains(dirName));
         assertTrue(tmp.contains(fileName));
     }
-    
+
+    @Test
     public void testCreateDeleteWithCollidingHashCodes() throws Exception {
         
         // create two files w/ colliding hash codes in nested dir
@@ -274,7 +279,8 @@ public class BabuDBStorageManagerTest extends TestCase {
         assertEquals(name2, children.next().getFileName());
         assertFalse(children.hasNext());
     }
-    
+
+    @Test
     public void testPathResolution() throws Exception {
         
         final String userId = "me";
@@ -330,7 +336,8 @@ public class BabuDBStorageManagerTest extends TestCase {
         assertEquals(1, tmp.size());
         assertTrue(tmp.contains("comp2"));
     }
-    
+
+    @Test
     public void testPartialReaddir() throws Exception {
         
         final String userId = "me";
@@ -530,9 +537,6 @@ public class BabuDBStorageManagerTest extends TestCase {
     // // ((FileEntity) copy).getXLocationsList());
     // // }
     
-    public static void main(String[] args) {
-        TestRunner.run(BabuDBStorageManagerTest.class);
-    }
     
     private static Map<String, Object> getDefaultStripingPolicy() {
         Map<String, Object> map = new HashMap<String, Object>();

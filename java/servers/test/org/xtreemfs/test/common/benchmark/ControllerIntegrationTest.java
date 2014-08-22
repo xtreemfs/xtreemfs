@@ -1,9 +1,11 @@
 package org.xtreemfs.test.common.benchmark;
 
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
-import static org.xtreemfs.common.benchmark.BenchmarkConfig.ConfigBuilder;
-import static org.xtreemfs.common.benchmark.BenchmarkUtils.*;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.xtreemfs.common.benchmark.BenchmarkUtils.KiB_IN_BYTES;
+import static org.xtreemfs.common.benchmark.BenchmarkUtils.MiB_IN_BYTES;
 import static org.xtreemfs.foundation.pbrpc.client.RPCAuthentication.authNone;
 
 import java.io.IOException;
@@ -12,9 +14,23 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.*;
-import org.xtreemfs.common.benchmark.*;
-import org.xtreemfs.common.libxtreemfs.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestRule;
+import org.xtreemfs.common.benchmark.BenchmarkConfig;
+import org.xtreemfs.common.benchmark.BenchmarkConfig.ConfigBuilder;
+import org.xtreemfs.common.benchmark.BenchmarkResult;
+import org.xtreemfs.common.benchmark.BenchmarkUtils;
+import org.xtreemfs.common.benchmark.BenchmarkUtils.BenchmarkType;
+import org.xtreemfs.common.benchmark.Controller;
+import org.xtreemfs.common.libxtreemfs.Client;
+import org.xtreemfs.common.libxtreemfs.ClientFactory;
+import org.xtreemfs.common.libxtreemfs.Options;
+import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.dir.DIRConfig;
@@ -30,8 +46,11 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 public class ControllerIntegrationTest {
+    @Rule
+    public final TestRule               testLog        = TestHelper.testLog;
 
     private static DIRRequestDispatcher   dir;
     private static TestEnvironment        testEnv;

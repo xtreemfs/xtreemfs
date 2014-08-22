@@ -6,28 +6,30 @@
  */
 package org.xtreemfs.test.osd;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
 
 import java.io.File;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.AdminFileHandle;
 import org.xtreemfs.common.libxtreemfs.AdminVolume;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.ClientImplementation;
 import org.xtreemfs.common.libxtreemfs.Options;
-import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
-import org.xtreemfs.foundation.util.FSUtils;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 
 /**
@@ -40,6 +42,9 @@ import org.xtreemfs.test.TestEnvironment;
  * 
  */
 public class FastDeleteOpenFile {
+    @Rule
+    public final TestRule               testLog = TestHelper.testLog;
+
     private static TestEnvironment      testEnv;
 
     private static UserCredentials      userCredentials;
@@ -56,11 +61,6 @@ public class FastDeleteOpenFile {
 
     @BeforeClass
     public static void initializeTest() throws Exception {
-        System.out.println("TEST: " + FastDeleteOpenFile.class.getSimpleName());
-
-        FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
-        Logging.start(Logging.LEVEL_WARN);
-
         testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_SERVICE, TestEnvironment.Services.DIR_CLIENT,
                 TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.RPC_CLIENT,
                 TestEnvironment.Services.MRC, TestEnvironment.Services.OSD, TestEnvironment.Services.OSD});

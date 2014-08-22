@@ -7,27 +7,30 @@
 
 package org.xtreemfs.test.common.monitoring;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import junit.framework.TestCase;
+import java.net.InetSocketAddress;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.monitoring.generatedcode.XTREEMFS_MIBOidTable;
 import org.xtreemfs.dir.DIRConfig;
-import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
-import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 import com.sun.management.snmp.SnmpDefinitions;
 import com.sun.management.snmp.SnmpInt;
@@ -40,43 +43,33 @@ import com.sun.management.snmp.manager.SnmpPeer;
 import com.sun.management.snmp.manager.SnmpRequest;
 import com.sun.management.snmp.manager.SnmpSession;
 
-public class DIRMonitoringTest extends TestCase {
-
-    DIRRequestDispatcher dir;
+public class DIRMonitoringTest {
+    @Rule
+    public final TestRule testLog = TestHelper.testLog;
 
     TestEnvironment      testEnv;
-
-    DIRConfig            dirConfig;
 
     SnmpPeer             dirAgent, mrcAgent, osdAgent;
 
     SnmpSession          session;
 
-    public DIRMonitoringTest() throws IOException {
+    @BeforeClass
+    public static void setUpClass() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
-
-        dirConfig = SetupUtils.createDIRConfig();
     }
 
     @Before
     public void setUp() throws Exception {
 
-        System.out.println("TEST: " + getClass().getSimpleName());
-
-        FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
-
-        dir = new DIRRequestDispatcher(dirConfig, SetupUtils.createDIRdbsConfig());
-        dir.startup();
-        dir.waitForStartup();
-
-        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_CLIENT,
-                TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.RPC_CLIENT,
-                TestEnvironment.Services.MRC, TestEnvironment.Services.OSD });
+        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_SERVICE,
+                TestEnvironment.Services.DIR_CLIENT, TestEnvironment.Services.TIME_SYNC,
+                TestEnvironment.Services.RPC_CLIENT, TestEnvironment.Services.MRC, TestEnvironment.Services.OSD });
         testEnv.start();
 
         final SnmpOidTableSupport oidTable = new XTREEMFS_MIBOidTable();
         SnmpOid.setSnmpOidTable(oidTable);
 
+        DIRConfig dirConfig = SetupUtils.createDIRConfig();
         MRCConfig mrcConfig = SetupUtils.createMRC1Config();
         OSDConfig osdConfig = SetupUtils.createMultipleOSDConfigs(1)[0];
 
@@ -105,11 +98,6 @@ public class DIRMonitoringTest extends TestCase {
         session.destroySession();
 
         testEnv.shutdown();
-
-        dir.shutdown();
-
-        dir.waitForShutdown();
-
     }
 
     /**
@@ -144,6 +132,7 @@ public class DIRMonitoringTest extends TestCase {
 
     }
 
+    @Test
     public void testAddressMappingCount() throws Exception {
 
         SnmpVarBindList result = makeSnmpGet(dirAgent, "addressMappingCount.0");
@@ -173,6 +162,7 @@ public class DIRMonitoringTest extends TestCase {
 
     }
 
+    @Test
     public void testServiceCount() throws Exception {
 
         SnmpVarBindList result = makeSnmpGet(dirAgent, "serviceCount.0");
