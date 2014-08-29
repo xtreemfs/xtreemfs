@@ -540,6 +540,9 @@ public class StorageThread extends Stage {
                 } else {
                     newFS = newObjSize;
                 }
+                if (newFS < fi.getFilesize()) {
+                    newFS = fi.getFilesize();
+                }
                 
                 // check whether the file size might have changed; in this case,
                 // ensure that the X-New-Filesize header will be set
