@@ -106,21 +106,21 @@ while read LINE; do
     $JAVA_CALL >> "$JUNIT_LOG_FILE" 2>&1
     RESULT=$?
     i=`expr $i + 1`
+  
+    if [ "$RESULT" -ne "0" ]; then
+      echo "FAILURE"
+      FAILED=`expr $FAILED + 1`
+      # Log netstat output to debug "address already in use" problems.
+      temp_file="$(mktemp netstat.XXXXXX)"
+      netstat -n -t -a &> "$temp_file.all"
+      netstat -n -t -l &> "$temp_file.listen"
+      netstat -n -t -a -o &> "$temp_file.all+timer"
+    else
+      echo "ok"
+    fi
+      
+    wait_for_time_wait_ports
   done
-
-  if [ "$RESULT" -ne "0" ]; then
-    echo "FAILURE"
-    FAILED=`expr $FAILED + 1`
-    # Log netstat output to debug "address already in use" problems.
-    temp_file="$(mktemp netstat.XXXXXX)"
-    netstat -n -t -a &> "$temp_file.all"
-    netstat -n -t -l &> "$temp_file.listen"
-    netstat -n -t -a -o &> "$temp_file.all+timer"
-  else
-    echo "ok"
-  fi
-    
-  wait_for_time_wait_ports
 
   COUNTER=`expr $COUNTER + 1`
     
