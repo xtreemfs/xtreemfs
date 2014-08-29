@@ -127,7 +127,7 @@ class EncryptionTest : public OnlineTest {
             user_credentials_,
             "/test_file",
             static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_CREAT // NOLINT
-                | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR));
+                | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR), 0777);
   }
 
   virtual void TearDown() {
@@ -291,6 +291,17 @@ TEST_F(EncryptionTest, Read_02) {
   EXPECT_EQ(7, x);
   buffer[x] = 0;
   EXPECT_STREQ("CDEFGHI", buffer);
+}
+
+TEST_F(EncryptionTest, Read_03) {
+  char buffer[50];
+  int x;
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 12, 0);
+  });
+  EXPECT_EQ(0, x);
 }
 
 TEST_F(EncryptionTest, Write_01) {
@@ -783,6 +794,35 @@ TEST_F(EncryptionTest, Truncate_07) {
   EXPECT_EQ(8, x);
   buffer[x] = 0;
   EXPECT_STREQ("ABCDEFGH", buffer);
+}
+
+TEST_F(EncryptionTest, Open_01) {
+  char buffer[50];
+  int x;
+
+  // full write to first 2. block
+  ASSERT_NO_THROW({
+    file->Write("EFGH", 4, 4);
+  });
+
+  file->Close();
+  file =
+      volume_->OpenFile(
+          user_credentials_,
+          "/test_file",
+          static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_CREAT // NOLINT
+              | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR));
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 10, 0);
+  });
+  EXPECT_EQ(8, x);
+  buffer[x] = 0;
+  for (int i = 0; i < 4; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
+  EXPECT_STREQ("EFGH", buffer+4);
 }
 
 }  // namespace xtreemfs

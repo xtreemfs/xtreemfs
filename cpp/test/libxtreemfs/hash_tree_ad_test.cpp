@@ -159,7 +159,8 @@ class HashTreeADTest : public OnlineTest {
                 | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
             0777, true);
 
-    tree = new HashTreeAD(file, 4, options_);
+    tree = new HashTreeAD(4, options_);
+    tree->Init(file, -2);
   }
 
   virtual void TearDown() {
@@ -186,7 +187,8 @@ class HashTreeADTest_Offline : public OfflineTest {
                 | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_TRUNC
                 | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR));
 
-    tree = new HashTreeAD(file, 4, test_env.options);
+    tree = new HashTreeAD(4, test_env.options);
+    tree->Init(file, -2);
   }
 
   virtual void TearDown() {
@@ -656,10 +658,7 @@ TEST_F(HashTreeADTest_Offline, RequiredNodesForWrite) {
   EXPECT_EQ(nodeNumbers, x);
 }
 
-TEST_F(HashTreeADTest_Offline, DISABLED_TmpTestOffline) {
-}
-
-TEST_F(HashTreeADTest, TmpTest) {
+TEST_F(HashTreeADTest, SetGetLeaf) {
   std::vector<unsigned char> x(4);
   x[0] = '#';
   x[1] = '0';

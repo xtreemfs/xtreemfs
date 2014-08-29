@@ -271,8 +271,7 @@ HashTreeAD::Node HashTreeAD::Node::RightSibling(const HashTreeAD* tree) const {
   return tmp_node;
 }
 
-HashTreeAD::HashTreeAD(FileHandle* meta_file, int leaf_adata_size,
-                       Options volume_options)
+HashTreeAD::HashTreeAD(int leaf_adata_size, Options volume_options)
     : max_leaf_number_(-1),
       max_level_(0),
       max_node_number_(-1),
@@ -281,15 +280,19 @@ HashTreeAD::HashTreeAD(FileHandle* meta_file, int leaf_adata_size,
       start_leaf_(0),
       end_leaf_(0),
       old_max_leaf_(0),
-      meta_file_(meta_file),
+      meta_file_(),
       hasher_(volume_options.encryption_hash) {
-  assert(meta_file);
-  // TODO(plieser): set member variables according to file size; difference
-  //                between created file an file of file size 0
 }
 
 HashTreeAD::~HashTreeAD() {
-  meta_file_->Close();
+  if (meta_file_ != NULL) {
+    meta_file_->Close();
+  }
+}
+
+void HashTreeAD::Init(FileHandle* meta_file, int max_leaf_number) {
+  meta_file_ = meta_file;
+  SetSize(max_leaf_number);
 }
 
 /**
@@ -335,7 +338,7 @@ void HashTreeAD::StartWrite(int start_leaf, bool complete_start_leaf,
   if (end_leaf > max_leaf_number_) {
     ChangeSize(end_leaf);
   } else {
-    old_max_leaf_ = -1;
+    old_max_leaf_ = -3;
   }
 
   state_ = 1;
@@ -523,15 +526,20 @@ void HashTreeAD::ChangeSize(int max_leaf_number) {
  * max_node_number_.
  */
 void HashTreeAD::SetSize(int max_leaf_number) {
-  assert(max_leaf_number >= -1);
+  assert(max_leaf_number >= -2);
 
   max_leaf_number_ = max_leaf_number;
-  if (max_leaf_number != -1) {
+  if (max_leaf_number >= 0) {
     max_level_ = MostSignificantBitSet(max_leaf_number) + 1;
     max_node_number_ = Node(0, max_leaf_number).NodeNumber(this) + 1;
   } else {
-    max_node_number_ = 0;
-    max_level_ = 0;
+    if (max_leaf_number == -2) {
+      max_node_number_ = -1;
+      max_level_ = -1;
+    } else {
+      max_node_number_ = 0;
+      max_level_ = 0;
+    }
   }
 }
 
@@ -644,8 +652,16 @@ boost::icl::interval_set<int> HashTreeAD::RequiredNodesForWrite(
   boost::icl::interval_set<int> nodeNumbers;
 
   if (max_leaf_number_ < 0) {
-    nodeNumbers += max_node_number_;
-  } else if (start_leaf > max_leaf_number_) {
+    if (max_leaf_number_ == -2) {
+      // newly created empty file, hash tree does not exist yet
+      return nodeNumbers;
+    }
+    // emty file, only root node exists
+    nodeNumbers += 0;
+    return nodeNumbers;
+  }
+
+  if (start_leaf > max_leaf_number_) {
     if (complete_max_leaf) {
       nodeNumbers += Node(0, max_leaf_number_).Parent(
           this, LeastSignificantBitUnset(max_leaf_number_))
@@ -733,7 +749,7 @@ void HashTreeAD::ValidateTree() {
  * @param max_leaf    Old/new max leaf number if it was changed, otherwise -1
  * @param max_leaf    Old max leaf number if it was increased,
  *                    new max leaf number if it was decreased,
- *                    -1 if it was not changed
+ *                    -3 if it was not changed
  */
 void HashTreeAD::UpdateTree(int start_leaf, int end_leaf, int max_leaf) {
   if (start_leaf > -1) {
@@ -768,7 +784,7 @@ void HashTreeAD::UpdateTree(int start_leaf, int end_leaf, int max_leaf) {
     }
   }
 
-  if (max_leaf != -1
+  if (max_leaf >= 0
       && (start_leaf == -1 || Node(0, start_leaf).LeftSibling().n > max_leaf)) {
     // the write was behind the last max leaf or truncate
     // update the ancestors (root node excluded) of the old/new max leaf

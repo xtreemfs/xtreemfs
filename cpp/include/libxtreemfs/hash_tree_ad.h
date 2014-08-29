@@ -25,10 +25,11 @@ namespace xtreemfs {
  */
 class HashTreeAD {
  public:
-  HashTreeAD(FileHandle* meta_file, int leaf_adata_size,
-             Options volume_options);
+  HashTreeAD(int leaf_adata_size, Options volume_options);
 
   ~HashTreeAD();
+
+  void Init(FileHandle* meta_file, int max_leaf_number);
 
   void StartRead(int start_leaf, int end_leaf);
 
@@ -55,7 +56,7 @@ class HashTreeAD {
   friend class HashTreeADTest_Node_CommonAncestor_Test;
   friend class HashTreeADTest_Offline_RequiredNodesForRead_Test;
   friend class HashTreeADTest_Offline_RequiredNodesForWrite_Test;
-  friend class HashTreeADTest_TmpTest_Test;
+  friend class HashTreeADTest_SetGetLeaf_Test;
 
   /**
    * Abstract representation of a node in the hash tree.
@@ -136,17 +137,21 @@ class HashTreeAD {
   /**
    * Max leaf number in the hash tree.
    * -1 for empty file.
+   * -2 for newly created file.
    */
   int max_leaf_number_;
 
   /**
    * Max level of the hash tree.
    * 0 for empty file.
+   * -1 for non existing tree.
    */
   int max_level_;
 
   /**
    * Max node number.
+   * 0 for empty file.
+   * -1 for non existing tree.
    */
   int max_node_number_;
 

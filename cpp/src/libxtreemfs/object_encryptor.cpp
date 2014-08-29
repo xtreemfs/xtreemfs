@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "xtreemfs/GlobalTypes.pb.h"
+#include "libxtreemfs/xtreemfs_exception.h"
 
 namespace xtreemfs {
 
@@ -48,15 +49,7 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
     : enc_block_size_(volume->volume_options().encryption_block_size),
       cipher_(volume->volume_options().encryption_cipher),
       // TODO(plieser): files in one dir (creat if not exist yet)
-      hash_tree_(
-          volume->OpenFile(
-              user_credentials,
-              "/.xtreemfs_enc_meta_files_"
-                  + boost::lexical_cast<std::string>(file_id),
-              static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
-                  | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
-              0777, true),
-          cipher_.iv_size(), volume->volume_options()),
+      hash_tree_(cipher_.iv_size(), volume->volume_options()),
       object_size_(object_size * 1024),
       file_info_(file_info),
       old_file_size_(0),
@@ -68,11 +61,37 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
   std::string key_str = "01234567890123456789012345678901";
   file_enc_key_ = std::vector<unsigned char>(key_str.begin(), key_str.end());
   xtreemfs::pbrpc::Stat stat;
-  // TODO(plieser): test_async_write_handler fails for this; disable encryption
-  //                for this test
-//  file_info_->GetAttr(user_credentials, &stat);
-//  file_size_ = stat.size();
-  file_size_ = 0;
+  file_info_->GetAttr(user_credentials, &stat);
+  // TODO(plieser): file_size_ must be a trustable input (needed for read behind
+  //                file size)
+  //                if file_size_ can be trusted, is hash tree for empty file
+  //                still needed?
+  file_size_ = stat.size();
+
+  std::string meta_file_name(
+      "/.xtreemfs_enc_meta_files_" + boost::lexical_cast<std::string>(file_id));
+  int max_leaf;
+  if (file_size_ != 0) {
+    max_leaf = (file_size_ - 1) / enc_block_size_;
+  } else {
+    max_leaf = -1;
+  }
+  FileHandle* meta_file;
+  try {
+    meta_file = volume->OpenFile(user_credentials, meta_file_name,
+                                 pbrpc::SYSTEM_V_FCNTL_H_O_RDWR, 0777, true);
+  } catch (const PosixErrorException& e) {  // NOLINT
+    // file didn't exist yet
+    max_leaf = -2;
+    meta_file =
+        volume->OpenFile(
+            user_credentials,
+            meta_file_name,
+            static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
+                | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
+            0777, true);
+  }
+  hash_tree_.Init(meta_file, max_leaf);
 }
 
 void ObjectEncryptor::StartRead(int64_t offset, int count) {
