@@ -898,6 +898,26 @@ public class MRCTest {
         // check 'access' call
         
         try {
+            invokeSync(client.access(mrcAddress, RPCAuthentication.authNone, uc1, posixVolName, "grsasd",
+                    ACCESS_FLAGS.ACCESS_FLAGS_F_OK.getNumber()));
+            fail("access should have been denied");
+        } catch (PBRPCException exc) {
+            if (exc.getPOSIXErrno() != POSIXErrno.POSIX_ERROR_EACCES) {
+                fail("wrong error returned");
+            }
+        }
+
+        try {
+            invokeSync(client.access(mrcAddress, RPCAuthentication.authNone, uc1, posixVolName, "grsasd",
+                    ACCESS_FLAGS.ACCESS_FLAGS_R_OK.getNumber()));
+            fail("access should have been denied");
+        } catch (PBRPCException exc) {
+            if (exc.getPOSIXErrno() != POSIXErrno.POSIX_ERROR_EACCES) {
+                fail("wrong error returned");
+            }
+        }
+
+        try {
             invokeSync(client.access(mrcAddress, RPCAuthentication.authNone, uc2, posixVolName, "grsasd",
                 ACCESS_FLAGS.ACCESS_FLAGS_F_OK.getNumber()));
             fail("access should have been denied");
