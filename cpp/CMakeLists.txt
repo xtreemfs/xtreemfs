@@ -348,6 +348,12 @@ if (BUILD_PRELOAD)
                         -ldl
                         ${CLIENT_GOOGLE_PROTOBUF_CPP_DYNAMIC_LIBRARY})
   ADD_EXECUTABLE(preload_test "test/ld_preload/preload_test.cpp")
+
+  ADD_EXECUTABLE(benchmark_preload "test/ld_preload/benchmark_preload.cpp")
+  TARGET_LINK_LIBRARIES(benchmark_preload xtreemfs)
+  
+  ADD_EXECUTABLE(benchmark_libxtreemfs "test/ld_preload/benchmark_libxtreemfs.cpp")
+  TARGET_LINK_LIBRARIES(benchmark_libxtreemfs xtreemfs)
 endif(BUILD_PRELOAD)
 
 if (GENERATE_JNI OR BUILD_JNI)
