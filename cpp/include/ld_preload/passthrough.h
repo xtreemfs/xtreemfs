@@ -39,6 +39,7 @@ typedef int (*funcptr_ftruncate)(int, off_t);
 typedef int (*funcptr_setxattr)(const char*, const char*, const void*, size_t, int);
 typedef int (*funcptr_fsetxattr)(int, const char*, const void*, size_t, int);
 
+typedef int (*funcptr_fsync)(int);
 
 extern void* libc_open;
 extern void* libc_close;
@@ -65,6 +66,8 @@ extern void* libc_ftruncate;
 
 extern void* libattr_setxattr;
 extern void* libattr_fsetxattr;
+
+extern void* libc_fsync;
 
 void initialize_passthrough_if_necessary();
 

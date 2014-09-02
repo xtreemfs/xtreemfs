@@ -35,5 +35,7 @@ int xtreemfs_fstat64(int fd, struct stat64 *buf);
 int xtreemfs_setxattr(const char *pathname, const char *name, const void *value, size_t size, int flags);
 int xtreemfs_fsetxattr(int fd, const char *name, const void *value, size_t size, int flags);
 
+int xtreemfs_fsync(int fd);
+
 #endif  // PRELOAD_PRELOAD_H_
 

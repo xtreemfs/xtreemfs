@@ -373,5 +373,17 @@ int fsetxattr(int fd, const char *name, const void *value, size_t size, int flag
 }
 
 
+int fsync(int fd) {
+  initialize_passthrough_if_necessary();
+  xprintf(" fsync(%d)\n", fd);
+
+  if (overlay_initialized() && is_xtreemfs_fd(fd)) {
+    xprintf(" fsync(%d) xtreemfs\n", fd);
+    return xtreemfs_fsync(fd);
+  } else {
+    xprintf(" fsync(%d) passthrough\n", fd);
+    return ((funcptr_fsync)libc_fsync)(fd);
+  }
+}
 
 }  // extern "C"

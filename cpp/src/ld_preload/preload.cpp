@@ -298,3 +298,9 @@ int xtreemfs_fsetxattr(int fd, const char *name, const void *value, size_t size,
 //  handle.fh_->SetX
   return 0;
 }
+
+int xtreemfs_fsync(int fd) {
+  OpenFile handle = env->open_file_table_.Get(fd);
+  handle.fh_->Flush();
+  return 0;
+}

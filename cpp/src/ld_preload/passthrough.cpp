@@ -39,6 +39,7 @@ void* libattr;
 void* libattr_setxattr;
 void* libattr_fsetxattr;
 
+void* libc_fsync;
 
 // Our "copy" of stdout, because the application might close stdout
 // or reuse the first file descriptors for other purposes.
@@ -78,6 +79,8 @@ static void initialize_passthrough() {
   libattr = dlopen("libattr.so.1", RTLD_LAZY);
   libattr_setxattr = dlsym(libattr, "setxattr");
   libattr_fsetxattr = dlsym(libattr, "setxattr");
+
+  libc_fsync = dlsym(libc, "fsync");
 
   int stdout2 = ((funcptr_dup)libc_dup)(1);
 
