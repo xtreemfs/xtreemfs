@@ -24,7 +24,7 @@ mkdir $MNT_DIR
 
 
 # File sizes to copy in MB
-FILE_SIZES="1	2	4	8	16	32	64	128	256	512	1024	2048	4096"
+FILE_SIZES="1	2	4	8	16	32	64	128	256	512	1024	2048"
 
 # Stripe sizes in kB
 STRIPE_SIZES="128"
@@ -39,12 +39,11 @@ for STRIPE_SIZE in $STRIPE_SIZES; do
 
   # Generate the volume
   VOL_NAME="ld_preload_benchmark_stripesize-$STRIPE_SIZE"
-  echo $XTREEMFS/bin/mkfs.xtreemfs -s $STRIPE_SIZE -w 1 $MRC_URL/$VOL_NAME
   $XTREEMFS/bin/mkfs.xtreemfs -s $STRIPE_SIZE -w 1 $MRC_URL/$VOL_NAME
 
   # Mount the volume to the tmp dir
-  echo $XTREEMFS/bin/mount.xtreemfs -d WARN $DIR_URL/$VOL_NAME $MNT_DIR
-  $XTREEMFS/bin/mount.xtreemfs -d WARN $DIR_URL/$VOL_NAME $MNT_DIR
+  # $XTREEMFS/bin/mount.xtreemfs -d WARN -o direct_io -o sync_read -o sync $DIR_URL/$VOL_NAME $MNT_DIR
+  $XTREEMFS/bin/mount.xtreemfs -d WARN -o direct_io $DIR_URL/$VOL_NAME $MNT_DIR
 
   # Set the LD_PRELOAD options
   XTREEMFS_PRELOAD_OPTIONS="$DIR_URL/$VOL_NAME /xtreemfs"
@@ -68,9 +67,6 @@ for STRIPE_SIZE in $STRIPE_SIZES; do
       # Fuse test
       $XTREEMFS/cpp/build/benchmark_preload --raw_log $OUT_DIR/fuse-$FILE_SIZE.raw fuse $REPEAT $FILE_SIZE $MNT_DIR/fuse.file \
         | tee -a $OUT_DIR/fuse.csv
-
-      ls -lAh $MNT_DIR
-
 
       # Free memory on osd
       rm $MNT_DIR/*.file

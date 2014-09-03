@@ -133,6 +133,7 @@ int main(int argc, char* argv[]) {
     {
         WallClock clock;
         in_file->Write(data, size_B, 0);
+        in_file->Flush();
         in_time.add(clock);
     }
 
@@ -178,9 +179,9 @@ int main(int argc, char* argv[]) {
 
 
   // Return the results
-  cout << "access\t" << "benchmark\t" << TimeAverageVariance::getHeaderString() <<  "\tsize (MiB)" << endl
-      << "libxtreemfs\t" << "in\t" << in_time.toString() << "\t" << size_MiB << endl
-      << "libxtreemfs\t" << "out\t" << out_time.toString() << "\t" << size_MiB << endl;
+  cout << "access\t" << "benchmark\t" << TimeAverageVariance::getHeaderString() << "\tsize (MiB)" << "\tthroughput (MiB/s)" << endl
+     << "libxtreemfs\t" << "in\t" << in_time.toString() << "\t" << size_MiB << "\t" << (size_MiB / (in_time.average() * 0.000001)) << endl
+     << "libxtreemfs\t" << "out\t" << out_time.toString() << "\t" << size_MiB << "\t" << (size_MiB / (out_time.average() * 0.000001)) << endl;
 
   // Write raw results if log prefix is set
   if (vm.count("raw_log")) {

@@ -81,6 +81,7 @@ int main(int argc, char* argv[]) {
   {
       WallClock clock;
       ssize_t write_ret = write(in_file, (void*)data, size_B);
+      fsync(in_file);
       in_time.add(clock);
       lseek(in_file, 0, SEEK_SET);
   }
@@ -117,9 +118,10 @@ int main(int argc, char* argv[]) {
 
 
   // Return the results
-  cout << "access\t" << "benchmark\t" << TimeAverageVariance::getHeaderString() <<  "\tsize (MiB)" << endl
-      << access << "\tin\t" << in_time.toString() << "\t" << size_MiB << endl
-      << access << "\tout\t" << out_time.toString() << "\t" << size_MiB << endl;
+  cout << "access\t" << "benchmark\t" << TimeAverageVariance::getHeaderString() << "\tsize (MiB)" << "\tthroughput (MiB/s)" << endl
+   << access << "\t" << "in\t" << in_time.toString() << "\t" << size_MiB << "\t" << (size_MiB / (in_time.average() * 0.000001)) << endl
+   << access << "\t" << "out\t" << out_time.toString() << "\t" << size_MiB << "\t" << (size_MiB / (out_time.average() * 0.000001)) << endl;
+
 
   // Write raw results if log prefix is set
   if (vm.count("raw_log")) {
