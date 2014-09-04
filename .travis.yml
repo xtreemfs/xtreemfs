@@ -1,6 +1,6 @@
 language: java
 
-jdk: oraclejdk7
+jdk: openjdk6
 
 install:
   - make server
