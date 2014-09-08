@@ -12,10 +12,6 @@ import static org.junit.Assert.assertEquals;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
@@ -33,25 +29,6 @@ import org.xtreemfs.test.TestHelper;
 public class RAID0ObjectMapperTest {
     @Rule
     public final TestRule testLog = TestHelper.testLog;
-
-    public RAID0ObjectMapperTest() {
-    }
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-    }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-    }
-
-    @Before
-    public void setUp() {
-    }
-
-    @After
-    public void tearDown() {
-    }
 
     /**
      * Test of readRequest method, of class RAID0ObjectMapper.

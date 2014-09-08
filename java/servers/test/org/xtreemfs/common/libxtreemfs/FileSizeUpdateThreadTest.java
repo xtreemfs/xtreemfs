@@ -47,7 +47,7 @@ public class FileSizeUpdateThreadTest {
     private static MRCServiceClient     mrcClient;
 
     @BeforeClass
-    public static void setUp() throws Exception {
+    public static void initializeTest() throws Exception {
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
 
@@ -69,7 +69,7 @@ public class FileSizeUpdateThreadTest {
     }
 
     @AfterClass
-    public static void tearDown() throws Exception {
+    public static void shutdownTest() throws Exception {
 
         testEnv.shutdown();
         dir.shutdown();

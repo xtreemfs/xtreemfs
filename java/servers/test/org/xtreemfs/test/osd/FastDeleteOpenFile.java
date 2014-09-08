@@ -78,7 +78,7 @@ public class FastDeleteOpenFile {
     }
 
     @AfterClass
-    public static void tearDown() throws Exception {
+    public static void shutdownTest() throws Exception {
         testEnv.shutdown();
 
         client.shutdown();

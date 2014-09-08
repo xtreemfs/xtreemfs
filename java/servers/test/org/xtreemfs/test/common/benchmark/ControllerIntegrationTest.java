@@ -69,7 +69,7 @@ public class ControllerIntegrationTest {
     private Client                        client;
 
     @BeforeClass
-    public static void setUpClass() throws Exception {
+    public static void initializeTest() throws Exception {
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
         Logging.start(Logging.LEVEL_WARN, Logging.Category.tool);
 
@@ -115,7 +115,7 @@ public class ControllerIntegrationTest {
     }
 
     @AfterClass
-    public static void tearDownClass() throws Exception {
+    public static void shutdownTest() throws Exception {
 
         for (int i = 0; i < osds.length; i++) {
             if (osds[i] != null) {

@@ -45,7 +45,7 @@ public class LocationsTest {
     static List<ServiceUUID> osds = new ArrayList<ServiceUUID>();
 
     @BeforeClass
-    public static void setUpClass() throws Exception {
+    public static void initializeTest() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL);
 
         osds.add(new ServiceUUID("http://127.0.0.1:65535"));

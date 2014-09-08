@@ -68,7 +68,7 @@ public class ClientTest {
     private static MRCRequestDispatcher mrc2;
     
     @BeforeClass
-    public static void setUp() throws Exception {
+    public static void initializeTest() throws Exception {
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
 
@@ -101,7 +101,7 @@ public class ClientTest {
     }
 
     @AfterClass
-    public static void tearDown() throws Exception {
+    public static void shutdownTest() throws Exception {
 
         for (int i = 0; i < osds.length; i++) {
             if (osds[i] != null) {

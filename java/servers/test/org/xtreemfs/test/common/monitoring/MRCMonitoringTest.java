@@ -59,7 +59,7 @@ public class MRCMonitoringTest {
     private SnmpSession     session;
 
     @BeforeClass
-    public static void setUpClass() throws Exception {
+    public static void initializeTest() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
     }
 

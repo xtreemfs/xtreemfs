@@ -67,7 +67,7 @@ public class ScrubberTest {
     private static final UserCredentials userCredentials = xtfs_scrub.credentials;
 
     @BeforeClass
-    public static void setUp() throws Exception {
+    public static void initializeTest() throws Exception {
         Logging.start(Logging.LEVEL_WARN);
 
         accessMode = 0777; // rwxrwxrwx
@@ -106,7 +106,7 @@ public class ScrubberTest {
     }
 
     @AfterClass
-    public static void tearDown() throws Exception {
+    public static void shutdownTest() throws Exception {
         client.shutdown();
         testEnv.shutdown();
     }

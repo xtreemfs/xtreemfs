@@ -38,7 +38,7 @@ public class BufferBackedMetadataTest {
     public final TestRule testLog = TestHelper.testLog;
 
     @BeforeClass
-    public static void setUpClass() throws Exception {
+    public static void initializeTest() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL);
     }
 

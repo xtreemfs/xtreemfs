@@ -58,14 +58,14 @@ public class CleanupTest {
     private static Auth     passwd;
     
     @BeforeClass
-    public static void setUpClass() throws Exception {
+    public static void initializeTest() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
         passwd = Auth.newBuilder().setAuthType(AuthType.AUTH_PASSWORD)
                 .setAuthPasswd(AuthPassword.newBuilder().setPassword("")).build();
     }
     
     @AfterClass
-    public static void tearDownClass() throws Exception {
+    public static void shutdownTest() throws Exception {
     }
 
     @Before

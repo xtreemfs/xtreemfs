@@ -57,7 +57,7 @@ public class RWReplicationFailureTest {
     private static final String fileId   = "ABCDEF:1";
 
     @BeforeClass
-    public static void setUpClass() throws Exception {
+    public static void initializeTest() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
     }
 

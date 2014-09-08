@@ -45,12 +45,12 @@ public class SimpleVivaldiStageTest {
     TestEnvironment       env;
 
     @BeforeClass
-    public static void setUpClass() throws Exception {
+    public static void initializeTest() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
     }
 
     @AfterClass
-    public static void tearDownClass() throws Exception {
+    public static void shutdownTest() throws Exception {
     }
 
     @Before

@@ -39,7 +39,7 @@ public class RAID0Test {
     private static final long KILOBYTE = 1024L;
 
     @BeforeClass
-    public static void setUpClass() throws Exception {
+    public static void initializeTest() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL);
     }
 

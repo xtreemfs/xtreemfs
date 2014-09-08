@@ -138,7 +138,7 @@ public class StripingTestCOW {
     private XLocSet              xloc;
     
     @BeforeClass
-    public static void setUpClass() throws Exception {
+    public static void initializeTest() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
         
         osdCfg1 = SetupUtils.createOSD1Config();

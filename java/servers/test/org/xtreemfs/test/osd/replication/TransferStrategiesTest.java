@@ -65,7 +65,7 @@ public class TransferStrategiesTest {
     private final static long   filesize   = 1024 * 1024 * 128; // byte
 
     @BeforeClass
-    public static void setUpClass() throws Exception {
+    public static void initializeTest() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
 
         xLoc = createLocations(4, 3);

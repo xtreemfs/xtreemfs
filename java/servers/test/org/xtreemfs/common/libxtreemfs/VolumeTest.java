@@ -138,7 +138,7 @@ public class VolumeTest {
     }
 
     @AfterClass
-    public static void tearDown() throws Exception {
+    public static void shutdownTest() throws Exception {
         for (int i = 0; i < osds.length; i++) {
             if (osds[i] != null) {
                 osds[i].shutdown();
