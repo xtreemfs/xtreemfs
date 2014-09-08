@@ -61,9 +61,7 @@ public interface  Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws IOException
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      */
-    // TODO: Create other Exceptions.
     public StatVFS statFS(UserCredentials userCredentials) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException;
 
@@ -80,9 +78,7 @@ public interface  Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws IOException
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      */
-    // TODO: Create other Exceptions.
     public String readLink(UserCredentials userCredentials, String path) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException;
 
@@ -100,9 +96,7 @@ public interface  Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws IOException
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      */
-    // TODO: Create other Exceptions.
     public void symlink(UserCredentials userCredentials, String targetPath, String linkPath)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
@@ -119,7 +113,6 @@ public interface  Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws IOException
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      */
     public void link(UserCredentials userCredentials, String targetPath, String linkPath)
             throws IOException, PosixErrorException, PosixErrorException, AddressToUUIDNotFoundException;
@@ -140,9 +133,7 @@ public interface  Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws IOException
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      */
-    // TODO: Create other Exceptions.
     public void access(UserCredentials userCredentials, String path, int flags) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException;
 
@@ -162,12 +153,10 @@ public interface  Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      * 
      * @remark Ownership is NOT transferred to the caller. Instead FileHandle.close() has to be called to
      *         destroy the object.
      */
-    // TODO: Create other Exceptions.
     public FileHandle openFile(UserCredentials userCredentials, String path, int flags)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
@@ -181,7 +170,6 @@ public interface  Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      */
     public FileHandle openFile(UserCredentials userCredentials, String path, int flags, int mode)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
@@ -199,7 +187,6 @@ public interface  Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      */
     public void truncate(UserCredentials userCredentials, String path, int newFileSize)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
@@ -216,7 +203,6 @@ public interface  Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      */
     public Stat getAttr(UserCredentials userCredentials, String path) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException;
@@ -239,7 +225,6 @@ public interface  Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      */
     public void setAttr(UserCredentials userCredentials, String path, Stat stat, int toSet)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
@@ -255,7 +240,6 @@ public interface  Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      */
     public void unlink(UserCredentials userCredentials, String path) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException;
@@ -273,7 +257,6 @@ public interface  Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      * */
     public void rename(UserCredentials userCredentials, String path, String newPath)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
@@ -311,7 +294,6 @@ public interface  Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      */
     public void createDirectory(UserCredentials userCredentials, String path, int mode)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
@@ -327,7 +309,6 @@ public interface  Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      */
     public void removeDirectory(UserCredentials userCredentials, String path) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException;
@@ -353,7 +334,6 @@ public interface  Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      */
     public DirectoryEntries readDir(UserCredentials userCredentials, String path, int offset,
             int count, boolean namesOnly) throws IOException, PosixErrorException,
@@ -370,7 +350,6 @@ public interface  Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      * 
      * @return {@link listxattrResponse}
      * 
@@ -393,7 +372,6 @@ public interface  Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      * 
      * @remark Ownership is transferred to the caller.
      */
@@ -417,7 +395,6 @@ public interface  Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      */
     public void setXAttr(UserCredentials userCredentials, String path, String name, String value,
             XATTR_FLAGS flags) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
@@ -442,7 +419,6 @@ public interface  Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      */
     public void setXAttr(UserCredentials userCredentials, Auth auth, String path, String name, String value,
             XATTR_FLAGS flags) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
@@ -462,7 +438,6 @@ public interface  Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      * 
      */
     public String getXAttr(UserCredentials userCredentials, String path, String name)
@@ -478,12 +453,10 @@ public interface  Volume {
      *            Path to the file/directory.
      * @param name
      *            Name of the extended attribute.
-     * @param int Size of the extended attribute. -1 if the attribute was not found.
      * 
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      * 
      * @return true if the attribute was found.
      */
@@ -503,7 +476,6 @@ public interface  Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      */
     public void removeXAttr(UserCredentials userCredentials, String path, String name)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
@@ -563,7 +535,6 @@ public interface  Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
      */
     public void removeReplica(UserCredentials userCredentials, String path, String osdUuid)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
@@ -578,8 +549,6 @@ public interface  Volume {
      *            Path to the file.
      * @param numberOfOsds
      *            Maximum number of OSDs which will be returned.
-     * @param listOfOsdUuids
-     *            [out] List of strings to which the UUIDs will be appended.
      * 
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
@@ -658,8 +627,8 @@ public interface  Volume {
      *          Username and groups of the user. 
      * @param path 
      *          The path on the volume where the ACL is stored
-     * @param user 
-     *          The user to remove access rights
+     * @param aclEntries
+     *          Set of acl entries to remove
      * @throws IOException
      */    
     public void removeACL(UserCredentials userCreds, String path, Set<String> aclEntries) throws IOException;
@@ -687,8 +656,8 @@ public interface  Volume {
      *          Username and groups of the user. 
      * @param path 
      *          The path on the volume where the ACL is stored
-     * @param user 
-     *          The user to remove access rights
+     * @param aclEntries
+     *          ACL entries to set
      * @throws IOException
      */ 
     public void setACL(UserCredentials userCreds, String path, Map<String, Object> aclEntries)
@@ -701,8 +670,6 @@ public interface  Volume {
      *          Username and groups of the user. 
      * @param path 
      *          The path on the volume where the ACL is stored
-     * @param user 
-     *          The user to remove access rights
      * @throws IOException
      */ 
     public Map<String, Object> listACL(UserCredentials userCreds, String path) throws IOException;
@@ -719,7 +686,7 @@ public interface  Volume {
     /** Set the OSD selection policies for the volume (replica placement).
      * 
      * @param userCreds Username and groups of the user.
-     * @param List of policies as comma separated string.
+     * @param policies List of policies as comma separated string.
      * @throws IOException
      */
     public void setOSDSelectionPolicy(UserCredentials userCreds, String policies) throws IOException;
@@ -737,7 +704,7 @@ public interface  Volume {
     /** Set the Replica selection policies for the volume (replica selection).
      * 
      * @param userCreds Username and groups of the user.
-     * @param List of policies as comma separated string.
+     * @param policies List of policies as comma separated string.
      * @throws IOException
      */
     public void setReplicaSelectionPolicy(UserCredentials userCreds, String policies) throws IOException;
@@ -747,8 +714,8 @@ public interface  Volume {
      *  selection. See the user guide for more information.
      * 
      * @param userCreds Username and groups of the user.
-     * @param Format: <policy id>.<attribute name> e.g., "1001.domains"
-     * @param Value of the attribute.
+     * @param attribute Format: <policy id>.<attribute name> e.g., "1001.domains"
+     * @param value Value of the attribute.
      * @throws IOException
      */
     public void setPolicyAttribute(UserCredentials userCreds, String attribute, String value) throws IOException;
@@ -760,7 +727,7 @@ public interface  Volume {
     public String getVolumeName();
     
     /**
-     * Used only for HDFS Interface.
+     * Used only for Hadoop Interface.
      * 
      * Encapsulates information about one stripe, i.e. the size in kb where the stripe begins, the length of
      * the stripe and lists of hostnames and corresponding uuids where the stripe is located. Hostnames are
