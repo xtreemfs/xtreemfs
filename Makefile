@@ -217,7 +217,7 @@ endif
 # Do not use env variables to control the CMake behavior as stated in http://www.cmake.org/Wiki/CMake_FAQ#How_can_I_get_or_set_environment_variables.3F
 # Instead define them via -D, so they will be cached.
 ifdef BOOST_ROOT
-	CMAKE_BOOST_ROOT = -DBOOST_ROOT="$(BOOST_ROOT)"
+	CMAKE_BOOST_ROOT = -DBOOST_ROOT="$(BOOST_ROOT)" -D Boost_NO_SYSTEM_PATHS=ON
 endif
 # Tell CMake if it should ignore a missing Fuse.
 ifdef SKIP_FUSE

@@ -8,6 +8,7 @@
 package org.xtreemfs.test.osd;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -268,6 +269,63 @@ public class OSDTruncateTest {
         r2.freeBuffers();
     }
 
+    @Test
+    public void testTruncateShrinkInObject2() throws Exception {
+        // wirte first 1024 bytes to object 0
+        ReusableBuffer buf = BufferPool.allocate(1024);
+        for (int i = 0; i < 1024; i++)
+            buf.put((byte) 'A');
+        buf.flip();
+        ObjectData data = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false)
+                .build();
+        RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fcred, fileId, 0, 0, 0, 0, data, buf);
+        OSDWriteResponse resp = r.get();
+        r.freeBuffers();
+        assertTrue(resp.hasSizeInBytes());
+        assertEquals(1024, resp.getSizeInBytes());
+
+        XCap newCap = fcred.getXcap().toBuilder().setTruncateEpoch(1).build();
+        fcred = fcred.toBuilder().setXcap(newCap).build();
+
+        // wirte first 512 bytes to object 0
+        ReusableBuffer buf2 = BufferPool.allocate(512);
+        for (int i = 0; i < 512; i++)
+            buf2.put((byte) 'B');
+        buf2.flip();
+        data = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false).build();
+        RPCResponse<OSDWriteResponse> r2 = osdClient.write(serverID.getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fcred, fileId, 0, 0, 0, 0, data, buf2);
+        OSDWriteResponse resp2 = r2.get();
+        r2.freeBuffers();
+        assertFalse(resp2.hasSizeInBytes());
+
+        newCap = fcred.getXcap().toBuilder().setTruncateEpoch(1).build();
+        fcred = fcred.toBuilder().setXcap(newCap).build();
+
+        // truncate shrink to 512
+        r = osdClient.truncate(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fcred,
+                fileId, 512);
+        resp = r.get();
+        r.freeBuffers();
+        assertTrue(resp.hasSizeInBytes());
+        assertEquals(512, resp.getSizeInBytes());
+
+        // get a range on a fully zero padded object
+        RPCResponse<ObjectData> r3 = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fcred, fileId, 0, 0, 0, 2048);
+        data = r3.get();
+        ReusableBuffer dataOut = r3.getData();
+
+        assertEquals(0, data.getZeroPadding());
+        assertEquals(512, dataOut.capacity());
+
+        for (int i = 0; i < 512; i++)
+            assertEquals((byte) 'B', dataOut.get());
+
+        r3.freeBuffers();
+    }
+    
     @Test
     public void testTruncateExtendInObject() throws Exception {
         // wirte first 1024 bytes to object 0
