@@ -1410,6 +1410,18 @@ void VolumeImplementation::RemoveReplica(
           uuid_resolver_,
           RPCOptionsFromOptions(volume_options_)));
 
+  // Update the local XLocSet cached at FileInfo if it exists.
+  uint64_t file_id = ExtractFileIdFromXCap(creds->xcap());
+  map<uint64_t, FileInfo*>::const_iterator it = open_file_table_.find(file_id);
+  if (it != open_file_table_.end()) {
+    // File has already been opened: refresh the xlocset.
+    // TODO(jdillmann): Return the new XLocSet and the replicateOnClose flag with the response. // NOLINT
+    FileHandle* file_handle = OpenFile(user_credentials,
+                                       path,
+                                       SYSTEM_V_FCNTL_H_O_RDONLY);
+    file_handle->Close();
+  }
+
   // Cleanup.
   response_mrc->DeleteBuffers();
   response_osd->DeleteBuffers();
