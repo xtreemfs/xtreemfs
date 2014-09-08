@@ -349,7 +349,6 @@ public class ProcessingStage extends MRCStage {
             @Override
             public void startRequest(MRCRequest rq) throws Throwable {
                 if (!(rq instanceof InternalCallbackMRCRequest)) {
-                    // TODO(jdillmann): check if this exception is the right one.
                     throw new MRCException("InternalCallbackOperations must be called with a MRCCallbackRequest.");
                 }
 

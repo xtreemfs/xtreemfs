@@ -49,7 +49,7 @@ public class XLocSetHandler<C> {
      * @throws IOException
      */
     public void renew() throws PosixErrorException, InternalServerErrorException, IOException {
-        fileHandle.renewXLocSetSynchronous();
+        fileInfo.renewXLocSet(fileHandle);
     }
 
     /**
@@ -59,7 +59,7 @@ public class XLocSetHandler<C> {
      * @return
      */
     public XLocSet getXLocSet() {
-        return fileHandle.getXlocSet();
+        return fileInfo.getXLocSet();
     }
 
     /**

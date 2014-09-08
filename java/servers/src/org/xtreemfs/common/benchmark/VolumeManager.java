@@ -8,6 +8,15 @@
 
 package org.xtreemfs.common.benchmark;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
@@ -16,9 +25,6 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC;
-
-import java.io.IOException;
-import java.util.*;
 
 /**
  * Volume Manager (Singleton).
@@ -413,7 +419,7 @@ class VolumeManager {
 
         for (String osd : uuids) {
             Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Starting cleanup of OSD %s", osd);
-            client.startCleanUp(osd, pwd, true, true, false);
+            client.startCleanUp(osd, pwd, true, true, false, true, 0);
         }
 
         boolean cleanUpIsRunning = true;

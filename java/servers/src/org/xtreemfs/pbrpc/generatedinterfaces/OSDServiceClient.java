@@ -1,5 +1,5 @@
-//automatically generated from OSD.proto at Wed Nov 20 11:38:05 CET 2013
-//(c) 2013. See LICENSE file for details.
+//automatically generated from OSD.proto at Tue Jul 08 18:23:22 CEST 2014
+//(c) 2014. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
 
@@ -136,8 +136,8 @@ public class OSDServiceClient {
          return response;
     }
 
-    public RPCResponse xtreemfs_cleanup_start(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, boolean remove_zombies, boolean remove_unavail_volume, boolean lost_and_found) throws IOException {
-         final OSD.xtreemfs_cleanup_startRequest msg = OSD.xtreemfs_cleanup_startRequest.newBuilder().setRemoveZombies(remove_zombies).setRemoveUnavailVolume(remove_unavail_volume).setLostAndFound(lost_and_found).build();
+    public RPCResponse xtreemfs_cleanup_start(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, boolean remove_zombies, boolean remove_unavail_volume, boolean lost_and_found, boolean delete_metadata, int metadata_timeout) throws IOException {
+         final OSD.xtreemfs_cleanup_startRequest msg = OSD.xtreemfs_cleanup_startRequest.newBuilder().setRemoveZombies(remove_zombies).setRemoveUnavailVolume(remove_unavail_volume).setLostAndFound(lost_and_found).setDeleteMetadata(delete_metadata).setMetadataTimeout(metadata_timeout).build();
          return xtreemfs_cleanup_start(server, authHeader, userCreds,msg);
     }
 

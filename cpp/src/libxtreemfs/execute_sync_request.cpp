@@ -25,6 +25,7 @@
 #include "libxtreemfs/uuid_iterator.h"
 #include "libxtreemfs/uuid_resolver.h"
 #include "libxtreemfs/xcap_handler.h"
+#include "libxtreemfs/xlocset_handler.h"
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "pbrpc/RPC.pb.h"
 #include "rpc/sync_callback.h"
@@ -114,15 +115,20 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
     const RPCOptions& options,
     bool uuid_iterator_has_addresses,
     XCapHandler* xcap_handler,
-    xtreemfs::pbrpc::XCap* xcap_in_req) {
+    xtreemfs::pbrpc::XCap* xcap_in_req,
+    XLocSetHandler* xlocset_handler,
+    xtreemfs::pbrpc::XLocSet* xlocset_in_req) {
   assert(uuid_iterator_has_addresses || uuid_resolver);
   assert((!xcap_handler && !xcap_in_req) || (xcap_handler && xcap_in_req));
+  assert((!xlocset_handler && !xlocset_in_req)
+           || (xlocset_handler && xlocset_in_req));
 
   const int kMaxRedirectsInARow = 5;
 
   int attempt = 0;
   int redirects_in_a_row = 0;
   bool max_redirects_in_a_row_exceeded = false;
+  bool renew_xlocset = false;
   rpc::SyncCallbackBase* response = NULL;
   string service_uuid = "";
   string service_address;
@@ -155,6 +161,17 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
     if (attempt > 1 && xcap_handler && xcap_in_req) {
       xcap_handler->GetXCap(xcap_in_req);
     }
+
+    // Renew the xLocSet if the request failed in the previous try due to an invalid view.  // NOLINT
+    if (attempt > 1 && xlocset_handler && xlocset_in_req) {
+      if (renew_xlocset) {
+        xlocset_handler->RenewXLocSet();
+        renew_xlocset = false;
+      }
+
+      xlocset_handler->GetXLocSet(xlocset_in_req);
+    }
+
     response = sync_function(service_address);
 
     bool has_failed;
@@ -245,6 +262,19 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
          uuid_iterator->MarkUUIDAsFailed(service_uuid);
          uuid_iterator->GetUUID(&service_uuid);
         }
+      }
+
+      // If the view of this request is invalid (outdated xlocset), the view
+      // (and the UUIDIterator) has to be updated and the request retried.
+      if (err.error_type() == INVALID_VIEW && xlocset_handler != NULL) {
+        delay_error = "The server "
+            + (uuid_iterator_has_addresses ? service_address
+                : ( service_address + " (" + service_uuid + ")"))
+            + " denied the requested operation because the clients view is " +
+            + "outdated. The request will be retried once the view is renewed.";  // NOLINT
+
+        retry = true;
+        renew_xlocset = true;
       }
 
       // Retry (and delay)?
@@ -397,6 +427,7 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
         ErrorLog::error_log->AppendError(error);
         throw XtreemFSException(error);
       }
+      // TODO(jdillmann): case INVALID_VIEW:
       default:  {
         string error_type_name
             = boost::lexical_cast<string>(error_type);
@@ -431,7 +462,46 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
   } // if (response != NULL)
 }
 
+/** Executes the request without a xlocset handler. */
+rpc::SyncCallbackBase* ExecuteSyncRequest(
+    boost::function<rpc::SyncCallbackBase* (const std::string&)> sync_function,
+    UUIDIterator* uuid_iterator,
+    UUIDResolver* uuid_resolver,
+    const RPCOptions& options,
+    bool uuid_iterator_has_addresses,
+    XCapHandler* xcap_handler,
+    xtreemfs::pbrpc::XCap* xcap_in_req) {
+  return ExecuteSyncRequest(sync_function,
+                            uuid_iterator,
+                            uuid_resolver,
+                            options,
+                            uuid_iterator_has_addresses,
+                            xcap_handler,
+                            xcap_in_req,
+                            NULL,
+                            NULL);
+}
+
 /** Executes the request without delaying the last try and no xcap handler. */
+rpc::SyncCallbackBase* ExecuteSyncRequest(
+    boost::function<rpc::SyncCallbackBase* (const std::string&)> sync_function,
+    UUIDIterator* uuid_iterator,
+    UUIDResolver* uuid_resolver,
+    const RPCOptions& options,
+    XLocSetHandler* xlocset_handler,
+    xtreemfs::pbrpc::XLocSet* xlocset_in_req) {
+  return ExecuteSyncRequest(sync_function,
+                            uuid_iterator,
+                            uuid_resolver,
+                            options,
+                            false,
+                            NULL,
+                            NULL,
+                            xlocset_handler,
+                            xlocset_in_req);
+}
+
+/** Executes the request without delaying the last try, no xcap and no xlocset handler. */
 rpc::SyncCallbackBase* ExecuteSyncRequest(
     boost::function<rpc::SyncCallbackBase* (const std::string&)> sync_function,
     UUIDIterator* uuid_iterator,
@@ -443,10 +513,32 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
                             options,
                             false,
                             NULL,
+                            NULL,
+                            NULL,
                             NULL);
 }
 
 /** Executes the request without a xcap handler. */
+rpc::SyncCallbackBase* ExecuteSyncRequest(
+    boost::function<rpc::SyncCallbackBase* (const std::string&)> sync_function,
+    UUIDIterator* uuid_iterator,
+    UUIDResolver* uuid_resolver,
+    const RPCOptions& options,
+    bool uuid_iterator_has_addresses,
+    XLocSetHandler* xlocset_handler,
+    xtreemfs::pbrpc::XLocSet* xlocset_in_req) {
+  return ExecuteSyncRequest(sync_function,
+                            uuid_iterator,
+                            uuid_resolver,
+                            options,
+                            uuid_iterator_has_addresses,
+                            NULL,
+                            NULL,
+                            xlocset_handler,
+                            xlocset_in_req);
+}
+
+/** Executes the request without a xcap and a xlocset handler. */
 rpc::SyncCallbackBase* ExecuteSyncRequest(
     boost::function<rpc::SyncCallbackBase* (const std::string&)> sync_function,
     UUIDIterator* uuid_iterator,
@@ -458,6 +550,8 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
                             uuid_resolver,
                             options,
                             uuid_iterator_has_addresses,
+                            NULL,
+                            NULL,
                             NULL,
                             NULL);
 }

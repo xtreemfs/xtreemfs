@@ -56,8 +56,22 @@ class FileInfo {
   inline void UpdateXLocSetAndRest(const xtreemfs::pbrpc::XLocSet& new_xlocset,
                                    bool replicate_on_close) {
     boost::mutex::scoped_lock lock(xlocset_mutex_);
+
     xlocset_.CopyFrom(new_xlocset);
+    osd_uuid_iterator_.ClearAndGetOSDUUIDsFromXlocSet(new_xlocset);
+    // TODO(jdillmann): Updating the osd_uuid_container_ is problematic because every
+    // derived container_uuid_iterator_ has references to the UUIDs.
+
     replicate_on_close_ = replicate_on_close;
+  }
+
+  inline void UpdateXLocSetAndRest(const xtreemfs::pbrpc::XLocSet& new_xlocset) {
+    boost::mutex::scoped_lock lock(xlocset_mutex_);
+
+    xlocset_.CopyFrom(new_xlocset);
+    osd_uuid_iterator_.ClearAndGetOSDUUIDsFromXlocSet(new_xlocset);
+    // TODO(jdillmann): Updating the osd_uuid_container_ is problematic because every
+    // derived container_uuid_iterator_ has references to the UUIDs.
   }
 
   /** Copies the XlocSet into new_xlocset. */
@@ -197,6 +211,11 @@ class FileInfo {
       bool* wait_completed,
       boost::mutex* wait_completed_mutex);
 
+  /** Get the mutex, that can be used for xLocSet renewals from multiple FileHandles. */
+  inline boost::mutex& xlocset_renewal_mutex() {
+    return xlocset_renewal_mutex_;
+  };
+
  private:
   /** Same as FlushPendingFileSizeUpdate(), takes special actions if called by Close(). */
   void FlushPendingFileSizeUpdate(FileHandleImplementation* file_handle,
@@ -243,6 +262,9 @@ class FileInfo {
 
   /** Use this to protect xlocset_ and replicate_on_close_. */
   boost::mutex xlocset_mutex_;
+
+  /** Use this to protect xlocset_ renewals. */
+  boost::mutex xlocset_renewal_mutex_;
 
   /** List of active locks (acts as a cache). The OSD allows only one lock per
    *  (client UUID, PID) tuple. */

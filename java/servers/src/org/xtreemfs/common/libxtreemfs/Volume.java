@@ -17,6 +17,7 @@ import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.REPL_FLAG;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replicas;
@@ -612,10 +613,25 @@ public interface  Volume {
             PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
-     * Returns a list of {@link StripeLocation} where each stripe of the file is located. To determine where
-     * the a particular stripe is located the UUIDs of all replicas which have a copy of this stripe will be
-     * collected and resolved to hostnames. If a uuid can't be resolved it will be deleted from the list
-     * because HDFS can't handle IP addresses.
+     * Gets the default replication policy for "directory".
+     * 
+     * @param userCredentials
+     *            Username and groups of the user.
+     * @param directory
+     *            Path of the directory.
+     * @return {@link ReplicationPolicy}
+     * @throws IOException
+     * @throws PosixErrorException
+     * @throws AddressToUUIDNotFoundException
+     */
+    public ReplicationPolicy getDefaultReplicationPolicy(UserCredentials userCredentials, String directory)
+            throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
+
+    /**
+     * Returns a list of {@link StripeLocation} where each stripe of the file is located. To determine where the a
+     * particular stripe is located the UUIDs of all replicas which have a copy of this stripe will be collected and
+     * resolved to hostnames. If a uuid can't be resolved it will be deleted from the list because HDFS can't handle IP
+     * addresses.
      * 
      * @param userCredentials
      *            Username and groups of the user.
@@ -624,8 +640,7 @@ public interface  Volume {
      * @param startSize
      *            Size in byte where to start collecting the {@link StripeLocation}s.
      * @param length
-     *            The length of the part of the file where the {@link StripeLocation}s should be collected in
-     *            byte.
+     *            The length of the part of the file where the {@link StripeLocation}s should be collected in byte.
      * @return {@link List} of {@link StripeLocation}
      * 
      * @throws IOException

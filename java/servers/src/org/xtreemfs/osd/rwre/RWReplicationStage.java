@@ -1472,8 +1472,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
                         "(R:%s) pending requests were queued while the replica for %s has been invalidated.", localID,
                         fileId);
-                // TODO(jdillmann): Check if this could happen somehow when multiple setAuthStateInvalidated requests
-                // are active.
             }
 
             switch (state.getState()) {

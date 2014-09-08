@@ -37,6 +37,7 @@ FileInfo::FileInfo(
       replicate_on_close_(replicate_on_close),
       reference_count_(0),
       xlocset_(xlocset),
+      osd_uuid_iterator_(xlocset),
       osd_uuid_container_(xlocset),
       client_uuid_(client_uuid),
       osd_write_response_(NULL),
@@ -58,10 +59,7 @@ FileInfo::FileInfo(
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif  // _MSC_VER
-  // Add the head OSD UUIDs of all replicas to the UUID Iterator.
-  for (int i = 0; i < xlocset_.replicas_size(); i++) {
-    osd_uuid_iterator_.AddUUID(xlocset_.replicas(i).osd_uuids(0));
-  }
+
   if (volume->volume_options().object_cache_size > 0) {
     const int object_size = 
         xlocset_.replicas(0).striping_policy().stripe_size() * 1024;
@@ -465,6 +463,5 @@ bool FileInfo::WaitForPendingAsyncWritesNonBlocking(
                                       wait_completed,
                                       wait_completed_mutex);
 }
-
 
 }  // namespace xtreemfs

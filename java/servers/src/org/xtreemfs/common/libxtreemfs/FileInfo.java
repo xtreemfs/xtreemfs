@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
+import org.xtreemfs.common.libxtreemfs.exceptions.InternalServerErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
 import org.xtreemfs.foundation.logging.Logging;
@@ -83,10 +84,9 @@ public class FileInfo {
     Object                                                  xLocSetLock;
     
     /**
-     * 
+     * Use this to protect the renewal of xLocSets.
      */
-    private boolean xLocSetRenewalPending;
-    private Object xLocSetRenewalPendingLock;
+    private Object                                          xLocSetRenewalLock;
 
     /**
      * UUIDIterator which contains the UUIDs of all replicas.
@@ -176,8 +176,7 @@ public class FileInfo {
         pathLock = new Object();
         xLocSetLock = new Object();
 
-        xLocSetRenewalPending = false;
-        xLocSetRenewalPendingLock = new Object();
+        xLocSetRenewalLock = new Object();
 
         openFileHandles = new ConcurrentLinkedQueue<FileHandleImplementation>();
         activeLocks = new ConcurrentHashMap<Integer, Lock>();
@@ -668,54 +667,21 @@ public class FileInfo {
     }
     
     /**
-     * Tries to acquire a lock, to renew the xLocSet. If another thread already has the lock, it will wait until its
-     * renewal is finished. In the second case the lock is not acquired, but the xLocSet has been renewed by the other
-     * thread.
-     * 
-     * @return true if the lock was acquired. false if another thread is renewing the xLocSet.
+     * Renew the xLocSet synchronously.<br>
+     * If another renewal is in pending, no additional renewal will be started and the caller will wait until the
+     * pending one finished.
      */
-    boolean lockXLocSetRenewalOrWait() {
-        // TODO(jdillmann): Discuss Usage of java.util.concurrent.locks
-        synchronized (xLocSetRenewalPendingLock) {
-            if (xLocSetRenewalPending) {
-                waitForXLocSetRenewal();
-                return false;
-            } else {
-                xLocSetRenewalPending = true;
-                return true;
+    protected void renewXLocSet(FileHandleImplementation fileHandle) throws PosixErrorException,
+            InternalServerErrorException, IOException {
+        // Store the current xLocSet before entering the renewal mutex section.
+        XLocSet xLocSetToRenew = getXLocSet();
+
+        synchronized (xLocSetRenewalLock) {
+            // Renew the xLocSet only if the xLocSet has not been renewed yet by another process.
+            if (getXLocSet().getVersion() <= xLocSetToRenew.getVersion()) {
+                XLocSet newXLocSet = fileHandle.renewXLocSetSynchronous();
+                updateXLocSetAndRest(newXLocSet);
             }
         }
     }
-
-    /**
-     * Releases the lock and informs every waiting thread.
-     */
-    void unlockXLocSetRenewal() {
-        synchronized (xLocSetRenewalPendingLock) {
-            xLocSetRenewalPending = false;
-            xLocSetRenewalPendingLock.notifyAll();
-        }
-    }
-    
-    /**
-     * Waits until any pending xLocSet renewals are finished.
-     * 
-     * @return true if a renewal was pending.
-     */
-    boolean waitForXLocSetRenewal() {
-        synchronized (xLocSetRenewalPendingLock) {
-            boolean pending = xLocSetRenewalPending;
-
-            while (xLocSetRenewalPending) {
-                try {
-                    xLocSetRenewalPendingLock.wait();
-                } catch (InterruptedException e) {
-                    break;
-                }
-            }
-
-            return pending;
-        }
-    }
-
 }

@@ -24,6 +24,7 @@
 #include "libxtreemfs/client_implementation.h"
 #include "libxtreemfs/file_handle.h"
 #include "libxtreemfs/xcap_handler.h"
+#include "libxtreemfs/xlocset_handler.h"
 
 namespace xtreemfs {
 
@@ -112,6 +113,7 @@ class XCapManager :
 class FileHandleImplementation
     : public FileHandle,
       public XCapHandler,
+      public XLocSetHandler,
       public rpc::CallbackInterface<pbrpc::timestampResponse> {
  public:
   FileHandleImplementation(
@@ -224,8 +226,14 @@ class FileHandleImplementation
   /** Execute period tasks */
   void ExecutePeriodTasks(const RPCOptions& options);
   
-  /** XCapHandler: Get current capability.*/
+  /** XCapHandler: Get current capability. */
   virtual void GetXCap(xtreemfs::pbrpc::XCap* xcap);
+
+  /** XLocSetHandler: Get the current xLocSet. */
+  virtual void GetXLocSet(xtreemfs::pbrpc::XLocSet* new_xlocset);
+
+  /** XLocSetHandler: Renew the xLocSet synchronously. */
+  virtual void RenewXLocSet();
 
  private:
   /** Implements callback for an async xtreemfs_update_file_size request. */

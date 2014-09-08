@@ -72,14 +72,15 @@ public final class DeleteOperation extends OSDOperation {
             // cancel replication of file
             if (rq.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY))
                 master.getReplicationStage().cancelReplicationForFile(args.getFileId());
-            
-            master.getDeletionStage().deleteObjects(args.getFileId(), null, rq.getCowPolicy().cowEnabled(), rq, new DeleteObjectsCallback() {
 
-                @Override
-                public void deleteComplete(ErrorResponse error) {
-                    disseminateDeletes(rq, args);
-                }
-            });
+            master.getDeletionStage().deleteObjects(args.getFileId(), null, rq.getCowPolicy().cowEnabled(), rq, false,
+                    new DeleteObjectsCallback() {
+
+                        @Override
+                        public void deleteComplete(ErrorResponse error) {
+                            disseminateDeletes(rq, args);
+                        }
+                    });
         } else {
             //file marked for delete on close, send ok to client
             disseminateDeletes(rq, args);

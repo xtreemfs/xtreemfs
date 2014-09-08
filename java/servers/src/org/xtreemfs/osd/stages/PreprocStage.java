@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.xtreemfs.common.Capability;
-import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.LRUCache;
@@ -641,8 +640,6 @@ public class PreprocStage extends Stage {
             
         }
 
-        // TODO(jdillmann): check rights for invalidate, install, and internal fetch invalidated
-
         return null;
     }
     
@@ -669,17 +666,14 @@ public class PreprocStage extends Stage {
             XLocSetVersionState newstate = state.toBuilder()
                     .setInvalidated(false)
                     .setVersion(locset.getVersion())
+                    .setModifiedTime(TimeSync.getGlobalTime())
                     .build();
             
             try {
                 // Persist the view.
                 layout.setXLocSetVersionState(fileId, newstate);
                 // Inform flease about the new view.
-                if (!((locset.getReplicaUpdatePolicy().length() == 0) 
-                        || (locset.getNumReplicas() == 1) 
-                        || (locset.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)))) {
-
-
+                if (ReplicaUpdatePolicy.requiresCoordination(locset)) {
                     ASCIIString cellId = ReplicaUpdatePolicy.fileToCellId(fileId);
                     master.getRWReplicationStage().setFleaseView(fileId, cellId, newstate);
                 }
@@ -723,7 +717,11 @@ public class PreprocStage extends Stage {
 
         // If a response from a newer View is encountered, we have to install it and leave the invalidated state.
         if (state.getVersion() < version) {
-            state = state.toBuilder().setInvalidated(false).setVersion(version).build();
+            state = state.toBuilder()
+                        .setInvalidated(false)
+                        .setVersion(version)
+                        .setModifiedTime(TimeSync.getGlobalTime())
+                        .build();
             try {
                 // persist the version
                 layout.setXLocSetVersionState(fileId, state);
@@ -777,15 +775,16 @@ public class PreprocStage extends Stage {
             }
             
             // Invalidate the replica.
-            stateBuilder.setInvalidated(true);
+            stateBuilder.setInvalidated(true)
+                        .setModifiedTime(TimeSync.getGlobalTime());
 
             state = stateBuilder.build();
             layout.setXLocSetVersionState(fileId, state);
             
-            if (request.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
-                callback.invalidateComplete(true, null);
-            } else {
+            if (ReplicaUpdatePolicy.requiresCoordination(xLoc)) {
                 master.getRWReplicationStage().invalidateReplica(fileId, fileCreds, xLoc, callback);
+            } else {
+                callback.invalidateComplete(true, null);
             }
 
         } catch (InvalidXLocationsException e) {

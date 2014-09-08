@@ -69,7 +69,6 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
         // Check if a xLocSetChange is already in progress.
         XLocSetLock lock = master.getXLocSetCoordinator().getXLocSetLock(file, sMan);
         if (lock.isLocked()) {
-            // TODO(jdillmann): Custom exception.
             throw new UserException(POSIXErrno.POSIX_ERROR_EAGAIN, "xLocSet change already in progress. Please retry.");
         }
 

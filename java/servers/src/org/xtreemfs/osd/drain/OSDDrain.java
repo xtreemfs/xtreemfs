@@ -47,6 +47,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_check_file_existsRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_check_file_existsResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_check_file_existsResponse.FILE_STATE;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_suitable_osdsRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_suitable_osdsResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addRequest;
@@ -391,11 +392,11 @@ public class OSDDrain {
             }
 
             RPCResponse<xtreemfs_check_file_existsResponse> r = null;
-            String bitMap = null;
+            xtreemfs_check_file_existsResponse response = null;
             try {
                 r = mrcClient.xtreemfs_check_file_exists(volIDMrcAddressMapping.get(entry.getKey()),
                         password, userCreds, fileExistsRequest.build());
-                bitMap = r.get().getBitmap();
+                response = r.get();
             } catch (Exception e) {
                 if (Logging.isDebug()) {
                     Logging.logError(Logging.LEVEL_WARN, this, e);
@@ -406,11 +407,12 @@ public class OSDDrain {
                 }
             }
 
-            assert (bitMap != "2");
+            assert (response.getVolumeExists());
 
-            for (int i = 0; i < bitMap.length(); i++) {
-                if (bitMap.charAt(i) == '1')
+            for (int i = 0; i < response.getFileStatesCount(); i++) {
+                if (response.getFileStates(i) == FILE_STATE.REGISTERED) {
                     returnList.add(entry.getValue().get(i));
+                }
             }
         }
         return returnList;

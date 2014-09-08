@@ -129,7 +129,6 @@ public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoord
                     Logging.logMessage(Logging.LEVEL_DEBUG, this, "Previous xLocSet change did not finish.");
                 }
             } else {
-                // TODO(jdillmann): Custom exception.
                 throw new UserException(POSIXErrno.POSIX_ERROR_EAGAIN,
                         "xLocSet change already in progress. Please retry.");
             }

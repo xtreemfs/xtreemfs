@@ -20,12 +20,14 @@ class SyncCallbackBase;
 
 namespace pbrpc {
 class XCap;
+class XLocSet;
 }  // namespace pbrpc
 
 class UUIDIterator;
 class UUIDResolver;
 class Options;
 class XCapHandler;
+class XLocSetHandler;
 
 class RPCOptions {
  public: 
@@ -95,9 +97,31 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
     const RPCOptions& options,
     bool uuid_iterator_has_addresses,
     XCapHandler* xcap_handler,
+    xtreemfs::pbrpc::XCap* xcap_in_req,
+    XLocSetHandler* xlocset_handler,
+    xtreemfs::pbrpc::XLocSet* xlocset_in_req);
+
+/** Executes the request without a xlocset handler. */
+rpc::SyncCallbackBase* ExecuteSyncRequest(
+    boost::function<rpc::SyncCallbackBase* (const std::string&)> sync_function,
+    UUIDIterator* uuid_iterator,
+    UUIDResolver* uuid_resolver,
+    const RPCOptions& options,
+    bool uuid_iterator_has_addresses,
+    XCapHandler* xcap_handler,
     xtreemfs::pbrpc::XCap* xcap_in_req);
 
+
 /** Executes the request without delaying the last try and no xcap handler. */
+rpc::SyncCallbackBase* ExecuteSyncRequest(
+    boost::function<rpc::SyncCallbackBase* (const std::string&)> sync_function,
+    UUIDIterator* uuid_iterator,
+    UUIDResolver* uuid_resolver,
+    const RPCOptions& options,
+    XLocSetHandler* xlocset_handler,
+    xtreemfs::pbrpc::XLocSet* xlocset_in_req);
+
+/** Executes the request without delaying the last try, no xcap and no xlocset handler. */
 rpc::SyncCallbackBase* ExecuteSyncRequest(
     boost::function<rpc::SyncCallbackBase* (const std::string&)> sync_function,
     UUIDIterator* uuid_iterator,
@@ -110,8 +134,17 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
     UUIDIterator* uuid_iterator,
     UUIDResolver* uuid_resolver,
     const RPCOptions& options,
-    bool uuid_iterator_has_addresses);
+    bool uuid_iterator_has_addresses,
+    XLocSetHandler* xlocset_handler,
+    xtreemfs::pbrpc::XLocSet* xlocset_in_req);
 
+/** Executes the request without a xcap and a xlocset handler. */
+rpc::SyncCallbackBase* ExecuteSyncRequest(
+    boost::function<rpc::SyncCallbackBase* (const std::string&)> sync_function,
+    UUIDIterator* uuid_iterator,
+    UUIDResolver* uuid_resolver,
+    const RPCOptions& options,
+    bool uuid_iterator_has_addresses);
 }  // namespace xtreemfs
 
 #endif  // CPP_INCLUDE_LIBXTREEMFS_CALLBACK_EXECUTE_SYNC_REQUEST_H_

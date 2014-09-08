@@ -86,7 +86,7 @@ public class EventCloseFile extends OSDOperation {
         // cancel replication of file
         master.getReplicationStage().cancelReplicationForFile(fileId);
         
-        master.getDeletionStage().deleteObjects(fileId, fi, isCow, null, new DeleteObjectsCallback() {
+        master.getDeletionStage().deleteObjects(fileId, fi, isCow, null, false, new DeleteObjectsCallback() {
             
             @Override
             public void deleteComplete(ErrorResponse error) {

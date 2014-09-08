@@ -11,7 +11,9 @@ package org.xtreemfs.osd.rwre;
 import java.io.IOException;
 import java.util.List;
 
+import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.flease.Flease;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
@@ -54,6 +56,18 @@ public abstract class ReplicaUpdatePolicy {
 
     public static ASCIIString fileToCellId(String fileId) {
         return new ASCIIString(FILE_CELLID_PREFIX + fileId);
+    }
+    
+    /**
+     * Returns true if the xLocations contains more then one replica and the policy is coordinated.
+     */
+    public static boolean requiresCoordination(XLocations xloc) {
+        return (xloc.getReplicaUpdatePolicy().length() > 0
+                && xloc.getNumReplicas() > 1
+                && (xloc.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA) 
+                    || xloc.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE)
+                    || xloc.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ))
+                );
     }
 
     public List<ServiceUUID> getRemoteOSDUUIDs() {

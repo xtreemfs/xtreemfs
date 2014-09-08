@@ -2025,6 +2025,14 @@ The process will be started and can be stopped by setting the option
 \texttt{-stop}. To watch the cleanup progress use option \texttt{-i} for the
 interactive mode. For further information see \texttt{man xtfs\_cleanup}.
 
+The cleanup tool is also responsible for the deletion of orhpaned metadata. Metadata can 
+not be deleted instantly because some information (particularly the XLocSets' version) is 
+required to preserve consistency, even if the file has been deleted or a replica has been 
+removed. Metadata must be retained until it is assured, that every client has a consistent
+view on the set of participating replicas. By default metadata is deleted after 600 seconds,
+which is equal to the time span a capability is valid.
+
+
 \subsection{Setting the OSD Status}
 
 The OSD's status field is shown in the service status page as \texttt{static.status}. The status can be online (new files be assigned to it), locked (new files will not be assigned to it) and removed (replicas assigned to this OSD will be replaced). Status online is the regular status for all services, even if they are temporarily offline. Status removed marks an OSD as permanently failed and the scrubber will removed replicas and files from these OSDs. Status locked will effectively set an OSD to ``read-only`` since no new files are placed on it.

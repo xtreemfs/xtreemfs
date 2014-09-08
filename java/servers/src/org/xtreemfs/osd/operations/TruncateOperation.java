@@ -27,6 +27,7 @@ import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
+import org.xtreemfs.osd.rwre.ReplicaUpdatePolicy;
 import org.xtreemfs.osd.stages.StorageStage.TruncateCallback;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest;
@@ -69,8 +70,9 @@ public final class TruncateOperation extends OSDOperation {
             return;
         }
 
-        if ((rq.getLocationList().getReplicaUpdatePolicy().length() == 0)
-            || (rq.getLocationList().getNumReplicas() == 1)) {
+        if (ReplicaUpdatePolicy.requiresCoordination(rq.getLocationList())) {
+            rwReplicatedTruncate(rq, args);
+        } else {
 
             master.getStorageStage().truncate(args.getFileId(), args.getNewFileSize(),
                 rq.getLocationList().getLocalReplica().getStripingPolicy(),
@@ -83,8 +85,6 @@ public final class TruncateOperation extends OSDOperation {
                         step2(rq, args, result, error);
                     }
             });
-        } else {
-            rwReplicatedTruncate(rq, args);
         }
     }
 

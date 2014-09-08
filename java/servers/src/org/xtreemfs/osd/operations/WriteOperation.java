@@ -23,6 +23,7 @@ import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
+import org.xtreemfs.osd.rwre.ReplicaUpdatePolicy;
 import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.stages.StorageStage.WriteObjectCallback;
 import org.xtreemfs.osd.storage.ObjectInformation;
@@ -79,8 +80,9 @@ public final class WriteOperation extends OSDOperation {
             master.objectReceived();
             master.dataReceived(rq.getRPCRequest().getData().capacity());
 
-            if ( (rq.getLocationList().getReplicaUpdatePolicy().length() == 0)
-               || (rq.getLocationList().getNumReplicas() == 1) ){
+            if (ReplicaUpdatePolicy.requiresCoordination(rq.getLocationList())) {
+                replicatedWrite(rq,args,syncWrite);
+            } else {
 
                 ReusableBuffer viewBuffer = rq.getRPCRequest().getData().createViewBuffer();
                 master.getStorageStage().writeObject(args.getFileId(), args.getObjectNumber(), sp,
@@ -92,8 +94,6 @@ public final class WriteOperation extends OSDOperation {
                                 sendResult(rq, result, error);
                             }
                         });
-            } else {
-                replicatedWrite(rq,args,syncWrite);
             }
         }
     }

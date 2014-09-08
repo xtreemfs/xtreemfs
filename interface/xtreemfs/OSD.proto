@@ -110,6 +110,7 @@ message TruncateLog {
 message XLocSetVersionState {
   required fixed32 version = 1;
   required bool invalidated = 2;
+  optional fixed64 modified_time = 3;
 }
 
 // Full status of a replica. Used by the read-write
@@ -230,6 +231,11 @@ message xtreemfs_cleanup_startRequest {
   required bool remove_unavail_volume = 2;
   // If true, objects are not deleted but moved to lost and found.
   required bool lost_and_found = 3;
+  // Delete metadata of deleted or abandoned files.
+  required bool delete_metadata = 4;
+  // Time in seconds to wait after the last view update before
+  // deleting metadata.
+  required fixed32 metadata_timeout = 5;
 }
 
 message xtreemfs_cleanup_statusResponse {
