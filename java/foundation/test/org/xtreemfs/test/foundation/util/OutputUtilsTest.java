@@ -9,22 +9,13 @@
 
 package org.xtreemfs.test.foundation.util;
 
-import junit.framework.TestCase;
-import junit.textui.TestRunner;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 import org.xtreemfs.foundation.util.OutputUtils;
 
-public class OutputUtilsTest extends TestCase {
-    
-    @Override
-    protected void setUp() throws Exception {
-    }
-    
-    @Override
-    protected void tearDown() throws Exception {
-    }
-    
+public class OutputUtilsTest {
+
     @Test
     public void testLongHexEncoding() throws Exception {
         
@@ -69,10 +60,6 @@ public class OutputUtilsTest extends TestCase {
         assertEquals(checksum,tmp2);
         tmp2 = OutputUtils.readHexLong(result, 40);
         assertEquals(checksum,tmp2);
-    }
-    
-    public static void main(String[] args) {
-        TestRunner.run(OutputUtilsTest.class);
     }
     
 }
