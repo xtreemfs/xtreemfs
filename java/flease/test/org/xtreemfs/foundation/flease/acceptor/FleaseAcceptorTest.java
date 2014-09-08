@@ -7,7 +7,17 @@
 
 package org.xtreemfs.foundation.flease.acceptor;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
+import java.io.File;
+import java.net.InetSocketAddress;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.flease.FleaseConfig;
@@ -18,23 +28,20 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.util.FSUtils;
 
-import java.io.File;
-import java.net.InetSocketAddress;
-
 /**
  *
  * @author bjko
  */
-public class FleaseAcceptorTest extends TestCase {
+public class FleaseAcceptorTest {
 
     private FleaseAcceptor acceptor;
     private final static ASCIIString TESTCELL = new ASCIIString("testcell");
 
-    private final FleaseConfig cfg;
-    private final File testDir;
+    private static FleaseConfig      cfg;
+    private static File              testDir;
     
-    public FleaseAcceptorTest(String testName) {
-        super(testName);
+    @BeforeClass
+    public static void setUpClass() {
         testDir = new File("/tmp/xtreemfs-test/");
         FSUtils.delTree(testDir);
         testDir.mkdirs();
@@ -44,9 +51,8 @@ public class FleaseAcceptorTest extends TestCase {
         cfg = new FleaseConfig(10000, 500, 500, new InetSocketAddress(12345), "localhost:12345",1);
     }
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
         acceptor = new FleaseAcceptor(new LearnEventListener() {
 
             @Override
@@ -55,12 +61,12 @@ public class FleaseAcceptorTest extends TestCase {
         }, cfg, "/tmp/xtreemfs-test/", true);
     }
 
-    @Override
-    protected void tearDown() throws Exception {
-        super.tearDown();
+    @After
+    public void tearDown() throws Exception {
         acceptor.shutdown();
     }
 
+    @Test
     public void testPrepAccLearn() {
 
         FleaseMessage prep = new FleaseMessage(FleaseMessage.MsgType.MSG_PREPARE);
@@ -86,6 +92,7 @@ public class FleaseAcceptorTest extends TestCase {
 
     }
 
+    @Test
     public void testConcurrentProposal() {
 
         FleaseMessage prep1 = new FleaseMessage(FleaseMessage.MsgType.MSG_PREPARE);
@@ -116,7 +123,7 @@ public class FleaseAcceptorTest extends TestCase {
 
     }
 
-
+    @Test
     public void testGetLease() {
 
 

@@ -17,7 +17,9 @@ import java.util.Map;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
@@ -28,12 +30,15 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 /**
  * 
  * @author bjko
  */
 public class ClientTest {
+    @Rule
+    public final TestRule       testLog     = TestHelper.testLog;
 
     private TestEnvironment     testEnv;
 
@@ -47,8 +52,6 @@ public class ClientTest {
 
     @Before
     public void setUp() throws Exception {
-        System.out.println("TEST: " + getClass().getSimpleName());
-
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
 
         testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_CLIENT,

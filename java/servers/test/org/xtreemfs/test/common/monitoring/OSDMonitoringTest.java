@@ -7,27 +7,32 @@
 
 package org.xtreemfs.test.common.monitoring;
 
-import java.io.IOException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.net.InetSocketAddress;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.clients.File;
 import org.xtreemfs.common.clients.RandomAccessFile;
 import org.xtreemfs.common.clients.Volume;
 import org.xtreemfs.common.monitoring.generatedcode.XTREEMFS_MIBOidTable;
 import org.xtreemfs.dir.DIRConfig;
-import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
-import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 import com.sun.management.snmp.SnmpDefinitions;
 import com.sun.management.snmp.SnmpInt;
@@ -40,50 +45,39 @@ import com.sun.management.snmp.manager.SnmpPeer;
 import com.sun.management.snmp.manager.SnmpRequest;
 import com.sun.management.snmp.manager.SnmpSession;
 
-import junit.framework.TestCase;
+public class OSDMonitoringTest {
+    @Rule
+    public final TestRule   testLog = TestHelper.testLog;
 
-public class OSDMonitoringTest extends TestCase {
+    private TestEnvironment testEnv;
 
-    private DIRRequestDispatcher dir;
+    private DIRConfig       dirConfig;
 
-    private TestEnvironment      testEnv;
+    private MRCConfig       mrcConfig;
 
-    private DIRConfig            dirConfig;
+    private OSDConfig       osdConfig;
 
-    private MRCConfig            mrcConfig;
+    private SnmpPeer        dirAgent, mrcAgent, osdAgent;
 
-    private OSDConfig            osdConfig;
+    private SnmpSession     session;
 
-    private SnmpPeer             dirAgent, mrcAgent, osdAgent;
-
-    private SnmpSession          session;
-
-    public OSDMonitoringTest() throws IOException {
+    @BeforeClass
+    public static void initializeTest() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
-
-        dirConfig = SetupUtils.createDIRConfig();
     }
 
     @Before
-    @Override
     public void setUp() throws Exception {
-        
-        System.out.println("TEST: " + getClass().getSimpleName());
 
-        FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
-
-        dir = new DIRRequestDispatcher(dirConfig, SetupUtils.createDIRdbsConfig());
-        dir.startup();
-        dir.waitForStartup();
-
-        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_CLIENT,
-                TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.RPC_CLIENT,
-                TestEnvironment.Services.MRC, TestEnvironment.Services.OSD });
+        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_SERVICE,
+                TestEnvironment.Services.DIR_CLIENT, TestEnvironment.Services.TIME_SYNC,
+                TestEnvironment.Services.RPC_CLIENT, TestEnvironment.Services.MRC, TestEnvironment.Services.OSD });
         testEnv.start();
 
         final SnmpOidTableSupport oidTable = new XTREEMFS_MIBOidTable();
         SnmpOid.setSnmpOidTable(oidTable);
 
+        dirConfig = SetupUtils.createDIRConfig();
         mrcConfig = SetupUtils.createMRC1Config();
         osdConfig = SetupUtils.createMultipleOSDConfigs(1)[0];
 
@@ -105,17 +99,11 @@ public class OSDMonitoringTest extends TestCase {
     }
 
     @After
-    @Override
     public void tearDown() throws Exception {
 
         session.destroySession();
 
         testEnv.shutdown();
-
-        dir.shutdown();
-
-        dir.waitForShutdown();
-
     }
 
     /**
@@ -150,43 +138,42 @@ public class OSDMonitoringTest extends TestCase {
 
     }
 
+    @Test
     public void testNumOpenFiles() throws Exception {
-        
 
         // there should be no open files because nothing is written/read on the OSD
         SnmpVarBindList result = makeSnmpGet(osdAgent, "numOpenFiles.0");
         SnmpVarBind varBind = result.getVarBindAt(0);
         SnmpInt snmpInt = varBind.getSnmpIntValue();
-        
+
         assertEquals(0, snmpInt.intValue());
-        
-        
+
         Client c = new Client(new InetSocketAddress[] { testEnv.getDIRAddress() }, 10000, 60000, null);
         c.start();
-        UserCredentials uc =  UserCredentials.newBuilder().setUsername("test").addGroups("test").build();
+        UserCredentials uc = UserCredentials.newBuilder().setUsername("test").addGroups("test").build();
 
         c.createVolume("foobar", RPCAuthentication.authNone, uc, SetupUtils.getStripingPolicy(64, 1),
                 AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, 0777);
 
         Volume v = c.getVolume("foobar", uc);
-        
+
         File f = v.getFile("/foo");
-        
+
         f.createFile();
         RandomAccessFile raf = f.open("rw", 0777);
-        
+
         byte[] data = new byte[2048];
         raf.write(data, 0, data.length);
-        
+
         result = makeSnmpGet(osdAgent, "numOpenFiles.0");
         varBind = result.getVarBindAt(0);
         snmpInt = varBind.getSnmpIntValue();
-        
+
         assertEquals(1, snmpInt.intValue());
-        
+
         raf.close();
         f.delete();
         c.deleteVolume("foobar", RPCAuthentication.authNone, uc);
-    
+
     }
 }

@@ -14,7 +14,9 @@ import java.util.List;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
@@ -37,8 +39,11 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 public class ClientTest {
+    @Rule
+    public final TestRule               testLog        = TestHelper.testLog;
 
     private static DIRRequestDispatcher dir;
 
@@ -63,7 +68,7 @@ public class ClientTest {
     private static MRCRequestDispatcher mrc2;
     
     @BeforeClass
-    public static void setUp() throws Exception {
+    public static void initializeTest() throws Exception {
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
 
@@ -96,7 +101,7 @@ public class ClientTest {
     }
 
     @AfterClass
-    public static void tearDown() throws Exception {
+    public static void shutdownTest() throws Exception {
 
         for (int i = 0; i < osds.length; i++) {
             if (osds[i] != null) {

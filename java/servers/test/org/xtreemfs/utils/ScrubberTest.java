@@ -16,14 +16,15 @@ import java.net.InetSocketAddress;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.AdminFileHandle;
 import org.xtreemfs.common.libxtreemfs.AdminVolume;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
-import org.xtreemfs.common.libxtreemfs.FileHandle;
 import org.xtreemfs.common.libxtreemfs.Helper;
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.common.xloc.ReplicationFlags;
@@ -40,9 +41,12 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 import org.xtreemfs.utils.xtfs_scrub.xtfs_scrub;
 
 public class ScrubberTest {
+    @Rule
+    public final TestRule                testLog         = TestHelper.testLog;
 
     private static MRCConfig             mrcCfg1;
 
@@ -62,15 +66,8 @@ public class ScrubberTest {
 
     private static final UserCredentials userCredentials = xtfs_scrub.credentials;
 
-    public ScrubberTest() {
-        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
-    }
-
     @BeforeClass
-    public static void setUp() throws Exception {
-
-        System.out.println("TEST: ScrubberTest");
-
+    public static void initializeTest() throws Exception {
         Logging.start(Logging.LEVEL_WARN);
 
         accessMode = 0777; // rwxrwxrwx
@@ -109,7 +106,7 @@ public class ScrubberTest {
     }
 
     @AfterClass
-    public static void tearDown() throws Exception {
+    public static void shutdownTest() throws Exception {
         client.shutdown();
         testEnv.shutdown();
     }

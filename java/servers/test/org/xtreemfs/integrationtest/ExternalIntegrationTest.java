@@ -7,16 +7,20 @@
 
 package org.xtreemfs.integrationtest;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
-import java.io.RandomAccessFile;
 
-import junit.framework.TestCase;
-import junit.textui.TestRunner;
-
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.foundation.util.FSUtils;
+import org.xtreemfs.test.TestHelper;
 
 /**
  * This test case externally tests the integration of all XtreemFS components at
@@ -40,21 +44,22 @@ import org.xtreemfs.foundation.util.FSUtils;
  * @author stender
  * 
  */
-public class ExternalIntegrationTest extends TestCase {
+public class ExternalIntegrationTest {
+    @Rule
+    public final TestRule testLog            = TestHelper.testLog;
     
     private static File xtreemFSMountPoint = new File("/tmp/xtreemfs");
     
-    protected void setUp() throws Exception {
-        
-        System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
-        
+    @Before
+    public void setUp() throws Exception {
         FSUtils.delTree(xtreemFSMountPoint);
         xtreemFSMountPoint.mkdirs();
         
         assertEquals(0, xtreemFSMountPoint.list().length);
     }
     
-    protected void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
         
     }
     
@@ -63,6 +68,7 @@ public class ExternalIntegrationTest extends TestCase {
      * 
      * @throws Exception
      */
+    @Test
     public void testCreateDelete() throws Exception {
         
         assertEquals(0, xtreemFSMountPoint.listFiles().length);
@@ -102,6 +108,7 @@ public class ExternalIntegrationTest extends TestCase {
         delete(file2);
     }
     
+    @Test
     public void testRename() throws Exception {
         
         // create a file and a directory
@@ -144,6 +151,7 @@ public class ExternalIntegrationTest extends TestCase {
         
     }
     
+    @Test
     public void testBatchCreateDeleteRename() throws Exception {
         
         final int numFiles = 100;
@@ -315,19 +323,6 @@ public class ExternalIntegrationTest extends TestCase {
     // raf.close();
     // }
     
-    public static void main(String[] args) {
-        
-        // if (args.length != 1) {
-        // System.out
-        // .println("usage: java "
-        // + ExternalIntegrationTest.class.getName()
-        // + " <mountpoint>");
-        // System.exit(1);
-        // }
-        // xtreemFSMountPoint = new File(args[0]);
-        
-        TestRunner.run(ExternalIntegrationTest.class);
-    }
     
     private File createDir(File parentDir, String name) {
         

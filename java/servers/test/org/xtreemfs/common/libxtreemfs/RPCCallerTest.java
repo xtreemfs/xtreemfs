@@ -14,7 +14,9 @@ import java.util.Map;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.libxtreemfs.RPCCaller.CallGenerator;
 import org.xtreemfs.dir.DIRConfig;
@@ -23,7 +25,6 @@ import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
@@ -41,8 +42,11 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 public class RPCCallerTest {
+    @Rule
+    public final TestRule               testLog = TestHelper.testLog;
 
     private static DIRRequestDispatcher dir;
 
@@ -63,8 +67,6 @@ public class RPCCallerTest {
 
     @BeforeClass
     public static void initializeTest() throws Exception {
-        System.out.println("TEST: " + RPCCallerTest.class.getSimpleName());
-
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
 
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));

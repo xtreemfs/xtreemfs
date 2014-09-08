@@ -22,7 +22,9 @@ import java.util.Set;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.foundation.buffer.BufferPool;
@@ -56,6 +58,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestEnvironment.Services;
+import org.xtreemfs.test.TestHelper;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
@@ -66,6 +69,8 @@ import com.google.protobuf.Message;
  * @author stender
  */
 public class MRCTest {
+    @Rule
+    public final TestRule     testLog = TestHelper.testLog;
     
     private MRCServiceClient  client;
     
