@@ -759,10 +759,7 @@ public class StorageThread extends Stage {
         }
         
     }
-    
-    /**
-     * @param method
-     */
+
     private void processGetObjectSet(StageRequest rq) {
         final GetObjectListCallback cback = (GetObjectListCallback) rq.getCallback();
         final String fileId = (String) rq.getArgs()[0];
@@ -777,10 +774,7 @@ public class StorageThread extends Stage {
                 POSIXErrno.POSIX_ERROR_EIO, ex.toString()));
         }
     }
-    
-    /**
-     * @param method
-     */
+
     private void processCreateFileVersion(StageRequest rq) {
         
         final CreateFileVersionCallback cback = (CreateFileVersionCallback) rq.getCallback();
