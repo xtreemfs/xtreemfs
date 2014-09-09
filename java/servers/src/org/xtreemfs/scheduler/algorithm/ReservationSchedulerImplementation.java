@@ -190,8 +190,16 @@ public class ReservationSchedulerImplementation implements ReservationScheduler 
 
         for(OSDDescription osd: osds) {
             freeCapacity += osd.getFreeResources().getCapacity();
-            freeIOPS += osd.getFreeResources().getIops();
-            freeSeqTP += osd.getFreeResources().getSeqTP();
+            if(osd.getUsage() == OSDDescription.OSDUsage.ALL ||
+               osd.getUsage() == OSDDescription.OSDUsage.UNUSED ||
+               osd.getUsage() == OSDDescription.OSDUsage.RANDOM_IO) {
+                freeIOPS += osd.getFreeResources().getIops();
+            }
+            if(osd.getUsage() == OSDDescription.OSDUsage.ALL ||
+               osd.getUsage() == OSDDescription.OSDUsage.UNUSED ||
+               osd.getUsage() == OSDDescription.OSDUsage.STREAMING) {
+                freeSeqTP += osd.getFreeResources().getSeqTP();
+            }
         }
 
         result.setCapacity(freeCapacity);
