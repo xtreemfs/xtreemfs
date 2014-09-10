@@ -9,6 +9,7 @@ from test_volume import Volume
 from optparse import OptionParser
 import test_server, os, traceback, subprocess, shutil, sys, socket, time
 import datetime
+import json
 
 START_STOP_SERVICE_RETRIES = 3
 
@@ -378,6 +379,7 @@ class TestEnvironment:
 
             testlog.close()
             self._writeHtml(volTestResults, sysTestResults)
+            self._writeJSON(volTestResults, sysTestResults)
             print 'Volume tests complete.'
             print
             return failed
@@ -429,6 +431,20 @@ class TestEnvironment:
 
         out.write('</TABLE></BODY></HTML>'+"\n")
         out.close()
+
+    def _writeJSON(self, volTestResults, sysTestResults):
+        results = {}
+        for i in range(len(sysTestResults)):
+            results[self.__config.getSystemTests()[i]['name']] = sysTestResults[i]
+
+        for i in range(len(volTestResults)):
+            results[self.__config.getVolumeTests()[i]['name']] = volTestResults[i]
+
+        print(results)
+
+        with open(os.path.join(self.__test_dir, "result.json"), "w") as out:
+            json.dump(results, out)
+
 
 if __name__ == "__main__":
     xtreemfs_dir = os.path.join(os.path.dirname( os.path.abspath( sys.modules[__name__].__file__ ) ), "..")
