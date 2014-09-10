@@ -1,7 +1,6 @@
 package org.xtreemfs.test.common.benchmark;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.xtreemfs.common.benchmark.BenchmarkUtils.KiB_IN_BYTES;
@@ -463,12 +462,12 @@ public class ControllerIntegrationTest {
          * after the teardown (which includes the deletion of the benchmark volumes and files), only the volumes are
          * present
          */
-        assertSame(0, Integer.valueOf(volumeA.getXAttr(userCredentials, "", "xtreemfs.num_files")));
-        assertSame(0, Integer.valueOf(volumeB.getXAttr(userCredentials, "", "xtreemfs.num_files")));
-        assertSame(0, Integer.valueOf(volumeC.getXAttr(userCredentials, "", "xtreemfs.num_files")));
-        assertSame(0, Integer.valueOf(volumeA.getXAttr(userCredentials, "", "xtreemfs.used_space")));
-        assertSame(0, Integer.valueOf(volumeB.getXAttr(userCredentials, "", "xtreemfs.used_space")));
-        assertSame(0, Integer.valueOf(volumeC.getXAttr(userCredentials, "", "xtreemfs.used_space")));
+        assertEquals(0, (int) Integer.valueOf(volumeA.getXAttr(userCredentials, "", "xtreemfs.num_files")));
+        assertEquals(0, (int) Integer.valueOf(volumeB.getXAttr(userCredentials, "", "xtreemfs.num_files")));
+        assertEquals(0, (int) Integer.valueOf(volumeC.getXAttr(userCredentials, "", "xtreemfs.num_files")));
+        assertEquals(0, (int) Integer.valueOf(volumeA.getXAttr(userCredentials, "", "xtreemfs.used_space")));
+        assertEquals(0, (int) Integer.valueOf(volumeB.getXAttr(userCredentials, "", "xtreemfs.used_space")));
+        assertEquals(0, (int) Integer.valueOf(volumeC.getXAttr(userCredentials, "", "xtreemfs.used_space")));
         deleteVolumes("BenchVolA", "BenchVolB", "BenchVolC");
     }
 
@@ -500,7 +499,7 @@ public class ControllerIntegrationTest {
          * still present
          */
         assertEquals(basefileSize, volume.getAttr(userCredentials, "benchmarks/basefile").getSize());
-        assertSame(1, Integer.valueOf(volume.getXAttr(userCredentials, "", "xtreemfs.num_files")));
+        assertEquals(1, (int) Integer.valueOf(volume.getXAttr(userCredentials, "", "xtreemfs.num_files")));
         assertEquals(basefileSize, (int) Integer.valueOf(volume.getXAttr(userCredentials, "", "xtreemfs.used_space")));
     }
 
