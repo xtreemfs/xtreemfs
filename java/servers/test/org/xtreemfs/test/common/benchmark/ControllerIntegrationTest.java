@@ -521,8 +521,8 @@ public class ControllerIntegrationTest {
             String benchmarkType = result.getBenchmarkType().toString();
             assertEquals(type, benchmarkType);
             assertEquals(threads, result.getNumberOfReadersOrWriters());
-            assertEquals(size, result.getDataRequestedInBytes());
-            assertEquals(size, result.getByteCount());
+            assertEquals(size, result.getRequestedSize());
+            assertEquals(size, result.getActualSize());
         }
         assertEquals(numberOfResults, resultCounter);
     }
@@ -558,8 +558,8 @@ public class ControllerIntegrationTest {
         System.err.println("Type\t\t\tThreads\t\tTime\tSpeed\tRequested\t\tCount");
         for (BenchmarkResult res : results) {
             System.err.println(res.getBenchmarkType() + "\t\t" + res.getNumberOfReadersOrWriters() + "\t\t\t"
-                    + res.getTimeInSec() + "\t" + res.getSpeedInMiBPerSec() + "\t" + res.getDataRequestedInBytes()
-                    + "\t\t" + res.getByteCount());
+                    + res.getTimeInSec() + "\t" + res.getSpeedInMiBPerSec() + "\t" + res.getRequestedSize()
+                    + "\t\t" + res.getActualSize());
         }
     }
 
