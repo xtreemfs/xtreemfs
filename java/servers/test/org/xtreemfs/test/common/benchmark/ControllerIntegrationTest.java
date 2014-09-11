@@ -553,14 +553,4 @@ public class ControllerIntegrationTest {
             client.deleteVolume(auth, userCredentials, volumeName);
         }
     }
-
-    private void printResults(List<BenchmarkResult> results) {
-        System.err.println("Type\t\t\tThreads\t\tTime\tSpeed\tRequested\t\tCount");
-        for (BenchmarkResult res : results) {
-            System.err.println(res.getBenchmarkType() + "\t\t" + res.getNumberOfReadersOrWriters() + "\t\t\t"
-                    + res.getTimeInSec() + "\t" + res.getSpeedInMiBPerSec() + "\t" + res.getRequestedSize()
-                    + "\t\t" + res.getActualSize());
-        }
-    }
-
 }
