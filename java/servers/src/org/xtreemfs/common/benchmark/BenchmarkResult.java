@@ -93,16 +93,7 @@ public class BenchmarkResult implements Comparable<BenchmarkResult> {
     }
 
     /**
-     * Get the speed of the benchmark in MiB/Sec
-     *
-     * @return the speed of the benchmark in MiB/Sec
-     */
-    public double getSpeedInMiBPerSec() {
-        return round(((double) actualSize / BenchmarkUtils.MiB_IN_BYTES) / timeInSec, 2);
-    }
-
-    /**
-     * Get the size in the bytes the benchmark was requested to write or read.
+     * Get the size, the benchmark was requested to write or read.
      *
      * @return the benchmark size in bytes
      */
@@ -111,9 +102,9 @@ public class BenchmarkResult implements Comparable<BenchmarkResult> {
     }
 
     /**
-     * Get the count of bytes actually written or red by the benchmark (should be equal to {@link #getRequestedSize()}).
+     * Get the count of requests actually written or red by the benchmark (should be equal to {@link #getRequestedSize()}).
      *
-     * @return the number of bytes written or red by the benchmark
+     * @return the number of requests written or red by the benchmark
      */
     public long getActualSize() {
         return actualSize;
@@ -145,17 +136,6 @@ public class BenchmarkResult implements Comparable<BenchmarkResult> {
 
     public boolean isFailed() {
         return failed;
-    }
-
-    /* Round doubles to specified number of decimals */
-    private double round(double value, int places) {
-        if (places < 0)
-            throw new IllegalArgumentException();
-
-        long factor = (long) Math.pow(10, places);
-        value = value * factor;
-        long tmp = Math.round(value);
-        return (double) tmp / factor;
     }
 
     @Override
