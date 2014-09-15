@@ -51,8 +51,8 @@ public class AccessOperation extends MRCOperation {
         faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
                 .getDetails().groupIds);
         
-        // if F_OK is set, only check if the file exists
-        if ((rqArgs.getFlags() & ACCESS_FLAGS.ACCESS_FLAGS_F_OK.getNumber()) != 0 && res.getFile() == null) {
+        // F_OK(==0) is always set, check if the file exists
+        if (res.getFile() == null) {
             throw new UserException(POSIXErrno.POSIX_ERROR_EACCES, "file or directory '" + rqArgs.getPath()
                 + "' does not exist");
         }

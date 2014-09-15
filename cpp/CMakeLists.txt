@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 2.6)
-PROJECT(cpp CXX)
+PROJECT(cpp CXX C)
 
 #SET (CMAKE_VERBOSE_MAKEFILE true)
 
-add_definitions(-D_FILE_OFFSET_BITS=64)
+# used for everything, but the preload library (which struggles with implicitly
+# generated symbols suffixed with 64, e.g. open64)
+set(COMPILE_DEFS "_FILE_OFFSET_BITS=64")
+
 # Uncomment this to enable boost::asio debug output.
 #add_definitions(-DBOOST_ASIO_ENABLE_HANDLER_TRACKING)
 
@@ -34,7 +37,12 @@ set(CLIENT_GOOGLE_PROTOBUF_CPP "${CMAKE_SOURCE_DIR}/thirdparty/protobuf-2.5.0")
 if (WIN32)
   set(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY "${CLIENT_GOOGLE_PROTOBUF_CPP}/vsprojects/Release/libprotobuf.lib")
 else()
-  set(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY "${CLIENT_GOOGLE_PROTOBUF_CPP}/src/.libs/libprotobuf.a")
+  FIND_FILE(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY
+            "libprotobuf.a"
+            PATHS "${CLIENT_GOOGLE_PROTOBUF_CPP}/src/.libs/")
+  FIND_FILE(CLIENT_GOOGLE_PROTOBUF_CPP_DYNAMIC_LIBRARY
+            "libprotobuf.so"
+            PATHS "${CLIENT_GOOGLE_PROTOBUF_CPP}/src/.libs/")
 endif(WIN32)
 set(CLIENT_GOOGLE_TEST_CPP "${CMAKE_SOURCE_DIR}/thirdparty/gtest-1.5.0")
 if (WIN32)
@@ -121,6 +129,7 @@ ENDIF(WIN32)
 # Set required thirdparty libraries.
 
 # Boost
+#set(Boost_DEBUG ON)
 set(REQUIRED_BOOST_LIBRARIES "system" "thread" "program_options" "regex")
 if (BOOST_ROOT)
   message(STATUS "Info: BOOST_ROOT is set to: ${BOOST_ROOT}")
@@ -228,18 +237,22 @@ add_library(xtreemfs ${SRCS_RPC} ${SRCS_UTIL} ${SRCS_GENERATED} ${SRCS_XTREEMFS}
 TARGET_LINK_LIBRARIES(xtreemfs optimized protobuf debug protobuf_debug ${Boost_LIBRARIES} ${LIBPTHREAD} ${OPENSSL_LIBRARIES} ${LIBSOCKET_SOLARIS} ${LIBNSL_SOLARIS})
 
 ADD_EXECUTABLE(example_libxtreemfs src/example_libxtreemfs/example_libxtreemfs.cpp)
+SET_TARGET_PROPERTIES(example_libxtreemfs PROPERTIES COMPILE_DEFINITIONS ${COMPILE_DEFS})
 TARGET_LINK_LIBRARIES(example_libxtreemfs xtreemfs)
 
 file(GLOB_RECURSE SRCS_MKFS src/mkfs.xtreemfs/*.cpp)
 ADD_EXECUTABLE(mkfs.xtreemfs ${SRCS_MKFS})
+SET_TARGET_PROPERTIES(mkfs.xtreemfs PROPERTIES COMPILE_DEFINITIONS ${COMPILE_DEFS})
 TARGET_LINK_LIBRARIES(mkfs.xtreemfs xtreemfs)
 
 file(GLOB_RECURSE SRCS_RMFS src/rmfs.xtreemfs/*.cpp)
 ADD_EXECUTABLE(rmfs.xtreemfs ${SRCS_RMFS})
+SET_TARGET_PROPERTIES(rmfs.xtreemfs PROPERTIES COMPILE_DEFINITIONS ${COMPILE_DEFS})
 TARGET_LINK_LIBRARIES(rmfs.xtreemfs xtreemfs)
 
 file(GLOB_RECURSE SRCS_LSFS src/lsfs.xtreemfs/*.cpp)
 ADD_EXECUTABLE(lsfs.xtreemfs ${SRCS_LSFS})
+SET_TARGET_PROPERTIES(lsfs.xtreemfs PROPERTIES COMPILE_DEFINITIONS ${COMPILE_DEFS})
 TARGET_LINK_LIBRARIES(lsfs.xtreemfs xtreemfs)
 
 file(GLOB_RECURSE SRCS_XTFS_UTIL src/xtfsutil/xtfsutil_server.cpp)
@@ -251,6 +264,7 @@ if (NOT WIN32)
     file(GLOB_RECURSE SRCS_FUSE_ADAPTER src/fuse/fuse*.cpp)
     file(GLOB_RECURSE SRCS_FUSE_ADAPTER_MAIN src/fuse/mount.xtreemfs.cpp)
     ADD_EXECUTABLE(mount.xtreemfs ${SRCS_FUSE_ADAPTER} ${SRCS_FUSE_ADAPTER_MAIN} ${SRCS_XTFS_UTIL} ${SRCS_JSONCPP})
+    SET_TARGET_PROPERTIES(mount.xtreemfs PROPERTIES COMPILE_DEFINITIONS ${COMPILE_DEFS})
     TARGET_LINK_LIBRARIES(mount.xtreemfs xtreemfs ${LIBFUSE})
 
     set(UNITTESTS_REQUIRED_SOURCES_fuse ${SRCS_FUSE_ADAPTER} ${SRCS_XTFS_UTIL} ${SRCS_JSONCPP})
@@ -270,6 +284,47 @@ if(WIN32 AND CBFS_FOUND)
 
   set(UNITTESTS_SKIP_fuse true)
 endif(WIN32 AND CBFS_FOUND)
+
+function(find_source_files RESULT)
+  set(RESULT "")
+  foreach(GLOBEXPR ${ARGV})
+    file(GLOB_RECURSE FILES ${GLOBEXPR})
+    foreach(TEST ${FILES})
+      get_filename_component(DIRNAME ${TEST} PATH)
+      get_filename_component(COMPONENT ${DIRNAME} NAME)
+      get_filename_component(FILENAME ${TEST} NAME)
+      if (${FILENAME} MATCHES "_test.cpp$")
+        #skip
+      elseif (${FILENAME} MATCHES "_main.cpp$")
+        #skip
+      else()
+        LIST(APPEND RESULT ${TEST})
+      endif()
+    endforeach(TEST)
+  endforeach(GLOBEXPR)
+  set(FIND_RESULT ${RESULT} PARENT_SCOPE)
+endfunction(find_source_files)
+
+#SET(BUILD_PRELOAD TRUE)
+if (BUILD_PRELOAD)
+  find_source_files("src/ld_preload/*.cpp" "include/ld_preload/*.h")
+  set(SRCS_PRELOAD ${FIND_RESULT})
+
+  # The LD_PRELOAD dynamic library
+  add_library(xtreemfs_preload SHARED ${SRCS_PRELOAD}
+              ${SRCS_RPC} ${SRCS_UTIL} ${SRCS_GENERATED} ${SRCS_XTREEMFS})
+
+  IF(NOT ${CMAKE_BUILD_TYPE} MATCHES "Debug")
+    SET_TARGET_PROPERTIES(xtreemfs_preload PROPERTIES COMPILE_DEFINITIONS "XTREEMFS_PRELOAD_QUIET")
+  ENDIF(NOT ${CMAKE_BUILD_TYPE} MATCHES "Debug")
+
+  SET_TARGET_PROPERTIES(xtreemfs_preload PROPERTIES LINKER_LANGUAGE C)
+  TARGET_LINK_LIBRARIES(xtreemfs_preload
+                        xtreemfs
+                        -ldl
+                        ${CLIENT_GOOGLE_PROTOBUF_CPP_DYNAMIC_LIBRARY})
+  ADD_EXECUTABLE(preload_test "test/ld_preload/preload_test.cpp")
+endif(BUILD_PRELOAD)
 
 ################################################################################
 # Define building of unittests.
@@ -317,6 +372,7 @@ if(BUILD_CLIENT_TESTS)
         MESSAGE(STATUS "\tConfiguring test: ${testname}.")
 
         add_executable(${testname} ${TEST} ${UNITTESTS_REQUIRED_SOURCES_${COMPONENT}})
+        SET_TARGET_PROPERTIES(${testname} PROPERTIES COMPILE_DEFINITIONS ${COMPILE_DEFS})
         TARGET_LINK_LIBRARIES(${testname} gtest_main gtest test_common xtreemfs ${UNITTESTS_REQUIRED_LIBRARIES_${COMPONENT}})
         ADD_TEST(${testname} ${testname})
       else()

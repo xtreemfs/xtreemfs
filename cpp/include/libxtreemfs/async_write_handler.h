@@ -65,7 +65,8 @@ class AsyncWriteHandler
       xtreemfs::pbrpc::OSDServiceClient* osd_service_client,
       const xtreemfs::pbrpc::Auth& auth_bogus,
       const xtreemfs::pbrpc::UserCredentials& user_credentials_bogus,
-      const Options& volume_options);
+      const Options& volume_options,
+      util::SynchronizedQueue<CallbackEntry>& callback_queue_);
 
   ~AsyncWriteHandler();
 
@@ -91,7 +92,7 @@ class AsyncWriteHandler
 
   /** This static method runs in its own thread and does the real callback
    *  handling to avoid load and blocking on the RPC thread. */
-  static void ProcessCallbacks();
+  static void ProcessCallbacks(util::SynchronizedQueue<CallbackEntry>& callback_queue);
 
  private:
   /** Possible states of this object. */
@@ -290,9 +291,8 @@ class AsyncWriteHandler
   /** The write buffer to whom the worst_error_ belongs. */
   AsyncWriteBuffer* worst_write_buffer_;
 
-  /** Holds the Callbacks enqueued be CallFinished() (producer). They are
-   *  processed by ProcessCallbacks(consumer), running in its own thread. */
-  static util::SynchronizedQueue<CallbackEntry> callback_queue;
+  /** Used by CallFinished (enqueue) */
+  util::SynchronizedQueue<CallbackEntry>& callback_queue_;
 };
 
 }  // namespace xtreemfs

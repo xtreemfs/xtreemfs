@@ -48,7 +48,6 @@ public interface Client {
      *         the object.
      * 
      * @throws AddressToUUIDNotFoundException
-     * @throws UnknownAddressSchemeException
      * @throws VolumeNotFoundException
      * @throws {@link IOException}
      */
@@ -80,8 +79,8 @@ public interface Client {
      * striping size = 128k and width = 1 (i.e. no striping), mode = 777 and owner username and groupname
      * retrieved from the user_credentials.
      * 
-     * @param mrcAddress
-     *            String of the form "hostname:port".
+     * @param mrcAddresses
+     *            List of Strings of the form "hostname:port".
      * @param auth
      *            Authentication data, e.g. of type AUTH_PASSWORD.
      * @param userCredentials
@@ -91,6 +90,7 @@ public interface Client {
      * 
      * @throws IOException
      * @throws PosixErrorException
+     * @throws AddressToUUIDNotFoundException
      */
     public void createVolume(List<String> mrcAddresses, Auth auth, UserCredentials userCredentials,
             String volumeName) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
@@ -110,7 +110,7 @@ public interface Client {
      *            Name of the owner user.
      * @param ownerGroupname
      *            Name of the owner group.
-     * @param accessPolicy_type
+     * @param accessPolicyType
      *            Access policy type (Null, Posix, Volume, ...).
      * @param defaultStripingPolicyType
      *            Only RAID0 so far.
@@ -121,6 +121,10 @@ public interface Client {
      * @param volumeAttributes
      *            Reference to a list of key-value pairs of volume attributes which will bet set at creation
      *            time of the volume.
+     *
+     * @throws AddressToUUIDNotFoundException
+     * @throws PosixErrorException
+     * @throws IOException
      */
     public void createVolume(Auth auth, UserCredentials userCredentials, String volumeName, int mode,
             String ownerUsername, String ownerGroupname, AccessControlPolicyType accessPolicyType,
@@ -145,7 +149,7 @@ public interface Client {
      *            Name of the owner user.
      * @param ownerGroupname
      *            Name of the owner group.
-     * @param accessPolicy_type
+     * @param accessPolicyType
      *            Access policy type (Null, Posix, Volume, ...).
      * @param defaultStripingPolicyType
      *            Only RAID0 so far.
@@ -159,6 +163,7 @@ public interface Client {
      * 
      * @throws IOException
      * @throws PosixErrorException
+     * @throws AddressToUUIDNotFoundException
      */
     public void createVolume(String mrcAddress, Auth auth, UserCredentials userCredentials,
             String volumeName, int mode, String ownerUsername, String ownerGroupname,
@@ -169,8 +174,8 @@ public interface Client {
     /**
      * Creates a volume on the MRC at mrc_address.
      * 
-     * @param mrcAddress
-     *            String of the form "hostname:port".
+     * @param mrcAddresses
+     *            List of Strings of the form "hostname:port".
      * @param auth
      *            Authentication data, e.g. of type AUTH_PASSWORD.
      * @param userCredentials
@@ -183,7 +188,7 @@ public interface Client {
      *            Name of the owner user.
      * @param ownerGroupname
      *            Name of the owner group.
-     * @param accessPolicy_type
+     * @param accessPolicyType
      *            Access policy type (Null, Posix, Volume, ...).
      * @param defaultStripingPolicyType
      *            Only RAID0 so far.
@@ -197,6 +202,7 @@ public interface Client {
      * 
      * @throws IOException
      * @throws PosixErrorException
+     * @throws AddressToUUIDNotFoundException
      */
     public void createVolume(List<String> mrcAddresses, Auth auth, UserCredentials userCredentials,
             String volumeName, int mode, String ownerUsername, String ownerGroupname,
@@ -225,8 +231,8 @@ public interface Client {
     /**
      * Deletes the volume "volume_name" at the MRC "mrc_address".
      * 
-     * @param mrcAddress
-     *            String of the form "hostname:port".
+     * @param mrcAddresses
+     *            List of Strings of the form "hostname:port".
      * @param auth
      *            Authentication data, e.g. of type AUTH_PASSWORD.
      * @param userCredentials
@@ -236,6 +242,7 @@ public interface Client {
      * 
      * @throws IOException
      * @throws PosixErrorException
+     * @throws AddressToUUIDNotFoundException
      */
     public void deleteVolume(List<String> mrcAddresses, Auth auth, UserCredentials userCredentials,
             String volumeName) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
@@ -294,7 +301,7 @@ public interface Client {
     /**
      * Returns the available volumes on a MRC.
      * 
-     * @param List
+     * @param mrcAddresses
      *            <String> List which contains MRC addresses of the form "hostname:port".
      * 
      * @throws AddressToUUIDNotFoundException

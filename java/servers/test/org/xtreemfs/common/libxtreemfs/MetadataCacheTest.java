@@ -16,9 +16,10 @@ import static org.junit.Assert.assertTrue;
 import java.util.Random;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntry;
@@ -27,6 +28,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XAttr;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrResponse;
 import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestHelper;
 
 /**
  * 
@@ -34,6 +36,8 @@ import org.xtreemfs.test.SetupUtils;
  * Sep 30, 2011
  */
 public class MetadataCacheTest {
+    @Rule
+    public final TestRule testLog = TestHelper.testLog;
 
     private class MetadataCacheSmasherThread extends Thread {
 

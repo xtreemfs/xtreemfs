@@ -20,23 +20,23 @@ public class BenchmarkResult implements Comparable<BenchmarkResult> {
     private BenchmarkType benchmarkType;
     private int           numberOfReadersOrWriters;
     private double        timeInSec;
-    private long          dataRequestedInBytes;
-    private long          byteCount;
+    private long          requestedSize;
+    private long          actualSize;
     private boolean       failed;
     private Throwable     error;
 
-    public BenchmarkResult(double timeInSec, long dataRequestedInBytes, long byteCount) {
+    public BenchmarkResult(double timeInSec, long requestedSize, long actualSize) {
         this.timeInSec = timeInSec;
-        this.dataRequestedInBytes = dataRequestedInBytes;
-        this.byteCount = byteCount;
+        this.requestedSize = requestedSize;
+        this.actualSize = actualSize;
         this.failed = false;
     }
 
-    public BenchmarkResult(double timeInSec, long byteCount, int numberOfReadersOrWriters, BenchmarkType benchmarkType) {
+    public BenchmarkResult(double timeInSec, long actualSize, int numberOfReadersOrWriters, BenchmarkType benchmarkType) {
         this.benchmarkType = benchmarkType;
         this.numberOfReadersOrWriters = numberOfReadersOrWriters;
         this.timeInSec = timeInSec;
-        this.byteCount = byteCount;
+        this.actualSize = actualSize;
     }
 
     public BenchmarkResult(Throwable error) {
@@ -93,30 +93,21 @@ public class BenchmarkResult implements Comparable<BenchmarkResult> {
     }
 
     /**
-     * Get the speed of the benchmark in MiB/Sec
-     *
-     * @return the speed of the benchmark in MiB/Sec
-     */
-    public double getSpeedInMiBPerSec() {
-        return round(((double) byteCount / BenchmarkUtils.MiB_IN_BYTES) / timeInSec, 2);
-    }
-
-    /**
-     * Get the size in the bytes the benchmark was requested to write or read.
+     * Get the size, the benchmark was requested to write or read.
      *
      * @return the benchmark size in bytes
      */
-    public long getDataRequestedInBytes() {
-        return dataRequestedInBytes;
+    public long getRequestedSize() {
+        return requestedSize;
     }
 
     /**
-     * Get the count of bytes actually written or red by the benchmark (should be equal to {@link #getDataRequestedInBytes()}).
+     * Get the count of requests actually written or red by the benchmark (should be equal to {@link #getRequestedSize()}).
      *
-     * @return the number of bytes written or red by the benchmark
+     * @return the number of requests written or red by the benchmark
      */
-    public long getByteCount() {
-        return byteCount;
+    public long getActualSize() {
+        return actualSize;
     }
 
     public Throwable getError() {
@@ -145,17 +136,6 @@ public class BenchmarkResult implements Comparable<BenchmarkResult> {
 
     public boolean isFailed() {
         return failed;
-    }
-
-    /* Round doubles to specified number of decimals */
-    private double round(double value, int places) {
-        if (places < 0)
-            throw new IllegalArgumentException();
-
-        long factor = (long) Math.pow(10, places);
-        value = value * factor;
-        long tmp = Math.round(value);
-        return (double) tmp / factor;
     }
 
     @Override

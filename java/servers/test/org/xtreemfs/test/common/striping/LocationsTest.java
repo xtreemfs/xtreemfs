@@ -9,13 +9,20 @@
 
 package org.xtreemfs.test.common.striping;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import junit.framework.TestCase;
-import junit.textui.TestRunner;
-
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.common.xloc.XLocations;
@@ -24,21 +31,21 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestHelper;
 
 /**
  * This class implements the tests for Locations
  * 
  * @author jmalo
  */
-public class LocationsTest extends TestCase {
+public class LocationsTest {
+    @Rule
+    public final TestRule    testLog = TestHelper.testLog;
 
-    List<ServiceUUID> osds = new ArrayList<ServiceUUID>();
+    static List<ServiceUUID> osds = new ArrayList<ServiceUUID>();
 
-    /**
-     * Creates a new instance of LocationsTest
-     */
-    public LocationsTest(String testName) {
-        super(testName);
+    @BeforeClass
+    public static void initializeTest() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL);
 
         osds.add(new ServiceUUID("http://127.0.0.1:65535"));
@@ -47,17 +54,16 @@ public class LocationsTest extends TestCase {
         osds.add(new ServiceUUID("http://10.0.0.1:65535"));
     }
 
-    @Override
-    protected void setUp() throws Exception {
-        System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
+    @Before
+    public void setUp() throws Exception {
     }
 
-    @Override
-    protected void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
     }
 
+    @Test
     public void testLocalReplica() throws Exception {
-
 
         List<String> osdList = new ArrayList();
         for (ServiceUUID osd : osds) {
@@ -67,9 +73,12 @@ public class LocationsTest extends TestCase {
         List<String> rep2List = new ArrayList();
         rep2List.add(osds.get(3).toString());
 
-        Replica r1 = Replica.newBuilder().setReplicationFlags(0).setStripingPolicy(SetupUtils.getStripingPolicy(4, 128)).addAllOsdUuids(osdList).build();
-        Replica r2 = Replica.newBuilder().setReplicationFlags(0).setStripingPolicy(SetupUtils.getStripingPolicy(4, 128)).addAllOsdUuids(rep2List).build();
-        XLocSet xlocset = XLocSet.newBuilder().setReadOnlyFileSize(0).setVersion(1).addReplicas(r1).addReplicas(r2).setReplicaUpdatePolicy("").build();// XLocSet(0, rset, "", 1);
+        Replica r1 = Replica.newBuilder().setReplicationFlags(0)
+                .setStripingPolicy(SetupUtils.getStripingPolicy(4, 128)).addAllOsdUuids(osdList).build();
+        Replica r2 = Replica.newBuilder().setReplicationFlags(0)
+                .setStripingPolicy(SetupUtils.getStripingPolicy(4, 128)).addAllOsdUuids(rep2List).build();
+        XLocSet xlocset = XLocSet.newBuilder().setReadOnlyFileSize(0).setVersion(1).addReplicas(r1).addReplicas(r2)
+                .setReplicaUpdatePolicy("").build();// XLocSet(0, rset, "", 1);
         XLocations loc = new XLocations(xlocset, osds.get(1));
 
         // System.out.println(loc.getLocalReplica().toString());
@@ -78,7 +87,7 @@ public class LocationsTest extends TestCase {
         assertNotNull(loc.getLocalReplica().getStripingPolicy());
 
     }
-    
+
     @Test
     public void testCorrectSetOfReplicationFlags() {
         List<String> osdList = new ArrayList();
@@ -88,10 +97,11 @@ public class LocationsTest extends TestCase {
         StripingPolicy stripingPolicy = SetupUtils.getStripingPolicy(4, 128);
         org.xtreemfs.common.xloc.Replica r;
         int flags = 0;
-        
+
         // set none
-        Replica interfR = Replica.newBuilder().setStripingPolicy(stripingPolicy).setReplicationFlags(flags).addAllOsdUuids(osdList).build();
-        r = new org.xtreemfs.common.xloc.Replica(interfR,null);
+        Replica interfR = Replica.newBuilder().setStripingPolicy(stripingPolicy).setReplicationFlags(flags)
+                .addAllOsdUuids(osdList).build();
+        r = new org.xtreemfs.common.xloc.Replica(interfR, null);
         assertFalse(r.isComplete());
         assertTrue(r.isPartialReplica());
         assertFalse(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));
@@ -99,8 +109,9 @@ public class LocationsTest extends TestCase {
 
         // set complete
         flags = ReplicationFlags.setReplicaIsComplete(0);
-        interfR = Replica.newBuilder().setStripingPolicy(stripingPolicy).setReplicationFlags(flags).addAllOsdUuids(osdList).build();
-        r = new org.xtreemfs.common.xloc.Replica(interfR,null);
+        interfR = Replica.newBuilder().setStripingPolicy(stripingPolicy).setReplicationFlags(flags)
+                .addAllOsdUuids(osdList).build();
+        r = new org.xtreemfs.common.xloc.Replica(interfR, null);
         assertTrue(r.isComplete());
         assertTrue(r.isPartialReplica());
         assertFalse(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));
@@ -108,8 +119,9 @@ public class LocationsTest extends TestCase {
 
         // set partial replica and RandomStrategy
         flags = ReplicationFlags.setPartialReplica(ReplicationFlags.setSequentialPrefetchingStrategy(0));
-        interfR = Replica.newBuilder().setStripingPolicy(stripingPolicy).setReplicationFlags(flags).addAllOsdUuids(osdList).build();
-        r = new org.xtreemfs.common.xloc.Replica(interfR,null);
+        interfR = Replica.newBuilder().setStripingPolicy(stripingPolicy).setReplicationFlags(flags)
+                .addAllOsdUuids(osdList).build();
+        r = new org.xtreemfs.common.xloc.Replica(interfR, null);
         assertFalse(r.isComplete());
         assertTrue(r.isPartialReplica());
         assertFalse(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));
@@ -117,8 +129,9 @@ public class LocationsTest extends TestCase {
 
         // set full replica and RandomStrategy
         flags = ReplicationFlags.setRandomStrategy(ReplicationFlags.setFullReplica(0));
-        interfR = Replica.newBuilder().setStripingPolicy(stripingPolicy).setReplicationFlags(flags).addAllOsdUuids(osdList).build();
-        r = new org.xtreemfs.common.xloc.Replica(interfR,null);
+        interfR = Replica.newBuilder().setStripingPolicy(stripingPolicy).setReplicationFlags(flags)
+                .addAllOsdUuids(osdList).build();
+        r = new org.xtreemfs.common.xloc.Replica(interfR, null);
         assertFalse(r.isComplete());
         assertFalse(r.isPartialReplica());
         assertTrue(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));
@@ -131,7 +144,7 @@ public class LocationsTest extends TestCase {
         flags = ReplicationFlags.setSequentialStrategy(flags);
         assertTrue(ReplicationFlags.isSequentialStrategy(flags));
         assertTrue(ReplicationFlags.isFullReplica(flags));
-        
+
         // test correct set of strategies
         // random
         flags = ReplicationFlags.setRandomStrategy(0);
@@ -159,7 +172,4 @@ public class LocationsTest extends TestCase {
         assertTrue(ReplicationFlags.isRarestFirstStrategy(flags));
     }
 
-    public static void main(String[] args) {
-        TestRunner.run(LocationsTest.class);
-    }
 }

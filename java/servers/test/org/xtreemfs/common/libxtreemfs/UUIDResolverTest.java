@@ -1,72 +1,51 @@
 package org.xtreemfs.common.libxtreemfs;
 
-import java.io.IOException;
-
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
-import org.xtreemfs.dir.DIRConfig;
-import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
-import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
-public class UUIDResolverTest extends TestCase {
-    private DIRRequestDispatcher dir;
+public class UUIDResolverTest {
+    @Rule
+    public final TestRule   testLog = TestHelper.testLog;
 
-    private TestEnvironment      testEnv;
+    private TestEnvironment testEnv;
 
-    private final DIRConfig            dirConfig;
+    private UserCredentials userCredentials;
 
-    private UserCredentials      userCredentials;
+    private final Auth      auth = RPCAuthentication.authNone;
 
-    private final Auth                 auth = RPCAuthentication.authNone;
-
-    /**
-     * 
-     */
-    public UUIDResolverTest() throws IOException {
-        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
-
-        dirConfig = SetupUtils.createDIRConfig();
-    }
-
-    @Override
     @Before
     public void setUp() throws Exception {
-        System.out.println("TEST: " + getClass().getSimpleName());
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
 
-        FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
-
-        dir = new DIRRequestDispatcher(dirConfig, SetupUtils.createDIRdbsConfig());
-        dir.startup();
-        dir.waitForStartup();
-
-        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_CLIENT,
-                TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.RPC_CLIENT,
-                TestEnvironment.Services.MRC, TestEnvironment.Services.OSD });
+        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_SERVICE,
+                TestEnvironment.Services.DIR_CLIENT, TestEnvironment.Services.TIME_SYNC,
+                TestEnvironment.Services.RPC_CLIENT, TestEnvironment.Services.MRC, TestEnvironment.Services.OSD });
         testEnv.start();
 
         userCredentials = UserCredentials.newBuilder().setUsername("test").addGroups("test").build();
     }
 
-    @Override
     @After
     public void tearDown() throws Exception {
         testEnv.shutdown();
-
-        dir.shutdown();
-
-        dir.waitForShutdown();
     }
 
+    @Test
     public void testUUIDResolver() throws Exception {
         final String VOLUME_NAME_1 = "foobar";
         final String VOLUME_NAME_2 = "barfoo";
@@ -75,8 +54,8 @@ public class UUIDResolverTest extends TestCase {
 
         String dirAddress = testEnv.getDIRAddress().getHostName() + ":" + testEnv.getDIRAddress().getPort();
 
-        ClientImplementation client = (ClientImplementation) ClientFactory.createClient(dirAddress,
-                userCredentials, null, options);
+        ClientImplementation client = (ClientImplementation) ClientFactory.createClient(dirAddress, userCredentials,
+                null, options);
         client.start();
 
         UUIDResolver resolver = client;
@@ -137,8 +116,8 @@ public class UUIDResolverTest extends TestCase {
         // should throw an VolumeNotFoundException
         // Do not retry here to avoid unnecessary lengthy executions.
         options.setMaxTries(1);
-        ClientImplementation clientFail = (ClientImplementation) ClientFactory.createClient(
-                "doesntexists:44444", userCredentials, null, options);
+        ClientImplementation clientFail = (ClientImplementation) ClientFactory.createClient("doesntexists:44444",
+                userCredentials, null, options);
         clientFail.start();
         UUIDResolver resolverFail = clientFail;
         try {

@@ -9,3 +9,5 @@ XtreemFS is a distributed, replicated and fault-tolerant file system for federat
  * Tutorial for Replication Fail-Over Demo: https://code.google.com/p/xtreemfs/wiki/ContrailSummerSchoolHandsOn2013
 
 The XtreemFS project is developed by Zuse Institute Berlin. The development of the project is funded by the European Commission since 2006 under Grant Agreements No. FP6-033576, FP7-ICT-257438, and FP7-318521, as well as the German projects MoSGrid, FFMK, and "First We Take Berlin".
+
+[![Build Status](https://travis-ci.org/xtreemfs/xtreemfs.svg?branch=master)](https://travis-ci.org/xtreemfs/xtreemfs)

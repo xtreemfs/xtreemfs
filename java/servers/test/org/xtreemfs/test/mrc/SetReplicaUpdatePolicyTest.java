@@ -8,15 +8,18 @@
 
 package org.xtreemfs.test.mrc;
 
+import static org.junit.Assert.assertTrue;
+
 import java.net.InetSocketAddress;
 import java.util.LinkedList;
 import java.util.List;
 
-import junit.framework.TestCase;
-
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.clients.File;
@@ -28,7 +31,6 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
-import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
@@ -39,8 +41,11 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestEnvironment.Services;
+import org.xtreemfs.test.TestHelper;
 
-public class SetReplicaUpdatePolicyTest extends TestCase {
+public class SetReplicaUpdatePolicyTest {
+    @Rule
+    public final TestRule     testLog = TestHelper.testLog;
 
     private MRCServiceClient  client;
     
@@ -48,24 +53,13 @@ public class SetReplicaUpdatePolicyTest extends TestCase {
     
     private TestEnvironment   testEnv;
     
-    public SetReplicaUpdatePolicyTest() {
+    @BeforeClass
+    public static void initializeTest() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL);
     }
 
     @Before
     public void setUp() throws Exception {
-        
-        java.io.File testDir = new java.io.File(SetupUtils.TEST_DIR);
-
-        FSUtils.delTree(testDir);
-        testDir.mkdirs();
-
-        
-        System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
-
-        
-        mrcAddress = SetupUtils.getMRC1Addr();
-        
         // register an OSD at the directory service (needed in order to assign
         // it to a new file on 'open')
         
@@ -73,17 +67,18 @@ public class SetReplicaUpdatePolicyTest extends TestCase {
                 Services.MRC_CLIENT, Services.DIR_SERVICE, Services.MRC, Services.OSD, Services.OSD);
         testEnv.start();
         
+        mrcAddress = testEnv.getMRCAddress();
         client = testEnv.getMrcClient();
     }
 
     @After
-    protected void tearDown() throws Exception {
+    public void tearDown() throws Exception {
         testEnv.shutdown();
         Logging.logMessage(Logging.LEVEL_DEBUG, this, BufferPool.getStatus());
     }
 
     @Test
-    public void  testSetReplicaUpdatePolicyOperation() throws Exception {
+    public void testSetReplicaUpdatePolicyOperation() throws Exception {
         final String uid = "root";
         final List<String> gids = createGIDs("root");
         final String volumeName = "testVolume";

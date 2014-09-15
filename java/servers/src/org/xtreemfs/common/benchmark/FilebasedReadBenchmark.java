@@ -30,14 +30,14 @@ class FilebasedReadBenchmark extends FilebasedBenchmark {
 
     @Override
     void prepareBenchmark() throws Exception {
-        this.filenames = volumeManager.getRandomFilelistForVolume(volume, benchmarkSizeInBytes);
+        this.filenames = volumeManager.getRandomFilelistForVolume(volume, benchmarkSize);
     }
 
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */
     @Override
     long performIO(byte[] data, long numberOfBlocks) throws IOException {
 
-        long numberOfFilesToRead = benchmarkSizeInBytes / filesize;
+        long numberOfFilesToRead = benchmarkSize / filesize;
 
         int filenamesSize = filenames.length;
         long byteCounter = 0;
@@ -49,14 +49,14 @@ class FilebasedReadBenchmark extends FilebasedBenchmark {
             String filename = filenames[random.nextInt(filenamesSize)];
             FileHandle fileHandle = volume.openFile(config.getUserCredentials(), filename, flags);
 
-            if (filesize <= chunkSize) {
+            if (filesize <= requestSize) {
                 random.nextBytes(data);
                 byteCounter += fileHandle.read(config.getUserCredentials(), data, filesize, 0);
             } else
-                for (long j = 0; j < filesize / chunkSize; j++) {
-                    long nextOffset = j * chunkSize;
+                for (long j = 0; j < filesize / requestSize; j++) {
+                    long nextOffset = j * requestSize;
                     assert nextOffset >= 0 : "Offset < 0 not allowed";
-                    byteCounter += fileHandle.read(config.getUserCredentials(), data, chunkSize, nextOffset);
+                    byteCounter += fileHandle.read(config.getUserCredentials(), data, requestSize, nextOffset);
                 }
             fileHandle.close();
         }

@@ -28,7 +28,7 @@ class SequentialReadBenchmark extends SequentialBenchmark {
 
     @Override
     void prepareBenchmark() throws Exception {
-        this.filenames = volumeManager.getSequentialFilelistForVolume(volume, benchmarkSizeInBytes);
+        this.filenames = volumeManager.getSequentialFilelistForVolume(volume, benchmarkSize);
     }
 
     /* Called within the benchmark method. Performs the actual reading of data from the volume. */
@@ -50,9 +50,9 @@ class SequentialReadBenchmark extends SequentialBenchmark {
     private long tryPerformIO(byte[] data, long numberOfBlocks, FileHandle fileHandle) throws IOException {
         long byteCounter = 0;
         for (long j = 0; !cancelled && j < numberOfBlocks; j++) {
-            long nextOffset = j * chunkSize;
+            long nextOffset = j * requestSize;
             assert nextOffset >= 0 : "Offset < 0 not allowed";
-            byteCounter += fileHandle.read(config.getUserCredentials(), data, chunkSize, nextOffset);
+            byteCounter += fileHandle.read(config.getUserCredentials(), data, requestSize, nextOffset);
         }
         fileHandle.close();
         return byteCounter;

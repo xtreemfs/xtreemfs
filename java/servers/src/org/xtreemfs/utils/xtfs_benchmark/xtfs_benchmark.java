@@ -10,7 +10,6 @@ package org.xtreemfs.utils.xtfs_benchmark;
 import static org.xtreemfs.foundation.logging.Logging.Category;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.common.benchmark.*;
 import org.xtreemfs.foundation.logging.Logging;
@@ -138,8 +137,8 @@ public class xtfs_benchmark {
     /* convert a single result to json like String */
     private static String resultToString(BenchmarkResult result) {
 
-        String dataWritten = result.getDataRequestedInBytes() >= BenchmarkUtils.GiB_IN_BYTES ? result
-                .getDataRequestedInBytes() / BenchmarkUtils.GiB_IN_BYTES + " GiB [" : result.getDataRequestedInBytes()
+        String dataWritten = result.getRequestedSize() >= BenchmarkUtils.GiB_IN_BYTES ? result
+                .getRequestedSize() / BenchmarkUtils.GiB_IN_BYTES + " GiB [" : result.getRequestedSize()
                 / BenchmarkUtils.MiB_IN_BYTES + " MiB [";
         String readersOrWriters;
         
@@ -152,14 +151,34 @@ public class xtfs_benchmark {
         }
 
         return "{\n\tBenchmarkType: " + result.getBenchmarkType() + "\n" + readersOrWriters
-                + "\tTime: " + result.getTimeInSec() + " Sec\n" + "\tSpeed: " + result.getSpeedInMiBPerSec() + " MiB/s\n" + "\tData written: "
-                + dataWritten + result.getDataRequestedInBytes()+ " Bytes]\n" + "\tByteCount: " + result.getByteCount() + " Bytes\n" + "}";
+                + "\tTime: " + result.getTimeInSec() + " Sec\n" + "\tSpeed: " + getSpeedInMiBPerSec(result.getActualSize(), result.getTimeInSec()) + " MiB/s\n" + "\tData written: "
+                + dataWritten + result.getRequestedSize()+ " Bytes]\n" + "\tByteCount: " + result.getActualSize() + " Bytes\n" + "}";
     }
 
     /* convert a single result to csv */
     private static String resultToCSV(BenchmarkResult result) {
         return result.getBenchmarkType() + ";" + result.getNumberOfReadersOrWriters() + ";"
-                + result.getTimeInSec() + ";" + result.getSpeedInMiBPerSec() + ";" + result.getDataRequestedInBytes() + ";"
-                + result.getByteCount();
+                + result.getTimeInSec() + ";" + getSpeedInMiBPerSec(result.getActualSize(), result.getTimeInSec()) + ";" + result.getRequestedSize() + ";"
+                + result.getActualSize();
+    }
+
+    /**
+     * Get the speed of the benchmark in MiB/Sec
+     *
+     * @return the speed of the benchmark in MiB/Sec
+     */
+    private static double getSpeedInMiBPerSec(long size, double time) {
+        return round(((double) size / BenchmarkUtils.MiB_IN_BYTES) / time, 2);
+    }
+
+    /* Round doubles to specified number of decimals */
+    private static double round(double value, int places) {
+        if (places < 0)
+            throw new IllegalArgumentException();
+
+        long factor = (long) Math.pow(10, places);
+        value = value * factor;
+        long tmp = Math.round(value);
+        return (double) tmp / factor;
     }
 }

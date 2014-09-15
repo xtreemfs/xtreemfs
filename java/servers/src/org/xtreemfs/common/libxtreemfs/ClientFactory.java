@@ -47,9 +47,9 @@ public class ClientFactory {
      * @param options
      *            Has to contain loglevel string and logfile path.
      */
-    public static Client createClient(String[] dirServiceAddresseses, UserCredentials userCredentials,
+    public static Client createClient(String[] dirServiceAddresses, UserCredentials userCredentials,
             SSLOptions sslOptions, Options options) {
-        return new ClientImplementation(dirServiceAddresseses, userCredentials, sslOptions, options);
+        return new ClientImplementation(dirServiceAddresses, userCredentials, sslOptions, options);
     }
 
     /**

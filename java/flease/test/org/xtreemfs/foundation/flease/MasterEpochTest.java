@@ -7,13 +7,18 @@
 
 package org.xtreemfs.foundation.flease;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import junit.framework.TestCase;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
@@ -26,14 +31,13 @@ import org.xtreemfs.foundation.util.FSUtils;
  *
  * @author bjko
  */
-public class MasterEpochTest extends TestCase {
+public class MasterEpochTest {
 
-    private final FleaseConfig cfg;
-    private final File testDir;
+    private static FleaseConfig cfg;
+    private static File         testDir;
     
-    public MasterEpochTest(String testName) {
-        super(testName);
-
+    @BeforeClass
+    public static void setUpClass() {
         Logging.start(Logging.LEVEL_WARN, Category.all);
         TimeSync.initializeLocal(50);
 
@@ -41,21 +45,20 @@ public class MasterEpochTest extends TestCase {
         testDir = new File("/tmp/xtreemfs-test/");
     }
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
         FSUtils.delTree(testDir);
         testDir.mkdirs();
     }
 
-    @Override
-    protected void tearDown() throws Exception {
-        super.tearDown();
+    @After
+    public void tearDown() throws Exception {
     }
 
     /**
      * Test of createTimer method, of class FleaseStage.
      */
+    @Test
     public void testOpenAndGetLease() throws Exception {
         final ASCIIString CELL_ID = new ASCIIString("testcell");
 
@@ -85,7 +88,7 @@ public class MasterEpochTest extends TestCase {
 
             @Override
             public void leaseFailed(ASCIIString cellId, FleaseException error) {
-                MasterEpochTest.fail(error.toString());
+                fail(error.toString());
             }
         }, new MasterEpochHandlerInterface() {
 
@@ -152,6 +155,7 @@ public class MasterEpochTest extends TestCase {
     /**
      * Test of createTimer method, of class FleaseStage.
      */
+    @Test
     public void testSimpleMasterEpochHandler() throws Exception {
         final ASCIIString CELL_ID = new ASCIIString("testcell");
 
@@ -185,7 +189,7 @@ public class MasterEpochTest extends TestCase {
 
             @Override
             public void leaseFailed(ASCIIString cellId, FleaseException error) {
-                MasterEpochTest.fail(error.toString());
+                fail(error.toString());
             }
         }, meHandler);
 
@@ -246,7 +250,7 @@ public class MasterEpochTest extends TestCase {
 
             @Override
             public void leaseFailed(ASCIIString cellId, FleaseException error) {
-                MasterEpochTest.fail(error.toString());
+                fail(error.toString());
             }
         }, meHandler);
 

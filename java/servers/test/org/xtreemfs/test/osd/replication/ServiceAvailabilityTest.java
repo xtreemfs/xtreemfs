@@ -9,38 +9,48 @@
 package org.xtreemfs.test.osd.replication;
 
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import junit.framework.TestCase;
-
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.ServiceAvailability;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestHelper;
 
 /**
  *
  * 06.04.2009
  */
-public class ServiceAvailabilityTest extends TestCase {
+public class ServiceAvailabilityTest {
+    @Rule
+    public final TestRule   testLog          = TestHelper.testLog;
+
     public final static int INITIAL_TIMEOUT = 100; // 0.1 second
     public final static int CLEANUP_INTERVAL = 1000; // 1 second
     public final static int MAX_LAST_ACCESS = 1000 * 3; // 3 seconds
 
     ServiceAvailability serviceAvailability;
 
+    @BeforeClass
+    public static void initializeTest() throws Exception {
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
+    }
+
     /**
      * @throws java.lang.Exception
      */
     @Before
     public void setUp() throws Exception {
-        System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
-        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
-
         serviceAvailability = new ServiceAvailability(INITIAL_TIMEOUT, MAX_LAST_ACCESS, CLEANUP_INTERVAL);
     }
 

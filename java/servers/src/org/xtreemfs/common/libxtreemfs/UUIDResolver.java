@@ -27,7 +27,7 @@ public interface UUIDResolver {
     /**
      * Resolves the UUID for a given volume name.
      * 
-     * @param  String
+     * @param  volumeName
      *          Name of the volume.
      * @return String
      *                  UUID of the MRC the volume 'volumeName' is registered.
