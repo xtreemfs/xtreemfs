@@ -820,6 +820,11 @@ void VolumeImplementation::Rename(
   // 2. Remove file content of any previous files at "new_path".
   if (rename_response->has_creds()) {
     UnlinkAtOSD(rename_response->creds(), new_path);
+    if (volume_options_.encryption && !ObjectEncryptor::IsEncMetaFile(path)) {
+      ObjectEncryptor::Unlink(
+          user_credentials, this,
+          ExtractFileIdFromXCap(rename_response->creds().xcap()));
+    }
   }
 
   // 3. Update caches
