@@ -8,6 +8,7 @@
 #include "libxtreemfs/volume_implementation.h"
 
 #include <algorithm>
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread/thread.hpp>
 #include <limits>
@@ -404,7 +405,8 @@ FileHandle* VolumeImplementation::OpenFileWithTruncateSize(
                                               async_writes_enabled);
   }
 
-  if (volume_options_.encryption && !disable_encryption) {
+  if (volume_options_.encryption && !disable_encryption
+      && !boost::starts_with(path, "/.xtreemfs_enc_meta_files/")) {
     file_handle->SetObjectEncryptor(
         std::auto_ptr<ObjectEncryptor>(
             new ObjectEncryptor(
