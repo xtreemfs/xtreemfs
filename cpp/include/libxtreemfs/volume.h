@@ -168,22 +168,6 @@ class Volume {
       uint32_t mode,
       uint32_t attributes) = 0;
 
-  /** Same as previous OpenFile() except for the additional parameter
-   *  "disable_encryption" which disables encryption for this file, even if
-   *  enabled for the volume.
-   *
-   * @throws AddressToUUIDNotFoundException
-   * @throws IOException
-   * @throws PosixErrorException
-   * @throws UnknownAddressSchemeException
-   */
-  virtual FileHandle* OpenFile(
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
-      const std::string& path,
-      const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
-      uint32_t mode,
-      bool disable_encryption) = 0;
-
   /** Truncates the file to "new_file_size_ bytes.
    *
    * @param user_credentials    Name and Groups of the user.

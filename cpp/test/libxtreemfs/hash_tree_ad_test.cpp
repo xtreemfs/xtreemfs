@@ -157,7 +157,7 @@ class HashTreeADTest : public OnlineTest {
             static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_CREAT // NOLINT
                 | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_TRUNC
                 | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
-            0777, true);
+            0777);
 
     tree = new HashTreeAD(4, options_);
     tree->Init(file, -2);

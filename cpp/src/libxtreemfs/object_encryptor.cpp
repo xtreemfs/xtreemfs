@@ -79,7 +79,7 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
   FileHandle* meta_file;
   try {
     meta_file = volume->OpenFile(user_credentials, meta_file_name,
-                                 pbrpc::SYSTEM_V_FCNTL_H_O_RDWR, 0777, true);
+                                 pbrpc::SYSTEM_V_FCNTL_H_O_RDWR, 0777);
   } catch (const PosixErrorException& e) {  // NOLINT
     // file didn't exist yet
     max_leaf = -2;
@@ -90,7 +90,7 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
               meta_file_name,
               static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
                   | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
-              0777, true);
+              0777);
     } catch (const PosixErrorException& e) {  // NOLINT
       // "/.xtreemfs_enc_meta_files" directory does not exist yet
       volume->MakeDirectory(user_credentials, "/.xtreemfs_enc_meta_files",
@@ -101,7 +101,7 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
               meta_file_name,
               static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
                   | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
-              0777, true);
+              0777);
     }
   }
   hash_tree_.Init(meta_file, max_leaf);

@@ -318,19 +318,7 @@ FileHandle* VolumeImplementation::OpenFile(
   return OpenFileWithTruncateSize(user_credentials, path, flags, mode, attributes, 0);
 }
 
-FileHandle* VolumeImplementation::OpenFile(
-    const xtreemfs::pbrpc::UserCredentials& user_credentials,
-    const std::string& path,
-    const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
-    uint32_t mode,
-    bool disable_encryption) {
-  return OpenFileWithTruncateSize(user_credentials, path, flags, mode, 0, 0,
-                                  disable_encryption);
-}
-
 /**
- * @param disable_encryption    Disable encryption for the file. Used for meta
- *                              files.
  * @throws IOException
  */
 FileHandle* VolumeImplementation::OpenFileWithTruncateSize(
@@ -339,8 +327,7 @@ FileHandle* VolumeImplementation::OpenFileWithTruncateSize(
     const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
     uint32_t mode,
     uint32_t attributes,
-    int truncate_new_file_size,
-    bool disable_encryption) {
+    int truncate_new_file_size) {
   bool async_writes_enabled = volume_options_.enable_async_writes;
 
   if (flags & SYSTEM_V_FCNTL_H_O_SYNC) {
@@ -404,8 +391,7 @@ FileHandle* VolumeImplementation::OpenFileWithTruncateSize(
                                               async_writes_enabled);
   }
 
-  if (volume_options_.encryption && !disable_encryption
-      && !ObjectEncryptor::IsEncMetaFile(path)) {
+  if (volume_options_.encryption && !ObjectEncryptor::IsEncMetaFile(path)) {
     file_handle->SetObjectEncryptor(
         std::auto_ptr<ObjectEncryptor>(
             new ObjectEncryptor(
