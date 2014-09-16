@@ -8,7 +8,6 @@
 #include "libxtreemfs/volume_implementation.h"
 
 #include <algorithm>
-#include <boost/algorithm/string/predicate.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread/thread.hpp>
 #include <limits>
@@ -406,7 +405,7 @@ FileHandle* VolumeImplementation::OpenFileWithTruncateSize(
   }
 
   if (volume_options_.encryption && !disable_encryption
-      && !boost::starts_with(path, "/.xtreemfs_enc_meta_files/")) {
+      && !ObjectEncryptor::IsEncMetaFile(path)) {
     file_handle->SetObjectEncryptor(
         std::auto_ptr<ObjectEncryptor>(
             new ObjectEncryptor(
@@ -765,6 +764,11 @@ void VolumeImplementation::Unlink(
   // 3. Delete objects of all replicas on the OSDs.
   if (unlink_response->has_creds()) {
     UnlinkAtOSD(unlink_response->creds(), path);
+    if (volume_options_.encryption && !ObjectEncryptor::IsEncMetaFile(path)) {
+      ObjectEncryptor::Unlink(
+          user_credentials, this,
+          ExtractFileIdFromXCap(unlink_response->creds().xcap()));
+    }
   }
 
   response->DeleteBuffers();

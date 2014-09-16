@@ -58,8 +58,6 @@ class ObjectEncryptor {
                 PartialObjectReaderFunction_sync reader_sync,
                 PartialObjectWriterFunction_sync writer_sync);
 
-  void FinishTruncate(const xtreemfs::pbrpc::UserCredentials& user_credentials);
-
   boost::unique_future<int> Read(int object_no, char* buffer,
                                  int offset_in_object, int bytes_to_read,
                                  PartialObjectReaderFunction reader,
@@ -78,6 +76,11 @@ class ObjectEncryptor {
                   int bytes_to_write,
                   PartialObjectReaderFunction_sync reader_sync,
                   PartialObjectWriterFunction_sync writer_sync);
+
+  static bool IsEncMetaFile(const std::string& path);
+
+  static void Unlink(const xtreemfs::pbrpc::UserCredentials& user_credentials,
+                     VolumeImplementation* volume, uint64_t file_id);
 
  private:
   boost::unique_future<int> CallSyncReaderAsynchronously(

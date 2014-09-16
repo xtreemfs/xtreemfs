@@ -7,6 +7,7 @@
 
 #include "libxtreemfs/object_encryptor.h"
 
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/lexical_cast.hpp>
 #include <algorithm>
 #include <string>
@@ -573,6 +574,29 @@ boost::unique_future<void> ObjectEncryptor::Write(
 
   return writer(object_no, reinterpret_cast<char*>(ciphertext.data()),
                 ct_offset_in_object, ct_bytes_to_write);
+}
+
+/**
+ * @param path  Path to file.
+ * @return True if the file is an encryption meta file witch is not encrypted.
+ */
+bool ObjectEncryptor::IsEncMetaFile(const std::string& path) {
+  return boost::starts_with(path, "/.xtreemfs_enc_meta_files/");
+}
+
+/**
+ * Unlinks the encryption meta file of a file.
+ *
+ * @param user_credentials
+ * @param volume    Ownership is not transfered.
+ * @param file_id   XtreemFS File ID of the file.
+ */
+void ObjectEncryptor::Unlink(
+    const xtreemfs::pbrpc::UserCredentials& user_credentials,
+    VolumeImplementation* volume, uint64_t file_id) {
+  volume->Unlink(
+      user_credentials,
+      "/.xtreemfs_enc_meta_files/" + boost::lexical_cast<std::string>(file_id));
 }
 
 }  // namespace xtreemfs
