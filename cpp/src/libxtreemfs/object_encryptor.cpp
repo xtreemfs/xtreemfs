@@ -48,7 +48,6 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
                                  FileInfo* file_info, int object_size)
     : enc_block_size_(volume->volume_options().encryption_block_size),
       cipher_(volume->volume_options().encryption_cipher),
-      // TODO(plieser): files in one dir (creat if not exist yet)
       hash_tree_(cipher_.iv_size(), volume->volume_options()),
       object_size_(object_size * 1024),
       file_info_(file_info),
@@ -69,7 +68,7 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
   file_size_ = stat.size();
 
   std::string meta_file_name(
-      "/.xtreemfs_enc_meta_files_" + boost::lexical_cast<std::string>(file_id));
+      "/.xtreemfs_enc_meta_files/" + boost::lexical_cast<std::string>(file_id));
   int max_leaf;
   if (file_size_ != 0) {
     max_leaf = (file_size_ - 1) / enc_block_size_;
@@ -83,13 +82,26 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
   } catch (const PosixErrorException& e) {  // NOLINT
     // file didn't exist yet
     max_leaf = -2;
-    meta_file =
-        volume->OpenFile(
-            user_credentials,
-            meta_file_name,
-            static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
-                | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
-            0777, true);
+    try {
+      meta_file =
+          volume->OpenFile(
+              user_credentials,
+              meta_file_name,
+              static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
+                  | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
+              0777, true);
+    } catch (const PosixErrorException& e) {  // NOLINT
+      // "/.xtreemfs_enc_meta_files" directory does not exist yet
+      volume->MakeDirectory(user_credentials, "/.xtreemfs_enc_meta_files",
+                            0777);
+      meta_file =
+          volume->OpenFile(
+              user_credentials,
+              meta_file_name,
+              static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
+                  | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
+              0777, true);
+    }
   }
   hash_tree_.Init(meta_file, max_leaf);
 }
