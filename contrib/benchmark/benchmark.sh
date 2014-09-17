@@ -17,23 +17,27 @@ SLEEP=true
 BASEFILE_SIZE="100g"
 
 # the directories for the logfiles and the results
-LOG_DIR="$HOME/log"
-RESULT_DIR="$HOME/result"
+LOG_BASE=${BENCH_LOG:-$HOME}
+LOG_DIR="$LOG_BASE/log"
+RESULT_DIR="$LOG_BASE/result"
 
 # Drops caches after each benchmark. Uncomment to activate
 # cp "drop_caches" to "/usr/local/bin" and add "ALL ALL=NOPASSWD: /usr/local/bin/drop_caches" to sudoers file
-DROP_CACHES_CALL="sudo /usr/bin/drop_caches"
+DROP_CACHES=${BENCH_DROP_CACHES:-"/usr/local/bin/drop_caches"}
+if [[ $DROP_CACHES != "false" ]]; then
+  DROP_CACHES_CALL="sudo ${DROP_CACHES}"
+fi
 
 # IP and Port of the DIR
-DIR="localhost:32638"
+DIR=${BENCH_DIR:-"localhost:32638"}
 
 # IP and Port of the MRC
-MRC="localhost:32636"
+MRC=${BENCH_MRC:-"localhost:32636"}
 
 # space separed list of OSD_UUIDS, e.g. "osd1 osd2 ..."
-OSD_UUIDS="test-osd0"
+OSD_UUIDS=${BENCH_OSD_UUIDS:-"test-osd0"}
 
-# the chunksize (aka blocksize) for the benchmarks
+# the default chunksize (aka blocksize) for the benchmarks
 CHUNKSIZE="128K"
 
 check_env(){
@@ -83,6 +87,10 @@ Synopsis
 
   -s size
     Size of one benchmark, modifier M (for MiB) or G (for GiB) is mandatory.
+
+  -c chunksize
+    Optional chunk- or blocksize for the benchmarks. Default: 128K
+    Allowed modifiers are K for KiB, M for MiB, G for GiB and none for Bytes.
 
   -b number of threads to beginn the benchmark series
     Minimum number of threads to be run as the benchmarks series.
@@ -278,7 +286,7 @@ REPETITIONS=1
 
 
 # parse options
-while getopts ":t:s:b:e:r:c:v" opt; do
+while getopts ":t:s:b:e:r:c:v:h" opt; do
   case $opt in
     t)
       if [ $OPTARG = "sw" ] || [ $OPTARG = "sr" ]  || [ $OPTARG = "rw" ] || [ $OPTARG = "rr" ]; then
@@ -315,7 +323,11 @@ while getopts ":t:s:b:e:r:c:v" opt; do
       set -x
       ;;
     c)
-      CONFIG=$OPTARG
+      CHUNKSIZE=$OPTARG
+      ;;
+    h)
+      printUsage
+      exit 1
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
