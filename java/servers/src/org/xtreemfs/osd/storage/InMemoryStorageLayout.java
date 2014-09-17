@@ -13,7 +13,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Queue;
 import java.util.SortedMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.buffer.BufferPool;
@@ -39,8 +41,60 @@ public class InMemoryStorageLayout extends StorageLayout {
 
     final static int   OBJECT_INIT_CAP = 1024; // 218500
     final static float OBJECT_LOAD_FAC = 0.75f;
+    
+    
+    // ================================================================================
+    // In-memory storage structures
+    // ================================================================================
 
-    // =================================================================== =============
+    private final static class InMemoryBufferPool {
+
+        static final int[]        BUFF_SIZES = { 65536, 131072, 524288 };
+        final Queue<ByteBuffer>[] pools;
+
+        public InMemoryBufferPool() {
+            pools = (ConcurrentLinkedQueue<ByteBuffer>[]) new ConcurrentLinkedQueue[BUFF_SIZES.length];
+            for (int i = 0; i < BUFF_SIZES.length; i++) {
+                pools[i] = new ConcurrentLinkedQueue<ByteBuffer>();
+            }
+        }
+
+        ReusableBuffer allocate(int size) {
+            ByteBuffer buffer = null;
+
+            for (int i = 0; i < BUFF_SIZES.length; i++) {
+                if (size <= BUFF_SIZES[i]) {
+                    buffer = pools[i].poll();
+                    break;
+                }
+            }
+            
+            if (buffer == null) {
+                buffer = ByteBuffer.allocateDirect(size);
+            } else {
+                buffer.clear();
+            }
+
+            return new ReusableBuffer(buffer);
+        }
+
+        void free(ReusableBuffer reusable) {
+            // TODO(jdillmann): reusable.returned = true;
+            final ByteBuffer buffer = reusable.getBuffer();
+
+            if (buffer.isDirect()) {
+                final int size = buffer.capacity();
+                for (int i = 0; i < BUFF_SIZES.length; i++) {
+                    if (size <= BUFF_SIZES[i]) {
+                        pools[i].add(buffer);
+                    }
+                }
+            }
+        }
+    }
+    
+
+    // ================================================================================
     // In-memory storage structures
     // ================================================================================
 
@@ -200,6 +254,8 @@ public class InMemoryStorageLayout extends StorageLayout {
 
     /** Number of StorageThreads used to by the OSD **/
     private final int                         numStorageThreads;
+    
+    private final InMemoryBufferPool          pool;
 
     // ================================================================================
     // Constructors
@@ -224,6 +280,8 @@ public class InMemoryStorageLayout extends StorageLayout {
         for (int i = 0; i < storage.length; i++) {
             storage[i] = new HashMap<String, InMemoryData>(FILE_INIT_CAP, FILE_LOAD_FAC);
         }
+
+        pool = new InMemoryBufferPool();
     }
 
     // ================================================================================
@@ -565,7 +623,7 @@ public class InMemoryStorageLayout extends StorageLayout {
                 if (oldObject.data != null && oldObject.getLength() > 0) {
                     // Allocate a new buffer.
                     // TODO(jdillmann): stripeSize or oldObject.data.capacity()
-                    object.data = new ReusableBuffer(ByteBuffer.allocateDirect(stripeSize));
+                    object.data = pool.allocate(stripeSize);
 
                     // Copy the buffer.
                     // Could be optimized by copying from 0->offset, offset+length->capacity
@@ -595,7 +653,7 @@ public class InMemoryStorageLayout extends StorageLayout {
         // Allocate a new ByteBuffer if none exists yet.
         if (object.data == null) {
             // TODO(jdillmann): Only use required size (which is <= stripeSize)
-            object.data = new ReusableBuffer(ByteBuffer.allocateDirect(stripeSize));
+            object.data = pool.allocate(stripeSize);
         }
 
         // Update the object length. Throws an Exception if the underlying buffer is to small.
@@ -654,7 +712,7 @@ public class InMemoryStorageLayout extends StorageLayout {
 
                 // Allocate a new buffer.
                 // TODO(jdillmann): stripeSize or oldObject.data.capacity()/limit()
-                object.data = new ReusableBuffer(ByteBuffer.allocateDirect(stripeSize));
+                object.data = pool.allocate(stripeSize);
                 object.setLength(oldLength);
 
                 // Copy the buffer.
@@ -674,7 +732,7 @@ public class InMemoryStorageLayout extends StorageLayout {
         if (newLength == 0) {
             // Free the buffer.
             if (object.data != null) {
-                // BufferPool.free(object.data);
+                pool.free(object.data);
                 object.data = null;
             }
 
@@ -686,7 +744,7 @@ public class InMemoryStorageLayout extends StorageLayout {
             // Keep the buffer, increase its limit and fill with zeros.
             if (object.data == null) {
                 // TODO(jdillmann): or newSize?
-                object.data = new ReusableBuffer(ByteBuffer.allocateDirect(stripeSize));
+                object.data = pool.allocate(stripeSize);
             }
 
             // Fill with zeros.
@@ -721,7 +779,7 @@ public class InMemoryStorageLayout extends StorageLayout {
         // Free the buffers.
         for (InMemoryObject object : file.getAllObjects()) {
             if (object.data != null) {
-                // BufferPool.free(object.data);
+                pool.free(object.data);
                 object.data = null;
             }
         }
@@ -746,7 +804,7 @@ public class InMemoryStorageLayout extends StorageLayout {
         final long verToDel = (version == LATEST_VERSION) ? md.getLatestObjectVersion(objNo) : version;
         InMemoryObject object = file.removeObject(objNo, verToDel);
         if (object.data != null) {
-            // BufferPool.free(object.data);
+            pool.free(object.data);
             object.data = null;
         }
     }
@@ -766,7 +824,7 @@ public class InMemoryStorageLayout extends StorageLayout {
         }
 
         if (object.data == null) {
-            object.data = new ReusableBuffer(ByteBuffer.allocateDirect(stripeSize));
+            object.data = pool.allocate(stripeSize);
         }
 
         // Try to set the length of the object.
