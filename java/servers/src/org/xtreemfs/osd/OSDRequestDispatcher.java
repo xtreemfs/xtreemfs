@@ -107,6 +107,7 @@ import org.xtreemfs.osd.storage.CleanupVersionsThread;
 import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.InMemoryStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
+import org.xtreemfs.osd.storage.NullStorageLayout;
 import org.xtreemfs.osd.storage.StorageLayout;
 import org.xtreemfs.osd.vivaldi.VivaldiNode;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.DirService;
@@ -313,6 +314,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             storageLayout = new HashStorageLayout(config, metadataCache);
         } else if (config.getStorageLayout().equalsIgnoreCase(InMemoryStorageLayout.class.getSimpleName())) {
             storageLayout = new InMemoryStorageLayout(config, metadataCache);
+        } else if (config.getStorageLayout().equalsIgnoreCase(NullStorageLayout.class.getSimpleName())) {
+            storageLayout = new NullStorageLayout(config, metadataCache);
         }
         // else if (config.getStorageLayout().equalsIgnoreCase(SingleFileStorageLayout.class.getSimpleName())) {
         // storageLayout = new SingleFileStorageLayout(config, metadataCache);
