@@ -13,7 +13,9 @@
 #include <utility>
 #include <vector>
 
+#include "util/crypto/asym_key.h"
 #include "util/crypto/cipher.h"
+#include "util/crypto/sign_algorithm.h"
 #include "util/logging.h"
 
 namespace xtreemfs {
@@ -29,8 +31,6 @@ class CryptoTest : public ::testing::Test {
   }
 };
 
-/*
- */
 TEST_F(CryptoTest, Cipher_AES_CTR) {
   std::string key_str = "01234567890123456789012345678901";
   std::vector<unsigned char> key(key_str.begin(), key_str.end());
@@ -49,6 +49,22 @@ TEST_F(CryptoTest, Cipher_AES_CTR) {
   EXPECT_TRUE(
       std::vector<unsigned char>(plaintext.begin(), plaintext.end())
           == plaintext_dec);
+}
+
+TEST_F(CryptoTest, Signature_RSA) {
+  std::auto_ptr<AsymKey> key(new AsymKey("RSA"));
+  SignAlgorithm signAlgo(key, "sha256");
+
+  std::string msg("Message to sign");
+
+  std::vector<unsigned char> sig = signAlgo.Sign(boost::asio::buffer(msg));
+
+  EXPECT_TRUE(
+      signAlgo.Verify(boost::asio::buffer(msg), boost::asio::buffer(sig)));
+
+  msg[0] = 'm';
+  EXPECT_FALSE(
+      signAlgo.Verify(boost::asio::buffer(msg), boost::asio::buffer(sig)));
 }
 
 }  // namespace xtreemfs
