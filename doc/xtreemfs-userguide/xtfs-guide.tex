@@ -2248,6 +2248,15 @@ The following values (or its aliases stated in parentheses) can be passed to \ve
   \item[WqRq (quorum), WaR1 (all)] New files are read-write replicated and can be modified. Please refer to the Section \ref{sec:readwrite_replication} for more information on both policies and their properties.
 \end{description}
 
+\subsubsection{Setting Volume Quota}
+By default no quota is set for Volumes. If a quota for a volume is set and a client wants to open a file the MRC will check if the quota is exceeded and responses accordingly. The quota of a volume can be set as follows. In this example the quota of the a volume will be set to 1 GB
+\begin{verbatim}
+$>xtfsutil --set-quota 1G /xtreemfs
+\end{verbatim}
+M(B), G(B) and T(B) can be used as multipliers. To disable a previously set quota the quota can be set to 0, i.e. the following command can be used
+\begin{verbatim}
+$>xtfsutil --set-quota 0 /xtreemfs
+\end{verbatim}
 
 \subsection{Changing OSD and Replica Selection Policies}\label{sec:osd_select_policy}
 
