@@ -69,6 +69,9 @@ public class FilterFQDNPolicy implements OSDSelectionPolicy {
     public void setAttribute(String key, String value) {
         if (key.equals(DOMAINS)) {
             domains.clear();
+            if (value == null) {
+                value = "";
+            }
             StringTokenizer st = new StringTokenizer(value, " ,;\t\n");
             if (st != null) {
                 while (st.hasMoreTokens()) {
