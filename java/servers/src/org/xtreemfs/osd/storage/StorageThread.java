@@ -244,7 +244,7 @@ public class StorageThread extends Stage {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
                     "removed file info from cache for file %s", fileId);
             
-            cback.cachesFlushed(null);
+            cback.cachesFlushed(null, md);
         } catch (Exception ex) {
             rq.sendInternalServerError(ex);
             return;
@@ -540,6 +540,9 @@ public class StorageThread extends Stage {
                 } else {
                     newFS = newObjSize;
                 }
+                if (newFS < fi.getFilesize()) {
+                    newFS = fi.getFilesize();
+                }
                 
                 // check whether the file size might have changed; in this case,
                 // ensure that the X-New-Filesize header will be set
@@ -756,10 +759,7 @@ public class StorageThread extends Stage {
         }
         
     }
-    
-    /**
-     * @param method
-     */
+
     private void processGetObjectSet(StageRequest rq) {
         final GetObjectListCallback cback = (GetObjectListCallback) rq.getCallback();
         final String fileId = (String) rq.getArgs()[0];
@@ -774,10 +774,7 @@ public class StorageThread extends Stage {
                 POSIXErrno.POSIX_ERROR_EIO, ex.toString()));
         }
     }
-    
-    /**
-     * @param method
-     */
+
     private void processCreateFileVersion(StageRequest rq) {
         
         final CreateFileVersionCallback cback = (CreateFileVersionCallback) rq.getCallback();

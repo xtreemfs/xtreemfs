@@ -13,14 +13,13 @@ import static org.junit.Assert.assertTrue;
 import java.lang.reflect.Field;
 import java.util.Vector;
 
+import org.junit.Rule;
 import org.junit.Test;
-import org.xtreemfs.common.libxtreemfs.ReadOperation;
-import org.xtreemfs.common.libxtreemfs.StripeTranslator;
-import org.xtreemfs.common.libxtreemfs.StripeTranslatorRaid0;
-import org.xtreemfs.common.libxtreemfs.WriteOperation;
+import org.junit.rules.TestRule;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
+import org.xtreemfs.test.TestHelper;
 
 /**
  * Test against the bug from Issue 277 (erroneous calculation of object offsets for read requests). The test
@@ -31,6 +30,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
  * @author jensvfischer
  */
 public class StripeTranslatorTest {
+    @Rule
+    public final TestRule           testLog                      = TestHelper.testLog;
 
     private static final int        XTREEMFS_BLOCK_SIZE_IN_BYTES = 128 * 1024;
     private static final int        GiB_IN_BYTES                 = 1024 * 1024 * 1024;

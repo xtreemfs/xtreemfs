@@ -247,7 +247,19 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public FSDataOutputStream append(Path path, int bufferSize, Progressable p) throws IOException {
-        throw new UnsupportedOperationException("Not supported yet.");
+    	Volume xtreemfsVolume = getVolumeFromPath(path);
+        final String pathString = preparePath(path, xtreemfsVolume);
+        
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Append new content to file %s.", pathString);
+        }
+
+        // Open file.
+        final FileHandle fileHandle = xtreemfsVolume.openFile(userCredentials, pathString,
+                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber());
+        
+        return new FSDataOutputStream(new XtreemFSFileOutputStream(userCredentials, fileHandle, pathString,
+                useWriteBuffer, writeBufferSize, true), statistics);
     }
 
     @Override

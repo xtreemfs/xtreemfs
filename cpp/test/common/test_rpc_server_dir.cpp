@@ -129,7 +129,7 @@ google::protobuf::Message* TestRPCServerDIR::GetAddressMappingOperation(
   size_t uuid_split_pos = rq->uuid().find_last_of(":");
   mapping->set_uuid(rq->uuid());
   mapping->set_version(0);
-  mapping->set_protocol(PBRPCURL::SCHEME_PBRPC);
+  mapping->set_protocol(PBRPCURL::GetSchemePBRPC());
   mapping->set_address(rq->uuid().substr(0, uuid_split_pos));
   mapping->set_port(atoi(rq->uuid().substr(uuid_split_pos+1).c_str()));
   mapping->set_match_network("*");

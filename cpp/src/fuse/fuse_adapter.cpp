@@ -1442,6 +1442,23 @@ int FuseAdapter::setxattr(
   UserCredentials user_credentials;
   GenerateUserCredentials(fuse_get_context(), &user_credentials);
 
+  // Ignore system attributes to avoid warnings while copying files (e.g. on OS X)
+  if (string(name) == string("xtreemfs.file_id") ||
+      string(name) == string("xtreemfs.owner") ||
+      string(name) == string("xtreemfs.group") ||
+      string(name) == string("xtreemfs.url") ||
+      string(name) == string("xtreemfs.object_type") ||
+      string(name) == string("xtreemfs.acl") ||
+      string(name) == string("xtreemfs.locations")) {
+    
+    if (Logging::log->loggingActive(LEVEL_WARN)) {
+      Logging::log->getLog(LEVEL_WARN)
+      << "Skipped setting immutable system attribute " << name << endl;
+    }
+    
+    return 0;
+  }
+    
   try {
     // Fuse reuses the value parameter. Therefore we may only use "size"
     // (null-termination is not counted) characters of value.

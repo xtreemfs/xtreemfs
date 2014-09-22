@@ -47,7 +47,7 @@ public interface AdminFileHandle extends FileHandle {
 
     /**
      * Returns the replica update policy of the file as a String. Constants for replica update policies are
-     * defined in {@link in org.xtreemfs.common.ReplicaUpdatePolicies}.
+     * defined in {@link org.xtreemfs.common.ReplicaUpdatePolicies}.
      * 
      */
     public String getReplicaUpdatePolicy();
@@ -87,7 +87,8 @@ public interface AdminFileHandle extends FileHandle {
      * @param objectNo
      *            Object which will be checked.
      * 
-     * @throws InvalidChecksumException.
+     * @throws InvalidChecksumException
+     * @throws IOException
      */
     public int checkObjectAndGetSize(int replicaIndex, long objectNo) throws IOException,
             InvalidChecksumException;

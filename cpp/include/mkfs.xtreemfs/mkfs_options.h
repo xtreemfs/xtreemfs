@@ -67,7 +67,7 @@ class MkfsOptions : public Options {
   int volume_mode_octal;
 
   /** Quota of the volume*/
-  long volume_quota;
+  std::string volume_quota;
 
   /** Name of the owner of the new volume. */
   std::string owner_username;

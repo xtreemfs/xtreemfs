@@ -8,12 +8,17 @@ package org.xtreemfs.common.statusserver;
 
 import java.io.IOException;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.PORTS;
 import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestHelper;
 
 public class StatusServerTest {
+    @Rule
+    public final TestRule testLog = TestHelper.testLog;
 
     /*
      * Start two servers concurrently at the same port. The second server should keep retrying to bind the

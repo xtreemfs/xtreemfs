@@ -32,8 +32,6 @@ using namespace xtreemfs::pbrpc;
 
 namespace xtreemfs {
 
-util::SynchronizedQueue<AsyncWriteHandler::CallbackEntry> AsyncWriteHandler::callback_queue;
-
 AsyncWriteHandler::AsyncWriteHandler(
     FileInfo* file_info,
     UUIDIterator* uuid_iterator,
@@ -41,7 +39,8 @@ AsyncWriteHandler::AsyncWriteHandler(
     xtreemfs::pbrpc::OSDServiceClient* osd_service_client,
     const xtreemfs::pbrpc::Auth& auth_bogus,
     const xtreemfs::pbrpc::UserCredentials& user_credentials_bogus,
-    const Options& volume_options)
+    const Options& volume_options,
+    util::SynchronizedQueue<CallbackEntry>& callback_queue)
     : state_(IDLE),
       pending_bytes_(0),
       pending_writes_(0),
@@ -64,7 +63,8 @@ AsyncWriteHandler::AsyncWriteHandler(
       max_write_tries_(volume_options.max_write_tries),
       redirected_(false),
       fast_redirect_(false),
-      worst_write_buffer_(0) {
+      worst_write_buffer_(0),
+      callback_queue_(callback_queue) {
   assert(file_info && uuid_iterator && uuid_resolver && osd_service_client);
 }
 
@@ -264,7 +264,7 @@ bool AsyncWriteHandler::WaitForPendingWritesNonBlocking(
   }
 }
 
-void AsyncWriteHandler::ProcessCallbacks() {
+void AsyncWriteHandler::ProcessCallbacks(util::SynchronizedQueue<CallbackEntry>& callback_queue) {
   while (!(boost::this_thread::interruption_requested() &&
            boost::this_thread::interruption_enabled())) {
     const CallbackEntry& entry = callback_queue.Dequeue();
@@ -291,7 +291,7 @@ void AsyncWriteHandler::CallFinished(
     uint32_t data_length,
     xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
     void* context) {
-  callback_queue.Enqueue(CallbackEntry(this,
+  callback_queue_.Enqueue(CallbackEntry(this,
                                        response_message,
                                        data,
                                        data_length,

@@ -8,12 +8,13 @@
 
 package org.xtreemfs.test.foundation.checksums;
 
-import java.nio.ByteBuffer;
+import static org.junit.Assert.assertEquals;
 
-import junit.framework.TestCase;
+import java.nio.ByteBuffer;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 import org.xtreemfs.foundation.checksums.StringChecksumAlgorithm;
 import org.xtreemfs.foundation.checksums.algorithms.SDBM;
 import org.xtreemfs.foundation.logging.Logging;
@@ -25,47 +26,46 @@ import org.xtreemfs.foundation.logging.Logging;
  *
  * @author clorenz
  */
-public class StringChecksumAlgorithmTest extends TestCase {
-	private ByteBuffer bufferData;
-	private String stringData;
+public class StringChecksumAlgorithmTest {
+    private ByteBuffer bufferData;
+    private String     stringData;
 
-	@Before
-	public void setUp() throws Exception {
-        System.out.println("TEST: " + getClass().getSimpleName() + "."
-                + getName());
-		Logging.start(Logging.LEVEL_ERROR);
+    @Before
+    public void setUp() throws Exception {
+        Logging.start(Logging.LEVEL_ERROR);
 
-		this.stringData = "";
-		for(int i=0; i<1024; i++){
-			this.stringData += "Test, ";
-		}
-		this.bufferData = ByteBuffer.wrap(stringData.getBytes());
-	}
+        this.stringData = "";
+        for (int i = 0; i < 1024; i++) {
+            this.stringData += "Test, ";
+        }
+        this.bufferData = ByteBuffer.wrap(stringData.getBytes());
+    }
 
-	@After
-	public void tearDown() throws Exception {
-	}
+    @After
+    public void tearDown() throws Exception {
+    }
 
-	/**
-	 * tests, if the SDBM algorithm generates the same checksum with
-	 * a String-input and ByteBuffer-input
-	 * @throws Exception
-	 */
-	public void testSDBMStringBufferEquality() throws Exception {
-		// compute checksum with xtreemfs ChecksumFactory
-		StringChecksumAlgorithm algorithm = new SDBM();
+    /**
+     * tests, if the SDBM algorithm generates the same checksum with a String-input and ByteBuffer-input
+     * 
+     * @throws Exception
+     */
+    @Test
+    public void testSDBMStringBufferEquality() throws Exception {
+        // compute checksum with xtreemfs ChecksumFactory
+        StringChecksumAlgorithm algorithm = new SDBM();
 
-		// string
-		algorithm.digest(stringData);
-		long stringValue = algorithm.getValue();
+        // string
+        algorithm.digest(stringData);
+        long stringValue = algorithm.getValue();
 
-		// buffer
-		algorithm.update(bufferData);
-		long bufferValue = algorithm.getValue();
+        // buffer
+        algorithm.update(bufferData);
+        long bufferValue = algorithm.getValue();
 
-//		System.out.println(stringValue);
-//		System.out.println(bufferValue);
+        // System.out.println(stringValue);
+        // System.out.println(bufferValue);
 
-		assertEquals(stringValue, bufferValue);
-	}
+        assertEquals(stringValue, bufferValue);
+    }
 }

@@ -512,7 +512,7 @@ void Options::ParseURL(XtreemFSServiceType service_type) {
   }
 
   PBRPCURL url_parser;
-  url_parser.ParseURL(xtreemfs_url, PBRPCURL::SCHEME_PBRPC, default_port);
+  url_parser.ParseURL(xtreemfs_url, PBRPCURL::GetSchemePBRPC(), default_port);
   volume_name = url_parser.volume();
   service_addresses = url_parser.GetAddresses();
   protocol = url_parser.scheme();
@@ -567,7 +567,7 @@ xtreemfs::rpc::SSLOptions* Options::GenerateSSLOptions() const {
         ssl_pem_key_path, ssl_pem_cert_path, ssl_pem_key_pass,  // PEM.
         ssl_pkcs12_path, ssl_pkcs12_pass,  // PKCS12.
         boost::asio::ssl::context::pem,
-        grid_ssl || protocol == PBRPCURL::SCHEME_PBRPCG);
+        grid_ssl || protocol == PBRPCURL::GetSchemePBRPCG());
   }
 #else
   opts = new xtreemfs::rpc::SSLOptions();

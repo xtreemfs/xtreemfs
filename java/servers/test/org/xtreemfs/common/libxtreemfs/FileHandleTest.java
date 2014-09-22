@@ -14,7 +14,9 @@ import java.io.FileWriter;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.libxtreemfs.exceptions.InvalidChecksumException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
@@ -39,6 +41,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 /**
  * 
@@ -46,29 +49,29 @@ import org.xtreemfs.test.TestEnvironment;
  * Dec 15, 2011
  */
 public class FileHandleTest {
+    @Rule
+    public final TestRule           testLog = TestHelper.testLog;
 
-    private static TestEnvironment      testEnv;
+    private static TestEnvironment  testEnv;
 
-    private static UserCredentials      userCredentials;
+    private static UserCredentials  userCredentials;
 
-    private static Auth                 auth        = RPCAuthentication.authNone;
+    private static Auth             auth    = RPCAuthentication.authNone;
 
-    private static String               mrcAddress;
+    private static String           mrcAddress;
 
-    private static String               dirAddress;
+    private static String           dirAddress;
 
-    private static StripingPolicy       defaultStripingPolicy;
+    private static StripingPolicy   defaultStripingPolicy;
 
-    private static MRCServiceClient     mrcClient;
+    private static MRCServiceClient mrcClient;
 
-    private static AdminClient          client;
+    private static AdminClient      client;
 
-    private static Options              options;
+    private static Options          options;
 
     @Before
     public void setUp() throws Exception {
-        System.out.println("TEST: " + VolumeTest.class.getSimpleName());
-
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
         Logging.start(Logging.LEVEL_WARN);
 

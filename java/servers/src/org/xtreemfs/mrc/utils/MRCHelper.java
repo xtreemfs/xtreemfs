@@ -128,6 +128,19 @@ public class MRCHelper {
         String volSize = null;
         try {
             volSize = String.valueOf(sMan.getVolumeInfo().getVolumeSize());
+            try {
+                // Use minimum of free space relative to the quota and free space on osds as free disk space.
+                long quota = vol.getVolumeQuota();
+                long quotaFreeSpace = quota - vol.getVolumeSize();
+                if (quota != 0 && quotaFreeSpace < Long.valueOf(free)) {
+                    quotaFreeSpace = quotaFreeSpace < 0 ? 0 : quotaFreeSpace;
+                    free = String.valueOf(quotaFreeSpace);
+                }
+            } catch (DatabaseException e) {
+                Logging.logMessage(Logging.LEVEL_WARN, Category.storage, null,
+                        "could not retrieve volume quota from database for volume '%s': %s",
+                        new Object[] { vol.getName(), e.toString() });
+            }
         } catch (DatabaseException e) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.storage, null,
                     "could not retrieve volume size from database for volume '%s': %s",
@@ -340,13 +353,9 @@ public class MRCHelper {
             case object_type:
                 String ref = sMan.getSoftlinkTarget(file.getId());
                 return ref != null ? "3" : file.isDirectory() ? "2" : "1";
-            case url: {
+            case url:
                 InetSocketAddress addr = config.getDirectoryService();
-                final String hostname = (config.getHostName().length() > 0) ? config.getHostName() : addr.getAddress()
-                        .getCanonicalHostName();
-                
-                return config.getURLScheme() + "://" + hostname + ":" + addr.getPort() + "/" + path;
-            }
+                return config.getURLScheme() + "://" + addr.getHostName() + ":" + addr.getPort() + "/" + path;
             case owner:
                 return file.getOwnerId();
             case group:
@@ -819,7 +828,7 @@ public class MRCHelper {
         
         case quota:
             if (file.getId() != 1)
-                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "quota can only be set on volumes");
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "quota must be set on volume root");
 
             sMan.getVolumeInfo().setVolumeQuota((long) Long.valueOf(value), update);
 

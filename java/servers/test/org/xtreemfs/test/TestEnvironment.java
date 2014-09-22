@@ -133,6 +133,13 @@ public class TestEnvironment {
     }
 
     /**
+     * Returns the OSD config of the first OSD.
+     */
+    public OSDConfig getOSDConfig() {
+        return osdConfigs[0];
+    }
+
+    /**
      * Stops the OSD with the UUID "osdUuid".
      * 
      * @param osdUuid

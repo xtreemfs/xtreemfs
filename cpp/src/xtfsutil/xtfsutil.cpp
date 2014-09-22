@@ -42,7 +42,7 @@ bool executeOperation(const string& xctl_file,
   Json::FastWriter writer;
   const string json_out = writer.write(request);
 
-  int fd = open(xctl_file.c_str(), O_CREAT | O_RDWR);
+  int fd = open(xctl_file.c_str(), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
   if (fd == -1) {
     cerr << "Cannot open xctl file: " << strerror(errno) << endl;
     unlink(xctl_file.c_str());
@@ -398,30 +398,20 @@ bool SetVolumeQuota(const string& xctl_file,
                   const string& path,
                   const variables_map& vm) {
 
-	const long quota = vm["set-quota"].as<long>();
+  const string quota = vm["set-quota"].as<string>();
 
-	if (path != "/") {
-		cerr << "Quota must be set on volume." << endl;
-		return false;
-	}
-
-	if (quota < 0) {
-		cerr << "The minimal quota must be 0 (was set to: " << quota << ")." << endl;
-		return false;
-	}
-
-	Json::Value request(Json::objectValue);
-	request["operation"] = "setVolumeQuota";
-	request["path"] = path;
-	request["quota"] = boost::lexical_cast<string>(quota);
-	Json::Value response;
-	if (executeOperation(xctl_file, request, &response)) {
-	    cout << "Set volume quota to " << quota << "." << endl;
-	    return true;
-	} else {
-	    cerr << "FAILED" << endl;
-	    return false;
-	}
+  Json::Value request(Json::objectValue);
+  request["operation"] = "setVolumeQuota";
+  request["path"] = path;
+  request["quota"] = quota;
+  Json::Value response;
+  if (executeOperation(xctl_file, request, &response)) {
+    cout << "Set volume quota to " << quota << "." << endl;
+    return true;
+  } else {
+    cerr << "FAILED" << endl;
+    return false;
+  }
 }
 
 // Sets the default replication policy.
@@ -705,6 +695,12 @@ bool SetOSP(const string& xctl_file,
         + ","
         + boost::lexical_cast<string>(
             xtreemfs::pbrpc::OSD_SELECTION_POLICY_SORT_VIVALDI);
+  } else if (policy_uc == "ROUNDROBIN") {
+      request["policy"] = boost::lexical_cast<string>(
+          xtreemfs::pbrpc::OSD_SELECTION_POLICY_FILTER_DEFAULT)
+          + ","
+          + boost::lexical_cast<string>(
+              xtreemfs::pbrpc::OSD_SELECTION_POLICY_SORT_HOST_ROUND_ROBIN);
   } else {
     request["policy"] = policy;
   }
@@ -1072,8 +1068,8 @@ int main(int argc, char **argv) {
        "adds/modifies an ACL entry, format: u|g|m|o:[<name>]:[<rwx>|<octal>]")
       ("del-acl", value<string>(),
        "removes an ACL entry, format: u|g|m|o:<name>")
-      ("set-quota", value<long>(),
-       "sets the volume quota in bytes (set quota to 0 to disable the quota)");
+      ("set-quota", value<string>(),
+       "sets the volume quota in bytes (set quota to 0 to disable the quota), format: <value>M|G|T");
 
   options_description snapshot_desc("Snapshot Options");
   snapshot_desc.add_options()

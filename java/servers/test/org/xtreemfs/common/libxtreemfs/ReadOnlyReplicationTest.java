@@ -11,7 +11,9 @@ import java.io.IOException;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.foundation.logging.Logging;
@@ -19,12 +21,12 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.FSUtils;
-import org.xtreemfs.mrc.osdselection.OSDSelectionPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDSelectionPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 /**
  * Read a partial replica "simultaneously" by two threads.
@@ -37,6 +39,9 @@ import org.xtreemfs.test.TestEnvironment;
  * 
  */
 public class ReadOnlyReplicationTest {
+    @Rule
+    public final TestRule               testLog = TestHelper.testLog;
+
     private static TestEnvironment      testEnv;
 
     private static UserCredentials      userCredentials;
@@ -53,8 +58,6 @@ public class ReadOnlyReplicationTest {
 
     @BeforeClass
     public static void initializeTest() throws Exception {
-        System.out.println("TEST: " + ReadOnlyReplicationTest.class.getSimpleName());
-
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
         Logging.start(Logging.LEVEL_WARN);
 
@@ -77,7 +80,7 @@ public class ReadOnlyReplicationTest {
     }
 
     @AfterClass
-    public static void tearDown() throws Exception {
+    public static void shutdownTest() throws Exception {
         testEnv.shutdown();
 
         client.shutdown();

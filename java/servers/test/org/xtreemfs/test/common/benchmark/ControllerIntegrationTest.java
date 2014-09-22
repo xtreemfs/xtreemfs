@@ -1,9 +1,10 @@
 package org.xtreemfs.test.common.benchmark;
 
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
-import static org.xtreemfs.common.benchmark.BenchmarkConfig.ConfigBuilder;
-import static org.xtreemfs.common.benchmark.BenchmarkUtils.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.xtreemfs.common.benchmark.BenchmarkUtils.KiB_IN_BYTES;
+import static org.xtreemfs.common.benchmark.BenchmarkUtils.MiB_IN_BYTES;
 import static org.xtreemfs.foundation.pbrpc.client.RPCAuthentication.authNone;
 
 import java.io.IOException;
@@ -12,9 +13,23 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.*;
-import org.xtreemfs.common.benchmark.*;
-import org.xtreemfs.common.libxtreemfs.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestRule;
+import org.xtreemfs.common.benchmark.BenchmarkConfig;
+import org.xtreemfs.common.benchmark.BenchmarkConfig.ConfigBuilder;
+import org.xtreemfs.common.benchmark.BenchmarkResult;
+import org.xtreemfs.common.benchmark.BenchmarkUtils;
+import org.xtreemfs.common.benchmark.BenchmarkUtils.BenchmarkType;
+import org.xtreemfs.common.benchmark.Controller;
+import org.xtreemfs.common.libxtreemfs.Client;
+import org.xtreemfs.common.libxtreemfs.ClientFactory;
+import org.xtreemfs.common.libxtreemfs.Options;
+import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.dir.DIRConfig;
@@ -30,8 +45,11 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 public class ControllerIntegrationTest {
+    @Rule
+    public final TestRule               testLog        = TestHelper.testLog;
 
     private static DIRRequestDispatcher   dir;
     private static TestEnvironment        testEnv;
@@ -50,7 +68,7 @@ public class ControllerIntegrationTest {
     private Client                        client;
 
     @BeforeClass
-    public static void setUpClass() throws Exception {
+    public static void initializeTest() throws Exception {
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
         Logging.start(Logging.LEVEL_WARN, Logging.Category.tool);
 
@@ -96,7 +114,7 @@ public class ControllerIntegrationTest {
     }
 
     @AfterClass
-    public static void tearDownClass() throws Exception {
+    public static void shutdownTest() throws Exception {
 
         for (int i = 0; i < osds.length; i++) {
             if (osds[i] != null) {
@@ -444,12 +462,12 @@ public class ControllerIntegrationTest {
          * after the teardown (which includes the deletion of the benchmark volumes and files), only the volumes are
          * present
          */
-        assertSame(0, Integer.valueOf(volumeA.getXAttr(userCredentials, "", "xtreemfs.num_files")));
-        assertSame(0, Integer.valueOf(volumeB.getXAttr(userCredentials, "", "xtreemfs.num_files")));
-        assertSame(0, Integer.valueOf(volumeC.getXAttr(userCredentials, "", "xtreemfs.num_files")));
-        assertSame(0, Integer.valueOf(volumeA.getXAttr(userCredentials, "", "xtreemfs.used_space")));
-        assertSame(0, Integer.valueOf(volumeB.getXAttr(userCredentials, "", "xtreemfs.used_space")));
-        assertSame(0, Integer.valueOf(volumeC.getXAttr(userCredentials, "", "xtreemfs.used_space")));
+        assertEquals(0, (int) Integer.valueOf(volumeA.getXAttr(userCredentials, "", "xtreemfs.num_files")));
+        assertEquals(0, (int) Integer.valueOf(volumeB.getXAttr(userCredentials, "", "xtreemfs.num_files")));
+        assertEquals(0, (int) Integer.valueOf(volumeC.getXAttr(userCredentials, "", "xtreemfs.num_files")));
+        assertEquals(0, (int) Integer.valueOf(volumeA.getXAttr(userCredentials, "", "xtreemfs.used_space")));
+        assertEquals(0, (int) Integer.valueOf(volumeB.getXAttr(userCredentials, "", "xtreemfs.used_space")));
+        assertEquals(0, (int) Integer.valueOf(volumeC.getXAttr(userCredentials, "", "xtreemfs.used_space")));
         deleteVolumes("BenchVolA", "BenchVolB", "BenchVolC");
     }
 
@@ -481,7 +499,7 @@ public class ControllerIntegrationTest {
          * still present
          */
         assertEquals(basefileSize, volume.getAttr(userCredentials, "benchmarks/basefile").getSize());
-        assertSame(1, Integer.valueOf(volume.getXAttr(userCredentials, "", "xtreemfs.num_files")));
+        assertEquals(1, (int) Integer.valueOf(volume.getXAttr(userCredentials, "", "xtreemfs.num_files")));
         assertEquals(basefileSize, (int) Integer.valueOf(volume.getXAttr(userCredentials, "", "xtreemfs.used_space")));
     }
 
@@ -503,8 +521,8 @@ public class ControllerIntegrationTest {
             String benchmarkType = result.getBenchmarkType().toString();
             assertEquals(type, benchmarkType);
             assertEquals(threads, result.getNumberOfReadersOrWriters());
-            assertEquals(size, result.getDataRequestedInBytes());
-            assertEquals(size, result.getByteCount());
+            assertEquals(size, result.getRequestedSize());
+            assertEquals(size, result.getActualSize());
         }
         assertEquals(numberOfResults, resultCounter);
     }
@@ -535,14 +553,4 @@ public class ControllerIntegrationTest {
             client.deleteVolume(auth, userCredentials, volumeName);
         }
     }
-
-    private void printResults(List<BenchmarkResult> results) {
-        System.err.println("Type\t\t\tThreads\t\tTime\tSpeed\tRequested\t\tCount");
-        for (BenchmarkResult res : results) {
-            System.err.println(res.getBenchmarkType() + "\t\t" + res.getNumberOfReadersOrWriters() + "\t\t\t"
-                    + res.getTimeInSec() + "\t" + res.getSpeedInMiBPerSec() + "\t" + res.getDataRequestedInBytes()
-                    + "\t\t" + res.getByteCount());
-        }
-    }
-
 }

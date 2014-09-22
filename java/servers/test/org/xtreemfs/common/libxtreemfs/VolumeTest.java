@@ -19,7 +19,9 @@ import java.util.List;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.libxtreemfs.Volume.StripeLocation;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
@@ -57,8 +59,11 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.statvfsRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 public class VolumeTest {
+    @Rule
+    public final TestRule               testLog     = TestHelper.testLog;
 
     private static DIRRequestDispatcher dir;
 
@@ -91,8 +96,6 @@ public class VolumeTest {
 
     @BeforeClass
     public static void initializeTest() throws Exception {
-        System.out.println("TEST: " + VolumeTest.class.getSimpleName());
-
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
 
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
@@ -135,7 +138,7 @@ public class VolumeTest {
     }
 
     @AfterClass
-    public static void tearDown() throws Exception {
+    public static void shutdownTest() throws Exception {
         for (int i = 0; i < osds.length; i++) {
             if (osds[i] != null) {
                 osds[i].shutdown();
