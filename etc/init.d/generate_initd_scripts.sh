@@ -38,3 +38,18 @@ do
   sed -i -e "s|@LONG_SERVICE_NAME@|${long_service_name}|g" "$initd_file"
   sed -i -e "s|@SHOULD_START@|${should_start}|g" "$initd_file"
 done
+
+service=scheduler
+short_service_name_lowercase=scheduler
+short_service_name_uppercase=Scheduler
+long_service_name=scheduler
+
+initd_file="${script_directory}/xtreemfs-${service}"
+cp "${script_directory}/${template_file}" "$initd_file"
+chmod a+x "$initd_file"
+
+sed -i -e "s|@SHORT_SERVICE_NAME@|${short_service_name_uppercase}|g" "$initd_file"
+sed -i -e "s|@SHORT_SERVICE_NAME_LOWERCASE@|${short_service_name_lowercase}|g" "$initd_file"
+sed -i -e "s|@LONG_SERVICE_NAME@|${long_service_name}|g" "$initd_file"
+sed -i -e "s|@SHOULD_START@|${should_start}|g" "$initd_file"
+
