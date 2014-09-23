@@ -28,8 +28,8 @@
  *
  * Data layout of example tree:
  * ============================
- * #0  #1    #2  #3    #4  #5     #6  #7     #8  #9    #10 #11   #12 #13     #14
- * 0.0|0.1 ||1.0|1.1|| 0.2|0.3 |||2.0|2.1||| 0.4|0.5 ||1.2|1.3|| 0.6|0.7 ||||3.0
+ * #14/-1  #0  #1    #2  #3    #4  #5     #6  #7     #8  #9    #10 #11   #12 #13
+ * 3.0|||| 0.0|0.1 ||1.0|1.1|| 0.2|0.3 |||2.0|2.1||| 0.4|0.5 ||1.2|1.3|| 0.6|0.7
  */
 
 #include "libxtreemfs/hash_tree_ad.h"
@@ -111,13 +111,14 @@ HashTreeAD::Node::Node(int level, int n)
 /**
  * @param node_number   The node number. If bigger than the max node number,
  *                      the root node gets constructed.
+ *                      -1 for root node.
  */
 HashTreeAD::Node::Node(int node_number, const HashTreeAD* tree)
     : level(0) {
-  assert(node_number >= 0);
+  assert(node_number >= -1);
 
   // special case for root node
-  if (node_number >= tree->max_node_number_) {
+  if (node_number >= tree->max_node_number_ || node_number == -1) {
     level = tree->max_level_;
     n = 0;
     return;
@@ -398,8 +399,7 @@ void HashTreeAD::FinishTruncate(
     const xtreemfs::pbrpc::UserCredentials& user_credentials) {
   assert(state_ == 2);
   UpdateTree(-1, -1, std::min(old_max_leaf_, max_leaf_number_));
-  meta_file_->Truncate(user_credentials,
-                       GetNodeStartInBytes(max_node_number_ + 1));
+  meta_file_->Truncate(user_credentials, GetNodeStartInBytes(max_node_number_));
   WriteNodesToFile();
   state_ = 0;
 }
@@ -473,27 +473,24 @@ void HashTreeAD::ChangeSize(int max_leaf_number) {
   Node node_to_move(0, 0);
   if (max_leaf_number > old_max_leaf_) {
     int old_max_node_number = max_node_number_;
-    if (old_max_leaf_ >= 0 && !IsPowerOfTwo(old_max_leaf_ + 1)) {
-      // old tree was incomplete
-      int r = LeastSignificantBitUnset(old_max_leaf_);
-      if (r > 0) {
-        // move node downwards
-        move_node = true;
-        node_to_move = Node(0, old_max_leaf_).Parent(this, r);
+    if (old_max_leaf_ >= 0) {
+      // old tree was more then just the root
+      if (old_max_leaf_ != 0 && IsPowerOfTwo(old_max_leaf_ + 1)) {
+        // old tree was complete
+        // store old root hash in the now normal node
+        // TODO(plieser): change if layout is different from normal node.
+        changed_nodes_ += old_max_node_number;
+      } else {
+        // old tree was incomplete
+        int r = LeastSignificantBitUnset(old_max_leaf_);
+        if (r > 0) {
+          // move node downwards
+          move_node = true;
+          node_to_move = Node(0, old_max_leaf_).Parent(this, r);
+        }
       }
     }
     SetSize(max_leaf_number);
-    if (old_max_leaf_ >= 0
-        && (!IsPowerOfTwo(old_max_leaf_ + 1) || old_max_leaf_ == 0)) {
-      // old tree was incomplete
-      // overwrite old root node in meta file with 0
-      // TODO(plieser): overwrite old root node if layout is different from
-      //                normal node.
-      Node tmp_node = Node(old_max_node_number, this);
-      std::vector<unsigned char> leaf_value(NodeSize(tmp_node.level));
-      nodes_[tmp_node] = leaf_value;
-      changed_nodes_ += old_max_node_number;
-    }
     if (move_node) {
       Node tmp_node = Node(0, old_max_leaf_).Parent(
           this, LeastSignificantBitUnset(old_max_leaf_));
@@ -516,6 +513,10 @@ void HashTreeAD::ChangeSize(int max_leaf_number) {
           this, LeastSignificantBitUnset(max_leaf_number));
       nodes_[tmp_node] = nodes_.at(node_to_move);
       changed_nodes_ += tmp_node.NodeNumber(this);
+    } else if (max_leaf_number >= 1 && IsPowerOfTwo(max_leaf_number + 1)) {
+      // new tree is more then just the root and complete
+      // store new root hash in the root node
+      // TODO(plieser): change if layout is different from normal node.
     }
   }
 }
@@ -553,11 +554,17 @@ void HashTreeAD::ReadNodesFromFile(boost::icl::interval_set<int> nodeNumbers) {
   boost::scoped_array<char> buffer;
   int buffer_size = 0;
 
+  // root node is at the beginning of the file
+  if (boost::icl::contains(nodeNumbers, max_node_number_)) {
+    nodeNumbers -= max_node_number_;
+    nodeNumbers += -1;
+  }
+
   BOOST_FOREACH(
       boost::icl::interval_set<int>::interval_type range,
       nodeNumbers) {
-    int read_start = GetNodeStartInBytes(range.lower());
-    int read_end = GetNodeStartInBytes(range.upper() + 1);
+    int read_start = GetNodeStartInBytes(boost::icl::first(range));
+    int read_end = GetNodeStartInBytes(boost::icl::last(range) + 1);
     int read_size = read_end - read_start;
     int read_count = 0;
     if (buffer_size < read_size) {
@@ -566,7 +573,7 @@ void HashTreeAD::ReadNodesFromFile(boost::icl::interval_set<int> nodeNumbers) {
     int bytes_read = meta_file_->Read(buffer.get(), read_size, read_start);
     assert(bytes_read == read_size);
 
-    for (int i = range.lower(); i <= range.upper(); i++) {
+    for (int i = boost::icl::first(range); i <= boost::icl::last(range); i++) {
       Node node(i, this);
       int node_size = NodeSize(node.level);
       nodes_.insert(
@@ -585,12 +592,17 @@ void HashTreeAD::ReadNodesFromFile(boost::icl::interval_set<int> nodeNumbers) {
  * Writes changed nodes to meta file.
  */
 void HashTreeAD::WriteNodesToFile() {
+  // root node is at the beginning of the file
+  assert(boost::icl::contains(changed_nodes_, max_node_number_));
+  changed_nodes_.subtract(max_node_number_);
+  changed_nodes_ += -1;
+
   BOOST_FOREACH(
       boost::icl::interval_set<int>::interval_type range,
       changed_nodes_) {
-    int write_start = GetNodeStartInBytes(range.lower());
+    int write_start = GetNodeStartInBytes(boost::icl::first(range));
     std::vector<char> buffer;
-    for (int i = range.lower(); i <= range.upper(); i++) {
+    for (int i = boost::icl::first(range); i <= boost::icl::last(range); i++) {
       Node node(i, this);
       buffer.insert(buffer.end(), nodes_[node].begin(), nodes_[node].end());
     }
@@ -856,11 +868,13 @@ std::vector<unsigned char> HashTreeAD::HashOfNode(Node left_child,
  * @return The start of the node in bytes.
  */
 int HashTreeAD::GetNodeStartInBytes(int node_number) {
-  if (node_number > max_node_number_) {
-    return GetNodeStartInBytes(max_node_number_) + NodeSize(max_level_);
+  assert(node_number >= -1);
+  assert(node_number <= max_node_number_);
+  if (node_number == -1) {
+    return 0;
   }
 
-  int start = 0;
+  int start = NodeSize(max_level_);
   int level = 0;
   int x;
   while ((x = NumberOfNodes(level, node_number))) {
