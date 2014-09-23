@@ -454,6 +454,17 @@ public class MRCHelper {
                     return "";
                 
                 return Converter.replicationPolicyToJSONString(rp);
+
+            case tracing_enabled:
+                return file.getId() == 1 && sMan.getVolumeInfo().isTracingEnabled() ? String.valueOf(true) : "";
+
+            case trace_target:
+                return file.getId() == 1 && sMan.getVolumeInfo().isTracingEnabled() ?
+                        sMan.getVolumeInfo().getTraceTarget() : "";
+
+            case tracing_policy:
+                return file.getId() == 1 && sMan.getVolumeInfo().isTracingEnabled() ?
+                        sMan.getVolumeInfo().getTracingPolicy() : "";
             }
         }
         
