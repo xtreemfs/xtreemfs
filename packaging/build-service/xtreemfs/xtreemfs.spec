@@ -11,12 +11,12 @@ Summary:        XtreemFS base package
 Source0:        XtreemFS-%{version}.tar.gz
 
 #requires for any distribution
-%if 0%{?sles_version} == 10 || 0%{?fedora_version} >= 20
+%if 0%{?sles_version} == 10 || 0%{?fedora_version} >= 20 || 0%{?rhel_version} >= 700
 # no need for ant-nodeps for SLE 10
 %else
 BuildRequires:  ant-nodeps >= 1.6.5
 %endif
-BuildRequires:  ant >= 1.6.5 ant-apache-regexp >= 1.6.5 java-devel >= 1.6.0
+BuildRequires:  ant >= 1.6.5 java-devel >= 1.6.0
 # Client dependencies.
 BuildRequires:  gcc-c++ >= 4.1 fuse >= 2.6 fuse-devel >= 2.6 openssl-devel >= 0.9.8 cmake >= 2.6 boost-devel >= 1.35 libattr-devel >= 2
 
