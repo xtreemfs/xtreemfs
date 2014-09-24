@@ -18,9 +18,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Christoph Kleineweber <kleineweber@zib.de>
@@ -288,5 +286,35 @@ public class WeightedFairQueueTest {
         System.out.println("Weight 2: " + count2);
         assertTrue(count2 > count1);
         assertTrue(count1 > 10);
+    }
+
+    @Test
+    public void testMultitenantProportions() throws Exception {
+        int count1 = 0;
+        int count2 = 0;
+        int count3 = 0;
+
+        for(int i = 1; i < capacity / 3; i++) {
+            assertTrue(queue.add(1));
+            assertTrue(queue.add(2));
+            assertTrue(queue.add(3));
+        }
+
+        for(int i = 0; i < capacity / 3; i++) {
+            int x = queue.take();
+            if(x == 1)
+                count1++;
+            if(x == 2)
+                count2++;
+            if(x == 3)
+                count3++;
+        }
+
+        System.out.println("Weight 1: " + count1);
+        System.out.println("Weight 2: " + count2);
+        System.out.println("Weight 3: " + count3);
+        assertTrue(count3 > count2);
+        assertTrue(count2 > count1);
+        assertTrue(count1 > 0);
     }
 }
