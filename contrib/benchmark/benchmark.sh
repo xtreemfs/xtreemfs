@@ -174,7 +174,7 @@ prepare_seq_read(){
   for i in $(seq 1 $threads); do
     local index=$(echo "$i-1"|bc)
     timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -sw -ssize $1 --no-cleanup --user $USER \
-      ${VOLUMES[$index]}
+      ${VOLUMES[$index]} --stripe-size $CHUNKSIZE --chunk-size $CHUNKSIZE
   done
 }
 
@@ -193,7 +193,7 @@ prepare_random(){
   for i in $(seq 1 $threads); do
     local index=$(echo "$i-1"|bc)
     timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -rr -rsize $CHUNKSIZE --no-cleanup-basefile --no-cleanup-volumes --user $USER \
-      --basefile-size $basefile_size ${VOLUMES[$index]}
+      --basefile-size $basefile_size ${VOLUMES[$index]} --stripe-size $CHUNKSIZE --chunk-size $CHUNKSIZE
   done
 }
 
@@ -203,14 +203,16 @@ run_benchmark(){
   local size=$2
   local threads=$3
   if [ $benchType = "sr" ]; then
-    XTREEMFS=$XTREEMFS timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -ssize $size -n $threads --no-cleanup-volumes --user $USER
+    XTREEMFS=$XTREEMFS timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -ssize $size -n $threads --no-cleanup-volumes --user $USER \
+      --stripe-size $CHUNKSIZE --chunk-size $CHUNKSIZE
   elif [ $benchType = "sw" ]; then
-    XTREEMFS=$XTREEMFS timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -ssize $size -n $threads --user $USER
+    XTREEMFS=$XTREEMFS timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -ssize $size -n $threads --user $USER \
+      --stripe-size $CHUNKSIZE --chunk-size $CHUNKSIZE
   elif [ $benchType = "rw" ] || [ $benchType = "rr" ]; then
     # calc basefile size and round to a number divideable through CHUNKSIZE
     local basefile_size=$(echo "(($BASEFILE_SIZE/$threads)/$CHUNKSIZE)*$CHUNKSIZE" | bc)
     XTREEMFS=$XTREEMFS timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -rsize $size --basefile-size $basefile_size -n $threads \
-      --no-cleanup-basefile --no-cleanup-volumes --user $USER
+      --no-cleanup-basefile --no-cleanup-volumes --user $USER --stripe-size $CHUNKSIZE --chunk-size $CHUNKSIZE
   fi
 
   local bench_exit_status=$?
@@ -350,7 +352,7 @@ for i in $THREADS; do
 
   if [ $TYPE = "sr" ]; then
     prepare_seq_read $size $i
-    cleanup_osd18:30
+    cleanup_osd
   elif [ $TYPE = "rw" ] || [ $TYPE = "rr" ]; then
     prepare_random $i
   fi
