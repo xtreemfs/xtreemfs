@@ -282,7 +282,8 @@ HashTreeAD::HashTreeAD(int leaf_adata_size, Options volume_options)
       end_leaf_(0),
       old_max_leaf_(0),
       meta_file_(),
-      hasher_(volume_options.encryption_hash) {
+      hasher_(volume_options.encryption_hash),
+      sign_algo_(std::auto_ptr<AsymKey>(NULL), volume_options.encryption_hash) {
 }
 
 HashTreeAD::~HashTreeAD() {
@@ -291,9 +292,11 @@ HashTreeAD::~HashTreeAD() {
   }
 }
 
-void HashTreeAD::Init(FileHandle* meta_file, int max_leaf_number) {
+void HashTreeAD::Init(FileHandle* meta_file, int max_leaf_number,
+                      std::auto_ptr<AsymKey> sign_key) {
   meta_file_ = meta_file;
   SetSize(max_leaf_number);
+  sign_algo_.set_key(sign_key);
 }
 
 /**
@@ -478,7 +481,6 @@ void HashTreeAD::ChangeSize(int max_leaf_number) {
       if (old_max_leaf_ != 0 && IsPowerOfTwo(old_max_leaf_ + 1)) {
         // old tree was complete
         // store old root hash in the now normal node
-        // TODO(plieser): change if layout is different from normal node.
         changed_nodes_ += old_max_node_number;
       } else {
         // old tree was incomplete
@@ -513,10 +515,6 @@ void HashTreeAD::ChangeSize(int max_leaf_number) {
           this, LeastSignificantBitUnset(max_leaf_number));
       nodes_[tmp_node] = nodes_.at(node_to_move);
       changed_nodes_ += tmp_node.NodeNumber(this);
-    } else if (max_leaf_number >= 1 && IsPowerOfTwo(max_leaf_number + 1)) {
-      // new tree is more then just the root and complete
-      // store new root hash in the root node
-      // TODO(plieser): change if layout is different from normal node.
     }
   }
 }
@@ -715,7 +713,22 @@ boost::icl::interval_set<int> HashTreeAD::RequiredNodesForWrite(
  * @throws XtreemFSException    If stored hash tree is invalid.
  */
 void HashTreeAD::ValidateTree() {
-  // TODO(plieser): validate siganture of root hash
+  // only validate tree if it exist
+  if (max_node_number_ == -1) {
+    return;
+  }
+
+  // validate signature of root node and remove it
+  Node root(max_level_, 0);
+  if (!sign_algo_.Verify(
+      boost::asio::buffer(nodes_[root], hasher_.digest_size()),
+      boost::asio::buffer(nodes_[root].data() + hasher_.digest_size(),
+                          sign_algo_.get_signature_size()))) {
+    throw XtreemFSException("Invalid signature of root node");
+  }
+  nodes_[root].resize(hasher_.digest_size());
+
+  // special case for empty file
   if (max_node_number_ == 0) {
     std::vector<unsigned char> stored_hash = nodes_.at(Node(0, 0));
     std::vector<unsigned char> calc_hash = hasher_.digest(
@@ -830,7 +843,12 @@ void HashTreeAD::UpdateTree(int start_leaf, int end_leaf, int max_leaf) {
   }
   changed_nodes_ += max_node_number_;
 
-  // TODO(plieser): sign root node
+  // sign root node
+  nodes_[root].resize(NodeSize(max_level_));
+  sign_algo_.Sign(
+      boost::asio::buffer(nodes_[root], hasher_.digest_size()),
+      boost::asio::buffer(nodes_[root].data() + hasher_.digest_size(),
+                          sign_algo_.get_signature_size()));
 }
 
 /**
@@ -909,8 +927,7 @@ int HashTreeAD::NodeSize(int level) {
   assert(level <= max_level_);
 
   if (level == max_level_) {
-    // TODO(plieser): size of root node
-    return hasher_.digest_size();
+    return hasher_.digest_size() + sign_algo_.get_signature_size();
   } else if (level == 0) {
     return hasher_.digest_size() + leaf_adata_size_;
   } else {

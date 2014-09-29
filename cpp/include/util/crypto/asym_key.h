@@ -13,16 +13,21 @@
 #include <boost/asio/ssl/detail/openssl_init.hpp>
 #include <boost/noncopyable.hpp>
 #include <string>
+#include <vector>
 
 namespace xtreemfs {
 
 class AsymKey : private boost::noncopyable {
  public:
-  explicit AsymKey(std::string alg_name, int bits = 0);
+  AsymKey(std::string alg_name, int bits = 0);
+
+  explicit AsymKey(std::vector<unsigned char> encoded_key);
 
   explicit AsymKey(EVP_PKEY* key);
 
   ~AsymKey();
+
+  std::vector<unsigned char> GetDEREncodedKey();
 
   EVP_PKEY* get_key();
 

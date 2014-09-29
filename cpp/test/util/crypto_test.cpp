@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "util/crypto/asym_key.h"
+#include "util/crypto/base64.h"
 #include "util/crypto/cipher.h"
 #include "util/crypto/sign_algorithm.h"
 #include "util/logging.h"
@@ -65,6 +66,19 @@ TEST_F(CryptoTest, Signature_RSA) {
   msg[0] = 'm';
   EXPECT_FALSE(
       signAlgo.Verify(boost::asio::buffer(msg), boost::asio::buffer(sig)));
+}
+
+TEST_F(CryptoTest, Base64) {
+  Base64Encoder encoder;
+  std::string msg("Message to sign");
+  std::string tmp;
+
+  std::string encoded_msg = encoder.Encode(boost::asio::buffer(msg));
+  std::vector<unsigned char> decoded_msg = encoder.Decode(
+      boost::asio::buffer(encoded_msg));
+
+  tmp = std::string(decoded_msg.begin(), decoded_msg.end());
+  EXPECT_TRUE(msg.compare(tmp));
 }
 
 }  // namespace xtreemfs

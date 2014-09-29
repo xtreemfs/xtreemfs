@@ -16,24 +16,18 @@ using xtreemfs::util::LogAndThrowOpenSSLError;
 
 namespace xtreemfs {
 
-SignAlgorithm::SignAlgorithm(std::auto_ptr<AsymKey> key, std::string alg_name)
-    : key_(key) {
+SignAlgorithm::SignAlgorithm(std::auto_ptr<AsymKey> key, std::string alg_name) {
   if ((md_ = EVP_get_digestbyname(alg_name.c_str())) == NULL) {
     LogAndThrowOpenSSLError();
   }
 
-  RSA* rsa_key = EVP_PKEY_get1_RSA(key_.get()->get_key());
-
-  BOOST_SCOPE_EXIT(&rsa_key) {
-    /* Clean up */
-      RSA_free(rsa_key);
-    }
-  BOOST_SCOPE_EXIT_END
-
-  signature_size_ = RSA_size(rsa_key);
+  if (key.get() != NULL) {
+    set_key(key);
+  }
 }
 
-std::vector<unsigned char> SignAlgorithm::Sign(boost::asio::const_buffer data) {
+void SignAlgorithm::Sign(boost::asio::const_buffer data,
+                         boost::asio::mutable_buffer sig) {
   EVP_MD_CTX* mdctx;
   size_t slen;
 
@@ -67,13 +61,19 @@ std::vector<unsigned char> SignAlgorithm::Sign(boost::asio::const_buffer data) {
   if (1 != EVP_DigestSignFinal(mdctx, NULL, &slen)) {
     LogAndThrowOpenSSLError();
   }
-  assert(slen == signature_size_);
-  std::vector<unsigned char> sig(slen);
+  assert(slen == boost::asio::buffer_size(sig));
   /* Obtain the signature */
-  if (1 != EVP_DigestSignFinal(mdctx, sig.data(), &slen)) {
+  if (1
+      != EVP_DigestSignFinal(mdctx,
+                             boost::asio::buffer_cast<unsigned char*>(sig),
+                             &slen)) {
     LogAndThrowOpenSSLError();
   }
+}
 
+std::vector<unsigned char> SignAlgorithm::Sign(boost::asio::const_buffer data) {
+  std::vector<unsigned char> sig(signature_size_);
+  Sign(data, boost::asio::buffer(sig));
   return sig;
 }
 
@@ -122,6 +122,21 @@ bool SignAlgorithm::Verify(boost::asio::const_buffer data,
  */
 int SignAlgorithm::get_signature_size() {
   return signature_size_;
+}
+
+void SignAlgorithm::set_key(std::auto_ptr<AsymKey> key) {
+  assert(key.get() != NULL);
+  key_ = key;
+
+  RSA* rsa_key = EVP_PKEY_get1_RSA(key_.get()->get_key());
+
+  BOOST_SCOPE_EXIT(&rsa_key) {
+    /* Clean up */
+      RSA_free(rsa_key);
+    }
+  BOOST_SCOPE_EXIT_END
+
+  signature_size_ = RSA_size(rsa_key);
 }
 
 } /* namespace xtreemfs */

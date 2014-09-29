@@ -22,11 +22,15 @@ class SignAlgorithm {
  public:
   SignAlgorithm(std::auto_ptr<AsymKey> key, std::string alg_name);
 
+  void Sign(boost::asio::const_buffer data, boost::asio::mutable_buffer sig);
+
   std::vector<unsigned char> Sign(boost::asio::const_buffer data);
 
   bool Verify(boost::asio::const_buffer data, boost::asio::mutable_buffer sig);
 
   int get_signature_size();
+
+  void set_key(std::auto_ptr<AsymKey> key);
 
  private:
   const EVP_MD* md_;

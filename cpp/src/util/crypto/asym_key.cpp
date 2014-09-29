@@ -8,6 +8,7 @@
 
 #include <boost/scope_exit.hpp>
 #include <string>
+#include <vector>
 
 #include "util/crypto/openssl_error.h"
 
@@ -55,6 +56,15 @@ AsymKey::AsymKey(std::string alg_name, int bits) {
 }
 
 /**
+ * Constructs an asymmetric key from a DER encoded key.
+ * @param key
+ */
+AsymKey::AsymKey(std::vector<unsigned char> encoded_key) {
+  const unsigned char* p_encoded_key = encoded_key.data();
+  key_ = d2i_AutoPrivateKey(NULL, &p_encoded_key, encoded_key.size());
+}
+
+/**
  * Constructs an asymmetric key from an EVP_PKEY structure.
  * @param key
  */
@@ -65,6 +75,15 @@ AsymKey::AsymKey(EVP_PKEY* key)
 AsymKey::~AsymKey() {
   EVP_PKEY_free(key_);
 }
+
+std::vector<unsigned char> AsymKey::GetDEREncodedKey() {
+  int len = i2d_PrivateKey(key_, NULL);
+  std::vector<unsigned char> buffer(len);
+  unsigned char* p_buffer = buffer.data();
+  i2d_PrivateKey(key_, &p_buffer);
+  return buffer;
+}
+
 EVP_PKEY* AsymKey::get_key() {
   return key_;
 }

@@ -15,6 +15,7 @@
 #include "libxtreemfs/file_handle.h"
 #include "libxtreemfs/options.h"
 #include "util/crypto/message_digest.h"
+#include "util/crypto/sign_algorithm.h"
 #include "xtreemfs/GlobalTypes.pb.h"
 
 namespace xtreemfs {
@@ -29,7 +30,8 @@ class HashTreeAD {
 
   ~HashTreeAD();
 
-  void Init(FileHandle* meta_file, int max_leaf_number);
+  void Init(FileHandle* meta_file, int max_leaf_number,
+            std::auto_ptr<AsymKey> sign_key);
 
   void StartRead(int start_leaf, int end_leaf);
 
@@ -201,6 +203,8 @@ class HashTreeAD {
   FileHandle* meta_file_;
 
   MessageDigest hasher_;
+
+  SignAlgorithm sign_algo_;
 };
 
 } /* namespace xtreemfs */

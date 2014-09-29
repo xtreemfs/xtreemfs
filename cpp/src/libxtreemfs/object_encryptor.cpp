@@ -16,6 +16,8 @@
 
 #include "xtreemfs/GlobalTypes.pb.h"
 #include "libxtreemfs/xtreemfs_exception.h"
+#include "util/crypto/asym_key.h"
+#include "util/crypto/base64.h"
 
 namespace xtreemfs {
 
@@ -60,6 +62,26 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
   // TODO(plieser): file enc key
   std::string key_str = "01234567890123456789012345678901";
   file_enc_key_ = std::vector<unsigned char>(key_str.begin(), key_str.end());
+  // TODO(plieser): file sign key
+  std::string encoded_file_sign_key =
+      "MIICXgIBAAKBgQDHo3StkYya5L/T3/ZIGTdmt347cwldwxKO3uAA8iBlG+dowht8"
+          "NHfar0hT61HnRVsH5tcmGB2r9HT4EhAFlrO9vT8QaQrQL6cX5f731YsOeYlC6gAz"
+          "azWROnc2/jt5b9vcS4DlV6nz4ud8PEH9SkhtC4CdaWxWH03AoSEyVC0vBwIDAQAB"
+          "AoGBAL6fK7zDmn8X5ra3ReEn+sdgc+7t88aMij7TPw6IIziIAVj85uOc8chkz+oZ"
+          "atYqWjZcS5j7M/HJ9JoeHSBI+ouEGG/roTXlpzOr9U30qlQYi4WIOHscZGxd+/3y"
+          "d1XwwQkkLaJOGp1meOLRMasfSIlpVA6c1EDu2ANVx6hoUkBpAkEA7+jIfRNQul+A"
+          "ko0Ds3lCbd5o5JELMP+paMGvls9XwLc9np//C0OPMdmSKz+dRxOQ66YvWjT5mThI"
+          "roFoRQIvxQJBANUHOifHucAybmyDvt5w0ZoDj0jXRU1nNfV8tsV21w1qTCfai1uD"
+          "JpUSLhUZJvfnkQb4WOwCj3Swd1KbNv9cpFsCQQCxvmrD2Aqoelc8vMMwNjfURMK8"
+          "DQYYoGI4Hb/k4Otn+ZrqqimAg+ZUjZiw+CmjXkixfmd40uTV8xBOUcwZzJvtAkBY"
+          "ArhgHv/7C9rbMkL1G589BiN4cJfNNsrwNSo9wq9ud3AnNv9EO5cBF5W6Wb3jxeQB"
+          "ATGbsCMcjpt9oWrDbb7pAkEA3YDyrjg6/Nrr2Q/mi2nIib6HJ3BEG2ds16VYAsKQ"
+          "7E8Bd+fRvCvM1ZLuuaJMkPNL9jkPX/11qB8g7HOtHtA3/Q==";
+  Base64Encoder b64Encoder;
+  std::auto_ptr<AsymKey> file_sign_key(
+      new AsymKey(
+          b64Encoder.Decode(boost::asio::buffer(encoded_file_sign_key))));
+
   xtreemfs::pbrpc::Stat stat;
   file_info_->GetAttr(user_credentials, &stat);
   // TODO(plieser): file_size_ must be a trustable input (needed for read behind
@@ -104,7 +126,7 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
               0777);
     }
   }
-  hash_tree_.Init(meta_file, max_leaf);
+  hash_tree_.Init(meta_file, max_leaf, file_sign_key);
 }
 
 void ObjectEncryptor::StartRead(int64_t offset, int count) {
