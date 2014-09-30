@@ -41,6 +41,8 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
     
     private static final String     FREE_CAPACITY_BYTES = "free_capacity_bytes";
     
+    private static final String     OSD_HEALTH_STATUS   = "osd_health_status";
+
     private static final String     NOT_IN              = "not.";
     // default: 2GB
     private long                    minFreeCapacity     = 2 * 1024 * 1024 * 1024;
@@ -48,6 +50,9 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
     // default: 5 min
     private long                    maxOfflineTime      = 300;
     
+    // default: WARNING
+    private OSDHealthResult         osdHealthStatus     = OSDHealthResult.OSD_HEALTH_RESULT_WARNING;
+
     private HashMap<String, String> customFilter        = new HashMap<String, String>();
     private HashMap<String, String> customNotFilter     = new HashMap<String, String>();
     
@@ -123,8 +128,16 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
         if (OFFLINE_TIME_SECS.equals(key)) {
             maxOfflineTime = Long.parseLong(value);
         }
-        else if (FREE_CAPACITY_BYTES.equals(key))
+        else if (FREE_CAPACITY_BYTES.equals(key)) {
             minFreeCapacity = Long.parseLong(value);
+        }
+        else if (OSD_HEALTH_STATUS.equals(key)){
+            if (value.toUpperCase().equals("WARNING")) {
+                osdHealthStatus = OSDHealthResult.OSD_HEALTH_RESULT_WARNING;
+            } else if (value.toUpperCase().equals("FAILED")) {
+                osdHealthStatus = OSDHealthResult.OSD_HEALTH_RESULT_FAILED;
+            }
+        }
         else {
             if (value == null) {
                 if (key.toLowerCase().startsWith(NOT_IN)) {
@@ -182,8 +195,13 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
         if (smartTestResult == null) {
             return true;
         }
-        return Integer.valueOf(smartTestResult) != OSDHealthResult.OSD_HEALTH_RESULT_FAILED_VALUE
-                || Integer.valueOf(smartTestResult) != OSDHealthResult.OSD_HEALTH_RESULT_WARNING_VALUE;
+
+        if (osdHealthStatus == OSDHealthResult.OSD_HEALTH_RESULT_WARNING) {
+            return Integer.valueOf(smartTestResult) != OSDHealthResult.OSD_HEALTH_RESULT_FAILED_VALUE
+                    && Integer.valueOf(smartTestResult) != OSDHealthResult.OSD_HEALTH_RESULT_WARNING_VALUE;
+        } else {
+            return Integer.valueOf(smartTestResult) != OSDHealthResult.OSD_HEALTH_RESULT_FAILED_VALUE;
+        }
     }
     
     private static boolean matches(String filterString, String customProperty) {
