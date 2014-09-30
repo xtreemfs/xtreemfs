@@ -1425,14 +1425,14 @@ Using the \texttt{xtreemfs-osd-farm} script demands two steps. First, a list nam
 
 \subsection{Monitoring OSD's storage devices}
 \label{sec:osd-health-script}
-The health status of OSDs storage devices (e.g. SMART health test) can be used to determine if an OSD will fail soon or actually failed. If the health status is available, the default OSD selection policy will use it to exclude OSDs with a critical status (WARNING or FAILED). To test the health status, the OSD executes a user-defined script, that can be configurated in the OSD config with the \texttt{health\_script} parameter. If you want to write such a script you must consider the following thinks:
+The health status of OSDs storage devices (e.g. SMART health test) can be used to determine if an OSD will fail soon or actually failed. If the health status is available, the default OSD selection policy will use it to exclude OSDs with a critical status (WARNING and/or FAILED). To test the health status, the OSD executes a user-defined script, that can be configurated in the OSD config with the \texttt{health\_script} parameter. If you want to write such a script you must consider the following thinks:
 \begin{itemize}
 \item The script will be executed with the object dir as the first (and only) parameter
 \item The script must print one of the following numbers to stdout:
 \begin{itemize}
 \item \texttt{0} - PASSED: Storage device is in an uncritical state. The OSD will not filtered out when the default OSD selection policy is used.
 \item \texttt{1} - FAILED: Storage device is in an critical state. The OSD will filtered out when the default OSD selection policy is used.
-\item \texttt{2} - WARNING: Storage could be in an critical state soon. The OSD will filtered out when the default OSD selection policy is used.
+\item \texttt{2} - WARNING: Storage could be in an critical state soon. The OSD will (not) filtered out (depending on the osd\_health\_status attribute) when the default OSD selection policy is used.
 \item \texttt{3} - Not Available: The health status is not available. Also used when an error occurs or an invalid value is returned from the script.
 \end{itemize}
 \end{itemize}
@@ -2618,6 +2618,11 @@ The following predefined policies exist:
  \begin{itemize}
  \item \emph{free\_capacity\_bytes}: the lower space limit in bytes
  \item \emph{offline\_time\_secs}: the upper response time limit in seconds
+ \item \emph{osd\_health\_status}: OSD Health status which is excluded (see section \ref{sec:osd-health-script}). Possible Values:
+ \begin{itemize}
+ \item \emph{warning}: WARNING and FAILED OSDs are excluded
+ \item \emph{failed}: FAILED OSDs are excluded
+ \end{itemize}
  \item custom attributes (see Section \ref{sec:custom_osd_selection})
  \end{itemize}
 
