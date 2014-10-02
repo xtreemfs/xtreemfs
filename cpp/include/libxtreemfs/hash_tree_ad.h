@@ -28,10 +28,8 @@ class HashTreeAD {
  public:
   HashTreeAD(int leaf_adata_size, Options volume_options);
 
-  ~HashTreeAD();
-
   void Init(FileHandle* meta_file, int max_leaf_number,
-            std::auto_ptr<AsymKey> sign_key);
+            SignAlgorithm* sign_algo);
 
   void StartRead(int start_leaf, int end_leaf);
 
@@ -197,14 +195,17 @@ class HashTreeAD {
   boost::icl::interval_set<int> changed_nodes_;
 
   /**
-   * File handle for the meta file. Not owned by this class. Close is called on
-   * destruction.
+   * File handle for the meta file. Not owned by this class. Not closed by this
+   * class.
    */
   FileHandle* meta_file_;
 
   MessageDigest hasher_;
 
-  SignAlgorithm sign_algo_;
+  /**
+   * Not owned by class.
+   */
+  SignAlgorithm* sign_algo_;
 };
 
 } /* namespace xtreemfs */

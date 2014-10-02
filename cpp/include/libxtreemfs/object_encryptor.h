@@ -10,6 +10,7 @@
 
 #include <boost/function.hpp>
 #include <boost/thread/future.hpp>
+#include <string>
 #include <vector>
 
 #include "libxtreemfs/file_info.h"
@@ -45,37 +46,75 @@ class ObjectEncryptor {
                   VolumeImplementation* volume, uint64_t file_id,
                   FileInfo* file_info, int object_size);
 
-  void StartRead(int64_t offset, int count);
+  ~ObjectEncryptor();
 
-  void StartWrite(int64_t offset, int count,
-                  PartialObjectReaderFunction_sync reader,
-                  PartialObjectWriterFunction_sync writer);
+  class Operation {
+   public:
+    explicit Operation(ObjectEncryptor* obj_enc);
 
-  void FinishWrite();
-
-  void Truncate(const xtreemfs::pbrpc::UserCredentials& user_credentials,
-                int64_t new_file_size,
-                PartialObjectReaderFunction_sync reader_sync,
-                PartialObjectWriterFunction_sync writer_sync);
-
-  boost::unique_future<int> Read(int object_no, char* buffer,
-                                 int offset_in_object, int bytes_to_read,
-                                 PartialObjectReaderFunction reader,
-                                 PartialObjectWriterFunction writer);
-
-  boost::unique_future<void> Write(int object_no, const char* buffer,
-                                   int offset_in_object, int bytes_to_write,
+    boost::unique_future<int> Read(int object_no, char* buffer,
+                                   int offset_in_object, int bytes_to_read,
                                    PartialObjectReaderFunction reader,
                                    PartialObjectWriterFunction writer);
 
-  int Read_sync(int object_no, char* buffer, int offset_in_object,
-                int bytes_to_read, PartialObjectReaderFunction_sync reader_sync,
-                PartialObjectWriterFunction_sync writer_sync);
+    boost::unique_future<void> Write(int object_no, const char* buffer,
+                                     int offset_in_object, int bytes_to_write,
+                                     PartialObjectReaderFunction reader,
+                                     PartialObjectWriterFunction writer);
 
-  void Write_sync(int object_no, const char* buffer, int offset_in_object,
-                  int bytes_to_write,
+    int Read_sync(int object_no, char* buffer, int offset_in_object,
+                  int bytes_to_read,
                   PartialObjectReaderFunction_sync reader_sync,
                   PartialObjectWriterFunction_sync writer_sync);
+
+    void Write_sync(int object_no, const char* buffer, int offset_in_object,
+                    int bytes_to_write,
+                    PartialObjectReaderFunction_sync reader_sync,
+                    PartialObjectWriterFunction_sync writer_sync);
+
+   protected:
+    ObjectEncryptor* obj_enc_;
+
+    int& enc_block_size_;
+
+    int& object_size_;
+
+    int64_t& file_size_;
+
+    HashTreeAD hash_tree_;
+
+    int64_t old_file_size_;
+
+   private:
+    int EncryptEncBlock(int block_number, boost::asio::const_buffer plaintext,
+                        boost::asio::mutable_buffer ciphertext);
+
+    int DecryptEncBlock(int block_number, boost::asio::const_buffer ciphertext,
+                        boost::asio::mutable_buffer plaintext);
+  };
+
+  class ReadOperation : public Operation {
+   public:
+    ReadOperation(ObjectEncryptor* obj_enc, int64_t offset, int count);
+  };
+
+  class WriteOperation : public Operation {
+   public:
+    WriteOperation(ObjectEncryptor* obj_enc, int64_t offset, int count,
+                   PartialObjectReaderFunction_sync reader,
+                   PartialObjectWriterFunction_sync writer);
+
+    ~WriteOperation();
+  };
+
+  class TruncateOperation : public Operation {
+   public:
+    TruncateOperation(ObjectEncryptor* obj_enc,
+                      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+                      int64_t new_file_size,
+                      PartialObjectReaderFunction_sync reader_sync,
+                      PartialObjectWriterFunction_sync writer_sync);
+  };
 
   static bool IsEncMetaFile(const std::string& path);
 
@@ -83,19 +122,13 @@ class ObjectEncryptor {
                      VolumeImplementation* volume, uint64_t file_id);
 
  private:
-  boost::unique_future<int> CallSyncReaderAsynchronously(
+  static boost::unique_future<int> CallSyncReaderAsynchronously(
       PartialObjectReaderFunction_sync reader_sync, int object_no, char* buffer,
       int offset_in_object, int bytes_to_read);
 
-  boost::unique_future<void> CallSyncWriterAsynchronously(
+  static boost::unique_future<void> CallSyncWriterAsynchronously(
       PartialObjectWriterFunction_sync writer_sync, int object_no,
       const char* buffer, int offset_in_object, int bytes_to_write);
-
-  int EncryptEncBlock(int block_number, boost::asio::const_buffer plaintext,
-                      boost::asio::mutable_buffer ciphertext);
-
-  int DecryptEncBlock(int block_number, boost::asio::const_buffer ciphertext,
-                      boost::asio::mutable_buffer plaintext);
 
   std::vector<unsigned char> file_enc_key_;
 
@@ -103,7 +136,7 @@ class ObjectEncryptor {
 
   Cipher cipher_;
 
-  HashTreeAD hash_tree_;
+  SignAlgorithm sign_algo_;
 
   /**
    * Object size in bytes.
@@ -114,7 +147,11 @@ class ObjectEncryptor {
 
   int64_t file_size_;
 
-  int64_t old_file_size_;
+  /**
+   * File handle for the meta file. Not owned by this class. Close is called on
+   * destruction.
+   */
+  FileHandle* meta_file_;
 
   /**
    * Pointer to the volume. Not owned by the class.

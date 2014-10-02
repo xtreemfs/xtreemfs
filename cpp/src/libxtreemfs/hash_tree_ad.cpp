@@ -283,20 +283,14 @@ HashTreeAD::HashTreeAD(int leaf_adata_size, Options volume_options)
       old_max_leaf_(0),
       meta_file_(),
       hasher_(volume_options.encryption_hash),
-      sign_algo_(std::auto_ptr<AsymKey>(NULL), volume_options.encryption_hash) {
-}
-
-HashTreeAD::~HashTreeAD() {
-  if (meta_file_ != NULL) {
-    meta_file_->Close();
-  }
+      sign_algo_(NULL) {
 }
 
 void HashTreeAD::Init(FileHandle* meta_file, int max_leaf_number,
-                      std::auto_ptr<AsymKey> sign_key) {
+                      SignAlgorithm* sign_algo) {
   meta_file_ = meta_file;
   SetSize(max_leaf_number);
-  sign_algo_.set_key(sign_key);
+  sign_algo_ = sign_algo;
 }
 
 /**
@@ -720,10 +714,10 @@ void HashTreeAD::ValidateTree() {
 
   // validate signature of root node and remove it
   Node root(max_level_, 0);
-  if (!sign_algo_.Verify(
+  if (!sign_algo_->Verify(
       boost::asio::buffer(nodes_[root], hasher_.digest_size()),
       boost::asio::buffer(nodes_[root].data() + hasher_.digest_size(),
-                          sign_algo_.get_signature_size()))) {
+                          sign_algo_->get_signature_size()))) {
     throw XtreemFSException("Invalid signature of root node");
   }
   nodes_[root].resize(hasher_.digest_size());
@@ -845,10 +839,10 @@ void HashTreeAD::UpdateTree(int start_leaf, int end_leaf, int max_leaf) {
 
   // sign root node
   nodes_[root].resize(NodeSize(max_level_));
-  sign_algo_.Sign(
+  sign_algo_->Sign(
       boost::asio::buffer(nodes_[root], hasher_.digest_size()),
       boost::asio::buffer(nodes_[root].data() + hasher_.digest_size(),
-                          sign_algo_.get_signature_size()));
+                          sign_algo_->get_signature_size()));
 }
 
 /**
@@ -927,7 +921,7 @@ int HashTreeAD::NodeSize(int level) {
   assert(level <= max_level_);
 
   if (level == max_level_) {
-    return hasher_.digest_size() + sign_algo_.get_signature_size();
+    return hasher_.digest_size() + sign_algo_->get_signature_size();
   } else if (level == 0) {
     return hasher_.digest_size() + leaf_adata_size_;
   } else {

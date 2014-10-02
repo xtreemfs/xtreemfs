@@ -51,10 +51,10 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
                                  FileInfo* file_info, int object_size)
     : enc_block_size_(volume->volume_options().encryption_block_size),
       cipher_(volume->volume_options().encryption_cipher),
-      hash_tree_(cipher_.iv_size(), volume->volume_options()),
+      sign_algo_(std::auto_ptr<AsymKey>(NULL),
+                 volume->volume_options().encryption_hash),
       object_size_(object_size * 1024),
       file_info_(file_info),
-      old_file_size_(0),
       volume_(volume),
       volume_options_(volume->volume_options()) {
   assert(object_size_ >= enc_block_size_);
@@ -81,6 +81,7 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
   std::auto_ptr<AsymKey> file_sign_key(
       new AsymKey(
           b64Encoder.Decode(boost::asio::buffer(encoded_file_sign_key))));
+  sign_algo_.set_key(file_sign_key);
 
   xtreemfs::pbrpc::Stat stat;
   file_info_->GetAttr(user_credentials, &stat);
@@ -92,21 +93,14 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
 
   std::string meta_file_name(
       "/.xtreemfs_enc_meta_files/" + boost::lexical_cast<std::string>(file_id));
-  int max_leaf;
-  if (file_size_ != 0) {
-    max_leaf = (file_size_ - 1) / enc_block_size_;
-  } else {
-    max_leaf = -1;
-  }
-  FileHandle* meta_file;
   try {
-    meta_file = volume->OpenFile(user_credentials, meta_file_name,
-                                 pbrpc::SYSTEM_V_FCNTL_H_O_RDWR, 0777);
+    meta_file_ = volume->OpenFile(user_credentials, meta_file_name,
+                                  pbrpc::SYSTEM_V_FCNTL_H_O_RDWR, 0777);
   } catch (const PosixErrorException& e) {  // NOLINT
     // file didn't exist yet
-    max_leaf = -2;
+    file_size_ = -1;
     try {
-      meta_file =
+      meta_file_ =
           volume->OpenFile(
               user_credentials,
               meta_file_name,
@@ -117,7 +111,7 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
       // "/.xtreemfs_enc_meta_files" directory does not exist yet
       volume->MakeDirectory(user_credentials, "/.xtreemfs_enc_meta_files",
                             0777);
-      meta_file =
+      meta_file_ =
           volume->OpenFile(
               user_credentials,
               meta_file_name,
@@ -126,10 +120,37 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
               0777);
     }
   }
-  hash_tree_.Init(meta_file, max_leaf, file_sign_key);
 }
 
-void ObjectEncryptor::StartRead(int64_t offset, int count) {
+ObjectEncryptor::~ObjectEncryptor() {
+  if (meta_file_ != NULL) {
+    meta_file_->Close();
+  }
+}
+
+ObjectEncryptor::Operation::Operation(ObjectEncryptor* obj_enc)
+    : obj_enc_(obj_enc),
+      enc_block_size_(obj_enc->enc_block_size_),
+      object_size_(obj_enc->object_size_),
+      file_size_(obj_enc->file_size_),
+      hash_tree_(obj_enc->cipher_.iv_size(),
+                 obj_enc->volume_->volume_options()),
+      old_file_size_(0) {
+  int max_leaf;
+  if (file_size_ >= 0) {
+    max_leaf = (file_size_ - 1) / enc_block_size_;
+  } else if (file_size_ == 0) {
+    max_leaf = -1;
+  } else {
+    file_size_ = 0;
+    max_leaf = -2;
+  }
+  hash_tree_.Init(obj_enc->meta_file_, max_leaf, &obj_enc->sign_algo_);
+}
+
+ObjectEncryptor::ReadOperation::ReadOperation(ObjectEncryptor* obj_enc,
+                                              int64_t offset, int count)
+    : Operation(obj_enc) {
   if (offset >= file_size_ || count == 0) {
     return;
   }
@@ -137,9 +158,11 @@ void ObjectEncryptor::StartRead(int64_t offset, int count) {
                        (offset + count - 1) / enc_block_size_);
 }
 
-void ObjectEncryptor::StartWrite(int64_t offset, int count,
-                                 PartialObjectReaderFunction_sync reader_sync,
-                                 PartialObjectWriterFunction_sync writer_sync) {
+ObjectEncryptor::WriteOperation::WriteOperation(
+    ObjectEncryptor* obj_enc, int64_t offset, int count,
+    PartialObjectReaderFunction_sync reader_sync,
+    PartialObjectWriterFunction_sync writer_sync)
+    : Operation(obj_enc) {
   assert(count > 0);
 
   // increase file size if end of write is behind current file size
@@ -165,14 +188,18 @@ void ObjectEncryptor::StartWrite(int64_t offset, int count,
   }
 }
 
-void ObjectEncryptor::FinishWrite() {
+ObjectEncryptor::WriteOperation::~WriteOperation() {
+  // TODO(plieser): catch exceptions
   hash_tree_.FinishWrite();
 }
 
-void ObjectEncryptor::Truncate(
+ObjectEncryptor::TruncateOperation::TruncateOperation(
+    ObjectEncryptor* obj_enc,
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     int64_t new_file_size, PartialObjectReaderFunction_sync reader_sync,
-    PartialObjectWriterFunction_sync writer_sync) {
+    PartialObjectWriterFunction_sync writer_sync)
+    : Operation(obj_enc) {
+  // TODO(plieser): user_credentials needed?
   int old_end_object_no = file_size_ / object_size_;
   int new_end_object_no = new_file_size / object_size_;
   int old_end_object_size = file_size_ % object_size_;
@@ -223,17 +250,18 @@ void ObjectEncryptor::Truncate(
  * @param writer_sync   A synchronously writer for objects.
  * @return
  */
-int ObjectEncryptor::Read_sync(int object_no, char* buffer,
-                               int offset_in_object, int bytes_to_read,
-                               PartialObjectReaderFunction_sync reader_sync,
-                               PartialObjectWriterFunction_sync writer_sync) {
+int ObjectEncryptor::Operation::Read_sync(
+    int object_no, char* buffer, int offset_in_object, int bytes_to_read,
+    PartialObjectReaderFunction_sync reader_sync,
+    PartialObjectWriterFunction_sync writer_sync) {
+  // TODO(plieser): writer_sync needed?
   // convert the sync reader/writer to async
   PartialObjectReaderFunction reader = boost::bind(
-      &ObjectEncryptor::CallSyncReaderAsynchronously, this, reader_sync, _1, _2,
-      _3, _4);
+      &ObjectEncryptor::CallSyncReaderAsynchronously, reader_sync, _1, _2, _3,
+      _4);
   PartialObjectWriterFunction writer = boost::bind(
-      &ObjectEncryptor::CallSyncWriterAsynchronously, this, writer_sync, _1, _2,
-      _3, _4);
+      &ObjectEncryptor::CallSyncWriterAsynchronously, writer_sync, _1, _2, _3,
+      _4);
 
   // call async read, wait for result and return it
   return Read(object_no, buffer, offset_in_object, bytes_to_read, reader,
@@ -250,17 +278,17 @@ int ObjectEncryptor::Read_sync(int object_no, char* buffer,
  * @param reader_sync   A synchronously reader for objects.
  * @param writer_sync   A synchronously writer for objects.
  */
-void ObjectEncryptor::Write_sync(int object_no, const char* buffer,
-                                 int offset_in_object, int bytes_to_write,
-                                 PartialObjectReaderFunction_sync reader_sync,
-                                 PartialObjectWriterFunction_sync writer_sync) {
+void ObjectEncryptor::Operation::Write_sync(
+    int object_no, const char* buffer, int offset_in_object, int bytes_to_write,
+    PartialObjectReaderFunction_sync reader_sync,
+    PartialObjectWriterFunction_sync writer_sync) {
   // convert the sync reader/writer to async
   PartialObjectReaderFunction reader = boost::bind(
-      &ObjectEncryptor::CallSyncReaderAsynchronously, this, reader_sync, _1, _2,
-      _3, _4);
+      &ObjectEncryptor::CallSyncReaderAsynchronously, reader_sync, _1, _2, _3,
+      _4);
   PartialObjectWriterFunction writer = boost::bind(
-      &ObjectEncryptor::CallSyncWriterAsynchronously, this, writer_sync, _1, _2,
-      _3, _4);
+      &ObjectEncryptor::CallSyncWriterAsynchronously, writer_sync, _1, _2, _3,
+      _4);
 
   // call async write and wait until it is finished
   Write(object_no, buffer, offset_in_object, bytes_to_write, reader, writer)
@@ -307,11 +335,11 @@ boost::unique_future<void> ObjectEncryptor::CallSyncWriterAsynchronously(
   return p.get_future();
 }
 
-int ObjectEncryptor::EncryptEncBlock(int block_number,
-                                     boost::asio::const_buffer plaintext,
-                                     boost::asio::mutable_buffer ciphertext) {
-  std::pair<std::vector<unsigned char>, int> encrypt_res = cipher_.encrypt(
-      plaintext, file_enc_key_, ciphertext);
+int ObjectEncryptor::Operation::EncryptEncBlock(
+    int block_number, boost::asio::const_buffer plaintext,
+    boost::asio::mutable_buffer ciphertext) {
+  std::pair<std::vector<unsigned char>, int> encrypt_res = obj_enc_->cipher_
+      .encrypt(plaintext, obj_enc_->file_enc_key_, ciphertext);
   std::vector<unsigned char>& iv = encrypt_res.first;
   int& ciphertext_len = encrypt_res.second;
   assert(ciphertext_len == boost::asio::buffer_size(plaintext));
@@ -320,9 +348,9 @@ int ObjectEncryptor::EncryptEncBlock(int block_number,
   return ciphertext_len;
 }
 
-int ObjectEncryptor::DecryptEncBlock(int block_number,
-                                     boost::asio::const_buffer ciphertext,
-                                     boost::asio::mutable_buffer plaintext) {
+int ObjectEncryptor::Operation::DecryptEncBlock(
+    int block_number, boost::asio::const_buffer ciphertext,
+    boost::asio::mutable_buffer plaintext) {
   std::vector<unsigned char> iv = hash_tree_.GetLeaf(block_number, ciphertext);
   if (iv.size() == 0) {
     // block contains unencrypted 0 of a sparse file
@@ -330,7 +358,9 @@ int ObjectEncryptor::DecryptEncBlock(int block_number,
            boost::asio::buffer_size(plaintext));
     return boost::asio::buffer_size(ciphertext);
   }
-  int plaintext_len = cipher_.decrypt(ciphertext, file_enc_key_, iv, plaintext);
+  int plaintext_len = obj_enc_->cipher_.decrypt(ciphertext,
+                                               obj_enc_->file_enc_key_, iv,
+                                               plaintext);
   assert(plaintext_len == boost::asio::buffer_size(ciphertext));
   return plaintext_len;
 }
@@ -346,7 +376,7 @@ int ObjectEncryptor::DecryptEncBlock(int block_number,
  * @param writer    An asynchronously writer for objects.
  * @return
  */
-boost::unique_future<int> ObjectEncryptor::Read(
+boost::unique_future<int> ObjectEncryptor::Operation::Read(
     int object_no, char* buffer, int offset_in_object, int bytes_to_read,
     PartialObjectReaderFunction reader, PartialObjectWriterFunction writer) {
   assert(bytes_to_read > 0);
@@ -475,7 +505,7 @@ boost::unique_future<int> ObjectEncryptor::Read(
  * @param writer    An asynchronously writer for objects.
  * @return
  */
-boost::unique_future<void> ObjectEncryptor::Write(
+boost::unique_future<void> ObjectEncryptor::Operation::Write(
     int object_no, const char* buffer, int offset_in_object, int bytes_to_write,
     PartialObjectReaderFunction reader, PartialObjectWriterFunction writer) {
   int object_offset = object_no * object_size_;
