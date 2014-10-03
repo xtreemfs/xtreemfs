@@ -3,7 +3,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.xtreemfs.contrib.provisioning</groupId>
-	<artifactId>xtreemfs-jsonrpc</artifactId>
+	<artifactId>ROOT</artifactId>
 	<packaging>war</packaging>
 	<version>0.1-SNAPSHOT</version>
 	<name>XtreemFS provision-interface with JSON RPC</name>
@@ -140,14 +140,14 @@
 	      </plugin>
 	    </plugins>
 	   </pluginManagement>
-		<finalName>xtreemfs-jsonrpc</finalName>
+		<finalName>ROOT</finalName>
 		<resources />
 		<plugins>
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<configuration>
 					<appendAssemblyId>false</appendAssemblyId>
-					<finalName>xtreemfs-jsonrpc</finalName>
+					<finalName>ROOT</finalName>
 					<descriptors>
 						<descriptor>src/main/assembly/package.xml</descriptor>
 					</descriptors>

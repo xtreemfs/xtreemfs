@@ -17,4 +17,4 @@ mvn install:install-file -Dfile=jsonrpc2-server-1.7.jar -DgroupId=com.thetransac
 mvn install:install-file -Dfile=jsonrpc2-client-1.8.jar -DgroupId=com.thetransactioncompany.client -DartifactId=jsonrpc-client -Dversion=1.8 -Dpackaging=jar
 
 echo "if the files were successfully added, you can now run \"mvn package\" from the parent directory (which also contains the pom.xml)"
-echo "afterwards you can deploy the resulting file \"target/xtreemfs-jsonrpc.war\" file in your servlet-container using \"mvn tomcat:redeploy\" (e.g. Jetty or Tomcat)"
+echo "afterwards you can deploy the resulting file \"target/ROOT.war\" file in your servlet-container using \"mvn tomcat:redeploy\" (e.g. Jetty or Tomcat)"

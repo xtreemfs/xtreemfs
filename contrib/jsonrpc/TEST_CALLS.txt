@@ -1,8 +1,8 @@
-http://localhost:8080/xtreemfs-jsonrpc/method/getAvailableResources
+http://localhost:8080/method/getAvailableResources
 
 
 
-http://localhost:8080/xtreemfs-jsonrpc/method/reserveResources
+http://localhost:8080/method/reserveResources
 
 {
 "Resources":[{
@@ -20,7 +20,7 @@ http://localhost:8080/xtreemfs-jsonrpc/method/reserveResources
 
 
 
-http://localhost:8080/xtreemfs-jsonrpc/method/checkReservationStatus
+http://localhost:8080/method/checkReservationStatus
 
 {
    "IResID": "volume-2d31dbc4-3c24-4481-868f-d59a65f38c34" 
@@ -28,7 +28,7 @@ http://localhost:8080/xtreemfs-jsonrpc/method/checkReservationStatus
 
 
 
-http://localhost:8080/xtreemfs-jsonrpc/method/releaseResources
+http://localhost:8080/method/releaseResources
 
 {
    "IResID": "volume-2d31dbc4-3c24-4481-868f-d59a65f38c34" 
@@ -36,4 +36,4 @@ http://localhost:8080/xtreemfs-jsonrpc/method/releaseResources
 
 
 
-http://localhost:8080/xtreemfs-jsonrpc/method/listReservations
+http://localhost:8080/method/listReservations
