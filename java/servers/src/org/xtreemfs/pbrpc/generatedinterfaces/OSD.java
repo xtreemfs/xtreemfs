@@ -22,13 +22,13 @@ public final class OSD {
      */
     OSD_HEALTH_RESULT_PASSED(0, 0),
     /**
-     * <code>OSD_HEALTH_RESULT_FAILED = 1;</code>
+     * <code>OSD_HEALTH_RESULT_WARNING = 1;</code>
      */
-    OSD_HEALTH_RESULT_FAILED(1, 1),
+    OSD_HEALTH_RESULT_WARNING(1, 1),
     /**
-     * <code>OSD_HEALTH_RESULT_WARNING = 2;</code>
+     * <code>OSD_HEALTH_RESULT_FAILED = 2;</code>
      */
-    OSD_HEALTH_RESULT_WARNING(2, 2),
+    OSD_HEALTH_RESULT_FAILED(2, 2),
     /**
      * <code>OSD_HEALTH_RESULT_NOT_AVAIL = 3;</code>
      *
@@ -45,13 +45,13 @@ public final class OSD {
      */
     public static final int OSD_HEALTH_RESULT_PASSED_VALUE = 0;
     /**
-     * <code>OSD_HEALTH_RESULT_FAILED = 1;</code>
+     * <code>OSD_HEALTH_RESULT_WARNING = 1;</code>
      */
-    public static final int OSD_HEALTH_RESULT_FAILED_VALUE = 1;
+    public static final int OSD_HEALTH_RESULT_WARNING_VALUE = 1;
     /**
-     * <code>OSD_HEALTH_RESULT_WARNING = 2;</code>
+     * <code>OSD_HEALTH_RESULT_FAILED = 2;</code>
      */
-    public static final int OSD_HEALTH_RESULT_WARNING_VALUE = 2;
+    public static final int OSD_HEALTH_RESULT_FAILED_VALUE = 2;
     /**
      * <code>OSD_HEALTH_RESULT_NOT_AVAIL = 3;</code>
      *
@@ -68,8 +68,8 @@ public final class OSD {
     public static OSDHealthResult valueOf(int value) {
       switch (value) {
         case 0: return OSD_HEALTH_RESULT_PASSED;
-        case 1: return OSD_HEALTH_RESULT_FAILED;
-        case 2: return OSD_HEALTH_RESULT_WARNING;
+        case 1: return OSD_HEALTH_RESULT_WARNING;
+        case 2: return OSD_HEALTH_RESULT_FAILED;
         case 3: return OSD_HEALTH_RESULT_NOT_AVAIL;
         default: return null;
       }
@@ -30886,8 +30886,8 @@ public final class OSD {
       "treemfs.pbrpc.FileCredentials\022\017\n\007file_id" +
       "\030\002 \002(\t\022\025\n\rprimary_epoch\030\003 \002(\007*\215\001\n\017OSDHea" +
       "lthResult\022\034\n\030OSD_HEALTH_RESULT_PASSED\020\000\022",
-      "\034\n\030OSD_HEALTH_RESULT_FAILED\020\001\022\035\n\031OSD_HEA" +
-      "LTH_RESULT_WARNING\020\002\022\037\n\033OSD_HEALTH_RESUL" +
+      "\035\n\031OSD_HEALTH_RESULT_WARNING\020\001\022\034\n\030OSD_HE" +
+      "ALTH_RESULT_FAILED\020\002\022\037\n\033OSD_HEALTH_RESUL" +
       "T_NOT_AVAIL\020\0032\253\034\n\nOSDService\022L\n\004read\022\033.x" +
       "treemfs.pbrpc.readRequest\032\032.xtreemfs.pbr" +
       "pc.ObjectData\"\013\215\265\030\n\000\000\000\230\265\030\001\022V\n\010truncate\022\037" +

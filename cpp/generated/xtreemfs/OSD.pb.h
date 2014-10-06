@@ -79,8 +79,8 @@ class xtreemfs_rwr_reset_completeRequest;
 
 enum OSDHealthResult {
   OSD_HEALTH_RESULT_PASSED = 0,
-  OSD_HEALTH_RESULT_FAILED = 1,
-  OSD_HEALTH_RESULT_WARNING = 2,
+  OSD_HEALTH_RESULT_WARNING = 1,
+  OSD_HEALTH_RESULT_FAILED = 2,
   OSD_HEALTH_RESULT_NOT_AVAIL = 3
 };
 bool OSDHealthResult_IsValid(int value);
