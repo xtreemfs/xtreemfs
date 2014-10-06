@@ -8,7 +8,7 @@ IFS=' ' read -r DEVICE TMP <<< $(df $OBJECT_DIR | grep dev)
 # Determine device type
 if [[ $DEVICE == *md* ]]; then
    # DEVICE is a RAID configuration
-   DEVICES=$(IFS=' ' read -a FOO <<< $(cat /proc/mdstat | grep md0))
+   DEVICES=$(IFS=' ' read -a TMP <<< $(cat /proc/mdstat | grep $DEVICE))
    DEVICES=${DEVICES[@]:4}
 elif [[ $DEVICE == *sd* || $DEVICE == *hd* ]]; then
    # DEVICE is a single disk
@@ -20,8 +20,14 @@ fi
 
 for DEVICE in $DEVICES; do     
    SMART_STATUS="$(sudo smartctl --health $DEVICE)"
-   if [[ $SMART_STATUS == *FAILED* ]]; then
-      echo 1; exit;
+   if [[ $SMART_STATUS == *PASSED* ]]
+      then
+         continue;
+   elif [[ $SMART_STATUS == *FAILED* ]]
+      then
+         echo 1; exit;
+   else 
+      echo 3; exit;
    fi
 done 
 
