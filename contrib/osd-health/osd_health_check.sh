@@ -15,21 +15,23 @@ elif [[ $DEVICE == *sd* || $DEVICE == *hd* ]]; then
    DEVICES=$DEVICE
 else
    # unsupported device type
-   echo 3; exit
+   echo "unsupported device type"
+   exit 3
 fi
 
 for DEVICE in $DEVICES; do     
    SMART_STATUS="$(sudo smartctl --health $DEVICE)"
+   echo $SMART_STATUS
    if [[ $SMART_STATUS == *PASSED* ]]
       then
          continue;
    elif [[ $SMART_STATUS == *FAILED* ]]
       then
-         echo 1; exit;
+         exit 1
    else 
-      echo 3; exit;
+      exit 3
    fi
 done 
 
 # If no device's health test failed, return 0 (i.e. health test PASSED).
-echo 0
+exit 0

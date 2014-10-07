@@ -287,7 +287,7 @@ public class OSDConfig extends ServiceConfig {
         return (Integer) parameter.get(Parameter.STORAGE_THREADS);
     }
     
-    public String getSmartScript() {
+    public String getHealthCheckScript() {
         return (String) parameter.get(Parameter.HEALTH_CHECK);
     }
 }

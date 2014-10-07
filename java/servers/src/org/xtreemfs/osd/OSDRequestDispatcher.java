@@ -8,6 +8,8 @@
 
 package org.xtreemfs.osd;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -386,28 +388,40 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 long totalRAM = Runtime.getRuntime().maxMemory();
                 long usedRAM = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
                 
-                // Get OSD health result from user-defined script.
-                OSDHealthResult smartTestResult = OSDHealthResult.OSD_HEALTH_RESULT_NOT_AVAIL;
-                InputStreamReader scriptOutputStream = null;
-                if (!config.getSmartScript().equals("")) {
+                // Get OSD health check result from user-defined script.
+                OSDHealthResult healthCheckResult = OSDHealthResult.OSD_HEALTH_RESULT_NOT_AVAIL;
+                BufferedReader scriptOutputReader = null;
+                String scriptOutput = "";
+                if (!config.getHealthCheckScript().equals("")) {
                     try {
-                        scriptOutputStream = new InputStreamReader(Runtime.getRuntime()
-                                .exec(new String[] { config.getSmartScript(), config.getObjDir() }).getInputStream());
-                        int scriptOutput = Integer.parseInt(String.valueOf((char) scriptOutputStream.read()));
-                        smartTestResult = OSDHealthResult.valueOf(scriptOutput);
-                        if (smartTestResult == null) {
+                        Process scriptProcess = Runtime.getRuntime()
+                                .exec(new String[] { config.getHealthCheckScript(), config.getObjDir() });
+                        
+                        // wait until the health check is terminated and get exit value (i.e. health check result)
+                        int healthCheckExitValue = scriptProcess.waitFor();
+                        healthCheckResult = OSDHealthResult.valueOf(healthCheckExitValue);
+                        
+                        // get output of the health check script
+                        scriptOutputReader = new BufferedReader (new InputStreamReader(scriptProcess.getInputStream()));
+                        String line = "";
+                        while(( line = scriptOutputReader.readLine()) != null) {
+                            scriptOutput += line;
+                            scriptOutput += "\n";
+                        }
+                        
+                        if (healthCheckResult == null) {
                             Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
-                                    "SMART script returns invalid value (" + scriptOutput + ")");
-                            smartTestResult = OSDHealthResult.OSD_HEALTH_RESULT_NOT_AVAIL;
+                                    "Health check script returns invalid value (" + healthCheckExitValue + ")");
+                            healthCheckResult = OSDHealthResult.OSD_HEALTH_RESULT_NOT_AVAIL;
                         }
                     } catch (Exception e) {
                         Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
-                                "Exception while reading SMART health result: " + e.getMessage());
+                                "Exception while reading health check result: " + e.getMessage());
                     } finally {
-                        if (scriptOutputStream != null) {
+                        if (scriptOutputReader != null) {
                             try {
-                                scriptOutputStream.close();
-                            } catch (IOException e1) {
+                                scriptOutputReader.close();
+                            } catch (IOException e) {
                                 // do nothing
                             }
                         }
@@ -425,8 +439,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                         .build());
                 dmap.addData(KeyValuePair.newBuilder().setKey("usedRAM").setValue(Long.toString(usedRAM))
                         .build());
-                dmap.addData(KeyValuePair.newBuilder().setKey("osd_health_test")
-                        .setValue(String.valueOf(smartTestResult.getNumber())).build());
+                dmap.addData(KeyValuePair.newBuilder().setKey("osd_health_check")
+                        .setValue(String.valueOf(healthCheckResult.getNumber())).build());
+                dmap.addData(KeyValuePair.newBuilder().setKey("osd_health_check_output")
+                        .setValue(scriptOutput).build());
                 dmap.addData(KeyValuePair.newBuilder().setKey("proto_version").setValue(
                     Integer.toString(OSDServiceConstants.INTERFACE_ID)).build());
                 VivaldiCoordinates coord = myCoordinates.get();

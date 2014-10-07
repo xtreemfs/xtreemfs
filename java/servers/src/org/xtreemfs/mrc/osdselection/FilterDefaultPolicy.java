@@ -41,7 +41,7 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
     
     private static final String     FREE_CAPACITY_BYTES = "free_capacity_bytes";
     
-    private static final String     OSD_HEALTH_STATUS   = "osd_health_status";
+    private static final String     OSD_HEALTH_CHECK   = "osd_health_check";
 
     private static final String     NOT_IN              = "not.";
     // default: 2GB
@@ -51,7 +51,7 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
     private long                    maxOfflineTime      = 300;
     
     // default: WARNING
-    private OSDHealthResult         osdHealthStatus     = OSDHealthResult.OSD_HEALTH_RESULT_WARNING;
+    private OSDHealthResult         osdHealthCheck     = OSDHealthResult.OSD_HEALTH_RESULT_WARNING;
 
     private HashMap<String, String> customFilter        = new HashMap<String, String>();
     private HashMap<String, String> customNotFilter     = new HashMap<String, String>();
@@ -131,11 +131,11 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
         else if (FREE_CAPACITY_BYTES.equals(key)) {
             minFreeCapacity = Long.parseLong(value);
         }
-        else if (OSD_HEALTH_STATUS.equals(key)){
+        else if (OSD_HEALTH_CHECK.equals(key)){
             if (value.toUpperCase().equals("WARNING")) {
-                osdHealthStatus = OSDHealthResult.OSD_HEALTH_RESULT_WARNING;
+                osdHealthCheck = OSDHealthResult.OSD_HEALTH_RESULT_WARNING;
             } else if (value.toUpperCase().equals("FAILED")) {
-                osdHealthStatus = OSDHealthResult.OSD_HEALTH_RESULT_FAILED;
+                osdHealthCheck = OSDHealthResult.OSD_HEALTH_RESULT_FAILED;
             }
         }
         else {
@@ -191,12 +191,12 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
     }
     
     private boolean isHealthy(Service osd) {
-        String smartTestResult = KeyValuePairs.getValue(osd.getData().getDataList(), "osd_health_test");
+        String smartTestResult = KeyValuePairs.getValue(osd.getData().getDataList(), OSD_HEALTH_CHECK);
         if (smartTestResult == null) {
             return true;
         }
 
-        if (osdHealthStatus == OSDHealthResult.OSD_HEALTH_RESULT_WARNING) {
+        if (osdHealthCheck == OSDHealthResult.OSD_HEALTH_RESULT_WARNING) {
             return Integer.valueOf(smartTestResult) != OSDHealthResult.OSD_HEALTH_RESULT_FAILED_VALUE
                     && Integer.valueOf(smartTestResult) != OSDHealthResult.OSD_HEALTH_RESULT_WARNING_VALUE;
         } else {
