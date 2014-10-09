@@ -8,6 +8,7 @@
 #include <cstring>
 
 #include <iostream>
+#include <list>
 #include <string>
 
 #include "libxtreemfs/client.h"
@@ -54,7 +55,21 @@ int main(int argc, char* argv[]) {
     // Start the client (a connection to the DIR service will be setup).
     client->Start();
 
-    // Open a volume named 'demo'.
+    xtreemfs::pbrpc::Auth auth = xtreemfs::pbrpc::Auth::default_instance();
+    auth.set_auth_type(xtreemfs::pbrpc::AUTH_NONE);
+
+    // Create a new volume named 'demo'.
+    xtreemfs::pbrpc::Volumes *volumes = client->ListVolumes("localhost:32636", auth);
+    bool has_volume = false;
+    for(int i = 0; i < volumes->volumes_size() && !has_volume; ++i) {
+        has_volume = volumes->volumes(i).name().compare("demo") == 0;
+    }
+
+    if(has_volume) {
+        client->DeleteVolume("localhost:32636", auth, user_credentials, "demo");
+    }
+	client->CreateVolume("localhost:32636", auth, user_credentials, "demo");
+
     xtreemfs::Volume *volume = NULL;
     volume = client->OpenVolume("demo",
                                 NULL,  // No SSL options.
@@ -85,6 +100,7 @@ int main(int argc, char* argv[]) {
     volume->GetAttr(user_credentials, "/example_libxtreemfs.txt", &stat);
     cout << "\nNew file size of example_libxtreemfs.txt: "
          << stat.size() << " Bytes." << endl;
+
     // Once again, now hopefully from the Cache.
     volume->GetAttr(user_credentials, "/example_libxtreemfs.txt", &stat);
     cout << "\nFile size of example_libxtreemfs.txt again (this time retrieved"
@@ -99,6 +115,59 @@ int main(int argc, char* argv[]) {
                0);  // Offset.
     cout << "\nReading the content of the file example_libxtreemfs.txt:\n\n"
          << read_buf << endl;
+
+    cout << endl << "Closing /example_libxtreemfs.txt... ";
+	file->Close();
+	file = NULL;
+	cout << "ok!" << endl;
+
+    // mark the file as read-only
+	cout << endl << "Marking /example_libxtreemfs.txt read only... ";
+    volume->SetXAttr(user_credentials, "/example_libxtreemfs.txt", "xtreemfs.read_only", "true", xtreemfs::pbrpc::XATTR_FLAGS_CREATE);
+    cout << "ok!" << endl;
+
+    // list replica(s) and their OSD(s)
+    // we expect one replica and one OSD here because we created a new volume above
+    xtreemfs::pbrpc::Replicas* replicas = volume->ListReplicas(user_credentials, "/example_libxtreemfs.txt");
+    const int repls = replicas->replicas_size();
+    cout << endl << repls << " replica(s) for /example_libxtreemfs.txt:" << endl;
+    for(int i = 0; i < repls; ++i) {
+        xtreemfs::pbrpc::Replica replica = replicas->replicas(i);
+        const int osds = replica.osd_uuids_size();
+        cout << "\t" << osds << " OSD(s) for replica " << i << ":";
+        for(int j = 0; j < osds; ++j) {
+            cout << " " << replica.osd_uuids(j);
+        }
+        cout << endl;
+    }
+
+    // grab one suitable OSD which we can use for manual replication of the file
+    list<string> osd_uuids;
+    volume->GetSuitableOSDs(user_credentials, "/example_libxtreemfs.txt", 1, &osd_uuids);
+
+    // replicate to second OSD if available
+    if(osd_uuids.size() > 0) {
+        string osd_uuid = osd_uuids.front();
+        cout << endl << "Replicating to suitable OSD " << osd_uuid << "... ";
+
+        // add replication
+		xtreemfs::pbrpc::Replica replica;
+		replica.add_osd_uuids(osd_uuid);
+
+		// read-only files have partial replication by default, we want full
+		replica.set_replication_flags(xtreemfs::pbrpc::REPL_FLAG_FULL_REPLICA | xtreemfs::pbrpc::REPL_FLAG_STRATEGY_RAREST_FIRST);
+		xtreemfs::pbrpc::StripingPolicy *striping = new xtreemfs::pbrpc::StripingPolicy;
+		striping->set_type(xtreemfs::pbrpc::STRIPING_POLICY_RAID0);
+		striping->set_stripe_size(128);
+		striping->set_width(1);
+		replica.set_allocated_striping_policy(striping);
+
+		volume->AddReplica(user_credentials, "/example_libxtreemfs.txt", replica);
+		cout << "ok!" << endl;
+    } else {
+        cout << endl << "No second OSD found for replication." << endl;
+    }
+
   } catch(const xtreemfs::XtreemFSException& e) {
     cout << "An error occurred:\n" << e.what() << endl;
     return_code = 1;
