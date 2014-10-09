@@ -8,22 +8,23 @@
 
 package org.xtreemfs.utils.xtfs_benchmark;
 
-import static org.xtreemfs.common.benchmark.BenchmarkConfig.ConfigBuilder;
-import static org.xtreemfs.foundation.util.CLIParser.CliOption.OPTIONTYPE.STRING;
-import static org.xtreemfs.foundation.util.CLIParser.CliOption.OPTIONTYPE.SWITCH;
-import static org.xtreemfs.foundation.util.CLIParser.parseCLI;
+import org.xtreemfs.common.benchmark.BenchmarkConfig;
+import org.xtreemfs.common.benchmark.BenchmarkUtils;
+import org.xtreemfs.common.config.ServiceConfig;
+import org.xtreemfs.foundation.pbrpc.Schemes;
+import org.xtreemfs.foundation.util.CLIParser;
+import org.xtreemfs.utils.DefaultDirConfig;
+import org.xtreemfs.utils.utils;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.xtreemfs.common.benchmark.*;
-import org.xtreemfs.common.config.ServiceConfig;
-import org.xtreemfs.foundation.pbrpc.Schemes;
-import org.xtreemfs.foundation.util.CLIParser;
-import org.xtreemfs.utils.DefaultDirConfig;
-import org.xtreemfs.utils.utils;
+import static org.xtreemfs.common.benchmark.BenchmarkConfig.ConfigBuilder;
+import static org.xtreemfs.foundation.util.CLIParser.CliOption.OPTIONTYPE.STRING;
+import static org.xtreemfs.foundation.util.CLIParser.CliOption.OPTIONTYPE.SWITCH;
+import static org.xtreemfs.foundation.util.CLIParser.parseCLI;
 
 /**
  * Class implementing the commandline options for {@link xtfs_benchmark}.
@@ -204,7 +205,7 @@ class CLIOptions {
         System.out.println("  " + "options:");
         utils.printOptions(options);
         System.out.println();
-        System.out.println("example: xtfs_benchmark -sw -sr -t 3 -ssize 3G volume1 volume2 volume3");
+        System.out.println("example: xtfs_benchmark -sw -sr -n 3 -ssize 3G volume1 volume2 volume3");
         System.out
                 .println("\t\t starts a sequential write and read benchmark of 3 GiB with 3 benchmarks in parallel on volume1, volume2 and volume3\n");
     }
