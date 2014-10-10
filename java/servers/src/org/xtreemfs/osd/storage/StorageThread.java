@@ -54,6 +54,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
@@ -376,6 +377,10 @@ public class StorageThread extends Stage {
             // object version; otherwise, read the latest object version
             long objVer = versionTimestamp != 0 ? fi.getVersionTable().getLatestVersionBefore(
                 versionTimestamp).getObjVersion(objNo) : fi.getLatestObjectVersion(objNo);
+            if (((readRequest) rq.getRequest().getRequestArgs()).getObjectVersion() > 0) {
+                // new version passed via arg always prevails
+                objVer = ((readRequest) rq.getRequest().getRequestArgs()).getObjectVersion();
+            }
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "getting objVer %d", objVer);
             }
@@ -501,12 +506,13 @@ public class StorageThread extends Stage {
             long largestV = fi.getLargestObjectVersion(objNo);
             
             // determine the object version to write
-            final boolean isCow = cow.isCOW((int) objNo);
+            boolean isCow = cow.isCOW((int) objNo);
             
             long newVersion = (isCow || checksumsEnabled) ? largestV + 1 : Math.max(1, largestV);
             if (newVersionArg != null) {
                 // new version passed via arg always prevails
                 newVersion = newVersionArg;
+                isCow = true;
             }
             assert (data != null);
             

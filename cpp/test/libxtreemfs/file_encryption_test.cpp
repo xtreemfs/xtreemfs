@@ -14,6 +14,7 @@
 
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/file_handle.h"
+#include "libxtreemfs/file_handle_implementation.h"
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/volume.h"
 #include "libxtreemfs/xtreemfs_exception.h"
@@ -823,6 +824,67 @@ TEST_F(EncryptionTest, Open_01) {
     EXPECT_EQ(*(buffer + i), 0);
   }
   EXPECT_STREQ("EFGH", buffer+4);
+}
+
+TEST_F(EncryptionTest, objectVersion) {
+  char buffer[50];
+
+  FileHandleImplementation* file_handle =
+      static_cast<FileHandleImplementation*>(volume_->OpenFile(
+          user_credentials_,
+          "/.xtreemfs_enc_meta_files/test",
+          static_cast<pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
+              | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
+          511));
+
+  EXPECT_TRUE(ObjectEncryptor::IsEncMetaFile("/.xtreemfs_enc_meta_files/test"));
+
+  file_handle->Write("write00", 7, 0);
+  ASSERT_NO_THROW({
+    file_handle->Read(buffer, 10, 0);
+  });
+  EXPECT_STREQ("write00", buffer);
+
+  file_handle->Write("write01", 7, 0, 1);
+  ASSERT_NO_THROW({
+    file_handle->Read(buffer, 10, 0);
+  });
+  EXPECT_STREQ("write01", buffer);
+
+  file_handle->Write("write02", 7, 0, 2);
+  ASSERT_NO_THROW({
+    file_handle->Read(buffer, 10, 0);
+  });
+  EXPECT_STREQ("write02", buffer);
+
+  file_handle->Write("write04", 7, 0, 4);
+  ASSERT_NO_THROW({
+    file_handle->Read(buffer, 10, 0);
+  });
+  EXPECT_STREQ("write04", buffer);
+
+  ASSERT_NO_THROW({
+    file_handle->Read(buffer, 10, 0, 2);
+  });
+  EXPECT_STREQ("write02", buffer);
+
+  ASSERT_NO_THROW({
+    file_handle->Read(buffer, 10, 0, 3);
+  });
+  EXPECT_STREQ("write02", buffer);
+
+  file_handle->Write("WRITE04", 7, 0, 4);
+  ASSERT_NO_THROW({
+    file_handle->Read(buffer, 10, 0, 4);
+  });
+  EXPECT_STREQ("WRITE04", buffer);
+
+  ASSERT_NO_THROW({
+    file_handle->Read(buffer, 10, 0, 0);
+  });
+  EXPECT_STREQ("WRITE04", buffer);
+
+  file_handle->Close();
 }
 
 }  // namespace xtreemfs

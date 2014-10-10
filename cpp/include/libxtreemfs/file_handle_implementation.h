@@ -138,7 +138,12 @@ class FileHandleImplementation
 
   virtual int Read(char *buf, size_t count, int64_t offset);
 
+  virtual int Read(char *buf, size_t count, int64_t offset, int object_version);
+
   virtual int Write(const char *buf, size_t count, int64_t offset);
+
+  virtual int Write(const char *buf, size_t count, int64_t offset,
+                    int object_version);
 
   virtual void Flush();
 
@@ -255,6 +260,7 @@ class FileHandleImplementation
       UUIDIterator* uuid_iterator,
       const pbrpc::FileCredentials& file_credentials,
       int object_no,
+      int object_version,
       char* buffer,
       int offset_in_object,
       int bytes_to_read);
@@ -264,6 +270,7 @@ class FileHandleImplementation
       UUIDIterator* uuid_iterator,
       const pbrpc::FileCredentials& file_credentials,
       int object_no,
+      int object_version,
       int offset_in_object,
       const char* buffer,
       int bytes_to_write);

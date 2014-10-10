@@ -83,7 +83,7 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
           b64Encoder.Decode(boost::asio::buffer(encoded_file_sign_key))));
   sign_algo_.set_key(file_sign_key);
 
-  xtreemfs::pbrpc::Stat stat;
+  pbrpc::Stat stat;
   file_info_->GetAttr(user_credentials, &stat);
   // TODO(plieser): file_size_ must be a trustable input (needed for read behind
   //                file size)
@@ -104,7 +104,7 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
           volume->OpenFile(
               user_credentials,
               meta_file_name,
-              static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
+              static_cast<pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
                   | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
               0777);
     } catch (const PosixErrorException& e) {  // NOLINT
@@ -115,7 +115,7 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
           volume->OpenFile(
               user_credentials,
               meta_file_name,
-              static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
+              static_cast<pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
                   | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
               0777);
     }

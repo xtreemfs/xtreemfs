@@ -82,10 +82,12 @@ public final class WriteOperation extends OSDOperation {
             if ( (rq.getLocationList().getReplicaUpdatePolicy().length() == 0)
                || (rq.getLocationList().getNumReplicas() == 1) ){
 
+                Long newObjectVersion = args.getObjectVersion() > 0 ? args.getObjectVersion() : null;
+
                 ReusableBuffer viewBuffer = rq.getRPCRequest().getData().createViewBuffer();
                 master.getStorageStage().writeObject(args.getFileId(), args.getObjectNumber(), sp,
                         args.getOffset(), viewBuffer, rq.getCowPolicy(),
-                        rq.getLocationList(), syncWrite, null, rq, viewBuffer, new WriteObjectCallback() {
+                        rq.getLocationList(), syncWrite, newObjectVersion, rq, viewBuffer, new WriteObjectCallback() {
 
                             @Override
                             public void writeComplete(OSDWriteResponse result, ErrorResponse error) {

@@ -98,6 +98,14 @@ int FileHandleImplementation::Read(
     char *buf,
     size_t count,
     int64_t offset) {
+  return Read(buf, count, offset, 0);
+}
+
+int FileHandleImplementation::Read(
+    char *buf,
+    size_t count,
+    int64_t offset,
+    int object_version) {
   if (async_writes_enabled_) {
     file_info_->WaitForPendingAsyncWrites();
     ThrowIfAsyncWritesFailed();
@@ -172,11 +180,11 @@ int FileHandleImplementation::Read(
     // if encryption is enabled
     if (object_encryptor_.get() != NULL) {
       reader_partial = boost::bind(&FileHandleImplementation::ReadFromOSD, this,
-                                   uuid_iterator, file_credentials, _1, _2, _3,
-                                   _4);
+                                   uuid_iterator, file_credentials, _1,
+                                   object_version, _2, _3, _4);
       writer_partial = boost::bind(&FileHandleImplementation::WriteToOSD, this,
-                                   osd_uuid_iterator_, file_credentials, _1, _3,
-                                   _2, _4);
+                                   osd_uuid_iterator_, file_credentials, _1,
+                                   object_version, _3, _2, _4);
     }
 
     if (object_cache_) {
@@ -198,13 +206,13 @@ int FileHandleImplementation::Read(
             this,
             uuid_iterator,
             file_credentials,
-            _1, _2, 0, object_cache_->object_size());
+            _1, object_version, _2, 0, object_cache_->object_size());
         writer = boost::bind(
             &FileHandleImplementation::WriteToOSD,
             this,
             osd_uuid_iterator_,
             file_credentials,
-            _1, 0, _2, _3);
+            _1, object_version, 0, _2, _3);
       }
       received_data += object_cache_->Read(
           operations[j].obj_number,
@@ -225,6 +233,7 @@ int FileHandleImplementation::Read(
         // TODO(mberlin): Update xloc list if newer version found (on OSD?).
         received_data += ReadFromOSD(uuid_iterator, file_credentials,
                                      operations[j].obj_number,
+                                     object_version,
                                      operations[j].data,
                                      operations[j].req_offset,
                                      operations[j].req_size);
@@ -238,13 +247,13 @@ int FileHandleImplementation::Read(
 int FileHandleImplementation::ReadFromOSD(
     UUIDIterator* uuid_iterator,
     const FileCredentials& file_credentials,
-    int object_no, char* buffer, int offset_in_object,
+    int object_no, int object_version, char* buffer, int offset_in_object,
     int bytes_to_read) {
   readRequest rq;
   rq.set_file_id(file_credentials.xcap().file_id());
   rq.mutable_file_credentials()->CopyFrom(file_credentials);
   rq.set_object_number(object_no);
-  rq.set_object_version(0);
+  rq.set_object_version(object_version);
   rq.set_offset(offset_in_object);
   rq.set_length(bytes_to_read);
 
@@ -283,6 +292,14 @@ int FileHandleImplementation::Write(
     const char *buf,
     size_t count,
     int64_t offset) {
+  return Write(buf, count, offset, 0);
+}
+
+int FileHandleImplementation::Write(
+    const char *buf,
+    size_t count,
+    int64_t offset,
+    int object_version) {
   if (async_writes_enabled_) {
     ThrowIfAsyncWritesFailed();
   }
@@ -376,10 +393,11 @@ int FileHandleImplementation::Write(
               offset,
               count,
               boost::bind(&FileHandleImplementation::ReadFromOSD, this,
-                          osd_uuid_iterator_, file_credentials, _1, _2, _3, _4),
+                          osd_uuid_iterator_, file_credentials, _1,
+                          object_version, _2, _3, _4),
               boost::bind(&FileHandleImplementation::WriteToOSD, this,
-                          osd_uuid_iterator_, file_credentials, _1, _3, _2,
-                          _4)));
+                          osd_uuid_iterator_, file_credentials, _1,
+                          object_version, _3, _2, _4)));
     }
     // Synchronous writes.
     string osd_uuid = "";
@@ -409,10 +427,10 @@ int FileHandleImplementation::Write(
       if (object_encryptor_.get() != NULL) {
         reader_partial = boost::bind(&FileHandleImplementation::ReadFromOSD,
                                      this, uuid_iterator, file_credentials, _1,
-                                     _2, _3, _4);
+                                     object_version, _2, _3, _4);
         writer_partial = boost::bind(&FileHandleImplementation::WriteToOSD,
                                      this, uuid_iterator, file_credentials, _1,
-                                     _3, _2, _4);
+                                     object_version, _3, _2, _4);
       }
 
       if (object_cache_ != NULL) {
@@ -435,13 +453,13 @@ int FileHandleImplementation::Write(
               this,
               uuid_iterator,
               file_credentials,
-              _1, _2, 0, object_cache_->object_size());
+              _1, object_version, _2, 0, object_cache_->object_size());
           writer = boost::bind(
               &FileHandleImplementation::WriteToOSD,
               this,
               osd_uuid_iterator_,
               file_credentials,
-              _1, 0, _2, _3);
+              _1, object_version, 0, _2, _3);
         }
         object_cache_->Write(operations[j].obj_number,
                              operations[j].req_offset,
@@ -457,9 +475,9 @@ int FileHandleImplementation::Write(
                                         operations[j].req_size, reader_partial,
                                         writer_partial);
         } else {
-            WriteToOSD(uuid_iterator, file_credentials,
-                       operations[j].obj_number, operations[j].req_offset,
-                       operations[j].data, operations[j].req_size);
+          WriteToOSD(uuid_iterator, file_credentials, operations[j].obj_number,
+                     object_version, operations[j].req_offset,
+                     operations[j].data, operations[j].req_size);
         }
       }
     }
@@ -471,13 +489,13 @@ int FileHandleImplementation::Write(
 void FileHandleImplementation::WriteToOSD(
     UUIDIterator* uuid_iterator,
     const FileCredentials& file_credentials,
-    int object_no, int offset_in_object, const char* buffer,
+    int object_no, int object_version, int offset_in_object, const char* buffer,
     int bytes_to_write) {
   writeRequest write_request;
   write_request.mutable_file_credentials()->CopyFrom(file_credentials);
   write_request.set_file_id(file_credentials.xcap().file_id());
   write_request.set_object_number(object_no);
-  write_request.set_object_version(0);
+  write_request.set_object_version(object_version);
   write_request.set_offset(offset_in_object);
   write_request.set_lease_timeout(0);
 
@@ -542,7 +560,7 @@ void FileHandleImplementation::Flush(bool close_file) {
         this,
         osd_uuid_iterator_,
         file_credentials,
-        _1, 0, _2, _3);
+        _1, 0, 0, _2, _3);
     object_cache_->Flush(writer);
   }
 
@@ -607,9 +625,9 @@ void FileHandleImplementation::TruncatePhaseTwoAndThree(
         user_credentials,
         new_file_size,
         boost::bind(&FileHandleImplementation::ReadFromOSD, this,
-                    osd_uuid_iterator_, file_credentials, _1, _2, _3, _4),
+                    osd_uuid_iterator_, file_credentials, _1, 0, _2, _3, _4),
         boost::bind(&FileHandleImplementation::WriteToOSD, this,
-                    osd_uuid_iterator_, file_credentials, _1, _3, _2, _4));
+                    osd_uuid_iterator_, file_credentials, _1, 0, _3, _2, _4));
   }
 
   // 2. Call truncate at the head OSD.
