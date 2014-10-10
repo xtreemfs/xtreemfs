@@ -7,6 +7,7 @@
  */
 package org.xtreemfs.contrib.provisioning;
 
+import com.goebl.david.Webb;
 import com.google.gson.Gson;
 import com.thetransactioncompany.jsonrpc2.JSONRPC2Error;
 import com.thetransactioncompany.jsonrpc2.JSONRPC2ParseException;
@@ -32,11 +33,11 @@ import org.xtreemfs.foundation.logging.Logging.Category;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.URL;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -436,23 +437,9 @@ public class JsonRPC implements ResourceLoaderAware {
 
     private void addMangerToCrs(String crsUrl) {
         try {
-            String myAddress = InetAddress.getLocalHost().getHostAddress();
-            String requestContent = "{\"Manager\": \"IRM-XtreemFS\", \"Hostname\": \""+myAddress+"\", \"Port\": \"8080\"}";
-            URL url = new URL(crsUrl);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("POST");
-            connection.setDoOutput(true);
-            connection.setDoInput(true);
-            connection.setInstanceFollowRedirects(false);
-            connection.setRequestProperty("Content-Type", "application/json");
-            connection.setRequestProperty("Content-Length", Integer.toString(requestContent.length()));
-            connection.setRequestProperty("charset", "utf-8");
-            connection.setUseCaches (false);
-            DataOutputStream wr = new DataOutputStream(connection.getOutputStream ());
-            wr.writeBytes(requestContent);
-            wr.flush();
-            wr.close();
-            connection.disconnect();
+            Webb webb = Webb.create();
+            webb.post(crsUrl).param("Manager", "IRM-XtreemFS").param("Hostname", "127.0.0.1").param("Port", "8080")
+                    .asJsonObject().ensureSuccess();
         } catch (Exception e) {
             Logger.getLogger(JsonRPC.class.getName()).log(Level.WARNING, "Adding manager to CRS failed: " + e.getMessage());
         }
