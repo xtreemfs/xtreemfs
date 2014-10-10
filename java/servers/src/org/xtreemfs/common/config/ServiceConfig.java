@@ -155,7 +155,13 @@ public class ServiceConfig extends Config {
         NO_CLEANUP("no_cleanup", false, Boolean.class, false),
         NO_CLEANUP_VOLUMES("no_cleanup_volumes", false, Boolean.class, false),
         NO_CLEANUP_BASEFILE("no_cleanup_basefile", false, Boolean.class, false),
-        OSD_CLEANUP("osd_cleanup", false, Boolean.class, false);
+        OSD_CLEANUP("osd_cleanup", false, Boolean.class, false),
+
+
+        /*
+         * IRM-XtreemFS specific configuration parameter
+         */
+        CRS_URL("crs_url", "", String.class, false);
 
 
         Parameter(String propString, Object defaultValue, Class propClass, Boolean req) {
@@ -812,5 +818,9 @@ public class ServiceConfig extends Config {
 
     public boolean isUsingMultihoming() {
         return (Boolean) parameter.get(Parameter.USE_MULTIHOMING);
+    }
+
+    public String getCrsUrl() {
+        return (String) parameter.get(Parameter.CRS_URL);
     }
 }

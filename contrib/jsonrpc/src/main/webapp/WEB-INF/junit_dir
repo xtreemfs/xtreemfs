@@ -17,3 +17,5 @@ ssl.enabled = false
 #ssl.service_creds = /home/bzcschae/zertifikate/mustafa/mustafa.p12
 #ssl.service_creds.pw = doh2Yaig  
 #ssl.service_creds.container = pkcs12
+
+crs_url = ""

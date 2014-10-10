@@ -7,20 +7,14 @@
  */
 package org.xtreemfs.contrib.provisioning;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-
+import com.google.gson.Gson;
+import com.thetransactioncompany.jsonrpc2.JSONRPC2Error;
+import com.thetransactioncompany.jsonrpc2.JSONRPC2ParseException;
+import com.thetransactioncompany.jsonrpc2.JSONRPC2Request;
+import com.thetransactioncompany.jsonrpc2.JSONRPC2Response;
+import com.thetransactioncompany.jsonrpc2.server.Dispatcher;
+import com.thetransactioncompany.jsonrpc2.server.MessageContext;
 import net.minidev.json.JSONObject;
-
 import org.springframework.context.ResourceLoaderAware;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Controller;
@@ -29,28 +23,23 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.xtreemfs.common.libxtreemfs.Client;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.Options;
-import org.xtreemfs.contrib.provisioning.LibJSON.Addresses;
-import org.xtreemfs.contrib.provisioning.LibJSON.ReservationStati;
-import org.xtreemfs.contrib.provisioning.LibJSON.Reservations;
-import org.xtreemfs.contrib.provisioning.LibJSON.Resource;
-import org.xtreemfs.contrib.provisioning.LibJSON.ResourceCapacity;
-import org.xtreemfs.contrib.provisioning.LibJSON.ResourceMapper;
-import org.xtreemfs.contrib.provisioning.LibJSON.Resources;
-import org.xtreemfs.contrib.provisioning.LibJSON.Types;
+import org.xtreemfs.contrib.provisioning.LibJSON.*;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
-import org.xtreemfs.mrc.MRCConfig;
 
-import com.google.gson.Gson;
-import com.thetransactioncompany.jsonrpc2.JSONRPC2Error;
-import com.thetransactioncompany.jsonrpc2.JSONRPC2ParseException;
-import com.thetransactioncompany.jsonrpc2.JSONRPC2Request;
-import com.thetransactioncompany.jsonrpc2.JSONRPC2Response;
-import com.thetransactioncompany.jsonrpc2.server.Dispatcher;
-import com.thetransactioncompany.jsonrpc2.server.MessageContext;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.URL;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Controller
 public class JsonRPC implements ResourceLoaderAware {
@@ -126,15 +115,18 @@ public class JsonRPC implements ResourceLoaderAware {
         Logging.start(Logging.LEVEL_DEBUG, Category.tool);
 
         // If /etc/xos/xtreemfs/default_dir exists, get DIR address from it.
-        File defaultDirConfigFile = getResource("WEB-INF/"+this.DEFAULT_DIR_CONFIG);
-        if (defaultDirConfigFile == null) { // for j-unit tests check this path too
-            defaultDirConfigFile = new File("src/main/webapp/WEB-INF/"+this.DEFAULT_DIR_CONFIG);
+        File defaultIrmConfigFile = new File("/etc/xos/xtreemfs/irm.properties");
+        if(!defaultIrmConfigFile.exists()) {
+            defaultIrmConfigFile = getResource("WEB-INF/" + this.DEFAULT_DIR_CONFIG);
+            if (defaultIrmConfigFile == null) { // for j-unit tests check this path too
+                defaultIrmConfigFile = new File("src/main/webapp/WEB-INF/" + this.DEFAULT_DIR_CONFIG);
+            }
         }
-        MRCConfig config = null;
-        if (defaultDirConfigFile != null && defaultDirConfigFile.exists()) {
-            Logger.getLogger(JsonRPC.class.getName()).log(Level.INFO, "Found a config file: " + defaultDirConfigFile.getAbsolutePath());
+        IRMConfig config = null;
+        if (defaultIrmConfigFile != null && defaultIrmConfigFile.exists()) {
+            Logger.getLogger(JsonRPC.class.getName()).log(Level.INFO, "Found a config file: " + defaultIrmConfigFile.getAbsolutePath());
             // the DIRConfig does not contain a "dir_service." property
-            config = new MRCConfig(defaultDirConfigFile.getAbsolutePath());
+            config = new IRMConfig(defaultIrmConfigFile.getAbsolutePath());
             config.read();
             this.dirAddresses = config.getDirectoryServices();
             this.schedulerAddress = config.getSchedulerService();
@@ -189,6 +181,10 @@ public class JsonRPC implements ResourceLoaderAware {
             stop();
 
             throw new IOException("client.start() failed (threw an exception)");
+        }
+
+        if(!config.getCrsUrl().equals("")) {
+            addMangerToCrs(config.getCrsUrl());
         }
     }
 
@@ -436,5 +432,29 @@ public class JsonRPC implements ResourceLoaderAware {
             return new JSONRPC2Response(JSONParser.parseJSON(json), req.getID());
         }
 
+    }
+
+    private void addMangerToCrs(String crsUrl) {
+        try {
+            String myAddress = InetAddress.getLocalHost().getHostAddress();
+            String requestContent = "{\"Manager\": \"IRM-XtreemFS\", \"Hostname\": \""+myAddress+"\", \"Port\": \"8080\"}";
+            URL url = new URL(crsUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setDoOutput(true);
+            connection.setDoInput(true);
+            connection.setInstanceFollowRedirects(false);
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Content-Length", Integer.toString(requestContent.length()));
+            connection.setRequestProperty("charset", "utf-8");
+            connection.setUseCaches (false);
+            DataOutputStream wr = new DataOutputStream(connection.getOutputStream ());
+            wr.writeBytes(requestContent);
+            wr.flush();
+            wr.close();
+            connection.disconnect();
+        } catch (Exception e) {
+            Logger.getLogger(JsonRPC.class.getName()).log(Level.WARNING, "Adding manager to CRS failed: " + e.getMessage());
+        }
     }
 }
