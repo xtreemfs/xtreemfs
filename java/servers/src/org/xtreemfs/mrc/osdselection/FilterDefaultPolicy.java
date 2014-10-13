@@ -24,6 +24,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDSelectionPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.OSDHealthResult;
 
 /**
  * Filters all those OSDs that haven't been assigned to the current XLoc list
@@ -40,6 +41,8 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
     
     private static final String     FREE_CAPACITY_BYTES = "free_capacity_bytes";
     
+    private static final String     OSD_HEALTH_CHECK   = "osd_health_check";
+
     private static final String     NOT_IN              = "not.";
     // default: 2GB
     private long                    minFreeCapacity     = 2 * 1024 * 1024 * 1024;
@@ -47,6 +50,9 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
     // default: 5 min
     private long                    maxOfflineTime      = 300;
     
+    // default: WARNING
+    private OSDHealthResult         osdHealthCheck     = OSDHealthResult.OSD_HEALTH_RESULT_WARNING;
+
     private HashMap<String, String> customFilter        = new HashMap<String, String>();
     private HashMap<String, String> customNotFilter     = new HashMap<String, String>();
     
@@ -73,7 +79,7 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
         ServiceSet.Builder filteredOSDs = ServiceSet.newBuilder();
         for (Service osd : allOSDs.getServicesList()) {
             
-            if (!hasTimedOut(osd) && hasFreeCapacity(osd) && isAvailable(osd)) {
+            if (!hasTimedOut(osd) && hasFreeCapacity(osd) && isAvailable(osd) && isHealthy(osd)) {
                 
                 // if no custom filters have been assigned, add the OSD to the
                 // list
@@ -122,8 +128,16 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
         if (OFFLINE_TIME_SECS.equals(key)) {
             maxOfflineTime = Long.parseLong(value);
         }
-        else if (FREE_CAPACITY_BYTES.equals(key))
+        else if (FREE_CAPACITY_BYTES.equals(key)) {
             minFreeCapacity = Long.parseLong(value);
+        }
+        else if (OSD_HEALTH_CHECK.equals(key)){
+            if (value.toUpperCase().equals("WARNING")) {
+                osdHealthCheck = OSDHealthResult.OSD_HEALTH_RESULT_WARNING;
+            } else if (value.toUpperCase().equals("FAILED")) {
+                osdHealthCheck = OSDHealthResult.OSD_HEALTH_RESULT_FAILED;
+            }
+        }
         else {
             if (value == null) {
                 if (key.toLowerCase().startsWith(NOT_IN)) {
@@ -176,6 +190,20 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
         }
     }
     
+    private boolean isHealthy(Service osd) {
+        String smartTestResult = KeyValuePairs.getValue(osd.getData().getDataList(), OSD_HEALTH_CHECK);
+        if (smartTestResult == null) {
+            return true;
+        }
+
+        if (osdHealthCheck == OSDHealthResult.OSD_HEALTH_RESULT_WARNING) {
+            return Integer.valueOf(smartTestResult) != OSDHealthResult.OSD_HEALTH_RESULT_FAILED_VALUE
+                    && Integer.valueOf(smartTestResult) != OSDHealthResult.OSD_HEALTH_RESULT_WARNING_VALUE;
+        } else {
+            return Integer.valueOf(smartTestResult) != OSDHealthResult.OSD_HEALTH_RESULT_FAILED_VALUE;
+        }
+    }
+    
     private static boolean matches(String filterString, String customProperty) {
         
         StringTokenizer st = new StringTokenizer(filterString);
@@ -186,5 +214,4 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
         
         return false;
     }
-    
 }
