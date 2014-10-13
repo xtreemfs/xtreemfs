@@ -18,4 +18,10 @@ ssl.enabled = false
 #ssl.service_creds.pw = doh2Yaig  
 #ssl.service_creds.container = pkcs12
 
+hostname = localhost
+
+cost_sequential = 2.0
+cost_random = 2.0
+cost_capacity = 1.0
+
 crs_url =

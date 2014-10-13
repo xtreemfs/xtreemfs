@@ -1,15 +1,5 @@
 package org.xtreemfs.contrib.provisioning;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-
-import javax.xml.bind.annotation.XmlRootElement;
-
 import org.codehaus.jackson.annotate.JsonAutoDetect;
 import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
 import org.xtreemfs.common.libxtreemfs.Client;
@@ -25,6 +15,16 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyTyp
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.Scheduler;
 import org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse;
+
+import javax.xml.bind.annotation.XmlRootElement;
+import java.io.IOException;
+import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
 
 
 /**
@@ -46,6 +46,11 @@ import org.xtreemfs.pbrpc.generatedinterfaces.Scheduler.freeResourcesResponse;
  */
 public class LibJSON {
 
+    private static IRMConfig irmConfig = null;
+
+    public static void setIrmConfig(IRMConfig config) {
+        LibJSON.irmConfig = config;
+    }
 
     public static Volume openVolume(
             String volume_name,
@@ -238,8 +243,8 @@ public class LibJSON {
                                     random? AccessTypes.RANDOM : AccessTypes.SEQUENTIAL
                             ),
                             new Cost(
-                                    0,
-                                    0
+                                    getSequentialCost(),
+                                    getCapacityCost()
                             )
                     )
             );
@@ -442,8 +447,8 @@ public class LibJSON {
                                 AccessTypes.RANDOM
                         ),
                         new Cost(
-                                0,
-                                0
+                                getCapacityCost(),
+                                getRandomCost()
                         )
                 ));
 
@@ -464,8 +469,8 @@ public class LibJSON {
                                 AccessTypes.SEQUENTIAL
                         ),
                         new Cost(
-                                0,
-                                0
+                                getCapacityCost(),
+                                getSequentialCost()
                         )
                 ));
 
@@ -1084,4 +1089,39 @@ public class LibJSON {
         }
     }
 
+    public static String getMyAddress() {
+        try {
+            if (!irmConfig.getHostName().equals("")) {
+                return irmConfig.getHostName();
+            } else {
+                return InetAddress.getLocalHost().getHostAddress();
+            }
+        } catch (Exception e) {
+            return "localhost";
+        }
+    }
+
+    private static double getSequentialCost() {
+        if(irmConfig != null) {
+            return irmConfig.getSequentialCost();
+        } else {
+            return 1.0;
+        }
+    }
+
+    private static double getRandomCost() {
+        if(irmConfig != null) {
+            return irmConfig.getRandomCost();
+        } else {
+            return 1.0;
+        }
+    }
+
+    private static double getCapacityCost() {
+        if(irmConfig != null) {
+            return irmConfig.getCapacityCost();
+        } else {
+            return 1.0;
+        }
+    }
 }

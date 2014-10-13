@@ -65,6 +65,8 @@ public class JsonRPC implements ResourceLoaderAware {
 
     protected SSLOptions sslOptions = null;
 
+    protected IRMConfig config = null;
+
     protected Gson gson = new Gson();
 
     enum METHOD {
@@ -123,7 +125,7 @@ public class JsonRPC implements ResourceLoaderAware {
                 defaultIrmConfigFile = new File("src/main/webapp/WEB-INF/" + this.DEFAULT_DIR_CONFIG);
             }
         }
-        IRMConfig config = null;
+
         if (defaultIrmConfigFile != null && defaultIrmConfigFile.exists()) {
             Logger.getLogger(JsonRPC.class.getName()).log(Level.INFO, "Found a config file: " + defaultIrmConfigFile.getAbsolutePath());
             // the DIRConfig does not contain a "dir_service." property
@@ -139,6 +141,10 @@ public class JsonRPC implements ResourceLoaderAware {
 
         if (this.adminPassword == null) {
             this.adminPassword = "";
+        }
+
+        if(config != null) {
+            LibJSON.setIrmConfig(config);
         }
 
         Logger.getLogger(JsonRPC.class.getName()).log(Level.INFO, "Connecting to DIR-Address: " + this.dirAddresses[0].getAddress().getCanonicalHostName());
@@ -184,7 +190,7 @@ public class JsonRPC implements ResourceLoaderAware {
             throw new IOException("client.start() failed (threw an exception)");
         }
 
-        if(!config.getCrsUrl().equals("")) {
+        if(config.getCrsUrl() != null && !config.getCrsUrl().equals("")) {
             addMangerToCrs(config.getCrsUrl());
         }
     }
@@ -437,11 +443,25 @@ public class JsonRPC implements ResourceLoaderAware {
 
     private void addMangerToCrs(String crsUrl) {
         try {
+            String url = getAddManagerURL(crsUrl);
             Webb webb = Webb.create();
-            webb.post(crsUrl).param("Manager", "IRM-XtreemFS").param("Hostname", "127.0.0.1").param("Port", "8080")
-                    .asJsonObject().ensureSuccess();
+            com.goebl.david.Response response = webb.post(url).header("Content-Type", "application/json")
+                    .body("{\"Manager\": \"IRM\", \"Hostname\": \"" + LibJSON.getMyAddress() + "\", \"Port\": \"8080\"}")
+                    .asJsonObject();
+            net.minidev.json.JSONObject json = (net.minidev.json.JSONObject) response.getBody();
+            Logger.getLogger(JsonRPC.class.getName()).log(Level.INFO, json.toJSONString());
         } catch (Exception e) {
             Logger.getLogger(JsonRPC.class.getName()).log(Level.WARNING, "Adding manager to CRS failed: " + e.getMessage());
+        }
+    }
+
+    private String getAddManagerURL(String crsUrl) {
+        if(crsUrl.endsWith("/method/addManager")) {
+            return crsUrl;
+        } else if (crsUrl.endsWith("/")) {
+            return crsUrl + "method/addManager";
+        } else {
+            return crsUrl + "/method/addManager";
         }
     }
 }

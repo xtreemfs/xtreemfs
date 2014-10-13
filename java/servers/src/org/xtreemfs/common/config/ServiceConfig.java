@@ -161,7 +161,10 @@ public class ServiceConfig extends Config {
         /*
          * IRM-XtreemFS specific configuration parameter
          */
-        CRS_URL("crs_url", "", String.class, false);
+        CRS_URL("crs_url", "", String.class, false),
+        SEQ_COST("cost_sequential", 1.0, Double.class, false),
+        RANDOM_COST("cost_random", 1.0, Double.class, false),
+        CAPACITY_COST("cost_capacity", 1.0, Double.class, false);
 
 
         Parameter(String propString, Object defaultValue, Class propClass, Boolean req) {
@@ -491,6 +494,10 @@ public class ServiceConfig extends Config {
             return(Long.parseLong(tmpString.trim()));
         }
 
+        // Double values
+        if (Double.class == param.getPropertyClass()) {
+            return Double.parseDouble(tmpString.trim());
+        }
 
         // Boolean values
         if (Boolean.class == param.getPropertyClass()) {
@@ -822,5 +829,17 @@ public class ServiceConfig extends Config {
 
     public String getCrsUrl() {
         return (String) parameter.get(Parameter.CRS_URL);
+    }
+
+    public Double getSequentialCost() {
+        return (Double) parameter.get(Parameter.SEQ_COST);
+    }
+
+    public Double getRandomCost() {
+        return (Double) parameter.get(Parameter.RANDOM_COST);
+    }
+
+    public Double getCapacityCost() {
+        return (Double) parameter.get(Parameter.CAPACITY_COST);
     }
 }

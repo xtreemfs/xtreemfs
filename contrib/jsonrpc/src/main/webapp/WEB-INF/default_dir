@@ -20,4 +20,9 @@ ssl.enabled = false
 #ssl.service_creds.pw = passphrase
 #ssl.service_creds.container = pkcs12
 
-crs_url =
+hostname = localhost
+
+crs_url = http://localhost:5558
+cost_sequential = 2.0
+cost_random = 2.0
+cost_capacity = 1.0

@@ -39,7 +39,10 @@ public class IRMConfig extends ServiceConfig {
             Parameter.WAIT_FOR_DIR,
             Parameter.GEO_COORDINATES,
             Parameter.ADMIN_PASSWORD,
-            Parameter.CRS_URL
+            Parameter.CRS_URL,
+            Parameter.SEQ_COST,
+            Parameter.RANDOM_COST,
+            Parameter.CAPACITY_COST
     };
 
     /** Creates a new instance of MRCConfig */
