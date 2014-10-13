@@ -44,7 +44,7 @@ else()
             "libprotobuf.so"
             PATHS "${CLIENT_GOOGLE_PROTOBUF_CPP}/src/.libs/")
 endif(WIN32)
-set(CLIENT_GOOGLE_TEST_CPP "${CMAKE_SOURCE_DIR}/thirdparty/gtest-1.5.0")
+set(CLIENT_GOOGLE_TEST_CPP "${CMAKE_SOURCE_DIR}/thirdparty/gtest-1.7.0")
 if (WIN32)
   set(CLIENT_GOOGLE_TEST_CPP_LIBRARY "${CLIENT_GOOGLE_TEST_CPP}/msvc/gtest-md/Debug/gtestd.lib")
 else()
