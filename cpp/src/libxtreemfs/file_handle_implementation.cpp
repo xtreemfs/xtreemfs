@@ -357,9 +357,13 @@ int FileHandleImplementation::Write(
                              operations[j].req_size,
                              reader, writer);
       } else {
-            WriteToOSD(uuid_iterator, file_credentials,
+        WriteToOSD(uuid_iterator, file_credentials,
                        operations[j].obj_number, operations[j].req_offset,
                        operations[j].data, operations[j].req_size);
+
+        if (operations[j].owns_data) {
+          delete[] operations[j].data;
+        }
       }
     }
   }
