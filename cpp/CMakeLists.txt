@@ -240,6 +240,9 @@ ADD_EXECUTABLE(example_libxtreemfs src/example_libxtreemfs/example_libxtreemfs.c
 SET_TARGET_PROPERTIES(example_libxtreemfs PROPERTIES COMPILE_DEFINITIONS ${COMPILE_DEFS})
 TARGET_LINK_LIBRARIES(example_libxtreemfs xtreemfs)
 
+ADD_EXECUTABLE(example_libxtreemfs_erasurecode src/example_libxtreemfs_erasurecode/example_libxtreemfs_erasurecode.cpp)
+TARGET_LINK_LIBRARIES(example_libxtreemfs_erasurecode xtreemfs)
+
 file(GLOB_RECURSE SRCS_MKFS src/mkfs.xtreemfs/*.cpp)
 ADD_EXECUTABLE(mkfs.xtreemfs ${SRCS_MKFS})
 SET_TARGET_PROPERTIES(mkfs.xtreemfs PROPERTIES COMPILE_DEFINITIONS ${COMPILE_DEFS})
