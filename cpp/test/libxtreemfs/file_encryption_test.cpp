@@ -305,6 +305,42 @@ TEST_F(EncryptionTest, Read_03) {
   EXPECT_EQ(0, x);
 }
 
+TEST_F(EncryptionTest, Read_04) {
+  char buffer[50];
+  int x;
+
+  // partial write to 1. enc block
+  ASSERT_NO_THROW({
+    file->Write("A", 1, 0);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 12, 0);
+  });
+  EXPECT_EQ(1, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("A", buffer);
+
+  // read behind file size
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 1, 2);
+  });
+  EXPECT_EQ(0, x);
+
+  // read behind file size
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 4, 1);
+  });
+  EXPECT_EQ(0, x);
+
+  // read of size 0
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 0, 0);
+  });
+  EXPECT_EQ(0, x);
+}
+
 TEST_F(EncryptionTest, Write_01) {
   char buffer[50];
   int x;

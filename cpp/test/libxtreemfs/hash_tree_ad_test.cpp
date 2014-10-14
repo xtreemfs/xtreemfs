@@ -19,6 +19,8 @@
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/volume.h"
 #include "libxtreemfs/xtreemfs_exception.h"
+#include "util/crypto/asym_key.h"
+#include "util/crypto/sign_algorithm.h"
 
 namespace xtreemfs {
 
@@ -40,79 +42,6 @@ std::string RandomVolumeName(const int length) {
   }
   return result;
 }
-
-class OnlineTest : public ::testing::Test {
- protected:
-  virtual void SetUp() {
-#ifdef __linux__
-    const char* dir_url_env = getenv("XTREEMFS_DIR_URL");
-    if (dir_url_env) {
-      dir_url_.xtreemfs_url = std::string(dir_url_env);
-    }
-    const char* mrc_url_env = getenv("XTREEMFS_MRC_URL");
-    if (mrc_url_env) {
-      mrc_url_.xtreemfs_url = std::string(mrc_url_env);
-    }
-#endif  // __linux__
-
-    if (dir_url_.xtreemfs_url.empty()) {
-      dir_url_.xtreemfs_url = "pbrpc://localhost:32638/";
-    }
-    if (mrc_url_.xtreemfs_url.empty()) {
-      mrc_url_.xtreemfs_url = "pbrpc://localhost:32636/";
-    }
-
-    dir_url_.ParseURL(kDIR);
-    mrc_url_.ParseURL(kMRC);
-
-    auth_.set_auth_type(xtreemfs::pbrpc::AUTH_NONE);
-
-    // Every operation is executed in the context of a given user and his groups
-    // The UserCredentials object does store this information.
-    user_credentials_.set_username("volume_implementation_test");
-    user_credentials_.add_groups("volume_implementation_test");
-
-    // Create a new instance of a client using the DIR service at 'localhost'
-    // at port 32638 using the default implementation.
-    options_.log_level_string = "WARN";
-    client_ = Client::CreateClient(dir_url_.service_addresses,
-                                   user_credentials_,
-                                   dir_url_.GenerateSSLOptions(), options_);
-
-    // Start the client (a connection to the DIR service will be setup).
-    client_->Start();
-
-    // Create volume with a random name.
-    volume_name_ = RandomVolumeName(5);
-    client_->CreateVolume(mrc_url_.service_addresses, auth_, user_credentials_,
-                          volume_name_);
-
-    // Mount volume.
-    volume_ = client_->OpenVolume(volume_name_, NULL, options_);
-  }
-
-  virtual void TearDown() {
-    volume_->Close();
-
-    client_->DeleteVolume(mrc_url_.service_addresses, auth_, user_credentials_,
-                          volume_name_);
-
-    client_->Shutdown();
-    delete client_;
-  }
-
-  xtreemfs::Client* client_;
-  xtreemfs::Options options_;
-  /** Only used to store and parse the DIR URL. */
-  xtreemfs::Options dir_url_;
-  /** Only used to store and parse the MRC URL. */
-  xtreemfs::Options mrc_url_;
-  xtreemfs::Volume* volume_;
-  std::string volume_name_;
-
-  xtreemfs::pbrpc::Auth auth_;
-  xtreemfs::pbrpc::UserCredentials user_credentials_;
-};
 
 class OfflineTest : public ::testing::Test {
  protected:
@@ -144,35 +73,6 @@ class OfflineTest : public ::testing::Test {
   xtreemfs::pbrpc::UserCredentials user_credentials_;
 };
 
-class HashTreeADTest : public OnlineTest {
- protected:
-  virtual void SetUp() {
-    OnlineTest::SetUp();
-
-    // Open a file.
-    file =
-        volume_->OpenFile(
-            user_credentials_,
-            "/test_meta_file",
-            static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_CREAT // NOLINT
-                | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_TRUNC
-                | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
-            0777);
-
-    tree = new HashTreeAD(4, options_);
-    tree->Init(file, -2);
-  }
-
-  virtual void TearDown() {
-    delete tree;
-
-    OnlineTest::TearDown();
-  }
-
-  FileHandle* file;
-  HashTreeAD* tree;
-};
-
 class HashTreeADTest_Offline : public OfflineTest {
  protected:
   virtual void SetUp() {
@@ -187,17 +87,21 @@ class HashTreeADTest_Offline : public OfflineTest {
                 | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_TRUNC
                 | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR));
 
-    tree = new HashTreeAD(4, test_env.options);
-    tree->Init(file, -2);
+    sign_algo_ = new SignAlgorithm(std::auto_ptr<AsymKey>(new AsymKey("RSA")),
+                                   test_env.options.encryption_hash);
+    tree = new HashTreeAD(file, sign_algo_, test_env.options, 4);
   }
 
   virtual void TearDown() {
     delete tree;
+    delete sign_algo_;
+    file->Close();
 
     OfflineTest::TearDown();
   }
 
   FileHandle* file;
+  SignAlgorithm* sign_algo_;
   HashTreeAD* tree;
 };
 
@@ -656,45 +560,6 @@ TEST_F(HashTreeADTest_Offline, RequiredNodesForWrite) {
   nodeNumbers.add(boost::icl::interval<int>::closed(10, 11));
   nodeNumbers.add(14);
   EXPECT_EQ(nodeNumbers, x);
-}
-
-TEST_F(HashTreeADTest, SetGetLeaf) {
-  std::vector<unsigned char> x(4);
-  x[0] = '#';
-  x[1] = '0';
-  x[2] = '0';
-
-  ASSERT_NO_THROW({
-    tree->StartWrite(1, true, 2, true);
-  });
-  x[3] = '1';
-  tree->SetLeaf(1, x, boost::asio::buffer("#001"));
-  x[3] = '2';
-  tree->SetLeaf(2, x, boost::asio::buffer("#002"));
-  tree->FinishWrite();
-
-  ASSERT_NO_THROW({
-    tree->StartRead(0, 1);
-  });
-  ASSERT_NO_THROW({
-    tree->GetLeaf(0, boost::asio::buffer(std::string(32, '\0')));
-  });
-  ASSERT_NO_THROW({
-    tree->GetLeaf(1, boost::asio::buffer("#001"));
-  });
-  ASSERT_THROW({
-    tree->GetLeaf(1, boost::asio::buffer("#002"));
-  }, XtreemFSException);
-
-  tree->StartTruncate(-1, true);
-  tree->FinishTruncate(user_credentials_);
-
-  ASSERT_NO_THROW({
-    tree->StartWrite(0, true, 0, true);
-  });
-  x[3] = '0';
-  tree->SetLeaf(0, x, boost::asio::buffer("#000"));
-  tree->FinishWrite();
 }
 
 }  // namespace xtreemfs

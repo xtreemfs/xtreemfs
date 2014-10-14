@@ -18,6 +18,7 @@
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/volume_implementation.h"
 #include "util/crypto/cipher.h"
+#include "util/crypto/sign_algorithm.h"
 
 namespace xtreemfs {
 
@@ -78,8 +79,6 @@ class ObjectEncryptor {
     int& enc_block_size_;
 
     int& object_size_;
-
-    int64_t& file_size_;
 
     HashTreeAD hash_tree_;
 
@@ -144,8 +143,6 @@ class ObjectEncryptor {
   int object_size_;
 
   FileInfo* file_info_;
-
-  int64_t file_size_;
 
   /**
    * File handle for the meta file. Not owned by this class. Close is called on

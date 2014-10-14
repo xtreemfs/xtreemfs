@@ -28,6 +28,7 @@ SignAlgorithm::SignAlgorithm(std::auto_ptr<AsymKey> key, std::string alg_name) {
 
 void SignAlgorithm::Sign(boost::asio::const_buffer data,
                          boost::asio::mutable_buffer sig) {
+  assert(key_.get() != NULL);
   EVP_MD_CTX* mdctx;
   size_t slen;
 
@@ -43,7 +44,7 @@ void SignAlgorithm::Sign(boost::asio::const_buffer data,
   BOOST_SCOPE_EXIT_END
 
   /* Initialise the DigestSign operation */
-  if (1 != EVP_DigestSignInit(mdctx, NULL, md_, NULL, key_.get()->get_key())) {
+  if (1 != EVP_DigestSignInit(mdctx, NULL, md_, NULL, key_->get_key())) {
     LogAndThrowOpenSSLError();
   }
 
@@ -79,6 +80,7 @@ std::vector<unsigned char> SignAlgorithm::Sign(boost::asio::const_buffer data) {
 
 bool SignAlgorithm::Verify(boost::asio::const_buffer data,
                            boost::asio::mutable_buffer sig) {
+  assert(key_.get() != NULL);
   EVP_MD_CTX* mdctx;
 
   /* Create the Message Digest Context */
@@ -94,7 +96,7 @@ bool SignAlgorithm::Verify(boost::asio::const_buffer data,
 
   /* Initialise the DigestVerify operation */
   if (1
-      != EVP_DigestVerifyInit(mdctx, NULL, md_, NULL, key_.get()->get_key())) {
+      != EVP_DigestVerifyInit(mdctx, NULL, md_, NULL, key_->get_key())) {
     LogAndThrowOpenSSLError();
   }
 
@@ -128,7 +130,7 @@ void SignAlgorithm::set_key(std::auto_ptr<AsymKey> key) {
   assert(key.get() != NULL);
   key_ = key;
 
-  RSA* rsa_key = EVP_PKEY_get1_RSA(key_.get()->get_key());
+  RSA* rsa_key = EVP_PKEY_get1_RSA(key_->get_key());
 
   BOOST_SCOPE_EXIT(&rsa_key) {
     /* Clean up */

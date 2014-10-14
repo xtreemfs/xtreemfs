@@ -83,14 +83,6 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
           b64Encoder.Decode(boost::asio::buffer(encoded_file_sign_key))));
   sign_algo_.set_key(file_sign_key);
 
-  pbrpc::Stat stat;
-  file_info_->GetAttr(user_credentials, &stat);
-  // TODO(plieser): file_size_ must be a trustable input (needed for read behind
-  //                file size)
-  //                if file_size_ can be trusted, is hash tree for empty file
-  //                still needed?
-  file_size_ = stat.size();
-
   std::string meta_file_name(
       "/.xtreemfs_enc_meta_files/" + boost::lexical_cast<std::string>(file_id));
   try {
@@ -98,26 +90,23 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
                                   pbrpc::SYSTEM_V_FCNTL_H_O_RDWR, 0777);
   } catch (const PosixErrorException& e) {  // NOLINT
     // file didn't exist yet
-    file_size_ = -1;
     try {
-      meta_file_ =
-          volume->OpenFile(
-              user_credentials,
-              meta_file_name,
-              static_cast<pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
-                  | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
-              0777);
+      meta_file_ = volume->OpenFile(
+          user_credentials,
+          meta_file_name,
+          static_cast<pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
+              | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
+          0777);
     } catch (const PosixErrorException& e) {  // NOLINT
       // "/.xtreemfs_enc_meta_files" directory does not exist yet
       volume->MakeDirectory(user_credentials, "/.xtreemfs_enc_meta_files",
                             0777);
-      meta_file_ =
-          volume->OpenFile(
-              user_credentials,
-              meta_file_name,
-              static_cast<pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
-                  | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
-              0777);
+      meta_file_ = volume->OpenFile(
+          user_credentials,
+          meta_file_name,
+          static_cast<pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
+              | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
+          0777);
     }
   }
 }
@@ -132,26 +121,16 @@ ObjectEncryptor::Operation::Operation(ObjectEncryptor* obj_enc)
     : obj_enc_(obj_enc),
       enc_block_size_(obj_enc->enc_block_size_),
       object_size_(obj_enc->object_size_),
-      file_size_(obj_enc->file_size_),
-      hash_tree_(obj_enc->cipher_.iv_size(),
-                 obj_enc->volume_->volume_options()),
+      hash_tree_(obj_enc->meta_file_, &obj_enc->sign_algo_,
+                 obj_enc->volume_->volume_options(),
+                 obj_enc->cipher_.iv_size()),
       old_file_size_(0) {
-  int max_leaf;
-  if (file_size_ >= 0) {
-    max_leaf = (file_size_ - 1) / enc_block_size_;
-  } else if (file_size_ == 0) {
-    max_leaf = -1;
-  } else {
-    file_size_ = 0;
-    max_leaf = -2;
-  }
-  hash_tree_.Init(obj_enc->meta_file_, max_leaf, &obj_enc->sign_algo_);
 }
 
 ObjectEncryptor::ReadOperation::ReadOperation(ObjectEncryptor* obj_enc,
                                               int64_t offset, int count)
     : Operation(obj_enc) {
-  if (offset >= file_size_ || count == 0) {
+  if (count == 0) {
     return;
   }
   hash_tree_.StartRead(offset / enc_block_size_,
@@ -165,9 +144,11 @@ ObjectEncryptor::WriteOperation::WriteOperation(
     : Operation(obj_enc) {
   assert(count > 0);
 
+  hash_tree_.Init();
+
   // increase file size if end of write is behind current file size
-  old_file_size_ = file_size_;
-  file_size_ = std::max(file_size_, offset + count);
+  old_file_size_ = hash_tree_.file_size();
+  hash_tree_.set_file_size(std::max(old_file_size_, offset + count));
 
   hash_tree_.StartWrite(
       offset / enc_block_size_,
@@ -177,8 +158,10 @@ ObjectEncryptor::WriteOperation::WriteOperation(
           || (offset + count) >= old_file_size_,
       old_file_size_ % enc_block_size_ == 0);
 
-  if (file_size_ > old_file_size_ && old_file_size_ % enc_block_size_ != 0
-      && file_size_ / enc_block_size_ != old_file_size_ / enc_block_size_) {
+  if (hash_tree_.file_size() > old_file_size_
+      && old_file_size_ % enc_block_size_ != 0
+      && hash_tree_.file_size() / enc_block_size_
+          != old_file_size_ / enc_block_size_) {
     // write is behind the old last enc block and it was incomplete,
     // so it's hash must be updated
     int old_end_object_no = old_file_size_ / object_size_;
@@ -200,9 +183,7 @@ ObjectEncryptor::TruncateOperation::TruncateOperation(
     PartialObjectWriterFunction_sync writer_sync)
     : Operation(obj_enc) {
   // TODO(plieser): user_credentials needed?
-  int old_end_object_no = file_size_ / object_size_;
   int new_end_object_no = new_file_size / object_size_;
-  int old_end_object_size = file_size_ % object_size_;
   int new_end_object_size = new_file_size % object_size_;
   int new_end_enc_block_no;
   if (new_file_size > 0) {
@@ -211,27 +192,34 @@ ObjectEncryptor::TruncateOperation::TruncateOperation(
     new_end_enc_block_no = -1;
   }
 
-  old_file_size_ = file_size_;
-  if (new_file_size > file_size_) {
-    if (file_size_ % enc_block_size_ == 0) {
+  hash_tree_.Init();
+
+  if (new_file_size > hash_tree_.file_size()) {
+    if (hash_tree_.file_size() % enc_block_size_ == 0) {
       hash_tree_.StartTruncate(new_end_enc_block_no, true);
-      file_size_ = new_file_size;
+//      old_file_size_ = hash_tree_.file_size();
+      hash_tree_.set_file_size(new_file_size);
       hash_tree_.FinishTruncate(user_credentials);
     } else {
       hash_tree_.StartTruncate(new_end_enc_block_no, false);
-      file_size_ = new_file_size;
+      int old_end_object_no = hash_tree_.file_size() / object_size_;
+      int old_end_object_size = hash_tree_.file_size() % object_size_;
+      old_file_size_ = hash_tree_.file_size();
+      hash_tree_.set_file_size(new_file_size);
       Write_sync(old_end_object_no, NULL, old_end_object_size, 0, reader_sync,
                  writer_sync);
       hash_tree_.FinishTruncate(user_credentials);
     }
-  } else if (new_file_size < file_size_) {
+  } else if (new_file_size < hash_tree_.file_size()) {
     if (new_file_size % enc_block_size_ == 0) {
       hash_tree_.StartTruncate(new_end_enc_block_no, true);
-      file_size_ = new_file_size;
+//      old_file_size_ = hash_tree_.file_size();
+      hash_tree_.set_file_size(new_file_size);
       hash_tree_.FinishTruncate(user_credentials);
     } else {
       hash_tree_.StartTruncate(new_end_enc_block_no, false);
-      file_size_ = new_file_size;
+      old_file_size_ = hash_tree_.file_size();
+      hash_tree_.set_file_size(new_file_size);
       Write_sync(new_end_object_no, NULL, new_end_object_size, 0, reader_sync,
                  writer_sync);
       hash_tree_.FinishTruncate(user_credentials);
@@ -359,8 +347,8 @@ int ObjectEncryptor::Operation::DecryptEncBlock(
     return boost::asio::buffer_size(ciphertext);
   }
   int plaintext_len = obj_enc_->cipher_.decrypt(ciphertext,
-                                               obj_enc_->file_enc_key_, iv,
-                                               plaintext);
+                                                obj_enc_->file_enc_key_, iv,
+                                                plaintext);
   assert(plaintext_len == boost::asio::buffer_size(ciphertext));
   return plaintext_len;
 }
@@ -381,7 +369,7 @@ boost::unique_future<int> ObjectEncryptor::Operation::Read(
     PartialObjectReaderFunction reader, PartialObjectWriterFunction writer) {
   assert(bytes_to_read > 0);
   int object_offset = object_no * object_size_;
-  if (file_size_ <= object_offset + offset_in_object) {
+  if (hash_tree_.file_size() <= object_offset + offset_in_object) {
     // return if read start is behind file size
     boost::promise<int> promise;
     promise.set_value(0);
@@ -516,7 +504,8 @@ boost::unique_future<void> ObjectEncryptor::Operation::Write(
                                    enc_block_size_) - ct_offset_in_object;
   int ct_bytes_to_write = std::min(
       ct_bytes_to_write_,
-      static_cast<int>(file_size_ - object_offset - ct_offset_in_object));
+      static_cast<int>(hash_tree_.file_size() - object_offset
+          - ct_offset_in_object));
   int ct_end_offset_in_object = ct_offset_in_object + ct_bytes_to_write;
   int end_offset_in_object = offset_in_object + bytes_to_write;  // ???
   int ct_end_offset_diff = ct_end_offset_in_object - end_offset_in_object;

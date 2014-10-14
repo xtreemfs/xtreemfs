@@ -85,6 +85,7 @@ std::vector<unsigned char> AsymKey::GetDEREncodedKey() {
 }
 
 EVP_PKEY* AsymKey::get_key() {
+  assert(key_ != NULL);
   return key_;
 }
 

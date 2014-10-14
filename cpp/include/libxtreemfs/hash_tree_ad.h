@@ -26,10 +26,10 @@ namespace xtreemfs {
  */
 class HashTreeAD {
  public:
-  HashTreeAD(int leaf_adata_size, Options volume_options);
+  HashTreeAD(FileHandle* meta_file, SignAlgorithm* sign_algo,
+             Options volume_options, int leaf_adata_size);
 
-  void Init(FileHandle* meta_file, int max_leaf_number,
-            SignAlgorithm* sign_algo);
+  void Init();
 
   void StartRead(int start_leaf, int end_leaf);
 
@@ -46,6 +46,10 @@ class HashTreeAD {
 
   void SetLeaf(int leaf, std::vector<unsigned char> adata,
                boost::asio::const_buffer data);
+
+  int64_t file_size();
+
+  void set_file_size(int64_t file_size);
 
  private:
   friend class HashTreeADTest_Node_Sibling_Test;
@@ -104,6 +108,8 @@ class HashTreeAD {
 
   void SetSize(int max_leaf_number);
 
+  bool ReadRootNodeFromFile();
+
   void ReadNodesFromFile(boost::icl::interval_set<int> nodeNumbers);
 
   void WriteNodesToFile();
@@ -135,6 +141,12 @@ class HashTreeAD {
   int NumberOfNodes(int level, int pos);
 
   /**
+   * Size of the file.
+   * -1 for newly created file.
+   */
+  int64_t file_size_;
+
+  /**
    * Max leaf number in the hash tree.
    * -1 for empty file.
    * -2 for newly created file.
@@ -161,14 +173,6 @@ class HashTreeAD {
   int leaf_adata_size_;
 
   /**
-   * State of the hash tree. Used to enforce correct calling order of functions
-   * 0: neutral
-   * 1: write started with StartWrite()
-   * 2: truncate started with StartTruncate()
-   */
-  int state_;
-
-  /**
    * Helper variable for write, storing the start_leaf parameter of StartWrite.
    */
   int start_leaf_;
@@ -182,6 +186,8 @@ class HashTreeAD {
    * Helper variable for a size change of tree, storing the old max leaf number.
    */
   int old_max_leaf_;
+
+  std::vector<unsigned char> root_hash_;
 
   /**
    * Storage for the nodes.
@@ -206,6 +212,11 @@ class HashTreeAD {
    * Not owned by class.
    */
   SignAlgorithm* sign_algo_;
+
+  /**
+   * Not owned by class.
+   */
+  Options volume_options_;
 };
 
 } /* namespace xtreemfs */
