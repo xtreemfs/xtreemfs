@@ -442,17 +442,26 @@ public class JsonRPC implements ResourceLoaderAware {
     }
 
     private void addMangerToCrs(String crsUrl) {
-        try {
-            String url = getAddManagerURL(crsUrl);
-            Webb webb = Webb.create();
-            com.goebl.david.Response response = webb.post(url).header("Content-Type", "application/json")
-                    .body("{\"Manager\": \"IRM\", \"Hostname\": \"" + LibJSON.getMyAddress() + "\", \"Port\": \"8080\"}")
-                    .asJsonObject();
-            net.minidev.json.JSONObject json = (net.minidev.json.JSONObject) response.getBody();
-            Logger.getLogger(JsonRPC.class.getName()).log(Level.INFO, json.toJSONString());
-        } catch (Exception e) {
-            Logger.getLogger(JsonRPC.class.getName()).log(Level.WARNING, "Adding manager to CRS failed: " + e.getMessage());
+        for(int errorCount = 0; errorCount < 15; errorCount++) {
+            try {
+                tryAddManagerToCrs(crsUrl);
+                break;
+            } catch (Exception e) {
+                Logger.getLogger(JsonRPC.class.getName()).log(Level.WARNING, "Adding manager to CRS failed: " + e.getMessage());
+                try{
+                    Thread.sleep(10000);
+                } catch (InterruptedException ex){}
+            }
         }
+    }
+
+    private void tryAddManagerToCrs(String crsUrl) throws Exception {
+        String url = getAddManagerURL(crsUrl);
+        Webb webb = Webb.create();
+        com.goebl.david.Response response = webb.post(url).header("Content-Type", "application/json")
+                .body("{\"Manager\": \"IRM\", \"Hostname\": \"" + LibJSON.getMyAddress() + "\", \"Port\": \"8080\"}")
+                .asJsonObject();
+        response.getBody();
     }
 
     private String getAddManagerURL(String crsUrl) {
