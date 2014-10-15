@@ -179,6 +179,7 @@ class Options {
   int encryption_block_size;
   std::string encryption_cipher;
   std::string encryption_hash;
+  std::string encryption_cw;
 #endif  // HAS_OPENSSL
 
   // Grid Support options.

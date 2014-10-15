@@ -9,15 +9,18 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/random.hpp>
+#include <boost/generator_iterator.hpp>
 #include <algorithm>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "xtreemfs/GlobalTypes.pb.h"
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "util/crypto/asym_key.h"
 #include "util/crypto/base64.h"
+#include "xtreemfs/GlobalTypes.pb.h"
+#include "xtreemfs/OSD.pb.h"
 
 namespace xtreemfs {
 
@@ -117,22 +120,25 @@ ObjectEncryptor::~ObjectEncryptor() {
   }
 }
 
-ObjectEncryptor::Operation::Operation(ObjectEncryptor* obj_enc)
+ObjectEncryptor::Operation::Operation(ObjectEncryptor* obj_enc, bool write)
     : obj_enc_(obj_enc),
       enc_block_size_(obj_enc->enc_block_size_),
       object_size_(obj_enc->object_size_),
       hash_tree_(obj_enc->meta_file_, &obj_enc->sign_algo_,
-                 obj_enc->volume_->volume_options(),
-                 obj_enc->cipher_.iv_size()),
+                 obj_enc->volume_options_, obj_enc->cipher_.iv_size()),
       old_file_size_(0) {
+  if (obj_enc->volume_options_.encryption_cw == "serialize") {
+    operation_lock_.reset(new FileLock(obj_enc->meta_file_, 0, 1, write));
+  }
 }
 
 ObjectEncryptor::ReadOperation::ReadOperation(ObjectEncryptor* obj_enc,
                                               int64_t offset, int count)
-    : Operation(obj_enc) {
+    : Operation(obj_enc, false) {
   if (count == 0) {
     return;
   }
+
   hash_tree_.StartRead(offset / enc_block_size_,
                        (offset + count - 1) / enc_block_size_);
 }
@@ -141,7 +147,7 @@ ObjectEncryptor::WriteOperation::WriteOperation(
     ObjectEncryptor* obj_enc, int64_t offset, int count,
     PartialObjectReaderFunction_sync reader_sync,
     PartialObjectWriterFunction_sync writer_sync)
-    : Operation(obj_enc) {
+    : Operation(obj_enc, true) {
   assert(count > 0);
 
   hash_tree_.Init();
@@ -181,7 +187,7 @@ ObjectEncryptor::TruncateOperation::TruncateOperation(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     int64_t new_file_size, PartialObjectReaderFunction_sync reader_sync,
     PartialObjectWriterFunction_sync writer_sync)
-    : Operation(obj_enc) {
+    : Operation(obj_enc, true) {
   // TODO(plieser): user_credentials needed?
   int new_end_object_no = new_file_size / object_size_;
   int new_end_object_size = new_file_size % object_size_;
@@ -638,6 +644,24 @@ void ObjectEncryptor::Unlink(
   volume->Unlink(
       user_credentials,
       "/.xtreemfs_enc_meta_files/" + boost::lexical_cast<std::string>(file_id));
+}
+
+ObjectEncryptor::FileLock::FileLock(FileHandle* file, uint64_t offset,
+                                    uint64_t length, bool exclusive)
+    : file_(file) {
+  int seed = boost::posix_time::time_duration(
+      boost::posix_time::microsec_clock::local_time().time_of_day())
+      .total_microseconds();
+  boost::random::mt19937 rng(seed);
+  boost::uniform_int<> uni_dist(0, INT32_MAX);
+  boost::variate_generator<boost::random::mt19937, boost::uniform_int<> > uni(
+      rng, uni_dist);
+  int process_id = uni();
+  lock_.reset(file->AcquireLock(process_id, offset, length, exclusive, true));
+}
+
+ObjectEncryptor::FileLock::~FileLock() {
+  file_->ReleaseLock(*lock_);
 }
 
 }  // namespace xtreemfs

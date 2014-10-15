@@ -935,11 +935,11 @@ void cw_worker(FileHandle* file, char id) {
   boost::variate_generator<boost::random::mt19937, boost::uniform_int<> > uni_65_90(
       rng, uni_dist_65_90);
 
-  for (int i=0;i<10;i++) {
+  for (int i = 0; i < 20; i++) {
     int offset = uni_0_10();
     char str[2];
     char buffer[2];
-    str[0]= id;
+    str[0] = id;
     str[1] = static_cast<char>(uni_65_90());
     ASSERT_NO_THROW({
       file->Write(str, 2, offset);
@@ -947,7 +947,7 @@ void cw_worker(FileHandle* file, char id) {
     ASSERT_NO_THROW({
       file->Read(buffer, 2, offset);
     });
-    if (buffer[0] == id) {
+    if (buffer[0] == id && 65 <= buffer[1] && buffer[1] <= 90) {
       EXPECT_STREQ(str, buffer);
     }
   }
@@ -956,9 +956,11 @@ void cw_worker(FileHandle* file, char id) {
 TEST_F(EncryptionTest, ConcurrentWrite) {
   boost::thread th1(cw_worker, file, '1');
   boost::thread th2(cw_worker, file, '2');
+  boost::thread th3(cw_worker, file, '3');
 
   th1.join();
   th2.join();
+  th3.join();
 }
 
 }  // namespace xtreemfs

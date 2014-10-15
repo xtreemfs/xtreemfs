@@ -42,6 +42,9 @@ typedef boost::function<
  * Encrypts/Decrypts an object.
  */
 class ObjectEncryptor {
+ private:
+  class FileLock;
+
  public:
   ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
                   VolumeImplementation* volume, uint64_t file_id,
@@ -51,7 +54,7 @@ class ObjectEncryptor {
 
   class Operation {
    public:
-    explicit Operation(ObjectEncryptor* obj_enc);
+    Operation(ObjectEncryptor* obj_enc, bool write);
 
     boost::unique_future<int> Read(int object_no, char* buffer,
                                    int offset_in_object, int bytes_to_read,
@@ -83,6 +86,8 @@ class ObjectEncryptor {
     HashTreeAD hash_tree_;
 
     int64_t old_file_size_;
+
+    boost::scoped_ptr<FileLock> operation_lock_;
 
    private:
     int EncryptEncBlock(int block_number, boost::asio::const_buffer plaintext,
@@ -121,6 +126,18 @@ class ObjectEncryptor {
                      VolumeImplementation* volume, uint64_t file_id);
 
  private:
+  class FileLock {
+   public:
+    FileLock(FileHandle* file, uint64_t offset, uint64_t length,
+             bool exclusive);
+
+    ~FileLock();
+
+   private:
+    FileHandle* file_;
+    boost::scoped_ptr<pbrpc::Lock> lock_;
+  };
+
   static boost::unique_future<int> CallSyncReaderAsynchronously(
       PartialObjectReaderFunction_sync reader_sync, int object_no, char* buffer,
       int offset_in_object, int bytes_to_read);

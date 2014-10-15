@@ -111,6 +111,7 @@ Options::Options()
   encryption_block_size = 4096;
   encryption_cipher = "aes-256-ctr";
   encryption_hash = "sha256";
+  encryption_cw = "serialize";
 #endif  // HAS_OPENSSL
 
   // Grid Support options.
@@ -287,7 +288,11 @@ void Options::GenerateProgramOptionsDescriptions() {
         "The cipher to use")
     ("encryption-hash",
         po::value(&encryption_hash)->default_value(encryption_hash),
-        "The hash function to use");
+        "The hash function to use")
+  ("encryption-cw-mf",
+      po::value(&encryption_cw)->default_value(encryption_cw),
+      "The method to use to ensure consistency for concurrent write"
+      " (none/serialize)");
 #endif  // HAS_OPENSSL
 
   grid_options_.add_options()
