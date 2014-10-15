@@ -9,6 +9,9 @@
 #include <sys/time.h>
 
 #include <boost/foreach.hpp>
+#include <boost/random.hpp>
+#include <boost/generator_iterator.hpp>
+#include <boost/thread.hpp>
 #include <string>
 #include <vector>
 
@@ -921,6 +924,41 @@ TEST_F(EncryptionTest, objectVersion) {
   EXPECT_STREQ("WRITE04", buffer);
 
   file_handle->Close();
+}
+
+void cw_worker(FileHandle* file, char id) {
+  boost::random::mt19937 rng(static_cast<int>(id));
+  boost::uniform_int<> uni_dist_0_10(0, 10);
+  boost::variate_generator<boost::random::mt19937, boost::uniform_int<> > uni_0_10(
+      rng, uni_dist_0_10);
+  boost::uniform_int<> uni_dist_65_90(65, 90);
+  boost::variate_generator<boost::random::mt19937, boost::uniform_int<> > uni_65_90(
+      rng, uni_dist_65_90);
+
+  for (int i=0;i<10;i++) {
+    int offset = uni_0_10();
+    char str[2];
+    char buffer[2];
+    str[0]= id;
+    str[1] = static_cast<char>(uni_65_90());
+    ASSERT_NO_THROW({
+      file->Write(str, 2, offset);
+    });
+    ASSERT_NO_THROW({
+      file->Read(buffer, 2, offset);
+    });
+    if (buffer[0] == id) {
+      EXPECT_STREQ(str, buffer);
+    }
+  }
+}
+
+TEST_F(EncryptionTest, ConcurrentWrite) {
+  boost::thread th1(cw_worker, file, '1');
+  boost::thread th2(cw_worker, file, '2');
+
+  th1.join();
+  th2.join();
 }
 
 }  // namespace xtreemfs
