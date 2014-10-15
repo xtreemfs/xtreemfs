@@ -700,13 +700,20 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
   // Check active locks first.
   std::auto_ptr<Lock> conflicting_lock(new Lock());
   bool lock_for_pid_cached, cached_lock_for_pid_equal, conflict_found;
-  file_info_->CheckLock(lock_request.lock_request(),
-                        conflicting_lock.get(),
-                        &lock_for_pid_cached,
-                        &cached_lock_for_pid_equal,
-                        &conflict_found);
-  if (conflict_found) {
-    throw PosixErrorException(POSIX_ERROR_EAGAIN, "conflicting lock");
+  while(true) {
+    file_info_->CheckLock(lock_request.lock_request(),
+                          conflicting_lock.get(),
+                          &lock_for_pid_cached,
+                          &cached_lock_for_pid_equal,
+                          &conflict_found);
+    if (!conflict_found) {
+      break;
+    }
+    if (!wait_for_lock) {
+      throw PosixErrorException(POSIX_ERROR_EAGAIN, "conflicting lock");
+    } else {
+      file_info_->WaitForDelLock();
+    }
   }
   // We allow only one lock per PID, i.e. an existing lock can be always
   // overwritten. In consequence, AcquireLock always has to be executed except

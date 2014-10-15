@@ -168,6 +168,9 @@ class FileInfo {
   /** Remove locks equal to "lock" from list of active locks. */
   void DelLock(const xtreemfs::pbrpc::Lock& lock);
 
+  /** Wait for removal of a lock from list of active locks. */
+  void WaitForDelLock();
+
   /** Flushes pending async writes and file size updates. */
   void Flush(FileHandleImplementation* file_handle);
 
@@ -250,6 +253,9 @@ class FileInfo {
 
   /** Use this to protect active_locks_. */
   boost::mutex active_locks_mutex_;
+
+  /** Use this to wait for DelLock call. */
+  boost::condition_variable_any active_locks_DelLock_cond_;
 
   /** Random UUID of this client to distinguish them while locking. */
   const std::string& client_uuid_;

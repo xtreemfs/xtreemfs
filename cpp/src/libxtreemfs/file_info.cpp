@@ -407,7 +407,13 @@ void FileInfo::DelLock(const xtreemfs::pbrpc::Lock& lock) {
     // Only up to one lock per PID. If its unlocked, just delete it.
     delete it->second;
     active_locks_.erase(it);
+    active_locks_DelLock_cond_.notify_all();
   }
+}
+
+void FileInfo::WaitForDelLock() {
+  boost::mutex::scoped_lock mutex_lock(active_locks_mutex_);
+  active_locks_DelLock_cond_.wait(active_locks_mutex_);
 }
 
 void FileInfo::ReleaseLockOfProcess(FileHandleImplementation* file_handle,
