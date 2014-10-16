@@ -50,6 +50,8 @@ class CLIOptions {
     private static final String              THREADS;
     private static final String              REPETITIONS;
     private static final String              CHUNK_SIZE;
+    private static final String              REPLICATION_POLICY;
+    private static final String              REPLICATION_FACTOR;
     private static final String              STRIPE_SIZE;
     private static final String              STRIPE_WITDH;
     private static final String              SIZE_SEQ;
@@ -77,6 +79,8 @@ class CLIOptions {
         THREADS = "n";
         REPETITIONS = "r";
         CHUNK_SIZE = "-chunk-size";
+        REPLICATION_POLICY = "-replication-policy";
+        REPLICATION_FACTOR = "-replication-factor";
         STRIPE_SIZE = "-stripe-size";
         STRIPE_WITDH = "-stripe-width";
         SIZE_SEQ = "ssize";
@@ -112,6 +116,8 @@ class CLIOptions {
         setOSDPassword();
         setSSLOptions();
         setChunkSize();
+        setReplicationPolicy();
+        setReplicationFactor();
         setStripeSize();
         setStripeWidth();
         setNoCleanup();
@@ -156,6 +162,10 @@ class CLIOptions {
                 "<number>"));
         options.put(CHUNK_SIZE, new CLIParser.CliOption(STRING,
                 "Chunk size of reads/writes in benchmark in [B|K|M|G] (no modifier assumes bytes). default: 128K", "<chunkSize>"));
+        options.put(REPLICATION_POLICY, new CLIParser.CliOption(STRING,
+        		"Replication policy to use for new volumes. default: none", "<replication policy>"));
+        options.put(REPLICATION_FACTOR, new CLIParser.CliOption(STRING,
+        		"Replication factor to use for new volumes. default: 3", "<replication factor>"));
         options.put(STRIPE_SIZE, new CLIParser.CliOption(STRING,
                 "stripeSize in [B|K|M|G] (no modifier assumes bytes). default: 128K", "<stripeSize>"));
         options.put(STRIPE_WITDH, new CLIParser.CliOption(STRING, "stripe width. default: 1", "<stripe width>"));
@@ -297,6 +307,22 @@ class CLIOptions {
                 builder.setSslOptions(true, gridSSL, serviceCredsFile, serviceCredsPass, trustedCAsFile, trustedCAsPass);
             }
         }
+    }
+    
+    private void setReplicationPolicy() {
+    	String replicationPolicy = options.get(REPLICATION_POLICY).stringValue;
+    	if(null != replicationPolicy) {
+            assert "".equals(replicationPolicy)
+            	|| "WqRq".equals(replicationPolicy)
+            	|| "WaR1".equals(replicationPolicy) : "Unknown replication policy: " + replicationPolicy;
+            builder.setReplicationPolicy(replicationPolicy);
+    	}
+    }
+    
+    private void setReplicationFactor() {
+    	String replicationFactor = options.get(REPLICATION_FACTOR).stringValue;
+    	if(null != replicationFactor)
+    		builder.setReplicationFactor(Integer.parseInt(replicationFactor));
     }
 
     private void setChunkSize() {
