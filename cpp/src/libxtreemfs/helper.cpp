@@ -254,7 +254,7 @@ bool CheckIfLocksDoConflict(const xtreemfs::pbrpc::Lock& lock1,
     }
   }
   // Overlapping?
-  if (!(lock1_end < lock2.offset() || lock1.offset() > lock2_end)) {
+  if (!(lock1_end <= lock2.offset() || lock1.offset() >= lock2_end)) {
     // Does overlap, check for conflicting modes.
     return lock1.exclusive() || lock2.exclusive();
   }
