@@ -237,6 +237,7 @@ bool CheckIfLocksAreEqual(const xtreemfs::pbrpc::Lock& lock1,
 bool CheckIfLocksDoConflict(const xtreemfs::pbrpc::Lock& lock1,
                             const xtreemfs::pbrpc::Lock& lock2) {
   // 0 means to lock till the end of the file.
+  // the end is not included
   uint64_t lock1_end = lock1.length() == 0 ? 0 :
       lock1.offset() + lock1.length();
   uint64_t lock2_end = lock2.length() == 0 ? 0 :
@@ -244,12 +245,12 @@ bool CheckIfLocksDoConflict(const xtreemfs::pbrpc::Lock& lock1,
 
   // Check for overlaps.
   if (lock1_end == 0) {
-    if (lock2_end >= lock1.offset() || lock2_end == 0) {
+    if (lock2_end > lock1.offset() || lock2_end == 0) {
       return true;
     }
   }
   if (lock2_end == 0) {
-    if (lock1_end >= lock2.offset() || lock1_end == 0) {
+    if (lock1_end > lock2.offset() || lock1_end == 0) {
       return true;
     }
   }
