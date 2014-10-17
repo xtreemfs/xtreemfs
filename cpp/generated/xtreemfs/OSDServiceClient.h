@@ -1,5 +1,5 @@
-//automatically generated from OSD.proto at Mon Nov 11 11:46:59 CET 2013
-//(c) 2013. See LICENSE file for details.
+//automatically generated from OSD.proto at Thu Oct 16 09:46:13 CEST 2014
+//(c) 2014. See LICENSE file for details.
 
 #ifndef OSDSERVICECLIENT_H
 #define OSDSERVICECLIENT_H
@@ -10,10 +10,8 @@
 #include "rpc/sync_callback.h"
 #include "rpc/callback_interface.h"
 #include "xtreemfs/OSD.pb.h"
-#include "xtreemfs/MRC.pb.h"
 #include "include/Common.pb.h"
 #include "xtreemfs/GlobalTypes.pb.h"
-#include "xtreemfs/DIR.pb.h"
 
 
 namespace xtreemfs {

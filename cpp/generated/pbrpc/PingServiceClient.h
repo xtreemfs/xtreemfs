@@ -1,5 +1,5 @@
-//automatically generated from Ping.proto at Mon Nov 11 11:47:00 CET 2013
-//(c) 2013. See LICENSE file for details.
+//automatically generated from Ping.proto at Thu Oct 16 09:46:14 CEST 2014
+//(c) 2014. See LICENSE file for details.
 
 #ifndef PINGSERVICECLIENT_H
 #define PINGSERVICECLIENT_H
