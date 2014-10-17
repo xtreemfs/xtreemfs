@@ -450,7 +450,9 @@ public class JsonRPC implements ResourceLoaderAware {
                 Logger.getLogger(JsonRPC.class.getName()).log(Level.WARNING, "Adding manager to CRS failed: " + e.getMessage());
                 try{
                     Thread.sleep(10000);
-                } catch (InterruptedException ex){}
+                } catch (InterruptedException ex){
+                    break;
+                }
             }
         }
     }
