@@ -36,6 +36,10 @@ OSD_UUIDS="test-osd0"
 # the chunksize (aka blocksize) for the benchmarks
 CHUNKSIZE="128K"
 
+# replication settings
+REPLICATION_POLICY=""
+REPLICATION_FACTOR=1
+
 check_env(){
   # check XTREEMFS
   if [ -z "$XTREEMFS" ]; then
@@ -69,7 +73,7 @@ printUsage() {
   cat << EOF
 
 Synopsis
-  $(basename $0) -t TYPE -s NUMBER [-b NUMBER -e NUMBER] [-r NUMBER] [-v]
+  $(basename $0) -t TYPE -s NUMBER [-x NUMBER] [-p POLICY -f NUMBER] [-b NUMBER -e NUMBER] [-r NUMBER] [-v]
   Run a XtreemFS benchmark series, i.e. a series of benchmarks with increasing
   numbers of threads. Logs are placed in \$HOME/log/, results in \$HOME/results
   (can be changed at the head of the script).
@@ -77,12 +81,23 @@ Synopsis
   -t type
     Type of benchmarks to run. Type can be either of the following:
       sw sequential write
+      usw unaligned sequential write
       sr sequential read
       rw random write
       rr random read
 
   -s size
-    Size of one benchmark, modifier M (for MiB) or G (for GiB) is mandatory.
+    Size of one benchmark, modifier K (for KiB), M (for MiB) or G (for GiB) is mandatory.
+
+  -x size
+    Size of each read/write request, modifier K (for KiB), M (for MiB) or G (for GiB) is mandatory.
+    Defaults to 128K.
+
+  -p policy
+    Replication policy to use. Defaults to none.
+
+  -f factor
+    Replication factor to use. Defaults to 1.
 
   -b number of threads to beginn the benchmark series
     Minimum number of threads to be run as the benchmarks series.
@@ -118,7 +133,8 @@ init_params(){
   THREADS="$(seq $BEGIN $END)"
   REPETITIONS="$(seq 1 $REPETITIONS)"
 
-  NOW=$(date +"%y-%m-%d_%H-%M")
+  # use second resolution in case multiple benchmarks are run per minute
+  NOW=$(date +"%y-%m-%d_%H-%M-%S")
   # redirect stdout and stderr
   exec 2> >(tee $LOG_DIR/$TYPE-$NOW.log)
   exec > >(tee $RESULT_DIR/$TYPE-$NOW.csv)
@@ -194,15 +210,23 @@ run_benchmark(){
   local benchType=$1
   local size=$2
   local threads=$3
+  local replicationOpt=""
+  if [ $REPLICATION_POLICY != "" ]; then
+    replicationOpt="--replication-policy $REPLICATION_POLICY"
+  fi
+
   if [ $benchType = "sr" ]; then
-    XTREEMFS=$XTREEMFS timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -ssize $size -n $threads --no-cleanup-volumes --user $USER
-  elif [ $benchType = "sw" ]; then
-    XTREEMFS=$XTREEMFS timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -ssize $size -n $threads --user $USER
+    XTREEMFS=$XTREEMFS timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -ssize $size -n $threads --no-cleanup-volumes --user $USER \
+     $replicationOpt --replication-factor $REPLICATION_FACTOR --chunk-size $CHUNKSIZE
+  elif [ $benchType = "sw" ] || [ $benchType = "usw" ]; then
+    XTREEMFS=$XTREEMFS timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -ssize $size -n $threads --user $USER \
+     $replicationOpt --replication-factor $REPLICATION_FACTOR --chunk-size $CHUNKSIZE
   elif [ $benchType = "rw" ] || [ $benchType = "rr" ]; then
     # calc basefile size and round to a number divideable through CHUNKSIZE
     local basefile_size=$(echo "(($BASEFILE_SIZE/$threads)/$CHUNKSIZE)*$CHUNKSIZE" | bc)
     XTREEMFS=$XTREEMFS timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -rsize $size --basefile-size $basefile_size -n $threads \
-      --no-cleanup-basefile --no-cleanup-volumes --user $USER
+      --no-cleanup-basefile --no-cleanup-volumes --user $USER \
+      $replicationOpt --replication-factor $REPLICATION_FACTOR --chunk-size $CHUNKSIZE
   fi
 
   local bench_exit_status=$?
@@ -278,13 +302,13 @@ REPETITIONS=1
 
 
 # parse options
-while getopts ":t:s:b:e:r:c:v" opt; do
+while getopts ":t:s:x:b:e:r:p:f:v:c" opt; do
   case $opt in
     t)
-      if [ $OPTARG = "sw" ] || [ $OPTARG = "sr" ]  || [ $OPTARG = "rw" ] || [ $OPTARG = "rr" ]; then
+      if [ $OPTARG = "sw" ] || [ $OPTARG = "usw" ] || [ $OPTARG = "sr" ]  || [ $OPTARG = "rw" ] || [ $OPTARG = "rr" ]; then
         TYPE=$OPTARG
       else
-        echo 'wrong argument to -t. Needs to be either "sw", "sr", "rw" or "rr"'
+        echo 'wrong argument to -t. Needs to be either "sw", "usw", "sr", "rw" or "rr"'
         exit 1
       fi
       ;;
@@ -292,12 +316,29 @@ while getopts ":t:s:b:e:r:c:v" opt; do
       index=$(echo `expr match $OPTARG '[0-9]\+'`)
       SIZE=${OPTARG:0:$index}
       modifier=${OPTARG:$index}
-      if [ $modifier = "M" ]; then
+      if [ $modifier = "K" ]; then
+        SIZE=$(echo "$SIZE*2^10" | bc)
+      elif [ $modifier = "M" ]; then
         SIZE=$(echo "$SIZE*2^20" | bc)
       elif [ $modifier = "G" ]; then
         SIZE=$(echo "$SIZE*2^30" | bc)
       else
-        echo "Wrong size modifier. Only 'M' and 'G' are allowed"
+        echo "Wrong size modifier. Only 'K', 'M' and 'G' are allowed"
+        exit 1
+      fi
+      ;;
+    x)
+      index=$(echo `expr match $OPTARG '[0-9]\+'`)
+      CHUNKSIZE=${OPTARG:0:$index}
+      modifier=${OPTARG:$index}
+      if [ $modifier = "K" ]; then
+        CHUNKSIZE=$(echo "$CHUNKSIZE*2^10" | bc)
+      elif [ $modifier = "M" ]; then
+        CHUNKSIZE=$(echo "$CHUNKSIZE*2^20" | bc)
+      elif [ $modifier = "G" ]; then
+        CHUNKSIZE=$(echo "$CHUNKSIZE*2^30" | bc)
+      else
+        echo "Wrong size modifier. Only 'K', 'M' and 'G' are allowed"
         exit 1
       fi
       ;;
@@ -309,6 +350,12 @@ while getopts ":t:s:b:e:r:c:v" opt; do
       ;;
     r)
       REPETITIONS=$OPTARG
+      ;;
+    p)
+      REPLICATION_POLICY=$OPTARG
+      ;;
+    f)
+      REPLICATION_FACTOR=$OPTARG
       ;;
     v)
       SLEEP=false
@@ -334,7 +381,9 @@ drop_caches
 
 for i in $THREADS; do
   size="$(echo "$SIZE/$i"|bc)"
-  size="$(echo "($size/$CHUNKSIZE)*$CHUNKSIZE" | bc)" # round down to a size divideable through the CHUNKSIZE
+  if [ $TYPE != "usw" ]; then
+    size="$(echo "($size/$CHUNKSIZE)*$CHUNKSIZE" | bc)" # round down to a size divideable through the CHUNKSIZE
+  fi
 
   if [ $TYPE = "sr" ]; then
     prepare_seq_read $size $i
@@ -353,7 +402,7 @@ for i in $THREADS; do
   done
 
   # seq write benchmarks run cleanup after every benchmark, so this would be redundant
-  if [ $TYPE != "sw" ]; then
+  if [ $TYPE != "sw" ] && [ $TYPE != "usw" ]; then
     volume_index=$(echo "$i-1" | bc)
     for i in $(seq 0 $volume_index); do
       rmfs.xtreemfs -f $MRC/benchmark$i
