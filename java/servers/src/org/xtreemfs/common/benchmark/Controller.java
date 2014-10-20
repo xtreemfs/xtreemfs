@@ -92,6 +92,17 @@ public class Controller {
     }
 
     /**
+     * Starts unaligned sequential write benchmarks with the parameters specified in the {@link BenchmarkConfig}. <br/>
+     *
+     * @return the results of the benchmark (see {@link BenchmarkResult})
+     * @throws Exception
+     */
+    public ArrayList<BenchmarkResult> startUnalignedSequentialWriteBenchmark(long size, int numberOfThreads) throws Exception {
+        verifySizesAndThreads(size, numberOfThreads, BenchmarkType.SEQ_UNALIGNED_WRITE);
+        return startBenchmark(size, numberOfThreads, BenchmarkType.SEQ_UNALIGNED_WRITE);
+    }
+
+    /**
      * Starts sequential read benchmarks with the parameters specified in the {@link BenchmarkConfig}. <br/>
      *
      * @return the results of the benchmark (see {@link BenchmarkResult})

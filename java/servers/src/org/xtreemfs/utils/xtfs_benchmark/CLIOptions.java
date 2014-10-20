@@ -41,6 +41,7 @@ class CLIOptions {
     private static final String              OSD_SELECTION_UUIDS;
     private static final String              USERNAME;
     private static final String              GROUPNAME;
+    private static final String              SEQ_UNALIGNED_WRITE;
     private static final String              SEQ_WRITE;
     private static final String              SEQ_READ;
     private static final String              RAND_WRITE;
@@ -72,6 +73,7 @@ class CLIOptions {
         GROUPNAME = "-group";
         SEQ_WRITE = "sw";
         SEQ_READ = "sr";
+        SEQ_UNALIGNED_WRITE = "usw";
         RAND_WRITE = "rw";
         RAND_READ = "rr";
         FILEBASED_WRITE = "fw";
@@ -150,6 +152,7 @@ class CLIOptions {
 
         /* benchmark switches */
         options.put(SEQ_WRITE, new CLIParser.CliOption(SWITCH, "sequential write benchmark", ""));
+        options.put(SEQ_UNALIGNED_WRITE, new CLIParser.CliOption(SWITCH, "unaligned sequential write benchmark", ""));
         options.put(SEQ_READ, new CLIParser.CliOption(SWITCH, "sequential read benchmark", ""));
         options.put(RAND_WRITE, new CLIParser.CliOption(SWITCH, "random write benchmark", ""));
         options.put(RAND_READ, new CLIParser.CliOption(SWITCH, "random read benchmark", ""));
@@ -419,6 +422,10 @@ class CLIOptions {
 
     boolean sequentialWriteBenchmarkIsSet() {
         return options.get(SEQ_WRITE).switchValue;
+    }
+
+    boolean unalignedSequentialWriteBenchmarkIsSet() {
+        return options.get(SEQ_UNALIGNED_WRITE).switchValue;
     }
 
     boolean sequentialReadBenchmarkIsSet() {
