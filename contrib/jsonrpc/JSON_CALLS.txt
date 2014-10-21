@@ -1,8 +1,0 @@
-curl http://localhost:8080/executeMethod -H "Content-Type: application/json" -H "Accept: application/json" --data '{"method":"listVolumes", "params":[],"id":"1" }' -G
-
-
-curl -X POST http://localhost:8080/executeMethod --header "Content-Type: application/json" --header "Accept: application/json" --data '{ "method":"getServers", "params":{"volume_name":"test_volume"}, "jsonrpc":"2.0", "id":"1" }'
-
-
-curl -X POST http://localhost:8080/executeMethod --header "Content-Type: application/json" --header "Accept: application/json" --data '{ "method":"startVINAgents", "params":{"server_ips":["192.168.1.101","192.168.1.102"], "vin_agent_identifiers":["pm0","pm1"], "ibis_server_address":"192.168.1.101-13000#c6.d2.04.bb.c3.7b.00.00.dd.2c.08.00.27.64.1a.db~root%2B22", "ibis_pool_name":"vinpool13000"}, "jsonrpc":"2.0", "id":"1" }'
-
