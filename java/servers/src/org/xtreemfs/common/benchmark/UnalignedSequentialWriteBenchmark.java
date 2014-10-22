@@ -10,7 +10,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 
 public class UnalignedSequentialWriteBenchmark extends SequentialBenchmark {
 
-    private LinkedList<String> filenames;
+    private final LinkedList<String> filenames;
 
     UnalignedSequentialWriteBenchmark(long size, BenchmarkConfig config, AdminClient client, VolumeManager volumeManager)
             throws Exception {
@@ -43,7 +43,7 @@ public class UnalignedSequentialWriteBenchmark extends SequentialBenchmark {
         long byteCounter = 0;
 
         for (long j = 0; !cancelled && j < numberOfBlocks; j++) {
-            long nextOffset = j * requestSize;
+            long nextOffset = j * config.getStripeSizeInBytes();
             random.nextBytes(data);
             byteCounter += fileHandle.write(config.getUserCredentials(), data, requestSize, nextOffset);
         }
