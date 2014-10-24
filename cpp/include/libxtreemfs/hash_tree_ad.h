@@ -142,7 +142,6 @@ class HashTreeAD {
 
   /**
    * Size of the file.
-   * -1 for newly created file.
    */
   int64_t file_size_;
 
@@ -183,6 +182,12 @@ class HashTreeAD {
   int end_leaf_;
 
   /**
+   * Helper variable for write, storing the complete_max_leaf parameter of
+   * StartWrite.
+   */
+  bool complete_max_leaf_;
+
+  /**
    * Helper variable for a size change of tree, storing the old max leaf number.
    */
   int old_max_leaf_;
@@ -194,6 +199,11 @@ class HashTreeAD {
    */
   typedef std::map<Node, std::vector<unsigned char> > Nodes_t;
   Nodes_t nodes_;
+
+  /**
+   * Storage for the changed leafs.
+   */
+  Nodes_t changed_leafs_;
 
   /**
    * The node numbers of the changed nodes.

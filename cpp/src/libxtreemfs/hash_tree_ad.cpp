@@ -286,6 +286,7 @@ HashTreeAD::HashTreeAD(FileHandle* meta_file, SignAlgorithm* sign_algo,
       leaf_adata_size_(leaf_adata_size),
       start_leaf_(0),
       end_leaf_(0),
+      complete_max_leaf_(false),
       old_max_leaf_(0),
       meta_file_(meta_file),
       hasher_(volume_options.encryption_hash),
@@ -366,12 +367,37 @@ void HashTreeAD::StartWrite(int start_leaf, bool complete_start_leaf,
   // needed by FinishWrite
   start_leaf_ = start_leaf;
   end_leaf_ = end_leaf;
+  complete_max_leaf_ = complete_max_leaf;
 }
 
 /**
  * Finishes a write.
  */
 void HashTreeAD::FinishWrite() {
+  if (volume_options_.encryption_cw == "locks") {
+    std::vector<unsigned char> root_hash(root_hash_);
+    int max_leaf_number = max_leaf_number_;
+    int64_t file_size = file_size_;
+    // get newest root hash
+    Init();
+    if (root_hash != root_hash_) {
+      // a concurrent write/truncate occurred
+      if (max_leaf_number_ <= end_leaf_) {
+        // write is to the last enc block, this write could have influence on
+        // the file size so restore it in case Init() changed it
+        file_size_ = file_size;
+      }
+      // get the new hash tree
+      StartWrite(start_leaf_, true, end_leaf_, true, complete_max_leaf_);
+    } else {
+      // restore size in case Init() changed it
+      file_size_ = file_size;
+      if (max_leaf_number != max_leaf_number_) {
+        SetSize(max_leaf_number);
+      }
+    }
+  }
+
   UpdateTree(start_leaf_, end_leaf_, old_max_leaf_);
   WriteNodesToFile();
 }
@@ -405,6 +431,7 @@ void HashTreeAD::StartTruncate(int max_leaf_number, bool complete_leaf) {
     ValidateTree();
   } else {
     nodes_.clear();
+    changed_nodes_.clear();
   }
 
   ChangeSize(max_leaf_number);
@@ -482,8 +509,7 @@ void HashTreeAD::SetLeaf(int leaf, std::vector<unsigned char> adata,
   std::vector<unsigned char> hash_value = hasher_.digest(data);
   leaf_value.insert(leaf_value.end(), hash_value.begin(), hash_value.end());
 
-  nodes_[Node(0, leaf)] = leaf_value;
-  changed_nodes_ += Node(0, leaf).NodeNumber(this);
+  changed_leafs_[Node(0, leaf)] = leaf_value;
 }
 
 /**
@@ -512,6 +538,8 @@ void HashTreeAD::ChangeSize(int max_leaf_number) {
           node_to_move = Node(0, old_max_leaf_).Parent(this, r);
         }
       }
+    } else {
+      nodes_.clear();
     }
     SetSize(max_leaf_number);
     if (move_node) {
@@ -608,6 +636,8 @@ bool HashTreeAD::ReadRootNodeFromFile() {
  */
 void HashTreeAD::ReadNodesFromFile(boost::icl::interval_set<int> nodeNumbers) {
   nodes_.clear();
+  changed_nodes_.clear();
+
   boost::scoped_array<char> buffer;
   int buffer_size = 0;
 
@@ -665,7 +695,6 @@ void HashTreeAD::WriteNodesToFile() {
     }
     meta_file_->Write(buffer.data(), buffer.size(), write_start);
   }
-  changed_nodes_.clear();
 }
 
 /**
@@ -842,6 +871,12 @@ void HashTreeAD::ValidateTree() {
  *                    -3 if it was not changed
  */
 void HashTreeAD::UpdateTree(int start_leaf, int end_leaf, int max_leaf) {
+  // insert changed leafs into nodes_
+  BOOST_FOREACH(Nodes_t::value_type node, changed_leafs_) {
+    nodes_[node.first] = node.second;
+    changed_nodes_ += node.first.NodeNumber(this);
+  }
+
   if (start_leaf > -1) {
     // update the ancestors hashes for the leafs written to, root node excluded
     int start_n = start_leaf;

@@ -171,6 +171,11 @@ class FileInfo {
   /** Wait for removal of a lock from list of active locks. */
   void WaitForDelLock();
 
+  boost::mutex* get_active_locks_DelLock_mutex();
+
+  /** Generates a for this client and file unique process id */
+  int GenerateUniquePID();
+
   /** Flushes pending async writes and file size updates. */
   void Flush(FileHandleImplementation* file_handle);
 
@@ -254,8 +259,18 @@ class FileInfo {
   /** Use this to protect active_locks_. */
   boost::mutex active_locks_mutex_;
 
+  /** Use this to protect active_locks_DelLock_cond_.
+   *  Lock before active_locks_mutex_. */
+  boost::mutex active_locks_DelLock_mutex_;
+
   /** Use this to wait for DelLock call. */
   boost::condition_variable_any active_locks_DelLock_cond_;
+
+  /** Use this to protect max_unique_pid_. */
+  boost::mutex unique_pid_mutex_;
+
+  /** The current max process id generated. */
+  int max_unique_pid_;
 
   /** Random UUID of this client to distinguish them while locking. */
   const std::string& client_uuid_;

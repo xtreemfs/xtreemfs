@@ -38,6 +38,7 @@ FileInfo::FileInfo(
       reference_count_(0),
       xlocset_(xlocset),
       osd_uuid_container_(xlocset),
+      max_unique_pid_(0),
       client_uuid_(client_uuid),
       osd_write_response_(NULL),
       osd_write_response_status_(kClean),
@@ -400,7 +401,8 @@ void FileInfo::PutLock(const xtreemfs::pbrpc::Lock& lock) {
 
 void FileInfo::DelLock(const xtreemfs::pbrpc::Lock& lock) {
   assert(lock.client_uuid() == client_uuid_);
-  boost::mutex::scoped_lock mutex_lock(active_locks_mutex_);
+  boost::mutex::scoped_lock mutex_lock1(active_locks_DelLock_mutex_);
+  boost::mutex::scoped_lock mutex_lock2(active_locks_mutex_);
 
   map<unsigned int, Lock*>::iterator it = active_locks_.find(lock.client_pid());
   if (it != active_locks_.end()) {
@@ -412,8 +414,19 @@ void FileInfo::DelLock(const xtreemfs::pbrpc::Lock& lock) {
 }
 
 void FileInfo::WaitForDelLock() {
-  boost::mutex::scoped_lock mutex_lock(active_locks_mutex_);
-  active_locks_DelLock_cond_.wait(active_locks_mutex_);
+  active_locks_DelLock_cond_.wait(active_locks_DelLock_mutex_);
+}
+
+
+boost::mutex* FileInfo::get_active_locks_DelLock_mutex() {
+  return &active_locks_DelLock_mutex_;
+}
+
+int FileInfo::GenerateUniquePID() {
+  // TODO(plieser): only works as long as a volume is not opened more that ones
+  //                in a client
+  boost::mutex::scoped_lock mutex_lock(unique_pid_mutex_);
+  return ++max_unique_pid_;
 }
 
 void FileInfo::ReleaseLockOfProcess(FileHandleImplementation* file_handle,

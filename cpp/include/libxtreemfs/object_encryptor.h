@@ -89,6 +89,8 @@ class ObjectEncryptor {
 
     boost::scoped_ptr<FileLock> operation_lock_;
 
+    boost::scoped_ptr<FileLock> file_lock_;
+
    private:
     int EncryptEncBlock(int block_number, boost::asio::const_buffer plaintext,
                         boost::asio::mutable_buffer ciphertext);
@@ -128,8 +130,10 @@ class ObjectEncryptor {
  private:
   class FileLock {
    public:
-    FileLock(FileHandle* file, uint64_t offset, uint64_t length,
-             bool exclusive);
+    FileLock(ObjectEncryptor* obj_enc, uint64_t offset, uint64_t length,
+             bool exclusive, bool wait_for_lock = true);
+
+    void Change(uint64_t offset, uint64_t length);
 
     ~FileLock();
 

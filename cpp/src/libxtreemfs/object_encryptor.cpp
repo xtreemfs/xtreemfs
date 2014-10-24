@@ -128,7 +128,7 @@ ObjectEncryptor::Operation::Operation(ObjectEncryptor* obj_enc, bool write)
                  obj_enc->volume_options_, obj_enc->cipher_.iv_size()),
       old_file_size_(0) {
   if (obj_enc->volume_options_.encryption_cw == "serialize") {
-    operation_lock_.reset(new FileLock(obj_enc->meta_file_, 0, 1, write));
+    operation_lock_.reset(new FileLock(obj_enc_, 0, 0, write));
   }
 }
 
@@ -139,8 +139,20 @@ ObjectEncryptor::ReadOperation::ReadOperation(ObjectEncryptor* obj_enc,
     return;
   }
 
-  hash_tree_.StartRead(offset / enc_block_size_,
-                       (offset + count - 1) / enc_block_size_);
+  int start_block = offset / enc_block_size_;
+  int end_block = (offset + count - 1) / enc_block_size_;
+
+  boost::scoped_ptr<FileLock> meta_file_lock;
+  if (obj_enc_->volume_options_.encryption_cw == "locks") {
+    // lock file
+    file_lock_.reset(
+        new FileLock(obj_enc_, start_block + 1, end_block - start_block + 1,
+                     false));
+    // lock meta file
+    meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, false));
+  }
+
+  hash_tree_.StartRead(start_block, end_block);
 }
 
 ObjectEncryptor::WriteOperation::WriteOperation(
@@ -150,24 +162,66 @@ ObjectEncryptor::WriteOperation::WriteOperation(
     : Operation(obj_enc, true) {
   assert(count > 0);
 
-  hash_tree_.Init();
+  int start_block = offset / enc_block_size_;
+  int end_block = (offset + count - 1) / enc_block_size_;
+  bool change_old_last_enc_block = false;
 
-  // increase file size if end of write is behind current file size
-  old_file_size_ = hash_tree_.file_size();
-  hash_tree_.set_file_size(std::max(old_file_size_, offset + count));
+  if (obj_enc->volume_options_.encryption_cw == "locks") {
+    // lock file
+    file_lock_.reset(
+        new FileLock(obj_enc_, start_block + 1, end_block - start_block + 1,
+                     true));
+  }
 
-  hash_tree_.StartWrite(
-      offset / enc_block_size_,
-      offset % enc_block_size_ == 0,
-      (offset + count - 1) / enc_block_size_,
-      (offset + count) % enc_block_size_ == 0
-          || (offset + count) >= old_file_size_,
-      old_file_size_ % enc_block_size_ == 0);
+  while (true) {
+    boost::scoped_ptr<FileLock> meta_file_lock;
+    if (obj_enc->volume_options_.encryption_cw == "locks") {
+      // lock meta file
+      meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, true));
+    }
 
-  if (hash_tree_.file_size() > old_file_size_
-      && old_file_size_ % enc_block_size_ != 0
-      && hash_tree_.file_size() / enc_block_size_
-          != old_file_size_ / enc_block_size_) {
+    hash_tree_.Init();
+
+    // increase file size if end of write is behind current file size
+    old_file_size_ = hash_tree_.file_size();
+    hash_tree_.set_file_size(std::max(old_file_size_, offset + count));
+
+    int old_last_enc_block = (old_file_size_ - 1) / enc_block_size_;
+    bool old_last_enc_block_complete = old_file_size_ % enc_block_size_ == 0;
+    change_old_last_enc_block = false;
+    if (old_last_enc_block < start_block && !old_last_enc_block_complete) {
+      // write is behind the old last enc block and it was incomplete,
+      // so the old last enc block must be updated
+      change_old_last_enc_block = true;
+
+      if (obj_enc->volume_options_.encryption_cw == "locks") {
+        // try to extend file lock
+        try {
+          file_lock_->Change(old_last_enc_block + 1,
+                             end_block - old_last_enc_block + 1);
+        } catch (const PosixErrorException& e) {  // NOLINT
+          if (e.posix_errno() != pbrpc::POSIX_ERROR_EAGAIN) {
+            // Only retry if there exists a conflicting lock and the server did
+            // return an EAGAIN - otherwise rethrow the exception.
+            throw;
+          }
+          // failed to lock required region, release meta file lock an try again
+          continue;
+        }
+      }
+    }
+
+    hash_tree_.StartWrite(
+        start_block,
+        offset % enc_block_size_ == 0,
+        end_block,
+        (offset + count) % enc_block_size_ == 0
+            || (offset + count) >= old_file_size_,
+        old_last_enc_block_complete);
+    break;
+  }
+
+  if (change_old_last_enc_block) {
     // write is behind the old last enc block and it was incomplete,
     // so it's hash must be updated
     int old_end_object_no = old_file_size_ / object_size_;
@@ -179,6 +233,12 @@ ObjectEncryptor::WriteOperation::WriteOperation(
 
 ObjectEncryptor::WriteOperation::~WriteOperation() {
   // TODO(plieser): catch exceptions
+  boost::scoped_ptr<FileLock> meta_file_lock;
+  if (obj_enc_->volume_options_.encryption_cw == "locks") {
+    // lock meta file
+    meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, true));
+  }
+
   hash_tree_.FinishWrite();
 }
 
@@ -189,8 +249,6 @@ ObjectEncryptor::TruncateOperation::TruncateOperation(
     PartialObjectWriterFunction_sync writer_sync)
     : Operation(obj_enc, true) {
   // TODO(plieser): user_credentials needed?
-  int new_end_object_no = new_file_size / object_size_;
-  int new_end_object_size = new_file_size % object_size_;
   int new_end_enc_block_no;
   if (new_file_size > 0) {
     new_end_enc_block_no = (new_file_size - 1) / enc_block_size_;
@@ -198,38 +256,51 @@ ObjectEncryptor::TruncateOperation::TruncateOperation(
     new_end_enc_block_no = -1;
   }
 
-  hash_tree_.Init();
+  while (true) {
+    boost::scoped_ptr<FileLock> meta_file_lock;
+    if (obj_enc->volume_options_.encryption_cw == "locks") {
+      // lock meta file
+      meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, true));
+    }
 
-  if (new_file_size > hash_tree_.file_size()) {
-    if (hash_tree_.file_size() % enc_block_size_ == 0) {
-      hash_tree_.StartTruncate(new_end_enc_block_no, true);
-//      old_file_size_ = hash_tree_.file_size();
-      hash_tree_.set_file_size(new_file_size);
-      hash_tree_.FinishTruncate(user_credentials);
-    } else {
-      hash_tree_.StartTruncate(new_end_enc_block_no, false);
-      int old_end_object_no = hash_tree_.file_size() / object_size_;
-      int old_end_object_size = hash_tree_.file_size() % object_size_;
-      old_file_size_ = hash_tree_.file_size();
-      hash_tree_.set_file_size(new_file_size);
-      Write_sync(old_end_object_no, NULL, old_end_object_size, 0, reader_sync,
-                 writer_sync);
-      hash_tree_.FinishTruncate(user_credentials);
+    hash_tree_.Init();
+
+    int min_file_size = std::min(hash_tree_.file_size(), new_file_size);
+    bool min_end_enc_block_complete = min_file_size % enc_block_size_ == 0;
+
+    if (obj_enc->volume_options_.encryption_cw == "locks") {
+      // lock file from min_file_size to end
+      try {
+        file_lock_.reset(
+            new FileLock(obj_enc_, (min_file_size / enc_block_size_) + 1, 0,
+                         true, false));
+      } catch (const PosixErrorException& e) {  // NOLINT
+        if (e.posix_errno() != pbrpc::POSIX_ERROR_EAGAIN) {
+          // Only retry if there exists a conflicting lock and the server did
+          // return an EAGAIN - otherwise rethrow the exception.
+          throw;
+        }
+        // failed to lock required region, release meta file lock an try again
+        continue;
+      }
     }
-  } else if (new_file_size < hash_tree_.file_size()) {
-    if (new_file_size % enc_block_size_ == 0) {
-      hash_tree_.StartTruncate(new_end_enc_block_no, true);
-//      old_file_size_ = hash_tree_.file_size();
-      hash_tree_.set_file_size(new_file_size);
-      hash_tree_.FinishTruncate(user_credentials);
-    } else {
-      hash_tree_.StartTruncate(new_end_enc_block_no, false);
-      old_file_size_ = hash_tree_.file_size();
-      hash_tree_.set_file_size(new_file_size);
-      Write_sync(new_end_object_no, NULL, new_end_object_size, 0, reader_sync,
-                 writer_sync);
-      hash_tree_.FinishTruncate(user_credentials);
+
+    if (hash_tree_.file_size() == new_file_size) {
+      // no truncation of hash tree needed.
+      break;
     }
+
+    hash_tree_.StartTruncate(new_end_enc_block_no, min_end_enc_block_complete);
+    old_file_size_ = hash_tree_.file_size();
+    hash_tree_.set_file_size(new_file_size);
+    if (!min_end_enc_block_complete) {
+      int min_end_object_no = (min_file_size - 1) / object_size_;
+      int min_end_object_size = min_file_size % object_size_;
+      Write_sync(min_end_object_no, NULL, min_end_object_size, 0, reader_sync,
+                 writer_sync);
+    }
+    hash_tree_.FinishTruncate(user_credentials);
+    break;
   }
 }
 
@@ -481,8 +552,6 @@ boost::unique_future<int> ObjectEncryptor::Operation::Read(
   assert(read_plaintext_len <= ciphertext.size());
   assert(read_plaintext_len <= bytes_to_read);
   assert(read_plaintext_len == end_offset_in_object - offset_in_object);
-//  return boost::make_ready_future(end_offset_in_object - offset_in_object);
-//  return boost::make_future(end_offset_in_object - offset_in_object);
   boost::promise<int> promise;
   promise.set_value(end_offset_in_object - offset_in_object);
   return promise.get_future();
@@ -516,15 +585,15 @@ boost::unique_future<void> ObjectEncryptor::Operation::Write(
   int end_offset_in_object = offset_in_object + bytes_to_write;  // ???
   int ct_end_offset_diff = ct_end_offset_in_object - end_offset_in_object;
   int start_enc_block = (object_offset + ct_offset_in_object) / enc_block_size_;
-  int end_enc_block = std::max(
-      start_enc_block,
-      (object_offset + ct_end_offset_in_object - 1) / enc_block_size_);
+  int end_enc_block = (object_offset + ct_end_offset_in_object - 1)
+      / enc_block_size_;
   int offset_end_enc_block = (end_enc_block - start_enc_block)
       * enc_block_size_;
   int buffer_offset = 0;
   int ciphertext_offset = 0;
 
   std::vector<unsigned char> ciphertext(ct_bytes_to_write);
+  assert(ct_bytes_to_write > 0);
 
   if (ct_offset_diff != 0) {
     // first enc block is only partly written, handle it differently
@@ -646,18 +715,32 @@ void ObjectEncryptor::Unlink(
       "/.xtreemfs_enc_meta_files/" + boost::lexical_cast<std::string>(file_id));
 }
 
-ObjectEncryptor::FileLock::FileLock(FileHandle* file, uint64_t offset,
-                                    uint64_t length, bool exclusive)
-    : file_(file) {
-  int seed = boost::posix_time::time_duration(
-      boost::posix_time::microsec_clock::local_time().time_of_day())
-      .total_microseconds();
-  boost::random::mt19937 rng(seed);
-  boost::uniform_int<> uni_dist(0, INT32_MAX);
-  boost::variate_generator<boost::random::mt19937, boost::uniform_int<> > uni(
-      rng, uni_dist);
-  int process_id = uni();
-  lock_.reset(file->AcquireLock(process_id, offset, length, exclusive, true));
+/**
+ * Acquires a lock on the meta file.
+ *
+ * Range has the following semantic:
+ *   [0, 1)  : Lock for the complete meta file
+ *   [x, x+1): Lock for the encryption block x-1 of the file.
+ */
+ObjectEncryptor::FileLock::FileLock(ObjectEncryptor* obj_enc, uint64_t offset,
+                                    uint64_t length, bool exclusive,
+                                    bool wait_for_lock)
+    : file_(obj_enc->meta_file_) {
+  int process_id = obj_enc->file_info_->GenerateUniquePID();
+  lock_.reset(
+      file_->AcquireLock(process_id, offset, length, exclusive, wait_for_lock));
+}
+
+/**
+ * Try's to change the range of the lock without waiting.
+ *
+ * @param offset  The new offset.
+ * @param length  The new length.
+ */
+void ObjectEncryptor::FileLock::Change(uint64_t offset, uint64_t length) {
+  lock_.reset(
+      file_->AcquireLock(lock_->client_pid(), offset, length,
+                         lock_->exclusive(), false));
 }
 
 ObjectEncryptor::FileLock::~FileLock() {

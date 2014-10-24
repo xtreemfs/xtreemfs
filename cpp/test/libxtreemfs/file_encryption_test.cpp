@@ -77,6 +77,7 @@ class OnlineTest : public ::testing::Test {
     // set options for encryption
     options_.encryption = true;
     options_.encryption_block_size = 4;
+//    options_.encryption_cw = "locks";
 
     // Create a new instance of a client using the DIR service at 'localhost'
     // at port 32638 using the default implementation.
@@ -836,6 +837,24 @@ TEST_F(EncryptionTest, Truncate_07) {
   EXPECT_STREQ("ABCDEFGH", buffer);
 }
 
+TEST_F(EncryptionTest, Truncate_08) {
+  ASSERT_NO_THROW({
+    file->Write("ABCDEFGHIJKLMNOPQRSTUVWXabcdefghijklmnopqrstuvwxy", 49, 0);
+  });
+
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 0);
+  });
+
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 3);
+  });
+
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 4);
+  });
+}
+
 TEST_F(EncryptionTest, Open_01) {
   char buffer[50];
   int x;
@@ -928,39 +947,73 @@ TEST_F(EncryptionTest, objectVersion) {
 
 void cw_worker(FileHandle* file, char id) {
   boost::random::mt19937 rng(static_cast<int>(id));
-  boost::uniform_int<> uni_dist_0_10(0, 10);
-  boost::variate_generator<boost::random::mt19937, boost::uniform_int<> > uni_0_10(
-      rng, uni_dist_0_10);
+  boost::uniform_int<> uni_dist_offset(0, 20);
+  boost::variate_generator<boost::random::mt19937, boost::uniform_int<> > uni_offset(
+      rng, uni_dist_offset);
   boost::uniform_int<> uni_dist_65_90(65, 90);
   boost::variate_generator<boost::random::mt19937, boost::uniform_int<> > uni_65_90(
       rng, uni_dist_65_90);
 
-  for (int i = 0; i < 20; i++) {
-    int offset = uni_0_10();
+  for (int i = 0; i < 50; i++) {
+    int offset = uni_offset();
     char str[2];
     char buffer[2];
     str[0] = id;
     str[1] = static_cast<char>(uni_65_90());
+//    std::cout << "id: " << id << " i: " << i << " write at offset:" << offset << " " << str << std::endl;
     ASSERT_NO_THROW({
       file->Write(str, 2, offset);
     });
-    ASSERT_NO_THROW({
-      file->Read(buffer, 2, offset);
-    });
+//    std::cout << "id: " << id << " i: " << i << " finished write" << std::endl;
     if (buffer[0] == id && 65 <= buffer[1] && buffer[1] <= 90) {
       EXPECT_STREQ(str, buffer);
     }
   }
 }
 
-TEST_F(EncryptionTest, ConcurrentWrite) {
+void ct_worker(FileHandle* file, char id,
+               pbrpc::UserCredentials& user_credentials) {
+  boost::random::mt19937 rng(static_cast<int>(id));
+  boost::uniform_int<> uni_dist_offset(0, 20);
+  boost::variate_generator<boost::random::mt19937, boost::uniform_int<> > uni_offset(
+      rng, uni_dist_offset);
+
+  for (int i = 0; i < 10; i++) {
+    int file_size = uni_offset();
+//    std::cout << "id: " << id << " i: " << i << " truncate to:" << file_size << std::endl;
+    ASSERT_NO_THROW({
+      file->Truncate(user_credentials, file_size);
+    });
+//    std::cout << "id: " << id << " i: " << i << " finished truncate" << std::endl;
+  }
+}
+
+TEST_F(EncryptionTest, ConcurrentWrite_01) {
+  options_.encryption_cw = "serialize";
+
   boost::thread th1(cw_worker, file, '1');
   boost::thread th2(cw_worker, file, '2');
   boost::thread th3(cw_worker, file, '3');
+  boost::thread th4(ct_worker, file, '4', user_credentials_);
 
   th1.join();
   th2.join();
   th3.join();
+  th4.join();
+}
+
+TEST_F(EncryptionTest, ConcurrentWrite_02) {
+  options_.encryption_cw = "locks";
+
+  boost::thread th1(cw_worker, file, '1');
+  boost::thread th2(cw_worker, file, '2');
+  boost::thread th3(cw_worker, file, '3');
+  boost::thread th4(ct_worker, file, '4', user_credentials_);
+
+  th1.join();
+  th2.join();
+  th3.join();
+  th4.join();
 }
 
 }  // namespace xtreemfs

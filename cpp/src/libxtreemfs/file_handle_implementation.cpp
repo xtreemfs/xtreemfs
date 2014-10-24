@@ -615,19 +615,23 @@ void FileHandleImplementation::TruncatePhaseTwoAndThree(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     int64_t new_file_size) {
   // if encryption is enabled
+  boost::scoped_ptr<ObjectEncryptor::TruncateOperation> enc_truncate_op;
   if (object_encryptor_.get() != NULL) {
     FileCredentials file_credentials;
     xcap_manager_.GetXCap(file_credentials.mutable_xcap());
     file_info_->GetXLocSet(file_credentials.mutable_xlocs());
 
-    ObjectEncryptor::TruncateOperation(
-        object_encryptor_.get(),
-        user_credentials,
-        new_file_size,
-        boost::bind(&FileHandleImplementation::ReadFromOSD, this,
-                    osd_uuid_iterator_, file_credentials, _1, 0, _2, _3, _4),
-        boost::bind(&FileHandleImplementation::WriteToOSD, this,
-                    osd_uuid_iterator_, file_credentials, _1, 0, _3, _2, _4));
+    enc_truncate_op.reset(
+        new ObjectEncryptor::TruncateOperation(
+            object_encryptor_.get(),
+            user_credentials,
+            new_file_size,
+            boost::bind(&FileHandleImplementation::ReadFromOSD, this,
+                        osd_uuid_iterator_, file_credentials, _1, 0, _2, _3,
+                        _4),
+            boost::bind(&FileHandleImplementation::WriteToOSD, this,
+                        osd_uuid_iterator_, file_credentials, _1, 0, _3, _2,
+                        _4)));
   }
 
   // 2. Call truncate at the head OSD.
@@ -700,11 +704,11 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
   // Check active locks first.
   std::auto_ptr<Lock> conflicting_lock(new Lock());
   bool lock_for_pid_cached, cached_lock_for_pid_equal, conflict_found;
-  while(true) {
-    file_info_->CheckLock(lock_request.lock_request(),
-                          conflicting_lock.get(),
-                          &lock_for_pid_cached,
-                          &cached_lock_for_pid_equal,
+  while (true) {
+    boost::mutex::scoped_lock mutex_lock(
+        *file_info_->get_active_locks_DelLock_mutex());
+    file_info_->CheckLock(lock_request.lock_request(), conflicting_lock.get(),
+                          &lock_for_pid_cached, &cached_lock_for_pid_equal,
                           &conflict_found);
     if (!conflict_found) {
       break;
