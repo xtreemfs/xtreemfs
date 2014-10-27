@@ -48,7 +48,7 @@ public class SortFQDNPolicy extends FQDNPolicyBase {
                         - getMatch(new ServiceUUID(o1.getUuid()).getAddress().getHostName(), clientIP
                                 .getCanonicalHostName());
                 } catch (UnknownUUIDException e) {
-                    Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this, "cannot compare UUIDs");
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this, "cannot compare FQDNs");
                     Logging.logMessage(Logging.LEVEL_WARN, this, OutputUtils.stackTraceToString(e));
                     return 0;
                 }

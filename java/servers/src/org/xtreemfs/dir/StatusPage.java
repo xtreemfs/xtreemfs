@@ -38,6 +38,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.OSDHealthResult;
 
 import com.sun.net.httpserver.HttpExchange;
 
@@ -201,7 +202,10 @@ public class StatusPage extends StatusServerModule {
                 SortedMap<String, String> sMap = new TreeMap<String, String>();
                 for (Entry<String, String> entry : sreg.getData().entrySet())
                     sMap.put(entry.getKey(), entry.getValue());
-
+                
+                //remove osd_health_check_output from map to display it together with osd_health_check_result
+                String osdHealthCheckOutput = sMap.remove("osd_health_check_output");
+                
                 for (Entry<String, String> dataEntry : sMap.entrySet()) {
                     dump.append("<tr><td width=\"30%\">");
                     dump.append(dataEntry.getKey());
@@ -213,7 +217,8 @@ public class StatusPage extends StatusServerModule {
                         dump.append("\">");
                     }
 
-                    if (!dataEntry.getKey().equals(HeartbeatThread.STATUS_ATTR)) {
+                    if (!(dataEntry.getKey().equals(HeartbeatThread.STATUS_ATTR) || dataEntry.getKey().equals(
+                            "osd_health_check"))) {
                         dump.append(dataEntry.getValue());
                     }
 
@@ -250,6 +255,20 @@ public class StatusPage extends StatusServerModule {
                         dump.append(" err ");
                         dump.append(coord.getLocalError());
                         dump.append(")");
+                    } else if (dataEntry.getKey().equals("osd_health_check")) {
+                        switch (OSDHealthResult.valueOf(Integer.valueOf(dataEntry.getValue()))) {
+                        case OSD_HEALTH_RESULT_PASSED:
+                            dump.append("passed (" + osdHealthCheckOutput + ")");
+                            break;
+                        case OSD_HEALTH_RESULT_FAILED:
+                            dump.append("<font color=#FF0000>failed (" + osdHealthCheckOutput + ")</font>");
+                            break;
+                        case OSD_HEALTH_RESULT_WARNING:
+                            dump.append("<font color=#FFFF00>warning (" + osdHealthCheckOutput + ")</font>");
+                            break;
+                        case OSD_HEALTH_RESULT_NOT_AVAIL:
+                            dump.append("Not available (" + dataEntry.getValue() + ")");
+                        }
                     }
                     dump.append("</b></td></tr>");
                 }
