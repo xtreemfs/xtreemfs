@@ -20,6 +20,8 @@
 
 namespace xtreemfs {
 
+class FileHandleImplementation;
+
 /**
  * A binary hash tree which contains not only the hashes, but can also contain
  * additional data in its leafs an nodes
@@ -46,6 +48,8 @@ class HashTreeAD {
 
   void SetLeaf(int leaf, std::vector<unsigned char> adata,
                boost::asio::const_buffer data);
+
+  int64_t file_version();
 
   int64_t file_size();
 
@@ -141,6 +145,11 @@ class HashTreeAD {
   int NumberOfNodes(int level, int pos);
 
   /**
+   * Version of the file.
+   */
+  int64_t file_version_;
+
+  /**
    * Size of the file.
    */
   int64_t file_size_;
@@ -214,7 +223,7 @@ class HashTreeAD {
    * File handle for the meta file. Not owned by this class. Not closed by this
    * class.
    */
-  FileHandle* meta_file_;
+  FileHandleImplementation* meta_file_;
 
   MessageDigest hasher_;
 

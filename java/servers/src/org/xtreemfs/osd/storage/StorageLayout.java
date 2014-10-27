@@ -23,7 +23,6 @@ import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.replication.ObjectSet;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog;
 
 /**
@@ -378,6 +377,9 @@ public abstract class StorageLayout {
                 // copy old data and then new data
                 writeData = BufferPool.allocate(offset + data.capacity());
                 writeData.put(obj.getData());
+                for (int i = obj.getData().capacity(); i < offset; i++) {
+                    writeData.put((byte) 0);
+                }
                 BufferPool.free(obj.getData());
                 writeData.position(offset);
                 writeData.put(data);

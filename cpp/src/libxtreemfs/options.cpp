@@ -292,7 +292,7 @@ void Options::GenerateProgramOptionsDescriptions() {
   ("encryption-cw-mf",
       po::value(&encryption_cw)->default_value(encryption_cw),
       "The method to use to ensure consistency for concurrent write"
-      " (none/serialize/locks)");
+      " (none/serialize/locks/snapshots)");
 #endif  // HAS_OPENSSL
 
   grid_options_.add_options()

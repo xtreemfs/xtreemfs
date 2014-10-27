@@ -33,7 +33,8 @@
  *
  * Data layout of root node:
  * ============================
- * file size (as uint64_t big-endian) [8 bytes] | hash | signature
+ * file version (as uint64_t big-endian) [8 bytes] |
+ *   file size (as uint64_t big-endian) [8 bytes] | hash | signature
  */
 
 #include "libxtreemfs/hash_tree_ad.h"
@@ -47,6 +48,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "libxtreemfs/file_handle_implementation.h"
 #include "libxtreemfs/xtreemfs_exception.h"
 
 namespace {
@@ -279,7 +281,8 @@ HashTreeAD::Node HashTreeAD::Node::RightSibling(const HashTreeAD* tree) const {
 
 HashTreeAD::HashTreeAD(FileHandle* meta_file, SignAlgorithm* sign_algo,
                        Options volume_options, int leaf_adata_size)
-    : file_size_(0),
+    : file_version_(0),
+      file_size_(0),
       max_leaf_number_(-1),
       max_level_(0),
       max_node_number_(0),
@@ -288,7 +291,7 @@ HashTreeAD::HashTreeAD(FileHandle* meta_file, SignAlgorithm* sign_algo,
       end_leaf_(0),
       complete_max_leaf_(false),
       old_max_leaf_(0),
-      meta_file_(meta_file),
+      meta_file_(static_cast<FileHandleImplementation*>(meta_file)),
       hasher_(volume_options.encryption_hash),
       sign_algo_(sign_algo),
       volume_options_(volume_options) {
@@ -374,7 +377,8 @@ void HashTreeAD::StartWrite(int start_leaf, bool complete_start_leaf,
  * Finishes a write.
  */
 void HashTreeAD::FinishWrite() {
-  if (volume_options_.encryption_cw == "locks") {
+  if (volume_options_.encryption_cw == "locks"
+      || volume_options_.encryption_cw == "snapshots") {
     std::vector<unsigned char> root_hash(root_hash_);
     int max_leaf_number = max_leaf_number_;
     int64_t file_size = file_size_;
@@ -617,13 +621,18 @@ bool HashTreeAD::ReadRootNodeFromFile() {
     throw XtreemFSException("Invalid signature of root node");
   }
 
+  // get file version
+  uint64_t file_version = *reinterpret_cast<uint64_t*>(buffer.data());
+  file_version_ = be64toh(file_version);
+
   // get file size
-  uint64_t file_size = *reinterpret_cast<uint64_t*>(buffer.data());
+  uint64_t file_size = *reinterpret_cast<uint64_t*>(buffer.data()
+      + sizeof(uint64_t));
   file_size_ = be64toh(file_size);
 
   // store root hash
   root_hash_ = std::vector<unsigned char>(
-      buffer.data() + sizeof(uint64_t),
+      buffer.data() + sizeof(uint64_t) + sizeof(uint64_t),
       buffer.data() + buffer.size() - sign_algo_->get_signature_size());
 
   return true;
@@ -657,7 +666,8 @@ void HashTreeAD::ReadNodesFromFile(boost::icl::interval_set<int> nodeNumbers) {
     if (buffer_size < read_size) {
       buffer.reset(new char[read_size]);
     }
-    int bytes_read = meta_file_->Read(buffer.get(), read_size, read_start);
+    int bytes_read = meta_file_->Read(buffer.get(), read_size, read_start,
+                                      file_version_);
     assert(bytes_read == read_size);
 
     for (int i = boost::icl::first(range); i <= boost::icl::last(range); i++) {
@@ -693,7 +703,7 @@ void HashTreeAD::WriteNodesToFile() {
       Node node(i, this);
       buffer.insert(buffer.end(), nodes_[node].begin(), nodes_[node].end());
     }
-    meta_file_->Write(buffer.data(), buffer.size(), write_start);
+    meta_file_->Write(buffer.data(), buffer.size(), write_start, file_version_);
   }
 }
 
@@ -927,10 +937,20 @@ void HashTreeAD::UpdateTree(int start_leaf, int end_leaf, int max_leaf) {
     }
   }
 
+  if (volume_options_.encryption_cw == "snapshots") {
+    file_version_++;
+  }
+
+  // store file version in root node
+  uint64_t file_version = htobe64(file_version_);
+  std::vector<unsigned char> root_node(
+      reinterpret_cast<unsigned char*>(&file_version),
+      reinterpret_cast<unsigned char*>(&file_version) + sizeof(uint64_t));
+
   // store file size in root node
   uint64_t file_size = htobe64(file_size_);
-  std::vector<unsigned char> root_node(
-      reinterpret_cast<unsigned char*>(&file_size),
+  root_node.insert(
+      root_node.end(), reinterpret_cast<unsigned char*>(&file_size),
       reinterpret_cast<unsigned char*>(&file_size) + sizeof(uint64_t));
 
   // get root node hash
@@ -1041,7 +1061,7 @@ int HashTreeAD::NodeSize(int level) {
   assert(level <= max_level_);
 
   if (level == max_level_) {
-    return sizeof(uint64_t) + hasher_.digest_size()
+    return sizeof(uint64_t) + sizeof(uint64_t) + hasher_.digest_size()
         + sign_algo_->get_signature_size();
   } else if (level == 0) {
     return hasher_.digest_size() + leaf_adata_size_;

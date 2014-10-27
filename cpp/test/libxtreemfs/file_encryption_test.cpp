@@ -884,7 +884,7 @@ TEST_F(EncryptionTest, Open_01) {
   EXPECT_STREQ("EFGH", buffer+4);
 }
 
-TEST_F(EncryptionTest, objectVersion) {
+TEST_F(EncryptionTest, objectVersion_01) {
   char buffer[50];
 
   FileHandleImplementation* file_handle =
@@ -945,6 +945,42 @@ TEST_F(EncryptionTest, objectVersion) {
   file_handle->Close();
 }
 
+TEST_F(EncryptionTest, objectVersion_02) {
+  char buffer[50];
+  int x;
+
+  FileHandleImplementation* file_handle =
+      static_cast<FileHandleImplementation*>(volume_->OpenFile(
+          user_credentials_,
+          "/.xtreemfs_enc_meta_files/test",
+          static_cast<pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
+              | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
+          511));
+
+  EXPECT_TRUE(ObjectEncryptor::IsEncMetaFile("/.xtreemfs_enc_meta_files/test"));
+
+  file_handle->Write("write00", 7, 0);
+  ASSERT_NO_THROW({
+    file_handle->Read(buffer, 10, 0);
+  });
+  EXPECT_STREQ("write00", buffer);
+
+  file_handle->Write("write01", 7, 40, 1);
+  ASSERT_NO_THROW({
+    x = file_handle->Read(buffer, 50, 0);
+  });
+  EXPECT_EQ(47, x);
+  buffer[x] = 0;
+
+  EXPECT_STREQ("write00", buffer);
+  for (int i = 7; i < 39; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
+  EXPECT_STREQ("write01", buffer + 40);
+
+  file_handle->Close();
+}
+
 void cw_worker(FileHandle* file, char id) {
   boost::random::mt19937 rng(static_cast<int>(id));
   boost::uniform_int<> uni_dist_offset(0, 20);
@@ -960,11 +996,9 @@ void cw_worker(FileHandle* file, char id) {
     char buffer[2];
     str[0] = id;
     str[1] = static_cast<char>(uni_65_90());
-//    std::cout << "id: " << id << " i: " << i << " write at offset:" << offset << " " << str << std::endl;
     ASSERT_NO_THROW({
       file->Write(str, 2, offset);
     });
-//    std::cout << "id: " << id << " i: " << i << " finished write" << std::endl;
     if (buffer[0] == id && 65 <= buffer[1] && buffer[1] <= 90) {
       EXPECT_STREQ(str, buffer);
     }
@@ -980,11 +1014,9 @@ void ct_worker(FileHandle* file, char id,
 
   for (int i = 0; i < 10; i++) {
     int file_size = uni_offset();
-//    std::cout << "id: " << id << " i: " << i << " truncate to:" << file_size << std::endl;
     ASSERT_NO_THROW({
       file->Truncate(user_credentials, file_size);
     });
-//    std::cout << "id: " << id << " i: " << i << " finished truncate" << std::endl;
   }
 }
 
@@ -1014,6 +1046,53 @@ TEST_F(EncryptionTest, ConcurrentWrite_02) {
   th2.join();
   th3.join();
   th4.join();
+}
+
+TEST_F(EncryptionTest, ConcurrentWrite_03) {
+  options_.encryption_cw = "snapshots";
+
+  boost::thread th1(cw_worker, file, '1');
+  boost::thread th2(cw_worker, file, '2');
+  boost::thread th3(cw_worker, file, '3');
+  boost::thread th4(ct_worker, file, '4', user_credentials_);
+
+  th1.join();
+  th2.join();
+  th3.join();
+  th4.join();
+}
+
+void cw_04_write_1(FileHandle* file, char id) {
+  std::cout << "id: " << id << "start" << std::endl;
+  file->Write("1R", 2, 13);
+  std::cout << "id: " << id << "end" << std::endl;
+}
+
+void cw_04_write_2(FileHandle* file, char id) {
+  std::cout << "id: " << id << "start" << std::endl;
+  file->Write("2E", 2, 3);
+  std::cout << "id: " << id << "end" << std::endl;
+}
+
+void cw_04_write_3(FileHandle* file, char id) {
+  std::cout << "id: " << id << "start" << std::endl;
+  file->Write("3A", 2, 0);
+  std::cout << "id: " << id << "end" << std::endl;
+}
+
+TEST_F(EncryptionTest, ConcurrentWrite_04) {
+  options_.encryption_cw = "snapshots";
+
+  file->Write("A", 1, 0);
+  file->Truncate(user_credentials_, 0);
+
+  boost::thread th1(cw_04_write_3, file, '3');
+  boost::thread th2(cw_04_write_1, file, '1');
+  boost::thread th3(cw_04_write_2, file, '2');
+
+  th1.join();
+  th2.join();
+  th3.join();
 }
 
 }  // namespace xtreemfs

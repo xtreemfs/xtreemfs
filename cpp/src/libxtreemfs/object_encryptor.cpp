@@ -142,12 +142,15 @@ ObjectEncryptor::ReadOperation::ReadOperation(ObjectEncryptor* obj_enc,
   int start_block = offset / enc_block_size_;
   int end_block = (offset + count - 1) / enc_block_size_;
 
-  boost::scoped_ptr<FileLock> meta_file_lock;
-  if (obj_enc_->volume_options_.encryption_cw == "locks") {
+  if (obj_enc_->volume_options_.encryption_cw == "locks"
+      || obj_enc_->volume_options_.encryption_cw == "snapshots") {
     // lock file
     file_lock_.reset(
         new FileLock(obj_enc_, start_block + 1, end_block - start_block + 1,
                      false));
+  }
+  boost::scoped_ptr<FileLock> meta_file_lock;
+  if (obj_enc_->volume_options_.encryption_cw == "locks") {
     // lock meta file
     meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, false));
   }
@@ -166,7 +169,8 @@ ObjectEncryptor::WriteOperation::WriteOperation(
   int end_block = (offset + count - 1) / enc_block_size_;
   bool change_old_last_enc_block = false;
 
-  if (obj_enc->volume_options_.encryption_cw == "locks") {
+  if (obj_enc->volume_options_.encryption_cw == "locks"
+      || obj_enc_->volume_options_.encryption_cw == "snapshots") {
     // lock file
     file_lock_.reset(
         new FileLock(obj_enc_, start_block + 1, end_block - start_block + 1,
@@ -175,9 +179,10 @@ ObjectEncryptor::WriteOperation::WriteOperation(
 
   while (true) {
     boost::scoped_ptr<FileLock> meta_file_lock;
-    if (obj_enc->volume_options_.encryption_cw == "locks") {
+    if (obj_enc->volume_options_.encryption_cw == "locks"
+        || obj_enc_->volume_options_.encryption_cw == "snapshots") {
       // lock meta file
-      meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, true));
+      meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, false));
     }
 
     hash_tree_.Init();
@@ -189,12 +194,14 @@ ObjectEncryptor::WriteOperation::WriteOperation(
     int old_last_enc_block = (old_file_size_ - 1) / enc_block_size_;
     bool old_last_enc_block_complete = old_file_size_ % enc_block_size_ == 0;
     change_old_last_enc_block = false;
-    if (old_last_enc_block < start_block && !old_last_enc_block_complete) {
+    if (old_last_enc_block < start_block
+        && (!old_last_enc_block_complete || old_last_enc_block == 0)) {
       // write is behind the old last enc block and it was incomplete,
       // so the old last enc block must be updated
       change_old_last_enc_block = true;
 
-      if (obj_enc->volume_options_.encryption_cw == "locks") {
+      if (obj_enc->volume_options_.encryption_cw == "locks"
+          || obj_enc_->volume_options_.encryption_cw == "snapshots") {
         // try to extend file lock
         try {
           file_lock_->Change(old_last_enc_block + 1,
@@ -234,7 +241,8 @@ ObjectEncryptor::WriteOperation::WriteOperation(
 ObjectEncryptor::WriteOperation::~WriteOperation() {
   // TODO(plieser): catch exceptions
   boost::scoped_ptr<FileLock> meta_file_lock;
-  if (obj_enc_->volume_options_.encryption_cw == "locks") {
+  if (obj_enc_->volume_options_.encryption_cw == "locks"
+      || obj_enc_->volume_options_.encryption_cw == "snapshots") {
     // lock meta file
     meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, true));
   }
@@ -258,7 +266,8 @@ ObjectEncryptor::TruncateOperation::TruncateOperation(
 
   while (true) {
     boost::scoped_ptr<FileLock> meta_file_lock;
-    if (obj_enc->volume_options_.encryption_cw == "locks") {
+    if (obj_enc->volume_options_.encryption_cw == "locks"
+        || obj_enc_->volume_options_.encryption_cw == "snapshots") {
       // lock meta file
       meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, true));
     }
@@ -266,9 +275,9 @@ ObjectEncryptor::TruncateOperation::TruncateOperation(
     hash_tree_.Init();
 
     int min_file_size = std::min(hash_tree_.file_size(), new_file_size);
-    bool min_end_enc_block_complete = min_file_size % enc_block_size_ == 0;
 
-    if (obj_enc->volume_options_.encryption_cw == "locks") {
+    if (obj_enc->volume_options_.encryption_cw == "locks"
+        || obj_enc_->volume_options_.encryption_cw == "snapshots") {
       // lock file from min_file_size to end
       try {
         file_lock_.reset(
@@ -289,6 +298,8 @@ ObjectEncryptor::TruncateOperation::TruncateOperation(
       // no truncation of hash tree needed.
       break;
     }
+
+    bool min_end_enc_block_complete = min_file_size % enc_block_size_ == 0;
 
     hash_tree_.StartTruncate(new_end_enc_block_no, min_end_enc_block_complete);
     old_file_size_ = hash_tree_.file_size();
