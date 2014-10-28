@@ -388,7 +388,7 @@ bool SetDefaultSP(const string& xctl_file,
         << width << " / " << size << "kB" << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Setting Default Striping Policy FAILED" << endl;
     return false;
   }
 }
@@ -409,7 +409,7 @@ bool SetVolumeQuota(const string& xctl_file,
     cout << "Set volume quota to " << quota << "." << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Setting Volume Quota FAILED" << endl;
     return false;
   }
 }
@@ -477,7 +477,7 @@ bool SetDefaultRP(const string& xctl_file,
         << factor << " replicas" << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Setting Default Replication Policy FAILED" << endl;
     return false;
   }
 }
@@ -557,7 +557,7 @@ bool SetReplicationPolicy(const string& xctl_file,
     }
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Setting Replication Policy FAILED" << endl;
     return false;
   }
 }
@@ -589,7 +589,7 @@ bool AddReplica(const string& xctl_file,
         << response["result"]["osd"].asString() << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Adding Replica FAILED" << endl;
     return false;
   }
 }
@@ -610,7 +610,7 @@ bool DeleteReplica(const string& xctl_file,
         << osd_uuid << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Deleting Replica FAILED" << endl;
     return false;
   }
 }
@@ -630,7 +630,7 @@ bool ShowErrors(const string& xctl_file,
     cout << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Showing Errors FAILED" << endl;
     return false;
   }
 }
@@ -651,7 +651,7 @@ bool GetSuitableOSDs(const string& xctl_file,
     }
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Getting Suitable OSDs FAILED" << endl;
     return false;
   }
 }
@@ -711,7 +711,7 @@ bool SetOSP(const string& xctl_file,
         << policy << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Setting OSD Selection Policy FAILED" << endl;
     return false;
   }
 }
@@ -747,7 +747,7 @@ bool SetRSP(const string& xctl_file,
         << policy << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Setting Replica Selection Policy FAILED" << endl;
     return false;
   }
 }
@@ -773,7 +773,7 @@ bool SetPolicyAttr(const string& xctl_file,
         << vm["value"].as<string>() << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Setting Policy Attribute FAILED" << endl;
     return false;
   }
 }
@@ -794,7 +794,7 @@ bool ListPolicyAttrs(const string& xctl_file,
     }
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Listing Policy Attributes FAILED" << endl;
     return false;
   }
 }
@@ -816,10 +816,10 @@ bool EnableDisableSnapshots(const string& xctl_file,
 
   Json::Value response;
   if (executeOperation(xctl_file, request, &response)) {
-    cout << "Success." << endl;
+    cout << "Enabling/Disabling Snapshot succeeded." << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Enabling/Disabling Snapshot FAILED" << endl;
     return false;
   }
 }
@@ -850,13 +850,13 @@ bool ListSnapshots(const string& xctl_file,
           cout << "- " << snapshots[i].asString() << endl;
         }
       } else {
-        cerr << "FAILED (to parse the list of snapshots)" << endl;
+        cerr << "Listing Snapshots FAILED (to parse the list of snapshots)" << endl;
         return false;
       }
     }
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Listing Snapshots FAILED" << endl;
     return false;
   }
 }
@@ -880,10 +880,10 @@ bool CreateDeleteSnapshot(const string& xctl_file,
 
   Json::Value response;
   if (executeOperation(xctl_file, request, &response)) {
-    cout << "Success." << endl;
+    cout << "Creating/Deleting Snapshot succeeded." << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Creating/Deleting Snapshot FAILED" << endl;
     return false;
   }
 }
@@ -908,10 +908,10 @@ bool SetRemoveACL(const string& xctl_file,
 
   Json::Value response;
   if (executeOperation(xctl_file, request, &response)) {
-    cout << "Success." << endl;
+    cout << "Setting/Modifying/Removing ACL succeeded." << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Setting/Modifying/Removong ACL FAILED" << endl;
     return false;
   }
 }
