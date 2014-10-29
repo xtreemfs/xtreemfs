@@ -41,6 +41,7 @@ class CLIOptions {
     private static final String              OSD_SELECTION_UUIDS;
     private static final String              USERNAME;
     private static final String              GROUPNAME;
+    private static final String              SEQ_UNALIGNED_WRITE;
     private static final String              SEQ_WRITE;
     private static final String              SEQ_READ;
     private static final String              RAND_WRITE;
@@ -50,6 +51,8 @@ class CLIOptions {
     private static final String              THREADS;
     private static final String              REPETITIONS;
     private static final String              CHUNK_SIZE;
+    private static final String              REPLICATION_POLICY;
+    private static final String              REPLICATION_FACTOR;
     private static final String              STRIPE_SIZE;
     private static final String              STRIPE_WITDH;
     private static final String              SIZE_SEQ;
@@ -70,6 +73,7 @@ class CLIOptions {
         GROUPNAME = "-group";
         SEQ_WRITE = "sw";
         SEQ_READ = "sr";
+        SEQ_UNALIGNED_WRITE = "usw";
         RAND_WRITE = "rw";
         RAND_READ = "rr";
         FILEBASED_WRITE = "fw";
@@ -77,6 +81,8 @@ class CLIOptions {
         THREADS = "n";
         REPETITIONS = "r";
         CHUNK_SIZE = "-chunk-size";
+        REPLICATION_POLICY = "-replication-policy";
+        REPLICATION_FACTOR = "-replication-factor";
         STRIPE_SIZE = "-stripe-size";
         STRIPE_WITDH = "-stripe-width";
         SIZE_SEQ = "ssize";
@@ -112,6 +118,8 @@ class CLIOptions {
         setOSDPassword();
         setSSLOptions();
         setChunkSize();
+        setReplicationPolicy();
+        setReplicationFactor();
         setStripeSize();
         setStripeWidth();
         setNoCleanup();
@@ -144,6 +152,7 @@ class CLIOptions {
 
         /* benchmark switches */
         options.put(SEQ_WRITE, new CLIParser.CliOption(SWITCH, "sequential write benchmark", ""));
+        options.put(SEQ_UNALIGNED_WRITE, new CLIParser.CliOption(SWITCH, "unaligned sequential write benchmark", ""));
         options.put(SEQ_READ, new CLIParser.CliOption(SWITCH, "sequential read benchmark", ""));
         options.put(RAND_WRITE, new CLIParser.CliOption(SWITCH, "random write benchmark", ""));
         options.put(RAND_READ, new CLIParser.CliOption(SWITCH, "random read benchmark", ""));
@@ -156,6 +165,10 @@ class CLIOptions {
                 "<number>"));
         options.put(CHUNK_SIZE, new CLIParser.CliOption(STRING,
                 "Chunk size of reads/writes in benchmark in [B|K|M|G] (no modifier assumes bytes). default: 128K", "<chunkSize>"));
+        options.put(REPLICATION_POLICY, new CLIParser.CliOption(STRING,
+        		"Replication policy to use for new volumes. default: none", "<replication policy>"));
+        options.put(REPLICATION_FACTOR, new CLIParser.CliOption(STRING,
+        		"Replication factor to use for new volumes. default: 3", "<replication factor>"));
         options.put(STRIPE_SIZE, new CLIParser.CliOption(STRING,
                 "stripeSize in [B|K|M|G] (no modifier assumes bytes). default: 128K", "<stripeSize>"));
         options.put(STRIPE_WITDH, new CLIParser.CliOption(STRING, "stripe width. default: 1", "<stripe width>"));
@@ -298,6 +311,22 @@ class CLIOptions {
             }
         }
     }
+    
+    private void setReplicationPolicy() {
+    	String replicationPolicy = options.get(REPLICATION_POLICY).stringValue;
+    	if(null != replicationPolicy) {
+            assert "".equals(replicationPolicy)
+            	|| "WqRq".equals(replicationPolicy)
+            	|| "WaR1".equals(replicationPolicy) : "Unknown replication policy: " + replicationPolicy;
+            builder.setReplicationPolicy(replicationPolicy);
+    	}
+    }
+    
+    private void setReplicationFactor() {
+    	String replicationFactor = options.get(REPLICATION_FACTOR).stringValue;
+    	if(null != replicationFactor)
+    		builder.setReplicationFactor(Integer.parseInt(replicationFactor));
+    }
 
     private void setChunkSize() {
         String chunkSize = options.get(CHUNK_SIZE).stringValue;
@@ -393,6 +422,10 @@ class CLIOptions {
 
     boolean sequentialWriteBenchmarkIsSet() {
         return options.get(SEQ_WRITE).switchValue;
+    }
+
+    boolean unalignedSequentialWriteBenchmarkIsSet() {
+        return options.get(SEQ_UNALIGNED_WRITE).switchValue;
     }
 
     boolean sequentialReadBenchmarkIsSet() {
