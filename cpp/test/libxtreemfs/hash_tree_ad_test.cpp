@@ -367,7 +367,9 @@ TEST_F(HashTreeADTest_Offline, RequiredNodesForRead) {
   x = tree->RequiredNodesForRead(0, 2);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(0, 5));
-  EXPECT_EQ(nodeNumbers, x);
+  // TODO(plieser): fix compiler error: ambiguous overload for ‘operator<<’
+  // EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   tree->SetSize(11);
 
@@ -375,7 +377,7 @@ TEST_F(HashTreeADTest_Offline, RequiredNodesForRead) {
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(14, 15));
   nodeNumbers.add(boost::icl::interval<int>::closed(18, 22));
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   tree->SetSize(15);
 
@@ -385,19 +387,19 @@ TEST_F(HashTreeADTest_Offline, RequiredNodesForRead) {
   nodeNumbers.add(boost::icl::interval<int>::closed(6, 7));
   nodeNumbers.add(boost::icl::interval<int>::closed(14, 15));
   nodeNumbers.add(boost::icl::interval<int>::closed(30, 30));
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   x = tree->RequiredNodesForRead(5, 6);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(6, 15));
   nodeNumbers.add(boost::icl::interval<int>::closed(30, 30));
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   x = tree->RequiredNodesForRead(5, 10);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(6, 23));
   nodeNumbers.add(boost::icl::interval<int>::closed(30, 30));
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 }
 
 TEST_F(HashTreeADTest_Offline, RequiredNodesForWrite) {
@@ -411,7 +413,7 @@ TEST_F(HashTreeADTest_Offline, RequiredNodesForWrite) {
 
   x = tree->RequiredNodesForWrite(1, true, 2, true);
   nodeNumbers.clear();
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   tree->SetSize(-1);
   EXPECT_EQ(0, tree->max_node_number_);
@@ -419,7 +421,7 @@ TEST_F(HashTreeADTest_Offline, RequiredNodesForWrite) {
   x = tree->RequiredNodesForWrite(1, true, 2, true);
   nodeNumbers.clear();
   nodeNumbers.add(0);
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   tree->SetSize(0);
   EXPECT_EQ(1, tree->max_node_number_);
@@ -427,7 +429,7 @@ TEST_F(HashTreeADTest_Offline, RequiredNodesForWrite) {
   x = tree->RequiredNodesForWrite(1, true, 2, true);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(0, 1));
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   tree->SetSize(1);
   EXPECT_EQ(2, tree->max_node_number_);
@@ -435,12 +437,12 @@ TEST_F(HashTreeADTest_Offline, RequiredNodesForWrite) {
   x = tree->RequiredNodesForWrite(4, true, 5, true);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(0, 2));
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   x = tree->RequiredNodesForWrite(4, true, 6, true);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(0, 2));
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   tree->SetSize(2);
   EXPECT_EQ(5, tree->max_node_number_);
@@ -448,34 +450,34 @@ TEST_F(HashTreeADTest_Offline, RequiredNodesForWrite) {
   x = tree->RequiredNodesForWrite(0, true, 2, true);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(5, 5));
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   x = tree->RequiredNodesForWrite(0, true, 3, true);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(5, 5));
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   x = tree->RequiredNodesForWrite(1, true, 2, true);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(0, 3));
   nodeNumbers.add(5);
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   x = tree->RequiredNodesForWrite(2, true, 2, true);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(2, 3));
   nodeNumbers.add(5);
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   x = tree->RequiredNodesForWrite(3, true, 3, true);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(2, 5));
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   x = tree->RequiredNodesForWrite(4, true, 5, true);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(2, 5));
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   tree->SetSize(3);
   EXPECT_EQ(6, tree->max_node_number_);
@@ -483,7 +485,7 @@ TEST_F(HashTreeADTest_Offline, RequiredNodesForWrite) {
   x = tree->RequiredNodesForWrite(4, true, 4, true);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(2, 6));
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   tree->SetSize(4);
   EXPECT_EQ(9, tree->max_node_number_);
@@ -492,12 +494,12 @@ TEST_F(HashTreeADTest_Offline, RequiredNodesForWrite) {
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(6, 7));
   nodeNumbers.add(9);
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   x = tree->RequiredNodesForWrite(5, true, 5, true);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(6, 9));
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   tree->SetSize(5);
   EXPECT_EQ(10, tree->max_node_number_);
@@ -505,30 +507,30 @@ TEST_F(HashTreeADTest_Offline, RequiredNodesForWrite) {
   x = tree->RequiredNodesForWrite(0, true, 5, true);
   nodeNumbers.clear();
   nodeNumbers.add(10);
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   x = tree->RequiredNodesForWrite(2, true, 5, true);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(2, 3));
   nodeNumbers.add(boost::icl::interval<int>::closed(6, 7));
   nodeNumbers.add(10);
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   x = tree->RequiredNodesForWrite(4, true, 4, true);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(6, 10));
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   x = tree->RequiredNodesForWrite(4, true, 5, true);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(6, 7));
   nodeNumbers.add(10);
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   x = tree->RequiredNodesForWrite(6, true, 6, true);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(6, 10));
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   tree->SetSize(7);
   EXPECT_EQ(14, tree->max_node_number_);
@@ -539,27 +541,27 @@ TEST_F(HashTreeADTest_Offline, RequiredNodesForWrite) {
   nodeNumbers.add(boost::icl::interval<int>::closed(6, 7));
   nodeNumbers.add(boost::icl::interval<int>::closed(10, 11));
   nodeNumbers.add(14);
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   x = tree->RequiredNodesForWrite(4, true, 7, true);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(6, 7));
   nodeNumbers.add(14);
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   x = tree->RequiredNodesForWrite(2, true, 3, true);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(2, 3));
   nodeNumbers.add(boost::icl::interval<int>::closed(6, 7));
   nodeNumbers.add(14);
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   x = tree->RequiredNodesForWrite(3, true, 5, true);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(2, 7));
   nodeNumbers.add(boost::icl::interval<int>::closed(10, 11));
   nodeNumbers.add(14);
-  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 }
 
 }  // namespace xtreemfs
