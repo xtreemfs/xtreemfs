@@ -167,7 +167,8 @@ ObjectEncryptor::WriteOperation::WriteOperation(
 
   int start_block = offset / enc_block_size_;
   int end_block = (offset + count - 1) / enc_block_size_;
-  bool change_old_last_enc_block = false;
+  int old_last_incomplete_enc_block;
+  bool old_last_enc_block_complete = false;
 
   if (obj_enc->volume_options_.encryption_cw == "locks"
       || obj_enc_->volume_options_.encryption_cw == "snapshots") {
@@ -191,32 +192,29 @@ ObjectEncryptor::WriteOperation::WriteOperation(
     old_file_size_ = hash_tree_.file_size();
     hash_tree_.set_file_size(std::max(old_file_size_, offset + count));
 
-    int old_last_enc_block = (old_file_size_ - 1) / enc_block_size_;
-    bool old_last_enc_block_complete = old_file_size_ % enc_block_size_ == 0;
-    change_old_last_enc_block = false;
-    if (old_last_enc_block < start_block
-        && (!old_last_enc_block_complete || old_last_enc_block == 0)) {
-      // write is behind the old last enc block and it was incomplete,
-      // so the old last enc block must be updated
-      change_old_last_enc_block = true;
-
-      if (obj_enc->volume_options_.encryption_cw == "locks"
-          || obj_enc_->volume_options_.encryption_cw == "snapshots") {
-        // try to extend file lock
-        try {
-          file_lock_->Change(old_last_enc_block + 1,
-                             end_block - old_last_enc_block + 1);
-        } catch (const PosixErrorException& e) {  // NOLINT
-          if (e.posix_errno() != pbrpc::POSIX_ERROR_EAGAIN) {
-            // Only retry if there exists a conflicting lock and the server did
-            // return an EAGAIN - otherwise rethrow the exception.
-            throw;
-          }
-          // failed to lock required region, release meta file lock an try again
-          continue;
+    old_last_incomplete_enc_block = old_file_size_ / enc_block_size_;
+    if ((obj_enc->volume_options_.encryption_cw == "locks"
+        || obj_enc_->volume_options_.encryption_cw == "snapshots")
+        && old_last_incomplete_enc_block < start_block) {
+      // The write is changing the file size but has not yet locked the old last
+      // incomplete enc block.
+      // To prevent a concurred write to change the file size too we must first
+      // extend the file lock.
+      try {
+        file_lock_->Change(old_last_incomplete_enc_block + 1,
+                           end_block - old_last_incomplete_enc_block + 1);
+      } catch (const PosixErrorException& e) {  // NOLINT
+        if (e.posix_errno() != pbrpc::POSIX_ERROR_EAGAIN) {
+          // Only retry if there exists a conflicting lock and the server did
+          // return an EAGAIN - otherwise rethrow the exception.
+          throw;
         }
+        // failed to lock required region, release meta file lock an try again
+        continue;
       }
     }
+
+    old_last_enc_block_complete = old_file_size_ % enc_block_size_ == 0;
 
     hash_tree_.StartWrite(
         start_block,
@@ -228,9 +226,9 @@ ObjectEncryptor::WriteOperation::WriteOperation(
     break;
   }
 
-  if (change_old_last_enc_block) {
+  if (old_last_incomplete_enc_block < start_block && !old_last_enc_block_complete) {
     // write is behind the old last enc block and it was incomplete,
-    // so it's hash must be updated
+    // so it musst be updated.
     int old_end_object_no = old_file_size_ / object_size_;
     int old_end_object_size = old_file_size_ % object_size_;
     Write_sync(old_end_object_no, NULL, old_end_object_size, 0, reader_sync,
@@ -278,7 +276,8 @@ ObjectEncryptor::TruncateOperation::TruncateOperation(
 
     if (obj_enc->volume_options_.encryption_cw == "locks"
         || obj_enc_->volume_options_.encryption_cw == "snapshots") {
-      // lock file from min_file_size to end
+      // To prevent concurrent change of file size
+      // lock the file from min_file_size to end.
       try {
         file_lock_.reset(
             new FileLock(obj_enc_, (min_file_size / enc_block_size_) + 1, 0,
