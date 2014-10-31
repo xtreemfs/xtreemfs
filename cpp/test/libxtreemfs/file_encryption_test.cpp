@@ -1063,21 +1063,21 @@ TEST_F(EncryptionTest, ConcurrentWrite_03) {
 }
 
 void cw_04_write_1(FileHandle* file, char id) {
-  std::cout << "id: " << id << "start" << std::endl;
+//  std::cout << "id: " << id << "start" << std::endl;
   file->Write("1R", 2, 13);
-  std::cout << "id: " << id << "end" << std::endl;
+//  std::cout << "id: " << id << "end" << std::endl;
 }
 
 void cw_04_write_2(FileHandle* file, char id) {
-  std::cout << "id: " << id << "start" << std::endl;
+//  std::cout << "id: " << id << "start" << std::endl;
   file->Write("2E", 2, 3);
-  std::cout << "id: " << id << "end" << std::endl;
+//  std::cout << "id: " << id << "end" << std::endl;
 }
 
 void cw_04_write_3(FileHandle* file, char id) {
-  std::cout << "id: " << id << "start" << std::endl;
+//  std::cout << "id: " << id << "start" << std::endl;
   file->Write("3A", 2, 0);
-  std::cout << "id: " << id << "end" << std::endl;
+//  std::cout << "id: " << id << "end" << std::endl;
 }
 
 TEST_F(EncryptionTest, ConcurrentWrite_04) {
@@ -1093,6 +1093,23 @@ TEST_F(EncryptionTest, ConcurrentWrite_04) {
   th1.join();
   th2.join();
   th3.join();
+}
+
+TEST_F(EncryptionTest, ConcurrentWrite_05) {
+  options_.encryption_cw = "serialize";
+  options_.enable_async_writes = true;
+
+  boost::thread th1(cw_worker, file, '1');
+  boost::thread th2(cw_worker, file, '2');
+  boost::thread th3(cw_worker, file, '3');
+  boost::thread th4(ct_worker, file, '4', user_credentials_);
+
+  th1.join();
+  th2.join();
+  th3.join();
+  th4.join();
+
+  file->Flush();
 }
 
 }  // namespace xtreemfs

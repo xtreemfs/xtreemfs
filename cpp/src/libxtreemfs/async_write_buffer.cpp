@@ -12,6 +12,17 @@
 
 #include "xtreemfs/OSD.pb.h"
 
+namespace {
+void WriteToBuffer(int object_no, const char* buffer_in, int offset_in_object,
+         int bytes_to_write, char** buffer_out, size_t* buffer_out_len) {
+  assert(buffer_in && *buffer_out && buffer_out_len);
+  *buffer_out_len = bytes_to_write;
+  *buffer_out = new char[bytes_to_write];
+  memcpy(*buffer_out, buffer_in, bytes_to_write);
+}
+
+}  // namespace unnamed
+
 namespace xtreemfs {
 
 AsyncWriteBuffer::AsyncWriteBuffer(xtreemfs::pbrpc::writeRequest* write_request,
@@ -48,6 +59,56 @@ AsyncWriteBuffer::AsyncWriteBuffer(xtreemfs::pbrpc::writeRequest* write_request,
   assert(write_request && data && file_handle);
   this->data = new char[data_length];
   memcpy(this->data, data, data_length);
+}
+
+AsyncWriteBuffer::AsyncWriteBuffer(xtreemfs::pbrpc::writeRequest* write_request,
+                                   const char* data,
+                                   size_t data_length,
+                                   FileHandleImplementation* file_handle,
+                                   XCapHandler* xcap_handler,
+                                   boost::shared_ptr<ObjectEncryptor::WriteOperation> enc_write_op,
+                                   PartialObjectReaderFunction_sync reader_partial)
+    : write_request(write_request),
+      data_length(data_length),
+      file_handle(file_handle),
+      xcap_handler_(xcap_handler),
+      use_uuid_iterator(true),
+      state_(PENDING),
+      retry_count_(0),
+      enc_write_op_(enc_write_op) {
+  assert(write_request && data && file_handle);
+
+  PartialObjectWriterFunction_sync writer_partial = boost::bind(
+      &WriteToBuffer, _1, _2, _3, _4, &this->data, &this->data_length);
+  enc_write_op_->Write_sync(write_request->object_number(), data,
+                            write_request->offset(), data_length,
+                            reader_partial, writer_partial);
+}
+
+AsyncWriteBuffer::AsyncWriteBuffer(xtreemfs::pbrpc::writeRequest* write_request,
+                                   const char* data,
+                                   size_t data_length,
+                                   FileHandleImplementation* file_handle,
+                                   XCapHandler* xcap_handler,
+                                   const std::string& osd_uuid,
+                                   boost::shared_ptr<ObjectEncryptor::WriteOperation> enc_write_op,
+                                   PartialObjectReaderFunction_sync reader_partial)
+    : write_request(write_request),
+      data_length(data_length),
+      file_handle(file_handle),
+      xcap_handler_(xcap_handler),
+      use_uuid_iterator(false),
+      osd_uuid(osd_uuid),
+      state_(PENDING),
+      retry_count_(0),
+      enc_write_op_(enc_write_op) {
+  assert(write_request && data && file_handle);
+
+  PartialObjectWriterFunction_sync writer_partial = boost::bind(
+      &WriteToBuffer, _1, _2, _3, _4, &this->data, &this->data_length);
+  enc_write_op_->Write_sync(write_request->object_number(), data,
+                            write_request->offset(), data_length,
+                            reader_partial, writer_partial);
 }
 
 AsyncWriteBuffer::~AsyncWriteBuffer() {

@@ -11,6 +11,8 @@
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <string>
 
+#include "libxtreemfs/object_encryptor.h"
+
 namespace xtreemfs {
 
 namespace pbrpc {
@@ -46,6 +48,29 @@ struct AsyncWriteBuffer {
                    FileHandleImplementation* file_handle,
                    XCapHandler* xcap_handler,
                    const std::string& osd_uuid);
+
+  /**
+   * @remark Ownership of write_request is transferred to this object.
+   */
+  AsyncWriteBuffer(xtreemfs::pbrpc::writeRequest* write_request,
+                   const char* data,
+                   size_t data_length,
+                   FileHandleImplementation* file_handle,
+                   XCapHandler* xcap_handler,
+                   boost::shared_ptr<ObjectEncryptor::WriteOperation> enc_write_op,
+                   PartialObjectReaderFunction_sync reader_partial);
+
+  /**
+   * @remark Ownership of write_request is transferred to this object.
+   */
+  AsyncWriteBuffer(xtreemfs::pbrpc::writeRequest* write_request,
+                   const char* data,
+                   size_t data_length,
+                   FileHandleImplementation* file_handle,
+                   XCapHandler* xcap_handler,
+                   const std::string& osd_uuid,
+                   boost::shared_ptr<ObjectEncryptor::WriteOperation> enc_write_op,
+                   PartialObjectReaderFunction_sync reader_partial);
 
   ~AsyncWriteBuffer();
 
@@ -83,6 +108,10 @@ struct AsyncWriteBuffer {
 
   /** Time when the request was sent */
   boost::posix_time::ptime request_sent_time;
+
+ private:
+  /** The write encrypted write operation this buffer belongs to */
+  boost::shared_ptr<ObjectEncryptor::WriteOperation> enc_write_op_;
 };
 
 }  // namespace xtreemfs

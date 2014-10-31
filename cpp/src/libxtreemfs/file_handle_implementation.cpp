@@ -9,6 +9,7 @@
 #include "libxtreemfs/file_handle_implementation.h"
 
 #include <boost/bind.hpp>
+#include <boost/make_shared.hpp>
 #include <map>
 #include <memory>
 #include <string>
@@ -347,7 +348,7 @@ int FileHandleImplementation::Write(
       write_request->set_file_id(global_file_id);
 
       write_request->set_object_number(operations[j].obj_number);
-      write_request->set_object_version(0);
+      write_request->set_object_version(object_version);
       write_request->set_offset(operations[j].req_offset);
       write_request->set_lease_timeout(0);
 
@@ -359,23 +360,62 @@ int FileHandleImplementation::Write(
       // Create new WriteBuffer and differ between striping and the rest (
       // (replication = use UUIDIterator, no replication = set specific UUID).
       AsyncWriteBuffer* write_buffer;
-      if (xlocs.replicas(0).osd_uuids_size() > 1) {
-        // Replica is striped. Pick UUID from xlocset.
-        write_buffer = new AsyncWriteBuffer(
-            write_request,
-            operations[j].data,
-            operations[j].req_size,
-            this,
-            &xcap_manager_,
-            GetOSDUUIDFromXlocSet(xlocs,
-                                  0,  // Use first and only replica.
-                                  operations[j].osd_offsets[0]));
+      if (object_encryptor_.get() != NULL) {
+        // encryption is enabled
+        PartialObjectReaderFunction_sync reader_partial = boost::bind(
+            &FileHandleImplementation::ReadFromOSD, this, osd_uuid_iterator_,
+            file_credentials, _1, object_version, _2, _3, _4);
+        boost::shared_ptr<ObjectEncryptor::WriteOperation> enc_write_op =
+            boost::make_shared<ObjectEncryptor::WriteOperation>(
+                object_encryptor_.get(),
+                offset,
+                count,
+                reader_partial,
+                boost::bind(&FileHandleImplementation::WriteToOSD, this,
+                            osd_uuid_iterator_, file_credentials, _1,
+                            object_version, _3, _2, _4));
+        if (xlocs.replicas(0).osd_uuids_size() > 1) {
+          // Replica is striped. Pick UUID from xlocset.
+          write_buffer = new AsyncWriteBuffer(
+              write_request,
+              operations[j].data,
+              operations[j].req_size,
+              this,
+              &xcap_manager_,
+              GetOSDUUIDFromXlocSet(xlocs,
+                                    0,  // Use first and only replica.
+                                    operations[j].osd_offsets[0]),
+              enc_write_op,
+              reader_partial);
+        } else {
+              write_buffer = new AsyncWriteBuffer(
+                  write_request,
+                  operations[j].data,
+                  operations[j].req_size,
+                  this,
+                  &xcap_manager_,
+                  enc_write_op,
+                  reader_partial);
+        }
       } else {
-        write_buffer = new AsyncWriteBuffer(write_request,
-                                            operations[j].data,
-                                            operations[j].req_size,
-                                            this,
-                                            &xcap_manager_);
+        if (xlocs.replicas(0).osd_uuids_size() > 1) {
+          // Replica is striped. Pick UUID from xlocset.
+          write_buffer = new AsyncWriteBuffer(
+              write_request,
+              operations[j].data,
+              operations[j].req_size,
+              this,
+              &xcap_manager_,
+              GetOSDUUIDFromXlocSet(xlocs,
+                                    0,  // Use first and only replica.
+                                    operations[j].osd_offsets[0]));
+        } else {
+            write_buffer = new AsyncWriteBuffer(write_request,
+                                                operations[j].data,
+                                                operations[j].req_size,
+                                                this,
+                                                &xcap_manager_);
+          }
       }
 
       file_info_->AsyncWrite(write_buffer);
