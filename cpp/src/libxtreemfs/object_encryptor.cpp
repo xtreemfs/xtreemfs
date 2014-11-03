@@ -160,8 +160,8 @@ ObjectEncryptor::ReadOperation::ReadOperation(ObjectEncryptor* obj_enc,
 
 ObjectEncryptor::WriteOperation::WriteOperation(
     ObjectEncryptor* obj_enc, int64_t offset, int count,
-    PartialObjectReaderFunction_sync reader_sync,
-    PartialObjectWriterFunction_sync writer_sync)
+    PartialObjectReaderFunction reader,
+    PartialObjectWriterFunction writer)
     : Operation(obj_enc, true) {
   assert(count > 0);
 
@@ -231,8 +231,8 @@ ObjectEncryptor::WriteOperation::WriteOperation(
     // so it musst be updated.
     int old_end_object_no = old_file_size_ / object_size_;
     int old_end_object_size = old_file_size_ % object_size_;
-    Write_sync(old_end_object_no, NULL, old_end_object_size, 0, reader_sync,
-               writer_sync);
+    Write(old_end_object_no, NULL, old_end_object_size, 0, reader,
+               writer);
   }
 }
 
@@ -251,8 +251,8 @@ ObjectEncryptor::WriteOperation::~WriteOperation() {
 ObjectEncryptor::TruncateOperation::TruncateOperation(
     ObjectEncryptor* obj_enc,
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
-    int64_t new_file_size, PartialObjectReaderFunction_sync reader_sync,
-    PartialObjectWriterFunction_sync writer_sync)
+    int64_t new_file_size, PartialObjectReaderFunction reader,
+    PartialObjectWriterFunction writer)
     : Operation(obj_enc, true) {
   // TODO(plieser): user_credentials needed?
   int new_end_enc_block_no;
@@ -306,108 +306,12 @@ ObjectEncryptor::TruncateOperation::TruncateOperation(
     if (!min_end_enc_block_complete) {
       int min_end_object_no = (min_file_size - 1) / object_size_;
       int min_end_object_size = min_file_size % object_size_;
-      Write_sync(min_end_object_no, NULL, min_end_object_size, 0, reader_sync,
-                 writer_sync);
+      Write(min_end_object_no, NULL, min_end_object_size, 0, reader,
+                 writer);
     }
     hash_tree_.FinishTruncate(user_credentials);
     break;
   }
-}
-
-/**
- * Read from an encrypted object synchronously.
- *
- * @param object_no
- * @param buffer    Ownership is not transfered.
- * @param offset_in_object
- * @param bytes_to_read
- * @param reader_sync   A synchronously reader for objects.
- * @param writer_sync   A synchronously writer for objects.
- * @return
- */
-int ObjectEncryptor::Operation::Read_sync(
-    int object_no, char* buffer, int offset_in_object, int bytes_to_read,
-    PartialObjectReaderFunction_sync reader_sync,
-    PartialObjectWriterFunction_sync writer_sync) {
-  // TODO(plieser): writer_sync needed?
-  // convert the sync reader/writer to async
-  PartialObjectReaderFunction reader = boost::bind(
-      &ObjectEncryptor::CallSyncReaderAsynchronously, reader_sync, _1, _2, _3,
-      _4);
-  PartialObjectWriterFunction writer = boost::bind(
-      &ObjectEncryptor::CallSyncWriterAsynchronously, writer_sync, _1, _2, _3,
-      _4);
-
-  // call async read, wait for result and return it
-  return Read(object_no, buffer, offset_in_object, bytes_to_read, reader,
-              writer).get();
-}
-
-/**
- * Write from an encrypted object synchronously.
- *
- * @param object_no
- * @param buffer    Ownership is not transfered.
- * @param offset_in_object
- * @param bytes_to_write
- * @param reader_sync   A synchronously reader for objects.
- * @param writer_sync   A synchronously writer for objects.
- */
-void ObjectEncryptor::Operation::Write_sync(
-    int object_no, const char* buffer, int offset_in_object, int bytes_to_write,
-    PartialObjectReaderFunction_sync reader_sync,
-    PartialObjectWriterFunction_sync writer_sync) {
-  // convert the sync reader/writer to async
-  PartialObjectReaderFunction reader = boost::bind(
-      &ObjectEncryptor::CallSyncReaderAsynchronously, reader_sync, _1, _2, _3,
-      _4);
-  PartialObjectWriterFunction writer = boost::bind(
-      &ObjectEncryptor::CallSyncWriterAsynchronously, writer_sync, _1, _2, _3,
-      _4);
-
-  // call async write and wait until it is finished
-  Write(object_no, buffer, offset_in_object, bytes_to_write, reader, writer)
-      .wait();
-  return;
-}
-
-/**
- * Calls a PartialObjectReaderFunction_sync and returns a future with the
- * result.
- *
- * @param reader_sync   A synchronously reader to be called.
- * @param object_no
- * @param buffer    Ownership is not transfered.
- * @param offset_in_object
- * @param bytes_to_read
- * @return
- */
-boost::unique_future<int> ObjectEncryptor::CallSyncReaderAsynchronously(
-    PartialObjectReaderFunction_sync reader_sync, int object_no, char* buffer,
-    int offset_in_object, int bytes_to_read) {
-  boost::promise<int> p;
-  p.set_value(reader_sync(object_no, buffer, offset_in_object, bytes_to_read));
-  return p.get_future();
-}
-
-/**
- * Calls a PartialObjectWriterFunction_sync and returns a future with the
- * result.
- *
- * @param writer_sync   A synchronously writer to be called.
- * @param object_no
- * @param buffer    Ownership is not transfered.
- * @param offset_in_object
- * @param bytes_to_write
- * @return
- */
-boost::unique_future<void> ObjectEncryptor::CallSyncWriterAsynchronously(
-    PartialObjectWriterFunction_sync writer_sync, int object_no,
-    const char* buffer, int offset_in_object, int bytes_to_write) {
-  writer_sync(object_no, buffer, offset_in_object, bytes_to_write);
-  boost::promise<void> p;
-  p.set_value();
-  return p.get_future();
 }
 
 int ObjectEncryptor::Operation::EncryptEncBlock(
@@ -441,26 +345,24 @@ int ObjectEncryptor::Operation::DecryptEncBlock(
 }
 
 /**
- * Read from an encrypted object asynchronously.
+ * Read from an encrypted object synchronously.
  *
  * @param object_no
  * @param buffer    Ownership is not transfered.
  * @param offset_in_object
  * @param bytes_to_read
- * @param reader    An asynchronously reader for objects.
- * @param writer    An asynchronously writer for objects.
+ * @param reader    A synchronously reader for objects.
+ * @param writer    A synchronously writer for objects.
  * @return
  */
-boost::unique_future<int> ObjectEncryptor::Operation::Read(
+int ObjectEncryptor::Operation::Read(
     int object_no, char* buffer, int offset_in_object, int bytes_to_read,
-    PartialObjectReaderFunction reader, PartialObjectWriterFunction writer) {
+    PartialObjectReaderFunction reader) {
   assert(bytes_to_read > 0);
   int object_offset = object_no * object_size_;
   if (hash_tree_.file_size() <= object_offset + offset_in_object) {
     // return if read start is behind file size
-    boost::promise<int> promise;
-    promise.set_value(0);
-    return promise.get_future();
+    return 0;
   }
   int ct_offset_in_object = RoundDown(offset_in_object, enc_block_size_);
   int ct_offset_diff = offset_in_object - ct_offset_in_object;
@@ -469,16 +371,14 @@ boost::unique_future<int> ObjectEncryptor::Operation::Read(
                                  enc_block_size_) - ct_offset_in_object;
 
   std::vector<unsigned char> ciphertext(ct_bytes_to_read);
-  boost::unique_future<int> bytes_read = reader(
+  int bytes_read = reader(
       object_no, reinterpret_cast<char*>(ciphertext.data()),
       ct_offset_in_object, ct_bytes_to_read);
-  // TODO(plieser): no wait
-  bytes_read.wait();
-  ciphertext.resize(bytes_read.get());
+  ciphertext.resize(bytes_read);
 
   int read_plaintext_len = 0;  // only to check correctness
 
-  int ct_end_offset_in_object = ct_offset_in_object + bytes_read.get();
+  int ct_end_offset_in_object = ct_offset_in_object + bytes_read;
   int end_offset_in_object = std::min(ct_end_offset_in_object,
                                       offset_in_object + bytes_to_read);
   int ct_end_offset_diff = ct_end_offset_in_object - end_offset_in_object;
@@ -493,7 +393,7 @@ boost::unique_future<int> ObjectEncryptor::Operation::Read(
 
   if (ct_offset_in_object != offset_in_object) {
     // first enc block is only partly read, handle it differently
-    int ct_block_len = std::min(enc_block_size_, bytes_read.get());
+    int ct_block_len = std::min(enc_block_size_, bytes_read);
     std::vector<unsigned char> tmp_pt_block(ct_block_len);
     boost::asio::const_buffer ct_block = boost::asio::buffer(ciphertext.data(),
                                                              ct_block_len);
@@ -511,10 +411,10 @@ boost::unique_future<int> ObjectEncryptor::Operation::Read(
   }
 
   if (end_enc_block >= start_enc_block
-      && (ct_end_offset_diff != 0 || ct_bytes_to_read != bytes_read.get())) {
+      && (ct_end_offset_diff != 0 || ct_bytes_to_read != bytes_read)) {
     // last enc block is either not the same as the first or was not yet handled
     // and is only partly read
-    int ct_block_len = bytes_read.get() - offset_end_enc_block;
+    int ct_block_len = bytes_read - offset_end_enc_block;
     assert(ct_block_len > 0);
     assert(ct_block_len <= enc_block_size_);
     boost::asio::const_buffer ct_block = boost::asio::buffer(
@@ -562,23 +462,21 @@ boost::unique_future<int> ObjectEncryptor::Operation::Read(
   assert(read_plaintext_len <= ciphertext.size());
   assert(read_plaintext_len <= bytes_to_read);
   assert(read_plaintext_len == end_offset_in_object - offset_in_object);
-  boost::promise<int> promise;
-  promise.set_value(end_offset_in_object - offset_in_object);
-  return promise.get_future();
+  return read_plaintext_len;
 }
 
 /**
- * Write from an encrypted object asynchronously.
+ * Write from an encrypted object synchronously.
  *
  * @param object_no
  * @param buffer    Ownership is not transfered.
  * @param offset_in_object
  * @param bytes_to_write
- * @param reader    An asynchronously reader for objects.
- * @param writer    An asynchronously writer for objects.
+ * @param reader    A synchronously reader for objects.
+ * @param writer    A synchronously writer for objects.
  * @return
  */
-boost::unique_future<void> ObjectEncryptor::Operation::Write(
+void ObjectEncryptor::Operation::Write(
     int object_no, const char* buffer, int offset_in_object, int bytes_to_write,
     PartialObjectReaderFunction reader, PartialObjectWriterFunction writer) {
   int object_offset = object_no * object_size_;
@@ -611,12 +509,10 @@ boost::unique_future<void> ObjectEncryptor::Operation::Write(
     if (old_file_size_ > object_offset + ct_offset_in_object) {
       // 1. read the old enc block if it is not behind old file size
       std::vector<unsigned char> old_ct_block(enc_block_size_);
-      boost::unique_future<int> bytes_read = reader(
+      int bytes_read = reader(
           object_no, reinterpret_cast<char*>(old_ct_block.data()),
           ct_offset_in_object, enc_block_size_);
-      // TODO(plieser): no wait
-      bytes_read.wait();
-      old_ct_block.resize(bytes_read.get());
+      old_ct_block.resize(bytes_read);
 
       // 2. decrypt the old enc block
       DecryptEncBlock(start_enc_block, boost::asio::buffer(old_ct_block),
@@ -653,12 +549,10 @@ boost::unique_future<void> ObjectEncryptor::Operation::Write(
       // 1. read the old enc block if it is not behind old file size or
       // is not getting completely overwritten
       std::vector<unsigned char> old_ct_block(enc_block_size_);
-      boost::unique_future<int> bytes_read = reader(
+      int bytes_read = reader(
           object_no, reinterpret_cast<char*>(old_ct_block.data()),
           ct_end_offset_in_object - new_pt_block_len, enc_block_size_);
-      // TODO(plieser): no wait
-      bytes_read.wait();
-      old_ct_block.resize(bytes_read.get());
+      old_ct_block.resize(bytes_read);
 
       // 2. decrypt the old enc block
       DecryptEncBlock(end_enc_block, boost::asio::buffer(old_ct_block),
@@ -698,7 +592,7 @@ boost::unique_future<void> ObjectEncryptor::Operation::Write(
   }
   assert(buffer_offset <= bytes_to_write);
 
-  return writer(object_no, reinterpret_cast<char*>(ciphertext.data()),
+  writer(object_no, reinterpret_cast<char*>(ciphertext.data()),
                 ct_offset_in_object, ct_bytes_to_write);
 }
 

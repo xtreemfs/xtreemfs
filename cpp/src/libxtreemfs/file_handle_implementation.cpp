@@ -176,8 +176,8 @@ int FileHandleImplementation::Read(
     // Create wrapper functions for partial read/write of objects.
     // Needed for encryption with both object cache enabled and disabled,
     // so we define them here.
-    PartialObjectReaderFunction_sync reader_partial;
-    PartialObjectWriterFunction_sync writer_partial;
+    PartialObjectReaderFunction reader_partial;
+    PartialObjectWriterFunction writer_partial;
     // if encryption is enabled
     if (object_encryptor_.get() != NULL) {
       reader_partial = boost::bind(&FileHandleImplementation::ReadFromOSD, this,
@@ -194,15 +194,14 @@ int FileHandleImplementation::Read(
 
       // if encryption is enabled
       if (object_encryptor_.get() != NULL) {
-        reader = boost::bind(&xtreemfs::ObjectEncryptor::Operation::Read_sync,
+        reader = boost::bind(&xtreemfs::ObjectEncryptor::Operation::Read,
                              enc_read_op.get(), _1, _2, 0,
-                             object_cache_->object_size(), reader_partial,
-                             writer_partial);
+                             object_cache_->object_size(), reader_partial);
         // TODO(plieser): needs to be changed (works only with no cw)
         //                the written object is a cached one with different
         //                object no, so different locks have to be held)
         assert(volume_options_.encryption_cw == "none");
-        writer = boost::bind(&xtreemfs::ObjectEncryptor::Operation::Write_sync,
+        writer = boost::bind(&xtreemfs::ObjectEncryptor::Operation::Write,
                              enc_read_op.get(), _1, _2, 0, _3, reader_partial,
                              writer_partial);
       } else {
@@ -228,12 +227,12 @@ int FileHandleImplementation::Read(
     } else {
       // if encryption is enabled
       if (object_encryptor_.get() != NULL) {
-        received_data += enc_read_op->Read_sync(
+        received_data += enc_read_op->Read(
             operations[j].obj_number,
             operations[j].data,
             operations[j].req_offset,
             operations[j].req_size,
-            reader_partial, writer_partial);
+            reader_partial);
       } else {
         // TODO(mberlin): Update xloc list if newer version found (on OSD?).
         received_data += ReadFromOSD(uuid_iterator, file_credentials,
@@ -366,7 +365,7 @@ int FileHandleImplementation::Write(
       AsyncWriteBuffer* write_buffer;
       if (object_encryptor_.get() != NULL) {
         // encryption is enabled
-        PartialObjectReaderFunction_sync reader_partial = boost::bind(
+        PartialObjectReaderFunction reader_partial = boost::bind(
             &FileHandleImplementation::ReadFromOSD, this, osd_uuid_iterator_,
             file_credentials, _1, object_version, _2, _3, _4);
         boost::shared_ptr<ObjectEncryptor::WriteOperation> enc_write_op =
@@ -465,8 +464,8 @@ int FileHandleImplementation::Write(
       // Create wrapper functions for partial read/write of objects.
       // Needed for encryption with both object cache enabled and disabled,
       // so we define them here.
-      PartialObjectReaderFunction_sync reader_partial;
-      PartialObjectWriterFunction_sync writer_partial;
+      PartialObjectReaderFunction reader_partial;
+      PartialObjectWriterFunction writer_partial;
       // if encryption is enabled
       if (object_encryptor_.get() != NULL) {
         reader_partial = boost::bind(&FileHandleImplementation::ReadFromOSD,
@@ -483,16 +482,15 @@ int FileHandleImplementation::Write(
 
         // if encryption is enabled
         if (object_encryptor_.get() != NULL) {
-          reader = boost::bind(
-              &xtreemfs::ObjectEncryptor::WriteOperation::Read_sync,
-              enc_write_op.get(), _1, _2, 0, object_cache_->object_size(),
-              reader_partial, writer_partial);
+          reader = boost::bind(&xtreemfs::ObjectEncryptor::WriteOperation::Read,
+                               enc_write_op.get(), _1, _2, 0,
+                               object_cache_->object_size(), reader_partial);
           // TODO(plieser): needs to be changed (works only with no cw)
           //                the written object is a cached one with different
           //                object no, so different locks have to be held)
           assert(volume_options_.encryption_cw == "none");
           writer = boost::bind(
-              &xtreemfs::ObjectEncryptor::WriteOperation::Write_sync,
+              &xtreemfs::ObjectEncryptor::WriteOperation::Write,
               enc_write_op.get(), _1, _2, 0, _3, reader_partial,
               writer_partial);
         } else {
@@ -517,11 +515,9 @@ int FileHandleImplementation::Write(
       } else {
         // if encryption is enabled
         if (object_encryptor_.get() != NULL) {
-          enc_write_op->Write_sync(operations[j].obj_number,
-                                        operations[j].data,
-                                        operations[j].req_offset,
-                                        operations[j].req_size, reader_partial,
-                                        writer_partial);
+          enc_write_op->Write(operations[j].obj_number, operations[j].data,
+                              operations[j].req_offset, operations[j].req_size,
+                              reader_partial, writer_partial);
         } else {
           WriteToOSD(uuid_iterator, file_credentials, operations[j].obj_number,
                      object_version, operations[j].req_offset,

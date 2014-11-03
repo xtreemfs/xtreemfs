@@ -9,7 +9,6 @@
 #define CPP_INCLUDE_LIBXTREEMFS_OBJECT_ENCRYPTOR_H_
 
 #include <boost/function.hpp>
-#include <boost/thread/future.hpp>
 #include <string>
 #include <vector>
 
@@ -27,16 +26,10 @@ namespace xtreemfs {
  * functionality for objects.
  */
 typedef boost::function<
-    boost::unique_future<int>(int object_no, char* buffer, int offset_in_object,
-                              int bytes_to_read)> PartialObjectReaderFunction;
-typedef boost::function<
-    boost::unique_future<void>(int object_no, const char* buffer,
-                               int offset_in_object, int bytes_to_write)> PartialObjectWriterFunction;  // NOLINT
-typedef boost::function<
-    int(int object_no, char* buffer, int offset_in_object, int bytes_to_read)> PartialObjectReaderFunction_sync;  // NOLINT
+    int(int object_no, char* buffer, int offset_in_object, int bytes_to_read)> PartialObjectReaderFunction;  // NOLINT
 typedef boost::function<
     void(int object_no, const char* buffer, int offset_in_object,
-         int bytes_to_write)> PartialObjectWriterFunction_sync;
+         int bytes_to_write)> PartialObjectWriterFunction;
 
 /**
  * Encrypts/Decrypts an object.
@@ -56,25 +49,12 @@ class ObjectEncryptor {
    public:
     Operation(ObjectEncryptor* obj_enc, bool write);
 
-    boost::unique_future<int> Read(int object_no, char* buffer,
-                                   int offset_in_object, int bytes_to_read,
-                                   PartialObjectReaderFunction reader,
-                                   PartialObjectWriterFunction writer);
+    int Read(int object_no, char* buffer, int offset_in_object,
+             int bytes_to_read, PartialObjectReaderFunction reader);
 
-    boost::unique_future<void> Write(int object_no, const char* buffer,
-                                     int offset_in_object, int bytes_to_write,
-                                     PartialObjectReaderFunction reader,
-                                     PartialObjectWriterFunction writer);
-
-    int Read_sync(int object_no, char* buffer, int offset_in_object,
-                  int bytes_to_read,
-                  PartialObjectReaderFunction_sync reader_sync,
-                  PartialObjectWriterFunction_sync writer_sync);
-
-    void Write_sync(int object_no, const char* buffer, int offset_in_object,
-                    int bytes_to_write,
-                    PartialObjectReaderFunction_sync reader_sync,
-                    PartialObjectWriterFunction_sync writer_sync);
+    void Write(int object_no, const char* buffer, int offset_in_object,
+               int bytes_to_write, PartialObjectReaderFunction reader,
+               PartialObjectWriterFunction writer);
 
    protected:
     ObjectEncryptor* obj_enc_;
@@ -107,8 +87,8 @@ class ObjectEncryptor {
   class WriteOperation : public Operation {
    public:
     WriteOperation(ObjectEncryptor* obj_enc, int64_t offset, int count,
-                   PartialObjectReaderFunction_sync reader,
-                   PartialObjectWriterFunction_sync writer);
+                   PartialObjectReaderFunction reader,
+                   PartialObjectWriterFunction writer);
 
     ~WriteOperation();
   };
@@ -117,9 +97,8 @@ class ObjectEncryptor {
    public:
     TruncateOperation(ObjectEncryptor* obj_enc,
                       const xtreemfs::pbrpc::UserCredentials& user_credentials,
-                      int64_t new_file_size,
-                      PartialObjectReaderFunction_sync reader_sync,
-                      PartialObjectWriterFunction_sync writer_sync);
+                      int64_t new_file_size, PartialObjectReaderFunction reader,
+                      PartialObjectWriterFunction writer);
   };
 
   void Flush();
@@ -143,14 +122,6 @@ class ObjectEncryptor {
     FileHandle* file_;
     boost::scoped_ptr<pbrpc::Lock> lock_;
   };
-
-  static boost::unique_future<int> CallSyncReaderAsynchronously(
-      PartialObjectReaderFunction_sync reader_sync, int object_no, char* buffer,
-      int offset_in_object, int bytes_to_read);
-
-  static boost::unique_future<void> CallSyncWriterAsynchronously(
-      PartialObjectWriterFunction_sync writer_sync, int object_no,
-      const char* buffer, int offset_in_object, int bytes_to_write);
 
   std::vector<unsigned char> file_enc_key_;
 

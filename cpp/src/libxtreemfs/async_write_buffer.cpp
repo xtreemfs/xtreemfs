@@ -67,7 +67,7 @@ AsyncWriteBuffer::AsyncWriteBuffer(xtreemfs::pbrpc::writeRequest* write_request,
                                    FileHandleImplementation* file_handle,
                                    XCapHandler* xcap_handler,
                                    boost::shared_ptr<ObjectEncryptor::WriteOperation> enc_write_op,
-                                   PartialObjectReaderFunction_sync reader_partial)
+                                   PartialObjectReaderFunction reader_partial)
     : write_request(write_request),
       data_length(data_length),
       file_handle(file_handle),
@@ -78,11 +78,13 @@ AsyncWriteBuffer::AsyncWriteBuffer(xtreemfs::pbrpc::writeRequest* write_request,
       enc_write_op_(enc_write_op) {
   assert(write_request && data && file_handle);
 
-  PartialObjectWriterFunction_sync writer_partial = boost::bind(
-      &WriteToBuffer, _1, _2, _3, _4, &this->data, &this->data_length);
-  enc_write_op_->Write_sync(write_request->object_number(), data,
-                            write_request->offset(), data_length,
-                            reader_partial, writer_partial);
+  PartialObjectWriterFunction writer_partial = boost::bind(&WriteToBuffer, _1,
+                                                           _2, _3, _4,
+                                                           &this->data,
+                                                           &this->data_length);
+  enc_write_op_->Write(write_request->object_number(), data,
+                       write_request->offset(), data_length, reader_partial,
+                       writer_partial);
 }
 
 AsyncWriteBuffer::AsyncWriteBuffer(xtreemfs::pbrpc::writeRequest* write_request,
@@ -92,7 +94,7 @@ AsyncWriteBuffer::AsyncWriteBuffer(xtreemfs::pbrpc::writeRequest* write_request,
                                    XCapHandler* xcap_handler,
                                    const std::string& osd_uuid,
                                    boost::shared_ptr<ObjectEncryptor::WriteOperation> enc_write_op,
-                                   PartialObjectReaderFunction_sync reader_partial)
+                                   PartialObjectReaderFunction reader_partial)
     : write_request(write_request),
       data_length(data_length),
       file_handle(file_handle),
@@ -104,11 +106,13 @@ AsyncWriteBuffer::AsyncWriteBuffer(xtreemfs::pbrpc::writeRequest* write_request,
       enc_write_op_(enc_write_op) {
   assert(write_request && data && file_handle);
 
-  PartialObjectWriterFunction_sync writer_partial = boost::bind(
-      &WriteToBuffer, _1, _2, _3, _4, &this->data, &this->data_length);
-  enc_write_op_->Write_sync(write_request->object_number(), data,
-                            write_request->offset(), data_length,
-                            reader_partial, writer_partial);
+  PartialObjectWriterFunction writer_partial = boost::bind(&WriteToBuffer, _1,
+                                                           _2, _3, _4,
+                                                           &this->data,
+                                                           &this->data_length);
+  enc_write_op_->Write(write_request->object_number(), data,
+                       write_request->offset(), data_length, reader_partial,
+                       writer_partial);
 }
 
 AsyncWriteBuffer::~AsyncWriteBuffer() {

@@ -58,7 +58,7 @@ struct AsyncWriteBuffer {
                    FileHandleImplementation* file_handle,
                    XCapHandler* xcap_handler,
                    boost::shared_ptr<ObjectEncryptor::WriteOperation> enc_write_op,
-                   PartialObjectReaderFunction_sync reader_partial);
+                   PartialObjectReaderFunction reader_partial);
 
   /**
    * @remark Ownership of write_request is transferred to this object.
@@ -70,7 +70,7 @@ struct AsyncWriteBuffer {
                    XCapHandler* xcap_handler,
                    const std::string& osd_uuid,
                    boost::shared_ptr<ObjectEncryptor::WriteOperation> enc_write_op,
-                   PartialObjectReaderFunction_sync reader_partial);
+                   PartialObjectReaderFunction reader_partial);
 
   ~AsyncWriteBuffer();
 
