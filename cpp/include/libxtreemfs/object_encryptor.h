@@ -122,6 +122,8 @@ class ObjectEncryptor {
                       PartialObjectWriterFunction_sync writer_sync);
   };
 
+  void Flush();
+
   static bool IsEncMetaFile(const std::string& path);
 
   static void Unlink(const xtreemfs::pbrpc::UserCredentials& user_credentials,

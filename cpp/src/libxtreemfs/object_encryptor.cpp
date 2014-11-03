@@ -703,6 +703,13 @@ boost::unique_future<void> ObjectEncryptor::Operation::Write(
 }
 
 /**
+ * Calls Flush on the meta file
+ */
+void ObjectEncryptor::Flush() {
+  meta_file_->Flush();
+}
+
+/**
  * @param path  Path to file.
  * @return True if the file is an encryption meta file witch is not encrypted.
  */

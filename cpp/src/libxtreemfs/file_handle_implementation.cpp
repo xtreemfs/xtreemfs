@@ -198,6 +198,10 @@ int FileHandleImplementation::Read(
                              enc_read_op.get(), _1, _2, 0,
                              object_cache_->object_size(), reader_partial,
                              writer_partial);
+        // TODO(plieser): needs to be changed (works only with no cw)
+        //                the written object is a cached one with different
+        //                object no, so different locks have to be held)
+        assert(volume_options_.encryption_cw == "none");
         writer = boost::bind(&xtreemfs::ObjectEncryptor::Operation::Write_sync,
                              enc_read_op.get(), _1, _2, 0, _3, reader_partial,
                              writer_partial);
@@ -483,6 +487,10 @@ int FileHandleImplementation::Write(
               &xtreemfs::ObjectEncryptor::WriteOperation::Read_sync,
               enc_write_op.get(), _1, _2, 0, object_cache_->object_size(),
               reader_partial, writer_partial);
+          // TODO(plieser): needs to be changed (works only with no cw)
+          //                the written object is a cached one with different
+          //                object no, so different locks have to be held)
+          assert(volume_options_.encryption_cw == "none");
           writer = boost::bind(
               &xtreemfs::ObjectEncryptor::WriteOperation::Write_sync,
               enc_write_op.get(), _1, _2, 0, _3, reader_partial,
@@ -587,6 +595,10 @@ void FileHandleImplementation::WriteToOSD(
 
 void FileHandleImplementation::Flush() {
   Flush(false);
+  if (object_encryptor_.get() != NULL) {
+    // encryption is enabled
+    object_encryptor_->Flush();
+  }
 }
 
 void FileHandleImplementation::Flush(bool close_file) {
@@ -594,7 +606,7 @@ void FileHandleImplementation::Flush(bool close_file) {
     FileCredentials file_credentials;
     xcap_manager_.GetXCap(file_credentials.mutable_xcap());
     file_info_->GetXLocSet(file_credentials.mutable_xlocs());
-    // TODO(plieser): check if this needs to be changed for encryption
+    // TODO(plieser): needs to be changed for encryption
     ObjectWriterFunction writer = boost::bind(
         &FileHandleImplementation::WriteToOSD,
         this,
@@ -996,7 +1008,6 @@ void FileHandleImplementation::PingReplica(
   SimpleUUIDIterator temp_uuid_iterator;
   temp_uuid_iterator.AddUUID(osd_uuid);
 
-  // TODO(plieser): check if this needs to be changed for encryption
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
           boost::bind(&xtreemfs::pbrpc::OSDServiceClient::read_sync,
