@@ -173,66 +173,48 @@ int FileHandleImplementation::Read(
       uuid_iterator = osd_uuid_iterator_;
     }
 
-    // Create wrapper functions for partial read/write of objects.
-    // Needed for encryption with both object cache enabled and disabled,
-    // so we define them here.
-    PartialObjectReaderFunction reader_partial;
-    PartialObjectWriterFunction writer_partial;
-    // if encryption is enabled
     if (object_encryptor_.get() != NULL) {
-      reader_partial = boost::bind(&FileHandleImplementation::ReadFromOSD, this,
-                                   uuid_iterator, file_credentials, _1,
-                                   object_version, _2, _3, _4);
-      writer_partial = boost::bind(&FileHandleImplementation::WriteToOSD, this,
-                                   osd_uuid_iterator_, file_credentials, _1,
-                                   object_version, _3, _2, _4);
-    }
-
-    if (object_cache_) {
-      ObjectReaderFunction reader;
-      ObjectWriterFunction writer;
-
-      // if encryption is enabled
-      if (object_encryptor_.get() != NULL) {
-        reader = boost::bind(&xtreemfs::ObjectEncryptor::Operation::Read,
-                             enc_read_op.get(), _1, _2, 0,
-                             object_cache_->object_size(), reader_partial);
-        // TODO(plieser): needs to be changed (works only with no cw)
-        //                the written object is a cached one with different
-        //                object no, so different locks have to be held)
-        assert(volume_options_.encryption_cw == "none");
-        writer = boost::bind(&xtreemfs::ObjectEncryptor::Operation::Write,
-                             enc_read_op.get(), _1, _2, 0, _3, reader_partial,
-                             writer_partial);
+      // encryption is enabled
+      PartialObjectReaderFunction reader;
+      if (object_cache_) {
+        ObjectReaderFunction full_obj_reader = boost::bind(
+            &FileHandleImplementation::ReadFromOSD, this, uuid_iterator,
+            file_credentials, _1, object_version, _2, 0,
+            object_cache_->object_size());
+        ObjectWriterFunction full_obj_writer = boost::bind(
+            &FileHandleImplementation::WriteToOSD, this, osd_uuid_iterator_,
+            file_credentials, _1, object_version, 0, _2, _3);
+        reader = boost::bind(&ObjectCache::Read, object_cache_, _1, _3, _2, _4,
+                             full_obj_reader, full_obj_writer);
       } else {
-        reader = boost::bind(
+        reader = boost::bind(&FileHandleImplementation::ReadFromOSD, this,
+                             uuid_iterator, file_credentials, _1,
+                             object_version, _2, _3, _4);
+      }
+      received_data += enc_read_op->Read(operations[j].obj_number,
+                                         operations[j].data,
+                                         operations[j].req_offset,
+                                         operations[j].req_size, reader);
+    } else {
+      if (object_cache_) {
+        ObjectReaderFunction reader = boost::bind(
             &FileHandleImplementation::ReadFromOSD,
             this,
             uuid_iterator,
             file_credentials,
             _1, object_version, _2, 0, object_cache_->object_size());
-        writer = boost::bind(
+        ObjectWriterFunction writer = boost::bind(
             &FileHandleImplementation::WriteToOSD,
             this,
             osd_uuid_iterator_,
             file_credentials,
             _1, object_version, 0, _2, _3);
-      }
-      received_data += object_cache_->Read(
-          operations[j].obj_number,
-          operations[j].req_offset,
-          operations[j].data,
-          operations[j].req_size,
-          reader, writer);
-    } else {
-      // if encryption is enabled
-      if (object_encryptor_.get() != NULL) {
-        received_data += enc_read_op->Read(
+        received_data += object_cache_->Read(
             operations[j].obj_number,
-            operations[j].data,
             operations[j].req_offset,
+            operations[j].data,
             operations[j].req_size,
-            reader_partial);
+            reader, writer);
       } else {
         // TODO(mberlin): Update xloc list if newer version found (on OSD?).
         received_data += ReadFromOSD(uuid_iterator, file_credentials,
@@ -428,19 +410,35 @@ int FileHandleImplementation::Write(
     }
   } else {
     boost::scoped_ptr<ObjectEncryptor::WriteOperation> enc_write_op;
-    // if encryption is enabled
     if (object_encryptor_.get() != NULL) {
+      // encryption is enabled
+
+      PartialObjectReaderFunction reader;
+      PartialObjectWriterFunction writer;
+      if (object_cache_ != NULL) {
+        ObjectReaderFunction full_obj_reader = boost::bind(
+            &FileHandleImplementation::ReadFromOSD, this, osd_uuid_iterator_,
+            file_credentials, _1, 0, _2, 0, object_cache_->object_size());
+        ObjectWriterFunction full_obj_writer = boost::bind(
+            &FileHandleImplementation::WriteToOSD, this, osd_uuid_iterator_,
+            file_credentials, _1, 0, 0, _2, _3);
+
+        reader = boost::bind(&ObjectCache::Read, object_cache_, _1, _3, _2, _4,
+                             full_obj_reader, full_obj_writer);
+        writer = boost::bind(&ObjectCache::Write, object_cache_, _1, _3, _2, _4,
+                             full_obj_reader, full_obj_writer);
+      } else {
+        reader = boost::bind(&FileHandleImplementation::ReadFromOSD, this,
+                             osd_uuid_iterator_, file_credentials, _1, 0, _2,
+                             _3, _4);
+        writer = boost::bind(&FileHandleImplementation::WriteToOSD, this,
+                             osd_uuid_iterator_, file_credentials, _1, 0, _3,
+                             _2, _4);
+      }
+
       enc_write_op.reset(
-          new ObjectEncryptor::WriteOperation(
-              object_encryptor_.get(),
-              offset,
-              count,
-              boost::bind(&FileHandleImplementation::ReadFromOSD, this,
-                          osd_uuid_iterator_, file_credentials, _1,
-                          object_version, _2, _3, _4),
-              boost::bind(&FileHandleImplementation::WriteToOSD, this,
-                          osd_uuid_iterator_, file_credentials, _1,
-                          object_version, _3, _2, _4)));
+          new ObjectEncryptor::WriteOperation(object_encryptor_.get(), offset,
+                                              count, reader, writer));
     }
     // Synchronous writes.
     string osd_uuid = "";
@@ -461,63 +459,53 @@ int FileHandleImplementation::Write(
         uuid_iterator = osd_uuid_iterator_;
       }
 
-      // Create wrapper functions for partial read/write of objects.
-      // Needed for encryption with both object cache enabled and disabled,
-      // so we define them here.
-      PartialObjectReaderFunction reader_partial;
-      PartialObjectWriterFunction writer_partial;
-      // if encryption is enabled
       if (object_encryptor_.get() != NULL) {
-        reader_partial = boost::bind(&FileHandleImplementation::ReadFromOSD,
-                                     this, uuid_iterator, file_credentials, _1,
-                                     object_version, _2, _3, _4);
-        writer_partial = boost::bind(&FileHandleImplementation::WriteToOSD,
-                                     this, uuid_iterator, file_credentials, _1,
-                                     object_version, _3, _2, _4);
-      }
+        // encryption is enabled
+        PartialObjectReaderFunction reader;
+        PartialObjectWriterFunction writer;
+        if (object_cache_ != NULL) {
+          ObjectReaderFunction full_obj_reader = boost::bind(
+              &FileHandleImplementation::ReadFromOSD, this, uuid_iterator,
+              file_credentials, _1, object_version, _2, 0,
+              object_cache_->object_size());
+          ObjectWriterFunction full_obj_writer = boost::bind(
+              &FileHandleImplementation::WriteToOSD, this, osd_uuid_iterator_,
+              file_credentials, _1, object_version, 0, _2, _3);
 
-      if (object_cache_ != NULL) {
-        ObjectReaderFunction reader;
-        ObjectWriterFunction writer;
-
-        // if encryption is enabled
-        if (object_encryptor_.get() != NULL) {
-          reader = boost::bind(&xtreemfs::ObjectEncryptor::WriteOperation::Read,
-                               enc_write_op.get(), _1, _2, 0,
-                               object_cache_->object_size(), reader_partial);
-          // TODO(plieser): needs to be changed (works only with no cw)
-          //                the written object is a cached one with different
-          //                object no, so different locks have to be held)
-          assert(volume_options_.encryption_cw == "none");
-          writer = boost::bind(
-              &xtreemfs::ObjectEncryptor::WriteOperation::Write,
-              enc_write_op.get(), _1, _2, 0, _3, reader_partial,
-              writer_partial);
+          reader = boost::bind(&ObjectCache::Read, object_cache_, _1, _3, _2,
+                               _4, full_obj_reader, full_obj_writer);
+          writer = boost::bind(&ObjectCache::Write, object_cache_, _1, _3, _2,
+                               _4, full_obj_reader, full_obj_writer);
         } else {
-          reader = boost::bind(
+          reader = boost::bind(&FileHandleImplementation::ReadFromOSD, this,
+                               uuid_iterator, file_credentials, _1,
+                               object_version, _2, _3, _4);
+          writer = boost::bind(&FileHandleImplementation::WriteToOSD, this,
+                               uuid_iterator, file_credentials, _1,
+                               object_version, _3, _2, _4);
+        }
+        enc_write_op->Write(operations[j].obj_number, operations[j].data,
+                            operations[j].req_offset, operations[j].req_size,
+                            reader, writer);
+      } else {
+        if (object_cache_ != NULL) {
+          ObjectReaderFunction reader = boost::bind(
               &FileHandleImplementation::ReadFromOSD,
               this,
               uuid_iterator,
               file_credentials,
               _1, object_version, _2, 0, object_cache_->object_size());
-          writer = boost::bind(
+          ObjectWriterFunction writer = boost::bind(
               &FileHandleImplementation::WriteToOSD,
               this,
               osd_uuid_iterator_,
               file_credentials,
               _1, object_version, 0, _2, _3);
-        }
-        object_cache_->Write(operations[j].obj_number,
-                             operations[j].req_offset,
-                             operations[j].data,
-                             operations[j].req_size,
-                             reader, writer);
-      } else {
-        // if encryption is enabled
-        if (object_encryptor_.get() != NULL) {
-          enc_write_op->Write(operations[j].obj_number, operations[j].data,
-                              operations[j].req_offset, operations[j].req_size,
-                              reader_partial, writer_partial);
+          object_cache_->Write(operations[j].obj_number,
+                               operations[j].req_offset,
+                               operations[j].data,
+                               operations[j].req_size,
+                               reader, writer);
         } else {
           WriteToOSD(uuid_iterator, file_credentials, operations[j].obj_number,
                      object_version, operations[j].req_offset,
@@ -535,6 +523,11 @@ void FileHandleImplementation::WriteToOSD(
     const FileCredentials& file_credentials,
     int object_no, int object_version, int offset_in_object, const char* buffer,
     int bytes_to_write) {
+  assert(bytes_to_write >= 0);
+  if (bytes_to_write == 0) {
+    return;
+  }
+  assert(buffer);
   writeRequest write_request;
   write_request.mutable_file_credentials()->CopyFrom(file_credentials);
   write_request.set_file_id(file_credentials.xcap().file_id());
@@ -602,7 +595,6 @@ void FileHandleImplementation::Flush(bool close_file) {
     FileCredentials file_credentials;
     xcap_manager_.GetXCap(file_credentials.mutable_xcap());
     file_info_->GetXLocSet(file_credentials.mutable_xlocs());
-    // TODO(plieser): needs to be changed for encryption
     ObjectWriterFunction writer = boost::bind(
         &FileHandleImplementation::WriteToOSD,
         this,
@@ -662,24 +654,40 @@ void FileHandleImplementation::Truncate(
 void FileHandleImplementation::TruncatePhaseTwoAndThree(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     int64_t new_file_size) {
-  // if encryption is enabled
   boost::scoped_ptr<ObjectEncryptor::TruncateOperation> enc_truncate_op;
   if (object_encryptor_.get() != NULL) {
+    // encryption is enabled
     FileCredentials file_credentials;
     xcap_manager_.GetXCap(file_credentials.mutable_xcap());
     file_info_->GetXLocSet(file_credentials.mutable_xlocs());
 
+    PartialObjectReaderFunction reader;
+    PartialObjectWriterFunction writer;
+    if (object_cache_ != NULL) {
+      ObjectReaderFunction full_obj_reader = boost::bind(
+          &FileHandleImplementation::ReadFromOSD, this, osd_uuid_iterator_,
+          file_credentials, _1, 0, _2, 0, object_cache_->object_size());
+      ObjectWriterFunction full_obj_writer = boost::bind(
+          &FileHandleImplementation::WriteToOSD, this, osd_uuid_iterator_,
+          file_credentials, _1, 0, 0, _2, _3);
+
+      reader = boost::bind(&ObjectCache::Read, object_cache_, _1, _3, _2, _4,
+                           full_obj_reader, full_obj_writer);
+      writer = boost::bind(&ObjectCache::Write, object_cache_, _1, _3, _2, _4,
+                           full_obj_reader, full_obj_writer);
+    } else {
+      reader = boost::bind(&FileHandleImplementation::ReadFromOSD, this,
+                           osd_uuid_iterator_, file_credentials, _1, 0, _2, _3,
+                           _4);
+      writer = boost::bind(&FileHandleImplementation::WriteToOSD, this,
+                           osd_uuid_iterator_, file_credentials, _1, 0, _3, _2,
+                           _4);
+    }
+
     enc_truncate_op.reset(
-        new ObjectEncryptor::TruncateOperation(
-            object_encryptor_.get(),
-            user_credentials,
-            new_file_size,
-            boost::bind(&FileHandleImplementation::ReadFromOSD, this,
-                        osd_uuid_iterator_, file_credentials, _1, 0, _2, _3,
-                        _4),
-            boost::bind(&FileHandleImplementation::WriteToOSD, this,
-                        osd_uuid_iterator_, file_credentials, _1, 0, _3, _2,
-                        _4)));
+        new ObjectEncryptor::TruncateOperation(object_encryptor_.get(),
+                                               user_credentials, new_file_size,
+                                               reader, writer));
   }
 
   // 2. Call truncate at the head OSD.

@@ -78,6 +78,7 @@ class OnlineTest : public ::testing::Test {
     options_.encryption = true;
     options_.encryption_block_size = 4;
 //    options_.encryption_cw = "locks";
+//    options_.object_cache_size = 2;
 
     // Create a new instance of a client using the DIR service at 'localhost'
     // at port 32638 using the default implementation.
@@ -993,15 +994,11 @@ void cw_worker(FileHandle* file, char id) {
   for (int i = 0; i < 50; i++) {
     int offset = uni_offset();
     char str[2];
-    char buffer[2];
     str[0] = id;
     str[1] = static_cast<char>(uni_65_90());
     ASSERT_NO_THROW({
       file->Write(str, 2, offset);
     });
-    if (buffer[0] == id && 65 <= buffer[1] && buffer[1] <= 90) {
-      EXPECT_STREQ(str, buffer);
-    }
   }
 }
 
@@ -1064,27 +1061,37 @@ TEST_F(EncryptionTest, ConcurrentWrite_03) {
 
 void cw_04_write_1(FileHandle* file, char id) {
 //  std::cout << "id: " << id << "start" << std::endl;
-  file->Write("1R", 2, 13);
+  ASSERT_NO_THROW({
+    file->Write("1R", 2, 13);
+  });
 //  std::cout << "id: " << id << "end" << std::endl;
 }
 
 void cw_04_write_2(FileHandle* file, char id) {
 //  std::cout << "id: " << id << "start" << std::endl;
-  file->Write("2E", 2, 3);
+  ASSERT_NO_THROW({
+    file->Write("2E", 2, 3);
+  });
 //  std::cout << "id: " << id << "end" << std::endl;
 }
 
 void cw_04_write_3(FileHandle* file, char id) {
 //  std::cout << "id: " << id << "start" << std::endl;
-  file->Write("3A", 2, 0);
+  ASSERT_NO_THROW({
+    file->Write("3A", 2, 0);
+  });
 //  std::cout << "id: " << id << "end" << std::endl;
 }
 
 TEST_F(EncryptionTest, ConcurrentWrite_04) {
   options_.encryption_cw = "snapshots";
 
-  file->Write("A", 1, 0);
-  file->Truncate(user_credentials_, 0);
+  ASSERT_NO_THROW({
+    file->Write("A", 1, 0);
+  });
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 0);
+  });
 
   boost::thread th1(cw_04_write_3, file, '3');
   boost::thread th2(cw_04_write_1, file, '1');
