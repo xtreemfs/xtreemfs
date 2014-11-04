@@ -6,17 +6,6 @@
  */
 package org.xtreemfs.common.libxtreemfs;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -41,25 +30,18 @@ import org.xtreemfs.mrc.utils.MRCHelper.SysAttrs;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Setattrs;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.StatVFS;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.getattrResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.openResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.statvfsRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.*;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.*;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestHelper;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 public class VolumeTest {
     @Rule
@@ -301,48 +283,51 @@ public class VolumeTest {
         assertEquals(3, entrySet.getEntriesCount());
     }
 
-//    TODO(stenjan): Fix this issue and comment it out again.
-//    @Test
-//    public void testCreateDirWithEmptyPathComponents() throws Exception {
-//        VOLUME_NAME = "testCreateDirWithEmptyPathComponents";
-//        // Both directories should be created under "/"
-//        final String DIR1 = "/test";
-//        final String DIR2 = "/test//";
-//        final String DIR3 = "/test//testdir";
-//
-//        // create volume
-//        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME, 0, userCredentials.getUsername(),
-//                userCredentials.getGroups(0), AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL,
-//                StripingPolicyType.STRIPING_POLICY_RAID0, defaultStripingPolicy.getStripeSize(),
-//                defaultStripingPolicy.getWidth(), new ArrayList<KeyValuePair>());
-//
-//        Volume volume = client.openVolume(VOLUME_NAME, null, options);
-//
-//        // create some files and directories
-//        try {
-//            volume.createDirectory(userCredentials, DIR1, 0755);
-//            volume.createDirectory(userCredentials, DIR2, 0755);
-//            volume.createDirectory(userCredentials, DIR3, 0755);
-//        } catch (IOException ioe) {
-//            fail("failed to create testdirs");
-//        }
-//
-//        // test 'readDir' and 'stat'
-//        DirectoryEntries entrySet = null;
-//
-//        entrySet = volume.readDir(userCredentials, DIR2, 0, 1000, false);
-//        assertEquals(3, entrySet.getEntriesCount());
-//        assertEquals("..", entrySet.getEntries(0).getName());
-//        assertEquals(".", entrySet.getEntries(1).getName());
-//        assertEquals(DIR3, "/" + entrySet.getEntries(2).getName());
-//
-//        entrySet = volume.readDir(userCredentials, DIR3, 0, 1000, false);
-//        assertEquals(0, entrySet.getEntriesCount());
-//
-//        volume.removeDirectory(userCredentials, DIR3);
-//        entrySet = volume.readDir(userCredentials, DIR1, 0, 1000, false);
-//        assertEquals(2, entrySet.getEntriesCount());
-//    }
+    @Test
+    public void testCreateDirWithEmptyPathComponents() throws Exception {
+        VOLUME_NAME = "testCreateDirWithEmptyPathComponents";
+        // Both directories should be created under "/"
+        final String DIR1 = "/test";
+        final String DIR2 = "/test//";
+        final String DIR3 = "/test//testdir";
+
+        // create volume
+        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME, 0, userCredentials.getUsername(),
+                userCredentials.getGroups(0), AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL,
+                StripingPolicyType.STRIPING_POLICY_RAID0, defaultStripingPolicy.getStripeSize(),
+                defaultStripingPolicy.getWidth(), new ArrayList<KeyValuePair>());
+
+        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+
+        // create some files and directories
+        try {
+            volume.createDirectory(userCredentials, DIR1, 0755);
+            volume.createDirectory(userCredentials, DIR3, 0755);
+        } catch (IOException ioe) {
+            fail("failed to create testdirs");
+        }
+
+        try {
+            volume.createDirectory(userCredentials, DIR2, 0755);
+            fail("existing directory could be created");
+        } catch (IOException ioe) {}
+
+        // test 'readDir' and 'stat'
+        DirectoryEntries entrySet = null;
+
+        entrySet = volume.readDir(userCredentials, DIR2, 0, 1000, false);
+        assertEquals(3, entrySet.getEntriesCount());
+        assertEquals("..", entrySet.getEntries(0).getName());
+        assertEquals(".", entrySet.getEntries(1).getName());
+        assertEquals("/testdir", "/" + entrySet.getEntries(2).getName());
+
+        entrySet = volume.readDir(userCredentials, DIR3, 0, 1000, false);
+        assertEquals(2, entrySet.getEntriesCount());
+
+        volume.removeDirectory(userCredentials, DIR3);
+        entrySet = volume.readDir(userCredentials, DIR1, 0, 1000, false);
+        assertEquals(2, entrySet.getEntriesCount());
+    }
 
     @Test
     public void testHardLink() throws Exception {
