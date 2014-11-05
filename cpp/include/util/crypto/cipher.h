@@ -23,19 +23,20 @@ class Cipher {
 
   std::pair<std::vector<unsigned char>, int> encrypt(
       boost::asio::const_buffer plaintext, std::vector<unsigned char> key,
-      boost::asio::mutable_buffer ciphertext);
+      boost::asio::mutable_buffer ciphertext) const;
 
   int decrypt(boost::asio::const_buffer ciphertext,
               std::vector<unsigned char> key, std::vector<unsigned char> iv,
-              boost::asio::mutable_buffer plaintext);
+              boost::asio::mutable_buffer plaintext) const;
 
-  int block_size();
+  int block_size() const;
 
-  int key_size();
+  int key_size() const;
 
-  int iv_size();
+  int iv_size() const;
 
  private:
+  // not owned by the class
   const EVP_CIPHER* cipher_;
 
   // Ensure openssl is initialised.

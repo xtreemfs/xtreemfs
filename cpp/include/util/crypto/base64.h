@@ -18,9 +18,9 @@ namespace xtreemfs {
 
 class Base64Encoder {
  public:
-  std::string Encode(boost::asio::const_buffer data);
+  std::string Encode(boost::asio::const_buffer data) const;
 
-  std::vector<unsigned char> Decode(boost::asio::const_buffer data);
+  std::vector<unsigned char> Decode(boost::asio::const_buffer data) const;
 
  private:
   // Ensure openssl is initialised.

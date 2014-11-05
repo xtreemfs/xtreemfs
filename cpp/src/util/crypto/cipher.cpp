@@ -30,7 +30,7 @@ Cipher::Cipher(std::string alg_name) {
 
 std::pair<std::vector<unsigned char>, int> Cipher::encrypt(
     boost::asio::const_buffer plaintext, std::vector<unsigned char> key,
-    boost::asio::mutable_buffer ciphertext) {
+    boost::asio::mutable_buffer ciphertext) const {
   assert(key_size() == key.size());
 
   EVP_CIPHER_CTX *ctx;
@@ -79,7 +79,7 @@ std::pair<std::vector<unsigned char>, int> Cipher::encrypt(
 int Cipher::decrypt(boost::asio::const_buffer ciphertext,
                     std::vector<unsigned char> key,
                     std::vector<unsigned char> iv,
-                    boost::asio::mutable_buffer plaintext) {
+                    boost::asio::mutable_buffer plaintext) const {
   EVP_CIPHER_CTX *ctx;
   int len;
   int plaintext_len;
@@ -117,15 +117,15 @@ int Cipher::decrypt(boost::asio::const_buffer ciphertext,
   return plaintext_len;
 }
 
-int Cipher::block_size() {
+int Cipher::block_size() const {
   return EVP_CIPHER_block_size(cipher_);
 }
 
-int Cipher::key_size() {
+int Cipher::key_size() const {
   return EVP_CIPHER_key_length(cipher_);
 }
 
-int Cipher::iv_size() {
+int Cipher::iv_size() const {
   return EVP_CIPHER_iv_length(cipher_);
 }
 

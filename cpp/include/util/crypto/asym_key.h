@@ -11,15 +11,18 @@
 
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/ssl/detail/openssl_init.hpp>
-#include <boost/noncopyable.hpp>
 #include <string>
 #include <vector>
 
 namespace xtreemfs {
 
-class AsymKey : private boost::noncopyable {
+class AsymKey {
  public:
   AsymKey(std::string alg_name, int bits = 0);
+
+  AsymKey(AsymKey& other);
+
+  AsymKey& operator=(AsymKey other);
 
   explicit AsymKey(std::vector<unsigned char> encoded_key);
 
@@ -32,6 +35,7 @@ class AsymKey : private boost::noncopyable {
   EVP_PKEY* get_key();
 
  private:
+  // owned by the class
   EVP_PKEY* key_;
 
   // Ensure openssl is initialised.

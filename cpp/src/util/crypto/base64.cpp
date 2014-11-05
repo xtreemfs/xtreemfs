@@ -16,7 +16,7 @@ using xtreemfs::util::LogAndThrowOpenSSLError;
 
 namespace xtreemfs {
 
-std::string Base64Encoder::Encode(boost::asio::const_buffer data) {
+std::string Base64Encoder::Encode(boost::asio::const_buffer data) const {
   BIO *bio, *b64;
 
   b64 = BIO_new(BIO_f_base64());
@@ -26,9 +26,9 @@ std::string Base64Encoder::Encode(boost::asio::const_buffer data) {
 
   BIO_write(b64, boost::asio::buffer_cast<const void*>(data),
             boost::asio::buffer_size(data));
-  // TODO(plieser): compiler warning unused result
-  BIO_flush(b64);
-
+  if (1 != BIO_flush(b64)) {
+    LogAndThrowOpenSSLError();
+  }
   std::vector<char> vec(BIO_ctrl_pending(bio));
   BIO_read(bio, vec.data(), vec.size());
   std::string str(vec.begin(), vec.end());
@@ -39,7 +39,7 @@ std::string Base64Encoder::Encode(boost::asio::const_buffer data) {
 }
 
 std::vector<unsigned char> Base64Encoder::Decode(
-    boost::asio::const_buffer data) {
+    boost::asio::const_buffer data) const {
   BIO *bio, *b64;
 
   b64 = BIO_new(BIO_f_base64());

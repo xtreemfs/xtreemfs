@@ -66,10 +66,21 @@ AsymKey::AsymKey(std::vector<unsigned char> encoded_key) {
 
 /**
  * Constructs an asymmetric key from an EVP_PKEY structure.
- * @param key
+ * @param key   Ownership is transfered.
  */
 AsymKey::AsymKey(EVP_PKEY* key)
     : key_(key) {
+}
+
+AsymKey::AsymKey(AsymKey& other)
+  : key_(other.get_key()) {
+  CRYPTO_add(&key_->references, 1, CRYPTO_LOCK_EVP_PKEY);
+}
+
+AsymKey& AsymKey::operator=(AsymKey other)
+{
+    std::swap(other.key_, key_);
+    return *this;
 }
 
 AsymKey::~AsymKey() {

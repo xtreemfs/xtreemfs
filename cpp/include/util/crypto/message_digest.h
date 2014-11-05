@@ -22,11 +22,12 @@ class MessageDigest {
 
   std::vector<unsigned char> digest(boost::asio::const_buffer buffer1,
                                     boost::asio::const_buffer buffer2 =
-                                        boost::asio::const_buffer());
+                                        boost::asio::const_buffer()) const;
 
-  int digest_size();
+  int digest_size() const;
 
  private:
+  // not owned by the class
   const EVP_MD* md;
 
   // Ensure openssl is initialised.

@@ -23,7 +23,8 @@ MessageDigest::MessageDigest(std::string alg_name) {
 }
 
 std::vector<unsigned char> MessageDigest::digest(
-    boost::asio::const_buffer buffer1, boost::asio::const_buffer buffer2) {
+    boost::asio::const_buffer buffer1,
+    boost::asio::const_buffer buffer2) const {
   EVP_MD_CTX* mdctx;
 
   if ((mdctx = EVP_MD_CTX_create()) == NULL) {
@@ -61,7 +62,7 @@ std::vector<unsigned char> MessageDigest::digest(
   return hash_value;
 }
 
-int MessageDigest::digest_size() {
+int MessageDigest::digest_size() const {
   return EVP_MD_size(md);
 }
 

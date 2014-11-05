@@ -27,7 +27,7 @@ SignAlgorithm::SignAlgorithm(std::auto_ptr<AsymKey> key, std::string alg_name) {
 }
 
 void SignAlgorithm::Sign(boost::asio::const_buffer data,
-                         boost::asio::mutable_buffer sig) {
+                         boost::asio::mutable_buffer sig) const {
   assert(key_.get() != NULL);
   EVP_MD_CTX* mdctx;
   size_t slen;
@@ -72,14 +72,15 @@ void SignAlgorithm::Sign(boost::asio::const_buffer data,
   }
 }
 
-std::vector<unsigned char> SignAlgorithm::Sign(boost::asio::const_buffer data) {
+std::vector<unsigned char> SignAlgorithm::Sign(
+    boost::asio::const_buffer data) const {
   std::vector<unsigned char> sig(signature_size_);
   Sign(data, boost::asio::buffer(sig));
   return sig;
 }
 
 bool SignAlgorithm::Verify(boost::asio::const_buffer data,
-                           boost::asio::mutable_buffer sig) {
+                           boost::asio::mutable_buffer sig) const {
   assert(key_.get() != NULL);
   EVP_MD_CTX* mdctx;
 
@@ -95,8 +96,7 @@ bool SignAlgorithm::Verify(boost::asio::const_buffer data,
   BOOST_SCOPE_EXIT_END
 
   /* Initialise the DigestVerify operation */
-  if (1
-      != EVP_DigestVerifyInit(mdctx, NULL, md_, NULL, key_->get_key())) {
+  if (1 != EVP_DigestVerifyInit(mdctx, NULL, md_, NULL, key_->get_key())) {
     LogAndThrowOpenSSLError();
   }
 
@@ -122,7 +122,7 @@ bool SignAlgorithm::Verify(boost::asio::const_buffer data,
 /**
  * @return  Size of the signature in bytes
  */
-int SignAlgorithm::get_signature_size() {
+int SignAlgorithm::get_signature_size() const {
   return signature_size_;
 }
 

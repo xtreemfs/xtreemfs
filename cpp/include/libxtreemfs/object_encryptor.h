@@ -9,6 +9,7 @@
 #define CPP_INCLUDE_LIBXTREEMFS_OBJECT_ENCRYPTOR_H_
 
 #include <boost/function.hpp>
+#include <boost/noncopyable.hpp>
 #include <string>
 #include <vector>
 
@@ -34,7 +35,7 @@ typedef boost::function<
 /**
  * Encrypts/Decrypts an object.
  */
-class ObjectEncryptor {
+class ObjectEncryptor : private boost::noncopyable {
  private:
   class FileLock;
 
@@ -45,7 +46,7 @@ class ObjectEncryptor {
 
   ~ObjectEncryptor();
 
-  class Operation {
+  class Operation : private boost::noncopyable {
    public:
     Operation(ObjectEncryptor* obj_enc, bool write);
 
@@ -109,7 +110,7 @@ class ObjectEncryptor {
                      VolumeImplementation* volume, uint64_t file_id);
 
  private:
-  class FileLock {
+  class FileLock : private boost::noncopyable {
    public:
     FileLock(ObjectEncryptor* obj_enc, uint64_t offset, uint64_t length,
              bool exclusive, bool wait_for_lock = true);

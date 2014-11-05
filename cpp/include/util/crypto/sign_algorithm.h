@@ -22,17 +22,18 @@ class SignAlgorithm {
  public:
   SignAlgorithm(std::auto_ptr<AsymKey> key, std::string alg_name);
 
-  void Sign(boost::asio::const_buffer data, boost::asio::mutable_buffer sig);
+  void Sign(boost::asio::const_buffer data, boost::asio::mutable_buffer sig) const;
 
-  std::vector<unsigned char> Sign(boost::asio::const_buffer data);
+  std::vector<unsigned char> Sign(boost::asio::const_buffer data) const;
 
-  bool Verify(boost::asio::const_buffer data, boost::asio::mutable_buffer sig);
+  bool Verify(boost::asio::const_buffer data, boost::asio::mutable_buffer sig) const;
 
-  int get_signature_size();
+  int get_signature_size() const;
 
   void set_key(std::auto_ptr<AsymKey> key);
 
  private:
+  // not owned by the class
   const EVP_MD* md_;
   std::auto_ptr<AsymKey> key_;
   int signature_size_;
