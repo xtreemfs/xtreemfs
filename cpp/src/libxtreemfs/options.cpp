@@ -9,7 +9,10 @@
 #include "libxtreemfs/options.h"
 
 #include <boost/program_options/cmdline.hpp>
+#include <boost/tokenizer.hpp>
+#include <algorithm>
 #include <iostream>
+#include <iterator>
 #include <string>
 
 #ifdef __APPLE__
@@ -46,7 +49,8 @@ Options::Options()
 #endif  // HAS_OPENSSL
       grid_options_("Grid Support options"),
       vivaldi_options_("Vivaldi Options"),
-      xtreemfs_advanced_options_("XtreemFS Advanced options") {
+      xtreemfs_advanced_options_("XtreemFS Advanced options"),
+	  alternative_options_("Alternative Specification of options") {
   version_string = XTREEMFS_VERSION_STRING;
 
   // XtreemFS URL Options.
@@ -353,6 +357,15 @@ void Options::GenerateProgramOptionsDescriptions() {
         "this signal was sent in earlier versions."
         );
 
+  alternative_options_.add_options()
+    (",o",
+        po::value< std::vector<std::string> >(&alternative_options),
+		"Alternatively specify all options as a key=value pair list."
+		"E.g. '--opt1 --opt2 arg2' can become '-o opt1,opt2=arg2'."
+		"Overridden by explicitly specified options."
+		"Short option names must be prefixed with '-' anyway."
+		"Unrecognized options are retained, e.g. for Fuse.");
+
   // These options are parsed
   all_descriptions_.add(general_).add(optimizations_).add(error_handling_)
 #ifdef HAS_OPENSSL
@@ -365,7 +378,7 @@ void Options::GenerateProgramOptionsDescriptions() {
 #ifdef HAS_OPENSSL
       .add(ssl_options_)
 #endif  // HAS_OPENSSL
-      .add(grid_options_).add(vivaldi_options_);
+      .add(grid_options_).add(vivaldi_options_).add(alternative_options_);
 
 
   all_descriptions_initialized_ = true;
@@ -374,25 +387,95 @@ void Options::GenerateProgramOptionsDescriptions() {
 std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
   GenerateProgramOptionsDescriptions();
 
-  // Parse command line.
+  // Parse alternative options specification first,
+  // and potentially override using explicity options later.
+  po::parsed_options parsed = po::command_line_parser(argc, argv)
+    .options(alternative_options_)
+    .allow_unregistered()
+    .style(style::default_style & ~style::allow_guessing)
+    .run();
   boost::program_options::variables_map vm;
+  po::store(parsed, vm);
+  po::notify(vm);
+
+  // Collect all non-alternative options, i.e. all regular ones,
+  // and the ones that are completely unknown.
+  vector<string> regular_options = po::collect_unrecognized(parsed.options, po::include_positional);
+
+  // Collect options that are not meant to be set via alternative specification.
+  vector<string> unrecognized_alternative_options;
+
+  typedef boost::tokenizer< boost::char_separator<char> > tokenizer;
+  boost::char_separator<char> list_separator(",");
+  boost::char_separator<char> pair_separator("=");
+
+  // Walk all alternative options, represented as a list of comma separated
+  // key=value pairs.
+  for(vector<string>::iterator opt_list = alternative_options.begin();
+      opt_list != alternative_options.end();
+      ++opt_list) {
+    // Split the current comma separated list into key=value pairs.
+    tokenizer pairs(*opt_list, list_separator);
+    for(tokenizer::iterator pair = pairs.begin();
+        pair != pairs.end();
+        ++pair) {
+      // Split the key=value pair into key and value.
+      tokenizer key_value(*pair, pair_separator);
+
+      // Find out whether this is a known option.
+      const po::option_description *opt_desc = all_descriptions_.find_nothrow(*(key_value.begin()), false);
+      if(opt_desc != NULL) {
+        string prefixed_long_opt = opt_desc->canonical_display_name(po::command_line_style::allow_long);
+        string prefixed_short_opt = opt_desc->canonical_display_name(po::command_line_style::allow_dash_for_short);
+
+        // Find out if this proper option has been explicitly defined.
+        if(find(regular_options.begin(), regular_options.end(), prefixed_long_opt) == regular_options.end() &&
+           find(regular_options.begin(), regular_options.end(), prefixed_short_opt) == regular_options.end()) {
+          // always at least 1 since the first part is the key
+          size_t num_tokens = distance(key_value.begin(), key_value.end()) - 1;
+
+          if( num_tokens < opt_desc->semantic()->min_tokens() ||
+              num_tokens > opt_desc->semantic()->max_tokens()) {
+            throw InvalidCommandLineParametersException("Incorrect number of arguments for option: " + *(key_value.begin()));
+          }
+
+          // Explicitly set option for later parsing.
+          regular_options.push_back(prefixed_long_opt);
+          tokenizer::iterator value = key_value.begin();
+          advance(value, 1);
+          for(; value != key_value.end(); advance(value, 1)) {
+            regular_options.push_back(*value);
+          }
+        } else {
+          // Known option is explicitly specified, do not set.
+        }
+      } else {
+        // Not an option that is supposed to be set via alternative specification,
+        // so just add it back the way it came in.
+        unrecognized_alternative_options.push_back("-o");
+        for(tokenizer::iterator value = key_value.begin();
+            value != key_value.end();
+            advance(value, 1)) {
+          unrecognized_alternative_options.push_back(*value);
+        }
+      }
+    }
+  }
+
+  vm.clear();
   try {
-    po::store(po::command_line_parser(argc, argv)
-        .options(all_descriptions_)
-        .allow_unregistered()
-        .style(style::default_style & ~style::allow_guessing)
-        .run(), vm);
+    // Parse non-alternative options normally.
+    parsed = po::command_line_parser(regular_options)
+      .options(all_descriptions_)
+      .allow_unregistered()
+      .style(style::default_style & ~style::allow_guessing)
+      .run();
+    po::store(parsed, vm);
     po::notify(vm);
   } catch(const std::exception& e) {
     // Rethrow boost errors due to invalid command line parameters.
     throw InvalidCommandLineParametersException(string(e.what()));
   }
-
-  po::parsed_options parsed = po::command_line_parser(argc, argv)
-  .options(all_descriptions_)
-  .allow_unregistered()
-  .style(style::default_style & ~style::allow_guessing)
-  .run();
 
   if (metadata_cache_size < readdir_chunk_size && metadata_cache_size != 0) {
     cerr << "Warning: Please set the metadata cache size at least as high as "
@@ -495,8 +578,10 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
   }
 #endif  // HAS_OPENSSL
 
-  // Return unparsed options.
-  return po::collect_unrecognized(parsed.options, po::include_positional);
+  // Return all unparsed options.
+  vector<string> unparsed_options = po::collect_unrecognized(parsed.options, po::include_positional);
+  unparsed_options.insert(unparsed_options.end(), unrecognized_alternative_options.begin(), unrecognized_alternative_options.end());
+  return unparsed_options;
 }
 
 void Options::ParseURL(XtreemFSServiceType service_type) {
