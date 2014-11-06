@@ -19,6 +19,7 @@ namespace xtreemfs {
 /**
  * Generates an asymmetric key.
  * Currently only RSA is supported.
+ *
  * @param alg_name  "RSA"
  * @param [bits]    Optional length of the key.
  */
@@ -56,8 +57,9 @@ AsymKey::AsymKey(std::string alg_name, int bits) {
 }
 
 /**
- * Constructs an asymmetric key from a DER encoded key.
- * @param key
+ * Constructs an AsymKey Object from a DER encoded key.
+ *
+ * @param key   A DER encoded asymmetric key.
  */
 AsymKey::AsymKey(std::vector<unsigned char> encoded_key) {
   const unsigned char* p_encoded_key = encoded_key.data();
@@ -65,14 +67,15 @@ AsymKey::AsymKey(std::vector<unsigned char> encoded_key) {
 }
 
 /**
- * Constructs an asymmetric key from an EVP_PKEY structure.
+ * Constructs an AsymKey Object from an EVP_PKEY structure.
+ *
  * @param key   Ownership is transfered.
  */
 AsymKey::AsymKey(EVP_PKEY* key)
     : key_(key) {
 }
 
-AsymKey::AsymKey(AsymKey& other)
+AsymKey::AsymKey(const AsymKey& other)
   : key_(other.get_key()) {
   CRYPTO_add(&key_->references, 1, CRYPTO_LOCK_EVP_PKEY);
 }
@@ -87,7 +90,10 @@ AsymKey::~AsymKey() {
   EVP_PKEY_free(key_);
 }
 
-std::vector<unsigned char> AsymKey::GetDEREncodedKey() {
+/**
+ * @return  The key in DER encoding.
+ */
+std::vector<unsigned char> AsymKey::GetDEREncodedKey() const {
   int len = i2d_PrivateKey(key_, NULL);
   std::vector<unsigned char> buffer(len);
   unsigned char* p_buffer = buffer.data();
@@ -95,7 +101,10 @@ std::vector<unsigned char> AsymKey::GetDEREncodedKey() {
   return buffer;
 }
 
-EVP_PKEY* AsymKey::get_key() {
+/**
+ * @return  The internally stored key structure.
+ */
+EVP_PKEY* AsymKey::get_key() const {
   assert(key_ != NULL);
   return key_;
 }

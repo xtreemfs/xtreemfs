@@ -16,23 +16,26 @@
 
 namespace xtreemfs {
 
+/**
+ * Wrapper class for an asymmetric key.
+ */
 class AsymKey {
  public:
   AsymKey(std::string alg_name, int bits = 0);
-
-  AsymKey(AsymKey& other);
-
-  AsymKey& operator=(AsymKey other);
 
   explicit AsymKey(std::vector<unsigned char> encoded_key);
 
   explicit AsymKey(EVP_PKEY* key);
 
+  AsymKey(const AsymKey& other);
+
+  AsymKey& operator=(AsymKey other);
+
   ~AsymKey();
 
-  std::vector<unsigned char> GetDEREncodedKey();
+  std::vector<unsigned char> GetDEREncodedKey() const;
 
-  EVP_PKEY* get_key();
+  EVP_PKEY* get_key() const;
 
  private:
   // owned by the class

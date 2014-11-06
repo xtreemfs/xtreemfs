@@ -80,7 +80,7 @@ std::vector<unsigned char> SignAlgorithm::Sign(
 }
 
 bool SignAlgorithm::Verify(boost::asio::const_buffer data,
-                           boost::asio::mutable_buffer sig) const {
+                           boost::asio::const_buffer sig) const {
   assert(key_.get() != NULL);
   EVP_MD_CTX* mdctx;
 
@@ -110,9 +110,11 @@ bool SignAlgorithm::Verify(boost::asio::const_buffer data,
 
   /* Finalise the DigestVerify operation */
   if (1
-      != EVP_DigestVerifyFinal(mdctx,
-                               boost::asio::buffer_cast<unsigned char*>(sig),
-                               boost::asio::buffer_size(sig))) {
+      != EVP_DigestVerifyFinal(
+          mdctx,
+          const_cast<unsigned char*>(boost::asio::buffer_cast<
+              const unsigned char*>(sig)),
+          boost::asio::buffer_size(sig))) {
     return false;
   }
 

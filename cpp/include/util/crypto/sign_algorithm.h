@@ -26,7 +26,7 @@ class SignAlgorithm {
 
   std::vector<unsigned char> Sign(boost::asio::const_buffer data) const;
 
-  bool Verify(boost::asio::const_buffer data, boost::asio::mutable_buffer sig) const;
+  bool Verify(boost::asio::const_buffer data, boost::asio::const_buffer sig) const;
 
   int get_signature_size() const;
 
