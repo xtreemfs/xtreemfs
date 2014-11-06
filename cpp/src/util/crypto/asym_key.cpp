@@ -7,6 +7,7 @@
 #include "util/crypto/asym_key.h"
 
 #include <boost/scope_exit.hpp>
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -76,14 +77,13 @@ AsymKey::AsymKey(EVP_PKEY* key)
 }
 
 AsymKey::AsymKey(const AsymKey& other)
-  : key_(other.get_key()) {
+    : key_(other.get_key()) {
   CRYPTO_add(&key_->references, 1, CRYPTO_LOCK_EVP_PKEY);
 }
 
-AsymKey& AsymKey::operator=(AsymKey other)
-{
-    std::swap(other.key_, key_);
-    return *this;
+AsymKey& AsymKey::operator=(AsymKey other) {
+  std::swap(other.key_, key_);
+  return *this;
 }
 
 AsymKey::~AsymKey() {

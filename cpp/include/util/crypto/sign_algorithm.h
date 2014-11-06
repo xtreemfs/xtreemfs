@@ -22,11 +22,13 @@ class SignAlgorithm {
  public:
   SignAlgorithm(std::auto_ptr<AsymKey> key, std::string alg_name);
 
-  void Sign(boost::asio::const_buffer data, boost::asio::mutable_buffer sig) const;
+  void Sign(boost::asio::const_buffer data,
+            boost::asio::mutable_buffer sig) const;
 
   std::vector<unsigned char> Sign(boost::asio::const_buffer data) const;
 
-  bool Verify(boost::asio::const_buffer data, boost::asio::const_buffer sig) const;
+  bool Verify(boost::asio::const_buffer data,
+              boost::asio::const_buffer sig) const;
 
   int get_signature_size() const;
 

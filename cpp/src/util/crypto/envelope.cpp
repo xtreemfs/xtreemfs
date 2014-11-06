@@ -51,7 +51,8 @@ void Envelope::Seal(std::string cipher_name, std::vector<AsymKey> pub_keys,
       new unsigned char*[pub_keys.size()]);
   boost::scoped_array<int> encrypted_keys_len(new int[pub_keys.size()]);
   iv->resize(EVP_CIPHER_iv_length(cipher));
-  ciphertext->resize(boost::asio::buffer_size(plaintext) + EVP_CIPHER_block_size(cipher));
+  ciphertext->resize(
+      boost::asio::buffer_size(plaintext) + EVP_CIPHER_block_size(cipher));
 
   for (int i = 0; i < pub_keys.size(); i++) {
     pub_keys_p_array[i] = pub_keys[i].get_key();
@@ -80,7 +81,6 @@ void Envelope::Seal(std::string cipher_name, std::vector<AsymKey> pub_keys,
           ctx, ciphertext->data(), &len,
           boost::asio::buffer_cast<const unsigned char*>(plaintext),
           boost::asio::buffer_size(plaintext))) {
-
     LogAndThrowOpenSSLError();
   }
   ciphertext_len = len;
@@ -134,17 +134,19 @@ int Envelope::Open(std::string cipher_name, AsymKey priv_key,
  * @return  The length of the plaintext.
  */
 void Envelope::Open(std::string cipher_name, AsymKey priv_key,
-                   boost::asio::const_buffer ciphertext,
-                   boost::asio::const_buffer encrypted_key,
-                   boost::asio::const_buffer iv,
-                   std::vector<unsigned char>* plaintext) const {
+                    boost::asio::const_buffer ciphertext,
+                    boost::asio::const_buffer encrypted_key,
+                    boost::asio::const_buffer iv,
+                    std::vector<unsigned char>* plaintext) const {
   assert(plaintext);
   const EVP_CIPHER* cipher;
   if ((cipher = EVP_get_cipherbyname(cipher_name.c_str())) == NULL) {
     LogAndThrowOpenSSLError();
   }
-  plaintext->resize(boost::asio::buffer_size(ciphertext) + EVP_CIPHER_block_size(cipher));
-  int plaintext_len = Open(cipher, priv_key, ciphertext, encrypted_key, iv, boost::asio::buffer(*plaintext));
+  plaintext->resize(
+      boost::asio::buffer_size(ciphertext) + EVP_CIPHER_block_size(cipher));
+  int plaintext_len = Open(cipher, priv_key, ciphertext, encrypted_key, iv,
+                           boost::asio::buffer(*plaintext));
   plaintext->resize(plaintext_len);
 }
 
@@ -175,7 +177,6 @@ int Envelope::Open(const EVP_CIPHER* cipher, AsymKey priv_key,
           boost::asio::buffer_size(encrypted_key),
           boost::asio::buffer_cast<const unsigned char*>(iv),
           priv_key.get_key())) {
-
     LogAndThrowOpenSSLError();
   }
 

@@ -91,8 +91,8 @@ TEST_F(CryptoTest, Envelope) {
   std::vector<unsigned char> iv;
   std::vector<unsigned char> ciphertext;
 
-  envelope.Seal("aes-256-ctr", std::vector<AsymKey>(1, key), boost::asio::buffer(msg),
-                &encrypted_keys, &iv, &ciphertext);
+  envelope.Seal("aes-256-ctr", std::vector<AsymKey>(1, key),
+                boost::asio::buffer(msg), &encrypted_keys, &iv, &ciphertext);
 
   std::vector<unsigned char> plaintext;
   envelope.Open("aes-256-ctr", key, boost::asio::buffer(ciphertext),
