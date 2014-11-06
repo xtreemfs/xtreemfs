@@ -281,6 +281,7 @@ The client is implemented as a \emph{FUSE user-level driver} that runs as a norm
 This chapter describes how to install and set up the server side of an XtreemFS installation.
 
 \section{Installation}
+\label{sec:installation}
 
 When installing XtreemFS server components, you can choose from two different installation sources: you can download one of the \emph{pre-packaged releases} that we create for most Linux distributions or you can install directly from the \emph{source tarball}.
 
@@ -1864,10 +1865,59 @@ $> umount /xtreemfs
 \end{verbatim}
 
 \subsection{Mount Options}
+\label{sec:mount_opts}
 
 Access to a FUSE mount is usually restricted to the user who mounted the volume. To allow the root user or any other user on the system to access the mounted volume, the FUSE options \texttt{-o allow\_root} and \texttt{-o allow\_other} can be used with \texttt{mount.xtreemfs}. They are, however, mutually exclusive. In order to use these options, the system administrator must create a FUSE configuration file \texttt{/etc/fuse.conf} and add a line\index{allow\_others option}\index{allow\_root option}\index{user\_allow\_other option} \texttt{user\_allow\_other}.
 
 By default, the local system cache on the client machine will be used to speed up read access to XtreemFS. In particular, using the cache as a local buffer is necessary to support the \texttt{mmap} system call, which - amongst others - is required to execute applications on Linux. Additionally, it enables the read-ahead functionality of Fuse and does speed up sequential reads, especially in presence of high latencies. If the local system cache is not disabled, the consistency model of client caches is limited to ``close-to-open'', which is similar to the model provided by NFS. Buffered I/O can be switched off by adding the \texttt{-o direct\_io} parameter. The parameter effects that all read and write operations are directed to their OSDs instead of being served from local caches. Enabling \texttt{-o direct\_io} might be also necessary if you rely on interruption support of read requests in Linux. Please see \href{http://code.google.com/p/xtreemfs/issues/detail?id=229}{issue 229} for more details.
+
+All mount options and their description can be viewed in detail when running:
+\begin{verbatim}
+$> mount.xtreemfs --help
+\end{verbatim}
+
+All options (except \texttt{-o}) can be specified explicitly or via the \texttt{-o} option, i.e.
+\begin{verbatim}
+$> mount.xtreemfs demo.xtreemfs.org/demo /mnt/xtreemfs \
+     --log-level DEBUG -l /tmp/xtreemfs.log
+\end{verbatim}
+is equivalent to
+\begin{verbatim}
+$> mount.xtreemfs demo.xtreemfs.org/demo /mnt/xtreemfs \
+     -o log-level=DEBUG,-l=/tmp/xtreemfs.log
+\end{verbatim}
+Note that when using \texttt{-o}, short options are still prefixed with a dash and the equal sign is mandatory. Options specified via \texttt{-o} that are not XtreemFS options are passed to FUSE as described above. Options specified via \texttt{-o} are ignored if they are also explicit specified, i.e.
+\begin{verbatim}
+$> mount.xtreemfs demo.xtreemfs.org/demo /mnt/xtreemfs \
+     -o log-level=DEBUG --log-level=INFO
+\end{verbatim}
+has the same effect as
+\begin{verbatim}
+$> mount.xtreemfs demo.xtreemfs.org/ demo /mnt/xtreemfs \
+     --log-level=INFO
+\end{verbatim}
+
+\subsection{\texttt{/etc/fstab} Integration}
+\label{sec:mount_vol:fstab}
+
+By allowing all options to be specified using \texttt{-o} (see section~\ref{sec:mount_opts}), an integration for automatic mounting using \texttt{/etc/fstab} on Unix and Unix-like systems is possible (note that the file system table may have different names or be located somewhere else depending on the Unix version). Simply append lines like the following to the file system table and modify as needed:
+\begin{Verbatim}[commandchars=\\\{\}]
+# <file system> <mount point> <type> <options> <dump> <pass>
+demo.xtreemfs.org:32638/demo /mnt/xtreemfs xtreemfs
+  \ensuremath{\color{red}\hookrightarrow\space} defaults,_netdev,-d=INFO,log-file-path=/tmp/xtreemfs.log 0 0
+\end{Verbatim}
+\texttt{defaults} is a shorthand for \texttt{rw,suid,dev,exec,auto,nouser,async}. This will result in the following command:
+\begin{verbatim}
+$> /sbin/mount.xtreemfs demo.xtreemfs.org:32638/demo /mnt/xtreemfs \
+  -o rw,_netdev,-d=INFO,log-file-path=/tmp/xtreemfs.log
+\end{verbatim}
+\texttt{rw} is passed on to Fuse, \texttt{\_netdev} is ignored by XtreemFS (however it is used by \texttt{mount}, see below) and the other options are processed as usual. Note that this requires that you have properly installed the client (see section~\ref{sec:installation}).
+
+The file system table is read on system startup or when executing
+\begin{verbatim}
+$> mount -a
+\end{verbatim}
+When mounting at system startup, it is vital to specify the \texttt{\_netdev} option to defer device mounting until the network has been enabled on the system. Otherwise the system will hang on boot.
 
 \subsection{Asynchronous Writes Support}
 \label{sec:async_writes}
