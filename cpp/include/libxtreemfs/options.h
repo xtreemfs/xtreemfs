@@ -220,7 +220,7 @@ class Options {
   double vivaldi_zipf_generator_skew;
 
   /** May contain all previous options in key=value pair lists. */
-  std::vector<std::string> alternative_options;
+  std::vector<std::string> alternative_options_list;
 
   // Internal options, not available from the command line interface.
   /** If not NULL, called to find out if request was interrupted. */

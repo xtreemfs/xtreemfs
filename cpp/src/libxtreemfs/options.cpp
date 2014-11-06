@@ -8,11 +8,12 @@
 
 #include "libxtreemfs/options.h"
 
+#include <boost/algorithm/string.hpp> // boost::algorithm::starts_with
+#include <boost/bind.hpp>
 #include <boost/program_options/cmdline.hpp>
 #include <boost/tokenizer.hpp>
-#include <algorithm>
+#include <algorithm> // std::find_if
 #include <iostream>
-#include <iterator>
 #include <string>
 
 #ifdef __APPLE__
@@ -35,6 +36,7 @@ using namespace std;
 using namespace xtreemfs::pbrpc;
 using namespace xtreemfs::util;
 
+namespace alg = boost::algorithm;
 namespace po = boost::program_options;
 namespace style = boost::program_options::command_line_style;
 
@@ -359,11 +361,14 @@ void Options::GenerateProgramOptionsDescriptions() {
 
   alternative_options_.add_options()
     (",o",
-        po::value< std::vector<std::string> >(&alternative_options),
-		"Alternatively specify all options as a key=value pair list."
-		"E.g. '--opt1 --opt2 arg2' can become '-o opt1,opt2=arg2'."
-		"Overridden by explicitly specified options."
-		"Short option names must be prefixed with '-' anyway."
+        po::value< std::vector<std::string> >(&alternative_options_list),
+		"Alternatively specify all options as a key=value1=value2 tuple list."
+		"E.g."
+		"  '--opt1 --opt2 arg2 --opt3 arg3 arg4' can become"
+		"  '-o opt1,opt2=arg2,opt3=arg3=arg4'."
+		"Overridden by explicitly specified options, e.g."
+		"  '--log-level DEBUG' overrides '-o log-level=INFO'."
+		"Short option names must be prefixed with '-' anyway, e.g. '-o -d=DEBUG'."
 		"Unrecognized options are retained, e.g. for Fuse.");
 
   // These options are parsed
@@ -388,7 +393,7 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
   GenerateProgramOptionsDescriptions();
 
   // Parse alternative options specification first,
-  // and potentially override using explicity options later.
+  // and potentially override using explicitly options later.
   po::parsed_options parsed = po::command_line_parser(argc, argv)
     .options(alternative_options_)
     .allow_unregistered()
@@ -407,45 +412,38 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
 
   typedef boost::tokenizer< boost::char_separator<char> > tokenizer;
   boost::char_separator<char> list_separator(",");
-  boost::char_separator<char> pair_separator("=");
+  boost::char_separator<char> tuple_separator("=");
 
   // Walk all alternative options, represented as a list of comma separated
-  // key=value pairs.
-  for(vector<string>::iterator opt_list = alternative_options.begin();
-      opt_list != alternative_options.end();
-      ++opt_list) {
-    // Split the current comma separated list into key=value pairs.
-    tokenizer pairs(*opt_list, list_separator);
-    for(tokenizer::iterator pair = pairs.begin();
-        pair != pairs.end();
-        ++pair) {
-      // Split the key=value pair into key and value.
-      tokenizer key_value(*pair, pair_separator);
+  // key=value1=value2... tuples.
+  for(vector<string>::iterator alternative_options = alternative_options_list.begin();
+      alternative_options != alternative_options_list.end();
+      ++alternative_options)
+  {
+    // Split the current comma separated list into key=value1=value2... tuples.
+    tokenizer tuples(*alternative_options, list_separator);
+    for(tokenizer::iterator tuple = tuples.begin();
+        tuple != tuples.end();
+        ++tuple)
+    {
+      // Split the key=value1=value2... tuple into key and values.
+      tokenizer key_values(*tuple, tuple_separator);
 
       // Find out whether this is a known option.
-      const po::option_description *opt_desc = all_descriptions_.find_nothrow(*(key_value.begin()), false);
+      const po::option_description *opt_desc = all_descriptions_.find_nothrow(*(key_values.begin()), false);
       if(opt_desc != NULL) {
-        string prefixed_long_opt = opt_desc->canonical_display_name(po::command_line_style::allow_long);
-        string prefixed_short_opt = opt_desc->canonical_display_name(po::command_line_style::allow_dash_for_short);
+        const string prefixed_long_opt = opt_desc->canonical_display_name(po::command_line_style::allow_long);
+        const string prefixed_short_opt = opt_desc->canonical_display_name(po::command_line_style::allow_dash_for_short);
 
-        // Find out if this proper option has been explicitly defined.
-        if(find(regular_options.begin(), regular_options.end(), prefixed_long_opt) == regular_options.end() &&
-           find(regular_options.begin(), regular_options.end(), prefixed_short_opt) == regular_options.end()) {
-          // always at least 1 since the first part is the key
-          size_t num_tokens = distance(key_value.begin(), key_value.end()) - 1;
-
-          if( num_tokens < opt_desc->semantic()->min_tokens() ||
-              num_tokens > opt_desc->semantic()->max_tokens()) {
-            throw InvalidCommandLineParametersException("Incorrect number of arguments for option: " + *(key_value.begin()));
-          }
-
+        // Find out if this known option has been explicitly specified.
+        if( find_if(regular_options.begin(), regular_options.end(),
+                boost::bind(alg::starts_with<string, string>, _1, prefixed_long_opt)) == regular_options.end() &&
+            find_if(regular_options.begin(), regular_options.end(),
+                boost::bind(alg::starts_with<string, string>, _1, prefixed_short_opt)) == regular_options.end())
+        {
           // Explicitly set option for later parsing.
-          regular_options.push_back(prefixed_long_opt);
-          tokenizer::iterator value = key_value.begin();
-          advance(value, 1);
-          for(; value != key_value.end(); advance(value, 1)) {
-            regular_options.push_back(*value);
-          }
+          regular_options.push_back(prefixed_long_opt.empty() ? prefixed_short_opt : prefixed_long_opt);
+          regular_options.insert(regular_options.end(), ++(key_values.begin()), key_values.end());
         } else {
           // Known option is explicitly specified, do not set.
         }
@@ -453,11 +451,8 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
         // Not an option that is supposed to be set via alternative specification,
         // so just add it back the way it came in.
         unrecognized_alternative_options.push_back("-o");
-        for(tokenizer::iterator value = key_value.begin();
-            value != key_value.end();
-            advance(value, 1)) {
-          unrecognized_alternative_options.push_back(*value);
-        }
+        unrecognized_alternative_options.insert(unrecognized_alternative_options.end(),
+            key_values.begin(), key_values.end());
       }
     }
   }
