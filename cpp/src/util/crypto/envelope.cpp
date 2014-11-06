@@ -28,7 +28,7 @@ namespace xtreemfs {
  * @param[out] iv               The generated IV for the symmetric encryption.
  * @param[out] ciphertext       The encrypted plaintext.
  */
-void Envelope::Seal(std::string cipher_name, std::vector<AsymKey> pub_keys,
+void Envelope::Seal(const std::string& cipher_name, std::vector<AsymKey> pub_keys,
                     boost::asio::const_buffer plaintext,
                     std::vector<std::vector<unsigned char> >* encrypted_keys,
                     std::vector<unsigned char>* iv,
@@ -109,7 +109,7 @@ void Envelope::Seal(std::string cipher_name, std::vector<AsymKey> pub_keys,
  *                        Caller must ensure that buffer has sufficient length.
  * @return  The length of the plaintext.
  */
-int Envelope::Open(std::string cipher_name, AsymKey priv_key,
+int Envelope::Open(const std::string& cipher_name, AsymKey priv_key,
                    boost::asio::const_buffer ciphertext,
                    boost::asio::const_buffer encrypted_key,
                    boost::asio::const_buffer iv,
@@ -133,7 +133,7 @@ int Envelope::Open(std::string cipher_name, AsymKey priv_key,
  * @param[out] plaintext  The decrypted ciphertext.
  * @return  The length of the plaintext.
  */
-void Envelope::Open(std::string cipher_name, AsymKey priv_key,
+void Envelope::Open(const std::string& cipher_name, AsymKey priv_key,
                     boost::asio::const_buffer ciphertext,
                     boost::asio::const_buffer encrypted_key,
                     boost::asio::const_buffer iv,

@@ -50,68 +50,22 @@ int RoundUp(int num, int multiple) {
  * @param object_size   Object size in kB.
  */
 ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
-                                 VolumeImplementation* volume, uint64_t file_id,
+                                 const pbrpc::XCap& xcap,
+                                 VolumeImplementation* volume,
                                  FileInfo* file_info, int object_size)
-    : enc_block_size_(volume->volume_options().encryption_block_size),
+    : key_distribution(volume),
+      enc_block_size_(volume->volume_options().encryption_block_size),
       cipher_(volume->volume_options().encryption_cipher),
       sign_algo_(std::auto_ptr<AsymKey>(NULL),
                  volume->volume_options().encryption_hash),
       object_size_(object_size * 1024),
       file_info_(file_info),
-      volume_(volume),
       volume_options_(volume->volume_options()) {
   assert(object_size_ >= enc_block_size_);
   assert(object_size_ % enc_block_size_ == 0);
-  // TODO(plieser): file enc key
-  std::string key_str = "01234567890123456789012345678901";
-  file_enc_key_ = std::vector<unsigned char>(key_str.begin(), key_str.end());
-  // TODO(plieser): file sign key
-  std::string encoded_file_sign_key =
-      "MIICXgIBAAKBgQDHo3StkYya5L/T3/ZIGTdmt347cwldwxKO3uAA8iBlG+dowht8"
-          "NHfar0hT61HnRVsH5tcmGB2r9HT4EhAFlrO9vT8QaQrQL6cX5f731YsOeYlC6gAz"
-          "azWROnc2/jt5b9vcS4DlV6nz4ud8PEH9SkhtC4CdaWxWH03AoSEyVC0vBwIDAQAB"
-          "AoGBAL6fK7zDmn8X5ra3ReEn+sdgc+7t88aMij7TPw6IIziIAVj85uOc8chkz+oZ"
-          "atYqWjZcS5j7M/HJ9JoeHSBI+ouEGG/roTXlpzOr9U30qlQYi4WIOHscZGxd+/3y"
-          "d1XwwQkkLaJOGp1meOLRMasfSIlpVA6c1EDu2ANVx6hoUkBpAkEA7+jIfRNQul+A"
-          "ko0Ds3lCbd5o5JELMP+paMGvls9XwLc9np//C0OPMdmSKz+dRxOQ66YvWjT5mThI"
-          "roFoRQIvxQJBANUHOifHucAybmyDvt5w0ZoDj0jXRU1nNfV8tsV21w1qTCfai1uD"
-          "JpUSLhUZJvfnkQb4WOwCj3Swd1KbNv9cpFsCQQCxvmrD2Aqoelc8vMMwNjfURMK8"
-          "DQYYoGI4Hb/k4Otn+ZrqqimAg+ZUjZiw+CmjXkixfmd40uTV8xBOUcwZzJvtAkBY"
-          "ArhgHv/7C9rbMkL1G589BiN4cJfNNsrwNSo9wq9ud3AnNv9EO5cBF5W6Wb3jxeQB"
-          "ATGbsCMcjpt9oWrDbb7pAkEA3YDyrjg6/Nrr2Q/mi2nIib6HJ3BEG2ds16VYAsKQ"
-          "7E8Bd+fRvCvM1ZLuuaJMkPNL9jkPX/11qB8g7HOtHtA3/Q==";
-  Base64Encoder b64Encoder;
-  std::auto_ptr<AsymKey> file_sign_key(
-      new AsymKey(
-          b64Encoder.Decode(boost::asio::buffer(encoded_file_sign_key))));
-  sign_algo_.set_key(file_sign_key);
 
-  std::string meta_file_name(
-      "/.xtreemfs_enc_meta_files/" + boost::lexical_cast<std::string>(file_id));
-  try {
-    meta_file_ = volume->OpenFile(user_credentials, meta_file_name,
-                                  pbrpc::SYSTEM_V_FCNTL_H_O_RDWR, 0777);
-  } catch (const PosixErrorException& e) {  // NOLINT
-    // file didn't exist yet
-    try {
-      meta_file_ = volume->OpenFile(
-          user_credentials,
-          meta_file_name,
-          static_cast<pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
-              | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
-          0777);
-    } catch (const PosixErrorException& e) {  // NOLINT
-      // "/.xtreemfs_enc_meta_files" directory does not exist yet
-      volume->MakeDirectory(user_credentials, "/.xtreemfs_enc_meta_files",
-                            0777);
-      meta_file_ = volume->OpenFile(
-          user_credentials,
-          meta_file_name,
-          static_cast<pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
-              | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
-          0777);
-    }
-  }
+  meta_file_ = key_distribution.OpenMetaFile(user_credentials, xcap,
+                                             &file_enc_key_, &sign_algo_);
 }
 
 ObjectEncryptor::~ObjectEncryptor() {
@@ -160,8 +114,7 @@ ObjectEncryptor::ReadOperation::ReadOperation(ObjectEncryptor* obj_enc,
 
 ObjectEncryptor::WriteOperation::WriteOperation(
     ObjectEncryptor* obj_enc, int64_t offset, int count,
-    PartialObjectReaderFunction reader,
-    PartialObjectWriterFunction writer)
+    PartialObjectReaderFunction reader, PartialObjectWriterFunction writer)
     : Operation(obj_enc, true) {
   assert(count > 0);
 
@@ -226,13 +179,13 @@ ObjectEncryptor::WriteOperation::WriteOperation(
     break;
   }
 
-  if (old_last_incomplete_enc_block < start_block && !old_last_enc_block_complete) {
+  if (old_last_incomplete_enc_block < start_block
+      && !old_last_enc_block_complete) {
     // write is behind the old last enc block and it was incomplete,
     // so it musst be updated.
     int old_end_object_no = old_file_size_ / object_size_;
     int old_end_object_size = old_file_size_ % object_size_;
-    Write(old_end_object_no, NULL, old_end_object_size, 0, reader,
-               writer);
+    Write(old_end_object_no, NULL, old_end_object_size, 0, reader, writer);
   }
 }
 
@@ -306,8 +259,7 @@ ObjectEncryptor::TruncateOperation::TruncateOperation(
     if (!min_end_enc_block_complete) {
       int min_end_object_no = (min_file_size - 1) / object_size_;
       int min_end_object_size = min_file_size % object_size_;
-      Write(min_end_object_no, NULL, min_end_object_size, 0, reader,
-                 writer);
+      Write(min_end_object_no, NULL, min_end_object_size, 0, reader, writer);
     }
     hash_tree_.FinishTruncate(user_credentials);
     break;
@@ -355,9 +307,9 @@ int ObjectEncryptor::Operation::DecryptEncBlock(
  * @param writer    A synchronously writer for objects.
  * @return
  */
-int ObjectEncryptor::Operation::Read(
-    int object_no, char* buffer, int offset_in_object, int bytes_to_read,
-    PartialObjectReaderFunction reader) {
+int ObjectEncryptor::Operation::Read(int object_no, char* buffer,
+                                     int offset_in_object, int bytes_to_read,
+                                     PartialObjectReaderFunction reader) {
   assert(bytes_to_read > 0);
   int object_offset = object_no * object_size_;
   if (hash_tree_.file_size() <= object_offset + offset_in_object) {
@@ -371,9 +323,8 @@ int ObjectEncryptor::Operation::Read(
                                  enc_block_size_) - ct_offset_in_object;
 
   std::vector<unsigned char> ciphertext(ct_bytes_to_read);
-  int bytes_read = reader(
-      object_no, reinterpret_cast<char*>(ciphertext.data()),
-      ct_offset_in_object, ct_bytes_to_read);
+  int bytes_read = reader(object_no, reinterpret_cast<char*>(ciphertext.data()),
+                          ct_offset_in_object, ct_bytes_to_read);
   ciphertext.resize(bytes_read);
 
   int read_plaintext_len = 0;  // only to check correctness
@@ -476,9 +427,10 @@ int ObjectEncryptor::Operation::Read(
  * @param writer    A synchronously writer for objects.
  * @return
  */
-void ObjectEncryptor::Operation::Write(
-    int object_no, const char* buffer, int offset_in_object, int bytes_to_write,
-    PartialObjectReaderFunction reader, PartialObjectWriterFunction writer) {
+void ObjectEncryptor::Operation::Write(int object_no, const char* buffer,
+                                       int offset_in_object, int bytes_to_write,
+                                       PartialObjectReaderFunction reader,
+                                       PartialObjectWriterFunction writer) {
   int object_offset = object_no * object_size_;
   int ct_offset_in_object = RoundDown(offset_in_object, enc_block_size_);
   int ct_offset_diff = offset_in_object - ct_offset_in_object;
@@ -509,9 +461,9 @@ void ObjectEncryptor::Operation::Write(
     if (old_file_size_ > object_offset + ct_offset_in_object) {
       // 1. read the old enc block if it is not behind old file size
       std::vector<unsigned char> old_ct_block(enc_block_size_);
-      int bytes_read = reader(
-          object_no, reinterpret_cast<char*>(old_ct_block.data()),
-          ct_offset_in_object, enc_block_size_);
+      int bytes_read = reader(object_no,
+                              reinterpret_cast<char*>(old_ct_block.data()),
+                              ct_offset_in_object, enc_block_size_);
       old_ct_block.resize(bytes_read);
 
       // 2. decrypt the old enc block
@@ -549,9 +501,10 @@ void ObjectEncryptor::Operation::Write(
       // 1. read the old enc block if it is not behind old file size or
       // is not getting completely overwritten
       std::vector<unsigned char> old_ct_block(enc_block_size_);
-      int bytes_read = reader(
-          object_no, reinterpret_cast<char*>(old_ct_block.data()),
-          ct_end_offset_in_object - new_pt_block_len, enc_block_size_);
+      int bytes_read = reader(object_no,
+                              reinterpret_cast<char*>(old_ct_block.data()),
+                              ct_end_offset_in_object - new_pt_block_len,
+                              enc_block_size_);
       old_ct_block.resize(bytes_read);
 
       // 2. decrypt the old enc block
@@ -593,7 +546,7 @@ void ObjectEncryptor::Operation::Write(
   assert(buffer_offset <= bytes_to_write);
 
   writer(object_no, reinterpret_cast<char*>(ciphertext.data()),
-                ct_offset_in_object, ct_bytes_to_write);
+         ct_offset_in_object, ct_bytes_to_write);
 }
 
 /**

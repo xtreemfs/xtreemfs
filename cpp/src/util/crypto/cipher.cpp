@@ -17,7 +17,7 @@ using xtreemfs::util::LogAndThrowOpenSSLError;
 
 namespace xtreemfs {
 
-Cipher::Cipher(std::string alg_name) {
+Cipher::Cipher(const std::string& alg_name) {
   if ((cipher_ = EVP_get_cipherbyname(alg_name.c_str())) == NULL) {
     LogAndThrowOpenSSLError();
   }
@@ -29,7 +29,7 @@ Cipher::Cipher(std::string alg_name) {
  */
 
 std::pair<std::vector<unsigned char>, int> Cipher::encrypt(
-    boost::asio::const_buffer plaintext, std::vector<unsigned char> key,
+    boost::asio::const_buffer plaintext, const std::vector<unsigned char>& key,
     boost::asio::mutable_buffer ciphertext) const {
   assert(key_size() == key.size());
 
@@ -77,8 +77,8 @@ std::pair<std::vector<unsigned char>, int> Cipher::encrypt(
  * @return    Length of plaintext.
  */
 int Cipher::decrypt(boost::asio::const_buffer ciphertext,
-                    std::vector<unsigned char> key,
-                    std::vector<unsigned char> iv,
+                    const std::vector<unsigned char>& key,
+                    const std::vector<unsigned char>& iv,
                     boost::asio::mutable_buffer plaintext) const {
   EVP_CIPHER_CTX *ctx;
   int len;
@@ -115,6 +115,19 @@ int Cipher::decrypt(boost::asio::const_buffer ciphertext,
   plaintext_len += len;
   assert(plaintext_len <= boost::asio::buffer_size(plaintext));
   return plaintext_len;
+}
+
+/**
+ * Generates a new key.
+ *
+ * @param[out] key  Pointer to vector to store new key in.
+ */
+void Cipher::GenerateKey(std::vector<unsigned char>* key) const {
+  assert(key);
+  key->resize(key_size());
+  if (1 != RAND_bytes(key->data(), key->size())) {
+    LogAndThrowOpenSSLError();
+  }
 }
 
 int Cipher::block_size() const {

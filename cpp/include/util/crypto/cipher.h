@@ -19,15 +19,19 @@ namespace xtreemfs {
 
 class Cipher {
  public:
-  explicit Cipher(std::string algo_name);
+  explicit Cipher(const std::string& algo_name);
 
   std::pair<std::vector<unsigned char>, int> encrypt(
-      boost::asio::const_buffer plaintext, std::vector<unsigned char> key,
+      boost::asio::const_buffer plaintext,
+      const std::vector<unsigned char>& key,
       boost::asio::mutable_buffer ciphertext) const;
 
   int decrypt(boost::asio::const_buffer ciphertext,
-              std::vector<unsigned char> key, std::vector<unsigned char> iv,
+              const std::vector<unsigned char>& key,
+              const std::vector<unsigned char>& iv,
               boost::asio::mutable_buffer plaintext) const;
+
+  void GenerateKey(std::vector<unsigned char>* key) const;
 
   int block_size() const;
 

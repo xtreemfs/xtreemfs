@@ -20,19 +20,19 @@ namespace xtreemfs {
 
 class Envelope {
  public:
-  void Seal(std::string cipher, std::vector<AsymKey> pub_keys,
+  void Seal(const std::string& cipher, std::vector<AsymKey> pub_keys,
             boost::asio::const_buffer plaintext,
             std::vector<std::vector<unsigned char> >* encrypted_keys,
             std::vector<unsigned char>* iv,
             std::vector<unsigned char>* ciphertext) const;
 
-  int Open(std::string cipher_name, AsymKey priv_key,
+  int Open(const std::string& cipher_name, AsymKey priv_key,
            boost::asio::const_buffer ciphertext,
            boost::asio::const_buffer encrypted_key,
            boost::asio::const_buffer iv,
            boost::asio::mutable_buffer plaintext) const;
 
-  void Open(std::string cipher_name, AsymKey priv_key,
+  void Open(const std::string& cipher_name, AsymKey priv_key,
             boost::asio::const_buffer ciphertext,
             boost::asio::const_buffer encrypted_key,
             boost::asio::const_buffer iv,

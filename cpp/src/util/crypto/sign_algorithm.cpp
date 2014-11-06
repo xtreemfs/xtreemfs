@@ -16,7 +16,8 @@ using xtreemfs::util::LogAndThrowOpenSSLError;
 
 namespace xtreemfs {
 
-SignAlgorithm::SignAlgorithm(std::auto_ptr<AsymKey> key, std::string alg_name) {
+SignAlgorithm::SignAlgorithm(std::auto_ptr<AsymKey> key,
+                             const std::string& alg_name) {
   if ((md_ = EVP_get_digestbyname(alg_name.c_str())) == NULL) {
     LogAndThrowOpenSSLError();
   }
@@ -125,6 +126,7 @@ bool SignAlgorithm::Verify(boost::asio::const_buffer data,
  * @return  Size of the signature in bytes
  */
 int SignAlgorithm::get_signature_size() const {
+  assert(key_.get() != NULL);
   return signature_size_;
 }
 

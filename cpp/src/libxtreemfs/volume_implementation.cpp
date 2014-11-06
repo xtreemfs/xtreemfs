@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <boost/bind.hpp>
 #include <boost/thread/thread.hpp>
+#include <google/protobuf/stubs/common.h>
 #include <limits>
 #include <map>
 #include <string>
@@ -396,8 +397,8 @@ FileHandle* VolumeImplementation::OpenFileWithTruncateSize(
         std::auto_ptr<ObjectEncryptor>(
             new ObjectEncryptor(
                 user_credentials,
+                open_response->creds().xcap(),
                 this,
-                ExtractFileIdFromXCap(open_response->creds().xcap()),
                 file_info,
                 open_response->creds().xlocs().replicas(0).striping_policy()
                     .stripe_size())));
@@ -1144,7 +1145,13 @@ void VolumeImplementation::SetXAttr(
   rq.set_name(name);
   // For unknown reasons this fails if c_str() is not used, for instance if the
   // value is set to the character '\002'.
-  rq.set_value(value.c_str());
+  if (google::protobuf::internal::IsStructurallyValidUTF8(value.c_str(),
+                                                          value.size())) {
+    // only set value string if it is valid UTF8
+    rq.set_value(value.c_str());
+  } else {
+    rq.set_value("");
+  }
   rq.set_value_bytes_string(value.c_str(), value.size());
   rq.set_flags(flags);
 

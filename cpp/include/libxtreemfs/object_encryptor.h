@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "libxtreemfs/file_key_distribution.h"
 #include "libxtreemfs/file_info.h"
 #include "libxtreemfs/hash_tree_ad.h"
 #include "libxtreemfs/options.h"
@@ -41,7 +42,7 @@ class ObjectEncryptor : private boost::noncopyable {
 
  public:
   ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
-                  VolumeImplementation* volume, uint64_t file_id,
+                  const pbrpc::XCap& xcap, VolumeImplementation* volume,
                   FileInfo* file_info, int object_size);
 
   ~ObjectEncryptor();
@@ -60,9 +61,9 @@ class ObjectEncryptor : private boost::noncopyable {
    protected:
     ObjectEncryptor* obj_enc_;
 
-    int& enc_block_size_;
+    const int& enc_block_size_;
 
-    int& object_size_;
+    const int& object_size_;
 
     HashTreeAD hash_tree_;
 
@@ -124,6 +125,8 @@ class ObjectEncryptor : private boost::noncopyable {
     boost::scoped_ptr<pbrpc::Lock> lock_;
   };
 
+  FileKeyDistribution key_distribution;
+
   std::vector<unsigned char> file_enc_key_;
 
   int enc_block_size_;
@@ -144,11 +147,6 @@ class ObjectEncryptor : private boost::noncopyable {
    * destruction.
    */
   FileHandle* meta_file_;
-
-  /**
-   * Pointer to the volume. Not owned by the class.
-   */
-  VolumeImplementation* volume_;
 
   /**
    * Reference to volume options. Not owned by class.

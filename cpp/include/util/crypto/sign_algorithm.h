@@ -20,7 +20,7 @@ namespace xtreemfs {
 
 class SignAlgorithm {
  public:
-  SignAlgorithm(std::auto_ptr<AsymKey> key, std::string alg_name);
+  SignAlgorithm(std::auto_ptr<AsymKey> key, const std::string& alg_name);
 
   void Sign(boost::asio::const_buffer data,
             boost::asio::mutable_buffer sig) const;

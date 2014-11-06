@@ -21,9 +21,11 @@ namespace xtreemfs {
  */
 class AsymKey {
  public:
-  AsymKey(std::string alg_name, int bits = 0);
+  AsymKey();
 
-  explicit AsymKey(std::vector<unsigned char> encoded_key);
+  AsymKey(const std::string& alg_name, int bits = 0);
+
+  explicit AsymKey(const std::vector<unsigned char>& encoded_key);
 
   explicit AsymKey(EVP_PKEY* key);
 

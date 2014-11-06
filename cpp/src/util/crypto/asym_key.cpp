@@ -17,6 +17,10 @@ using xtreemfs::util::LogAndThrowOpenSSLError;
 
 namespace xtreemfs {
 
+AsymKey::AsymKey()
+    : key_(0) {
+}
+
 /**
  * Generates an asymmetric key.
  * Currently only RSA is supported.
@@ -24,7 +28,7 @@ namespace xtreemfs {
  * @param alg_name  "RSA"
  * @param [bits]    Optional length of the key.
  */
-AsymKey::AsymKey(std::string alg_name, int bits) {
+AsymKey::AsymKey(const std::string& alg_name, int bits) {
   assert(alg_name == "RSA");
 
   BIGNUM* bne = NULL;
@@ -62,7 +66,7 @@ AsymKey::AsymKey(std::string alg_name, int bits) {
  *
  * @param key   A DER encoded asymmetric key.
  */
-AsymKey::AsymKey(std::vector<unsigned char> encoded_key) {
+AsymKey::AsymKey(const std::vector<unsigned char>& encoded_key) {
   const unsigned char* p_encoded_key = encoded_key.data();
   key_ = d2i_AutoPrivateKey(NULL, &p_encoded_key, encoded_key.size());
 }
@@ -94,6 +98,7 @@ AsymKey::~AsymKey() {
  * @return  The key in DER encoding.
  */
 std::vector<unsigned char> AsymKey::GetDEREncodedKey() const {
+  assert(key_);
   int len = i2d_PrivateKey(key_, NULL);
   std::vector<unsigned char> buffer(len);
   unsigned char* p_buffer = buffer.data();
