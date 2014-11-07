@@ -1886,7 +1886,7 @@ is equivalent to
 $> mount.xtreemfs demo.xtreemfs.org/demo /mnt/xtreemfs \
      -o log-level=DEBUG,-l=/tmp/xtreemfs.log
 \end{verbatim}
-Note that when using \texttt{-o}, short options are still prefixed with a dash and the equal sign is mandatory. Options specified via \texttt{-o} that are not XtreemFS options are passed to FUSE as described above. Options specified via \texttt{-o} are ignored if they are also explicit specified, i.e.
+Note that when using \texttt{-o}, short options are still prefixed with a dash and the equal sign is mandatory. Options specified via \texttt{-o} that are not XtreemFS options are passed to FUSE as described above. Options specified via \texttt{-o} are ignored if they are also specified explicitly, i.e.
 \begin{verbatim}
 $> mount.xtreemfs demo.xtreemfs.org/demo /mnt/xtreemfs \
      -o log-level=DEBUG --log-level=INFO
@@ -1900,7 +1900,7 @@ $> mount.xtreemfs demo.xtreemfs.org/ demo /mnt/xtreemfs \
 \subsection{\texttt{/etc/fstab} Integration}
 \label{sec:mount_vol:fstab}
 
-By allowing all options to be specified using \texttt{-o} (see section~\ref{sec:mount_opts}), an integration for automatic mounting using \texttt{/etc/fstab} on Unix and Unix-like systems is possible (note that the file system table may have different names or be located somewhere else depending on the Unix version). Simply append lines like the following to the file system table and modify as needed:
+By allowing all options to be specified using \texttt{-o} (see section~\ref{sec:mount_opts}), an integration for automatic mounting using \texttt{/etc/fstab} on Unix and Unix-like systems is possible (note that \texttt{/etc/fstab} may have different names or be located somewhere else depending on the Unix version). Simply append lines like the following to \texttt{/etc/fstab} and modify as needed:
 \begin{Verbatim}[commandchars=\\\{\}]
 # <file system> <mount point> <type> <options> <dump> <pass>
 demo.xtreemfs.org:32638/demo /mnt/xtreemfs xtreemfs
@@ -1913,11 +1913,11 @@ $> /sbin/mount.xtreemfs demo.xtreemfs.org:32638/demo /mnt/xtreemfs \
 \end{verbatim}
 \texttt{rw} is passed on to Fuse, \texttt{\_netdev} is ignored by XtreemFS (however it is used by \texttt{mount}, see below) and the other options are processed as usual. Note that this requires that you have properly installed the client (see section~\ref{sec:installation}).
 
-The file system table is read on system startup or when executing
+\texttt{/etc/fstab} is read on system startup or when executing
 \begin{verbatim}
 $> mount -a
 \end{verbatim}
-When mounting at system startup, it is vital to specify the \texttt{\_netdev} option to defer device mounting until the network has been enabled on the system. Otherwise the system will hang on boot.
+When mounting at system startup, it is vital to specify the \texttt{\_netdev} option to defer device mounting until the network has been started on the system. Otherwise the system will hang on boot.
 
 \subsection{Asynchronous Writes Support}
 \label{sec:async_writes}
