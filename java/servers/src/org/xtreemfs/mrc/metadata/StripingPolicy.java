@@ -15,26 +15,33 @@ package org.xtreemfs.mrc.metadata;
  * directories, which will be assigned to newly created files.
  */
 public interface StripingPolicy {
-    
+
     /**
      * Returns the striping pattern.
-     * 
+     *
      * @return the striping pattern
      */
     public String getPattern();
-    
+
     /**
      * Returns the striping width, i.e. number of OSDs used for the pattern.
-     * 
+     *
      * @return the striping width
      */
     public int getWidth();
-    
+
+    /**
+     * Returns the parity striping width, i.e. number of OSDs used for partiy information.
+     *
+     * @return the parity striping width
+     */
+    public int getParityWidth();
+
     /**
      * Returns the stripe size, i.e. size of a single object in kBytes.
-     * 
+     *
      * @return the stripe size
      */
     public int getStripeSize();
-    
+
 }

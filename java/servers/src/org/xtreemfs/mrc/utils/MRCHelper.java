@@ -236,7 +236,7 @@ public class MRCHelper {
         
         if (width != stripingPolicy.getWidth())
             stripingPolicy = sMan.createStripingPolicy(stripingPolicy.getPattern(), stripingPolicy.getStripeSize(),
-                    width);
+                    width, stripingPolicy.getParityWidth());
         
         return sMan.createXLoc(stripingPolicy, osds, replFlags);
     }

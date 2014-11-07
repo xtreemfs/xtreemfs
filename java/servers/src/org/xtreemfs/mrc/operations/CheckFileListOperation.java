@@ -62,7 +62,7 @@ public class CheckFileListOperation extends MRCOperation {
                         boolean registered = false;
                         XLocList list = mData.getXLocList();
                         if (list==null) {
-                            StripingPolicy sp = sMan.createStripingPolicy("RAID0", (int) mData.getSize(), 1);
+                            StripingPolicy sp = sMan.createStripingPolicy("RAID0", (int) mData.getSize(), 1, 0);
                             mData.setXLocList(
                                 sMan.createXLocList(
                                     new XLoc[] {
