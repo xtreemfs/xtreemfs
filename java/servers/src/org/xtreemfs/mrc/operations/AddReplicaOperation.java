@@ -131,7 +131,7 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
         org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy sp = newRepl.getStripingPolicy();
         
         StripingPolicy sPol = sMan.createStripingPolicy(sp.getType().toString(), sp.getStripeSize(), sp
-                .getWidth());
+                .getWidth(), sp.getParityWidth());
         
         // Check whether the new replica relies on a set of OSDs which hasn't been used yet.
         XLocList xLocList = file.getXLocList();

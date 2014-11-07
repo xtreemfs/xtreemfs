@@ -256,8 +256,8 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public StripingPolicy createStripingPolicy(String pattern, int stripeSize, int width) {
-        return new BufferBackedStripingPolicy(pattern, stripeSize, width);
+    public StripingPolicy createStripingPolicy(String pattern, int stripeSize, int width, int parity_width) {
+        return new BufferBackedStripingPolicy(pattern, stripeSize, width, parity_width);
     }
     
     @Override
