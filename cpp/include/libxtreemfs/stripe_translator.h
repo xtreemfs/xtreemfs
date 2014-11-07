@@ -23,10 +23,10 @@ class ReadOperation {
 
   ReadOperation(size_t _obj_number, OSDOffsetContainer _osd_offsets,
                 size_t _req_size, size_t _req_offset,
-                char *_data, bool _is_parity)
+                char *_data)
       : obj_number(_obj_number), osd_offsets(_osd_offsets),
         req_size(_req_size), req_offset(_req_offset),
-        data(_data), is_parity(_is_parity) {
+        data(_data) {
   };
 
   size_t obj_number;
@@ -34,7 +34,6 @@ class ReadOperation {
   size_t req_size;
   size_t req_offset;
   char *data;
-  bool is_parity;
 };
 
 class WriteOperation {
