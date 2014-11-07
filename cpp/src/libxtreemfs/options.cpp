@@ -433,10 +433,23 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
       const po::option_description *opt_desc = all_descriptions_.find_nothrow(
           *(key_values.begin()), false);
       if (opt_desc != NULL) {
-        const string prefixed_long_opt = opt_desc->canonical_display_name(
-            po::command_line_style::allow_long);
-        const string prefixed_short_opt = opt_desc->canonical_display_name(
-            po::command_line_style::allow_dash_for_short);
+        // Extract long and short option names from the formatted parameter
+        // '-o [ --opt ]' or '--opt' or '-o [ -- ]' (boost 1.48)
+        // '-o [ --opt ]' or '--opt' or '-o'        (boost 1.57)
+        // FIXME use po::option_description::canonical_display_name
+        // when upgrading boost.
+        const string format_opt = opt_desc->format_name();
+        string prefixed_long_opt = "", prefixed_short_opt = "";
+        if(format_opt.substr(0, 2) == "--") {
+          // No short option available.
+          prefixed_long_opt = format_opt;
+        } else {
+          // Short option available, covers the other two cases.
+          prefixed_short_opt = format_opt.substr(0, 2);
+          if(format_opt.length() > 9) {
+            prefixed_long_opt = format_opt.substr(5, format_opt.length() - 7);
+          }
+        }
 
         // Find out if this known option has been explicitly specified.
         if (find_if(regular_options.begin(), regular_options.end(),
