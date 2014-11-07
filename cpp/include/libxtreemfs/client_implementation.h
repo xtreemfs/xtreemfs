@@ -118,6 +118,7 @@ class ClientImplementation : public Client {
       const pbrpc::StripingPolicyType& default_striping_policy_type,
       int default_stripe_size,
       int default_stripe_width,
+      int default_parity_width,
       const std::list<pbrpc::KeyValuePair*>& volume_attributes);
 
   virtual void DeleteVolume(

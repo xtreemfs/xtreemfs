@@ -437,6 +437,7 @@ void ClientImplementation::CreateVolume(
     const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
     int default_stripe_size,
     int default_stripe_width,
+    int default_parity_width,
     const std::list<xtreemfs::pbrpc::KeyValuePair*>& volume_attributes) {
   MRCServiceClient mrc_service_client(network_client_.get());
 
@@ -453,6 +454,7 @@ void ClientImplementation::CreateVolume(
   new_volume.mutable_default_striping_policy()
       ->set_stripe_size(default_stripe_size);
   new_volume.mutable_default_striping_policy()->set_width(default_stripe_width);
+  new_volume.mutable_default_striping_policy()->set_parity_width(default_parity_width);
   for (list<KeyValuePair*>::const_iterator it = volume_attributes.begin();
        it != volume_attributes.end();
        ++it) {

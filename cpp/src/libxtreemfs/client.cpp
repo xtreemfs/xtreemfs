@@ -65,5 +65,37 @@ void Client::CreateVolume(
                volume_attributes);
 }
 
+void Client::CreateVolume(
+    const ServiceAddresses& mrc_address,
+    const xtreemfs::pbrpc::Auth& auth,
+    const xtreemfs::pbrpc::UserCredentials& user_credentials,
+    const std::string& volume_name,
+    int mode,
+    const std::string& owner_username,
+    const std::string& owner_groupname,
+    const xtreemfs::pbrpc::AccessControlPolicyType& access_policy,
+    long volume_quota,
+    const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
+    int default_stripe_size,
+    int default_stripe_width,
+    const std::list<xtreemfs::pbrpc::KeyValuePair*>& volume_attributes) {
+
+  CreateVolume(
+      mrc_address,
+      auth,
+      user_credentials,
+      volume_name,
+      mode,
+      owner_username,
+      owner_groupname,
+      access_policy,
+      volume_quota,
+      default_striping_policy_type,
+      default_stripe_size,
+      default_stripe_width,
+      0,
+      volume_attributes);
+}
+
 
 }  // namespace xtreemfs
