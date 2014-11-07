@@ -51,26 +51,24 @@ TEST_F(StripeTranslatorTest, ErasureCodeNormalOperation) {
   boost::scoped_ptr<StripeTranslator>stripe_translator(new StripeTranslatorErasureCode());
 
   // Define stripe of chunks.
-  size_t kChunkSize = 10;
-  size_t kChunkCount = 2;
-  size_t kBufferSize = kChunkSize * kChunkCount;
-  boost::scoped_array<char> write_buffer(new char[kBufferSize]());
-  boost::scoped_array<char> expected_write_buffer_redundance(new char[kChunkSize]());
+  size_t chunk_size = 1; // in kB
+  size_t buffer_size = chunk_size * 1024; // in B
+  // testing 2 + 1 striping
+  size_t chunk_count = 2;
+  size_t parity_width = 1;
+  boost::scoped_array<char> write_buffer(new char[buffer_size * chunk_count]());
+  boost::scoped_array<char> expected_write_buffer(new char[buffer_size * chunk_count]());
+  boost::scoped_array<char> expected_write_buffer_redundance(new char[buffer_size]());
 
-  string original = "super_flying_monkeys_are_aweseome,_aren't_they?";
-     cout << "Original data = " << original;
-
-
-  for (size_t temp = 0; temp < kBufferSize; temp++) {
-    write_buffer[temp] = original[temp];
-  }
+  for(size_t i = 0; i < buffer_size; i++)
+    write_buffer[i] = rand() % 256;
 
   // Define striping policy.
   StripingPolicy striping_policy;
   striping_policy.set_type(STRIPING_POLICY_ERASURECODE);
-  striping_policy.set_stripe_size(kChunkSize / 10);
-  striping_policy.set_width(kChunkCount);
-  striping_policy.set_parity_width(1);
+  striping_policy.set_stripe_size(chunk_size);
+  striping_policy.set_width(chunk_count + parity_width);
+  striping_policy.set_parity_width(parity_width);
 
   StripeTranslator::PolicyContainer striping_policies;
   striping_policies.push_back(&striping_policy);
@@ -78,76 +76,74 @@ TEST_F(StripeTranslatorTest, ErasureCodeNormalOperation) {
   // Translate to WriteOperations.
   vector<WriteOperation> operations;
   stripe_translator->TranslateWriteRequest(
-      write_buffer.get(), kBufferSize, 0, striping_policies, &operations);
+      write_buffer.get(), buffer_size * chunk_count, 0, striping_policies, &operations);
 
-  // Define expected WriteOperations.
-  vector<xtreemfs::WriteOperation> expected_operations;
-  boost::scoped_array<char> expected_write_buffer(new char[kBufferSize]());
+  for(size_t i = 0; i < buffer_size * chunk_count; i++)
+    expected_write_buffer[i] = write_buffer[i];
 
-  for (size_t temp = 0; temp < kBufferSize; temp++){
-    expected_write_buffer[temp] =original[temp];
-      }
-  for (size_t i = 0; i <= kChunkCount; ++i) {
+  for(size_t i = 0; i < buffer_size; i++)
+    expected_write_buffer_redundance[i] = expected_write_buffer[i] ^
+                                          expected_write_buffer[i + 1024] ;
+
+  vector<WriteOperation> expected_operations;
+  for (size_t i = 0; i <= chunk_count; ++i) {
     vector<size_t> osd_offsets;
 
     osd_offsets.push_back(i);
 
-    if( i == kChunkCount){
-
-
-    // Define expected redundant WriteOperation.
-     for (size_t j = 0; j < kChunkSize; ++j) {
-       expected_write_buffer_redundance[j]= expected_operations[0].data[j] ^
-                                            expected_operations[1].data[j];
-     }
-
-    expected_operations.push_back(
+    if(i == chunk_count){
+      // Define expected redundant WriteOperation.
+      expected_operations.push_back(
            xtreemfs::WriteOperation(i,
                                     osd_offsets,
-                                    kChunkSize,
+                                    buffer_size,
                                     0 /* file offset */,
                                     expected_write_buffer_redundance.get()));
       continue;
-
     }
 
     expected_operations.push_back(
         xtreemfs::WriteOperation(i,
                                  osd_offsets,
-                                 kChunkSize,
+                                 buffer_size,
                                  0 /* file offset */,
-                                 expected_write_buffer.get() + (kChunkSize * i))
+                                 expected_write_buffer.get() + (buffer_size * i))
                                 );
 
   }
 
 
   // Verify WriteRequests.
+  cout << "\n***************Comparing Write operations***************\n\n";
   ASSERT_EQ(expected_operations.size(), operations.size());
+  cout << "operation vectors have the same length" << endl;
   for (size_t i = 0; i < expected_operations.size(); ++i) {
     ASSERT_EQ(expected_operations[i].osd_offsets.size(),
               operations[i].osd_offsets.size());
+    cout << "OSD Offset containers in operation " << i << " have the same length" << endl;
 
     for (size_t j = 0; j < expected_operations[i].osd_offsets.size(); ++j) {
-      cout << "\n ***************Verify Data arrays***************\n";
-
-      cout << "\nexpected_operations [" << i << "]="<<expected_operations[i].data;
-      cout << "\noperations[" << i << "]="<<operations[i].data;
-      cout << "\n ******************************\n";
-
       EXPECT_EQ(expected_operations[i].osd_offsets[j],
                 operations[i].osd_offsets[j]);
     }
+    cout << "OSD Offsets match in operation " << i << endl;
 
     EXPECT_EQ(expected_operations[i].req_size, operations[i].req_size);
+    cout << "req_size matches in operation " << i << endl;
 
     EXPECT_TRUE(ArraysMatch(expected_operations[i].data,
                             operations[i].data,
-                            kChunkSize));
+                            chunk_size));
+    if(i < chunk_count) {
+      cout << "data matches in operation " << i << endl;
+    } else {
+      cout << "parity data matches in operation " << i << endl;
+    }
 
     EXPECT_EQ(expected_operations[i].obj_number, operations[i].obj_number);
     EXPECT_EQ(expected_operations[i].req_offset, operations[i].req_offset);
   }
+  cout << "\n********************************************************\n";
 }
 
 
