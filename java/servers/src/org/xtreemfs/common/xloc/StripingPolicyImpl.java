@@ -42,7 +42,7 @@ public abstract class StripingPolicyImpl {
         } else if (replica.getStripingPolicy().getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE) {
             return new ErasureCodeImpl(replica, relOsdPosition);
         } else {
-            throw new IllegalArgumentException("unknown striping polciy requested");
+            throw new IllegalArgumentException("unknown striping policy requested");
         }
     }
 

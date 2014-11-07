@@ -25,6 +25,10 @@ public class ErasureCodeImpl extends StripingPolicyImpl {
             throw new IllegalArgumentException("size must be > 0");
     }
 
+    public int getParityWidth() {
+        return policy.getParityWidth();
+    }
+
     @Override
     public long getObjectNoForOffset(long fileOffset) {
         return (fileOffset / stripe_size_in_bytes);
@@ -57,7 +61,7 @@ public class ErasureCodeImpl extends StripingPolicyImpl {
 
     @Override
     public String toString() {
-        return "StripingPolicy RAID0: " + policy;
+        return "StripingPolicy ErasureCode: " + policy;
     }
 
     @Override
