@@ -8,10 +8,25 @@
 #include <gtest/gtest.h>
 
 #include "libxtreemfs/options.h"
+#include "libxtreemfs/xtreemfs_exception.h"
+#include "util/logging.h"
+
+using namespace xtreemfs::util;
 
 namespace xtreemfs {
+    
+ class OptionsTest : public ::testing::Test {
+ protected:
+  virtual void SetUp() {
+    initialize_logger(LEVEL_WARN);
+  }
 
-TEST(OptionsTest, TestParseCommandLineAndConfigFile) {
+  virtual void TearDown() {
+    shutdown_logger();
+  }
+};
+
+TEST_F(OptionsTest, TestParseCommandLineAndConfigFile) {
   xtreemfs::Options options;
   
   {
