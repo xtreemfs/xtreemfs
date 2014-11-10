@@ -34,7 +34,7 @@ TEST_F(OptionsTest, TestParseCommandLineAndConfigFile) {
     const char* n_argv[] = { "executable", "--log-level=DEBUG", "-dINFO" };
     ASSERT_THROW(
         options.ParseCommandLine(3, const_cast<char**>(n_argv)),
-        std::exception
+        InvalidCommandLineParametersException
     );
   }
   
