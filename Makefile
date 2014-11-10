@@ -49,11 +49,17 @@ CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY = $(CLIENT_GOOGLE_PROTOBUF_CPP)/src/.libs/lib
 CLIENT_GOOGLE_TEST_CPP = cpp/thirdparty/gtest-1.7.0
 CLIENT_GOOGLE_TEST_CPP_LIBRARY = $(CLIENT_GOOGLE_TEST_CPP)/lib/.libs/libgtest.a
 CLIENT_GOOGLE_TEST_CPP_MAIN = $(CLIENT_GOOGLE_TEST_CPP)/lib/.libs/libgtest_main.a
+CLIENT_GF_COMPLETE_CPP = cpp/thirdparty/gf-complete-1.0.2
+CLIENT_GF_COMPLETE_CPP_LIBRARY = $(CLIENT_GF_COMPLETE_CPP)/src/.libs/libgf_complete.a
+CLIENT_JERASURE_CPP = cpp/thirdparty/jerasure-2.0
+CLIENT_JERASURE_CPP_LIBRARY = $(CLIENT_JERASURE_CPP)/src/.libs/libJerasure.so
 # The two required objects libgtest.a and libgtest_main.a both depend
 # on the same target building the Google googletest library.
 # Therefore, this target is guarded by a checkfile which will be touched once it was executed.
 # This prevents the target from getting executed again as long as the checkfile does not change.
 CLIENT_GOOGLE_TEST_CHECKFILE = .googletest_library_already_built
+CLIENT_GF_COMPLETE_CHECKFILE = .gf_complete_library_already_built
+CLIENT_JERASURE_CHECKFILE = .jerasure_library_already_built
 
 TARGETS = client server foundation flease
 .PHONY:	clean distclean set_version
@@ -87,7 +93,7 @@ install-client:
 	@mkdir -p $(MAN_DIR)
 	@cp -R man/man1/*.xtreemfs* $(MAN_DIR)
 	@cp -R man/man1/xtfsutil.* $(MAN_DIR)
-	
+
 install-server:
 
 	@if [ ! -f java/servers/dist/XtreemFS.jar ]; then echo "PLEASE RUN 'make server' FIRST!"; exit 1; fi
@@ -213,6 +219,10 @@ ifdef BUILD_CLIENT_TESTS
 	CLIENT_THIRDPARTY_REQUIREMENTS += $(CLIENT_GOOGLE_TEST_CPP_LIBRARY) $(CLIENT_GOOGLE_TEST_CPP_MAIN)
 	CMAKE_BUILD_CLIENT_TESTS = -DBUILD_CLIENT_TESTS=true
 endif
+ifdef BUILD_CLIENT_JERASURE
+	CLIENT_THIRDPARTY_REQUIREMENTS += $(CLIENT_GF_COMPLETE_CPP_LIBRARY) $(CLIENT_JERASURE_CPP_LIBRARY)
+	CMAKE_BUILD_CLIENT_JERASURE = -DBUILD_CLIENT_JERASURE=true
+endif
 
 # Do not use env variables to control the CMake behavior as stated in http://www.cmake.org/Wiki/CMake_FAQ#How_can_I_get_or_set_environment_variables.3F
 # Instead define them via -D, so they will be cached.
@@ -252,10 +262,28 @@ $(CLIENT_GOOGLE_TEST_CHECKFILE): $(CLIENT_GOOGLE_TEST_CPP)/include/** $(CLIENT_G
 	@echo "client_thirdparty: ...completed building required Google googletest library."
 	@touch $(CLIENT_GOOGLE_TEST_CHECKFILE)
 
+$(CLIENT_GF_COMPLETE_CPP_LIBRARY): $(CLIENT_GF_COMPLETE_CPP)/src/**
+	@echo "client_thirdpary: Configuring and building required gf-complete library.."
+	@cd $(CLIENT_GF_COMPLETE_CPP) && ./configure >/dev/null
+	@$(MAKE) -C $(CLIENT_GF_COMPLETE_CPP) >/dev/null
+	@echo "client_thirdparty: ...completed building required gf-complete library."
+	@touch $(CLIENT_GF_COMPLETE_CPP_LIBRARY)
+
+$(CLIENT_JERASURE_CPP_LIBRARY): $(CLIENT_JERASURE_CPP)/src/**
+	@echo "client_thirdpary: Configuring and building required jerasure library.."
+	cd $(CLIENT_JERASURE_CPP) &&  ./configure LDFLAGS=-L$(shell pwd)/$(CLIENT_GF_COMPLETE_CPP)/src/.libs/ CPPFLAGS=-I$(shell pwd)/$(CLIENT_GF_COMPLETE_CPP)/include >/dev/null
+	@$(MAKE) -C $(CLIENT_JERASURE_CPP) >/dev/null
+	@echo "client_thirdparty: ...completed building required jerasure library."
+	@touch $(CLIENT_JERASURE_CPP_LIBRARY)
+
 client_thirdparty_clean:
 	@if [ -f $(CLIENT_GOOGLE_PROTOBUF_CPP)/Makefile ]; then echo "Cleaning required Google protobuf library sources..."; $(MAKE) -C $(CLIENT_GOOGLE_PROTOBUF_CPP) clean >/dev/null; fi
 	@if [ -f $(shell pwd)/$(CLIENT_GOOGLE_TEST_CPP)/Makefile ]; then echo "Cleaning required Google googletest library sources..."; $(MAKE) -C $(shell pwd)/$(CLIENT_GOOGLE_TEST_CPP) clean >/dev/null; fi
+	@if [ -f $(CLIENT_GF_COMPLETE_CPP)/Makefile ]; then echo "Cleaning required gf-complete library sources..."; $(MAKE) -C $(CLIENT_GF_COMPLETE_CPP) clean >/dev/null; fi
+	@if [ -f $(CLIENT_JERASURE_CPP)/Makefile ]; then echo "Cleaning required jerasure library sources..."; $(MAKE) -C $(CLIENT_JERASURE_CPP) clean >/dev/null; fi
 	@if [ -f $(CLIENT_GOOGLE_TEST_CHECKFILE) ]; then rm $(CLIENT_GOOGLE_TEST_CHECKFILE); fi
+	@if [ -f $(CLIENT_GF_COMPLETE_CHECKFILE) ]; then rm $(CLIENT_GF_COMPLETE_CHECKFILE); fi
+	@if [ -f $(CLIENT_JERASURE_CHECKFILE) ]; then rm $(CLIENT_JERASURE_CHECKFILE); fi
 	@echo "...finished cleaning thirdparty sources."
 
 client_thirdparty_distclean:
@@ -263,7 +291,11 @@ client_thirdparty_distclean:
 	@if [ -f $(shell pwd)/$(CLIENT_GOOGLE_PROTOBUF_CPP)/Makefile ]; then $(MAKE) -C $(shell pwd)/$(CLIENT_GOOGLE_PROTOBUF_CPP) distclean >/dev/null; fi
 	@echo "client_thirdparty: Dist-Cleaning required Google googletest library sources..."
 	@if [ -f $(shell pwd)/$(CLIENT_GOOGLE_TEST_CPP)/Makefile ]; then $(MAKE) -C $(shell pwd)/$(CLIENT_GOOGLE_TEST_CPP) distclean >/dev/null; fi
+	@if [ -f $(CLIENT_GF_COMPLETE_CPP)/Makefile ]; then echo "Cleaning required gf-complete library sources..."; $(MAKE) -C $(CLIENT_GF_COMPLETE_CPP) distclean >/dev/null; fi
+	@if [ -f $(CLIENT_JERASURE_CPP)/Makefile ]; then echo "Cleaning required jerasure library sources..."; $(MAKE) -C $(CLIENT_JERASURE_CPP) distclean >/dev/null; fi
 	@if [ -f $(CLIENT_GOOGLE_TEST_CHECKFILE) ]; then rm $(CLIENT_GOOGLE_TEST_CHECKFILE); fi
+	@if [ -f $(CLIENT_GF_COMPLETE_CHECKFILE) ]; then rm $(CLIENT_GF_COMPLETE_CHECKFILE); fi
+	@if [ -f $(CLIENT_JERASURE_CHECKFILE) ]; then rm $(CLIENT_JERASURE_CHECKFILE); fi
 	@echo "client_thirdparty: ...finished distcleaning thirdparty sources."
 
 client_debug: CLIENT_DEBUG = -DCMAKE_BUILD_TYPE=Debug
