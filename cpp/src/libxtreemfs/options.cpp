@@ -52,7 +52,7 @@ Options::Options()
       grid_options_("Grid Support options"),
       vivaldi_options_("Vivaldi Options"),
       xtreemfs_advanced_options_("XtreemFS Advanced options"),
-	    alternative_options_("Alternative Specification of options") {
+      alternative_options_("Alternative Specification of options") {
   version_string = XTREEMFS_VERSION_STRING;
 
   // XtreemFS URL Options.
@@ -362,15 +362,15 @@ void Options::GenerateProgramOptionsDescriptions() {
   alternative_options_.add_options()
     (",o",
         po::value< std::vector<std::string> >(&alternative_options_list),
-		    "Alternatively specify all options as a key=value1=value2 tuple list. "
-		    "E.g.\n"
-		    "  '--opt1 --opt2 arg2 --opt3 arg3 arg4' can become\n"
-		    "  '-o opt1,opt2=arg2,opt3=arg3=arg4'.\n"
-		    "Overridden by explicitly specified options, e.g.\n"
-		    "  '--log-level DEBUG' overrides '-o log-level=INFO'.\n"
-		    "Short option names must be prefixed with '-' anyway, "
-		    "e.g. '-o -d=DEBUG'. Unrecognized options are retained, "
-		    "e.g. for Fuse, see 'Fuse Options'.");
+        "Alternatively specify all options as a key=value1=value2 tuple list. "
+        "E.g.\n"
+        "  '--opt1 --opt2 arg2 --opt3 arg3 arg4' can become\n"
+        "  '-o opt1,opt2=arg2,opt3=arg3=arg4'.\n"
+        "Overridden by explicitly specified options, e.g.\n"
+        "  '--log-level DEBUG' overrides '-o log-level=INFO'.\n"
+        "Short option names must be prefixed with '-' anyway, "
+        "e.g. '-o -d=DEBUG'. Unrecognized options are retained, "
+        "e.g. for Fuse, see 'Fuse Options'.");
 
   // These options are parsed
   all_descriptions_.add(general_).add(optimizations_).add(error_handling_)
