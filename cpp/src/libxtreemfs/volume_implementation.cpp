@@ -398,6 +398,7 @@ FileHandle* VolumeImplementation::OpenFileWithTruncateSize(
             new ObjectEncryptor(
                 user_credentials,
                 open_response->creds().xcap(),
+                path,
                 this,
                 file_info,
                 open_response->creds().xlocs().replicas(0).striping_policy()

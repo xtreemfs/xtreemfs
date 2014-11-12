@@ -78,6 +78,8 @@ class OnlineTest : public ::testing::Test {
     options_.encryption = true;
     options_.encryption_block_size = 4;
 //    options_.encryption_cw = "locks";
+    options_.encryption_pub_keys_path = "../../tests/certs/user/";
+    options_.encryption_priv_keys_path = "../../tests/certs/user/";
 //    options_.object_cache_size = 2;
 
     // Create a new instance of a client using the DIR service at 'localhost'

@@ -43,7 +43,7 @@ std::pair<std::vector<unsigned char>, int> Cipher::encrypt(
     LogAndThrowOpenSSLError();
   }
 
-  BOOST_SCOPE_EXIT(&ctx) {
+  BOOST_SCOPE_EXIT((&ctx)) {
       EVP_CIPHER_CTX_free(ctx);
     }
   BOOST_SCOPE_EXIT_END
@@ -88,7 +88,7 @@ int Cipher::decrypt(boost::asio::const_buffer ciphertext,
     LogAndThrowOpenSSLError();
   }
 
-  BOOST_SCOPE_EXIT(&ctx) {
+  BOOST_SCOPE_EXIT((&ctx)) {
       EVP_CIPHER_CTX_free(ctx);
     }
   BOOST_SCOPE_EXIT_END

@@ -31,7 +31,7 @@ std::vector<unsigned char> MessageDigest::digest(
     LogAndThrowOpenSSLError();
   }
 
-  BOOST_SCOPE_EXIT(&mdctx) {
+  BOOST_SCOPE_EXIT((&mdctx)) {
       EVP_MD_CTX_destroy(mdctx);
     }
   BOOST_SCOPE_EXIT_END

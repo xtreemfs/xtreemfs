@@ -37,6 +37,10 @@ class AsymKey {
 
   std::vector<unsigned char> GetDEREncodedKey() const;
 
+  std::vector<unsigned char> GetDEREncodedPubKey() const;
+
+  EVP_PKEY* key() const;
+
   EVP_PKEY* get_key() const;
 
  private:

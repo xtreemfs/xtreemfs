@@ -111,7 +111,8 @@ Options::Options()
   encryption_block_size = 4096;
   encryption_cipher = "aes-256-ctr";
   encryption_hash = "sha256";
-  encryption_cw = "serialize";
+  encryption_pub_keys_path = "";
+  encryption_priv_keys_path = "";
 #endif  // HAS_OPENSSL
 
   // Grid Support options.
@@ -289,10 +290,18 @@ void Options::GenerateProgramOptionsDescriptions() {
     ("encryption-hash",
         po::value(&encryption_hash)->default_value(encryption_hash),
         "The hash function to use")
-  ("encryption-cw-mf",
-      po::value(&encryption_cw)->default_value(encryption_cw),
-      "The method to use to ensure consistency for concurrent write"
-      " (none/serialize/locks/snapshots)");
+    ("encryption-cw-mf",
+        po::value(&encryption_cw)->default_value(encryption_cw),
+        "The method to use to ensure consistency for concurrent write"
+        " (none/serialize/locks/snapshots)")
+    ("encryption-pub-keys-path",
+        po::value(&encryption_pub_keys_path)
+          ->default_value(encryption_pub_keys_path),
+        "Path to the directory there the public keys are stored.")
+    ("encryption-priv-keys-path",
+        po::value(&encryption_priv_keys_path)
+          ->default_value(encryption_priv_keys_path),
+        "Path to the directory there the private keys are stored.");
 #endif  // HAS_OPENSSL
 
   grid_options_.add_options()

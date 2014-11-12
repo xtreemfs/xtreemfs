@@ -34,7 +34,7 @@ AsymKey::AsymKey(const std::string& alg_name, int bits) {
   BIGNUM* bne = NULL;
   RSA* rsa_key = NULL;
 
-  BOOST_SCOPE_EXIT(&bne, &rsa_key) {
+  BOOST_SCOPE_EXIT((&bne) (&rsa_key)) {
     /* Clean up */
       BN_clear_free(bne);
       RSA_free(rsa_key);
@@ -81,8 +81,10 @@ AsymKey::AsymKey(EVP_PKEY* key)
 }
 
 AsymKey::AsymKey(const AsymKey& other)
-    : key_(other.get_key()) {
-  CRYPTO_add(&key_->references, 1, CRYPTO_LOCK_EVP_PKEY);
+    : key_(other.key()) {
+  if (key_) {
+    CRYPTO_add(&key_->references, 1, CRYPTO_LOCK_EVP_PKEY);
+  }
 }
 
 AsymKey& AsymKey::operator=(AsymKey other) {
@@ -96,6 +98,7 @@ AsymKey::~AsymKey() {
 
 /**
  * @return  The key in DER encoding.
+ * @remark  If no key is set abort is called.
  */
 std::vector<unsigned char> AsymKey::GetDEREncodedKey() const {
   assert(key_);
@@ -107,10 +110,33 @@ std::vector<unsigned char> AsymKey::GetDEREncodedKey() const {
 }
 
 /**
- * @return  The internally stored key structure.
+ * @return  The public part of the key in DER encoding.
+ * @remark  If no key is set abort is called.
+ */
+std::vector<unsigned char> AsymKey::GetDEREncodedPubKey() const {
+  assert(key_);
+  int len = i2d_PublicKey(key_, NULL);
+  std::vector<unsigned char> buffer(len);
+  unsigned char* p_buffer = buffer.data();
+  i2d_PublicKey(key_, &p_buffer);
+  return buffer;
+}
+
+/**
+ * @return  Pointer to the internally stored key structure.
+ *          Ownership is not transfered.
+ */
+EVP_PKEY* AsymKey::key() const {
+  return key_;
+}
+
+/**
+ * @return  Pointer to the internally stored key structure.
+ *          Ownership is not transfered.
+ * @remark  If no key is set abort is called.
  */
 EVP_PKEY* AsymKey::get_key() const {
-  assert(key_ != NULL);
+  assert(key_);
   return key_;
 }
 

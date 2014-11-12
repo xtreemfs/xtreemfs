@@ -20,25 +20,24 @@ namespace xtreemfs {
 
 class SignAlgorithm {
  public:
-  SignAlgorithm(std::auto_ptr<AsymKey> key, const std::string& alg_name);
+  SignAlgorithm(const AsymKey& key, const std::string& hash_name);
 
-  void Sign(boost::asio::const_buffer data,
-            boost::asio::mutable_buffer sig) const;
+  int Sign(const boost::asio::const_buffer& data,
+           const boost::asio::mutable_buffer& sig) const;
 
-  std::vector<unsigned char> Sign(boost::asio::const_buffer data) const;
+  std::vector<unsigned char> Sign(const boost::asio::const_buffer& data) const;
 
-  bool Verify(boost::asio::const_buffer data,
-              boost::asio::const_buffer sig) const;
+  bool Verify(const boost::asio::const_buffer& data,
+              const boost::asio::const_buffer& sig) const;
 
   int get_signature_size() const;
 
-  void set_key(std::auto_ptr<AsymKey> key);
+  void set_key(const AsymKey& key);
 
  private:
   // not owned by the class
   const EVP_MD* md_;
-  std::auto_ptr<AsymKey> key_;
-  int signature_size_;
+  AsymKey key_;
 
   // Ensure openssl is initialised.
   boost::asio::ssl::detail::openssl_init<> init_;

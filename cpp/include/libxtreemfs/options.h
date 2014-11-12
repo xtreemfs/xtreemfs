@@ -180,6 +180,8 @@ class Options {
   std::string encryption_cipher;
   std::string encryption_hash;
   std::string encryption_cw;
+  std::string encryption_pub_keys_path;
+  std::string encryption_priv_keys_path;
 #endif  // HAS_OPENSSL
 
   // Grid Support options.

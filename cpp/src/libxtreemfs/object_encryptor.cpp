@@ -51,20 +51,20 @@ int RoundUp(int num, int multiple) {
  */
 ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
                                  const pbrpc::XCap& xcap,
+                                 const std::string& file_path,
                                  VolumeImplementation* volume,
                                  FileInfo* file_info, int object_size)
     : key_distribution(volume),
       enc_block_size_(volume->volume_options().encryption_block_size),
       cipher_(volume->volume_options().encryption_cipher),
-      sign_algo_(std::auto_ptr<AsymKey>(NULL),
-                 volume->volume_options().encryption_hash),
+      sign_algo_(AsymKey(), volume->volume_options().encryption_hash),
       object_size_(object_size * 1024),
       file_info_(file_info),
       volume_options_(volume->volume_options()) {
   assert(object_size_ >= enc_block_size_);
   assert(object_size_ % enc_block_size_ == 0);
 
-  meta_file_ = key_distribution.OpenMetaFile(user_credentials, xcap,
+  meta_file_ = key_distribution.OpenMetaFile(user_credentials, xcap, file_path,
                                              &file_enc_key_, &sign_algo_);
 }
 

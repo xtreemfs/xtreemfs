@@ -87,7 +87,7 @@ class HashTreeADTest_Offline : public OfflineTest {
                 | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_TRUNC
                 | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR));
 
-    sign_algo_ = new SignAlgorithm(std::auto_ptr<AsymKey>(new AsymKey("RSA")),
+    sign_algo_ = new SignAlgorithm(AsymKey("RSA"),
                                    test_env.options.encryption_hash);
     tree = new HashTreeAD(file, sign_algo_, test_env.options, 4);
   }

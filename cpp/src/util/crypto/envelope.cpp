@@ -28,12 +28,14 @@ namespace xtreemfs {
  * @param[out] iv               The generated IV for the symmetric encryption.
  * @param[out] ciphertext       The encrypted plaintext.
  */
-void Envelope::Seal(const std::string& cipher_name, std::vector<AsymKey> pub_keys,
-                    boost::asio::const_buffer plaintext,
+void Envelope::Seal(const std::string& cipher_name,
+                    const std::vector<AsymKey>& pub_keys,
+                    const boost::asio::const_buffer& plaintext,
                     std::vector<std::vector<unsigned char> >* encrypted_keys,
                     std::vector<unsigned char>* iv,
                     std::vector<unsigned char>* ciphertext) const {
   assert(encrypted_keys && iv && ciphertext);
+  assert(pub_keys.size() > 0);
 
   const EVP_CIPHER* cipher;
   EVP_CIPHER_CTX *ctx;
@@ -64,12 +66,12 @@ void Envelope::Seal(const std::string& cipher_name, std::vector<AsymKey> pub_key
     LogAndThrowOpenSSLError();
   }
 
-  BOOST_SCOPE_EXIT(&ctx) {
+  BOOST_SCOPE_EXIT((&ctx)) {
       EVP_CIPHER_CTX_free(ctx);
     }
   BOOST_SCOPE_EXIT_END
 
-  if (1
+  if (pub_keys.size()
       != EVP_SealInit(ctx, cipher, encrypted_keys_p_array.get(),
                       encrypted_keys_len.get(), iv->data(),
                       pub_keys_p_array.get(), pub_keys.size())) {
@@ -109,11 +111,11 @@ void Envelope::Seal(const std::string& cipher_name, std::vector<AsymKey> pub_key
  *                        Caller must ensure that buffer has sufficient length.
  * @return  The length of the plaintext.
  */
-int Envelope::Open(const std::string& cipher_name, AsymKey priv_key,
-                   boost::asio::const_buffer ciphertext,
-                   boost::asio::const_buffer encrypted_key,
-                   boost::asio::const_buffer iv,
-                   boost::asio::mutable_buffer plaintext) const {
+int Envelope::Open(const std::string& cipher_name, const AsymKey& priv_key,
+                   const boost::asio::const_buffer& ciphertext,
+                   const boost::asio::const_buffer& encrypted_key,
+                   const boost::asio::const_buffer& iv,
+                   const boost::asio::mutable_buffer& plaintext) const {
   const EVP_CIPHER* cipher;
   if ((cipher = EVP_get_cipherbyname(cipher_name.c_str())) == NULL) {
     LogAndThrowOpenSSLError();
@@ -133,10 +135,10 @@ int Envelope::Open(const std::string& cipher_name, AsymKey priv_key,
  * @param[out] plaintext  The decrypted ciphertext.
  * @return  The length of the plaintext.
  */
-void Envelope::Open(const std::string& cipher_name, AsymKey priv_key,
-                    boost::asio::const_buffer ciphertext,
-                    boost::asio::const_buffer encrypted_key,
-                    boost::asio::const_buffer iv,
+void Envelope::Open(const std::string& cipher_name, const AsymKey& priv_key,
+                    const boost::asio::const_buffer& ciphertext,
+                    const boost::asio::const_buffer& encrypted_key,
+                    const boost::asio::const_buffer& iv,
                     std::vector<unsigned char>* plaintext) const {
   assert(plaintext);
   const EVP_CIPHER* cipher;
@@ -150,11 +152,12 @@ void Envelope::Open(const std::string& cipher_name, AsymKey priv_key,
   plaintext->resize(plaintext_len);
 }
 
-int Envelope::Open(const EVP_CIPHER* cipher, AsymKey priv_key,
-                   boost::asio::const_buffer ciphertext,
-                   boost::asio::const_buffer encrypted_key,
-                   boost::asio::const_buffer iv,
-                   boost::asio::mutable_buffer plaintext) const {
+int Envelope::Open(const EVP_CIPHER* cipher, const AsymKey& priv_key,
+                   const boost::asio::const_buffer& ciphertext,
+                   const boost::asio::const_buffer& encrypted_key,
+                   const boost::asio::const_buffer& iv,
+                   const boost::asio::mutable_buffer& plaintext) const {
+  assert(cipher);
   assert(boost::asio::buffer_size(iv) == EVP_CIPHER_iv_length(cipher));
 
   EVP_CIPHER_CTX *ctx;
@@ -165,13 +168,13 @@ int Envelope::Open(const EVP_CIPHER* cipher, AsymKey priv_key,
     LogAndThrowOpenSSLError();
   }
 
-  BOOST_SCOPE_EXIT(&ctx) {
+  BOOST_SCOPE_EXIT((&ctx)) {
       EVP_CIPHER_CTX_free(ctx);
     }
   BOOST_SCOPE_EXIT_END
 
-  if (1
-      != EVP_OpenInit(
+  if (0
+      == EVP_OpenInit(
           ctx, cipher,
           boost::asio::buffer_cast<const unsigned char*>(encrypted_key),
           boost::asio::buffer_size(encrypted_key),

@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "libxtreemfs/volume_implementation.h"
-#include "util/crypto/asym_key.h"
+#include "util/crypto/asym_key_storage.h"
 #include "util/crypto/envelope.h"
 #include "util/crypto/sign_algorithm.h"
 #include "xtreemfs/Encryption.pb.h"
@@ -26,32 +26,43 @@ class FileKeyDistribution {
 
   FileHandle* OpenMetaFile(const pbrpc::UserCredentials& user_credentials,
                            const pbrpc::XCap& xcap,
+                           const std::string& file_path,
                            std::vector<unsigned char>* file_enc_key,
                            SignAlgorithm* file_sign_algo);
 
  private:
   void GetFileKeys(const pbrpc::UserCredentials& user_credentials,
-                   const pbrpc::XCap& xcap, const std::string& meta_file_name,
+                   const std::string& file_path, const std::string& file_id,
                    std::vector<unsigned char>* file_enc_key,
                    SignAlgorithm* file_sign_algo);
 
-  pbrpc::FileLockbox CreateNewLockbox(const pbrpc::XCap& xcap,
-                                      std::vector<unsigned char>* file_enc_key,
-                                      SignAlgorithm* file_sign_algo);
+  void CreateAndSetNewLockbox(const pbrpc::UserCredentials& user_credentials,
+                              const std::string& file_path,
+                              const std::string& file_id,
+                              std::vector<unsigned char>* file_enc_key,
+                              SignAlgorithm* file_sign_algo);
 
   void SetLockbox(const pbrpc::UserCredentials& user_credentials,
-                  const std::string& meta_file_name,
-                  const pbrpc::FileLockbox& lockbox);
+                  const std::string& file_path, const SignAlgorithm& sig_algo,
+                  const std::vector<std::string>& key_ids,
+                  const std::vector<AsymKey>& pub_enc_keys,
+                  const pbrpc::FileLockbox& lockbox, bool write_lockbox);
+
+  std::string GetAccessLockboxKeys(
+      const pbrpc::UserCredentials& user_credentials,
+      const std::string& file_path, SignAlgorithm* file_sign_algo,
+      bool* write_access);
+
+  void GetSetLockboxKeys(const pbrpc::UserCredentials& user_credentials,
+                         const std::string& file_path,
+                         SignAlgorithm* file_sign_algo,
+                         std::vector<std::string>* key_ids_rw,
+                         std::vector<std::string>* key_ids_r);
 
   /**
-   * Sign algorithm used to sign the lockbox.
+   * Key storage from there to get the public and private keys.
    */
-  SignAlgorithm sign_algo_;
-
-  /**
-   * User key for asymmetric encryption.
-   */
-  AsymKey user_enc_key_;
+  AsymKeyStorage key_storage_;
 
   /**
    * Asymmetric encrypter.

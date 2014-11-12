@@ -20,30 +20,30 @@ namespace xtreemfs {
 
 class Envelope {
  public:
-  void Seal(const std::string& cipher, std::vector<AsymKey> pub_keys,
-            boost::asio::const_buffer plaintext,
+  void Seal(const std::string& cipher, const std::vector<AsymKey>& pub_keys,
+            const boost::asio::const_buffer& plaintext,
             std::vector<std::vector<unsigned char> >* encrypted_keys,
             std::vector<unsigned char>* iv,
             std::vector<unsigned char>* ciphertext) const;
 
-  int Open(const std::string& cipher_name, AsymKey priv_key,
-           boost::asio::const_buffer ciphertext,
-           boost::asio::const_buffer encrypted_key,
-           boost::asio::const_buffer iv,
-           boost::asio::mutable_buffer plaintext) const;
+  int Open(const std::string& cipher_name, const AsymKey& priv_key,
+           const boost::asio::const_buffer& ciphertext,
+           const boost::asio::const_buffer& encrypted_key,
+           const boost::asio::const_buffer& iv,
+           const boost::asio::mutable_buffer& plaintext) const;
 
-  void Open(const std::string& cipher_name, AsymKey priv_key,
-            boost::asio::const_buffer ciphertext,
-            boost::asio::const_buffer encrypted_key,
-            boost::asio::const_buffer iv,
+  void Open(const std::string& cipher_name, const AsymKey& priv_key,
+            const boost::asio::const_buffer& ciphertext,
+            const boost::asio::const_buffer& encrypted_key,
+            const boost::asio::const_buffer& iv,
             std::vector<unsigned char>* plaintext) const;
 
  private:
-  int Open(const EVP_CIPHER* cipher, AsymKey priv_key,
-           boost::asio::const_buffer ciphertext,
-           boost::asio::const_buffer encrypted_key,
-           boost::asio::const_buffer iv,
-           boost::asio::mutable_buffer plaintext) const;
+  int Open(const EVP_CIPHER* cipher, const AsymKey& priv_key,
+           const boost::asio::const_buffer& ciphertext,
+           const boost::asio::const_buffer& encrypted_key,
+           const boost::asio::const_buffer& iv,
+           const boost::asio::mutable_buffer& plaintext) const;
 
   // Ensure openssl is initialised.
   boost::asio::ssl::detail::openssl_init<> init_;

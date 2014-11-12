@@ -54,8 +54,7 @@ TEST_F(CryptoTest, Cipher_AES_CTR) {
 }
 
 TEST_F(CryptoTest, Signature_RSA) {
-  std::auto_ptr<AsymKey> key(new AsymKey("RSA"));
-  SignAlgorithm signAlgo(key, "sha256");
+  SignAlgorithm signAlgo(AsymKey("RSA"), "sha256");
 
   std::string msg("Message to sign");
 
@@ -82,7 +81,7 @@ TEST_F(CryptoTest, Base64) {
   EXPECT_TRUE(msg.compare(tmp));
 }
 
-TEST_F(CryptoTest, Envelope) {
+TEST_F(CryptoTest, Envelope_01) {
   AsymKey key("RSA");
   Envelope envelope;
 
@@ -92,6 +91,26 @@ TEST_F(CryptoTest, Envelope) {
   std::vector<unsigned char> ciphertext;
 
   envelope.Seal("aes-256-ctr", std::vector<AsymKey>(1, key),
+                boost::asio::buffer(msg), &encrypted_keys, &iv, &ciphertext);
+
+  std::vector<unsigned char> plaintext;
+  envelope.Open("aes-256-ctr", key, boost::asio::buffer(ciphertext),
+                boost::asio::buffer(encrypted_keys[0]), boost::asio::buffer(iv),
+                &plaintext);
+
+  EXPECT_TRUE(std::vector<unsigned char>(msg.begin(), msg.end()) == plaintext);
+}
+
+TEST_F(CryptoTest, Envelope_02) {
+  AsymKey key("RSA");
+  Envelope envelope;
+
+  std::string msg("Plaintext message");
+  std::vector<std::vector<unsigned char> > encrypted_keys;
+  std::vector<unsigned char> iv;
+  std::vector<unsigned char> ciphertext;
+
+  envelope.Seal("aes-256-ctr", std::vector<AsymKey>(2, key),
                 boost::asio::buffer(msg), &encrypted_keys, &iv, &ciphertext);
 
   std::vector<unsigned char> plaintext;

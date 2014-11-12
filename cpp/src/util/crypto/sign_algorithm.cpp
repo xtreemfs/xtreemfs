@@ -16,20 +16,26 @@ using xtreemfs::util::LogAndThrowOpenSSLError;
 
 namespace xtreemfs {
 
-SignAlgorithm::SignAlgorithm(std::auto_ptr<AsymKey> key,
-                             const std::string& alg_name) {
-  if ((md_ = EVP_get_digestbyname(alg_name.c_str())) == NULL) {
+/**
+ * @param key   The key to use for signing.
+ * @param hash_name   The name of the used hash algorithm.
+ */
+SignAlgorithm::SignAlgorithm(const AsymKey& key, const std::string& hash_name)
+    : key_(key) {
+  if ((md_ = EVP_get_digestbyname(hash_name.c_str())) == NULL) {
     LogAndThrowOpenSSLError();
-  }
-
-  if (key.get() != NULL) {
-    set_key(key);
   }
 }
 
-void SignAlgorithm::Sign(boost::asio::const_buffer data,
-                         boost::asio::mutable_buffer sig) const {
-  assert(key_.get() != NULL);
+/**
+ * Signs the given data.
+ *
+ * @param data  The data to sign.
+ * @param[out] sig  Buffer to store the signature in.
+ * @return  The actual size of the signature.
+ */
+int SignAlgorithm::Sign(const boost::asio::const_buffer& data,
+                        const boost::asio::mutable_buffer& sig) const {
   EVP_MD_CTX* mdctx;
   size_t slen;
 
@@ -38,14 +44,14 @@ void SignAlgorithm::Sign(boost::asio::const_buffer data,
     LogAndThrowOpenSSLError();
   }
 
-  BOOST_SCOPE_EXIT(&mdctx) {
+  BOOST_SCOPE_EXIT((&mdctx)) {
     /* Clean up */
       EVP_MD_CTX_destroy(mdctx);
     }
   BOOST_SCOPE_EXIT_END
 
   /* Initialise the DigestSign operation */
-  if (1 != EVP_DigestSignInit(mdctx, NULL, md_, NULL, key_->get_key())) {
+  if (1 != EVP_DigestSignInit(mdctx, NULL, md_, NULL, key_.get_key())) {
     LogAndThrowOpenSSLError();
   }
 
@@ -63,7 +69,7 @@ void SignAlgorithm::Sign(boost::asio::const_buffer data,
   if (1 != EVP_DigestSignFinal(mdctx, NULL, &slen)) {
     LogAndThrowOpenSSLError();
   }
-  assert(slen == boost::asio::buffer_size(sig));
+  assert(slen <= boost::asio::buffer_size(sig));
   /* Obtain the signature */
   if (1
       != EVP_DigestSignFinal(mdctx,
@@ -71,18 +77,33 @@ void SignAlgorithm::Sign(boost::asio::const_buffer data,
                              &slen)) {
     LogAndThrowOpenSSLError();
   }
+
+  return slen;
 }
 
+/**
+ * Signs the given data.
+ *
+ * @param data  The data to sign.
+ * @return  The signature.
+ */
 std::vector<unsigned char> SignAlgorithm::Sign(
-    boost::asio::const_buffer data) const {
-  std::vector<unsigned char> sig(signature_size_);
-  Sign(data, boost::asio::buffer(sig));
+    const boost::asio::const_buffer& data) const {
+  std::vector<unsigned char> sig(get_signature_size());
+  int len = Sign(data, boost::asio::buffer(sig));
+  sig.resize(len);
   return sig;
 }
 
-bool SignAlgorithm::Verify(boost::asio::const_buffer data,
-                           boost::asio::const_buffer sig) const {
-  assert(key_.get() != NULL);
+/**
+ * Verifies a signature.
+ *
+ * @param data  The signed data.
+ * @param sig   The signature.
+ * @return  True if the signature is valid.
+ */
+bool SignAlgorithm::Verify(const boost::asio::const_buffer& data,
+                           const boost::asio::const_buffer& sig) const {
   EVP_MD_CTX* mdctx;
 
   /* Create the Message Digest Context */
@@ -90,14 +111,14 @@ bool SignAlgorithm::Verify(boost::asio::const_buffer data,
     LogAndThrowOpenSSLError();
   }
 
-  BOOST_SCOPE_EXIT(&mdctx) {
+  BOOST_SCOPE_EXIT((&mdctx)) {
     /* Clean up */
       EVP_MD_CTX_destroy(mdctx);
     }
   BOOST_SCOPE_EXIT_END
 
   /* Initialise the DigestVerify operation */
-  if (1 != EVP_DigestVerifyInit(mdctx, NULL, md_, NULL, key_->get_key())) {
+  if (1 != EVP_DigestVerifyInit(mdctx, NULL, md_, NULL, key_.get_key())) {
     LogAndThrowOpenSSLError();
   }
 
@@ -123,26 +144,19 @@ bool SignAlgorithm::Verify(boost::asio::const_buffer data,
 }
 
 /**
- * @return  Size of the signature in bytes
+ * @return  The maximum size of a signature in bytes.
  */
 int SignAlgorithm::get_signature_size() const {
-  assert(key_.get() != NULL);
-  return signature_size_;
+  return EVP_PKEY_size(key_.get_key());
 }
 
-void SignAlgorithm::set_key(std::auto_ptr<AsymKey> key) {
-  assert(key.get() != NULL);
+/**
+ * Sets a new signing key.
+ *
+ * @param key   The key to use for signing
+ */
+void SignAlgorithm::set_key(const AsymKey& key) {
   key_ = key;
-
-  RSA* rsa_key = EVP_PKEY_get1_RSA(key_->get_key());
-
-  BOOST_SCOPE_EXIT(&rsa_key) {
-    /* Clean up */
-      RSA_free(rsa_key);
-    }
-  BOOST_SCOPE_EXIT_END
-
-  signature_size_ = RSA_size(rsa_key);
 }
 
 } /* namespace xtreemfs */
