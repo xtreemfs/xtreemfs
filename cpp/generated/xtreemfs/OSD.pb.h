@@ -23,6 +23,7 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/repeated_field.h>
 #include <google/protobuf/extension_set.h>
+#include <google/protobuf/generated_enum_reflection.h>
 #include <google/protobuf/unknown_field_set.h>
 #include "include/PBRPC.pb.h"
 #include "include/Common.pb.h"
@@ -79,6 +80,27 @@ class xtreemfs_rwr_reset_completeRequest;
 class xtreemfs_xloc_set_invalidateRequest;
 class xtreemfs_xloc_set_invalidateResponse;
 
+enum OSDHealthResult {
+  OSD_HEALTH_RESULT_PASSED = 0,
+  OSD_HEALTH_RESULT_WARNING = 1,
+  OSD_HEALTH_RESULT_FAILED = 2,
+  OSD_HEALTH_RESULT_NOT_AVAIL = 3
+};
+bool OSDHealthResult_IsValid(int value);
+const OSDHealthResult OSDHealthResult_MIN = OSD_HEALTH_RESULT_PASSED;
+const OSDHealthResult OSDHealthResult_MAX = OSD_HEALTH_RESULT_NOT_AVAIL;
+const int OSDHealthResult_ARRAYSIZE = OSDHealthResult_MAX + 1;
+
+const ::google::protobuf::EnumDescriptor* OSDHealthResult_descriptor();
+inline const ::std::string& OSDHealthResult_Name(OSDHealthResult value) {
+  return ::google::protobuf::internal::NameOfEnum(
+    OSDHealthResult_descriptor(), value);
+}
+inline bool OSDHealthResult_Parse(
+    const ::std::string& name, OSDHealthResult* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<OSDHealthResult>(
+    OSDHealthResult_descriptor(), name, value);
+}
 // ===================================================================
 
 class InternalGmax : public ::google::protobuf::Message {
@@ -9144,6 +9166,10 @@ inline void xtreemfs_xloc_set_invalidateResponse::set_allocated_status(::xtreemf
 namespace google {
 namespace protobuf {
 
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::xtreemfs::pbrpc::OSDHealthResult>() {
+  return ::xtreemfs::pbrpc::OSDHealthResult_descriptor();
+}
 
 }  // namespace google
 }  // namespace protobuf

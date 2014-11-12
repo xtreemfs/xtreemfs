@@ -8,6 +8,11 @@
 
 package org.xtreemfs.test.osd.replication;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -16,19 +21,23 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
-import junit.framework.TestCase;
-
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.osd.replication.ObjectSet;
+import org.xtreemfs.test.TestHelper;
 
 /**
  * 
  * <br>
  * 02.07.2009
  */
-public class ObjectSetTest extends TestCase {
+public class ObjectSetTest {
+    @Rule
+    public final TestRule testLog = TestHelper.testLog;
+
     List<ObjectSet> changeableSets;
     List<ObjectSet> fixedSets;
 

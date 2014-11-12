@@ -17,13 +17,12 @@ import java.util.Set;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.xtreemfs.babudb.config.BabuDBConfig;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.Options;
-import org.xtreemfs.dir.DIRConfig;
-import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.Schemes;
 import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
@@ -48,12 +47,15 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 /**
  * 
  * @author bjko
  */
 public class DIRTest {
+    @Rule
+    public final TestRule testLog = TestHelper.testLog;
 
     TestEnvironment      testEnv;
 

@@ -358,6 +358,16 @@ message xtreemfs_xloc_set_invalidateResponse {
   optional ReplicaStatus status = 2;
 }
 
+// Status of OSD health test
+enum OSDHealthResult {
+   OSD_HEALTH_RESULT_PASSED = 0;
+   OSD_HEALTH_RESULT_WARNING = 1;
+   OSD_HEALTH_RESULT_FAILED = 2;
+   // Status is not available,
+   // i.e. the test is disabled or an error occurred
+   OSD_HEALTH_RESULT_NOT_AVAIL = 3;
+}
+
 service OSDService {
   
   option(interface_id)=30001;

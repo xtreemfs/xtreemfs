@@ -24,6 +24,6 @@ public class BenchmarkUtils {
      * Enum for the different benchmark Types.
      */
     public static enum BenchmarkType {
-        SEQ_WRITE, SEQ_READ, RAND_WRITE, RAND_READ, FILES_WRITE, FILES_READ
+        SEQ_WRITE, SEQ_UNALIGNED_WRITE, SEQ_READ, RAND_WRITE, RAND_READ, FILES_WRITE, FILES_READ
     }
 }

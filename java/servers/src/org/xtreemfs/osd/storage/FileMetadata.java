@@ -11,8 +11,8 @@ package org.xtreemfs.osd.storage;
 import java.io.RandomAccessFile;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 
@@ -139,7 +139,7 @@ public class FileMetadata {
     }
     
     public String toString() {
-        return "fileSize=" + filesize + ", lastObjNo=" + lastObjectNumber;
+        return "(fileSize=" + filesize + ", lastObjNo=" + lastObjectNumber + ")";
     }
     
     public long getTruncateEpoch() {

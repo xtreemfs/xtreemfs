@@ -838,6 +838,13 @@ class Volume : public ::google::protobuf::Message {
   inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::KeyValuePair >*
       mutable_attrs();
 
+  // optional fixed64 quota = 9;
+  inline bool has_quota() const;
+  inline void clear_quota();
+  static const int kQuotaFieldNumber = 9;
+  inline ::google::protobuf::uint64 quota() const;
+  inline void set_quota(::google::protobuf::uint64 value);
+
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.Volume)
  private:
   inline void set_has_access_control_policy();
@@ -854,6 +861,8 @@ class Volume : public ::google::protobuf::Message {
   inline void clear_has_owner_group_id();
   inline void set_has_owner_user_id();
   inline void clear_has_owner_user_id();
+  inline void set_has_quota();
+  inline void clear_has_quota();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -865,9 +874,10 @@ class Volume : public ::google::protobuf::Message {
   ::std::string* owner_group_id_;
   ::std::string* owner_user_id_;
   ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::KeyValuePair > attrs_;
+  ::google::protobuf::uint64 quota_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(8 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(9 + 31) / 32];
 
   friend void  protobuf_AddDesc_xtreemfs_2fMRC_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fMRC_2eproto();
@@ -7153,6 +7163,28 @@ Volume::attrs() const {
 inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::KeyValuePair >*
 Volume::mutable_attrs() {
   return &attrs_;
+}
+
+// optional fixed64 quota = 9;
+inline bool Volume::has_quota() const {
+  return (_has_bits_[0] & 0x00000100u) != 0;
+}
+inline void Volume::set_has_quota() {
+  _has_bits_[0] |= 0x00000100u;
+}
+inline void Volume::clear_has_quota() {
+  _has_bits_[0] &= ~0x00000100u;
+}
+inline void Volume::clear_quota() {
+  quota_ = GOOGLE_ULONGLONG(0);
+  clear_has_quota();
+}
+inline ::google::protobuf::uint64 Volume::quota() const {
+  return quota_;
+}
+inline void Volume::set_quota(::google::protobuf::uint64 value) {
+  set_has_quota();
+  quota_ = value;
 }
 
 // -------------------------------------------------------------------

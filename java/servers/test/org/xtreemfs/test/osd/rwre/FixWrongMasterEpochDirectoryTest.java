@@ -6,19 +6,26 @@
  */
 package org.xtreemfs.test.osd.rwre;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestHelper;
 
 public class FixWrongMasterEpochDirectoryTest {
+    @Rule
+    public final TestRule testLog = TestHelper.testLog;
 
     /**
      * @throws java.lang.Exception

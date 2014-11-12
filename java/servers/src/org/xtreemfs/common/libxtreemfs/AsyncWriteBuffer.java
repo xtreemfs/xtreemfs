@@ -102,7 +102,7 @@ public class AsyncWriteBuffer {
     }
 
     /**
-     * @param osdUuid2
+     * @param osdUuid
      */
     protected void setOsdUuid(String osdUuid) {
         this.osdUuid = osdUuid;

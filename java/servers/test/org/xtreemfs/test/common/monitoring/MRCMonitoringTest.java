@@ -7,24 +7,29 @@
 
 package org.xtreemfs.test.common.monitoring;
 
-import java.io.IOException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.net.InetSocketAddress;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.monitoring.generatedcode.XTREEMFS_MIBOidTable;
 import org.xtreemfs.dir.DIRConfig;
-import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
-import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 import com.sun.management.snmp.SnmpDefinitions;
 import com.sun.management.snmp.SnmpInt;
@@ -37,50 +42,39 @@ import com.sun.management.snmp.manager.SnmpPeer;
 import com.sun.management.snmp.manager.SnmpRequest;
 import com.sun.management.snmp.manager.SnmpSession;
 
-import junit.framework.TestCase;
+public class MRCMonitoringTest {
+    @Rule
+    public final TestRule   testLog = TestHelper.testLog;
 
-public class MRCMonitoringTest extends TestCase {
+    private TestEnvironment testEnv;
 
-    private DIRRequestDispatcher dir;
+    private DIRConfig       dirConfig;
 
-    private TestEnvironment      testEnv;
+    private MRCConfig       mrcConfig;
 
-    private DIRConfig            dirConfig;
+    private OSDConfig       osdConfig;
 
-    private MRCConfig            mrcConfig;
+    private SnmpPeer        dirAgent, mrcAgent, osdAgent;
 
-    private OSDConfig            osdConfig;
+    private SnmpSession     session;
 
-    private SnmpPeer             dirAgent, mrcAgent, osdAgent;
-
-    private SnmpSession          session;
-
-    public MRCMonitoringTest() throws IOException {
+    @BeforeClass
+    public static void initializeTest() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
-
-        dirConfig = SetupUtils.createDIRConfig();
     }
 
     @Before
     public void setUp() throws Exception {
 
-        System.out.println("TEST: " + getClass().getSimpleName());
-
-        FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
-        
-        
-        dir = new DIRRequestDispatcher(dirConfig, SetupUtils.createDIRdbsConfig());
-        dir.startup();
-        dir.waitForStartup();
-
-        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_CLIENT,
-                TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.RPC_CLIENT,
-                TestEnvironment.Services.MRC, TestEnvironment.Services.OSD });
+        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_SERVICE,
+                TestEnvironment.Services.DIR_CLIENT, TestEnvironment.Services.TIME_SYNC,
+                TestEnvironment.Services.RPC_CLIENT, TestEnvironment.Services.MRC, TestEnvironment.Services.OSD });
         testEnv.start();
 
         final SnmpOidTableSupport oidTable = new XTREEMFS_MIBOidTable();
         SnmpOid.setSnmpOidTable(oidTable);
 
+        dirConfig = SetupUtils.createDIRConfig();
         mrcConfig = SetupUtils.createMRC1Config();
         osdConfig = SetupUtils.createMultipleOSDConfigs(1)[0];
 
@@ -107,11 +101,6 @@ public class MRCMonitoringTest extends TestCase {
         session.destroySession();
 
         testEnv.shutdown();
-
-        dir.shutdown();
-
-        dir.waitForShutdown();
-
     }
 
     /**
@@ -146,6 +135,7 @@ public class MRCMonitoringTest extends TestCase {
 
     }
 
+    @Test
     public void testVolumeCount() throws Exception {
 
         // At first there should be no volumes
@@ -157,8 +147,8 @@ public class MRCMonitoringTest extends TestCase {
 
         Client c = new Client(new InetSocketAddress[] { testEnv.getDIRAddress() }, 10000, 60000, null);
         c.start();
-        
-       UserCredentials uc =  UserCredentials.newBuilder().setUsername("test").addGroups("test").build();
+
+        UserCredentials uc = UserCredentials.newBuilder().setUsername("test").addGroups("test").build();
 
         c.createVolume("foobar", RPCAuthentication.authNone, uc, SetupUtils.getStripingPolicy(64, 1),
                 AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, 0777);
@@ -183,63 +173,59 @@ public class MRCMonitoringTest extends TestCase {
         snmpInt = varBind.getSnmpIntValue();
 
         assertEquals(4, snmpInt.intValue());
-        
-        
+
         c.deleteVolume("foobar3", RPCAuthentication.authNone, uc);
         c.deleteVolume("foobar", RPCAuthentication.authNone, uc);
-        
+
         // Now there should be two volumes
         result = makeSnmpGet(mrcAgent, "volumeCount.0");
         varBind = result.getVarBindAt(0);
         snmpInt = varBind.getSnmpIntValue();
 
         assertEquals(2, snmpInt.intValue());
-        
-        
+
         c.deleteVolume("foobar2", RPCAuthentication.authNone, uc);
-        
+
         // Now there should be one volumes
-        
+
         result = makeSnmpGet(mrcAgent, "volumeCount.0");
         varBind = result.getVarBindAt(0);
         snmpInt = varBind.getSnmpIntValue();
 
         assertEquals(1, snmpInt.intValue());
-        
+
         try {
             c.createVolume("foobar4", RPCAuthentication.authNone, uc, SetupUtils.getStripingPolicy(64, 1),
                     AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, 0777);
-                
+
         } catch (Exception e) {
-            //Ignore
+            // Ignore
         }
-        
+
         // Now there should be still one volume
         result = makeSnmpGet(mrcAgent, "volumeCount.0");
         varBind = result.getVarBindAt(0);
         snmpInt = varBind.getSnmpIntValue();
 
         assertEquals(1, snmpInt.intValue());
-        
 
         try {
             c.deleteVolume("foobar2", RPCAuthentication.authNone, uc);
-                
+
         } catch (Exception e) {
             // Ignore
         }
-        
-        // Now there should be still one volume    
+
+        // Now there should be still one volume
         result = makeSnmpGet(mrcAgent, "volumeCount.0");
         varBind = result.getVarBindAt(0);
         snmpInt = varBind.getSnmpIntValue();
 
         assertEquals(1, snmpInt.intValue());
-        
-        
+
         c.deleteVolume("foobar4", RPCAuthentication.authNone, uc);
-        
-        // Now there should be zero volumes    
+
+        // Now there should be zero volumes
         result = makeSnmpGet(mrcAgent, "volumeCount.0");
         varBind = result.getVarBindAt(0);
         snmpInt = varBind.getSnmpIntValue();

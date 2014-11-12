@@ -735,12 +735,10 @@ public class HashStorageLayout extends StorageLayout {
     }
 
     private void del(File parent) {
-        if (parent.list().length > 1 || parent.equals(new File(this.storageDir))) {
-            return;
-        } else {
-            assert (parent != null);
+        File storageDirFile = new File(this.storageDir);
+        for (File p = parent; p != null && p.list().length <= 1 && !p.equals(storageDirFile); p = p
+                .getParentFile()) {
             parent.delete();
-            del(parent.getParentFile());
         }
     }
 

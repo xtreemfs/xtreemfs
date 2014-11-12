@@ -25,8 +25,8 @@ public interface AdminClient extends Client {
      * Open an admin volume and use the returned class to access it.
      * 
      * @throws AddressToUUIDNotFoundException
-     * @throws UnknownAddressSchemeException
      * @throws VolumeNotFoundException
+     * @thorws IOException
      * @throws {@link IOException}
      */
     public AdminVolume openVolume(String volumeName, SSLOptions sslOptions, Options options)
@@ -114,7 +114,7 @@ public interface AdminClient extends Client {
     /**
      * Returns a ServiceSet with all services of the given type.
      * 
-     * @param ServiceType
+     * @param serviceType
      * 
      * @return ServiceSet
      * @throws XtreemFSException

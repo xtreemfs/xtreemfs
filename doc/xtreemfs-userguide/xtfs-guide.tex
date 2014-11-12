@@ -366,11 +366,21 @@ XtreemFS services are configured via Java properties files that can be modified 
 
 XtreemFS uses UUIDs\index{UUID} (Universally Unique Identifiers) to be able to identify services and their associated state independently from the machine they are installed on. This implies that you cannot change the UUID of an MRC or OSD after it has been used for the first time!
 
-The Directory Service resolves UUIDs to service endpoints, where each service endpoint consists of an IP address or hostname and port number. Each endpoint is associated with a netmask that indicates the subnet in which the mapping is valid. In theory, multiple endpoints can be assigned to a single UUID if endpoints are associated with different netmasks. However, it is currently only possible to assign a single endpoint to each UUID; the netmask must be ``*'', which means that the mapping is valid in all networks. Upon first start-up, OSDs and MRCs will auto-generate the mapping if it does not exist, by using the first available network device with a public address.
+The Directory Service resolves UUIDs to service endpoints, where each service endpoint consists of an IP address or hostname and port number. Each endpoint is associated with a netmask that indicates the subnet in which the mapping is valid. If \hyperref[option:multihoming.enabled]{multihoming} is enabled, multiple endpoints with different netmasks are assigned to a single UUID. In addition one default mapping, which is valid in all networks with the netmask ``*'', will be assigned. By default this will be the first available network device with a public address.
 
-Changing the IP address, hostname or port is possible at any time. Due to the caching of UUIDs in all components, it can take some time until the new UUID mapping is used by all OSDs, MRCs and clients. The TTL (time-to-live) of a mapping defines how long an XtreemFS component is allowed to keep entries cached. The default value is 3600 seconds (1 hour). It should be set to shorter durations if services change their IP address frequently.
+Changes to the IP address, hostname or port are possible at any time, but have to be propagated to the Directory Service by a \hyperref[option:multihoming.renewalsignal]{manual signal}. Due to the caching of UUIDs in all components, it can take some time until the new UUID mapping is used by all OSDs, MRCs and clients. The TTL (time-to-live) of a mapping defines how long an XtreemFS component is allowed to keep entries cached. The default value is 3600 seconds (1 hour). It should be set to shorter durations if services change their IP address frequently.
 
 To create a globally unique UUID you can use tools like \texttt{uuidgen}. During installation, the post-install script will automatically create a UUID for each OSD and MRC if it does not have a UUID assigned.
+
+
+\subsection{Configuration for mixed IPv4 / IPv6 networks and NATs}
+
+XtreemFS is IPv6 ready, but requires a hostname based configuration for mixed networks due to the way UUIDs are resolved. If no hostname is configured, the default endpoint will be set to the first available network device with a public address. If this is an IPv6 address, clients or services in IPv4 networks won't be able to access the service with the resolved UUID. Additional IPv4 endpoints may be available, but will be bound to a specific netmask.
+
+To enable mixed networks each service has to be configured with a \hyperref[options:hostname]{\texttt{hostname}}, which is resolvable to the IPv4 address as well as to the IPv6 address by clients and other services. This can be achieved by using the Domain Name System and setting the \texttt{A} and \texttt{AAAA} records for each hostname.
+
+Analogous problems occur in systems with NAT (network address translation) like on Amazon Virtual Private Cloud or OpenStack. By default each service will register its local address which is unreachable from other networks. To enable services with NAT you can add the external address to the internal network device with a corresponding route and use the DNS to resolve hostnames as described above. To ensure services from the same network are using a direct route it is advised to enable \hyperref[option:multihoming.enabled]{multihoming}. 
+
 
 \subsection{Automatic DIR Discovery}
 \label{sec:autodiscover}
@@ -967,6 +977,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
 \end{tabular}
 
 \subsubsection{\texttt{hostname} \textit{optional}}
+\label{options:hostname}
 \begin{tabular}{lp{10cm}}
  Services & MRC, OSD\\
  Values   & String \\
@@ -974,6 +985,13 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & If specified and \texttt{multihoming.enabled} is \texttt{false}, it defines the host name that is used to register the service at the directory service. If neither \texttt{hostname} nor \texttt{listen.address} are specified, the service itself will search for an externally reachable network interface and advertise its address. To use multiple interfaces see \hyperref[option:multihoming.enabled]{multihoming.enabled}.
 \end{tabular}
 
+\subsubsection{\texttt{health\_script} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & OSD\\
+ Values   & String \\
+ Default  & \\
+ Description & If specified, the OSD will use this script to determine the health status of the storage devices which stores the \texttt{object\_dir}. See section~\ref{sec:xtreemfs-osd-farm} for more information.
+\end{tabular}
 \subsubsection{\texttt{http\_port}}
 \begin{tabular}{lp{10cm}}
  Services & DIR, MRC, OSD\\
@@ -1083,6 +1101,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
 \end{tabular}
 
 \subsubsection{\texttt{multihoming.renewal\_signal} \textit{optional}}
+\label{option:multihoming.renewalsignal}
 \begin{tabular}{lp{10cm}}
  Services & MRC, OSD\\
  Values   & true, false\\
@@ -1404,6 +1423,42 @@ The \texttt{xtreemfs-osd-farm} script can be found in the /usr/share/xtreemfs di
 
 Using the \texttt{xtreemfs-osd-farm} script demands two steps. First, a list names for all of the used OSDs hat to be set to the OSD\_INSTANCES variable in the script. The list elements have to be separated by spaces. In the second step, a configuration file with the name \texttt{<osdname>.config.properties} has to be created in \texttt{/etc/xos/xtreemfs} for all of the defined OSD names, whereas <osdname> has to be replaced by the particular OSD name. After these steps, the \texttt{init.d} script can be executed with the usual arguments \texttt{start}, \texttt{stop}, \texttt{status}, \texttt{restart}, and \texttt{try-restart}. A single OSD can be controlled by \texttt{xtreemfs-osd-farm <osdname> <argument>}.
 
+\subsection{Monitoring OSD's storage devices}
+\label{sec:osd-health-script}
+The health status of OSDs storage devices (e.g. the SMART health test of the
+used disks) can be used to determine if an OSD will fail soon or is actually
+failed. If the health status is available, the default OSD selection policy
+(id 1000) can use it to exclude OSDs with a critical status (WARNING or
+FAILED). To test the health status, the OSD executes a user-defined script, that
+can be configured in the OSD configuration file with the \texttt{health\_check}
+parameter. If you want to write such a script you must consider the following
+things:
+
+\begin{itemize}
+\item The script will be executed with the \texttt{object\_dir} as the first
+(and only) parameter 
+\item The script must exit with one of the following return values:
+\begin{itemize}
+\item \texttt{0} - PASSED: Storage device is in an uncritical state. The OSD
+is not filtered out when the default OSD selection policy is used.
+\item \texttt{1} - WARNING: Storage could be in an critical state soon. The OSD
+is filtered out, depending on the osd\_health\_status attribute, if the
+default OSD selection policy is used.
+\item \texttt{2} - FAILED: Storage device is in an critical state. The OSD is
+filtered out when the default OSD selection policy is used.
+\item \texttt{3} - Not Available: The health status is not available. Also used
+when an error occurs or an invalid value is returned from the script.
+\end{itemize}
+\item Additionally, the output of the script (stdout) is send to the DIR and is
+shown in the web interface
+\end{itemize}
+An example script for Linux systems is provided in
+\texttt{/usr/share/xtreemfs/osd\_health\_check.sh}. This script uses the SMART
+health test result of the devices which stores the \texttt{object\_dir}. The
+Script supports software RAID configurations (\texttt{/dev/md*}) and single
+devices(\texttt{/dev/sd*} or \texttt{/dev/hd*}). In order to use this script,
+\texttt{smartmontools} must be installed and the command \texttt{smartctl} must
+be executable with sudo privileges without password.
 
 \subsection{Web-based Status Page}
 
@@ -2244,6 +2299,15 @@ The following values (or its aliases stated in parentheses) can be passed to \ve
   \item[WqRq (quorum), WaR1 (all)] New files are read-write replicated and can be modified. Please refer to the Section \ref{sec:readwrite_replication} for more information on both policies and their properties.
 \end{description}
 
+\subsubsection{Setting Volume Quota}
+By default no quota is set for Volumes. If a quota for a volume is set and a client wants to open a file the MRC will check if the quota is exceeded and responses accordingly. The quota of a volume can be set as follows. In this example the quota of the a volume will be set to 1 GB
+\begin{verbatim}
+$>xtfsutil --set-quota 1G /xtreemfs
+\end{verbatim}
+M(B), G(B) and T(B) can be used as multipliers. To disable a previously set quota the quota can be set to 0, i.e. the following command can be used
+\begin{verbatim}
+$>xtfsutil --set-quota 0 /xtreemfs
+\end{verbatim}
 
 \subsection{Changing OSD and Replica Selection Policies}\label{sec:osd_select_policy}
 
@@ -2274,6 +2338,7 @@ sets a data center map-based OSD selection policy, which is invoked each time a 
  \item[\texttt{fqdn}] Selects OSDs based on the size of the post-fix match of the fully qualified domain names and on the free space.
  \item[\texttt{dcmap}] Selects OSDs based on the distance defined in the datacenter map and on the free space.
  \item[\texttt{vivaldi}] Selects OSDs based on the distance of the Vivaldi coordinates between client and OSD and on the free space.
+  \item[\texttt{roundrobin}] Selects OSDs based on a round robin manner regarding the host name of the OSDs.
 \end{description}
 
 In addition, custom policies can be set by passing a list of basic policy IDs to be successively applied instead of a predefined policy name.
@@ -2338,8 +2403,8 @@ $> xtfsutil --enable-snapshots /path/to/mounted/volume
 Once snapshots have been enabled, a snapshot named \texttt{mySnapshot} can be taken as follows:
 
 \begin{verbatim}
-$> xtfsutil --create-snapshot /path/to/mounted/volume/directory \
-   mySnapshot
+$> xtfsutil --create-snapshot mySnapshot \
+   /path/to/mounted/volume/directory 
 \end{verbatim}
 
 Note that capturing snapshots requires privileged access rights (ownership or superuser rights) on the volume.
@@ -2347,8 +2412,8 @@ Note that capturing snapshots requires privileged access rights (ownership or su
 It is also possible to capture a snapshot of a given directory without including any subdirectories:
 
 \begin{verbatim}
-$> xtfsutil --create-snapshot-non-recursive \
-   /path/to/mounted/volume/directory mySnapshot
+$> xtfsutil --create-snapshot-non-recursive mySnapshot \
+   /path/to/mounted/volume/directory
 \end{verbatim}
 
 A list of all snapshots that exist on the volume can be displayed as follows:
@@ -2369,7 +2434,7 @@ A mounted volume snapshot can be browsed normally, and all files can be read as 
 A snapshot \texttt{mySnapshot} that is no longer needed can be removed as follows:
 
 \begin{verbatim}
-$> xtfsutil --delete-snapshot /path/to/mounted/volume mySnapshot
+$> xtfsutil --delete-snapshot mySnapshot /path/to/mounted/volume
 \end{verbatim}
 
 Please be aware that removing a snapshot does not automatically reclaim any storage space occupied by prior versions. To dispose of obsolete and redundant versions on a specific OSD, it is necessary to perform a version cleanup run with the \texttt{xtfs\_cleanup} tool:
@@ -2592,6 +2657,11 @@ The following predefined policies exist:
  \begin{itemize}
  \item \emph{free\_capacity\_bytes}: the lower space limit in bytes
  \item \emph{offline\_time\_secs}: the upper response time limit in seconds
+ \item \emph{osd\_health\_status}: OSD Health status which is excluded (see section \ref{sec:osd-health-script}). Possible Values:
+ \begin{itemize}
+ \item \emph{warning}: WARNING and FAILED OSDs are excluded
+ \item \emph{failed}: FAILED OSDs are excluded
+ \end{itemize}
  \item custom attributes (see Section \ref{sec:custom_osd_selection})
  \end{itemize}
 
@@ -2673,6 +2743,9 @@ This policy uses domain names of clients and OSDs to determine the distance betw
 
  \item \textbf{Vivaldi network coordinates based sorting (policy ID 3003)}\\
  Sorts the list of OSDs in ascending order of their distance to the client, according to the vivaldi coordinates of the client and OSDs. This policy requires to enable vivaldi in the client (see section~\ref{sec:vivaldi} for details).
+ 
+ \item \textbf{Host round robin based sorting (policy ID 3004)}\\
+ Sorts the list of OSDs in a round robin manner regarding the host name of the OSDs. If multiple OSDs run per host, this policy guarantees a distribution over multiple hosts.
 
 \end{itemize}
 

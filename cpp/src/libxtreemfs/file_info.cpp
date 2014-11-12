@@ -55,7 +55,8 @@ FileInfo::FileInfo(
                            volume->osd_service_client(),
                            volume->auth_bogus(),
                            volume->user_credentials_bogus(),
-                           volume->volume_options()) {
+                           volume->volume_options(),
+                           client->GetAsyncWriteCallbackQueue()) {
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif  // _MSC_VER

@@ -18,6 +18,7 @@
 
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/xtreemfs_exception.h"
+#include <boost/algorithm/string.hpp>
 #include "rpc/sync_callback.h"
 #include "util/logging.h"
 #include "xtreemfs/GlobalTypes.pb.h"
@@ -152,6 +153,11 @@ std::string GetOSDUUIDFromXlocSet(
   // Get the UUID for the first replica (r=0) and the head OSD (i.e. the first
   // chunk, c=0).
   return GetOSDUUIDFromXlocSet(xlocs, 0, 0);
+}
+
+std::string StripePolicyTypeToString(xtreemfs::pbrpc::StripingPolicyType policy) {
+  std::string policyMap[] = { "STRIPING_POLICY_RAID0" };
+  return policyMap[policy];
 }
 
 /**
@@ -538,6 +544,38 @@ boost::unordered_set<std::string> GetNetworks() {
 #endif  // __linux__
 
   return result;
+}
+
+/**
+ *  Parses human-readable byte number to byte count. Returns -1 if byte_number is not parsable.
+ */
+long parseByteNumber(std::string byte_number) {
+	std::string multiplier;
+  int coeff;
+	std::stringstream ss;
+  ss << byte_number;
+  ss >> coeff;
+  ss >> multiplier;
+  boost::to_upper(multiplier);
+
+  if (multiplier.length() == 0 || multiplier == "B"){
+    return coeff;
+  }
+
+  if (multiplier.length() > 2 || (multiplier.length() == 2 && multiplier[1] != 'B')) {
+    return -1;
+  }
+
+	int exp  = 0;
+	int unit = 1024;
+	switch (multiplier[0]) {
+		case 'K':  exp =  3; break;
+		case 'M':  exp =  6; break;
+		case 'G':  exp =  9; break;
+		case 'T':  exp =  12; break;
+		default:   return -1;
+	}
+	return coeff * pow(unit, exp / 3);
 }
 
 }  // namespace xtreemfs

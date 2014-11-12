@@ -6,75 +6,37 @@
  */
 package org.xtreemfs.common.libxtreemfs;
 
-import java.io.IOException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import java.util.LinkedList;
 import java.util.List;
 
-import junit.framework.TestCase;
-
-import org.junit.After;
-import org.xtreemfs.common.libxtreemfs.UUIDIterator;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.libxtreemfs.exceptions.UUIDIteratorListIsEmpyException;
-import org.xtreemfs.dir.DIRClient;
-import org.xtreemfs.dir.DIRConfig;
-import org.xtreemfs.dir.DIRRequestDispatcher;
-import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 
-
-
-/**
- *
- * <br>Sep 6, 2011
- */
-public class UUIDIteratorTest extends TestCase {
-
-    DIRRequestDispatcher dir;
-
-    TestEnvironment      testEnv;
-
-    DIRConfig            dirConfig;
-
-    UserCredentials      userCredentials;
-
-    Auth                 auth = RPCAuthentication.authNone;
-
-    DIRClient            dirClient;
+public class UUIDIteratorTest {
+    @Rule
+    public final TestRule testLog = TestHelper.testLog;
     
-    /**
-     * 
-     */
-    public UUIDIteratorTest() throws IOException {
-        dirConfig = SetupUtils.createDIRConfig();
-        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
+    @BeforeClass
+    public static void initializeTest() throws Exception {
     }
-    
-    /* (non-Javadoc)
-     * @see junit.framework.TestCase#setUp()
-     */
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
 
-        System.out.println("TEST: " + getClass().getSimpleName());
-
+    @Before
+    public void setUp() throws Exception {
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
-        
     }
-    
-    @Override
-    @After
-    public void tearDown() throws Exception {
 
-
-    }
-    
+    @Test
     public void testUUIDIterator() throws Exception {
         
         final String UUID_STRING1 = "uuidstring1";
@@ -126,6 +88,7 @@ public class UUIDIteratorTest extends TestCase {
         
     }
     
+    @Test
     public void testAddUuidCollection() {
         List<String> uuidList = new LinkedList<String>();
         uuidList.add("uuidstring1");
@@ -138,6 +101,7 @@ public class UUIDIteratorTest extends TestCase {
         assertEquals(3, iterator.size());
     }
     
+    @Test
     public void testSetCurrentUuid() throws Exception {
         final String UUID_STRING1 = "uuidstring1";
         final String UUID_STRING2 = "uuidstring2";

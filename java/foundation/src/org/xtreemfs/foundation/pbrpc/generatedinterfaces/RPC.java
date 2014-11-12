@@ -517,13 +517,17 @@ public final class RPC {
      */
     POSIX_ERROR_EINVAL(12, 22),
     /**
+     * <code>POSIX_ERROR_ENOSPC = 28;</code>
+     */
+    POSIX_ERROR_ENOSPC(13, 28),
+    /**
      * <code>POSIX_ERROR_ENOTEMPTY = 39;</code>
      */
-    POSIX_ERROR_ENOTEMPTY(13, 39),
+    POSIX_ERROR_ENOTEMPTY(14, 39),
     /**
      * <code>POSIX_ERROR_ENODATA = 61;</code>
      */
-    POSIX_ERROR_ENODATA(14, 61),
+    POSIX_ERROR_ENODATA(15, 61),
     ;
 
     /**
@@ -579,6 +583,10 @@ public final class RPC {
      */
     public static final int POSIX_ERROR_EINVAL_VALUE = 22;
     /**
+     * <code>POSIX_ERROR_ENOSPC = 28;</code>
+     */
+    public static final int POSIX_ERROR_ENOSPC_VALUE = 28;
+    /**
      * <code>POSIX_ERROR_ENOTEMPTY = 39;</code>
      */
     public static final int POSIX_ERROR_ENOTEMPTY_VALUE = 39;
@@ -605,6 +613,7 @@ public final class RPC {
         case 20: return POSIX_ERROR_ENOTDIR;
         case 21: return POSIX_ERROR_EISDIR;
         case 22: return POSIX_ERROR_EINVAL;
+        case 28: return POSIX_ERROR_ENOSPC;
         case 39: return POSIX_ERROR_ENOTEMPTY;
         case 61: return POSIX_ERROR_ENODATA;
         default: return null;
@@ -6229,7 +6238,7 @@ public final class RPC {
       "D\020\002\022\020\n\014GARBAGE_ARGS\020\003\022\017\n\013AUTH_FAILED\020\004\022\031" +
       "\n\025INTERNAL_SERVER_ERROR\020\005\022\t\n\005ERRNO\020\006\022\014\n\010" +
       "REDIRECT\020\007\022\020\n\014INVALID_VIEW\020\010\022\014\n\010IO_ERROR" +
-      "\020d*\362\002\n\nPOSIXErrno\022\025\n\020POSIX_ERROR_NONE\020\217N" +
+      "\020d*\212\003\n\nPOSIXErrno\022\025\n\020POSIX_ERROR_NONE\020\217N" +
       "\022\025\n\021POSIX_ERROR_EPERM\020\001\022\026\n\022POSIX_ERROR_E",
       "NOENT\020\002\022\025\n\021POSIX_ERROR_EINTR\020\004\022\023\n\017POSIX_" +
       "ERROR_EIO\020\005\022\026\n\022POSIX_ERROR_EAGAIN\020\013\022\026\n\022P" +
@@ -6237,9 +6246,10 @@ public final class RPC {
       "T\020\021\022\025\n\021POSIX_ERROR_EXDEV\020\022\022\026\n\022POSIX_ERRO" +
       "R_ENODEV\020\023\022\027\n\023POSIX_ERROR_ENOTDIR\020\024\022\026\n\022P" +
       "OSIX_ERROR_EISDIR\020\025\022\026\n\022POSIX_ERROR_EINVA" +
-      "L\020\026\022\031\n\025POSIX_ERROR_ENOTEMPTY\020\'\022\027\n\023POSIX_" +
-      "ERROR_ENODATA\020=B3\n1org.xtreemfs.foundati" +
-      "on.pbrpc.generatedinterfaces"
+      "L\020\026\022\026\n\022POSIX_ERROR_ENOSPC\020\034\022\031\n\025POSIX_ERR" +
+      "OR_ENOTEMPTY\020\'\022\027\n\023POSIX_ERROR_ENODATA\020=B" +
+      "3\n1org.xtreemfs.foundation.pbrpc.generat" +
+      "edinterfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {

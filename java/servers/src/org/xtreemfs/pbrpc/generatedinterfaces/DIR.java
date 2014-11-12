@@ -367,8 +367,8 @@ public final class DIR {
      * <code>required string match_network = 6;</code>
      *
      * <pre>
-     * Matching network, unused at the moment.
-     * Must be "*".
+     * Matching network. There has to exist exactly one default address 
+     * accessible from any network for which this is set to "*".
      * </pre>
      */
     boolean hasMatchNetwork();
@@ -376,8 +376,8 @@ public final class DIR {
      * <code>required string match_network = 6;</code>
      *
      * <pre>
-     * Matching network, unused at the moment.
-     * Must be "*".
+     * Matching network. There has to exist exactly one default address 
+     * accessible from any network for which this is set to "*".
      * </pre>
      */
     java.lang.String getMatchNetwork();
@@ -385,8 +385,8 @@ public final class DIR {
      * <code>required string match_network = 6;</code>
      *
      * <pre>
-     * Matching network, unused at the moment.
-     * Must be "*".
+     * Matching network. There has to exist exactly one default address 
+     * accessible from any network for which this is set to "*".
      * </pre>
      */
     com.google.protobuf.ByteString
@@ -795,8 +795,8 @@ public final class DIR {
      * <code>required string match_network = 6;</code>
      *
      * <pre>
-     * Matching network, unused at the moment.
-     * Must be "*".
+     * Matching network. There has to exist exactly one default address 
+     * accessible from any network for which this is set to "*".
      * </pre>
      */
     public boolean hasMatchNetwork() {
@@ -806,8 +806,8 @@ public final class DIR {
      * <code>required string match_network = 6;</code>
      *
      * <pre>
-     * Matching network, unused at the moment.
-     * Must be "*".
+     * Matching network. There has to exist exactly one default address 
+     * accessible from any network for which this is set to "*".
      * </pre>
      */
     public java.lang.String getMatchNetwork() {
@@ -828,8 +828,8 @@ public final class DIR {
      * <code>required string match_network = 6;</code>
      *
      * <pre>
-     * Matching network, unused at the moment.
-     * Must be "*".
+     * Matching network. There has to exist exactly one default address 
+     * accessible from any network for which this is set to "*".
      * </pre>
      */
     public com.google.protobuf.ByteString
@@ -1750,8 +1750,8 @@ public final class DIR {
        * <code>required string match_network = 6;</code>
        *
        * <pre>
-       * Matching network, unused at the moment.
-       * Must be "*".
+       * Matching network. There has to exist exactly one default address 
+       * accessible from any network for which this is set to "*".
        * </pre>
        */
       public boolean hasMatchNetwork() {
@@ -1761,8 +1761,8 @@ public final class DIR {
        * <code>required string match_network = 6;</code>
        *
        * <pre>
-       * Matching network, unused at the moment.
-       * Must be "*".
+       * Matching network. There has to exist exactly one default address 
+       * accessible from any network for which this is set to "*".
        * </pre>
        */
       public java.lang.String getMatchNetwork() {
@@ -1780,8 +1780,8 @@ public final class DIR {
        * <code>required string match_network = 6;</code>
        *
        * <pre>
-       * Matching network, unused at the moment.
-       * Must be "*".
+       * Matching network. There has to exist exactly one default address 
+       * accessible from any network for which this is set to "*".
        * </pre>
        */
       public com.google.protobuf.ByteString
@@ -1801,8 +1801,8 @@ public final class DIR {
        * <code>required string match_network = 6;</code>
        *
        * <pre>
-       * Matching network, unused at the moment.
-       * Must be "*".
+       * Matching network. There has to exist exactly one default address 
+       * accessible from any network for which this is set to "*".
        * </pre>
        */
       public Builder setMatchNetwork(
@@ -1819,8 +1819,8 @@ public final class DIR {
        * <code>required string match_network = 6;</code>
        *
        * <pre>
-       * Matching network, unused at the moment.
-       * Must be "*".
+       * Matching network. There has to exist exactly one default address 
+       * accessible from any network for which this is set to "*".
        * </pre>
        */
       public Builder clearMatchNetwork() {
@@ -1833,8 +1833,8 @@ public final class DIR {
        * <code>required string match_network = 6;</code>
        *
        * <pre>
-       * Matching network, unused at the moment.
-       * Must be "*".
+       * Matching network. There has to exist exactly one default address 
+       * accessible from any network for which this is set to "*".
        * </pre>
        */
       public Builder setMatchNetworkBytes(
