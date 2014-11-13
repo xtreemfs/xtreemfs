@@ -42,7 +42,6 @@
 #include <endian.h>
 #include <math.h>
 
-#include <boost/algorithm/cxx11/all_of.hpp>
 #include <boost/foreach.hpp>
 #include <boost/smart_ptr/scoped_array.hpp>
 #include <algorithm>
@@ -100,6 +99,28 @@ bool IsPowerOfTwo(int x) {
   assert(x > 0);
   return (x != 0) && ((x & (x - 1)) == 0);
 }
+
+template<typename InputIterator>
+bool all_zero(InputIterator begin, InputIterator end) {
+  for (; begin != end; begin++) {
+    if (*begin != 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool all_zero(const boost::asio::const_buffer& buffer) {
+  return all_zero(
+      boost::asio::buffer_cast<const unsigned char*>(buffer),
+      boost::asio::buffer_cast<const unsigned char*>(buffer)
+          + boost::asio::buffer_size(buffer));
+}
+
+bool all_zero(const std::vector<unsigned char>& buffer) {
+  return all_zero(buffer.data(), buffer.data() + buffer.size());
+}
+
 }  // namespace unnamed
 
 namespace xtreemfs {
@@ -470,12 +491,7 @@ std::vector<unsigned char> HashTreeAD::GetLeaf(int leaf,
   if (!std::equal(leaf_value.begin() + leaf_adata_size_, leaf_value.end(),
                   hash_value.begin())) {
     // hash 0 indicates special case in which all data under node is 0
-    if (boost::algorithm::all_of_equal(leaf_value, 0)
-        && boost::algorithm::all_of_equal(
-            boost::asio::buffer_cast<const unsigned char*>(data),
-            boost::asio::buffer_cast<const unsigned char*>(data)
-                + boost::asio::buffer_size(data),
-            0)) {
+    if (all_zero(leaf_value) && all_zero(data)) {
       return std::vector<unsigned char>();
     } else {
       throw XtreemFSException("Hash mismatch in leaf of hash tree");
@@ -857,9 +873,8 @@ void HashTreeAD::ValidateTree() {
     Node right_child = node.first.RightChild(this);
 
     // hash 0 indicates special case in which all data under node is 0
-    if (boost::algorithm::all_of_equal(node.second, 0)) {
-      if (boost::algorithm::all_of_equal(nodes_.at(left_child), 0)
-          && boost::algorithm::all_of_equal(nodes_.at(right_child), 0)) {
+    if (all_zero(node.second)) {
+      if (all_zero(nodes_.at(left_child)) && all_zero(nodes_.at(right_child))) {
         continue;
       }
     }

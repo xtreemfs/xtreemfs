@@ -9,8 +9,6 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/random.hpp>
-#include <boost/generator_iterator.hpp>
 #include <algorithm>
 #include <exception>
 #include <string>
