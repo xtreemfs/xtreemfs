@@ -460,8 +460,6 @@ void HashTreeAD::FinishTruncate(
  * @param data    Data of the leaf.
  *
  * @throws XtreemFSException    If hash of the data is incorrect.
- * @throws std::out_of_range    If StartRead was not called, resulting in leaf
- *                              not being fetched from meta file.
  */
 std::vector<unsigned char> HashTreeAD::GetLeaf(int leaf,
                                                boost::asio::const_buffer data) {
@@ -599,6 +597,8 @@ void HashTreeAD::SetSize(int max_leaf_number) {
  * Reads root node from the meta file.
  *
  * @return false if root node does not exist.
+ *
+ * @throws XtreemFSException   If signature of root node is invalid.
  */
 bool HashTreeAD::ReadRootNodeFromFile() {
   std::vector<char> buffer(NodeSize(max_level_));

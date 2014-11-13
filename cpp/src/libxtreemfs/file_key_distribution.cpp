@@ -83,6 +83,8 @@ FileHandle* FileKeyDistribution::OpenMetaFile(
  * @param file_id           Full XtreemFS File ID (Volume UUID and File ID).
  * @param[out] file_enc_key
  * @param[out] file_sign_algo
+ *
+ * @throws XtreemFSException
  */
 void FileKeyDistribution::GetFileKeys(
     const pbrpc::UserCredentials& user_credentials,

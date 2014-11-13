@@ -12,6 +12,7 @@
 #include <boost/random.hpp>
 #include <boost/generator_iterator.hpp>
 #include <algorithm>
+#include <exception>
 #include <string>
 #include <utility>
 #include <vector>
@@ -19,8 +20,11 @@
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "util/crypto/asym_key.h"
 #include "util/crypto/base64.h"
+#include "util/error_log.h"
 #include "xtreemfs/GlobalTypes.pb.h"
 #include "xtreemfs/OSD.pb.h"
+
+using xtreemfs::util::ErrorLog;
 
 namespace xtreemfs {
 
@@ -190,15 +194,21 @@ ObjectEncryptor::WriteOperation::WriteOperation(
 }
 
 ObjectEncryptor::WriteOperation::~WriteOperation() {
-  // TODO(plieser): catch exceptions
-  boost::scoped_ptr<FileLock> meta_file_lock;
-  if (obj_enc_->volume_options_.encryption_cw == "locks"
-      || obj_enc_->volume_options_.encryption_cw == "snapshots") {
-    // lock meta file
-    meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, true));
-  }
+  try {
+    boost::scoped_ptr<FileLock> meta_file_lock;
+    if (obj_enc_->volume_options_.encryption_cw == "locks"
+        || obj_enc_->volume_options_.encryption_cw == "snapshots") {
+      // lock meta file
+      meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, true));
+    }
 
-  hash_tree_.FinishWrite();
+    hash_tree_.FinishWrite();
+  } catch (const std::exception& e) {
+    ErrorLog::error_log->AppendError(
+        "WriteOperation::~WriteOperation(): A exception occurred, possibly"
+            "leaving the file in an inconsistent state: "
+            + std::string(e.what()));
+  }
 }
 
 ObjectEncryptor::TruncateOperation::TruncateOperation(
@@ -207,7 +217,6 @@ ObjectEncryptor::TruncateOperation::TruncateOperation(
     int64_t new_file_size, PartialObjectReaderFunction reader,
     PartialObjectWriterFunction writer)
     : Operation(obj_enc, true) {
-  // TODO(plieser): user_credentials needed?
   int new_end_enc_block_no;
   if (new_file_size > 0) {
     new_end_enc_block_no = (new_file_size - 1) / enc_block_size_;
@@ -608,7 +617,13 @@ void ObjectEncryptor::FileLock::Change(uint64_t offset, uint64_t length) {
 }
 
 ObjectEncryptor::FileLock::~FileLock() {
-  file_->ReleaseLock(*lock_);
+  try {
+    file_->ReleaseLock(*lock_);
+  } catch (const std::exception& e) {
+    ErrorLog::error_log->AppendError(
+        "FileLock::~FileLock(): A exception occurred on releasing the lock: "
+            + std::string(e.what()));
+  }
 }
 
 }  // namespace xtreemfs
