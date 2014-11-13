@@ -985,12 +985,12 @@ TEST_F(EncryptionTest, objectVersion_02) {
 }
 
 void cw_worker(FileHandle* file, char id) {
-  boost::random::mt19937 rng(static_cast<int>(id));
+  boost::mt19937 rng(static_cast<int>(id));
   boost::uniform_int<> uni_dist_offset(0, 20);
-  boost::variate_generator<boost::random::mt19937, boost::uniform_int<> > uni_offset(
+  boost::variate_generator<boost::mt19937, boost::uniform_int<> > uni_offset(
       rng, uni_dist_offset);
   boost::uniform_int<> uni_dist_65_90(65, 90);
-  boost::variate_generator<boost::random::mt19937, boost::uniform_int<> > uni_65_90(
+  boost::variate_generator<boost::mt19937, boost::uniform_int<> > uni_65_90(
       rng, uni_dist_65_90);
 
   for (int i = 0; i < 50; i++) {
@@ -1006,9 +1006,9 @@ void cw_worker(FileHandle* file, char id) {
 
 void ct_worker(FileHandle* file, char id,
                pbrpc::UserCredentials& user_credentials) {
-  boost::random::mt19937 rng(static_cast<int>(id));
+  boost::mt19937 rng(static_cast<int>(id));
   boost::uniform_int<> uni_dist_offset(0, 20);
-  boost::variate_generator<boost::random::mt19937, boost::uniform_int<> > uni_offset(
+  boost::variate_generator<boost::mt19937, boost::uniform_int<> > uni_offset(
       rng, uni_dist_offset);
 
   for (int i = 0; i < 10; i++) {
