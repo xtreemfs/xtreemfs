@@ -377,7 +377,9 @@ public class StorageThread extends Stage {
             // object version; otherwise, read the latest object version
             long objVer = versionTimestamp != 0 ? fi.getVersionTable().getLatestVersionBefore(
                 versionTimestamp).getObjVersion(objNo) : fi.getLatestObjectVersion(objNo);
-            if (((readRequest) rq.getRequest().getRequestArgs()).getObjectVersion() > 0) {
+            // TODO(plieser): reading specific object version at the moment only works for readRequest
+            if (rq.getRequest().getRequestArgs() instanceof readRequest
+                    && ((readRequest) rq.getRequest().getRequestArgs()).getObjectVersion() > 0) {
                 // new version passed via arg always prevails
                 objVer = ((readRequest) rq.getRequest().getRequestArgs()).getObjectVersion();
             }
