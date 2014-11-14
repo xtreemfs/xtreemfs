@@ -14,6 +14,7 @@
 #include "libxtreemfs/volume_implementation.h"
 #include "util/crypto/asym_key_storage.h"
 #include "util/crypto/envelope.h"
+#include "util/crypto/rand.h"
 #include "util/crypto/sign_algorithm.h"
 #include "xtreemfs/Encryption.pb.h"
 #include "xtreemfs/GlobalTypes.pb.h"
@@ -58,6 +59,11 @@ class FileKeyDistribution {
                          SignAlgorithm* file_sign_algo,
                          std::vector<std::string>* key_ids_rw,
                          std::vector<std::string>* key_ids_r);
+
+  /**
+   *
+   */
+  Rand rand;
 
   /**
    * Key storage from there to get the public and private keys.

@@ -158,8 +158,8 @@ void FileKeyDistribution::CreateAndSetNewLockbox(
   // create read/write lockbox
   FileLockbox lockbox_rw;
   lockbox_rw.set_file_id(file_id);
-  // TODO(plieser): random salt
-  lockbox_rw.set_file_id_salt("00");
+  std::vector<unsigned char> salt = rand.Bytes(16);
+  lockbox_rw.set_file_id_salt(salt.data(), salt.size());
   lockbox_rw.set_cipher(volume_->volume_options().encryption_cipher);
   // generate and set file enc key
   Cipher cipher(volume_->volume_options().encryption_cipher);
