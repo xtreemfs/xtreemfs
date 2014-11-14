@@ -158,19 +158,6 @@ public class Converter {
         return JSONParser.writeJSON(list);
     }
 
-    // public static void main(String[] args) {
-    // BufferBackedStripingPolicy sp = new BufferBackedStripingPolicy("RAID0",
-    // 256, 2);
-    // BufferBackedXLoc repl1 = new BufferBackedXLoc(sp, new String[] { "osd1",
-    // "osd2" }, 0);
-    // BufferBackedXLoc repl2 = new BufferBackedXLoc(sp, new String[] { "osd4"
-    // }, 0);
-    // XLocList xLocList = new BufferBackedXLocList(new BufferBackedXLoc[] {
-    // repl1, repl2 }, "policy", 3);
-    //
-    // System.out.println(xLocListToString(xLocList));
-    // }
-
     /**
      * Converts an XLocSet to an XLocList
      *
@@ -218,7 +205,7 @@ public class Converter {
 
             org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy.Builder sp = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy
                     .newBuilder().setType(StripingPolicyType.valueOf(xSP.getPattern())).setStripeSize(
-                        xSP.getStripeSize()).setWidth(xSP.getWidth());
+                        xSP.getStripeSize()).setWidth(xSP.getWidth()).setParityWidth(xSP.getParityWidth());
 
             Replica.Builder replBuilder = Replica.newBuilder().setReplicationFlags(
                 xRepl.getReplicationFlags()).setStripingPolicy(sp);
@@ -280,9 +267,10 @@ public class Converter {
         String pattern = (String) spMap.get("pattern");
         long size = (Long) spMap.get("size");
         long width = (Long) spMap.get("width");
+        long parity_width = (Long) spMap.get("parity_width");
 
         return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy.newBuilder().setType(
-            StripingPolicyType.valueOf(pattern)).setStripeSize((int) size).setWidth((int) width).build();
+            StripingPolicyType.valueOf(pattern)).setStripeSize((int) size).setWidth((int) width).setParityWidth((int) parity_width).build();
     }
 
     /**
@@ -314,7 +302,7 @@ public class Converter {
         StripingPolicy sp) {
         return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy.newBuilder().setType(
             StripingPolicyType.valueOf(sp.getPattern())).setStripeSize(sp.getStripeSize()).setWidth(
-            sp.getWidth());
+            sp.getWidth()).setParityWidth(sp.getParityWidth());
     }
 
     public static String stripingPolicyToJSONString(StripingPolicy sp) throws JSONException {
@@ -326,11 +314,13 @@ public class Converter {
         long rf = (Long) jsonObj.get("replication-flags");
         Map<String, Object> jsonSP = (Map<String, Object>) jsonObj.get("striping-policy");
         final String spName = (String) jsonSP.get("pattern");
+        //TODO set correct type...can be ERASURECODES as well but seems to work for now
         StripingPolicyType spType = StripingPolicyType.STRIPING_POLICY_RAID0;
         final long width = (Long) jsonSP.get("width");
+        final long parity_width = (Long) jsonSP.get("parity_width");
         final long size = (Long) jsonSP.get("size");
         org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy.Builder sp = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy
-                .newBuilder().setType(spType).setStripeSize((int) size).setWidth((int) width);
+                .newBuilder().setType(spType).setStripeSize((int) size).setWidth((int) width).setParityWidth((int) parity_width);
 
         List<String> osds = (List<String>) jsonObj.get("osds");
 
@@ -345,6 +335,7 @@ public class Converter {
         spMap.put("pattern", sp.getPattern());
         spMap.put("size", sp.getStripeSize());
         spMap.put("width", sp.getWidth());
+        spMap.put("parity_width", sp.getParityWidth());
         return spMap;
     }
 
