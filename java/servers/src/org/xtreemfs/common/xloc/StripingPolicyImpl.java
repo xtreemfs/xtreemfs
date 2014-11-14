@@ -16,7 +16,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 
 
 /**
- * 
+ *
  * @author bjko
  */
 public abstract class StripingPolicyImpl {
@@ -48,7 +48,7 @@ public abstract class StripingPolicyImpl {
 
     /**
      * returns the width (number of OSDs) of the striping policy
-     * 
+     *
      * @return
      */
     public int getWidth() {
@@ -64,8 +64,15 @@ public abstract class StripingPolicyImpl {
     }
 
     /**
+     * returns the number of OSDs that store parity information
+     *
+     * @return
+     */
+    public abstract int getParityWidth();
+
+    /**
      * returns the object number for the given offset
-     * 
+     *
      * @param fileOffset
      * @return
      */
@@ -73,7 +80,7 @@ public abstract class StripingPolicyImpl {
 
     /**
      * returns the index of the OSD for the given offset
-     * 
+     *
      * @param fileOffset
      * @return
      */
@@ -81,7 +88,7 @@ public abstract class StripingPolicyImpl {
 
     /**
      * returns the index of the OSD for the given object
-     * 
+     *
      * @param objectNo
      * @return
      */
@@ -91,7 +98,7 @@ public abstract class StripingPolicyImpl {
 
     /**
      * returns the first offset of this object
-     * 
+     *
      * @param objectNo
      * @return
      */
@@ -99,7 +106,7 @@ public abstract class StripingPolicyImpl {
 
     /**
      * returns the last offset of this object
-     * 
+     *
      * @param objectNo
      * @return
      */
@@ -117,7 +124,7 @@ public abstract class StripingPolicyImpl {
     /**
      * Returns a virtual iterator which iterates over all objects the given OSD should save. It starts with
      * the correct object in the row of startObjectNo (inclusive) and ends with endObjectNo (maybe inclusive).
-     * 
+     *
      * @param osdIndex
      * @param filesize
      * @return

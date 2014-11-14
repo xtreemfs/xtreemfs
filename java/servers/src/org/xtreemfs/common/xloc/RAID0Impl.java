@@ -13,7 +13,7 @@ import java.util.Iterator;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 
 /**
- * 
+ *
  * @author bjko
  */
 public class RAID0Impl extends StripingPolicyImpl {
@@ -25,6 +25,12 @@ public class RAID0Impl extends StripingPolicyImpl {
         stripe_size_in_bytes = policy.getStripeSize() * 1024;
         if (stripe_size_in_bytes <= 0)
             throw new IllegalArgumentException("size must be > 0");
+    }
+
+
+    @Override
+    public int getParityWidth() {
+        return 0;
     }
 
     @Override

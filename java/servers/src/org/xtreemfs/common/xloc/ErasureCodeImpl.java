@@ -25,6 +25,7 @@ public class ErasureCodeImpl extends StripingPolicyImpl {
             throw new IllegalArgumentException("size must be > 0");
     }
 
+    @Override
     public int getParityWidth() {
         return policy.getParityWidth();
     }
