@@ -402,7 +402,8 @@ FileHandle* VolumeImplementation::OpenFileWithTruncateSize(
                 this,
                 file_info,
                 open_response->creds().xlocs().replicas(0).striping_policy()
-                    .stripe_size())));
+                    .stripe_size(),
+                mode)));
   }
 
   // Copy timestamp and free response memory.

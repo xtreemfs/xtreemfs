@@ -27,7 +27,7 @@ class FileKeyDistribution {
 
   FileHandle* OpenMetaFile(const pbrpc::UserCredentials& user_credentials,
                            const pbrpc::XCap& xcap,
-                           const std::string& file_path,
+                           const std::string& file_path, uint32_t mode,
                            std::vector<unsigned char>* file_enc_key,
                            SignAlgorithm* file_sign_algo);
 
@@ -39,12 +39,12 @@ class FileKeyDistribution {
 
   void CreateAndSetNewLockbox(const pbrpc::UserCredentials& user_credentials,
                               const std::string& file_path,
-                              const std::string& file_id,
+                              const std::string& file_id, uint32_t mode,
                               std::vector<unsigned char>* file_enc_key,
                               SignAlgorithm* file_sign_algo);
 
   void SetLockbox(const pbrpc::UserCredentials& user_credentials,
-                  const std::string& file_path, const SignAlgorithm& sig_algo,
+                  const std::string& file_path, const SignAlgorithm& sign_algo,
                   const std::vector<std::string>& key_ids,
                   const std::vector<AsymKey>& pub_enc_keys,
                   const pbrpc::FileLockbox& lockbox, bool write_lockbox);
@@ -54,8 +54,7 @@ class FileKeyDistribution {
       const std::string& file_path, SignAlgorithm* file_sign_algo,
       bool* write_access);
 
-  void GetSetLockboxKeys(const pbrpc::UserCredentials& user_credentials,
-                         const std::string& file_path,
+  void GetSetLockboxKeys(const pbrpc::FileMetadata& file_mdata,
                          SignAlgorithm* file_sign_algo,
                          std::vector<std::string>* key_ids_rw,
                          std::vector<std::string>* key_ids_r);

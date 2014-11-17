@@ -21,8 +21,9 @@
 
 using xtreemfs::pbrpc::Stat;
 using xtreemfs::pbrpc::SymEncBytes;
+using xtreemfs::pbrpc::SignedBytes;
 using xtreemfs::pbrpc::FileLockbox;
-using xtreemfs::pbrpc::SignedFileLockbox;
+using xtreemfs::pbrpc::FileMetadata;
 
 namespace xtreemfs {
 
@@ -35,8 +36,8 @@ FileKeyDistribution::FileKeyDistribution(VolumeImplementation* volume)
 
 FileHandle* FileKeyDistribution::OpenMetaFile(
     const pbrpc::UserCredentials& user_credentials, const pbrpc::XCap& xcap,
-    const std::string& file_path, std::vector<unsigned char>* file_enc_key,
-    SignAlgorithm* file_sign_algo) {
+    const std::string& file_path, uint32_t mode,
+    std::vector<unsigned char>* file_enc_key, SignAlgorithm* file_sign_algo) {
   assert(file_enc_key && file_sign_algo);
 
   std::string meta_file_name(
@@ -68,7 +69,7 @@ FileHandle* FileKeyDistribution::OpenMetaFile(
               | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
           0777);
     }
-    CreateAndSetNewLockbox(user_credentials, file_path, xcap.file_id(),
+    CreateAndSetNewLockbox(user_credentials, file_path, xcap.file_id(), mode,
                            file_enc_key, file_sign_algo);
   }
 
@@ -92,11 +93,11 @@ void FileKeyDistribution::GetFileKeys(
     std::vector<unsigned char>* file_enc_key, SignAlgorithm* file_sign_algo) {
   assert(file_enc_key && file_sign_algo);
 
-  SignAlgorithm owner_sig_algo(AsymKey(),
-                               volume_->volume_options().encryption_hash);
+  SignAlgorithm owner_sign_algo(AsymKey(),
+                                volume_->volume_options().encryption_hash);
   bool write_access;
   std::string key_id = GetAccessLockboxKeys(user_credentials, file_path,
-                                            &owner_sig_algo, &write_access);
+                                            &owner_sign_algo, &write_access);
 
   // get asym encrypted lockbox encryption key
   std::string enc_lockbox_enc_key;
@@ -121,15 +122,16 @@ void FileKeyDistribution::GetFileKeys(
                  boost::asio::buffer(ste_lockbox.iv()), &signed_lockbox_buffer);
 
   // verify signature of file lockbox
-  SignedFileLockbox signed_lockbox;
+  SignedBytes signed_lockbox;
   signed_lockbox.ParseFromArray(signed_lockbox_buffer.data(),
                                 signed_lockbox_buffer.size());
-  owner_sig_algo.Verify(boost::asio::buffer(signed_lockbox.lockbox()),
-                        boost::asio::buffer(signed_lockbox.signature()));
+  // TODO(plieser): set used hash for signing
+  owner_sign_algo.Verify(boost::asio::buffer(signed_lockbox.data()),
+                         boost::asio::buffer(signed_lockbox.signature()));
 
   // read lockbox
   FileLockbox lockbox;
-  lockbox.ParseFromString(signed_lockbox.lockbox());
+  lockbox.ParseFromString(signed_lockbox.data());
   if (lockbox.file_id() != file_id) {
     throw XtreemFSException("Wrong FileID in lockbox");
   }
@@ -146,20 +148,32 @@ void FileKeyDistribution::GetFileKeys(
  * @param user_credentials  Owner of the file.
  * @param file_path         File path to the file.
  * @param file_id   Full XtreemFS File ID (Volume UUID and File ID).
+ * @param mode    POSIX access mode.
  * @param[out] file_enc_key
  * @param[out] file_sign_algo
  */
 void FileKeyDistribution::CreateAndSetNewLockbox(
     const pbrpc::UserCredentials& user_credentials,
-    const std::string& file_path, const std::string& file_id,
+    const std::string& file_path, const std::string& file_id, uint32_t mode,
     std::vector<unsigned char>* file_enc_key, SignAlgorithm* file_sign_algo) {
   assert(file_enc_key && file_sign_algo);
+
+  // create FileMetadata
+  FileMetadata file_mdata;
+  file_mdata.set_file_id(file_id);
+  std::vector<unsigned char> file_id_salt = rand.Bytes(16);
+  file_mdata.set_file_id_salt(file_id_salt.data(), file_id_salt.size());
+  std::vector<unsigned char> salt = rand.Bytes(16);
+  file_mdata.set_file_id_salt(salt.data(), salt.size());
+  file_mdata.set_user_id(user_credentials.username());
+  file_mdata.set_group_id(user_credentials.groups(0));
+  file_mdata.set_mode(mode);
 
   // create read/write lockbox
   FileLockbox lockbox_rw;
   lockbox_rw.set_file_id(file_id);
-  std::vector<unsigned char> salt = rand.Bytes(16);
-  lockbox_rw.set_file_id_salt(salt.data(), salt.size());
+  lockbox_rw.set_file_id_salt(file_mdata.file_id_salt());
+  lockbox_rw.set_salt(file_mdata.salt());
   lockbox_rw.set_cipher(volume_->volume_options().encryption_cipher);
   // generate and set file enc key
   Cipher cipher(volume_->volume_options().encryption_cipher);
@@ -182,16 +196,15 @@ void FileKeyDistribution::CreateAndSetNewLockbox(
   lockbox_r.set_sign_key(encoded_pub_file_sign_key.data(),
                          encoded_pub_file_sign_key.size());
 
-  SignAlgorithm owner_sig_algo(AsymKey(),
-                               volume_->volume_options().encryption_hash);
+  SignAlgorithm owner_sign_algo(AsymKey(),
+                                volume_->volume_options().encryption_hash);
   std::vector<std::string> key_ids_rw;
   std::vector<std::string> key_ids_r;
-  GetSetLockboxKeys(user_credentials, file_path, &owner_sig_algo, &key_ids_rw,
-                    &key_ids_r);
+  GetSetLockboxKeys(file_mdata, &owner_sign_algo, &key_ids_rw, &key_ids_r);
 
-  SetLockbox(user_credentials, file_path, owner_sig_algo, key_ids_rw,
+  SetLockbox(user_credentials, file_path, owner_sign_algo, key_ids_rw,
              key_storage_.GetPubKeys(key_ids_rw), lockbox_rw, true);
-  SetLockbox(user_credentials, file_path, owner_sig_algo, key_ids_r,
+  SetLockbox(user_credentials, file_path, owner_sign_algo, key_ids_r,
              key_storage_.GetPubKeys(key_ids_r), lockbox_r, false);
 }
 
@@ -200,7 +213,7 @@ void FileKeyDistribution::CreateAndSetNewLockbox(
  *
  * @param user_credentials  Owner of the file.
  * @param file_path         File path to the file the lockbox belongs.
- * @param sig_algo          Sign algorithm to sign lockbox with.
+ * @param sign_algo         Sign algorithm to sign lockbox with.
  * @param key_ids_          Key IDs of users/groups who should have access.
  * @param pub_enc_keys      Public keys of users/groups who should have access.
  * @param lockbox           The lockbox to set.
@@ -208,7 +221,7 @@ void FileKeyDistribution::CreateAndSetNewLockbox(
  */
 void FileKeyDistribution::SetLockbox(
     const pbrpc::UserCredentials& user_credentials,
-    const std::string& file_path, const SignAlgorithm& sig_algo,
+    const std::string& file_path, const SignAlgorithm& sign_algo,
     const std::vector<std::string>& key_ids,
     const std::vector<AsymKey>& pub_enc_keys, const pbrpc::FileLockbox& lockbox,
     bool write_lockbox) {
@@ -218,10 +231,11 @@ void FileKeyDistribution::SetLockbox(
   }
 
   // sign file lockbox
-  SignedFileLockbox signed_lockbox;
-  signed_lockbox.set_lockbox(lockbox.SerializeAsString());
-  std::vector<unsigned char> sig = sig_algo.Sign(
-      boost::asio::buffer(signed_lockbox.lockbox()));
+  SignedBytes signed_lockbox;
+  signed_lockbox.set_data(lockbox.SerializeAsString());
+  signed_lockbox.set_hash_algo(sign_algo.get_hash_name());
+  std::vector<unsigned char> sig = sign_algo.Sign(
+      boost::asio::buffer(signed_lockbox.data()));
   signed_lockbox.set_signature(sig.data(), sig.size());
 
   // encrypt signed file lockbox
@@ -302,44 +316,37 @@ std::string FileKeyDistribution::GetAccessLockboxKeys(
 /**
  * Get the necessary keys to encrypt and sign the file lockbox.
  *
- * @param user_credentials  Owner of the file.
- * @param file_path         File path to the file the lockbox belongs.
+ * @param file_mdata    File metadata.
  * @param[out] file_sign_algo   Sign algorithm to sign lockbox.
  * @param[out] key_ids_rw   Key IDs of users/groups who have write access.
  * @param[out] key_ids_r    Key IDs of users/groups who have read only access.
  */
 void FileKeyDistribution::GetSetLockboxKeys(
-    const pbrpc::UserCredentials& user_credentials,
-    const std::string& file_path, SignAlgorithm* file_sign_algo,
+    const pbrpc::FileMetadata& file_mdata, SignAlgorithm* file_sign_algo,
     std::vector<std::string>* key_ids_rw, std::vector<std::string>* key_ids_r) {
   assert(file_sign_algo && key_ids_rw && key_ids_r);
   key_ids_rw->clear();
   key_ids_r->clear();
 
-  // get file access right
-  // TODO(plieser): access rights must be a trustable input
-  Stat stat;
-  volume_->GetAttr(user_credentials, file_path, &stat);
-
   // get private key of lockbox signer (the owner)
   file_sign_algo->set_key(
-      key_storage_.GetPrivKey("user." + stat.user_id() + ".sign"));
+      key_storage_.GetPrivKey("user." + file_mdata.user_id() + ".sign"));
 
   // owner has always write access
-  key_ids_rw->push_back("user." + stat.user_id() + ".enc");
-  if (stat.mode() & S_IWGRP) {
+  key_ids_rw->push_back("user." + file_mdata.user_id() + ".enc");
+  if (file_mdata.mode() & S_IWGRP) {
     // owner group has write access
-    key_ids_rw->push_back("group." + stat.group_id() + ".enc");
-  } else if (stat.mode() & S_IRGRP) {
+    key_ids_rw->push_back("group." + file_mdata.group_id() + ".enc");
+  } else if (file_mdata.mode() & S_IRGRP) {
     // owner group has read only access
-    key_ids_r->push_back("group." + stat.group_id() + ".enc");
+    key_ids_r->push_back("group." + file_mdata.group_id() + ".enc");
   }
-  if (stat.mode() & S_IWOTH) {
+  if (file_mdata.mode() & S_IWOTH) {
     // others has write access
-    key_ids_rw->push_back("group." + stat.group_id() + ".enc");
-  } else if (stat.mode() & S_IROTH) {
+    key_ids_rw->push_back("group." + file_mdata.group_id() + ".enc");
+  } else if (file_mdata.mode() & S_IROTH) {
     // others has read only access
-    key_ids_r->push_back("group." + stat.group_id() + ".enc");
+    key_ids_r->push_back("group." + file_mdata.group_id() + ".enc");
   }
 }
 

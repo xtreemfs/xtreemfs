@@ -30,6 +30,8 @@ class SignAlgorithm {
   bool Verify(const boost::asio::const_buffer& data,
               const boost::asio::const_buffer& sig) const;
 
+  const std::string& get_hash_name() const;
+
   int get_signature_size() const;
 
   void set_key(const AsymKey& key);
@@ -37,6 +39,11 @@ class SignAlgorithm {
  private:
   // not owned by the class
   const EVP_MD* md_;
+
+  // the name of hash algorithm used for signing
+  const std::string hash_name_;
+
+  // key used for signing
   AsymKey key_;
 
   // Ensure openssl is initialised.

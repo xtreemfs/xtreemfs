@@ -21,7 +21,8 @@ namespace xtreemfs {
  * @param hash_name   The name of the used hash algorithm.
  */
 SignAlgorithm::SignAlgorithm(const AsymKey& key, const std::string& hash_name)
-    : key_(key) {
+    : hash_name_(hash_name),
+      key_(key) {
   if ((md_ = EVP_get_digestbyname(hash_name.c_str())) == NULL) {
     LogAndThrowOpenSSLError();
   }
@@ -141,6 +142,13 @@ bool SignAlgorithm::Verify(const boost::asio::const_buffer& data,
   }
 
   return true;
+}
+
+/**
+ * @return  The name of hash algorithm used for signing.
+ */
+const std::string& SignAlgorithm::get_hash_name() const {
+  return hash_name_;
 }
 
 /**

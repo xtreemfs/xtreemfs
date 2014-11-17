@@ -24,12 +24,15 @@ namespace {
 const ::google::protobuf::Descriptor* SymEncBytes_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   SymEncBytes_reflection_ = NULL;
+const ::google::protobuf::Descriptor* SignedBytes_descriptor_ = NULL;
+const ::google::protobuf::internal::GeneratedMessageReflection*
+  SignedBytes_reflection_ = NULL;
+const ::google::protobuf::Descriptor* FileMetadata_descriptor_ = NULL;
+const ::google::protobuf::internal::GeneratedMessageReflection*
+  FileMetadata_reflection_ = NULL;
 const ::google::protobuf::Descriptor* FileLockbox_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   FileLockbox_reflection_ = NULL;
-const ::google::protobuf::Descriptor* SignedFileLockbox_descriptor_ = NULL;
-const ::google::protobuf::internal::GeneratedMessageReflection*
-  SignedFileLockbox_reflection_ = NULL;
 
 }  // namespace
 
@@ -57,10 +60,48 @@ void protobuf_AssignDesc_xtreemfs_2fEncryption_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(SymEncBytes));
-  FileLockbox_descriptor_ = file->message_type(1);
-  static const int FileLockbox_offsets_[5] = {
+  SignedBytes_descriptor_ = file->message_type(1);
+  static const int SignedBytes_offsets_[3] = {
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SignedBytes, data_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SignedBytes, signature_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SignedBytes, hash_algo_),
+  };
+  SignedBytes_reflection_ =
+    new ::google::protobuf::internal::GeneratedMessageReflection(
+      SignedBytes_descriptor_,
+      SignedBytes::default_instance_,
+      SignedBytes_offsets_,
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SignedBytes, _has_bits_[0]),
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SignedBytes, _unknown_fields_),
+      -1,
+      ::google::protobuf::DescriptorPool::generated_pool(),
+      ::google::protobuf::MessageFactory::generated_factory(),
+      sizeof(SignedBytes));
+  FileMetadata_descriptor_ = file->message_type(2);
+  static const int FileMetadata_offsets_[6] = {
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(FileMetadata, file_id_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(FileMetadata, file_id_salt_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(FileMetadata, salt_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(FileMetadata, user_id_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(FileMetadata, group_id_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(FileMetadata, mode_),
+  };
+  FileMetadata_reflection_ =
+    new ::google::protobuf::internal::GeneratedMessageReflection(
+      FileMetadata_descriptor_,
+      FileMetadata::default_instance_,
+      FileMetadata_offsets_,
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(FileMetadata, _has_bits_[0]),
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(FileMetadata, _unknown_fields_),
+      -1,
+      ::google::protobuf::DescriptorPool::generated_pool(),
+      ::google::protobuf::MessageFactory::generated_factory(),
+      sizeof(FileMetadata));
+  FileLockbox_descriptor_ = file->message_type(3);
+  static const int FileLockbox_offsets_[6] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(FileLockbox, file_id_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(FileLockbox, file_id_salt_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(FileLockbox, salt_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(FileLockbox, cipher_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(FileLockbox, enc_key_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(FileLockbox, sign_key_),
@@ -76,22 +117,6 @@ void protobuf_AssignDesc_xtreemfs_2fEncryption_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(FileLockbox));
-  SignedFileLockbox_descriptor_ = file->message_type(2);
-  static const int SignedFileLockbox_offsets_[2] = {
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SignedFileLockbox, lockbox_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SignedFileLockbox, signature_),
-  };
-  SignedFileLockbox_reflection_ =
-    new ::google::protobuf::internal::GeneratedMessageReflection(
-      SignedFileLockbox_descriptor_,
-      SignedFileLockbox::default_instance_,
-      SignedFileLockbox_offsets_,
-      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SignedFileLockbox, _has_bits_[0]),
-      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SignedFileLockbox, _unknown_fields_),
-      -1,
-      ::google::protobuf::DescriptorPool::generated_pool(),
-      ::google::protobuf::MessageFactory::generated_factory(),
-      sizeof(SignedFileLockbox));
 }
 
 namespace {
@@ -107,9 +132,11 @@ void protobuf_RegisterTypes(const ::std::string&) {
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
     SymEncBytes_descriptor_, &SymEncBytes::default_instance());
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
-    FileLockbox_descriptor_, &FileLockbox::default_instance());
+    SignedBytes_descriptor_, &SignedBytes::default_instance());
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
-    SignedFileLockbox_descriptor_, &SignedFileLockbox::default_instance());
+    FileMetadata_descriptor_, &FileMetadata::default_instance());
+  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
+    FileLockbox_descriptor_, &FileLockbox::default_instance());
 }
 
 }  // namespace
@@ -117,10 +144,12 @@ void protobuf_RegisterTypes(const ::std::string&) {
 void protobuf_ShutdownFile_xtreemfs_2fEncryption_2eproto() {
   delete SymEncBytes::default_instance_;
   delete SymEncBytes_reflection_;
+  delete SignedBytes::default_instance_;
+  delete SignedBytes_reflection_;
+  delete FileMetadata::default_instance_;
+  delete FileMetadata_reflection_;
   delete FileLockbox::default_instance_;
   delete FileLockbox_reflection_;
-  delete SignedFileLockbox::default_instance_;
-  delete SignedFileLockbox_reflection_;
 }
 
 void protobuf_AddDesc_xtreemfs_2fEncryption_2eproto() {
@@ -132,20 +161,26 @@ void protobuf_AddDesc_xtreemfs_2fEncryption_2eproto() {
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
     "\n\031xtreemfs/Encryption.proto\022\016xtreemfs.pb"
     "rpc\"=\n\013SymEncBytes\022\016\n\006cipher\030\001 \002(\t\022\n\n\002iv"
-    "\030\002 \002(\014\022\022\n\nciphertext\030\003 \002(\014\"g\n\013FileLockbo"
-    "x\022\017\n\007file_id\030\001 \002(\t\022\024\n\014file_id_salt\030\002 \002(\t"
-    "\022\016\n\006cipher\030\003 \002(\t\022\017\n\007enc_key\030\004 \002(\014\022\020\n\010sig"
-    "n_key\030\005 \002(\014\"7\n\021SignedFileLockbox\022\017\n\007lock"
-    "box\030\001 \002(\014\022\021\n\tsignature\030\002 \002(\014B(\n&org.xtre"
-    "emfs.pbrpc.generatedinterfaces", 310);
+    "\030\002 \002(\014\022\022\n\nciphertext\030\003 \002(\014\"A\n\013SignedByte"
+    "s\022\014\n\004data\030\001 \002(\014\022\021\n\tsignature\030\002 \002(\014\022\021\n\tha"
+    "sh_algo\030\003 \001(\t\"t\n\014FileMetadata\022\017\n\007file_id"
+    "\030\001 \002(\t\022\024\n\014file_id_salt\030\002 \002(\014\022\014\n\004salt\030\003 \002"
+    "(\014\022\017\n\007user_id\030\004 \002(\t\022\020\n\010group_id\030\005 \002(\t\022\014\n"
+    "\004mode\030\006 \002(\007\"u\n\013FileLockbox\022\017\n\007file_id\030\001 "
+    "\002(\t\022\024\n\014file_id_salt\030\002 \002(\014\022\014\n\004salt\030\003 \002(\014\022"
+    "\016\n\006cipher\030\004 \002(\t\022\017\n\007enc_key\030\005 \002(\014\022\020\n\010sign"
+    "_key\030\006 \002(\014B(\n&org.xtreemfs.pbrpc.generat"
+    "edinterfaces", 452);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "xtreemfs/Encryption.proto", &protobuf_RegisterTypes);
   SymEncBytes::default_instance_ = new SymEncBytes();
+  SignedBytes::default_instance_ = new SignedBytes();
+  FileMetadata::default_instance_ = new FileMetadata();
   FileLockbox::default_instance_ = new FileLockbox();
-  SignedFileLockbox::default_instance_ = new SignedFileLockbox();
   SymEncBytes::default_instance_->InitAsDefaultInstance();
+  SignedBytes::default_instance_->InitAsDefaultInstance();
+  FileMetadata::default_instance_->InitAsDefaultInstance();
   FileLockbox::default_instance_->InitAsDefaultInstance();
-  SignedFileLockbox::default_instance_->InitAsDefaultInstance();
   ::google::protobuf::internal::OnShutdown(&protobuf_ShutdownFile_xtreemfs_2fEncryption_2eproto);
 }
 
@@ -481,8 +516,805 @@ void SymEncBytes::Swap(SymEncBytes* other) {
 // ===================================================================
 
 #ifndef _MSC_VER
+const int SignedBytes::kDataFieldNumber;
+const int SignedBytes::kSignatureFieldNumber;
+const int SignedBytes::kHashAlgoFieldNumber;
+#endif  // !_MSC_VER
+
+SignedBytes::SignedBytes()
+  : ::google::protobuf::Message() {
+  SharedCtor();
+}
+
+void SignedBytes::InitAsDefaultInstance() {
+}
+
+SignedBytes::SignedBytes(const SignedBytes& from)
+  : ::google::protobuf::Message() {
+  SharedCtor();
+  MergeFrom(from);
+}
+
+void SignedBytes::SharedCtor() {
+  _cached_size_ = 0;
+  data_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  signature_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  hash_algo_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+}
+
+SignedBytes::~SignedBytes() {
+  SharedDtor();
+}
+
+void SignedBytes::SharedDtor() {
+  if (data_ != &::google::protobuf::internal::kEmptyString) {
+    delete data_;
+  }
+  if (signature_ != &::google::protobuf::internal::kEmptyString) {
+    delete signature_;
+  }
+  if (hash_algo_ != &::google::protobuf::internal::kEmptyString) {
+    delete hash_algo_;
+  }
+  if (this != default_instance_) {
+  }
+}
+
+void SignedBytes::SetCachedSize(int size) const {
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+}
+const ::google::protobuf::Descriptor* SignedBytes::descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return SignedBytes_descriptor_;
+}
+
+const SignedBytes& SignedBytes::default_instance() {
+  if (default_instance_ == NULL) protobuf_AddDesc_xtreemfs_2fEncryption_2eproto();
+  return *default_instance_;
+}
+
+SignedBytes* SignedBytes::default_instance_ = NULL;
+
+SignedBytes* SignedBytes::New() const {
+  return new SignedBytes;
+}
+
+void SignedBytes::Clear() {
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    if (has_data()) {
+      if (data_ != &::google::protobuf::internal::kEmptyString) {
+        data_->clear();
+      }
+    }
+    if (has_signature()) {
+      if (signature_ != &::google::protobuf::internal::kEmptyString) {
+        signature_->clear();
+      }
+    }
+    if (has_hash_algo()) {
+      if (hash_algo_ != &::google::protobuf::internal::kEmptyString) {
+        hash_algo_->clear();
+      }
+    }
+  }
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+  mutable_unknown_fields()->Clear();
+}
+
+bool SignedBytes::MergePartialFromCodedStream(
+    ::google::protobuf::io::CodedInputStream* input) {
+#define DO_(EXPRESSION) if (!(EXPRESSION)) return false
+  ::google::protobuf::uint32 tag;
+  while ((tag = input->ReadTag()) != 0) {
+    switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
+      // required bytes data = 1;
+      case 1: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadBytes(
+                input, this->mutable_data()));
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(18)) goto parse_signature;
+        break;
+      }
+
+      // required bytes signature = 2;
+      case 2: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_signature:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadBytes(
+                input, this->mutable_signature()));
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(26)) goto parse_hash_algo;
+        break;
+      }
+
+      // optional string hash_algo = 3;
+      case 3: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_hash_algo:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+                input, this->mutable_hash_algo()));
+          ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+            this->hash_algo().data(), this->hash_algo().length(),
+            ::google::protobuf::internal::WireFormat::PARSE);
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectAtEnd()) return true;
+        break;
+      }
+
+      default: {
+      handle_uninterpreted:
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_END_GROUP) {
+          return true;
+        }
+        DO_(::google::protobuf::internal::WireFormat::SkipField(
+              input, tag, mutable_unknown_fields()));
+        break;
+      }
+    }
+  }
+  return true;
+#undef DO_
+}
+
+void SignedBytes::SerializeWithCachedSizes(
+    ::google::protobuf::io::CodedOutputStream* output) const {
+  // required bytes data = 1;
+  if (has_data()) {
+    ::google::protobuf::internal::WireFormatLite::WriteBytes(
+      1, this->data(), output);
+  }
+
+  // required bytes signature = 2;
+  if (has_signature()) {
+    ::google::protobuf::internal::WireFormatLite::WriteBytes(
+      2, this->signature(), output);
+  }
+
+  // optional string hash_algo = 3;
+  if (has_hash_algo()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+      this->hash_algo().data(), this->hash_algo().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE);
+    ::google::protobuf::internal::WireFormatLite::WriteString(
+      3, this->hash_algo(), output);
+  }
+
+  if (!unknown_fields().empty()) {
+    ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
+        unknown_fields(), output);
+  }
+}
+
+::google::protobuf::uint8* SignedBytes::SerializeWithCachedSizesToArray(
+    ::google::protobuf::uint8* target) const {
+  // required bytes data = 1;
+  if (has_data()) {
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteBytesToArray(
+        1, this->data(), target);
+  }
+
+  // required bytes signature = 2;
+  if (has_signature()) {
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteBytesToArray(
+        2, this->signature(), target);
+  }
+
+  // optional string hash_algo = 3;
+  if (has_hash_algo()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+      this->hash_algo().data(), this->hash_algo().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE);
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
+        3, this->hash_algo(), target);
+  }
+
+  if (!unknown_fields().empty()) {
+    target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
+        unknown_fields(), target);
+  }
+  return target;
+}
+
+int SignedBytes::ByteSize() const {
+  int total_size = 0;
+
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    // required bytes data = 1;
+    if (has_data()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::BytesSize(
+          this->data());
+    }
+
+    // required bytes signature = 2;
+    if (has_signature()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::BytesSize(
+          this->signature());
+    }
+
+    // optional string hash_algo = 3;
+    if (has_hash_algo()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::StringSize(
+          this->hash_algo());
+    }
+
+  }
+  if (!unknown_fields().empty()) {
+    total_size +=
+      ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
+        unknown_fields());
+  }
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = total_size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+  return total_size;
+}
+
+void SignedBytes::MergeFrom(const ::google::protobuf::Message& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  const SignedBytes* source =
+    ::google::protobuf::internal::dynamic_cast_if_available<const SignedBytes*>(
+      &from);
+  if (source == NULL) {
+    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
+  } else {
+    MergeFrom(*source);
+  }
+}
+
+void SignedBytes::MergeFrom(const SignedBytes& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    if (from.has_data()) {
+      set_data(from.data());
+    }
+    if (from.has_signature()) {
+      set_signature(from.signature());
+    }
+    if (from.has_hash_algo()) {
+      set_hash_algo(from.hash_algo());
+    }
+  }
+  mutable_unknown_fields()->MergeFrom(from.unknown_fields());
+}
+
+void SignedBytes::CopyFrom(const ::google::protobuf::Message& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void SignedBytes::CopyFrom(const SignedBytes& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool SignedBytes::IsInitialized() const {
+  if ((_has_bits_[0] & 0x00000003) != 0x00000003) return false;
+
+  return true;
+}
+
+void SignedBytes::Swap(SignedBytes* other) {
+  if (other != this) {
+    std::swap(data_, other->data_);
+    std::swap(signature_, other->signature_);
+    std::swap(hash_algo_, other->hash_algo_);
+    std::swap(_has_bits_[0], other->_has_bits_[0]);
+    _unknown_fields_.Swap(&other->_unknown_fields_);
+    std::swap(_cached_size_, other->_cached_size_);
+  }
+}
+
+::google::protobuf::Metadata SignedBytes::GetMetadata() const {
+  protobuf_AssignDescriptorsOnce();
+  ::google::protobuf::Metadata metadata;
+  metadata.descriptor = SignedBytes_descriptor_;
+  metadata.reflection = SignedBytes_reflection_;
+  return metadata;
+}
+
+
+// ===================================================================
+
+#ifndef _MSC_VER
+const int FileMetadata::kFileIdFieldNumber;
+const int FileMetadata::kFileIdSaltFieldNumber;
+const int FileMetadata::kSaltFieldNumber;
+const int FileMetadata::kUserIdFieldNumber;
+const int FileMetadata::kGroupIdFieldNumber;
+const int FileMetadata::kModeFieldNumber;
+#endif  // !_MSC_VER
+
+FileMetadata::FileMetadata()
+  : ::google::protobuf::Message() {
+  SharedCtor();
+}
+
+void FileMetadata::InitAsDefaultInstance() {
+}
+
+FileMetadata::FileMetadata(const FileMetadata& from)
+  : ::google::protobuf::Message() {
+  SharedCtor();
+  MergeFrom(from);
+}
+
+void FileMetadata::SharedCtor() {
+  _cached_size_ = 0;
+  file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  file_id_salt_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  salt_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  user_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  group_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  mode_ = 0u;
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+}
+
+FileMetadata::~FileMetadata() {
+  SharedDtor();
+}
+
+void FileMetadata::SharedDtor() {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
+    delete file_id_;
+  }
+  if (file_id_salt_ != &::google::protobuf::internal::kEmptyString) {
+    delete file_id_salt_;
+  }
+  if (salt_ != &::google::protobuf::internal::kEmptyString) {
+    delete salt_;
+  }
+  if (user_id_ != &::google::protobuf::internal::kEmptyString) {
+    delete user_id_;
+  }
+  if (group_id_ != &::google::protobuf::internal::kEmptyString) {
+    delete group_id_;
+  }
+  if (this != default_instance_) {
+  }
+}
+
+void FileMetadata::SetCachedSize(int size) const {
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+}
+const ::google::protobuf::Descriptor* FileMetadata::descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return FileMetadata_descriptor_;
+}
+
+const FileMetadata& FileMetadata::default_instance() {
+  if (default_instance_ == NULL) protobuf_AddDesc_xtreemfs_2fEncryption_2eproto();
+  return *default_instance_;
+}
+
+FileMetadata* FileMetadata::default_instance_ = NULL;
+
+FileMetadata* FileMetadata::New() const {
+  return new FileMetadata;
+}
+
+void FileMetadata::Clear() {
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    if (has_file_id()) {
+      if (file_id_ != &::google::protobuf::internal::kEmptyString) {
+        file_id_->clear();
+      }
+    }
+    if (has_file_id_salt()) {
+      if (file_id_salt_ != &::google::protobuf::internal::kEmptyString) {
+        file_id_salt_->clear();
+      }
+    }
+    if (has_salt()) {
+      if (salt_ != &::google::protobuf::internal::kEmptyString) {
+        salt_->clear();
+      }
+    }
+    if (has_user_id()) {
+      if (user_id_ != &::google::protobuf::internal::kEmptyString) {
+        user_id_->clear();
+      }
+    }
+    if (has_group_id()) {
+      if (group_id_ != &::google::protobuf::internal::kEmptyString) {
+        group_id_->clear();
+      }
+    }
+    mode_ = 0u;
+  }
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+  mutable_unknown_fields()->Clear();
+}
+
+bool FileMetadata::MergePartialFromCodedStream(
+    ::google::protobuf::io::CodedInputStream* input) {
+#define DO_(EXPRESSION) if (!(EXPRESSION)) return false
+  ::google::protobuf::uint32 tag;
+  while ((tag = input->ReadTag()) != 0) {
+    switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
+      // required string file_id = 1;
+      case 1: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+                input, this->mutable_file_id()));
+          ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+            this->file_id().data(), this->file_id().length(),
+            ::google::protobuf::internal::WireFormat::PARSE);
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(18)) goto parse_file_id_salt;
+        break;
+      }
+
+      // required bytes file_id_salt = 2;
+      case 2: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_file_id_salt:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadBytes(
+                input, this->mutable_file_id_salt()));
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(26)) goto parse_salt;
+        break;
+      }
+
+      // required bytes salt = 3;
+      case 3: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_salt:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadBytes(
+                input, this->mutable_salt()));
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(34)) goto parse_user_id;
+        break;
+      }
+
+      // required string user_id = 4;
+      case 4: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_user_id:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+                input, this->mutable_user_id()));
+          ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+            this->user_id().data(), this->user_id().length(),
+            ::google::protobuf::internal::WireFormat::PARSE);
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(42)) goto parse_group_id;
+        break;
+      }
+
+      // required string group_id = 5;
+      case 5: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_group_id:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+                input, this->mutable_group_id()));
+          ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+            this->group_id().data(), this->group_id().length(),
+            ::google::protobuf::internal::WireFormat::PARSE);
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(53)) goto parse_mode;
+        break;
+      }
+
+      // required fixed32 mode = 6;
+      case 6: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED32) {
+         parse_mode:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
+                 input, &mode_)));
+          set_has_mode();
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectAtEnd()) return true;
+        break;
+      }
+
+      default: {
+      handle_uninterpreted:
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_END_GROUP) {
+          return true;
+        }
+        DO_(::google::protobuf::internal::WireFormat::SkipField(
+              input, tag, mutable_unknown_fields()));
+        break;
+      }
+    }
+  }
+  return true;
+#undef DO_
+}
+
+void FileMetadata::SerializeWithCachedSizes(
+    ::google::protobuf::io::CodedOutputStream* output) const {
+  // required string file_id = 1;
+  if (has_file_id()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+      this->file_id().data(), this->file_id().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE);
+    ::google::protobuf::internal::WireFormatLite::WriteString(
+      1, this->file_id(), output);
+  }
+
+  // required bytes file_id_salt = 2;
+  if (has_file_id_salt()) {
+    ::google::protobuf::internal::WireFormatLite::WriteBytes(
+      2, this->file_id_salt(), output);
+  }
+
+  // required bytes salt = 3;
+  if (has_salt()) {
+    ::google::protobuf::internal::WireFormatLite::WriteBytes(
+      3, this->salt(), output);
+  }
+
+  // required string user_id = 4;
+  if (has_user_id()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+      this->user_id().data(), this->user_id().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE);
+    ::google::protobuf::internal::WireFormatLite::WriteString(
+      4, this->user_id(), output);
+  }
+
+  // required string group_id = 5;
+  if (has_group_id()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+      this->group_id().data(), this->group_id().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE);
+    ::google::protobuf::internal::WireFormatLite::WriteString(
+      5, this->group_id(), output);
+  }
+
+  // required fixed32 mode = 6;
+  if (has_mode()) {
+    ::google::protobuf::internal::WireFormatLite::WriteFixed32(6, this->mode(), output);
+  }
+
+  if (!unknown_fields().empty()) {
+    ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
+        unknown_fields(), output);
+  }
+}
+
+::google::protobuf::uint8* FileMetadata::SerializeWithCachedSizesToArray(
+    ::google::protobuf::uint8* target) const {
+  // required string file_id = 1;
+  if (has_file_id()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+      this->file_id().data(), this->file_id().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE);
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
+        1, this->file_id(), target);
+  }
+
+  // required bytes file_id_salt = 2;
+  if (has_file_id_salt()) {
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteBytesToArray(
+        2, this->file_id_salt(), target);
+  }
+
+  // required bytes salt = 3;
+  if (has_salt()) {
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteBytesToArray(
+        3, this->salt(), target);
+  }
+
+  // required string user_id = 4;
+  if (has_user_id()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+      this->user_id().data(), this->user_id().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE);
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
+        4, this->user_id(), target);
+  }
+
+  // required string group_id = 5;
+  if (has_group_id()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+      this->group_id().data(), this->group_id().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE);
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
+        5, this->group_id(), target);
+  }
+
+  // required fixed32 mode = 6;
+  if (has_mode()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(6, this->mode(), target);
+  }
+
+  if (!unknown_fields().empty()) {
+    target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
+        unknown_fields(), target);
+  }
+  return target;
+}
+
+int FileMetadata::ByteSize() const {
+  int total_size = 0;
+
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    // required string file_id = 1;
+    if (has_file_id()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::StringSize(
+          this->file_id());
+    }
+
+    // required bytes file_id_salt = 2;
+    if (has_file_id_salt()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::BytesSize(
+          this->file_id_salt());
+    }
+
+    // required bytes salt = 3;
+    if (has_salt()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::BytesSize(
+          this->salt());
+    }
+
+    // required string user_id = 4;
+    if (has_user_id()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::StringSize(
+          this->user_id());
+    }
+
+    // required string group_id = 5;
+    if (has_group_id()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::StringSize(
+          this->group_id());
+    }
+
+    // required fixed32 mode = 6;
+    if (has_mode()) {
+      total_size += 1 + 4;
+    }
+
+  }
+  if (!unknown_fields().empty()) {
+    total_size +=
+      ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
+        unknown_fields());
+  }
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = total_size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+  return total_size;
+}
+
+void FileMetadata::MergeFrom(const ::google::protobuf::Message& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  const FileMetadata* source =
+    ::google::protobuf::internal::dynamic_cast_if_available<const FileMetadata*>(
+      &from);
+  if (source == NULL) {
+    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
+  } else {
+    MergeFrom(*source);
+  }
+}
+
+void FileMetadata::MergeFrom(const FileMetadata& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    if (from.has_file_id()) {
+      set_file_id(from.file_id());
+    }
+    if (from.has_file_id_salt()) {
+      set_file_id_salt(from.file_id_salt());
+    }
+    if (from.has_salt()) {
+      set_salt(from.salt());
+    }
+    if (from.has_user_id()) {
+      set_user_id(from.user_id());
+    }
+    if (from.has_group_id()) {
+      set_group_id(from.group_id());
+    }
+    if (from.has_mode()) {
+      set_mode(from.mode());
+    }
+  }
+  mutable_unknown_fields()->MergeFrom(from.unknown_fields());
+}
+
+void FileMetadata::CopyFrom(const ::google::protobuf::Message& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void FileMetadata::CopyFrom(const FileMetadata& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool FileMetadata::IsInitialized() const {
+  if ((_has_bits_[0] & 0x0000003f) != 0x0000003f) return false;
+
+  return true;
+}
+
+void FileMetadata::Swap(FileMetadata* other) {
+  if (other != this) {
+    std::swap(file_id_, other->file_id_);
+    std::swap(file_id_salt_, other->file_id_salt_);
+    std::swap(salt_, other->salt_);
+    std::swap(user_id_, other->user_id_);
+    std::swap(group_id_, other->group_id_);
+    std::swap(mode_, other->mode_);
+    std::swap(_has_bits_[0], other->_has_bits_[0]);
+    _unknown_fields_.Swap(&other->_unknown_fields_);
+    std::swap(_cached_size_, other->_cached_size_);
+  }
+}
+
+::google::protobuf::Metadata FileMetadata::GetMetadata() const {
+  protobuf_AssignDescriptorsOnce();
+  ::google::protobuf::Metadata metadata;
+  metadata.descriptor = FileMetadata_descriptor_;
+  metadata.reflection = FileMetadata_reflection_;
+  return metadata;
+}
+
+
+// ===================================================================
+
+#ifndef _MSC_VER
 const int FileLockbox::kFileIdFieldNumber;
 const int FileLockbox::kFileIdSaltFieldNumber;
+const int FileLockbox::kSaltFieldNumber;
 const int FileLockbox::kCipherFieldNumber;
 const int FileLockbox::kEncKeyFieldNumber;
 const int FileLockbox::kSignKeyFieldNumber;
@@ -506,6 +1338,7 @@ void FileLockbox::SharedCtor() {
   _cached_size_ = 0;
   file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   file_id_salt_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  salt_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   cipher_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   enc_key_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   sign_key_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
@@ -522,6 +1355,9 @@ void FileLockbox::SharedDtor() {
   }
   if (file_id_salt_ != &::google::protobuf::internal::kEmptyString) {
     delete file_id_salt_;
+  }
+  if (salt_ != &::google::protobuf::internal::kEmptyString) {
+    delete salt_;
   }
   if (cipher_ != &::google::protobuf::internal::kEmptyString) {
     delete cipher_;
@@ -569,6 +1405,11 @@ void FileLockbox::Clear() {
         file_id_salt_->clear();
       }
     }
+    if (has_salt()) {
+      if (salt_ != &::google::protobuf::internal::kEmptyString) {
+        salt_->clear();
+      }
+    }
     if (has_cipher()) {
       if (cipher_ != &::google::protobuf::internal::kEmptyString) {
         cipher_->clear();
@@ -611,25 +1452,36 @@ bool FileLockbox::MergePartialFromCodedStream(
         break;
       }
 
-      // required string file_id_salt = 2;
+      // required bytes file_id_salt = 2;
       case 2: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
          parse_file_id_salt:
-          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+          DO_(::google::protobuf::internal::WireFormatLite::ReadBytes(
                 input, this->mutable_file_id_salt()));
-          ::google::protobuf::internal::WireFormat::VerifyUTF8String(
-            this->file_id_salt().data(), this->file_id_salt().length(),
-            ::google::protobuf::internal::WireFormat::PARSE);
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(26)) goto parse_cipher;
+        if (input->ExpectTag(26)) goto parse_salt;
         break;
       }
 
-      // required string cipher = 3;
+      // required bytes salt = 3;
       case 3: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_salt:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadBytes(
+                input, this->mutable_salt()));
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(34)) goto parse_cipher;
+        break;
+      }
+
+      // required string cipher = 4;
+      case 4: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
          parse_cipher:
@@ -641,12 +1493,12 @@ bool FileLockbox::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(34)) goto parse_enc_key;
+        if (input->ExpectTag(42)) goto parse_enc_key;
         break;
       }
 
-      // required bytes enc_key = 4;
-      case 4: {
+      // required bytes enc_key = 5;
+      case 5: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
          parse_enc_key:
@@ -655,12 +1507,12 @@ bool FileLockbox::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(42)) goto parse_sign_key;
+        if (input->ExpectTag(50)) goto parse_sign_key;
         break;
       }
 
-      // required bytes sign_key = 5;
-      case 5: {
+      // required bytes sign_key = 6;
+      case 6: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
          parse_sign_key:
@@ -700,34 +1552,37 @@ void FileLockbox::SerializeWithCachedSizes(
       1, this->file_id(), output);
   }
 
-  // required string file_id_salt = 2;
+  // required bytes file_id_salt = 2;
   if (has_file_id_salt()) {
-    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
-      this->file_id_salt().data(), this->file_id_salt().length(),
-      ::google::protobuf::internal::WireFormat::SERIALIZE);
-    ::google::protobuf::internal::WireFormatLite::WriteString(
+    ::google::protobuf::internal::WireFormatLite::WriteBytes(
       2, this->file_id_salt(), output);
   }
 
-  // required string cipher = 3;
+  // required bytes salt = 3;
+  if (has_salt()) {
+    ::google::protobuf::internal::WireFormatLite::WriteBytes(
+      3, this->salt(), output);
+  }
+
+  // required string cipher = 4;
   if (has_cipher()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->cipher().data(), this->cipher().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
     ::google::protobuf::internal::WireFormatLite::WriteString(
-      3, this->cipher(), output);
+      4, this->cipher(), output);
   }
 
-  // required bytes enc_key = 4;
+  // required bytes enc_key = 5;
   if (has_enc_key()) {
     ::google::protobuf::internal::WireFormatLite::WriteBytes(
-      4, this->enc_key(), output);
+      5, this->enc_key(), output);
   }
 
-  // required bytes sign_key = 5;
+  // required bytes sign_key = 6;
   if (has_sign_key()) {
     ::google::protobuf::internal::WireFormatLite::WriteBytes(
-      5, this->sign_key(), output);
+      6, this->sign_key(), output);
   }
 
   if (!unknown_fields().empty()) {
@@ -748,38 +1603,42 @@ void FileLockbox::SerializeWithCachedSizes(
         1, this->file_id(), target);
   }
 
-  // required string file_id_salt = 2;
+  // required bytes file_id_salt = 2;
   if (has_file_id_salt()) {
-    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
-      this->file_id_salt().data(), this->file_id_salt().length(),
-      ::google::protobuf::internal::WireFormat::SERIALIZE);
     target =
-      ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
+      ::google::protobuf::internal::WireFormatLite::WriteBytesToArray(
         2, this->file_id_salt(), target);
   }
 
-  // required string cipher = 3;
+  // required bytes salt = 3;
+  if (has_salt()) {
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteBytesToArray(
+        3, this->salt(), target);
+  }
+
+  // required string cipher = 4;
   if (has_cipher()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->cipher().data(), this->cipher().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
     target =
       ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
-        3, this->cipher(), target);
+        4, this->cipher(), target);
   }
 
-  // required bytes enc_key = 4;
+  // required bytes enc_key = 5;
   if (has_enc_key()) {
     target =
       ::google::protobuf::internal::WireFormatLite::WriteBytesToArray(
-        4, this->enc_key(), target);
+        5, this->enc_key(), target);
   }
 
-  // required bytes sign_key = 5;
+  // required bytes sign_key = 6;
   if (has_sign_key()) {
     target =
       ::google::protobuf::internal::WireFormatLite::WriteBytesToArray(
-        5, this->sign_key(), target);
+        6, this->sign_key(), target);
   }
 
   if (!unknown_fields().empty()) {
@@ -800,28 +1659,35 @@ int FileLockbox::ByteSize() const {
           this->file_id());
     }
 
-    // required string file_id_salt = 2;
+    // required bytes file_id_salt = 2;
     if (has_file_id_salt()) {
       total_size += 1 +
-        ::google::protobuf::internal::WireFormatLite::StringSize(
+        ::google::protobuf::internal::WireFormatLite::BytesSize(
           this->file_id_salt());
     }
 
-    // required string cipher = 3;
+    // required bytes salt = 3;
+    if (has_salt()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::BytesSize(
+          this->salt());
+    }
+
+    // required string cipher = 4;
     if (has_cipher()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::StringSize(
           this->cipher());
     }
 
-    // required bytes enc_key = 4;
+    // required bytes enc_key = 5;
     if (has_enc_key()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::BytesSize(
           this->enc_key());
     }
 
-    // required bytes sign_key = 5;
+    // required bytes sign_key = 6;
     if (has_sign_key()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::BytesSize(
@@ -861,6 +1727,9 @@ void FileLockbox::MergeFrom(const FileLockbox& from) {
     if (from.has_file_id_salt()) {
       set_file_id_salt(from.file_id_salt());
     }
+    if (from.has_salt()) {
+      set_salt(from.salt());
+    }
     if (from.has_cipher()) {
       set_cipher(from.cipher());
     }
@@ -887,7 +1756,7 @@ void FileLockbox::CopyFrom(const FileLockbox& from) {
 }
 
 bool FileLockbox::IsInitialized() const {
-  if ((_has_bits_[0] & 0x0000001f) != 0x0000001f) return false;
+  if ((_has_bits_[0] & 0x0000003f) != 0x0000003f) return false;
 
   return true;
 }
@@ -896,6 +1765,7 @@ void FileLockbox::Swap(FileLockbox* other) {
   if (other != this) {
     std::swap(file_id_, other->file_id_);
     std::swap(file_id_salt_, other->file_id_salt_);
+    std::swap(salt_, other->salt_);
     std::swap(cipher_, other->cipher_);
     std::swap(enc_key_, other->enc_key_);
     std::swap(sign_key_, other->sign_key_);
@@ -910,271 +1780,6 @@ void FileLockbox::Swap(FileLockbox* other) {
   ::google::protobuf::Metadata metadata;
   metadata.descriptor = FileLockbox_descriptor_;
   metadata.reflection = FileLockbox_reflection_;
-  return metadata;
-}
-
-
-// ===================================================================
-
-#ifndef _MSC_VER
-const int SignedFileLockbox::kLockboxFieldNumber;
-const int SignedFileLockbox::kSignatureFieldNumber;
-#endif  // !_MSC_VER
-
-SignedFileLockbox::SignedFileLockbox()
-  : ::google::protobuf::Message() {
-  SharedCtor();
-}
-
-void SignedFileLockbox::InitAsDefaultInstance() {
-}
-
-SignedFileLockbox::SignedFileLockbox(const SignedFileLockbox& from)
-  : ::google::protobuf::Message() {
-  SharedCtor();
-  MergeFrom(from);
-}
-
-void SignedFileLockbox::SharedCtor() {
-  _cached_size_ = 0;
-  lockbox_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-  signature_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-  ::memset(_has_bits_, 0, sizeof(_has_bits_));
-}
-
-SignedFileLockbox::~SignedFileLockbox() {
-  SharedDtor();
-}
-
-void SignedFileLockbox::SharedDtor() {
-  if (lockbox_ != &::google::protobuf::internal::kEmptyString) {
-    delete lockbox_;
-  }
-  if (signature_ != &::google::protobuf::internal::kEmptyString) {
-    delete signature_;
-  }
-  if (this != default_instance_) {
-  }
-}
-
-void SignedFileLockbox::SetCachedSize(int size) const {
-  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
-  _cached_size_ = size;
-  GOOGLE_SAFE_CONCURRENT_WRITES_END();
-}
-const ::google::protobuf::Descriptor* SignedFileLockbox::descriptor() {
-  protobuf_AssignDescriptorsOnce();
-  return SignedFileLockbox_descriptor_;
-}
-
-const SignedFileLockbox& SignedFileLockbox::default_instance() {
-  if (default_instance_ == NULL) protobuf_AddDesc_xtreemfs_2fEncryption_2eproto();
-  return *default_instance_;
-}
-
-SignedFileLockbox* SignedFileLockbox::default_instance_ = NULL;
-
-SignedFileLockbox* SignedFileLockbox::New() const {
-  return new SignedFileLockbox;
-}
-
-void SignedFileLockbox::Clear() {
-  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (has_lockbox()) {
-      if (lockbox_ != &::google::protobuf::internal::kEmptyString) {
-        lockbox_->clear();
-      }
-    }
-    if (has_signature()) {
-      if (signature_ != &::google::protobuf::internal::kEmptyString) {
-        signature_->clear();
-      }
-    }
-  }
-  ::memset(_has_bits_, 0, sizeof(_has_bits_));
-  mutable_unknown_fields()->Clear();
-}
-
-bool SignedFileLockbox::MergePartialFromCodedStream(
-    ::google::protobuf::io::CodedInputStream* input) {
-#define DO_(EXPRESSION) if (!(EXPRESSION)) return false
-  ::google::protobuf::uint32 tag;
-  while ((tag = input->ReadTag()) != 0) {
-    switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // required bytes lockbox = 1;
-      case 1: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
-          DO_(::google::protobuf::internal::WireFormatLite::ReadBytes(
-                input, this->mutable_lockbox()));
-        } else {
-          goto handle_uninterpreted;
-        }
-        if (input->ExpectTag(18)) goto parse_signature;
-        break;
-      }
-
-      // required bytes signature = 2;
-      case 2: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
-         parse_signature:
-          DO_(::google::protobuf::internal::WireFormatLite::ReadBytes(
-                input, this->mutable_signature()));
-        } else {
-          goto handle_uninterpreted;
-        }
-        if (input->ExpectAtEnd()) return true;
-        break;
-      }
-
-      default: {
-      handle_uninterpreted:
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_END_GROUP) {
-          return true;
-        }
-        DO_(::google::protobuf::internal::WireFormat::SkipField(
-              input, tag, mutable_unknown_fields()));
-        break;
-      }
-    }
-  }
-  return true;
-#undef DO_
-}
-
-void SignedFileLockbox::SerializeWithCachedSizes(
-    ::google::protobuf::io::CodedOutputStream* output) const {
-  // required bytes lockbox = 1;
-  if (has_lockbox()) {
-    ::google::protobuf::internal::WireFormatLite::WriteBytes(
-      1, this->lockbox(), output);
-  }
-
-  // required bytes signature = 2;
-  if (has_signature()) {
-    ::google::protobuf::internal::WireFormatLite::WriteBytes(
-      2, this->signature(), output);
-  }
-
-  if (!unknown_fields().empty()) {
-    ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
-        unknown_fields(), output);
-  }
-}
-
-::google::protobuf::uint8* SignedFileLockbox::SerializeWithCachedSizesToArray(
-    ::google::protobuf::uint8* target) const {
-  // required bytes lockbox = 1;
-  if (has_lockbox()) {
-    target =
-      ::google::protobuf::internal::WireFormatLite::WriteBytesToArray(
-        1, this->lockbox(), target);
-  }
-
-  // required bytes signature = 2;
-  if (has_signature()) {
-    target =
-      ::google::protobuf::internal::WireFormatLite::WriteBytesToArray(
-        2, this->signature(), target);
-  }
-
-  if (!unknown_fields().empty()) {
-    target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
-        unknown_fields(), target);
-  }
-  return target;
-}
-
-int SignedFileLockbox::ByteSize() const {
-  int total_size = 0;
-
-  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    // required bytes lockbox = 1;
-    if (has_lockbox()) {
-      total_size += 1 +
-        ::google::protobuf::internal::WireFormatLite::BytesSize(
-          this->lockbox());
-    }
-
-    // required bytes signature = 2;
-    if (has_signature()) {
-      total_size += 1 +
-        ::google::protobuf::internal::WireFormatLite::BytesSize(
-          this->signature());
-    }
-
-  }
-  if (!unknown_fields().empty()) {
-    total_size +=
-      ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
-        unknown_fields());
-  }
-  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
-  _cached_size_ = total_size;
-  GOOGLE_SAFE_CONCURRENT_WRITES_END();
-  return total_size;
-}
-
-void SignedFileLockbox::MergeFrom(const ::google::protobuf::Message& from) {
-  GOOGLE_CHECK_NE(&from, this);
-  const SignedFileLockbox* source =
-    ::google::protobuf::internal::dynamic_cast_if_available<const SignedFileLockbox*>(
-      &from);
-  if (source == NULL) {
-    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
-  } else {
-    MergeFrom(*source);
-  }
-}
-
-void SignedFileLockbox::MergeFrom(const SignedFileLockbox& from) {
-  GOOGLE_CHECK_NE(&from, this);
-  if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from.has_lockbox()) {
-      set_lockbox(from.lockbox());
-    }
-    if (from.has_signature()) {
-      set_signature(from.signature());
-    }
-  }
-  mutable_unknown_fields()->MergeFrom(from.unknown_fields());
-}
-
-void SignedFileLockbox::CopyFrom(const ::google::protobuf::Message& from) {
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-void SignedFileLockbox::CopyFrom(const SignedFileLockbox& from) {
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-bool SignedFileLockbox::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000003) != 0x00000003) return false;
-
-  return true;
-}
-
-void SignedFileLockbox::Swap(SignedFileLockbox* other) {
-  if (other != this) {
-    std::swap(lockbox_, other->lockbox_);
-    std::swap(signature_, other->signature_);
-    std::swap(_has_bits_[0], other->_has_bits_[0]);
-    _unknown_fields_.Swap(&other->_unknown_fields_);
-    std::swap(_cached_size_, other->_cached_size_);
-  }
-}
-
-::google::protobuf::Metadata SignedFileLockbox::GetMetadata() const {
-  protobuf_AssignDescriptorsOnce();
-  ::google::protobuf::Metadata metadata;
-  metadata.descriptor = SignedFileLockbox_descriptor_;
-  metadata.reflection = SignedFileLockbox_reflection_;
   return metadata;
 }
 

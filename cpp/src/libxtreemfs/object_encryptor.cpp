@@ -55,7 +55,8 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
                                  const pbrpc::XCap& xcap,
                                  const std::string& file_path,
                                  VolumeImplementation* volume,
-                                 FileInfo* file_info, int object_size)
+                                 FileInfo* file_info, int object_size,
+                                 uint32_t mode)
     : key_distribution(volume),
       enc_block_size_(volume->volume_options().encryption_block_size),
       cipher_(volume->volume_options().encryption_cipher),
@@ -67,7 +68,7 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
   assert(object_size_ % enc_block_size_ == 0);
 
   meta_file_ = key_distribution.OpenMetaFile(user_credentials, xcap, file_path,
-                                             &file_enc_key_, &sign_algo_);
+                                             mode, &file_enc_key_, &sign_algo_);
 }
 
 ObjectEncryptor::~ObjectEncryptor() {
@@ -201,7 +202,7 @@ ObjectEncryptor::WriteOperation::~WriteOperation() {
     }
 
     hash_tree_.FinishWrite();
-  } catch (const std::exception& e) {
+  } catch (const std::exception& e) {  // NOLINT
     ErrorLog::error_log->AppendError(
         "WriteOperation::~WriteOperation(): A exception occurred, possibly"
             "leaving the file in an inconsistent state: "
@@ -617,7 +618,7 @@ void ObjectEncryptor::FileLock::Change(uint64_t offset, uint64_t length) {
 ObjectEncryptor::FileLock::~FileLock() {
   try {
     file_->ReleaseLock(*lock_);
-  } catch (const std::exception& e) {
+  } catch (const std::exception& e) {  // NOLINT
     ErrorLog::error_log->AppendError(
         "FileLock::~FileLock(): A exception occurred on releasing the lock: "
             + std::string(e.what()));

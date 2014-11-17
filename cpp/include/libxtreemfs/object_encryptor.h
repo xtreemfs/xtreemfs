@@ -44,7 +44,7 @@ class ObjectEncryptor : private boost::noncopyable {
   ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
                   const pbrpc::XCap& xcap, const std::string& file_path,
                   VolumeImplementation* volume, FileInfo* file_info,
-                  int object_size);
+                  int object_size, uint32_t mode);
 
   ~ObjectEncryptor();
 
