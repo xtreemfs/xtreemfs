@@ -84,7 +84,9 @@ class Options {
    *  - ssl_pem_key_pass
    *  - ssl_pkcs12_path
    *  - ssl_pkcs12_pass
-   *  - grid_ssl || protocol.
+   *  - grid_ssl || protocol
+   *  - verify_certificates
+   *  - ignore_verify_errors.
    *
    * @remark Ownership is transferred to caller. May be NULL.
    */
@@ -173,6 +175,12 @@ class Options {
   /** True, if the XtreemFS Grid-SSL Mode (only SSL handshake, no encryption of
    *  data itself) shall be used. */
   bool grid_ssl;
+
+  /** True if certificates shall be verified. */
+  bool ssl_verify_certificates;
+  /** List of openssl verify error codes to ignore during verification and
+   * accept anyway. Only used when ssl_verify_certificates = true. */
+  std::vector<int> ssl_ignore_verify_errors;
 #endif  // HAS_OPENSSL
 
   // Grid Support options.

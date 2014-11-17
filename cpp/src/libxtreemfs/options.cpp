@@ -110,6 +110,7 @@ Options::Options()
   ssl_pkcs12_path = "";
   ssl_pkcs12_pass = "";
   grid_ssl = false;
+  ssl_verify_certificates = false;
 #endif  // HAS_OPENSSL
 
   // Grid Support options.
@@ -272,7 +273,16 @@ void Options::GenerateProgramOptionsDescriptions() {
     ("grid-ssl",
         po::value(&grid_ssl)->zero_tokens(),
         "Explicitly use the XtreemFS Grid-SSL mode. Same as specifying "
-        "pbrpcg:// in the volume URL.");
+        "pbrpcg:// in the volume URL.")
+    ("verify-certificates",
+        po::value(&ssl_verify_certificates)->default_value(ssl_verify_certificates)
+        ->zero_tokens(),
+        "Enables X.509 certificate verification.")
+    ("ignore-verify-errors",
+        po::value(&ssl_ignore_verify_errors)->multitoken(),
+        "List of error codes to ignore during certificate verification and "
+        "proceed and accept, see verify(1) for the list of error codes. Only "
+        "evaluated in conjunction with --verify-certificates.");
 #endif  // HAS_OPENSSL
 
   grid_options_.add_options()
@@ -667,7 +677,9 @@ xtreemfs::rpc::SSLOptions* Options::GenerateSSLOptions() const {
         ssl_pem_key_path, ssl_pem_cert_path, ssl_pem_key_pass,  // PEM.
         ssl_pkcs12_path, ssl_pkcs12_pass,  // PKCS12.
         boost::asio::ssl::context::pem,
-        grid_ssl || protocol == PBRPCURL::GetSchemePBRPCG());
+        grid_ssl || protocol == PBRPCURL::GetSchemePBRPCG(),
+        ssl_verify_certificates,
+        ssl_ignore_verify_errors);
   }
 #else
   opts = new xtreemfs::rpc::SSLOptions();

@@ -121,6 +121,9 @@ class Client {
 #ifdef HAS_OPENSSL
   std::string get_pem_password_callback() const;
   std::string get_pkcs12_password_callback() const;
+  
+  bool verify_certificate_callback(bool preverfied,
+                                   boost::asio::ssl::verify_context& context) const;
 
   bool use_gridssl_;
   const SSLOptions* ssl_options;

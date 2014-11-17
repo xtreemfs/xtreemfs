@@ -92,7 +92,20 @@ Client::Client(int32_t connect_timeout_s,
         new boost::asio::ssl::context(service_,
                                       boost::asio::ssl::context::sslv23);
     ssl_context_->set_options(boost::asio::ssl::context::no_tlsv1);
-    ssl_context_->set_verify_mode(boost::asio::ssl::context::verify_none);
+    if (ssl_options->verify_certificates()) {
+      ssl_context_->set_verify_mode(boost::asio::ssl::context::verify_peer |
+                                    boost::asio::ssl::context::verify_fail_if_no_peer_cert);
+      ssl_context_->set_verify_callback(boost::bind(&Client::verify_certificate_callback,
+                                                    this, _1, _2));
+    } else {
+      if (Logging::log->loggingActive(LEVEL_WARN)) {
+        Logging::log->getLog(LEVEL_WARN) << "Not performing SSL certificate "
+            "verification." << endl;
+      }
+      ssl_context_->set_verify_mode(boost::asio::ssl::verify_none);
+    }
+    // TODO does this make sense?
+    ssl_context_->set_default_verify_paths();
 
     OpenSSL_add_all_algorithms();
     OpenSSL_add_all_ciphers();
@@ -151,6 +164,7 @@ Client::Client(int32_t connect_timeout_s,
         exit(1);
       }
       PKCS12_free(p12);
+      // TODO warn about discarding of other certificates if there are any
       sk_X509_free(ca);
 
       // create two tmp files containing the PEM certificates.
@@ -278,6 +292,42 @@ std::string Client::get_pem_password_callback() const {
 
 std::string Client::get_pkcs12_password_callback() const {
   return ssl_options->pkcs12_file_password();
+}
+
+bool Client::verify_certificate_callback(bool preverified,
+                                         boost::asio::ssl::verify_context& context) const {
+  X509_STORE_CTX *sctx = context.native_handle();
+  X509* cert = X509_STORE_CTX_get_current_cert(sctx);
+  
+  char subject[256];
+  X509_NAME_oneline(X509_get_subject_name(cert), subject, 256);
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+    Logging::log->getLog(LEVEL_DEBUG) << "Verifying subject '" << subject
+        << "'." << endl;
+  }
+
+  bool override = false;
+  if (sctx->error != 0) {
+    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+      Logging::log->getLog(LEVEL_DEBUG) << "OpenSSL verify error: "
+          << sctx->error << endl;
+    }
+    if (ssl_options->ignore_verify_error(sctx->error)) {
+      if (Logging::log->loggingActive(LEVEL_WARN)) {
+        Logging::log->getLog(LEVEL_WARN) << "Ignoring OpenSSL verify error: "
+            << sctx->error << " because of user settings." << endl;
+      }
+      override = true;
+    }
+  }
+  
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+    Logging::log->getLog(LEVEL_DEBUG) << "Verification of subject '" << subject
+        << "' was " << (preverified ? "successful." : "unsuccessful.")
+        << (override ? " Overriding because of user settings." : "") << endl;
+  }
+  
+  return preverified || override;
 }
 #endif  // HAS_OPENSSL
 
