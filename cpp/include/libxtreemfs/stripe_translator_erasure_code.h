@@ -25,7 +25,7 @@ class StripeTranslatorErasureCode : public StripeTranslator {
       PolicyContainer policies,
       std::vector<WriteOperation>* operations) const;
 
-  virtual void TranslateReadRequest(
+  virtual size_t TranslateReadRequest(
       char *buf,
       size_t size,
       int64_t offset,

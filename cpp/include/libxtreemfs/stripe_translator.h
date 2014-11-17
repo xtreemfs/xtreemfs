@@ -69,7 +69,13 @@ class StripeTranslator {
       PolicyContainer policies,
       std::vector<WriteOperation>* operations) const = 0;
 
-  virtual void TranslateReadRequest(
+  /*
+   * fills operations vector with ReadOperations necessary for the Read operation. The read
+   * operations are ordered to be excuted in the returned sequence.
+   *
+   * returns the number of successful stripe reads necessary for the whole ReadOp to suceed.
+   */
+  virtual size_t TranslateReadRequest(
       char *buf,
       size_t size,
       int64_t offset,

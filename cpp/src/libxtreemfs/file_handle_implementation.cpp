@@ -136,6 +136,7 @@ int FileHandleImplementation::Read(
 
   // Map offset to corresponding OSDs.
   std::vector<ReadOperation> operations;
+  size_t min_sucessfull_reads =
   translator->TranslateReadRequest(buf, count, offset, striping_policies,
                                    &operations);
 

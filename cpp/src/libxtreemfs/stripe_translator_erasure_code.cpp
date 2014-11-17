@@ -73,7 +73,7 @@ void StripeTranslatorErasureCode::TranslateWriteRequest(
   }
 }
 
-void StripeTranslatorErasureCode::TranslateReadRequest(
+size_t StripeTranslatorErasureCode::TranslateReadRequest(
     char *buf,
     size_t size,
     int64_t offset,
@@ -122,6 +122,7 @@ void StripeTranslatorErasureCode::TranslateReadRequest(
     read_blocks += stripe_size;
     real_obj_number++;
   }
+  return obj_number;
 }
 
 }  // namespace xtreemfs

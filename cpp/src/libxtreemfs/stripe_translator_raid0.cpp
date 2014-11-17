@@ -44,7 +44,7 @@ void StripeTranslatorRaid0::TranslateWriteRequest(
   }
 }
 
-void StripeTranslatorRaid0::TranslateReadRequest(
+size_t StripeTranslatorRaid0::TranslateReadRequest(
     char *buf,
     size_t size,
     int64_t offset,
@@ -72,6 +72,7 @@ void StripeTranslatorRaid0::TranslateReadRequest(
 
     start += req_size;
   }
+  return operations->size();
 }
 
 }  // namespace xtreemfs
