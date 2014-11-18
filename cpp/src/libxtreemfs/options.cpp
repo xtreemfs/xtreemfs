@@ -282,7 +282,10 @@ void Options::GenerateProgramOptionsDescriptions() {
         po::value(&ssl_ignore_verify_errors)->multitoken(),
         "List of error codes to ignore during certificate verification and "
         "proceed and accept, see verify(1) for the list of error codes. Only "
-        "evaluated in conjunction with --verify-certificates.");
+        "evaluated in conjunction with --verify-certificates. E.g.\n"
+        "  '--ignore-verify-errors 20 27 21' to accept certificates with "
+        "unknown issuer certificates, untrusted certificates and one-element "
+        "certificate chains (typical setup for local testing).");
 #endif  // HAS_OPENSSL
 
   grid_options_.add_options()
