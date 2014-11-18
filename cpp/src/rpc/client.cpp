@@ -158,11 +158,30 @@ Client::Client(int32_t connect_timeout_s,
       }
       PKCS12_free(p12);
       
-      if (ca != NULL) {
+      if (ca == NULL) {
         if (Logging::log->loggingActive(LEVEL_WARN)) {
-          Logging::log->getLog(LEVEL_WARN) << "Found " << ca->stack.num
-              << " additional certificates in PKCS#12 file: "
-              << options->pkcs12_file_name() << ", discarding." << endl;
+          Logging::log->getLog(LEVEL_WARN) << "Expected one or more additional "
+              "certificates in " << options->pkcs12_file_name() << " in order "
+              "to verify the services' certificates. Using default system verify "
+              "paths only." << endl;
+        }
+      } else {
+        // Setup additional certificates as trusted root CAs
+        for (int i = 0; i < ca->stack.num; ++i) {
+          X509* ca_cert = sk_X509_pop(ca);
+          char ca_template[] = "/tmp/caXXXXXX";
+          FILE* ca_file = create_and_open_temporary_ssl_file(ca_template);
+          if(PEM_write_X509(ca_file, ca_cert)) {
+            // TODO load as verify file
+            // TODO add to list and remove in destructor
+          } else {
+            if (Logging::log->loggingActive(LEVEL_WARN)) {
+              Logging::log->getLog(LEVEL_WARN) << "Error writing CA file "
+                  << ca_template << endl;
+            }
+          }
+          X509_free(ca_cert);
+          fclose(ca_file);
         }
       }
       sk_X509_free(ca);
