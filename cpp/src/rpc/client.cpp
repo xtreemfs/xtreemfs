@@ -164,7 +164,14 @@ Client::Client(int32_t connect_timeout_s,
         exit(1);
       }
       PKCS12_free(p12);
-      // TODO warn about discarding of other certificates if there are any
+      
+      if (ca != NULL) {
+        if (Logging::log->loggingActive(LEVEL_WARN)) {
+          Logging::log->getLog(LEVEL_WARN) << "Found " << ca->stack.num
+              << " additional certificates in PKCS#12 file: "
+              << options->pkcs12_file_name() << ", discarding." << endl;
+        }
+      }
       sk_X509_free(ca);
 
       // create two tmp files containing the PEM certificates.
