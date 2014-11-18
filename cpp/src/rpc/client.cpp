@@ -169,47 +169,14 @@ Client::Client(int32_t connect_timeout_s,
 
       // create two tmp files containing the PEM certificates.
       // these which be deleted when exiting the program
-#ifdef WIN32
-      //  Gets the temp path env string (no guarantee it's a valid path).
-      TCHAR temp_path[MAX_PATH];
-      TCHAR filename_temp_pem[MAX_PATH];
-      TCHAR filename_temp_cert[MAX_PATH];
-
-      DWORD dwRetVal = 0;
-      dwRetVal = GetTempPath(MAX_PATH,          // length of the buffer
-                             temp_path); // buffer for path
-      if (dwRetVal > MAX_PATH || (dwRetVal == 0)) {
-        _tcsncpy_s(temp_path, TEXT("."), 1);
-      }
-
-      //  Generates a temporary file name.
-      if (!GetTempFileName(temp_path, // directory for tmp files
-                                TEXT("DEMO"),     // temp file name prefix
-                                0,                // create unique name
-                                filename_temp_pem)) {  // buffer for name
-        std::cerr << "Couldn't create temp file name.\n";
-        exit(1);
-      }
-      if (!GetTempFileName(temp_path, // directory for tmp files
-                                TEXT("DEMO"),     // temp file name prefix
-                                0,                // create unique name
-                                filename_temp_cert)) {  // buffer for name
-        std::cerr << "Couldn't create temp file name.\n";
-        exit(1);
-      }
-      FILE* pemFile = _tfopen(filename_temp_pem, TEXT("wb+"));
-      FILE* certFile = _tfopen(filename_temp_cert, TEXT("wb+"));
-#else
-      int tmpPem = mkstemp(tmplate1);
-      int tmpCert = mkstemp(tmplate2);
-      if (tmpPem == -1 || tmpCert == -1) {
-        std::cerr << "Couldn't create temp file name.\n";
+      FILE* pemFile = create_and_open_temporary_ssl_file(tmplate1);
+      FILE* certFile = create_and_open_temporary_ssl_file(tmplate2);
+      if (pemFile == NULL || certFile == NULL) {
+        Logging::log->getLog(LEVEL_ERROR) << "Error creating temporary "
+            "certificates" << endl;
         //TODO(mberlin): Use a better approach than exit - throw?
         exit(1);
       }
-      FILE* pemFile = fdopen(tmpPem, "wb+");
-      FILE* certFile = fdopen(tmpCert, "wb+");
-#endif  // WIN32
 
       if (Logging::log->loggingActive(LEVEL_DEBUG)) {
         Logging::log->getLog(LEVEL_DEBUG) << "tmp file name:"
@@ -666,6 +633,39 @@ void Client::ShutdownHandler() {
     assert(con != NULL);
     con->Close("RPC client was stopped.");
   }
+}
+
+FILE* Client::create_and_open_temporary_ssl_file(char* filename_template) {
+  #ifdef WIN32
+      // FIXME set filename_template to actual name
+      //  Gets the temp path env string (no guarantee it's a valid path).
+      TCHAR temp_path[MAX_PATH];
+      TCHAR filename_temp[MAX_PATH];
+
+      DWORD dwRetVal = 0;
+      dwRetVal = GetTempPath(MAX_PATH,          // length of the buffer
+                             temp_path); // buffer for path
+      if (dwRetVal > MAX_PATH || (dwRetVal == 0)) {
+        _tcsncpy_s(temp_path, TEXT("."), 1);
+      }
+
+      //  Generates a temporary file name.
+      if (!GetTempFileName(temp_path, // directory for tmp files
+                                TEXT("DEMO"),     // temp file name prefix
+                                0,                // create unique name
+                                filename_temp)) {  // buffer for name
+        std::cerr << "Couldn't create temp file name.\n";
+        return NULL;
+      }
+      return _tfopen(filename_temp, TEXT("wb+"));
+#else
+      int tmp = mkstemp(filename_template);
+      if (tmp == -1) {
+        std::cerr << "Couldn't create temp file name.\n";
+        return NULL;
+      }
+      return fdopen(tmp, "wb+");
+#endif  // WIN32
 }
 
 Client::~Client() {
