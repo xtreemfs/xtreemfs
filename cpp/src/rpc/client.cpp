@@ -104,7 +104,7 @@ Client::Client(int32_t connect_timeout_s,
       }
       ssl_context_->set_verify_mode(boost::asio::ssl::verify_none);
     }
-    // TODO does this make sense?
+    // Use system default paths that hold trusted root CAs.
     ssl_context_->set_default_verify_paths();
 
     OpenSSL_add_all_algorithms();
