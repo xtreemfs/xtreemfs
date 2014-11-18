@@ -92,18 +92,11 @@ Client::Client(int32_t connect_timeout_s,
         new boost::asio::ssl::context(service_,
                                       boost::asio::ssl::context::sslv23);
     ssl_context_->set_options(boost::asio::ssl::context::no_tlsv1);
-    if (ssl_options->verify_certificates()) {
-      ssl_context_->set_verify_mode(boost::asio::ssl::context::verify_peer |
-                                    boost::asio::ssl::context::verify_fail_if_no_peer_cert);
-      ssl_context_->set_verify_callback(boost::bind(&Client::verify_certificate_callback,
-                                                    this, _1, _2));
-    } else {
-      if (Logging::log->loggingActive(LEVEL_WARN)) {
-        Logging::log->getLog(LEVEL_WARN) << "Not performing SSL certificate "
-            "verification." << endl;
-      }
-      ssl_context_->set_verify_mode(boost::asio::ssl::verify_none);
-    }
+    ssl_context_->set_verify_mode(boost::asio::ssl::context::verify_peer |
+                                  boost::asio::ssl::context::verify_fail_if_no_peer_cert);
+    ssl_context_->set_verify_callback(boost::bind(&Client::verify_certificate_callback,
+                                                  this, _1, _2));
+    
     // Use system default paths that hold trusted root CAs.
     ssl_context_->set_default_verify_paths();
 
@@ -319,7 +312,11 @@ bool Client::verify_certificate_callback(bool preverified,
       Logging::log->getLog(LEVEL_DEBUG) << "OpenSSL verify error: "
           << sctx->error << endl;
     }
-    if (ssl_options->ignore_verify_error(sctx->error)) {
+    
+    // Ignore error if verification is turned off in general or the error has
+    // been disabled specifically.
+    if (!ssl_options->verify_certificates() ||
+        ssl_options->ignore_verify_error(sctx->error)) {
       if (Logging::log->loggingActive(LEVEL_WARN)) {
         Logging::log->getLog(LEVEL_WARN) << "Ignoring OpenSSL verify error: "
             << sctx->error << " because of user settings." << endl;
