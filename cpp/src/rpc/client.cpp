@@ -188,8 +188,8 @@ Client::Client(int32_t connect_timeout_s,
 
       // create two tmp files containing the PEM certificates.
       // these which be deleted when exiting the program
-      FILE* pemFile = create_and_open_temporary_ssl_file(tmplate1);
-      FILE* certFile = create_and_open_temporary_ssl_file(tmplate2);
+      FILE* pemFile = create_and_open_temporary_ssl_file(tmplate1, "wb+");
+      FILE* certFile = create_and_open_temporary_ssl_file(tmplate2, "wb+");
       if (pemFile == NULL || certFile == NULL) {
         Logging::log->getLog(LEVEL_ERROR) << "Error creating temporary "
             "certificates" << endl;
@@ -654,7 +654,8 @@ void Client::ShutdownHandler() {
   }
 }
 
-FILE* Client::create_and_open_temporary_ssl_file(char* filename_template) {
+FILE* Client::create_and_open_temporary_ssl_file(char* filename_template,
+                                                 const char* mode) {
   #ifdef WIN32
       // FIXME set filename_template to actual name
       //  Gets the temp path env string (no guarantee it's a valid path).
@@ -676,14 +677,14 @@ FILE* Client::create_and_open_temporary_ssl_file(char* filename_template) {
         std::cerr << "Couldn't create temp file name.\n";
         return NULL;
       }
-      return _tfopen(filename_temp, TEXT("wb+"));
+      return _tfopen(filename_temp, TEXT(mode));
 #else
       int tmp = mkstemp(filename_template);
       if (tmp == -1) {
         std::cerr << "Couldn't create temp file name.\n";
         return NULL;
       }
-      return fdopen(tmp, "wb+");
+      return fdopen(tmp, mode);
 #endif  // WIN32
 }
 

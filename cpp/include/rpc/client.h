@@ -85,7 +85,8 @@ class Client {
 
   void ShutdownHandler();
   
-  FILE* create_and_open_temporary_ssl_file(char* filename_template);
+  FILE* create_and_open_temporary_ssl_file(char* filename_template,
+                                           const char* mode);
 
   boost::asio::io_service service_;
 
