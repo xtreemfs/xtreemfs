@@ -107,6 +107,7 @@ Options::Options()
   ssl_pem_cert_path = "";
   ssl_pem_key_path = "";
   ssl_pem_key_pass = "";
+  ssl_pem_trusted_certs_path = "";
   ssl_pkcs12_path = "";
   ssl_pkcs12_pass = "";
   grid_ssl = false;
@@ -263,6 +264,11 @@ void Options::GenerateProgramOptionsDescriptions() {
         po::value(&ssl_pem_key_pass)->default_value(ssl_pem_key_pass),
         "PEM private key passphrase  (If the argument is set to '-', the user"
         " will be prompted for the passphrase.)")
+    ("pem-trusted-certificates-file-path",
+        po::value(&ssl_pem_trusted_certs_path)
+            ->default_value(ssl_pem_trusted_certs_path),
+        "PEM trusted certificates path. Contains all trusted CAs in one PEM "
+        "encoded file.")
     ("pkcs12-file-path",
         po::value(&ssl_pkcs12_path)->default_value(ssl_pkcs12_path),
         "PKCS#12 file path")
@@ -276,7 +282,7 @@ void Options::GenerateProgramOptionsDescriptions() {
         "pbrpcg:// in the volume URL.")
     ("verify-certificates",
         po::value(&ssl_verify_certificates)->default_value(ssl_verify_certificates)
-        ->zero_tokens(),
+            ->zero_tokens(),
         "Enables X.509 certificate verification.")
     ("ignore-verify-errors",
         po::value(&ssl_ignore_verify_errors)->multitoken(),
@@ -678,6 +684,7 @@ xtreemfs::rpc::SSLOptions* Options::GenerateSSLOptions() const {
   if (SSLEnabled()) {
     opts = new xtreemfs::rpc::SSLOptions(
         ssl_pem_key_path, ssl_pem_cert_path, ssl_pem_key_pass,  // PEM.
+        ssl_pem_trusted_certs_path,  // PEM.
         ssl_pkcs12_path, ssl_pkcs12_pass,  // PKCS12.
         boost::asio::ssl::context::pem,
         grid_ssl || protocol == PBRPCURL::GetSchemePBRPCG(),

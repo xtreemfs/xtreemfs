@@ -268,6 +268,18 @@ Client::Client(int32_t connect_timeout_s,
         ssl_context_->use_private_key_file(options->pem_file_name(),
                                            options->cert_format());
         ssl_context_->use_certificate_chain_file(options->pem_cert_name());
+        
+        // Use system default path for trusted root CAs and any supplied certificates.
+        ssl_context_->set_default_verify_paths();
+        if (options->pem_trusted_certs_file_name().empty()) {
+          if (Logging::log->loggingActive(LEVEL_WARN)) {
+            Logging::log->getLog(LEVEL_WARN) << "Not using any additional "
+                "certificates in order to verify the services' certificates. "
+                "Using default system verify paths only." << endl;
+          }
+        } else {
+          ssl_context_->load_verify_file(options->pem_trusted_certs_file_name());
+        }
       } catch(invalid_argument& ia) {
          cerr << "Invalid argument: " << ia.what() << endl;
          cerr << "Please check your private key and certificate file."<< endl;

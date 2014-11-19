@@ -25,6 +25,7 @@ class SSLOptions {
   SSLOptions(const std::string ssl_pem_path,
              const std::string ssl_pem_cert_path,
              const std::string ssl_pem_key_pass,
+             const std::string ssl_pem_trusted_certs_path,
              const std::string ssl_pkcs12_path,
              const std::string ssl_pkcs12_pass,
              const boost::asio::ssl::context::file_format format,
@@ -34,6 +35,7 @@ class SSLOptions {
      : pem_file_name_(ssl_pem_path),
        pem_file_pass_(ssl_pem_key_pass),
        pem_cert_name_(ssl_pem_cert_path),
+       pem_trusted_certs_file_name_(ssl_pem_trusted_certs_path),
        pkcs12_file_name_(ssl_pkcs12_path),
        pkcs12_file_pass_(ssl_pkcs12_pass),
        cert_format_(format),
@@ -54,6 +56,10 @@ class SSLOptions {
 
   std::string pem_file_password() const {
     return pem_file_pass_;
+  }
+  
+  std::string pem_trusted_certs_file_name() const {
+    return pem_trusted_certs_file_name_;
   }
 
   std::string pkcs12_file_name() const {
@@ -86,6 +92,7 @@ class SSLOptions {
   std::string pem_file_name_;
   std::string pem_file_pass_;
   std::string pem_cert_name_;
+  std::string pem_trusted_certs_file_name_;
   std::string pkcs12_file_name_;
   std::string pkcs12_file_pass_;
 

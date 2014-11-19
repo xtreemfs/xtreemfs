@@ -170,6 +170,7 @@ class Options {
   std::string ssl_pem_cert_path;
   std::string ssl_pem_key_path;
   std::string ssl_pem_key_pass;
+  std::string ssl_pem_trusted_certs_path;
   std::string ssl_pkcs12_path;
   std::string ssl_pkcs12_pass;
   /** True, if the XtreemFS Grid-SSL Mode (only SSL handshake, no encryption of
