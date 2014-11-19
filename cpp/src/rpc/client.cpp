@@ -80,6 +80,7 @@ Client::Client(int32_t connect_timeout_s,
       ssl_options(options),
       pemFileName(NULL),
       certFileName(NULL),
+      trustedCAsFileName(NULL),
       ssl_context_(NULL) {
   // Check if ssl options were passed.
   if (options != NULL) {
@@ -96,9 +97,6 @@ Client::Client(int32_t connect_timeout_s,
                                   boost::asio::ssl::context::verify_fail_if_no_peer_cert);
     ssl_context_->set_verify_callback(boost::bind(&Client::verify_certificate_callback,
                                                   this, _1, _2));
-    
-    // Use system default paths that hold trusted root CAs.
-    ssl_context_->set_default_verify_paths();
 
     OpenSSL_add_all_algorithms();
     OpenSSL_add_all_ciphers();
@@ -166,23 +164,28 @@ Client::Client(int32_t connect_timeout_s,
               "paths only." << endl;
         }
       } else {
-        // Setup additional certificates as trusted root CAs
+        // Setup any additional certificates as trusted root CAs in one file.
+        char trusted_cas_template[] = "/tmp/caXXXXXX";
+        FILE* trusted_cas_file =
+            create_and_open_temporary_ssl_file(trusted_cas_template, "ab+");
+        trustedCAsFileName = new char[sizeof(trusted_cas_template)];
+        strncpy(trustedCAsFileName,
+                trusted_cas_template, sizeof(trusted_cas_template)); 
+        
         for (int i = 0; i < ca->stack.num; ++i) {
           X509* ca_cert = sk_X509_pop(ca);
-          char ca_template[] = "/tmp/caXXXXXX";
-          FILE* ca_file = create_and_open_temporary_ssl_file(ca_template);
-          if(PEM_write_X509(ca_file, ca_cert)) {
-            // TODO load as verify file
-            // TODO add to list and remove in destructor
+          // _AUX writes trusted certificates.
+          if (PEM_write_X509_AUX(trusted_cas_file, ca_cert)) { 
           } else {
             if (Logging::log->loggingActive(LEVEL_WARN)) {
-              Logging::log->getLog(LEVEL_WARN) << "Error writing CA file "
-                  << ca_template << endl;
+              Logging::log->getLog(LEVEL_WARN) << "Error writing a CA to file "
+                  << trusted_cas_template << ", continuing without it." << endl;
             }
           }
           X509_free(ca_cert);
-          fclose(ca_file);
         }
+        
+        fclose(trusted_cas_file);
       }
       sk_X509_free(ca);
 
@@ -244,6 +247,12 @@ Client::Client(int32_t connect_timeout_s,
           boost::bind(&Client::get_pkcs12_password_callback, this));
       ssl_context_->use_private_key_file(pemFileName, options->cert_format());
       ssl_context_->use_certificate_chain_file(certFileName);
+
+      // Use system default path for trusted root CAs and any supplied certificates.
+      ssl_context_->set_default_verify_paths();
+      if (trustedCAsFileName != NULL) {
+        ssl_context_->load_verify_file(trustedCAsFileName);
+      }
 
       // FIXME(ps) make sure that the temporary files are deleted!
     } else if (!options->pem_file_name().empty()) {
@@ -697,9 +706,13 @@ Client::~Client() {
   if (certFileName != NULL) {
     unlink(certFileName);
   }
+  if (trustedCAsFileName != NULL) {
+    unlink(trustedCAsFileName);
+  }
 
   delete[] pemFileName;
   delete[] certFileName;
+  delete[] trustedCAsFileName;
 
   if (ssl_options) {
     ERR_remove_state(0);

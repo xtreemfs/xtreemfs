@@ -132,6 +132,7 @@ class Client {
   const SSLOptions* ssl_options;
   char* pemFileName;
   char* certFileName;
+  char* trustedCAsFileName;
   boost::asio::ssl::context* ssl_context_;
 #endif  // HAS_OPENSSL
 
