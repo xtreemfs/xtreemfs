@@ -163,8 +163,8 @@ Client::Client(int32_t connect_timeout_s,
               "to verify the services' certificates. Using default system verify "
               "paths only." << endl;
         }
-      } else {
-        // Setup any additional certificates as trusted root CAs in one file.
+      } else if (ca->stack.num > 0) {
+        // Setup any additional certificates as trusted root CAs in one file.   
         char trusted_cas_template[] = "/tmp/caXXXXXX";
         FILE* trusted_cas_file =
             create_and_open_temporary_ssl_file(trusted_cas_template, "ab+");
@@ -172,7 +172,12 @@ Client::Client(int32_t connect_timeout_s,
         strncpy(trustedCAsFileName,
                 trusted_cas_template, sizeof(trusted_cas_template)); 
         
-        for (int i = 0; i < ca->stack.num; ++i) {
+        if (Logging::log->loggingActive(LEVEL_INFO)) {
+          Logging::log->getLog(LEVEL_INFO) << "Writing " << ca->stack.num
+              << " verification certificates to " << trustedCAsFileName << endl;
+        }
+        
+        while (ca->stack.num > 0) {
           X509* ca_cert = sk_X509_pop(ca);
           // _AUX writes trusted certificates.
           if (PEM_write_X509_AUX(trusted_cas_file, ca_cert)) { 
