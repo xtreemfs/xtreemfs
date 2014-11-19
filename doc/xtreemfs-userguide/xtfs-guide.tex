@@ -518,11 +518,17 @@ $> openssl x509 -CA ca/ca.pem -CAkey ca/ca.key \
 		\end{verbatim}
 
 	\item Export the service credentials (certificate and private key) as a PKCS\#12 file.\\
-		Use ``passphrase'' as export password. You can leave the export password empty for the XtreemFS Client to avoid being asked for the password on mount.
+		For the \texttt{dir}, \texttt{mrc} and \texttt{osd} services, use ``passphrase'' as export password.
 		\begin{verbatim}
 $> openssl pkcs12 -export -in SERVICE.pem -inkey SERVICE.key \
    -out SERVICE.p12 -name "SERVICE"
 		\end{verbatim}
+		For the XtreemFS Client, leave the export password empty to avoid being asked for the password on mount. If you do not want to/cannot distribute the demo CA to the clients' trusted root CA paths (e.g. \path{/usr/share/ca-certificates/extra} on Linux machines), also include your demo CA in the PKCS\#12 file so the server certificates can be verified.
+		\begin{verbatim}
+$> openssl pkcs12 -export -in client.pem -inkey client.key \
+   -out client_ca.p12 -name "client_ca" -certfile ca.pem
+		\end{verbatim}
+		Multiple CAs can be specified by concatenating them and storing them in a new file which can then be used as argument to the \texttt{-certfile} option.
 
 	\item Copy the PKCS\#12 file to the certificates directory.
 		\begin{verbatim}
@@ -555,12 +561,12 @@ $> cp SERVICE.p12 /etc/xos/xtreemfs/truststore/certs
 	Use
 	\begin{verbatim}
 	$> mkfs.xtreemfs --pkcs12-file-path=\
-	   /etc/xos/xtreemfs/truststore/certs/client.p12 pbrpcs://localhost/test
+	   /etc/xos/xtreemfs/truststore/certs/client_ca.p12 pbrpcs://localhost/test
 	\end{verbatim}
 	for SSL-enabled servers, or
 	\begin{verbatim}
 	$> mkfs.xtreemfs --pkcs12-file-path=\
-	   /etc/xos/xtreemfs/truststore/certs/client.p12 pbrpcg://localhost/test
+	   /etc/xos/xtreemfs/truststore/certs/client_ca.p12 pbrpcg://localhost/test
 	\end{verbatim}
 	for Grid-SSL-enabled servers.
 
@@ -569,12 +575,12 @@ $> cp SERVICE.p12 /etc/xos/xtreemfs/truststore/certs
 	Use
 	\begin{verbatim}
 	$> mount.xtreemfs --pkcs12-file-path=\
-	   /etc/xos/xtreemfs/truststore/certs/client.p12 pbrpcs://localhost/test /mnt
+	   /etc/xos/xtreemfs/truststore/certs/client_ca.p12 pbrpcs://localhost/test /mnt
 	\end{verbatim}
 	for SSL-enabled servers, or
 	\begin{verbatim}
 	$> mount.xtreemfs --pkcs12-file-path=\
-	   /etc/xos/xtreemfs/truststore/certs/client.p12 pbrpcg://localhost/test /mnt
+	   /etc/xos/xtreemfs/truststore/certs/client_ca.p12 pbrpcg://localhost/test /mnt
 	\end{verbatim}
 	for Grid-SSL-enabled servers.
 
