@@ -130,7 +130,7 @@ mkdir -p $TEST_DIR
 
 # Check out
 cd $XTREEMFS_DIR
-git clone https://code.google.com/p/xtreemfs/ . &> $TEST_LOG
+git clone https://github.com/xtreemfs/xtreemfs.git . &> $TEST_LOG
 
 # Compile
 # 2012-11-02(mberlin): Try to disable optimizations in client compilation.
