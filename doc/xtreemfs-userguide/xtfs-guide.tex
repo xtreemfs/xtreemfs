@@ -528,7 +528,7 @@ $> openssl pkcs12 -export -in SERVICE.pem -inkey SERVICE.key \
 $> openssl pkcs12 -export -in client.pem -inkey client.key \
    -out client_ca.p12 -name "client_ca" -certfile ca.pem
 		\end{verbatim}
-		Multiple CAs can be specified by concatenating them and storing them in a new file which can then be used as argument to the \texttt{-certfile} option.
+		Multiple CA's certificates (e.g. for using a certificate chain) can be specified by concatenating them and storing them in a new file which can then be used as argument to the \texttt{-certfile} option.
 
 	\item Copy the PKCS\#12 file to the certificates directory.
 		\begin{verbatim}
@@ -545,6 +545,7 @@ $> cp SERVICE.p12 /etc/xos/xtreemfs/truststore/certs
 	   -trustcacerts -file ca/ca.pem
 	$> cp  trusted.jks /etc/xos/xtreemfs/truststore/certs
 	\end{verbatim}
+	It is sufficient to only trust the CA's certificates which have signed the other service's certificates, instead of trusting the entire chain. For example, if you signed \texttt{MRC.pem} with \texttt{ca.pem}, which in turn was signed with \texttt{some\_ca.pem}, you do not need to import \texttt{some\_ca.pem} into the keystore.
 
  \item Configure the services.
 	Edit the configuration file for all your services. Set the following configuration options (see Sec. \ref{sec:service_config} for details).\\
