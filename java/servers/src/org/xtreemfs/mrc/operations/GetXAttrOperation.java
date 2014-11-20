@@ -78,7 +78,7 @@ public class GetXAttrOperation extends MRCOperation {
         
         // set the response
         rq.setResponse(getxattrResponse.newBuilder().setValue(new String(value))
-                .setValueBytes(ByteString.copyFrom(value)).build());
+                .setValueBytesString(ByteString.copyFrom(value)).build());
         finishRequest(rq);
     }
     

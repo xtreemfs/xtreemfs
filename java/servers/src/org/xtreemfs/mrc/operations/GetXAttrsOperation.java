@@ -114,7 +114,7 @@ public class GetXAttrsOperation extends MRCOperation {
                     .newBuilder().setName(attr.getKey());
             
             if (!rqArgs.getNamesOnly())
-                builder.setValue(new String(attr.getValue())).setValueBytes(ByteString.copyFrom(attr.getValue()));
+                builder.setValue(new String(attr.getValue())).setValueBytesString(ByteString.copyFrom(attr.getValue()));
             
             result.addXattrs(builder.build());
         }
