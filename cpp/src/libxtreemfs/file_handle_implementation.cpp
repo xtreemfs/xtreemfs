@@ -94,10 +94,67 @@ FileHandleImplementation::FileHandleImplementation(
 
 FileHandleImplementation::~FileHandleImplementation() {}
 
-int FileHandleImplementation::Read(
+
+template<typename T>
+T FileHandleImplementation::ExecuteViewCheckedOperation(
+    boost::function<T()> operation) {
+
+  RPCOptions options(volume_options_.max_view_renewals,
+                     volume_options_.retry_delay_s, false,
+                     volume_options_.was_interrupted_function);
+
+  int attempt;
+  for (attempt = 1;
+          (attempt <= options.max_retries() || options.max_retries() == 0) &&
+          !Interruptibilizer::WasInterrupted(options.was_interrupted_cb());
+       attempt++) {
+
+    try {
+      return operation();
+
+    } catch (const InvalidViewException& ex) {
+      if (attempt == options.max_retries() && options.max_retries() > 0) {
+        // The request did finally fail.
+        // Append the number of attempts to the message and rethrow.
+        string error_msg(ex.what());
+        error_msg.append(" Request finally failed after " +
+                         boost::lexical_cast<string>(attempt) + " attempts.");
+
+        throw InvalidViewException(error_msg);
+      } else {
+        // Delay the xLocSet renewal and the next run of the operation.
+        Interruptibilizer::SleepInterruptible((options.retry_delay_s() * 1000),
+                  options.was_interrupted_cb());
+
+        // Try to renew the XLocSet.
+        RenewXLocSet();
+      }
+    }
+  }
+
+  // If we reach this, something went wrong.
+  string error_msg = "The operation did fail due to an outdated view after "
+      + boost::lexical_cast<string>(attempt) + " attempts.";
+
+  if (Interruptibilizer::WasInterrupted(options.was_interrupted_cb())) {
+    throw PosixErrorException(POSIX_ERROR_EINTR, error_msg);
+  } else {
+    throw XtreemFSException(error_msg);
+  }
+}
+
+int FileHandleImplementation::Read(char *buf, size_t count, int64_t offset) {
+  boost::function<int()> operation(
+      boost::bind(&FileHandleImplementation::DoRead, this,
+                  buf, count, offset));
+  return ExecuteViewCheckedOperation(operation);
+}
+
+int FileHandleImplementation::DoRead(
     char *buf,
     size_t count,
     int64_t offset) {
+
   if (async_writes_enabled_) {
     file_info_->WaitForPendingAsyncWrites();
     ThrowIfAsyncWritesFailed();
@@ -199,11 +256,6 @@ int FileHandleImplementation::ReadFromOSD(
   rq.set_offset(offset_in_object);
   rq.set_length(bytes_to_read);
 
-  // XLocSet renewal is not possible, if striping is enabled.
-  xtreemfs::pbrpc::XLocSet* xlocset_in_req;
-  xlocset_in_req = rq.mutable_file_credentials()->mutable_xlocs();
-  const bool striped = (xlocset_in_req->replicas(0)).osd_uuids_size() > 1;
-
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
           boost::bind(&xtreemfs::pbrpc::OSDServiceClient::read_sync,
@@ -212,17 +264,15 @@ int FileHandleImplementation::ReadFromOSD(
                       boost::cref(auth_bogus_),
                       boost::cref(user_credentials_bogus_),
                       &rq),
-                      uuid_iterator,
-                      uuid_resolver_,
-                      RPCOptions(volume_options_.max_read_tries,
-                                 volume_options_.retry_delay_s,
-                                 false,
-                                 volume_options_.was_interrupted_function),
-                      false,
-                      &xcap_manager_,
-                      rq.mutable_file_credentials()->mutable_xcap(),
-                      striped ? NULL : this,
-                      striped ? NULL : xlocset_in_req));
+          uuid_iterator,
+          uuid_resolver_,
+          RPCOptions(volume_options_.max_read_tries,
+                     volume_options_.retry_delay_s,
+                     false,
+                     volume_options_.was_interrupted_function),
+          false,
+          &xcap_manager_,
+          rq.mutable_file_credentials()->mutable_xcap()));
 
   xtreemfs::pbrpc::ObjectData* data =
       static_cast<xtreemfs::pbrpc::ObjectData*>(response->response());
@@ -237,7 +287,15 @@ int FileHandleImplementation::ReadFromOSD(
   return received_data;
 }
 
-int FileHandleImplementation::Write(
+int FileHandleImplementation::Write(const char *buf, size_t count,
+                                    int64_t offset) {
+  boost::function<int()> operation(
+      boost::bind(&FileHandleImplementation::DoWrite, this,
+                  buf, count, offset));
+  return ExecuteViewCheckedOperation(operation);
+}
+
+int FileHandleImplementation::DoWrite(
     const char *buf,
     size_t count,
     int64_t offset) {
@@ -391,11 +449,6 @@ void FileHandleImplementation::WriteToOSD(
   data->set_invalid_checksum_on_osd(false);
   data->set_zero_padding(0);
 
-  // XLocSet renewal is not possible, if striping is enabled.
-  xtreemfs::pbrpc::XLocSet* xlocset_in_req;
-  xlocset_in_req = write_request.mutable_file_credentials()->mutable_xlocs();
-  const bool striped = (xlocset_in_req->replicas(0)).osd_uuids_size() > 1;
-
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
           boost::bind(
@@ -415,9 +468,7 @@ void FileHandleImplementation::WriteToOSD(
                       volume_options_.was_interrupted_function),
           false,
           &xcap_manager_,
-          write_request.mutable_file_credentials()->mutable_xcap(),
-          striped ? NULL : this,
-          striped ? NULL : xlocset_in_req));
+          write_request.mutable_file_credentials()->mutable_xcap()));
 
   xtreemfs::pbrpc::OSDWriteResponse* write_response =
       static_cast<xtreemfs::pbrpc::OSDWriteResponse*>(response->response());
@@ -444,6 +495,12 @@ void FileHandleImplementation::Flush() {
 }
 
 void FileHandleImplementation::Flush(bool close_file) {
+  boost::function<void()> operation(
+      boost::bind(&FileHandleImplementation::DoFlush, this, close_file));
+  ExecuteViewCheckedOperation(operation);
+}
+
+void FileHandleImplementation::DoFlush(bool close_file) {
   if (object_cache_ != NULL) {
     FileCredentials file_credentials;
     xcap_manager_.GetXCap(file_credentials.mutable_xcap());
@@ -505,7 +562,14 @@ void FileHandleImplementation::Truncate(
   TruncatePhaseTwoAndThree(new_file_size);
 }
 
-void FileHandleImplementation::TruncatePhaseTwoAndThree(
+void FileHandleImplementation::TruncatePhaseTwoAndThree(int64_t new_file_size) {
+  boost::function<void()> operation(
+      boost::bind(&FileHandleImplementation::DoTruncatePhaseTwoAndThree, this,
+                  new_file_size));
+  ExecuteViewCheckedOperation(operation);
+}
+
+void FileHandleImplementation::DoTruncatePhaseTwoAndThree(
     int64_t new_file_size) {
   // 2. Call truncate at the head OSD.
   truncateRequest truncate_rq;
@@ -529,9 +593,7 @@ void FileHandleImplementation::TruncatePhaseTwoAndThree(
           RPCOptionsFromOptions(volume_options_),
           false,
           &xcap_manager_,
-          truncate_rq.mutable_file_credentials()->mutable_xcap(),
-          this,
-          truncate_rq.mutable_file_credentials()->mutable_xlocs()));
+          truncate_rq.mutable_file_credentials()->mutable_xcap()));
   xtreemfs::pbrpc::OSDWriteResponse* write_response =
       static_cast<xtreemfs::pbrpc::OSDWriteResponse*>(response->response());
 
@@ -563,6 +625,19 @@ void FileHandleImplementation::GetAttr(
 }
 
 xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
+    int process_id,
+    uint64_t offset,
+    uint64_t length,
+    bool exclusive,
+    bool wait_for_lock) {
+  boost::function<xtreemfs::pbrpc::Lock*()> operation(
+      boost::bind(&FileHandleImplementation::DoAcquireLock, this,
+                  process_id, offset, length, exclusive, wait_for_lock));
+
+  return ExecuteViewCheckedOperation(operation);
+}
+
+xtreemfs::pbrpc::Lock* FileHandleImplementation::DoAcquireLock(
     int process_id,
     uint64_t offset,
     uint64_t length,
@@ -616,9 +691,7 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
         RPCOptionsFromOptions(volume_options_),
         false,
         &xcap_manager_,
-        lock_request.mutable_file_credentials()->mutable_xcap(),
-        this,
-        lock_request.mutable_file_credentials()->mutable_xlocs()));
+        lock_request.mutable_file_credentials()->mutable_xcap()));
   } else {
     // Retry to obtain the lock in case of EAGAIN responses.
     int retries_left = volume_options_.max_tries;
@@ -640,9 +713,7 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
                        volume_options_.was_interrupted_function),
             false,  // UUIDIterator contains UUIDs and not addresses.
             &xcap_manager_,
-            lock_request.mutable_file_credentials()->mutable_xcap(),
-            this,
-            lock_request.mutable_file_credentials()->mutable_xlocs()));
+            lock_request.mutable_file_credentials()->mutable_xcap()));
         break;  // If successful, do not retry again.
       } catch(const PosixErrorException& e) {
         if (e.posix_errno() != POSIX_ERROR_EAGAIN) {
@@ -667,6 +738,18 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
 }
 
 xtreemfs::pbrpc::Lock* FileHandleImplementation::CheckLock(
+    int process_id,
+    uint64_t offset,
+    uint64_t length,
+    bool exclusive) {
+  boost::function<xtreemfs::pbrpc::Lock*()> operation(
+      boost::bind(&FileHandleImplementation::DoCheckLock, this,
+                  process_id, offset, length, exclusive));
+
+  return ExecuteViewCheckedOperation(operation);
+}
+
+xtreemfs::pbrpc::Lock* FileHandleImplementation::DoCheckLock(
     int process_id,
     uint64_t offset,
     uint64_t length,
@@ -717,9 +800,7 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::CheckLock(
         RPCOptionsFromOptions(volume_options_),
         false,
         &xcap_manager_,
-        lock_request.mutable_file_credentials()->mutable_xcap(),
-        this,
-        lock_request.mutable_file_credentials()->mutable_xlocs()));
+        lock_request.mutable_file_credentials()->mutable_xcap()));
   // Delete everything except the response.
   delete[] response->data();
   delete response->error();
@@ -743,6 +824,13 @@ void FileHandleImplementation::ReleaseLock(
 
 void FileHandleImplementation::ReleaseLock(
     const xtreemfs::pbrpc::Lock& lock) {
+  boost::function<void()> operation(
+      boost::bind(&FileHandleImplementation::DoReleaseLock, this, lock));
+  ExecuteViewCheckedOperation(operation);
+}
+
+void FileHandleImplementation::DoReleaseLock(
+    const xtreemfs::pbrpc::Lock& lock) {
   // Only release locks which are known to this client.
   if (!file_info_->CheckIfProcessHasLocks(lock.client_pid())) {
     if (Logging::log->loggingActive(LEVEL_DEBUG)) {
@@ -758,7 +846,8 @@ void FileHandleImplementation::ReleaseLock(
   lockRequest unlock_request;
   file_info_->GetXLocSet(
       unlock_request.mutable_file_credentials()->mutable_xlocs());
-  xcap_manager_.GetXCap(unlock_request.mutable_file_credentials()->mutable_xcap());
+  xcap_manager_.GetXCap(
+      unlock_request.mutable_file_credentials()->mutable_xcap());
   unlock_request.mutable_lock_request()->CopyFrom(lock);
 
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
@@ -775,9 +864,7 @@ void FileHandleImplementation::ReleaseLock(
         RPCOptionsFromOptions(volume_options_),
         false,
         &xcap_manager_,
-        unlock_request.mutable_file_credentials()->mutable_xcap(),
-        this,
-        unlock_request.mutable_file_credentials()->mutable_xlocs()));
+        unlock_request.mutable_file_credentials()->mutable_xcap()));
   response->DeleteBuffers();
 
   file_info_->DelLock(lock);
@@ -788,6 +875,13 @@ void FileHandleImplementation::ReleaseLockOfProcess(int process_id) {
 }
 
 void FileHandleImplementation::PingReplica(
+    const std::string& osd_uuid) {
+  boost::function<void()> operation(
+      boost::bind(&FileHandleImplementation::DoPingReplica, this, osd_uuid));
+  ExecuteViewCheckedOperation(operation);
+}
+
+void FileHandleImplementation::DoPingReplica(
     const std::string& osd_uuid) {
   // Get xlocset. and check if osd_uuid is included.
   readRequest read_request;
@@ -845,9 +939,7 @@ void FileHandleImplementation::PingReplica(
           RPCOptionsFromOptions(volume_options_),
           false,
           &xcap_manager_,
-          read_request.mutable_file_credentials()->mutable_xcap(),
-          this,
-          read_request.mutable_file_credentials()->mutable_xlocs()));
+          read_request.mutable_file_credentials()->mutable_xcap()));
   // We don't care about the result.
   response->DeleteBuffers();
 }
@@ -877,7 +969,8 @@ const StripeTranslator* FileHandleImplementation::GetStripeTranslator(
 
   // Type not found.
   if (it == stripe_translators_.end()) {
-    throw XtreemFSException("No StripingPolicy found for type: " + type);
+    throw XtreemFSException("No StripingPolicy found for type: "
+        + boost::lexical_cast<string>(type));
   } else {
     // Type found.
     return it->second;
@@ -943,7 +1036,7 @@ void FileHandleImplementation::WriteBackFileSize(
   response->DeleteBuffers();
 }
 
-void FileHandleImplementation::WriteBackFileSizeAsync(const RPCOptions& options) {
+void FileHandleImplementation::WriteBackFileSizeAsync(const RPCOptions& options) { // NOLINT
   xtreemfs_update_file_sizeRequest rq;
   {
     boost::mutex::scoped_lock lock(mutex_);
@@ -1039,23 +1132,18 @@ void FileHandleImplementation::GetXCap(xtreemfs::pbrpc::XCap* xcap) {
   xcap_manager_.GetXCap(xcap);
 }
 
-void FileHandleImplementation::GetXLocSet(xtreemfs::pbrpc::XLocSet* new_xlocset) {
-  file_info_->GetXLocSet(new_xlocset);
-}
-
 void FileHandleImplementation::RenewXLocSet() {
   XLocSet xlocset_to_renew, xlocset_current;
 
   // Store the current xLocSet before entering the renewal mutex section.
-  GetXLocSet(&xlocset_to_renew);
+  file_info_->GetXLocSet(&xlocset_to_renew);
 
   {
     FileInfo::XLocSetRenewalLock lock(file_info_);
 
-    // Renew the xLocSet only if the xLocSet has not been renewed yet by another process.
-    GetXLocSet(&xlocset_current);
+    // Renew the xLocSet if it has not been renewed yet by another process.
+    file_info_->GetXLocSet(&xlocset_current);
     if (xlocset_current.version() <= xlocset_to_renew.version()) {
-
       // Build the request and call the MRC synchronously.
       XCap xcap;
       GetXCap(&xcap);
@@ -1076,8 +1164,8 @@ void FileHandleImplementation::RenewXLocSet() {
               &xcap_manager_,
               &xcap));
 
-      xtreemfs::pbrpc::XLocSet* xlocset_new = static_cast<xtreemfs::pbrpc::XLocSet*>(
-          response->response());
+      xtreemfs::pbrpc::XLocSet* xlocset_new =
+          static_cast<xtreemfs::pbrpc::XLocSet*>(response->response());
 
       file_info_->UpdateXLocSetAndRest(*xlocset_new);
 
