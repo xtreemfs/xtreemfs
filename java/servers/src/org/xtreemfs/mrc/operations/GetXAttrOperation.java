@@ -62,7 +62,7 @@ public class GetXAttrOperation extends MRCOperation {
         byte[] value = null;
         if (rqArgs.getName().startsWith("xtreemfs."))
             value = MRCHelper.getSysAttrValue(master.getConfig(), sMan, master.getOSDStatusManager(), faMan,
-                res.toString(), file, rqArgs.getName().substring(9)).getBytes();
+                    res.toString(), file, rqArgs.getName().substring(9));
         else {
             
             // first, try to fetch an individual user attribute

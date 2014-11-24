@@ -87,10 +87,10 @@ public class GetXAttrsOperation extends MRCOperation {
         // include system attributes
         for (SysAttrs attr : SysAttrs.values()) {
             String key = "xtreemfs." + attr.toString();
-            String value = MRCHelper.getSysAttrValue(master.getConfig(), sMan, master.getOSDStatusManager(), faMan,
+            byte[] value = MRCHelper.getSysAttrValue(master.getConfig(), sMan, master.getOSDStatusManager(), faMan,
                     res.toString(), file, attr.toString());
-            if (!value.equals(""))
-                attrs.put(key, value.getBytes());
+            if (value.length > 0)
+                attrs.put(key, value);
         }
         
         // if file ID is root volume

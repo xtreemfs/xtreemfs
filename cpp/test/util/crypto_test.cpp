@@ -121,4 +121,33 @@ TEST_F(CryptoTest, Envelope_02) {
   EXPECT_TRUE(std::vector<unsigned char>(msg.begin(), msg.end()) == plaintext);
 }
 
+TEST_F(CryptoTest, Envelope_03) {
+  AsymKey key1("RSA");
+  AsymKey key2("RSA");
+  std::vector<AsymKey> keys;
+  keys.push_back(key1);
+  keys.push_back(key2);
+  Envelope envelope;
+
+  std::string msg("Plaintext message");
+  std::vector<std::vector<unsigned char> > encrypted_keys;
+  std::vector<unsigned char> iv;
+  std::vector<unsigned char> ciphertext;
+
+  envelope.Seal("aes-256-ctr",keys,
+                boost::asio::buffer(msg), &encrypted_keys, &iv, &ciphertext);
+
+  std::vector<unsigned char> plaintext;
+  envelope.Open("aes-256-ctr", key1, boost::asio::buffer(ciphertext),
+                boost::asio::buffer(encrypted_keys[0]), boost::asio::buffer(iv),
+                &plaintext);
+  EXPECT_TRUE(std::vector<unsigned char>(msg.begin(), msg.end()) == plaintext);
+
+  plaintext.clear();
+  envelope.Open("aes-256-ctr", key2, boost::asio::buffer(ciphertext),
+                boost::asio::buffer(encrypted_keys[1]), boost::asio::buffer(iv),
+                &plaintext);
+  EXPECT_TRUE(std::vector<unsigned char>(msg.begin(), msg.end()) == plaintext);
+}
+
 }  // namespace xtreemfs

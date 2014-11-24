@@ -36,8 +36,8 @@ void protobuf_ShutdownFile_xtreemfs_2fEncryption_2eproto();
 
 class SymEncBytes;
 class SignedBytes;
-class FileMetadata;
 class FileLockbox;
+class FileMetadata;
 
 // ===================================================================
 
@@ -236,7 +236,7 @@ class SignedBytes : public ::google::protobuf::Message {
   inline ::std::string* release_signature();
   inline void set_allocated_signature(::std::string* signature);
 
-  // optional string hash_algo = 3;
+  // required string hash_algo = 3;
   inline bool has_hash_algo() const;
   inline void clear_hash_algo();
   static const int kHashAlgoFieldNumber = 3;
@@ -272,163 +272,6 @@ class SignedBytes : public ::google::protobuf::Message {
 
   void InitAsDefaultInstance();
   static SignedBytes* default_instance_;
-};
-// -------------------------------------------------------------------
-
-class FileMetadata : public ::google::protobuf::Message {
- public:
-  FileMetadata();
-  virtual ~FileMetadata();
-
-  FileMetadata(const FileMetadata& from);
-
-  inline FileMetadata& operator=(const FileMetadata& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _unknown_fields_;
-  }
-
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return &_unknown_fields_;
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const FileMetadata& default_instance();
-
-  void Swap(FileMetadata* other);
-
-  // implements Message ----------------------------------------------
-
-  FileMetadata* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const FileMetadata& from);
-  void MergeFrom(const FileMetadata& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
-  int GetCachedSize() const { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  public:
-
-  ::google::protobuf::Metadata GetMetadata() const;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // required string file_id = 1;
-  inline bool has_file_id() const;
-  inline void clear_file_id();
-  static const int kFileIdFieldNumber = 1;
-  inline const ::std::string& file_id() const;
-  inline void set_file_id(const ::std::string& value);
-  inline void set_file_id(const char* value);
-  inline void set_file_id(const char* value, size_t size);
-  inline ::std::string* mutable_file_id();
-  inline ::std::string* release_file_id();
-  inline void set_allocated_file_id(::std::string* file_id);
-
-  // required bytes file_id_salt = 2;
-  inline bool has_file_id_salt() const;
-  inline void clear_file_id_salt();
-  static const int kFileIdSaltFieldNumber = 2;
-  inline const ::std::string& file_id_salt() const;
-  inline void set_file_id_salt(const ::std::string& value);
-  inline void set_file_id_salt(const char* value);
-  inline void set_file_id_salt(const void* value, size_t size);
-  inline ::std::string* mutable_file_id_salt();
-  inline ::std::string* release_file_id_salt();
-  inline void set_allocated_file_id_salt(::std::string* file_id_salt);
-
-  // required bytes salt = 3;
-  inline bool has_salt() const;
-  inline void clear_salt();
-  static const int kSaltFieldNumber = 3;
-  inline const ::std::string& salt() const;
-  inline void set_salt(const ::std::string& value);
-  inline void set_salt(const char* value);
-  inline void set_salt(const void* value, size_t size);
-  inline ::std::string* mutable_salt();
-  inline ::std::string* release_salt();
-  inline void set_allocated_salt(::std::string* salt);
-
-  // required string user_id = 4;
-  inline bool has_user_id() const;
-  inline void clear_user_id();
-  static const int kUserIdFieldNumber = 4;
-  inline const ::std::string& user_id() const;
-  inline void set_user_id(const ::std::string& value);
-  inline void set_user_id(const char* value);
-  inline void set_user_id(const char* value, size_t size);
-  inline ::std::string* mutable_user_id();
-  inline ::std::string* release_user_id();
-  inline void set_allocated_user_id(::std::string* user_id);
-
-  // required string group_id = 5;
-  inline bool has_group_id() const;
-  inline void clear_group_id();
-  static const int kGroupIdFieldNumber = 5;
-  inline const ::std::string& group_id() const;
-  inline void set_group_id(const ::std::string& value);
-  inline void set_group_id(const char* value);
-  inline void set_group_id(const char* value, size_t size);
-  inline ::std::string* mutable_group_id();
-  inline ::std::string* release_group_id();
-  inline void set_allocated_group_id(::std::string* group_id);
-
-  // required fixed32 mode = 6;
-  inline bool has_mode() const;
-  inline void clear_mode();
-  static const int kModeFieldNumber = 6;
-  inline ::google::protobuf::uint32 mode() const;
-  inline void set_mode(::google::protobuf::uint32 value);
-
-  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.FileMetadata)
- private:
-  inline void set_has_file_id();
-  inline void clear_has_file_id();
-  inline void set_has_file_id_salt();
-  inline void clear_has_file_id_salt();
-  inline void set_has_salt();
-  inline void clear_has_salt();
-  inline void set_has_user_id();
-  inline void clear_has_user_id();
-  inline void set_has_group_id();
-  inline void clear_has_group_id();
-  inline void set_has_mode();
-  inline void clear_has_mode();
-
-  ::google::protobuf::UnknownFieldSet _unknown_fields_;
-
-  ::std::string* file_id_;
-  ::std::string* file_id_salt_;
-  ::std::string* salt_;
-  ::std::string* user_id_;
-  ::std::string* group_id_;
-  ::google::protobuf::uint32 mode_;
-
-  mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(6 + 31) / 32];
-
-  friend void  protobuf_AddDesc_xtreemfs_2fEncryption_2eproto();
-  friend void protobuf_AssignDesc_xtreemfs_2fEncryption_2eproto();
-  friend void protobuf_ShutdownFile_xtreemfs_2fEncryption_2eproto();
-
-  void InitAsDefaultInstance();
-  static FileMetadata* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -591,6 +434,163 @@ class FileLockbox : public ::google::protobuf::Message {
 
   void InitAsDefaultInstance();
   static FileLockbox* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class FileMetadata : public ::google::protobuf::Message {
+ public:
+  FileMetadata();
+  virtual ~FileMetadata();
+
+  FileMetadata(const FileMetadata& from);
+
+  inline FileMetadata& operator=(const FileMetadata& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const FileMetadata& default_instance();
+
+  void Swap(FileMetadata* other);
+
+  // implements Message ----------------------------------------------
+
+  FileMetadata* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const FileMetadata& from);
+  void MergeFrom(const FileMetadata& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required string file_id = 1;
+  inline bool has_file_id() const;
+  inline void clear_file_id();
+  static const int kFileIdFieldNumber = 1;
+  inline const ::std::string& file_id() const;
+  inline void set_file_id(const ::std::string& value);
+  inline void set_file_id(const char* value);
+  inline void set_file_id(const char* value, size_t size);
+  inline ::std::string* mutable_file_id();
+  inline ::std::string* release_file_id();
+  inline void set_allocated_file_id(::std::string* file_id);
+
+  // required bytes file_id_salt = 2;
+  inline bool has_file_id_salt() const;
+  inline void clear_file_id_salt();
+  static const int kFileIdSaltFieldNumber = 2;
+  inline const ::std::string& file_id_salt() const;
+  inline void set_file_id_salt(const ::std::string& value);
+  inline void set_file_id_salt(const char* value);
+  inline void set_file_id_salt(const void* value, size_t size);
+  inline ::std::string* mutable_file_id_salt();
+  inline ::std::string* release_file_id_salt();
+  inline void set_allocated_file_id_salt(::std::string* file_id_salt);
+
+  // required bytes salt = 3;
+  inline bool has_salt() const;
+  inline void clear_salt();
+  static const int kSaltFieldNumber = 3;
+  inline const ::std::string& salt() const;
+  inline void set_salt(const ::std::string& value);
+  inline void set_salt(const char* value);
+  inline void set_salt(const void* value, size_t size);
+  inline ::std::string* mutable_salt();
+  inline ::std::string* release_salt();
+  inline void set_allocated_salt(::std::string* salt);
+
+  // required string user_id = 4;
+  inline bool has_user_id() const;
+  inline void clear_user_id();
+  static const int kUserIdFieldNumber = 4;
+  inline const ::std::string& user_id() const;
+  inline void set_user_id(const ::std::string& value);
+  inline void set_user_id(const char* value);
+  inline void set_user_id(const char* value, size_t size);
+  inline ::std::string* mutable_user_id();
+  inline ::std::string* release_user_id();
+  inline void set_allocated_user_id(::std::string* user_id);
+
+  // required string group_id = 5;
+  inline bool has_group_id() const;
+  inline void clear_group_id();
+  static const int kGroupIdFieldNumber = 5;
+  inline const ::std::string& group_id() const;
+  inline void set_group_id(const ::std::string& value);
+  inline void set_group_id(const char* value);
+  inline void set_group_id(const char* value, size_t size);
+  inline ::std::string* mutable_group_id();
+  inline ::std::string* release_group_id();
+  inline void set_allocated_group_id(::std::string* group_id);
+
+  // required fixed32 mode = 6;
+  inline bool has_mode() const;
+  inline void clear_mode();
+  static const int kModeFieldNumber = 6;
+  inline ::google::protobuf::uint32 mode() const;
+  inline void set_mode(::google::protobuf::uint32 value);
+
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.FileMetadata)
+ private:
+  inline void set_has_file_id();
+  inline void clear_has_file_id();
+  inline void set_has_file_id_salt();
+  inline void clear_has_file_id_salt();
+  inline void set_has_salt();
+  inline void clear_has_salt();
+  inline void set_has_user_id();
+  inline void clear_has_user_id();
+  inline void set_has_group_id();
+  inline void clear_has_group_id();
+  inline void set_has_mode();
+  inline void clear_has_mode();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::std::string* file_id_;
+  ::std::string* file_id_salt_;
+  ::std::string* salt_;
+  ::std::string* user_id_;
+  ::std::string* group_id_;
+  ::google::protobuf::uint32 mode_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(6 + 31) / 32];
+
+  friend void  protobuf_AddDesc_xtreemfs_2fEncryption_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fEncryption_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fEncryption_2eproto();
+
+  void InitAsDefaultInstance();
+  static FileMetadata* default_instance_;
 };
 // ===================================================================
 
@@ -953,7 +953,7 @@ inline void SignedBytes::set_allocated_signature(::std::string* signature) {
   }
 }
 
-// optional string hash_algo = 3;
+// required string hash_algo = 3;
 inline bool SignedBytes::has_hash_algo() const {
   return (_has_bits_[0] & 0x00000004u) != 0;
 }
@@ -1021,382 +1021,6 @@ inline void SignedBytes::set_allocated_hash_algo(::std::string* hash_algo) {
     clear_has_hash_algo();
     hash_algo_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   }
-}
-
-// -------------------------------------------------------------------
-
-// FileMetadata
-
-// required string file_id = 1;
-inline bool FileMetadata::has_file_id() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
-}
-inline void FileMetadata::set_has_file_id() {
-  _has_bits_[0] |= 0x00000001u;
-}
-inline void FileMetadata::clear_has_file_id() {
-  _has_bits_[0] &= ~0x00000001u;
-}
-inline void FileMetadata::clear_file_id() {
-  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
-    file_id_->clear();
-  }
-  clear_has_file_id();
-}
-inline const ::std::string& FileMetadata::file_id() const {
-  return *file_id_;
-}
-inline void FileMetadata::set_file_id(const ::std::string& value) {
-  set_has_file_id();
-  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
-    file_id_ = new ::std::string;
-  }
-  file_id_->assign(value);
-}
-inline void FileMetadata::set_file_id(const char* value) {
-  set_has_file_id();
-  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
-    file_id_ = new ::std::string;
-  }
-  file_id_->assign(value);
-}
-inline void FileMetadata::set_file_id(const char* value, size_t size) {
-  set_has_file_id();
-  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
-    file_id_ = new ::std::string;
-  }
-  file_id_->assign(reinterpret_cast<const char*>(value), size);
-}
-inline ::std::string* FileMetadata::mutable_file_id() {
-  set_has_file_id();
-  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
-    file_id_ = new ::std::string;
-  }
-  return file_id_;
-}
-inline ::std::string* FileMetadata::release_file_id() {
-  clear_has_file_id();
-  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
-    return NULL;
-  } else {
-    ::std::string* temp = file_id_;
-    file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-    return temp;
-  }
-}
-inline void FileMetadata::set_allocated_file_id(::std::string* file_id) {
-  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
-    delete file_id_;
-  }
-  if (file_id) {
-    set_has_file_id();
-    file_id_ = file_id;
-  } else {
-    clear_has_file_id();
-    file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-  }
-}
-
-// required bytes file_id_salt = 2;
-inline bool FileMetadata::has_file_id_salt() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
-}
-inline void FileMetadata::set_has_file_id_salt() {
-  _has_bits_[0] |= 0x00000002u;
-}
-inline void FileMetadata::clear_has_file_id_salt() {
-  _has_bits_[0] &= ~0x00000002u;
-}
-inline void FileMetadata::clear_file_id_salt() {
-  if (file_id_salt_ != &::google::protobuf::internal::kEmptyString) {
-    file_id_salt_->clear();
-  }
-  clear_has_file_id_salt();
-}
-inline const ::std::string& FileMetadata::file_id_salt() const {
-  return *file_id_salt_;
-}
-inline void FileMetadata::set_file_id_salt(const ::std::string& value) {
-  set_has_file_id_salt();
-  if (file_id_salt_ == &::google::protobuf::internal::kEmptyString) {
-    file_id_salt_ = new ::std::string;
-  }
-  file_id_salt_->assign(value);
-}
-inline void FileMetadata::set_file_id_salt(const char* value) {
-  set_has_file_id_salt();
-  if (file_id_salt_ == &::google::protobuf::internal::kEmptyString) {
-    file_id_salt_ = new ::std::string;
-  }
-  file_id_salt_->assign(value);
-}
-inline void FileMetadata::set_file_id_salt(const void* value, size_t size) {
-  set_has_file_id_salt();
-  if (file_id_salt_ == &::google::protobuf::internal::kEmptyString) {
-    file_id_salt_ = new ::std::string;
-  }
-  file_id_salt_->assign(reinterpret_cast<const char*>(value), size);
-}
-inline ::std::string* FileMetadata::mutable_file_id_salt() {
-  set_has_file_id_salt();
-  if (file_id_salt_ == &::google::protobuf::internal::kEmptyString) {
-    file_id_salt_ = new ::std::string;
-  }
-  return file_id_salt_;
-}
-inline ::std::string* FileMetadata::release_file_id_salt() {
-  clear_has_file_id_salt();
-  if (file_id_salt_ == &::google::protobuf::internal::kEmptyString) {
-    return NULL;
-  } else {
-    ::std::string* temp = file_id_salt_;
-    file_id_salt_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-    return temp;
-  }
-}
-inline void FileMetadata::set_allocated_file_id_salt(::std::string* file_id_salt) {
-  if (file_id_salt_ != &::google::protobuf::internal::kEmptyString) {
-    delete file_id_salt_;
-  }
-  if (file_id_salt) {
-    set_has_file_id_salt();
-    file_id_salt_ = file_id_salt;
-  } else {
-    clear_has_file_id_salt();
-    file_id_salt_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-  }
-}
-
-// required bytes salt = 3;
-inline bool FileMetadata::has_salt() const {
-  return (_has_bits_[0] & 0x00000004u) != 0;
-}
-inline void FileMetadata::set_has_salt() {
-  _has_bits_[0] |= 0x00000004u;
-}
-inline void FileMetadata::clear_has_salt() {
-  _has_bits_[0] &= ~0x00000004u;
-}
-inline void FileMetadata::clear_salt() {
-  if (salt_ != &::google::protobuf::internal::kEmptyString) {
-    salt_->clear();
-  }
-  clear_has_salt();
-}
-inline const ::std::string& FileMetadata::salt() const {
-  return *salt_;
-}
-inline void FileMetadata::set_salt(const ::std::string& value) {
-  set_has_salt();
-  if (salt_ == &::google::protobuf::internal::kEmptyString) {
-    salt_ = new ::std::string;
-  }
-  salt_->assign(value);
-}
-inline void FileMetadata::set_salt(const char* value) {
-  set_has_salt();
-  if (salt_ == &::google::protobuf::internal::kEmptyString) {
-    salt_ = new ::std::string;
-  }
-  salt_->assign(value);
-}
-inline void FileMetadata::set_salt(const void* value, size_t size) {
-  set_has_salt();
-  if (salt_ == &::google::protobuf::internal::kEmptyString) {
-    salt_ = new ::std::string;
-  }
-  salt_->assign(reinterpret_cast<const char*>(value), size);
-}
-inline ::std::string* FileMetadata::mutable_salt() {
-  set_has_salt();
-  if (salt_ == &::google::protobuf::internal::kEmptyString) {
-    salt_ = new ::std::string;
-  }
-  return salt_;
-}
-inline ::std::string* FileMetadata::release_salt() {
-  clear_has_salt();
-  if (salt_ == &::google::protobuf::internal::kEmptyString) {
-    return NULL;
-  } else {
-    ::std::string* temp = salt_;
-    salt_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-    return temp;
-  }
-}
-inline void FileMetadata::set_allocated_salt(::std::string* salt) {
-  if (salt_ != &::google::protobuf::internal::kEmptyString) {
-    delete salt_;
-  }
-  if (salt) {
-    set_has_salt();
-    salt_ = salt;
-  } else {
-    clear_has_salt();
-    salt_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-  }
-}
-
-// required string user_id = 4;
-inline bool FileMetadata::has_user_id() const {
-  return (_has_bits_[0] & 0x00000008u) != 0;
-}
-inline void FileMetadata::set_has_user_id() {
-  _has_bits_[0] |= 0x00000008u;
-}
-inline void FileMetadata::clear_has_user_id() {
-  _has_bits_[0] &= ~0x00000008u;
-}
-inline void FileMetadata::clear_user_id() {
-  if (user_id_ != &::google::protobuf::internal::kEmptyString) {
-    user_id_->clear();
-  }
-  clear_has_user_id();
-}
-inline const ::std::string& FileMetadata::user_id() const {
-  return *user_id_;
-}
-inline void FileMetadata::set_user_id(const ::std::string& value) {
-  set_has_user_id();
-  if (user_id_ == &::google::protobuf::internal::kEmptyString) {
-    user_id_ = new ::std::string;
-  }
-  user_id_->assign(value);
-}
-inline void FileMetadata::set_user_id(const char* value) {
-  set_has_user_id();
-  if (user_id_ == &::google::protobuf::internal::kEmptyString) {
-    user_id_ = new ::std::string;
-  }
-  user_id_->assign(value);
-}
-inline void FileMetadata::set_user_id(const char* value, size_t size) {
-  set_has_user_id();
-  if (user_id_ == &::google::protobuf::internal::kEmptyString) {
-    user_id_ = new ::std::string;
-  }
-  user_id_->assign(reinterpret_cast<const char*>(value), size);
-}
-inline ::std::string* FileMetadata::mutable_user_id() {
-  set_has_user_id();
-  if (user_id_ == &::google::protobuf::internal::kEmptyString) {
-    user_id_ = new ::std::string;
-  }
-  return user_id_;
-}
-inline ::std::string* FileMetadata::release_user_id() {
-  clear_has_user_id();
-  if (user_id_ == &::google::protobuf::internal::kEmptyString) {
-    return NULL;
-  } else {
-    ::std::string* temp = user_id_;
-    user_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-    return temp;
-  }
-}
-inline void FileMetadata::set_allocated_user_id(::std::string* user_id) {
-  if (user_id_ != &::google::protobuf::internal::kEmptyString) {
-    delete user_id_;
-  }
-  if (user_id) {
-    set_has_user_id();
-    user_id_ = user_id;
-  } else {
-    clear_has_user_id();
-    user_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-  }
-}
-
-// required string group_id = 5;
-inline bool FileMetadata::has_group_id() const {
-  return (_has_bits_[0] & 0x00000010u) != 0;
-}
-inline void FileMetadata::set_has_group_id() {
-  _has_bits_[0] |= 0x00000010u;
-}
-inline void FileMetadata::clear_has_group_id() {
-  _has_bits_[0] &= ~0x00000010u;
-}
-inline void FileMetadata::clear_group_id() {
-  if (group_id_ != &::google::protobuf::internal::kEmptyString) {
-    group_id_->clear();
-  }
-  clear_has_group_id();
-}
-inline const ::std::string& FileMetadata::group_id() const {
-  return *group_id_;
-}
-inline void FileMetadata::set_group_id(const ::std::string& value) {
-  set_has_group_id();
-  if (group_id_ == &::google::protobuf::internal::kEmptyString) {
-    group_id_ = new ::std::string;
-  }
-  group_id_->assign(value);
-}
-inline void FileMetadata::set_group_id(const char* value) {
-  set_has_group_id();
-  if (group_id_ == &::google::protobuf::internal::kEmptyString) {
-    group_id_ = new ::std::string;
-  }
-  group_id_->assign(value);
-}
-inline void FileMetadata::set_group_id(const char* value, size_t size) {
-  set_has_group_id();
-  if (group_id_ == &::google::protobuf::internal::kEmptyString) {
-    group_id_ = new ::std::string;
-  }
-  group_id_->assign(reinterpret_cast<const char*>(value), size);
-}
-inline ::std::string* FileMetadata::mutable_group_id() {
-  set_has_group_id();
-  if (group_id_ == &::google::protobuf::internal::kEmptyString) {
-    group_id_ = new ::std::string;
-  }
-  return group_id_;
-}
-inline ::std::string* FileMetadata::release_group_id() {
-  clear_has_group_id();
-  if (group_id_ == &::google::protobuf::internal::kEmptyString) {
-    return NULL;
-  } else {
-    ::std::string* temp = group_id_;
-    group_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-    return temp;
-  }
-}
-inline void FileMetadata::set_allocated_group_id(::std::string* group_id) {
-  if (group_id_ != &::google::protobuf::internal::kEmptyString) {
-    delete group_id_;
-  }
-  if (group_id) {
-    set_has_group_id();
-    group_id_ = group_id;
-  } else {
-    clear_has_group_id();
-    group_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-  }
-}
-
-// required fixed32 mode = 6;
-inline bool FileMetadata::has_mode() const {
-  return (_has_bits_[0] & 0x00000020u) != 0;
-}
-inline void FileMetadata::set_has_mode() {
-  _has_bits_[0] |= 0x00000020u;
-}
-inline void FileMetadata::clear_has_mode() {
-  _has_bits_[0] &= ~0x00000020u;
-}
-inline void FileMetadata::clear_mode() {
-  mode_ = 0u;
-  clear_has_mode();
-}
-inline ::google::protobuf::uint32 FileMetadata::mode() const {
-  return mode_;
-}
-inline void FileMetadata::set_mode(::google::protobuf::uint32 value) {
-  set_has_mode();
-  mode_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -1821,6 +1445,382 @@ inline void FileLockbox::set_allocated_sign_key(::std::string* sign_key) {
     clear_has_sign_key();
     sign_key_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   }
+}
+
+// -------------------------------------------------------------------
+
+// FileMetadata
+
+// required string file_id = 1;
+inline bool FileMetadata::has_file_id() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void FileMetadata::set_has_file_id() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void FileMetadata::clear_has_file_id() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void FileMetadata::clear_file_id() {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
+    file_id_->clear();
+  }
+  clear_has_file_id();
+}
+inline const ::std::string& FileMetadata::file_id() const {
+  return *file_id_;
+}
+inline void FileMetadata::set_file_id(const ::std::string& value) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(value);
+}
+inline void FileMetadata::set_file_id(const char* value) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(value);
+}
+inline void FileMetadata::set_file_id(const char* value, size_t size) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* FileMetadata::mutable_file_id() {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  return file_id_;
+}
+inline ::std::string* FileMetadata::release_file_id() {
+  clear_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = file_id_;
+    file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void FileMetadata::set_allocated_file_id(::std::string* file_id) {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
+    delete file_id_;
+  }
+  if (file_id) {
+    set_has_file_id();
+    file_id_ = file_id;
+  } else {
+    clear_has_file_id();
+    file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// required bytes file_id_salt = 2;
+inline bool FileMetadata::has_file_id_salt() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void FileMetadata::set_has_file_id_salt() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void FileMetadata::clear_has_file_id_salt() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void FileMetadata::clear_file_id_salt() {
+  if (file_id_salt_ != &::google::protobuf::internal::kEmptyString) {
+    file_id_salt_->clear();
+  }
+  clear_has_file_id_salt();
+}
+inline const ::std::string& FileMetadata::file_id_salt() const {
+  return *file_id_salt_;
+}
+inline void FileMetadata::set_file_id_salt(const ::std::string& value) {
+  set_has_file_id_salt();
+  if (file_id_salt_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_salt_ = new ::std::string;
+  }
+  file_id_salt_->assign(value);
+}
+inline void FileMetadata::set_file_id_salt(const char* value) {
+  set_has_file_id_salt();
+  if (file_id_salt_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_salt_ = new ::std::string;
+  }
+  file_id_salt_->assign(value);
+}
+inline void FileMetadata::set_file_id_salt(const void* value, size_t size) {
+  set_has_file_id_salt();
+  if (file_id_salt_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_salt_ = new ::std::string;
+  }
+  file_id_salt_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* FileMetadata::mutable_file_id_salt() {
+  set_has_file_id_salt();
+  if (file_id_salt_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_salt_ = new ::std::string;
+  }
+  return file_id_salt_;
+}
+inline ::std::string* FileMetadata::release_file_id_salt() {
+  clear_has_file_id_salt();
+  if (file_id_salt_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = file_id_salt_;
+    file_id_salt_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void FileMetadata::set_allocated_file_id_salt(::std::string* file_id_salt) {
+  if (file_id_salt_ != &::google::protobuf::internal::kEmptyString) {
+    delete file_id_salt_;
+  }
+  if (file_id_salt) {
+    set_has_file_id_salt();
+    file_id_salt_ = file_id_salt;
+  } else {
+    clear_has_file_id_salt();
+    file_id_salt_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// required bytes salt = 3;
+inline bool FileMetadata::has_salt() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void FileMetadata::set_has_salt() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void FileMetadata::clear_has_salt() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void FileMetadata::clear_salt() {
+  if (salt_ != &::google::protobuf::internal::kEmptyString) {
+    salt_->clear();
+  }
+  clear_has_salt();
+}
+inline const ::std::string& FileMetadata::salt() const {
+  return *salt_;
+}
+inline void FileMetadata::set_salt(const ::std::string& value) {
+  set_has_salt();
+  if (salt_ == &::google::protobuf::internal::kEmptyString) {
+    salt_ = new ::std::string;
+  }
+  salt_->assign(value);
+}
+inline void FileMetadata::set_salt(const char* value) {
+  set_has_salt();
+  if (salt_ == &::google::protobuf::internal::kEmptyString) {
+    salt_ = new ::std::string;
+  }
+  salt_->assign(value);
+}
+inline void FileMetadata::set_salt(const void* value, size_t size) {
+  set_has_salt();
+  if (salt_ == &::google::protobuf::internal::kEmptyString) {
+    salt_ = new ::std::string;
+  }
+  salt_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* FileMetadata::mutable_salt() {
+  set_has_salt();
+  if (salt_ == &::google::protobuf::internal::kEmptyString) {
+    salt_ = new ::std::string;
+  }
+  return salt_;
+}
+inline ::std::string* FileMetadata::release_salt() {
+  clear_has_salt();
+  if (salt_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = salt_;
+    salt_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void FileMetadata::set_allocated_salt(::std::string* salt) {
+  if (salt_ != &::google::protobuf::internal::kEmptyString) {
+    delete salt_;
+  }
+  if (salt) {
+    set_has_salt();
+    salt_ = salt;
+  } else {
+    clear_has_salt();
+    salt_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// required string user_id = 4;
+inline bool FileMetadata::has_user_id() const {
+  return (_has_bits_[0] & 0x00000008u) != 0;
+}
+inline void FileMetadata::set_has_user_id() {
+  _has_bits_[0] |= 0x00000008u;
+}
+inline void FileMetadata::clear_has_user_id() {
+  _has_bits_[0] &= ~0x00000008u;
+}
+inline void FileMetadata::clear_user_id() {
+  if (user_id_ != &::google::protobuf::internal::kEmptyString) {
+    user_id_->clear();
+  }
+  clear_has_user_id();
+}
+inline const ::std::string& FileMetadata::user_id() const {
+  return *user_id_;
+}
+inline void FileMetadata::set_user_id(const ::std::string& value) {
+  set_has_user_id();
+  if (user_id_ == &::google::protobuf::internal::kEmptyString) {
+    user_id_ = new ::std::string;
+  }
+  user_id_->assign(value);
+}
+inline void FileMetadata::set_user_id(const char* value) {
+  set_has_user_id();
+  if (user_id_ == &::google::protobuf::internal::kEmptyString) {
+    user_id_ = new ::std::string;
+  }
+  user_id_->assign(value);
+}
+inline void FileMetadata::set_user_id(const char* value, size_t size) {
+  set_has_user_id();
+  if (user_id_ == &::google::protobuf::internal::kEmptyString) {
+    user_id_ = new ::std::string;
+  }
+  user_id_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* FileMetadata::mutable_user_id() {
+  set_has_user_id();
+  if (user_id_ == &::google::protobuf::internal::kEmptyString) {
+    user_id_ = new ::std::string;
+  }
+  return user_id_;
+}
+inline ::std::string* FileMetadata::release_user_id() {
+  clear_has_user_id();
+  if (user_id_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = user_id_;
+    user_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void FileMetadata::set_allocated_user_id(::std::string* user_id) {
+  if (user_id_ != &::google::protobuf::internal::kEmptyString) {
+    delete user_id_;
+  }
+  if (user_id) {
+    set_has_user_id();
+    user_id_ = user_id;
+  } else {
+    clear_has_user_id();
+    user_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// required string group_id = 5;
+inline bool FileMetadata::has_group_id() const {
+  return (_has_bits_[0] & 0x00000010u) != 0;
+}
+inline void FileMetadata::set_has_group_id() {
+  _has_bits_[0] |= 0x00000010u;
+}
+inline void FileMetadata::clear_has_group_id() {
+  _has_bits_[0] &= ~0x00000010u;
+}
+inline void FileMetadata::clear_group_id() {
+  if (group_id_ != &::google::protobuf::internal::kEmptyString) {
+    group_id_->clear();
+  }
+  clear_has_group_id();
+}
+inline const ::std::string& FileMetadata::group_id() const {
+  return *group_id_;
+}
+inline void FileMetadata::set_group_id(const ::std::string& value) {
+  set_has_group_id();
+  if (group_id_ == &::google::protobuf::internal::kEmptyString) {
+    group_id_ = new ::std::string;
+  }
+  group_id_->assign(value);
+}
+inline void FileMetadata::set_group_id(const char* value) {
+  set_has_group_id();
+  if (group_id_ == &::google::protobuf::internal::kEmptyString) {
+    group_id_ = new ::std::string;
+  }
+  group_id_->assign(value);
+}
+inline void FileMetadata::set_group_id(const char* value, size_t size) {
+  set_has_group_id();
+  if (group_id_ == &::google::protobuf::internal::kEmptyString) {
+    group_id_ = new ::std::string;
+  }
+  group_id_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* FileMetadata::mutable_group_id() {
+  set_has_group_id();
+  if (group_id_ == &::google::protobuf::internal::kEmptyString) {
+    group_id_ = new ::std::string;
+  }
+  return group_id_;
+}
+inline ::std::string* FileMetadata::release_group_id() {
+  clear_has_group_id();
+  if (group_id_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = group_id_;
+    group_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void FileMetadata::set_allocated_group_id(::std::string* group_id) {
+  if (group_id_ != &::google::protobuf::internal::kEmptyString) {
+    delete group_id_;
+  }
+  if (group_id) {
+    set_has_group_id();
+    group_id_ = group_id;
+  } else {
+    clear_has_group_id();
+    group_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// required fixed32 mode = 6;
+inline bool FileMetadata::has_mode() const {
+  return (_has_bits_[0] & 0x00000020u) != 0;
+}
+inline void FileMetadata::set_has_mode() {
+  _has_bits_[0] |= 0x00000020u;
+}
+inline void FileMetadata::clear_has_mode() {
+  _has_bits_[0] &= ~0x00000020u;
+}
+inline void FileMetadata::clear_mode() {
+  mode_ = 0u;
+  clear_has_mode();
+}
+inline ::google::protobuf::uint32 FileMetadata::mode() const {
+  return mode_;
+}
+inline void FileMetadata::set_mode(::google::protobuf::uint32 value) {
+  set_has_mode();
+  mode_ = value;
 }
 
 

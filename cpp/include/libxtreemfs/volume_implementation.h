@@ -20,6 +20,7 @@
 #include <string>
 
 #include "libxtreemfs/execute_sync_request.h"
+#include "libxtreemfs/file_key_distribution.h"
 #include "libxtreemfs/metadata_cache.h"
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/uuid_iterator.h"
@@ -396,6 +397,8 @@ class VolumeImplementation : public Volume {
 
   /** Periodically writes back pending file sizes updates to the MRC service. */
   boost::scoped_ptr<boost::thread> filesize_writeback_thread_;
+
+  FileKeyDistribution file_key_distribution_;
 
   FRIEND_TEST(VolumeImplementationTest,
               StatCacheCorrectlyUpdatedAfterRenameWriteAndClose);

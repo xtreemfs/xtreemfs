@@ -62,13 +62,19 @@ AsymKey::AsymKey(const std::string& alg_name, int bits) {
 }
 
 /**
- * Constructs an AsymKey Object from a DER encoded key.
+ * Constructs an AsymKey Object from a PKCS#8 DER encoded key.
  *
  * @param key   A DER encoded asymmetric key.
  */
 AsymKey::AsymKey(const std::vector<unsigned char>& encoded_key) {
   const unsigned char* p_encoded_key = encoded_key.data();
   key_ = d2i_AutoPrivateKey(NULL, &p_encoded_key, encoded_key.size());
+  if (key_ == NULL) {
+    key_ = d2i_PUBKEY(NULL, &p_encoded_key, encoded_key.size());
+    if (key_ == NULL) {
+      LogAndThrowOpenSSLError();
+    }
+  }
 }
 
 /**
@@ -97,28 +103,46 @@ AsymKey::~AsymKey() {
 }
 
 /**
- * @return  The key in DER encoding.
+ * @return  The key in PKCS#8 DER encoding.
  * @remark  If no key is set abort is called.
  */
 std::vector<unsigned char> AsymKey::GetDEREncodedKey() const {
   assert(key_);
-  int len = i2d_PrivateKey(key_, NULL);
+
+  PKCS8_PRIV_KEY_INFO *p8inf;
+  if (!(p8inf = EVP_PKEY2PKCS8(key_))) {
+    LogAndThrowOpenSSLError();
+  }
+  BOOST_SCOPE_EXIT((&p8inf)) {
+      PKCS8_PRIV_KEY_INFO_free(p8inf);
+    }
+  BOOST_SCOPE_EXIT_END
+
+  int len = i2d_PKCS8_PRIV_KEY_INFO(p8inf, NULL);
+  if (len < 0) {
+    LogAndThrowOpenSSLError();
+  }
   std::vector<unsigned char> buffer(len);
   unsigned char* p_buffer = buffer.data();
-  i2d_PrivateKey(key_, &p_buffer);
+  i2d_PKCS8_PRIV_KEY_INFO(p8inf, &p_buffer);
   return buffer;
 }
 
 /**
- * @return  The public part of the key in DER encoding.
+ * @return  The public part of the key in PKCS#8 DER encoding.
  * @remark  If no key is set abort is called.
  */
 std::vector<unsigned char> AsymKey::GetDEREncodedPubKey() const {
   assert(key_);
-  int len = i2d_PublicKey(key_, NULL);
+  int len = i2d_PUBKEY(key_, NULL);
+  if (len < 0) {
+    LogAndThrowOpenSSLError();
+  }
   std::vector<unsigned char> buffer(len);
   unsigned char* p_buffer = buffer.data();
-  i2d_PublicKey(key_, &p_buffer);
+  if (0 > i2d_PUBKEY(key_, &p_buffer)) {
+    LogAndThrowOpenSSLError();
+  }
   return buffer;
 }
 

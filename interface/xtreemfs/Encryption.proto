@@ -19,7 +19,7 @@ message SignedBytes {
     // Signature.
     required bytes signature = 2;
     // The used hash algorithm.
-    optional string hash_algo = 3;
+    required string hash_algo = 3;
 }
 
 // File lockbox containing the file specific keys.
@@ -38,7 +38,7 @@ message FileLockbox {
     required string cipher = 4;
     // Symmetric file encryption key.
     required bytes enc_key = 5;
-    // DER encoder asymmetric file sign key.
+    // PKCS#8 DER encoded asymmetric file sign key.
     // Can be either the public or private one, depending on write access.
     required bytes sign_key = 6;
 }

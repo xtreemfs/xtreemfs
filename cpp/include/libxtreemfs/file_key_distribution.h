@@ -11,15 +11,20 @@
 #include <string>
 #include <vector>
 
-#include "libxtreemfs/volume_implementation.h"
+#include "pbrpc/RPC.pb.h"
+#include "util/crypto/asym_key.h"
 #include "util/crypto/asym_key_storage.h"
 #include "util/crypto/envelope.h"
 #include "util/crypto/rand.h"
 #include "util/crypto/sign_algorithm.h"
 #include "xtreemfs/Encryption.pb.h"
 #include "xtreemfs/GlobalTypes.pb.h"
+#include "xtreemfs/MRC.pb.h"
 
 namespace xtreemfs {
+
+class FileHandle;
+class VolumeImplementation;
 
 class FileKeyDistribution {
  public:
@@ -31,17 +36,32 @@ class FileKeyDistribution {
                            std::vector<unsigned char>* file_enc_key,
                            SignAlgorithm* file_sign_algo);
 
+  void ChangeAccessRights(
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      const std::string& file_path, const xtreemfs::pbrpc::Stat& stat,
+      xtreemfs::pbrpc::Setattrs to_set);
+
  private:
   void GetFileKeys(const pbrpc::UserCredentials& user_credentials,
                    const std::string& file_path, const std::string& file_id,
                    std::vector<unsigned char>* file_enc_key,
                    SignAlgorithm* file_sign_algo);
 
-  void CreateAndSetNewLockbox(const pbrpc::UserCredentials& user_credentials,
-                              const std::string& file_path,
-                              const std::string& file_id, uint32_t mode,
-                              std::vector<unsigned char>* file_enc_key,
-                              SignAlgorithm* file_sign_algo);
+  void CreateAndSetMetadataAndLockbox(
+      const pbrpc::UserCredentials& user_credentials,
+      const std::string& file_path, const std::string& file_id, uint32_t mode,
+      std::vector<unsigned char>* file_enc_key, SignAlgorithm* file_sign_algo);
+
+  void SetMetadataAndLockbox(const pbrpc::UserCredentials& user_credentials,
+                             const std::string& file_path,
+                             const pbrpc::FileMetadata& file_metadata,
+                             const pbrpc::FileLockbox& lockbox_rw,
+                             const pbrpc::FileLockbox& lockbox_r);
+
+  pbrpc::FileLockbox GetLockbox(const pbrpc::UserCredentials& user_credentials,
+                                const std::string& file_path,
+                                const AsymKey& lockbox_sign_key,
+                                const std::string& key_id, bool write_lockbox);
 
   void SetLockbox(const pbrpc::UserCredentials& user_credentials,
                   const std::string& file_path, const SignAlgorithm& sign_algo,
@@ -51,10 +71,10 @@ class FileKeyDistribution {
 
   std::string GetAccessLockboxKeys(
       const pbrpc::UserCredentials& user_credentials,
-      const std::string& file_path, SignAlgorithm* file_sign_algo,
+      const std::string& file_path, AsymKey* lockbox_sign_key,
       bool* write_access);
 
-  void GetSetLockboxKeys(const pbrpc::FileMetadata& file_mdata,
+  void GetSetLockboxKeys(const pbrpc::FileMetadata& file_metadata,
                          SignAlgorithm* file_sign_algo,
                          std::vector<std::string>* key_ids_rw,
                          std::vector<std::string>* key_ids_r);

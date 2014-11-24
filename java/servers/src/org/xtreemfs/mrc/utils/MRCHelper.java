@@ -83,7 +83,11 @@ public class MRCHelper {
             return localFileId;
         }
     }
+
+    private final static byte[] NULL_BYTE_ARRAY             = new byte[0];
     
+    public static final String ENC_ATTR_PREFIX             = "enc";
+
     public static final String POLICY_ATTR_PREFIX = "policies";
     
     public static final String VOL_ATTR_PREFIX    = "volattr";
@@ -314,15 +318,18 @@ public class MRCHelper {
         return true;
     }
     
-    public static String getSysAttrValue(MRCConfig config, StorageManager sMan, OSDStatusManager osdMan,
+    public static byte[] getSysAttrValue(MRCConfig config, StorageManager sMan, OSDStatusManager osdMan,
             FileAccessManager faMan, String path, FileMetadata file, String keyString) throws DatabaseException,
             UserException, JSONException {
         
+        if (keyString.startsWith(ENC_ATTR_PREFIX + "."))
+            return getEncValue(sMan, file.getId(), keyString);
+
         if (keyString.startsWith(POLICY_ATTR_PREFIX + "."))
-            return getPolicyValue(sMan, keyString);
+            return getPolicyValue(sMan, keyString).getBytes();
         
         if (keyString.startsWith(VOL_ATTR_PREFIX + "."))
-            return getVolAttrValue(sMan, keyString);
+            return getVolAttrValue(sMan, keyString).getBytes();
         
         SysAttrs key = null;
         try {
@@ -337,53 +344,57 @@ public class MRCHelper {
             
             case locations:
                 if (file.isDirectory()) {
-                    return "";
+                    return NULL_BYTE_ARRAY;
                 } else {
                     XLocList xLocList = file.getXLocList();
                     
                     try {
-                        return xLocList == null ? "" : Converter.xLocListToJSON(xLocList, osdMan);
+                        return xLocList == null ? NULL_BYTE_ARRAY : Converter.xLocListToJSON(xLocList, osdMan)
+                                .getBytes();
                     } catch (UnknownUUIDException exc) {
                         throw new UserException(POSIXErrno.POSIX_ERROR_EIO, "cannot retrieve '"
                                 + SysAttrs.locations.name() + "' attribute value: " + exc);
                     }
                 }
             case file_id:
-                return sMan.getVolumeInfo().getId() + ":" + file.getId();
+                return (sMan.getVolumeInfo().getId() + ":" + file.getId()).getBytes();
             case object_type:
                 String ref = sMan.getSoftlinkTarget(file.getId());
-                return ref != null ? "3" : file.isDirectory() ? "2" : "1";
+                return (ref != null ? "3" : file.isDirectory() ? "2" : "1").getBytes();
             case url:
                 InetSocketAddress addr = config.getDirectoryService();
-                return config.getURLScheme() + "://" + addr.getHostName() + ":" + addr.getPort() + "/" + path;
+                return (config.getURLScheme() + "://" + addr.getHostName() + ":" + addr.getPort() + "/" + path)
+                        .getBytes();
             case owner:
-                return file.getOwnerId();
+                return file.getOwnerId().getBytes();
             case group:
-                return file.getOwningGroupId();
+                return file.getOwningGroupId().getBytes();
             case default_sp:
                 if (!file.isDirectory())
-                    return "";
+                    return NULL_BYTE_ARRAY;
                 StripingPolicy sp = sMan.getDefaultStripingPolicy(file.getId());
                 if (sp == null)
-                    return "";
-                return Converter.stripingPolicyToJSONString(sp);
+                    return NULL_BYTE_ARRAY;
+                return Converter.stripingPolicyToJSONString(sp).getBytes();
             case ac_policy_id:
-                return file.getId() == 1 ? sMan.getVolumeInfo().getAcPolicyId() + "" : "";
+                return file.getId() == 1 ? (sMan.getVolumeInfo().getAcPolicyId() + "").getBytes() : NULL_BYTE_ARRAY;
             case osel_policy:
-                return file.getId() == 1 ? Converter.shortArrayToString(sMan.getVolumeInfo().getOsdPolicy()) : "";
+                return file.getId() == 1 ? Converter.shortArrayToString(sMan.getVolumeInfo().getOsdPolicy()).getBytes()
+                        : NULL_BYTE_ARRAY;
             case rsel_policy:
-                return file.getId() == 1 ? Converter.shortArrayToString(sMan.getVolumeInfo().getReplicaPolicy()) : "";
+                return file.getId() == 1 ? Converter.shortArrayToString(sMan.getVolumeInfo().getReplicaPolicy())
+                        .getBytes() : NULL_BYTE_ARRAY;
             case read_only:
                 if (file.isDirectory())
-                    return "";
+                    return NULL_BYTE_ARRAY;
                 
-                return String.valueOf(file.isReadOnly());
+                return String.valueOf(file.isReadOnly()).getBytes();
                 
             case usable_osds: {
                 
                 // only return a value for the volume root
                 if (file.getId() != 1)
-                    return "";
+                    return NULL_BYTE_ARRAY;
                 
                 try {
                     ServiceSet.Builder srvs = osdMan.getUsableOSDs(sMan.getVolumeInfo().getId());
@@ -392,7 +403,7 @@ public class MRCHelper {
                         ServiceUUID uuid = new ServiceUUID(srv.getUuid());
                         osds.put(uuid.toString(), uuid.getAddressString());
                     }
-                    return JSONParser.writeJSON(osds);
+                    return JSONParser.writeJSON(osds).getBytes();
                     
                 } catch (UnknownUUIDException exc) {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EIO, "cannot retrieve '"
@@ -400,18 +411,22 @@ public class MRCHelper {
                 }
             }
             case free_space:
-                return file.getId() == 1 ? String.valueOf(osdMan.getFreeSpace(sMan.getVolumeInfo().getId())) : "";
+                return file.getId() == 1 ? String.valueOf(osdMan.getFreeSpace(sMan.getVolumeInfo().getId())).getBytes()
+                        : NULL_BYTE_ARRAY;
             case used_space:
-                return file.getId() == 1 ? String.valueOf(sMan.getVolumeInfo().getVolumeSize()) : "";
+                return file.getId() == 1 ? String.valueOf(sMan.getVolumeInfo().getVolumeSize()).getBytes()
+                        : NULL_BYTE_ARRAY;
             case num_files:
-                return file.getId() == 1 ? String.valueOf(sMan.getVolumeInfo().getNumFiles()) : "";
+                return file.getId() == 1 ? String.valueOf(sMan.getVolumeInfo().getNumFiles()).getBytes()
+                        : NULL_BYTE_ARRAY;
             case num_dirs:
-                return file.getId() == 1 ? String.valueOf(sMan.getVolumeInfo().getNumDirs()) : "";
+                return file.getId() == 1 ? String.valueOf(sMan.getVolumeInfo().getNumDirs()).getBytes()
+                        : NULL_BYTE_ARRAY;
                 
             case snapshots: {
                 
                 if (file.getId() != 1 || sMan.getVolumeInfo().isSnapVolume())
-                    return "";
+                    return NULL_BYTE_ARRAY;
                 
                 String[] snaps = sMan.getAllSnapshots();
                 Arrays.sort(snaps);
@@ -423,15 +438,15 @@ public class MRCHelper {
                     snapshots.add(snap);
                 }
                 
-                return JSONParser.writeJSON(snapshots);
+                return JSONParser.writeJSON(snapshots).getBytes();
             }
             
             case snapshots_enabled:
                 return file.getId() == 1 && !sMan.getVolumeInfo().isSnapVolume() ? String.valueOf(sMan.getVolumeInfo()
-                        .isSnapshotsEnabled()) : "";
+.isSnapshotsEnabled()).getBytes() : NULL_BYTE_ARRAY;
             case snapshot_time:
                 return file.getId() == 1 && sMan.getVolumeInfo().isSnapVolume() ? Long.toString(sMan.getVolumeInfo()
-                        .getCreationTime()) : "";
+.getCreationTime()).getBytes() : NULL_BYTE_ARRAY;
                 
             case acl:
                 
@@ -449,31 +464,39 @@ public class MRCHelper {
                     for (Entry<String, Object> entry : acl.entrySet())
                         map.put(entry.getKey(), "" + entry.getValue());
                     
-                    return JSONParser.writeJSON(map);
+                    return JSONParser.writeJSON(map).getBytes();
                 }
                 
             case default_rp:
                 
                 if (!file.isDirectory())
-                    return "";
+                    return NULL_BYTE_ARRAY;
                 ReplicationPolicy rp = sMan.getDefaultReplicationPolicy(file.getId());
                 if (rp == null)
-                    return "";
+                    return NULL_BYTE_ARRAY;
                 
-                return Converter.replicationPolicyToJSONString(rp);
+                return Converter.replicationPolicyToJSONString(rp).getBytes();
 
             case quota:
-                return String.valueOf(sMan.getVolumeInfo().getVolumeQuota());
+                return String.valueOf(sMan.getVolumeInfo().getVolumeQuota()).getBytes();
             }
         }
         
-        return "";
+        return NULL_BYTE_ARRAY;
     }
     
     public static void setSysAttrValue(StorageManager sMan, VolumeManager vMan, FileAccessManager faMan, long parentId,
-            FileMetadata file, String keyString, String value, AtomicDBUpdate update) throws UserException,
+            FileMetadata file, String keyString, byte[] value_bytes, AtomicDBUpdate update) throws UserException,
             DatabaseException {
         
+        // handle encryption-specific values
+        if (keyString.startsWith(ENC_ATTR_PREFIX.toString() + ".")) {
+            setEncValue(sMan, file.getId(), keyString, value_bytes, update);
+            return;
+        }
+
+        String value = value_bytes == null ? "" : new String(value_bytes);
+
         // handle policy-specific values
         if (keyString.startsWith(POLICY_ATTR_PREFIX.toString() + ".")) {
             setPolicyValue(sMan, keyString, value, update);
@@ -902,5 +925,15 @@ public class MRCHelper {
         byte[] bytes = value.getBytes();
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, "xtreemfs." + keyString, bytes == null || bytes.length == 0 ? null
                 : bytes, update);
+    }
+
+    private static byte[] getEncValue(StorageManager sMan, long fileId, String keyString) throws DatabaseException {
+        return sMan.getXAttr(fileId, StorageManager.SYSTEM_UID, "xtreemfs." + keyString);
+    }
+
+    private static void setEncValue(StorageManager sMan, long fileId, String keyString, byte[] value,
+            AtomicDBUpdate update) throws DatabaseException {
+        sMan.setXAttr(fileId, StorageManager.SYSTEM_UID, "xtreemfs." + keyString,
+                value == null || value.length == 0 ? null : value, update);
     }
 }

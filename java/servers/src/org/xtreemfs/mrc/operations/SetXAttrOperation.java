@@ -84,7 +84,7 @@ public class SetXAttrOperation extends MRCOperation {
                 rq.getDetails().groupIds);
             
             MRCHelper.setSysAttrValue(sMan, vMan, faMan, res.getParentDirId(), file, attrKey
-                    .substring(StorageManager.SYS_ATTR_KEY_PREFIX.length()), new String(attrVal), update);
+                    .substring(StorageManager.SYS_ATTR_KEY_PREFIX.length()), attrVal, update);
         }
 
         // set a user attribute

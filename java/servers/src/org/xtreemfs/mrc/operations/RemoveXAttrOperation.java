@@ -72,7 +72,7 @@ public class RemoveXAttrOperation extends MRCOperation {
                 rq.getDetails().groupIds);
             
             MRCHelper.setSysAttrValue(sMan, vMan, faMan, res.getParentDirId(), file, attrKey.substring(9),
-                "", update);
+                null, update);
         }
 
         // set a user attribute

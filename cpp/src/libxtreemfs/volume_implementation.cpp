@@ -57,7 +57,8 @@ VolumeImplementation::VolumeImplementation(
       // Disable retries and interrupted querying for periodic threads.
       periodic_threads_options_(1, 40, false, NULL),
       metadata_cache_(options.metadata_cache_size,
-                      options.metadata_cache_ttl_s) {
+                      options.metadata_cache_ttl_s),
+      file_key_distribution_(this) {
   // Set AuthType to AUTH_NONE as it's currently not used.
   auth_bogus_.set_auth_type(AUTH_NONE);
   // Set username "xtreemfs" as it does not get checked at server side.
@@ -676,6 +677,11 @@ void VolumeImplementation::SetAttr(
           " are currently ignored. Path: " << path << endl;
     }
     return;
+  }
+
+  if (volume_options_.encryption && !ObjectEncryptor::IsEncMetaFile(path)) {
+    file_key_distribution_.ChangeAccessRights(user_credentials, path, stat,
+                                              to_set);
   }
 
   setattrRequest rq;

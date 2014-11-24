@@ -18,9 +18,21 @@
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/file_handle.h"
 #include "libxtreemfs/file_handle_implementation.h"
+#include "libxtreemfs/helper.h"
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/volume.h"
 #include "libxtreemfs/xtreemfs_exception.h"
+#include "xtreemfs/MRC.pb.h"
+
+using xtreemfs::pbrpc::Stat;
+using xtreemfs::pbrpc::Setattrs;
+using xtreemfs::pbrpc::SETATTR_MODE;
+using xtreemfs::pbrpc::SETATTR_GID;
+using xtreemfs::pbrpc::SYSTEM_V_FCNTL;
+using xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_CREAT;
+using xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDONLY;
+using xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR;
+using xtreemfs::pbrpc::UserCredentials;
 
 namespace xtreemfs {
 
@@ -130,12 +142,12 @@ class EncryptionTest : public OnlineTest {
     OnlineTest::SetUp();
 
     // Open a file.
-    file =
-        volume_->OpenFile(
-            user_credentials_,
-            "/test_file",
-            static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_CREAT // NOLINT
-                | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR), 0777);
+    file = volume_->OpenFile(
+        user_credentials_,
+        "/test_file",
+        static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_CREAT
+            | SYSTEM_V_FCNTL_H_O_RDWR),
+        0700);
   }
 
   virtual void TearDown() {
@@ -868,12 +880,11 @@ TEST_F(EncryptionTest, Open_01) {
   });
 
   file->Close();
-  file =
-      volume_->OpenFile(
-          user_credentials_,
-          "/test_file",
-          static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_CREAT // NOLINT
-              | xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR));
+  file = volume_->OpenFile(
+      user_credentials_,
+      "/test_file",
+      static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_CREAT
+          | SYSTEM_V_FCNTL_H_O_RDWR));
 
   // full read
   ASSERT_NO_THROW({
@@ -894,8 +905,8 @@ TEST_F(EncryptionTest, objectVersion_01) {
       static_cast<FileHandleImplementation*>(volume_->OpenFile(
           user_credentials_,
           "/.xtreemfs_enc_meta_files/test",
-          static_cast<pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
-              | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
+          static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_CREAT
+              | SYSTEM_V_FCNTL_H_O_RDWR),
           511));
 
   EXPECT_TRUE(ObjectEncryptor::IsEncMetaFile("/.xtreemfs_enc_meta_files/test"));
@@ -956,8 +967,8 @@ TEST_F(EncryptionTest, objectVersion_02) {
       static_cast<FileHandleImplementation*>(volume_->OpenFile(
           user_credentials_,
           "/.xtreemfs_enc_meta_files/test",
-          static_cast<pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
-              | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
+          static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_CREAT
+              | SYSTEM_V_FCNTL_H_O_RDWR),
           511));
 
   EXPECT_TRUE(ObjectEncryptor::IsEncMetaFile("/.xtreemfs_enc_meta_files/test"));
@@ -1119,6 +1130,194 @@ TEST_F(EncryptionTest, ConcurrentWrite_05) {
   th4.join();
 
   file->Flush();
+}
+
+TEST_F(EncryptionTest, chmod_01) {
+  char buffer[50];
+  int x;
+
+  // full write to first block
+  ASSERT_NO_THROW({
+    file->Write("ABCD", 4, 0);
+  });
+
+  // allow group to read file
+  Stat stat;
+  InitializeStat(&stat);
+  stat.set_mode(0740);
+  ASSERT_NO_THROW({
+    volume_->SetAttr(user_credentials_, "/test_file", stat,
+                     static_cast<Setattrs>(SETATTR_MODE));
+  });
+
+  UserCredentials user2;
+  user2.set_username("user2");
+  user2.add_groups("volume_implementation_test");
+
+  file->Close();
+  file = volume_->OpenFile(
+      user2, "/test_file",
+      static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_RDONLY)
+  );
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 10, 0);
+  });
+  EXPECT_EQ(4, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("ABCD", buffer);
+}
+
+TEST_F(EncryptionTest, chmod_02) {
+  char buffer[50];
+  int x;
+
+  // allow group to write file
+  Stat stat;
+  InitializeStat(&stat);
+  stat.set_mode(0070);
+  ASSERT_NO_THROW({
+    volume_->SetAttr(user_credentials_, "/test_file", stat,
+                     static_cast<Setattrs>(SETATTR_MODE));
+  });
+
+  UserCredentials user2;
+  user2.set_username("user2");
+  user2.add_groups("volume_implementation_test");
+
+  file->Close();
+  file = volume_->OpenFile(
+      user2, "/test_file",
+      static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_RDWR)
+  );
+
+  // full write to first block
+  ASSERT_NO_THROW({
+    file->Write("ABCD", 4, 0);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 10, 0);
+  });
+  EXPECT_EQ(4, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("ABCD", buffer);
+}
+
+TEST_F(EncryptionTest, chmod_03) {
+  char buffer[50];
+  int x;
+
+  // full write to first block
+  ASSERT_NO_THROW({
+    file->Write("ABCD", 4, 0);
+  });
+
+  // allow others to read file
+  Stat stat;
+  InitializeStat(&stat);
+  stat.set_mode(0704);
+  ASSERT_NO_THROW({
+    volume_->SetAttr(user_credentials_, "/test_file", stat,
+                     static_cast<Setattrs>(SETATTR_MODE));
+  });
+
+  UserCredentials user2;
+  user2.set_username("user2");
+  user2.add_groups("group2");
+
+  file->Close();
+  file = volume_->OpenFile(
+      user2, "/test_file",
+      static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_RDONLY)
+  );
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 10, 0);
+  });
+  EXPECT_EQ(4, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("ABCD", buffer);
+}
+
+TEST_F(EncryptionTest, chmod_04) {
+  char buffer[50];
+  int x;
+
+  // full write to first block
+  ASSERT_NO_THROW({
+    file->Write("ABCD", 4, 0);
+  });
+
+  // allow all to write file
+  Stat stat;
+  InitializeStat(&stat);
+  stat.set_mode(0477);
+  ASSERT_NO_THROW({
+    volume_->SetAttr(user_credentials_, "/test_file", stat,
+                     static_cast<Setattrs>(SETATTR_MODE));
+  });
+
+  UserCredentials user2;
+  user2.set_username("user2");
+  user2.add_groups("volume_implementation_test");
+
+  file->Close();
+  file = volume_->OpenFile(
+      user2, "/test_file",
+      static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_RDONLY)
+  );
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 10, 0);
+  });
+  EXPECT_EQ(4, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("ABCD", buffer);
+}
+
+TEST_F(EncryptionTest, chown_01) {
+  char buffer[50];
+  int x;
+
+  // full write to first block
+  ASSERT_NO_THROW({
+    file->Write("ABCD", 4, 0);
+  });
+
+  user_credentials_.add_groups("group2");
+  // change group
+  Stat stat;
+  InitializeStat(&stat);
+  stat.set_group_id("group2");
+  // allow group to write file
+  stat.set_mode(0770);
+  ASSERT_NO_THROW({
+    volume_->SetAttr(user_credentials_, "/test_file", stat,
+                     static_cast<Setattrs>(SETATTR_MODE | SETATTR_GID));
+  });
+
+  UserCredentials user2;
+  user2.set_username("user2");
+  user2.add_groups("group2");
+
+  file->Close();
+  file = volume_->OpenFile(
+      user2, "/test_file",
+      static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_RDONLY)
+  );
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 10, 0);
+  });
+  EXPECT_EQ(4, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("ABCD", buffer);
 }
 
 }  // namespace xtreemfs
