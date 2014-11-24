@@ -61,7 +61,7 @@ public:
     service_pid_ = -1;
   }
   
-  void start(std::string service_class) {
+  void Start(std::string service_class) {
     char *argv[] = {
       strdup((java_home_ + "bin/java").c_str()),
       strdup("-ea"),
@@ -78,14 +78,16 @@ public:
     if (service_pid_ == 0) {
       // Executed by the child.
       execve((java_home_ + "bin/java").c_str(), argv, envp);
+      exit(EXIT_SUCCESS);
     }
   }
   
-  void shutdown() {
-    std::cerr << "shutting down " << service_pid_ << std::endl;
+  void Shutdown() {
     if (service_pid_ > 0) {
       // Executed by the parent.
       kill(service_pid_, 2);
+      waitpid(service_pid_, NULL, 0);
+      service_pid_ = -1;
     }
   }
 
@@ -103,8 +105,8 @@ public:
   ExternalDIR(std::string config_file_name, std::string xtreemfs_dir)
   : ExternalService(config_file_name, xtreemfs_dir) {}
   
-  void start() {
-    ExternalService::start("org.xtreemfs.dir.DIR");
+  void Start() {
+    ExternalService::Start("org.xtreemfs.dir.DIR");
   }
 };
 
@@ -113,8 +115,8 @@ public:
   ExternalMRC(std::string config_file_name, std::string xtreemfs_dir)
   : ExternalService(config_file_name, xtreemfs_dir) {}
   
-  void start() {
-    ExternalService::start("org.xtreemfs.mrc.MRC");
+  void Start() {
+    ExternalService::Start("org.xtreemfs.mrc.MRC");
   }
 };
 
@@ -123,8 +125,8 @@ public:
   ExternalOSD(std::string config_file_name, std::string xtreemfs_dir)
   : ExternalService(config_file_name, xtreemfs_dir) {}
   
-  void start() {
-    ExternalService::start("org.xtreemfs.osd.OSD");
+  void Start() {
+    ExternalService::Start("org.xtreemfs.osd.OSD");
   }
 };
 
@@ -139,11 +141,11 @@ public:
     initialize_logger(LEVEL_WARN);
     
     external_dir_.reset(new ExternalDIR(dir_config_file_, xtreemfs_dir_));
-    external_dir_->start();
+    external_dir_->Start();
     external_mrc_.reset(new ExternalMRC(mrc_config_file_, xtreemfs_dir_));
-    external_mrc_->start();
+    external_mrc_->Start();
     external_osd_.reset(new ExternalOSD(osd_config_file_, xtreemfs_dir_));
-    external_osd_->start();
+    external_osd_->Start();
     
     auth_.set_auth_type(AUTH_NONE);
     user_credentials_.set_username("client_ssl_test");
@@ -160,9 +162,9 @@ public:
   virtual void TearDown() {
     client_->Shutdown();
     
-    external_dir_->shutdown();
-    external_mrc_->shutdown();
-    external_osd_->shutdown();
+    external_osd_->Shutdown();
+    external_mrc_->Shutdown();
+    external_dir_->Shutdown();
   }
   
 protected:
