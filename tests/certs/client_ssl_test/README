@@ -46,9 +46,11 @@ openssl pkcs12 -export -in OSD_Leaf.pem -inkey OSD_Leaf.key -out OSD_Leaf.p12 -n
 
 # Boatloads of client exports.
 cat CA_Leaf.pem CA_Intermediate.pem CA_Root.pem > CA_Chain.pem
+openssl pkcs12 -export -in Client_Root.pem -inkey Client_Root.key -out Client_Root.p12 -name "Client (Root signed)" -passout "pass:"
 openssl pkcs12 -export -in Client_Root.pem -inkey Client_Root.key -out Client_Root_Chain.p12 -name "Client (Root signed, full chain)" -passout "pass:" -certfile CA_Chain.pem
 openssl pkcs12 -export -in Client_Root.pem -inkey Client_Root.key -out Client_Root_Root.p12 -name "Client (Root signed, root CA)" -passout "pass:" -certfile CA_Root.pem
 openssl pkcs12 -export -in Client_Root.pem -inkey Client_Root.key -out Client_Root_Leaf.p12 -name "Client (Root signed, leaf CA)" -passout "pass:" -certfile CA_Leaf.pem
+openssl pkcs12 -export -in Client_Leaf.pem -inkey Client_Leaf.key -out Client_Leaf.p12 -name "Client (Leaf signed)" -passout "pass:"
 openssl pkcs12 -export -in Client_Leaf.pem -inkey Client_Leaf.key -out Client_Leaf_Chain.p12 -name "Client (Leaf signed, full chain)" -passout "pass:" -certfile CA_Chain.pem
 openssl pkcs12 -export -in Client_Leaf.pem -inkey Client_Leaf.key -out Client_Leaf_Root.p12 -name "Client (Leaf signed, root CA)" -passout "pass:" -certfile CA_Root.pem
 openssl pkcs12 -export -in Client_Leaf.pem -inkey Client_Leaf.key -out Client_Leaf_Leaf.p12 -name "Client (Leaf signed, leaf CA)" -passout "pass:" -certfile CA_Leaf.pem
