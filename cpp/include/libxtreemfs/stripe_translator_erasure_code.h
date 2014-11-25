@@ -31,6 +31,12 @@ class StripeTranslatorErasureCode : public StripeTranslator {
       int64_t offset,
       PolicyContainer policies,
       std::vector<ReadOperation>* operations) const;
+
+  virtual void ProcessReads(
+          std::vector<ReadOperation>* operations,
+          boost::dynamic_bitset<>* successful_reads,
+          PolicyContainer policies
+          ) const;
 };
 }  // namespace xtreemfs
 

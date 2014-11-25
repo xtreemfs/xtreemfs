@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 
+#include <boost/dynamic_bitset.hpp>
 #include <list>
 #include <vector>
 
@@ -81,6 +82,17 @@ class StripeTranslator {
       int64_t offset,
       PolicyContainer policies,
       std::vector<ReadOperation>* operations) const = 0;
+
+  /*
+   * post processing of executed read operations.
+   * the operations vector holds the read operations including the data buffers and the
+   * successful_reads vector shows which read operation was sucessfull.
+   */
+  virtual void ProcessReads(
+          std::vector<ReadOperation>* operations,
+          boost::dynamic_bitset<>* successful_reads,
+          PolicyContainer policies
+          ) const = 0;
 };
 
 }  // namespace xtreemfs

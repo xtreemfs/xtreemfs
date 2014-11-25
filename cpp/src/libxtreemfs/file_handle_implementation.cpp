@@ -9,6 +9,7 @@
 #include "libxtreemfs/file_handle_implementation.h"
 
 #include <boost/bind.hpp>
+#include <boost/dynamic_bitset.hpp>
 #include <map>
 #include <memory>
 #include <string>
@@ -143,6 +144,7 @@ int FileHandleImplementation::Read(
   boost::scoped_ptr<ContainerUUIDIterator> temp_uuid_iterator_for_striping;
 
   // Read all objects.
+  boost::dynamic_bitset<> successful_reads(operations.size());
   for (size_t j = 0; j < operations.size(); j++) {
     // Differ between striping and the rest (replication, no replication).
     UUIDIterator* uuid_iterator;
@@ -178,12 +180,31 @@ int FileHandleImplementation::Read(
           reader, writer);
     } else {
       // TODO(mberlin): Update xloc list if newer version found (on OSD?).
-      received_data +=
+      try {
+        received_data +=
           ReadFromOSD(uuid_iterator, file_credentials, operations[j].obj_number,
-          operations[j].data, operations[j].req_offset,
-          operations[j].req_size);
+              operations[j].data, operations[j].req_offset,
+              operations[j].req_size);
+        successful_reads[j] = 1;
+        // abort loop if all data stripe reads were successful
+        if (successful_reads.count() == min_sucessfull_reads && j == min_sucessfull_reads)
+          break;
+      } catch(IOException &e) {
+        if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+          Logging::log->getLog(LEVEL_DEBUG) << "failed read operation" << endl;
+        }
+        if ((*striping_policies.begin())->parity_width() > 0) {
+          if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+            Logging::log->getLog(LEVEL_DEBUG) << "parity data exists...trying to finish read operation" << endl;
+          }
+        } else {
+          throw e;
+        }
+      }
     }
   }
+
+  translator->ProcessReads(&operations, &successful_reads, striping_policies);
 
   return received_data;
 }

@@ -7,6 +7,7 @@
 #include "libxtreemfs/stripe_translator_raid0.h"
 
 #include <algorithm>
+#include <boost/dynamic_bitset.hpp>
 #include <vector>
 
 using namespace std;
@@ -73,6 +74,13 @@ size_t StripeTranslatorRaid0::TranslateReadRequest(
     start += req_size;
   }
   return operations->size();
+}
+
+void StripeTranslatorRaid0::ProcessReads(
+    std::vector<ReadOperation>* read_ops,
+    boost::dynamic_bitset<>* suc_read_ops,
+    PolicyContainer policies) const {
+  // nothing to do here
 }
 
 }  // namespace xtreemfs

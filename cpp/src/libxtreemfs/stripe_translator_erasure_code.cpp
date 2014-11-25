@@ -5,8 +5,10 @@
  *
  */
 #include "libxtreemfs/stripe_translator_erasure_code.h"
+#include "libxtreemfs/xtreemfs_exception.h"
 
 #include <algorithm>
+#include <boost/dynamic_bitset.hpp>
 #include <vector>
 
 using namespace std;
@@ -79,7 +81,6 @@ size_t StripeTranslatorErasureCode::TranslateReadRequest(
     int64_t offset,
     PolicyContainer policies,
     std::vector<ReadOperation>* operations) const {
-  std::vector<ReadOperation>::iterator par_reads = operations->end();
   // stripe size is stored in kB
   unsigned int stripe_size = (*policies.begin())->stripe_size() * 1024;
   // number of OSD to distribute parity chunks
@@ -90,6 +91,7 @@ size_t StripeTranslatorErasureCode::TranslateReadRequest(
 
   size_t total_size = (size / (width - parity_width)) * width;
   size_t obj_number = 0;
+  size_t par_reads = 0;
   size_t real_obj_number = 0;
 
   size_t start = 0;
@@ -112,9 +114,9 @@ size_t StripeTranslatorErasureCode::TranslateReadRequest(
           ReadOperation(obj_number - 1, osd_offsets, stripe_size, 0,
               buf_redundance));
     } else {
-      par_reads = operations->insert(par_reads,
+      operations->insert(operations->begin() + par_reads,
           ReadOperation(obj_number, osd_offsets, stripe_size, 0,
-              buf + start));
+            buf + start));
       par_reads++;
       start += stripe_size;
       obj_number++;
@@ -123,6 +125,72 @@ size_t StripeTranslatorErasureCode::TranslateReadRequest(
     real_obj_number++;
   }
   return obj_number;
+}
+
+void StripeTranslatorErasureCode::ProcessReads(
+    std::vector<ReadOperation>* operations,
+    boost::dynamic_bitset<>* successful_reads,
+    PolicyContainer policies) const {
+  // stripe size is stored in kB
+  unsigned int stripe_size = (*policies.begin())->stripe_size() * 1024;
+  // number of OSD to distribute parity chunks
+  unsigned int parity_width =(*policies.begin())->parity_width();
+  // number of OSD to distribute chunks
+  unsigned int width =(*policies.begin())->width();
+  // how many whole lines does this operation contain
+  unsigned int lines = operations->size() / width;
+
+  assert(operations->size() == successful_reads->size());
+
+  for (size_t i = 0; i < lines; i++) {
+    // create successful_reads bitvector for each line
+    boost::dynamic_bitset<> line_mask(width);
+    // normal reads
+    for (size_t j = 0; j < (width - parity_width); j++)
+      line_mask[j] = successful_reads->test(j + i * (width - parity_width));
+    // parity reads
+    for (size_t j = 0; j < parity_width; j++)
+      // parity reads are at the end of the successful_reads vector because they are read iff normal
+      // reads ahve failed
+      line_mask[width - parity_width + j] = successful_reads->test(lines * (width - parity_width) + i * parity_width + j);
+
+    // check is enough data exists...at least width - parity_width stripes must be present
+    if (line_mask.count() < (width - parity_width))
+      throw IOException("to many failed reads");
+
+    // if all data stripes have been read there is nothing todo
+    if((line_mask << parity_width).count() == width - parity_width){
+      continue;
+    }
+    // fix data
+    char buf[stripe_size];
+    memset(buf, 0, stripe_size);
+    for (size_t j = 0; j < (width - parity_width); j++){
+      if (line_mask[j]){
+        char *d = (*operations)[j + i * (width - parity_width)].data;
+        for (int k = 0; k < stripe_size; k++){
+          buf[k] = buf[k] ^ d[k];
+        }
+      }
+    }
+    for (size_t j = 0; j < parity_width; j++) {
+      if (line_mask[width - parity_width + j]) {
+        char *d = (*operations)[lines * (width - parity_width) + i * parity_width + j].data;
+        for (int k = 0; k < stripe_size; k++){
+          buf[k] = buf[k] ^ d[k];
+        }
+      }
+    }
+    // copy fixed data to correct location
+    for (size_t j = 0; j < width - parity_width; j++){
+      if (!line_mask[j]) {
+        char *d = (*operations)[j + i * (width - parity_width)].data;
+        for (int k = 0; k < stripe_size; k++){
+          d[k] = buf[k];
+        }
+      }
+    }
+  }
 }
 
 }  // namespace xtreemfs
