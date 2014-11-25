@@ -225,7 +225,34 @@ protected:
   }
 };
 
-class ClientSSLTest : public ClientTest {
+class ClientSSLTestShortChain : public ClientTest {
+protected:
+  virtual void SetUp() {
+    // Root signed, root trusted
+    dir_config_file_ = "tests/configs/dirconfig_ssl_short_chain.test";
+    mrc_config_file_ = "tests/configs/mrcconfig_ssl_short_chain.test";
+    osd_config_file_ = "tests/configs/osdconfig_ssl_short_chain.test";
+        
+    dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
+    mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
+    
+    options_.log_level_string = "DEBUG";
+    options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_short_chain";
+    
+    // Root signed, only root as additional certificate.
+    options_.ssl_pkcs12_path = "tests/certs/client_ssl_test/Client_Root_Root.p12";
+    options_.ssl_verify_certificates = true;
+    
+    ClientTest::SetUp();
+  }
+  
+  virtual void TearDown() {
+    ClientTest::TearDown();
+    unlink(options_.log_file_path.c_str());
+  }
+};
+
+class ClientSSLTestLongChain : public ClientTest {
 protected:
   virtual void SetUp() {
     // All service certificates are signed with Leaf CA, which is signed with
@@ -260,8 +287,43 @@ TEST_F(ClientNoSSLTest, TestNoSSL) {
   ASSERT_EQ(0, count_occurrences_in_file(options_.log_file_path, "SSL"));
 }
 
-TEST_F(ClientSSLTest, TestSSLWithChain) {
-  CreateOpenDeleteVolume("test_ssl");
+TEST_F(ClientSSLTestShortChain, TestVerifyShortChain) {
+  CreateOpenDeleteVolume("test_ssl_short_chain");
+  
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "SSL support activated"));
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "SSL support using PKCS#12 file "
+      "tests/certs/client_ssl_test/Client_Root_Root.p12"));
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "Writing 1 verification certificates to /tmp/ca"));
+  
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Root CA' "
+      "was successful."));
+  ASSERT_EQ(0, count_occurrences_in_file(
+      options_.log_file_path,
+      "/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Intermediate CA"));
+  ASSERT_EQ(0, count_occurrences_in_file(
+      options_.log_file_path,
+      "/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Leaf CA"));
+  
+  ASSERT_EQ(1, count_occurrences_in_file(
+      options_.log_file_path,
+      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Root)' "
+      "was successful"));
+  ASSERT_EQ(1, count_occurrences_in_file(
+      options_.log_file_path,
+      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=DIR (Root)' "
+      "was successful."));
+}
+
+TEST_F(ClientSSLTestLongChain, TestVerifyLongChain) {
+  CreateOpenDeleteVolume("test_ssl_long_chain");
   
   // Once for MRC and once for DIR.
   ASSERT_EQ(2, count_occurrences_in_file(
