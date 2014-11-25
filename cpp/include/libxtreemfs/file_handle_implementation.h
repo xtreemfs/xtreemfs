@@ -123,7 +123,6 @@ class FileHandleImplementation
       const pbrpc::XCap& xcap,
       UUIDIterator* mrc_uuid_iterator,
       UUIDIterator* osd_uuid_iterator,
-      UUIDContainer* osd_uuid_container,
       UUIDResolver* uuid_resolver,
       pbrpc::MRCServiceClient* mrc_service_client,
       pbrpc::OSDServiceClient* osd_service_client,
@@ -323,8 +322,6 @@ class FileHandleImplementation
 
   /** UUIDIterator which contains the UUIDs of all replicas. */
   UUIDIterator* osd_uuid_iterator_;
-  /** UUIDIterator which contains the UUIDs of all replicas and stripes. */
-  UUIDContainer* osd_uuid_container_;
 
   /** Needed to resolve UUIDs. */
   UUIDResolver* uuid_resolver_;

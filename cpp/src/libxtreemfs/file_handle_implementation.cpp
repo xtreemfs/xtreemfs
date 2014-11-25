@@ -53,7 +53,6 @@ FileHandleImplementation::FileHandleImplementation(
     const xtreemfs::pbrpc::XCap& xcap,
     UUIDIterator* mrc_uuid_iterator,
     UUIDIterator* osd_uuid_iterator,
-    UUIDContainer* osd_uuid_container,
     UUIDResolver* uuid_resolver,
     xtreemfs::pbrpc::MRCServiceClient* mrc_service_client,
     xtreemfs::pbrpc::OSDServiceClient* osd_service_client,
@@ -68,7 +67,6 @@ FileHandleImplementation::FileHandleImplementation(
       client_uuid_(client_uuid),
       mrc_uuid_iterator_(mrc_uuid_iterator),
       osd_uuid_iterator_(osd_uuid_iterator),
-      osd_uuid_container_(osd_uuid_container),
       uuid_resolver_(uuid_resolver),
       file_info_(file_info),
       osd_write_response_for_async_write_back_(NULL),
@@ -163,7 +161,8 @@ int FileHandleImplementation::DoRead(
   // Prepare request object.
   FileCredentials file_credentials;
   xcap_manager_.GetXCap(file_credentials.mutable_xcap());
-  file_info_->GetXLocSet(file_credentials.mutable_xlocs());
+  boost::shared_ptr<UUIDContainer> osd_uuid_container =
+      file_info_->GetXLocSetAndUUIDContainer(file_credentials.mutable_xlocs());
   // Use a reference for shorter code.
   const XLocSet& xlocs = file_credentials.xlocs();
 
@@ -205,7 +204,7 @@ int FileHandleImplementation::DoRead(
     if (xlocs.replicas(0).osd_uuids_size() > 1) {
       // Replica is striped. Get a UUID iterator from OSD offsets
       temp_uuid_iterator_for_striping.reset(
-          new ContainerUUIDIterator(osd_uuid_container_,
+          new ContainerUUIDIterator(osd_uuid_container,
                                     operations[j].osd_offsets));
       uuid_iterator = temp_uuid_iterator_for_striping.get();
     } else {
