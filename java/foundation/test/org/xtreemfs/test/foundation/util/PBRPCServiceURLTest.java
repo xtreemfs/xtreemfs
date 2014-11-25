@@ -9,23 +9,19 @@
 
 package org.xtreemfs.test.foundation.util;
 
+import org.junit.*;
 import org.xtreemfs.foundation.pbrpc.Schemes;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.xtreemfs.foundation.util.ONCRPCServiceURL;
+import org.xtreemfs.foundation.util.PBRPCServiceURL;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  *
  * @author bjko
  */
-public class ONCRPCServiceURLTest {
+public class PBRPCServiceURLTest {
 
-    public ONCRPCServiceURLTest() {
+    public PBRPCServiceURLTest() {
     }
 
     @BeforeClass
@@ -51,7 +47,7 @@ public class ONCRPCServiceURLTest {
     public void testURLParse() throws Exception {
         String host = "yagga";
         int port = 1254;
-        ONCRPCServiceURL u = new ONCRPCServiceURL("pbrpcg://"+host+":"+port+"/",
+        PBRPCServiceURL u = new PBRPCServiceURL("pbrpcg://"+host+":"+port+"/",
                 Schemes.SCHEME_PBRPC,12345);
         assertEquals(host, u.getHost());
         assertEquals(port, u.getPort());

@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
  *
  * @author bjko
  */
-public class ONCRPCServiceURL {
+public class PBRPCServiceURL {
 
     static {
 
@@ -31,7 +31,7 @@ public class ONCRPCServiceURL {
 
     private final int    port;
 
-    public ONCRPCServiceURL(String url, String defaultProtocol, int defaultPort) throws MalformedURLException {
+    public PBRPCServiceURL(String url, String defaultProtocol, int defaultPort) throws MalformedURLException {
 
         //parse URL
         Matcher m = urlPattern.matcher(url);

@@ -205,7 +205,7 @@ message VivaldiCoordinates {
 
 // Response returned by OSD write and truncate operations.
 // This information is stored by the client and must be
-// realyed to the MRC in regular intervals or when the file
+// relayed to the MRC in regular intervals or when the file
 // is fsynced or closed.
 // In addition, the client must use this information locally
 // for open files to provide processes with an accurate
