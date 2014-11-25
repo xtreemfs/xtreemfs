@@ -134,57 +134,63 @@ void StripeTranslatorErasureCode::ProcessReads(
   // stripe size is stored in kB
   unsigned int stripe_size = (*policies.begin())->stripe_size() * 1024;
   // number of OSD to distribute parity chunks
-  unsigned int parity_width =(*policies.begin())->parity_width();
+  unsigned int parity_width = (*policies.begin())->parity_width();
   // number of OSD to distribute chunks
-  unsigned int width =(*policies.begin())->width();
+  unsigned int width = (*policies.begin())->width();
+  // number of data stripes
+  unsigned int data_width = width - parity_width;
   // how many whole lines does this operation contain
   unsigned int lines = operations->size() / width;
 
   assert(operations->size() == successful_reads->size());
 
   for (size_t i = 0; i < lines; i++) {
-    // create successful_reads bitvector for each line
+
+    // create successful_reads bitvector for each line (data stripes + parity stripes)
     boost::dynamic_bitset<> line_mask(width);
     // normal reads
-    for (size_t j = 0; j < (width - parity_width); j++)
-      line_mask[j] = successful_reads->test(j + i * (width - parity_width));
+    for (size_t j = 0; j < data_width; j++)
+      line_mask[j] = successful_reads->test(j + i * data_width);
     // parity reads
     for (size_t j = 0; j < parity_width; j++)
       // parity reads are at the end of the successful_reads vector because they are read iff normal
       // reads ahve failed
-      line_mask[width - parity_width + j] = successful_reads->test(lines * (width - parity_width) + i * parity_width + j);
+      line_mask[data_width + j] = successful_reads->test(lines * data_width + i * parity_width + j);
 
-    // check is enough data exists...at least width - parity_width stripes must be present
-    if (line_mask.count() < (width - parity_width))
+    // check is enough data exists...at least data_width stripes must be present
+    if (line_mask.count() < data_width)
       throw IOException("to many failed reads");
 
     // if all data stripes have been read there is nothing todo
-    if((line_mask << parity_width).count() == width - parity_width){
+    if((line_mask << parity_width).count() == data_width){
       continue;
     }
-    // fix data
+
     char buf[stripe_size];
     memset(buf, 0, stripe_size);
-    for (size_t j = 0; j < (width - parity_width); j++){
+
+    // fix data by XORing all successfully read stripes
+    for (size_t j = 0; j < data_width; j++){
       if (line_mask[j]){
-        char *d = (*operations)[j + i * (width - parity_width)].data;
+        char *d = (*operations)[j + i * data_width].data;
         for (int k = 0; k < stripe_size; k++){
           buf[k] = buf[k] ^ d[k];
         }
       }
     }
     for (size_t j = 0; j < parity_width; j++) {
-      if (line_mask[width - parity_width + j]) {
-        char *d = (*operations)[lines * (width - parity_width) + i * parity_width + j].data;
+      if (line_mask[data_width + j]) {
+        char *d = (*operations)[lines * data_width + i * parity_width + j].data;
         for (int k = 0; k < stripe_size; k++){
           buf[k] = buf[k] ^ d[k];
         }
       }
     }
+
     // copy fixed data to correct location
-    for (size_t j = 0; j < width - parity_width; j++){
+    for (size_t j = 0; j < data_width; j++){
       if (!line_mask[j]) {
-        char *d = (*operations)[j + i * (width - parity_width)].data;
+        char *d = (*operations)[j + i * data_width].data;
         for (int k = 0; k < stripe_size; k++){
           d[k] = buf[k];
         }
