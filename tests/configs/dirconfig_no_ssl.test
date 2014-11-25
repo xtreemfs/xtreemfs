@@ -71,10 +71,10 @@ policy_dir = /etc/xos/xtreemfs/policies
 babudb.debug.level = 6
 
 # base directory to store database index snapshots in
-babudb.baseDir = /tmp/xtreemfs-test/dir_nossl/database
+babudb.baseDir = /tmp/xtreemfs-test/dir_no_ssl/database
 
 # directory in which the database logs are stored
-babudb.logDir = /tmp/xtreemfs-test/dir_nossl/db-log
+babudb.logDir = /tmp/xtreemfs-test/dir_no_ssl/db-log
 
 # SyncMode the synchronization mode to use for the logFile
 # ASYNC - asynchronously write log entries (data is lost when system crashes).

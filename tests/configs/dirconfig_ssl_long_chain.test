@@ -73,10 +73,10 @@ uuid = test-localhost-DIR
 babudb.debug.level = 4
 
 # base directory to store database index snapshots in
-babudb.baseDir = /tmp/xtreemfs-test/dir_ssl/database
+babudb.baseDir = /tmp/xtreemfs-test/dir_ssl_long_chain/database
 
 # directory in which the database logs are stored
-babudb.logDir = /tmp/xtreemfs-test/dir_ssl/database
+babudb.logDir = /tmp/xtreemfs-test/dir_ssl_long_chain/database
 
 # SyncMode the synchronization mode to use for the logFile
 # ASYNC - asynchronously write log entries (data is lost when system crashes).

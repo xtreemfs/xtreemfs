@@ -38,7 +38,7 @@ dir_service.host = localhost
 dir_service.port = 42638
 
 # directory containing XtreemFS file content
-object_dir = /tmp/xtreemfs-test/osd_nossl/
+object_dir = /tmp/xtreemfs-test/osd_no_ssl/
 
 # Number of storage threads. Increase it to improve concurrency in case of multiple open files.
 # Set it to a value >1 only if the underlying device can cope with concurrency, e.g. an SSD.
