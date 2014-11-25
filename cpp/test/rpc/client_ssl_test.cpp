@@ -7,65 +7,357 @@
 
 #include <gtest/gtest.h>
 
-#include <openssl/pem.h>
-#include <openssl/rsa.h>
-#include <openssl/x509.h>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/scoped_ptr.hpp>
+#include <boost/thread.hpp>
+#include <fstream>
+#include <stdio.h>
+#include <string>
 
-#include "common/test_environment.h"
-#include "rpc/client.h"
+#include "libxtreemfs/client.h"
+#include "libxtreemfs/client_implementation.h"
+#include "libxtreemfs/options.h"
+#include "pbrpc/RPC.pb.h"
 #include "util/logging.h"
 
+
+using namespace xtreemfs::pbrpc;
 using namespace xtreemfs::util;
 
 namespace xtreemfs {
 namespace rpc {
+  
+class ExternalService {
+public:
+  ExternalService(
+      std::string config_file_name)
+      : config_file_name_(config_file_name) {
+    
+    char *java_home = getenv("JAVA_HOME");
+    if (java_home == NULL || (java_home_ = strdup(java_home)).empty()) {
+      if (Logging::log->loggingActive(LEVEL_WARN)) {
+        Logging::log->getLog(LEVEL_WARN) << "JAVA_HOME is empty."
+            << std::endl;
+      }
+    }
+    
+    if (!boost::algorithm::ends_with(java_home_, "/")) {
+      java_home_ += "/";
+    }
+    
+    classpath_ = "java/servers/dist/XtreemFS.jar";
+    classpath_ += ":java/foundation/dist/Foundation.jar";
+    classpath_ += ":java/flease/dist/Flease.jar";
+    classpath_ += ":java/lib/*";
+    
+    service_pid_ = -1;
+  }
+  
+  void Start(std::string service_class) {
+    char *argv[] = {
+      strdup((java_home_ + "bin/java").c_str()),
+      strdup("-ea"),
+      strdup("-cp"),
+      strdup(classpath_.c_str()),
+      strdup(service_class.c_str()),
+      strdup(config_file_name_.c_str()),
+      NULL
+    };
+    
+    char *envp[] = { NULL };
+    
+    service_pid_ = fork();
+    if (service_pid_ == 0) {
+      // Executed by the child.
+      execve((java_home_ + "bin/java").c_str(), argv, envp);
+      exit(EXIT_SUCCESS);
+    }
+  }
+  
+  void Shutdown() {
+    if (service_pid_ > 0) {
+      // Executed by the parent.
+      kill(service_pid_, 2);
+      waitpid(service_pid_, NULL, 0);
+      service_pid_ = -1;
+    }
+  }
 
-class ClientSSLTest : public ::testing::Test {
- protected:
+private:
+  std::string config_file_name_;
+  std::string java_home_;
+  std::string classpath_;
+  
+  pid_t service_pid_;
+};
+  
+class ExternalDIR : public ExternalService {
+public:
+  ExternalDIR(std::string config_file_name)
+  : ExternalService(config_file_name) {}
+  
+  void Start() {
+    ExternalService::Start("org.xtreemfs.dir.DIR");
+  }
+};
+
+class ExternalMRC : public ExternalService {
+public:
+  ExternalMRC(std::string config_file_name)
+  : ExternalService(config_file_name) {}
+  
+  void Start() {
+    ExternalService::Start("org.xtreemfs.mrc.MRC");
+  }
+};
+
+class ExternalOSD : public ExternalService {
+public:
+  ExternalOSD(std::string config_file_name)
+  : ExternalService(config_file_name) {}
+  
+  void Start() {
+    ExternalService::Start("org.xtreemfs.osd.OSD");
+  }
+};
+
+class ClientTest : public ::testing::Test {
+protected:
   virtual void SetUp() {
-    //initialize_logger(LEVEL_WARN);
-    //ASSERT_TRUE(test_env.Start());
+    initialize_logger(options_.log_level_string,
+                      options_.log_file_path,
+                      LEVEL_WARN);
     
-    X509_REQ *req_ca_root = X509_REQ_new();
+    external_dir_.reset(new ExternalDIR(dir_config_file_));
+    external_dir_->Start();
+    external_mrc_.reset(new ExternalMRC(mrc_config_file_));
+    external_mrc_->Start();
+    external_osd_.reset(new ExternalOSD(osd_config_file_));
+    external_osd_->Start();
     
-    BIGNUM *exponent = BN_new();
-    BN_set_word(exponent, RSA_F4);
+    auth_.set_auth_type(AUTH_NONE);
+    user_credentials_.set_username("client_ssl_test");
+    user_credentials_.add_groups("client_ssl_test");
     
-    RSA *rsa = RSA_new();
-    RSA_generate_key_ex(rsa, 1024, exponent, NULL);
+    options_.retry_delay_s = 5;
     
-    X509_REQ_set_version(req_ca_root, 1);
-    
-    X509_NAME *x509_name = X509_REQ_get_subject_name(req_ca_root);
-    X509_NAME_add_entry_by_txt(x509_name, "C", MBSTRING_ASC, (const unsigned char*) "Germany", -1, -1, 0);
-    X509_NAME_add_entry_by_txt(x509_name, "ST", MBSTRING_ASC, (const unsigned char*) "Berlin", -1, -1, 0);
-    X509_NAME_add_entry_by_txt(x509_name, "L", MBSTRING_ASC, (const unsigned char*) "Berlin", -1, -1, 0);
-    X509_NAME_add_entry_by_txt(x509_name, "O", MBSTRING_ASC, (const unsigned char*) "ZIB", -1, -1, 0);
-    X509_NAME_add_entry_by_txt(x509_name, "CN", MBSTRING_ASC, (const unsigned char*) "Root CA", -1, -1, 0);
-    
-    EVP_PKEY *public_key = EVP_PKEY_new();
-    EVP_PKEY_assign_RSA(public_key, rsa);
-    X509_REQ_set_pubkey(req_ca_root, public_key);
-    
-    X509_REQ_sign(req_ca_root, public_key, EVP_sha1());
-    
-    char tmplt[] = "/tmp/testmeXXXXXX";
-    int f = mkstemp(tmplt);
-    FILE *file = fdopen(f, "wb+");
-    PEM_write_X509_REQ(file, req_ca_root);
-    fclose(file);
+    mrc_url_.ParseURL(kMRC);
+    dir_url_.ParseURL(kDIR);
+    client_.reset(xtreemfs::Client::CreateClient(dir_url_.service_addresses,
+                                                 user_credentials_,
+                                                 options_.GenerateSSLOptions(),
+                                                 options_));
+
+    client_->Start();
   }
 
   virtual void TearDown() {
-    //shutdown_logger();
-    //test_env.Stop();
+    client_->Shutdown();
+    
+    external_osd_->Shutdown();
+    external_mrc_->Shutdown();
+    external_dir_->Shutdown();
   }
+  
+  void CreateOpenDeleteVolume(std::string volume_name) {
+    client_->CreateVolume(mrc_url_.service_addresses,
+                        auth_,
+                        user_credentials_,
+                        volume_name);
+    client_->OpenVolume(volume_name,
+                        options_.GenerateSSLOptions(),
+                        options_);
+    client_->DeleteVolume(mrc_url_.service_addresses,
+                          auth_,
+                          user_credentials_,
+                          volume_name);
+  }
+  
+  size_t count_occurrences_in_file(std::string file_path, std::string s) {
+    std::ifstream in(file_path.c_str(), std::ios_base::in);
+    size_t occurences = 0;
+    while (!in.eof()) {
+      std::string line;
+      std::getline(in, line);
+      occurences += line.find(s) == std::string::npos ? 0 : 1;
+    }
+    in.close();
+    return occurences;
+  }
+  
+  boost::scoped_ptr<ExternalDIR> external_dir_;
+  boost::scoped_ptr<ExternalMRC> external_mrc_;
+  boost::scoped_ptr<ExternalOSD> external_osd_;
+  
+  boost::scoped_ptr<xtreemfs::Client> client_;
+  xtreemfs::Options options_;
+  
+  xtreemfs::Options dir_url_;
+  xtreemfs::Options mrc_url_;
+  
+  std::string dir_config_file_;
+  std::string mrc_config_file_;
+  std::string osd_config_file_;
 
-  TestEnvironment test_env;
+  xtreemfs::pbrpc::Auth auth_;
+  xtreemfs::pbrpc::UserCredentials user_credentials_;
 };
 
-TEST_F(ClientSSLTest, TestNoSSL) {
+class ClientNoSSLTest : public ClientTest {
+protected:
+  virtual void SetUp() {
+    dir_config_file_ = "tests/configs/dirconfig_no_ssl.test";
+    mrc_config_file_ = "tests/configs/mrcconfig_no_ssl.test";
+    osd_config_file_ = "tests/configs/osdconfig_no_ssl.test";
+        
+    dir_url_.xtreemfs_url = "pbrpc://localhost:42638/";
+    mrc_url_.xtreemfs_url = "pbrpc://localhost:42636/";
+    
+    options_.log_level_string = "DEBUG";
+    options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_no_ssl";
+    
+    ClientTest::SetUp();
+  }
   
+  virtual void TearDown() {
+    ClientTest::TearDown();
+    unlink(options_.log_file_path.c_str());
+  }
+};
+
+class ClientSSLTestShortChain : public ClientTest {
+protected:
+  virtual void SetUp() {
+    // Root signed, root trusted
+    dir_config_file_ = "tests/configs/dirconfig_ssl_short_chain.test";
+    mrc_config_file_ = "tests/configs/mrcconfig_ssl_short_chain.test";
+    osd_config_file_ = "tests/configs/osdconfig_ssl_short_chain.test";
+        
+    dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
+    mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
+    
+    options_.log_level_string = "DEBUG";
+    options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_short_chain";
+    
+    // Root signed, only root as additional certificate.
+    options_.ssl_pkcs12_path = "tests/certs/client_ssl_test/Client_Root_Root.p12";
+    options_.ssl_verify_certificates = true;
+    
+    ClientTest::SetUp();
+  }
+  
+  virtual void TearDown() {
+    ClientTest::TearDown();
+    unlink(options_.log_file_path.c_str());
+  }
+};
+
+class ClientSSLTestLongChain : public ClientTest {
+protected:
+  virtual void SetUp() {
+    // All service certificates are signed with Leaf CA, which is signed with
+    // Intermediate CA, which is signed with Root CA. The keystore contains
+    // only the Leaf CA.
+    dir_config_file_ = "tests/configs/dirconfig_ssl_long_chain.test";
+    mrc_config_file_ = "tests/configs/mrcconfig_ssl_long_chain.test";
+    osd_config_file_ = "tests/configs/osdconfig_ssl_long_chain.test";
+        
+    dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
+    mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
+    
+    options_.log_level_string = "DEBUG";
+    options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_long_chain";
+    
+    // Client certificate is signed with Leaf CA. Contains the entire chain
+    // as additional certificates.
+    options_.ssl_pkcs12_path = "tests/certs/client_ssl_test/Client_Leaf_Chain.p12";
+    options_.ssl_verify_certificates = true;
+    
+    ClientTest::SetUp();
+  }
+  
+  virtual void TearDown() {
+    ClientTest::TearDown();
+    unlink(options_.log_file_path.c_str());
+  }
+};
+
+TEST_F(ClientNoSSLTest, TestNoSSL) {
+  CreateOpenDeleteVolume("test_no_ssl");
+  ASSERT_EQ(0, count_occurrences_in_file(options_.log_file_path, "SSL"));
+}
+
+TEST_F(ClientSSLTestShortChain, TestVerifyShortChain) {
+  CreateOpenDeleteVolume("test_ssl_short_chain");
+  
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "SSL support activated"));
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "SSL support using PKCS#12 file "
+      "tests/certs/client_ssl_test/Client_Root_Root.p12"));
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "Writing 1 verification certificates to /tmp/ca"));
+  
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Root CA' "
+      "was successful."));
+  ASSERT_EQ(0, count_occurrences_in_file(
+      options_.log_file_path,
+      "/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Intermediate CA"));
+  ASSERT_EQ(0, count_occurrences_in_file(
+      options_.log_file_path,
+      "/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Leaf CA"));
+  
+  ASSERT_EQ(1, count_occurrences_in_file(
+      options_.log_file_path,
+      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Root)' "
+      "was successful"));
+  ASSERT_EQ(1, count_occurrences_in_file(
+      options_.log_file_path,
+      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=DIR (Root)' "
+      "was successful."));
+}
+
+TEST_F(ClientSSLTestLongChain, TestVerifyLongChain) {
+  CreateOpenDeleteVolume("test_ssl_long_chain");
+  
+  // Once for MRC and once for DIR.
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "SSL support activated"));
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "SSL support using PKCS#12 file "
+      "tests/certs/client_ssl_test/Client_Leaf_Chain.p12"));
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "Writing 3 verification certificates to /tmp/ca"));
+  
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Root CA' "
+      "was successful."));
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Intermediate "
+      "CA' was successful."));
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Leaf CA' was "
+      "successful."));
+  
+  ASSERT_EQ(1, count_occurrences_in_file(
+      options_.log_file_path,
+      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Leaf)' "
+      "was successful"));
+  ASSERT_EQ(1, count_occurrences_in_file(
+      options_.log_file_path,
+      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=DIR (Leaf)' "
+      "was successful."));
 }
 
 }  // namespace rpc
