@@ -10,6 +10,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
+#include <fstream>
 #include <stdio.h>
 #include <string>
 
@@ -123,7 +124,9 @@ public:
 class ClientTest : public ::testing::Test {
 protected:
   virtual void SetUp() {
-    initialize_logger(LEVEL_WARN);
+    initialize_logger(options_.log_level_string,
+                      options_.log_file_path,
+                      LEVEL_WARN);
     
     external_dir_.reset(new ExternalDIR(dir_config_file_));
     external_dir_->Start();
@@ -140,10 +143,10 @@ protected:
     
     mrc_url_.ParseURL(kMRC);
     dir_url_.ParseURL(kDIR);
-    client_.reset(new ClientImplementation(dir_url_.service_addresses,
-                                           user_credentials_,
-                                           options_.GenerateSSLOptions(),
-                                           options_));
+    client_.reset(xtreemfs::Client::CreateClient(dir_url_.service_addresses,
+                                                 user_credentials_,
+                                                 options_.GenerateSSLOptions(),
+                                                 options_));
 
     client_->Start();
   }
@@ -168,6 +171,18 @@ protected:
                           auth_,
                           user_credentials_,
                           volume_name);
+  }
+  
+  size_t count_occurrences_in_file(std::string file_path, std::string s) {
+    std::ifstream in(file_path.c_str(), std::ios_base::in);
+    size_t occurences = 0;
+    while (!in.eof()) {
+      std::string line;
+      std::getline(in, line);
+      occurences += line.find(s) == std::string::npos ? 0 : 1;
+    }
+    in.close();
+    return occurences;
   }
   
   boost::scoped_ptr<ExternalDIR> external_dir_;
@@ -198,13 +213,24 @@ protected:
     dir_url_.xtreemfs_url = "pbrpc://localhost:42638/";
     mrc_url_.xtreemfs_url = "pbrpc://localhost:42636/";
     
+    options_.log_level_string = "DEBUG";
+    options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_no_ssl";
+    
     ClientTest::SetUp();
+  }
+  
+  virtual void TearDown() {
+    ClientTest::TearDown();
+    unlink(options_.log_file_path.c_str());
   }
 };
 
 class ClientSSLTest : public ClientTest {
 protected:
   virtual void SetUp() {
+    // All service certificates are signed with Leaf CA, which is signed with
+    // Intermediate CA, which is signed with Root CA. The keystore contains
+    // only the Leaf CA.
     dir_config_file_ = "tests/configs/dirconfig_ssl.test";
     mrc_config_file_ = "tests/configs/mrcconfig_ssl.test";
     osd_config_file_ = "tests/configs/osdconfig_ssl.test";
@@ -212,18 +238,64 @@ protected:
     dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
     
+    options_.log_level_string = "DEBUG";
+    options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_with_chain";
+    
+    // Client certificate is signed with Leaf CA. Contains the entire chain
+    // as additional certificates.
     options_.ssl_pkcs12_path = "tests/certs/client_ssl_test/Client_Leaf_Chain.p12";
+    options_.ssl_verify_certificates = true;
     
     ClientTest::SetUp();
+  }
+  
+  virtual void TearDown() {
+    ClientTest::TearDown();
+    unlink(options_.log_file_path.c_str());
   }
 };
 
 TEST_F(ClientNoSSLTest, TestNoSSL) {
   CreateOpenDeleteVolume("test_no_ssl");
+  ASSERT_EQ(0, count_occurrences_in_file(options_.log_file_path, "SSL"));
 }
 
-TEST_F(ClientSSLTest, TestNoSSL) {
+TEST_F(ClientSSLTest, TestSSLWithChain) {
   CreateOpenDeleteVolume("test_ssl");
+  
+  // Once for MRC and once for DIR.
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "SSL support activated"));
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "SSL support using PKCS#12 file "
+      "tests/certs/client_ssl_test/Client_Leaf_Chain.p12"));
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "Writing 3 verification certificates to /tmp/ca"));
+  
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Root CA' "
+      "was successful."));
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Intermediate "
+      "CA' was successful."));
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Leaf CA' was "
+      "successful."));
+  
+  ASSERT_EQ(1, count_occurrences_in_file(
+      options_.log_file_path,
+      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Leaf)' "
+      "was successful"));
+  ASSERT_EQ(1, count_occurrences_in_file(
+      options_.log_file_path,
+      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=DIR (Leaf)' "
+      "was successful."));
 }
 
 }  // namespace rpc
