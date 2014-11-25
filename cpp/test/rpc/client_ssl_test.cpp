@@ -46,10 +46,10 @@ public:
       java_home_ += "/";
     }
     
-    classpath_ = "java/servers/dist/XtreemFS.jar";
-    classpath_ += ":java/foundation/dist/Foundation.jar";
-    classpath_ += ":java/flease/dist/Flease.jar";
-    classpath_ += ":java/lib/*";
+    classpath_ = "../../java/servers/dist/XtreemFS.jar";
+    classpath_ += ":../../java/foundation/dist/Foundation.jar";
+    classpath_ += ":../../java/flease/dist/Flease.jar";
+    classpath_ += ":../../java/lib/*";
     
     service_pid_ = -1;
   }
@@ -207,9 +207,9 @@ protected:
 class ClientNoSSLTest : public ClientTest {
 protected:
   virtual void SetUp() {
-    dir_config_file_ = "tests/configs/dirconfig_no_ssl.test";
-    mrc_config_file_ = "tests/configs/mrcconfig_no_ssl.test";
-    osd_config_file_ = "tests/configs/osdconfig_no_ssl.test";
+    dir_config_file_ = "../../tests/configs/dirconfig_no_ssl.test";
+    mrc_config_file_ = "../../tests/configs/mrcconfig_no_ssl.test";
+    osd_config_file_ = "../../tests/configs/osdconfig_no_ssl.test";
         
     dir_url_.xtreemfs_url = "pbrpc://localhost:42638/";
     mrc_url_.xtreemfs_url = "pbrpc://localhost:42636/";
@@ -230,9 +230,9 @@ class ClientSSLTestShortChain : public ClientTest {
 protected:
   virtual void SetUp() {
     // Root signed, root trusted
-    dir_config_file_ = "tests/configs/dirconfig_ssl_short_chain.test";
-    mrc_config_file_ = "tests/configs/mrcconfig_ssl_short_chain.test";
-    osd_config_file_ = "tests/configs/osdconfig_ssl_short_chain.test";
+    dir_config_file_ = "../../tests/configs/dirconfig_ssl_short_chain.test";
+    mrc_config_file_ = "../../tests/configs/mrcconfig_ssl_short_chain.test";
+    osd_config_file_ = "../../tests/configs/osdconfig_ssl_short_chain.test";
         
     dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
@@ -241,7 +241,7 @@ protected:
     options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_short_chain";
     
     // Root signed, only root as additional certificate.
-    options_.ssl_pkcs12_path = "tests/certs/client_ssl_test/Client_Root_Root.p12";
+    options_.ssl_pkcs12_path = "../../tests/certs/client_ssl_test/Client_Root_Root.p12";
     options_.ssl_verify_certificates = true;
     
     ClientTest::SetUp();
@@ -259,9 +259,9 @@ protected:
     // All service certificates are signed with Leaf CA, which is signed with
     // Intermediate CA, which is signed with Root CA. The keystore contains
     // only the Leaf CA.
-    dir_config_file_ = "tests/configs/dirconfig_ssl_long_chain.test";
-    mrc_config_file_ = "tests/configs/mrcconfig_ssl_long_chain.test";
-    osd_config_file_ = "tests/configs/osdconfig_ssl_long_chain.test";
+    dir_config_file_ = "../../tests/configs/dirconfig_ssl_long_chain.test";
+    mrc_config_file_ = "../../tests/configs/mrcconfig_ssl_long_chain.test";
+    osd_config_file_ = "../../tests/configs/osdconfig_ssl_long_chain.test";
         
     dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
@@ -271,7 +271,7 @@ protected:
     
     // Client certificate is signed with Leaf CA. Contains the entire chain
     // as additional certificates.
-    options_.ssl_pkcs12_path = "tests/certs/client_ssl_test/Client_Leaf_Chain.p12";
+    options_.ssl_pkcs12_path = "../../tests/certs/client_ssl_test/Client_Leaf_Chain.p12";
     options_.ssl_verify_certificates = true;
     
     ClientTest::SetUp();
@@ -286,9 +286,9 @@ protected:
 class ClientSSLTestShortChainVerification : public ClientTest {
 protected:
   virtual void SetUp() {
-    dir_config_file_ = "tests/configs/dirconfig_ssl_short_chain.test";
-    mrc_config_file_ = "tests/configs/mrcconfig_ssl_short_chain.test";
-    osd_config_file_ = "tests/configs/osdconfig_ssl_short_chain.test";
+    dir_config_file_ = "../../tests/configs/dirconfig_ssl_short_chain.test";
+    mrc_config_file_ = "../../tests/configs/mrcconfig_ssl_short_chain.test";
+    osd_config_file_ = "../../tests/configs/osdconfig_ssl_short_chain.test";
     
     dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
@@ -298,7 +298,7 @@ protected:
     
     // Server does not know client's certificate, client does not know server's
     // certificate.
-    options_.ssl_pkcs12_path = "tests/certs/client_ssl_test/Client_Leaf.p12";
+    options_.ssl_pkcs12_path = "../../tests/certs/client_ssl_test/Client_Leaf.p12";
     options_.ssl_verify_certificates = true;
     
     // Need this to avoid too many reconnects upon SSL errors.
@@ -316,9 +316,9 @@ protected:
 class ClientSSLTestLongChainVerificationIgnoreErrors : public ClientTest {
 protected:
   virtual void SetUp() {
-    dir_config_file_ = "tests/configs/dirconfig_ssl_ignore_errors.test";
-    mrc_config_file_ = "tests/configs/mrcconfig_ssl_ignore_errors.test";
-    osd_config_file_ = "tests/configs/osdconfig_ssl_ignore_errors.test";
+    dir_config_file_ = "../../tests/configs/dirconfig_ssl_ignore_errors.test";
+    mrc_config_file_ = "../../tests/configs/mrcconfig_ssl_ignore_errors.test";
+    osd_config_file_ = "../../tests/configs/osdconfig_ssl_ignore_errors.test";
     
     dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
@@ -328,7 +328,7 @@ protected:
     
     // Server knows client's certificate, client does not know server's
     // certificate.
-    options_.ssl_pkcs12_path = "tests/certs/client_ssl_test/Client_Leaf_Root.p12";
+    options_.ssl_pkcs12_path = "../../tests/certs/client_ssl_test/Client_Leaf_Root.p12";
     options_.ssl_verify_certificates = true;
     
     // The issuer certificate could not be found: this occurs if the issuer
@@ -352,9 +352,9 @@ protected:
 class ClientSSLTestLongChainNoVerification : public ClientTest {
 protected:
   virtual void SetUp() {
-    dir_config_file_ = "tests/configs/dirconfig_ssl_no_verification.test";
-    mrc_config_file_ = "tests/configs/mrcconfig_ssl_no_verification.test";
-    osd_config_file_ = "tests/configs/osdconfig_ssl_no_verification.test";
+    dir_config_file_ = "../../tests/configs/dirconfig_ssl_no_verification.test";
+    mrc_config_file_ = "../../tests/configs/mrcconfig_ssl_no_verification.test";
+    osd_config_file_ = "../../tests/configs/osdconfig_ssl_no_verification.test";
     
     dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
@@ -364,7 +364,7 @@ protected:
     
     // Server knows client's certificate, client does not know all of server's
     // certificate.
-    options_.ssl_pkcs12_path = "tests/certs/client_ssl_test/Client_Leaf_Leaf.p12";
+    options_.ssl_pkcs12_path = "../../tests/certs/client_ssl_test/Client_Leaf_Leaf.p12";
                 
     ClientTest::SetUp();
   }
@@ -389,7 +389,7 @@ TEST_F(ClientSSLTestShortChain, TestVerifyShortChain) {
   ASSERT_EQ(2, count_occurrences_in_file(
       options_.log_file_path,
       "SSL support using PKCS#12 file "
-      "tests/certs/client_ssl_test/Client_Root_Root.p12"));
+      "../../tests/certs/client_ssl_test/Client_Root_Root.p12"));
   ASSERT_EQ(2, count_occurrences_in_file(
       options_.log_file_path,
       "Writing 1 verification certificates to /tmp/ca"));
@@ -425,7 +425,7 @@ TEST_F(ClientSSLTestLongChain, TestVerifyLongChain) {
   ASSERT_EQ(2, count_occurrences_in_file(
       options_.log_file_path,
       "SSL support using PKCS#12 file "
-      "tests/certs/client_ssl_test/Client_Leaf_Chain.p12"));
+      "../../tests/certs/client_ssl_test/Client_Leaf_Chain.p12"));
   ASSERT_EQ(2, count_occurrences_in_file(
       options_.log_file_path,
       "Writing 3 verification certificates to /tmp/ca"));

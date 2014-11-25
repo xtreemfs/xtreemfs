@@ -35,12 +35,12 @@ http_port = 40638
 ssl.enabled = true
 
 # server credentials for SSL handshakes
-ssl.service_creds = tests/certs/client_ssl_test/DIR_Root.p12
+ssl.service_creds = ../../tests/certs/client_ssl_test/DIR_Root.p12
 ssl.service_creds.pw = dir_root
 ssl.service_creds.container = pkcs12
 
 # trusted certificates for SSL handshakes
-ssl.trusted_certs = tests/certs/client_ssl_test/trusted_root.jks
+ssl.trusted_certs = ../../tests/certs/client_ssl_test/trusted_root.jks
 ssl.trusted_certs.pw = trusted_root
 ssl.trusted_certs.container = jks
 
