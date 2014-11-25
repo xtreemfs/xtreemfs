@@ -17,6 +17,7 @@
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/client_implementation.h"
 #include "libxtreemfs/options.h"
+#include "libxtreemfs/xtreemfs_exception.h"
 #include "pbrpc/RPC.pb.h"
 #include "util/logging.h"
 
@@ -282,6 +283,98 @@ protected:
   }
 };
 
+class ClientSSLTestShortChainVerification : public ClientTest {
+protected:
+  virtual void SetUp() {
+    dir_config_file_ = "tests/configs/dirconfig_ssl_short_chain.test";
+    mrc_config_file_ = "tests/configs/mrcconfig_ssl_short_chain.test";
+    osd_config_file_ = "tests/configs/osdconfig_ssl_short_chain.test";
+    
+    dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
+    mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
+    
+    options_.log_level_string = "DEBUG";
+    options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_verification";
+    
+    // Server does not know client's certificate, client does not know server's
+    // certificate.
+    options_.ssl_pkcs12_path = "tests/certs/client_ssl_test/Client_Leaf.p12";
+    options_.ssl_verify_certificates = true;
+    
+    // Need this to avoid too many reconnects upon SSL errors.
+    options_.max_tries = 3;
+        
+    ClientTest::SetUp();
+  }
+  
+  virtual void TearDown() {
+    ClientTest::TearDown();
+    unlink(options_.log_file_path.c_str());
+  }
+};
+
+class ClientSSLTestLongChainVerificationIgnoreErrors : public ClientTest {
+protected:
+  virtual void SetUp() {
+    dir_config_file_ = "tests/configs/dirconfig_ssl_ignore_errors.test";
+    mrc_config_file_ = "tests/configs/mrcconfig_ssl_ignore_errors.test";
+    osd_config_file_ = "tests/configs/osdconfig_ssl_ignore_errors.test";
+    
+    dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
+    mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
+    
+    options_.log_level_string = "DEBUG";
+    options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_verification_ignore_errors";
+    
+    // Server knows client's certificate, client does not know server's
+    // certificate.
+    options_.ssl_pkcs12_path = "tests/certs/client_ssl_test/Client_Leaf_Root.p12";
+    options_.ssl_verify_certificates = true;
+    
+    // The issuer certificate could not be found: this occurs if the issuer
+    // certificate of an untrusted certificate cannot be found.
+    options_.ssl_ignore_verify_errors.push_back(20);
+    // The root CA is not marked as trusted for the specified purpose.
+    options_.ssl_ignore_verify_errors.push_back(27);
+    // No signatures could be verified because the chain contains only one
+    // certificate and it is not self signed.
+    options_.ssl_ignore_verify_errors.push_back(21);
+            
+    ClientTest::SetUp();
+  }
+  
+  virtual void TearDown() {
+    ClientTest::TearDown();
+    unlink(options_.log_file_path.c_str());
+  }
+};
+
+class ClientSSLTestLongChainNoVerification : public ClientTest {
+protected:
+  virtual void SetUp() {
+    dir_config_file_ = "tests/configs/dirconfig_ssl_no_verification.test";
+    mrc_config_file_ = "tests/configs/mrcconfig_ssl_no_verification.test";
+    osd_config_file_ = "tests/configs/osdconfig_ssl_no_verification.test";
+    
+    dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
+    mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
+    
+    options_.log_level_string = "DEBUG";
+    options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_no_verification";
+    
+    // Server knows client's certificate, client does not know all of server's
+    // certificate.
+    options_.ssl_pkcs12_path = "tests/certs/client_ssl_test/Client_Leaf_Leaf.p12";
+                
+    ClientTest::SetUp();
+  }
+  
+  virtual void TearDown() {
+    ClientTest::TearDown();
+    unlink(options_.log_file_path.c_str());
+  }
+};
+
 TEST_F(ClientNoSSLTest, TestNoSSL) {
   CreateOpenDeleteVolume("test_no_ssl");
   ASSERT_EQ(0, count_occurrences_in_file(options_.log_file_path, "SSL"));
@@ -357,6 +450,76 @@ TEST_F(ClientSSLTestLongChain, TestVerifyLongChain) {
   ASSERT_EQ(1, count_occurrences_in_file(
       options_.log_file_path,
       "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=DIR (Leaf)' "
+      "was successful."));
+}
+
+TEST_F(ClientSSLTestShortChainVerification, TestVerificationFail) {
+  // Server does not accept our certificate.
+  std::string exception_text;
+  try {
+    CreateOpenDeleteVolume("test_ssl_verification");
+  } catch (xtreemfs::IOException& e) {
+    exception_text = e.what();
+  }
+  ASSERT_TRUE(exception_text.find("could not connect to host") != std::string::npos);
+  
+  // We do not accept the server's certificate.
+  ASSERT_TRUE(count_occurrences_in_file(
+      options_.log_file_path,
+      "OpenSSL verify error: 20") > 0);  // Issuer certificate of untrusted
+                                         // certificate cannot be found.
+  ASSERT_TRUE(count_occurrences_in_file(
+      options_.log_file_path,
+      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Root)' "
+      "was unsuccessful.") > 0);
+}
+
+TEST_F(ClientSSLTestLongChainVerificationIgnoreErrors, TestVerificationIgnoreErrors) {
+  CreateOpenDeleteVolume("test_ssl_verification_ignore_errors");
+  
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "Ignoring OpenSSL verify error: 20 because of user settings."));
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "Ignoring OpenSSL verify error: 27 because of user settings."));
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "Ignoring OpenSSL verify error: 21 because of user settings."));
+  
+  ASSERT_EQ(3, count_occurrences_in_file(
+      options_.log_file_path,
+      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Leaf)' "
+      "was unsuccessful. Overriding because of user settings."));
+  ASSERT_EQ(3, count_occurrences_in_file(
+      options_.log_file_path,
+      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=DIR (Leaf)' "
+      "was unsuccessful. Overriding because of user settings."));
+}
+
+TEST_F(ClientSSLTestLongChainNoVerification, TestNoVerification) {
+  CreateOpenDeleteVolume("test_ssl_no_verification");
+  
+  // The issuer certificate of a looked up certificate could not be found.
+  // This normally means the list of trusted certificates is not complete.
+  ASSERT_EQ(2, count_occurrences_in_file(
+      options_.log_file_path,
+      "Ignoring OpenSSL verify error: 2 because of user settings."));
+  
+  // Twice for MRC, twice for DIR.
+  ASSERT_EQ(4, count_occurrences_in_file(
+      options_.log_file_path,
+      "Ignoring OpenSSL verify error: 27 because of user settings."));
+  
+  // Succeed because the client can verify the leaf certificates, but not their
+  // issuer certificates.
+  ASSERT_EQ(1, count_occurrences_in_file(
+      options_.log_file_path,
+      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=DIR (Leaf)' "
+      "was successful."));
+  ASSERT_EQ(1, count_occurrences_in_file(
+      options_.log_file_path,
+      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Leaf)' "
       "was successful."));
 }
 
