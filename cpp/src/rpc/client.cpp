@@ -340,7 +340,8 @@ bool Client::verify_certificate_callback(bool preverified,
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
     Logging::log->getLog(LEVEL_DEBUG) << "Verification of subject '" << subject
         << "' was " << (preverified ? "successful." : "unsuccessful.")
-        << (override ? " Overriding because of user settings." : "") << endl;
+        << ((!preverified && override) ? " Overriding because of user settings." : "")
+        << endl;
   }
   
   return preverified || override;
