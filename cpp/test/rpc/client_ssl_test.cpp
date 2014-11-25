@@ -206,9 +206,9 @@ protected:
 class ClientNoSSLTest : public ClientTest {
 protected:
   virtual void SetUp() {
-    dir_config_file_ = "tests/configs/dirconfig_nossl.test";
-    mrc_config_file_ = "tests/configs/mrcconfig_nossl.test";
-    osd_config_file_ = "tests/configs/osdconfig_nossl.test";
+    dir_config_file_ = "tests/configs/dirconfig_no_ssl.test";
+    mrc_config_file_ = "tests/configs/mrcconfig_no_ssl.test";
+    osd_config_file_ = "tests/configs/osdconfig_no_ssl.test";
         
     dir_url_.xtreemfs_url = "pbrpc://localhost:42638/";
     mrc_url_.xtreemfs_url = "pbrpc://localhost:42636/";
@@ -258,15 +258,15 @@ protected:
     // All service certificates are signed with Leaf CA, which is signed with
     // Intermediate CA, which is signed with Root CA. The keystore contains
     // only the Leaf CA.
-    dir_config_file_ = "tests/configs/dirconfig_ssl.test";
-    mrc_config_file_ = "tests/configs/mrcconfig_ssl.test";
-    osd_config_file_ = "tests/configs/osdconfig_ssl.test";
+    dir_config_file_ = "tests/configs/dirconfig_ssl_long_chain.test";
+    mrc_config_file_ = "tests/configs/mrcconfig_ssl_long_chain.test";
+    osd_config_file_ = "tests/configs/osdconfig_ssl_long_chain.test";
         
     dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
     
     options_.log_level_string = "DEBUG";
-    options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_with_chain";
+    options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_long_chain";
     
     // Client certificate is signed with Leaf CA. Contains the entire chain
     // as additional certificates.
