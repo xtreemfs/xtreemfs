@@ -21,13 +21,20 @@
 #include "pbrpc/RPC.pb.h"
 #include "util/logging.h"
 
+/** 
+ * The working directory is assumed to be cpp/build.
+ */
 
 using namespace xtreemfs::pbrpc;
 using namespace xtreemfs::util;
 
 namespace xtreemfs {
 namespace rpc {
-  
+
+/**
+ * Represents a DIR, MRC or OSD started via command line. Not the stripped
+ * down test environment services.
+ */
 class ExternalService {
 public:
   ExternalService(
@@ -69,7 +76,7 @@ public:
     
     service_pid_ = fork();
     if (service_pid_ == 0) {
-      // Executed by the child.
+      // This block is executed by the child and is blocking.
       execve((java_home_ + "bin/java").c_str(), argv, envp);
       exit(EXIT_SUCCESS);
     }
@@ -77,7 +84,8 @@ public:
   
   void Shutdown() {
     if (service_pid_ > 0) {
-      // Executed by the parent.
+      // This block is executed by the parent. Interrupt the child and wait
+      // for completion.
       kill(service_pid_, 2);
       waitpid(service_pid_, NULL, 0);
       service_pid_ = -1;
@@ -122,8 +130,12 @@ public:
   }
 };
 
+enum TestCertificateType {
+  None, kPKCS12, kPEM
+};
+
 class ClientTest : public ::testing::Test {
-protected:
+protected:  
   virtual void SetUp() {
     initialize_logger(options_.log_level_string,
                       options_.log_file_path,
@@ -186,6 +198,14 @@ protected:
     return occurences;
   }
   
+  std::string cert_path(std::string cert) {
+    return "../../tests/certs/client_ssl_test/" + cert;
+  }
+  
+  std::string config_path(std::string config) {
+    return "../../tests/configs/" + config;
+  }
+  
   boost::scoped_ptr<ExternalDIR> external_dir_;
   boost::scoped_ptr<ExternalMRC> external_mrc_;
   boost::scoped_ptr<ExternalOSD> external_osd_;
@@ -207,9 +227,9 @@ protected:
 class ClientNoSSLTest : public ClientTest {
 protected:
   virtual void SetUp() {
-    dir_config_file_ = "../../tests/configs/dirconfig_no_ssl.test";
-    mrc_config_file_ = "../../tests/configs/mrcconfig_no_ssl.test";
-    osd_config_file_ = "../../tests/configs/osdconfig_no_ssl.test";
+    dir_config_file_ = config_path("dirconfig_no_ssl.test");
+    mrc_config_file_ = config_path("mrcconfig_no_ssl.test");
+    osd_config_file_ = config_path("osdconfig_no_ssl.test");
         
     dir_url_.xtreemfs_url = "pbrpc://localhost:42638/";
     mrc_url_.xtreemfs_url = "pbrpc://localhost:42636/";
@@ -226,13 +246,14 @@ protected:
   }
 };
 
+template<TestCertificateType t>
 class ClientSSLTestShortChain : public ClientTest {
 protected:
   virtual void SetUp() {
     // Root signed, root trusted
-    dir_config_file_ = "../../tests/configs/dirconfig_ssl_short_chain.test";
-    mrc_config_file_ = "../../tests/configs/mrcconfig_ssl_short_chain.test";
-    osd_config_file_ = "../../tests/configs/osdconfig_ssl_short_chain.test";
+    dir_config_file_ = config_path("dirconfig_ssl_short_chain.test");
+    mrc_config_file_ = config_path("mrcconfig_ssl_short_chain.test");
+    osd_config_file_ = config_path("osdconfig_ssl_short_chain.test");
         
     dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
@@ -241,9 +262,21 @@ protected:
     options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_short_chain";
     
     // Root signed, only root as additional certificate.
-    options_.ssl_pkcs12_path = "../../tests/certs/client_ssl_test/Client_Root_Root.p12";
-    options_.ssl_verify_certificates = true;
+    switch (t) {
+      case kPKCS12:
+        options_.ssl_pkcs12_path = cert_path("Client_Root_Root.p12");
+        break;
+      case kPEM:
+        options_.ssl_pem_cert_path = cert_path("Client_Root.pem");
+        options_.ssl_pem_key_path = cert_path("Client_Root.key");
+        options_.ssl_pem_trusted_certs_path = cert_path("CA_Root.pem");
+        break;
+      case None:
+        break;
+    }
     
+    options_.ssl_verify_certificates = true;
+        
     ClientTest::SetUp();
   }
   
@@ -251,17 +284,69 @@ protected:
     ClientTest::TearDown();
     unlink(options_.log_file_path.c_str());
   }
+  
+  void DoTest() {
+    CreateOpenDeleteVolume("test_ssl_short_chain");
+  
+    ASSERT_EQ(2, count_occurrences_in_file(
+        options_.log_file_path,
+        "SSL support activated"));
+    
+    switch (t) {
+      case kPKCS12:
+        ASSERT_EQ(2, count_occurrences_in_file(
+            options_.log_file_path,
+            "SSL support using PKCS#12 file "
+            "../../tests/certs/client_ssl_test/Client_Root_Root.p12"));
+        ASSERT_EQ(2, count_occurrences_in_file(
+            options_.log_file_path,
+            "Writing 1 verification certificates to /tmp/ca"));
+        break;
+      case kPEM:
+        ASSERT_EQ(2, count_occurrences_in_file(
+            options_.log_file_path,
+            "SSL support using PEM private key file "
+            "../../tests/certs/client_ssl_test/Client_Root.key"));
+        break;
+      case None:
+        break;
+    }
+
+    ASSERT_EQ(2, count_occurrences_in_file(
+        options_.log_file_path,
+        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Root CA' "
+        "was successful."));
+    ASSERT_EQ(0, count_occurrences_in_file(
+        options_.log_file_path,
+        "/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Intermediate CA"));
+    ASSERT_EQ(0, count_occurrences_in_file(
+        options_.log_file_path,
+        "/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Leaf CA"));
+
+    ASSERT_EQ(1, count_occurrences_in_file(
+        options_.log_file_path,
+        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Root)' "
+        "was successful"));
+    ASSERT_EQ(1, count_occurrences_in_file(
+        options_.log_file_path,
+        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=DIR (Root)' "
+        "was successful."));
+  }
 };
 
+class ClientSSLTestShortChainPKCS12 : public ClientSSLTestShortChain<kPKCS12> {};
+class ClientSSLTestShortChainPEM : public ClientSSLTestShortChain<kPEM> {};
+
+template<TestCertificateType t>
 class ClientSSLTestLongChain : public ClientTest {
 protected:
   virtual void SetUp() {
     // All service certificates are signed with Leaf CA, which is signed with
     // Intermediate CA, which is signed with Root CA. The keystore contains
     // only the Leaf CA.
-    dir_config_file_ = "../../tests/configs/dirconfig_ssl_long_chain.test";
-    mrc_config_file_ = "../../tests/configs/mrcconfig_ssl_long_chain.test";
-    osd_config_file_ = "../../tests/configs/osdconfig_ssl_long_chain.test";
+    dir_config_file_ = config_path("dirconfig_ssl_long_chain.test");
+    mrc_config_file_ = config_path("mrcconfig_ssl_long_chain.test");
+    osd_config_file_ = config_path("osdconfig_ssl_long_chain.test");
         
     dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
@@ -271,7 +356,19 @@ protected:
     
     // Client certificate is signed with Leaf CA. Contains the entire chain
     // as additional certificates.
-    options_.ssl_pkcs12_path = "../../tests/certs/client_ssl_test/Client_Leaf_Chain.p12";
+    switch (t) {
+      case kPKCS12:
+        options_.ssl_pkcs12_path = cert_path("Client_Leaf_Chain.p12");
+        break;
+      case kPEM:
+        options_.ssl_pem_cert_path = cert_path("Client_Leaf.pem");
+        options_.ssl_pem_key_path = cert_path("Client_Leaf.key");
+        options_.ssl_pem_trusted_certs_path = cert_path("CA_Chain.pem");
+        break;
+      case None:
+        break;
+    }
+    
     options_.ssl_verify_certificates = true;
     
     ClientTest::SetUp();
@@ -281,14 +378,69 @@ protected:
     ClientTest::TearDown();
     unlink(options_.log_file_path.c_str());
   }
+  
+  void DoTest() {
+    CreateOpenDeleteVolume("test_ssl_long_chain");
+  
+    // Once for MRC and once for DIR.
+    ASSERT_EQ(2, count_occurrences_in_file(
+        options_.log_file_path,
+        "SSL support activated"));
+    
+    switch (t) {
+      case kPKCS12:
+        ASSERT_EQ(2, count_occurrences_in_file(
+            options_.log_file_path,
+            "SSL support using PKCS#12 file "
+            "../../tests/certs/client_ssl_test/Client_Leaf_Chain.p12"));
+        ASSERT_EQ(2, count_occurrences_in_file(
+            options_.log_file_path,
+            "Writing 3 verification certificates to /tmp/ca"));
+        break;
+      case kPEM:
+        ASSERT_EQ(2, count_occurrences_in_file(
+            options_.log_file_path,
+            "SSL support using PEM private key file "
+            "../../tests/certs/client_ssl_test/Client_Leaf.key"));
+        break;
+      case None:
+        break;
+    }
+
+    ASSERT_EQ(2, count_occurrences_in_file(
+        options_.log_file_path,
+        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Root CA' "
+        "was successful."));
+    ASSERT_EQ(2, count_occurrences_in_file(
+        options_.log_file_path,
+        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Intermediate "
+        "CA' was successful."));
+    ASSERT_EQ(2, count_occurrences_in_file(
+        options_.log_file_path,
+        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Leaf CA' was "
+        "successful."));
+
+    ASSERT_EQ(1, count_occurrences_in_file(
+        options_.log_file_path,
+        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Leaf)' "
+        "was successful"));
+    ASSERT_EQ(1, count_occurrences_in_file(
+        options_.log_file_path,
+        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=DIR (Leaf)' "
+        "was successful."));
+  }
 };
 
+class ClientSSLTestLongChainPKCS12 : public ClientSSLTestLongChain<kPKCS12> {};
+class ClientSSLTestLongChainPEM : public ClientSSLTestLongChain<kPEM> {};
+
+template<TestCertificateType t>
 class ClientSSLTestShortChainVerification : public ClientTest {
 protected:
   virtual void SetUp() {
-    dir_config_file_ = "../../tests/configs/dirconfig_ssl_short_chain.test";
-    mrc_config_file_ = "../../tests/configs/mrcconfig_ssl_short_chain.test";
-    osd_config_file_ = "../../tests/configs/osdconfig_ssl_short_chain.test";
+    dir_config_file_ = config_path("dirconfig_ssl_short_chain.test");
+    mrc_config_file_ = config_path("mrcconfig_ssl_short_chain.test");
+    osd_config_file_ = config_path("osdconfig_ssl_short_chain.test");
     
     dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
@@ -298,7 +450,18 @@ protected:
     
     // Server does not know client's certificate, client does not know server's
     // certificate.
-    options_.ssl_pkcs12_path = "../../tests/certs/client_ssl_test/Client_Leaf.p12";
+    switch (t) {
+      case kPKCS12:
+        options_.ssl_pkcs12_path = cert_path("Client_Leaf.p12");
+        break;
+      case kPEM:
+        options_.ssl_pem_cert_path = cert_path("Client_Leaf.pem");
+        options_.ssl_pem_key_path = cert_path("Client_Leaf.key");
+        break;
+      case None:
+        break;
+    }
+    
     options_.ssl_verify_certificates = true;
     
     // Need this to avoid too many reconnects upon SSL errors.
@@ -311,24 +474,64 @@ protected:
     ClientTest::TearDown();
     unlink(options_.log_file_path.c_str());
   }
+  
+  void DoTest() {
+    // Server does not accept our certificate.
+    std::string exception_text;
+    try {
+      CreateOpenDeleteVolume("test_ssl_verification");
+    } catch (xtreemfs::IOException& e) {
+      exception_text = e.what();
+    }
+    ASSERT_TRUE(exception_text.find("could not connect to host") != std::string::npos);
+
+    // We do not accept the server's certificate.
+    ASSERT_TRUE(count_occurrences_in_file(
+        options_.log_file_path,
+        "OpenSSL verify error: 20") > 0);  // Issuer certificate of untrusted
+                                           // certificate cannot be found.
+    ASSERT_TRUE(count_occurrences_in_file(
+        options_.log_file_path,
+        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Root)' "
+        "was unsuccessful.") > 0);
+  }
 };
 
+class ClientSSLTestShortChainVerificationPKCS12 :
+    public ClientSSLTestShortChainVerification<kPKCS12> {};
+class ClientSSLTestShortChainVerificationPEM :
+    public ClientSSLTestShortChainVerification<kPEM> {};
+
+template<TestCertificateType t>
 class ClientSSLTestLongChainVerificationIgnoreErrors : public ClientTest {
 protected:
   virtual void SetUp() {
-    dir_config_file_ = "../../tests/configs/dirconfig_ssl_ignore_errors.test";
-    mrc_config_file_ = "../../tests/configs/mrcconfig_ssl_ignore_errors.test";
-    osd_config_file_ = "../../tests/configs/osdconfig_ssl_ignore_errors.test";
+    dir_config_file_ = config_path("dirconfig_ssl_ignore_errors.test");
+    mrc_config_file_ = config_path("mrcconfig_ssl_ignore_errors.test");
+    osd_config_file_ = config_path("osdconfig_ssl_ignore_errors.test");
     
     dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
     
     options_.log_level_string = "DEBUG";
-    options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_verification_ignore_errors";
+    options_.log_file_path =
+        "/tmp/xtreemfs_client_ssl_test_verification_ignore_errors";
     
     // Server knows client's certificate, client does not know server's
     // certificate.
-    options_.ssl_pkcs12_path = "../../tests/certs/client_ssl_test/Client_Leaf_Root.p12";
+    switch (t) {
+      case kPKCS12:
+        options_.ssl_pkcs12_path = cert_path("Client_Leaf_Root.p12");
+        break;
+      case kPEM:
+        options_.ssl_pem_cert_path = cert_path("Client_Leaf.pem");
+        options_.ssl_pem_key_path = cert_path("Client_Leaf.key");
+        options_.ssl_pem_trusted_certs_path = cert_path("CA_Root.pem");
+        break;
+      case None:
+        break;
+    }
+    
     options_.ssl_verify_certificates = true;
     
     // The issuer certificate could not be found: this occurs if the issuer
@@ -347,14 +550,43 @@ protected:
     ClientTest::TearDown();
     unlink(options_.log_file_path.c_str());
   }
+  
+  void DoTest() {
+    CreateOpenDeleteVolume("test_ssl_verification_ignore_errors");
+  
+    ASSERT_EQ(2, count_occurrences_in_file(
+        options_.log_file_path,
+        "Ignoring OpenSSL verify error: 20 because of user settings."));
+    ASSERT_EQ(2, count_occurrences_in_file(
+        options_.log_file_path,
+        "Ignoring OpenSSL verify error: 27 because of user settings."));
+    ASSERT_EQ(2, count_occurrences_in_file(
+        options_.log_file_path,
+        "Ignoring OpenSSL verify error: 21 because of user settings."));
+
+    ASSERT_EQ(3, count_occurrences_in_file(
+        options_.log_file_path,
+        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Leaf)' "
+        "was unsuccessful. Overriding because of user settings."));
+    ASSERT_EQ(3, count_occurrences_in_file(
+        options_.log_file_path,
+        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=DIR (Leaf)' "
+        "was unsuccessful. Overriding because of user settings."));
+  }
 };
 
+class ClientSSLTestLongChainVerificationIgnoreErrorsPKCS12 :
+    public ClientSSLTestLongChainVerificationIgnoreErrors<kPKCS12> {};
+class ClientSSLTestLongChainVerificationIgnoreErrorsPEM :
+    public ClientSSLTestLongChainVerificationIgnoreErrors<kPEM> {};
+
+template<TestCertificateType t>
 class ClientSSLTestLongChainNoVerification : public ClientTest {
 protected:
   virtual void SetUp() {
-    dir_config_file_ = "../../tests/configs/dirconfig_ssl_no_verification.test";
-    mrc_config_file_ = "../../tests/configs/mrcconfig_ssl_no_verification.test";
-    osd_config_file_ = "../../tests/configs/osdconfig_ssl_no_verification.test";
+    dir_config_file_ = config_path("dirconfig_ssl_no_verification.test");
+    mrc_config_file_ = config_path("mrcconfig_ssl_no_verification.test");
+    osd_config_file_ = config_path("osdconfig_ssl_no_verification.test");
     
     dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
@@ -364,7 +596,18 @@ protected:
     
     // Server knows client's certificate, client does not know all of server's
     // certificate.
-    options_.ssl_pkcs12_path = "../../tests/certs/client_ssl_test/Client_Leaf_Leaf.p12";
+    switch (t) {
+      case kPKCS12:
+        options_.ssl_pkcs12_path = cert_path("Client_Leaf_Leaf.p12");
+        break;
+      case kPEM:
+        options_.ssl_pem_cert_path = cert_path("Client_Leaf.pem");
+        options_.ssl_pem_key_path = cert_path("Client_Leaf.key");
+        options_.ssl_pem_trusted_certs_path = cert_path("CA_Leaf.pem");
+        break;
+      case None:
+        break;
+    }
                 
     ClientTest::SetUp();
   }
@@ -373,154 +616,84 @@ protected:
     ClientTest::TearDown();
     unlink(options_.log_file_path.c_str());
   }
+  
+  void DoTest() {
+    CreateOpenDeleteVolume("test_ssl_no_verification");
+  
+    // The issuer certificate of a looked up certificate could not be found.
+    // This normally means the list of trusted certificates is not complete.
+    ASSERT_EQ(2, count_occurrences_in_file(
+        options_.log_file_path,
+        "Ignoring OpenSSL verify error: 2 because of user settings."));
+
+    // Twice for MRC, twice for DIR.
+    ASSERT_EQ(4, count_occurrences_in_file(
+        options_.log_file_path,
+        "Ignoring OpenSSL verify error: 27 because of user settings."));
+
+    // Succeed because the client can verify the leaf certificates, but not their
+    // issuer certificates.
+    ASSERT_EQ(1, count_occurrences_in_file(
+        options_.log_file_path,
+        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=DIR (Leaf)' "
+        "was successful."));
+    ASSERT_EQ(1, count_occurrences_in_file(
+        options_.log_file_path,
+        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Leaf)' "
+        "was successful."));
+  }
 };
+
+class ClientSSLTestLongChainNoVerificationPKCS12 :
+    public ClientSSLTestLongChainNoVerification<kPKCS12> {};
+class ClientSSLTestLongChainNoVerificationPEM :
+    public ClientSSLTestLongChainNoVerification<kPEM> {};
 
 TEST_F(ClientNoSSLTest, TestNoSSL) {
   CreateOpenDeleteVolume("test_no_ssl");
   ASSERT_EQ(0, count_occurrences_in_file(options_.log_file_path, "SSL"));
 }
 
-TEST_F(ClientSSLTestShortChain, TestVerifyShortChain) {
-  CreateOpenDeleteVolume("test_ssl_short_chain");
-  
-  ASSERT_EQ(2, count_occurrences_in_file(
-      options_.log_file_path,
-      "SSL support activated"));
-  ASSERT_EQ(2, count_occurrences_in_file(
-      options_.log_file_path,
-      "SSL support using PKCS#12 file "
-      "../../tests/certs/client_ssl_test/Client_Root_Root.p12"));
-  ASSERT_EQ(2, count_occurrences_in_file(
-      options_.log_file_path,
-      "Writing 1 verification certificates to /tmp/ca"));
-  
-  ASSERT_EQ(2, count_occurrences_in_file(
-      options_.log_file_path,
-      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Root CA' "
-      "was successful."));
-  ASSERT_EQ(0, count_occurrences_in_file(
-      options_.log_file_path,
-      "/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Intermediate CA"));
-  ASSERT_EQ(0, count_occurrences_in_file(
-      options_.log_file_path,
-      "/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Leaf CA"));
-  
-  ASSERT_EQ(1, count_occurrences_in_file(
-      options_.log_file_path,
-      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Root)' "
-      "was successful"));
-  ASSERT_EQ(1, count_occurrences_in_file(
-      options_.log_file_path,
-      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=DIR (Root)' "
-      "was successful."));
+TEST_F(ClientSSLTestShortChainPKCS12, TestVerifyShortChain) {
+  DoTest();
 }
 
-TEST_F(ClientSSLTestLongChain, TestVerifyLongChain) {
-  CreateOpenDeleteVolume("test_ssl_long_chain");
-  
-  // Once for MRC and once for DIR.
-  ASSERT_EQ(2, count_occurrences_in_file(
-      options_.log_file_path,
-      "SSL support activated"));
-  ASSERT_EQ(2, count_occurrences_in_file(
-      options_.log_file_path,
-      "SSL support using PKCS#12 file "
-      "../../tests/certs/client_ssl_test/Client_Leaf_Chain.p12"));
-  ASSERT_EQ(2, count_occurrences_in_file(
-      options_.log_file_path,
-      "Writing 3 verification certificates to /tmp/ca"));
-  
-  ASSERT_EQ(2, count_occurrences_in_file(
-      options_.log_file_path,
-      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Root CA' "
-      "was successful."));
-  ASSERT_EQ(2, count_occurrences_in_file(
-      options_.log_file_path,
-      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Intermediate "
-      "CA' was successful."));
-  ASSERT_EQ(2, count_occurrences_in_file(
-      options_.log_file_path,
-      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Leaf CA' was "
-      "successful."));
-  
-  ASSERT_EQ(1, count_occurrences_in_file(
-      options_.log_file_path,
-      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Leaf)' "
-      "was successful"));
-  ASSERT_EQ(1, count_occurrences_in_file(
-      options_.log_file_path,
-      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=DIR (Leaf)' "
-      "was successful."));
+TEST_F(ClientSSLTestShortChainPEM, TestVerifyShortChain) {
+  DoTest();
 }
 
-TEST_F(ClientSSLTestShortChainVerification, TestVerificationFail) {
-  // Server does not accept our certificate.
-  std::string exception_text;
-  try {
-    CreateOpenDeleteVolume("test_ssl_verification");
-  } catch (xtreemfs::IOException& e) {
-    exception_text = e.what();
-  }
-  ASSERT_TRUE(exception_text.find("could not connect to host") != std::string::npos);
-  
-  // We do not accept the server's certificate.
-  ASSERT_TRUE(count_occurrences_in_file(
-      options_.log_file_path,
-      "OpenSSL verify error: 20") > 0);  // Issuer certificate of untrusted
-                                         // certificate cannot be found.
-  ASSERT_TRUE(count_occurrences_in_file(
-      options_.log_file_path,
-      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Root)' "
-      "was unsuccessful.") > 0);
+TEST_F(ClientSSLTestLongChainPKCS12, TestVerifyLongChain) {
+  DoTest();
 }
 
-TEST_F(ClientSSLTestLongChainVerificationIgnoreErrors, TestVerificationIgnoreErrors) {
-  CreateOpenDeleteVolume("test_ssl_verification_ignore_errors");
-  
-  ASSERT_EQ(2, count_occurrences_in_file(
-      options_.log_file_path,
-      "Ignoring OpenSSL verify error: 20 because of user settings."));
-  ASSERT_EQ(2, count_occurrences_in_file(
-      options_.log_file_path,
-      "Ignoring OpenSSL verify error: 27 because of user settings."));
-  ASSERT_EQ(2, count_occurrences_in_file(
-      options_.log_file_path,
-      "Ignoring OpenSSL verify error: 21 because of user settings."));
-  
-  ASSERT_EQ(3, count_occurrences_in_file(
-      options_.log_file_path,
-      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Leaf)' "
-      "was unsuccessful. Overriding because of user settings."));
-  ASSERT_EQ(3, count_occurrences_in_file(
-      options_.log_file_path,
-      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=DIR (Leaf)' "
-      "was unsuccessful. Overriding because of user settings."));
+TEST_F(ClientSSLTestLongChainPEM, TestVerifyLongChain) {
+  DoTest();
 }
 
-TEST_F(ClientSSLTestLongChainNoVerification, TestNoVerification) {
-  CreateOpenDeleteVolume("test_ssl_no_verification");
-  
-  // The issuer certificate of a looked up certificate could not be found.
-  // This normally means the list of trusted certificates is not complete.
-  ASSERT_EQ(2, count_occurrences_in_file(
-      options_.log_file_path,
-      "Ignoring OpenSSL verify error: 2 because of user settings."));
-  
-  // Twice for MRC, twice for DIR.
-  ASSERT_EQ(4, count_occurrences_in_file(
-      options_.log_file_path,
-      "Ignoring OpenSSL verify error: 27 because of user settings."));
-  
-  // Succeed because the client can verify the leaf certificates, but not their
-  // issuer certificates.
-  ASSERT_EQ(1, count_occurrences_in_file(
-      options_.log_file_path,
-      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=DIR (Leaf)' "
-      "was successful."));
-  ASSERT_EQ(1, count_occurrences_in_file(
-      options_.log_file_path,
-      "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Leaf)' "
-      "was successful."));
+TEST_F(ClientSSLTestShortChainVerificationPKCS12, TestVerificationFail) {
+  DoTest();
+}
+
+TEST_F(ClientSSLTestShortChainVerificationPEM, TestVerificationFail) {
+  DoTest();
+}
+
+TEST_F(ClientSSLTestLongChainVerificationIgnoreErrorsPKCS12,
+       TestVerificationIgnoreErrors) {
+  DoTest();
+}
+
+TEST_F(ClientSSLTestLongChainVerificationIgnoreErrorsPEM,
+       TestVerificationIgnoreErrors) {
+  DoTest();
+}
+
+TEST_F(ClientSSLTestLongChainNoVerificationPKCS12, TestNoVerification) {
+  DoTest();
+}
+
+TEST_F(ClientSSLTestLongChainNoVerificationPEM, TestNoVerification) {
+  DoTest();
 }
 
 }  // namespace rpc
