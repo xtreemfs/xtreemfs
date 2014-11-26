@@ -701,7 +701,7 @@ protected:
     if (strcmp(ssl_min_method_string, "sslv3") == 0) {
       ASSERT_EQ(2, count_occurrences_in_file(
           options_.log_file_path,
-          "using SSL/TLS version 'SSLv3'"));
+          "Using SSL/TLS version 'SSLv3'."));
     } else if (strcmp(ssl_min_method_string, "sslv23") == 0
 #if (BOOST_VERSION > 105300)
                || strcmp(ssl_min_method_string, "tlsv12") == 0
@@ -709,17 +709,17 @@ protected:
                ) {
       ASSERT_EQ(2, count_occurrences_in_file(
           options_.log_file_path,
-          "using SSL/TLS version 'TLSv1.2'"));
+          "Using SSL/TLS version 'TLSv1.2'."));
     } else if (strcmp(ssl_min_method_string, "tlsv1") == 0) {
       ASSERT_EQ(2, count_occurrences_in_file(
           options_.log_file_path,
-          "using SSL/TLS version 'TLSv1'"));
+          "Using SSL/TLS version 'TLSv1'."));
     }
 #if (BOOST_VERSION > 105300)
     else if (strcmp(ssl_min_method_string, "tlsv11") == 0) {
       ASSERT_EQ(2, count_occurrences_in_file(
           options_.log_file_path,
-          "using SSL/TLS version 'TLSv1.1'"));
+          "Using SSL/TLS version 'TLSv1.1'."));
     }
 #endif  // BOOST_VERSION > 105300
   }
