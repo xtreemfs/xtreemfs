@@ -30,11 +30,16 @@ void StripeTranslatorErasureCode::TranslateWriteRequest(
   unsigned int width =(*policies.begin())->width();
   char *buf_redundance = NULL;
 
+  size_t obj_offset = offset / stripe_size;
+
+  // check for illegal offset
+  assert(offset % (stripe_size * (width - parity_width)) == 0);
+
   size_t total_size = (size / (width - parity_width)) * width;
   // object number for stripe (parity stripes are not counted)
-  size_t obj_number = 0;
+  size_t obj_number = obj_offset;
   // actual object number to calculate the osd number
-  size_t real_obj_number = 0;
+  size_t real_obj_number =  (obj_offset / (width - parity_width) * width);
 
   size_t start = 0;
   size_t written_blocks = 0;
@@ -89,10 +94,14 @@ size_t StripeTranslatorErasureCode::TranslateReadRequest(
   unsigned int width =(*policies.begin())->width();
   char *buf_redundance = NULL;
 
+  size_t obj_offset = offset / stripe_size;
+
   size_t total_size = (size / (width - parity_width)) * width;
-  size_t obj_number = 0;
+  // object number for stripe (parity stripes are not counted)
+  size_t obj_number = obj_offset;
+  // actual object number to calculate the osd number
+  size_t real_obj_number =  (obj_offset / (width - parity_width) * width);
   size_t par_reads = 0;
-  size_t real_obj_number = 0;
 
   size_t start = 0;
   size_t read_blocks = 0;
