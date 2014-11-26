@@ -65,7 +65,7 @@ void StripeTranslatorErasureCode::TranslateWriteRequest(
        * this caters towards the calculation of a correct  filesize
        * ...and hopefully nothing else */
       operations->push_back(
-          WriteOperation(obj_number - 1, osd_offsets, stripe_size, 0,
+          WriteOperation(obj_number - (width - parity_width), osd_offsets, stripe_size, 0,
               buf_redundance, true));
     } else {
       operations->push_back(
@@ -120,7 +120,7 @@ size_t StripeTranslatorErasureCode::TranslateReadRequest(
        * this caters towards the calculation of a correct  filesize
        * ...and hopefully nothing else */
       operations->push_back(
-          ReadOperation(obj_number - 1, osd_offsets, stripe_size, 0,
+          ReadOperation(obj_number - (width - parity_width), osd_offsets, stripe_size, 0,
               buf_redundance));
     } else {
       operations->insert(operations->begin() + par_reads,
