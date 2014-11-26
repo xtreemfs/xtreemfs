@@ -182,6 +182,9 @@ class Options {
   /** List of openssl verify error codes to ignore during verification and
    * accept anyway. Only used when ssl_verify_certificates = true. */
   std::vector<int> ssl_ignore_verify_errors;
+  
+  /** Minimum SSL version that this client should accept. */
+  std::string ssl_min_method_string;
 #endif  // HAS_OPENSSL
 
   // Grid Support options.

@@ -31,7 +31,8 @@ class SSLOptions {
              const boost::asio::ssl::context::file_format format,
              const bool use_grid_ssl,
              const bool ssl_verify_certificates,
-             const std::vector<int> ssl_ignore_verify_errors)
+             const std::vector<int> ssl_ignore_verify_errors,
+             const std::string ssl_min_method_string)
      : pem_file_name_(ssl_pem_path),
        pem_file_pass_(ssl_pem_key_pass),
        pem_cert_name_(ssl_pem_cert_path),
@@ -41,7 +42,8 @@ class SSLOptions {
        cert_format_(format),
        use_grid_ssl_(use_grid_ssl),
        verify_certificates_(ssl_verify_certificates),
-       ignore_verify_errors_(ssl_ignore_verify_errors) {}
+       ignore_verify_errors_(ssl_ignore_verify_errors),
+       min_method_string_(ssl_min_method_string) {}
 
   virtual ~SSLOptions() {
   }
@@ -79,13 +81,17 @@ class SSLOptions {
   }
   
   bool verify_certificates() const {
-      return verify_certificates_;
+    return verify_certificates_;
   }
   
   bool ignore_verify_error(int verify_error) const {
-      return std::find(ignore_verify_errors_.begin(),
-                       ignore_verify_errors_.end(),
-                       verify_error) != ignore_verify_errors_.end();
+    return std::find(ignore_verify_errors_.begin(),
+                     ignore_verify_errors_.end(),
+                     verify_error) != ignore_verify_errors_.end();
+  }
+  
+  std::string min_method_string() const {
+    return min_method_string_;
   }
 
  private:
@@ -100,6 +106,7 @@ class SSLOptions {
   bool use_grid_ssl_;
   bool verify_certificates_;
   std::vector<int> ignore_verify_errors_;
+  std::string min_method_string_;
 #endif  // HAS_OPENSSL
 };
 

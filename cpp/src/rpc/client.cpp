@@ -23,6 +23,7 @@
 #include "util/logging.h"
 
 #ifdef HAS_OPENSSL
+#include <boost/asio/ssl.hpp>
 #include <openssl/pem.h>
 #include <openssl/err.h>
 #include <openssl/pkcs12.h>
@@ -89,10 +90,11 @@ Client::Client(int32_t connect_timeout_s,
     }
 
     use_gridssl_ = options->use_grid_ssl();
-    ssl_context_ =
-        new boost::asio::ssl::context(service_,
-                                      boost::asio::ssl::context::sslv23);
-    ssl_context_->set_options(boost::asio::ssl::context::no_tlsv1);
+    ssl_context_ = new boost::asio::ssl::context(
+        service_,
+        string_to_ssl_method(
+            options->min_method_string(),
+            boost::asio::ssl::context_base::sslv23_client));
     ssl_context_->set_verify_mode(boost::asio::ssl::context::verify_peer |
                                   boost::asio::ssl::context::verify_fail_if_no_peer_cert);
     ssl_context_->set_verify_callback(boost::bind(&Client::verify_certificate_callback,
@@ -714,6 +716,36 @@ FILE* Client::create_and_open_temporary_ssl_file(char* filename_template,
       return fdopen(tmp, mode);
 #endif  // WIN32
 }
+
+#ifdef HAS_OPENSSL
+    boost::asio::ssl::context_base::method Client::string_to_ssl_method(
+        std::string method_string,
+        boost::asio::ssl::context_base::method default_method) {
+      if (method_string == "sslv2") {
+        return boost::asio::ssl::context_base::sslv2_client;
+      } else if (method_string == "sslv3") {
+        return boost::asio::ssl::context_base::sslv3_client;
+      } else if (method_string == "sslv23") {
+        return boost::asio::ssl::context_base::sslv23_client;
+      } else if (method_string == "tlsv1") {
+        return boost::asio::ssl::context_base::tlsv1_client;
+      }
+#if (BOOST_VERSION > 105300)
+      else if (method_string == "tlsv11") {
+        return boost::asio::ssl::context_base::tlsv11_client;
+      } else if (method_string == "tlsv12") {
+        return boost::asio::ssl::context_base::tlsv12_client;
+      }
+#endif  // BOOST_VERSION > 105300
+      else {
+        if (Logging::log->loggingActive(LEVEL_WARN)) {
+          Logging::log->getLog(LEVEL_WARN) << "Unknown SSL method: '"
+              << method_string << "', using default." << endl;
+        }
+        return default_method;
+      }
+    }
+#endif  // HAS_OPENSSL
 
 Client::~Client() {
 #ifdef HAS_OPENSSL

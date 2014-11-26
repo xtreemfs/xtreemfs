@@ -87,6 +87,12 @@ class Client {
   
   FILE* create_and_open_temporary_ssl_file(char* filename_template,
                                            const char* mode);
+  
+#ifdef HAS_OPENSSL
+  boost::asio::ssl::context_base::method  string_to_ssl_method(
+      std::string method_string,
+      boost::asio::ssl::context_base::method default_method);
+#endif  // HAS_OPENSSL
 
   boost::asio::io_service service_;
 
