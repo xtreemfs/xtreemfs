@@ -80,7 +80,11 @@ class SSLSocketChannel : public AbstractSocketChannel {
     ssl_stream_.lowest_layer().close(ignored_error);
 
     ssl_stream_.shutdown(ignored_error);
-}
+  }
+  
+  const char *ssl_tls_version() {
+    return SSL_get_version(ssl_stream_.native_handle());
+  }
 
  private:
   boost::asio::ssl::stream<boost::asio::ip::tcp::socket> ssl_stream_;
