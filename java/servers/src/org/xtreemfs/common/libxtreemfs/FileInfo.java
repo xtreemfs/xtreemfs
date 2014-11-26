@@ -16,7 +16,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
-import org.xtreemfs.common.libxtreemfs.exceptions.InternalServerErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
 import org.xtreemfs.foundation.logging.Logging;
@@ -86,7 +85,7 @@ public class FileInfo {
     /**
      * Use this to protect the renewal of xLocSets.
      */
-    private Object                                          xLocSetRenewalLock;
+    Object                                                  xLocSetRenewalLock;
 
     /**
      * UUIDIterator which contains the UUIDs of all replicas.
@@ -215,7 +214,7 @@ public class FileInfo {
         }
 
         // Update the osdUuidIterator to reflect the changes in the xlocset.
-        osdUuidIterator.clearAndAddUUIDs(Helper.getOSDUUIDsFromXlocSet(xlocset));
+        osdUuidIterator.clearAndAddUUIDs(Helper.getOSDUUIDsFromXlocSet(newXlocset));
     }
 
     /**
@@ -227,7 +226,7 @@ public class FileInfo {
         }
 
         // Update the osdUuidIterator to reflect the changes in the xlocset.
-        osdUuidIterator.clearAndAddUUIDs(Helper.getOSDUUIDsFromXlocSet(xlocset));
+        osdUuidIterator.clearAndAddUUIDs(Helper.getOSDUUIDsFromXlocSet(newXlocset));
     }
 
     /**
@@ -663,25 +662,6 @@ public class FileInfo {
     protected XLocSet getXLocSet() {
         synchronized (xLocSetLock) {
             return xlocset.toBuilder().build();
-        }
-    }
-    
-    /**
-     * Renew the xLocSet synchronously.<br>
-     * If another renewal is in pending, no additional renewal will be started and the caller will wait until the
-     * pending one finished.
-     */
-    protected void renewXLocSet(FileHandleImplementation fileHandle) throws PosixErrorException,
-            InternalServerErrorException, IOException {
-        // Store the current xLocSet before entering the renewal mutex section.
-        XLocSet xLocSetToRenew = getXLocSet();
-
-        synchronized (xLocSetRenewalLock) {
-            // Renew the xLocSet only if the xLocSet has not been renewed yet by another process.
-            if (getXLocSet().getVersion() <= xLocSetToRenew.getVersion()) {
-                XLocSet newXLocSet = fileHandle.renewXLocSetSynchronous();
-                updateXLocSetAndRest(newXLocSet);
-            }
         }
     }
 }
