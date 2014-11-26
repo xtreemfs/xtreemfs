@@ -296,13 +296,12 @@ void Options::GenerateProgramOptionsDescriptions() {
     ("min-ssl-method",
         po::value(&ssl_min_method_string)->default_value(ssl_min_method_string),
         "Minimum SSL method that this client will accept:\n"
-        "  - sslv2 accepts SSLv2 only\n"
         "  - sslv3 accepts SSLv3 only\n"
         "  - sslv23 accepts SSLv2, SSLv3 and TLSv1.x\n"
-        "  - tlsv1 accepts TLSv1 and above"
+        "  - tlsv1 accepts TLSv1 only"
 #if (BOOST_VERSION > 105300)
-        "\n  - tlsv11 accepts TLSv1.1 and above\n"
-        "  - tlsv12 accepts TLSv1.2 and above"
+        "\n  - tlsv11 accepts TLSv1.1 only\n"
+        "  - tlsv12 accepts TLSv1.2 only"
 #endif  // BOOST_VERSION > 105300
         );
 #endif  // HAS_OPENSSL

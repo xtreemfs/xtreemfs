@@ -721,9 +721,7 @@ FILE* Client::create_and_open_temporary_ssl_file(char* filename_template,
     boost::asio::ssl::context_base::method Client::string_to_ssl_method(
         std::string method_string,
         boost::asio::ssl::context_base::method default_method) {
-      if (method_string == "sslv2") {
-        return boost::asio::ssl::context_base::sslv2_client;
-      } else if (method_string == "sslv3") {
+      if (method_string == "sslv3") {
         return boost::asio::ssl::context_base::sslv3_client;
       } else if (method_string == "sslv23") {
         return boost::asio::ssl::context_base::sslv23_client;
