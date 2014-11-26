@@ -134,6 +134,14 @@ enum TestCertificateType {
   None, kPKCS12, kPEM
 };
 
+char g_ssl_tls_version_sslv3[] = "sslv3";
+char g_ssl_tls_version_sslv23[] = "sslv23";
+char g_ssl_tls_version_tlsv1[] = "tlsv1";
+#if (BOOST_VERSION > 105300)
+char g_ssl_tls_version_tlsv11[] = "tlsv11";
+char g_ssl_tls_version_tlsv12[] = "tlsv12";
+#endif  // BOOST_VERSION > 105300
+
 class ClientTest : public ::testing::Test {
 protected:  
   virtual void SetUp() {
@@ -648,27 +656,113 @@ class ClientSSLTestLongChainNoVerificationPKCS12 :
     public ClientSSLTestLongChainNoVerification<kPKCS12> {};
 class ClientSSLTestLongChainNoVerificationPEM :
     public ClientSSLTestLongChainNoVerification<kPEM> {};
+    
+template<TestCertificateType t, char const *ssl_min_method_string>
+class ClientSSLTestSSLVersion : public ClientTest {
+protected:
+  virtual void SetUp() {
+    dir_config_file_ = config_path("dirconfig_ssl_version.test");
+    mrc_config_file_ = config_path("mrcconfig_ssl_version.test");
+    osd_config_file_ = config_path("osdconfig_ssl_version.test");
+    
+    dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
+    mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
+    
+    options_.log_level_string = "DEBUG";
+    options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_version";
+    
+    switch (t) {
+      case kPKCS12:
+        options_.ssl_pkcs12_path = cert_path("Client_Root_Root.p12");
+        break;
+      case kPEM:
+        options_.ssl_pem_cert_path = cert_path("Client_Root.pem");
+        options_.ssl_pem_key_path = cert_path("Client_Root.key");
+        options_.ssl_pem_trusted_certs_path = cert_path("CA_Root.pem");
+        break;
+      case None:
+        break;
+    }
+    
+    options_.ssl_min_method_string = ssl_min_method_string;
+    options_.ssl_verify_certificates = true;
+                
+    ClientTest::SetUp();
+  }
+  
+  virtual void TearDown() {
+    ClientTest::TearDown();
+    unlink(options_.log_file_path.c_str());
+  }
+  
+  void DoTest() {
+    CreateOpenDeleteVolume("test_ssl_version");
+    
+    if (strcmp(ssl_min_method_string, "sslv3") == 0) {
+      ASSERT_EQ(2, count_occurrences_in_file(
+          options_.log_file_path,
+          "using SSL/TLS version 'SSLv3'"));
+    } else if (strcmp(ssl_min_method_string, "sslv23") == 0
+#if (BOOST_VERSION > 105300)
+               || strcmp(ssl_min_method_string, "tlsv12") == 0
+#endif  // BOOST_VERSION > 105300
+               ) {
+      ASSERT_EQ(2, count_occurrences_in_file(
+          options_.log_file_path,
+          "using SSL/TLS version 'TLSv1.2'"));
+    } else if (strcmp(ssl_min_method_string, "tlsv1") == 0) {
+      ASSERT_EQ(2, count_occurrences_in_file(
+          options_.log_file_path,
+          "using SSL/TLS version 'TLSv1'"));
+    }
+#if (BOOST_VERSION > 105300)
+    else if (strcmp(ssl_min_method_string, "tlsv11") == 0) {
+      ASSERT_EQ(2, count_occurrences_in_file(
+          options_.log_file_path,
+          "using SSL/TLS version 'TLSv1.1'"));
+    }
+#endif  // BOOST_VERSION > 105300
+  }
+};
+
+class ClientSSLTestSSLVersionPKCS12SSLv3 :
+    public ClientSSLTestSSLVersion<kPKCS12, g_ssl_tls_version_sslv3> {};
+class ClientSSLTestSSLVersionPKCS12SSLv23 :
+    public ClientSSLTestSSLVersion<kPKCS12, g_ssl_tls_version_sslv23> {};
+class ClientSSLTestSSLVersionPKCS12TLSv1 :
+    public ClientSSLTestSSLVersion<kPKCS12, g_ssl_tls_version_tlsv1> {};
+#if (BOOST_VERSION > 105300)
+class ClientSSLTestSSLVersionPKCS12TLSv11 :
+    public ClientSSLTestSSLVersion<kPKCS12, g_ssl_tls_version_tlsv11> {};
+class ClientSSLTestSSLVersionPKCS12TLSv12 :
+    public ClientSSLTestSSLVersion<kPKCS12, g_ssl_tls_version_tlsv12> {};
+#endif  // BOOST_VERSION > 105300
+    
+class ClientSSLTestSSLVersionPEMSSLv3 :
+    public ClientSSLTestSSLVersion<kPEM, g_ssl_tls_version_sslv3> {};
+class ClientSSLTestSSLVersionPEMSSLv23 :
+    public ClientSSLTestSSLVersion<kPEM, g_ssl_tls_version_sslv23> {};
+class ClientSSLTestSSLVersionPEMTLSv1 :
+    public ClientSSLTestSSLVersion<kPEM, g_ssl_tls_version_tlsv1> {};
+#if (BOOST_VERSION > 105300)
+class ClientSSLTestSSLVersionPEMTLSv11 :
+    public ClientSSLTestSSLVersion<kPEM, g_ssl_tls_version_tlsv11> {};
+class ClientSSLTestSSLVersionPEMTLSv12 :
+    public ClientSSLTestSSLVersion<kPEM, g_ssl_tls_version_tlsv12> {};
+#endif  // BOOST_VERSION > 105300
 
 TEST_F(ClientNoSSLTest, TestNoSSL) {
   CreateOpenDeleteVolume("test_no_ssl");
   ASSERT_EQ(0, count_occurrences_in_file(options_.log_file_path, "SSL"));
 }
 
-TEST_F(ClientSSLTestShortChainPKCS12, TestVerifyShortChain) {
-  DoTest();
-}
+TEST_F(ClientSSLTestShortChainPKCS12, TestVerifyShortChain) { DoTest(); }
 
-TEST_F(ClientSSLTestShortChainPEM, TestVerifyShortChain) {
-  DoTest();
-}
+TEST_F(ClientSSLTestShortChainPEM, TestVerifyShortChain) { DoTest(); }
 
-TEST_F(ClientSSLTestLongChainPKCS12, TestVerifyLongChain) {
-  DoTest();
-}
+TEST_F(ClientSSLTestLongChainPKCS12, TestVerifyLongChain) { DoTest(); }
 
-TEST_F(ClientSSLTestLongChainPEM, TestVerifyLongChain) {
-  DoTest();
-}
+TEST_F(ClientSSLTestLongChainPEM, TestVerifyLongChain) { DoTest(); }
 
 TEST_F(ClientSSLTestShortChainVerificationPKCS12, TestVerificationFail) {
   DoTest();
@@ -692,9 +786,22 @@ TEST_F(ClientSSLTestLongChainNoVerificationPKCS12, TestNoVerification) {
   DoTest();
 }
 
-TEST_F(ClientSSLTestLongChainNoVerificationPEM, TestNoVerification) {
-  DoTest();
-}
+TEST_F(ClientSSLTestLongChainNoVerificationPEM, TestNoVerification) { DoTest(); }
+
+TEST_F(ClientSSLTestSSLVersionPKCS12SSLv3, TestSSLVersion) { DoTest(); }
+TEST_F(ClientSSLTestSSLVersionPKCS12SSLv23, TestSSLVersion) { DoTest(); }
+TEST_F(ClientSSLTestSSLVersionPKCS12TLSv1, TestSSLVersion) { DoTest(); }
+#if (BOOST_VERSION > 105300)
+TEST_F(ClientSSLTestSSLVersionPKCS12TLSv11, TestSSLVersion) { DoTest(); }
+TEST_F(ClientSSLTestSSLVersionPKCS12TLSv12, TestSSLVersion) { DoTest(); }
+#endif  // BOOST_VERSION > 105300
+TEST_F(ClientSSLTestSSLVersionPEMSSLv3, TestSSLVersion) { DoTest(); }
+TEST_F(ClientSSLTestSSLVersionPEMSSLv23, TestSSLVersion) { DoTest(); }
+TEST_F(ClientSSLTestSSLVersionPEMTLSv1, TestSSLVersion) { DoTest(); }
+#if (BOOST_VERSION > 105300)
+TEST_F(ClientSSLTestSSLVersionPEMTLSv11, TestSSLVersion) { DoTest(); }
+TEST_F(ClientSSLTestSSLVersionPEMTLSv12, TestSSLVersion) { DoTest(); }
+#endif  // BOOST_VERSION > 105300
 
 }  // namespace rpc
 }  // namespace xtreemfs
