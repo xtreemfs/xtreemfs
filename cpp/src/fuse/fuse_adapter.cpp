@@ -229,6 +229,38 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
         }
       }
     }
+
+    if (xattr.name() == "xtreemfs.volattr.encryption"
+        && xattr.value() == "true") {
+      options_->encryption = true;
+    }
+    if (xattr.name() == "xtreemfs.volattr.encryption_block_size"
+        && options_->encryption_block_size == 0) {
+      options_->encryption_block_size = boost::lexical_cast<int>(xattr.value());
+    }
+    if (xattr.name() == "xtreemfs.volattr.encryption_cipher"
+        && options_->encryption_cipher == "") {
+      options_->encryption_cipher = xattr.value();
+    }
+    if (xattr.name() == "xtreemfs.volattr.encryption_hash"
+        && options_->encryption_hash == "") {
+      options_->encryption_hash = xattr.value();
+    }
+    if (xattr.name() == "xtreemfs.volattr.encryption_cw") {
+      if (options_->encryption_cw == "") {
+        options_->encryption_cw = xattr.value();
+      } else if (options_->encryption_cw != xattr.value()) {
+        if (Logging::log->loggingActive(LEVEL_WARN)) {
+          Logging::log->getLog(LEVEL_WARN)
+              << "The selected method to use to ensure consistency for"
+              "concurrent writes is different form the default one for the"
+              "volume.\n"
+              "This may result in corrupted files if concurrent writes do"
+              "occur."
+              << endl;
+        }
+      }
+    }
   }
 
   // Register additional user mapping if specified.

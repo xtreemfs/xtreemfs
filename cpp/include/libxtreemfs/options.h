@@ -66,7 +66,11 @@ class Options {
 
   /** Outputs usage of the command line parameters of volume creation
    *  relevant options. */
-  std::string ShowCommandLineHelpVolumeCreationAndDeletion();
+  std::string ShowCommandLineHelpVolumeCreation();
+
+  /** Outputs usage of the command line parameters of volume deletion
+   *  relevant options. */
+  std::string ShowCommandLineHelpVolumeDeletion();
 
   /** Outputs usage of the command line parameters of volume deletion/listing
    *  relevant options. */

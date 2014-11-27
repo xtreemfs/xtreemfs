@@ -12,6 +12,7 @@
 #include <cstdlib>
 
 #include <boost/bind.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/thread/thread.hpp>
 
 #include "libxtreemfs/async_write_handler.h"
@@ -460,6 +461,35 @@ void ClientImplementation::CreateVolume(
     new_volume.mutable_attrs(new_volume.attrs_size() - 1)->set_key((*it)->key());
     new_volume.mutable_attrs(new_volume.attrs_size() - 1)
         ->set_value((*it)->value());
+  }
+
+  if (options_.encryption) {
+    KeyValuePair* attribute = new_volume.add_attrs();
+    attribute->set_key("encryption");
+    attribute->set_value("true");
+
+    attribute = new_volume.add_attrs();
+    attribute->set_key("encryption_block_size");
+    attribute->set_value(
+        options_.encryption_block_size == 0 ?
+            boost::lexical_cast<std::string>(4096) :
+            boost::lexical_cast<std::string>(options_.encryption_block_size));
+
+    attribute = new_volume.add_attrs();
+    attribute->set_key("encryption_cipher");
+    attribute->set_value(
+        options_.encryption_cipher == "" ?
+            "aes-256-ctr" : options_.encryption_cipher);
+
+    attribute = new_volume.add_attrs();
+    attribute->set_key("encryption_hash");
+    attribute->set_value(
+        options_.encryption_hash == "" ? "sha256" : options_.encryption_hash);
+
+    attribute = new_volume.add_attrs();
+    attribute->set_key("encryption_cw");
+    attribute->set_value(
+        options_.encryption_cw == "" ? "none" : options_.encryption_cw);
   }
 
   SimpleUUIDIterator temp_uuid_iterator_with_addresses;

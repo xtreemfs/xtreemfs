@@ -108,9 +108,10 @@ Options::Options()
 
   // encryption options.
   encryption = false;
-  encryption_block_size = 4096;
-  encryption_cipher = "aes-256-ctr";
-  encryption_hash = "sha256";
+  encryption_block_size = 0;
+  encryption_cipher = "";
+  encryption_hash = "";
+  encryption_hash = "";
   encryption_pub_keys_path = "";
   encryption_priv_keys_path = "";
 #endif  // HAS_OPENSSL
@@ -290,7 +291,7 @@ void Options::GenerateProgramOptionsDescriptions() {
     ("encryption-hash",
         po::value(&encryption_hash)->default_value(encryption_hash),
         "The hash function to use")
-    ("encryption-cw-mf",
+    ("encryption-cw",
         po::value(&encryption_cw)->default_value(encryption_cw),
         "The method to use to ensure consistency for concurrent write"
         " (none/serialize/locks/snapshots)")
@@ -560,7 +561,19 @@ std::string Options::ShowCommandLineHelp() {
   return stream.str();
 }
 
-std::string Options::ShowCommandLineHelpVolumeCreationAndDeletion() {
+std::string Options::ShowCommandLineHelpVolumeCreation() {
+  GenerateProgramOptionsDescriptions();
+  ostringstream stream;
+  stream << general_ << endl
+#ifdef HAS_OPENSSL
+         << ssl_options_ << endl
+         << encryption_options_ << endl
+#endif  // HAS_OPENSSL
+         << grid_options_;
+  return stream.str();
+}
+
+std::string Options::ShowCommandLineHelpVolumeDeletion() {
   GenerateProgramOptionsDescriptions();
   ostringstream stream;
   stream << general_ << endl
