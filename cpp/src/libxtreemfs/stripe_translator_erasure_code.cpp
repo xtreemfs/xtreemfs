@@ -28,18 +28,19 @@ void StripeTranslatorErasureCode::TranslateWriteRequest(
   unsigned int parity_width =(*policies.begin())->parity_width();
   // number of OSD to distribute chunks
   unsigned int width =(*policies.begin())->width();
+  unsigned int data_width = width - parity_width;
   char *buf_redundance = NULL;
 
   size_t obj_offset = offset / stripe_size;
 
   // check for illegal offset
-  assert(offset % (stripe_size * (width - parity_width)) == 0);
+  assert(offset % (stripe_size * data_width) == 0);
 
-  size_t total_size = (size / (width - parity_width)) * width;
+  size_t total_size = (size / data_width) * width;
   // object number for stripe (parity stripes are not counted)
   size_t obj_number = obj_offset;
   // actual object number to calculate the osd number
-  size_t real_obj_number =  (obj_offset / (width - parity_width) * width);
+  size_t real_obj_number =  (obj_offset / data_width * width);
 
   size_t start = 0;
   size_t written_blocks = 0;
@@ -51,8 +52,44 @@ void StripeTranslatorErasureCode::TranslateWriteRequest(
     size_t osd_number = real_obj_number % width;
     osd_offsets.push_back(osd_number);
 
+    // if partial stripe at the end of the file
+    if (total_size - written_blocks < 2 * stripe_size) {
+      // size of incomplete object
+      size_t tail_size = size - start;
+
+      operations->push_back(
+          WriteOperation(obj_number, osd_offsets, tail_size, 0,
+            buf + start));
+      osd_offsets.clear();
+      osd_offsets.push_back(data_width);
+      if (obj_number % data_width == 0){
+        // partial object at the start of the stripe
+        // write data to parity object and enque par object with correct osd_offsets
+        operations->push_back(
+            WriteOperation(obj_number, osd_offsets, tail_size, 0,
+              buf + start));
+      } else {
+        buf_redundance = new char[stripe_size];
+        memcpy(buf_redundance, buf + start, tail_size);
+        memset(buf_redundance + tail_size, 0, stripe_size - tail_size);
+
+        // XOR all obects for the length of the incomplete object
+        for (size_t i = 0; i < stripe_size; ++i) {
+          for (size_t j = obj_number % width; j > 0; --j)
+            buf_redundance[i] = buf[start - (j * stripe_size) + i]
+              ^ buf_redundance[i];
+        }
+        operations->push_back(
+            WriteOperation(obj_number - (obj_number % width), osd_offsets, stripe_size, 0,
+              buf_redundance, true));
+        // full objects have been written in this line
+        // create parity object and enque at correct position..remember N+1 striping
+      }
+      return;
+    }
+
     //is it a parity chunk?
-    if (osd_number >= width - parity_width) {
+    if (osd_number >= data_width) {
       buf_redundance = new char[stripe_size];
 
       for (size_t i = 0; i < stripe_size; ++i) {
@@ -65,7 +102,7 @@ void StripeTranslatorErasureCode::TranslateWriteRequest(
        * this caters towards the calculation of a correct  filesize
        * ...and hopefully nothing else */
       operations->push_back(
-          WriteOperation(obj_number - (width - parity_width), osd_offsets, stripe_size, 0,
+          WriteOperation(obj_number - data_width, osd_offsets, stripe_size, 0,
               buf_redundance, true));
     } else {
       operations->push_back(
@@ -92,15 +129,16 @@ size_t StripeTranslatorErasureCode::TranslateReadRequest(
   unsigned int parity_width =(*policies.begin())->parity_width();
   // number of OSD to distribute chunks
   unsigned int width =(*policies.begin())->width();
+  unsigned int data_width = width - parity_width;
   char *buf_redundance = NULL;
 
   size_t obj_offset = offset / stripe_size;
 
-  size_t total_size = (size / (width - parity_width)) * width;
+  size_t total_size = (size / data_width) * width;
   // object number for stripe (parity stripes are not counted)
   size_t obj_number = obj_offset;
   // actual object number to calculate the osd number
-  size_t real_obj_number =  (obj_offset / (width - parity_width) * width);
+  size_t real_obj_number =  (obj_offset / data_width * width);
   size_t par_reads = 0;
 
   size_t start = 0;
@@ -113,16 +151,46 @@ size_t StripeTranslatorErasureCode::TranslateReadRequest(
     size_t osd_number = real_obj_number % (width);
     osd_offsets.push_back(osd_number);
 
+    // if partial stripe at the end of the file
+    if (total_size - read_blocks < 2 * stripe_size) {
+      // size of incomplete object
+      size_t tail_size = size - start;
+
+      operations->insert(operations->begin() + par_reads,
+          ReadOperation(obj_number, osd_offsets, tail_size, 0,
+            buf + start));
+      osd_offsets.clear();
+      osd_offsets.push_back(data_width);
+      if (obj_number % data_width == 0){
+        // partial object at the start of the stripe
+        // write data to parity object and enque par object with correct osd_offsets
+        buf_redundance = new char[tail_size];
+        operations->push_back(
+            ReadOperation(obj_number, osd_offsets, tail_size, 0,
+              buf_redundance));
+      } else {
+        buf_redundance = new char[stripe_size];
+        operations->push_back(
+            ReadOperation(obj_number - (obj_number % width), osd_offsets, stripe_size, 0,
+              buf_redundance));
+        // full objects have been written in this line
+        // create parity object and enque at correct position..remember N+1 striping
+      }
+      return obj_number + 1;
+    }
+
     //is it a parity chunk?
-    if (osd_number >= width - parity_width) {
+    if (osd_number >= data_width) {
       buf_redundance = new char[stripe_size];
+      // TODO fix comment here
       /* use the last object number used for a data stripe
        * this caters towards the calculation of a correct  filesize
        * ...and hopefully nothing else */
       operations->push_back(
-          ReadOperation(obj_number - (width - parity_width), osd_offsets, stripe_size, 0,
+          ReadOperation(obj_number - data_width, osd_offsets, stripe_size, 0,
               buf_redundance));
     } else {
+      // operations->push_back(
       operations->insert(operations->begin() + par_reads,
           ReadOperation(obj_number, osd_offsets, stripe_size, 0,
             buf + start));
@@ -136,6 +204,7 @@ size_t StripeTranslatorErasureCode::TranslateReadRequest(
   return obj_number;
 }
 
+// TODO free all redundance buffers here!!!
 void StripeTranslatorErasureCode::ProcessReads(
     std::vector<ReadOperation>* operations,
     boost::dynamic_bitset<>* successful_reads,
@@ -152,6 +221,8 @@ void StripeTranslatorErasureCode::ProcessReads(
   unsigned int lines = operations->size() / width;
 
   assert(operations->size() == successful_reads->size());
+
+  // TODO check if only data stripes have been read and if so return immediately
 
   for (size_t i = 0; i < lines; i++) {
 
