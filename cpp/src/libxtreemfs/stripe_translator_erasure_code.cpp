@@ -204,7 +204,6 @@ size_t StripeTranslatorErasureCode::TranslateReadRequest(
   return obj_number;
 }
 
-// TODO free all redundance buffers here!!!
 void StripeTranslatorErasureCode::ProcessReads(
     std::vector<ReadOperation>* operations,
     boost::dynamic_bitset<>* successful_reads,
@@ -222,7 +221,12 @@ void StripeTranslatorErasureCode::ProcessReads(
 
   assert(operations->size() == successful_reads->size());
 
-  // TODO check if only data stripes have been read and if so return immediately
+  if (((*successful_reads) << lines).count() == lines * data_width) {
+    // if only data objects have been read cleanup and exit...nothing to do
+    for (size_t i = lines * data_width; i < operations->size(); i++)
+      delete (*operations)[i].data;
+    return;
+  }
 
   for (size_t i = 0; i < lines; i++) {
 
