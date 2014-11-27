@@ -279,11 +279,11 @@ $(CLIENT_JERASURE_CPP_LIBRARY): $(CLIENT_JERASURE_CPP)/src/**
 client_thirdparty_clean:
 	@if [ -f $(CLIENT_GOOGLE_PROTOBUF_CPP)/Makefile ]; then echo "Cleaning required Google protobuf library sources..."; $(MAKE) -C $(CLIENT_GOOGLE_PROTOBUF_CPP) clean >/dev/null; fi
 	@if [ -f $(shell pwd)/$(CLIENT_GOOGLE_TEST_CPP)/Makefile ]; then echo "Cleaning required Google googletest library sources..."; $(MAKE) -C $(shell pwd)/$(CLIENT_GOOGLE_TEST_CPP) clean >/dev/null; fi
+	@if [ -f $(CLIENT_JERASURE_CPP)/Makefile ]; then echo "Cleaning required jerasure library sources..."; LDFLAGS=-L$(shell pwd)/$(CLIENT_GF_COMPLETE_CPP)/src/.libs/ CPPFLAGS=-I$(shell pwd)/$(CLIENT_GF_COMPLETE_CPP) $(MAKE) -C $(CLIENT_JERASURE_CPP) clean >/dev/null; fi
 	@if [ -f $(CLIENT_GF_COMPLETE_CPP)/Makefile ]; then echo "Cleaning required gf-complete library sources..."; $(MAKE) -C $(CLIENT_GF_COMPLETE_CPP) clean >/dev/null; fi
-	@if [ -f $(CLIENT_JERASURE_CPP)/Makefile ]; then echo "Cleaning required jerasure library sources..."; $(MAKE) -C $(CLIENT_JERASURE_CPP) clean >/dev/null; fi
 	@if [ -f $(CLIENT_GOOGLE_TEST_CHECKFILE) ]; then rm $(CLIENT_GOOGLE_TEST_CHECKFILE); fi
-	@if [ -f $(CLIENT_GF_COMPLETE_CHECKFILE) ]; then rm $(CLIENT_GF_COMPLETE_CHECKFILE); fi
 	@if [ -f $(CLIENT_JERASURE_CHECKFILE) ]; then rm $(CLIENT_JERASURE_CHECKFILE); fi
+	@if [ -f $(CLIENT_GF_COMPLETE_CHECKFILE) ]; then rm $(CLIENT_GF_COMPLETE_CHECKFILE); fi
 	@echo "...finished cleaning thirdparty sources."
 
 client_thirdparty_distclean:
@@ -291,8 +291,8 @@ client_thirdparty_distclean:
 	@if [ -f $(shell pwd)/$(CLIENT_GOOGLE_PROTOBUF_CPP)/Makefile ]; then $(MAKE) -C $(shell pwd)/$(CLIENT_GOOGLE_PROTOBUF_CPP) distclean >/dev/null; fi
 	@echo "client_thirdparty: Dist-Cleaning required Google googletest library sources..."
 	@if [ -f $(shell pwd)/$(CLIENT_GOOGLE_TEST_CPP)/Makefile ]; then $(MAKE) -C $(shell pwd)/$(CLIENT_GOOGLE_TEST_CPP) distclean >/dev/null; fi
-	@if [ -f $(CLIENT_GF_COMPLETE_CPP)/Makefile ]; then echo "Cleaning required gf-complete library sources..."; $(MAKE) -C $(CLIENT_GF_COMPLETE_CPP) distclean >/dev/null; fi
 	@if [ -f $(CLIENT_JERASURE_CPP)/Makefile ]; then echo "Cleaning required jerasure library sources..."; $(MAKE) -C $(CLIENT_JERASURE_CPP) distclean >/dev/null; fi
+	@if [ -f $(CLIENT_GF_COMPLETE_CPP)/Makefile ]; then echo "Cleaning required gf-complete library sources..."; $(MAKE) -C $(CLIENT_GF_COMPLETE_CPP) distclean >/dev/null; fi
 	@if [ -f $(CLIENT_GOOGLE_TEST_CHECKFILE) ]; then rm $(CLIENT_GOOGLE_TEST_CHECKFILE); fi
 	@if [ -f $(CLIENT_GF_COMPLETE_CHECKFILE) ]; then rm $(CLIENT_GF_COMPLETE_CHECKFILE); fi
 	@if [ -f $(CLIENT_JERASURE_CHECKFILE) ]; then rm $(CLIENT_JERASURE_CHECKFILE); fi
