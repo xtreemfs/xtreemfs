@@ -14,15 +14,18 @@ import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.Security;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-
 import java.security.cert.X509Certificate;
+
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
+
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.util.OutputUtils;
 
 /**
  * Encapsulates the SSLOptions for the connections of pinky and speedy
@@ -130,6 +133,25 @@ public class SSLOptions {
             // KeyManager's decide which key material to use.
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
             kmf.init(ksKeys, serverCredentialFilePassphrase);
+            
+            // Remove faulty security provider before getting the context. Known to affect OpenJDK 1.6.
+            // https://bugs.launchpad.net/ubuntu/+source/openjdk-6/+bug/948875
+            if ("OpenJDK Runtime Environment".equals(System.getProperty("java.runtime.name")) &&
+                "1.6".equals(System.getProperty("java.specification.version"))) {
+                try {
+                    Security.removeProvider("SunPKCS11-NSS");
+                    if (Logging.isDebug()) {
+                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "Successfully removed faulty security provider 'SunPKCS11-NSS'.");
+                    }
+                } catch(SecurityException e) {
+                    Logging.logMessage(Logging.LEVEL_WARN, this,
+                                       "Could not remove faulty security provider 'SunPKCS11-NSS'. " +
+                                       "TLS connections might time out. Known to affect OpenJDK 6.");
+                    if (Logging.isDebug()) {
+                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "%s:\n%s", e.getMessage(), OutputUtils.stackTraceToString(e));
+                    }
+                }
+            }
             
             sslContext = SSLContext.getInstance("TLS");
             
