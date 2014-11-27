@@ -277,6 +277,9 @@ void StripeTranslatorErasureCode::ProcessReads(
       }
     }
   }
+  // free parity buffers
+  for (size_t i = lines * data_width; i < operations->size(); i++)
+    delete (*operations)[i].data;
 }
 
 }  // namespace xtreemfs
