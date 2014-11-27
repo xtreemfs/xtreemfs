@@ -9,12 +9,13 @@
 #include <openssl/err.h>
 
 #include "libxtreemfs/xtreemfs_exception.h"
+#include "util/error_log.h"
 #include "util/logging.h"
 
 namespace xtreemfs {
 namespace util {
 
-void LogAndThrowOpenSSLError() {
+void LogAndThrowOpenSSLError(std::string error_msg) {
   int flags, line;
   const char *data, *file;
   unsigned long code;
@@ -31,7 +32,10 @@ void LogAndThrowOpenSSLError() {
                                                     << data << std::endl;
     }
   }
-  throw XtreemFSException("OpenSSL error");
+  error_msg = "OpenSSL error: " + error_msg;
+  util::Logging::log->getLog(util::LEVEL_ERROR) << error_msg << std::endl;
+  ErrorLog::error_log->AppendError(error_msg);
+  throw XtreemFSException(error_msg);
 }
 
 } /* namespace util */

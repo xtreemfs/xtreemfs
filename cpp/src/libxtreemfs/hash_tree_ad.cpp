@@ -48,7 +48,7 @@
 #include <vector>
 
 #include "libxtreemfs/file_handle_implementation.h"
-#include "libxtreemfs/xtreemfs_exception.h"
+#include "libxtreemfs/helper.h"
 
 namespace {
 /**
@@ -494,7 +494,7 @@ std::vector<unsigned char> HashTreeAD::GetLeaf(int leaf,
     if (all_zero(leaf_value) && all_zero(data)) {
       return std::vector<unsigned char>();
     } else {
-      throw XtreemFSException("Hash mismatch in leaf of hash tree");
+      LogAndThrowXtreemFSException("Hash mismatch in leaf of hash tree");
     }
   }
   return std::vector<unsigned char>(leaf_value.begin(),
@@ -634,7 +634,7 @@ bool HashTreeAD::ReadRootNodeFromFile() {
       boost::asio::buffer(
           buffer.data() + buffer.size() - sign_algo_->get_signature_size(),
           sign_algo_->get_signature_size()))) {
-    throw XtreemFSException("Invalid signature of root node");
+    LogAndThrowXtreemFSException("Invalid signature of root node");
   }
 
   // get file version
@@ -854,7 +854,7 @@ void HashTreeAD::ValidateTree() {
     std::vector<unsigned char> calc_hash = hasher_.digest(
         boost::asio::const_buffer());
     if (nodes_.at(Node(0, 0)) != hasher_.digest(boost::asio::const_buffer())) {
-      throw XtreemFSException("Hash mismatch in hash tree");
+      LogAndThrowXtreemFSException("Hash mismatch in hash tree");
     }
     return;
   }
@@ -880,7 +880,7 @@ void HashTreeAD::ValidateTree() {
     }
 
     if (node.second != HashOfNode(left_child, right_child)) {
-      throw XtreemFSException("Hash mismatch in hash tree");
+      LogAndThrowXtreemFSException("Hash mismatch in hash tree");
     }
   }
 }

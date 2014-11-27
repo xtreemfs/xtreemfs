@@ -7,11 +7,12 @@
 #ifndef CPP_INCLUDE_UTIL_CRYPTO_OPENSSL_ERROR_H_
 #define CPP_INCLUDE_UTIL_CRYPTO_OPENSSL_ERROR_H_
 
+#include <string>
 
 namespace xtreemfs {
 namespace util {
 
-void LogAndThrowOpenSSLError();
+void LogAndThrowOpenSSLError(std::string error_msg = "");
 
 } /* namespace util */
 } /* namespace xtreemfs */

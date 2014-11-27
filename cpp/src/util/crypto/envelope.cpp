@@ -43,7 +43,8 @@ void Envelope::Seal(const std::string& cipher_name,
   int ciphertext_len;
 
   if ((cipher = EVP_get_cipherbyname(cipher_name.c_str())) == NULL) {
-    LogAndThrowOpenSSLError();
+    LogAndThrowOpenSSLError(
+        "Envelope::Seal: Unknown cipher '" + cipher_name + "'");
   }
 
   boost::scoped_array<EVP_PKEY*> pub_keys_p_array(
@@ -118,7 +119,8 @@ int Envelope::Open(const std::string& cipher_name, const AsymKey& priv_key,
                    const boost::asio::mutable_buffer& plaintext) const {
   const EVP_CIPHER* cipher;
   if ((cipher = EVP_get_cipherbyname(cipher_name.c_str())) == NULL) {
-    LogAndThrowOpenSSLError();
+    LogAndThrowOpenSSLError(
+        "Envelope::Open: Unknown cipher '" + cipher_name + "'");
   }
   return Open(cipher, priv_key, ciphertext, encrypted_key, iv, plaintext);
 }
@@ -143,7 +145,7 @@ void Envelope::Open(const std::string& cipher_name, const AsymKey& priv_key,
   assert(plaintext);
   const EVP_CIPHER* cipher;
   if ((cipher = EVP_get_cipherbyname(cipher_name.c_str())) == NULL) {
-    LogAndThrowOpenSSLError();
+    LogAndThrowOpenSSLError("Envelope: Unknown cipher '" + cipher_name + "'");
   }
   plaintext->resize(
       boost::asio::buffer_size(ciphertext) + EVP_CIPHER_block_size(cipher));

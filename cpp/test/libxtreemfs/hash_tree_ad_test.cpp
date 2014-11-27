@@ -78,6 +78,8 @@ class HashTreeADTest_Offline : public OfflineTest {
   virtual void SetUp() {
     OfflineTest::SetUp();
 
+    test_env.options.encryption_hash = "sha256";
+
     // Open a file.
     file =
         volume_->OpenFile(

@@ -14,8 +14,8 @@
 
 #include "libxtreemfs/file_handle_implementation.h"
 #include "libxtreemfs/helper.h"
-#include "libxtreemfs/volume_implementation.h"
 #include "libxtreemfs/xtreemfs_exception.h"
+#include "libxtreemfs/volume_implementation.h"
 #include "util/crypto/cipher.h"
 
 using xtreemfs::pbrpc::FileLockbox;
@@ -73,12 +73,20 @@ FileHandle* FileKeyDistribution::OpenMetaFile(
     created_meta_file = true;
   }
 
-  if (created_meta_file) {
-    CreateAndSetMetadataAndLockbox(user_credentials, file_path, xcap.file_id(),
-                                   mode, file_enc_key, file_sign_algo);
-  } else {
-    GetFileKeys(user_credentials, file_path, xcap.file_id(), file_enc_key,
-                file_sign_algo);
+  try {
+    if (created_meta_file) {
+      CreateAndSetMetadataAndLockbox(user_credentials, file_path,
+                                     xcap.file_id(), mode, file_enc_key,
+                                     file_sign_algo);
+    } else {
+      GetFileKeys(user_credentials, file_path, xcap.file_id(), file_enc_key,
+                  file_sign_algo);
+    }
+  } catch (const std::exception& e) {
+    if (meta_file) {
+      meta_file->Close();
+    }
+    throw;
   }
 
   return meta_file;
@@ -94,7 +102,7 @@ void FileKeyDistribution::ChangeAccessRights(
   }
 
   if (to_set & SETATTR_UID) {
-    throw XtreemFSException(
+    LogAndThrowXtreemFSException(
         "Changing the owner of an encrypted file is not supported");
   }
 
@@ -114,14 +122,15 @@ void FileKeyDistribution::ChangeAccessRights(
                          boost::asio::buffer(signed_file_mdata.signature()));
   // verify old metadata
   if (old_meta_data.user_id() != user_credentials.username()) {
-    throw XtreemFSException("File meta data contains wrong user ID");
+    LogAndThrowXtreemFSException(
+        "Only the file owner can change the access rights");
   }
 
   if ((to_set & SETATTR_GID)
       && std::find(user_credentials.groups().begin(),
                    user_credentials.groups().end(), stat.group_id())
           == user_credentials.groups().end()) {
-    throw XtreemFSException(
+    LogAndThrowXtreemFSException(
         "Changing the group owner to a group the user is not a member of is"
         "not supported");
   }
@@ -183,7 +192,9 @@ void FileKeyDistribution::GetFileKeys(
   FileLockbox lockbox = GetLockbox(user_credentials, file_path, owner_sign_key,
                                    key_id, write_access);
   if (lockbox.file_id() != file_id) {
-    throw XtreemFSException("Wrong FileID in lockbox");
+    LogAndThrowXtreemFSException(
+        "Wrong FileID in lockbox of file file_path. Expected: '" + file_id
+            + "', contains '" + lockbox.file_id() + "'.");
   }
 
   file_enc_key->assign(lockbox.enc_key().begin(), lockbox.enc_key().end());

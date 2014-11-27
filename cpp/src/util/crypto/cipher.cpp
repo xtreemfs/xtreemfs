@@ -19,7 +19,7 @@ namespace xtreemfs {
 
 Cipher::Cipher(const std::string& alg_name) {
   if ((cipher_ = EVP_get_cipherbyname(alg_name.c_str())) == NULL) {
-    LogAndThrowOpenSSLError();
+    LogAndThrowOpenSSLError("Unknown cipher '" + alg_name + "'");
   }
 }
 

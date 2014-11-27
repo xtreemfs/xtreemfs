@@ -20,6 +20,7 @@
 #include "libxtreemfs/xtreemfs_exception.h"
 #include <boost/algorithm/string.hpp>
 #include "rpc/sync_callback.h"
+#include "util/error_log.h"
 #include "util/logging.h"
 #include "xtreemfs/GlobalTypes.pb.h"
 #include "xtreemfs/MRC.pb.h"
@@ -577,6 +578,13 @@ long parseByteNumber(std::string byte_number) {
 		default:   return -1;
 	}
 	return coeff * pow(unit, exp / 3);
+}
+
+void LogAndThrowXtreemFSException(std::string error_msg) {
+  util::Logging::log->getLog(util::LEVEL_ERROR) << error_msg
+                                                << std::endl;
+  ErrorLog::error_log->AppendError(error_msg);
+  throw XtreemFSException(error_msg);
 }
 
 }  // namespace xtreemfs

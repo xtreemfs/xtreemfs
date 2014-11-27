@@ -148,6 +148,11 @@ std::string GetNetworkStringUnix(const struct ifaddrs* ifaddr);
  */
 long parseByteNumber(std::string byte_number);
 
+/**
+ *  Logs the error_msg and then throws a XtreemFSException
+ */
+void LogAndThrowXtreemFSException(std::string error_msg);
+
 }  // namespace xtreemfs
 
 #endif  // CPP_INCLUDE_LIBXTREEMFS_HELPER_H_

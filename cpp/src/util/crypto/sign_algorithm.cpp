@@ -24,7 +24,8 @@ SignAlgorithm::SignAlgorithm(const AsymKey& key, const std::string& hash_name)
     : hash_name_(hash_name),
       key_(key) {
   if ((md_ = EVP_get_digestbyname(hash_name.c_str())) == NULL) {
-    LogAndThrowOpenSSLError();
+    LogAndThrowOpenSSLError(
+        "SignAlgorithm: Unknown message digest '" + hash_name + "'");
   }
 }
 

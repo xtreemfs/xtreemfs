@@ -18,7 +18,7 @@ namespace xtreemfs {
 
 MessageDigest::MessageDigest(std::string alg_name) {
   if ((md = EVP_get_digestbyname(alg_name.c_str())) == NULL) {
-    LogAndThrowOpenSSLError();
+    LogAndThrowOpenSSLError("Unknown message digest '" + alg_name + "'");
   }
 }
 
