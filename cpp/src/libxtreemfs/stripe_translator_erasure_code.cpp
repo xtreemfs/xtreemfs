@@ -80,7 +80,7 @@ void StripeTranslatorErasureCode::TranslateWriteRequest(
               ^ buf_redundance[i];
         }
         operations->push_back(
-            WriteOperation(obj_number - (obj_number % width), osd_offsets, stripe_size, 0,
+            WriteOperation(obj_number + 1 - (obj_number % width), osd_offsets, stripe_size, 0,
               buf_redundance, true));
         // full objects have been written in this line
         // create parity object and enque at correct position..remember N+1 striping
@@ -171,7 +171,7 @@ size_t StripeTranslatorErasureCode::TranslateReadRequest(
       } else {
         buf_redundance = new char[stripe_size];
         operations->push_back(
-            ReadOperation(obj_number - (obj_number % width), osd_offsets, stripe_size, 0,
+            ReadOperation(obj_number + 1 - (obj_number % width), osd_offsets, stripe_size, 0,
               buf_redundance));
         // full objects have been written in this line
         // create parity object and enque at correct position..remember N+1 striping
