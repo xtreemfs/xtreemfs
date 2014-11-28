@@ -82,6 +82,7 @@ class Options {
    *  - ssl_pem_key_path
    *  - ssl_pem_cert_path
    *  - ssl_pem_key_pass
+   *  - ssl_pem_trusted_certs_path
    *  - ssl_pkcs12_path
    *  - ssl_pkcs12_pass
    *  - grid_ssl || protocol
