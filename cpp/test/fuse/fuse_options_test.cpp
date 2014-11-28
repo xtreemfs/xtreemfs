@@ -56,14 +56,14 @@ TEST_F(FuseOptionsTest, TestCommandLineMultipleOptionsPerFuseOptionAndMinusoOpti
   // Split options are added to the end of fuse_options.
   EXPECT_EQ("allow_other", options.fuse_options[1]);
   EXPECT_EQ("bogus", options.fuse_options[2]);
-  
+
   // when using -o, split options are ordered because they are processed in
   // Options::ParseCommandLine.
   free(argv[1]);
   argv[1] = strdup("-o");
   free(argv[3]);
-  argv[1] = strdup("-o");
-  
+  argv[3] = strdup("-o");
+
   ASSERT_NO_THROW({
     options.ParseCommandLine(argc, argv);
   });
