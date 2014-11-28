@@ -31,6 +31,7 @@
 #include "xtreemfs/MRCServiceClient.h"
 #include "xtreemfs/OSD.pb.h"
 #include "xtreemfs/OSDServiceClient.h"
+#include <iostream>
 
 using namespace std;
 using namespace xtreemfs::pbrpc;
@@ -143,6 +144,15 @@ int FileHandleImplementation::Read(
 
   boost::scoped_ptr<ContainerUUIDIterator> temp_uuid_iterator_for_striping;
 
+  // for(std::vector<ReadOperation>::iterator it = operations.begin();
+  //         it != operations.end();
+  //         it++) {
+  //     std::cout << "--Read Operation--" << std::endl;
+  //     std::cout << "object number: " << it->obj_number << std::endl;
+  //     std::cout << "req size: " << it->req_size << std::endl;
+  //     std::cout << "req offset: " << it->req_offset << std::endl;
+  //     std::cout << "osd offset: " << it->osd_offsets[0] << std::endl;
+  // }
   // Read all objects.
   boost::dynamic_bitset<> successful_reads(operations.size());
   for (size_t j = 0; j < operations.size(); j++) {
@@ -181,6 +191,7 @@ int FileHandleImplementation::Read(
     } else {
       // TODO(mberlin): Update xloc list if newer version found (on OSD?).
       try {
+        cout << "trying to read stripe " << j << " from osd " << operations[j].osd_offsets[0] << endl;
         received_data +=
           ReadFromOSD(uuid_iterator, file_credentials, operations[j].obj_number,
               operations[j].data, operations[j].req_offset,
@@ -190,6 +201,7 @@ int FileHandleImplementation::Read(
         if (successful_reads.count() == min_sucessfull_reads && j == min_sucessfull_reads)
           break;
       } catch(IOException &e) {
+        cout << "\tfailed" << endl;
         if (Logging::log->loggingActive(LEVEL_DEBUG)) {
           Logging::log->getLog(LEVEL_DEBUG) << "failed read operation" << endl;
         }
@@ -200,9 +212,12 @@ int FileHandleImplementation::Read(
         } else {
           throw e;
         }
+        cout << "caught exception " << e.what() << endl;
       }
+      cout << "\tsuccess" << endl;
     }
   }
+  cout << "successful_reads: " << successful_reads << endl;
 
   translator->ProcessReads(&operations, &successful_reads, striping_policies);
 
@@ -283,6 +298,7 @@ int FileHandleImplementation::Write(
   for (int32_t i = 0; i < xlocs.replicas_size(); ++i) {
     striping_policies.push_back(&(xlocs.replicas(i).striping_policy()));
   }
+  cout << " width, parity_width " << (*striping_policies.begin())->width() << " " << (*striping_policies.begin())->parity_width() << endl;
 
   // NOTE: We assume that all replicas use the same striping policy type and
   //       that all replicas use the same stripe size.
@@ -294,6 +310,15 @@ int FileHandleImplementation::Write(
   translator->TranslateWriteRequest(buf, count, offset, striping_policies,
                                    &operations);
 
+  for(std::vector<WriteOperation>::iterator it = operations.begin();
+          it != operations.end();
+          it++) {
+      std::cout << "--Write Operation--" << std::endl;
+      std::cout << "object number: " << it->obj_number << std::endl;
+      std::cout << "req size: " << it->req_size << std::endl;
+      std::cout << "req offset: " << it->req_offset << std::endl;
+      std::cout << "osd offset: " << it->osd_offsets[0] << std::endl;
+  }
   if (async_writes_enabled_) {
     string osd_uuid = "";
     writeRequest* write_request = NULL;

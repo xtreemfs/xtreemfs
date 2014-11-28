@@ -216,15 +216,17 @@ void StripeTranslatorErasureCode::ProcessReads(
   unsigned int width = (*policies.begin())->width();
   // number of data stripes
   unsigned int data_width = width - parity_width;
-  // how many whole lines does this operation contain
-  unsigned int lines = operations->size() / width;
+  // how many (poss. incomplete)  lines does this operation contain
+  // (X + y -1)/y is apperantly a common idiom for quick ceil(x/y) can overflow in x+y though
+  unsigned int lines = (operations->size() + width - 1) / width;
 
   assert(operations->size() == successful_reads->size());
 
-  if (((*successful_reads) << lines).count() == lines * data_width) {
+  if (((*successful_reads) << lines).count() == operations->size() - lines) {
     // if only data objects have been read cleanup and exit...nothing to do
-    for (size_t i = lines * data_width; i < operations->size(); i++)
+    for (size_t i = operations->size() - lines; i < operations->size(); i++){
       delete (*operations)[i].data;
+    }
     return;
   }
 
@@ -282,8 +284,9 @@ void StripeTranslatorErasureCode::ProcessReads(
     }
   }
   // free parity buffers
-  for (size_t i = lines * data_width; i < operations->size(); i++)
+  for (size_t i = operations->size() - lines; i < operations->size(); i++){
     delete (*operations)[i].data;
+  }
 }
 
 }  // namespace xtreemfs
