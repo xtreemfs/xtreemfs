@@ -88,10 +88,12 @@ class StripeTranslator {
    * the operations vector holds the read operations including the data buffers and the
    * successful_reads vector shows which read operation was sucessfull.
    */
-  virtual void ProcessReads(
+  virtual size_t ProcessReads(
           std::vector<ReadOperation>* operations,
           boost::dynamic_bitset<>* successful_reads,
-          PolicyContainer policies
+          PolicyContainer policies,
+          size_t received_data,
+          int64_t offset
           ) const = 0;
 };
 

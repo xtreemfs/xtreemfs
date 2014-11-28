@@ -33,10 +33,12 @@ class StripeTranslatorRaid0 : public StripeTranslator {
       PolicyContainer policies,
       std::vector<ReadOperation>* operations) const;
 
-  virtual void ProcessReads(
+  virtual size_t ProcessReads(
           std::vector<ReadOperation>* operations,
           boost::dynamic_bitset<>* successful_reads,
-          PolicyContainer policies
+          PolicyContainer policies,
+          size_t received_data,
+          int64_t offset
           ) const;
 };
 }  // namespace xtreemfs

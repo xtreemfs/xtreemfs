@@ -36,58 +36,22 @@ void StripeTranslatorErasureCode::TranslateWriteRequest(
   // check for illegal offset
   assert(offset % (stripe_size * data_width) == 0);
 
-  size_t total_size = (size / data_width) * width;
   // object number for stripe (parity stripes are not counted)
   size_t obj_number = obj_offset;
   // actual object number to calculate the osd number
   size_t real_obj_number =  (obj_offset / data_width * width);
 
   size_t start = 0;
-  size_t written_blocks = 0;
 
-  while (written_blocks < total_size) {
+  while (start < size) {
 
     std::vector<size_t> osd_offsets;
 
     size_t osd_number = real_obj_number % width;
     osd_offsets.push_back(osd_number);
 
-    // if partial stripe at the end of the file
-    if (total_size - written_blocks < 2 * stripe_size) {
-      // size of incomplete object
-      size_t tail_size = size - start;
-
-      operations->push_back(
-          WriteOperation(obj_number, osd_offsets, tail_size, 0,
-            buf + start));
-      osd_offsets.clear();
-      osd_offsets.push_back(data_width);
-      if (obj_number % data_width == 0){
-        // partial object at the start of the stripe
-        // write data to parity object and enque par object with correct osd_offsets
-        operations->push_back(
-            WriteOperation(obj_number, osd_offsets, tail_size, 0,
-              buf + start));
-      } else {
-        buf_redundance = new char[stripe_size];
-        memcpy(buf_redundance, buf + start, tail_size);
-        memset(buf_redundance + tail_size, 0, stripe_size - tail_size);
-
-        // XOR all obects for the length of the incomplete object
-        for (size_t i = 0; i < stripe_size; ++i) {
-          for (size_t j = obj_number % width; j > 0; --j)
-            buf_redundance[i] = buf[start - (j * stripe_size) + i]
-              ^ buf_redundance[i];
-        }
-        operations->push_back(
-            WriteOperation(obj_number + 1 - (obj_number % width), osd_offsets, stripe_size, 0,
-              buf_redundance, true));
-        // full objects have been written in this line
-        // create parity object and enque at correct position..remember N+1 striping
-      }
-      return;
-    }
-
+    size_t req_size
+      = min(size - start, static_cast<size_t>(stripe_size));
     //is it a parity chunk?
     if (osd_number >= data_width) {
       buf_redundance = new char[stripe_size];
@@ -106,14 +70,44 @@ void StripeTranslatorErasureCode::TranslateWriteRequest(
               buf_redundance, true));
     } else {
       operations->push_back(
-          WriteOperation(obj_number, osd_offsets, stripe_size, 0,
+          WriteOperation(obj_number, osd_offsets, req_size, 0,
               buf + start));
 
-      start += stripe_size;
+      start += req_size;
       obj_number++;
     }
     real_obj_number++;
-    written_blocks += stripe_size;
+
+    // all data has been written...write last parity block
+    if (size == start) {
+      osd_offsets.clear();
+      osd_offsets.push_back(data_width);
+      if (obj_number % data_width == 1){
+        // partial object at the start of the stripe
+        // write data to parity object and enque par object with correct osd_offsets
+        operations->push_back(
+            WriteOperation(obj_number - 1, osd_offsets, req_size, 0,
+              buf + start - req_size));
+      } else {
+        buf_redundance = new char[stripe_size];
+        --obj_number;
+        memcpy(buf_redundance, buf + start - req_size, req_size);
+        memset(buf_redundance + req_size, 0, stripe_size - req_size);
+
+        // XOR all obects for the length of the incomplete object
+        for (size_t i = 0; i < stripe_size; ++i) {
+          for (size_t j = obj_number % width; j > 0; --j)
+            buf_redundance[i] = buf[start - (j * stripe_size) + i]
+              ^ buf_redundance[i];
+        }
+        operations->push_back(
+            WriteOperation(obj_number - (obj_number % data_width), osd_offsets, stripe_size, 0,
+              buf_redundance, true));
+        // full objects have been written in this line
+        // create parity object and enque at correct position..remember N+1 striping
+      }
+      return;
+    }
   }
 }
 
@@ -133,52 +127,44 @@ size_t StripeTranslatorErasureCode::TranslateReadRequest(
   char *buf_redundance = NULL;
 
   size_t obj_offset = offset / stripe_size;
+  offset = offset % stripe_size;
 
-  size_t total_size = (size / data_width) * width;
   // object number for stripe (parity stripes are not counted)
-  size_t obj_number = obj_offset;
+  size_t obj_number = obj_offset - (obj_offset % data_width);
   // actual object number to calculate the osd number
   size_t real_obj_number =  (obj_offset / data_width * width);
-  size_t par_reads = 0;
+  if (real_obj_number != 0)
+    real_obj_number -= (obj_offset % data_width);
+  size_t data_reads = 0;
 
   size_t start = 0;
-  size_t read_blocks = 0;
 
-  while (read_blocks < total_size) {
+  for (int i = 0; i < obj_offset % data_width; i--) {
 
     std::vector<size_t> osd_offsets;
 
     size_t osd_number = real_obj_number % (width);
     osd_offsets.push_back(osd_number);
 
-    // if partial stripe at the end of the file
-    if (total_size - read_blocks < 2 * stripe_size) {
-      // size of incomplete object
-      size_t tail_size = size - start;
+    // TODO delete this buffer!!
+    buf_redundance = new char[stripe_size];
+    operations->push_back(
+        ReadOperation(obj_number - i, osd_offsets, stripe_size, 0,
+          buf_redundance));
+    data_reads++;
+    obj_number++;
+    real_obj_number++;
+  }
 
-      operations->insert(operations->begin() + par_reads,
-          ReadOperation(obj_number, osd_offsets, tail_size, 0,
-            buf + start));
-      osd_offsets.clear();
-      osd_offsets.push_back(data_width);
-      if (obj_number % data_width == 0){
-        // partial object at the start of the stripe
-        // write data to parity object and enque par object with correct osd_offsets
-        buf_redundance = new char[tail_size];
-        operations->push_back(
-            ReadOperation(obj_number, osd_offsets, tail_size, 0,
-              buf_redundance));
-      } else {
-        buf_redundance = new char[stripe_size];
-        operations->push_back(
-            ReadOperation(obj_number + 1 - (obj_number % width), osd_offsets, stripe_size, 0,
-              buf_redundance));
-        // full objects have been written in this line
-        // create parity object and enque at correct position..remember N+1 striping
-      }
-      return obj_number + 1;
-    }
+  while (start < size) {
 
+    std::vector<size_t> osd_offsets;
+
+    size_t osd_number = real_obj_number % (width);
+    osd_offsets.push_back(osd_number);
+
+    size_t req_size
+      = min(size - start, static_cast<size_t>(stripe_size - offset));
     //is it a parity chunk?
     if (osd_number >= data_width) {
       buf_redundance = new char[stripe_size];
@@ -191,23 +177,50 @@ size_t StripeTranslatorErasureCode::TranslateReadRequest(
               buf_redundance));
     } else {
       // operations->push_back(
-      operations->insert(operations->begin() + par_reads,
-          ReadOperation(obj_number, osd_offsets, stripe_size, 0,
+      operations->insert(operations->begin() + data_reads,
+          ReadOperation(obj_number, osd_offsets, req_size, offset,
             buf + start));
-      par_reads++;
-      start += stripe_size;
+      offset = 0;
+      data_reads++;
+      start += req_size;
       obj_number++;
     }
-    read_blocks += stripe_size;
     real_obj_number++;
+    // if partial stripe at the end of the file
+    if (size == start) {
+      // size of incomplete object
+      osd_offsets.clear();
+      osd_offsets.push_back(data_width);
+      if (obj_number % data_width == 1){
+        // partial object at the start of the stripe
+        // write data to parity object and enque par object with correct osd_offsets
+        buf_redundance = new char[req_size];
+        operations->push_back(
+            ReadOperation(obj_number - 1, osd_offsets, req_size, 0,
+              buf_redundance));
+        return obj_number;
+      } else {
+        buf_redundance = new char[stripe_size];
+        --obj_number;
+        operations->push_back(
+            ReadOperation(obj_number - (obj_number % data_width), osd_offsets, stripe_size, 0,
+              buf_redundance));
+        // full objects have been written in this line
+        // create parity object and enque at correct position..remember N+1 striping
+        return obj_number + 1;
+      }
+    }
+
   }
   return obj_number;
 }
 
-void StripeTranslatorErasureCode::ProcessReads(
+size_t StripeTranslatorErasureCode::ProcessReads(
     std::vector<ReadOperation>* operations,
     boost::dynamic_bitset<>* successful_reads,
-    PolicyContainer policies) const {
+    PolicyContainer policies,
+    size_t received_data,
+    int64_t offset) const {
   // stripe size is stored in kB
   unsigned int stripe_size = (*policies.begin())->stripe_size() * 1024;
   // number of OSD to distribute parity chunks
@@ -217,8 +230,9 @@ void StripeTranslatorErasureCode::ProcessReads(
   // number of data stripes
   unsigned int data_width = width - parity_width;
   // how many (poss. incomplete)  lines does this operation contain
-  // (X + y -1)/y is apperantly a common idiom for quick ceil(x/y) can overflow in x+y though
-  unsigned int lines = (operations->size() + width - 1) / width;
+  // (x + y - 1) / y is apperantly a common idiom for quick ceil(x / y) can overflow in x + y though
+  // 1 + ((x - 1) / y avoids overflow problem
+  unsigned int lines = 1 + ((operations->size() - 1) / width);
 
   assert(operations->size() == successful_reads->size());
 
@@ -227,28 +241,32 @@ void StripeTranslatorErasureCode::ProcessReads(
     for (size_t i = operations->size() - lines; i < operations->size(); i++){
       delete (*operations)[i].data;
     }
-    return;
+    for (int i = 0; i < (offset / stripe_size) % data_width; i++) {
+      delete (*operations)[i].data;
+    }
+    return subtract_extra_reads(received_data, offset, stripe_size, width, parity_width);
   }
 
   for (size_t i = 0; i < lines; i++) {
 
     // create successful_reads bitvector for each line (data stripes + parity stripes)
-    boost::dynamic_bitset<> line_mask(width);
+    boost::dynamic_bitset<> line_mask(0);
     // normal reads
-    for (size_t j = 0; j < data_width; j++)
-      line_mask[j] = successful_reads->test(j + i * data_width);
+    unsigned int foo = min(i * data_width + data_width, successful_reads->size() - lines);
+    for (size_t j = i * data_width; j < foo ; j++){
+      line_mask.push_back(successful_reads->test(j));
+    }
     // parity reads
-    for (size_t j = 0; j < parity_width; j++)
-      // parity reads are at the end of the successful_reads vector because they are read iff normal
-      // reads ahve failed
-      line_mask[data_width + j] = successful_reads->test(lines * data_width + i * parity_width + j);
+    // parity reads are at the end of the successful_reads vector because they are read iff normal
+    // reads have failed
+    line_mask.push_back(successful_reads->test(successful_reads->size() - lines + i));
 
     // check is enough data exists...at least data_width stripes must be present
-    if (line_mask.count() < data_width)
+    if (line_mask.count() < line_mask.size() - 1)
       throw IOException("to many failed reads");
 
     // if all data stripes have been read there is nothing todo
-    if((line_mask << parity_width).count() == data_width){
+    if((line_mask << parity_width).count() == line_mask.size() - 1){
       continue;
     }
 
@@ -259,6 +277,7 @@ void StripeTranslatorErasureCode::ProcessReads(
     for (size_t j = 0; j < data_width; j++){
       if (line_mask[j]){
         char *d = (*operations)[j + i * data_width].data;
+        size_t s = (*operations)[j + i * data_width].req_size;
         for (int k = 0; k < stripe_size; k++){
           buf[k] = buf[k] ^ d[k];
         }
@@ -267,6 +286,7 @@ void StripeTranslatorErasureCode::ProcessReads(
     for (size_t j = 0; j < parity_width; j++) {
       if (line_mask[data_width + j]) {
         char *d = (*operations)[lines * data_width + i * parity_width + j].data;
+        size_t s = (*operations)[j + i * data_width].req_size;
         for (int k = 0; k < stripe_size; k++){
           buf[k] = buf[k] ^ d[k];
         }
@@ -287,6 +307,28 @@ void StripeTranslatorErasureCode::ProcessReads(
   for (size_t i = operations->size() - lines; i < operations->size(); i++){
     delete (*operations)[i].data;
   }
+  for (int i = 0; i < (offset / stripe_size) % data_width; i++) {
+    delete (*operations)[i].data;
+  }
+  return subtract_extra_reads(received_data, offset, stripe_size, width, parity_width);
+}
+
+size_t StripeTranslatorErasureCode::subtract_extra_reads (
+    size_t received_data,
+    int64_t offset,
+    unsigned int stripe_size,
+    unsigned int width,
+    unsigned int parity_width) const {
+
+  unsigned int data_width = width - parity_width;
+
+  if (offset < stripe_size) {
+    return received_data;
+  }
+
+  unsigned int obj_offset = offset / stripe_size;
+  unsigned int line_offset = obj_offset % data_width;
+  return received_data - stripe_size * line_offset;
 }
 
 }  // namespace xtreemfs

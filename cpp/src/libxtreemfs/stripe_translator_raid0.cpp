@@ -76,11 +76,14 @@ size_t StripeTranslatorRaid0::TranslateReadRequest(
   return operations->size();
 }
 
-void StripeTranslatorRaid0::ProcessReads(
+size_t StripeTranslatorRaid0::ProcessReads(
     std::vector<ReadOperation>* read_ops,
     boost::dynamic_bitset<>* suc_read_ops,
-    PolicyContainer policies) const {
+    PolicyContainer policies,
+    size_t received_data,
+    int64_t offset) const {
   // nothing to do here
+  return received_data;
 }
 
 }  // namespace xtreemfs
