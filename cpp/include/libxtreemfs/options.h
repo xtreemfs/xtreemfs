@@ -86,7 +86,8 @@ class Options {
    *  - ssl_pkcs12_pass
    *  - grid_ssl || protocol
    *  - verify_certificates
-   *  - ignore_verify_errors.
+   *  - ignore_verify_errors
+   *  - min_ssl_method
    *
    * @remark Ownership is transferred to caller. May be NULL.
    */
