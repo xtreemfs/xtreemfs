@@ -32,6 +32,7 @@ using xtreemfs::pbrpc::SYSTEM_V_FCNTL;
 using xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_CREAT;
 using xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDONLY;
 using xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR;
+using xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_WRONLY;
 using xtreemfs::pbrpc::UserCredentials;
 
 namespace xtreemfs {
@@ -887,6 +888,33 @@ TEST_F(EncryptionTest, Open_01) {
       "/test_file",
       static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_CREAT
           | SYSTEM_V_FCNTL_H_O_RDWR));
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 10, 0);
+  });
+  EXPECT_EQ(8, x);
+  buffer[x] = 0;
+  for (int i = 0; i < 4; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
+  EXPECT_STREQ("EFGH", buffer+4);
+}
+
+TEST_F(EncryptionTest, Open_02) {
+  char buffer[50];
+  int x;
+
+  FileHandle* file_open2 = volume_->OpenFile(
+      user_credentials_,
+      "/test_file",
+      static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_WRONLY));
+
+  // full write to first 2. block
+  ASSERT_NO_THROW({
+    file_open2->Write("EFGH", 4, 4);
+  });
+  file_open2->Close();
 
   // full read
   ASSERT_NO_THROW({

@@ -352,6 +352,13 @@ FileHandle* VolumeImplementation::OpenFileWithTruncateSize(
     rq.mutable_coordinates()->CopyFrom(this->client_->GetVivaldiCoordinates());
   }
 
+  // encrypted files need read access for write
+  if (volume_options_.encryption && (flags & SYSTEM_V_FCNTL_H_O_WRONLY)
+      && !ObjectEncryptor::IsEncMetaFile(path)) {
+    rq.set_flags(
+        (flags & ~SYSTEM_V_FCNTL_H_O_WRONLY) | SYSTEM_V_FCNTL_H_O_RDWR);
+  }
+
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
           boost::bind(
