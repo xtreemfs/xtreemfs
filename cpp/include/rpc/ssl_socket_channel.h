@@ -83,7 +83,7 @@ class SSLSocketChannel : public AbstractSocketChannel {
   }
   
   const char *ssl_tls_version() {
-#if (BOOST_VERSION < 104700
+#if (BOOST_VERSION < 104700)
     return SSL_get_version(ssl_stream_.impl());
 #else  // BOOST_VERSION < 104700
     return SSL_get_version(ssl_stream_.native_handle());
