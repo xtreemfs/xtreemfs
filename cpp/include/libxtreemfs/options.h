@@ -82,11 +82,13 @@ class Options {
    *  - ssl_pem_key_path
    *  - ssl_pem_cert_path
    *  - ssl_pem_key_pass
+   *  - ssl_pem_trusted_certs_path
    *  - ssl_pkcs12_path
    *  - ssl_pkcs12_pass
    *  - grid_ssl || protocol
    *  - verify_certificates
-   *  - ignore_verify_errors.
+   *  - ignore_verify_errors
+   *  - min_ssl_method
    *
    * @remark Ownership is transferred to caller. May be NULL.
    */
