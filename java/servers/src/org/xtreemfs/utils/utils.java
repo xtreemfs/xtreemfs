@@ -146,13 +146,14 @@ public class utils {
             "a PKCS#12 file containing user credentials (SSL/GridSSL only)", "<creds_file>"));
         options.put(OPTION_USER_CREDS_PASS,
             new CliOption(CliOption.OPTIONTYPE.STRING,
-                "a pass phrase to decrypt the the user credentials file (SSL/GridSSL only)",
+                "a pass phrase to decrypt the the user credentials file (SSL/GridSSL only).  Set to '-' to prompt for the passphrase.",
                 "<creds_passphrase>"));
         options.put(OPTION_TRUSTSTORE_FILE, new CliOption(CliOption.OPTIONTYPE.STRING,
             "a PKCS#12 file containing a set of certificates from trusted CAs (SSL/GridSSL only)",
             "<trusted_CAs>"));
         options.put(OPTION_TRUSTSTORE_PASS, new CliOption(CliOption.OPTIONTYPE.STRING,
-            "a pass phrase to decrypt the trusted CAs file (SSL/GridSSL only)", "<trusted_passphrase>"));
+            "a pass phrase to decrypt the trusted CAs file (SSL/GridSSL only).  Set to '-' to prompt for the passphrase.",
+            "<trusted_passphrase>"));
         options.put(OPTION_HELP, new CliOption(CliOption.OPTIONTYPE.SWITCH, "show usage information", ""));
         options.put(OPTION_HELP_LONG,
             new CliOption(CliOption.OPTIONTYPE.SWITCH, "show usage information", ""));

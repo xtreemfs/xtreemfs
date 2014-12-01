@@ -10,7 +10,7 @@
 # As of April 2013, we run this script internally every night. The results of the
 # tests are posted to the internal mailing list xtreemfs-test@googlegroups.com.
 #
-# Run it as cron job as follows: /usr/bin/wget http://xtreemfs.googlecode.com/git/tests/cronjob/run_xtreemfs_tests.sh -q -O - | bash -l
+# Run it as cron job as follows: /usr/bin/wget https://raw.githubusercontent.com/xtreemfs/xtreemfs/master/tests/cronjob/run_xtreemfs_tests.sh -q -O - | bash -l
 
 # Environment
 export LANG=en_US.UTF-8

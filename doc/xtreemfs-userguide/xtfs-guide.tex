@@ -587,6 +587,35 @@ $> cp SERVICE.p12 /etc/xos/xtreemfs/truststore/certs
 
 \end{enumerate}
 
+\subsubsection{Setting passphrases in command line tools}
+
+There are two options to set the passhrase for the trusted certificates and the keystore in command line tools.
+\begin{enumerate}
+\item Set the passphrase with the corresponding parameter (See the man page of the corresponding tool). For example: 
+\begin{verbatim}
+	$> mount.xtreemfs --pkcs12-file-path=\
+	   /etc/xos/xtreemfs/truststore/certs/client.p12 \
+	   --pkcs12-passphrase=passphrase pbrpcs://localhost/test /mnt  
+\end{verbatim}
+or
+\begin{verbatim}
+	$> xtfs_chstatus \
+	   -c /etc/xos/xtreemfs/truststore/certs/client.p12 \
+	   -cpass phasphrase \
+	   -t /etc/xos/xtreemfs/truststore/certs/trusted.jks \
+	   -tpass jks_passpharase test-osd online	
+\end{verbatim}
+\item Set the corresponding passphrase parameter to "-" and you will be prompted for the passphrase. For example:
+\begin{verbatim}
+	$> mount.xtreemfs --pkcs12-file-path=\
+	   /etc/xos/xtreemfs/truststore/certs/client.p12 \
+	   --pkcs12-passphrase=- pbrpcs://localhost/test /mnt 
+\end{verbatim}
+Press enter and you will be prompted for the passphrase:
+\begin{verbatim}
+No PKCS#12 certificate passphrase was given. Please enter it now:
+\end{verbatim}
+\end{enumerate}
 
 \subsection{Running XtreemFS on SSDs}
 \label{sec:ssds}
