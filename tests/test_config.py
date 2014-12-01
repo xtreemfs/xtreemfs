@@ -286,7 +286,7 @@ Tests = [
         'name': 'Valgrind memory-leak check for C++ Unit Tests',
         'file': 'cpp_unit_tests_valgrind.sh',
         'VolumeConfigs': [],
-        'TestSets': [ 'full' ]
+        'TestSets': [ 'full', 'travis' ]
     },
     {
         'name': 'mkfs-lsfs-rmfs.xtreemfs test',
