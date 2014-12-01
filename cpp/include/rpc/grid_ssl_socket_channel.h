@@ -86,7 +86,7 @@ class GridSSLSocketChannel : public AbstractSocketChannel {
   
   const char *ssl_tls_version() {
 #if (BOOST_VERSION < 104700)
-    return SSL_get_version(ssl_stream_.impl());
+    return SSL_get_version(ssl_stream_.impl()->ssl);
 #else  // BOOST_VERSION < 104700
     return SSL_get_version(ssl_stream_.native_handle());
 #endif  // BOOST_VERSION < 104700
