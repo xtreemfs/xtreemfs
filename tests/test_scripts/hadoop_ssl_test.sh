@@ -16,6 +16,7 @@ for VERSION in $HADOOP_VERSIONS; do
    cd $TEST_DIR
    echo "Extract Hadoop $VERSION..."
    tar -zxf $TEST_DIR/hadoop-$VERSION.tar.gz
+   rm -rf $TEST_DIR/hadoop-$VERSION.tar.gz
    cd $VOLUME_DIR
 
    #configure hadoop
@@ -26,13 +27,13 @@ for VERSION in $HADOOP_VERSIONS; do
    export HADOOP_CONF_DIR=$HADOOP_PREFIX/conf/
    echo "Set HADOOP_CONF_DIR=$HADOOP_CONF_DIR"
 
-   export HADOOP_LOG_DIR="$TEST_DIR/log/hadoop.log"  
+   export HADOOP_LOG_DIR="$TEST_DIR/log/hadoop.log"
    echo "Set HADOOP_LOG_DIR=$HADOOP_LOG_DIR"
 
 
    echo "Copy XtreeemFSHadoopClient.jar to $HADOOP_PREFIX/lib/"
    cp $XTREEMFS/contrib/hadoop/dist/XtreemFSHadoopClient.jar $HADOOP_PREFIX/lib/
-   
+
    echo "configure core-site.xml"
 
    CORE_SITE="
@@ -109,7 +110,7 @@ for VERSION in $HADOOP_VERSIONS; do
    </property>
 
    </configuration>"
-         
+
    echo $CORE_SITE > $HADOOP_PREFIX/conf/core-site.xml
 
    echo "configure mapred-site.xml"
@@ -125,16 +126,16 @@ for VERSION in $HADOOP_VERSIONS; do
    </configuration>"
 
    echo $MAPRED_SITE > $HADOOP_PREFIX/conf/mapred-site.xml
-   
+
    #prepare input
    mkdir input
 
-   wget -nv -O test.txt http://www.gutenberg.org/cache/epub/1661/pg1661.txt 
+   wget -nv -O test.txt http://www.gutenberg.org/cache/epub/1661/pg1661.txt
 
    #test hadoop fs shell
    if [ -z "$($HADOOP_PREFIX/bin/hadoop fs -ls /hadoop_with_ssl_test | grep test.txt)" ]
       then echo hadoop fs -ls does not show test file!; RESULT=-1;
-   fi 
+   fi
 
    $HADOOP_PREFIX/bin/hadoop fs -copyFromLocal test.txt /hadoop_with_ssl_test/input/
 
@@ -149,8 +150,8 @@ for VERSION in $HADOOP_VERSIONS; do
    $HADOOP_PREFIX/bin/hadoop-daemon.sh start tasktracker
    #wait for complete start up
    sleep 10s
-   
-   if [[ -z "$(jps | grep TaskTracker)" || -z "$(jps | grep JobTracker)" ]] 
+
+   if [[ -z "$(jps | grep TaskTracker)" || -z "$(jps | grep JobTracker)" ]]
       then echo "Hadoop start up failed!"; RESULT=-1;
       else
          echo "Run wordcount"
@@ -170,14 +171,14 @@ for VERSION in $HADOOP_VERSIONS; do
 
          # check if JobTacker and TaskTracker stop
          if [ -n "$(jps | grep TaskTracker)" ]
-         then 
+         then
             echo "TaskTracker does not stop, kill manually"
             TASKTRACKER_PID=$(jps | grep TaskTracker | cut -d ' ' -f1)
             kill $TASKTRACKER_PID
-         fi 
-    
+         fi
+
          if [ -n "$(jps | grep JobTracker)" ]
-         then 
+         then
             echo "JobTracker does not stop, kill manually"
             JOBTRACKER_PID=$(jps | grep JobTracker | cut -d ' ' -f1)
             kill $JOBTRACKER_PID
@@ -185,7 +186,7 @@ for VERSION in $HADOOP_VERSIONS; do
 
          #kill all remaining child processes
          CHILD_PIDS=$(jps | grep Child | cut -d ' ' -f1)
-         if [ -n "$CHILD_PIDS" ] 
+         if [ -n "$CHILD_PIDS" ]
             then kill $CHILD_PIDS
          fi
    fi
