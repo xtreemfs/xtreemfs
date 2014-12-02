@@ -181,9 +181,13 @@ class Options {
   // encryption options.
   bool encryption;
   int encryption_block_size;
+  bool encryption_block_size_was_passed;
   std::string encryption_cipher;
+  bool encryption_cipher_was_passed;
   std::string encryption_hash;
+  bool encryption_hash_was_passed;
   std::string encryption_cw;
+  bool encryption_cw_was_passed;
   std::string encryption_pub_keys_path;
   std::string encryption_priv_keys_path;
 #endif  // HAS_OPENSSL

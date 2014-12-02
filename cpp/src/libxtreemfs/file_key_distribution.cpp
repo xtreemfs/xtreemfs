@@ -38,9 +38,8 @@ FileKeyDistribution::FileKeyDistribution(VolumeImplementation* volume)
 
 FileHandle* FileKeyDistribution::OpenMetaFile(
     const pbrpc::UserCredentials& user_credentials, const pbrpc::XCap& xcap,
-    const std::string& file_path, uint32_t mode,
-    std::vector<unsigned char>* file_enc_key, SignAlgorithm* file_sign_algo) {
-  assert(file_enc_key && file_sign_algo);
+    const std::string& file_path, uint32_t mode, pbrpc::FileLockbox* lockbox) {
+  assert(lockbox);
 
   std::string meta_file_name(
       "/.xtreemfs_enc_meta_files/"
@@ -75,12 +74,10 @@ FileHandle* FileKeyDistribution::OpenMetaFile(
 
   try {
     if (created_meta_file) {
-      CreateAndSetMetadataAndLockbox(user_credentials, file_path,
-                                     xcap.file_id(), mode, file_enc_key,
-                                     file_sign_algo);
+      *lockbox = CreateAndSetMetadataAndLockbox(user_credentials, file_path,
+                                                xcap.file_id(), mode);
     } else {
-      GetFileKeys(user_credentials, file_path, xcap.file_id(), file_enc_key,
-                  file_sign_algo);
+      *lockbox = GetFileKeys(user_credentials, file_path, xcap.file_id());
     }
   } catch (const std::exception& e) {
     if (meta_file) {
@@ -172,16 +169,13 @@ void FileKeyDistribution::ChangeAccessRights(
  * @param user_credentials  Credentials of the user requesting the keys.
  * @param file_path         File path to the file.
  * @param file_id           Full XtreemFS File ID (Volume UUID and File ID).
- * @param[out] file_enc_key
- * @param[out] file_sign_algo
+ * @return The lockbox the user is given access with.
  *
  * @throws XtreemFSException
  */
-void FileKeyDistribution::GetFileKeys(
+pbrpc::FileLockbox FileKeyDistribution::GetFileKeys(
     const pbrpc::UserCredentials& user_credentials,
-    const std::string& file_path, const std::string& file_id,
-    std::vector<unsigned char>* file_enc_key, SignAlgorithm* file_sign_algo) {
-  assert(file_enc_key && file_sign_algo);
+    const std::string& file_path, const std::string& file_id) {
 
   AsymKey owner_sign_key;
   bool write_access;
@@ -197,11 +191,7 @@ void FileKeyDistribution::GetFileKeys(
             + "', contains '" + lockbox.file_id() + "'.");
   }
 
-  file_enc_key->assign(lockbox.enc_key().begin(), lockbox.enc_key().end());
-  file_sign_algo->set_key(
-      AsymKey(
-          std::vector<unsigned char>(lockbox.sign_key().begin(),
-                                     lockbox.sign_key().end())));
+  return lockbox;
 }
 
 /**
@@ -210,13 +200,11 @@ void FileKeyDistribution::GetFileKeys(
  * @param user_credentials  Owner of the file.
  * @param file_path         Path to the file.
  * @param file_metadata     File metadata.
- * @param[out] file_enc_key
- * @param[out] file_sign_algo
+ * @return The lockbox the user is given access with.
  */
-void FileKeyDistribution::CreateAndSetMetadataAndLockbox(
+pbrpc::FileLockbox FileKeyDistribution::CreateAndSetMetadataAndLockbox(
     const pbrpc::UserCredentials& user_credentials,
-    const std::string& file_path, const std::string& file_id, uint32_t mode,
-    std::vector<unsigned char>* file_enc_key, SignAlgorithm* file_sign_algo) {
+    const std::string& file_path, const std::string& file_id, uint32_t mode) {
   // create new FileMetadata
   FileMetadata file_metadata;
   file_metadata.set_file_id(file_id);
@@ -234,19 +222,15 @@ void FileKeyDistribution::CreateAndSetMetadataAndLockbox(
   lockbox_rw.set_file_id_salt(file_metadata.file_id_salt());
   lockbox_rw.set_salt(file_metadata.salt());
   lockbox_rw.set_cipher(volume_->volume_options().encryption_cipher);
+  lockbox_rw.set_block_size(volume_->volume_options().encryption_block_size);
+  lockbox_rw.set_hash(volume_->volume_options().encryption_hash);
   // generate and set file enc key
   Cipher cipher(volume_->volume_options().encryption_cipher);
   std::vector<unsigned char> enc_key;
   cipher.GenerateKey(&enc_key);
   lockbox_rw.set_enc_key(enc_key.data(), enc_key.size());
-  if (file_enc_key) {
-    *file_enc_key = enc_key;
-  }
   // generate and set file sign key
   AsymKey file_sign_key("RSA");
-  if (file_sign_algo) {
-    file_sign_algo->set_key(file_sign_key);
-  }
   std::vector<unsigned char> encoded_file_sign_key = file_sign_key
       .GetDEREncodedKey();
   lockbox_rw.set_sign_key(encoded_file_sign_key.data(),
@@ -261,6 +245,8 @@ void FileKeyDistribution::CreateAndSetMetadataAndLockbox(
 
   SetMetadataAndLockbox(user_credentials, file_path, file_metadata, lockbox_rw,
                         lockbox_r);
+
+  return lockbox_rw;
 }
 
 /**

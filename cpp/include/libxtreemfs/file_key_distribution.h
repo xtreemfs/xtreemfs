@@ -33,8 +33,7 @@ class FileKeyDistribution {
   FileHandle* OpenMetaFile(const pbrpc::UserCredentials& user_credentials,
                            const pbrpc::XCap& xcap,
                            const std::string& file_path, uint32_t mode,
-                           std::vector<unsigned char>* file_enc_key,
-                           SignAlgorithm* file_sign_algo);
+                           pbrpc::FileLockbox* lockbox);
 
   void ChangeAccessRights(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
@@ -42,15 +41,13 @@ class FileKeyDistribution {
       xtreemfs::pbrpc::Setattrs to_set);
 
  private:
-  void GetFileKeys(const pbrpc::UserCredentials& user_credentials,
-                   const std::string& file_path, const std::string& file_id,
-                   std::vector<unsigned char>* file_enc_key,
-                   SignAlgorithm* file_sign_algo);
+  pbrpc::FileLockbox GetFileKeys(const pbrpc::UserCredentials& user_credentials,
+                                 const std::string& file_path,
+                                 const std::string& file_id);
 
-  void CreateAndSetMetadataAndLockbox(
+  pbrpc::FileLockbox CreateAndSetMetadataAndLockbox(
       const pbrpc::UserCredentials& user_credentials,
-      const std::string& file_path, const std::string& file_id, uint32_t mode,
-      std::vector<unsigned char>* file_enc_key, SignAlgorithm* file_sign_algo);
+      const std::string& file_path, const std::string& file_id, uint32_t mode);
 
   void SetMetadataAndLockbox(const pbrpc::UserCredentials& user_credentials,
                              const std::string& file_path,

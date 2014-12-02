@@ -301,31 +301,32 @@ HashTreeAD::Node HashTreeAD::Node::RightSibling(const HashTreeAD* tree) const {
 }
 
 HashTreeAD::HashTreeAD(FileHandle* meta_file, SignAlgorithm* sign_algo,
-                       Options volume_options, int leaf_adata_size)
+                       int block_size, std::string hash, int leaf_adata_size,
+                       std::string concurrent_write)
     : file_version_(0),
       file_size_(0),
       max_leaf_number_(-1),
       max_level_(0),
       max_node_number_(0),
-      leaf_adata_size_(leaf_adata_size),
       start_leaf_(0),
       end_leaf_(0),
       complete_max_leaf_(false),
       old_max_leaf_(0),
+      block_size_(block_size),
+      hasher_(hash),
+      leaf_adata_size_(leaf_adata_size),
+      concurrent_write_(concurrent_write),
       meta_file_(static_cast<FileHandleImplementation*>(meta_file)),
-      hasher_(volume_options.encryption_hash),
-      sign_algo_(sign_algo),
-      volume_options_(volume_options) {
-  assert(meta_file_ != NULL);
-  assert(sign_algo_ != NULL);
+      sign_algo_(sign_algo) {
+  assert(meta_file_ && sign_algo_);
+  assert(block_size_ > 0);
 }
 
 void HashTreeAD::Init() {
   int max_leaf_number;
   if (ReadRootNodeFromFile()) {
     if (file_size_ > 0) {
-      max_leaf_number = (file_size_ - 1)
-          / volume_options_.encryption_block_size;
+      max_leaf_number = (file_size_ - 1) / block_size_;
     } else if (file_size_ == 0) {
       max_leaf_number = -1;
     }
@@ -398,8 +399,7 @@ void HashTreeAD::StartWrite(int start_leaf, bool complete_start_leaf,
  * Finishes a write.
  */
 void HashTreeAD::FinishWrite() {
-  if (volume_options_.encryption_cw == "locks"
-      || volume_options_.encryption_cw == "snapshots") {
+  if (concurrent_write_ == "locks" || concurrent_write_ == "snapshots") {
     std::vector<unsigned char> root_hash(root_hash_);
     int max_leaf_number = max_leaf_number_;
     int64_t file_size = file_size_;
@@ -952,7 +952,7 @@ void HashTreeAD::UpdateTree(int start_leaf, int end_leaf, int max_leaf) {
     }
   }
 
-  if (volume_options_.encryption_cw == "snapshots") {
+  if (concurrent_write_ == "snapshots") {
     file_version_++;
   }
 

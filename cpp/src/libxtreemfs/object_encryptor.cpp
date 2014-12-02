@@ -51,24 +51,25 @@ int RoundUp(int num, int multiple) {
  *                  Ownership is not transfered.
  * @param object_size   Object size in kB.
  */
-ObjectEncryptor::ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
-                                 const pbrpc::XCap& xcap,
-                                 const std::string& file_path,
+ObjectEncryptor::ObjectEncryptor(const pbrpc::FileLockbox& lockbox,
+                                 FileHandle* meta_file,
                                  VolumeImplementation* volume,
-                                 FileInfo* file_info, int object_size,
-                                 uint32_t mode)
-    : key_distribution(volume),
-      enc_block_size_(volume->volume_options().encryption_block_size),
-      cipher_(volume->volume_options().encryption_cipher),
-      sign_algo_(AsymKey(), volume->volume_options().encryption_hash),
+                                 FileInfo* file_info, int object_size)
+    : file_enc_key_(lockbox.enc_key().begin(), lockbox.enc_key().end()),
+      enc_block_size_(lockbox.block_size()),
+      cipher_(lockbox.cipher()),
+      sign_algo_(
+          AsymKey(
+              std::vector<unsigned char>(lockbox.sign_key().begin(),
+                                         lockbox.sign_key().end())),
+          lockbox.hash()),
+      concurrent_write_(volume->volume_options().encryption_cw),
       object_size_(object_size * 1024),
       file_info_(file_info),
-      volume_options_(volume->volume_options()) {
+      meta_file_(meta_file) {
+  assert(meta_file && volume && file_info);
   assert(object_size_ >= enc_block_size_);
   assert(object_size_ % enc_block_size_ == 0);
-
-  meta_file_ = key_distribution.OpenMetaFile(user_credentials, xcap, file_path,
-                                             mode, &file_enc_key_, &sign_algo_);
 }
 
 ObjectEncryptor::~ObjectEncryptor() {
@@ -82,9 +83,10 @@ ObjectEncryptor::Operation::Operation(ObjectEncryptor* obj_enc, bool write)
       enc_block_size_(obj_enc->enc_block_size_),
       object_size_(obj_enc->object_size_),
       hash_tree_(obj_enc->meta_file_, &obj_enc->sign_algo_,
-                 obj_enc->volume_options_, obj_enc->cipher_.iv_size()),
+                 obj_enc->enc_block_size_, obj_enc->sign_algo_.get_hash_name(),
+                 obj_enc->cipher_.iv_size(), obj_enc->concurrent_write_),
       old_file_size_(0) {
-  if (obj_enc->volume_options_.encryption_cw == "serialize") {
+  if (obj_enc->concurrent_write_ == "serialize") {
     operation_lock_.reset(new FileLock(obj_enc_, 0, 0, write));
   }
 }
@@ -99,15 +101,15 @@ ObjectEncryptor::ReadOperation::ReadOperation(ObjectEncryptor* obj_enc,
   int start_block = offset / enc_block_size_;
   int end_block = (offset + count - 1) / enc_block_size_;
 
-  if (obj_enc_->volume_options_.encryption_cw == "locks"
-      || obj_enc_->volume_options_.encryption_cw == "snapshots") {
+  if (obj_enc_->concurrent_write_ == "locks"
+      || obj_enc_->concurrent_write_ == "snapshots") {
     // lock file
     file_lock_.reset(
         new FileLock(obj_enc_, start_block + 1, end_block - start_block + 1,
                      false));
   }
   boost::scoped_ptr<FileLock> meta_file_lock;
-  if (obj_enc_->volume_options_.encryption_cw == "locks") {
+  if (obj_enc_->concurrent_write_ == "locks") {
     // lock meta file
     meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, false));
   }
@@ -126,8 +128,8 @@ ObjectEncryptor::WriteOperation::WriteOperation(
   int old_last_incomplete_enc_block;
   bool old_last_enc_block_complete = false;
 
-  if (obj_enc->volume_options_.encryption_cw == "locks"
-      || obj_enc_->volume_options_.encryption_cw == "snapshots") {
+  if (obj_enc->concurrent_write_ == "locks"
+      || obj_enc_->concurrent_write_ == "snapshots") {
     // lock file
     file_lock_.reset(
         new FileLock(obj_enc_, start_block + 1, end_block - start_block + 1,
@@ -136,8 +138,8 @@ ObjectEncryptor::WriteOperation::WriteOperation(
 
   while (true) {
     boost::scoped_ptr<FileLock> meta_file_lock;
-    if (obj_enc->volume_options_.encryption_cw == "locks"
-        || obj_enc_->volume_options_.encryption_cw == "snapshots") {
+    if (obj_enc->concurrent_write_ == "locks"
+        || obj_enc_->concurrent_write_ == "snapshots") {
       // lock meta file
       meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, false));
     }
@@ -149,8 +151,8 @@ ObjectEncryptor::WriteOperation::WriteOperation(
     hash_tree_.set_file_size(std::max(old_file_size_, offset + count));
 
     old_last_incomplete_enc_block = old_file_size_ / enc_block_size_;
-    if ((obj_enc->volume_options_.encryption_cw == "locks"
-        || obj_enc_->volume_options_.encryption_cw == "snapshots")
+    if ((obj_enc->concurrent_write_ == "locks"
+        || obj_enc_->concurrent_write_ == "snapshots")
         && old_last_incomplete_enc_block < start_block) {
       // The write is changing the file size but has not yet locked the old last
       // incomplete enc block.
@@ -195,8 +197,8 @@ ObjectEncryptor::WriteOperation::WriteOperation(
 ObjectEncryptor::WriteOperation::~WriteOperation() {
   try {
     boost::scoped_ptr<FileLock> meta_file_lock;
-    if (obj_enc_->volume_options_.encryption_cw == "locks"
-        || obj_enc_->volume_options_.encryption_cw == "snapshots") {
+    if (obj_enc_->concurrent_write_ == "locks"
+        || obj_enc_->concurrent_write_ == "snapshots") {
       // lock meta file
       meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, true));
     }
@@ -225,8 +227,8 @@ ObjectEncryptor::TruncateOperation::TruncateOperation(
 
   while (true) {
     boost::scoped_ptr<FileLock> meta_file_lock;
-    if (obj_enc->volume_options_.encryption_cw == "locks"
-        || obj_enc_->volume_options_.encryption_cw == "snapshots") {
+    if (obj_enc->concurrent_write_ == "locks"
+        || obj_enc_->concurrent_write_ == "snapshots") {
       // lock meta file
       meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, true));
     }
@@ -235,8 +237,8 @@ ObjectEncryptor::TruncateOperation::TruncateOperation(
 
     int min_file_size = std::min(hash_tree_.file_size(), new_file_size);
 
-    if (obj_enc->volume_options_.encryption_cw == "locks"
-        || obj_enc_->volume_options_.encryption_cw == "snapshots") {
+    if (obj_enc->concurrent_write_ == "locks"
+        || obj_enc_->concurrent_write_ == "snapshots") {
       // To prevent concurrent change of file size
       // lock the file from min_file_size to end.
       try {

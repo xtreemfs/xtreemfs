@@ -91,7 +91,7 @@ class HashTreeADTest_Offline : public OfflineTest {
 
     sign_algo_ = new SignAlgorithm(AsymKey("RSA"),
                                    test_env.options.encryption_hash);
-    tree = new HashTreeAD(file, sign_algo_, test_env.options, 4);
+    tree = new HashTreeAD(file, sign_algo_, 4, "sha256", 4, "none");
   }
 
   virtual void TearDown() {

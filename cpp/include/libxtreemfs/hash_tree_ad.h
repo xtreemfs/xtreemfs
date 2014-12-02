@@ -28,8 +28,9 @@ class FileHandleImplementation;
  */
 class HashTreeAD {
  public:
-  HashTreeAD(FileHandle* meta_file, SignAlgorithm* sign_algo,
-             Options volume_options, int leaf_adata_size);
+  HashTreeAD(FileHandle* meta_file, SignAlgorithm* sign_algo, int block_size,
+             std::string hash, int leaf_adata_size,
+             std::string concurrent_write);
 
   void Init();
 
@@ -176,11 +177,6 @@ class HashTreeAD {
   int max_node_number_;
 
   /**
-   * Size (in bytes) of additional data in leaf.
-   */
-  int leaf_adata_size_;
-
-  /**
    * Helper variable for write, storing the start_leaf parameter of StartWrite.
    */
   int start_leaf_;
@@ -201,6 +197,9 @@ class HashTreeAD {
    */
   int old_max_leaf_;
 
+  /**
+   * The hash containted in the root node.
+   */
   std::vector<unsigned char> root_hash_;
 
   /**
@@ -220,22 +219,35 @@ class HashTreeAD {
   boost::icl::interval_set<int> changed_nodes_;
 
   /**
+   * The block size used for encryption in bytes.
+   */
+  int block_size_;
+
+  /**
+   * The hash algorithm used for the hash tree.
+   */
+  MessageDigest hasher_;
+
+  /**
+   * Size (in bytes) of additional data in leaf.
+   */
+  int leaf_adata_size_;
+
+  /**
+   * The method used to ensure consistency for concurrent write
+   */
+  std::string concurrent_write_;
+
+  /**
    * File handle for the meta file. Not owned by this class. Not closed by this
    * class.
    */
   FileHandleImplementation* meta_file_;
 
-  MessageDigest hasher_;
-
   /**
-   * Not owned by class.
+   * The algorithm used to sign the root node. Not owned by class.
    */
   SignAlgorithm* sign_algo_;
-
-  /**
-   * Not owned by class.
-   */
-  Options volume_options_;
 };
 
 } /* namespace xtreemfs */

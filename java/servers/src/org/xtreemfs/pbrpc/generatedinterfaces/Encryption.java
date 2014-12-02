@@ -1583,6 +1583,51 @@ public final class Encryption {
      * </pre>
      */
     com.google.protobuf.ByteString getSignKey();
+
+    // required fixed32 block_size = 7;
+    /**
+     * <code>required fixed32 block_size = 7;</code>
+     *
+     * <pre>
+     * The block size used for encryption in KiB
+     * </pre>
+     */
+    boolean hasBlockSize();
+    /**
+     * <code>required fixed32 block_size = 7;</code>
+     *
+     * <pre>
+     * The block size used for encryption in KiB
+     * </pre>
+     */
+    int getBlockSize();
+
+    // required string hash = 8;
+    /**
+     * <code>required string hash = 8;</code>
+     *
+     * <pre>
+     * The hash used for signing
+     * </pre>
+     */
+    boolean hasHash();
+    /**
+     * <code>required string hash = 8;</code>
+     *
+     * <pre>
+     * The hash used for signing
+     * </pre>
+     */
+    java.lang.String getHash();
+    /**
+     * <code>required string hash = 8;</code>
+     *
+     * <pre>
+     * The hash used for signing
+     * </pre>
+     */
+    com.google.protobuf.ByteString
+        getHashBytes();
   }
   /**
    * Protobuf type {@code xtreemfs.pbrpc.FileLockbox}
@@ -1667,6 +1712,16 @@ public final class Encryption {
             case 50: {
               bitField0_ |= 0x00000020;
               signKey_ = input.readBytes();
+              break;
+            }
+            case 61: {
+              bitField0_ |= 0x00000040;
+              blockSize_ = input.readFixed32();
+              break;
+            }
+            case 66: {
+              bitField0_ |= 0x00000080;
+              hash_ = input.readBytes();
               break;
             }
           }
@@ -1924,6 +1979,85 @@ public final class Encryption {
       return signKey_;
     }
 
+    // required fixed32 block_size = 7;
+    public static final int BLOCK_SIZE_FIELD_NUMBER = 7;
+    private int blockSize_;
+    /**
+     * <code>required fixed32 block_size = 7;</code>
+     *
+     * <pre>
+     * The block size used for encryption in KiB
+     * </pre>
+     */
+    public boolean hasBlockSize() {
+      return ((bitField0_ & 0x00000040) == 0x00000040);
+    }
+    /**
+     * <code>required fixed32 block_size = 7;</code>
+     *
+     * <pre>
+     * The block size used for encryption in KiB
+     * </pre>
+     */
+    public int getBlockSize() {
+      return blockSize_;
+    }
+
+    // required string hash = 8;
+    public static final int HASH_FIELD_NUMBER = 8;
+    private java.lang.Object hash_;
+    /**
+     * <code>required string hash = 8;</code>
+     *
+     * <pre>
+     * The hash used for signing
+     * </pre>
+     */
+    public boolean hasHash() {
+      return ((bitField0_ & 0x00000080) == 0x00000080);
+    }
+    /**
+     * <code>required string hash = 8;</code>
+     *
+     * <pre>
+     * The hash used for signing
+     * </pre>
+     */
+    public java.lang.String getHash() {
+      java.lang.Object ref = hash_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          hash_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string hash = 8;</code>
+     *
+     * <pre>
+     * The hash used for signing
+     * </pre>
+     */
+    public com.google.protobuf.ByteString
+        getHashBytes() {
+      java.lang.Object ref = hash_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        hash_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private void initFields() {
       fileId_ = "";
       fileIdSalt_ = com.google.protobuf.ByteString.EMPTY;
@@ -1931,6 +2065,8 @@ public final class Encryption {
       cipher_ = "";
       encKey_ = com.google.protobuf.ByteString.EMPTY;
       signKey_ = com.google.protobuf.ByteString.EMPTY;
+      blockSize_ = 0;
+      hash_ = "";
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -1961,6 +2097,14 @@ public final class Encryption {
         memoizedIsInitialized = 0;
         return false;
       }
+      if (!hasBlockSize()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasHash()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
       memoizedIsInitialized = 1;
       return true;
     }
@@ -1985,6 +2129,12 @@ public final class Encryption {
       }
       if (((bitField0_ & 0x00000020) == 0x00000020)) {
         output.writeBytes(6, signKey_);
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        output.writeFixed32(7, blockSize_);
+      }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        output.writeBytes(8, getHashBytes());
       }
       getUnknownFields().writeTo(output);
     }
@@ -2018,6 +2168,14 @@ public final class Encryption {
       if (((bitField0_ & 0x00000020) == 0x00000020)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(6, signKey_);
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeFixed32Size(7, blockSize_);
+      }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(8, getHashBytes());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -2151,6 +2309,10 @@ public final class Encryption {
         bitField0_ = (bitField0_ & ~0x00000010);
         signKey_ = com.google.protobuf.ByteString.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000020);
+        blockSize_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000040);
+        hash_ = "";
+        bitField0_ = (bitField0_ & ~0x00000080);
         return this;
       }
 
@@ -2203,6 +2365,14 @@ public final class Encryption {
           to_bitField0_ |= 0x00000020;
         }
         result.signKey_ = signKey_;
+        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+          to_bitField0_ |= 0x00000040;
+        }
+        result.blockSize_ = blockSize_;
+        if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
+          to_bitField0_ |= 0x00000080;
+        }
+        result.hash_ = hash_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -2241,6 +2411,14 @@ public final class Encryption {
         if (other.hasSignKey()) {
           setSignKey(other.getSignKey());
         }
+        if (other.hasBlockSize()) {
+          setBlockSize(other.getBlockSize());
+        }
+        if (other.hasHash()) {
+          bitField0_ |= 0x00000080;
+          hash_ = other.hash_;
+          onChanged();
+        }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
@@ -2267,6 +2445,14 @@ public final class Encryption {
           return false;
         }
         if (!hasSignKey()) {
+          
+          return false;
+        }
+        if (!hasBlockSize()) {
+          
+          return false;
+        }
+        if (!hasHash()) {
           
           return false;
         }
@@ -2710,6 +2896,153 @@ public final class Encryption {
       public Builder clearSignKey() {
         bitField0_ = (bitField0_ & ~0x00000020);
         signKey_ = getDefaultInstance().getSignKey();
+        onChanged();
+        return this;
+      }
+
+      // required fixed32 block_size = 7;
+      private int blockSize_ ;
+      /**
+       * <code>required fixed32 block_size = 7;</code>
+       *
+       * <pre>
+       * The block size used for encryption in KiB
+       * </pre>
+       */
+      public boolean hasBlockSize() {
+        return ((bitField0_ & 0x00000040) == 0x00000040);
+      }
+      /**
+       * <code>required fixed32 block_size = 7;</code>
+       *
+       * <pre>
+       * The block size used for encryption in KiB
+       * </pre>
+       */
+      public int getBlockSize() {
+        return blockSize_;
+      }
+      /**
+       * <code>required fixed32 block_size = 7;</code>
+       *
+       * <pre>
+       * The block size used for encryption in KiB
+       * </pre>
+       */
+      public Builder setBlockSize(int value) {
+        bitField0_ |= 0x00000040;
+        blockSize_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required fixed32 block_size = 7;</code>
+       *
+       * <pre>
+       * The block size used for encryption in KiB
+       * </pre>
+       */
+      public Builder clearBlockSize() {
+        bitField0_ = (bitField0_ & ~0x00000040);
+        blockSize_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // required string hash = 8;
+      private java.lang.Object hash_ = "";
+      /**
+       * <code>required string hash = 8;</code>
+       *
+       * <pre>
+       * The hash used for signing
+       * </pre>
+       */
+      public boolean hasHash() {
+        return ((bitField0_ & 0x00000080) == 0x00000080);
+      }
+      /**
+       * <code>required string hash = 8;</code>
+       *
+       * <pre>
+       * The hash used for signing
+       * </pre>
+       */
+      public java.lang.String getHash() {
+        java.lang.Object ref = hash_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          hash_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string hash = 8;</code>
+       *
+       * <pre>
+       * The hash used for signing
+       * </pre>
+       */
+      public com.google.protobuf.ByteString
+          getHashBytes() {
+        java.lang.Object ref = hash_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          hash_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string hash = 8;</code>
+       *
+       * <pre>
+       * The hash used for signing
+       * </pre>
+       */
+      public Builder setHash(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000080;
+        hash_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string hash = 8;</code>
+       *
+       * <pre>
+       * The hash used for signing
+       * </pre>
+       */
+      public Builder clearHash() {
+        bitField0_ = (bitField0_ & ~0x00000080);
+        hash_ = getDefaultInstance().getHash();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string hash = 8;</code>
+       *
+       * <pre>
+       * The hash used for signing
+       * </pre>
+       */
+      public Builder setHashBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000080;
+        hash_ = value;
         onChanged();
         return this;
       }
@@ -4094,14 +4427,15 @@ public final class Encryption {
       "rpc\"=\n\013SymEncBytes\022\016\n\006cipher\030\001 \002(\t\022\n\n\002iv" +
       "\030\002 \002(\014\022\022\n\nciphertext\030\003 \002(\014\"A\n\013SignedByte" +
       "s\022\014\n\004data\030\001 \002(\014\022\021\n\tsignature\030\002 \002(\014\022\021\n\tha" +
-      "sh_algo\030\003 \002(\t\"u\n\013FileLockbox\022\017\n\007file_id\030" +
-      "\001 \002(\t\022\024\n\014file_id_salt\030\002 \002(\014\022\014\n\004salt\030\003 \002(" +
-      "\014\022\016\n\006cipher\030\004 \002(\t\022\017\n\007enc_key\030\005 \002(\014\022\020\n\010si" +
-      "gn_key\030\006 \002(\014\"t\n\014FileMetadata\022\017\n\007file_id\030" +
-      "\001 \002(\t\022\024\n\014file_id_salt\030\002 \002(\014\022\014\n\004salt\030\003 \002(" +
-      "\014\022\017\n\007user_id\030\004 \002(\t\022\020\n\010group_id\030\005 \002(\t\022\014\n\004",
-      "mode\030\006 \002(\007B(\n&org.xtreemfs.pbrpc.generat" +
-      "edinterfaces"
+      "sh_algo\030\003 \002(\t\"\227\001\n\013FileLockbox\022\017\n\007file_id" +
+      "\030\001 \002(\t\022\024\n\014file_id_salt\030\002 \002(\014\022\014\n\004salt\030\003 \002" +
+      "(\014\022\016\n\006cipher\030\004 \002(\t\022\017\n\007enc_key\030\005 \002(\014\022\020\n\010s" +
+      "ign_key\030\006 \002(\014\022\022\n\nblock_size\030\007 \002(\007\022\014\n\004has" +
+      "h\030\010 \002(\t\"t\n\014FileMetadata\022\017\n\007file_id\030\001 \002(\t" +
+      "\022\024\n\014file_id_salt\030\002 \002(\014\022\014\n\004salt\030\003 \002(\014\022\017\n\007",
+      "user_id\030\004 \002(\t\022\020\n\010group_id\030\005 \002(\t\022\014\n\004mode\030" +
+      "\006 \002(\007B(\n&org.xtreemfs.pbrpc.generatedint" +
+      "erfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -4125,7 +4459,7 @@ public final class Encryption {
           internal_static_xtreemfs_pbrpc_FileLockbox_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_FileLockbox_descriptor,
-              new java.lang.String[] { "FileId", "FileIdSalt", "Salt", "Cipher", "EncKey", "SignKey", });
+              new java.lang.String[] { "FileId", "FileIdSalt", "Salt", "Cipher", "EncKey", "SignKey", "BlockSize", "Hash", });
           internal_static_xtreemfs_pbrpc_FileMetadata_descriptor =
             getDescriptor().getMessageTypes().get(3);
           internal_static_xtreemfs_pbrpc_FileMetadata_fieldAccessorTable = new

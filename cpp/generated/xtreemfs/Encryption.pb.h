@@ -401,6 +401,25 @@ class FileLockbox : public ::google::protobuf::Message {
   inline ::std::string* release_sign_key();
   inline void set_allocated_sign_key(::std::string* sign_key);
 
+  // required fixed32 block_size = 7;
+  inline bool has_block_size() const;
+  inline void clear_block_size();
+  static const int kBlockSizeFieldNumber = 7;
+  inline ::google::protobuf::uint32 block_size() const;
+  inline void set_block_size(::google::protobuf::uint32 value);
+
+  // required string hash = 8;
+  inline bool has_hash() const;
+  inline void clear_hash();
+  static const int kHashFieldNumber = 8;
+  inline const ::std::string& hash() const;
+  inline void set_hash(const ::std::string& value);
+  inline void set_hash(const char* value);
+  inline void set_hash(const char* value, size_t size);
+  inline ::std::string* mutable_hash();
+  inline ::std::string* release_hash();
+  inline void set_allocated_hash(::std::string* hash);
+
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.FileLockbox)
  private:
   inline void set_has_file_id();
@@ -415,6 +434,10 @@ class FileLockbox : public ::google::protobuf::Message {
   inline void clear_has_enc_key();
   inline void set_has_sign_key();
   inline void clear_has_sign_key();
+  inline void set_has_block_size();
+  inline void clear_has_block_size();
+  inline void set_has_hash();
+  inline void clear_has_hash();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -424,9 +447,11 @@ class FileLockbox : public ::google::protobuf::Message {
   ::std::string* cipher_;
   ::std::string* enc_key_;
   ::std::string* sign_key_;
+  ::std::string* hash_;
+  ::google::protobuf::uint32 block_size_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(6 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(8 + 31) / 32];
 
   friend void  protobuf_AddDesc_xtreemfs_2fEncryption_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fEncryption_2eproto();
@@ -1444,6 +1469,98 @@ inline void FileLockbox::set_allocated_sign_key(::std::string* sign_key) {
   } else {
     clear_has_sign_key();
     sign_key_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// required fixed32 block_size = 7;
+inline bool FileLockbox::has_block_size() const {
+  return (_has_bits_[0] & 0x00000040u) != 0;
+}
+inline void FileLockbox::set_has_block_size() {
+  _has_bits_[0] |= 0x00000040u;
+}
+inline void FileLockbox::clear_has_block_size() {
+  _has_bits_[0] &= ~0x00000040u;
+}
+inline void FileLockbox::clear_block_size() {
+  block_size_ = 0u;
+  clear_has_block_size();
+}
+inline ::google::protobuf::uint32 FileLockbox::block_size() const {
+  return block_size_;
+}
+inline void FileLockbox::set_block_size(::google::protobuf::uint32 value) {
+  set_has_block_size();
+  block_size_ = value;
+}
+
+// required string hash = 8;
+inline bool FileLockbox::has_hash() const {
+  return (_has_bits_[0] & 0x00000080u) != 0;
+}
+inline void FileLockbox::set_has_hash() {
+  _has_bits_[0] |= 0x00000080u;
+}
+inline void FileLockbox::clear_has_hash() {
+  _has_bits_[0] &= ~0x00000080u;
+}
+inline void FileLockbox::clear_hash() {
+  if (hash_ != &::google::protobuf::internal::kEmptyString) {
+    hash_->clear();
+  }
+  clear_has_hash();
+}
+inline const ::std::string& FileLockbox::hash() const {
+  return *hash_;
+}
+inline void FileLockbox::set_hash(const ::std::string& value) {
+  set_has_hash();
+  if (hash_ == &::google::protobuf::internal::kEmptyString) {
+    hash_ = new ::std::string;
+  }
+  hash_->assign(value);
+}
+inline void FileLockbox::set_hash(const char* value) {
+  set_has_hash();
+  if (hash_ == &::google::protobuf::internal::kEmptyString) {
+    hash_ = new ::std::string;
+  }
+  hash_->assign(value);
+}
+inline void FileLockbox::set_hash(const char* value, size_t size) {
+  set_has_hash();
+  if (hash_ == &::google::protobuf::internal::kEmptyString) {
+    hash_ = new ::std::string;
+  }
+  hash_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* FileLockbox::mutable_hash() {
+  set_has_hash();
+  if (hash_ == &::google::protobuf::internal::kEmptyString) {
+    hash_ = new ::std::string;
+  }
+  return hash_;
+}
+inline ::std::string* FileLockbox::release_hash() {
+  clear_has_hash();
+  if (hash_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = hash_;
+    hash_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void FileLockbox::set_allocated_hash(::std::string* hash) {
+  if (hash_ != &::google::protobuf::internal::kEmptyString) {
+    delete hash_;
+  }
+  if (hash) {
+    set_has_hash();
+    hash_ = hash;
+  } else {
+    clear_has_hash();
+    hash_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   }
 }
 

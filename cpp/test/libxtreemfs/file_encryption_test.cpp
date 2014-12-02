@@ -1063,6 +1063,12 @@ void ct_worker(FileHandle* file, char id,
 TEST_F(EncryptionTest, ConcurrentWrite_01) {
   options_.encryption_cw = "serialize";
 
+  file->Close();
+  file = volume_->OpenFile(
+      user_credentials_,
+      "/test_file",
+      static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_RDWR));
+
   boost::thread th1(cw_worker, file, '1');
   boost::thread th2(cw_worker, file, '2');
   boost::thread th3(cw_worker, file, '3');
@@ -1077,6 +1083,12 @@ TEST_F(EncryptionTest, ConcurrentWrite_01) {
 TEST_F(EncryptionTest, ConcurrentWrite_02) {
   options_.encryption_cw = "locks";
 
+  file->Close();
+  file = volume_->OpenFile(
+      user_credentials_,
+      "/test_file",
+      static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_RDWR));
+
   boost::thread th1(cw_worker, file, '1');
   boost::thread th2(cw_worker, file, '2');
   boost::thread th3(cw_worker, file, '3');
@@ -1090,6 +1102,12 @@ TEST_F(EncryptionTest, ConcurrentWrite_02) {
 
 TEST_F(EncryptionTest, ConcurrentWrite_03) {
   options_.encryption_cw = "snapshots";
+
+  file->Close();
+  file = volume_->OpenFile(
+      user_credentials_,
+      "/test_file",
+      static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_RDWR));
 
   boost::thread th1(cw_worker, file, '1');
   boost::thread th2(cw_worker, file, '2');
@@ -1129,6 +1147,12 @@ void cw_04_write_3(FileHandle* file, char id) {
 TEST_F(EncryptionTest, ConcurrentWrite_04) {
   options_.encryption_cw = "snapshots";
 
+  file->Close();
+  file = volume_->OpenFile(
+      user_credentials_,
+      "/test_file",
+      static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_RDWR));
+
   ASSERT_NO_THROW({
     file->Write("A", 1, 0);
   });
@@ -1148,6 +1172,12 @@ TEST_F(EncryptionTest, ConcurrentWrite_04) {
 TEST_F(EncryptionTest, ConcurrentWrite_05) {
   options_.encryption_cw = "serialize";
   options_.enable_async_writes = true;
+
+  file->Close();
+  file = volume_->OpenFile(
+      user_credentials_,
+      "/test_file",
+      static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_RDWR));
 
   boost::thread th1(cw_worker, file, '1');
   boost::thread th2(cw_worker, file, '2');

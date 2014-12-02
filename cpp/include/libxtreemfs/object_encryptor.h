@@ -13,13 +13,14 @@
 #include <string>
 #include <vector>
 
-#include "libxtreemfs/file_key_distribution.h"
 #include "libxtreemfs/file_info.h"
 #include "libxtreemfs/hash_tree_ad.h"
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/volume_implementation.h"
 #include "util/crypto/cipher.h"
 #include "util/crypto/sign_algorithm.h"
+
+#include "xtreemfs/Encryption.pb.h"
 
 namespace xtreemfs {
 
@@ -41,10 +42,9 @@ class ObjectEncryptor : private boost::noncopyable {
   class FileLock;
 
  public:
-  ObjectEncryptor(const pbrpc::UserCredentials& user_credentials,
-                  const pbrpc::XCap& xcap, const std::string& file_path,
+  ObjectEncryptor(const pbrpc::FileLockbox& lockbox, FileHandle* meta_file,
                   VolumeImplementation* volume, FileInfo* file_info,
-                  int object_size, uint32_t mode);
+                  int object_size);
 
   ~ObjectEncryptor();
 
@@ -126,15 +126,30 @@ class ObjectEncryptor : private boost::noncopyable {
     boost::scoped_ptr<pbrpc::Lock> lock_;
   };
 
-  FileKeyDistribution key_distribution;
-
+  /**
+   * The key used to encrypt the file.
+   */
   std::vector<unsigned char> file_enc_key_;
 
+  /**
+   * The block size used for encryption in bytes.
+   */
   int enc_block_size_;
 
+  /**
+   * The cipher used to encrypt the file.
+   */
   Cipher cipher_;
 
+  /**
+   * The algorithm used to sign the file.
+   */
   SignAlgorithm sign_algo_;
+
+  /**
+   * The method used to ensure consistency for concurrent write
+   */
+  std::string concurrent_write_;
 
   /**
    * Object size in bytes.
@@ -148,11 +163,6 @@ class ObjectEncryptor : private boost::noncopyable {
    * destruction.
    */
   FileHandle* meta_file_;
-
-  /**
-   * Reference to volume options. Not owned by class.
-   */
-  const Options& volume_options_;
 };
 
 }  // namespace xtreemfs

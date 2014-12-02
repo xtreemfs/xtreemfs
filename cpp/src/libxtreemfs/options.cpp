@@ -108,10 +108,14 @@ Options::Options()
 
   // encryption options.
   encryption = false;
-  encryption_block_size = 0;
-  encryption_cipher = "";
-  encryption_hash = "";
-  encryption_hash = "";
+  encryption_block_size = 4096;
+  encryption_block_size_was_passed = false;
+  encryption_cipher = "aes-256-ctr";
+  encryption_cipher_was_passed = false;
+  encryption_hash = "sha256";
+  encryption_hash_was_passed = false;
+  encryption_cw = "none";
+  encryption_cw_was_passed = false;
   encryption_pub_keys_path = "";
   encryption_priv_keys_path = "";
 #endif  // HAS_OPENSSL
@@ -528,6 +532,19 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
     ReadPasswordFromStdin(
         "No PKCS#12 certificate passphrase was given. Please enter it now:",
         &ssl_pkcs12_pass);
+  }
+
+  if (vm.count("encryption-block-size")) {
+    encryption_block_size_was_passed = true;
+  }
+  if (vm.count("encryption-cipher")) {
+    encryption_cipher_was_passed = true;
+  }
+  if (vm.count("encryption-hash")) {
+    encryption_hash_was_passed = true;
+  }
+  if (vm.count("encryption-cw")) {
+    encryption_cw_was_passed = true;
   }
 #endif  // HAS_OPENSSL
 

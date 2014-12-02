@@ -401,17 +401,18 @@ FileHandle* VolumeImplementation::OpenFileWithTruncateSize(
   }
 
   if (volume_options_.encryption && !ObjectEncryptor::IsEncMetaFile(path)) {
+    pbrpc::FileLockbox lockbox;
+    FileHandle* meta_file = file_key_distribution_.OpenMetaFile(
+        user_credentials, open_response->creds().xcap(), path, mode, &lockbox);
     file_handle->SetObjectEncryptor(
         std::auto_ptr<ObjectEncryptor>(
             new ObjectEncryptor(
-                user_credentials,
-                open_response->creds().xcap(),
-                path,
+                lockbox,
+                meta_file,
                 this,
                 file_info,
                 open_response->creds().xlocs().replicas(0).striping_policy()
-                    .stripe_size(),
-                mode)));
+                    .stripe_size())));
   }
 
   // Copy timestamp and free response memory.
