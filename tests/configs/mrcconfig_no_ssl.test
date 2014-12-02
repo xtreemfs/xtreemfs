@@ -23,9 +23,9 @@ debug.level = 4
 #debug.categories = all
 
 # port for the service to listen on
-listen.port = 42636
+listen.port = 48636
 
-http_port = 40636
+http_port = 46636
 
 # optional address for network device, "any" if not specified
 # listen.address = 127.0.0.1
@@ -38,7 +38,7 @@ osd_check_interval = 10
 
 # Directory Service endpoint
 dir_service.host = localhost
-dir_service.port = 42638
+dir_service.port = 48638
 #dir_service1.host = localhost
 #dir_service1.port = 32639
 

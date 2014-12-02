@@ -23,10 +23,10 @@ debug.level = 4
 #debug.categories = all
 
 # port for the service to listen on
-listen.port = 42638
+listen.port = 48638
 
 # port for the status page (HTTP server)
-http_port = 40638
+http_port = 46638
 
 # optional address for network device ("any" if not specified)
 # listen.address = 127.0.0.1

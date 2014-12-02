@@ -23,9 +23,9 @@ debug.level = 4
 #debug.categories = all
 
 # port for the service to listen on
-listen.port = 42640
+listen.port = 48640
 
-http_port = 40640
+http_port = 46640
 
 # optional address for network device, "any" if not specified
 #listen.address = 127.0.0.1
@@ -35,7 +35,7 @@ http_port = 40640
 
 # Directory Service endpoint
 dir_service.host = localhost
-dir_service.port = 42638
+dir_service.port = 48638
 
 # directory containing XtreemFS file content
 object_dir = /tmp/xtreemfs-test/osd_no_ssl/

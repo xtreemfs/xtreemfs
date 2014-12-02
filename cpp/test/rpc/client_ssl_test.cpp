@@ -239,8 +239,8 @@ protected:
     mrc_config_file_ = config_path("mrcconfig_no_ssl.test");
     osd_config_file_ = config_path("osdconfig_no_ssl.test");
         
-    dir_url_.xtreemfs_url = "pbrpc://localhost:42638/";
-    mrc_url_.xtreemfs_url = "pbrpc://localhost:42636/";
+    dir_url_.xtreemfs_url = "pbrpc://localhost:48638/";
+    mrc_url_.xtreemfs_url = "pbrpc://localhost:48636/";
     
     options_.log_level_string = "DEBUG";
     options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_no_ssl";
@@ -263,8 +263,8 @@ protected:
     mrc_config_file_ = config_path("mrcconfig_ssl_short_chain.test");
     osd_config_file_ = config_path("osdconfig_ssl_short_chain.test");
         
-    dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
-    mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
+    dir_url_.xtreemfs_url = "pbrpcs://localhost:48638/";
+    mrc_url_.xtreemfs_url = "pbrpcs://localhost:48636/";
     
     options_.log_level_string = "DEBUG";
     options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_short_chain";
@@ -356,8 +356,8 @@ protected:
     mrc_config_file_ = config_path("mrcconfig_ssl_long_chain.test");
     osd_config_file_ = config_path("osdconfig_ssl_long_chain.test");
         
-    dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
-    mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
+    dir_url_.xtreemfs_url = "pbrpcs://localhost:48638/";
+    mrc_url_.xtreemfs_url = "pbrpcs://localhost:48636/";
     
     options_.log_level_string = "DEBUG";
     options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_long_chain";
@@ -450,8 +450,8 @@ protected:
     mrc_config_file_ = config_path("mrcconfig_ssl_short_chain.test");
     osd_config_file_ = config_path("osdconfig_ssl_short_chain.test");
     
-    dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
-    mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
+    dir_url_.xtreemfs_url = "pbrpcs://localhost:48638/";
+    mrc_url_.xtreemfs_url = "pbrpcs://localhost:48636/";
     
     options_.log_level_string = "DEBUG";
     options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_verification";
@@ -518,8 +518,8 @@ protected:
     mrc_config_file_ = config_path("mrcconfig_ssl_ignore_errors.test");
     osd_config_file_ = config_path("osdconfig_ssl_ignore_errors.test");
     
-    dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
-    mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
+    dir_url_.xtreemfs_url = "pbrpcs://localhost:48638/";
+    mrc_url_.xtreemfs_url = "pbrpcs://localhost:48636/";
     
     options_.log_level_string = "DEBUG";
     options_.log_file_path =
@@ -596,8 +596,8 @@ protected:
     mrc_config_file_ = config_path("mrcconfig_ssl_no_verification.test");
     osd_config_file_ = config_path("osdconfig_ssl_no_verification.test");
     
-    dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
-    mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
+    dir_url_.xtreemfs_url = "pbrpcs://localhost:48638/";
+    mrc_url_.xtreemfs_url = "pbrpcs://localhost:48636/";
     
     options_.log_level_string = "DEBUG";
     options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_no_verification";
@@ -657,7 +657,7 @@ class ClientSSLTestLongChainNoVerificationPKCS12 :
 class ClientSSLTestLongChainNoVerificationPEM :
     public ClientSSLTestLongChainNoVerification<kPEM> {};
     
-template<TestCertificateType t, char const *ssl_min_method_string>
+template<TestCertificateType t, char const *ssl_method_string>
 class ClientSSLTestSSLVersion : public ClientTest {
 protected:
   virtual void SetUp() {
@@ -665,8 +665,8 @@ protected:
     mrc_config_file_ = config_path("mrcconfig_ssl_version.test");
     osd_config_file_ = config_path("osdconfig_ssl_version.test");
     
-    dir_url_.xtreemfs_url = "pbrpcs://localhost:42638/";
-    mrc_url_.xtreemfs_url = "pbrpcs://localhost:42636/";
+    dir_url_.xtreemfs_url = "pbrpcs://localhost:48638/";
+    mrc_url_.xtreemfs_url = "pbrpcs://localhost:48636/";
     
     options_.log_level_string = "DEBUG";
     options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_version";
@@ -684,7 +684,7 @@ protected:
         break;
     }
     
-    options_.ssl_min_method_string = ssl_min_method_string;
+    options_.ssl_method_string = ssl_method_string;
     options_.ssl_verify_certificates = true;
                 
     ClientTest::SetUp();
@@ -698,32 +698,32 @@ protected:
   void DoTest() {
     CreateOpenDeleteVolume("test_ssl_version");
     
-    if (strcmp(ssl_min_method_string, "sslv3") == 0) {
+    if (strcmp(ssl_method_string, "sslv3") == 0) {
       ASSERT_EQ(2, count_occurrences_in_file(
           options_.log_file_path,
           "Using SSL/TLS version 'SSLv3'."));
     }
 #if (BOOST_VERSION > 105300)
-    else if (strcmp(ssl_min_method_string, "sslv23") == 0 ||
-             strcmp(ssl_min_method_string, "tlsv12") == 0) {
+    else if (strcmp(ssl_method_string, "sslv23") == 0 ||
+             strcmp(ssl_method_string, "tlsv12") == 0) {
       ASSERT_EQ(2, count_occurrences_in_file(
           options_.log_file_path,
           "Using SSL/TLS version 'TLSv1.2'."));
     }
 #else  // BOOST_VERSION > 105300
-    else if (strcmp(ssl_min_method_string, "sslv23") == 0) {
+    else if (strcmp(ssl_method_string, "sslv23") == 0) {
       ASSERT_EQ(2, count_occurrences_in_file(
           options_.log_file_path,
           "Using SSL/TLS version 'TLSv1'."));
     }
 #endif  // BOOST_VERSION > 105300
-    else if (strcmp(ssl_min_method_string, "tlsv1") == 0) {
+    else if (strcmp(ssl_method_string, "tlsv1") == 0) {
       ASSERT_EQ(2, count_occurrences_in_file(
           options_.log_file_path,
           "Using SSL/TLS version 'TLSv1'."));
     }
 #if (BOOST_VERSION > 105300)
-    else if (strcmp(ssl_min_method_string, "tlsv11") == 0) {
+    else if (strcmp(ssl_method_string, "tlsv11") == 0) {
       ASSERT_EQ(2, count_occurrences_in_file(
           options_.log_file_path,
           "Using SSL/TLS version 'TLSv1.1'."));
