@@ -93,7 +93,7 @@ Client::Client(int32_t connect_timeout_s,
     ssl_context_ = new boost::asio::ssl::context(
         service_,
         string_to_ssl_method(
-            options->min_method_string(),
+            options->ssl_method_string(),
             boost::asio::ssl::context_base::sslv23_client));
 #if (BOOST_VERSION > 104601)
     // Verify certificate callback can be conveniently specified from

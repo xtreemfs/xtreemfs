@@ -88,7 +88,7 @@ class Options {
    *  - grid_ssl || protocol
    *  - verify_certificates
    *  - ignore_verify_errors
-   *  - min_ssl_method
+   *  - ssl_method
    *
    * @remark Ownership is transferred to caller. May be NULL.
    */
@@ -185,8 +185,8 @@ class Options {
    * accept anyway. Only used when ssl_verify_certificates = true. */
   std::vector<int> ssl_ignore_verify_errors;
   
-  /** Minimum SSL version that this client should accept. */
-  std::string ssl_min_method_string;
+  /** SSL version that this client should accept. */
+  std::string ssl_method_string;
 #endif  // HAS_OPENSSL
 
   // Grid Support options.

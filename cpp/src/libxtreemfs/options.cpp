@@ -112,7 +112,7 @@ Options::Options()
   ssl_pkcs12_pass = "";
   grid_ssl = false;
   ssl_verify_certificates = false;
-  ssl_min_method_string = "sslv23";
+  ssl_method_string = "sslv23";
 #endif  // HAS_OPENSSL
 
   // Grid Support options.
@@ -294,8 +294,8 @@ void Options::GenerateProgramOptionsDescriptions() {
         "unknown issuer certificates, untrusted certificates and one-element "
         "certificate chains (typical setup for local testing).")
     ("min-ssl-method",
-        po::value(&ssl_min_method_string)->default_value(ssl_min_method_string),
-        "Minimum SSL method that this client will accept:\n"
+        po::value(&ssl_method_string)->default_value(ssl_method_string),
+        "SSL method that this client will accept:\n"
         "  - sslv3 accepts SSLv3 only\n"
         "  - sslv23 accepts SSLv2, SSLv3 and TLSv1.x\n"
         "  - tlsv1 accepts TLSv1 only"
@@ -702,7 +702,7 @@ xtreemfs::rpc::SSLOptions* Options::GenerateSSLOptions() const {
         grid_ssl || protocol == PBRPCURL::GetSchemePBRPCG(),
         ssl_verify_certificates,
         ssl_ignore_verify_errors,
-        ssl_min_method_string);
+        ssl_method_string);
   }
 #else
   opts = new xtreemfs::rpc::SSLOptions();
