@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/interprocess/detail/atomic.hpp>
@@ -127,8 +128,8 @@ Client::Client(int32_t connect_timeout_s,
             << options->pkcs12_file_name() << endl;
       }
 
-      char tmplate1[] = "/tmp/pmXXXXXX";
-      char tmplate2[] = "/tmp/ctXXXXXX";
+      std::string pemFileTemplate = "pmXXXXXX";
+      std::string certFileTemplate = "ctXXXXXX";
 
       FILE *p12_file = fopen(options->pkcs12_file_name().c_str(), "rb");
 
@@ -174,17 +175,14 @@ Client::Client(int32_t connect_timeout_s,
         if (Logging::log->loggingActive(LEVEL_WARN)) {
           Logging::log->getLog(LEVEL_WARN) << "Expected one or more additional "
               "certificates in " << options->pkcs12_file_name() << " in order "
-              "to verify the services' certificates. Using default system verify "
-              "paths only." << endl;
+              "to verify the services' certificates." << endl;
         }
       } else if (ca->stack.num > 0) {
         // Setup any additional certificates as trusted root CAs in one file.   
-        char trusted_cas_template[] = "/tmp/caXXXXXX";
+        std::string trusted_cas_template("caXXXXXX");
         FILE* trusted_cas_file =
-            create_and_open_temporary_ssl_file(trusted_cas_template, "ab+");
-        trustedCAsFileName = new char[sizeof(trusted_cas_template)];
-        strncpy(trustedCAsFileName,
-                trusted_cas_template, sizeof(trusted_cas_template)); 
+            create_and_open_temporary_ssl_file(&trusted_cas_template, "ab+");
+        trustedCAsFileName = strdup(trusted_cas_template.c_str());
         
         if (Logging::log->loggingActive(LEVEL_INFO)) {
           Logging::log->getLog(LEVEL_INFO) << "Writing " << ca->stack.num
@@ -210,8 +208,8 @@ Client::Client(int32_t connect_timeout_s,
 
       // create two tmp files containing the PEM certificates.
       // these which be deleted when exiting the program
-      FILE* pemFile = create_and_open_temporary_ssl_file(tmplate1, "wb+");
-      FILE* certFile = create_and_open_temporary_ssl_file(tmplate2, "wb+");
+      FILE* pemFile = create_and_open_temporary_ssl_file(&pemFileTemplate, "wb+");
+      FILE* certFile = create_and_open_temporary_ssl_file(&certFileTemplate, "wb+");
       if (pemFile == NULL || certFile == NULL) {
         Logging::log->getLog(LEVEL_ERROR) << "Error creating temporary "
             "certificates" << endl;
@@ -221,7 +219,7 @@ Client::Client(int32_t connect_timeout_s,
 
       if (Logging::log->loggingActive(LEVEL_DEBUG)) {
         Logging::log->getLog(LEVEL_DEBUG) << "tmp file name:"
-            << tmplate1 << " " << tmplate2 << endl;
+            << pemFileTemplate << " " << certFileTemplate << endl;
       }
 
       // write private key
@@ -229,12 +227,12 @@ Client::Client(int32_t connect_timeout_s,
       char* password = strdup(options->pkcs12_file_password().c_str());
       if (!PEM_write_PrivateKey(pemFile, pkey, NULL, NULL, 0, 0, password)) {
         Logging::log->getLog(LEVEL_ERROR)
-            << "Error writing pem file:" << tmplate1 << endl;
+            << "Error writing pem file:" << pemFileTemplate << endl;
         free(password);
         EVP_PKEY_free(pkey);
 
-        unlink(tmplate1);
-        unlink(tmplate2);
+        unlink(pemFileTemplate.c_str());
+        unlink(certFileTemplate.c_str());
         //TODO(mberlin): Use a better approach than exit - throw?
         exit(1);
       }
@@ -244,11 +242,11 @@ Client::Client(int32_t connect_timeout_s,
       // write ca certificate
       if (!PEM_write_X509(certFile, cert)) {
         Logging::log->getLog(LEVEL_ERROR) << "Error writing cert file:"
-            << tmplate2 << endl;
+            << certFileTemplate << endl;
 
         X509_free(cert);
-        unlink(tmplate1);
-        unlink(tmplate2);
+        unlink(pemFileTemplate.c_str());
+        unlink(certFileTemplate.c_str());
         //TODO(mberlin): Use a better approach than exit - throw?
         exit(1);
       }
@@ -257,10 +255,8 @@ Client::Client(int32_t connect_timeout_s,
       fclose(pemFile);
       fclose(certFile);
 
-      pemFileName = new char[sizeof(tmplate1)];
-      strncpy(pemFileName, tmplate1, sizeof(tmplate1));
-      certFileName = new char[sizeof(tmplate2)];
-      strncpy(certFileName, tmplate2, sizeof(tmplate2));
+      pemFileName = strdup(pemFileTemplate.c_str());
+      certFileName = strdup(certFileTemplate.c_str());
 
       ssl_context_->set_password_callback(
           boost::bind(&Client::get_pkcs12_password_callback, this));
@@ -297,8 +293,8 @@ Client::Client(int32_t connect_timeout_s,
         if (options->pem_trusted_certs_file_name().empty()) {
           if (Logging::log->loggingActive(LEVEL_WARN)) {
             Logging::log->getLog(LEVEL_WARN) << "Not using any additional "
-                "certificates in order to verify the services' certificates. "
-                "Using default system verify paths only." << endl;
+                "certificates in order to verify the services' certificates."
+                << endl;
           }
         } else {
           ssl_context_->load_verify_file(options->pem_trusted_certs_file_name());
@@ -713,37 +709,58 @@ void Client::ShutdownHandler() {
   }
 }
 
-FILE* Client::create_and_open_temporary_ssl_file(char* filename_template,
+FILE* Client::create_and_open_temporary_ssl_file(std::string *filename_template,
                                                  const char* mode) {
-  #ifdef WIN32
-      // FIXME set filename_template to actual name
-      //  Gets the temp path env string (no guarantee it's a valid path).
-      TCHAR temp_path[MAX_PATH];
-      TCHAR filename_temp[MAX_PATH];
+  if (filename_template == NULL || mode == NULL) {
+    return NULL;
+  }
+#ifdef WIN32
+  // FIXME set filename_template to actual name
+  //  Gets the temp path env string (no guarantee it's a valid path).
+  TCHAR temp_path[MAX_PATH];
+  TCHAR filename_temp[MAX_PATH];
 
-      DWORD dwRetVal = 0;
-      dwRetVal = GetTempPath(MAX_PATH,          // length of the buffer
-                             temp_path); // buffer for path
-      if (dwRetVal > MAX_PATH || (dwRetVal == 0)) {
-        _tcsncpy_s(temp_path, TEXT("."), 1);
-      }
+  DWORD dwRetVal = 0;
+  dwRetVal = GetTempPath(MAX_PATH,          // length of the buffer
+                         temp_path); // buffer for path
+  if (dwRetVal > MAX_PATH || (dwRetVal == 0)) {
+    _tcsncpy_s(temp_path, TEXT("."), 1);
+  }
 
-      //  Generates a temporary file name.
-      if (!GetTempFileName(temp_path, // directory for tmp files
-                                TEXT("DEMO"),     // temp file name prefix
-                                0,                // create unique name
-                                filename_temp)) {  // buffer for name
-        std::cerr << "Couldn't create temp file name.\n";
-        return NULL;
-      }
-      return _tfopen(filename_temp, TEXT(mode));
+  //  Generates a temporary file name.
+  if (!GetTempFileName(temp_path, // directory for tmp files
+                            TEXT("DEMO"),     // temp file name prefix
+                            0,                // create unique name
+                            filename_temp)) {  // buffer for name
+    std::cerr << "Couldn't create temp file name.\n";
+    return NULL;
+  }
+  return _tfopen(filename_temp, TEXT(mode));
 #else
-      int tmp = mkstemp(filename_template);
-      if (tmp == -1) {
-        std::cerr << "Couldn't create temp file name.\n";
-        return NULL;
+  std::string filename = *filename_template;
+  if (!boost::algorithm::starts_with<std::string, std::string>(filename, "/")) {
+    char *tmpdir = getenv("TMPDIR");
+    if (tmpdir != NULL) {
+      std::string tmp(tmpdir);
+      if (!boost::algorithm::ends_with(tmp, "/")) {
+        tmp += "/";
       }
-      return fdopen(tmp, mode);
+      filename = tmp + filename;
+    } else {
+      filename = "/tmp/" + filename;
+    }
+  }
+  
+  char *temporary_filename = strdup(filename.c_str());
+  int tmp = mkstemp(temporary_filename);
+  if (tmp == -1) {
+    std::cerr << "Couldn't create temp file name.\n";
+    return NULL;
+  }
+  
+  *filename_template = std::string(temporary_filename);
+  free(temporary_filename);
+  return fdopen(tmp, mode);
 #endif  // WIN32
 }
 
@@ -788,9 +805,10 @@ Client::~Client() {
     unlink(trustedCAsFileName);
   }
 
-  delete[] pemFileName;
-  delete[] certFileName;
-  delete[] trustedCAsFileName;
+  // strdup initialized.
+  free(pemFileName);
+  free(certFileName);
+  free(trustedCAsFileName);
 
   if (ssl_options) {
     ERR_remove_state(0);

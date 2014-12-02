@@ -85,7 +85,7 @@ class Client {
 
   void ShutdownHandler();
   
-  FILE* create_and_open_temporary_ssl_file(char* filename_template,
+  FILE* create_and_open_temporary_ssl_file(std::string* filename_template,
                                            const char* mode);
   
 #ifdef HAS_OPENSSL
