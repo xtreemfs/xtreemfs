@@ -131,8 +131,11 @@ class Client {
   std::string get_pem_password_callback() const;
   std::string get_pkcs12_password_callback() const;
   
+  // For previous Boost versions the callback is not a member function (see below).
+#if (BOOST_VERSION > 104601)
   bool verify_certificate_callback(bool preverfied,
                                    boost::asio::ssl::verify_context& context) const;
+#endif
 
   bool use_gridssl_;
   const SSLOptions* ssl_options;
@@ -145,6 +148,12 @@ class Client {
   FRIEND_TEST(ClientTestFastLingerTimeout, LingerTests);
   FRIEND_TEST(ClientTestFastLingerTimeoutConnectTimeout, LingerTests);
 };
+
+// For newer Boost versions the callback is a member function (see above).
+#if (BOOST_VERSION < 104700)
+int verify_certificate_callback(int preverify_ok, X509_STORE_CTX *ctx);
+#endif  // BOOST_VERSION < 104700
+
 }  // namespace rpc
 }  // namespace xtreemfs
 

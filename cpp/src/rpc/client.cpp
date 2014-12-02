@@ -95,10 +95,22 @@ Client::Client(int32_t connect_timeout_s,
         string_to_ssl_method(
             options->min_method_string(),
             boost::asio::ssl::context_base::sslv23_client));
+#if (BOOST_VERSION > 104601)
+    // Verify certificate callback can be conveniently specified from
+    // Boost 1.47.0 onwards.
     ssl_context_->set_verify_mode(boost::asio::ssl::context::verify_peer |
                                   boost::asio::ssl::context::verify_fail_if_no_peer_cert);
     ssl_context_->set_verify_callback(boost::bind(&Client::verify_certificate_callback,
                                                   this, _1, _2));
+#else  // BOOST_VERSION > 104601
+    // The verify callback is not a Client member here, so make sure it can
+    // retrieve the ssl_options later.
+    SSL_CTX_set_app_data(ssl_context_->impl(), ssl_options);
+    SSL_CTX_set_verify(ssl_context_->impl(),
+                       boost::asio::ssl::context::verify_peer |
+                       boost::asio::ssl::context::verify_fail_if_no_peer_cert,
+                       &xtreemfs::rpc::verify_certificate_callback);
+#endif  // BOOST_VERSION > 104601
 
     OpenSSL_add_all_algorithms();
     OpenSSL_add_all_ciphers();
@@ -255,8 +267,10 @@ Client::Client(int32_t connect_timeout_s,
       ssl_context_->use_private_key_file(pemFileName, options->cert_format());
       ssl_context_->use_certificate_chain_file(certFileName);
 
+#if (BOOST_VERSION > 104601)
       // Use system default path for trusted root CAs and any supplied certificates.
       ssl_context_->set_default_verify_paths();
+#endif  // BOOST_VERSION > 104601
       if (trustedCAsFileName != NULL) {
         ssl_context_->load_verify_file(trustedCAsFileName);
       }
@@ -276,8 +290,10 @@ Client::Client(int32_t connect_timeout_s,
                                            options->cert_format());
         ssl_context_->use_certificate_chain_file(options->pem_cert_name());
         
+#if (BOOST_VERSION > 104601)
         // Use system default path for trusted root CAs and any supplied certificates.
         ssl_context_->set_default_verify_paths();
+#endif  // BOOST_VERSION > 104601
         if (options->pem_trusted_certs_file_name().empty()) {
           if (Logging::log->loggingActive(LEVEL_WARN)) {
             Logging::log->getLog(LEVEL_WARN) << "Not using any additional "
@@ -308,9 +324,19 @@ std::string Client::get_pkcs12_password_callback() const {
   return ssl_options->pkcs12_file_password();
 }
 
+#if (BOOST_VERSION > 104601)
 bool Client::verify_certificate_callback(bool preverified,
                                          boost::asio::ssl::verify_context& context) const {
   X509_STORE_CTX *sctx = context.native_handle();
+#else  // BOOST_VERSION > 104601
+int verify_certificate_callback(int preverify_ok, X509_STORE_CTX *sctx) {   
+  bool preverified = preverify_ok == 1;
+  SSL *ssl = static_cast<SSL*>(X509_STORE_CTX_get_ex_data(
+          sctx,
+          SSL_get_ex_data_X509_STORE_CTX_idx()));
+  SSL_CTX *ctx = SSL_get_SSL_CTX(ssl);
+  SSLOptions *ssl_options = static_cast<SSLOptions*>(SSL_CTX_get_app_data(ctx));
+#endif
   X509* cert = X509_STORE_CTX_get_current_cert(sctx);
   
   char subject[256];
@@ -346,7 +372,11 @@ bool Client::verify_certificate_callback(bool preverified,
         << endl;
   }
   
+#if (BOOST_VERSION > 104601)
   return preverified || override;
+#else  // BOOST_VERSION > 104601
+  return (preverified || override) ? 1 : 0;
+#endif  // BOOST_VERSION > 104601
 }
 #endif  // HAS_OPENSSL
 
