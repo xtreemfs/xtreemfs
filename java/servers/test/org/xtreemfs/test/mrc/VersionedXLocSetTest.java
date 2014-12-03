@@ -8,6 +8,7 @@ package org.xtreemfs.test.mrc;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT;
 import static org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY;
 import static org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR;
@@ -130,13 +131,12 @@ public class VersionedXLocSetTest {
     }
 
     /**
-     * Test to ensure the appropriate error (invalid view) is returned, when the RONLY policy is active and a client
-     * tries to read from a replica that has been removed.
+     * Test to ensure, that either a InvalidViewException is thrown if a clients tries to read from a replica, that has
+     * been removed when view renewals are disabled or the view is renewed transparently.
      */
     @Test
-    public void testRonlyRemoveReadOutdated() throws Exception {
-        String volumeName = "testRonlyRemoveReadOutdated";
-        String fileName = "/testfile";
+    public void testViewsOnReplicaRemoval() throws Exception {
+        String volumeName = "testViewsOnReplicaRemoval";
 
         client.createVolume(mrcAddress, auth, userCredentials, volumeName);
         AdminVolume volume = client.openVolume(volumeName, null, options);
@@ -148,44 +148,26 @@ public class VersionedXLocSetTest {
 
         volume.close();
 
-        removeReadOutdated(volumeName, fileName);
+        removeReadOutdated(volumeName, "/testfile-with-renewal", true);
+        removeReadOutdated(volumeName, "/testfile-wo-renewal", false);
     }
+
 
     /**
      * Test to ensure the appropriate error (invalid view) is returned, when the WqRq policy is active and a client
-     * tries to read, and thus form an majority, based on an outdated XLocSet.
+     * tries to read, and thus form an majority, based on an outdated XLocSet. TODO(jdillmann): Should test if flease
+     * transmits the views, when the removed replica does miss the .version_state file
      */
-    @Test
-    public void testWqRqRemoveReadOutdated() throws Exception {
-        String volumeName = "testWqRqRemoveReadOutdated";
-        String fileName = "/testfile";
-
-        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
-        AdminVolume volume = client.openVolume(volumeName, null, options);
-
-        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 3, 0);
-        volume.setOSDSelectionPolicy(
-                userCredentials,
-                Helper.policiesToString(new OSDSelectionPolicyType[] {
-                        OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT,
-                        OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID }));
-        volume.setReplicaSelectionPolicy(
-                userCredentials,
-                Helper.policiesToString(new OSDSelectionPolicyType[] { OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID }));
-
-        volume.close();
-
-        removeReadOutdated(volumeName, fileName);
-    }
 
     /**
      * Remove the primary replica and provoke an invalid view error by accessing the file with an outdated xLocSet.
      * 
      * @param volumeName
      * @param fileName
+     * @param renewView
      * @throws Exception
      */
-    private void removeReadOutdated(String volumeName, String fileName) throws Exception {
+    private void removeReadOutdated(String volumeName, String fileName, boolean renewView) throws Exception {
         AdminVolume volume = client.openVolume(volumeName, null, options);
 
         // Open the testfile and write some bytes not "0".
@@ -226,20 +208,25 @@ public class VersionedXLocSetTest {
         controlVolume.close();
 
         // Reading from the previous fileHandle with the outdated xLocSet has to result in an error.
-        readInvalidView(fileHandle);
-
-        fileHandle.close();
-        volume.close();
+        try {
+            if (renewView) {
+                readWithViewRenewal(fileHandle);
+            } else {
+                readInvalidView(fileHandle);
+            }
+        } finally {
+            fileHandle.close();
+            volume.close();
+        }
     }
 
     /**
-     * Test to ensure the appropriate error (invalid view) is returned, when new replicas are added to a file with the
-     * RONLY policy and a client tries to get access with an outdated xLocSet.
+     * Test to ensure, that either a InvalidViewException is thrown when view renewals are disabled or the view is
+     * renewed transparently, after a new replicas is added and a client tries to read with an outdated view.
      */
     @Test
-    public void testRonlyAddReadOutdated() throws Exception {
-        String volumeName = "testRonlyAddReadOutdated";
-        String fileName = "/testfile";
+    public void testViewsOnReplicaAdding() throws Exception {
+        String volumeName = "testViewsOnReplicaAdding";
 
         client.createVolume(mrcAddress, auth, userCredentials, volumeName);
         AdminVolume volume = client.openVolume(volumeName, null, options);
@@ -253,36 +240,27 @@ public class VersionedXLocSetTest {
         volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY, 2,
                 repl_flags);
         volume.close();
-        
-        addReadOutdated(volumeName, fileName);
+
+        addReadOutdated(volumeName, "/testfile-with-renewal", true);
+        addReadOutdated(volumeName, "/testfile-wo-renewal", false);
     }
+
 
     /**
      * Test to ensure the appropriate error (invalid view) is returned, when new replicas are added to a file with the
-     * WqRw policy and a client tries to get access with an outdated xLocSet.
+     * WqRw policy and a client tries to get access with an outdated xLocSet. TODO(jdillmann): Should test if flease
+     * transmits the views, when the removed replica does miss the .version_state file
      */
-    @Test
-    public void testWqRqAddReadOutdated() throws Exception {
-        String volumeName = "testWqRqAddReadOutdated";
-        String fileName = "/testfile";
-
-        client.createVolume(mrcAddress, auth, userCredentials, volumeName);
-        AdminVolume volume = client.openVolume(volumeName, null, options);
-
-        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 2, 0);
-        volume.close();
-
-        addReadOutdated(volumeName, fileName);
-    }
 
     /**
      * Add additional replicas and and provoke an invalid view error by accessing the file with an outdated xLocSet.
      * 
      * @param volumeName
      * @param fileName
+     * @param renewView
      * @throws Exception
      */
-    private void addReadOutdated(String volumeName, String fileName) throws Exception {
+    private void addReadOutdated(String volumeName, String fileName, boolean renewView) throws Exception {
         // Open the testfile and write some data to it.
         AdminVolume outdatedVolume = client.openVolume(volumeName, null, options);
         AdminFileHandle outdatedFile = outdatedVolume.openFile(userCredentials, fileName,
@@ -304,10 +282,16 @@ public class VersionedXLocSetTest {
         volume.close();
 
         // Reading from the previous fileHandle with the outdated xLocSet has to result in an error.
-        readInvalidView(outdatedFile);
-
-        outdatedFile.close();
-        outdatedVolume.close();
+        try {
+            if (renewView) {
+                readWithViewRenewal(outdatedFile);
+            } else {
+                readInvalidView(outdatedFile);
+            }
+        } finally {
+            outdatedFile.close();
+            outdatedVolume.close();
+        }
     }
 
     /**
@@ -519,19 +503,33 @@ public class VersionedXLocSetTest {
                 .getReplicasCount());
     }
 
-    private static void readInvalidView(AdminFileHandle file) throws AddressToUUIDNotFoundException, IOException {
-        // If no (more) retries are allowed, syncCall won't reload the view and throws an InvalidViewException.
-        int prevMaxTries = options.getMaxTries();
-        options.setMaxTries(1);
+    private void readInvalidView(AdminFileHandle file) throws AddressToUUIDNotFoundException, IOException {
+        // Prevent view renewal.
+        int prevMaxViewRenewals = options.getMaxViewRenewals();
+        options.setMaxViewRenewals(1);
 
         try {
             byte[] dataOut = new byte[1];
             file.read(userCredentials, dataOut, 1, 0);
+            fail("InvalidViewException was expected.");
         } catch (InvalidViewException e) {
             // Everything is fine. The InvalidViewException is expected, because the client read with an outdated view.
         } finally {
-            // Restore the maxRetries.
-            options.setMaxTries(prevMaxTries);
+            // Restore the settings.
+            options.setMaxViewRenewals(prevMaxViewRenewals);
+        }
+    }
+
+    private void readWithViewRenewal(AdminFileHandle file) throws AddressToUUIDNotFoundException, IOException {
+        int prevMaxViewRenewals = options.getMaxViewRenewals();
+        options.setMaxViewRenewals(2);
+
+        try {
+            byte[] dataOut = new byte[1];
+            file.read(userCredentials, dataOut, 1, 0);
+        } finally {
+            // Restore the settings.
+            options.setMaxViewRenewals(prevMaxViewRenewals);
         }
     }
 
