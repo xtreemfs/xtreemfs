@@ -485,15 +485,19 @@ protected:
   
   void DoTest() {
     // Server does not accept our certificate.
-    std::string exception_text("no exception");
+    std::string exception_text;
     try {
       CreateOpenDeleteVolume("test_ssl_verification");
-    // } catch (xtreemfs::IOException& e) {
-    } catch (const std::exception& e) {
+    } catch (xtreemfs::IOException& e) {
       exception_text = e.what();
     }
-    // ASSERT_TRUE(exception_text.find("could not connect to host") != std::string::npos);
-    ASSERT_EQ("could not connect to host", exception_text);
+    // Depending on whether the error occurs on initial connect or reconnect,
+    // the error message varies. This depends on how quick the services start
+    // up, such that the first connect might happen before the services are
+    // operational.
+    ASSERT_TRUE(
+        exception_text.find("could not connect to host") != std::string::npos ||
+        exception_text.find("cannot connect to server") != std:.string::npos);
 
     // We do not accept the server's certificate.
     ASSERT_TRUE(count_occurrences_in_file(
