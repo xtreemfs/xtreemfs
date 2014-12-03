@@ -10,6 +10,7 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
+#include <cerrno>
 #include <fstream>
 #include <stdio.h>
 #include <string>
@@ -39,10 +40,14 @@ class ExternalService {
 public:
   ExternalService(
       std::string config_file_name)
-      : config_file_name_(config_file_name) {
+      : config_file_name_(config_file_name),
+        java_home_(""),
+        classpath_(""),
+        argv_(NULL),
+        service_pid_(-1) {
     
     char *java_home = getenv("JAVA_HOME");
-    if (java_home == NULL || (java_home_ = strdup(java_home)).empty()) {
+    if (java_home == NULL || (java_home_ = java_home).empty()) {
       if (Logging::log->loggingActive(LEVEL_WARN)) {
         Logging::log->getLog(LEVEL_WARN) << "JAVA_HOME is empty."
             << std::endl;
@@ -57,28 +62,26 @@ public:
     classpath_ += ":../../java/foundation/dist/Foundation.jar";
     classpath_ += ":../../java/flease/dist/Flease.jar";
     classpath_ += ":../../java/lib/*";
-    
-    service_pid_ = -1;
   }
   
   void Start(std::string service_class) {
-    char *argv[] = {
-      strdup((java_home_ + "bin/java").c_str()),
-      strdup("-ea"),
-      strdup("-cp"),
-      strdup(classpath_.c_str()),
-      strdup(service_class.c_str()),
-      strdup(config_file_name_.c_str()),
-      NULL
-    };
+    argv_ = new char*[7];
+    argv_[0] = strdup((java_home_ + "bin/java").c_str());
+    argv_[1] = strdup("-ea");
+    argv_[2] = strdup("-cp");
+    argv_[3] = strdup(classpath_.c_str());
+    argv_[4] = strdup(service_class.c_str());
+    argv_[5] = strdup(config_file_name_.c_str());
+    argv_[6] = NULL;
     
     char *envp[] = { NULL };
     
     service_pid_ = fork();
     if (service_pid_ == 0) {
       // This block is executed by the child and is blocking.
-      execve((java_home_ + "bin/java").c_str(), argv, envp);
-      exit(EXIT_SUCCESS);
+      // It also will not return control upon successful completion.
+      execve((java_home_ + "bin/java").c_str(), argv_, envp);
+      exit(errno);
     }
   }
   
@@ -89,6 +92,11 @@ public:
       kill(service_pid_, 2);
       waitpid(service_pid_, NULL, 0);
       service_pid_ = -1;
+      
+      for (size_t i = 0; i < 6; ++i) {
+        free(argv_[i]);
+      }
+      delete[] argv_;
     }
   }
 
@@ -97,6 +105,7 @@ private:
   std::string java_home_;
   std::string classpath_;
   
+  char **argv_;
   pid_t service_pid_;
 };
   
