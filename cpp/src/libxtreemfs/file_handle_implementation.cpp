@@ -190,6 +190,19 @@ int FileHandleImplementation::Read(
         if (successful_reads.count() == min_sucessfull_reads && j + 1 == min_sucessfull_reads)
           break;
       } catch(IOException &e) {
+        cout << "\tfailed" << endl;
+        if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+          Logging::log->getLog(LEVEL_DEBUG) << "failed read operation" << endl;
+        }
+        if ((*striping_policies.begin())->parity_width() > 0) {
+          if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+            Logging::log->getLog(LEVEL_DEBUG) << "parity data exists...trying to finish read operation" << endl;
+          }
+        } else {
+          throw e;
+        }
+        cout << "caught exception " << e.what() << endl;
+      } catch (InternalServerErrorException &e){
         if (Logging::log->loggingActive(LEVEL_DEBUG)) {
           Logging::log->getLog(LEVEL_DEBUG) << "failed read operation" << endl;
         }
