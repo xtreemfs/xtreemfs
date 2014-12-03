@@ -90,16 +90,19 @@ void StripeTranslatorErasureCode::TranslateWriteRequest(
               buf + start - req_size));
       } else {
         buf_redundance = new char[stripe_size];
-        --obj_number;
-        memcpy(buf_redundance, buf + start - req_size, req_size);
+        size_t data_index = operations->size() - 1;
+        memcpy(buf_redundance, (*operations)[data_index].data, req_size);
         memset(buf_redundance + req_size, 0, stripe_size - req_size);
 
         // XOR all obects for the length of the incomplete object
-        for (size_t i = 0; i < stripe_size; ++i) {
-          for (size_t j = obj_number % width; j > 0; --j)
-            buf_redundance[i] = buf[start - (j * stripe_size) + i]
+        // for (size_t j = obj_number % data_width; j > 0; --j){
+        data_index--;
+          for (size_t i = 0; i < stripe_size; ++i) {
+            buf_redundance[i] = (*operations)[data_index].data[i]
               ^ buf_redundance[i];
-        }
+          }
+        // }
+        --obj_number;
         operations->push_back(
             WriteOperation(obj_number - (obj_number % data_width), osd_offsets, stripe_size, 0,
               buf_redundance, true));
@@ -198,7 +201,6 @@ size_t StripeTranslatorErasureCode::TranslateReadRequest(
         operations->push_back(
             ReadOperation(obj_number - 1, osd_offsets, req_size, 0,
               buf_redundance));
-        return obj_number;
       } else {
         buf_redundance = new char[stripe_size];
         --obj_number;
@@ -207,12 +209,12 @@ size_t StripeTranslatorErasureCode::TranslateReadRequest(
               buf_redundance));
         // full objects have been written in this line
         // create parity object and enque at correct position..remember N+1 striping
-        return obj_number + 1;
       }
     }
 
   }
-  return obj_number;
+  unsigned int lines = 1 + ((operations->size() - 1) / width);
+  return operations->size() - lines;
 }
 
 size_t StripeTranslatorErasureCode::ProcessReads(
@@ -247,19 +249,32 @@ size_t StripeTranslatorErasureCode::ProcessReads(
     return subtract_extra_reads(received_data, offset, stripe_size, width, parity_width);
   }
 
+
+  int real_size_of_last_read = received_data;
   for (size_t i = 0; i < lines; i++) {
 
     // create successful_reads bitvector for each line (data stripes + parity stripes)
+
+    std::vector<ReadOperation> succ_ops;
+    ReadOperation* failed_op = NULL;
     boost::dynamic_bitset<> line_mask(0);
     // normal reads
-    unsigned int foo = min(i * data_width + data_width, successful_reads->size() - lines);
-    for (size_t j = i * data_width; j < foo ; j++){
+    unsigned int line_ops = min(i * data_width + data_width, successful_reads->size() - lines);
+    for (size_t j = i * data_width; j < line_ops ; j++){
       line_mask.push_back(successful_reads->test(j));
+      if (successful_reads->test(j)) {
+        succ_ops.push_back((*operations)[j]);
+        real_size_of_last_read -= (*operations)[j].req_size;
+      } else {
+        failed_op = &((*operations)[j]);
+      }
     }
     // parity reads
     // parity reads are at the end of the successful_reads vector because they are read iff normal
     // reads have failed
     line_mask.push_back(successful_reads->test(successful_reads->size() - lines + i));
+    succ_ops.push_back((*operations)[successful_reads->size() - lines + i]);
+    real_size_of_last_read -= (*operations)[successful_reads->size() - lines + i].req_size;
 
     // check is enough data exists...at least data_width stripes must be present
     if (line_mask.count() < line_mask.size() - 1)
@@ -270,39 +285,31 @@ size_t StripeTranslatorErasureCode::ProcessReads(
       continue;
     }
 
-    char buf[stripe_size];
-    memset(buf, 0, stripe_size);
-
-    // fix data by XORing all successfully read stripes
-    for (size_t j = 0; j < data_width; j++){
-      if (line_mask[j]){
-        char *d = (*operations)[j + i * data_width].data;
-        size_t s = (*operations)[j + i * data_width].req_size;
-        for (int k = 0; k < stripe_size; k++){
-          buf[k] = buf[k] ^ d[k];
+    if (failed_op) {
+      size_t failed_size = failed_op->req_size;
+      size_t failed_offset = failed_op->req_offset;
+      char *failed_buf = (*failed_op).data;
+      memset(failed_buf, 0, failed_size);
+      // copy fixed data to correct location
+      received_data -= failed_offset;
+      for (size_t j = 0; j < succ_ops.size(); j++){
+        char *d = succ_ops[j].data;
+        size_t req_offset = succ_ops[j].req_offset;
+        size_t op_size = min(succ_ops[j].req_size, failed_size);// min(failed_size, real_size_of_last_read));
+        if (j < succ_ops.size() - 1 && real_size_of_last_read < 0) {
+          if (op_size >= abs(real_size_of_last_read)) {
+            op_size += real_size_of_last_read;
+          } else {
+            op_size = 0;
+          }
         }
-      }
-    }
-    for (size_t j = 0; j < parity_width; j++) {
-      if (line_mask[data_width + j]) {
-        char *d = (*operations)[lines * data_width + i * parity_width + j].data;
-        size_t s = (*operations)[j + i * data_width].req_size;
-        for (int k = 0; k < stripe_size; k++){
-          buf[k] = buf[k] ^ d[k];
-        }
-      }
-    }
-
-    // copy fixed data to correct location
-    for (size_t j = 0; j < data_width; j++){
-      if (!line_mask[j]) {
-        char *d = (*operations)[j + i * data_width].data;
-        for (int k = 0; k < stripe_size; k++){
-          d[k] = buf[k];
+        for (int k = 0; k < op_size; k++){
+          failed_buf[k] = d[k + failed_offset - req_offset] ^ failed_buf[k];
         }
       }
     }
   }
+
   // free parity buffers
   for (size_t i = operations->size() - lines; i < operations->size(); i++){
     delete (*operations)[i].data;
