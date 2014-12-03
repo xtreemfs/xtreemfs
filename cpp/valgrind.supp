@@ -1,4 +1,22 @@
 {
+   getpwnam_r
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:__nss_lookup_function
+   ...
+   fun:getpwnam_r@@GLIBC_*
+}
+{
+   getpwnam_r static mem
+   Memcheck:Leak
+   fun:malloc
+   fun:nss_parse_service_list
+   fun:__nss_database_lookup
+   ...
+   fun:getpwnam_r@@GLIBC_*
+}
+{
    getpwuid_r
    Memcheck:Leak
    fun:malloc

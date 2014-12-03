@@ -4,7 +4,7 @@ jdk: openjdk6
 
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -y libboost-all-dev libfuse-dev fuse libssl-dev libattr1-dev make cmake automake python
+  - sudo apt-get install -y libboost-all-dev libfuse-dev fuse libssl-dev libattr1-dev make cmake automake python valgrind
 
 before_script:
   - TEST_DIR="/tmp/xtreemfs_xtestenv"
@@ -18,6 +18,8 @@ script:
 after_failure:
   - JUNIT_RESULT=`./contrib/travis/parse_results.py $TEST_DIR/result.json 'JUnit tests'`
   - CPP_RESULT=`./contrib/travis/parse_results.py $TEST_DIR/result.json 'C++ Unit Tests'`
-  - if [ $JUNIT_RESULT = "false" ]; then cat $TEST_DIR/log/junit.log; fi
-  - if [ $CPP_RESULT = "false" ]; then cat cpp/build/Testing/Temporary/LastTest.log; fi
+  - VALGRIND_RESULT=`./contrib/travis/parse_results.py $TEST_DIR/result.json 'Valgrind memory-leak check for C++ Unit Tests'`
+  - if [[ $JUNIT_RESULT = "false" ]]; then cat $TEST_DIR/log/junit.log; fi
+  - if [[ $CPP_RESULT = "false" ]]; then cat cpp/build/Testing/Temporary/LastTest.log; fi
+  - if [[ $VALGRIND_RESULT = "false" ]]; then cat $TEST_DIR/log/valgrind.log; fi
 

@@ -328,10 +328,6 @@ public class BabuDBVolumeManager implements VolumeManager {
             // check if the volume exists
             StorageManager sMan = getStorageManager(volumeId);
             
-            if (!snapName.equals(".dump") && !sMan.getVolumeInfo().isSnapshotsEnabled())
-                throw new UserException(POSIXErrno.POSIX_ERROR_EPERM,
-                        "snapshot operations are not allowed on this volume");
-            
             // determine the unique identifier for the snapshot
             String snapVolName = sMan.getVolumeInfo().getName() + SNAPSHOT_SEPARATOR + snapName;
             

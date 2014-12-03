@@ -4,7 +4,10 @@
 # Copyright (c) 2009-2011 by Bjoern Kolbeck, Minor Gordon, Zuse Institute Berlin
 # Licensed under the BSD License, see LICENSE file for details.
 
-import unittest, shutil, sys, os, subprocess
+import unittest
+import sys
+import os
+import subprocess
 
 
 global have_called_createTestSuite
@@ -23,19 +26,13 @@ class makextreemfsTest(unittest.TestCase):
         if self.direct_io:
             print >>self.stdout, self.__class__.__name__ + ": skipping nondirect volume", os.getcwd()
         else:
-            retcode = subprocess.call( "svn co http://xtreemfs.googlecode.com/svn/trunk/bin >/dev/null", shell=True )
+            retcode = subprocess.call( "wget https://github.com/xtreemfs/xtreemfs/archive/unstable.tar.gz >/dev/null", shell=True )
             self.assertEqual( retcode, 0 )
 
-            retcode = subprocess.call( "svn co http://xtreemfs.googlecode.com/svn/trunk/cpp >/dev/null", shell=True )
+            retcode = subprocess.call( "tar xvzf unstable.tar.gz >/dev/null", shell=True )
             self.assertEqual( retcode, 0 )
 
-            retcode = subprocess.call( "svn co http://xtreemfs.googlecode.com/svn/trunk/java >/dev/null", shell=True )
-            self.assertEqual( retcode, 0 )
-
-            retcode = subprocess.call( "svn export http://xtreemfs.googlecode.com/svn/trunk/Makefile >/dev/null", shell=True )
-            self.assertEqual( retcode, 0 )
-            
-            retcode = subprocess.call( "make >/dev/null", shell=True )    
+            retcode = subprocess.call( "cd xtreemfs-unstable && make >/dev/null", shell=True )
             self.assertEqual( retcode, 0 )
             
 
