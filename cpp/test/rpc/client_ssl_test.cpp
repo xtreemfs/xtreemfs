@@ -497,7 +497,7 @@ protected:
     // operational.
     ASSERT_TRUE(
         exception_text.find("could not connect to host") != std::string::npos ||
-        exception_text.find("cannot connect to server") != std:.string::npos);
+        exception_text.find("cannot connect to server") != std::string::npos);
 
     // We do not accept the server's certificate.
     ASSERT_TRUE(count_occurrences_in_file(
