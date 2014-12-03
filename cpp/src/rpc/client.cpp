@@ -737,6 +737,7 @@ FILE* Client::create_and_open_temporary_ssl_file(std::string *filename_template,
   }
   return _tfopen(filename_temp, TEXT(mode));
 #else
+  // Place file in TMPDIR or /tmp if not specified as absolute path.
   std::string filename = *filename_template;
   if (!boost::algorithm::starts_with<std::string, std::string>(filename, "/")) {
     char *tmpdir = getenv("TMPDIR");
@@ -755,6 +756,7 @@ FILE* Client::create_and_open_temporary_ssl_file(std::string *filename_template,
   int tmp = mkstemp(temporary_filename);
   if (tmp == -1) {
     std::cerr << "Couldn't create temp file name.\n";
+    free(temporary_filename);
     return NULL;
   }
   
