@@ -31,8 +31,8 @@ public interface AuthenticationProvider {
     /**
      * Get the effective credentials for an operation.
      * 
-     * @param authHeader
-     *            content of the Authentication header sent by the client
+     * @param ctx
+     *            user credentials sent by the client
      * @param channel
      *            the channel used, can be used to store attachments and to get
      *            certificates

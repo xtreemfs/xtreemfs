@@ -7,30 +7,25 @@
 
 package org.xtreemfs.test.osd;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.osd.storage.CowPolicy.cowMode;
+import org.xtreemfs.test.TestHelper;
 
 /**
  *
  * @author bjko
  */
-public class CowPolicyTest extends TestCase {
-    
-    public CowPolicyTest(String testName) {
-        super(testName);
-    }            
+public class CowPolicyTest {
+    @Rule
+    public final TestRule testLog = TestHelper.testLog;
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-    }
-
-    @Override
-    protected void tearDown() throws Exception {
-        super.tearDown();
-    }
-
+    @Test
     public void testNoCow() throws Exception {
         CowPolicy p = new CowPolicy(cowMode.NO_COW);
         assertFalse(p.isCOW(0));
@@ -39,7 +34,8 @@ public class CowPolicyTest extends TestCase {
         p.objectChanged(0);
         assertFalse(p.isCOW(0));
     }
-    
+
+    @Test
     public void testAlwaysCow() throws Exception {
         CowPolicy p = new CowPolicy(cowMode.ALWAYS_COW);
         assertTrue(p.isCOW(0));
@@ -48,7 +44,8 @@ public class CowPolicyTest extends TestCase {
         p.objectChanged(0);
         assertTrue(p.isCOW(0));
     }
-    
+
+    @Test
     public void testCowOnce() throws Exception {
         CowPolicy p = new CowPolicy(cowMode.COW_ONCE);
         p.initCowFlagsIfRequired(115);

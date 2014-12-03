@@ -71,10 +71,10 @@ class unlinkRequest;
 class unlinkResponse;
 class accessRequest;
 class xtreemfs_check_file_existsRequest;
+class xtreemfs_check_file_existsResponse;
 class xtreemfs_dump_restore_databaseRequest;
 class xtreemfs_get_suitable_osdsRequest;
 class xtreemfs_get_suitable_osdsResponse;
-class xtreemfs_check_file_existsResponse;
 class timestampResponse;
 class stringMessage;
 class xtreemfs_listdirRequest;
@@ -91,6 +91,26 @@ class xtreemfs_set_read_only_xattrRequest;
 class xtreemfs_set_read_only_xattrResponse;
 class xtreemfs_get_file_credentialsRequest;
 
+enum xtreemfs_check_file_existsResponse_FILE_STATE {
+  xtreemfs_check_file_existsResponse_FILE_STATE_DELETED = 0,
+  xtreemfs_check_file_existsResponse_FILE_STATE_REGISTERED = 1,
+  xtreemfs_check_file_existsResponse_FILE_STATE_ABANDONED = 2
+};
+bool xtreemfs_check_file_existsResponse_FILE_STATE_IsValid(int value);
+const xtreemfs_check_file_existsResponse_FILE_STATE xtreemfs_check_file_existsResponse_FILE_STATE_FILE_STATE_MIN = xtreemfs_check_file_existsResponse_FILE_STATE_DELETED;
+const xtreemfs_check_file_existsResponse_FILE_STATE xtreemfs_check_file_existsResponse_FILE_STATE_FILE_STATE_MAX = xtreemfs_check_file_existsResponse_FILE_STATE_ABANDONED;
+const int xtreemfs_check_file_existsResponse_FILE_STATE_FILE_STATE_ARRAYSIZE = xtreemfs_check_file_existsResponse_FILE_STATE_FILE_STATE_MAX + 1;
+
+const ::google::protobuf::EnumDescriptor* xtreemfs_check_file_existsResponse_FILE_STATE_descriptor();
+inline const ::std::string& xtreemfs_check_file_existsResponse_FILE_STATE_Name(xtreemfs_check_file_existsResponse_FILE_STATE value) {
+  return ::google::protobuf::internal::NameOfEnum(
+    xtreemfs_check_file_existsResponse_FILE_STATE_descriptor(), value);
+}
+inline bool xtreemfs_check_file_existsResponse_FILE_STATE_Parse(
+    const ::std::string& name, xtreemfs_check_file_existsResponse_FILE_STATE* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<xtreemfs_check_file_existsResponse_FILE_STATE>(
+    xtreemfs_check_file_existsResponse_FILE_STATE_descriptor(), name, value);
+}
 enum Setattrs {
   SETATTR_MODE = 1,
   SETATTR_UID = 2,
@@ -818,6 +838,13 @@ class Volume : public ::google::protobuf::Message {
   inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::KeyValuePair >*
       mutable_attrs();
 
+  // optional fixed64 quota = 9;
+  inline bool has_quota() const;
+  inline void clear_quota();
+  static const int kQuotaFieldNumber = 9;
+  inline ::google::protobuf::uint64 quota() const;
+  inline void set_quota(::google::protobuf::uint64 value);
+
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.Volume)
  private:
   inline void set_has_access_control_policy();
@@ -834,6 +861,8 @@ class Volume : public ::google::protobuf::Message {
   inline void clear_has_owner_group_id();
   inline void set_has_owner_user_id();
   inline void clear_has_owner_user_id();
+  inline void set_has_quota();
+  inline void clear_has_quota();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -845,9 +874,10 @@ class Volume : public ::google::protobuf::Message {
   ::std::string* owner_group_id_;
   ::std::string* owner_user_id_;
   ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::KeyValuePair > attrs_;
+  ::google::protobuf::uint64 quota_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(8 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(9 + 31) / 32];
 
   friend void  protobuf_AddDesc_xtreemfs_2fMRC_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fMRC_2eproto();
@@ -4037,6 +4067,125 @@ class xtreemfs_check_file_existsRequest : public ::google::protobuf::Message {
 };
 // -------------------------------------------------------------------
 
+class xtreemfs_check_file_existsResponse : public ::google::protobuf::Message {
+ public:
+  xtreemfs_check_file_existsResponse();
+  virtual ~xtreemfs_check_file_existsResponse();
+
+  xtreemfs_check_file_existsResponse(const xtreemfs_check_file_existsResponse& from);
+
+  inline xtreemfs_check_file_existsResponse& operator=(const xtreemfs_check_file_existsResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const xtreemfs_check_file_existsResponse& default_instance();
+
+  void Swap(xtreemfs_check_file_existsResponse* other);
+
+  // implements Message ----------------------------------------------
+
+  xtreemfs_check_file_existsResponse* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const xtreemfs_check_file_existsResponse& from);
+  void MergeFrom(const xtreemfs_check_file_existsResponse& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  typedef xtreemfs_check_file_existsResponse_FILE_STATE FILE_STATE;
+  static const FILE_STATE DELETED = xtreemfs_check_file_existsResponse_FILE_STATE_DELETED;
+  static const FILE_STATE REGISTERED = xtreemfs_check_file_existsResponse_FILE_STATE_REGISTERED;
+  static const FILE_STATE ABANDONED = xtreemfs_check_file_existsResponse_FILE_STATE_ABANDONED;
+  static inline bool FILE_STATE_IsValid(int value) {
+    return xtreemfs_check_file_existsResponse_FILE_STATE_IsValid(value);
+  }
+  static const FILE_STATE FILE_STATE_MIN =
+    xtreemfs_check_file_existsResponse_FILE_STATE_FILE_STATE_MIN;
+  static const FILE_STATE FILE_STATE_MAX =
+    xtreemfs_check_file_existsResponse_FILE_STATE_FILE_STATE_MAX;
+  static const int FILE_STATE_ARRAYSIZE =
+    xtreemfs_check_file_existsResponse_FILE_STATE_FILE_STATE_ARRAYSIZE;
+  static inline const ::google::protobuf::EnumDescriptor*
+  FILE_STATE_descriptor() {
+    return xtreemfs_check_file_existsResponse_FILE_STATE_descriptor();
+  }
+  static inline const ::std::string& FILE_STATE_Name(FILE_STATE value) {
+    return xtreemfs_check_file_existsResponse_FILE_STATE_Name(value);
+  }
+  static inline bool FILE_STATE_Parse(const ::std::string& name,
+      FILE_STATE* value) {
+    return xtreemfs_check_file_existsResponse_FILE_STATE_Parse(name, value);
+  }
+
+  // accessors -------------------------------------------------------
+
+  // required bool volume_exists = 1;
+  inline bool has_volume_exists() const;
+  inline void clear_volume_exists();
+  static const int kVolumeExistsFieldNumber = 1;
+  inline bool volume_exists() const;
+  inline void set_volume_exists(bool value);
+
+  // repeated .xtreemfs.pbrpc.xtreemfs_check_file_existsResponse.FILE_STATE file_states = 2 [packed = true];
+  inline int file_states_size() const;
+  inline void clear_file_states();
+  static const int kFileStatesFieldNumber = 2;
+  inline ::xtreemfs::pbrpc::xtreemfs_check_file_existsResponse_FILE_STATE file_states(int index) const;
+  inline void set_file_states(int index, ::xtreemfs::pbrpc::xtreemfs_check_file_existsResponse_FILE_STATE value);
+  inline void add_file_states(::xtreemfs::pbrpc::xtreemfs_check_file_existsResponse_FILE_STATE value);
+  inline const ::google::protobuf::RepeatedField<int>& file_states() const;
+  inline ::google::protobuf::RepeatedField<int>* mutable_file_states();
+
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_check_file_existsResponse)
+ private:
+  inline void set_has_volume_exists();
+  inline void clear_has_volume_exists();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::google::protobuf::RepeatedField<int> file_states_;
+  mutable int _file_states_cached_byte_size_;
+  bool volume_exists_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
+
+  friend void  protobuf_AddDesc_xtreemfs_2fMRC_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fMRC_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fMRC_2eproto();
+
+  void InitAsDefaultInstance();
+  static xtreemfs_check_file_existsResponse* default_instance_;
+};
+// -------------------------------------------------------------------
+
 class xtreemfs_dump_restore_databaseRequest : public ::google::protobuf::Message {
  public:
   xtreemfs_dump_restore_databaseRequest();
@@ -4337,93 +4486,6 @@ class xtreemfs_get_suitable_osdsResponse : public ::google::protobuf::Message {
 
   void InitAsDefaultInstance();
   static xtreemfs_get_suitable_osdsResponse* default_instance_;
-};
-// -------------------------------------------------------------------
-
-class xtreemfs_check_file_existsResponse : public ::google::protobuf::Message {
- public:
-  xtreemfs_check_file_existsResponse();
-  virtual ~xtreemfs_check_file_existsResponse();
-
-  xtreemfs_check_file_existsResponse(const xtreemfs_check_file_existsResponse& from);
-
-  inline xtreemfs_check_file_existsResponse& operator=(const xtreemfs_check_file_existsResponse& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _unknown_fields_;
-  }
-
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return &_unknown_fields_;
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const xtreemfs_check_file_existsResponse& default_instance();
-
-  void Swap(xtreemfs_check_file_existsResponse* other);
-
-  // implements Message ----------------------------------------------
-
-  xtreemfs_check_file_existsResponse* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const xtreemfs_check_file_existsResponse& from);
-  void MergeFrom(const xtreemfs_check_file_existsResponse& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
-  int GetCachedSize() const { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  public:
-
-  ::google::protobuf::Metadata GetMetadata() const;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // required string bitmap = 1;
-  inline bool has_bitmap() const;
-  inline void clear_bitmap();
-  static const int kBitmapFieldNumber = 1;
-  inline const ::std::string& bitmap() const;
-  inline void set_bitmap(const ::std::string& value);
-  inline void set_bitmap(const char* value);
-  inline void set_bitmap(const char* value, size_t size);
-  inline ::std::string* mutable_bitmap();
-  inline ::std::string* release_bitmap();
-  inline void set_allocated_bitmap(::std::string* bitmap);
-
-  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_check_file_existsResponse)
- private:
-  inline void set_has_bitmap();
-  inline void clear_has_bitmap();
-
-  ::google::protobuf::UnknownFieldSet _unknown_fields_;
-
-  ::std::string* bitmap_;
-
-  mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(1 + 31) / 32];
-
-  friend void  protobuf_AddDesc_xtreemfs_2fMRC_2eproto();
-  friend void protobuf_AssignDesc_xtreemfs_2fMRC_2eproto();
-  friend void protobuf_ShutdownFile_xtreemfs_2fMRC_2eproto();
-
-  void InitAsDefaultInstance();
-  static xtreemfs_check_file_existsResponse* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -7101,6 +7163,28 @@ Volume::attrs() const {
 inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::KeyValuePair >*
 Volume::mutable_attrs() {
   return &attrs_;
+}
+
+// optional fixed64 quota = 9;
+inline bool Volume::has_quota() const {
+  return (_has_bits_[0] & 0x00000100u) != 0;
+}
+inline void Volume::set_has_quota() {
+  _has_bits_[0] |= 0x00000100u;
+}
+inline void Volume::clear_has_quota() {
+  _has_bits_[0] &= ~0x00000100u;
+}
+inline void Volume::clear_quota() {
+  quota_ = GOOGLE_ULONGLONG(0);
+  clear_has_quota();
+}
+inline ::google::protobuf::uint64 Volume::quota() const {
+  return quota_;
+}
+inline void Volume::set_quota(::google::protobuf::uint64 value) {
+  set_has_quota();
+  quota_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -11700,6 +11784,59 @@ inline void xtreemfs_check_file_existsRequest::set_allocated_osd_uuid(::std::str
 
 // -------------------------------------------------------------------
 
+// xtreemfs_check_file_existsResponse
+
+// required bool volume_exists = 1;
+inline bool xtreemfs_check_file_existsResponse::has_volume_exists() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void xtreemfs_check_file_existsResponse::set_has_volume_exists() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void xtreemfs_check_file_existsResponse::clear_has_volume_exists() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void xtreemfs_check_file_existsResponse::clear_volume_exists() {
+  volume_exists_ = false;
+  clear_has_volume_exists();
+}
+inline bool xtreemfs_check_file_existsResponse::volume_exists() const {
+  return volume_exists_;
+}
+inline void xtreemfs_check_file_existsResponse::set_volume_exists(bool value) {
+  set_has_volume_exists();
+  volume_exists_ = value;
+}
+
+// repeated .xtreemfs.pbrpc.xtreemfs_check_file_existsResponse.FILE_STATE file_states = 2 [packed = true];
+inline int xtreemfs_check_file_existsResponse::file_states_size() const {
+  return file_states_.size();
+}
+inline void xtreemfs_check_file_existsResponse::clear_file_states() {
+  file_states_.Clear();
+}
+inline ::xtreemfs::pbrpc::xtreemfs_check_file_existsResponse_FILE_STATE xtreemfs_check_file_existsResponse::file_states(int index) const {
+  return static_cast< ::xtreemfs::pbrpc::xtreemfs_check_file_existsResponse_FILE_STATE >(file_states_.Get(index));
+}
+inline void xtreemfs_check_file_existsResponse::set_file_states(int index, ::xtreemfs::pbrpc::xtreemfs_check_file_existsResponse_FILE_STATE value) {
+  assert(::xtreemfs::pbrpc::xtreemfs_check_file_existsResponse_FILE_STATE_IsValid(value));
+  file_states_.Set(index, value);
+}
+inline void xtreemfs_check_file_existsResponse::add_file_states(::xtreemfs::pbrpc::xtreemfs_check_file_existsResponse_FILE_STATE value) {
+  assert(::xtreemfs::pbrpc::xtreemfs_check_file_existsResponse_FILE_STATE_IsValid(value));
+  file_states_.Add(value);
+}
+inline const ::google::protobuf::RepeatedField<int>&
+xtreemfs_check_file_existsResponse::file_states() const {
+  return file_states_;
+}
+inline ::google::protobuf::RepeatedField<int>*
+xtreemfs_check_file_existsResponse::mutable_file_states() {
+  return &file_states_;
+}
+
+// -------------------------------------------------------------------
+
 // xtreemfs_dump_restore_databaseRequest
 
 // required string dump_file = 1;
@@ -12054,80 +12191,6 @@ xtreemfs_get_suitable_osdsResponse::osd_uuids() const {
 inline ::google::protobuf::RepeatedPtrField< ::std::string>*
 xtreemfs_get_suitable_osdsResponse::mutable_osd_uuids() {
   return &osd_uuids_;
-}
-
-// -------------------------------------------------------------------
-
-// xtreemfs_check_file_existsResponse
-
-// required string bitmap = 1;
-inline bool xtreemfs_check_file_existsResponse::has_bitmap() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
-}
-inline void xtreemfs_check_file_existsResponse::set_has_bitmap() {
-  _has_bits_[0] |= 0x00000001u;
-}
-inline void xtreemfs_check_file_existsResponse::clear_has_bitmap() {
-  _has_bits_[0] &= ~0x00000001u;
-}
-inline void xtreemfs_check_file_existsResponse::clear_bitmap() {
-  if (bitmap_ != &::google::protobuf::internal::kEmptyString) {
-    bitmap_->clear();
-  }
-  clear_has_bitmap();
-}
-inline const ::std::string& xtreemfs_check_file_existsResponse::bitmap() const {
-  return *bitmap_;
-}
-inline void xtreemfs_check_file_existsResponse::set_bitmap(const ::std::string& value) {
-  set_has_bitmap();
-  if (bitmap_ == &::google::protobuf::internal::kEmptyString) {
-    bitmap_ = new ::std::string;
-  }
-  bitmap_->assign(value);
-}
-inline void xtreemfs_check_file_existsResponse::set_bitmap(const char* value) {
-  set_has_bitmap();
-  if (bitmap_ == &::google::protobuf::internal::kEmptyString) {
-    bitmap_ = new ::std::string;
-  }
-  bitmap_->assign(value);
-}
-inline void xtreemfs_check_file_existsResponse::set_bitmap(const char* value, size_t size) {
-  set_has_bitmap();
-  if (bitmap_ == &::google::protobuf::internal::kEmptyString) {
-    bitmap_ = new ::std::string;
-  }
-  bitmap_->assign(reinterpret_cast<const char*>(value), size);
-}
-inline ::std::string* xtreemfs_check_file_existsResponse::mutable_bitmap() {
-  set_has_bitmap();
-  if (bitmap_ == &::google::protobuf::internal::kEmptyString) {
-    bitmap_ = new ::std::string;
-  }
-  return bitmap_;
-}
-inline ::std::string* xtreemfs_check_file_existsResponse::release_bitmap() {
-  clear_has_bitmap();
-  if (bitmap_ == &::google::protobuf::internal::kEmptyString) {
-    return NULL;
-  } else {
-    ::std::string* temp = bitmap_;
-    bitmap_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-    return temp;
-  }
-}
-inline void xtreemfs_check_file_existsResponse::set_allocated_bitmap(::std::string* bitmap) {
-  if (bitmap_ != &::google::protobuf::internal::kEmptyString) {
-    delete bitmap_;
-  }
-  if (bitmap) {
-    set_has_bitmap();
-    bitmap_ = bitmap;
-  } else {
-    clear_has_bitmap();
-    bitmap_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-  }
 }
 
 // -------------------------------------------------------------------
@@ -13998,6 +14061,10 @@ inline void xtreemfs_get_file_credentialsRequest::set_allocated_file_id(::std::s
 namespace google {
 namespace protobuf {
 
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::xtreemfs::pbrpc::xtreemfs_check_file_existsResponse_FILE_STATE>() {
+  return ::xtreemfs::pbrpc::xtreemfs_check_file_existsResponse_FILE_STATE_descriptor();
+}
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::xtreemfs::pbrpc::Setattrs>() {
   return ::xtreemfs::pbrpc::Setattrs_descriptor();

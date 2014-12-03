@@ -7,19 +7,23 @@
 
 package org.xtreemfs.test.osd;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import junit.framework.TestCase;
-
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.clients.File;
 import org.xtreemfs.common.clients.RandomAccessFile;
@@ -39,32 +43,31 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningRes
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 /**
  * 
  * @author bjko
  */
-public class CleanupTest extends TestCase {
+public class CleanupTest {
+    @Rule
+    public final TestRule   testLog = TestHelper.testLog;
     
     private TestEnvironment env;
 
-    private final Auth passwd;
-    
-    public CleanupTest() {
-        super();
-        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
-        passwd = Auth.newBuilder().setAuthType(AuthType.AUTH_PASSWORD).setAuthPasswd(AuthPassword.newBuilder().setPassword("")).build();
-    }
+    private static Auth     passwd;
     
     @BeforeClass
-    public static void setUpClass() throws Exception {
+    public static void initializeTest() throws Exception {
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
+        passwd = Auth.newBuilder().setAuthType(AuthType.AUTH_PASSWORD)
+                .setAuthPasswd(AuthPassword.newBuilder().setPassword("")).build();
     }
     
     @AfterClass
-    public static void tearDownClass() throws Exception {
+    public static void shutdownTest() throws Exception {
     }
 
-    @Override
     @Before
     public void setUp() throws Exception {
         env = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.TIME_SYNC,
@@ -74,7 +77,6 @@ public class CleanupTest extends TestCase {
         env.start();
     }
 
-    @Override
     @After
     public void tearDown() {
         env.shutdown();
@@ -287,7 +289,7 @@ public class CleanupTest extends TestCase {
         // start the cleanUp Operation
         r = env.getOSDClient().xtreemfs_cleanup_start(env.getOSDAddress(),
                 passwd, RPCAuthentication.userService,
-                killZombies, deleteVolumes, restore);
+                killZombies, deleteVolumes, restore, true, 0);
         r.get();
         r.freeBuffers();
         

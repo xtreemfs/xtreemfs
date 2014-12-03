@@ -35,7 +35,6 @@ import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.OpenFileTable;
 import org.xtreemfs.osd.OpenFileTable.OpenFileTableEntry;
-import org.xtreemfs.osd.operations.DeleteOperation;
 import org.xtreemfs.osd.operations.EventCloseFile;
 import org.xtreemfs.osd.operations.EventCreateFileVersion;
 import org.xtreemfs.osd.operations.OSDOperation;
@@ -72,10 +71,12 @@ public class PreprocStage extends Stage {
     public final static int                                 STAGEOP_UNLOCK             = 12;
 
     public final static int                                 STAGEOP_PING_FILE          = 14;
+    
+    public final static int                                 STAGEOP_CLOSE_FILE         = 15;
+    
+    public final static int                                 STAGEOP_INVALIDATE_XLOC    = 16;
 
-    public final static int                                 STAGEOP_INVALIDATE_XLOC    = 15;
-
-    public final static int                                 STAGEOP_UPDATE_XLOC        = 16;
+    public final static int                                 STAGEOP_UPDATE_XLOC        = 17;
 
     private final static long                               OFT_CLEAN_INTERVAL         = 1000 * 60;
     
@@ -178,40 +179,34 @@ public class PreprocStage extends Stage {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "STAGEOP OPEN");
             
             CowPolicy cowPolicy = CowPolicy.PolicyNoCow;
-            // Open file unless it is a DeleteOperation.
-            if (!(request.getOperation() instanceof DeleteOperation)) {
-                // check if snasphots are enabled and a write operation is executed;
-                // this is required to create new snapshots when files open for
-                // writing are closed, even if the same files are still open for
-                // reading
-                boolean write = request.getCapability() != null
-                        && request.getCapability().getSnapConfig() != SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
-                        && ((SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber()
-                                | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber() | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY
-                                    .getNumber()) & request.getCapability().getAccessMode()) > 0;
-                
-                if (oft.contains(fileId)) {
-                    cowPolicy = oft.refresh(fileId, TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, write);
-                } else {
 
-                    // find out which COW mode to use, depending on the capability
-                    if (request.getCapability() == null
-                            || request.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_SNAPS_DISABLED)
-                        cowPolicy = CowPolicy.PolicyNoCow;
-                    else
-                        cowPolicy = new CowPolicy(cowMode.COW_ONCE);
+            // check if snasphots are enabled and a write operation is executed;
+            // this is required to create new snapshots when files open for
+            // writing are closed, even if the same files are still open for
+            // reading
+            boolean write = request.getCapability() != null
+                    && request.getCapability().getSnapConfig() != SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
+                    && ((SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber()
+                            | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber() | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY
+                                .getNumber()) & request.getCapability().getAccessMode()) > 0;
 
-                    oft.openFile(fileId, TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, cowPolicy, write);
-                    request.setFileOpen(true);
-                }
+            if (oft.contains(fileId)) {
+                cowPolicy = oft.refresh(fileId, TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, write);
             } else {
-                // It's a DeleteOperation. Close the file first.
-                if (oft.close(fileId)) {
-                    checkOpenFileTable(true);
-                }
+
+                // find out which COW mode to use, depending on the capability
+                if (request.getCapability() == null
+                        || request.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_SNAPS_DISABLED)
+                    cowPolicy = CowPolicy.PolicyNoCow;
+                else
+                    cowPolicy = new CowPolicy(cowMode.COW_ONCE);
+
+                oft.openFile(fileId, TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, cowPolicy, write);
+                request.setFileOpen(true);
             }
             request.setCowPolicy(cowPolicy);
         }
+
         callback.parseComplete(request, null);
     }
     
@@ -346,6 +341,34 @@ public class PreprocStage extends Stage {
         }
     }
     
+    /**
+     * Closing the file clears the capability cache and removes the entry for fileId from the {@link OpenFileTable} if
+     * it exists. <br>
+     * Attention: This will not trigger {@link EventCloseFile} or {@link EventCreateFileVersion} by itself.
+     * TODO(jdillmann): Discuss if this should trigger the event.
+     * 
+     * @param fileId
+     * @param listener
+     */
+    public void close(String fileId, CloseCallback listener) {
+        this.enqueueOperation(STAGEOP_CLOSE_FILE, new Object[] { fileId }, null, listener);
+    }
+
+    public static interface CloseCallback {
+        public void closeResult( OpenFileTableEntry entry, ErrorResponse error);
+    }
+
+    private void doClose(StageRequest m) {
+
+        final String fileId = (String) m.getArgs()[0];
+        final CloseCallback callback = (CloseCallback) m.getCallback();
+
+        OpenFileTableEntry entry = oft.close(fileId);
+        LRUCache<String, Capability> cachedCaps = capCache.remove(entry.getFileId());
+
+        callback.closeResult(entry, null);
+    }
+
     @Override
     public void run() {
         
@@ -401,35 +424,40 @@ public class PreprocStage extends Stage {
             long currentTime = TimeSync.getLocalSystemTime();
             
             // do OFT clean
-            List<OpenFileTable.OpenFileTableEntry> closedFiles = oft.clean(currentTime);
+            List<OpenFileTableEntry> closedFiles = oft.clean(currentTime);
             // Logging.logMessage(Logging.LEVEL_DEBUG,this,"closing
             // "+closedFiles.size()+" files");
-            for (OpenFileTable.OpenFileTableEntry entry : closedFiles) {
+            for (OpenFileTableEntry entry : closedFiles) {
                 
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
                         "send internal close event for %s, deleteOnClose=%b", entry.getFileId(), entry
                                 .isDeleteOnClose());
                 
-                LRUCache<String, Capability> cachedCaps = capCache.remove(entry.getFileId());
+                // Remove the cached capabilities.
+                capCache.remove(entry.getFileId());
                 
-                // send close event
+                // Send close event (creates a new file version if necessary).
                 OSDOperation closeEvent = master.getInternalEvent(EventCloseFile.class);
                 closeEvent.startInternalEvent(new Object[] { entry.getFileId(), entry.isDeleteOnClose(),
-                    metadataCache.getFileInfo(entry.getFileId()), entry.getCowPolicy(), cachedCaps });
+                        entry.getCowPolicy().cowEnabled(), entry.isWrite() });
+                  
             }
             
-            // check if written files need to be closed; if no files were closed
-            // completely, generate close events w/o discarding the open state
-            List<OpenFileTable.OpenFileTableEntry> closedWrittenFiles = oft.cleanWritten(currentTime);
-            if (closedFiles.size() == 0) {
-                for (OpenFileTable.OpenFileTableEntry entry : closedWrittenFiles) {
+            
+            // Check if written files need to be versioned (copied on write). If the file has been already closed it
+            // unnecessary to create another version because EventCloseFile already did.
+            List<OpenFileTableEntry> closedWrittenFiles = oft.cleanWritten(currentTime);
+            for (OpenFileTableEntry entry : closedWrittenFiles) {
+                if (!entry.isClosed() && entry.isWrite()) {
+                    entry.clearWrite();
+
                     OSDOperation createVersionEvent = master.getInternalEvent(EventCreateFileVersion.class);
                     createVersionEvent.startInternalEvent(new Object[] { entry.getFileId(),
-                        metadataCache.getFileInfo(entry.getFileId()) });
+                            metadataCache.getFileInfo(entry.getFileId()) });
                 }
             }
-            
+
             timeToNextOFTclean = OFT_CLEAN_INTERVAL;
         }
         lastOFTcheck = TimeSync.getLocalSystemTime();
@@ -458,6 +486,9 @@ public class PreprocStage extends Stage {
             break;
         case STAGEOP_PING_FILE:
             doPingFile(m);
+            break;
+        case STAGEOP_CLOSE_FILE:
+            doClose(m);
             break;
         case STAGEOP_INVALIDATE_XLOC:
             doInvalidateXLocSet(m);
@@ -666,6 +697,7 @@ public class PreprocStage extends Stage {
             XLocSetVersionState newstate = state.toBuilder()
                     .setInvalidated(false)
                     .setVersion(locset.getVersion())
+                    .setModifiedTime(TimeSync.getGlobalTime())
                     .build();
             
             try {
@@ -716,7 +748,11 @@ public class PreprocStage extends Stage {
 
         // If a response from a newer View is encountered, we have to install it and leave the invalidated state.
         if (state.getVersion() < version) {
-            state = state.toBuilder().setInvalidated(false).setVersion(version).build();
+            state = state.toBuilder()
+                        .setInvalidated(false)
+                        .setVersion(version)
+                        .setModifiedTime(TimeSync.getGlobalTime())
+                        .build();
             try {
                 // persist the version
                 layout.setXLocSetVersionState(fileId, state);
@@ -770,7 +806,8 @@ public class PreprocStage extends Stage {
             }
             
             // Invalidate the replica.
-            stateBuilder.setInvalidated(true);
+            stateBuilder.setInvalidated(true)
+                        .setModifiedTime(TimeSync.getGlobalTime());
 
             state = stateBuilder.build();
             layout.setXLocSetVersionState(fileId, state);

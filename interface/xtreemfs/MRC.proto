@@ -121,6 +121,8 @@ message Volume {
     required string owner_user_id = 7;
     // optional configuration attributes for the volume
     repeated KeyValuePair attrs = 8;
+    // optional volume quota
+    optional fixed64 quota = 9;
 }
 
 // a list of volumes; relevant for the 'xtfs_lsvol' call
@@ -452,6 +454,17 @@ message xtreemfs_check_file_existsRequest {
   required string osd_uuid = 3;
 }
 
+message xtreemfs_check_file_existsResponse {
+  required bool volume_exists = 1;
+
+  enum FILE_STATE {
+    DELETED=0;
+    REGISTERED=1;
+    ABANDONED=2;
+  }
+  repeated FILE_STATE file_states = 2 [packed=true]; 
+}
+
 // dumps or restores the MRC database
 message xtreemfs_dump_restore_databaseRequest {
   // the path to the dump file on the MRC host
@@ -472,10 +485,6 @@ message xtreemfs_get_suitable_osdsRequest {
 // returns a list of suitable OSDs
 message xtreemfs_get_suitable_osdsResponse {
   repeated string osd_uuids = 1;
-}
-
-message xtreemfs_check_file_existsResponse {
-  required string bitmap = 1;
 }
 
 message timestampResponse {

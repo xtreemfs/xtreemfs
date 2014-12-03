@@ -15,7 +15,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -156,7 +155,7 @@ public class BabuDBVolumeManager implements VolumeManager {
     @Override
     public void createVolume(FileAccessManager faMan, String volumeId, String volumeName, short fileAccessPolicyId,
             String ownerId, String owningGroupId, StripingPolicy defaultStripingPolicy, int initialAccessMode,
-            List<KeyValuePair> attrs) throws UserException, DatabaseException {
+            long volumeQuota, List<KeyValuePair> attrs) throws UserException, DatabaseException {
         
         waitLock.set(false);
         
@@ -176,7 +175,7 @@ public class BabuDBVolumeManager implements VolumeManager {
         // the transaction listener)
         new BabuDBStorageManager(database, volumeId, volumeName, fileAccessPolicyId, DEFAULT_OSD_POLICY,
                 DEFAULT_REPL_POLICY, ownerId, owningGroupId, initialAccessMode, acl, defaultStripingPolicy,
-                DEFAULT_ALLOW_SNAPS, KeyValuePairs.toMap(attrs));
+                DEFAULT_ALLOW_SNAPS, volumeQuota, KeyValuePairs.toMap(attrs));
         
         // wait for the notification from the transaction listener before
         // continuing
@@ -328,10 +327,6 @@ public class BabuDBVolumeManager implements VolumeManager {
             
             // check if the volume exists
             StorageManager sMan = getStorageManager(volumeId);
-            
-            if (!snapName.equals(".dump") && !sMan.getVolumeInfo().isSnapshotsEnabled())
-                throw new UserException(POSIXErrno.POSIX_ERROR_EPERM,
-                        "snapshot operations are not allowed on this volume");
             
             // determine the unique identifier for the snapshot
             String snapVolName = sMan.getVolumeInfo().getName() + SNAPSHOT_SEPARATOR + snapName;

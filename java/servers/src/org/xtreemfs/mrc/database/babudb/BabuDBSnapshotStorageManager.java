@@ -79,6 +79,8 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     
     protected static final String          VOL_ID_ATTR_NAME           = "volId";
     
+    protected static final String          VOL_QUOTA                  = "quota";
+    
     protected static final int[]           ALL_INDICES                = { FILE_INDEX, XATTRS_INDEX,
         ACL_INDEX, FILE_ID_INDEX, VOLUME_INDEX                       };
     
@@ -204,6 +206,21 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
         }
     }
     
+    public long getVolumeQuota() throws DatabaseException {
+        try {
+            byte[] quotaBytes = getXAttr(1, SYSTEM_UID, VOL_QUOTA);
+            if (quotaBytes == null) {
+                return 0;
+            } else {
+                return Long.valueOf(new String(quotaBytes));
+            }
+        } catch (DatabaseException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
     @Override
     public FileMetadata getMetadata(long fileId) throws DatabaseException {
         
@@ -527,6 +544,11 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     }
     
     @Override
+    public void setVolumeQuota(long quota, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
     public void setLastFileId(long fileId, AtomicDBUpdate update) throws DatabaseException {
         throwException();
     }
@@ -555,5 +577,4 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     protected void throwException() throws DatabaseException {
         throw new DatabaseException("cannot invoke this operation on a snapshot", ExceptionType.NOT_ALLOWED);
     }
-    
 }

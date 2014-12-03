@@ -26,6 +26,9 @@ class BenchmarkFactory {
         case SEQ_WRITE:
             benchmark = new SequentialWriteBenchmark(size, config, client, volumeManager);
             break;
+        case SEQ_UNALIGNED_WRITE:
+            benchmark = new UnalignedSequentialWriteBenchmark(size, config, client, volumeManager);
+            break;
         case SEQ_READ:
             benchmark = new SequentialReadBenchmark(size, config, client, volumeManager);
             break;

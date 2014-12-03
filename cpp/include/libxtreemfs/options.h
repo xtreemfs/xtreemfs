@@ -221,6 +221,9 @@ class Options {
   /** Skewness of the Zipf distribution used for vivaldi OSD selection */
   double vivaldi_zipf_generator_skew;
 
+  /** May contain all previous options in key=value pair lists. */
+  std::vector<std::string> alternative_options_list;
+
   // Internal options, not available from the command line interface.
   /** If not NULL, called to find out if request was interrupted. */
   CheckIfInterruptedQueryFunction was_interrupted_function;
@@ -299,6 +302,9 @@ class Options {
 
   /** Deprecated options which are kept to ensure backward compatibility. */
   boost::program_options::options_description deprecated_options_;
+
+  /** Specify all previous options in key=value pair lists. */
+  boost::program_options::options_description alternative_options_;
 };
 
 }  // namespace xtreemfs

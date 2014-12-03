@@ -702,15 +702,15 @@ public class HashStorageLayout extends StorageLayout {
     }
 
     @Override
-    public void deleteFile(String fileId, boolean deleteMetadata) throws IOException {
-
+    public void deleteFile(String fileId, final boolean deleteMetadata) throws IOException {
         File fileDir = new File(generateAbsoluteFilePath(fileId));
-        File[] objs = fileDir.listFiles(new FileFilter() {
+
+        // Filter metadata from the fileList, if deleteMetadata is not set.
+        File[] fileList = fileDir.listFiles(new FileFilter() {
 
             @Override
             public boolean accept(File pathname) {
-                // TODO(jdillmann): use {@link CleanupTread} to delete the version state after the capability timed out.
-                if (pathname.getPath().endsWith(XLOC_VERSION_STATE_FILENAME)) {
+                if (!deleteMetadata && pathname.getName().startsWith(".")) {
                     return false;
                 }
 
@@ -718,32 +718,27 @@ public class HashStorageLayout extends StorageLayout {
             }
         });
 
-        if (objs == null) {
+        // Stop the execution if the directory does not exist.
+        if (fileList == null) {
             return;
         }
 
-        // otherwise, delete the file including its metadata
-        else {
+        // Delete the filtered files.
+        for (File file : fileList) {
+            file.delete();
+        }
 
-            for (File obj : objs) {
-                obj.delete();
-            }
-
-            // delete all empty dirs along the path
-            if (deleteMetadata) {
-                del(fileDir);
-            }
-
+        // Try to delete the data directory if it is empty.
+        if (deleteMetadata) {
+            del(fileDir);
         }
     }
 
     private void del(File parent) {
-        if (parent.list().length > 1 || parent.equals(new File(this.storageDir))) {
-            return;
-        } else {
-            assert (parent != null);
+        File storageDirFile = new File(this.storageDir);
+        for (File p = parent; p != null && p.list().length <= 1 && !p.equals(storageDirFile); p = p
+                .getParentFile()) {
             parent.delete();
-            del(parent.getParentFile());
         }
     }
 
@@ -1178,6 +1173,7 @@ public class HashStorageLayout extends StorageLayout {
                 File newestFirst = null;
                 File newestLast = null;
                 Long objectSize = 0L;
+                boolean isFileNameDir = false;
 
                 for (File ch : dir.listFiles()) {
                     // handle the directories (hash and fileName)
@@ -1191,6 +1187,7 @@ public class HashStorageLayout extends StorageLayout {
                             long version = getVersion(ch);
                             long objNum = getObjectNo(ch);
 
+                            isFileNameDir = true;
                             if (newestFirst == null) {
 
                                 newestFirst = newestLast = ch;
@@ -1214,30 +1211,41 @@ public class HashStorageLayout extends StorageLayout {
                                     "CleanUp: an illegal file (" + ch.getAbsolutePath()
                                             + ") was discovered and ignored.");
                         }
+                    } else if (ch != null && ch.isFile() && ch.getName().endsWith(XLOC_VERSION_STATE_FILENAME)) {
+                        // If no data file exists, but a version_state file, the whole data folder can be deleted after
+                        // a certain period.
+                        isFileNameDir = true;
                     }
                 }
 
                 // dir is a fileName-directory
-                if (newestFirst != null) {
-                    // get a preview from the file
-                    char[] preview = null;
-                    try {
-                        fReader = new FileReader(newestFirst);
-                        preview = new char[PREVIEW_LENGTH];
-                        fReader.read(preview);
-                        fReader.close();
-                    } catch (Exception e) {
-                        assert (false);
+                if (isFileNameDir) {
+
+                    if (newestFirst != null) {
+                        // get a preview from the file
+                        char[] preview = null;
+                        try {
+                            fReader = new FileReader(newestFirst);
+                            preview = new char[PREVIEW_LENGTH];
+                            fReader.read(preview);
+                            fReader.close();
+                        } catch (Exception e) {
+                            assert (false);
+                        }
+
+                        // get the metaInfo from the root-directory
+                        long stripCount = getObjectNo(newestLast);
+                        long fileSize = (stripCount == 1) ? newestFirst.length() : (objectSize * stripCount)
+                                + newestLast.length();
+
+                        // insert the data into the FileList
+                        l.files.put((WIN) ? dir.getName().replace('_', ':') : dir.getName(),
+                                new FileData(fileSize, (int) (objectSize / 1024)));
+                    } else {
+                        // No data file exists, but the folders some metadata is still in place.
+                        l.files.put((WIN) ? dir.getName().replace('_', ':') : dir.getName(), 
+                                new FileData(true));
                     }
-
-                    // get the metaInfo from the root-directory
-                    long stripCount = getObjectNo(newestLast);
-                    long fileSize = (stripCount == 1) ? newestFirst.length() : (objectSize * stripCount)
-                            + newestLast.length();
-
-                    // insert the data into the FileList
-                    l.files.put((WIN) ? dir.getName().replace('_', ':') : dir.getName(), new FileData(
-                            fileSize, (int) (objectSize / 1024)));
                 }
             } while (l.files.size() < maxNumEntries);
             l.hasMore = true;

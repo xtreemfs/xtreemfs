@@ -24,13 +24,7 @@
 
 package org.xtreemfs.sandbox.tests;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.List;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
-
 import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.clients.File;
 import org.xtreemfs.common.clients.RandomAccessFile;
@@ -42,16 +36,22 @@ import org.xtreemfs.foundation.pbrpc.Schemes;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.CLOption;
-import org.xtreemfs.foundation.util.CLOptionParser;
-import org.xtreemfs.foundation.util.InvalidUsageException;
-import org.xtreemfs.foundation.util.ONCRPCServiceURL;
 import org.xtreemfs.foundation.util.CLOption.IntegerValue;
 import org.xtreemfs.foundation.util.CLOption.StringValue;
 import org.xtreemfs.foundation.util.CLOption.Switch;
+import org.xtreemfs.foundation.util.CLOptionParser;
+import org.xtreemfs.foundation.util.InvalidUsageException;
+import org.xtreemfs.foundation.util.PBRPCServiceURL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.PORTS;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 
@@ -88,7 +88,7 @@ public class ReplicatedTortureXtreemFS {
             final String path = optPath.isSet() ? optPath.getValue() : "/torture.data";
             final String volname = optVolname.isSet() ? optVolname.getValue() : "test";
             
-            final ONCRPCServiceURL dirURL = new ONCRPCServiceURL(arguments.get(0),Schemes.SCHEME_PBRPC,PORTS.DIR_PBRPC_PORT_DEFAULT.getNumber());
+            final PBRPCServiceURL dirURL = new PBRPCServiceURL(arguments.get(0),Schemes.SCHEME_PBRPC,PORTS.DIR_PBRPC_PORT_DEFAULT.getNumber());
 
             final boolean useSSL = dirURL.getProtocol().equals(Schemes.SCHEME_PBRPCG) || dirURL.getProtocol().equals(Schemes.SCHEME_PBRPCS);
             final boolean randomOnly = optRandomOnly.isSet();

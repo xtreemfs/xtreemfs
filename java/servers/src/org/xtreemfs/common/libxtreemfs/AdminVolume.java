@@ -32,7 +32,7 @@ public interface AdminVolume extends Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
+     * @throws AddressToUUIDNotFoundException
      * 
      */
     public AdminFileHandle openFile(UserCredentials userCredentials, String path, int flags)
@@ -45,7 +45,7 @@ public interface AdminVolume extends Volume {
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
+     * @throws AddressToUUIDNotFoundException
      */
     public AdminFileHandle openFile(UserCredentials userCredentials, String path, int flags, int mode)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
@@ -69,13 +69,13 @@ public interface AdminVolume extends Volume {
      *            Name and Groups of the user.
      * @param path
      *            Path to the file.
-     * @param truncateOnlyAtMRC
+     * @param unlinkOnlyAtMrc
      *            true if the file should be unlinked only at the MRC, otherwise false.
      * 
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
      * @throws PosixErrorException
-     * @throws UnknownAddressSchemeException
+     * @throws AddressToUUIDNotFoundException
      */
     public abstract void unlink(UserCredentials userCredentials, String path, boolean unlinkOnlyAtMrc)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;

@@ -18,11 +18,6 @@ using namespace std;
 
 namespace xtreemfs {
 
-const std::string PBRPCURL::SCHEME_PBRPC = "pbrpc";
-const std::string PBRPCURL::SCHEME_PBRPCS = "pbrpcs";
-const std::string PBRPCURL::SCHEME_PBRPCG = "pbrpcg";
-const std::string PBRPCURL::SCHEME_PBRPCU = "pbrpcu";
-
 PBRPCURL::PBRPCURL() : scheme_(""), servers_(), ports_(), volume_("") {}
 
 void PBRPCURL::ParseURL(const std::string& original_url,
@@ -48,10 +43,10 @@ void PBRPCURL::ParseURL(const std::string& original_url,
     if (scheme_pos != string::npos) {
       // scheme specified
       scheme = address.substr(0, scheme_pos);
-      if ((scheme != SCHEME_PBRPC)
-          && (scheme != SCHEME_PBRPCS)
-          && (scheme != SCHEME_PBRPCG)
-          && (scheme != SCHEME_PBRPCU)) {
+      if ((scheme != GetSchemePBRPC())
+          && (scheme != GetSchemePBRPCS())
+          && (scheme != GetSchemePBRPCG())
+          && (scheme != GetSchemePBRPCU())) {
         throw InvalidURLException(scheme_ + " is not a valid scheme");
       }
 

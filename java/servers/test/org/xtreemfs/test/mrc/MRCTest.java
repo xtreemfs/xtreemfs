@@ -22,7 +22,9 @@ import java.util.Set;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.foundation.buffer.BufferPool;
@@ -56,6 +58,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestEnvironment.Services;
+import org.xtreemfs.test.TestHelper;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
@@ -66,6 +69,8 @@ import com.google.protobuf.Message;
  * @author stender
  */
 public class MRCTest {
+    @Rule
+    public final TestRule     testLog = TestHelper.testLog;
     
     private MRCServiceClient  client;
     
@@ -111,7 +116,7 @@ public class MRCTest {
                 String name = "vol-" + j;
                 invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
                         AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, getDefaultStripingPolicy(), "", 0775,
-                        name, "", "", getKVList("i", String.valueOf(i))));
+                        name, "", "", getKVList("i", String.valueOf(i)), 0));
             }
 
             // Check number of created volumes
@@ -124,7 +129,7 @@ public class MRCTest {
                 try {
                     invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
                             AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, getDefaultStripingPolicy(), "", 0775,
-                            name, "", "", getKVList("i", String.valueOf(i))));
+                            name, "", "", getKVList("i", String.valueOf(i)), 0));
                     fail();
                 } catch (Exception ex) {
                     vols = invokeSync(client.xtreemfs_lsvol(mrcAddress, RPCAuthentication.authNone, uc));
@@ -159,7 +164,7 @@ public class MRCTest {
             
             invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
                 AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, getDefaultStripingPolicy(), "", 0775,
-                name, "", "", getKVList("bla", "blub")));
+                name, "", "", getKVList("bla", "blub"), 0));
             
             volNames.add(name);
         }
@@ -207,7 +212,7 @@ public class MRCTest {
         // create and delete a volume
         invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
             AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, getDefaultStripingPolicy(), "", 0775,
-            volumeName, "", "", getKVList("bla", "blub")));
+            volumeName, "", "", getKVList("bla", "blub"), 0));
         
         Volumes localVols = invokeSync(client.xtreemfs_lsvol(mrcAddress, RPCAuthentication.authNone, uc));
         assertEquals(1, localVols.getVolumesCount());
@@ -222,7 +227,7 @@ public class MRCTest {
         // create a volume
         invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
             AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, getDefaultStripingPolicy(), "", 0775,
-            volumeName, "", "", getKVList()));
+            volumeName, "", "", getKVList(), 0));
         
         // create some files and directories
         invokeSync(client.mkdir(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "myDir", 0775));
@@ -305,7 +310,7 @@ public class MRCTest {
         
         invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
             AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, getDefaultStripingPolicy(), "", 0,
-            volumeName, "", "", getKVList()));
+            volumeName, "", "", getKVList(), 0));
         invokeSync(client.readdir(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "/", -1, 1000,
             false, 0));
     }
@@ -320,7 +325,7 @@ public class MRCTest {
         
         invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
             AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, getDefaultStripingPolicy(), "", 0,
-            volumeName, "", "", getKVList()));
+            volumeName, "", "", getKVList(), 0));
         
         // create a file and add some user attributes
         invokeSync(client.open(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test.txt",
@@ -442,7 +447,7 @@ public class MRCTest {
         
         invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
             AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, getDefaultStripingPolicy(), "", 0,
-            volumeName, "", "", getKVList()));
+            volumeName, "", "", getKVList(), 0));
         
         // create a file and add some user attributes
         invokeSync(client.open(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test.txt",
@@ -471,7 +476,7 @@ public class MRCTest {
         
         invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
             AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, getDefaultStripingPolicy(), "", 0,
-            volumeName, "", "", getKVList()));
+            volumeName, "", "", getKVList(), 0));
         
         invokeSync(client.open(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test.txt",
             FileAccessManager.O_CREAT, 0, 0, getDefaultCoordinates()));
@@ -495,7 +500,7 @@ public class MRCTest {
         
         invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
             AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, getDefaultStripingPolicy(), "", 0,
-            volumeName, "", "", getKVList()));
+            volumeName, "", "", getKVList(), 0));
         
         invokeSync(client.open(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test1.txt",
             FileAccessManager.O_CREAT, 0, 0, getDefaultCoordinates()));
@@ -577,7 +582,7 @@ public class MRCTest {
         
         invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
             AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, getDefaultStripingPolicy(), "", 0775,
-            volumeName, "", "", getKVList()));
+            volumeName, "", "", getKVList(), 0));
         
         invokeSync(client.open(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test.txt",
             FileAccessManager.O_CREAT, 0774, 0, getDefaultCoordinates()));
@@ -670,7 +675,7 @@ public class MRCTest {
         
         invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
             AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, getDefaultStripingPolicy(), "", 0775,
-            volumeName, "", "", getKVList()));
+            volumeName, "", "", getKVList(), 0));
         
         final String uid2 = "bla";
         final List<String> gids2 = createGIDs("groupY");
@@ -697,7 +702,7 @@ public class MRCTest {
         
         invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
             AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, getDefaultStripingPolicy(), "", 0,
-            volumeName, "", "", getKVList()));
+            volumeName, "", "", getKVList(), 0));
         
         // create some files and directories
         invokeSync(client.open(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test.txt",
@@ -821,7 +826,7 @@ public class MRCTest {
         // create a volume
         invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc1,
             AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, getDefaultStripingPolicy(), "", 0,
-            noACVolumeName, "", "", getKVList()));
+            noACVolumeName, "", "", getKVList(), 0));
         
         // test chown
         invokeSync(client.open(mrcAddress, RPCAuthentication.authNone, uc1, noACVolumeName, "chownTestFile",
@@ -856,7 +861,7 @@ public class MRCTest {
         // create a volume
         invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc1,
             AccessControlPolicyType.ACCESS_CONTROL_POLICY_VOLUME, getDefaultStripingPolicy(), "", 0700,
-            volACVolumeName, "", "", getKVList()));
+            volACVolumeName, "", "", getKVList(), 0));
         
         // create a new directory: should succeed for user1, fail
         // for user2
@@ -876,7 +881,7 @@ public class MRCTest {
         // create a volume
         invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc1,
             AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, getDefaultStripingPolicy(), "", 0775,
-            posixVolName, "", "", getKVList()));
+            posixVolName, "", "", getKVList(), 0));
         
         invokeSync(client.setattr(mrcAddress, RPCAuthentication.authNone, uc1, posixVolName, "",
             createChmodStat(0700), Setattrs.SETATTR_MODE.getNumber()));
@@ -897,6 +902,26 @@ public class MRCTest {
         
         // check 'access' call
         
+        try {
+            invokeSync(client.access(mrcAddress, RPCAuthentication.authNone, uc1, posixVolName, "grsasd",
+                    ACCESS_FLAGS.ACCESS_FLAGS_F_OK.getNumber()));
+            fail("access should have been denied");
+        } catch (PBRPCException exc) {
+            if (exc.getPOSIXErrno() != POSIXErrno.POSIX_ERROR_EACCES) {
+                fail("wrong error returned");
+            }
+        }
+
+        try {
+            invokeSync(client.access(mrcAddress, RPCAuthentication.authNone, uc1, posixVolName, "grsasd",
+                    ACCESS_FLAGS.ACCESS_FLAGS_R_OK.getNumber()));
+            fail("access should have been denied");
+        } catch (PBRPCException exc) {
+            if (exc.getPOSIXErrno() != POSIXErrno.POSIX_ERROR_EACCES) {
+                fail("wrong error returned");
+            }
+        }
+
         try {
             invokeSync(client.access(mrcAddress, RPCAuthentication.authNone, uc2, posixVolName, "grsasd",
                 ACCESS_FLAGS.ACCESS_FLAGS_F_OK.getNumber()));
@@ -996,7 +1021,7 @@ public class MRCTest {
         invokeSync(client.xtreemfs_rmvol(mrcAddress, RPCAuthentication.authNone, uc1, posixVolName));
         invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc1,
             AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, getDefaultStripingPolicy(), "", 0775,
-            posixVolName, "", "", getKVList()));
+            posixVolName, "", "", getKVList(), 0));
         
         invokeSync(client.open(mrcAddress, RPCAuthentication.authNone, uc1, posixVolName, "someFile.txt",
             FileAccessManager.O_CREAT, 224, 0, getDefaultCoordinates()));
@@ -1065,7 +1090,7 @@ public class MRCTest {
         // create a new file in a new volume
         invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
             AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, getDefaultStripingPolicy(), "", 0,
-            volumeName, "", "", getKVList()));
+            volumeName, "", "", getKVList(), 0));
         
         invokeSync(client.open(mrcAddress, RPCAuthentication.authNone, uc, volumeName, fileName,
             FileAccessManager.O_CREAT, 0, 0, getDefaultCoordinates()));
@@ -1168,7 +1193,7 @@ public class MRCTest {
         
         // create a new file in a directory in a new volume
         invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
-            AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, sp1, "", 0, volumeName, "", "", getKVList()));
+            AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, sp1, "", 0, volumeName, "", "", getKVList(), 0));
         
         invokeSync(client.mkdir(mrcAddress, RPCAuthentication.authNone, uc, volumeName, dirName, 0));
         invokeSync(client.open(mrcAddress, RPCAuthentication.authNone, uc, volumeName, fileName1,
@@ -1233,7 +1258,7 @@ public class MRCTest {
         
         // create a new file in a directory in a new volume
         invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
-            AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, sp, "", 0, volumeName, "", "", getKVList()));
+            AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, sp, "", 0, volumeName, "", "", getKVList(), 0));
         
         invokeSync(client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "",
             "xtreemfs.default_rp", "", ByteString.copyFrom(Converter.replicationPolicyToJSONString(rp).getBytes()), 0));
@@ -1273,7 +1298,7 @@ public class MRCTest {
         // create a volume
         invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
             AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, getDefaultStripingPolicy(), "", 0775,
-            volumeName, "", "", getKVList()));
+            volumeName, "", "", getKVList(), 0));
         
         // auto-assign three (two more) replicas to each newly-created file
         ReplicationPolicy rp = new ReplicationPolicy() {

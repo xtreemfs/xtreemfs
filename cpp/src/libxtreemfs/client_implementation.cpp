@@ -100,10 +100,10 @@ void DIRUUIDResolver::UUIDToAddressWithOptions(const std::string& uuid,
   AddressMapping found_address_mapping;
   for (int i = 0; i < set->mappings_size(); i++) {
     const AddressMapping& am = set->mappings(i);
-    if (am.protocol() != PBRPCURL::SCHEME_PBRPC
-        && am.protocol() != PBRPCURL::SCHEME_PBRPCS
-        && am.protocol() != PBRPCURL::SCHEME_PBRPCG
-        && am.protocol() != PBRPCURL::SCHEME_PBRPCU) {
+    if (am.protocol() != PBRPCURL::GetSchemePBRPC()
+        && am.protocol() != PBRPCURL::GetSchemePBRPCS()
+        && am.protocol() != PBRPCURL::GetSchemePBRPCG()
+        && am.protocol() != PBRPCURL::GetSchemePBRPCU()) {
       Logging::log->getLog(LEVEL_ERROR)
           << "Unknown scheme: " << am.protocol() << endl;
       response->DeleteBuffers();
@@ -355,7 +355,8 @@ void ClientImplementation::Start() {
   }
 
   async_write_callback_thread_.reset(
-      new boost::thread(&xtreemfs::AsyncWriteHandler::ProcessCallbacks));
+      new boost::thread(&xtreemfs::AsyncWriteHandler::ProcessCallbacks, 
+                        boost::ref(async_write_callback_queue_)));
 }
 
 void ClientImplementation::Shutdown() {
@@ -432,6 +433,7 @@ void ClientImplementation::CreateVolume(
     const std::string& owner_username,
     const std::string& owner_groupname,
     const xtreemfs::pbrpc::AccessControlPolicyType& access_policy,
+    long volume_quota,
     const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
     int default_stripe_size,
     int default_stripe_width,
@@ -445,6 +447,7 @@ void ClientImplementation::CreateVolume(
   new_volume.set_owner_user_id(owner_username);
   new_volume.set_owner_group_id(owner_groupname);
   new_volume.set_access_control_policy(access_policy);
+  new_volume.set_quota(volume_quota);
   new_volume.mutable_default_striping_policy()
       ->set_type(default_striping_policy_type);
   new_volume.mutable_default_striping_policy()
@@ -555,6 +558,10 @@ std::string ClientImplementation::UUIDToAddress(const std::string& uuid) {
 
 const VivaldiCoordinates& ClientImplementation::GetVivaldiCoordinates() const {
   return vivaldi_->GetVivaldiCoordinates();
+}
+
+util::SynchronizedQueue<AsyncWriteHandler::CallbackEntry>& ClientImplementation::GetAsyncWriteCallbackQueue() {
+  return async_write_callback_queue_;
 }
 
 }  // namespace xtreemfs

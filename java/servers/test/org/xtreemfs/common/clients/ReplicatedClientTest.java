@@ -13,10 +13,10 @@ import java.net.InetSocketAddress;
 import java.util.LinkedList;
 
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
@@ -26,12 +26,15 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyTyp
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 /**
  *
  * @author bjko
  */
 public class ReplicatedClientTest {
+    @Rule
+    public final TestRule       testLog     = TestHelper.testLog;
 
     private TestEnvironment       testEnv;
 
@@ -43,18 +46,8 @@ public class ReplicatedClientTest {
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
     }
 
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-    }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-    }
-
     @Before
     public void setUp() throws Exception {
-        System.out.println("TEST: " + getClass().getSimpleName());
-
         testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_CLIENT,
             TestEnvironment.Services.MRC_CLIENT, TestEnvironment.Services.TIME_SYNC,
             TestEnvironment.Services.UUID_RESOLVER, TestEnvironment.Services.DIR_SERVICE,
@@ -65,7 +58,7 @@ public class ReplicatedClientTest {
         uc = UserCredentials.newBuilder().setUsername("test").addGroups("test").build();
 
         RPCResponse r = testEnv.getMrcClient().xtreemfs_mkvol(testEnv.getMRCAddress(), RPCAuthentication.authNone, uc,
-            AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, SetupUtils.getStripingPolicy(1, 64), "", 0777, VOLUME_NAME, "test", "test", new LinkedList<KeyValuePair>());
+            AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, SetupUtils.getStripingPolicy(1, 64), "", 0777, VOLUME_NAME, "test", "test", new LinkedList<KeyValuePair>(), 0);
         r.get();
         r.freeBuffers();
     }

@@ -22,6 +22,7 @@
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/volume.h"
 #include "libxtreemfs/xtreemfs_exception.h"
+#include "libxtreemfs/helper.h"
 #include "util/error_log.h"
 #include "util/logging.h"
 
@@ -111,6 +112,8 @@ void XtfsUtilServer::ParseAndExecute(const xtreemfs::pbrpc::UserCredentials& uc,
       OpCreateDeleteSnapshot(uc, input, &result);
     } else if (op_name == "setRemoveACL") {
       OpSetRemoveACL(uc, input, &result);
+    } else if (op_name == "setVolumeQuota") {
+      OpSetVolumeQuota(uc, input, &result);
     } else {
       file->set_last_result(
           "{ \"error\":\"Unknown operation '" + op_name + "'.\" }\n");
@@ -193,7 +196,18 @@ void XtfsUtilServer::OpStat(const xtreemfs::pbrpc::UserCredentials& uc,
     }
     if (path == "/") {
       // Get more volume details.
-      result["free_space"] = Json::Value(xtfs_attrs["xtreemfs.free_space"]);
+
+      uint64_t quota = boost::lexical_cast<uint64_t>(xtfs_attrs["xtreemfs.quota"]);
+      int64_t quota_free_space = quota - boost::lexical_cast<uint64_t>(xtfs_attrs["xtreemfs.used_space"]);
+
+      // Use minimum of free space relative to the quota and free space on osds as free space.
+      if (quota != 0 && quota_free_space < boost::lexical_cast<uint64_t>(xtfs_attrs["xtreemfs.free_space"])) {
+        quota_free_space = quota_free_space < 0 ? 0 : quota_free_space;
+        result["free_space"] = Json::Value(boost::lexical_cast<std::string>(quota_free_space));
+      } else {
+        result["free_space"] = Json::Value(xtfs_attrs["xtreemfs.free_space"]);
+      }
+
       result["used_space"] = Json::Value(xtfs_attrs["xtreemfs.used_space"]);
       result["ac_policy_id"] =
           Json::Value(xtfs_attrs["xtreemfs.ac_policy_id"]);
@@ -615,6 +629,38 @@ void XtfsUtilServer::OpSetRemoveACL(
                     "xtreemfs.acl",
                     input["acl"].asString(),
                     xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
+  (*output)["result"] = Json::Value(Json::objectValue);
+}
+
+void XtfsUtilServer::OpSetVolumeQuota(
+	    const xtreemfs::pbrpc::UserCredentials& uc,
+	    const Json::Value& input,
+	    Json::Value* output) {
+
+  if (!input.isMember("path") || !input["path"].isString()
+      || !input.isMember("quota") || !input["quota"].isString()) {
+    (*output)["error"] = Json::Value("One of the following fields is missing or"
+        " has an invalid value: path, quota.");
+    return;
+  }
+
+  const string path = input["path"].asString();
+  const long quota = parseByteNumber(input["quota"].asString());
+
+  if (quota == -1) {
+    (*output)["error"] = Json::Value(
+        input["quota"].asString() + " is not a valid quota.");
+    return;
+  }
+
+  if (quota < 0) {
+    (*output)["error"] = "Quota has to be greater or equal zero (was set to: "
+        + boost::lexical_cast<std::string>(quota) + ")";
+    return;
+  }
+
+  volume_->SetXAttr(uc, path, "xtreemfs.quota",
+      boost::lexical_cast<std::string>(quota), xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
   (*output)["result"] = Json::Value(Json::objectValue);
 }
 

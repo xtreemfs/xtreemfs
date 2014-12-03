@@ -14,8 +14,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.xtreemfs.foundation.util.ONCRPCServiceURL;
-
 public class CLIParser {
     
     public static final class CliOption {
@@ -31,7 +29,7 @@ public class CLIParser {
         
         public Long             numValue;
         
-        public ONCRPCServiceURL urlValue;
+        public PBRPCServiceURL  urlValue;
         
         public File             fileValue;
         
@@ -102,7 +100,7 @@ public class CLIParser {
                     if (iter.hasNext()) {
                         final String value = iter.next();
                         try {
-                            final ONCRPCServiceURL tmp = new ONCRPCServiceURL(value,
+                            final PBRPCServiceURL tmp = new PBRPCServiceURL(value,
                                 option.urlDefaultProtocol, option.urlDefaultPort);
                             option.urlValue = tmp;
                         } catch (Exception ex) {

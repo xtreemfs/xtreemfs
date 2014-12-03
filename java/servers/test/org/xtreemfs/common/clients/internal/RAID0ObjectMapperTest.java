@@ -7,52 +7,34 @@
 
 package org.xtreemfs.common.clients.internal;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
+
+import org.junit.Rule;
 import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.clients.internal.ObjectMapper.ObjectRequest;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestHelper;
 
 /**
  *
  * @author bjko
  */
 public class RAID0ObjectMapperTest {
-
-    public RAID0ObjectMapperTest() {
-    }
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-    }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-    }
-
-    @Before
-    public void setUp() {
-    }
-
-    @After
-    public void tearDown() {
-    }
+    @Rule
+    public final TestRule testLog = TestHelper.testLog;
 
     /**
      * Test of readRequest method, of class RAID0ObjectMapper.
      */
     @Test
     public void testReadRequest() {
-        System.out.println("readRequest");
-
         StripingPolicy sp = SetupUtils.getStripingPolicy(3, 7);
         List<String> s = new ArrayList(3);
         s.add("1");
@@ -130,8 +112,6 @@ public class RAID0ObjectMapperTest {
      */
     @Test
     public void testWriteRequest() {
-        System.out.println("writeRequest");
-
         StripingPolicy sp = SetupUtils.getStripingPolicy(3, 7);
         List<String> s = new ArrayList(3);
         s.add("1");

@@ -101,7 +101,7 @@ class ClientImplementationTest : public ::testing::Test {
     AddressMapping mapping;
     mapping.set_uuid(kTestUUID_);
     mapping.set_version(0);
-    mapping.set_protocol(PBRPCURL::SCHEME_PBRPC);
+    mapping.set_protocol(PBRPCURL::GetSchemePBRPC());
     mapping.set_address(hostname);
     mapping.set_port(kTestPort_);
     mapping.set_match_network(match_network);

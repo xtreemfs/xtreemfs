@@ -23,6 +23,7 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/repeated_field.h>
 #include <google/protobuf/extension_set.h>
+#include <google/protobuf/generated_enum_reflection.h>
 #include <google/protobuf/unknown_field_set.h>
 #include "include/PBRPC.pb.h"
 #include "include/Common.pb.h"
@@ -79,6 +80,27 @@ class xtreemfs_rwr_reset_completeRequest;
 class xtreemfs_xloc_set_invalidateRequest;
 class xtreemfs_xloc_set_invalidateResponse;
 
+enum OSDHealthResult {
+  OSD_HEALTH_RESULT_PASSED = 0,
+  OSD_HEALTH_RESULT_WARNING = 1,
+  OSD_HEALTH_RESULT_FAILED = 2,
+  OSD_HEALTH_RESULT_NOT_AVAIL = 3
+};
+bool OSDHealthResult_IsValid(int value);
+const OSDHealthResult OSDHealthResult_MIN = OSD_HEALTH_RESULT_PASSED;
+const OSDHealthResult OSDHealthResult_MAX = OSD_HEALTH_RESULT_NOT_AVAIL;
+const int OSDHealthResult_ARRAYSIZE = OSDHealthResult_MAX + 1;
+
+const ::google::protobuf::EnumDescriptor* OSDHealthResult_descriptor();
+inline const ::std::string& OSDHealthResult_Name(OSDHealthResult value) {
+  return ::google::protobuf::internal::NameOfEnum(
+    OSDHealthResult_descriptor(), value);
+}
+inline bool OSDHealthResult_Parse(
+    const ::std::string& name, OSDHealthResult* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<OSDHealthResult>(
+    OSDHealthResult_descriptor(), name, value);
+}
 // ===================================================================
 
 class InternalGmax : public ::google::protobuf::Message {
@@ -856,20 +878,30 @@ class XLocSetVersionState : public ::google::protobuf::Message {
   inline bool invalidated() const;
   inline void set_invalidated(bool value);
 
+  // optional fixed64 modified_time = 3;
+  inline bool has_modified_time() const;
+  inline void clear_modified_time();
+  static const int kModifiedTimeFieldNumber = 3;
+  inline ::google::protobuf::uint64 modified_time() const;
+  inline void set_modified_time(::google::protobuf::uint64 value);
+
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.XLocSetVersionState)
  private:
   inline void set_has_version();
   inline void clear_has_version();
   inline void set_has_invalidated();
   inline void clear_has_invalidated();
+  inline void set_has_modified_time();
+  inline void clear_has_modified_time();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
   ::google::protobuf::uint32 version_;
   bool invalidated_;
+  ::google::protobuf::uint64 modified_time_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
 
   friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
@@ -2320,6 +2352,20 @@ class xtreemfs_cleanup_startRequest : public ::google::protobuf::Message {
   inline bool lost_and_found() const;
   inline void set_lost_and_found(bool value);
 
+  // required bool delete_metadata = 4;
+  inline bool has_delete_metadata() const;
+  inline void clear_delete_metadata();
+  static const int kDeleteMetadataFieldNumber = 4;
+  inline bool delete_metadata() const;
+  inline void set_delete_metadata(bool value);
+
+  // required fixed32 metadata_timeout = 5;
+  inline bool has_metadata_timeout() const;
+  inline void clear_metadata_timeout();
+  static const int kMetadataTimeoutFieldNumber = 5;
+  inline ::google::protobuf::uint32 metadata_timeout() const;
+  inline void set_metadata_timeout(::google::protobuf::uint32 value);
+
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_cleanup_startRequest)
  private:
   inline void set_has_remove_zombies();
@@ -2328,15 +2374,21 @@ class xtreemfs_cleanup_startRequest : public ::google::protobuf::Message {
   inline void clear_has_remove_unavail_volume();
   inline void set_has_lost_and_found();
   inline void clear_has_lost_and_found();
+  inline void set_has_delete_metadata();
+  inline void clear_has_delete_metadata();
+  inline void set_has_metadata_timeout();
+  inline void clear_has_metadata_timeout();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
   bool remove_zombies_;
   bool remove_unavail_volume_;
   bool lost_and_found_;
+  bool delete_metadata_;
+  ::google::protobuf::uint32 metadata_timeout_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(5 + 31) / 32];
 
   friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
@@ -5084,6 +5136,28 @@ inline void XLocSetVersionState::set_invalidated(bool value) {
   invalidated_ = value;
 }
 
+// optional fixed64 modified_time = 3;
+inline bool XLocSetVersionState::has_modified_time() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void XLocSetVersionState::set_has_modified_time() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void XLocSetVersionState::clear_has_modified_time() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void XLocSetVersionState::clear_modified_time() {
+  modified_time_ = GOOGLE_ULONGLONG(0);
+  clear_has_modified_time();
+}
+inline ::google::protobuf::uint64 XLocSetVersionState::modified_time() const {
+  return modified_time_;
+}
+inline void XLocSetVersionState::set_modified_time(::google::protobuf::uint64 value) {
+  set_has_modified_time();
+  modified_time_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // ReplicaStatus
@@ -6631,6 +6705,50 @@ inline bool xtreemfs_cleanup_startRequest::lost_and_found() const {
 inline void xtreemfs_cleanup_startRequest::set_lost_and_found(bool value) {
   set_has_lost_and_found();
   lost_and_found_ = value;
+}
+
+// required bool delete_metadata = 4;
+inline bool xtreemfs_cleanup_startRequest::has_delete_metadata() const {
+  return (_has_bits_[0] & 0x00000008u) != 0;
+}
+inline void xtreemfs_cleanup_startRequest::set_has_delete_metadata() {
+  _has_bits_[0] |= 0x00000008u;
+}
+inline void xtreemfs_cleanup_startRequest::clear_has_delete_metadata() {
+  _has_bits_[0] &= ~0x00000008u;
+}
+inline void xtreemfs_cleanup_startRequest::clear_delete_metadata() {
+  delete_metadata_ = false;
+  clear_has_delete_metadata();
+}
+inline bool xtreemfs_cleanup_startRequest::delete_metadata() const {
+  return delete_metadata_;
+}
+inline void xtreemfs_cleanup_startRequest::set_delete_metadata(bool value) {
+  set_has_delete_metadata();
+  delete_metadata_ = value;
+}
+
+// required fixed32 metadata_timeout = 5;
+inline bool xtreemfs_cleanup_startRequest::has_metadata_timeout() const {
+  return (_has_bits_[0] & 0x00000010u) != 0;
+}
+inline void xtreemfs_cleanup_startRequest::set_has_metadata_timeout() {
+  _has_bits_[0] |= 0x00000010u;
+}
+inline void xtreemfs_cleanup_startRequest::clear_has_metadata_timeout() {
+  _has_bits_[0] &= ~0x00000010u;
+}
+inline void xtreemfs_cleanup_startRequest::clear_metadata_timeout() {
+  metadata_timeout_ = 0u;
+  clear_has_metadata_timeout();
+}
+inline ::google::protobuf::uint32 xtreemfs_cleanup_startRequest::metadata_timeout() const {
+  return metadata_timeout_;
+}
+inline void xtreemfs_cleanup_startRequest::set_metadata_timeout(::google::protobuf::uint32 value) {
+  set_has_metadata_timeout();
+  metadata_timeout_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -9048,6 +9166,10 @@ inline void xtreemfs_xloc_set_invalidateResponse::set_allocated_status(::xtreemf
 namespace google {
 namespace protobuf {
 
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::xtreemfs::pbrpc::OSDHealthResult>() {
+  return ::xtreemfs::pbrpc::OSDHealthResult_descriptor();
+}
 
 }  // namespace google
 }  // namespace protobuf

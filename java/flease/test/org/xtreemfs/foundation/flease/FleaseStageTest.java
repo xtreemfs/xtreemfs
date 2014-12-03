@@ -7,49 +7,60 @@
 
 package org.xtreemfs.foundation.flease;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import junit.framework.TestCase;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.flease.proposer.FleaseException;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.util.FSUtils;
 
 /**
  *
  * @author bjko
  */
-public class FleaseStageTest extends TestCase {
+public class FleaseStageTest {
 
-    private final FleaseConfig cfg;
-    
-    public FleaseStageTest(String testName) {
-        super(testName);
+    private static FleaseConfig cfg;
+    private static File         testDir;
 
+    @BeforeClass
+    public static void setUpClass() {
         Logging.start(Logging.LEVEL_WARN, Category.all);
         TimeSync.initializeLocal(50);
 
         cfg = new FleaseConfig(10000, 500, 500, new InetSocketAddress(12345), "localhost:12345",5);
+        testDir = new File("/tmp/xtreemfs-test/");
     }
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
+        FSUtils.delTree(testDir);
+        testDir.mkdirs();
     }
 
-    @Override
-    protected void tearDown() throws Exception {
-        super.tearDown();
+    @After
+    public void tearDown() throws Exception {
     }
 
     /**
      * Test of createTimer method, of class FleaseStage.
      */
+    @Test
     public void testOpenAndGetLease() throws Exception {
         final ASCIIString CELL_ID = new ASCIIString("testcell");
 
@@ -79,7 +90,7 @@ public class FleaseStageTest extends TestCase {
 
             @Override
             public void leaseFailed(ASCIIString cellId, FleaseException error) {
-                FleaseStageTest.fail(error.toString());
+                fail(error.toString());
             }
         }, null);
 
@@ -127,6 +138,7 @@ public class FleaseStageTest extends TestCase {
     /**
      * Test of createTimer method, of class FleaseStage.
      */
+    @Test
     public void testGetState() throws Exception {
         FleaseStage fs = new FleaseStage(cfg, "/tmp/xtreemfs-test/", new FleaseMessageSenderInterface() {
 
@@ -147,7 +159,7 @@ public class FleaseStageTest extends TestCase {
 
             @Override
             public void leaseFailed(ASCIIString cellId, FleaseException error) {
-                FleaseStageTest.fail(error.toString());
+                fail(error.toString());
             }
         }, null);
 
@@ -178,6 +190,7 @@ public class FleaseStageTest extends TestCase {
     /**
      * Test of createTimer method, of class FleaseStage.
      */
+    @Test
     public void testCreateTimer() throws Exception {
         FleaseStage fs = new FleaseStage(cfg, "/tmp/xtreemfs-test/", new FleaseMessageSenderInterface() {
 

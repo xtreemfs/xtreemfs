@@ -20,11 +20,6 @@ namespace xtreemfs {
 
 class PBRPCURL {
  public:
-  static const std::string SCHEME_PBRPC;
-  static const std::string SCHEME_PBRPCG;
-  static const std::string SCHEME_PBRPCS;
-  static const std::string SCHEME_PBRPCU;
-
   PBRPCURL();
 
   /** Parses the URL of the form [scheme://]host[:port][/volume].
@@ -49,6 +44,23 @@ class PBRPCURL {
   }
 
   ServiceAddresses GetAddresses() const;
+
+  static const std::string& GetSchemePBRPC() {
+    static const std::string SCHEME_PBRPC_STRING = "pbrpc";
+    return SCHEME_PBRPC_STRING;
+  }
+  static const std::string& GetSchemePBRPCS() {
+    static const std::string SCHEME_PBRPCS_STRING = "pbrpcs";
+    return SCHEME_PBRPCS_STRING;
+  }
+  static const std::string& GetSchemePBRPCG() {
+    static const std::string SCHEME_PBRPCG_STRING = "pbrpcg";
+    return SCHEME_PBRPCG_STRING;
+  }
+  static const std::string GetSchemePBRPCU() {
+    static const std::string SCHEME_PBRPCU_STRING = "pbrpcu";
+    return SCHEME_PBRPCU_STRING;
+  }
 
  private:
   /** List of servers (hostnames only) */

@@ -14,7 +14,6 @@ import java.util.Random;
 
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.FileHandle;
-import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 
 /**
@@ -57,10 +56,10 @@ class SequentialWriteBenchmark extends SequentialBenchmark {
         long byteCounter = 0;
 
         for (long j = 0; !cancelled && j < numberOfBlocks; j++) {
-            long nextOffset = j * chunkSize;
+            long nextOffset = j * requestSize;
             assert nextOffset >= 0 : "Offset < 0 not allowed";
             random.nextBytes(data);
-            byteCounter += fileHandle.write(config.getUserCredentials(), data, chunkSize, nextOffset);
+            byteCounter += fileHandle.write(config.getUserCredentials(), data, requestSize, nextOffset);
         }
         fileHandle.close();
         return byteCounter;

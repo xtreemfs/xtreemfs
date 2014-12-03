@@ -260,6 +260,16 @@ public class FileScrubber implements Runnable {
             returnStatus.add(ReturnStatus.UNREACHABLE);
         }
 
+        // handle removed replicas
+        if (!removedReplicas.isEmpty()) {
+            if (repair) {
+                recreateReplicas(removedReplicas);
+            } else {
+                printFileErrorMessage("lost " + removedReplicas.size() + " replicas due to dead OSDs");
+            }
+            returnStatus.add(ReturnStatus.FAILURE_REPLICAS);
+        }
+
         // if everything is fine, set returnStatus to FILE_OK
         if (returnStatus.size() == 0) {
             returnStatus.add(ReturnStatus.FILE_OK);

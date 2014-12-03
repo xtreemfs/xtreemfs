@@ -8,11 +8,17 @@
 
 package org.xtreemfs.test.osd;
 
-import junit.framework.TestCase;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestRule;
+import org.xtreemfs.test.TestHelper;
 
 // TODO
-public class StorageStageTest extends TestCase {
+public class StorageStageTest {
+    @Rule
+    public final TestRule testLog = TestHelper.testLog;
 
+    @Test
     public void testDummy() {
 
     }

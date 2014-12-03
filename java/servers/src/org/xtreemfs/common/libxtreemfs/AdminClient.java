@@ -25,8 +25,8 @@ public interface AdminClient extends Client {
      * Open an admin volume and use the returned class to access it.
      * 
      * @throws AddressToUUIDNotFoundException
-     * @throws UnknownAddressSchemeException
      * @throws VolumeNotFoundException
+     * @thorws IOException
      * @throws {@link IOException}
      */
     public AdminVolume openVolume(String volumeName, SSLOptions sslOptions, Options options)
@@ -45,10 +45,14 @@ public interface AdminClient extends Client {
      *            deletes volumes that might be dead
      * @param restore
      *            restore zombies found on the OSD
+     * @param removeMetadata
+     *            remove metadata from deleted or abandoned files
+     * @param metaDataTimeoutS
+     *            time in seconds to wait after the last view update before deleting metadata
      * @throws IOException
      */
-    public void startCleanUp(String osdUUID, String password, boolean remove, boolean deleteVolumes,
-            boolean restore) throws IOException;
+    public void startCleanUp(String osdUUID, String password, boolean remove, boolean deleteVolumes, boolean restore,
+            boolean removeMetadata, int metaDataTimeoutS) throws IOException;
 
     /**
      * Run a version cleanup (only if file content versioning is enabled).
@@ -110,7 +114,7 @@ public interface AdminClient extends Client {
     /**
      * Returns a ServiceSet with all services of the given type.
      * 
-     * @param ServiceType
+     * @param serviceType
      * 
      * @return ServiceSet
      * @throws XtreemFSException

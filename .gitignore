@@ -6,3 +6,7 @@
 /java/flease/nbproject/private/
 /java/pbrpcgen/nbproject/private/
 /java/pbrpcgen/dist/
+/build
+[._]*.s[a-w][a-z]
+.clang_complete
+cscope.out

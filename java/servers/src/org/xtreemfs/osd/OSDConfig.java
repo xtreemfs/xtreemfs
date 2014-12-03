@@ -79,7 +79,8 @@ public class OSDConfig extends ServiceConfig {
             Parameter.VIVALDI_TIMER_INTERVAL_IN_MS,
             Parameter.STORAGE_THREADS,
             Parameter.USE_RENEWAL_SIGNAL,
-            Parameter.USE_MULTIHOMING
+            Parameter.USE_MULTIHOMING,
+            Parameter.HEALTH_CHECK
     };
     /*
      * @formatter:on   
@@ -284,5 +285,9 @@ public class OSDConfig extends ServiceConfig {
 
     public int getStorageThreads() {
         return (Integer) parameter.get(Parameter.STORAGE_THREADS);
+    }
+    
+    public String getHealthCheckScript() {
+        return (String) parameter.get(Parameter.HEALTH_CHECK);
     }
 }

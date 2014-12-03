@@ -113,6 +113,8 @@ public interface StorageManager {
     public void setDefaultStripingPolicy(long fileId, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy defaultSp,
         AtomicDBUpdate update) throws DatabaseException;
     
+    public void setVolumeQuota(long quota, AtomicDBUpdate update) throws DatabaseException;
+
     public void setDefaultReplicationPolicy(long fileId, ReplicationPolicy defaultRp,
         AtomicDBUpdate update) throws DatabaseException;
     
@@ -132,6 +134,8 @@ public interface StorageManager {
     
     public ReplicationPolicy getDefaultReplicationPolicy(long fileId) throws DatabaseException;
     
+    public long getVolumeQuota() throws DatabaseException;
+
     public String getSoftlinkTarget(long fileId) throws DatabaseException;
     
     public DatabaseResultSet<FileMetadata> getChildren(long parentId, int seen, int num) throws DatabaseException;

@@ -68,7 +68,7 @@ Requires the following options: \-\-replication-policy, \-\-replication-factor
 Additional options: \-\-full
 
 .TP
-\fB\-\-replication-policy ronly|WqRq|WaRa|none (the aliases readonly|quorum|all are also allowed)
+\fB\-\-replication-policy ronly|WqRq|WaR1|none (the aliases readonly|quorum|all are also allowed)
 Sets the replication policy.
 
 .br
@@ -164,6 +164,10 @@ Same as --create-snapshot but excludes any subdirectories.
 Deletes the snapshot with the name \fIname\fP.
 
 .TP
+\fB\-\-set-quota [quota size]MB|GB|TB
+Sets the volume quota (set quota to 0 to disable the quota)
+
+.TP
 FILE OPTIONS:
 .TP
 \fB\-a, \-\-add-replica [OSD UUID] or AUTO
@@ -180,11 +184,7 @@ Removes the replica on the OSD with the specified UUID.
 Prints a list of up to ten OSDs that can be used for new replicas for the specified file.
 
 .TP
-\fB\-d, \-\-delete-replica [OSD UUID]
-Removes the replica on the OSD with the specified UUID.
-
-.TP
-\fB\-r, \-\-set-replication-policy ronly|WqRq|WaRa|none (the aliases readonly|quorum|all are also allowed)
+\fB\-r, \-\-set-replication-policy ronly|WqRq|WaR1|none (the aliases readonly|quorum|all are also allowed)
 Sets the replication policy for a file. Mode cane only be changed when a file has no replicas. See --replication-policy for values.
 
 .SH "SEE ALSO"

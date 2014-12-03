@@ -54,7 +54,14 @@ TestSets = {
                 'mrc_repl': False,
                 'dir_repl': False,
                 'snmp': True,
-    }
+    },
+    # This configuration is used to run the tests on the Travis CI build environment.
+    'travis' : {
+                'ssl': False,
+                'mrc_repl': False,
+                'dir_repl': False,
+                'snmp': False,
+    },
 }
 
 VolumeConfigs = {
@@ -273,19 +280,19 @@ Tests = [
         'name': 'JUnit tests',
         'file': 'junit_tests.sh',
         'VolumeConfigs': [],
-        'TestSets': [ 'full', 'short', 'short-ssl' ]
+        'TestSets': [ 'full', 'short', 'short-ssl', 'travis' ]
     },
     {
         'name': 'C++ Unit Tests',
         'file': 'cpp_unit_tests.sh',
         'VolumeConfigs': [],
-        'TestSets': [ 'full', 'short', 'short-ssl' ]
+        'TestSets': [ 'full', 'short', 'short-ssl', 'travis' ]
     },
     {
         'name': 'Valgrind memory-leak check for C++ Unit Tests',
         'file': 'cpp_unit_tests_valgrind.sh',
         'VolumeConfigs': [],
-        'TestSets': [ 'full' ]
+        'TestSets': [ 'full', 'travis' ]
     },
     {
         'name': 'mkfs-lsfs-rmfs.xtreemfs test',

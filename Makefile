@@ -11,13 +11,14 @@ else
 endif
 
 ifeq "$(CMAKE_HOME)" ""
-        CMAKE_BIN = /usr/bin/cmake
+        CMAKE_BIN = cmake
 else
         CMAKE_BIN = $(CMAKE_HOME)/bin/cmake
 endif
 
 SHELL := $(shell which bash)
 WHICH_GPP = $(shell which g++)
+WHICH_CLANGPP = $(shell which clang++)
 
 ifeq "$(shell uname)" "SunOS"
   PROTOBUF_DISABLE_64_BIT_SOLARIS = "--disable-64bit-solaris"
@@ -45,7 +46,7 @@ PLUGIN_CONFIG_DIR=$(XTREEMFS_CONFIG_DIR)/server-repl-plugin
 # If you edit the next five variables, make sure you also change them in cpp/CMakeLists.txt.
 CLIENT_GOOGLE_PROTOBUF_CPP = cpp/thirdparty/protobuf-2.5.0
 CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY = $(CLIENT_GOOGLE_PROTOBUF_CPP)/src/.libs/libprotobuf.a
-CLIENT_GOOGLE_TEST_CPP = cpp/thirdparty/gtest-1.5.0
+CLIENT_GOOGLE_TEST_CPP = cpp/thirdparty/gtest-1.7.0
 CLIENT_GOOGLE_TEST_CPP_LIBRARY = $(CLIENT_GOOGLE_TEST_CPP)/lib/.libs/libgtest.a
 CLIENT_GOOGLE_TEST_CPP_MAIN = $(CLIENT_GOOGLE_TEST_CPP)/lib/.libs/libgtest_main.a
 # The two required objects libgtest.a and libgtest_main.a both depend
@@ -189,9 +190,9 @@ check_server:
 	@echo "ant ok"
 
 check_client:
-	@if [ ! $(WHICH_GPP) ]; then echo "g++ not found";exit 1; fi;
+	@if [ ! $(WHICH_GPP) -a ! $(WHICH_CLANGPP) ]; then echo "C++ compiler not found";exit 1; fi;
 	@if [ ! $(CMAKE_BIN) ]; then echo "cmake not found";exit 1; fi;
-	@echo "g++ ok"
+	@echo "C++ ok"
 	
 
 check_test:
@@ -216,12 +217,17 @@ endif
 # Do not use env variables to control the CMake behavior as stated in http://www.cmake.org/Wiki/CMake_FAQ#How_can_I_get_or_set_environment_variables.3F
 # Instead define them via -D, so they will be cached.
 ifdef BOOST_ROOT
-	CMAKE_BOOST_ROOT = -DBOOST_ROOT="$(BOOST_ROOT)"
+	CMAKE_BOOST_ROOT = -DBOOST_ROOT="$(BOOST_ROOT)" -D Boost_NO_SYSTEM_PATHS=ON
 endif
 # Tell CMake if it should ignore a missing Fuse.
 ifdef SKIP_FUSE
 	CMAKE_SKIP_FUSE = -DSKIP_FUSE=true
 endif
+# Trigger building the experimental LD_PRELOAD library
+ifdef BUILD_PRELOAD
+	CMAKE_BUILD_PRELOAD = -DBUILD_PRELOAD=true
+endif
+
 
 client_thirdparty: $(CLIENT_THIRDPARTY_REQUIREMENTS)
 
@@ -264,7 +270,7 @@ client_debug: CLIENT_DEBUG = -DCMAKE_BUILD_TYPE=Debug
 client_debug: client
 
 client: check_client client_thirdparty set_version
-	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG) $(CMAKE_BOOST_ROOT) $(CMAKE_BUILD_CLIENT_TESTS) $(CMAKE_SKIP_FUSE)
+	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG) $(CMAKE_BOOST_ROOT) $(CMAKE_BUILD_CLIENT_TESTS) $(CMAKE_SKIP_FUSE) ${CMAKE_BUILD_PRELOAD}
 	@$(MAKE) -C $(XTREEMFS_CLIENT_BUILD_DIR)
 	@cd $(XTREEMFS_CLIENT_BUILD_DIR); for i in *.xtreemfs xtfsutil; do [ -f $(XTREEMFS_BINARIES_DIR)/$$i ] && rm -f $(XTREEMFS_BINARIES_DIR)/$$i; done; true
 	@cp   -p $(XTREEMFS_CLIENT_BUILD_DIR)/*.xtreemfs $(XTREEMFS_BINARIES_DIR)

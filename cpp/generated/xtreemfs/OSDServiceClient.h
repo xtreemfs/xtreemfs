@@ -1,5 +1,5 @@
-//automatically generated from OSD.proto at Wed Nov 20 11:39:08 CET 2013
-//(c) 2013. See LICENSE file for details.
+//automatically generated from OSD.proto at Wed Nov 12 13:55:48 CET 2014
+//(c) 2014. See LICENSE file for details.
 
 #ifndef OSDSERVICECLIENT_H
 #define OSDSERVICECLIENT_H

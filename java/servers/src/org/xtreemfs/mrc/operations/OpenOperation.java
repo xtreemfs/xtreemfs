@@ -99,6 +99,12 @@ public class OpenOperation extends MRCOperation {
         // check whether the file/directory exists
         try {
             
+            // check if volume is full
+            long volumeQuota = volume.getVolumeQuota();
+            if ((write || create) && volumeQuota != 0 && volumeQuota <= volume.getVolumeSize()) {
+                throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "the volume's quota is reached");
+            }
+            
             res.checkIfFileDoesNotExist();
             
             // check if O_CREAT and O_EXCL are set; if so, send an exception
