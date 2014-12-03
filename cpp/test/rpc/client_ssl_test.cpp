@@ -485,13 +485,15 @@ protected:
   
   void DoTest() {
     // Server does not accept our certificate.
-    std::string exception_text;
+    std::string exception_text("no exception");
     try {
       CreateOpenDeleteVolume("test_ssl_verification");
-    } catch (xtreemfs::IOException& e) {
+    // } catch (xtreemfs::IOException& e) {
+    } catch (const std::exception& e) {
       exception_text = e.what();
     }
-    ASSERT_TRUE(exception_text.find("could not connect to host") != std::string::npos);
+    // ASSERT_TRUE(exception_text.find("could not connect to host") != std::string::npos);
+    ASSERT_EQ("could not connect to host", exception_text);
 
     // We do not accept the server's certificate.
     ASSERT_TRUE(count_occurrences_in_file(
