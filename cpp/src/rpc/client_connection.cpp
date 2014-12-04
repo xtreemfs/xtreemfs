@@ -274,6 +274,12 @@ void ClientConnection::PostConnect(const boost::system::error_code& err,
       Logging::log->getLog(LEVEL_DEBUG) << "connected to "
           << (*endpoint_iterator).host_name() << ":"
           << (*endpoint_iterator).service_name() << endl;
+#ifdef HAS_OPENSSL
+      if (ssl_context_ != NULL) {
+        Logging::log->getLog(LEVEL_DEBUG) << "Using SSL/TLS version '"
+            << ((SSLSocketChannel*) socket_)->ssl_tls_version() << "'." << endl;
+      }
+#endif  // HAS_OPENSSL
     }
 
     connection_state_ = IDLE;
