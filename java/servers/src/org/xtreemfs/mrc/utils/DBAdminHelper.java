@@ -64,6 +64,8 @@ public class DBAdminHelper {
         public Map<String, Object> currentACL;
 
         public long                largestFileId;
+        
+        public long currentVolumeQuota;
 
         public DBRestoreState() {
             parentIds = new LinkedList<Long>();
@@ -99,7 +101,7 @@ public class DBAdminHelper {
             // if the directory is the root directory, restore the volume
             if (id == 1) {
                 vMan.createVolume(faMan, state.currentVolumeId, state.currentVolumeName, state.currentVolumeACPolicy,
-                        owner, owningGroup, null, rights, new LinkedList<KeyValuePair>());
+                        owner, owningGroup, null, rights, state.currentVolumeQuota, new LinkedList<KeyValuePair>());
 
                 StorageManager sMan = vMan.getStorageManager(state.currentVolumeId);
                 state.currentEntity = sMan.getMetadata(1);

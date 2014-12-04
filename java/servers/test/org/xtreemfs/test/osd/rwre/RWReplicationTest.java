@@ -7,13 +7,20 @@
 
 package org.xtreemfs.test.osd.rwre;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.net.InetSocketAddress;
 import java.util.LinkedList;
 import java.util.List;
-import junit.framework.TestCase;
+
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.clients.Client;
@@ -23,7 +30,6 @@ import org.xtreemfs.common.clients.Volume;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
@@ -47,27 +53,28 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 /**
  *
  * @author bjko
  */
-public class RWReplicationTest extends TestCase {
+public class RWReplicationTest {
+    @Rule
+    public final TestRule       testLog  = TestHelper.testLog;
 
-    private OSD[] osds;
-    private OSDConfig[] configs;
-    private TestEnvironment testEnv;
+    private OSD[]               osds;
+    private OSDConfig[]         configs;
+    private TestEnvironment     testEnv;
 
-    private final static int NUM_OSDS = 3;
-    private static final String fileId = "ABCDEF:1";
+    private final static int    NUM_OSDS = 3;
+    private static final String fileId   = "ABCDEF:1";
 
-    public RWReplicationTest() {
-        super();
+    @BeforeClass
+    public static void initializeTest() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
     }
 
-
-    @Override
     @Before
     public void setUp() throws Exception {
 
@@ -91,7 +98,7 @@ public class RWReplicationTest extends TestCase {
 
     }
 
-    @Override
+
     @After
     public void tearDown() {
         if (osds != null) {
@@ -104,16 +111,9 @@ public class RWReplicationTest extends TestCase {
         testEnv.shutdown();
     }
 
-    // TODO add test methods here.
-    // The methods must be annotated with annotation @Test. For example:
-    //
-    // @Test
-    // public void hello() {}
 
     @Test
     public void testReplicationWithClient() throws Exception {
-        System.out.println("TEST: replication with client");
-
         UserCredentials uc = UserCredentials.newBuilder().setUsername("test").addGroups("test").build();
         Auth passwd = passwd = Auth.newBuilder().setAuthType(AuthType.AUTH_PASSWORD).setAuthPasswd(AuthPassword.newBuilder().setPassword("")).build();
 
@@ -147,8 +147,6 @@ public class RWReplicationTest extends TestCase {
 
     @Test
     public void testReplicatedWrite() throws Exception {
-        System.out.println("TEST: replicated write");
-
         Capability cap = new Capability(fileId, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber() | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 60, System.currentTimeMillis(), "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, configs[0].getCapabilitySecret());
         List<Replica> rlist = new LinkedList();
         for (OSDConfig osd : this.configs) {
@@ -237,8 +235,6 @@ public class RWReplicationTest extends TestCase {
 
     @Test
     public void testReset() throws Exception {
-        System.out.println("TEST: replica reset");
-
         Capability cap = new Capability(fileId, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber() | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 60, System.currentTimeMillis(), "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, configs[0].getCapabilitySecret());
         List<Replica> rlist = new LinkedList();
         for (OSDConfig osd : this.configs) {

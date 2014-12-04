@@ -8,38 +8,41 @@
 
 package org.xtreemfs.test.mrc;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.net.InetSocketAddress;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.clients.File;
 import org.xtreemfs.common.clients.Volume;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.logging.Logging;
-
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
-import org.xtreemfs.foundation.util.FSUtils;
-
 import org.xtreemfs.mrc.utils.Path;
-
-import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
-import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_read_only_xattrRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_read_only_xattrResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestEnvironment.Services;
+import org.xtreemfs.test.TestHelper;
 
-import junit.framework.TestCase;
-
-public class SetReadOnlyXattrTest extends TestCase {
+public class SetReadOnlyXattrTest {
+    @Rule
+    public final TestRule     testLog = TestHelper.testLog;
 
     private MRCServiceClient  client;
 
@@ -51,17 +54,8 @@ public class SetReadOnlyXattrTest extends TestCase {
         Logging.start(SetupUtils.DEBUG_LEVEL);
     }
 
+    @Before
     public void setUp() throws Exception {
-
-        java.io.File testDir = new java.io.File(SetupUtils.TEST_DIR);
-
-        FSUtils.delTree(testDir);
-        testDir.mkdirs();
-
-        System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
-
-        mrcAddress = SetupUtils.getMRC1Addr();
-
         // register an OSD at the directory service (needed in order to assign
         // it to a new file on 'open')
 
@@ -69,14 +63,17 @@ public class SetReadOnlyXattrTest extends TestCase {
                 Services.MRC_CLIENT, Services.DIR_SERVICE, Services.MRC, Services.OSD);
         testEnv.start();
 
+        mrcAddress = testEnv.getMRCAddress();
         client = testEnv.getMrcClient();
     }
 
-    protected void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
         testEnv.shutdown();
         Logging.logMessage(Logging.LEVEL_DEBUG, this, BufferPool.getStatus());
     }
 
+    @Test
     public void testSetReadOnlyXattrOperation() throws Exception {
         final String uid = "root";
         final List<String> gids = createGIDs("root");

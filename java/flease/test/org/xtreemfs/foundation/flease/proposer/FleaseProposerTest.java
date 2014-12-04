@@ -7,7 +7,22 @@
 
 package org.xtreemfs.foundation.flease.proposer;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.flease.Flease;
@@ -21,31 +36,23 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.util.FSUtils;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 /**
  *
  * @author bjko
  */
-public class FleaseProposerTest extends TestCase {
+public class FleaseProposerTest {
 
-    private FleaseAcceptor acceptor;
-    private FleaseProposer proposer;
-    private final static ASCIIString TESTCELL = new ASCIIString("testcell");
+    private FleaseAcceptor                 acceptor;
+    private FleaseProposer                 proposer;
+    private final static ASCIIString       TESTCELL = new ASCIIString("testcell");
 
-    private final FleaseConfig cfg;
-    private final File testDir;
+    private static FleaseConfig            cfg;
+    private static File                    testDir;
 
-    private final AtomicReference<Flease> result;
+    private static AtomicReference<Flease> result;
     
-    public FleaseProposerTest(String testName) {
-        super(testName);
+    @BeforeClass
+    public static void setUpClass() throws Exception {
         testDir = new File("/tmp/xtreemfs-test/");
         FSUtils.delTree(testDir);
         testDir.mkdirs();
@@ -57,9 +64,8 @@ public class FleaseProposerTest extends TestCase {
         cfg = new FleaseConfig(10000, 500, 500, new InetSocketAddress(12345), "localhost:12345",5);
     }
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
         acceptor = new FleaseAcceptor(new LearnEventListener() {
 
             @Override
@@ -102,7 +108,7 @@ public class FleaseProposerTest extends TestCase {
             @Override
             public void leaseFailed(ASCIIString cellId, FleaseException error) {
                 // System.out.println("failed: "+error);
-                FleaseProposerTest.fail(error.toString());
+                fail(error.toString());
             }
         }, new LearnEventListener() {
 
@@ -113,11 +119,11 @@ public class FleaseProposerTest extends TestCase {
         },null,null);
     }
 
-    @Override
-    protected void tearDown() throws Exception {
-        super.tearDown();
+    @After
+    public void tearDown() throws Exception {
     }
 
+    @Test
     public void testGetLease() throws Exception {
 
         proposer.openCell(TESTCELL, new ArrayList(),false);

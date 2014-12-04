@@ -38,7 +38,7 @@ class FilebasedWriteBenchmark extends FilebasedBenchmark {
     @Override
     long performIO(byte[] data, long numberOfBlocks) throws IOException {
 
-        long numberOfFiles = benchmarkSizeInBytes / filesize;
+        long numberOfFiles = benchmarkSize / filesize;
         long byteCounter = 0;
         Random random = new Random();
 
@@ -50,15 +50,15 @@ class FilebasedWriteBenchmark extends FilebasedBenchmark {
             FileHandle fileHandle = volume.openFile(config.getUserCredentials(), BENCHMARK_FILENAME + i, flags, 511);
             this.filenames.add(BENCHMARK_FILENAME + i);
 
-            if (filesize <= chunkSize) {
+            if (filesize <= requestSize) {
                 random.nextBytes(data);
                 byteCounter += fileHandle.write(config.getUserCredentials(), data, filesize, 0);
             } else
-                for (long j = 0; j < filesize / chunkSize; j++) {
-                    long nextOffset = j * chunkSize;
+                for (long j = 0; j < filesize / requestSize; j++) {
+                    long nextOffset = j * requestSize;
                     assert nextOffset >= 0 : "Offset < 0 not allowed";
                     random.nextBytes(data);
-                    byteCounter += fileHandle.write(config.getUserCredentials(), data, chunkSize, nextOffset);
+                    byteCounter += fileHandle.write(config.getUserCredentials(), data, requestSize, nextOffset);
                 }
             fileHandle.close();
         }

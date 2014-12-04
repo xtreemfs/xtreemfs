@@ -70,7 +70,8 @@ FuseOptions::FuseOptions() : Options(), fuse_descriptions_("Fuse Options") {
         "Do not fork into background.")
     ("fuse_option,o",
         po::value< vector<string> >(&fuse_options),
-        "Passes -o=<option> to Fuse.")
+        "Passes -o=<option> to Fuse if not recognized by mount.xtreemfs, "
+        "see 'Alternative Specification of options'.")
     ("no-default-permissions",
         po::value(&fuse_permission_checks_explicitly_disabled)->zero_tokens(),
         "Do not pass -o default_permissions to Fuse (disables local Fuse"

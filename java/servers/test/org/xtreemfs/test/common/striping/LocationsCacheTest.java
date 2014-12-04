@@ -9,45 +9,51 @@
 
 package org.xtreemfs.test.common.striping;
 
-import junit.framework.TestCase;
-import junit.textui.TestRunner;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.osd.LocationsCache;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
+import org.xtreemfs.test.TestHelper;
 
 /**
  * This class implements the tests for LocationsCache
  * 
  * @author jmalo
  */
-public class LocationsCacheTest extends TestCase {
+public class LocationsCacheTest {
+    @Rule
+    public final TestRule  testLog     = TestHelper.testLog;
 
     private LocationsCache cache;
 
-    private final int maximumSize = 3;
+    private final int      maximumSize = 3;
 
-    /** Creates a new instance of LocationsCacheTest */
-    public LocationsCacheTest(String testName) {
-        super(testName);
-    }
-
-    protected void setUp() throws Exception {
-        System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
+    @Before
+    public void setUp() throws Exception {
         cache = new LocationsCache(maximumSize);
     }
 
-    protected void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
         cache = null;
     }
 
     /**
      * It tests the update method
      */
+    @Test
     public void testUpdate() throws Exception {
 
         XLocSet xlocSet = XLocSet.newBuilder().setReadOnlyFileSize(0).setReplicaUpdatePolicy("").setVersion(1).build();
-        XLocations loc = new XLocations(xlocSet,null);
+        XLocations loc = new XLocations(xlocSet, null);
 
         for (int i = 0; i < 3 * maximumSize; i++) {
             cache.update("F" + i, loc);
@@ -67,13 +73,14 @@ public class LocationsCacheTest extends TestCase {
     /**
      * It tests the getVersion method
      */
+    @Test
     public void testGetVersion() throws Exception {
 
         XLocSet xlocSet0 = XLocSet.newBuilder().setReadOnlyFileSize(0).setReplicaUpdatePolicy("").setVersion(1).build();
         XLocSet xlocSet1 = XLocSet.newBuilder().setReadOnlyFileSize(0).setReplicaUpdatePolicy("").setVersion(2).build();
 
-        XLocations loc0 = new XLocations(xlocSet0,null);
-        XLocations loc1 = new XLocations(xlocSet1,null);
+        XLocations loc0 = new XLocations(xlocSet0, null);
+        XLocations loc1 = new XLocations(xlocSet1, null);
         String fileId = "F0";
 
         // It asks the version number of an inexistent entry
@@ -91,10 +98,11 @@ public class LocationsCacheTest extends TestCase {
     /**
      * It tests the getLocations method
      */
+    @Test
     public void testGetLocations() throws Exception {
 
         XLocSet xlocSet = XLocSet.newBuilder().setReadOnlyFileSize(0).setReplicaUpdatePolicy("").setVersion(1).build();
-        XLocations loc = new XLocations(xlocSet,null);
+        XLocations loc = new XLocations(xlocSet, null);
 
         // It fills the cache
         for (int i = 0; i < maximumSize; i++) {
@@ -123,9 +131,5 @@ public class LocationsCacheTest extends TestCase {
                 assertEquals(loc, loc2);
             }
         }
-    }
-
-    public static void main(String[] args) {
-        TestRunner.run(LocationsCacheTest.class);
     }
 }

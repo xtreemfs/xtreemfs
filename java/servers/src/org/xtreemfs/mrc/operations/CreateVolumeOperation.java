@@ -126,7 +126,7 @@ public class CreateVolumeOperation extends MRCOperation {
             // create the volume locally
             master.getVolumeManager().createVolume(master.getFileAccessManager(), volumeId, volData.getName(),
                     (short) volData.getAccessControlPolicy().getNumber(), uid, gid, volData.getDefaultStripingPolicy(),
-                    volData.getMode(), volData.getAttrsList());
+                    volData.getMode(), volData.getQuota(), volData.getAttrsList());
             
             master.notifyVolumeCreated();
             

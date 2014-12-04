@@ -9,8 +9,32 @@ from test_volume import Volume
 from optparse import OptionParser
 import test_server, os, traceback, subprocess, shutil, sys, socket, time
 import datetime
+import json
 
 START_STOP_SERVICE_RETRIES = 3
+
+class TeeLog:
+    def __init__(self, fp):
+        self.file = fp 
+        self.stdout = sys.stdout
+
+    def close(self):
+        self.file.close()
+
+    def write(self, data):
+        self.file.write(data)
+        self.stdout.write(data)
+
+    def flush(self):
+        self.file.flush()
+        self.stdout.flush()
+
+    def fileno(self):
+        return self.file.fileno()
+
+    def __eq__(self, other):
+        return self.file == other
+
 
 class TestEnvironment:
     def __init__(self,
@@ -20,7 +44,8 @@ class TestEnvironment:
                  xtreemfs_dir,
                  test_dir,
                  debug_level,
-                 storage_threads):
+                 storage_threads,
+                 progress):
         self.__xtreemfs_dir = xtreemfs_dir
         self.__test_dir = os.path.abspath(test_dir)
         self.__debug_level = debug_level
@@ -30,6 +55,7 @@ class TestEnvironment:
         self.__mrc = None
         self.__osds = list()
         self.__storage_threads = storage_threads
+        self.__progress = progress
 
     def start(self):
         try:
@@ -269,7 +295,9 @@ class TestEnvironment:
                 # Execute test...
                 t_start = time.time()
                 try:
-                    testprocess = subprocess.Popen(testargs, stdout=testlog, stderr=testlog)
+                    testprocess = subprocess.Popen(testargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    for line in iter(testprocess.stdout.readline,''):
+                        testlog.write(line)
                     testprocess.wait()
                     if testprocess.returncode is not 0:
                         perVolumeSuccess[vcName] = False
@@ -313,7 +341,7 @@ class TestEnvironment:
     def _runSystemTest(self, test, testlog):
         testlog.write(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + " Executing system test '" + test['name'] + "'\n\n")
         testlog.flush()
-        sys.stdout.write("xtestenv: Executing system test '" + test['name'] + "' ... ")
+        sys.stdout.write("xtestenv: Executing system test '" + test['name'] + "' ... \n")
         sys.stdout.flush()
         testargs = list()
         testargs.append(os.path.join(self.__xtreemfs_dir,"tests", "test_scripts", test['file']))
@@ -325,7 +353,9 @@ class TestEnvironment:
         t_start = time.time()
         success = False
         try:
-            testprocess = subprocess.Popen(testargs, stdout=testlog, stderr=testlog, cwd=self.__xtreemfs_dir)
+            testprocess = subprocess.Popen(testargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=self.__xtreemfs_dir)
+            for line in iter(testprocess.stdout.readline,''):
+                testlog.write(line)
             testprocess.wait()
             if testprocess.returncode == 0:
                 success = True
@@ -349,6 +379,9 @@ class TestEnvironment:
     def runTests(self):
         try:
             testlog = open(os.path.join(self.__test_dir, "test.log"), "w")
+            if self.__progress:
+                testlog = TeeLog(testlog)
+
             sysTestResults = list()
             volTestResults = list()
 
@@ -378,6 +411,7 @@ class TestEnvironment:
 
             testlog.close()
             self._writeHtml(volTestResults, sysTestResults)
+            self._writeJSON(volTestResults, sysTestResults)
             print 'Volume tests complete.'
             print
             return failed
@@ -430,6 +464,18 @@ class TestEnvironment:
         out.write('</TABLE></BODY></HTML>'+"\n")
         out.close()
 
+    def _writeJSON(self, volTestResults, sysTestResults):
+        results = {}
+        for i in range(len(sysTestResults)):
+            results[self.__config.getSystemTests()[i]['name']] = sysTestResults[i]
+
+        for i in range(len(volTestResults)):
+            results[self.__config.getVolumeTests()[i]['name']] = volTestResults[i]
+
+        with open(os.path.join(self.__test_dir, "result.json"), "w") as out:
+            json.dump(results, out)
+
+
 if __name__ == "__main__":
     xtreemfs_dir = os.path.join(os.path.dirname( os.path.abspath( sys.modules[__name__].__file__ ) ), "..")
 
@@ -443,6 +489,8 @@ if __name__ == "__main__":
     option_parser.add_option( "-e", "--start-test-env", action="store_true", dest="start_test_env")
     option_parser.add_option( "-f", "--start-test-env-with-ssl", action="store_true", dest="start_test_env_with_ssl", help="Same as -e, but with SSL enabled.")
     option_parser.add_option( "-s", "--storage-threads", action="store", dest="storage_threads", default=1, help="Number of storage threads per OSD.")
+    option_parser.add_option( "-p", "--progress", action="store_true", dest="progress", help="Show progress by printing the test script output to stdout.")
+
     if len(sys.argv) == 1:
         option_parser.print_help()
         sys.exit(2)
@@ -472,7 +520,8 @@ if __name__ == "__main__":
                                   options.xtreemfs_dir,
                                   options.test_dir,
                                   options.debug_level,
-                                  options.storage_threads)
+                                  options.storage_threads,
+                                  options.progress)
         testEnv.start()
         try:
             print
@@ -497,7 +546,8 @@ if __name__ == "__main__":
                                   options.xtreemfs_dir,
                                   options.test_dir,
                                   options.debug_level,
-                                  options.storage_threads)
+                                  options.storage_threads,
+                                  options.progress)
         testEnv.start()
         try:
             failed = testEnv.runTests()

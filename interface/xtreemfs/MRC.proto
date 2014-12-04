@@ -121,6 +121,8 @@ message Volume {
     required string owner_user_id = 7;
     // optional configuration attributes for the volume
     repeated KeyValuePair attrs = 8;
+    // optional volume quota
+    optional fixed64 quota = 9;
 }
 
 // a list of volumes; relevant for the 'xtfs_lsvol' call

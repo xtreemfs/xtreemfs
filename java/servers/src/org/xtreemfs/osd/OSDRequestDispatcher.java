@@ -8,9 +8,12 @@
 
 package org.xtreemfs.osd;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.net.InetSocketAddress;
@@ -117,77 +120,78 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.OSDHealthResult;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 import com.google.protobuf.Message;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener {
-    
+
     private static final int                            RPC_TIMEOUT        = 15000;
-    
+
     private static final int                            CONNECTION_TIMEOUT = 5 * 60 * 1000;
-    
+
     protected final Map<Integer, OSDOperation>          operations;
-    
+
     protected final Map<Class<?>, OSDOperation>         internalEvents;
-    
+
     protected final HeartbeatThread                     heartbeatThread;
-    
+
     protected final OSDConfig                           config;
-    
+
     protected final DIRClient                           dirClient;
-    
+
     protected final MRCServiceClient                    mrcClient;
-    
+
     protected final OSDServiceClient                    osdClient;
-    
+
     protected final OSDServiceClient                    osdClientForReplication;
-    
+
     protected final RPCNIOSocketClient                  rpcClientForReplication;
-    
+
     protected final RPCNIOSocketClient                  rpcClient;
-    
+
     protected final RPCNIOSocketServer                  rpcServer;
-    
+
     protected long                                      requestId;
-    
+
     protected String                                    authString;
-    
+
     protected final PreprocStage                        preprocStage;
-    
+
     protected final StorageStage                        stStage;
-    
+
     protected final DeletionStage                       delStage;
-    
+
     protected final ReplicationStage                    replStage;
-    
+
     protected final RPCUDPSocketServer                  udpCom;
-    
+
     protected final StatusServer                        statusServer;
-    
+
     protected final long                                startupTime;
-    
-    protected final AtomicLong                          numBytesTX, numBytesRX, numObjsTX, numObjsRX,
-            numReplBytesRX, numReplObjsRX;
-    
+
+    protected final AtomicLong                          numBytesTX, numBytesRX, numObjsTX, numObjsRX, numReplBytesRX,
+            numReplObjsRX;
+
     protected final VivaldiStage                        vStage;
-    
+
     protected final AtomicReference<VivaldiCoordinates> myCoordinates;
-    
+
     protected final CleanupThread                       cThread;
-    
+
     protected final CleanupVersionsThread               cvThread;
-    
+
     protected final RWReplicationStage                  rwrStage;
-    
+
     private List<OSDStatusListener>                     statusListener;
-    
+
     /**
      * reachability of services
      */
     private final ServiceAvailability                   serviceAvailability;
-    
+
     public OSDRequestDispatcher(final OSDConfig config) throws Exception {
         
         Logging.logMessage(Logging.LEVEL_INFO, this, "XtreemFS OSD version "
@@ -384,6 +388,46 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 long totalRAM = Runtime.getRuntime().maxMemory();
                 long usedRAM = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
                 
+                // Get OSD health check result from user-defined script.
+                OSDHealthResult healthCheckResult = OSDHealthResult.OSD_HEALTH_RESULT_NOT_AVAIL;
+                BufferedReader scriptOutputReader = null;
+                String scriptOutput = "";
+                if (!config.getHealthCheckScript().equals("")) {
+                    try {
+                        Process scriptProcess = Runtime.getRuntime()
+                                .exec(new String[] { config.getHealthCheckScript(), config.getObjDir() });
+                        
+                        // wait until the health check is terminated and get exit value (i.e. health check result)
+                        int healthCheckExitValue = scriptProcess.waitFor();
+                        healthCheckResult = OSDHealthResult.valueOf(healthCheckExitValue);
+                        
+                        // get output of the health check script
+                        scriptOutputReader = new BufferedReader (new InputStreamReader(scriptProcess.getInputStream()));
+                        String line = "";
+                        while(( line = scriptOutputReader.readLine()) != null) {
+                            scriptOutput += line;
+                            scriptOutput += "\n";
+                        }
+                        
+                        if (healthCheckResult == null) {
+                            Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
+                                    "Health check script returns invalid value (" + healthCheckExitValue + ")");
+                            healthCheckResult = OSDHealthResult.OSD_HEALTH_RESULT_NOT_AVAIL;
+                        }
+                    } catch (Exception e) {
+                        Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
+                                "Exception while reading health check result: " + e.getMessage());
+                    } finally {
+                        if (scriptOutputReader != null) {
+                            try {
+                                scriptOutputReader.close();
+                            } catch (IOException e) {
+                                // do nothing
+                            }
+                        }
+                    }
+                }
+
                 ServiceSet.Builder data = ServiceSet.newBuilder();
                 
                 ServiceDataMap.Builder dmap = ServiceDataMap.newBuilder();
@@ -395,6 +439,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                         .build());
                 dmap.addData(KeyValuePair.newBuilder().setKey("usedRAM").setValue(Long.toString(usedRAM))
                         .build());
+                dmap.addData(KeyValuePair.newBuilder().setKey("osd_health_check")
+                        .setValue(String.valueOf(healthCheckResult.getNumber())).build());
+                dmap.addData(KeyValuePair.newBuilder().setKey("osd_health_check_output")
+                        .setValue(scriptOutput).build());
                 dmap.addData(KeyValuePair.newBuilder().setKey("proto_version").setValue(
                     Integer.toString(OSDServiceConstants.INTERFACE_ID)).build());
                 VivaldiCoordinates coord = myCoordinates.get();
@@ -474,26 +522,26 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.lifecycle, this, "OSD at %s ready", this
                     .getConfig().getUUID().toString());
     }
-    
+
     public CleanupThread getCleanupThread() {
         return cThread;
     }
-    
+
     public CleanupVersionsThread getCleanupVersionsThread() {
         return cvThread;
     }
-    
+
     public void start() {
-        
+
         try {
-            
+
             rpcServer.start();
             rpcClient.start();
             rpcClientForReplication.start();
-            
+
             rpcServer.waitForStartup();
             rpcClient.waitForStartup();
-            
+
             udpCom.start();
             preprocStage.start();
             delStage.start();
@@ -503,7 +551,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cThread.start();
             cvThread.start();
             rwrStage.start();
-            
+
             udpCom.waitForStartup();
             preprocStage.waitForStartup();
             delStage.waitForStartup();
@@ -512,25 +560,25 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cThread.waitForStartup();
             cvThread.waitForStartup();
             rwrStage.waitForStartup();
-            
+
             heartbeatThread.initialize();
             heartbeatThread.start();
             heartbeatThread.waitForStartup();
-            
+
             if (Logging.isInfo())
                 Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
-                    "OSD RequestController and all services operational");
-            
+                        "OSD RequestController and all services operational");
+
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, "STARTUP FAILED!");
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
             System.exit(1);
         }
-        
+
     }
-    
+
     public void shutdown() {
-        
+
         try {
 
             for (OSDStatusListener listener : statusListener) {
@@ -539,17 +587,17 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
             heartbeatThread.shutdown();
             heartbeatThread.waitForShutdown();
-            
+
             rpcServer.shutdown();
             rpcClient.shutdown();
             rpcClientForReplication.shutdown();
-            
+
             rpcServer.waitForShutdown();
             rpcClient.waitForShutdown();
             rpcClientForReplication.waitForShutdown();
-            
+
             serviceAvailability.shutdown();
-            
+
             udpCom.shutdown();
             preprocStage.shutdown();
             delStage.shutdown();
@@ -562,7 +610,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cvThread.cleanupStop();
             cvThread.shutdown();
             serviceAvailability.shutdown();
-            
+
             udpCom.waitForShutdown();
             preprocStage.waitForShutdown();
             delStage.waitForShutdown();
@@ -572,34 +620,33 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             vStage.waitForShutdown();
             cThread.waitForShutdown();
             cvThread.waitForShutdown();
-            
+
             if (statusServer != null) {
                 statusServer.shutdown();
             }
-            
+
             if (Logging.isInfo())
-                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
-                    "OSD and all stages terminated");
-            
+                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this, "OSD and all stages terminated");
+
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, "shutdown failed");
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
     }
-    
+
     public void asyncShutdown() {
         try {
-            
+
             for (OSDStatusListener listener : statusListener) {
                 listener.shuttingDown();
             }
-            
+
             heartbeatThread.shutdown();
-            
+
             rpcServer.shutdown();
             rpcClient.shutdown();
             rpcClientForReplication.shutdown();
-            
+
             udpCom.shutdown();
             preprocStage.shutdown();
             delStage.shutdown();
@@ -612,107 +659,105 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cvThread.cleanupStop();
             cvThread.shutdown();
             serviceAvailability.shutdown();
-            
+
             statusServer.shutdown();
-            
+
             if (Logging.isInfo())
                 Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this, "OSD and all stages terminated");
-            
+
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, "shutdown failed");
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
     }
-    
+
     public OSDOperation getOperation(int procId) {
         return operations.get(procId);
     }
-    
+
     public OSDOperation getInternalEvent(Class<?> clazz) {
         return internalEvents.get(clazz);
     }
-    
+
     public OSDConfig getConfig() {
         return config;
     }
-    
+
     public DIRClient getDIRClient() {
         return dirClient;
     }
-    
+
     public MRCServiceClient getMRCClient() {
         return mrcClient;
     }
-    
+
     public OSDServiceClient getOSDClient() {
         return osdClient;
     }
-    
+
     public OSDServiceClient getOSDClientForReplication() {
         return osdClientForReplication;
     }
-    
+
     public RPCNIOSocketClient getRPCClient() {
         return rpcClient;
     }
-    
+
     @Override
     public void startupPerformed() {
-        
+
     }
-    
+
     @Override
     public void shutdownPerformed() {
-        
+
     }
-    
+
     @Override
     public void crashPerformed(Throwable cause) {
-        final String report = CrashReporter
-                .createCrashReport("OSD", VersionManagement.RELEASE_VERSION, cause);
+        final String report = CrashReporter.createCrashReport("OSD", VersionManagement.RELEASE_VERSION, cause);
         System.out.println(report);
         CrashReporter.reportXtreemFSCrash(report);
         this.shutdown();
     }
-    
+
     /**
-     * Checks if the local OSD is the head OSD in one of the given X-Locations
-     * list.
+     * Checks if the local OSD is the head OSD in one of the given X-Locations list.
      * 
      * @param xloc
      *            the X-Locations list
-     * @return <texttt>true</texttt>, if the local OSD is the head OSD of the
-     *         given X-Locations list; <texttt>false</texttt>, otherwise
+     * @return <texttt>true</texttt>, if the local OSD is the head OSD of the given X-Locations list;
+     *         <texttt>false</texttt>, otherwise
      */
     public boolean isHeadOSD(XLocations xloc) {
         final ServiceUUID headOSD = xloc.getLocalReplica().getOSDs().get(0);
         return config.getUUID().equals(headOSD);
     }
-    
+
     public long getFreeSpace() {
         return FSUtils.getFreeSpace(config.getObjDir());
     }
-    
+
     public long getTotalSpace() {
         File f = new File(config.getObjDir());
         long s = f.getTotalSpace();
         return s;
     }
-    
+
     @Override
     public void receiveRecord(RPCServerRequest rq) {
-        
+
         // final ONCRPCRequestHeader hdr = rq.getRequestHeader();
         RPCHeader hdr = rq.getHeader();
-        
+
         if (hdr.getMessageType() != MessageType.RPC_REQUEST) {
             rq.sendError(ErrorType.GARBAGE_ARGS, POSIXErrno.POSIX_ERROR_EIO,
-                "expected RPC request message type but got " + hdr.getMessageType());
+                    "expected RPC request message type but got " + hdr.getMessageType());
             return;
         }
-        
+
         final RPCHeader.RequestHeader rqHdr = hdr.getRequestHeader();
-        
+
         if (rqHdr.getInterfaceId() != OSDServiceConstants.INTERFACE_ID) {
             rq.sendError(
                     ErrorType.INVALID_INTERFACE_ID,
@@ -720,14 +765,13 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                     "Invalid interface id. This is an OSD service. You probably wanted to contact another service. Check the used address and port.");
             return;
         }
-        
+
         try {
             OSDRequest request = new OSDRequest(rq);
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "received new request: %s", rq
-                        .toString());
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "received new request: %s", rq.toString());
             preprocStage.prepareRequest(request, new PreprocStage.ParseCompleteCallback() {
-                
+
                 @Override
                 public void parseComplete(OSDRequest result, ErrorResponse error) {
                     if (error == null) {
@@ -742,190 +786,181 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
     }
-    
+
     public int getNumClientConnections() {
         return rpcServer.getNumConnections();
     }
-    
+
     public long getPendingRequests() {
         return rpcServer.getPendingRequests();
     }
-    
+
     private void initializeOperations() {
         // register all ops
         OSDOperation op = new ReadOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new WriteOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new DeleteOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new TruncateOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         /*
-         * op = new KeepFileOpenOperation(this);
-         * operations.put(op.getProcedureId(),op);
+         * op = new KeepFileOpenOperation(this); operations.put(op.getProcedureId(),op);
          */
 
         op = new InternalGetGmaxOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new InternalTruncateOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new CheckObjectOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new RepairObjectOperation(this);
         operations.put(op.getProcedureId(), op);
 
         op = new InternalGetFileSizeOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new ShutdownOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new LocalReadOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new CleanupStartOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new CleanupIsRunningOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new CleanupStopOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new CleanupGetStatusOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new CleanupGetResultsOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new CleanupVersionsStartOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new GetObjectSetOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new LockAcquireOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new LockCheckOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new LockReleaseOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new VivaldiPingOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new FleaseMessageOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new InternalRWRUpdateOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new InternalRWRTruncateOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new InternalRWRStatusOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new InternalRWRFetchOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new GetFileIDListOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         op = new RWRNotifyOperation(this);
         operations.put(op.getProcedureId(), op);
 
         op = new InternalRWRAuthStateOperation(this);
         operations.put(op.getProcedureId(), op);
-        
+
         // --internal events here--
-        
+
         op = new EventCloseFile(this);
         internalEvents.put(EventCloseFile.class, op);
-        
+
         op = new EventCreateFileVersion(this);
         internalEvents.put(EventCreateFileVersion.class, op);
-        
+
         op = new EventWriteObject(this);
         internalEvents.put(EventWriteObject.class, op);
-        
+
         op = new EventInsertPaddingObject(this);
         internalEvents.put(EventInsertPaddingObject.class, op);
-        
+
         op = new EventRWRStatus(this);
         internalEvents.put(EventRWRStatus.class, op);
 
     }
-    
+
     public StorageStage getStorageStage() {
         return this.stStage;
     }
-    
+
     public DeletionStage getDeletionStage() {
         return delStage;
     }
-    
+
     public PreprocStage getPreprocStage() {
         return preprocStage;
     }
-    
+
     public ReplicationStage getReplicationStage() {
         return replStage;
     }
-    
-    public void sendUDPMessage(RPCHeader header, Message message, InetSocketAddress receiver)
-        throws IOException {
+
+    public void sendUDPMessage(RPCHeader header, Message message, InetSocketAddress receiver) throws IOException {
         udpCom.sendRequest(header, message, receiver);
     }
-    
+
     public VivaldiStage getVivaldiStage() {
         return this.vStage;
     }
-    
+
     public RWReplicationStage getRWReplicationStage() {
         return this.rwrStage;
     }
-    
+
     // FIXME: implement operations for Gmax, Ping
     /*
-     * @Override public void receiveUDP(UDPMessage msg) { assert
-     * (msg.isRequest() || msg.isResponse());
+     * @Override public void receiveUDP(UDPMessage msg) { assert (msg.isRequest() || msg.isResponse());
      * 
      * try {
      * 
-     * if (msg.isRequest()) { if (msg.getRequestData() instanceof
-     * xtreemfs_broadcast_gmaxRequest) { xtreemfs_broadcast_gmaxRequest rq =
-     * (xtreemfs_broadcast_gmaxRequest) msg.getRequestData(); if
-     * (Logging.isDebug()) Logging.logMessage(Logging.LEVEL_DEBUG,
-     * Category.stage, this, "received GMAX packet for: %s from %s",
+     * if (msg.isRequest()) { if (msg.getRequestData() instanceof xtreemfs_broadcast_gmaxRequest) {
+     * xtreemfs_broadcast_gmaxRequest rq = (xtreemfs_broadcast_gmaxRequest) msg.getRequestData(); if (Logging.isDebug())
+     * Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "received GMAX packet for: %s from %s",
      * rq.getFile_id(), msg.getAddress());
      * 
-     * BufferPool.free(msg.getPayload());
-     * stStage.receivedGMAX_ASYNC(rq.getFile_id(), rq.getTruncate_epoch(),
-     * rq.getLast_object()); } else if (msg.getRequestData() instanceof
-     * xtreemfs_pingRequest) { xtreemfs_pingRequest rq = (xtreemfs_pingRequest)
-     * msg.getRequestData(); if (Logging.isDebug())
-     * Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
-     * "received ping request from: %s", msg.getAddress());
+     * BufferPool.free(msg.getPayload()); stStage.receivedGMAX_ASYNC(rq.getFile_id(), rq.getTruncate_epoch(),
+     * rq.getLast_object()); } else if (msg.getRequestData() instanceof xtreemfs_pingRequest) { xtreemfs_pingRequest rq
+     * = (xtreemfs_pingRequest) msg.getRequestData(); if (Logging.isDebug()) Logging.logMessage(Logging.LEVEL_DEBUG,
+     * Category.stage, this, "received ping request from: %s", msg.getAddress());
      * 
-     * vStage.receiveVivaldiMessage(msg); } } else { if (msg.getResponseData()
-     * instanceof xtreemfs_pingResponse) { xtreemfs_pingResponse resp =
-     * (xtreemfs_pingResponse) msg.getResponseData(); if (Logging.isDebug())
-     * Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
-     * "received ping response from: %s", msg.getAddress());
+     * vStage.receiveVivaldiMessage(msg); } } else { if (msg.getResponseData() instanceof xtreemfs_pingResponse) {
+     * xtreemfs_pingResponse resp = (xtreemfs_pingResponse) msg.getResponseData(); if (Logging.isDebug())
+     * Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "received ping response from: %s",
+     * msg.getAddress());
      * 
-     * vStage.receiveVivaldiMessage(msg); } } } catch (Exception ex) {
-     * Logging.logError(Logging.LEVEL_DEBUG, this,ex); } }
+     * vStage.receiveVivaldiMessage(msg); } } } catch (Exception ex) { Logging.logError(Logging.LEVEL_DEBUG, this,ex); }
+     * }
      */
 
     /**
@@ -934,81 +969,81 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     public ServiceAvailability getServiceAvailability() {
         return serviceAvailability;
     }
-    
+
     public void objectReceived() {
         long num = numObjsRX.incrementAndGet();
         for (OSDStatusListener listener : statusListener) {
             listener.numObjsRXChanged(num);
         }
     }
-    
+
     public void objectReplicated() {
         long num = numReplObjsRX.incrementAndGet();
         for (OSDStatusListener listener : statusListener) {
             listener.numReplObjsRX(num);
         }
     }
-    
+
     public void objectSent() {
         long num = numObjsTX.incrementAndGet();
         for (OSDStatusListener listener : statusListener) {
             listener.numObjsTXChanged(num);
         }
     }
-    
+
     public void replicatedDataReceived(int numBytes) {
         long num = numReplBytesRX.addAndGet(numBytes);
         for (OSDStatusListener listener : statusListener) {
             listener.numReplBytesRXChanged(num);
         }
     }
-    
+
     public void dataReceived(int numBytes) {
         long num = numBytesRX.addAndGet(numBytes);
         for (OSDStatusListener listener : statusListener) {
             listener.numBytesRXChanged(num);
         }
     }
-    
+
     public void dataSent(int numBytes) {
         long num = numBytesTX.addAndGet(numBytes);
         for (OSDStatusListener listener : statusListener) {
             listener.numBytesTXChanged(num);
         }
     }
-    
+
     public long getObjectsReceived() {
         return numObjsRX.get();
     }
-    
+
     public long getObjectsSent() {
         return numObjsTX.get();
     }
-    
+
     public long getBytesReceived() {
         return numBytesRX.get();
     }
-    
+
     public long getBytesSent() {
         return numBytesTX.get();
     }
-    
+
     public long getReplicatedObjectsReceived() {
         return numReplObjsRX.get();
     }
-    
+
     public long getReplicatedBytesReceived() {
         return numReplBytesRX.get();
     }
-    
+
     public void updateVivaldiCoordinates(VivaldiCoordinates newVC) {
         myCoordinates.set(newVC);
     }
-    
+
     public String getHostName() {
         return heartbeatThread.getAdvertisedHostName();
     }
-    
+
     public void addStatusListener(OSDStatusListener listener) {
         this.statusListener.add(listener);
     }
@@ -1016,7 +1051,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     public void removeStatusListener(OSDStatusListener listener) {
         this.statusListener.remove(listener);
     }
-    
+
     /**
      * Tells all listeners when the configuration has changed.
      */
@@ -1025,19 +1060,19 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             listener.OSDConfigChanged(this.config);
         }
     }
-    
-    
+
     /**
      * Getter for a timestamp when the heartbeatthread sent his last heartbeat
+     * 
      * @return long - timestamp as returned by System.currentTimeMillis()
      */
     public long getLastHeartbeat() {
         return heartbeatThread.getLastHeartbeat();
     }
-    
+
     /**
-     * Returns primary OSD UUID for the file with ID "fileId" (if OSD is primary or backup) or null (if OSD
-     * does not know the file).
+     * Returns primary OSD UUID for the file with ID "fileId" (if OSD is primary or backup) or null (if OSD does not
+     * know the file).
      * 
      * @param fileId
      */

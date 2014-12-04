@@ -19,6 +19,8 @@
 #include "libxtreemfs/simple_uuid_iterator.h"
 #include "libxtreemfs/typedefs.h"
 #include "libxtreemfs/uuid_resolver.h"
+#include "util/synchronized_queue.h"
+#include "libxtreemfs/async_write_handler.h"
 
 namespace boost {
 class thread;
@@ -112,6 +114,7 @@ class ClientImplementation : public Client {
       const std::string& owner_username,
       const std::string& owner_groupname,
       const pbrpc::AccessControlPolicyType& access_policy,
+      long volume_quota,
       const pbrpc::StripingPolicyType& default_striping_policy_type,
       int default_stripe_size,
       int default_stripe_width,
@@ -132,6 +135,8 @@ class ClientImplementation : public Client {
   virtual std::string UUIDToAddress(const std::string& uuid);
 
   const pbrpc::VivaldiCoordinates& GetVivaldiCoordinates() const;
+
+  util::SynchronizedQueue<AsyncWriteHandler::CallbackEntry>& GetAsyncWriteCallbackQueue();
 
  private:
   /** True if Shutdown() was executed. */
@@ -166,6 +171,9 @@ class ClientImplementation : public Client {
 
   /** Thread that handles the callbacks for asynchronous writes. */
   boost::scoped_ptr<boost::thread> async_write_callback_thread_;
+  /** Holds the Callbacks enqueued be CallFinished() (producer). They are
+   *  processed by ProcessCallbacks(consumer), running in its own thread. */
+  util::SynchronizedQueue<AsyncWriteHandler::CallbackEntry> async_write_callback_queue_;
 
   FRIEND_TEST(rpc::ClientTestFastLingerTimeout, LingerTests);
   FRIEND_TEST(rpc::ClientTestFastLingerTimeoutConnectTimeout, LingerTests);

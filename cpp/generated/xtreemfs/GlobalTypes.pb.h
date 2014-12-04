@@ -80,6 +80,7 @@ enum OSDSelectionPolicyType {
   OSD_SELECTION_POLICY_SORT_FQDN = 3001,
   OSD_SELECTION_POLICY_SORT_RANDOM = 3002,
   OSD_SELECTION_POLICY_SORT_VIVALDI = 3003,
+  OSD_SELECTION_POLICY_SORT_HOST_ROUND_ROBIN = 3004,
   OSD_SELECTION_POLICY_SORT_UUID = 3998,
   OSD_SELECTION_POLICY_SORT_REVERSE = 3999
 };
@@ -137,11 +138,12 @@ inline bool SnapConfig_Parse(
     SnapConfig_descriptor(), name, value);
 }
 enum StripingPolicyType {
-  STRIPING_POLICY_RAID0 = 0
+  STRIPING_POLICY_RAID0 = 0,
+  STRIPING_POLICY_ERASURECODE = 1
 };
 bool StripingPolicyType_IsValid(int value);
 const StripingPolicyType StripingPolicyType_MIN = STRIPING_POLICY_RAID0;
-const StripingPolicyType StripingPolicyType_MAX = STRIPING_POLICY_RAID0;
+const StripingPolicyType StripingPolicyType_MAX = STRIPING_POLICY_ERASURECODE;
 const int StripingPolicyType_ARRAYSIZE = StripingPolicyType_MAX + 1;
 
 const ::google::protobuf::EnumDescriptor* StripingPolicyType_descriptor();
@@ -548,6 +550,13 @@ class StripingPolicy : public ::google::protobuf::Message {
   inline ::google::protobuf::uint32 width() const;
   inline void set_width(::google::protobuf::uint32 value);
 
+  // optional fixed32 parity_width = 4;
+  inline bool has_parity_width() const;
+  inline void clear_parity_width();
+  static const int kParityWidthFieldNumber = 4;
+  inline ::google::protobuf::uint32 parity_width() const;
+  inline void set_parity_width(::google::protobuf::uint32 value);
+
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.StripingPolicy)
  private:
   inline void set_has_type();
@@ -556,15 +565,18 @@ class StripingPolicy : public ::google::protobuf::Message {
   inline void clear_has_stripe_size();
   inline void set_has_width();
   inline void clear_has_width();
+  inline void set_has_parity_width();
+  inline void clear_has_parity_width();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
   int type_;
   ::google::protobuf::uint32 stripe_size_;
   ::google::protobuf::uint32 width_;
+  ::google::protobuf::uint32 parity_width_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(4 + 31) / 32];
 
   friend void  protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto();
@@ -1850,6 +1862,28 @@ inline ::google::protobuf::uint32 StripingPolicy::width() const {
 inline void StripingPolicy::set_width(::google::protobuf::uint32 value) {
   set_has_width();
   width_ = value;
+}
+
+// optional fixed32 parity_width = 4;
+inline bool StripingPolicy::has_parity_width() const {
+  return (_has_bits_[0] & 0x00000008u) != 0;
+}
+inline void StripingPolicy::set_has_parity_width() {
+  _has_bits_[0] |= 0x00000008u;
+}
+inline void StripingPolicy::clear_has_parity_width() {
+  _has_bits_[0] &= ~0x00000008u;
+}
+inline void StripingPolicy::clear_parity_width() {
+  parity_width_ = 0u;
+  clear_has_parity_width();
+}
+inline ::google::protobuf::uint32 StripingPolicy::parity_width() const {
+  return parity_width_;
+}
+inline void StripingPolicy::set_parity_width(::google::protobuf::uint32 value) {
+  set_has_parity_width();
+  parity_width_ = value;
 }
 
 // -------------------------------------------------------------------

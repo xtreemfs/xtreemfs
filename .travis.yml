@@ -1,13 +1,25 @@
 language: java
 
-jdk: oraclejdk7
+jdk: openjdk6
 
-install:
-  - make server
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -y libboost-all-dev libfuse-dev fuse libssl-dev libattr1-dev make cmake automake python valgrind
+
+before_script:
+  - TEST_DIR="/tmp/xtreemfs_xtestenv"
+  - XTREEMFS_DIR=`pwd`
 
 script:
-  - source contrib/travis/unit_tests.sh
+  - make server
+  - BUILD_CLIENT_TESTS=true make client_debug
+  - ./tests/xtestenv --clean-test-dir -x $XTREEMFS_DIR -t $TEST_DIR -c $XTREEMFS_DIR/tests/test_config.py -p travis
 
 after_failure:
-  - if [ $JUNIT_FAILED = "true" ]; then cat /tmp/xtreemfs-junit/log/junit.log; fi
+  - JUNIT_RESULT=`./contrib/travis/parse_results.py $TEST_DIR/result.json 'JUnit tests'`
+  - CPP_RESULT=`./contrib/travis/parse_results.py $TEST_DIR/result.json 'C++ Unit Tests'`
+  - VALGRIND_RESULT=`./contrib/travis/parse_results.py $TEST_DIR/result.json 'Valgrind memory-leak check for C++ Unit Tests'`
+  - if [[ $JUNIT_RESULT = "false" ]]; then cat $TEST_DIR/log/junit.log; fi
+  - if [[ $CPP_RESULT = "false" ]]; then cat cpp/build/Testing/Temporary/LastTest.log; fi
+  - if [[ $VALGRIND_RESULT = "false" ]]; then cat $TEST_DIR/log/valgrind.log; fi
 

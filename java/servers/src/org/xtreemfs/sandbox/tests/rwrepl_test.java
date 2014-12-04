@@ -5,8 +5,6 @@
 
 package org.xtreemfs.sandbox.tests;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.clients.File;
@@ -19,10 +17,13 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
-import org.xtreemfs.foundation.util.ONCRPCServiceURL;
+import org.xtreemfs.foundation.util.PBRPCServiceURL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
 
 /**
  *
@@ -40,7 +41,7 @@ public class rwrepl_test {
     public static void main(String[] args) {
         // TODO code application logic here
         try {
-            final ONCRPCServiceURL dir = new ONCRPCServiceURL(args[0], "oncrpc", 32638);
+            final PBRPCServiceURL dir = new PBRPCServiceURL(args[0], "oncrpc", 32638);
             final int    numReplicas = Integer.valueOf(args[1]);
             final int    fileSize = Integer.valueOf(args[2])*1024*1024;
             String mode = "rw";

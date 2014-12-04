@@ -24,19 +24,19 @@ import java.util.concurrent.Callable;
 
     static volatile boolean cancelled = false;
 
-    final int             chunkSize;
-    final long            benchmarkSizeInBytes;
+    final int             requestSize;
+    final long            benchmarkSize;
     final Volume          volume;
     final AdminClient     client;
     final BenchmarkConfig config;
     final VolumeManager   volumeManager;
 
-    AbstractBenchmark(long benchmarkSizeInBytes, BenchmarkConfig config, AdminClient client, VolumeManager volumeManager) throws Exception {
+    AbstractBenchmark(long benchmarkSize, BenchmarkConfig config, AdminClient client, VolumeManager volumeManager) throws Exception {
         this.client = client;
-        this.benchmarkSizeInBytes = benchmarkSizeInBytes;
+        this.benchmarkSize = benchmarkSize;
         this.volume = volumeManager.getNextVolume();
         this.config = config;
-        this.chunkSize = config.getChunkSizeInBytes();
+        this.requestSize = config.getChunkSizeInBytes();
         this.volumeManager = volumeManager;
         this.cancelled = false; // reset cancellation status
     }
@@ -51,22 +51,21 @@ import java.util.concurrent.Callable;
         Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Starting %s on volume %s", shortClassname, volume.getVolumeName());
 
         // Setting up
-        byte[] data = new byte[chunkSize];
+        byte[] data = new byte[requestSize];
 
-        long numberOfBlocks = benchmarkSizeInBytes / chunkSize;
-        long byteCounter = 0;
+        long numberOfRequests = benchmarkSize / requestSize;
 
         /* Run the AbstractBenchmark */
         long before = System.currentTimeMillis();
-        byteCounter = performIO(data, numberOfBlocks);
+        long requestCounter = performIO(data, numberOfRequests);
         long after = System.currentTimeMillis();
 
-        if (benchmarkSizeInBytes != byteCounter)
+        if (benchmarkSize != requestCounter)
             throw new BenchmarkFailedException("Data written does not equal the requested size");
 
         /* Calculate results */
         double timeInSec = (after - before) / 1000.;
-        BenchmarkResult result = new BenchmarkResult(timeInSec, benchmarkSizeInBytes, byteCounter);
+        BenchmarkResult result = new BenchmarkResult(timeInSec, benchmarkSize, requestCounter);
 
         finalizeBenchmark();
 

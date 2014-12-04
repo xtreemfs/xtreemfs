@@ -10,7 +10,9 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.foundation.logging.Logging;
@@ -23,11 +25,14 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 /**
  * Tests if FileSizeUpdateThread works correctly.
  */
 public class FileSizeUpdateThreadTest {
+    @Rule
+    public final TestRule               testLog = TestHelper.testLog;
 
     private static DIRRequestDispatcher dir;
 
@@ -42,7 +47,7 @@ public class FileSizeUpdateThreadTest {
     private static MRCServiceClient     mrcClient;
 
     @BeforeClass
-    public static void setUp() throws Exception {
+    public static void initializeTest() throws Exception {
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
 
@@ -64,7 +69,7 @@ public class FileSizeUpdateThreadTest {
     }
 
     @AfterClass
-    public static void tearDown() throws Exception {
+    public static void shutdownTest() throws Exception {
 
         testEnv.shutdown();
         dir.shutdown();

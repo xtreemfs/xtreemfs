@@ -70,6 +70,9 @@ enum OSDSelectionPolicyType {
     // Sorts the OSDs by proximity of vivalid network
     // coordinates of the client.
     OSD_SELECTION_POLICY_SORT_VIVALDI = 3003;
+    // Sorts the OSDs in a round robin manner for
+    // multiple OSDs per host.
+    OSD_SELECTION_POLICY_SORT_HOST_ROUND_ROBIN = 3004;
     // Sortes the OSDs by their UUID.
     OSD_SELECTION_POLICY_SORT_UUID = 3998;
     // Reverse given list. Used only internally by unit tests.
@@ -111,15 +114,21 @@ message NewFileSize {
 enum StripingPolicyType {
     // Default striping policy (round-robin distribution).
     STRIPING_POLICY_RAID0 = 0;
+    // Erasure code striping policy (.
+    STRIPING_POLICY_ERASURECODE = 1;
 }
 
 message StripingPolicy {
-    // Type, always STRIPING_POLICY_RAID0.
+    // Type (by default STRIPING_POLICY_RAID0).
     required StripingPolicyType type = 1;
-    // Size of stripe (objects) in *kB*!
+    // Size of a single chunk (object) in *kB*!
+    // The name of the field is wrong: This is not the total size of the stripe.
+    // Instead, the total size of a stripe in XtreemFS is: stripe_size * (width + parity_width)
     required fixed32 stripe_size = 2;
-    // Number of OSDs to distribute stripes on.
+    // Number of OSDs to distribute data chunks on.
     required fixed32 width = 3;
+    // Number of OSDs to distribute parity chunks on.
+    optional fixed32 parity_width = 4;
 }
 
 // Details for a file replica.
@@ -208,7 +217,7 @@ message VivaldiCoordinates {
 
 // Response returned by OSD write and truncate operations.
 // This information is stored by the client and must be
-// realyed to the MRC in regular intervals or when the file
+// relayed to the MRC in regular intervals or when the file
 // is fsynced or closed.
 // In addition, the client must use this information locally
 // for open files to provide processes with an accurate

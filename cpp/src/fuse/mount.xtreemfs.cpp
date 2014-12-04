@@ -196,6 +196,14 @@ int main(int argc, char **argv) {
 
   // Create Fuse channel (mount_point will be freed by fuse_teardown()).
   mount_point = strdup(options.mount_point.c_str());
+  
+  struct stat mount_point_stat;
+  stat(mount_point, &mount_point_stat);
+  if((mount_point_stat.st_mode & S_IFMT) != S_IFDIR) {
+    cerr << mount_point << " is not a directory." << endl;
+    return 1;
+  }
+  
   // Fuse docu: "manually add arguments to the struct fuse_args list"
   fuse_opt_parse(&fuse_args, NULL, NULL, NULL);
   fuse_channel = fuse_mount(mount_point, &fuse_args);

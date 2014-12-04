@@ -215,13 +215,22 @@ public final class GlobalTypes {
      */
     OSD_SELECTION_POLICY_SORT_VIVALDI(8, 3003),
     /**
+     * <code>OSD_SELECTION_POLICY_SORT_HOST_ROUND_ROBIN = 3004;</code>
+     *
+     * <pre>
+     * Sorts the OSDs in a round robin manner for
+     * multiple OSDs per host.
+     * </pre>
+     */
+    OSD_SELECTION_POLICY_SORT_HOST_ROUND_ROBIN(9, 3004),
+    /**
      * <code>OSD_SELECTION_POLICY_SORT_UUID = 3998;</code>
      *
      * <pre>
      * Sortes the OSDs by their UUID.
      * </pre>
      */
-    OSD_SELECTION_POLICY_SORT_UUID(9, 3998),
+    OSD_SELECTION_POLICY_SORT_UUID(10, 3998),
     /**
      * <code>OSD_SELECTION_POLICY_SORT_REVERSE = 3999;</code>
      *
@@ -229,7 +238,7 @@ public final class GlobalTypes {
      * Reverse given list. Used only internally by unit tests.
      * </pre>
      */
-    OSD_SELECTION_POLICY_SORT_REVERSE(10, 3999),
+    OSD_SELECTION_POLICY_SORT_REVERSE(11, 3999),
     ;
 
     /**
@@ -309,6 +318,15 @@ public final class GlobalTypes {
      */
     public static final int OSD_SELECTION_POLICY_SORT_VIVALDI_VALUE = 3003;
     /**
+     * <code>OSD_SELECTION_POLICY_SORT_HOST_ROUND_ROBIN = 3004;</code>
+     *
+     * <pre>
+     * Sorts the OSDs in a round robin manner for
+     * multiple OSDs per host.
+     * </pre>
+     */
+    public static final int OSD_SELECTION_POLICY_SORT_HOST_ROUND_ROBIN_VALUE = 3004;
+    /**
      * <code>OSD_SELECTION_POLICY_SORT_UUID = 3998;</code>
      *
      * <pre>
@@ -339,6 +357,7 @@ public final class GlobalTypes {
         case 3001: return OSD_SELECTION_POLICY_SORT_FQDN;
         case 3002: return OSD_SELECTION_POLICY_SORT_RANDOM;
         case 3003: return OSD_SELECTION_POLICY_SORT_VIVALDI;
+        case 3004: return OSD_SELECTION_POLICY_SORT_HOST_ROUND_ROBIN;
         case 3998: return OSD_SELECTION_POLICY_SORT_UUID;
         case 3999: return OSD_SELECTION_POLICY_SORT_REVERSE;
         default: return null;
@@ -597,6 +616,14 @@ public final class GlobalTypes {
      * </pre>
      */
     STRIPING_POLICY_RAID0(0, 0),
+    /**
+     * <code>STRIPING_POLICY_ERASURECODE = 1;</code>
+     *
+     * <pre>
+     * Erasure code striping policy (.
+     * </pre>
+     */
+    STRIPING_POLICY_ERASURECODE(1, 1),
     ;
 
     /**
@@ -607,6 +634,14 @@ public final class GlobalTypes {
      * </pre>
      */
     public static final int STRIPING_POLICY_RAID0_VALUE = 0;
+    /**
+     * <code>STRIPING_POLICY_ERASURECODE = 1;</code>
+     *
+     * <pre>
+     * Erasure code striping policy (.
+     * </pre>
+     */
+    public static final int STRIPING_POLICY_ERASURECODE_VALUE = 1;
 
 
     public final int getNumber() { return value; }
@@ -614,6 +649,7 @@ public final class GlobalTypes {
     public static StripingPolicyType valueOf(int value) {
       switch (value) {
         case 0: return STRIPING_POLICY_RAID0;
+        case 1: return STRIPING_POLICY_ERASURECODE;
         default: return null;
       }
     }
@@ -2681,7 +2717,7 @@ public final class GlobalTypes {
      * <code>required .xtreemfs.pbrpc.StripingPolicyType type = 1;</code>
      *
      * <pre>
-     * Type, always STRIPING_POLICY_RAID0.
+     * Type (by default STRIPING_POLICY_RAID0).
      * </pre>
      */
     boolean hasType();
@@ -2689,7 +2725,7 @@ public final class GlobalTypes {
      * <code>required .xtreemfs.pbrpc.StripingPolicyType type = 1;</code>
      *
      * <pre>
-     * Type, always STRIPING_POLICY_RAID0.
+     * Type (by default STRIPING_POLICY_RAID0).
      * </pre>
      */
     org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType getType();
@@ -2699,7 +2735,9 @@ public final class GlobalTypes {
      * <code>required fixed32 stripe_size = 2;</code>
      *
      * <pre>
-     * Size of stripe (objects) in *kB*!
+     * Size of a single chunk (object) in *kB*!
+     * The name of the field is wrong: This is not the total size of the stripe.
+     * Instead, the total size of a stripe in XtreemFS is: stripe_size * (width + parity_width)
      * </pre>
      */
     boolean hasStripeSize();
@@ -2707,7 +2745,9 @@ public final class GlobalTypes {
      * <code>required fixed32 stripe_size = 2;</code>
      *
      * <pre>
-     * Size of stripe (objects) in *kB*!
+     * Size of a single chunk (object) in *kB*!
+     * The name of the field is wrong: This is not the total size of the stripe.
+     * Instead, the total size of a stripe in XtreemFS is: stripe_size * (width + parity_width)
      * </pre>
      */
     int getStripeSize();
@@ -2717,7 +2757,7 @@ public final class GlobalTypes {
      * <code>required fixed32 width = 3;</code>
      *
      * <pre>
-     * Number of OSDs to distribute stripes on.
+     * Number of OSDs to distribute data chunks on.
      * </pre>
      */
     boolean hasWidth();
@@ -2725,10 +2765,28 @@ public final class GlobalTypes {
      * <code>required fixed32 width = 3;</code>
      *
      * <pre>
-     * Number of OSDs to distribute stripes on.
+     * Number of OSDs to distribute data chunks on.
      * </pre>
      */
     int getWidth();
+
+    // optional fixed32 parity_width = 4;
+    /**
+     * <code>optional fixed32 parity_width = 4;</code>
+     *
+     * <pre>
+     * Number of OSDs to distribute parity chunks on.
+     * </pre>
+     */
+    boolean hasParityWidth();
+    /**
+     * <code>optional fixed32 parity_width = 4;</code>
+     *
+     * <pre>
+     * Number of OSDs to distribute parity chunks on.
+     * </pre>
+     */
+    int getParityWidth();
   }
   /**
    * Protobuf type {@code xtreemfs.pbrpc.StripingPolicy}
@@ -2802,6 +2860,11 @@ public final class GlobalTypes {
               width_ = input.readFixed32();
               break;
             }
+            case 37: {
+              bitField0_ |= 0x00000008;
+              parityWidth_ = input.readFixed32();
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -2849,7 +2912,7 @@ public final class GlobalTypes {
      * <code>required .xtreemfs.pbrpc.StripingPolicyType type = 1;</code>
      *
      * <pre>
-     * Type, always STRIPING_POLICY_RAID0.
+     * Type (by default STRIPING_POLICY_RAID0).
      * </pre>
      */
     public boolean hasType() {
@@ -2859,7 +2922,7 @@ public final class GlobalTypes {
      * <code>required .xtreemfs.pbrpc.StripingPolicyType type = 1;</code>
      *
      * <pre>
-     * Type, always STRIPING_POLICY_RAID0.
+     * Type (by default STRIPING_POLICY_RAID0).
      * </pre>
      */
     public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType getType() {
@@ -2873,7 +2936,9 @@ public final class GlobalTypes {
      * <code>required fixed32 stripe_size = 2;</code>
      *
      * <pre>
-     * Size of stripe (objects) in *kB*!
+     * Size of a single chunk (object) in *kB*!
+     * The name of the field is wrong: This is not the total size of the stripe.
+     * Instead, the total size of a stripe in XtreemFS is: stripe_size * (width + parity_width)
      * </pre>
      */
     public boolean hasStripeSize() {
@@ -2883,7 +2948,9 @@ public final class GlobalTypes {
      * <code>required fixed32 stripe_size = 2;</code>
      *
      * <pre>
-     * Size of stripe (objects) in *kB*!
+     * Size of a single chunk (object) in *kB*!
+     * The name of the field is wrong: This is not the total size of the stripe.
+     * Instead, the total size of a stripe in XtreemFS is: stripe_size * (width + parity_width)
      * </pre>
      */
     public int getStripeSize() {
@@ -2897,7 +2964,7 @@ public final class GlobalTypes {
      * <code>required fixed32 width = 3;</code>
      *
      * <pre>
-     * Number of OSDs to distribute stripes on.
+     * Number of OSDs to distribute data chunks on.
      * </pre>
      */
     public boolean hasWidth() {
@@ -2907,17 +2974,42 @@ public final class GlobalTypes {
      * <code>required fixed32 width = 3;</code>
      *
      * <pre>
-     * Number of OSDs to distribute stripes on.
+     * Number of OSDs to distribute data chunks on.
      * </pre>
      */
     public int getWidth() {
       return width_;
     }
 
+    // optional fixed32 parity_width = 4;
+    public static final int PARITY_WIDTH_FIELD_NUMBER = 4;
+    private int parityWidth_;
+    /**
+     * <code>optional fixed32 parity_width = 4;</code>
+     *
+     * <pre>
+     * Number of OSDs to distribute parity chunks on.
+     * </pre>
+     */
+    public boolean hasParityWidth() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>optional fixed32 parity_width = 4;</code>
+     *
+     * <pre>
+     * Number of OSDs to distribute parity chunks on.
+     * </pre>
+     */
+    public int getParityWidth() {
+      return parityWidth_;
+    }
+
     private void initFields() {
       type_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0;
       stripeSize_ = 0;
       width_ = 0;
+      parityWidth_ = 0;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -2952,6 +3044,9 @@ public final class GlobalTypes {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         output.writeFixed32(3, width_);
       }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeFixed32(4, parityWidth_);
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -2972,6 +3067,10 @@ public final class GlobalTypes {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
           .computeFixed32Size(3, width_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeFixed32Size(4, parityWidth_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -3095,6 +3194,8 @@ public final class GlobalTypes {
         bitField0_ = (bitField0_ & ~0x00000002);
         width_ = 0;
         bitField0_ = (bitField0_ & ~0x00000004);
+        parityWidth_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
 
@@ -3135,6 +3236,10 @@ public final class GlobalTypes {
           to_bitField0_ |= 0x00000004;
         }
         result.width_ = width_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.parityWidth_ = parityWidth_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -3159,6 +3264,9 @@ public final class GlobalTypes {
         }
         if (other.hasWidth()) {
           setWidth(other.getWidth());
+        }
+        if (other.hasParityWidth()) {
+          setParityWidth(other.getParityWidth());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -3205,7 +3313,7 @@ public final class GlobalTypes {
        * <code>required .xtreemfs.pbrpc.StripingPolicyType type = 1;</code>
        *
        * <pre>
-       * Type, always STRIPING_POLICY_RAID0.
+       * Type (by default STRIPING_POLICY_RAID0).
        * </pre>
        */
       public boolean hasType() {
@@ -3215,7 +3323,7 @@ public final class GlobalTypes {
        * <code>required .xtreemfs.pbrpc.StripingPolicyType type = 1;</code>
        *
        * <pre>
-       * Type, always STRIPING_POLICY_RAID0.
+       * Type (by default STRIPING_POLICY_RAID0).
        * </pre>
        */
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType getType() {
@@ -3225,7 +3333,7 @@ public final class GlobalTypes {
        * <code>required .xtreemfs.pbrpc.StripingPolicyType type = 1;</code>
        *
        * <pre>
-       * Type, always STRIPING_POLICY_RAID0.
+       * Type (by default STRIPING_POLICY_RAID0).
        * </pre>
        */
       public Builder setType(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType value) {
@@ -3241,7 +3349,7 @@ public final class GlobalTypes {
        * <code>required .xtreemfs.pbrpc.StripingPolicyType type = 1;</code>
        *
        * <pre>
-       * Type, always STRIPING_POLICY_RAID0.
+       * Type (by default STRIPING_POLICY_RAID0).
        * </pre>
        */
       public Builder clearType() {
@@ -3257,7 +3365,9 @@ public final class GlobalTypes {
        * <code>required fixed32 stripe_size = 2;</code>
        *
        * <pre>
-       * Size of stripe (objects) in *kB*!
+       * Size of a single chunk (object) in *kB*!
+       * The name of the field is wrong: This is not the total size of the stripe.
+       * Instead, the total size of a stripe in XtreemFS is: stripe_size * (width + parity_width)
        * </pre>
        */
       public boolean hasStripeSize() {
@@ -3267,7 +3377,9 @@ public final class GlobalTypes {
        * <code>required fixed32 stripe_size = 2;</code>
        *
        * <pre>
-       * Size of stripe (objects) in *kB*!
+       * Size of a single chunk (object) in *kB*!
+       * The name of the field is wrong: This is not the total size of the stripe.
+       * Instead, the total size of a stripe in XtreemFS is: stripe_size * (width + parity_width)
        * </pre>
        */
       public int getStripeSize() {
@@ -3277,7 +3389,9 @@ public final class GlobalTypes {
        * <code>required fixed32 stripe_size = 2;</code>
        *
        * <pre>
-       * Size of stripe (objects) in *kB*!
+       * Size of a single chunk (object) in *kB*!
+       * The name of the field is wrong: This is not the total size of the stripe.
+       * Instead, the total size of a stripe in XtreemFS is: stripe_size * (width + parity_width)
        * </pre>
        */
       public Builder setStripeSize(int value) {
@@ -3290,7 +3404,9 @@ public final class GlobalTypes {
        * <code>required fixed32 stripe_size = 2;</code>
        *
        * <pre>
-       * Size of stripe (objects) in *kB*!
+       * Size of a single chunk (object) in *kB*!
+       * The name of the field is wrong: This is not the total size of the stripe.
+       * Instead, the total size of a stripe in XtreemFS is: stripe_size * (width + parity_width)
        * </pre>
        */
       public Builder clearStripeSize() {
@@ -3306,7 +3422,7 @@ public final class GlobalTypes {
        * <code>required fixed32 width = 3;</code>
        *
        * <pre>
-       * Number of OSDs to distribute stripes on.
+       * Number of OSDs to distribute data chunks on.
        * </pre>
        */
       public boolean hasWidth() {
@@ -3316,7 +3432,7 @@ public final class GlobalTypes {
        * <code>required fixed32 width = 3;</code>
        *
        * <pre>
-       * Number of OSDs to distribute stripes on.
+       * Number of OSDs to distribute data chunks on.
        * </pre>
        */
       public int getWidth() {
@@ -3326,7 +3442,7 @@ public final class GlobalTypes {
        * <code>required fixed32 width = 3;</code>
        *
        * <pre>
-       * Number of OSDs to distribute stripes on.
+       * Number of OSDs to distribute data chunks on.
        * </pre>
        */
       public Builder setWidth(int value) {
@@ -3339,12 +3455,61 @@ public final class GlobalTypes {
        * <code>required fixed32 width = 3;</code>
        *
        * <pre>
-       * Number of OSDs to distribute stripes on.
+       * Number of OSDs to distribute data chunks on.
        * </pre>
        */
       public Builder clearWidth() {
         bitField0_ = (bitField0_ & ~0x00000004);
         width_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // optional fixed32 parity_width = 4;
+      private int parityWidth_ ;
+      /**
+       * <code>optional fixed32 parity_width = 4;</code>
+       *
+       * <pre>
+       * Number of OSDs to distribute parity chunks on.
+       * </pre>
+       */
+      public boolean hasParityWidth() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>optional fixed32 parity_width = 4;</code>
+       *
+       * <pre>
+       * Number of OSDs to distribute parity chunks on.
+       * </pre>
+       */
+      public int getParityWidth() {
+        return parityWidth_;
+      }
+      /**
+       * <code>optional fixed32 parity_width = 4;</code>
+       *
+       * <pre>
+       * Number of OSDs to distribute parity chunks on.
+       * </pre>
+       */
+      public Builder setParityWidth(int value) {
+        bitField0_ |= 0x00000008;
+        parityWidth_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional fixed32 parity_width = 4;</code>
+       *
+       * <pre>
+       * Number of OSDs to distribute parity chunks on.
+       * </pre>
+       */
+      public Builder clearParityWidth() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        parityWidth_ = 0;
         onChanged();
         return this;
       }
@@ -10358,7 +10523,7 @@ public final class GlobalTypes {
    * <pre>
    * Response returned by OSD write and truncate operations.
    * This information is stored by the client and must be
-   * realyed to the MRC in regular intervals or when the file
+   * relayed to the MRC in regular intervals or when the file
    * is fsynced or closed.
    * In addition, the client must use this information locally
    * for open files to provide processes with an accurate
@@ -10636,7 +10801,7 @@ public final class GlobalTypes {
      * <pre>
      * Response returned by OSD write and truncate operations.
      * This information is stored by the client and must be
-     * realyed to the MRC in regular intervals or when the file
+     * relayed to the MRC in regular intervals or when the file
      * is fsynced or closed.
      * In addition, the client must use this information locally
      * for open files to provide processes with an accurate
@@ -11603,78 +11768,81 @@ public final class GlobalTypes {
       "n.proto\"T\n\013TraceConfig\022\026\n\016trace_requests" +
       "\030\001 \002(\010\022\025\n\rtarget_volume\030\002 \001(\t\022\026\n\016tracing" +
       "_policy\030\003 \001(\t\"<\n\013NewFileSize\022\025\n\rsize_in_" +
-      "bytes\030\001 \002(\006\022\026\n\016truncate_epoch\030\002 \002(\007\"f\n\016S" +
+      "bytes\030\001 \002(\006\022\026\n\016truncate_epoch\030\002 \002(\007\"|\n\016S" +
       "tripingPolicy\0220\n\004type\030\001 \002(\0162\".xtreemfs.p" +
       "brpc.StripingPolicyType\022\023\n\013stripe_size\030\002" +
-      " \002(\007\022\r\n\005width\030\003 \002(\007\"p\n\007Replica\022\021\n\tosd_uu" +
-      "ids\030\001 \003(\t\022\031\n\021replication_flags\030\002 \002(\007\0227\n\017",
-      "striping_policy\030\003 \002(\0132\036.xtreemfs.pbrpc.S" +
-      "tripingPolicy\"5\n\010Replicas\022)\n\010replicas\030\001 " +
-      "\003(\0132\027.xtreemfs.pbrpc.Replica\"\300\002\n\004XCap\022\023\n" +
-      "\013access_mode\030\001 \002(\007\022\027\n\017client_identity\030\002 " +
-      "\002(\t\022\025\n\rexpire_time_s\030\003 \002(\006\022\030\n\020expire_tim" +
-      "eout_s\030\004 \002(\007\022\017\n\007file_id\030\005 \002(\t\022\032\n\022replica" +
-      "te_on_close\030\006 \002(\010\022\030\n\020server_signature\030\007 " +
-      "\002(\t\022\026\n\016truncate_epoch\030\010 \002(\007\022/\n\013snap_conf" +
-      "ig\030\t \002(\0162\032.xtreemfs.pbrpc.SnapConfig\022\026\n\016" +
-      "snap_timestamp\030\n \002(\006\0221\n\014trace_config\030\013 \001",
-      "(\0132\033.xtreemfs.pbrpc.TraceConfig\"\201\001\n\007XLoc" +
-      "Set\022\033\n\023read_only_file_size\030\001 \002(\006\022)\n\010repl" +
-      "icas\030\002 \003(\0132\027.xtreemfs.pbrpc.Replica\022\035\n\025r" +
-      "eplica_update_policy\030\003 \002(\t\022\017\n\007version\030\004 " +
-      "\002(\007\"]\n\017FileCredentials\022\"\n\004xcap\030\001 \002(\0132\024.x" +
-      "treemfs.pbrpc.XCap\022&\n\005xlocs\030\002 \002(\0132\027.xtre" +
-      "emfs.pbrpc.XLocSet\"O\n\022FileCredentialsSet" +
-      "\0229\n\020file_credentials\030\001 \001(\0132\037.xtreemfs.pb" +
-      "rpc.FileCredentials\"U\n\022VivaldiCoordinate" +
-      "s\022\024\n\014x_coordinate\030\001 \002(\001\022\024\n\014y_coordinate\030",
-      "\002 \002(\001\022\023\n\013local_error\030\003 \002(\001\"A\n\020OSDWriteRe" +
-      "sponse\022\025\n\rsize_in_bytes\030\001 \001(\006\022\026\n\016truncat" +
-      "e_epoch\030\002 \001(\007\"*\n\014KeyValuePair\022\013\n\003key\030\001 \002" +
-      "(\t\022\r\n\005value\030\002 \002(\t*|\n\027AccessControlPolicy" +
-      "Type\022\036\n\032ACCESS_CONTROL_POLICY_NULL\020\001\022\037\n\033" +
-      "ACCESS_CONTROL_POLICY_POSIX\020\002\022 \n\034ACCESS_" +
-      "CONTROL_POLICY_VOLUME\020\003*\304\003\n\026OSDSelection" +
-      "PolicyType\022(\n#OSD_SELECTION_POLICY_FILTE" +
-      "R_DEFAULT\020\350\007\022%\n OSD_SELECTION_POLICY_FIL" +
-      "TER_FQDN\020\351\007\022%\n OSD_SELECTION_POLICY_FILT",
-      "ER_UUID\020\352\007\022%\n OSD_SELECTION_POLICY_GROUP" +
-      "_DCMAP\020\320\017\022$\n\037OSD_SELECTION_POLICY_GROUP_" +
-      "FQDN\020\321\017\022$\n\037OSD_SELECTION_POLICY_SORT_DCM" +
-      "AP\020\270\027\022#\n\036OSD_SELECTION_POLICY_SORT_FQDN\020" +
-      "\271\027\022%\n OSD_SELECTION_POLICY_SORT_RANDOM\020\272" +
-      "\027\022&\n!OSD_SELECTION_POLICY_SORT_VIVALDI\020\273" +
-      "\027\022#\n\036OSD_SELECTION_POLICY_SORT_UUID\020\236\037\022&" +
-      "\n!OSD_SELECTION_POLICY_SORT_REVERSE\020\237\037*A" +
-      "\n\032ReplicaSelectionPolicyType\022#\n\037REPLICA_" +
-      "SELECTION_POLICY_SIMPLE\020\001*i\n\nSnapConfig\022",
-      "\036\n\032SNAP_CONFIG_SNAPS_DISABLED\020\000\022\036\n\032SNAP_" +
-      "CONFIG_ACCESS_CURRENT\020\001\022\033\n\027SNAP_CONFIG_A" +
-      "CCESS_SNAP\020\002*/\n\022StripingPolicyType\022\031\n\025ST" +
-      "RIPING_POLICY_RAID0\020\000*\270\001\n\005PORTS\022\033\n\025DIR_H" +
-      "TTP_PORT_DEFAULT\020\256\357\001\022\034\n\026DIR_PBRPC_PORT_D" +
-      "EFAULT\020\376\376\001\022\033\n\025MRC_HTTP_PORT_DEFAULT\020\254\357\001\022" +
-      "\034\n\026MRC_PBRPC_PORT_DEFAULT\020\374\376\001\022\033\n\025OSD_HTT" +
-      "P_PORT_DEFAULT\020\260\357\001\022\034\n\026OSD_PBRPC_PORT_DEF" +
-      "AULT\020\200\377\001*+\n\tCONSTANTS\022\036\n\032XCAP_RENEW_INTE" +
-      "RVAL_IN_MIN\020\001*\202\003\n\016SYSTEM_V_FCNTL\022\035\n\031SYST",
-      "EM_V_FCNTL_H_O_RDONLY\020\000\022\035\n\031SYSTEM_V_FCNT" +
-      "L_H_O_WRONLY\020\001\022\033\n\027SYSTEM_V_FCNTL_H_O_RDW" +
-      "R\020\002\022\035\n\031SYSTEM_V_FCNTL_H_O_APPEND\020\010\022\035\n\030SY" +
-      "STEM_V_FCNTL_H_O_CREAT\020\200\002\022\035\n\030SYSTEM_V_FC" +
-      "NTL_H_O_TRUNC\020\200\004\022\034\n\027SYSTEM_V_FCNTL_H_O_E" +
-      "XCL\020\200\010\022\033\n\027SYSTEM_V_FCNTL_H_O_SYNC\020\020\022\036\n\030S" +
-      "YSTEM_V_FCNTL_H_S_IFREG\020\200\200\002\022\036\n\030SYSTEM_V_" +
-      "FCNTL_H_S_IFDIR\020\200\200\001\022\036\n\030SYSTEM_V_FCNTL_H_" +
-      "S_IFLNK\020\200\300\002\022\035\n\030SYSTEM_V_FCNTL_H_S_IFIFO\020" +
-      "\200 *\330\001\n\tREPL_FLAG\022\032\n\026REPL_FLAG_FULL_REPLI",
-      "CA\020\001\022\031\n\025REPL_FLAG_IS_COMPLETE\020\002\022\035\n\031REPL_" +
-      "FLAG_STRATEGY_RANDOM\020\004\022#\n\037REPL_FLAG_STRA" +
-      "TEGY_RAREST_FIRST\020\010\022!\n\035REPL_FLAG_STRATEG" +
-      "Y_SEQUENTIAL\020\020\022-\n)REPL_FLAG_STRATEGY_SEQ" +
-      "UENTIAL_PREFETCHING\020 *%\n\010SERVICES\022\007\n\003DIR" +
-      "\020\001\022\007\n\003MRC\020\002\022\007\n\003OSD\020\003B(\n&org.xtreemfs.pbr" +
-      "pc.generatedinterfaces"
+      " \002(\007\022\r\n\005width\030\003 \002(\007\022\024\n\014parity_width\030\004 \001(" +
+      "\007\"p\n\007Replica\022\021\n\tosd_uuids\030\001 \003(\t\022\031\n\021repli",
+      "cation_flags\030\002 \002(\007\0227\n\017striping_policy\030\003 " +
+      "\002(\0132\036.xtreemfs.pbrpc.StripingPolicy\"5\n\010R" +
+      "eplicas\022)\n\010replicas\030\001 \003(\0132\027.xtreemfs.pbr" +
+      "pc.Replica\"\300\002\n\004XCap\022\023\n\013access_mode\030\001 \002(\007" +
+      "\022\027\n\017client_identity\030\002 \002(\t\022\025\n\rexpire_time" +
+      "_s\030\003 \002(\006\022\030\n\020expire_timeout_s\030\004 \002(\007\022\017\n\007fi" +
+      "le_id\030\005 \002(\t\022\032\n\022replicate_on_close\030\006 \002(\010\022" +
+      "\030\n\020server_signature\030\007 \002(\t\022\026\n\016truncate_ep" +
+      "och\030\010 \002(\007\022/\n\013snap_config\030\t \002(\0162\032.xtreemf" +
+      "s.pbrpc.SnapConfig\022\026\n\016snap_timestamp\030\n \002",
+      "(\006\0221\n\014trace_config\030\013 \001(\0132\033.xtreemfs.pbrp" +
+      "c.TraceConfig\"\201\001\n\007XLocSet\022\033\n\023read_only_f" +
+      "ile_size\030\001 \002(\006\022)\n\010replicas\030\002 \003(\0132\027.xtree" +
+      "mfs.pbrpc.Replica\022\035\n\025replica_update_poli" +
+      "cy\030\003 \002(\t\022\017\n\007version\030\004 \002(\007\"]\n\017FileCredent" +
+      "ials\022\"\n\004xcap\030\001 \002(\0132\024.xtreemfs.pbrpc.XCap" +
+      "\022&\n\005xlocs\030\002 \002(\0132\027.xtreemfs.pbrpc.XLocSet" +
+      "\"O\n\022FileCredentialsSet\0229\n\020file_credentia" +
+      "ls\030\001 \001(\0132\037.xtreemfs.pbrpc.FileCredential" +
+      "s\"U\n\022VivaldiCoordinates\022\024\n\014x_coordinate\030",
+      "\001 \002(\001\022\024\n\014y_coordinate\030\002 \002(\001\022\023\n\013local_err" +
+      "or\030\003 \002(\001\"A\n\020OSDWriteResponse\022\025\n\rsize_in_" +
+      "bytes\030\001 \001(\006\022\026\n\016truncate_epoch\030\002 \001(\007\"*\n\014K" +
+      "eyValuePair\022\013\n\003key\030\001 \002(\t\022\r\n\005value\030\002 \002(\t*" +
+      "|\n\027AccessControlPolicyType\022\036\n\032ACCESS_CON" +
+      "TROL_POLICY_NULL\020\001\022\037\n\033ACCESS_CONTROL_POL" +
+      "ICY_POSIX\020\002\022 \n\034ACCESS_CONTROL_POLICY_VOL" +
+      "UME\020\003*\365\003\n\026OSDSelectionPolicyType\022(\n#OSD_" +
+      "SELECTION_POLICY_FILTER_DEFAULT\020\350\007\022%\n OS" +
+      "D_SELECTION_POLICY_FILTER_FQDN\020\351\007\022%\n OSD",
+      "_SELECTION_POLICY_FILTER_UUID\020\352\007\022%\n OSD_" +
+      "SELECTION_POLICY_GROUP_DCMAP\020\320\017\022$\n\037OSD_S" +
+      "ELECTION_POLICY_GROUP_FQDN\020\321\017\022$\n\037OSD_SEL" +
+      "ECTION_POLICY_SORT_DCMAP\020\270\027\022#\n\036OSD_SELEC" +
+      "TION_POLICY_SORT_FQDN\020\271\027\022%\n OSD_SELECTIO" +
+      "N_POLICY_SORT_RANDOM\020\272\027\022&\n!OSD_SELECTION" +
+      "_POLICY_SORT_VIVALDI\020\273\027\022/\n*OSD_SELECTION" +
+      "_POLICY_SORT_HOST_ROUND_ROBIN\020\274\027\022#\n\036OSD_" +
+      "SELECTION_POLICY_SORT_UUID\020\236\037\022&\n!OSD_SEL" +
+      "ECTION_POLICY_SORT_REVERSE\020\237\037*A\n\032Replica",
+      "SelectionPolicyType\022#\n\037REPLICA_SELECTION" +
+      "_POLICY_SIMPLE\020\001*i\n\nSnapConfig\022\036\n\032SNAP_C" +
+      "ONFIG_SNAPS_DISABLED\020\000\022\036\n\032SNAP_CONFIG_AC" +
+      "CESS_CURRENT\020\001\022\033\n\027SNAP_CONFIG_ACCESS_SNA" +
+      "P\020\002*P\n\022StripingPolicyType\022\031\n\025STRIPING_PO" +
+      "LICY_RAID0\020\000\022\037\n\033STRIPING_POLICY_ERASUREC" +
+      "ODE\020\001*\270\001\n\005PORTS\022\033\n\025DIR_HTTP_PORT_DEFAULT" +
+      "\020\256\357\001\022\034\n\026DIR_PBRPC_PORT_DEFAULT\020\376\376\001\022\033\n\025MR" +
+      "C_HTTP_PORT_DEFAULT\020\254\357\001\022\034\n\026MRC_PBRPC_POR" +
+      "T_DEFAULT\020\374\376\001\022\033\n\025OSD_HTTP_PORT_DEFAULT\020\260",
+      "\357\001\022\034\n\026OSD_PBRPC_PORT_DEFAULT\020\200\377\001*+\n\tCONS" +
+      "TANTS\022\036\n\032XCAP_RENEW_INTERVAL_IN_MIN\020\001*\202\003" +
+      "\n\016SYSTEM_V_FCNTL\022\035\n\031SYSTEM_V_FCNTL_H_O_R" +
+      "DONLY\020\000\022\035\n\031SYSTEM_V_FCNTL_H_O_WRONLY\020\001\022\033" +
+      "\n\027SYSTEM_V_FCNTL_H_O_RDWR\020\002\022\035\n\031SYSTEM_V_" +
+      "FCNTL_H_O_APPEND\020\010\022\035\n\030SYSTEM_V_FCNTL_H_O" +
+      "_CREAT\020\200\002\022\035\n\030SYSTEM_V_FCNTL_H_O_TRUNC\020\200\004" +
+      "\022\034\n\027SYSTEM_V_FCNTL_H_O_EXCL\020\200\010\022\033\n\027SYSTEM" +
+      "_V_FCNTL_H_O_SYNC\020\020\022\036\n\030SYSTEM_V_FCNTL_H_" +
+      "S_IFREG\020\200\200\002\022\036\n\030SYSTEM_V_FCNTL_H_S_IFDIR\020",
+      "\200\200\001\022\036\n\030SYSTEM_V_FCNTL_H_S_IFLNK\020\200\300\002\022\035\n\030S" +
+      "YSTEM_V_FCNTL_H_S_IFIFO\020\200 *\330\001\n\tREPL_FLAG" +
+      "\022\032\n\026REPL_FLAG_FULL_REPLICA\020\001\022\031\n\025REPL_FLA" +
+      "G_IS_COMPLETE\020\002\022\035\n\031REPL_FLAG_STRATEGY_RA" +
+      "NDOM\020\004\022#\n\037REPL_FLAG_STRATEGY_RAREST_FIRS" +
+      "T\020\010\022!\n\035REPL_FLAG_STRATEGY_SEQUENTIAL\020\020\022-" +
+      "\n)REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETCH" +
+      "ING\020 *%\n\010SERVICES\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n\003O" +
+      "SD\020\003B(\n&org.xtreemfs.pbrpc.generatedinte" +
+      "rfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -11698,7 +11866,7 @@ public final class GlobalTypes {
           internal_static_xtreemfs_pbrpc_StripingPolicy_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_StripingPolicy_descriptor,
-              new java.lang.String[] { "Type", "StripeSize", "Width", });
+              new java.lang.String[] { "Type", "StripeSize", "Width", "ParityWidth", });
           internal_static_xtreemfs_pbrpc_Replica_descriptor =
             getDescriptor().getMessageTypes().get(3);
           internal_static_xtreemfs_pbrpc_Replica_fieldAccessorTable = new
