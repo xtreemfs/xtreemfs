@@ -1375,11 +1375,11 @@ public class MRCTest {
 
         invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
                 AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, getDefaultStripingPolicy(), "", 0775,
-                volumeName, "", "", getKVList()));
+                volumeName, "", "", getKVList(), 0L));
 
         invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
                 AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, getDefaultStripingPolicy(), "", 0775,
-                traceTarget, "", "", getKVList()));
+                traceTarget, "", "", getKVList(), 0L));
 
         invokeSync(client.open(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test.txt",
                 FileAccessManager.O_CREAT, 0774, 0, getDefaultCoordinates()));
