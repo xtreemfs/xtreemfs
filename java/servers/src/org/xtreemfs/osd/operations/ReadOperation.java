@@ -169,31 +169,32 @@ public final class ReadOperation extends OSDOperation {
         final long lastKnownObject = Math.max(result.getLastLocalObjectNo(), result.getGlobalLastObjectNo());
         final boolean isLastObjectLocallyKnown = lastKnownObject <= objNo;
         //check if GMAX must be fetched to determin EOF
-        if ((objNo > lastKnownObject) ||
-                (objNo == lastKnownObject) && (result.getData() != null) && (result.getData().remaining() < result.getStripeSize())) {
-            try {
-                final List<ServiceUUID> osds = rq.getLocationList().getLocalReplica().getOSDs();
-                final RPCResponse[] gmaxRPCs = new RPCResponse[osds.size() - 1];
-                int cnt = 0;
-                for (ServiceUUID osd : osds) {
-                    if (!osd.equals(localUUID)) {
-                        gmaxRPCs[cnt++] = master.getOSDClient().xtreemfs_internal_get_gmax(osd.getAddress(), RPCAuthentication.authNone,RPCAuthentication.userService,args.getFileCredentials(),args.getFileId());
-                    }
-                }
-                this.waitForResponses(gmaxRPCs, new ResponsesListener() {
-
-                    @Override
-                    public void responsesAvailable() {
-                        stripedReadAnalyzeGmax(rq, args, result, gmaxRPCs);
-                    }
-                });
-            } catch (IOException ex) {
-                rq.sendInternalServerError(ex);
-                return;
-            }
-        } else {
+        // TODO DO NOT MERGE TO MASTER...this breaks sparse files
+        /* if ((objNo > lastKnownObject)){ // || */
+        /*         (objNo == lastKnownObject) && (result.getData() != null) && (result.getData().remaining() < result.getStripeSize())) { */
+        /*     try { */
+        /*         final List<ServiceUUID> osds = rq.getLocationList().getLocalReplica().getOSDs(); */
+        /*         final RPCResponse[] gmaxRPCs = new RPCResponse[osds.size() - 1]; */
+        /*         int cnt = 0; */
+        /*         for (ServiceUUID osd : osds) { */
+        /*             if (!osd.equals(localUUID)) { */
+        /*                 gmaxRPCs[cnt++] = master.getOSDClient().xtreemfs_internal_get_gmax(osd.getAddress(), RPCAuthentication.authNone,RPCAuthentication.userService,args.getFileCredentials(),args.getFileId()); */
+        /*             } */
+        /*         } */
+        /*         this.waitForResponses(gmaxRPCs, new ResponsesListener() { */
+        /*  */
+        /*             @Override */
+        /*             public void responsesAvailable() { */
+        /*                 stripedReadAnalyzeGmax(rq, args, result, gmaxRPCs); */
+        /*             } */
+        /*         }); */
+        /*     } catch (IOException ex) { */
+        /*         rq.sendInternalServerError(ex); */
+        /*         return; */
+        /*     } */
+        /* } else { */
             readFinish(rq, args, result, isLastObjectLocallyKnown);
-        }
+        /* } */
     }
 
     private void stripedReadAnalyzeGmax(final OSDRequest rq, final readRequest args,
