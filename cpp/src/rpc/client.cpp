@@ -336,8 +336,18 @@ int verify_certificate_callback(int preverify_ok, X509_STORE_CTX *sctx) {
 #endif
   X509* cert = X509_STORE_CTX_get_current_cert(sctx);
   
-  char subject[256];
-  X509_NAME_oneline(X509_get_subject_name(cert), subject, 256);
+  X509_NAME *subject_name = X509_get_subject_name(cert);
+  BIO *subject_name_out = BIO_new(BIO_s_mem());
+  X509_NAME_print_ex(subject_name_out, subject_name, 0, XN_FLAG_RFC2253);
+  
+  char *subject_start = NULL, *subject = NULL;
+  long subject_length = BIO_get_mem_data(subject_name_out, &subject_start);
+  subject = new char[subject_length + 1];
+  memcpy(subject, subject_start, subject_length);
+  subject[subject_length] = '\0';
+  
+  BIO_free(subject_name_out);
+  
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
     Logging::log->getLog(LEVEL_DEBUG) << "Verifying subject '" << subject
         << "'." << endl;
@@ -368,6 +378,8 @@ int verify_certificate_callback(int preverify_ok, X509_STORE_CTX *sctx) {
         << ((!preverified && override) ? " Overriding because of user settings." : "")
         << endl;
   }
+  
+  delete[] subject;
   
 #if (BOOST_VERSION > 104601)
   return preverified || override;
