@@ -308,7 +308,8 @@ Client::Client(int32_t connect_timeout_s,
     }
 
     // Cleanup thread-local OpenSSL state.
-    ERR_remove_state(0);
+    ERR_free_strings();
+    ERR_remove_thread_state(NULL);
   }
 }
 
