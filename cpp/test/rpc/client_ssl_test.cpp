@@ -331,22 +331,22 @@ protected:
 
     ASSERT_EQ(2, count_occurrences_in_file(
         options_.log_file_path,
-        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Root CA' "
+        "Verification of subject 'CN=Root CA,O=ZIB,L=Berlin,ST=Berlin,C=DE' "
         "was successful."));
     ASSERT_EQ(0, count_occurrences_in_file(
         options_.log_file_path,
-        "/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Intermediate CA"));
+        "CN=Intermediate CA,O=ZIB,L=Berlin,ST=Berlin,C=DE"));
     ASSERT_EQ(0, count_occurrences_in_file(
         options_.log_file_path,
-        "/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Leaf CA"));
+        "CN=Leaf CA,O=ZIB,L=Berlin,ST=Berlin,C=DE"));
 
     ASSERT_EQ(1, count_occurrences_in_file(
         options_.log_file_path,
-        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Root)' "
+        "Verification of subject 'CN=MRC (Root),O=ZIB,L=Berlin,ST=Berlin,C=DE' "
         "was successful"));
     ASSERT_EQ(1, count_occurrences_in_file(
         options_.log_file_path,
-        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=DIR (Root)' "
+        "Verification of subject 'CN=DIR (Root),O=ZIB,L=Berlin,ST=Berlin,C=DE' "
         "was successful."));
   }
 };
@@ -426,24 +426,24 @@ protected:
 
     ASSERT_EQ(2, count_occurrences_in_file(
         options_.log_file_path,
-        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Root CA' "
+        "Verification of subject 'CN=Root CA,O=ZIB,L=Berlin,ST=Berlin,C=DE' "
         "was successful."));
     ASSERT_EQ(2, count_occurrences_in_file(
         options_.log_file_path,
-        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Intermediate "
-        "CA' was successful."));
+        "Verification of subject 'CN=Intermediate CA,O=ZIB,L=Berlin,ST=Berlin,C=DE' "
+        "was successful."));
     ASSERT_EQ(2, count_occurrences_in_file(
         options_.log_file_path,
-        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Leaf CA' was "
+        "Verification of subject 'CN=Leaf CA,O=ZIB,L=Berlin,ST=Berlin,C=DE' was "
         "successful."));
 
     ASSERT_EQ(1, count_occurrences_in_file(
         options_.log_file_path,
-        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Leaf)' "
+        "Verification of subject 'CN=MRC (Leaf),O=ZIB,L=Berlin,ST=Berlin,C=DE' "
         "was successful"));
     ASSERT_EQ(1, count_occurrences_in_file(
         options_.log_file_path,
-        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=DIR (Leaf)' "
+        "Verification of subject 'CN=DIR (Leaf),O=ZIB,L=Berlin,ST=Berlin,C=DE' "
         "was successful."));
   }
 };
@@ -515,7 +515,7 @@ protected:
                                            // certificate cannot be found.
     ASSERT_TRUE(count_occurrences_in_file(
         options_.log_file_path,
-        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Root)' "
+        "Verification of subject 'CN=MRC (Root),O=ZIB,L=Berlin,ST=Berlin,C=DE' "
         "was unsuccessful.") > 0);
   }
 };
@@ -589,11 +589,11 @@ protected:
 
     ASSERT_EQ(3, count_occurrences_in_file(
         options_.log_file_path,
-        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Leaf)' "
+        "Verification of subject 'CN=MRC (Leaf),O=ZIB,L=Berlin,ST=Berlin,C=DE' "
         "was unsuccessful. Overriding because of user settings."));
     ASSERT_EQ(3, count_occurrences_in_file(
         options_.log_file_path,
-        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=DIR (Leaf)' "
+        "Verification of subject 'CN=DIR (Leaf),O=ZIB,L=Berlin,ST=Berlin,C=DE' "
         "was unsuccessful. Overriding because of user settings."));
   }
 };
@@ -658,11 +658,11 @@ protected:
     // issuer certificates.
     ASSERT_EQ(1, count_occurrences_in_file(
         options_.log_file_path,
-        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=DIR (Leaf)' "
+        "Verification of subject 'CN=DIR (Leaf),O=ZIB,L=Berlin,ST=Berlin,C=DE' "
         "was successful."));
     ASSERT_EQ(1, count_occurrences_in_file(
         options_.log_file_path,
-        "Verification of subject '/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Leaf)' "
+        "Verification of subject 'CN=DIR (Leaf),O=ZIB,L=Berlin,ST=Berlin,C=DE' "
         "was successful."));
   }
 };
