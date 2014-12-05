@@ -101,6 +101,8 @@ public class xtfs_mrcdbtool {
         	tp = new String(System.console().readPassword("Enter trust store password: "));
         }
         
+        String sslProtocolString = options.get(utils.OPTION_SSL_PROTOCOL).stringValue;
+        
         String host = mrc.urlValue.getHost();
         int port = mrc.urlValue.getPort();
         String protocol = mrc.urlValue.getProtocol();
@@ -127,7 +129,7 @@ public class xtfs_mrcdbtool {
 
                 sslOptions = new SSLOptions(new FileInputStream(c.stringValue), cp,
                         SSLOptions.PKCS12_CONTAINER, new FileInputStream(t.stringValue), tp,
-                        SSLOptions.JKS_CONTAINER, false, gridSSL, null);
+                        SSLOptions.JKS_CONTAINER, false, gridSSL, sslProtocolString, null);
             }
             rpcClient = new RPCNIOSocketClient(sslOptions, Integer.MAX_VALUE - 1000, Integer.MAX_VALUE, "xtfs_mrcdbtool");
             rpcClient.start();
