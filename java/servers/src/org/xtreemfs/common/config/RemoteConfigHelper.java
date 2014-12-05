@@ -40,7 +40,8 @@ public class RemoteConfigHelper {
                     config.getServiceCredsFile()), config.getServiceCredsPassphrase(),
                     config.getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()),
                     config.getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false,
-                    config.isGRIDSSLmode(), new PolicyContainer(config).getTrustManager()) : null;
+                    config.isGRIDSSLmode(), config.getSSLProtocolString(),
+                    new PolicyContainer(config).getTrustManager()) : null;
     
             RPCNIOSocketClient clientStage = new RPCNIOSocketClient(sslOptions, 1000, 60 * 1000, "RemoteConfigHelper");
             DIRServiceClient dirRPCClient = new DIRServiceClient(clientStage, config.getDirectoryService());
