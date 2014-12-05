@@ -728,26 +728,26 @@ FILE* Client::create_and_open_temporary_ssl_file(std::string *filename_template,
     return NULL;
   }
 #ifdef WIN32
-  // FIXME set filename_template to actual name
-  //  Gets the temp path env string (no guarantee it's a valid path).
+  // Gets the temp path env string (no guarantee it's a valid path).
   TCHAR temp_path[MAX_PATH];
   TCHAR filename_temp[MAX_PATH];
 
   DWORD dwRetVal = 0;
-  dwRetVal = GetTempPath(MAX_PATH,          // length of the buffer
-                         temp_path); // buffer for path
+  dwRetVal = GetTempPath(MAX_PATH,    // length of the buffer
+                         temp_path);  // buffer for path
   if (dwRetVal > MAX_PATH || (dwRetVal == 0)) {
     _tcsncpy_s(temp_path, TEXT("."), 1);
   }
 
   //  Generates a temporary file name.
-  if (!GetTempFileName(temp_path, // directory for tmp files
-                            TEXT("DEMO"),     // temp file name prefix
-                            0,                // create unique name
-                            filename_temp)) {  // buffer for name
+  if (!GetTempFileName(temp_path,         // directory for tmp files
+                       TEXT("xfs"),       // temp file name prefix, max 3 char
+                       0,                 // create unique name
+                       filename_temp)) {  // buffer for name
     std::cerr << "Couldn't create temp file name.\n";
     return NULL;
   }
+  *filename_template = std::string(filename_temp);
   return _tfopen(filename_temp, TEXT(mode));
 #else
   // Place file in TMPDIR or /tmp if not specified as absolute path.
