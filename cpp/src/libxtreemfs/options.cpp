@@ -112,7 +112,7 @@ Options::Options()
   ssl_pkcs12_pass = "";
   grid_ssl = false;
   ssl_verify_certificates = false;
-  ssl_method_string = "sslv23";
+  ssl_method_string = "ssltls";
 #endif  // HAS_OPENSSL
 
   // Grid Support options.
@@ -297,7 +297,7 @@ void Options::GenerateProgramOptionsDescriptions() {
         po::value(&ssl_method_string)->default_value(ssl_method_string),
         "SSL method that this client will accept:\n"
         "  - sslv3 accepts SSLv3 only\n"
-        "  - sslv23 accepts SSLv2, SSLv3 and TLSv1.x\n"
+        "  - ssltls accepts SSLv3 and TLSv1.x\n"
         "  - tlsv1 accepts TLSv1 only"
 #if (BOOST_VERSION > 105300)
         "\n  - tlsv11 accepts TLSv1.1 only\n"

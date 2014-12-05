@@ -96,6 +96,7 @@ Client::Client(int32_t connect_timeout_s,
         string_to_ssl_method(
             options->ssl_method_string(),
             boost::asio::ssl::context_base::sslv23_client));
+    ssl_context_->set_options(boost::asio::ssl::context::no_sslv2);
 #if (BOOST_VERSION > 104601)
     // Verify certificate callback can be conveniently specified from
     // Boost 1.47.0 onwards.
@@ -785,7 +786,7 @@ FILE* Client::create_and_open_temporary_ssl_file(std::string *filename_template,
         boost::asio::ssl::context_base::method default_method) {
       if (method_string == "sslv3") {
         return boost::asio::ssl::context_base::sslv3_client;
-      } else if (method_string == "sslv23") {
+      } else if (method_string == "ssltls") {
         return boost::asio::ssl::context_base::sslv23_client;
       } else if (method_string == "tlsv1") {
         return boost::asio::ssl::context_base::tlsv1_client;

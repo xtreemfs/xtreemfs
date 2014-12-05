@@ -144,7 +144,7 @@ enum TestCertificateType {
 };
 
 char g_ssl_tls_version_sslv3[] = "sslv3";
-char g_ssl_tls_version_sslv23[] = "sslv23";
+char g_ssl_tls_version_ssltls[] = "ssltls";
 char g_ssl_tls_version_tlsv1[] = "tlsv1";
 #if (BOOST_VERSION > 105300)
 char g_ssl_tls_version_tlsv11[] = "tlsv11";
@@ -719,14 +719,14 @@ protected:
           "Using SSL/TLS version 'SSLv3'."));
     }
 #if (BOOST_VERSION > 105300)
-    else if (strcmp(ssl_method_string, "sslv23") == 0 ||
+    else if (strcmp(ssl_method_string, "ssltls") == 0 ||
              strcmp(ssl_method_string, "tlsv12") == 0) {
       ASSERT_EQ(2, count_occurrences_in_file(
           options_.log_file_path,
           "Using SSL/TLS version 'TLSv1.2'."));
     }
 #else  // BOOST_VERSION > 105300
-    else if (strcmp(ssl_method_string, "sslv23") == 0) {
+    else if (strcmp(ssl_method_string, "ssltls") == 0) {
       ASSERT_EQ(2, count_occurrences_in_file(
           options_.log_file_path,
           "Using SSL/TLS version 'TLSv1'."));
@@ -749,8 +749,8 @@ protected:
 
 class ClientSSLTestSSLVersionPKCS12SSLv3 :
     public ClientSSLTestSSLVersion<kPKCS12, g_ssl_tls_version_sslv3> {};
-class ClientSSLTestSSLVersionPKCS12SSLv23 :
-    public ClientSSLTestSSLVersion<kPKCS12, g_ssl_tls_version_sslv23> {};
+class ClientSSLTestSSLVersionPKCS12SSLTLS :
+    public ClientSSLTestSSLVersion<kPKCS12, g_ssl_tls_version_ssltls> {};
 class ClientSSLTestSSLVersionPKCS12TLSv1 :
     public ClientSSLTestSSLVersion<kPKCS12, g_ssl_tls_version_tlsv1> {};
 #if (BOOST_VERSION > 105300)
@@ -762,8 +762,8 @@ class ClientSSLTestSSLVersionPKCS12TLSv12 :
     
 class ClientSSLTestSSLVersionPEMSSLv3 :
     public ClientSSLTestSSLVersion<kPEM, g_ssl_tls_version_sslv3> {};
-class ClientSSLTestSSLVersionPEMSSLv23 :
-    public ClientSSLTestSSLVersion<kPEM, g_ssl_tls_version_sslv23> {};
+class ClientSSLTestSSLVersionPEMSSLTLS :
+    public ClientSSLTestSSLVersion<kPEM, g_ssl_tls_version_ssltls> {};
 class ClientSSLTestSSLVersionPEMTLSv1 :
     public ClientSSLTestSSLVersion<kPEM, g_ssl_tls_version_tlsv1> {};
 #if (BOOST_VERSION > 105300)
@@ -811,14 +811,14 @@ TEST_F(ClientSSLTestLongChainNoVerificationPKCS12, TestNoVerification) {
 TEST_F(ClientSSLTestLongChainNoVerificationPEM, TestNoVerification) { DoTest(); }
 
 TEST_F(ClientSSLTestSSLVersionPKCS12SSLv3, TestSSLVersion) { DoTest(); }
-TEST_F(ClientSSLTestSSLVersionPKCS12SSLv23, TestSSLVersion) { DoTest(); }
+TEST_F(ClientSSLTestSSLVersionPKCS12SSLTLS, TestSSLVersion) { DoTest(); }
 TEST_F(ClientSSLTestSSLVersionPKCS12TLSv1, TestSSLVersion) { DoTest(); }
 #if (BOOST_VERSION > 105300)
 TEST_F(ClientSSLTestSSLVersionPKCS12TLSv11, TestSSLVersion) { DoTest(); }
 TEST_F(ClientSSLTestSSLVersionPKCS12TLSv12, TestSSLVersion) { DoTest(); }
 #endif  // BOOST_VERSION > 105300
 TEST_F(ClientSSLTestSSLVersionPEMSSLv3, TestSSLVersion) { DoTest(); }
-TEST_F(ClientSSLTestSSLVersionPEMSSLv23, TestSSLVersion) { DoTest(); }
+TEST_F(ClientSSLTestSSLVersionPEMSSLTLS, TestSSLVersion) { DoTest(); }
 TEST_F(ClientSSLTestSSLVersionPEMTLSv1, TestSSLVersion) { DoTest(); }
 #if (BOOST_VERSION > 105300)
 TEST_F(ClientSSLTestSSLVersionPEMTLSv11, TestSSLVersion) { DoTest(); }
