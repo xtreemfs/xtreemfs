@@ -855,7 +855,7 @@ public class MRCHelper {
             break;
         case tracing_policy:
             sMan.getVolumeInfo().setTracingPolicy(value, update);
-
+            break;
         case quota:
             if (file.getId() != 1)
                 throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "quota must be set on volume root");
