@@ -97,6 +97,22 @@ Environment::Environment() : volume_(NULL) {
   xprintf("Environment::Environment(): Opening volume %s\n", options_.volume_name.c_str());
   volume_ = client_->OpenVolume(options_.volume_name, NULL, options_);
   volume_name_ = options_.volume_name;
+  
+  
+  xtreemfs::pbrpc::listxattrResponse* xattrlist = volume_->ListXAttrs(user_creds_, "/", false);
+	for(int i = 0; i < xattrlist->xattrs_size(); i++) {
+	  std::cout << "\t" << xattrlist->xattrs(i).name() << ": " << xattrlist->xattrs(i).value() << std::endl;
+	}
+
+//	std::string path = "/";
+//	std::string name = "xtreemfs.default_sp";
+//	std::string value = "{\"pattern\":\"STRIPING_POLICY_ERASURECODE\",\"width\":4,\"parity_width\":1, \"size\":2}";
+// volume_->SetXAttr(user_creds_, path, name, value, xtreemfs::pbrpc::XATTR_FLAGS());
+
+//xattrlist = volume_->ListXAttrs(user_creds_, "/", false);
+//	for(int i = 0; i < xattrlist->xattrs_size(); i++) {
+//	  std::cout << "\t" << xattrlist->xattrs(i).name() << ": " << xattrlist->xattrs(i).value() << std::endl;
+//	}
 
   std::string prefix_env(options_.mount_point);
   Path::SetXtreemFSPrefix(prefix_env);

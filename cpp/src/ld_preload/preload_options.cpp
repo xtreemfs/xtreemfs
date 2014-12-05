@@ -27,9 +27,15 @@ namespace style = boost::program_options::command_line_style;
 
 namespace xtreemfs {
 
-PreloadOptions::PreloadOptions() : Options(), preload_descriptions_("Preload Options") {
-  // TODO:
-  //preload_descriptions_.add_options()
+PreloadOptions::PreloadOptions() : Options(), preload_descriptions_("Preload Options"), enable_append_buffer(false), append_buffer_size(128*1024*2) { // TODO: default value for 2+1
+  preload_descriptions_.add_options()
+      ("enable-append-buffer", 
+       po::value(&enable_append_buffer)->default_value(enable_append_buffer)->zero_tokens(),
+       "Enable if writes only append data to files.")
+      ("append-writes-only", 
+       po::value(&append_buffer_size)->default_value(append_buffer_size),
+       "Buffer size, set with care (stripe size withour parity, e.g. 2 times block-size, for 2+1")
+      ;
 }
 
 void PreloadOptions::ParseCommandLine(int argc, char** argv) {

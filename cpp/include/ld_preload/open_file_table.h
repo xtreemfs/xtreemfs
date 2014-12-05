@@ -23,7 +23,7 @@ class VolumeHandle;
 
 class OpenFile {
  public:
-  OpenFile(xtreemfs::FileHandle* fh);
+  OpenFile(xtreemfs::FileHandle* fh, size_t append_buffer_size = 0);
 
   void Initialise();
   void Deinitialise();
@@ -35,6 +35,14 @@ class OpenFile {
 private:
   FILE * tmp_file_;
   int tmp_file_fd_;
+
+public:
+  bool enable_append_buffer;
+  size_t append_buffer_size;
+  uint64_t local_buffer_offset; // local offset inside the buffer, also used as size, when buffer is flushed
+  uint64_t buffer_start_offset; // offset where buffer content starts in file
+  char* read_buffer;
+  char* write_buffer;
 };
 
 class OpenFileTable {
@@ -42,9 +50,9 @@ class OpenFileTable {
   OpenFileTable();
   ~OpenFileTable();
 
-  int Register(xtreemfs::FileHandle* handle);
+  int Register(xtreemfs::FileHandle* handle, size_t append_buffer_size = 0);
   void Unregister(int fd);
-  OpenFile Get(int fd);
+  OpenFile& Get(int fd); // NOTE: see comment in cpp
   int Set(int fd, xtreemfs::FileHandle* handle);
   void SetOffset(int fd, uint64_t offset);
   bool Has(int fd);

@@ -33,11 +33,14 @@ class PreloadOptions : public Options {
   /** Outputs usage of the command line parameters. */
   virtual std::string ShowCommandLineHelp();
 
-  // TODO: add preload-specific options here
-
  private:
   /** Contains all available preload options and its descriptions. */
   boost::program_options::options_description preload_descriptions_;
+
+ public: 
+  // preload-specific options
+  bool enable_append_buffer;
+  size_t append_buffer_size;
 };
 
 }  // namespace xtreemfs

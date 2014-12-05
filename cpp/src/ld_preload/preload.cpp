@@ -8,6 +8,7 @@
 #include "ld_preload/preload.h"
 
 #include <pthread.h>
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 #include <exception>
@@ -30,6 +31,8 @@
 #include "ld_preload/passthrough.h"
 
 static Environment* env = NULL;
+
+uint64_t xtreemfs_flush_write_buffer(OpenFile& handle);
 
 /**
  * The environment should be initialised exactly once during shared library initialisation.
@@ -119,7 +122,7 @@ int xtreemfs_open(const char* pathname, int flags, int mode) {
       xtreem_flags,
       mode);
 
-  int fd = env->open_file_table_.Register(handle);
+  int fd = env->open_file_table_.Register(handle, env->options_.enable_append_buffer ? env->options_.append_buffer_size : 0);
   xprintf(" open on xtreemfs(%s) -> %d\n", pathname, fd);
   return fd;
 }
@@ -127,32 +130,179 @@ int xtreemfs_open(const char* pathname, int flags, int mode) {
 int xtreemfs_close(int fd) {
   xprintf(" close xtreemfs(%d)\n", fd);
   OpenFile handle = env->open_file_table_.Get(fd);
+
+  if(env->options_.enable_append_buffer)
+    xtreemfs_flush_write_buffer(handle);
+
   env->open_file_table_.Unregister(fd);
   //handle.fh_->Flush(); // implicit by close
   handle.fh_->Close(); // TODO: error code
   return 0;
 }
 
-uint64_t xtreemfs_pread(int fd, void* buf, uint64_t nbyte, uint64_t offset) {
-  xprintf(" read xtreemfs(%d)\n", fd);
-  OpenFile handle = env->open_file_table_.Get(fd);
-  return handle.fh_->Read((char*)buf, nbyte, offset);
+bool check_offset(int fd, uint64_t offset, const char* msg) {
+  const uint64_t alignment = 0x40000; // 256 KiB
+  if (offset % alignment != 0) {
+    xprintf("ALIGNMENT-FAIL(%s): fd(%d), offset(%ld), alignment(%ld)\n", msg, fd, offset, alignment);
+    return false;
+  }
+  return true;
+}
+
+uint64_t xtreemfs_pread(int fd, void* buf, uint64_t n_byte, uint64_t offset) {
+  xprintf(" pread xtreemfs(%d)\n", fd);
+//  check_offset(fd, offset, "xtreemfs_pread");
+  OpenFile& handle = env->open_file_table_.Get(fd);
+
+  // read only complete buffers from xtreemfs
+  if (env->options_.enable_append_buffer) {
+    const size_t buffer_size = env->options_.append_buffer_size;
+
+    // read first complete buffer
+    uint64_t read_offset = (offset / buffer_size) * buffer_size; // start offset at alignment boundary
+    uint64_t buffer_offset = offset % buffer_size; // actual offset realative to alignment boundary
+//xprintf(" pread xtreemfs XXXXXXX, read_buffer(%ld), buffer_size(%ld), read_offset(%ld)\n", handle.read_buffer, buffer_size, read_offset);    
+    uint64_t n_read = handle.fh_->Read(handle.read_buffer, buffer_size, read_offset); // read a complete buffer from alignment boundary
+//xprintf(" pread xtreemfs XXXXXXX2\n");
+    if (n_read <= buffer_offset) // nothing was read for the caller, done
+      return 0;
+    
+    n_read -= buffer_offset; // bytes read from caller offset, to end
+    
+    uint64_t n_read_caller = std::min(n_read, n_byte); // number of byte the caller wants (or at least gets) from this buffer starting at buffer_offset
+//xprintf(" pread xtreemfs QQQQQQQ\n");        
+    // memcpy(dest, src, n) to caller buffer
+    memcpy((char*)buf, handle.read_buffer + buffer_offset, n_read_caller);
+    
+    if (n_read_caller == n_byte) // we got all the caller wanted
+      return n_read_caller;
+        
+    uint64_t complete_buffers = (n_byte - n_read_caller) / buffer_size; // complete buffers to read
+    read_offset += buffer_size; // advance aligned offset by one buffer
+    for (size_t i = 0; i < complete_buffers; ++i) {
+//xprintf(" pread xtreemfs CCCCCCC\n");    
+      n_read = handle.fh_->Read((char*)buf + n_read_caller, buffer_size, read_offset); // read a complete buffer directly into the caller memory
+      
+      if (n_read < buffer_size) {
+        return n_read_caller + n_read; // incomplete read by xtreemfs, we are done
+      } 
+      
+      n_read_caller += buffer_size;
+      read_offset += buffer_size;
+    }
+  
+    // read remaining incomplete buffer
+    uint64_t n_remaining = n_byte - n_read_caller;
+    if (n_remaining > 0) {
+//xprintf(" pread xtreemfs BBBBBBBB\n");    
+      n_read = handle.fh_->Read(handle.read_buffer, buffer_size, read_offset);
+      uint64_t n_copy = std::min(n_read, n_remaining);
+//xprintf(" pread xtreemfs ZZZZZZZZ\n");    
+      memcpy((char*)buf + n_read_caller, handle.read_buffer, n_copy);
+      n_read_caller += n_copy;
+    }
+//xprintf(" pread xtreemfs YYYYYYY\n");        
+    return n_read_caller;
+  } else {
+    return handle.fh_->Read((char*)buf, n_byte, offset);
+  }
 }
 
 uint64_t xtreemfs_read(int fd, void* buf, uint64_t nbyte) {
   xprintf(" read xtreemfs(%d)\n", fd);
   OpenFile handle = env->open_file_table_.Get(fd);
-  int read = handle.fh_->Read((char*)buf, nbyte, handle.offset_);
+//  check_offset(fd, handle.offset_, "xtreemfs_read");
+  //int read = handle.fh_->Read((char*)buf, nbyte, handle.offset_);
+  uint64_t read = xtreemfs_pread(fd, buf, nbyte, handle.offset_);
   env->open_file_table_.SetOffset(fd, handle.offset_ + read);
   return read;
 }
 
-uint64_t xtreemfs_write(int fd, const void* buf, uint64_t nbyte) {
+uint64_t xtreemfs_flush_write_buffer(OpenFile& handle) {
+    uint64_t written = 0;
+    if (handle.local_buffer_offset > 0 ) {
+  xprintf(" flushing write buffer: local_offset(%ld), start_offset(%ld)\n", handle.local_buffer_offset, handle.buffer_start_offset);
+      written = handle.fh_->Write(handle.write_buffer, handle.local_buffer_offset, handle.buffer_start_offset);
+    }
+    
+     handle.local_buffer_offset = 0;
+    
+    return written;
+}
+
+uint64_t xtreemfs_write(int fd, const void* buf, uint64_t n_byte) {
   xprintf(" write xtreemfs(%d)\n", fd);
-  OpenFile handle = env->open_file_table_.Get(fd);
-  int written = handle.fh_->Write((char*)buf, nbyte, handle.offset_);
-  env->open_file_table_.SetOffset(fd, handle.offset_ + written);
-  return written;
+  OpenFile& handle = env->open_file_table_.Get(fd);
+//  check_offset(fd, handle.offset_, "xtreemfs_write");
+
+  // write only complete buffers to xtreemfs and cache partial writes locally
+  if (env->options_.enable_append_buffer) {
+    const size_t buffer_size = env->options_.append_buffer_size;
+
+    xprintf(" write xtreemfs(%d), handle.offset_(%ld), n_byte(%ld), handle.local_buffer_offset(%ld), o mod bs(%ld) \n", fd, handle.offset_, n_byte, handle.local_buffer_offset,  handle.offset_ % buffer_size);
+    //assert((handle.offset_ % buffer_size) == handle.local_buffer_offset); // make sure this write continues where the last write ended
+
+    uint64_t write_offset = handle.local_buffer_offset; //handle.offset_ / buffer_size; // start offset at alignment boundary
+    uint64_t n_written = 0; // returned by xtreemfs
+    uint64_t n_written_caller = 0; // reported to the caller
+    uint64_t n_copy = 0;
+    
+    // append to buffer
+    if (write_offset != 0) {
+//xprintf(" write xtreemfs(%d) append_buffer\n", fd);
+//xprintf(" write xtreemfs(%d), handle.buffer_start_offset(%ld), o mod bs(%ld) \n", fd, handle.buffer_start_offset, (handle.offset_ / buffer_size) * buffer_size);
+      assert(handle.buffer_start_offset == (handle.offset_ / buffer_size) * buffer_size); // make sure the append-buffer is logically mapped to the right block/line/stripe 
+
+      n_written_caller = std::min(buffer_size - write_offset, n_byte);
+      memcpy((char*)handle.write_buffer + write_offset, buf, n_written_caller);
+      handle.local_buffer_offset += n_written_caller;
+
+      if (handle.local_buffer_offset == buffer_size) {
+        n_written = xtreemfs_flush_write_buffer(handle);
+        env->open_file_table_.SetOffset(fd, handle.buffer_start_offset + buffer_size);
+        assert(n_written == buffer_size);
+      }
+
+      if (n_written_caller == n_byte)
+        return n_written_caller; // done      
+    }
+    // we have written and flushed up an alignment boundary, or start from one
+    uint64_t complete_buffers = (n_byte - n_written_caller) / buffer_size; // complete buffers to write
+    uint64_t caller_buffer_offset = n_written_caller;
+    for (size_t i = 0; i < complete_buffers; ++i) {
+//xprintf(" write xtreemfs(%d) full block handle.offset_(%ld)\n", fd, handle.offset_);
+      // write-through complete buffers
+      assert(caller_buffer_offset % buffer_size == 0);
+      assert(handle.offset_ % buffer_size == 0);
+      n_written = handle.fh_->Write((char*)buf + caller_buffer_offset, buffer_size, handle.offset_);
+      
+      if (n_written < buffer_size) {
+        // TODO: something is wrong...
+        assert(false);
+      } 
+      
+      env->open_file_table_.SetOffset(fd, handle.offset_ + buffer_size);
+      n_written_caller += buffer_size;
+      caller_buffer_offset += buffer_size;
+    }
+    // append remaining incomplete buffer
+    if (n_written_caller < n_byte) {
+//xprintf(" write xtreemfs(%d) start buffer from remainder, handle.offset_(%ld)\n", fd, handle.offset_);
+      n_copy = n_byte - n_written_caller;
+      assert(n_copy < buffer_size);
+      memcpy((char*)handle.write_buffer, (char*)buf + n_written_caller, n_copy);
+      n_written_caller += n_copy;
+      handle.local_buffer_offset = n_copy;
+      handle.buffer_start_offset = handle.offset_;
+      // NOTE: handle.offset_ is *not* set here, since we keep it in sync with the actually written data on the server
+    }
+    assert(n_written_caller == n_byte);
+    return n_written_caller; // done
+  } else {
+    int written = handle.fh_->Write((char*)buf, n_byte, handle.offset_);
+    env->open_file_table_.SetOffset(fd, handle.offset_ + written);
+    return written;
+  }
 }
 
 int xtreemfs_dup2(int oldfd, int newfd) {
