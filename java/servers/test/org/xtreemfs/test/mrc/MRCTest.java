@@ -1398,6 +1398,8 @@ public class MRCTest {
                         FileAccessManager.O_RDONLY, 0, 0, getDefaultCoordinates())).getCreds().getXcap();
 
         assertTrue(xcap.getTraceConfig().getTraceRequests());
+        assertTrue(xcap.getTraceConfig().getTargetVolume().equals(traceTarget));
+        assertTrue(xcap.getTraceConfig().getTracingPolicy().equals(tracingPolicy));
 
         try {
             // Setting the current volume as trace target should not be possible
