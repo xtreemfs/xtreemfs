@@ -38,6 +38,8 @@ public class DefaultDirConfig extends Config {
     private String             trustedCertsPassphrase;
 
     private String             trustedCertsContainer;
+    
+    private String             sslProtocolString;
 
     public DefaultDirConfig() throws IOException {
         super(DEFAULT_DIR_CONFIG);
@@ -60,7 +62,7 @@ public class DefaultDirConfig extends Config {
         if (sslEnabled) {
             return new SSLOptions(new FileInputStream(serviceCredsFile), serviceCredsPassphrase,
                     serviceCredsContainer, new FileInputStream(trustedCertsFile), trustedCertsPassphrase,
-                    trustedCertsContainer, false, false, null);
+                    trustedCertsContainer, false, false, sslProtocolString, null);
         } else {
             return null;
         }
@@ -101,6 +103,8 @@ public class DefaultDirConfig extends Config {
             this.trustedCertsPassphrase = this.readRequiredString("ssl.trusted_certs.pw");
 
             this.trustedCertsContainer = this.readRequiredString("ssl.trusted_certs.container");
+            
+            this.sslProtocolString = this.readOptionalString("ssl.protocol", "ssltls");
         }
     }
 }

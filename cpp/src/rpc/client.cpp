@@ -94,6 +94,7 @@ Client::Client(int32_t connect_timeout_s,
         string_to_ssl_method(
             options->ssl_method_string(),
             boost::asio::ssl::context_base::sslv23_client));
+    ssl_context_->set_options(boost::asio::ssl::context::no_sslv2);
 #if (BOOST_VERSION > 104601)
     // Verify certificate callback can be conveniently specified from
     // Boost 1.47.0 onwards.
@@ -730,26 +731,26 @@ FILE* Client::create_and_open_temporary_ssl_file(std::string *filename_template,
     return NULL;
   }
 #ifdef WIN32
-  // FIXME set filename_template to actual name
-  //  Gets the temp path env string (no guarantee it's a valid path).
+  // Gets the temp path env string (no guarantee it's a valid path).
   TCHAR temp_path[MAX_PATH];
   TCHAR filename_temp[MAX_PATH];
 
   DWORD dwRetVal = 0;
-  dwRetVal = GetTempPath(MAX_PATH,          // length of the buffer
-                         temp_path); // buffer for path
+  dwRetVal = GetTempPath(MAX_PATH,    // length of the buffer
+                         temp_path);  // buffer for path
   if (dwRetVal > MAX_PATH || (dwRetVal == 0)) {
     _tcsncpy_s(temp_path, TEXT("."), 1);
   }
 
   //  Generates a temporary file name.
-  if (!GetTempFileName(temp_path, // directory for tmp files
-                            TEXT("DEMO"),     // temp file name prefix
-                            0,                // create unique name
-                            filename_temp)) {  // buffer for name
+  if (!GetTempFileName(temp_path,         // directory for tmp files
+                       TEXT("xfs"),       // temp file name prefix, max 3 char
+                       0,                 // create unique name
+                       filename_temp)) {  // buffer for name
     std::cerr << "Couldn't create temp file name.\n";
     return NULL;
   }
+  *filename_template = std::string(filename_temp);
   return _tfopen(filename_temp, TEXT(mode));
 #else
   // Place file in TMPDIR or /tmp if not specified as absolute path.
@@ -787,7 +788,7 @@ FILE* Client::create_and_open_temporary_ssl_file(std::string *filename_template,
         boost::asio::ssl::context_base::method default_method) {
       if (method_string == "sslv3") {
         return boost::asio::ssl::context_base::sslv3_client;
-      } else if (method_string == "sslv23") {
+      } else if (method_string == "ssltls") {
         return boost::asio::ssl::context_base::sslv23_client;
       } else if (method_string == "tlsv1") {
         return boost::asio::ssl::context_base::tlsv1_client;
