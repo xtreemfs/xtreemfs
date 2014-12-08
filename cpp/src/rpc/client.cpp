@@ -25,13 +25,11 @@
 
 #ifdef HAS_OPENSSL
 #include <boost/asio/ssl.hpp>
-#include <openssl/pem.h>
 #include <openssl/err.h>
+#include <openssl/pem.h>
 #include <openssl/pkcs12.h>
-#include <openssl/bio.h>
 #include <openssl/rand.h>
 #include <openssl/x509.h>
-#include <openssl/evp.h>
 #endif  // HAS_OPENSSL
 #ifdef WIN32
 #include <tchar.h>
@@ -177,7 +175,7 @@ Client::Client(int32_t connect_timeout_s,
               "certificates in " << options->pkcs12_file_name() << " in order "
               "to verify the services' certificates." << endl;
         }
-      } else if (ca->stack.num > 0) {
+      } else if (sk_X509_num(ca) > 0) {
         // Setup any additional certificates as trusted root CAs in one file.   
         std::string trusted_cas_template("caXXXXXX");
         FILE* trusted_cas_file =
@@ -185,11 +183,11 @@ Client::Client(int32_t connect_timeout_s,
         trustedCAsFileName = strdup(trusted_cas_template.c_str());
         
         if (Logging::log->loggingActive(LEVEL_INFO)) {
-          Logging::log->getLog(LEVEL_INFO) << "Writing " << ca->stack.num
+          Logging::log->getLog(LEVEL_INFO) << "Writing " << sk_X509_num(ca)
               << " verification certificates to " << trustedCAsFileName << endl;
         }
         
-        while (ca->stack.num > 0) {
+        while (sk_X509_num(ca) > 0) {
           X509* ca_cert = sk_X509_pop(ca);
           // _AUX writes trusted certificates.
           if (PEM_write_X509_AUX(trusted_cas_file, ca_cert)) { 
@@ -309,7 +307,11 @@ Client::Client(int32_t connect_timeout_s,
 
     // Cleanup thread-local OpenSSL state.
     ERR_free_strings();
+#if (OPENSSL_VERSION_NUMBER < 0x1000000fL)
+    ERR_remove_state(0);
+#else  // OPENSSL_VERSION_NUMBER < 0x1000000fL
     ERR_remove_thread_state(NULL);
+#endif  // OPENSSL_VERSION_NUMBER < 0x1000000fL
   }
 }
 
