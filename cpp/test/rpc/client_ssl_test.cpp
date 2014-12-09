@@ -294,14 +294,15 @@ protected:
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:48636/";
     
     options_.log_level_string = "DEBUG";
-    options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_short_chain";
     
     // Root signed, only root as additional certificate.
     switch (t) {
       case kPKCS12:
+        options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_short_chain_pkcs12";
         options_.ssl_pkcs12_path = cert_path("Client_Root_Root.p12");
         break;
       case kPEM:
+        options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_short_chain_pem";
         options_.ssl_pem_cert_path = cert_path("Client_Root.pem");
         options_.ssl_pem_key_path = cert_path("Client_Root.key");
         options_.ssl_pem_trusted_certs_path = cert_path("CA_Root.pem");
@@ -387,15 +388,16 @@ protected:
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:48636/";
     
     options_.log_level_string = "DEBUG";
-    options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_long_chain";
     
     // Client certificate is signed with Leaf CA. Contains the entire chain
     // as additional certificates.
     switch (t) {
       case kPKCS12:
+        options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_long_chain_pkcs12";
         options_.ssl_pkcs12_path = cert_path("Client_Leaf_Chain.p12");
         break;
       case kPEM:
+        options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_long_chain_pem";
         options_.ssl_pem_cert_path = cert_path("Client_Leaf.pem");
         options_.ssl_pem_key_path = cert_path("Client_Leaf.key");
         options_.ssl_pem_trusted_certs_path = cert_path("CA_Chain.pem");
@@ -481,15 +483,16 @@ protected:
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:48636/";
     
     options_.log_level_string = "DEBUG";
-    options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_verification";
     
     // Server does not know client's certificate, client does not know server's
     // certificate.
     switch (t) {
       case kPKCS12:
+        options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_verification_pkcs12";
         options_.ssl_pkcs12_path = cert_path("Client_Leaf.p12");
         break;
       case kPEM:
+        options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_verification_pem";
         options_.ssl_pem_cert_path = cert_path("Client_Leaf.pem");
         options_.ssl_pem_key_path = cert_path("Client_Leaf.key");
         break;
@@ -555,16 +558,18 @@ protected:
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:48636/";
     
     options_.log_level_string = "DEBUG";
-    options_.log_file_path =
-        "/tmp/xtreemfs_client_ssl_test_verification_ignore_errors";
     
     // Server knows client's certificate, client does not know server's
     // certificate.
     switch (t) {
       case kPKCS12:
+        options_.log_file_path =
+            "/tmp/xtreemfs_client_ssl_test_verification_ignore_errors_pkcs12";
         options_.ssl_pkcs12_path = cert_path("Client_Leaf_Root.p12");
         break;
       case kPEM:
+        options_.log_file_path =
+            "/tmp/xtreemfs_client_ssl_test_verification_ignore_errors_pem";
         options_.ssl_pem_cert_path = cert_path("Client_Leaf.pem");
         options_.ssl_pem_key_path = cert_path("Client_Leaf.key");
         options_.ssl_pem_trusted_certs_path = cert_path("CA_Root.pem");
@@ -633,15 +638,16 @@ protected:
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:48636/";
     
     options_.log_level_string = "DEBUG";
-    options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_no_verification";
     
     // Server knows client's certificate, client does not know all of server's
     // certificate.
     switch (t) {
       case kPKCS12:
+        options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_no_verification_pkcs12";
         options_.ssl_pkcs12_path = cert_path("Client_Leaf_Leaf.p12");
         break;
       case kPEM:
+        options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_no_verification_pem";
         options_.ssl_pem_cert_path = cert_path("Client_Leaf.pem");
         options_.ssl_pem_key_path = cert_path("Client_Leaf.key");
         options_.ssl_pem_trusted_certs_path = cert_path("CA_Leaf.pem");
@@ -711,13 +717,16 @@ protected:
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:48636/";
     
     options_.log_level_string = "DEBUG";
-    options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_version";
     
     switch (t) {
       case kPKCS12:
+        options_.log_file_path =
+            "/tmp/xtreemfs_client_ssl_test_version_pkcs12_";
         options_.ssl_pkcs12_path = cert_path("Client_Root_Root.p12");
         break;
       case kPEM:
+        options_.log_file_path =
+            "/tmp/xtreemfs_client_ssl_test_version_pem_";
         options_.ssl_pem_cert_path = cert_path("Client_Root.pem");
         options_.ssl_pem_key_path = cert_path("Client_Root.key");
         options_.ssl_pem_trusted_certs_path = cert_path("CA_Root.pem");
@@ -725,6 +734,7 @@ protected:
       case None:
         break;
     }
+    options_.log_file_path.append(ssl_method_string);
     
     options_.ssl_method_string = ssl_method_string;
     options_.ssl_verify_certificates = true;
