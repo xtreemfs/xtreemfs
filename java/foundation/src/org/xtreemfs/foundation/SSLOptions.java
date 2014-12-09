@@ -142,10 +142,9 @@ public class SSLOptions {
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
             kmf.init(ksKeys, serverCredentialFilePassphrase);
             
-            // Remove faulty security provider before getting the context. Known to affect OpenJDK 1.6.
-            // https://bugs.launchpad.net/ubuntu/+source/openjdk-6/+bug/948875
-            if ("OpenJDK Runtime Environment".equals(System.getProperty("java.runtime.name")) &&
-                "1.6".equals(System.getProperty("java.specification.version"))) {
+            // There are quite a few issues with the OpenJDK PKCS11 provider in combination with NSS,
+            // so remove it no matter what the OpenJDK version is.
+            if ("OpenJDK Runtime Environment".equals(System.getProperty("java.runtime.name"))) {
                 try {
                     Security.removeProvider("SunPKCS11-NSS");
                     if (Logging.isDebug()) {
@@ -153,8 +152,8 @@ public class SSLOptions {
                     }
                 } catch(SecurityException e) {
                     Logging.logMessage(Logging.LEVEL_WARN, this,
-                                       "Could not remove faulty security provider 'SunPKCS11-NSS'. " +
-                                       "TLS connections might time out. Known to affect OpenJDK 6.");
+                                       "Could not remove security provider 'SunPKCS11-NSS'. This might cause TLS connections to time out. " +
+                                       "Known to affect multiple OpenJDK / NSS version combindations.");
                     if (Logging.isDebug()) {
                         Logging.logMessage(Logging.LEVEL_DEBUG, this, "%s:\n%s", e.getMessage(), OutputUtils.stackTraceToString(e));
                     }
