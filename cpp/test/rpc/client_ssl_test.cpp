@@ -14,6 +14,7 @@
 #include <fstream>
 #include <stdio.h>
 #include <string>
+#include <openssl/opensslv.h>
 
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/client_implementation.h"
@@ -62,6 +63,23 @@ public:
     classpath_ += ":../../java/foundation/dist/Foundation.jar";
     classpath_ += ":../../java/flease/dist/Flease.jar";
     classpath_ += ":../../java/lib/*";
+  }
+      
+  int JavaMajorVersion() {
+    // java -version prints to stderr
+    FILE *pipe = popen((java_home_ + "bin/java -version 2>&1").c_str(), "r");
+    char buf[256];
+    std::string output("");
+    while (!feof(pipe)) {
+      if (fgets(buf, 256, pipe) != NULL) {
+        output += buf;
+      }
+    }
+    pclose(pipe);
+    // Output starts with: java version "1.X.Y_Z"
+    size_t a = output.find('.', 0);
+    size_t b = output.find('.', a + 1);
+    return atoi(output.substr(a + 1, b - a - 1).c_str());
   }
   
   void Start(std::string service_class) {
@@ -674,8 +692,17 @@ class ClientSSLTestLongChainNoVerificationPEM :
     
 template<TestCertificateType t, char const *ssl_method_string>
 class ClientSSLTestSSLVersion : public ClientTest {
+public:
+  ClientSSLTestSSLVersion() {
+    // Grab the Java version that all services run on so we know what TLS
+    // capabilities to expect.
+    java_major_version_ = ExternalService("").JavaMajorVersion();
+  }
+  
 protected:
   virtual void SetUp() {
+    ASSERT_GE(java_major_version_, 6);
+    
     dir_config_file_ = config_path("dirconfig_ssl_version.test");
     mrc_config_file_ = config_path("mrcconfig_ssl_version.test");
     osd_config_file_ = config_path("osdconfig_ssl_version.test");
@@ -701,6 +728,8 @@ protected:
     
     options_.ssl_method_string = ssl_method_string;
     options_.ssl_verify_certificates = true;
+    
+    options_.max_tries = 3;
                 
     ClientTest::SetUp();
   }
@@ -715,36 +744,94 @@ protected:
     
     if (strcmp(ssl_method_string, "sslv3") == 0) {
       ASSERT_EQ(2, count_occurrences_in_file(
-          options_.log_file_path,
-          "Using SSL/TLS version 'SSLv3'."));
+          options_.log_file_path, "Using SSL/TLS version 'SSLv3'."));
     }
-#if (BOOST_VERSION > 105300)
-    else if (strcmp(ssl_method_string, "ssltls") == 0 ||
-             strcmp(ssl_method_string, "tlsv12") == 0) {
+    
+#if (BOOST_VERSION < 104800)
+    // Boost < 1.48 supports SSLv3 and TLSv1
+
+    if (strcmp(ssl_method_string, "ssltls") == 0 ||
+        strcmp(ssl_method_string, "tlsv1") == 0) {
       ASSERT_EQ(2, count_occurrences_in_file(
-          options_.log_file_path,
-          "Using SSL/TLS version 'TLSv1.2'."));
+          options_.log_file_path, "Using SSL/TLS version 'TLSv1'."));
+    } else if (strcmp(ssl_method_string, "tlsv11") == 0 ||
+               strcmp(ssl_method_string, "tlsv12") == 0){
+      // Connection must fail for TLSv1.1 and TLSv1.2
+      ASSERT_EQ(0, count_occurrences_in_file(
+          options_.log_file_path, "Using SSL/TLS"));
     }
-#else  // BOOST_VERSION > 105300
-    else if (strcmp(ssl_method_string, "ssltls") == 0) {
+#else  // BOOST_VERSION < 104800
+    // Boost >= 1.48 supports whatever OpenSSL supports
+      
+#if (OPENSSL_VERSION_NUMBER < 0x1000100fL)
+    // OpenSSL < 1.0.1 supports SSLv3 and TLSv1
+
+    if (strcmp(ssl_method_string, "ssltls") == 0 ||
+        strcmp(ssl_method_string, "tlsv1") == 0) {
       ASSERT_EQ(2, count_occurrences_in_file(
-          options_.log_file_path,
-          "Using SSL/TLS version 'TLSv1'."));
+          options_.log_file_path, "Using SSL/TLS version 'TLSv1'."));
+    } else if (strcmp(ssl_method_string, "tlsv11") == 0 ||
+               strcmp(ssl_method_string, "tlsv12") == 0){
+      // Connection must fail for TLSv1.1 and TLSv1.2
+      ASSERT_EQ(0, count_occurrences_in_file(
+          options_.log_file_path, "Using SSL/TLS"));
     }
-#endif  // BOOST_VERSION > 105300
-    else if (strcmp(ssl_method_string, "tlsv1") == 0) {
-      ASSERT_EQ(2, count_occurrences_in_file(
-          options_.log_file_path,
-          "Using SSL/TLS version 'TLSv1'."));
+#endif  // OPENSSL_VERSION_NUMBER < 0x1000100fL
+#endif  // BOOST_VERSION < 104800
+    
+    if (java_major_version_ == 6) {
+      // Java 6 supports SSLv3, TLSv1 and possibly TLSv1.1
+      
+#if (BOOST_VERSION >= 104800 && OPENSSL_VERSION_NUMBER >= 0x1000100fL)
+      // OpenSSL >= 1.0.1 supports SSLv3, TLSv1, TLSv1.1 and TLSv1.2
+      
+      if (strcmp(ssl_method_string, "ssltls") == 0) {
+        // Boost and OpenSSL are capable of 1.2, Java at most 1.1
+        int tlsv1 = count_occurrences_in_file(
+            options_.log_file_path, "Using SSL/TLS version 'TLSv1'.");
+        int tlsv11 = count_occurrences_in_file(
+            options_.log_file_path, "Using SSL/TLS version 'TLSv1.1'.");
+        ASSERT_EQ(2, tlsv1 + tlsv11);
+      } else if (strcmp(ssl_method_string, "tlsv1") == 0) {
+        ASSERT_EQ(2, count_occurrences_in_file(
+            options_.log_file_path,
+            "Using SSL/TLS version 'TLSv1'."));
+      } else if (strcmp(ssl_method_string, "tlsv11") == 0) {
+        // Don't fail if Java 6 does not support TLSv1.1
+        EXPECT_EQ(2, count_occurrences_in_file(
+            options_.log_file_path, "Using SSL/TLS version 'TLSv1.1'."));
+      } else if (strcmp(ssl_method_string, "tlsv12") == 0) {
+        // Java 6 is incapable of TLSv1.2, connection must fail.
+        ASSERT_EQ(0, count_occurrences_in_file(
+            options_.log_file_path, "Using SSL/TLS version"));
+      }
+#endif  // BOOST_VERSION >= 104800 && OPENSSL_VERSION_NUMBER >= 0x1000100fL
+    } else if (java_major_version_ >= 7) {
+      // Java 7+ supports SSLv3, TLSv1, TLSv1.1 and TLSv1.2
+      
+#if (BOOST_VERSION >= 104800 && OPENSSL_VERSION_NUMBER >= 0x1000100fL)
+      // OpenSSL >= 1.0.1 supports SSLv3, TLSv1, TLSv1.1 and TLSv1.2
+      
+      if (strcmp(ssl_method_string, "ssltls") == 0) {
+        ASSERT_EQ(2, count_occurrences_in_file(
+            options_.log_file_path, "Using SSL/TLS version 'TLSv1.2'."));
+      } else if (strcmp(ssl_method_string, "tlsv1") == 0) {
+        ASSERT_EQ(2, count_occurrences_in_file(
+            options_.log_file_path,
+            "Using SSL/TLS version 'TLSv1'."));
+      } else if (strcmp(ssl_method_string, "tlsv11") == 0) {
+        ASSERT_EQ(2, count_occurrences_in_file(
+            options_.log_file_path, "Using SSL/TLS version 'TLSv1.1'."));
+      } else if (strcmp(ssl_method_string, "tlsv12") == 0) {
+        ASSERT_EQ(2, count_occurrences_in_file(
+            options_.log_file_path, "Using SSL/TLS version 'TLSv1.2'."));
+      }
+#endif  // BOOST_VERSION >= 104800 && OPENSSL_VERSION_NUMBER >= 0x1000100fL
     }
-#if (BOOST_VERSION > 105300)
-    else if (strcmp(ssl_method_string, "tlsv11") == 0) {
-      ASSERT_EQ(2, count_occurrences_in_file(
-          options_.log_file_path,
-          "Using SSL/TLS version 'TLSv1.1'."));
-    }
-#endif  // BOOST_VERSION > 105300
   }
+  
+private:
+  int java_major_version_;
 };
 
 class ClientSSLTestSSLVersionPKCS12SSLv3 :
