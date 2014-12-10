@@ -986,4 +986,4 @@ TEST_F(ClientSSLTestSSLVersionPEMTLSv12, TestSSLVersion) { DoTest(); }
 }  // namespace rpc
 }  // namespace xtreemfs
 
-#endif  // HAS_OPENSSL_
+#endif  // HAS_OPENSSL
