@@ -5,14 +5,18 @@
  *
  */
 
+#ifdef HAS_OPENSSL
+
 #include <gtest/gtest.h>
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
 #include <cerrno>
+#include <fcntl.h>
 #include <fstream>
 #include <stdio.h>
+#include <stdexcept>
 #include <string>
 #include <openssl/opensslv.h>
 
@@ -40,8 +44,14 @@ namespace rpc {
 class ExternalService {
 public:
   ExternalService(
-      std::string config_file_name)
-      : config_file_name_(config_file_name),
+      std::string service_class,
+      std::string config_file_name,
+      std::string log_file_name,
+      std::string startup_phrase)
+      : service_class_(service_class),
+        config_file_name_(config_file_name),
+        log_file_name_(log_file_name),
+        startup_phrase_(startup_phrase),
         java_home_(""),
         classpath_(""),
         argv_(NULL),
@@ -82,13 +92,13 @@ public:
     return atoi(output.substr(a + 1, b - a - 1).c_str());
   }
   
-  void Start(std::string service_class) {
+  void Start() {
     argv_ = new char*[7];
     argv_[0] = strdup((java_home_ + "bin/java").c_str());
     argv_[1] = strdup("-ea");
     argv_[2] = strdup("-cp");
     argv_[3] = strdup(classpath_.c_str());
-    argv_[4] = strdup(service_class.c_str());
+    argv_[4] = strdup(service_class_.c_str());
     argv_[5] = strdup(config_file_name_.c_str());
     argv_[6] = NULL;
     
@@ -96,10 +106,39 @@ public:
     
     service_pid_ = fork();
     if (service_pid_ == 0) {
-      // This block is executed by the child and is blocking.
-      // It also will not return control upon successful completion.
+      /* This block is executed by the child and is blocking. */
+      
+      // Redirect stdout and stderr to file
+      int log_fd = open(log_file_name_.c_str(),
+                        O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+      dup2(log_fd, 1);
+      dup2(log_fd, 2);
+      close(log_fd);
+      
+      // execve does not return control upon successful completion.
       execve((java_home_ + "bin/java").c_str(), argv_, envp);
       exit(errno);
+    } else {
+      /* This block is executed by the parent. */
+      
+      // Wait until the child has created the log file.
+      int log_fd = -1;
+      while ((log_fd = open(log_file_name_.c_str(), O_RDONLY)) == -1)
+        ;
+      
+      // Listen to the log file until the startup phrase has occurred.
+      std::string output("");
+      while (output.find(startup_phrase_) == std::string::npos) {
+        char buffer[1024];
+        ssize_t n = read(log_fd, buffer, sizeof(buffer));
+        if (n > 0) {
+          output.append(buffer, n);
+        } else if (n == -1) {
+          throw std::runtime_error(
+              "Could not read log file '" + log_file_name_ + "'.");
+        }
+      }
+      close(log_fd);
     }
   }
   
@@ -119,7 +158,10 @@ public:
   }
 
 private:
+  std::string service_class_;
   std::string config_file_name_;
+  std::string log_file_name_;
+  std::string startup_phrase_;
   std::string java_home_;
   std::string classpath_;
   
@@ -129,32 +171,23 @@ private:
   
 class ExternalDIR : public ExternalService {
 public:
-  ExternalDIR(std::string config_file_name)
-  : ExternalService(config_file_name) {}
-  
-  void Start() {
-    ExternalService::Start("org.xtreemfs.dir.DIR");
-  }
+  ExternalDIR(std::string config_file_name, std::string log_file_name)
+  : ExternalService("org.xtreemfs.dir.DIR", config_file_name, log_file_name,
+                    "PBRPC Srv 48638 ready") {}
 };
 
 class ExternalMRC : public ExternalService {
 public:
-  ExternalMRC(std::string config_file_name)
-  : ExternalService(config_file_name) {}
-  
-  void Start() {
-    ExternalService::Start("org.xtreemfs.mrc.MRC");
-  }
+  ExternalMRC(std::string config_file_name, std::string log_file_name)
+  : ExternalService("org.xtreemfs.mrc.MRC", config_file_name, log_file_name,
+                    "PBRPC Srv 48636 ready") {}
 };
 
 class ExternalOSD : public ExternalService {
 public:
-  ExternalOSD(std::string config_file_name)
-  : ExternalService(config_file_name) {}
-  
-  void Start() {
-    ExternalService::Start("org.xtreemfs.osd.OSD");
-  }
+  ExternalOSD(std::string config_file_name, std::string log_file_name)
+  : ExternalService("org.xtreemfs.osd.OSD", config_file_name, log_file_name,
+                    "PBRPC Srv 48640 ready") {}
 };
 
 enum TestCertificateType {
@@ -176,11 +209,15 @@ protected:
                       options_.log_file_path,
                       LEVEL_WARN);
     
-    external_dir_.reset(new ExternalDIR(dir_config_file_));
+    dir_log_file_name_ = options_.log_file_path + "_dir";
+    mrc_log_file_name_ = options_.log_file_path + "_mrc";
+    osd_log_file_name_ = options_.log_file_path + "_osd";
+    
+    external_dir_.reset(new ExternalDIR(dir_config_file_, dir_log_file_name_));
     external_dir_->Start();
-    external_mrc_.reset(new ExternalMRC(mrc_config_file_));
+    external_mrc_.reset(new ExternalMRC(mrc_config_file_, mrc_log_file_name_));
     external_mrc_->Start();
-    external_osd_.reset(new ExternalOSD(osd_config_file_));
+    external_osd_.reset(new ExternalOSD(osd_config_file_, osd_log_file_name_));
     external_osd_->Start();
     
     auth_.set_auth_type(AUTH_NONE);
@@ -247,6 +284,9 @@ protected:
   
   boost::scoped_ptr<xtreemfs::Client> client_;
   xtreemfs::Options options_;
+  std::string dir_log_file_name_;
+  std::string mrc_log_file_name_;
+  std::string osd_log_file_name_;
   
   xtreemfs::Options dir_url_;
   xtreemfs::Options mrc_url_;
@@ -278,6 +318,9 @@ protected:
   virtual void TearDown() {
     ClientTest::TearDown();
     unlink(options_.log_file_path.c_str());
+    unlink(dir_log_file_name_.c_str());
+    unlink(mrc_log_file_name_.c_str());
+    unlink(osd_log_file_name_.c_str());
   }
 };
 
@@ -319,6 +362,9 @@ protected:
   virtual void TearDown() {
     ClientTest::TearDown();
     unlink(options_.log_file_path.c_str());
+    unlink(dir_log_file_name_.c_str());
+    unlink(mrc_log_file_name_.c_str());
+    unlink(osd_log_file_name_.c_str());
   }
   
   void DoTest() {
@@ -414,6 +460,9 @@ protected:
   virtual void TearDown() {
     ClientTest::TearDown();
     unlink(options_.log_file_path.c_str());
+    unlink(dir_log_file_name_.c_str());
+    unlink(mrc_log_file_name_.c_str());
+    unlink(osd_log_file_name_.c_str());
   }
   
   void DoTest() {
@@ -511,6 +560,9 @@ protected:
   virtual void TearDown() {
     ClientTest::TearDown();
     unlink(options_.log_file_path.c_str());
+    unlink(dir_log_file_name_.c_str());
+    unlink(mrc_log_file_name_.c_str());
+    unlink(osd_log_file_name_.c_str());
   }
   
   void DoTest() {
@@ -595,6 +647,9 @@ protected:
   virtual void TearDown() {
     ClientTest::TearDown();
     unlink(options_.log_file_path.c_str());
+    unlink(dir_log_file_name_.c_str());
+    unlink(mrc_log_file_name_.c_str());
+    unlink(osd_log_file_name_.c_str());
   }
   
   void DoTest() {
@@ -662,6 +717,9 @@ protected:
   virtual void TearDown() {
     ClientTest::TearDown();
     unlink(options_.log_file_path.c_str());
+    unlink(dir_log_file_name_.c_str());
+    unlink(mrc_log_file_name_.c_str());
+    unlink(osd_log_file_name_.c_str());
   }
   
   void DoTest() {
@@ -702,7 +760,7 @@ public:
   ClientSSLTestSSLVersion() {
     // Grab the Java version that all services run on so we know what TLS
     // capabilities to expect.
-    java_major_version_ = ExternalService("").JavaMajorVersion();
+    java_major_version_ = ExternalService("", "", "", "").JavaMajorVersion();
   }
   
 protected:
@@ -747,6 +805,9 @@ protected:
   virtual void TearDown() {
     ClientTest::TearDown();
     unlink(options_.log_file_path.c_str());
+    unlink(dir_log_file_name_.c_str());
+    unlink(mrc_log_file_name_.c_str());
+    unlink(osd_log_file_name_.c_str());
   }
   
   void DoTest() {
@@ -924,3 +985,5 @@ TEST_F(ClientSSLTestSSLVersionPEMTLSv12, TestSSLVersion) { DoTest(); }
 
 }  // namespace rpc
 }  // namespace xtreemfs
+
+#endif  // HAS_OPENSSL_
