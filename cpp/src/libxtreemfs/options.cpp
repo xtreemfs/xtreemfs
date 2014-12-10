@@ -9,6 +9,7 @@
 #include "libxtreemfs/options.h"
 
 #include <algorithm>  // std::find_if
+#include <boost/algorithm/string/compare.hpp>
 #include <boost/algorithm/string.hpp>  // boost::algorithm::starts_with
 #include <boost/bind.hpp>
 #include <boost/program_options/cmdline.hpp>
@@ -112,7 +113,7 @@ Options::Options()
   ssl_pkcs12_pass = "";
   grid_ssl = false;
   ssl_verify_certificates = false;
-  ssl_method_string = "sslv23";
+  ssl_method_string = "ssltls";
 #endif  // HAS_OPENSSL
 
   // Grid Support options.
@@ -297,7 +298,7 @@ void Options::GenerateProgramOptionsDescriptions() {
         po::value(&ssl_method_string)->default_value(ssl_method_string),
         "SSL method that this client will accept:\n"
         "  - sslv3 accepts SSLv3 only\n"
-        "  - sslv23 accepts SSLv2, SSLv3 and TLSv1.x\n"
+        "  - ssltls accepts SSLv3 and TLSv1.x\n"
         "  - tlsv1 accepts TLSv1 only"
 #if (BOOST_VERSION > 105300)
         "\n  - tlsv11 accepts TLSv1.1 only\n"
@@ -484,11 +485,13 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
 
         // Find out if this known option has been explicitly specified.
         if (find_if(regular_options.begin(), regular_options.end(),
-                    boost::bind(alg::starts_with<string, string>, _1,
-                                prefixed_long_opt)) == regular_options.end() &&
+                    boost::bind(alg::starts_with<string, string, alg::is_equal>,
+                                _1, prefixed_long_opt, alg::is_equal()))
+                    == regular_options.end() &&
             find_if(regular_options.begin(), regular_options.end(),
-                    boost::bind(alg::starts_with<string, string>, _1,
-                                prefixed_short_opt)) == regular_options.end()) {
+                    boost::bind(alg::starts_with<string, string, alg::is_equal>,
+                                _1, prefixed_short_opt, alg::is_equal()))
+                    == regular_options.end()) {
           // Explicitly set option for later parsing.
           regular_options.push_back(
               prefixed_long_opt.empty() ? prefixed_short_opt : prefixed_long_opt);

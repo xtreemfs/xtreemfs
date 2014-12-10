@@ -5,15 +5,20 @@
  *
  */
 
+#ifdef HAS_OPENSSL
+
 #include <gtest/gtest.h>
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
 #include <cerrno>
+#include <fcntl.h>
 #include <fstream>
 #include <stdio.h>
+#include <stdexcept>
 #include <string>
+#include <openssl/opensslv.h>
 
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/client_implementation.h"
@@ -39,8 +44,14 @@ namespace rpc {
 class ExternalService {
 public:
   ExternalService(
-      std::string config_file_name)
-      : config_file_name_(config_file_name),
+      std::string service_class,
+      std::string config_file_name,
+      std::string log_file_name,
+      std::string startup_phrase)
+      : service_class_(service_class),
+        config_file_name_(config_file_name),
+        log_file_name_(log_file_name),
+        startup_phrase_(startup_phrase),
         java_home_(""),
         classpath_(""),
         argv_(NULL),
@@ -63,14 +74,31 @@ public:
     classpath_ += ":../../java/flease/dist/Flease.jar";
     classpath_ += ":../../java/lib/*";
   }
+      
+  int JavaMajorVersion() {
+    // java -version prints to stderr
+    FILE *pipe = popen((java_home_ + "bin/java -version 2>&1").c_str(), "r");
+    char buf[256];
+    std::string output("");
+    while (!feof(pipe)) {
+      if (fgets(buf, 256, pipe) != NULL) {
+        output += buf;
+      }
+    }
+    pclose(pipe);
+    // Output starts with: java version "1.X.Y_Z"
+    size_t a = output.find('.', 0);
+    size_t b = output.find('.', a + 1);
+    return atoi(output.substr(a + 1, b - a - 1).c_str());
+  }
   
-  void Start(std::string service_class) {
+  void Start() {
     argv_ = new char*[7];
     argv_[0] = strdup((java_home_ + "bin/java").c_str());
     argv_[1] = strdup("-ea");
     argv_[2] = strdup("-cp");
     argv_[3] = strdup(classpath_.c_str());
-    argv_[4] = strdup(service_class.c_str());
+    argv_[4] = strdup(service_class_.c_str());
     argv_[5] = strdup(config_file_name_.c_str());
     argv_[6] = NULL;
     
@@ -78,10 +106,39 @@ public:
     
     service_pid_ = fork();
     if (service_pid_ == 0) {
-      // This block is executed by the child and is blocking.
-      // It also will not return control upon successful completion.
+      /* This block is executed by the child and is blocking. */
+      
+      // Redirect stdout and stderr to file
+      int log_fd = open(log_file_name_.c_str(),
+                        O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+      dup2(log_fd, 1);
+      dup2(log_fd, 2);
+      close(log_fd);
+      
+      // execve does not return control upon successful completion.
       execve((java_home_ + "bin/java").c_str(), argv_, envp);
       exit(errno);
+    } else {
+      /* This block is executed by the parent. */
+      
+      // Wait until the child has created the log file.
+      int log_fd = -1;
+      while ((log_fd = open(log_file_name_.c_str(), O_RDONLY)) == -1)
+        ;
+      
+      // Listen to the log file until the startup phrase has occurred.
+      std::string output("");
+      while (output.find(startup_phrase_) == std::string::npos) {
+        char buffer[1024];
+        ssize_t n = read(log_fd, buffer, sizeof(buffer));
+        if (n > 0) {
+          output.append(buffer, n);
+        } else if (n == -1) {
+          throw std::runtime_error(
+              "Could not read log file '" + log_file_name_ + "'.");
+        }
+      }
+      close(log_fd);
     }
   }
   
@@ -101,7 +158,10 @@ public:
   }
 
 private:
+  std::string service_class_;
   std::string config_file_name_;
+  std::string log_file_name_;
+  std::string startup_phrase_;
   std::string java_home_;
   std::string classpath_;
   
@@ -111,32 +171,23 @@ private:
   
 class ExternalDIR : public ExternalService {
 public:
-  ExternalDIR(std::string config_file_name)
-  : ExternalService(config_file_name) {}
-  
-  void Start() {
-    ExternalService::Start("org.xtreemfs.dir.DIR");
-  }
+  ExternalDIR(std::string config_file_name, std::string log_file_name)
+  : ExternalService("org.xtreemfs.dir.DIR", config_file_name, log_file_name,
+                    "PBRPC Srv 48638 ready") {}
 };
 
 class ExternalMRC : public ExternalService {
 public:
-  ExternalMRC(std::string config_file_name)
-  : ExternalService(config_file_name) {}
-  
-  void Start() {
-    ExternalService::Start("org.xtreemfs.mrc.MRC");
-  }
+  ExternalMRC(std::string config_file_name, std::string log_file_name)
+  : ExternalService("org.xtreemfs.mrc.MRC", config_file_name, log_file_name,
+                    "PBRPC Srv 48636 ready") {}
 };
 
 class ExternalOSD : public ExternalService {
 public:
-  ExternalOSD(std::string config_file_name)
-  : ExternalService(config_file_name) {}
-  
-  void Start() {
-    ExternalService::Start("org.xtreemfs.osd.OSD");
-  }
+  ExternalOSD(std::string config_file_name, std::string log_file_name)
+  : ExternalService("org.xtreemfs.osd.OSD", config_file_name, log_file_name,
+                    "PBRPC Srv 48640 ready") {}
 };
 
 enum TestCertificateType {
@@ -144,7 +195,7 @@ enum TestCertificateType {
 };
 
 char g_ssl_tls_version_sslv3[] = "sslv3";
-char g_ssl_tls_version_sslv23[] = "sslv23";
+char g_ssl_tls_version_ssltls[] = "ssltls";
 char g_ssl_tls_version_tlsv1[] = "tlsv1";
 #if (BOOST_VERSION > 105300)
 char g_ssl_tls_version_tlsv11[] = "tlsv11";
@@ -158,11 +209,15 @@ protected:
                       options_.log_file_path,
                       LEVEL_WARN);
     
-    external_dir_.reset(new ExternalDIR(dir_config_file_));
+    dir_log_file_name_ = options_.log_file_path + "_dir";
+    mrc_log_file_name_ = options_.log_file_path + "_mrc";
+    osd_log_file_name_ = options_.log_file_path + "_osd";
+    
+    external_dir_.reset(new ExternalDIR(dir_config_file_, dir_log_file_name_));
     external_dir_->Start();
-    external_mrc_.reset(new ExternalMRC(mrc_config_file_));
+    external_mrc_.reset(new ExternalMRC(mrc_config_file_, mrc_log_file_name_));
     external_mrc_->Start();
-    external_osd_.reset(new ExternalOSD(osd_config_file_));
+    external_osd_.reset(new ExternalOSD(osd_config_file_, osd_log_file_name_));
     external_osd_->Start();
     
     auth_.set_auth_type(AUTH_NONE);
@@ -229,6 +284,9 @@ protected:
   
   boost::scoped_ptr<xtreemfs::Client> client_;
   xtreemfs::Options options_;
+  std::string dir_log_file_name_;
+  std::string mrc_log_file_name_;
+  std::string osd_log_file_name_;
   
   xtreemfs::Options dir_url_;
   xtreemfs::Options mrc_url_;
@@ -260,6 +318,9 @@ protected:
   virtual void TearDown() {
     ClientTest::TearDown();
     unlink(options_.log_file_path.c_str());
+    unlink(dir_log_file_name_.c_str());
+    unlink(mrc_log_file_name_.c_str());
+    unlink(osd_log_file_name_.c_str());
   }
 };
 
@@ -276,14 +337,15 @@ protected:
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:48636/";
     
     options_.log_level_string = "DEBUG";
-    options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_short_chain";
     
     // Root signed, only root as additional certificate.
     switch (t) {
       case kPKCS12:
+        options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_short_chain_pkcs12";
         options_.ssl_pkcs12_path = cert_path("Client_Root_Root.p12");
         break;
       case kPEM:
+        options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_short_chain_pem";
         options_.ssl_pem_cert_path = cert_path("Client_Root.pem");
         options_.ssl_pem_key_path = cert_path("Client_Root.key");
         options_.ssl_pem_trusted_certs_path = cert_path("CA_Root.pem");
@@ -300,6 +362,9 @@ protected:
   virtual void TearDown() {
     ClientTest::TearDown();
     unlink(options_.log_file_path.c_str());
+    unlink(dir_log_file_name_.c_str());
+    unlink(mrc_log_file_name_.c_str());
+    unlink(osd_log_file_name_.c_str());
   }
   
   void DoTest() {
@@ -369,15 +434,16 @@ protected:
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:48636/";
     
     options_.log_level_string = "DEBUG";
-    options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_long_chain";
     
     // Client certificate is signed with Leaf CA. Contains the entire chain
     // as additional certificates.
     switch (t) {
       case kPKCS12:
+        options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_long_chain_pkcs12";
         options_.ssl_pkcs12_path = cert_path("Client_Leaf_Chain.p12");
         break;
       case kPEM:
+        options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_long_chain_pem";
         options_.ssl_pem_cert_path = cert_path("Client_Leaf.pem");
         options_.ssl_pem_key_path = cert_path("Client_Leaf.key");
         options_.ssl_pem_trusted_certs_path = cert_path("CA_Chain.pem");
@@ -394,6 +460,9 @@ protected:
   virtual void TearDown() {
     ClientTest::TearDown();
     unlink(options_.log_file_path.c_str());
+    unlink(dir_log_file_name_.c_str());
+    unlink(mrc_log_file_name_.c_str());
+    unlink(osd_log_file_name_.c_str());
   }
   
   void DoTest() {
@@ -463,15 +532,16 @@ protected:
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:48636/";
     
     options_.log_level_string = "DEBUG";
-    options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_verification";
     
     // Server does not know client's certificate, client does not know server's
     // certificate.
     switch (t) {
       case kPKCS12:
+        options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_verification_pkcs12";
         options_.ssl_pkcs12_path = cert_path("Client_Leaf.p12");
         break;
       case kPEM:
+        options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_verification_pem";
         options_.ssl_pem_cert_path = cert_path("Client_Leaf.pem");
         options_.ssl_pem_key_path = cert_path("Client_Leaf.key");
         break;
@@ -490,6 +560,9 @@ protected:
   virtual void TearDown() {
     ClientTest::TearDown();
     unlink(options_.log_file_path.c_str());
+    unlink(dir_log_file_name_.c_str());
+    unlink(mrc_log_file_name_.c_str());
+    unlink(osd_log_file_name_.c_str());
   }
   
   void DoTest() {
@@ -537,16 +610,18 @@ protected:
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:48636/";
     
     options_.log_level_string = "DEBUG";
-    options_.log_file_path =
-        "/tmp/xtreemfs_client_ssl_test_verification_ignore_errors";
     
     // Server knows client's certificate, client does not know server's
     // certificate.
     switch (t) {
       case kPKCS12:
+        options_.log_file_path =
+            "/tmp/xtreemfs_client_ssl_test_verification_ignore_errors_pkcs12";
         options_.ssl_pkcs12_path = cert_path("Client_Leaf_Root.p12");
         break;
       case kPEM:
+        options_.log_file_path =
+            "/tmp/xtreemfs_client_ssl_test_verification_ignore_errors_pem";
         options_.ssl_pem_cert_path = cert_path("Client_Leaf.pem");
         options_.ssl_pem_key_path = cert_path("Client_Leaf.key");
         options_.ssl_pem_trusted_certs_path = cert_path("CA_Root.pem");
@@ -572,6 +647,9 @@ protected:
   virtual void TearDown() {
     ClientTest::TearDown();
     unlink(options_.log_file_path.c_str());
+    unlink(dir_log_file_name_.c_str());
+    unlink(mrc_log_file_name_.c_str());
+    unlink(osd_log_file_name_.c_str());
   }
   
   void DoTest() {
@@ -615,15 +693,16 @@ protected:
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:48636/";
     
     options_.log_level_string = "DEBUG";
-    options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_no_verification";
     
     // Server knows client's certificate, client does not know all of server's
     // certificate.
     switch (t) {
       case kPKCS12:
+        options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_no_verification_pkcs12";
         options_.ssl_pkcs12_path = cert_path("Client_Leaf_Leaf.p12");
         break;
       case kPEM:
+        options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_no_verification_pem";
         options_.ssl_pem_cert_path = cert_path("Client_Leaf.pem");
         options_.ssl_pem_key_path = cert_path("Client_Leaf.key");
         options_.ssl_pem_trusted_certs_path = cert_path("CA_Leaf.pem");
@@ -638,6 +717,9 @@ protected:
   virtual void TearDown() {
     ClientTest::TearDown();
     unlink(options_.log_file_path.c_str());
+    unlink(dir_log_file_name_.c_str());
+    unlink(mrc_log_file_name_.c_str());
+    unlink(osd_log_file_name_.c_str());
   }
   
   void DoTest() {
@@ -674,8 +756,17 @@ class ClientSSLTestLongChainNoVerificationPEM :
     
 template<TestCertificateType t, char const *ssl_method_string>
 class ClientSSLTestSSLVersion : public ClientTest {
+public:
+  ClientSSLTestSSLVersion() {
+    // Grab the Java version that all services run on so we know what TLS
+    // capabilities to expect.
+    java_major_version_ = ExternalService("", "", "", "").JavaMajorVersion();
+  }
+  
 protected:
   virtual void SetUp() {
+    ASSERT_GE(java_major_version_, 6);
+    
     dir_config_file_ = config_path("dirconfig_ssl_version.test");
     mrc_config_file_ = config_path("mrcconfig_ssl_version.test");
     osd_config_file_ = config_path("osdconfig_ssl_version.test");
@@ -684,13 +775,16 @@ protected:
     mrc_url_.xtreemfs_url = "pbrpcs://localhost:48636/";
     
     options_.log_level_string = "DEBUG";
-    options_.log_file_path = "/tmp/xtreemfs_client_ssl_test_version";
     
     switch (t) {
       case kPKCS12:
+        options_.log_file_path =
+            "/tmp/xtreemfs_client_ssl_test_version_pkcs12_";
         options_.ssl_pkcs12_path = cert_path("Client_Root_Root.p12");
         break;
       case kPEM:
+        options_.log_file_path =
+            "/tmp/xtreemfs_client_ssl_test_version_pem_";
         options_.ssl_pem_cert_path = cert_path("Client_Root.pem");
         options_.ssl_pem_key_path = cert_path("Client_Root.key");
         options_.ssl_pem_trusted_certs_path = cert_path("CA_Root.pem");
@@ -698,9 +792,12 @@ protected:
       case None:
         break;
     }
+    options_.log_file_path.append(ssl_method_string);
     
     options_.ssl_method_string = ssl_method_string;
     options_.ssl_verify_certificates = true;
+    
+    options_.max_tries = 3;
                 
     ClientTest::SetUp();
   }
@@ -708,6 +805,9 @@ protected:
   virtual void TearDown() {
     ClientTest::TearDown();
     unlink(options_.log_file_path.c_str());
+    unlink(dir_log_file_name_.c_str());
+    unlink(mrc_log_file_name_.c_str());
+    unlink(osd_log_file_name_.c_str());
   }
   
   void DoTest() {
@@ -715,42 +815,100 @@ protected:
     
     if (strcmp(ssl_method_string, "sslv3") == 0) {
       ASSERT_EQ(2, count_occurrences_in_file(
-          options_.log_file_path,
-          "Using SSL/TLS version 'SSLv3'."));
+          options_.log_file_path, "Using SSL/TLS version 'SSLv3'."));
     }
-#if (BOOST_VERSION > 105300)
-    else if (strcmp(ssl_method_string, "sslv23") == 0 ||
-             strcmp(ssl_method_string, "tlsv12") == 0) {
+    
+#if (BOOST_VERSION < 104800)
+    // Boost < 1.48 supports SSLv3 and TLSv1
+
+    if (strcmp(ssl_method_string, "ssltls") == 0 ||
+        strcmp(ssl_method_string, "tlsv1") == 0) {
       ASSERT_EQ(2, count_occurrences_in_file(
-          options_.log_file_path,
-          "Using SSL/TLS version 'TLSv1.2'."));
+          options_.log_file_path, "Using SSL/TLS version 'TLSv1'."));
+    } else if (strcmp(ssl_method_string, "tlsv11") == 0 ||
+               strcmp(ssl_method_string, "tlsv12") == 0){
+      // Connection must fail for TLSv1.1 and TLSv1.2
+      ASSERT_EQ(0, count_occurrences_in_file(
+          options_.log_file_path, "Using SSL/TLS"));
     }
-#else  // BOOST_VERSION > 105300
-    else if (strcmp(ssl_method_string, "sslv23") == 0) {
+#else  // BOOST_VERSION < 104800
+    // Boost >= 1.48 supports whatever OpenSSL supports
+      
+#if (OPENSSL_VERSION_NUMBER < 0x1000100fL)
+    // OpenSSL < 1.0.1 supports SSLv3 and TLSv1
+
+    if (strcmp(ssl_method_string, "ssltls") == 0 ||
+        strcmp(ssl_method_string, "tlsv1") == 0) {
       ASSERT_EQ(2, count_occurrences_in_file(
-          options_.log_file_path,
-          "Using SSL/TLS version 'TLSv1'."));
+          options_.log_file_path, "Using SSL/TLS version 'TLSv1'."));
+    } else if (strcmp(ssl_method_string, "tlsv11") == 0 ||
+               strcmp(ssl_method_string, "tlsv12") == 0){
+      // Connection must fail for TLSv1.1 and TLSv1.2
+      ASSERT_EQ(0, count_occurrences_in_file(
+          options_.log_file_path, "Using SSL/TLS"));
     }
-#endif  // BOOST_VERSION > 105300
-    else if (strcmp(ssl_method_string, "tlsv1") == 0) {
-      ASSERT_EQ(2, count_occurrences_in_file(
-          options_.log_file_path,
-          "Using SSL/TLS version 'TLSv1'."));
+#endif  // OPENSSL_VERSION_NUMBER < 0x1000100fL
+#endif  // BOOST_VERSION < 104800
+    
+    if (java_major_version_ == 6) {
+      // Java 6 supports SSLv3, TLSv1 and possibly TLSv1.1
+      
+#if (BOOST_VERSION >= 104800 && OPENSSL_VERSION_NUMBER >= 0x1000100fL)
+      // OpenSSL >= 1.0.1 supports SSLv3, TLSv1, TLSv1.1 and TLSv1.2
+      
+      if (strcmp(ssl_method_string, "ssltls") == 0) {
+        // Boost and OpenSSL are capable of 1.2, Java at most 1.1
+        int tlsv1 = count_occurrences_in_file(
+            options_.log_file_path, "Using SSL/TLS version 'TLSv1'.");
+        int tlsv11 = count_occurrences_in_file(
+            options_.log_file_path, "Using SSL/TLS version 'TLSv1.1'.");
+        ASSERT_EQ(2, tlsv1 + tlsv11);
+      } else if (strcmp(ssl_method_string, "tlsv1") == 0) {
+        ASSERT_EQ(2, count_occurrences_in_file(
+            options_.log_file_path,
+            "Using SSL/TLS version 'TLSv1'."));
+      } else if (strcmp(ssl_method_string, "tlsv11") == 0) {
+        // Don't fail if Java 6 does not support TLSv1.1
+        EXPECT_EQ(2, count_occurrences_in_file(
+            options_.log_file_path, "Using SSL/TLS version 'TLSv1.1'."));
+      } else if (strcmp(ssl_method_string, "tlsv12") == 0) {
+        // Java 6 is incapable of TLSv1.2, connection must fail.
+        ASSERT_EQ(0, count_occurrences_in_file(
+            options_.log_file_path, "Using SSL/TLS version"));
+      }
+#endif  // BOOST_VERSION >= 104800 && OPENSSL_VERSION_NUMBER >= 0x1000100fL
+    } else if (java_major_version_ >= 7) {
+      // Java 7+ supports SSLv3, TLSv1, TLSv1.1 and TLSv1.2
+      
+#if (BOOST_VERSION >= 104800 && OPENSSL_VERSION_NUMBER >= 0x1000100fL)
+      // OpenSSL >= 1.0.1 supports SSLv3, TLSv1, TLSv1.1 and TLSv1.2
+      
+      if (strcmp(ssl_method_string, "ssltls") == 0) {
+        ASSERT_EQ(2, count_occurrences_in_file(
+            options_.log_file_path, "Using SSL/TLS version 'TLSv1.2'."));
+      } else if (strcmp(ssl_method_string, "tlsv1") == 0) {
+        ASSERT_EQ(2, count_occurrences_in_file(
+            options_.log_file_path,
+            "Using SSL/TLS version 'TLSv1'."));
+      } else if (strcmp(ssl_method_string, "tlsv11") == 0) {
+        ASSERT_EQ(2, count_occurrences_in_file(
+            options_.log_file_path, "Using SSL/TLS version 'TLSv1.1'."));
+      } else if (strcmp(ssl_method_string, "tlsv12") == 0) {
+        ASSERT_EQ(2, count_occurrences_in_file(
+            options_.log_file_path, "Using SSL/TLS version 'TLSv1.2'."));
+      }
+#endif  // BOOST_VERSION >= 104800 && OPENSSL_VERSION_NUMBER >= 0x1000100fL
     }
-#if (BOOST_VERSION > 105300)
-    else if (strcmp(ssl_method_string, "tlsv11") == 0) {
-      ASSERT_EQ(2, count_occurrences_in_file(
-          options_.log_file_path,
-          "Using SSL/TLS version 'TLSv1.1'."));
-    }
-#endif  // BOOST_VERSION > 105300
   }
+  
+private:
+  int java_major_version_;
 };
 
 class ClientSSLTestSSLVersionPKCS12SSLv3 :
     public ClientSSLTestSSLVersion<kPKCS12, g_ssl_tls_version_sslv3> {};
-class ClientSSLTestSSLVersionPKCS12SSLv23 :
-    public ClientSSLTestSSLVersion<kPKCS12, g_ssl_tls_version_sslv23> {};
+class ClientSSLTestSSLVersionPKCS12SSLTLS :
+    public ClientSSLTestSSLVersion<kPKCS12, g_ssl_tls_version_ssltls> {};
 class ClientSSLTestSSLVersionPKCS12TLSv1 :
     public ClientSSLTestSSLVersion<kPKCS12, g_ssl_tls_version_tlsv1> {};
 #if (BOOST_VERSION > 105300)
@@ -762,8 +920,8 @@ class ClientSSLTestSSLVersionPKCS12TLSv12 :
     
 class ClientSSLTestSSLVersionPEMSSLv3 :
     public ClientSSLTestSSLVersion<kPEM, g_ssl_tls_version_sslv3> {};
-class ClientSSLTestSSLVersionPEMSSLv23 :
-    public ClientSSLTestSSLVersion<kPEM, g_ssl_tls_version_sslv23> {};
+class ClientSSLTestSSLVersionPEMSSLTLS :
+    public ClientSSLTestSSLVersion<kPEM, g_ssl_tls_version_ssltls> {};
 class ClientSSLTestSSLVersionPEMTLSv1 :
     public ClientSSLTestSSLVersion<kPEM, g_ssl_tls_version_tlsv1> {};
 #if (BOOST_VERSION > 105300)
@@ -811,14 +969,14 @@ TEST_F(ClientSSLTestLongChainNoVerificationPKCS12, TestNoVerification) {
 TEST_F(ClientSSLTestLongChainNoVerificationPEM, TestNoVerification) { DoTest(); }
 
 TEST_F(ClientSSLTestSSLVersionPKCS12SSLv3, TestSSLVersion) { DoTest(); }
-TEST_F(ClientSSLTestSSLVersionPKCS12SSLv23, TestSSLVersion) { DoTest(); }
+TEST_F(ClientSSLTestSSLVersionPKCS12SSLTLS, TestSSLVersion) { DoTest(); }
 TEST_F(ClientSSLTestSSLVersionPKCS12TLSv1, TestSSLVersion) { DoTest(); }
 #if (BOOST_VERSION > 105300)
 TEST_F(ClientSSLTestSSLVersionPKCS12TLSv11, TestSSLVersion) { DoTest(); }
 TEST_F(ClientSSLTestSSLVersionPKCS12TLSv12, TestSSLVersion) { DoTest(); }
 #endif  // BOOST_VERSION > 105300
 TEST_F(ClientSSLTestSSLVersionPEMSSLv3, TestSSLVersion) { DoTest(); }
-TEST_F(ClientSSLTestSSLVersionPEMSSLv23, TestSSLVersion) { DoTest(); }
+TEST_F(ClientSSLTestSSLVersionPEMSSLTLS, TestSSLVersion) { DoTest(); }
 TEST_F(ClientSSLTestSSLVersionPEMTLSv1, TestSSLVersion) { DoTest(); }
 #if (BOOST_VERSION > 105300)
 TEST_F(ClientSSLTestSSLVersionPEMTLSv11, TestSSLVersion) { DoTest(); }
@@ -827,3 +985,5 @@ TEST_F(ClientSSLTestSSLVersionPEMTLSv12, TestSSLVersion) { DoTest(); }
 
 }  // namespace rpc
 }  // namespace xtreemfs
+
+#endif  // HAS_OPENSSL

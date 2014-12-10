@@ -29,6 +29,7 @@ public class DIRConfig extends ServiceConfig {
             Parameter.HTTP_PORT,
             Parameter.LISTEN_ADDRESS,
             Parameter.USE_SSL,
+            Parameter.SSL_PROTOCOL_STRING,
             Parameter.SERVICE_CREDS_FILE,
             Parameter.SERVICE_CREDS_PASSPHRASE,
             Parameter.SERVICE_CREDS_CONTAINER,

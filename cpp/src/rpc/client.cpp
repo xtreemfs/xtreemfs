@@ -25,13 +25,11 @@
 
 #ifdef HAS_OPENSSL
 #include <boost/asio/ssl.hpp>
-#include <openssl/pem.h>
 #include <openssl/err.h>
+#include <openssl/pem.h>
 #include <openssl/pkcs12.h>
-#include <openssl/bio.h>
 #include <openssl/rand.h>
 #include <openssl/x509.h>
-#include <openssl/evp.h>
 #endif  // HAS_OPENSSL
 #ifdef WIN32
 #include <tchar.h>
@@ -96,6 +94,7 @@ Client::Client(int32_t connect_timeout_s,
         string_to_ssl_method(
             options->ssl_method_string(),
             boost::asio::ssl::context_base::sslv23_client));
+    ssl_context_->set_options(boost::asio::ssl::context::no_sslv2);
 #if (BOOST_VERSION > 104601)
     // Verify certificate callback can be conveniently specified from
     // Boost 1.47.0 onwards.
@@ -177,7 +176,7 @@ Client::Client(int32_t connect_timeout_s,
               "certificates in " << options->pkcs12_file_name() << " in order "
               "to verify the services' certificates." << endl;
         }
-      } else if (ca->stack.num > 0) {
+      } else if (sk_X509_num(ca) > 0) {
         // Setup any additional certificates as trusted root CAs in one file.   
         std::string trusted_cas_template("caXXXXXX");
         FILE* trusted_cas_file =
@@ -185,11 +184,11 @@ Client::Client(int32_t connect_timeout_s,
         trustedCAsFileName = strdup(trusted_cas_template.c_str());
         
         if (Logging::log->loggingActive(LEVEL_INFO)) {
-          Logging::log->getLog(LEVEL_INFO) << "Writing " << ca->stack.num
+          Logging::log->getLog(LEVEL_INFO) << "Writing " << sk_X509_num(ca)
               << " verification certificates to " << trustedCAsFileName << endl;
         }
         
-        while (ca->stack.num > 0) {
+        while (sk_X509_num(ca) > 0) {
           X509* ca_cert = sk_X509_pop(ca);
           // _AUX writes trusted certificates.
           if (PEM_write_X509_AUX(trusted_cas_file, ca_cert)) { 
@@ -309,7 +308,11 @@ Client::Client(int32_t connect_timeout_s,
 
     // Cleanup thread-local OpenSSL state.
     ERR_free_strings();
+#if (OPENSSL_VERSION_NUMBER < 0x1000000fL)
+    ERR_remove_state(0);
+#else  // OPENSSL_VERSION_NUMBER < 0x1000000fL
     ERR_remove_thread_state(NULL);
+#endif  // OPENSSL_VERSION_NUMBER < 0x1000000fL
   }
 }
 
@@ -728,26 +731,26 @@ FILE* Client::create_and_open_temporary_ssl_file(std::string *filename_template,
     return NULL;
   }
 #ifdef WIN32
-  // FIXME set filename_template to actual name
-  //  Gets the temp path env string (no guarantee it's a valid path).
+  // Gets the temp path env string (no guarantee it's a valid path).
   TCHAR temp_path[MAX_PATH];
   TCHAR filename_temp[MAX_PATH];
 
   DWORD dwRetVal = 0;
-  dwRetVal = GetTempPath(MAX_PATH,          // length of the buffer
-                         temp_path); // buffer for path
+  dwRetVal = GetTempPath(MAX_PATH,    // length of the buffer
+                         temp_path);  // buffer for path
   if (dwRetVal > MAX_PATH || (dwRetVal == 0)) {
     _tcsncpy_s(temp_path, TEXT("."), 1);
   }
 
   //  Generates a temporary file name.
-  if (!GetTempFileName(temp_path, // directory for tmp files
-                            TEXT("DEMO"),     // temp file name prefix
-                            0,                // create unique name
-                            filename_temp)) {  // buffer for name
+  if (!GetTempFileName(temp_path,         // directory for tmp files
+                       TEXT("xfs"),       // temp file name prefix, max 3 char
+                       0,                 // create unique name
+                       filename_temp)) {  // buffer for name
     std::cerr << "Couldn't create temp file name.\n";
     return NULL;
   }
+  *filename_template = std::string(filename_temp);
   return _tfopen(filename_temp, TEXT(mode));
 #else
   // Place file in TMPDIR or /tmp if not specified as absolute path.
@@ -785,7 +788,7 @@ FILE* Client::create_and_open_temporary_ssl_file(std::string *filename_template,
         boost::asio::ssl::context_base::method default_method) {
       if (method_string == "sslv3") {
         return boost::asio::ssl::context_base::sslv3_client;
-      } else if (method_string == "sslv23") {
+      } else if (method_string == "ssltls") {
         return boost::asio::ssl::context_base::sslv23_client;
       } else if (method_string == "tlsv1") {
         return boost::asio::ssl::context_base::tlsv1_client;
