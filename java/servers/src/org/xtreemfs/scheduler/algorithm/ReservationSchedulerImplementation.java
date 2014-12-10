@@ -238,15 +238,16 @@ public class ReservationSchedulerImplementation implements ReservationScheduler 
         else
             streamingPerformance = 0.0;
 
-		return Math
+		double result = Math
 				.acos((reservedCapacity
 						* (o.getCapabilities().getCapacity() * this.capacityGain)
 						+ reservedRandomThroughput
 						* (o.getCapabilities().getIops() * this.randomIOGain) + reservedStreamingThroughput
 						* (streamingPerformance * this.streamingGain))
-						/ getUsageVectorLength(o, r)
-						* getCapabilityVectorLength(o));
-	}
+						/ (getUsageVectorLength(o, r)
+						* getCapabilityVectorLength(o)));
+ 		return result;
+ 	}
 
 	static double getUsageVectorLength(OSDDescription o, Reservation r) {
 		double reservedCapacity = r.getCapacity();

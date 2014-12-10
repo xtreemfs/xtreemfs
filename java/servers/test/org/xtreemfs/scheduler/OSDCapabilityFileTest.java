@@ -40,7 +40,8 @@ public class OSDCapabilityFileTest {
     public void startUp() throws Exception {
         schedulerConfig = SetupUtils.createSchedulerConfigWithCapabilityFile();
         File capabilityFile = new File(schedulerConfig.getOSDCapabilitiesFile());
-        String capabilityString = "test-localhost-OSD;100.0;100.0;100.0,99.0,98.0,97.0,96.0,95.0";
+        String capabilityString = "osd-ssd-maia01;5000.0;256000.0;200.0,200.0,200.0,200.0,200.0,200.0\n" +
+                                  "osd-hdd-maia01;100.0;200000.0;10.0,10.0,10.0,10.0,10.0,10.0";
 
         if(!capabilityFile.createNewFile())
             fail();
@@ -70,19 +71,28 @@ public class OSDCapabilityFileTest {
         SchedulerServiceClient schedulerClient = testEnv.getSchedulerClient();
         Scheduler.freeResourcesResponse resources = schedulerClient.getFreeResources(null,
                 RPCAuthentication.authNone, RPCAuthentication.userService).get();
-        assertTrue(resources.getRandomCapacity() == 100.0);
-        assertTrue(resources.getRandomThroughput() == 100.0);
-        assertTrue(resources.getStreamingThroughput() == 100.0);
+        assertTrue(resources.getRandomCapacity() >= 100.0);
+        assertTrue(resources.getRandomThroughput() >= 100.0);
+        assertTrue(resources.getStreamingThroughput() >= 100.0);
     }
 
     @Test
     public void testCreateReservation() throws Exception {
         SchedulerServiceClient schedulerClient = testEnv.getSchedulerClient();
-        Scheduler.reservation res = Scheduler.reservation.newBuilder().setCapacity(10.0)
-                .setRandomThroughput(10.0).setType(Scheduler.reservationType.RANDOM_IO_RESERVATION)
+        Scheduler.reservation res = Scheduler.reservation.newBuilder().setCapacity(200000.0)
+                .setStreamingThroughput(5.0).setType(Scheduler.reservationType.STREAMING_RESERVATION)
                 .setVolume(Scheduler.volumeIdentifier.newBuilder().setUuid("test").build()).build();
         Scheduler.osdSet osds = schedulerClient.scheduleReservation(null, RPCAuthentication.authNone,
                 RPCAuthentication.userService, res).get();
         assertTrue(osds.getOsdCount() > 0);
+        assertTrue(osds.getOsd(0).getUuid().equals("osd-hdd-maia01"));
+
+        res = Scheduler.reservation.newBuilder().setCapacity(100000.0)
+                .setStreamingThroughput(200.0).setType(Scheduler.reservationType.STREAMING_RESERVATION)
+                .setVolume(Scheduler.volumeIdentifier.newBuilder().setUuid("test2").build()).build();
+        osds = schedulerClient.scheduleReservation(null, RPCAuthentication.authNone,
+                RPCAuthentication.userService, res).get();
+        assertTrue(osds.getOsdCount() > 0);
+        assertTrue(osds.getOsd(0).getUuid().equals("osd-ssd-maia01"));
     }
 }
