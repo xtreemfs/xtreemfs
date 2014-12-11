@@ -82,8 +82,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.unlinkRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.unlinkResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_suitable_osdsRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_suitable_osdsResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_xlocsetRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addRequest;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_listRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request;
@@ -1343,22 +1343,25 @@ public class VolumeImplementation implements Volume, AdminVolume {
     @Override
     public Replicas listReplicas(UserCredentials userCredentials, String path) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException {
-        xtreemfs_replica_listRequest request = xtreemfs_replica_listRequest.newBuilder()
+        xtreemfs_get_xlocsetRequest request = xtreemfs_get_xlocsetRequest.newBuilder()
                 .setVolumeName(volumeName).setPath(path).build();
 
-        Replicas response = RPCCaller.<xtreemfs_replica_listRequest, Replicas> syncCall(SERVICES.MRC,
+        XLocSet xlocset = RPCCaller.<xtreemfs_get_xlocsetRequest, XLocSet> syncCall(SERVICES.MRC,
                 userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                new CallGenerator<xtreemfs_replica_listRequest, Replicas>() {
+                new CallGenerator<xtreemfs_get_xlocsetRequest, XLocSet>() {
                     @Override
-                    public RPCResponse<Replicas> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, xtreemfs_replica_listRequest input) throws IOException {
-                        return mrcServiceClient.xtreemfs_replica_list(server, authHeader, userCreds, input);
+                    public RPCResponse<XLocSet> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, xtreemfs_get_xlocsetRequest input) throws IOException {
+                        return mrcServiceClient.xtreemfs_get_xlocset(server, authHeader, userCreds, input);
                     }
                 });
 
-        assert (response != null);
+        assert (xlocset != null);
 
-        return response;
+        Replicas.Builder replicas = Replicas.newBuilder();
+        replicas.addAllReplicas(xlocset.getReplicasList());
+
+        return replicas.build();
     }
 
     /*

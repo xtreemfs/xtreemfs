@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Wed Nov 12 13:55:48 CET 2014
+//automatically generated from MRC.proto at Thu Dec 11 16:09:40 CET 2014
 //(c) 2014. See LICENSE file for details.
 
 #ifndef MRCSERVICECLIENT_H
@@ -953,7 +953,7 @@ namespace pbrpc {
             void xtreemfs_get_xlocset(const std::string &address,
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds,
-                const xtreemfs::pbrpc::XCap* request,
+                const xtreemfs::pbrpc::xtreemfs_get_xlocsetRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::XLocSet> *callback, void *context = NULL) {
                 const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 51,
@@ -964,7 +964,7 @@ namespace pbrpc {
             SyncCallback<xtreemfs::pbrpc::XLocSet>* xtreemfs_get_xlocset_sync(const std::string &address,
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
-                , const xtreemfs::pbrpc::XCap* request) {
+                , const xtreemfs::pbrpc::xtreemfs_get_xlocsetRequest* request) {
                 const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::XLocSet>* sync_cb = new SyncCallback<xtreemfs::pbrpc::XLocSet>();
                 client_->sendRequest(address, 20001, 51,

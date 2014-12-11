@@ -514,13 +514,24 @@ message xtreemfs_replica_addRequest {
   required Replica new_replica = 2;
 }
 
-// requests a list of all replicas of a file
+// requests a list of all replicas of a file (deprecated)
 message xtreemfs_replica_listRequest {
   // the file ID
   optional string file_id = 1;
   // or path and volume_name to file.
   optional string path = 2;
   optional string volume_name = 3;
+}
+
+// requests the xLocSet of a file
+message xtreemfs_get_xlocsetRequest {
+  // the file ID
+  optional string file_id = 1;
+  // or path and volume_name to file
+  optional string path = 2;
+  optional string volume_name = 3;
+  // or a valid XCap.
+  optional XCap xcap = 4;
 }
 
 // removes a replica from a file
@@ -754,7 +765,7 @@ service MRCService {
     option(proc_id)=39;
   };
 
-  // lists all replicas of a file
+  // lists all replicas of a file (deprecated)
   rpc xtreemfs_replica_list(xtreemfs_replica_listRequest) returns(Replicas) {
     option(proc_id)=40;
   };
@@ -804,8 +815,8 @@ service MRCService {
     option(proc_id)=50;	  
   }; 
 
-  // Returns the current xLocSet for the file specified in the capability.
-  rpc xtreemfs_get_xlocset(XCap) returns(XLocSet) {
+  // Returns the current xLocSet for the specified file.
+  rpc xtreemfs_get_xlocset(xtreemfs_get_xlocsetRequest) returns(XLocSet) {
     option(proc_id)=51;
   };
 }

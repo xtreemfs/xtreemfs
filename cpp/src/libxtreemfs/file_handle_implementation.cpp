@@ -1143,8 +1143,9 @@ void FileHandleImplementation::RenewXLocSet() {
     file_info_->GetXLocSet(&xlocset_current);
     if (xlocset_current.version() <= xlocset_to_renew.version()) {
       // Build the request and call the MRC synchronously.
-      XCap xcap;
-      GetXCap(&xcap);
+      xtreemfs_get_xlocsetRequest request;
+      XCap* xcap_in_req = request.mutable_xcap();
+      GetXCap(xcap_in_req);
 
       boost::scoped_ptr<rpc::SyncCallbackBase> response(
           ExecuteSyncRequest(
@@ -1154,13 +1155,13 @@ void FileHandleImplementation::RenewXLocSet() {
                   _1,
                   boost::cref(auth_bogus_),
                   boost::cref(user_credentials_bogus_),
-                  &xcap),
+                  &request),
               mrc_uuid_iterator_,
               uuid_resolver_,
               RPCOptionsFromOptions(volume_options_),
               false,
               &xcap_manager_,
-              &xcap));
+              xcap_in_req));
 
       xtreemfs::pbrpc::XLocSet* xlocset_new =
           static_cast<xtreemfs::pbrpc::XLocSet*>(response->response());

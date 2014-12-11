@@ -45,6 +45,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.timestampResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_xlocsetRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_update_file_sizeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
@@ -1358,14 +1359,16 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
             if (xLocSetCurrent.getVersion() <= xLocSetToRenew.getVersion()) {
                 // The xCap is required to prevent unauthorized access to the XLocSet.
                 XCap xCap = getXcap();
+                xtreemfs_get_xlocsetRequest request = xtreemfs_get_xlocsetRequest.newBuilder().setXcap(xCap).build();
 
-                XLocSet newXLocSet = RPCCaller.<XCap, XLocSet> syncCall(SERVICES.MRC, userCredentialsBogus, authBogus,
-                        volumeOptions, uuidResolver, mrcUuidIterator, false, false, 1, xCap,
-                        new CallGenerator<XCap, XLocSet>() {
+                XLocSet newXLocSet = RPCCaller.<xtreemfs_get_xlocsetRequest, XLocSet> syncCall(SERVICES.MRC,
+                        userCredentialsBogus, authBogus, volumeOptions, uuidResolver, mrcUuidIterator, false, false, 1,
+                        request, new CallGenerator<xtreemfs_get_xlocsetRequest, XLocSet>() {
 
                             @Override
                             public RPCResponse<XLocSet> executeCall(InetSocketAddress server, Auth authHeader,
-                                    UserCredentials userCreds, XCap input) throws IOException, PosixErrorException {
+                                    UserCredentials userCreds, xtreemfs_get_xlocsetRequest input) throws IOException,
+                                    PosixErrorException {
                                 return mrcServiceClient.xtreemfs_get_xlocset(server, authHeader, userCreds, input);
                             }
                         });
