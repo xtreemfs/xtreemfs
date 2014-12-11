@@ -89,7 +89,8 @@ public class SSLOptions {
     /**
      * Protocol to use when creating the SSL Context
      */
-    private final String       sslProtocol;
+    private final String        sslProtocol;
+    private final static String DEFAULT_SSL_PROTOCOL = "TLS";
     
     public SSLOptions(InputStream serverCredentialFile, String serverCredentialFilePassphrase,
         String serverCredentialFileContainer, InputStream trustedCertificatesFile,
@@ -117,7 +118,7 @@ public class SSLOptions {
         
         this.useFakeSSLMode = useFakeSSLMode;
 
-        sslProtocol = sslProtocolStringToProtocol(sslProtocolString, "TLS");
+        sslProtocol = sslProtocolStringToProtocol(sslProtocolString);
         
         sslContext = createSSLContext(trustManager);
     }
@@ -160,7 +161,16 @@ public class SSLOptions {
                 }
             }
             
-            sslContext = SSLContext.getInstance(sslProtocol);
+            try {
+                sslContext = SSLContext.getInstance(sslProtocol);
+            } catch (NoSuchAlgorithmException e) {
+                Logging.logMessage(Logging.LEVEL_WARN, this, "Unsupported algorithm '%s', defaulting to '%s'.",
+                                   sslProtocol, DEFAULT_SSL_PROTOCOL);
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "%s:\n%s", e.getMessage(), OutputUtils.stackTraceToString(e));
+                }
+                sslContext = SSLContext.getInstance(DEFAULT_SSL_PROTOCOL);
+            }
             
             if (trustManager != null) {
                 // if a user-defined trust manager is set ...
@@ -266,7 +276,7 @@ public class SSLOptions {
         }
     }
     
-    private String sslProtocolStringToProtocol(String sslProtocolString, String defaultSSLProtocol) {
+    private String sslProtocolStringToProtocol(String sslProtocolString) {
         // SSL Context Protocol Strings:
         // JDK 6: SSL, SSLv2, SSLv3, TLS, TLSv1
         // additionally in JDK 7: TLSv1.2
@@ -284,8 +294,8 @@ public class SSLOptions {
         } else {
             Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
                                "Unknown SSL Context Protocol: '%s', defaulting to '%s'.",
-                               sslProtocolString, defaultSSLProtocol);
-            return defaultSSLProtocol;
+                               sslProtocolString, DEFAULT_SSL_PROTOCOL);
+            return DEFAULT_SSL_PROTOCOL;
         }
     }
     
