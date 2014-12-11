@@ -35,6 +35,7 @@ public class MRCConfig extends ServiceConfig {
             Parameter.LOCAL_CLOCK_RENEW,
             Parameter.REMOTE_TIME_SYNC,
             Parameter.USE_SSL,
+            Parameter.SSL_PROTOCOL_STRING,
             Parameter.SERVICE_CREDS_FILE,
             Parameter.SERVICE_CREDS_PASSPHRASE,
             Parameter.SERVICE_CREDS_CONTAINER,

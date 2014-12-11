@@ -381,6 +381,7 @@ public class xtfs_scrub {
                     if(trustedCAsPass != null && trustedCAsPass.equals("-")) {
                     	trustedCAsPass = new String(System.console().readPassword("Enter trust store password: "));
                     }
+                    String sslProtocolString = options.get(utils.OPTION_SSL_PROTOCOL).stringValue;
                     if (dirURL.contains(Schemes.SCHEME_PBRPCG + "://")) {
                         gridSSL = true;
                     }
@@ -401,7 +402,8 @@ public class xtfs_scrub {
                     try {
                         sslOptions = new SSLOptions(new FileInputStream(serviceCredsFile), serviceCredsPass,
                                 SSLOptions.PKCS12_CONTAINER, new FileInputStream(trustedCAsFile),
-                                trustedCAsPass, SSLOptions.JKS_CONTAINER, false, gridSSL, null);
+                                trustedCAsPass, SSLOptions.JKS_CONTAINER, false, gridSSL, sslProtocolString,
+                                null);
                     } catch (Exception e) {
                         System.err.println("unable to set up SSL, because:" + e.getMessage());
                         System.exit(1);

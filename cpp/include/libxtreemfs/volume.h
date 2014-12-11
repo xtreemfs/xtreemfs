@@ -496,12 +496,14 @@ class Volume {
       const std::string& path,
       const std::string& osd_uuid) = 0;
 
-  /** Adds to "list_of_osd_uuids" up to "number_of_osds" UUIDs of all available
-   *  OSDs where the file (described by "path") can be placed.
+  /** Adds all available OSDs where the file (described by "path") can be
+   *  placed to "list_of_osd_uuids"
    *
    * @param user_credentials    Username and groups of the user.
    * @param path                Path to the file.
-   * @param number_of_osds      Maximum number of OSDs which will be returned.
+   * @param number_of_osds      Number of OSDs required in a valid group. This
+   *                            is only relevant for grouping and will be
+   *                            ignored by filtering and sorting policies.
    * @param list_of_osd_uuids[out]  List of strings to which the UUIDs will be
    *                                appended.
    *

@@ -46,6 +46,7 @@ public class ServiceConfig extends Config {
         HTTP_PORT("http_port", null, Integer.class, true),
         LISTEN_ADDRESS("listen.address", null, InetAddress.class, false),
         USE_SSL("ssl.enabled", false, Boolean.class, false),
+        SSL_PROTOCOL_STRING("ssl.protocol", "ssltls", String.class, false),
         SERVICE_CREDS_FILE("ssl.service_creds", null, String.class, false ),
         SERVICE_CREDS_PASSPHRASE("ssl.service_creds.pw", null, String.class, false),
         SERVICE_CREDS_CONTAINER("ssl.service_creds.container", null, String.class, false),
@@ -646,6 +647,10 @@ public class ServiceConfig extends Config {
     public boolean isGRIDSSLmode() {
         return parameter.get(Parameter.USE_GRID_SSL_MODE) != null
                 && (Boolean) parameter.get(Parameter.USE_GRID_SSL_MODE);
+    }
+    
+    public String getSSLProtocolString() {
+        return (String) parameter.get(Parameter.SSL_PROTOCOL_STRING);
     }
 
     public int getWaitForDIR() {
