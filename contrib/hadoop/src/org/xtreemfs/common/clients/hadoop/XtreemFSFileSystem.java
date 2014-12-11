@@ -134,6 +134,7 @@ public class XtreemFSFileSystem extends FileSystem {
             String trustedCertificatesFilePassphrase = conf.get("xtreemfs.ssl.trustedCertificatesFile.passphrase");
             String trustedCertificatesFileContainer = null;
             FileInputStream trustedCertificatesFile = null;
+            String sslProtocolString = conf.get("xtreemfs.ssl.protocol", "ssltls");
             if (trustedCertificatesFilePath == null) {
                 trustedCertificatesFileContainer = "none";
             } else {
@@ -144,7 +145,7 @@ public class XtreemFSFileSystem extends FileSystem {
             sslOptions = new SSLOptions(credentialFile, credentialFilePassphrase,
                     SSLOptions.PKCS12_CONTAINER, trustedCertificatesFile, trustedCertificatesFilePassphrase,
                     trustedCertificatesFileContainer, conf.getBoolean("xtreemfs.ssl.authenticationWithoutEncryption",
-                            false), false, null);
+                            false), false, sslProtocolString, null);
         }
 
         // Initialize XtreemFS Client with default Options.
