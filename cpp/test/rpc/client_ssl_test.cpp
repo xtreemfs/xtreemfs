@@ -1005,7 +1005,7 @@ protected:
               strcmp(server_ssl_method_string, "tlsv11") == 0) {
             assert_no_ssl_tls_in_log(ex);
           } else if (strcmp(server_ssl_method_string, "tlsv12") == 0 ||
-              strcmp(server_ssl_method_string, "ssltls") == 0) {
+                     strcmp(server_ssl_method_string, "ssltls") == 0) {
             assert_ssl_tls_in_log("TLSv1.2", ex);
           } else {
             FAIL() << "Unsupported server SSL method.";
