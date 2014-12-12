@@ -45,6 +45,11 @@ public class SSLOptions {
     public final static String PKCS12_CONTAINER = "PKCS12";
     
     /**
+     * Default SSL/TLS Protocol to use when no or an invalid protocol was specified
+     */
+    public final static String DEFAULT_SSL_PROTOCOL = "TLS";
+    
+    /**
      * file with the private key and the public cert for the server
      */
     private final InputStream  serverCredentialFile;
@@ -86,12 +91,6 @@ public class SSLOptions {
     
     private final boolean      useFakeSSLMode;
     
-    /**
-     * Protocol to use when creating the SSL Context
-     */
-    private final String        sslProtocol;
-    private final static String DEFAULT_SSL_PROTOCOL = "TLS";
-    
     public SSLOptions(InputStream serverCredentialFile, String serverCredentialFilePassphrase,
         String serverCredentialFileContainer, InputStream trustedCertificatesFile,
         String trustedCertificatesFilePassphrase, String trustedCertificatesFileContainer,
@@ -117,10 +116,8 @@ public class SSLOptions {
         this.authenticationWithoutEncryption = authenticationWithoutEncryption;
         
         this.useFakeSSLMode = useFakeSSLMode;
-
-        sslProtocol = sslProtocolStringToProtocol(sslProtocolString);
         
-        sslContext = createSSLContext(trustManager);
+        sslContext = createSSLContext(sslProtocolStringToProtocol(sslProtocolString), trustManager);
     }
     
     /**
@@ -132,7 +129,7 @@ public class SSLOptions {
      * @return the created and initialized SSLContext
      * @throws IOException
      */
-    private SSLContext createSSLContext(TrustManager trustManager) throws IOException {
+    private SSLContext createSSLContext(String sslProtocol, TrustManager trustManager) throws IOException {
         SSLContext sslContext = null;
         try {
             // First initialize the key and trust material.
@@ -251,13 +248,14 @@ public class SSLOptions {
     }
     
     public String getSSLProtocol() {
-        return sslProtocol;
+        return sslContext.getProtocol();
     }
     
     public boolean isSSLEngineProtocolSupported(String sslEngineProtocol) {
         // Protocol names in JDK 5, 6: SSLv2Hello, SSLv3, TLSv1
         // Additionally in JDK 7, 8: TLSv1.2
         // TLSv1.1 seems to depend on the vendor
+        String sslProtocol = getSSLProtocol();
         if ("SSLv3".equals(sslProtocol)) {
             return "SSLv3".equals(sslEngineProtocol);
         } else if ("TLS".equals(sslProtocol)) {
