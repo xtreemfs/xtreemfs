@@ -73,7 +73,7 @@ public class SetupUtils {
         props.setProperty("local_clock_renewal", "0");
         props.setProperty("remote_time_sync", "60000");
         props.setProperty("ssl.enabled", "" + SSL_ON);
-        props.setProperty("ssl.protocol", "ssltls");
+        props.setProperty("ssl.protocol", null);
         props.setProperty("ssl.service_creds", CERT_DIR + "OSD.p12");
         props.setProperty("ssl.service_creds.pw", "passphrase");
         props.setProperty("ssl.service_creds.container", "pkcs12");
@@ -155,7 +155,7 @@ public class SetupUtils {
         props.setProperty("http_port", new Integer(30638 + PORT_RANGE_OFFSET).toString());
         props.setProperty("uuid", "UUID:localhost:" + new Integer(32638 + PORT_RANGE_OFFSET).toString());
         props.setProperty("ssl.enabled", "" + SSL_ON);
-        props.setProperty("ssl.protocol", "ssltls");
+        props.setProperty("ssl.protocol", null);
         props.setProperty("ssl.service_creds", CERT_DIR + "DIR.p12");
         props.setProperty("ssl.service_creds.pw", "passphrase");
         props.setProperty("ssl.service_creds.container", "pkcs12");
@@ -207,7 +207,7 @@ public class SetupUtils {
         props.setProperty("local_clock_renewal", "0");
         props.setProperty("remote_time_sync", "60000");
         props.setProperty("ssl.enabled", "" + SSL_ON);
-        props.setProperty("ssl.protocol", "ssltls");
+        props.setProperty("ssl.protocol", null);
         props.setProperty("ssl.service_creds", CERT_DIR + "MRC.p12");
         props.setProperty("ssl.service_creds.pw", "passphrase");
         props.setProperty("ssl.service_creds.container", "pkcs12");
@@ -260,7 +260,7 @@ public class SetupUtils {
         props.setProperty("local_clock_renewal", "0");
         props.setProperty("remote_time_sync", "60000");
         props.setProperty("ssl.enabled", "" + SSL_ON);
-        props.setProperty("ssl.protocol", "ssltls");
+        props.setProperty("ssl.protocol", null);
         props.setProperty("ssl.service_creds", CERT_DIR + "MRC.p12");
         props.setProperty("ssl.service_creds.pw", "passphrase");
         props.setProperty("ssl.service_creds.container", "pkcs12");
@@ -377,7 +377,7 @@ public class SetupUtils {
     public static SSLOptions createClientSSLOptions() throws IOException, FileNotFoundException {
         return new SSLOptions(new FileInputStream(CERT_DIR + "Client.p12"), "passphrase", SSLOptions.PKCS12_CONTAINER,
                 new FileInputStream(CERT_DIR + "trusted.jks"), "passphrase", SSLOptions.JKS_CONTAINER, false, false,
-                "ssltls", null);
+                null, null);
     }
     
     static DIRServiceClient createDIRClient(RPCNIOSocketClient client) throws IOException {
