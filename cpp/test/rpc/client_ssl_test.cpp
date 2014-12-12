@@ -830,7 +830,7 @@ protected:
     size_t ssl_error = ex.find(
         "could not connect to host 'localhost:48636': asio.ssl error");
     size_t timeout = ex.find(
-        "Error: connection to 'localhost:48636' timed out.");
+        "connection to 'localhost:48636' timed out");
     ASSERT_TRUE(ssl_error != std::string::npos || timeout != std::string::npos);
   }
   
