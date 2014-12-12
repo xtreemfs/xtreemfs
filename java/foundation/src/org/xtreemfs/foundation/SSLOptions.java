@@ -292,9 +292,11 @@ public class SSLOptions {
         } else if ("tlsv12".equals(sslProtocolString)) {
             return "TLSv1.2";
         } else {
-            Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
-                               "Unknown SSL Context Protocol: '%s', defaulting to '%s'.",
-                               sslProtocolString, DEFAULT_SSL_PROTOCOL);
+            if (sslProtocolString != null) {
+                Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
+                                   "Unknown SSL Context Protocol: '%s', defaulting to '%s'.",
+                                   sslProtocolString, DEFAULT_SSL_PROTOCOL);
+            }
             return DEFAULT_SSL_PROTOCOL;
         }
     }
