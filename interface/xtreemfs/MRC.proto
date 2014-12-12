@@ -467,7 +467,8 @@ message xtreemfs_get_suitable_osdsRequest {
   // or path and volume_name to file.
   optional string path = 3;
   optional string volume_name = 4;
-  // the number of OSDs for the new replicas
+  // the number of OSDs required in a valid group
+  // ignored by filtering and sorting policies
   required fixed32 num_osds = 2;
 }
 
