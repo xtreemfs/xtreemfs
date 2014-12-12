@@ -940,6 +940,7 @@ protected:
               assert_no_ssl_tls_in_log(ex);
             } else {
               FAIL() << "Unsupported server SSL method.";
+            }
           }
         }
       } else {
