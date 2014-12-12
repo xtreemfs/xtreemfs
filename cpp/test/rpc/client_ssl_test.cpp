@@ -825,9 +825,13 @@ protected:
   }
   
   void assert_no_ssl_tls_in_log(std::string ex) {
-    ASSERT_NE(
-        std::string::npos,
-        ex.find("could not connect to host 'localhost:48636': asio.ssl error"));
+    // Different errors depending on boost version and client/server SSL/TLS
+    // versions.
+    size_t ssl_error = ex.find(
+        "could not connect to host 'localhost:48636': asio.ssl error");
+    size_t timeout = ex.find(
+        "Error: connection to 'localhost:48636' timed out.");
+    ASSERT_TRUE(ssl_error != std::string::npos || timeout != std::string::npos);
   }
   
   void assert_ssl_tls_in_log_or_nothing(std::string ssl_tls, std::string ex) {
