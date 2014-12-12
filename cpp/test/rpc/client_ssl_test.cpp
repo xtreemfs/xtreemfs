@@ -915,14 +915,12 @@ protected:
         }
       }
     } else {
-#if (BOOST_VERSION < 104800 || \
-    (BOOST_VERSION >= 104800 && OPENSSL_VERSION_NUMBER < 0x1000100fL))
-      /* Boost < 1.48 supports SSLv3 and TLSv1.
-       * Boost >= 1.48 supports whatever OpenSSL supports.
-       * OpenSSL < 1.0.1 supports SSLv3 and TLSv1.
+#if (OPENSSL_VERSION_NUMBER < 0x1000100fL)
+      /* OpenSSL < 1.0.1 supports SSLv3 and TLSv1 only. This implies a Boost
+       * version smaller than 1.54, in which case tlsv11 and tlsv12 default to
+       * ssltls behavior in the client.
        */
 
-      // In this case, tlsv11 and tlsv12 default to ssltls for the client.
       if (strcmp(client_ssl_method_string, "tlsv11") == 0 ||
           strcmp(client_ssl_method_string, "tlsv12") == 0 ||
           strcmp(client_ssl_method_string, "ssltls") == 0) {
@@ -950,12 +948,22 @@ protected:
       } else {
         FAIL() << "Unsupported client SSL method.";
       }
-#else  // Boost < 1.48 || (Boost >= 1.48 && OpenSSL < 1.0.1)
+#else  // OPENSSL_VERSION_NUMBER < 0x1000100fL
       /* The client is capable of all methods, now it depends on the Java version
-       * of the servers, see above.
+       * of the servers, see above. Boost >= 1.54 can enforce TLSv1.1 and TLSv1.2.
+       * Note that this does not imply a Boost version >= 1.54 here. For smaller
+       * Boost versions, tlsv11 and tlsv12 default to ssltls behavior in the client.
        */
+      
+      bool ssltls_behavior;
+#if (BOOST_VERSION >= 105400)
+      ssltls_behavior = false;
+#else  // BOOST_VERSION >= 105400
+      ssltls_behavior = true;
+#endif  // BOOST_VERSION >= 105400
 
-      if (strcmp(client_ssl_method_string, "tlsv11") == 0) {
+      if (strcmp(client_ssl_method_string, "tlsv11") == 0 &&
+          !ssltls_behavior) {
         if (java_major_version_ == 6) {
           if (strcmp(server_ssl_method_string, "sslv3") == 0 ||
               strcmp(server_ssl_method_string, "tlsv1") == 0) {
@@ -979,7 +987,8 @@ protected:
             FAIL() << "Unsupported server SSL method.";
           }
         }
-      } else if (strcmp(client_ssl_method_string, "tlsv12") == 0) {
+      } else if (strcmp(client_ssl_method_string, "tlsv12") == 0 &&
+                 !ssltls_behavior) {
         if (java_major_version_ == 6) {
           if (strcmp(server_ssl_method_string, "sslv3") == 0 ||
               strcmp(server_ssl_method_string, "tlsv1") == 0 ||
@@ -1002,7 +1011,8 @@ protected:
             FAIL() << "Unsupported server SSL method.";
           }
         }
-      } else if (strcmp(client_ssl_method_string, "ssltls") == 0) {
+      } else if (strcmp(client_ssl_method_string, "ssltls") == 0 ||
+                 ssltls_behavior) {
         if (strcmp(server_ssl_method_string, "sslv3") == 0) {
           assert_ssl_tls_in_log("SSLv3", ex);
         } else if (strcmp(server_ssl_method_string, "tlsv1") == 0) {
@@ -1030,7 +1040,7 @@ protected:
       } else {
         FAIL() << "Unsupported client SSL method.";
       }
-#endif  // Boost < 1.48 || (Boost >= 1.48 && OpenSSL < 1.0.1)
+#endif  // // OPENSSL_VERSION_NUMBER < 0x1000100fL
     }
   }
   
