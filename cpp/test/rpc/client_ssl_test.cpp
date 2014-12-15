@@ -829,17 +829,26 @@ protected:
     // versions.
     size_t ssl_error = ex.find(
         "could not connect to host 'localhost:48636': asio.ssl error");
-    size_t timeout = ex.find(
+    size_t c_timeout = ex.find(
         "connection to 'localhost:48636' timed out");
-    ASSERT_TRUE(ssl_error != std::string::npos || timeout != std::string::npos);
+    size_t r_timeout = ex.find("Request timed out");
+    ASSERT_TRUE(ssl_error != std::string::npos ||
+                c_timeout != std::string::npos ||
+                r_timeout != std::string::npos);
   }
   
   void assert_ssl_tls_in_log_or_nothing(std::string ssl_tls, std::string ex) {
     size_t c1 = count_occurrences_in_file(
         options_.log_file_path, "Using SSL/TLS version '" + ssl_tls + "'.");
-    size_t c2 =
-        ex.find("could not connect to host 'localhost:48636': asio.ssl error");
-    ASSERT_TRUE(c1 == 2 || c2 != std::string::npos);
+    size_t ssl_error = ex.find(
+        "could not connect to host 'localhost:48636': asio.ssl error");
+    size_t c_timeout = ex.find(
+        "connection to 'localhost:48636' timed out");
+    size_t r_timeout = ex.find("Request timed out");
+    ASSERT_TRUE(c1 == 2 ||
+                ssl_error != std::string::npos ||
+                c_timeout != std::string::npos ||
+                r_timeout != std::string::npos);
   }
   
   void assert_ssl_tls_in_log_or_other(std::string ssl_tls1, std::string ssl_tls2,
@@ -1029,9 +1038,13 @@ protected:
           } else {
             if (strcmp(server_ssl_method_string, "tlsv11") == 0) {
               assert_ssl_tls_in_log("TLSv1.1", ex);
-            } else if (strcmp(server_ssl_method_string, "tlsv12") == 0 ||
-                       strcmp(server_ssl_method_string, "ssltls") == 0) {
-              assert_ssl_tls_in_log("TLSv1.2", ex);
+            } else if (strcmp(server_ssl_method_string, "tlsv12") == 0) {
+              // In Ubuntu 12.04 TLSv1.2 is disabled by default, so maybe
+              // expect a fail here.
+              assert_ssl_tls_in_log_or_nothing("TLSv1.2", ex);
+            } else if (strcmp(server_ssl_method_string, "ssltls") == 0) {
+              // Ubuntu 12.04 only goes up to TLSv1.1
+              assert_ssl_tls_in_log_or_other("TLSv1.2", "TLSv1.1", ex);
             } else {
               FAIL() << "Unsupported server SSL method.";
             }
@@ -1040,7 +1053,7 @@ protected:
       } else {
         FAIL() << "Unsupported client SSL method.";
       }
-#endif  // // OPENSSL_VERSION_NUMBER < 0x1000100fL
+#endif  // OPENSSL_VERSION_NUMBER < 0x1000100fL
     }
   }
   
