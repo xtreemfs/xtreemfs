@@ -152,7 +152,7 @@ if (NOT Boost_FOUND)
 endif(NOT Boost_FOUND)
 include_directories(${Boost_INCLUDE_DIRS})
 
-find_package(OpenSSL QUIET)
+find_package(OpenSSL)
 if (NOT OPENSSL_FOUND)
 # OpenSSL find_package script cannot cope with /usr/lib64 directory under Cmake 2.8.3.
   set(LIBCRYPTO "crypto")
