@@ -131,7 +131,7 @@ public:
       
       // execve does not return control upon successful completion.
       execve((java_home_ + "bin/java").c_str(), argv_, envp);
-      return false;
+      exit(errno);
     } else {
       /* This block is executed by the parent. */
       
@@ -154,7 +154,12 @@ public:
               "Could not read log file '" + log_file_name_ + "'.");
         }
         
-        service_alive = kill(0, service_pid_) == 0;
+        // Read status of child process using wait because otherwise it would
+        // remain in the process table, even if exited to allow the parent to
+        // read the exit status using wait.
+        int status;
+        waitpid(service_pid_, &status, WNOHANG);
+        service_alive = !WIFEXITED(status);
       }
       close(log_fd);
       
