@@ -215,6 +215,9 @@ void ClientConnection::PostResolve(const boost::system::error_code& err,
           << (*endpoint_iterator).host_name() << endl;
     }
 
+    if (endpoint_ != NULL) {
+      delete endpoint_;
+    }
     endpoint_ = new tcp::endpoint(*endpoint_iterator);
 
     timer_.expires_from_now(posix_time::seconds(connect_timeout_s_));
