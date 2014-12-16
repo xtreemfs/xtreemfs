@@ -909,8 +909,6 @@ protected:
     } catch (xtreemfs::IOException& e) {
       ex = e.what();
     }
-
-    std::cerr << "Ex: '" << ex << "'" << std::endl;
     
     /* JDK 6 supports SSLv3, TLSv1 and possibly TLSv11. If it is set to TLSv11
      * but does not support it, it will default to TLS which supports all
