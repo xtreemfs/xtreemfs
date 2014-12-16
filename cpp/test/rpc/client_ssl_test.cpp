@@ -158,8 +158,10 @@ public:
         // remain in the process table, even if exited to allow the parent to
         // read the exit status using wait.
         int status;
-        waitpid(service_pid_, &status, WNOHANG);
-        service_alive = !WIFEXITED(status);
+        pid_t p = waitpid(service_pid_, &status, WNOHANG);
+        if (p == service_pid_) {
+          service_alive = !WIFEXITED(status);
+        }
       }
       close(log_fd);
       
