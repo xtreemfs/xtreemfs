@@ -10,15 +10,18 @@
 #include <gtest/gtest.h>
 
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/asio.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
 #include <cerrno>
 #include <fcntl.h>
 #include <fstream>
+#include <signal.h>
 #include <stdio.h>
 #include <stdexcept>
 #include <string>
 #include <openssl/opensslv.h>
+#include <boost/asio/deadline_timer.hpp>
 
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/client_implementation.h"
@@ -75,6 +78,17 @@ public:
     classpath_ += ":../../java/lib/*";
   }
       
+  void cleanup() {
+    service_pid_ = -1;
+    if (argv_ != NULL) {
+      for (size_t i = 0; i < 6; ++i) {
+        free(argv_[i]);
+      }
+      delete[] argv_;
+      argv_ = NULL;
+    }
+  }
+  
   int JavaMajorVersion() {
     // java -version prints to stderr
     FILE *pipe = popen((java_home_ + "bin/java -version 2>&1").c_str(), "r");
@@ -92,7 +106,7 @@ public:
     return atoi(output.substr(a + 1, b - a - 1).c_str());
   }
   
-  void Start() {
+  bool Start() {
     argv_ = new char*[7];
     argv_[0] = strdup((java_home_ + "bin/java").c_str());
     argv_[1] = strdup("-ea");
@@ -117,7 +131,7 @@ public:
       
       // execve does not return control upon successful completion.
       execve((java_home_ + "bin/java").c_str(), argv_, envp);
-      exit(errno);
+      return false;
     } else {
       /* This block is executed by the parent. */
       
@@ -126,9 +140,11 @@ public:
       while ((log_fd = open(log_file_name_.c_str(), O_RDONLY)) == -1)
         ;
       
-      // Listen to the log file until the startup phrase has occurred.
+      // Listen to the log file until the startup phrase has occurred
+      // and the service process is still running.
       std::string output("");
-      while (output.find(startup_phrase_) == std::string::npos) {
+      bool service_alive = true;
+      while (output.find(startup_phrase_) == std::string::npos && service_alive) {
         char buffer[1024];
         ssize_t n = read(log_fd, buffer, sizeof(buffer));
         if (n > 0) {
@@ -137,9 +153,19 @@ public:
           throw std::runtime_error(
               "Could not read log file '" + log_file_name_ + "'.");
         }
+        
+        service_alive = kill(0, service_pid_) == 0;
       }
       close(log_fd);
+      
+      if (!service_alive) {
+        std::cerr << service_class_ << " did not start properly: " << errno
+            << std::endl;
+        cleanup();
+        return false;
+      }
     }
+    return true;
   }
   
   void Shutdown() {
@@ -148,12 +174,7 @@ public:
       // for completion.
       kill(service_pid_, 2);
       waitpid(service_pid_, NULL, 0);
-      service_pid_ = -1;
-      
-      for (size_t i = 0; i < 6; ++i) {
-        free(argv_[i]);
-      }
-      delete[] argv_;
+      cleanup();
     }
   }
 
@@ -212,11 +233,11 @@ protected:
     osd_log_file_name_ = options_.log_file_path + "_osd";
     
     external_dir_.reset(new ExternalDIR(dir_config_file_, dir_log_file_name_));
-    external_dir_->Start();
+    ASSERT_TRUE(external_dir_->Start());
     external_mrc_.reset(new ExternalMRC(mrc_config_file_, mrc_log_file_name_));
-    external_mrc_->Start();
+    ASSERT_TRUE(external_mrc_->Start());
     external_osd_.reset(new ExternalOSD(osd_config_file_, osd_log_file_name_));
-    external_osd_->Start();
+    ASSERT_TRUE(external_osd_->Start());
     
     auth_.set_auth_type(AUTH_NONE);
     user_credentials_.set_username("client_ssl_test");
@@ -235,11 +256,18 @@ protected:
   }
 
   virtual void TearDown() {
-    client_->Shutdown();
-    
-    external_osd_->Shutdown();
-    external_mrc_->Shutdown();
-    external_dir_->Shutdown();
+    if (client_.get() != NULL) {
+      client_->Shutdown();
+    }
+    if (external_osd_.get() != NULL) {
+      external_osd_->Shutdown();
+    }
+    if (external_mrc_.get() != NULL) {
+      external_mrc_->Shutdown();
+    }
+    if (external_dir_.get() != NULL) {
+      external_dir_->Shutdown();
+    }
   }
   
   void CreateOpenDeleteVolume(std::string volume_name) {
