@@ -832,9 +832,12 @@ protected:
     size_t c_timeout = ex.find(
         "connection to 'localhost:48636' timed out");
     size_t r_timeout = ex.find("Request timed out");
+    size_t connect_error = ex.find(
+        "cannot connect to server 'localhost:48636'");
     ASSERT_TRUE(ssl_error != std::string::npos ||
                 c_timeout != std::string::npos ||
-                r_timeout != std::string::npos);
+                r_timeout != std::string::npos ||
+                connect_error != std::string::npos);
   }
   
   void assert_ssl_tls_in_log_or_nothing(std::string ssl_tls, std::string ex) {
@@ -845,10 +848,13 @@ protected:
     size_t c_timeout = ex.find(
         "connection to 'localhost:48636' timed out");
     size_t r_timeout = ex.find("Request timed out");
+    size_t connect_error = ex.find(
+        "cannot connect to server 'localhost:48636'");
     ASSERT_TRUE(c1 == 2 ||
                 ssl_error != std::string::npos ||
                 c_timeout != std::string::npos ||
-                r_timeout != std::string::npos);
+                r_timeout != std::string::npos ||
+                connect_error != std::string::npos);
   }
   
   void assert_ssl_tls_in_log_or_other(std::string ssl_tls1, std::string ssl_tls2,
