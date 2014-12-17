@@ -275,6 +275,13 @@ protected:
     if (external_dir_.get() != NULL) {
       external_dir_->Shutdown();
     }
+    
+    if (!HasFailure()) {
+      unlink(options_.log_file_path.c_str());
+      unlink(dir_log_file_name_.c_str());
+      unlink(mrc_log_file_name_.c_str());
+      unlink(osd_log_file_name_.c_str());
+    }
   }
   
   void CreateOpenDeleteVolume(std::string volume_name) {
@@ -347,14 +354,6 @@ protected:
     
     ClientTest::SetUp();
   }
-  
-  virtual void TearDown() {
-    ClientTest::TearDown();
-    unlink(options_.log_file_path.c_str());
-    unlink(dir_log_file_name_.c_str());
-    unlink(mrc_log_file_name_.c_str());
-    unlink(osd_log_file_name_.c_str());
-  }
 };
 
 template<TestCertificateType t>
@@ -390,14 +389,6 @@ protected:
     options_.ssl_verify_certificates = true;
         
     ClientTest::SetUp();
-  }
-  
-  virtual void TearDown() {
-    ClientTest::TearDown();
-    unlink(options_.log_file_path.c_str());
-    unlink(dir_log_file_name_.c_str());
-    unlink(mrc_log_file_name_.c_str());
-    unlink(osd_log_file_name_.c_str());
   }
   
   void DoTest() {
@@ -488,14 +479,6 @@ protected:
     options_.ssl_verify_certificates = true;
     
     ClientTest::SetUp();
-  }
-  
-  virtual void TearDown() {
-    ClientTest::TearDown();
-    unlink(options_.log_file_path.c_str());
-    unlink(dir_log_file_name_.c_str());
-    unlink(mrc_log_file_name_.c_str());
-    unlink(osd_log_file_name_.c_str());
   }
   
   void DoTest() {
@@ -590,14 +573,6 @@ protected:
     ClientTest::SetUp();
   }
   
-  virtual void TearDown() {
-    ClientTest::TearDown();
-    unlink(options_.log_file_path.c_str());
-    unlink(dir_log_file_name_.c_str());
-    unlink(mrc_log_file_name_.c_str());
-    unlink(osd_log_file_name_.c_str());
-  }
-  
   void DoTest() {
     // Server does not accept our certificate.
     std::string exception_text;
@@ -677,14 +652,6 @@ protected:
     ClientTest::SetUp();
   }
   
-  virtual void TearDown() {
-    ClientTest::TearDown();
-    unlink(options_.log_file_path.c_str());
-    unlink(dir_log_file_name_.c_str());
-    unlink(mrc_log_file_name_.c_str());
-    unlink(osd_log_file_name_.c_str());
-  }
-  
   void DoTest() {
     CreateOpenDeleteVolume("test_ssl_verification_ignore_errors");
   
@@ -745,14 +712,6 @@ protected:
     }
                 
     ClientTest::SetUp();
-  }
-  
-  virtual void TearDown() {
-    ClientTest::TearDown();
-    unlink(options_.log_file_path.c_str());
-    unlink(dir_log_file_name_.c_str());
-    unlink(mrc_log_file_name_.c_str());
-    unlink(osd_log_file_name_.c_str());
   }
   
   void DoTest() {
@@ -843,14 +802,6 @@ protected:
     options_.max_tries = 3;
                 
     ClientTest::SetUp();
-  }
-  
-  virtual void TearDown() {
-    ClientTest::TearDown();
-    unlink(options_.log_file_path.c_str());
-    unlink(dir_log_file_name_.c_str());
-    unlink(mrc_log_file_name_.c_str());
-    unlink(osd_log_file_name_.c_str());
   }
   
   void assert_ssl_tls_in_log(std::string ssl_tls, std::string ex) {
