@@ -236,11 +236,10 @@ protected:
         (xtreemfs_test_dir_ = xtreemfs_test_dir).empty()) {
       xtreemfs_test_dir_ = "/tmp/";
     } else {
+      if (!boost::algorithm::ends_with(xtreemfs_test_dir_, "/")) {
+        xtreemfs_test_dir_ += "/";
+      }
       xtreemfs_test_dir_ += "log/";
-    }
-    
-    if (!boost::algorithm::ends_with(xtreemfs_test_dir_, "/")) {
-      xtreemfs_test_dir_ += "/";
     }
   }
   
