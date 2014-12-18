@@ -8,6 +8,8 @@ find_path(VALGRIND_INCLUDE_DIR
     include
 )
 
+include(FindPackageHandleStandardArgs)
+
 find_package_handle_standard_args(VALGRIND
   DEFAULT_MSG
   VALGRIND_INCLUDE_DIR
