@@ -10,6 +10,8 @@ set(COMPILE_DEFS "_FILE_OFFSET_BITS=64")
 # Uncomment this to enable boost::asio debug output.
 #add_definitions(-DBOOST_ASIO_ENABLE_HANDLER_TRACKING)
 
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+
 # Set variables and required libraries.
 ##########################################
 if (CMAKE_COMPILER_IS_GNUCXX)
@@ -162,6 +164,14 @@ endif(NOT OPENSSL_FOUND)
 include_directories(${OPENSSL_INCLUDE_DIR})
 # Comment this definition if the XtreemFS source should not depend on OpenSSL.
 add_definitions(-DHAS_OPENSSL)
+
+find_package(Valgrind)
+if (VALGRIND_FOUND)
+  include_directories(${VALGRIND_INCLUDE_DIR})
+  add_definitions(-DHAS_VALGRIND)
+else (VALGRIND_FOUND)
+  message(WARNING "Valgrind headers not found, running memcheck might report false positives.")
+endif (VALGRIND_FOUND)
 
 SET(REQUIRED_STATIC_LIBRARIES ${CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY})
 if(BUILD_CLIENT_TESTS)
