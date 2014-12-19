@@ -21,7 +21,6 @@
 #include <stdexcept>
 #include <string>
 #include <openssl/opensslv.h>
-#include <boost/asio/deadline_timer.hpp>
 
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/client_implementation.h"
