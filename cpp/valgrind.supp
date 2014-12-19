@@ -281,12 +281,19 @@
    fun:ASN1_mbstring_ncopy
    fun:ASN1_mbstring_copy
    fun:ASN1_STRING_to_UTF8
-   obj:/lib/*libcrypto.so.1.0.0
-   obj:/lib/*libcrypto.so.1.0.0
+   obj:/lib*/libcrypto.so.1.0.0
+   obj:/lib*/libcrypto.so.1.0.0
    fun:ASN1_item_ex_d2i
-   obj:/lib/*libcrypto.so.1.0.0
-   obj:/lib/*libcrypto.so.1.0.0
+   obj:/lib*/libcrypto.so.1.0.0
+   obj:/lib*/libcrypto.so.1.0.0
    fun:ASN1_item_ex_d2i
-   obj:/lib/*libcrypto.so.1.0.0
-   obj:/lib/*libcrypto.so.1.0.0
+   obj:/lib*/libcrypto.so.1.0.0
+   obj:/lib*/libcrypto.so.1.0.0
+}
+{
+   Bad request parsing on some OpenSSL versions when using SSLv3
+   Memcheck:Cond
+   ...
+   fun:ssl3_read_bytes
+   obj:/lib*/libssl.so.1.0.0
 }
