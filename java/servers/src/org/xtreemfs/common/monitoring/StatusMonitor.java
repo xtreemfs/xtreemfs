@@ -54,7 +54,7 @@ public class StatusMonitor implements DIRStatusListener, MRCStatusListener, OSDS
     private SnmpAdaptorServer    snmpAdaptor       = null;
 
     /**
-     * The MIB containing all SNMP related informations
+     * The MIB containing all SNMP related information
      */
     private XTREEMFS_MIB         xtfsmib           = null;
 
