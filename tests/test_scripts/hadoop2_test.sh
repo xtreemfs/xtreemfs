@@ -214,8 +214,8 @@ for VERSION in $HADOOP_VERSIONS; do
          fi
 
          echo "Stop Hadoop..."
-         $HADOOP_PREFIX/bin/yarn-daemon.sh stop nodemanager
-         $HADOOP_PREFIX/bin/yarn-daemon.sh stop resourcemanager
+         $HADOOP_PREFIX/sbin/yarn-daemon.sh stop nodemanager
+         $HADOOP_PREFIX/sbin/yarn-daemon.sh stop resourcemanager
          $HADOOP_PREFIX/sbin/mr-jobhistory-daemon.sh stop historyserver
 
          # check if servers stop
