@@ -103,11 +103,13 @@ fi
 
 # Cleanup test directory if disk is full
 min_free_space_mb=10000 # Remove all tests until enough space is available
+min_free_inodes=1000
 while true
 do
   # Enough free space?
   free_space_mb=$(df -Pm $DIR_PREFIX | grep -v ^Filesystem | awk '{ print $4 }')
-  if [ $free_space_mb -ge $min_free_space_mb ]
+  free_inodes=$(df -i $DIR_PREFIX | grep -v ^Filesystem | awk '{ print $4 }')
+  if [ $free_space_mb -ge $min_free_space_mb ] && [ $free_inodes -ge $min_free_inodes ]
   then
     break
   fi
