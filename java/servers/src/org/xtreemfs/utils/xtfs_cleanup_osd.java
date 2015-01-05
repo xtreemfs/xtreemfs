@@ -250,7 +250,7 @@ public class xtfs_cleanup_osd {
     }
 
     /**
-     * Prints out usage informations and terminates the application.
+     * Prints out usage information and terminates the application.
      */
     public static void usage(Map<String, CliOption> options) {
 
