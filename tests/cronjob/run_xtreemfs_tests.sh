@@ -103,7 +103,7 @@ fi
 
 # Cleanup test directory if disk is full
 min_free_space_mb=10000 # Remove all tests until enough space is available
-min_free_inodes=1200000
+min_free_inodes=2000000
 while true
 do
   # Enough free space?
