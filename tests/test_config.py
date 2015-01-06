@@ -153,134 +153,134 @@ VolumeConfigs = {
 
 Tests = [
     # VOLUME TESTS
-#    {
-#        'name': 'Simple Metadata',
-#        'file': '01_simple_metadata.py',
-#        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'nomdcache' ],
-#        'TestSets': [ 'short', 'full', 'short-ssl' ]
-#    },
-#    {
-#        'name': 'Erichs dd write',
-#        'file': '02_erichs_ddwrite.py',
-#        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_wqrq_asyncwrites' ],
-#        'TestSets': [ 'full', 'short', 'short-ssl', 'packages-ssl' ]
-#    },
-#    {
-#        'name': 'Erichs data integrity test',
-#        'file': '03_erichs_data_integrity_test.py',
-#        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_wqrq_asyncwrites' ],
-#        'TestSets': [ 'full', 'short', 'short-ssl' ]
-#    },
-#    {
-#        'name': 'Find Grep Tar',
-#        'file': '05_findgreptar.sh',
-#        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'nomdcache', 'replicated_wqrq', 'replicated_wqrq_asyncwrites' ],
-#        'TestSets': [ 'full', 'short', 'short-ssl' ]
-#    },
-#    {
-#        'name': 'fsx',
-#        'file': 'fsx.sh',
-#        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'nomdcache', 'replicated_wqrq', 'replicated_wqrq_asyncwrites' ],
-#        'TestSets': [ 'full', 'short', 'short-ssl' ]
-#    },
-#    {
-#        'name': 'bonnie',
-#        'file': '10_bonnie.py',
-#        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_wqrq_asyncwrites' ],
-#        # NOTE(mberlin): 2013/04: Disabled because it takes too long and was not helpful in finding problems so far.
-#        'TestSets': [ ]
-#    },
-#    {
-#        'name': 'IOZone diagnostic',
-#        'file': '11_iozone_diagnostic.py',
-#        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_wqrq_asyncwrites' ],
-#        'TestSets': [ 'full' ]
-#    },
-#    {
-#        'name': 'IOZone throughput',
-#        'file': '12_iozone_throughput.py',
-#        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_wqrq_asyncwrites' ],
-#        'TestSets': [ 'full' ]
-#    },
-#    {
-#        'name': 'DBench',
-#        'file': '13_dbench.py',
-#        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'nomdcache' ],
-#        'TestSets': [ 'full' ]
-#    },
-#    {
-#        'name': 'make xtreemfs',
-#        'file': '15_makextreemfs.py',
-#        'VolumeConfigs': [ 'regular', 'nomdcache' ],
-#        'TestSets': [ 'full' ]
-#    },
-#    {
-#        'name': 'IOZone multithread',
-#        'file': '16_iozone_multithread.py',
-#        'VolumeConfigs': [ 'regular' ],
-#        'TestSets': [ 'ssd' ]
-#    },
-#    {
-#        'name': 'bonnie multithread',
-#        'file': '17_bonnie_multithread.py',
-#        'VolumeConfigs': [ 'regular' ],
-#        'TestSets': [ 'ssd' ]
-#    },
-#    {
-#        'name': 'xtfs_cleanup test',
-#        'file': 'system_cleanup_test.sh',
-#        'VolumeConfigs': ['nomdcache'],
-#        'TestSets': [ 'full', 'short', 'short-ssl' ]
-#    },
-#    {
-#        'name': 'snapshot test',
-#        'file': 'system_snap_test.sh',
-#        'VolumeConfigs': ['regular'],
-#        'TestSets': [ 'full', 'short', 'short-ssl' ]
-#    },
-#    {
-#        'name': 'xattr test',
-#        'file': 'test_xattrs.sh',
-#        'VolumeConfigs': [ 'regular', 'nomdcache' ],
-#        'TestSets': [ 'full', 'short' ]
-#    },
-#    {
-#        'name': 'xtfs_scrub test',
-#        'file': 'system_scrub_test.sh',
-#        'VolumeConfigs': ['nomdcache'],
-#        #'TestSets': [ 'full', 'short', 'short-ssl' ]
-#        'TestSets': []
-#    },
-#    {
-#        'name': 'Add and delete replica manually (read-only replication)',
-#        'file': 'ronly_replication_add_delete_replica.sh',
-#        'VolumeConfigs': ['regular_two_osds'],
-#        'TestSets': [ 'full', 'short', 'short-ssl' ]
-#    },
-#    {
-#        'name': 'POSIX Test Suite (root required)',
-#        'file': 'posix_test_suite.sh',
-#        'VolumeConfigs': ['regular', 'nomdcache'],
-#        'TestSets': [ 'full', 'short', 'short-ssl' ]
-#    },
-#    {
-#        'name': 'hadoop test',
-#        'file': 'hadoop_test.sh',
-#        'VolumeConfigs': ['regular'],
-#        'TestSets': [ 'full' ] 
-#    },
-#    {
-#        'name': 'hadoop2 test',
-#        'file': 'hadoop2_test.sh',
-#        'VolumeConfigs': ['regular'],
-#        'TestSets': [ 'full' ] 
-#    },
-#    {
-#        'name': 'hadoop with ssl test',
-#        'file': 'hadoop_ssl_test.sh',
-#        'VolumeConfigs': ['regular_two_osds'],
-#        'TestSets': [ 'short-ssl' ]
-#    },
+    {
+        'name': 'Simple Metadata',
+        'file': '01_simple_metadata.py',
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'nomdcache' ],
+        'TestSets': [ 'short', 'full', 'short-ssl' ]
+    },
+    {
+        'name': 'Erichs dd write',
+        'file': '02_erichs_ddwrite.py',
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_wqrq_asyncwrites' ],
+        'TestSets': [ 'full', 'short', 'short-ssl', 'packages-ssl' ]
+    },
+    {
+        'name': 'Erichs data integrity test',
+        'file': '03_erichs_data_integrity_test.py',
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_wqrq_asyncwrites' ],
+        'TestSets': [ 'full', 'short', 'short-ssl' ]
+    },
+    {
+        'name': 'Find Grep Tar',
+        'file': '05_findgreptar.sh',
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'nomdcache', 'replicated_wqrq', 'replicated_wqrq_asyncwrites' ],
+        'TestSets': [ 'full', 'short', 'short-ssl' ]
+    },
+    {
+        'name': 'fsx',
+        'file': 'fsx.sh',
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'nomdcache', 'replicated_wqrq', 'replicated_wqrq_asyncwrites' ],
+        'TestSets': [ 'full', 'short', 'short-ssl' ]
+    },
+    {
+        'name': 'bonnie',
+        'file': '10_bonnie.py',
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_wqrq_asyncwrites' ],
+        # NOTE(mberlin): 2013/04: Disabled because it takes too long and was not helpful in finding problems so far.
+        'TestSets': [ ]
+    },
+    {
+        'name': 'IOZone diagnostic',
+        'file': '11_iozone_diagnostic.py',
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_wqrq_asyncwrites' ],
+        'TestSets': [ 'full' ]
+    },
+    {
+        'name': 'IOZone throughput',
+        'file': '12_iozone_throughput.py',
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_wqrq_asyncwrites' ],
+        'TestSets': [ 'full' ]
+    },
+    {
+        'name': 'DBench',
+        'file': '13_dbench.py',
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'nomdcache' ],
+        'TestSets': [ 'full' ]
+    },
+    {
+        'name': 'make xtreemfs',
+        'file': '15_makextreemfs.py',
+        'VolumeConfigs': [ 'regular', 'nomdcache' ],
+        'TestSets': [ 'full' ]
+    },
+    {
+        'name': 'IOZone multithread',
+        'file': '16_iozone_multithread.py',
+        'VolumeConfigs': [ 'regular' ],
+        'TestSets': [ 'ssd' ]
+    },
+    {
+        'name': 'bonnie multithread',
+        'file': '17_bonnie_multithread.py',
+        'VolumeConfigs': [ 'regular' ],
+        'TestSets': [ 'ssd' ]
+    },
+    {
+        'name': 'xtfs_cleanup test',
+        'file': 'system_cleanup_test.sh',
+        'VolumeConfigs': ['nomdcache'],
+        'TestSets': [ 'full', 'short', 'short-ssl' ]
+    },
+    {
+        'name': 'snapshot test',
+        'file': 'system_snap_test.sh',
+        'VolumeConfigs': ['regular'],
+        'TestSets': [ 'full', 'short', 'short-ssl' ]
+    },
+    {
+        'name': 'xattr test',
+        'file': 'test_xattrs.sh',
+        'VolumeConfigs': [ 'regular', 'nomdcache' ],
+        'TestSets': [ 'full', 'short' ]
+    },
+    {
+        'name': 'xtfs_scrub test',
+        'file': 'system_scrub_test.sh',
+        'VolumeConfigs': ['nomdcache'],
+        #'TestSets': [ 'full', 'short', 'short-ssl' ]
+        'TestSets': []
+    },
+    {
+        'name': 'Add and delete replica manually (read-only replication)',
+        'file': 'ronly_replication_add_delete_replica.sh',
+        'VolumeConfigs': ['regular_two_osds'],
+        'TestSets': [ 'full', 'short', 'short-ssl' ]
+    },
+    {
+        'name': 'POSIX Test Suite (root required)',
+        'file': 'posix_test_suite.sh',
+        'VolumeConfigs': ['regular', 'nomdcache'],
+        'TestSets': [ 'full', 'short', 'short-ssl' ]
+    },
+    {
+        'name': 'hadoop test',
+        'file': 'hadoop_test.sh',
+        'VolumeConfigs': ['regular'],
+        'TestSets': [ 'full' ] 
+    },
+    {
+        'name': 'hadoop2 test',
+        'file': 'hadoop2_test.sh',
+        'VolumeConfigs': ['regular'],
+        'TestSets': [ 'full' ] 
+    },
+    {
+        'name': 'hadoop with ssl test',
+        'file': 'hadoop_ssl_test.sh',
+        'VolumeConfigs': ['regular_two_osds'],
+        'TestSets': [ 'short-ssl' ]
+    },
     {
         'name': 'xtfs_benchmark',
         'file': '14_xtfs_benchmark.sh',
@@ -288,40 +288,40 @@ Tests = [
         'TestSets': [ 'full' ]
     }
     # SYSTEM TESTS
-#    {
-#        'name': 'JUnit tests',
-#        'file': 'junit_tests.sh',
-#        'VolumeConfigs': [],
-#        'TestSets': [ 'full', 'short', 'short-ssl', 'travis-junit' ]
-#    },
-#    {
-#        'name': 'C++ Unit Tests',
-#        'file': 'cpp_unit_tests.sh',
-#        'VolumeConfigs': [],
-#        'TestSets': [ 'full', 'short', 'short-ssl', 'travis-cpp' ]
-#    },
-#    {
-#        'name': 'Valgrind memory-leak check for C++ Unit Tests',
-#        'file': 'cpp_unit_tests_valgrind.sh',
-#        'VolumeConfigs': [],
-#        'TestSets': [ 'full', 'travis-valgrind' ]
-#    },
-#    {
-#        'name': 'mkfs-lsfs-rmfs.xtreemfs test',
-#        'file': 'system_mkfs_lsfs_rmfs_test.sh',
-#        'VolumeConfigs': [],
-#        'TestSets': [ 'full', 'short', 'short-ssl' ]
-#    },
-#    {
-#        'name': 'xtfs_mrcdbtool test',
-#        'file': 'system_mrcdbtool_test.sh',
-#        'VolumeConfigs': [],
-#        'TestSets': [ 'full', 'short', 'short-ssl' ]
-#    },
-#    {
-#        'name': 'xtfs_chstatus test',
-#        'file': 'system_chstatus_test.sh',
-#        'VolumeConfigs': [],
-#        'TestSets': [ 'full', 'short', 'short-ssl' ]
-#    }
+    {
+        'name': 'JUnit tests',
+        'file': 'junit_tests.sh',
+        'VolumeConfigs': [],
+        'TestSets': [ 'full', 'short', 'short-ssl', 'travis-junit' ]
+    },
+    {
+        'name': 'C++ Unit Tests',
+        'file': 'cpp_unit_tests.sh',
+        'VolumeConfigs': [],
+        'TestSets': [ 'full', 'short', 'short-ssl', 'travis-cpp' ]
+    },
+    {
+        'name': 'Valgrind memory-leak check for C++ Unit Tests',
+        'file': 'cpp_unit_tests_valgrind.sh',
+        'VolumeConfigs': [],
+        'TestSets': [ 'full', 'travis-valgrind' ]
+    },
+    {
+        'name': 'mkfs-lsfs-rmfs.xtreemfs test',
+        'file': 'system_mkfs_lsfs_rmfs_test.sh',
+        'VolumeConfigs': [],
+        'TestSets': [ 'full', 'short', 'short-ssl' ]
+    },
+    {
+        'name': 'xtfs_mrcdbtool test',
+        'file': 'system_mrcdbtool_test.sh',
+        'VolumeConfigs': [],
+        'TestSets': [ 'full', 'short', 'short-ssl' ]
+    },
+    {
+        'name': 'xtfs_chstatus test',
+        'file': 'system_chstatus_test.sh',
+        'VolumeConfigs': [],
+        'TestSets': [ 'full', 'short', 'short-ssl' ]
+    }
  ]
