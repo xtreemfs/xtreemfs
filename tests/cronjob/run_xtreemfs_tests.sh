@@ -143,7 +143,7 @@ make client_debug server hadoop-client &>$TEST_LOG
 if [ $? -ne 0 ]; then
   echo "FAILED: cannot make sources!" >> $TEST_LOG
   date >> $TEST_LOG
-  sendresult 1
+#  sendresult 1
   exit
 fi
 
@@ -152,4 +152,4 @@ fi
 cd $XTREEMFS_DIR/tests
 python -u xtestenv -t $TEST_DIR full &> $TEST_SUMMARY
 result=$?
-sendresult $result
+#sendresult $result
