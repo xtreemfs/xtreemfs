@@ -160,7 +160,8 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             sslOptions = new SSLOptions(new FileInputStream(config.getServiceCredsFile()), config
                     .getServiceCredsPassphrase(), config.getServiceCredsContainer(), new FileInputStream(
                 config.getTrustedCertsFile()), config.getTrustedCertsPassphrase(), config
-                    .getTrustedCertsContainer(), false, config.isGRIDSSLmode(), tm);
+                    .getTrustedCertsContainer(), false, config.isGRIDSSLmode(),
+                    config.getSSLProtocolString(), tm);
             
             if (Logging.isInfo() && tm != null)
                 Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this,

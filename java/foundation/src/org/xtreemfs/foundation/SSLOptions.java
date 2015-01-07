@@ -14,15 +14,19 @@ import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.Security;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-
 import java.security.cert.X509Certificate;
+
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
+
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.util.OutputUtils;
 
 /**
  * Encapsulates the SSLOptions for the connections of pinky and speedy
@@ -39,6 +43,11 @@ public class SSLOptions {
      * a PKCS12 Keystore
      */
     public final static String PKCS12_CONTAINER = "PKCS12";
+    
+    /**
+     * Default SSL/TLS Protocol to use when no or an invalid protocol was specified
+     */
+    public final static String DEFAULT_SSL_PROTOCOL = "TLS";
     
     /**
      * file with the private key and the public cert for the server
@@ -85,8 +94,8 @@ public class SSLOptions {
     public SSLOptions(InputStream serverCredentialFile, String serverCredentialFilePassphrase,
         String serverCredentialFileContainer, InputStream trustedCertificatesFile,
         String trustedCertificatesFilePassphrase, String trustedCertificatesFileContainer,
-        boolean authenticationWithoutEncryption, boolean useFakeSSLMode, TrustManager trustManager)
-        throws IOException {
+        boolean authenticationWithoutEncryption, boolean useFakeSSLMode, String sslProtocolString,
+        TrustManager trustManager) throws IOException {
         
         this.serverCredentialFile = serverCredentialFile;
         this.trustedCertificatesFile = trustedCertificatesFile;
@@ -108,7 +117,7 @@ public class SSLOptions {
         
         this.useFakeSSLMode = useFakeSSLMode;
         
-        sslContext = createSSLContext(trustManager);
+        sslContext = createSSLContext(sslProtocolStringToProtocol(sslProtocolString), trustManager);
     }
     
     /**
@@ -120,7 +129,7 @@ public class SSLOptions {
      * @return the created and initialized SSLContext
      * @throws IOException
      */
-    private SSLContext createSSLContext(TrustManager trustManager) throws IOException {
+    private SSLContext createSSLContext(String sslProtocol, TrustManager trustManager) throws IOException {
         SSLContext sslContext = null;
         try {
             // First initialize the key and trust material.
@@ -131,7 +140,34 @@ public class SSLOptions {
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
             kmf.init(ksKeys, serverCredentialFilePassphrase);
             
-            sslContext = SSLContext.getInstance("TLS");
+            // There are quite a few issues with the OpenJDK PKCS11 provider in combination with NSS,
+            // so remove it no matter what the OpenJDK version is.
+            if ("OpenJDK Runtime Environment".equals(System.getProperty("java.runtime.name"))) {
+                try {
+                    Security.removeProvider("SunPKCS11-NSS");
+                    if (Logging.isDebug()) {
+                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "Successfully removed faulty security provider 'SunPKCS11-NSS'.");
+                    }
+                } catch(SecurityException e) {
+                    Logging.logMessage(Logging.LEVEL_WARN, this,
+                                       "Could not remove security provider 'SunPKCS11-NSS'. This might cause TLS connections to time out. " +
+                                       "Known to affect multiple OpenJDK / NSS version combindations.");
+                    if (Logging.isDebug()) {
+                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "%s:\n%s", e.getMessage(), OutputUtils.stackTraceToString(e));
+                    }
+                }
+            }
+            
+            try {
+                sslContext = SSLContext.getInstance(sslProtocol);
+            } catch (NoSuchAlgorithmException e) {
+                Logging.logMessage(Logging.LEVEL_WARN, this, "Unsupported algorithm '%s', defaulting to '%s'.",
+                                   sslProtocol, DEFAULT_SSL_PROTOCOL);
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "%s:\n%s", e.getMessage(), OutputUtils.stackTraceToString(e));
+                }
+                sslContext = SSLContext.getInstance(DEFAULT_SSL_PROTOCOL);
+            }
             
             if (trustManager != null) {
                 // if a user-defined trust manager is set ...
@@ -209,6 +245,58 @@ public class SSLOptions {
     
     public boolean isFakeSSLMode() {
         return this.useFakeSSLMode;
+    }
+    
+    public String getSSLProtocol() {
+        return sslContext.getProtocol();
+    }
+    
+    public boolean isSSLEngineProtocolSupported(String sslEngineProtocol) {
+        // Protocol names in JDK 5, 6: SSLv2Hello, SSLv3, TLSv1
+        // Additionally in JDK 7, 8: TLSv1.2
+        // TLSv1.1 seems to depend on the vendor
+        String sslProtocol = getSSLProtocol();
+        if ("SSLv3".equals(sslProtocol)) {
+            return "SSLv3".equals(sslEngineProtocol);
+        } else if ("TLS".equals(sslProtocol)) {
+            return "SSLv3".equals(sslEngineProtocol) ||
+                   "TLSv1".equals(sslEngineProtocol) ||
+                   "TLSv1.1".equals(sslEngineProtocol) ||
+                   "TLSv1.2".equals(sslEngineProtocol);
+        } else if ("TLSv1".equals(sslProtocol)) {
+            return "TLSv1".equals(sslEngineProtocol);
+        } else if ("TLSv1.1".equals(sslProtocol)) {
+            return "TLSv1.1".equals(sslEngineProtocol);
+        } else if ("TLSv1.2".equals(sslProtocol)) {
+            return "TLSv1.2".equals(sslEngineProtocol);
+        } else {
+            return false;
+        }
+    }
+    
+    private String sslProtocolStringToProtocol(String sslProtocolString) {
+        // SSL Context Protocol Strings:
+        // JDK 6: SSL, SSLv2, SSLv3, TLS, TLSv1
+        // additionally in JDK 7: TLSv1.2
+        // TLSv1.1 seems to depend on the vendor
+        if ("sslv3".equals(sslProtocolString)) {
+            return  "SSLv3";
+        } else if ("ssltls".equals(sslProtocolString)) {
+            return "TLS";
+        } else if ("tlsv1".equals(sslProtocolString)) {
+            return "TLSv1";
+        } else if ("tlsv11".equals(sslProtocolString)) {
+            return "TLSv1.1";
+        } else if ("tlsv12".equals(sslProtocolString)) {
+            return "TLSv1.2";
+        } else {
+            if (sslProtocolString != null) {
+                Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
+                                   "Unknown SSL Context Protocol: '%s', defaulting to '%s'.",
+                                   sslProtocolString, DEFAULT_SSL_PROTOCOL);
+            }
+            return DEFAULT_SSL_PROTOCOL;
+        }
     }
     
     private static class NoAuthTrustStore implements TrustManager, X509TrustManager {
