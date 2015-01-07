@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/interprocess/detail/atomic.hpp>
@@ -23,13 +24,12 @@
 #include "util/logging.h"
 
 #ifdef HAS_OPENSSL
-#include <openssl/pem.h>
+#include <boost/asio/ssl.hpp>
 #include <openssl/err.h>
+#include <openssl/pem.h>
 #include <openssl/pkcs12.h>
-#include <openssl/bio.h>
 #include <openssl/rand.h>
 #include <openssl/x509.h>
-#include <openssl/evp.h>
 #endif  // HAS_OPENSSL
 #ifdef WIN32
 #include <tchar.h>
@@ -80,6 +80,7 @@ Client::Client(int32_t connect_timeout_s,
       ssl_options(options),
       pemFileName(NULL),
       certFileName(NULL),
+      trustedCAsFileName(NULL),
       ssl_context_(NULL) {
   // Check if ssl options were passed.
   if (options != NULL) {
@@ -88,11 +89,28 @@ Client::Client(int32_t connect_timeout_s,
     }
 
     use_gridssl_ = options->use_grid_ssl();
-    ssl_context_ =
-        new boost::asio::ssl::context(service_,
-                                      boost::asio::ssl::context::sslv23);
-    ssl_context_->set_options(boost::asio::ssl::context::no_tlsv1);
-    ssl_context_->set_verify_mode(boost::asio::ssl::context::verify_none);
+    ssl_context_ = new boost::asio::ssl::context(
+        service_,
+        string_to_ssl_method(
+            options->ssl_method_string(),
+            boost::asio::ssl::context_base::sslv23_client));
+    ssl_context_->set_options(boost::asio::ssl::context::no_sslv2);
+#if (BOOST_VERSION > 104601)
+    // Verify certificate callback can be conveniently specified from
+    // Boost 1.47.0 onwards.
+    ssl_context_->set_verify_mode(boost::asio::ssl::context::verify_peer |
+                                  boost::asio::ssl::context::verify_fail_if_no_peer_cert);
+    ssl_context_->set_verify_callback(boost::bind(&Client::verify_certificate_callback,
+                                                  this, _1, _2));
+#else  // BOOST_VERSION > 104601
+    // The verify callback is not a Client member here, so make sure it can
+    // retrieve the ssl_options later.
+    SSL_CTX_set_app_data(ssl_context_->impl(), ssl_options);
+    SSL_CTX_set_verify(ssl_context_->impl(),
+                       boost::asio::ssl::context::verify_peer |
+                       boost::asio::ssl::context::verify_fail_if_no_peer_cert,
+                       &xtreemfs::rpc::verify_certificate_callback);
+#endif  // BOOST_VERSION > 104601
 
     OpenSSL_add_all_algorithms();
     OpenSSL_add_all_ciphers();
@@ -109,8 +127,8 @@ Client::Client(int32_t connect_timeout_s,
             << options->pkcs12_file_name() << endl;
       }
 
-      char tmplate1[] = "/tmp/pmXXXXXX";
-      char tmplate2[] = "/tmp/ctXXXXXX";
+      std::string pemFileTemplate = "pmXXXXXX";
+      std::string certFileTemplate = "ctXXXXXX";
 
       FILE *p12_file = fopen(options->pkcs12_file_name().c_str(), "rb");
 
@@ -151,55 +169,56 @@ Client::Client(int32_t connect_timeout_s,
         exit(1);
       }
       PKCS12_free(p12);
+      
+      if (ca == NULL) {
+        if (Logging::log->loggingActive(LEVEL_WARN)) {
+          Logging::log->getLog(LEVEL_WARN) << "Expected one or more additional "
+              "certificates in " << options->pkcs12_file_name() << " in order "
+              "to verify the services' certificates." << endl;
+        }
+      } else if (sk_X509_num(ca) > 0) {
+        // Setup any additional certificates as trusted root CAs in one file.   
+        std::string trusted_cas_template("caXXXXXX");
+        FILE* trusted_cas_file =
+            create_and_open_temporary_ssl_file(&trusted_cas_template, "ab+");
+        trustedCAsFileName = strdup(trusted_cas_template.c_str());
+        
+        if (Logging::log->loggingActive(LEVEL_INFO)) {
+          Logging::log->getLog(LEVEL_INFO) << "Writing " << sk_X509_num(ca)
+              << " verification certificates to " << trustedCAsFileName << endl;
+        }
+        
+        while (sk_X509_num(ca) > 0) {
+          X509* ca_cert = sk_X509_pop(ca);
+          // _AUX writes trusted certificates.
+          if (PEM_write_X509_AUX(trusted_cas_file, ca_cert)) { 
+          } else {
+            if (Logging::log->loggingActive(LEVEL_WARN)) {
+              Logging::log->getLog(LEVEL_WARN) << "Error writing a CA to file "
+                  << trusted_cas_template << ", continuing without it." << endl;
+            }
+          }
+          X509_free(ca_cert);
+        }
+        
+        fclose(trusted_cas_file);
+      }
       sk_X509_free(ca);
 
       // create two tmp files containing the PEM certificates.
       // these which be deleted when exiting the program
-#ifdef WIN32
-      //  Gets the temp path env string (no guarantee it's a valid path).
-      TCHAR temp_path[MAX_PATH];
-      TCHAR filename_temp_pem[MAX_PATH];
-      TCHAR filename_temp_cert[MAX_PATH];
-
-      DWORD dwRetVal = 0;
-      dwRetVal = GetTempPath(MAX_PATH,          // length of the buffer
-                             temp_path); // buffer for path
-      if (dwRetVal > MAX_PATH || (dwRetVal == 0)) {
-        _tcsncpy_s(temp_path, TEXT("."), 1);
-      }
-
-      //  Generates a temporary file name.
-      if (!GetTempFileName(temp_path, // directory for tmp files
-                                TEXT("DEMO"),     // temp file name prefix
-                                0,                // create unique name
-                                filename_temp_pem)) {  // buffer for name
-        std::cerr << "Couldn't create temp file name.\n";
-        exit(1);
-      }
-      if (!GetTempFileName(temp_path, // directory for tmp files
-                                TEXT("DEMO"),     // temp file name prefix
-                                0,                // create unique name
-                                filename_temp_cert)) {  // buffer for name
-        std::cerr << "Couldn't create temp file name.\n";
-        exit(1);
-      }
-      FILE* pemFile = _tfopen(filename_temp_pem, TEXT("wb+"));
-      FILE* certFile = _tfopen(filename_temp_cert, TEXT("wb+"));
-#else
-      int tmpPem = mkstemp(tmplate1);
-      int tmpCert = mkstemp(tmplate2);
-      if (tmpPem == -1 || tmpCert == -1) {
-        std::cerr << "Couldn't create temp file name.\n";
+      FILE* pemFile = create_and_open_temporary_ssl_file(&pemFileTemplate, "wb+");
+      FILE* certFile = create_and_open_temporary_ssl_file(&certFileTemplate, "wb+");
+      if (pemFile == NULL || certFile == NULL) {
+        Logging::log->getLog(LEVEL_ERROR) << "Error creating temporary "
+            "certificates" << endl;
         //TODO(mberlin): Use a better approach than exit - throw?
         exit(1);
       }
-      FILE* pemFile = fdopen(tmpPem, "wb+");
-      FILE* certFile = fdopen(tmpCert, "wb+");
-#endif  // WIN32
 
       if (Logging::log->loggingActive(LEVEL_DEBUG)) {
         Logging::log->getLog(LEVEL_DEBUG) << "tmp file name:"
-            << tmplate1 << " " << tmplate2 << endl;
+            << pemFileTemplate << " " << certFileTemplate << endl;
       }
 
       // write private key
@@ -207,12 +226,12 @@ Client::Client(int32_t connect_timeout_s,
       char* password = strdup(options->pkcs12_file_password().c_str());
       if (!PEM_write_PrivateKey(pemFile, pkey, NULL, NULL, 0, 0, password)) {
         Logging::log->getLog(LEVEL_ERROR)
-            << "Error writing pem file:" << tmplate1 << endl;
+            << "Error writing pem file:" << pemFileTemplate << endl;
         free(password);
         EVP_PKEY_free(pkey);
 
-        unlink(tmplate1);
-        unlink(tmplate2);
+        unlink(pemFileTemplate.c_str());
+        unlink(certFileTemplate.c_str());
         //TODO(mberlin): Use a better approach than exit - throw?
         exit(1);
       }
@@ -222,11 +241,11 @@ Client::Client(int32_t connect_timeout_s,
       // write ca certificate
       if (!PEM_write_X509(certFile, cert)) {
         Logging::log->getLog(LEVEL_ERROR) << "Error writing cert file:"
-            << tmplate2 << endl;
+            << certFileTemplate << endl;
 
         X509_free(cert);
-        unlink(tmplate1);
-        unlink(tmplate2);
+        unlink(pemFileTemplate.c_str());
+        unlink(certFileTemplate.c_str());
         //TODO(mberlin): Use a better approach than exit - throw?
         exit(1);
       }
@@ -235,15 +254,21 @@ Client::Client(int32_t connect_timeout_s,
       fclose(pemFile);
       fclose(certFile);
 
-      pemFileName = new char[sizeof(tmplate1)];
-      strncpy(pemFileName, tmplate1, sizeof(tmplate1));
-      certFileName = new char[sizeof(tmplate2)];
-      strncpy(certFileName, tmplate2, sizeof(tmplate2));
+      pemFileName = strdup(pemFileTemplate.c_str());
+      certFileName = strdup(certFileTemplate.c_str());
 
       ssl_context_->set_password_callback(
           boost::bind(&Client::get_pkcs12_password_callback, this));
       ssl_context_->use_private_key_file(pemFileName, options->cert_format());
       ssl_context_->use_certificate_chain_file(certFileName);
+
+#if (BOOST_VERSION > 104601)
+      // Use system default path for trusted root CAs and any supplied certificates.
+      ssl_context_->set_default_verify_paths();
+#endif  // BOOST_VERSION > 104601
+      if (trustedCAsFileName != NULL) {
+        ssl_context_->load_verify_file(trustedCAsFileName);
+      }
 
       // FIXME(ps) make sure that the temporary files are deleted!
     } else if (!options->pem_file_name().empty()) {
@@ -259,6 +284,20 @@ Client::Client(int32_t connect_timeout_s,
         ssl_context_->use_private_key_file(options->pem_file_name(),
                                            options->cert_format());
         ssl_context_->use_certificate_chain_file(options->pem_cert_name());
+        
+#if (BOOST_VERSION > 104601)
+        // Use system default path for trusted root CAs and any supplied certificates.
+        ssl_context_->set_default_verify_paths();
+#endif  // BOOST_VERSION > 104601
+        if (options->pem_trusted_certs_file_name().empty()) {
+          if (Logging::log->loggingActive(LEVEL_WARN)) {
+            Logging::log->getLog(LEVEL_WARN) << "Not using any additional "
+                "certificates in order to verify the services' certificates."
+                << endl;
+          }
+        } else {
+          ssl_context_->load_verify_file(options->pem_trusted_certs_file_name());
+        }
       } catch(invalid_argument& ia) {
          cerr << "Invalid argument: " << ia.what() << endl;
          cerr << "Please check your private key and certificate file."<< endl;
@@ -268,7 +307,12 @@ Client::Client(int32_t connect_timeout_s,
     }
 
     // Cleanup thread-local OpenSSL state.
+    ERR_free_strings();
+#if (OPENSSL_VERSION_NUMBER < 0x1000000fL)
     ERR_remove_state(0);
+#else  // OPENSSL_VERSION_NUMBER < 0x1000000fL
+    ERR_remove_thread_state(NULL);
+#endif  // OPENSSL_VERSION_NUMBER < 0x1000000fL
   }
 }
 
@@ -278,6 +322,73 @@ std::string Client::get_pem_password_callback() const {
 
 std::string Client::get_pkcs12_password_callback() const {
   return ssl_options->pkcs12_file_password();
+}
+
+#if (BOOST_VERSION > 104601)
+bool Client::verify_certificate_callback(bool preverified,
+                                         boost::asio::ssl::verify_context& context) const {
+  X509_STORE_CTX *sctx = context.native_handle();
+#else  // BOOST_VERSION > 104601
+int verify_certificate_callback(int preverify_ok, X509_STORE_CTX *sctx) {   
+  bool preverified = preverify_ok == 1;
+  SSL *ssl = static_cast<SSL*>(X509_STORE_CTX_get_ex_data(
+          sctx,
+          SSL_get_ex_data_X509_STORE_CTX_idx()));
+  SSL_CTX *ctx = SSL_get_SSL_CTX(ssl);
+  SSLOptions *ssl_options = static_cast<SSLOptions*>(SSL_CTX_get_app_data(ctx));
+#endif
+  X509* cert = X509_STORE_CTX_get_current_cert(sctx);
+  
+  X509_NAME *subject_name = X509_get_subject_name(cert);
+  BIO *subject_name_out = BIO_new(BIO_s_mem());
+  X509_NAME_print_ex(subject_name_out, subject_name, 0, XN_FLAG_RFC2253);
+  
+  char *subject_start = NULL, *subject = NULL;
+  long subject_length = BIO_get_mem_data(subject_name_out, &subject_start);
+  subject = new char[subject_length + 1];
+  memcpy(subject, subject_start, subject_length);
+  subject[subject_length] = '\0';
+  
+  BIO_free(subject_name_out);
+  
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+    Logging::log->getLog(LEVEL_DEBUG) << "Verifying subject '" << subject
+        << "'." << endl;
+  }
+
+  bool override = false;
+  if (sctx->error != 0) {
+    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+      Logging::log->getLog(LEVEL_DEBUG) << "OpenSSL verify error: "
+          << sctx->error << endl;
+    }
+    
+    // Ignore error if verification is turned off in general or the error has
+    // been disabled specifically.
+    if (!ssl_options->verify_certificates() ||
+        ssl_options->ignore_verify_error(sctx->error)) {
+      if (Logging::log->loggingActive(LEVEL_WARN)) {
+        Logging::log->getLog(LEVEL_WARN) << "Ignoring OpenSSL verify error: "
+            << sctx->error << " because of user settings." << endl;
+      }
+      override = true;
+    }
+  }
+  
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+    Logging::log->getLog(LEVEL_DEBUG) << "Verification of subject '" << subject
+        << "' was " << (preverified ? "successful." : "unsuccessful.")
+        << ((!preverified && override) ? " Overriding because of user settings." : "")
+        << endl;
+  }
+  
+  delete[] subject;
+  
+#if (BOOST_VERSION > 104601)
+  return preverified || override;
+#else  // BOOST_VERSION > 104601
+  return (preverified || override) ? 1 : 0;
+#endif  // BOOST_VERSION > 104601
 }
 #endif  // HAS_OPENSSL
 
@@ -614,6 +725,91 @@ void Client::ShutdownHandler() {
   }
 }
 
+FILE* Client::create_and_open_temporary_ssl_file(std::string *filename_template,
+                                                 const char* mode) {
+  if (filename_template == NULL || mode == NULL) {
+    return NULL;
+  }
+#ifdef WIN32
+  // Gets the temp path env string (no guarantee it's a valid path).
+  TCHAR temp_path[MAX_PATH];
+  TCHAR filename_temp[MAX_PATH];
+
+  DWORD dwRetVal = 0;
+  dwRetVal = GetTempPath(MAX_PATH,    // length of the buffer
+                         temp_path);  // buffer for path
+  if (dwRetVal > MAX_PATH || (dwRetVal == 0)) {
+    _tcsncpy_s(temp_path, TEXT("."), 1);
+  }
+
+  //  Generates a temporary file name.
+  if (!GetTempFileName(temp_path,         // directory for tmp files
+                       TEXT("xfs"),       // temp file name prefix, max 3 char
+                       0,                 // create unique name
+                       filename_temp)) {  // buffer for name
+    std::cerr << "Couldn't create temp file name.\n";
+    return NULL;
+  }
+  *filename_template = std::string(filename_temp);
+  return _tfopen(filename_temp, TEXT(mode));
+#else
+  // Place file in TMPDIR or /tmp if not specified as absolute path.
+  std::string filename = *filename_template;
+  if (!boost::algorithm::starts_with<std::string, std::string>(filename, "/")) {
+    char *tmpdir = getenv("TMPDIR");
+    if (tmpdir != NULL) {
+      std::string tmp(tmpdir);
+      if (!boost::algorithm::ends_with(tmp, "/")) {
+        tmp += "/";
+      }
+      filename = tmp + filename;
+    } else {
+      filename = "/tmp/" + filename;
+    }
+  }
+  
+  char *temporary_filename = strdup(filename.c_str());
+  int tmp = mkstemp(temporary_filename);
+  if (tmp == -1) {
+    std::cerr << "Couldn't create temp file name.\n";
+    free(temporary_filename);
+    return NULL;
+  }
+  
+  *filename_template = std::string(temporary_filename);
+  free(temporary_filename);
+  return fdopen(tmp, mode);
+#endif  // WIN32
+}
+
+#ifdef HAS_OPENSSL
+    boost::asio::ssl::context_base::method Client::string_to_ssl_method(
+        std::string method_string,
+        boost::asio::ssl::context_base::method default_method) {
+      if (method_string == "sslv3") {
+        return boost::asio::ssl::context_base::sslv3_client;
+      } else if (method_string == "ssltls") {
+        return boost::asio::ssl::context_base::sslv23_client;
+      } else if (method_string == "tlsv1") {
+        return boost::asio::ssl::context_base::tlsv1_client;
+      }
+#if (BOOST_VERSION > 105300)
+      else if (method_string == "tlsv11") {
+        return boost::asio::ssl::context_base::tlsv11_client;
+      } else if (method_string == "tlsv12") {
+        return boost::asio::ssl::context_base::tlsv12_client;
+      }
+#endif  // BOOST_VERSION > 105300
+      else {
+        if (Logging::log->loggingActive(LEVEL_WARN)) {
+          Logging::log->getLog(LEVEL_WARN) << "Unknown SSL method: '"
+              << method_string << "', using default." << endl;
+        }
+        return default_method;
+      }
+    }
+#endif  // HAS_OPENSSL
+
 Client::~Client() {
 #ifdef HAS_OPENSSL
   // remove temporary cert and pem files
@@ -623,9 +819,14 @@ Client::~Client() {
   if (certFileName != NULL) {
     unlink(certFileName);
   }
+  if (trustedCAsFileName != NULL) {
+    unlink(trustedCAsFileName);
+  }
 
-  delete[] pemFileName;
-  delete[] certFileName;
+  // strdup initialized.
+  free(pemFileName);
+  free(certFileName);
+  free(trustedCAsFileName);
 
   if (ssl_options) {
     ERR_remove_state(0);

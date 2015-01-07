@@ -9,6 +9,7 @@
 #include "libxtreemfs/options.h"
 
 #include <algorithm>  // std::find_if
+#include <boost/algorithm/string/compare.hpp>
 #include <boost/algorithm/string.hpp>  // boost::algorithm::starts_with
 #include <boost/bind.hpp>
 #include <boost/program_options/cmdline.hpp>
@@ -107,9 +108,12 @@ Options::Options()
   ssl_pem_cert_path = "";
   ssl_pem_key_path = "";
   ssl_pem_key_pass = "";
+  ssl_pem_trusted_certs_path = "";
   ssl_pkcs12_path = "";
   ssl_pkcs12_pass = "";
   grid_ssl = false;
+  ssl_verify_certificates = false;
+  ssl_method_string = "ssltls";
 #endif  // HAS_OPENSSL
 
   // Grid Support options.
@@ -262,6 +266,11 @@ void Options::GenerateProgramOptionsDescriptions() {
         po::value(&ssl_pem_key_pass)->default_value(ssl_pem_key_pass),
         "PEM private key passphrase  (If the argument is set to '-', the user"
         " will be prompted for the passphrase.)")
+    ("pem-trusted-certificates-file-path",
+        po::value(&ssl_pem_trusted_certs_path)
+            ->default_value(ssl_pem_trusted_certs_path),
+        "PEM trusted certificates path. Contains all trusted CAs in one PEM "
+        "encoded file.")
     ("pkcs12-file-path",
         po::value(&ssl_pkcs12_path)->default_value(ssl_pkcs12_path),
         "PKCS#12 file path")
@@ -272,7 +281,30 @@ void Options::GenerateProgramOptionsDescriptions() {
     ("grid-ssl",
         po::value(&grid_ssl)->zero_tokens(),
         "Explicitly use the XtreemFS Grid-SSL mode. Same as specifying "
-        "pbrpcg:// in the volume URL.");
+        "pbrpcg:// in the volume URL.")
+    ("verify-certificates",
+        po::value(&ssl_verify_certificates)->default_value(ssl_verify_certificates)
+            ->zero_tokens(),
+        "Enables X.509 certificate verification.")
+    ("ignore-verify-errors",
+        po::value(&ssl_ignore_verify_errors)->multitoken(),
+        "List of error codes to ignore during certificate verification and "
+        "proceed and accept, see verify(1) for the list of error codes. Only "
+        "evaluated in conjunction with --verify-certificates. E.g.\n"
+        "  '--ignore-verify-errors 20 27 21' to accept certificates with "
+        "unknown issuer certificates, untrusted certificates and one-element "
+        "certificate chains (typical setup for local testing).")
+    ("min-ssl-method",
+        po::value(&ssl_method_string)->default_value(ssl_method_string),
+        "SSL method that this client will accept:\n"
+        "  - sslv3 accepts SSLv3 only\n"
+        "  - ssltls accepts SSLv3 and TLSv1.x\n"
+        "  - tlsv1 accepts TLSv1 only"
+#if (BOOST_VERSION > 105300)
+        "\n  - tlsv11 accepts TLSv1.1 only\n"
+        "  - tlsv12 accepts TLSv1.2 only"
+#endif  // BOOST_VERSION > 105300
+        );
 #endif  // HAS_OPENSSL
 
   grid_options_.add_options()
@@ -453,11 +485,13 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
 
         // Find out if this known option has been explicitly specified.
         if (find_if(regular_options.begin(), regular_options.end(),
-                    boost::bind(alg::starts_with<string, string>, _1,
-                                prefixed_long_opt)) == regular_options.end() &&
+                    boost::bind(alg::starts_with<string, string, alg::is_equal>,
+                                _1, prefixed_long_opt, alg::is_equal()))
+                    == regular_options.end() &&
             find_if(regular_options.begin(), regular_options.end(),
-                    boost::bind(alg::starts_with<string, string>, _1,
-                                prefixed_short_opt)) == regular_options.end()) {
+                    boost::bind(alg::starts_with<string, string, alg::is_equal>,
+                                _1, prefixed_short_opt, alg::is_equal()))
+                    == regular_options.end()) {
           // Explicitly set option for later parsing.
           regular_options.push_back(
               prefixed_long_opt.empty() ? prefixed_short_opt : prefixed_long_opt);
@@ -665,9 +699,13 @@ xtreemfs::rpc::SSLOptions* Options::GenerateSSLOptions() const {
   if (SSLEnabled()) {
     opts = new xtreemfs::rpc::SSLOptions(
         ssl_pem_key_path, ssl_pem_cert_path, ssl_pem_key_pass,  // PEM.
+        ssl_pem_trusted_certs_path,  // PEM.
         ssl_pkcs12_path, ssl_pkcs12_pass,  // PKCS12.
         boost::asio::ssl::context::pem,
-        grid_ssl || protocol == PBRPCURL::GetSchemePBRPCG());
+        grid_ssl || protocol == PBRPCURL::GetSchemePBRPCG(),
+        ssl_verify_certificates,
+        ssl_ignore_verify_errors,
+        ssl_method_string);
   }
 #else
   opts = new xtreemfs::rpc::SSLOptions();

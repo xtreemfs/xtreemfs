@@ -36,6 +36,8 @@ public class utils {
     
     public static final String OPTION_TRUSTSTORE_PASS = "tpass";
     
+    public static final String OPTION_SSL_PROTOCOL    = "-ssl-protocol";
+    
     public static final String OPTION_HELP            = "h";
     
     public static final String OPTION_HELP_LONG       = "-help";
@@ -154,6 +156,11 @@ public class utils {
         options.put(OPTION_TRUSTSTORE_PASS, new CliOption(CliOption.OPTIONTYPE.STRING,
             "a pass phrase to decrypt the trusted CAs file (SSL/GridSSL only).  Set to '-' to prompt for the passphrase.",
             "<trusted_passphrase>"));
+        options.put(OPTION_SSL_PROTOCOL, new CliOption(CliOption.OPTIONTYPE.STRING,
+            "SSL/TLS version to use: sslv3, ssltls, tlsv1, tlsv11, tlsv12. 'ssltls' (default) accepts all versions, " + 
+            "the others accept only the exact version they name. 'tlsv12' is available in JDK 7+ only. " + 
+            "'tlsv11' comes with JDK 6 or 7, depending on the vendor.",
+            "<ssl_protocol>"));
         options.put(OPTION_HELP, new CliOption(CliOption.OPTIONTYPE.SWITCH, "show usage information", ""));
         options.put(OPTION_HELP_LONG,
             new CliOption(CliOption.OPTIONTYPE.SWITCH, "show usage information", ""));

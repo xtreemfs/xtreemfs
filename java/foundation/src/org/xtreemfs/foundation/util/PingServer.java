@@ -41,7 +41,7 @@ public class PingServer {
             if (true) {
                 ssl = new SSLOptions(new FileInputStream(PingServer.CERT_DIR + "Client.p12"),
                 "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(PingServer.CERT_DIR + "trusted.jks"),
-                "passphrase", SSLOptions.JKS_CONTAINER, false,true,null);
+                "passphrase", SSLOptions.JKS_CONTAINER, false, true, null, null);
             }
 
             RPCNIOSocketServer server = new RPCNIOSocketServer(12345, null, new RPCServerRequestListener() {

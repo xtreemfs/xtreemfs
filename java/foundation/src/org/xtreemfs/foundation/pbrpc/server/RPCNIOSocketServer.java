@@ -241,7 +241,7 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                 if (sslOptions.isFakeSSLMode()) {
                     sslMode = "GRID SSL mode enabled (SSL handshake only)";
                 } else {
-                    sslMode = "SSL enabled";
+                    sslMode = "SSL enabled (" + sslOptions.getSSLProtocol() + ")";
                 }
             }
             Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "PBRPC Srv %d ready %s", bindPort,sslMode);

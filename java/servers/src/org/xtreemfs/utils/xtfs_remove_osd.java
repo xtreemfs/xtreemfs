@@ -130,6 +130,7 @@ public class xtfs_remove_osd {
                         if(trustedCAsPass != null && trustedCAsPass.equals("-")) {
                         	trustedCAsPass = new String(System.console().readPassword("Enter trust store password: "));
                         }
+                        String sslProtocolString = options.get(utils.OPTION_SSL_PROTOCOL).stringValue;
                         if (dirURL.contains(Schemes.SCHEME_PBRPCG + "://")) {
                             gridSSL = true;
                         }
@@ -151,7 +152,7 @@ public class xtfs_remove_osd {
                             sslOptions = new SSLOptions(new FileInputStream(serviceCredsFile),
                                     serviceCredsPass, SSLOptions.PKCS12_CONTAINER, new FileInputStream(
                                             trustedCAsFile), trustedCAsPass, SSLOptions.JKS_CONTAINER, false,
-                                    gridSSL, null);
+                                    gridSSL, sslProtocolString, null);
                         } catch (Exception e) {
                             System.err.println("unable to get SSL options, because:" + e.getMessage());
                             System.exit(1);

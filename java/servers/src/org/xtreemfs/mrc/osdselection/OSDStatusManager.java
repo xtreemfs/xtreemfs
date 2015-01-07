@@ -19,7 +19,6 @@ import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.database.DatabaseException;
@@ -220,12 +219,6 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         // return a set of OSDs
         ServiceSet.Builder result = vol.filterByOSDSelectionPolicy(knownOSDs, clientIP, clientCoords,
             currentXLoc, numOSDs);
-        
-        if (result.getServicesCount() == 0) {
-            String osds = "";
-            for (Service s : result.getServicesList())
-                osds += s.getUuid() + ", " + s.getData() + " ";
-        }
         
         return result;
     }
