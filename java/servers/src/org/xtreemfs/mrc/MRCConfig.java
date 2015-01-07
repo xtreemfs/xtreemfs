@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.Properties;
 
 import org.xtreemfs.common.config.ServiceConfig;
+import org.xtreemfs.mrc.stages.XLocSetCoordinator;
 
 /**
  * 
@@ -60,7 +61,8 @@ public class MRCConfig extends ServiceConfig {
             Parameter.FAILOVER_MAX_RETRIES,
             Parameter.FAILOVER_WAIT,
             Parameter.USE_RENEWAL_SIGNAL,
-            Parameter.USE_MULTIHOMING
+            Parameter.USE_MULTIHOMING,
+            Parameter.FLEASE_LEASE_TIMEOUT_MS
             };
     /*
      * @formatter:on
@@ -138,5 +140,14 @@ public class MRCConfig extends ServiceConfig {
     public void checkConfig() {
         super.checkConfig(mrcParameter);
         checkMultihomingConfiguration();
+    }
+
+    /**
+     * The flease lease timeout is needed for the {@link XLocSetCoordinator}.
+     * 
+     * @return the fleaseLeaseToMS
+     */
+    public int getFleaseLeaseToMS() {
+        return (Integer) parameter.get(Parameter.FLEASE_LEASE_TIMEOUT_MS);
     }
 }

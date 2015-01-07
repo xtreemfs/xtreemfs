@@ -82,10 +82,11 @@ public final class ReadOperation extends OSDOperation {
             return;
         }
 
-        if ( (rq.getLocationList().getReplicaUpdatePolicy().length() == 0)
-            || (rq.getLocationList().getNumReplicas() == 1)
-            || (rq.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY))){
-
+        // TODO(jdillmann): Use centralized method to check if a lease is required.
+        if (rq.getLocationList().getNumReplicas() > 1
+                && ReplicaUpdatePolicies.isRwReplicated(rq.getLocationList().getReplicaUpdatePolicy())) {
+            rwReplicatedRead(rq, args);
+        } else {
             final long snapVerTS = rq.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_ACCESS_SNAP? rq.getCapability().getSnapTimestamp(): 0;
 
             master.getStorageStage().readObject(args.getFileId(), args.getObjectNumber(), sp,
@@ -96,8 +97,6 @@ public final class ReadOperation extends OSDOperation {
                     postRead(rq, args, result, error);
                 }
             });
-        } else {
-            rwReplicatedRead(rq,args);
         }
     }
 

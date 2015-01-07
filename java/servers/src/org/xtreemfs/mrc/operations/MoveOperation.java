@@ -19,17 +19,17 @@ import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
+import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.DatabaseResultSet;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.VolumeManager;
-import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper;
+import org.xtreemfs.mrc.utils.MRCHelper.FileType;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
-import org.xtreemfs.mrc.utils.MRCHelper.FileType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.renameRequest;
@@ -274,7 +274,7 @@ public class MoveOperation extends MRCOperation {
                 if (sMan.getSoftlinkTarget(target.getId()) == null && target.getLinkCount() == 1) {
                     
                     // create a deletion capability for the file
-                    Capability cap = new Capability(volume.getId() + ":" + target.getId(),
+                    Capability cap = new Capability(MRCHelper.createGlobalFileId(volume, target),
                         FileAccessManager.NON_POSIX_DELETE, master.getConfig().getCapabilityTimeout(),
                         Integer.MAX_VALUE, ((InetSocketAddress) rq.getRPCRequest().getSenderAddress())
                                 .getAddress().getHostAddress(), target.getEpoch(), false, !volume

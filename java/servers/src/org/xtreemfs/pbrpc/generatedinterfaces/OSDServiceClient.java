@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Thu Jul 10 14:56:46 CEST 2014
+//automatically generated from OSD.proto at Thu Dec 11 16:09:37 CET 2014
 //(c) 2014. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -136,8 +136,8 @@ public class OSDServiceClient {
          return response;
     }
 
-    public RPCResponse xtreemfs_cleanup_start(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, boolean remove_zombies, boolean remove_unavail_volume, boolean lost_and_found) throws IOException {
-         final OSD.xtreemfs_cleanup_startRequest msg = OSD.xtreemfs_cleanup_startRequest.newBuilder().setRemoveZombies(remove_zombies).setRemoveUnavailVolume(remove_unavail_volume).setLostAndFound(lost_and_found).build();
+    public RPCResponse xtreemfs_cleanup_start(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, boolean remove_zombies, boolean remove_unavail_volume, boolean lost_and_found, boolean delete_metadata, int metadata_timeout) throws IOException {
+         final OSD.xtreemfs_cleanup_startRequest msg = OSD.xtreemfs_cleanup_startRequest.newBuilder().setRemoveZombies(remove_zombies).setRemoveUnavailVolume(remove_unavail_volume).setLostAndFound(lost_and_found).setDeleteMetadata(delete_metadata).setMetadataTimeout(metadata_timeout).build();
          return xtreemfs_cleanup_start(server, authHeader, userCreds,msg);
     }
 
@@ -451,6 +451,32 @@ public class OSDServiceClient {
     public RPCResponse xtreemfs_shutdown(InetSocketAddress server, Auth authHeader, UserCredentials userCreds) throws IOException {
          
          return xtreemfs_shutdown(server, authHeader, userCreds,null);
+    }
+
+    public RPCResponse<OSD.xtreemfs_xloc_set_invalidateResponse> xtreemfs_xloc_set_invalidate(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_xloc_set_invalidateRequest input) throws IOException {
+         if (server == null) server = defaultServer;
+         if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
+         RPCResponse<OSD.xtreemfs_xloc_set_invalidateResponse> response = new RPCResponse<OSD.xtreemfs_xloc_set_invalidateResponse>(OSD.xtreemfs_xloc_set_invalidateResponse.getDefaultInstance());
+         client.sendRequest(server, authHeader, userCreds, 30001, 81, input, null, response, false);
+         return response;
+    }
+
+    public RPCResponse<OSD.xtreemfs_xloc_set_invalidateResponse> xtreemfs_xloc_set_invalidate(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id) throws IOException {
+         final OSD.xtreemfs_xloc_set_invalidateRequest msg = OSD.xtreemfs_xloc_set_invalidateRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).build();
+         return xtreemfs_xloc_set_invalidate(server, authHeader, userCreds,msg);
+    }
+
+    public RPCResponse xtreemfs_rwr_auth_state_invalidated(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_rwr_auth_stateRequest input) throws IOException {
+         if (server == null) server = defaultServer;
+         if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
+         RPCResponse response = new RPCResponse(null);
+         client.sendRequest(server, authHeader, userCreds, 30001, 82, input, null, response, false);
+         return response;
+    }
+
+    public RPCResponse xtreemfs_rwr_auth_state_invalidated(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, OSD.AuthoritativeReplicaState state) throws IOException {
+         final OSD.xtreemfs_rwr_auth_stateRequest msg = OSD.xtreemfs_rwr_auth_stateRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setState(state).build();
+         return xtreemfs_rwr_auth_state_invalidated(server, authHeader, userCreds,msg);
     }
 
     public boolean clientIsAlive() {

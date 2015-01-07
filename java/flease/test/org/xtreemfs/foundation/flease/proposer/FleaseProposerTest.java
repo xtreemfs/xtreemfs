@@ -126,7 +126,7 @@ public class FleaseProposerTest {
     @Test
     public void testGetLease() throws Exception {
 
-        proposer.openCell(TESTCELL, new ArrayList(),false);
+        proposer.openCell(TESTCELL, new ArrayList(), false, 0);
 
         Thread.sleep(100);
 

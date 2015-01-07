@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 
+#include <boost/function.hpp>
 #include <boost/thread/condition.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -23,6 +24,7 @@
 #include "xtreemfs/MRC.pb.h"
 #include "libxtreemfs/client_implementation.h"
 #include "libxtreemfs/file_handle.h"
+#include "libxtreemfs/interrupt.h"
 #include "libxtreemfs/xcap_handler.h"
 
 namespace xtreemfs {
@@ -121,7 +123,6 @@ class FileHandleImplementation
       const pbrpc::XCap& xcap,
       UUIDIterator* mrc_uuid_iterator,
       UUIDIterator* osd_uuid_iterator,
-      UUIDContainer* osd_uuid_container,
       UUIDResolver* uuid_resolver,
       pbrpc::MRCServiceClient* mrc_service_client,
       pbrpc::OSDServiceClient* osd_service_client,
@@ -224,10 +225,21 @@ class FileHandleImplementation
   /** Execute period tasks */
   void ExecutePeriodTasks(const RPCOptions& options);
   
-  /** XCapHandler: Get current capability.*/
+  /** XCapHandler: Get current capability. */
   virtual void GetXCap(xtreemfs::pbrpc::XCap* xcap);
 
  private:
+  /**
+   * Execute the operation and check on invalid view exceptions.
+   * If the view the operation was executed with is outdated, it
+   * will be renewed and the operation retried.
+   */
+  template<typename T>
+  T ExecuteViewCheckedOperation(boost::function<T()> operation);
+
+  /** Renew the xLocSet synchronously. */
+  void RenewXLocSet();
+
   /** Implements callback for an async xtreemfs_update_file_size request. */
   virtual void CallFinished(
       pbrpc::timestampResponse* response_message,
@@ -239,11 +251,14 @@ class FileHandleImplementation
   /** Same as Flush(), takes special actions if called by Close(). */
   void Flush(bool close_file);
 
-  /** Actual implementation of ReleaseLock(). */
-  void ReleaseLock(
-      const pbrpc::UserCredentials& user_credentials,
-      const pbrpc::Lock& lock,
-      boost::mutex::scoped_lock* active_locks_mutex_lock);
+  /** Actual implementation of Flush(). */
+  void DoFlush(bool close_file);
+
+  /** Actual implementation of Read(). */
+  int DoRead(
+      char *buf,
+      size_t count,
+      int64_t offset);
 
   /** Read data from the OSD. Objects owned by the caller. */
   int ReadFromOSD(
@@ -254,6 +269,12 @@ class FileHandleImplementation
       int offset_in_object,
       int bytes_to_read);
 
+  /** Actual implementation of Write(). */
+  int DoWrite(
+      const char *buf,
+      size_t count,
+      int64_t offset);
+
   /** Write data to the OSD. Objects owned by the caller. */
   void WriteToOSD(
       UUIDIterator* uuid_iterator,
@@ -262,6 +283,30 @@ class FileHandleImplementation
       int offset_in_object,
       const char* buffer,
       int bytes_to_write);
+
+  /** Acutal implementation of TruncatePhaseTwoAndThree(). */
+  void DoTruncatePhaseTwoAndThree(int64_t new_file_size);
+
+  /** Actual implementation of AcquireLock(). */
+  xtreemfs::pbrpc::Lock* DoAcquireLock(
+      int process_id,
+      uint64_t offset,
+      uint64_t length,
+      bool exclusive,
+      bool wait_for_lock);
+
+  /** Actual implementation of CheckLock(). */
+  xtreemfs::pbrpc::Lock* DoCheckLock(
+      int process_id,
+      uint64_t offset,
+      uint64_t length,
+      bool exclusive);
+
+  /** Actual implementation of ReleaseLock(). */
+  void DoReleaseLock(const pbrpc::Lock& lock);
+
+  /** Actual implementation of PingReplica(). */
+  void DoPingReplica(const std::string& osd_uuid);
 
   /** Any modification to the object must obtain a lock first. */
   boost::mutex mutex_;
@@ -277,8 +322,6 @@ class FileHandleImplementation
 
   /** UUIDIterator which contains the UUIDs of all replicas. */
   UUIDIterator* osd_uuid_iterator_;
-  /** UUIDIterator which contains the UUIDs of all replicas and stripes. */
-  UUIDContainer* osd_uuid_container_;
 
   /** Needed to resolve UUIDs. */
   UUIDResolver* uuid_resolver_;

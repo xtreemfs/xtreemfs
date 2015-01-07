@@ -19,10 +19,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
+import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.libxtreemfs.RPCCaller.CallGenerator;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
+import org.xtreemfs.common.xloc.ReplicationPolicyImplementation;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
@@ -35,6 +37,7 @@ import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
@@ -79,8 +82,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.unlinkRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.unlinkResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_suitable_osdsRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_suitable_osdsResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_xlocsetRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addRequest;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_listRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request;
@@ -1317,10 +1320,17 @@ public class VolumeImplementation implements Volume, AdminVolume {
                     }
                 });
 
-        // Trigger the replication at this point by reading at least one byte.
-        FileHandle fileHandle = openFile(userCredentials, path,
+        // Renew the local XLocSet by reopening the file.
+        // TODO(jdillmann): Return the updated XLocSet as a response to the addReplicaOperation.
+        AdminFileHandle fileHandle = openFile(userCredentials, path,
                 SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
-        fileHandle.pingReplica(userCredentials, newReplica.getOsdUuids(0));
+
+        // Only the files with the RONLY policy have to be pinged. WqRq, WaR1, WaRa policies handled on the MRC side by
+        // the XLocSetCoordinator.
+        if (fileHandle.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
+            // Trigger the replication at this point by reading at least one byte.
+            fileHandle.pingReplica(userCredentials, newReplica.getOsdUuids(0));
+        }
         fileHandle.close();
     }
 
@@ -1333,22 +1343,25 @@ public class VolumeImplementation implements Volume, AdminVolume {
     @Override
     public Replicas listReplicas(UserCredentials userCredentials, String path) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException {
-        xtreemfs_replica_listRequest request = xtreemfs_replica_listRequest.newBuilder()
+        xtreemfs_get_xlocsetRequest request = xtreemfs_get_xlocsetRequest.newBuilder()
                 .setVolumeName(volumeName).setPath(path).build();
 
-        Replicas response = RPCCaller.<xtreemfs_replica_listRequest, Replicas> syncCall(SERVICES.MRC,
+        XLocSet xlocset = RPCCaller.<xtreemfs_get_xlocsetRequest, XLocSet> syncCall(SERVICES.MRC,
                 userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                new CallGenerator<xtreemfs_replica_listRequest, Replicas>() {
+                new CallGenerator<xtreemfs_get_xlocsetRequest, XLocSet>() {
                     @Override
-                    public RPCResponse<Replicas> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, xtreemfs_replica_listRequest input) throws IOException {
-                        return mrcServiceClient.xtreemfs_replica_list(server, authHeader, userCreds, input);
+                    public RPCResponse<XLocSet> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, xtreemfs_get_xlocsetRequest input) throws IOException {
+                        return mrcServiceClient.xtreemfs_get_xlocset(server, authHeader, userCreds, input);
                     }
                 });
 
-        assert (response != null);
+        assert (xlocset != null);
 
-        return response;
+        Replicas.Builder replicas = Replicas.newBuilder();
+        replicas.addAllReplicas(xlocset.getReplicasList());
+
+        return replicas.build();
     }
 
     /*
@@ -1394,6 +1407,14 @@ public class VolumeImplementation implements Volume, AdminVolume {
                         return osdServiceClient.unlink(server, authHeader, userCreds, input);
                     }
                 });
+
+        // Update the local XLocSet cached at FileInfo if it exists.
+        if (openFileTable.containsKey(response.getXcap().getFileId())) {
+            // File has already been opened: refresh the xlocset.
+            // TODO(jdillmann): Return the new XLocSet and the replicateOnClose flag with the response.
+            FileHandle file = openFile(userCredentials, path, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
+            file.close();
+        }
     }
 
     @Override
@@ -1492,6 +1513,47 @@ public class VolumeImplementation implements Volume, AdminVolume {
                 + "\"update-policy\": " + "\"" + replicationPolicy + "\"," + "\"replication-flags\": "
                 + String.valueOf(replicationFlags) + " }";
         setXAttr(userCredentials, directory, XTREEMFS_DEFAULT_RP, JSON, XATTR_FLAGS.XATTR_FLAGS_CREATE);
+    }
+
+    @SuppressWarnings("unchecked")
+    public ReplicationPolicy getDefaultReplicationPolicy(UserCredentials userCredentials, String directory)
+            throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+
+        Object replicationPolicyObject;
+        Map<String, Object> replicationPolicyMap;
+
+        try {
+            String rpAsJSON = getXAttr(userCredentials, directory, XTREEMFS_DEFAULT_RP);
+            replicationPolicyObject = JSONParser.parseJSON(new JSONString(rpAsJSON));
+        } catch (JSONException e) {
+            throw new IOException(e);
+        }
+
+        try {
+            replicationPolicyMap = (Map<String, Object>) replicationPolicyObject;
+        } catch (ClassCastException e) {
+            throw new IOException("JSON response does not contain a Map.", e);
+        }
+
+        if (!(replicationPolicyMap.containsKey("replication-factor")
+                && replicationPolicyMap.containsKey("update-policy") 
+                && replicationPolicyMap.containsKey("replication-flags"))) {
+            throw new IOException("Incomplete JSON response from MRC.");
+        }
+
+        final String updatePolicy;
+        final int replicationFactor;
+        final int replicationFlags;
+        try {
+            // The JSONParser returns every number as a Long object.
+            replicationFlags = ((Long) replicationPolicyMap.get("replication-flags")).intValue();
+            replicationFactor = ((Long) replicationPolicyMap.get("replication-factor")).intValue();
+            updatePolicy = (String) replicationPolicyMap.get("update-policy");
+        } catch (ClassCastException e) {
+            throw new IOException(e);
+        }
+
+        return new ReplicationPolicyImplementation(updatePolicy, replicationFactor, replicationFlags);
     }
 
     /**

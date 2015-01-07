@@ -104,6 +104,15 @@ message TruncateLog {
   repeated TruncateRecord records = 1;
 }
 
+// Version of the latest XLocSet a Replica has beeen part of 
+// and a flag indicating if the Replica is currently participating
+// in a XLocSetChange 
+message XLocSetVersionState {
+  required fixed32 version = 1;
+  required bool invalidated = 2;
+  optional fixed64 modified_time = 3;
+}
+
 // Full status of a replica. Used by the read-write
 // replication during Replica Reset.
 message ReplicaStatus {
@@ -222,6 +231,11 @@ message xtreemfs_cleanup_startRequest {
   required bool remove_unavail_volume = 2;
   // If true, objects are not deleted but moved to lost and found.
   required bool lost_and_found = 3;
+  // Delete metadata of deleted or abandoned files.
+  required bool delete_metadata = 4;
+  // Time in seconds to wait after the last view update before
+  // deleting metadata.
+  required fixed32 metadata_timeout = 5;
 }
 
 message xtreemfs_cleanup_statusResponse {
@@ -332,6 +346,16 @@ message xtreemfs_rwr_reset_completeRequest {
   required FileCredentials file_credentials = 1;
   required string file_id = 2;
   required fixed32 primary_epoch = 3;
+}
+
+message xtreemfs_xloc_set_invalidateRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+}
+
+message xtreemfs_xloc_set_invalidateResponse {
+  required bool is_primary = 1;
+  optional ReplicaStatus status = 2;
 }
 
 // Status of OSD health test
@@ -544,4 +568,15 @@ service OSDService {
     option(proc_id)=70;
   };
 
+  // Invalidate the replicas location set.
+  rpc xtreemfs_xloc_set_invalidate(xtreemfs_xloc_set_invalidateRequest) returns(xtreemfs_xloc_set_invalidateResponse) {
+    option(proc_id)=81;
+  };
+  
+  // Sets the authoritative state on a replica during an xLocSet change. 
+  // This operation invalidets replicas not yet invalidated and does not require
+  // a valid view.
+  rpc xtreemfs_rwr_auth_state_invalidated(xtreemfs_rwr_auth_stateRequest) returns(emptyResponse) {
+    option(proc_id)=82;
+  };
 }

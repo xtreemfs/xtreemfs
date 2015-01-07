@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Thu Jul 10 14:56:46 CEST 2014
+//automatically generated from MRC.proto at Thu Dec 11 16:09:37 CET 2014
 //(c) 2014. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -48,6 +48,7 @@ public class MRCServiceConstants {
     public static final int PROC_ID_XTREEMFS_SET_REPLICA_UPDATE_POLICY = 48;
     public static final int PROC_ID_XTREEMFS_SET_READ_ONLY_XATTR = 49;
     public static final int PROC_ID_XTREEMFS_GET_FILE_CREDENTIALS = 50;
+    public static final int PROC_ID_XTREEMFS_GET_XLOCSET = 51;
 
     public static Message getRequestMessage(int procId) {
         switch (procId) {
@@ -91,6 +92,7 @@ public class MRCServiceConstants {
            case 48: return MRC.xtreemfs_set_replica_update_policyRequest.getDefaultInstance();
            case 49: return MRC.xtreemfs_set_read_only_xattrRequest.getDefaultInstance();
            case 50: return MRC.xtreemfs_get_file_credentialsRequest.getDefaultInstance();
+           case 51: return MRC.xtreemfs_get_xlocsetRequest.getDefaultInstance();
            default: throw new RuntimeException("unknown procedure id");
         }
     }
@@ -138,6 +140,7 @@ public class MRCServiceConstants {
            case 48: return MRC.xtreemfs_set_replica_update_policyResponse.getDefaultInstance();
            case 49: return MRC.xtreemfs_set_read_only_xattrResponse.getDefaultInstance();
            case 50: return GlobalTypes.FileCredentials.getDefaultInstance();
+           case 51: return GlobalTypes.XLocSet.getDefaultInstance();
            default: throw new RuntimeException("unknown procedure id");
         }
     }

@@ -17,6 +17,10 @@ using namespace xtreemfs::util;
 
 namespace xtreemfs {
 
+SimpleUUIDIterator::SimpleUUIDIterator(const xtreemfs::pbrpc::XLocSet& xlocs) {
+  ClearAndGetOSDUUIDsFromXlocSet(xlocs);
+}
+
 SimpleUUIDIterator::~SimpleUUIDIterator() {
   for (list<UUIDItem*>::iterator it = uuids_.begin();
        it != uuids_.end();
@@ -35,6 +39,41 @@ void SimpleUUIDIterator::AddUUID(const std::string& uuid) {
   if (uuids_.size() == 1) {
     current_uuid_ = uuids_.begin();
   }
+}
+
+void SimpleUUIDIterator::ClearAndGetOSDUUIDsFromXlocSet(const xtreemfs::pbrpc::XLocSet& xlocs) {
+  boost::mutex::scoped_lock lock(mutex_);
+
+  if (xlocs.replicas_size() == 0) {
+    throw EmptyReplicaListInXlocSet("UUIDContainer::GetOSDUUIDFromXlocSet: "
+        "Empty replica list in XlocSet: " + xlocs.DebugString());
+  }
+
+  // Clear the list.
+  for (list<UUIDItem*>::iterator it = uuids_.begin();
+       it != uuids_.end();
+       ++it) {
+    delete (*it);
+  }
+  uuids_.clear();
+
+  // Add the head OSD of each replica to the list.
+  for (int replica_index = 0;
+       replica_index < xlocs.replicas_size();
+       ++replica_index) {
+    const xtreemfs::pbrpc::Replica& replica = xlocs.replicas(replica_index);
+
+    if (replica.osd_uuids_size() == 0) {
+      throw NoHeadOSDInXlocSet("UUIDContainer::GetOSDUUIDFromXlocSet: "
+          "No head OSD available in XlocSet: " + xlocs.DebugString());
+    }
+
+    UUIDItem* entry = new UUIDItem(replica.osd_uuids(0));
+    uuids_.push_back(entry);
+  }
+
+  // Set the current UUID to the first element.
+  current_uuid_ = uuids_.begin();
 }
 
 void SimpleUUIDIterator::Clear() {

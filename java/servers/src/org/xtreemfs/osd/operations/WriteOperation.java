@@ -79,8 +79,11 @@ public final class WriteOperation extends OSDOperation {
             master.objectReceived();
             master.dataReceived(rq.getRPCRequest().getData().capacity());
 
-            if ( (rq.getLocationList().getReplicaUpdatePolicy().length() == 0)
-               || (rq.getLocationList().getNumReplicas() == 1) ){
+            // TODO(jdillmann): Use centralized method to check if a lease is required.
+            if (rq.getLocationList().getNumReplicas() > 1
+                    && ReplicaUpdatePolicies.isRwReplicated(rq.getLocationList().getReplicaUpdatePolicy())) {
+                replicatedWrite(rq,args,syncWrite);
+            } else {
 
                 ReusableBuffer viewBuffer = rq.getRPCRequest().getData().createViewBuffer();
                 master.getStorageStage().writeObject(args.getFileId(), args.getObjectNumber(), sp,
@@ -92,8 +95,6 @@ public final class WriteOperation extends OSDOperation {
                                 sendResult(rq, result, error);
                             }
                         });
-            } else {
-                replicatedWrite(rq,args,syncWrite);
             }
         }
     }
@@ -224,7 +225,4 @@ public final class WriteOperation extends OSDOperation {
     public void startInternalEvent(Object[] args) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    
-
 }
