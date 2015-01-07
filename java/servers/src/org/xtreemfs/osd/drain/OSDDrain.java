@@ -42,7 +42,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replicas;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_check_file_existsRequest;
@@ -50,8 +49,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_check_file_existsResp
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_check_file_existsResponse.FILE_STATE;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_suitable_osdsRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_suitable_osdsResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_xlocsetRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addRequest;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_listRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_read_only_xattrResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse;
@@ -87,8 +86,7 @@ public class OSDDrain {
         public Replica           newReplica;
 
         // origReplica is necessary to restore the replicas if there is an error
-        // while removing the
-        // original replica
+        // while removing the original replica
         public Replica           oldReplica;
 
         public Boolean           wasAlreadyReadOnly;
@@ -148,9 +146,7 @@ public class OSDDrain {
             this.updateMRCAddresses(fileInfos);
 
             // remove fileIDs which has no entry on MRC. Can happen because
-            // object files on OSDs
-            // will be deleted delayed.
-
+            // object files on OSDs will be deleted delayed.
             fileInfos = this.removeNonExistingFileIDs(fileInfos);
 
             // set ReplicationUpdatePolicy to RONLY
@@ -418,9 +414,10 @@ public class OSDDrain {
         return returnList;
     }
 
+
     /**
-     * Create a new Replica for every fileID in fileIDList on a new OSD. OSDs will be chosen by
-     * get_suitable_osds MRC call.
+     * Create a new Replica for every fileID in fileIDList on a new OSD. OSDs will be chosen by get_suitable_osds MRC
+     * call.
      * 
      * @param fileIDList
      * @throws Exception
@@ -433,15 +430,14 @@ public class OSDDrain {
         for (FileInformation fileInfo : fileInfos) {
 
             // get Striping Policy
-            RPCResponse<Replicas> replResp = null;
-            Replicas reps = null;
+            RPCResponse<XLocSet> xlocsetResp = null;
+            XLocSet xlocset = null;
             try {
 
-                xtreemfs_replica_listRequest rlistReq = xtreemfs_replica_listRequest.newBuilder()
+                xtreemfs_get_xlocsetRequest xlocReq = xtreemfs_get_xlocsetRequest.newBuilder()
                         .setFileId(fileInfo.fileID).build();
-                replResp = mrcClient
-                        .xtreemfs_replica_list(fileInfo.mrcAddress, password, userCreds, rlistReq);
-                reps = replResp.get();
+                xlocsetResp = mrcClient.xtreemfs_get_xlocset(fileInfo.mrcAddress, password, userCreds, xlocReq);
+                xlocset = xlocsetResp.get();
             } catch (Exception e) {
                 if (Logging.isDebug()) {
                     Logging.logError(Logging.LEVEL_WARN, this, e);
@@ -449,11 +445,11 @@ public class OSDDrain {
                 throw new OSDDrainException(e.getMessage(), ErrorState.CREATE_REPLICAS, fileInfos,
                         finishedFileInfos);
             } finally {
-                if (replResp != null)
-                    replResp.freeBuffers();
+                if (xlocsetResp != null)
+                    xlocsetResp.freeBuffers();
             }
 
-            Replica rep = reps.getReplicas(0);
+            Replica rep = xlocset.getReplicas(0);
             StripingPolicy sp = rep.getStripingPolicy();
 
             // get suitable OSD for new replica
@@ -482,11 +478,8 @@ public class OSDDrain {
             }
 
             // build new Replica
-            // TODO: set stripe-width to 1 or decide what to do with
-            // stripe-width greater than 1 (if
-            // stripe-width is greater than 1 all OSDs used in one of the other
-            // replicas couldn't
-            // be used again)
+            // TODO: set stripe-width to 1 or decide what to do with stripe-width greater than 1 (if stripe-width is
+            // greater than 1 all OSDs used in one of the other replicas couldn't be used again)
             // current solution is to use '1' for the striping width
             sp = StripingPolicy.newBuilder().setType(sp.getType()).setStripeSize(sp.getStripeSize()).setWidth(1)
                     .build();
@@ -646,8 +639,7 @@ public class OSDDrain {
             }
 
             // read a single Byte from one object of every OSD the new replica
-            // is assigned to to
-            // trigger replication
+            // is assigned to to trigger replication
             StripingPolicyImpl spol = StripingPolicyImpl.getPolicy(fileInfo.newReplica, 0);
             for (int i = 0; i < fileInfo.newReplica.getOsdUuidsCount(); i++) {
 

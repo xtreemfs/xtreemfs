@@ -98,6 +98,7 @@ Options::Options()
   max_tries = 40;
   max_read_tries = 40;
   max_write_tries = 40;
+  max_view_renewals = 5;
   retry_delay_s = 15;
   connect_timeout_s = 15;
   request_timeout_s = 15;
@@ -240,6 +241,10 @@ void Options::GenerateProgramOptionsDescriptions() {
         "Fuse.)"
 #endif  // __linux
         )
+    ("max-view-renewals",
+        po::value(&max_view_renewals)->default_value(max_view_renewals),
+        "Maximum number of attempts to retry a request with a renewed view "
+        "in case an outdated view error did occur.")
     ("retry-delay",
         po::value(&retry_delay_s)->default_value(retry_delay_s),
         "Wait time after a request failed until next attempt (in seconds).")

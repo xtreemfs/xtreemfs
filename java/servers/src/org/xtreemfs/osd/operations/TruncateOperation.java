@@ -27,7 +27,6 @@ import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
-import org.xtreemfs.osd.rwre.ReplicaUpdatePolicy;
 import org.xtreemfs.osd.stages.StorageStage.TruncateCallback;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest;
@@ -70,7 +69,9 @@ public final class TruncateOperation extends OSDOperation {
             return;
         }
 
-        if (ReplicaUpdatePolicy.requiresCoordination(rq.getLocationList())) {
+        // TODO(jdillmann): Use centralized method to check if a lease is required.
+        if (rq.getLocationList().getNumReplicas() > 1
+                && ReplicaUpdatePolicies.isRwReplicated(rq.getLocationList().getReplicaUpdatePolicy())) {
             rwReplicatedTruncate(rq, args);
         } else {
 

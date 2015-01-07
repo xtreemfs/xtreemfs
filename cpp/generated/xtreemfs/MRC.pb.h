@@ -81,6 +81,7 @@ class xtreemfs_listdirRequest;
 class xtreemfs_listdirResponse;
 class xtreemfs_replica_addRequest;
 class xtreemfs_replica_listRequest;
+class xtreemfs_get_xlocsetRequest;
 class xtreemfs_replica_removeRequest;
 class xtreemfs_restore_fileRequest;
 class xtreemfs_rmvolRequest;
@@ -5077,6 +5078,135 @@ class xtreemfs_replica_listRequest : public ::google::protobuf::Message {
 
   void InitAsDefaultInstance();
   static xtreemfs_replica_listRequest* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class xtreemfs_get_xlocsetRequest : public ::google::protobuf::Message {
+ public:
+  xtreemfs_get_xlocsetRequest();
+  virtual ~xtreemfs_get_xlocsetRequest();
+
+  xtreemfs_get_xlocsetRequest(const xtreemfs_get_xlocsetRequest& from);
+
+  inline xtreemfs_get_xlocsetRequest& operator=(const xtreemfs_get_xlocsetRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const xtreemfs_get_xlocsetRequest& default_instance();
+
+  void Swap(xtreemfs_get_xlocsetRequest* other);
+
+  // implements Message ----------------------------------------------
+
+  xtreemfs_get_xlocsetRequest* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const xtreemfs_get_xlocsetRequest& from);
+  void MergeFrom(const xtreemfs_get_xlocsetRequest& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // optional string file_id = 1;
+  inline bool has_file_id() const;
+  inline void clear_file_id();
+  static const int kFileIdFieldNumber = 1;
+  inline const ::std::string& file_id() const;
+  inline void set_file_id(const ::std::string& value);
+  inline void set_file_id(const char* value);
+  inline void set_file_id(const char* value, size_t size);
+  inline ::std::string* mutable_file_id();
+  inline ::std::string* release_file_id();
+  inline void set_allocated_file_id(::std::string* file_id);
+
+  // optional string path = 2;
+  inline bool has_path() const;
+  inline void clear_path();
+  static const int kPathFieldNumber = 2;
+  inline const ::std::string& path() const;
+  inline void set_path(const ::std::string& value);
+  inline void set_path(const char* value);
+  inline void set_path(const char* value, size_t size);
+  inline ::std::string* mutable_path();
+  inline ::std::string* release_path();
+  inline void set_allocated_path(::std::string* path);
+
+  // optional string volume_name = 3;
+  inline bool has_volume_name() const;
+  inline void clear_volume_name();
+  static const int kVolumeNameFieldNumber = 3;
+  inline const ::std::string& volume_name() const;
+  inline void set_volume_name(const ::std::string& value);
+  inline void set_volume_name(const char* value);
+  inline void set_volume_name(const char* value, size_t size);
+  inline ::std::string* mutable_volume_name();
+  inline ::std::string* release_volume_name();
+  inline void set_allocated_volume_name(::std::string* volume_name);
+
+  // optional .xtreemfs.pbrpc.XCap xcap = 4;
+  inline bool has_xcap() const;
+  inline void clear_xcap();
+  static const int kXcapFieldNumber = 4;
+  inline const ::xtreemfs::pbrpc::XCap& xcap() const;
+  inline ::xtreemfs::pbrpc::XCap* mutable_xcap();
+  inline ::xtreemfs::pbrpc::XCap* release_xcap();
+  inline void set_allocated_xcap(::xtreemfs::pbrpc::XCap* xcap);
+
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_get_xlocsetRequest)
+ private:
+  inline void set_has_file_id();
+  inline void clear_has_file_id();
+  inline void set_has_path();
+  inline void clear_has_path();
+  inline void set_has_volume_name();
+  inline void clear_has_volume_name();
+  inline void set_has_xcap();
+  inline void clear_has_xcap();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::std::string* file_id_;
+  ::std::string* path_;
+  ::std::string* volume_name_;
+  ::xtreemfs::pbrpc::XCap* xcap_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(4 + 31) / 32];
+
+  friend void  protobuf_AddDesc_xtreemfs_2fMRC_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fMRC_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fMRC_2eproto();
+
+  void InitAsDefaultInstance();
+  static xtreemfs_get_xlocsetRequest* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -12878,6 +13008,258 @@ inline void xtreemfs_replica_listRequest::set_allocated_volume_name(::std::strin
   } else {
     clear_has_volume_name();
     volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// -------------------------------------------------------------------
+
+// xtreemfs_get_xlocsetRequest
+
+// optional string file_id = 1;
+inline bool xtreemfs_get_xlocsetRequest::has_file_id() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void xtreemfs_get_xlocsetRequest::set_has_file_id() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void xtreemfs_get_xlocsetRequest::clear_has_file_id() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void xtreemfs_get_xlocsetRequest::clear_file_id() {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
+    file_id_->clear();
+  }
+  clear_has_file_id();
+}
+inline const ::std::string& xtreemfs_get_xlocsetRequest::file_id() const {
+  return *file_id_;
+}
+inline void xtreemfs_get_xlocsetRequest::set_file_id(const ::std::string& value) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(value);
+}
+inline void xtreemfs_get_xlocsetRequest::set_file_id(const char* value) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(value);
+}
+inline void xtreemfs_get_xlocsetRequest::set_file_id(const char* value, size_t size) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* xtreemfs_get_xlocsetRequest::mutable_file_id() {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  return file_id_;
+}
+inline ::std::string* xtreemfs_get_xlocsetRequest::release_file_id() {
+  clear_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = file_id_;
+    file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void xtreemfs_get_xlocsetRequest::set_allocated_file_id(::std::string* file_id) {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
+    delete file_id_;
+  }
+  if (file_id) {
+    set_has_file_id();
+    file_id_ = file_id;
+  } else {
+    clear_has_file_id();
+    file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// optional string path = 2;
+inline bool xtreemfs_get_xlocsetRequest::has_path() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void xtreemfs_get_xlocsetRequest::set_has_path() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void xtreemfs_get_xlocsetRequest::clear_has_path() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void xtreemfs_get_xlocsetRequest::clear_path() {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
+    path_->clear();
+  }
+  clear_has_path();
+}
+inline const ::std::string& xtreemfs_get_xlocsetRequest::path() const {
+  return *path_;
+}
+inline void xtreemfs_get_xlocsetRequest::set_path(const ::std::string& value) {
+  set_has_path();
+  if (path_ == &::google::protobuf::internal::kEmptyString) {
+    path_ = new ::std::string;
+  }
+  path_->assign(value);
+}
+inline void xtreemfs_get_xlocsetRequest::set_path(const char* value) {
+  set_has_path();
+  if (path_ == &::google::protobuf::internal::kEmptyString) {
+    path_ = new ::std::string;
+  }
+  path_->assign(value);
+}
+inline void xtreemfs_get_xlocsetRequest::set_path(const char* value, size_t size) {
+  set_has_path();
+  if (path_ == &::google::protobuf::internal::kEmptyString) {
+    path_ = new ::std::string;
+  }
+  path_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* xtreemfs_get_xlocsetRequest::mutable_path() {
+  set_has_path();
+  if (path_ == &::google::protobuf::internal::kEmptyString) {
+    path_ = new ::std::string;
+  }
+  return path_;
+}
+inline ::std::string* xtreemfs_get_xlocsetRequest::release_path() {
+  clear_has_path();
+  if (path_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = path_;
+    path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void xtreemfs_get_xlocsetRequest::set_allocated_path(::std::string* path) {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
+    delete path_;
+  }
+  if (path) {
+    set_has_path();
+    path_ = path;
+  } else {
+    clear_has_path();
+    path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// optional string volume_name = 3;
+inline bool xtreemfs_get_xlocsetRequest::has_volume_name() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void xtreemfs_get_xlocsetRequest::set_has_volume_name() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void xtreemfs_get_xlocsetRequest::clear_has_volume_name() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void xtreemfs_get_xlocsetRequest::clear_volume_name() {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
+    volume_name_->clear();
+  }
+  clear_has_volume_name();
+}
+inline const ::std::string& xtreemfs_get_xlocsetRequest::volume_name() const {
+  return *volume_name_;
+}
+inline void xtreemfs_get_xlocsetRequest::set_volume_name(const ::std::string& value) {
+  set_has_volume_name();
+  if (volume_name_ == &::google::protobuf::internal::kEmptyString) {
+    volume_name_ = new ::std::string;
+  }
+  volume_name_->assign(value);
+}
+inline void xtreemfs_get_xlocsetRequest::set_volume_name(const char* value) {
+  set_has_volume_name();
+  if (volume_name_ == &::google::protobuf::internal::kEmptyString) {
+    volume_name_ = new ::std::string;
+  }
+  volume_name_->assign(value);
+}
+inline void xtreemfs_get_xlocsetRequest::set_volume_name(const char* value, size_t size) {
+  set_has_volume_name();
+  if (volume_name_ == &::google::protobuf::internal::kEmptyString) {
+    volume_name_ = new ::std::string;
+  }
+  volume_name_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* xtreemfs_get_xlocsetRequest::mutable_volume_name() {
+  set_has_volume_name();
+  if (volume_name_ == &::google::protobuf::internal::kEmptyString) {
+    volume_name_ = new ::std::string;
+  }
+  return volume_name_;
+}
+inline ::std::string* xtreemfs_get_xlocsetRequest::release_volume_name() {
+  clear_has_volume_name();
+  if (volume_name_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = volume_name_;
+    volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void xtreemfs_get_xlocsetRequest::set_allocated_volume_name(::std::string* volume_name) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
+    delete volume_name_;
+  }
+  if (volume_name) {
+    set_has_volume_name();
+    volume_name_ = volume_name;
+  } else {
+    clear_has_volume_name();
+    volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// optional .xtreemfs.pbrpc.XCap xcap = 4;
+inline bool xtreemfs_get_xlocsetRequest::has_xcap() const {
+  return (_has_bits_[0] & 0x00000008u) != 0;
+}
+inline void xtreemfs_get_xlocsetRequest::set_has_xcap() {
+  _has_bits_[0] |= 0x00000008u;
+}
+inline void xtreemfs_get_xlocsetRequest::clear_has_xcap() {
+  _has_bits_[0] &= ~0x00000008u;
+}
+inline void xtreemfs_get_xlocsetRequest::clear_xcap() {
+  if (xcap_ != NULL) xcap_->::xtreemfs::pbrpc::XCap::Clear();
+  clear_has_xcap();
+}
+inline const ::xtreemfs::pbrpc::XCap& xtreemfs_get_xlocsetRequest::xcap() const {
+  return xcap_ != NULL ? *xcap_ : *default_instance_->xcap_;
+}
+inline ::xtreemfs::pbrpc::XCap* xtreemfs_get_xlocsetRequest::mutable_xcap() {
+  set_has_xcap();
+  if (xcap_ == NULL) xcap_ = new ::xtreemfs::pbrpc::XCap;
+  return xcap_;
+}
+inline ::xtreemfs::pbrpc::XCap* xtreemfs_get_xlocsetRequest::release_xcap() {
+  clear_has_xcap();
+  ::xtreemfs::pbrpc::XCap* temp = xcap_;
+  xcap_ = NULL;
+  return temp;
+}
+inline void xtreemfs_get_xlocsetRequest::set_allocated_xcap(::xtreemfs::pbrpc::XCap* xcap) {
+  delete xcap_;
+  xcap_ = xcap;
+  if (xcap) {
+    set_has_xcap();
+  } else {
+    clear_has_xcap();
   }
 }
 

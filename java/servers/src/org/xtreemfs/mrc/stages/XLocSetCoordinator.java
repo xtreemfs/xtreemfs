@@ -49,9 +49,6 @@ import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.operations.MRCOperation;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.osd.rwre.CoordinatedReplicaUpdatePolicy;
-import org.xtreemfs.osd.rwre.WaR1UpdatePolicy;
-import org.xtreemfs.osd.rwre.WaRaUpdatePolicy;
-import org.xtreemfs.osd.rwre.WqRqUpdatePolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
@@ -241,6 +238,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         // Ensure the next view won't be propagated until it is installed at the MRC.
         final XLocSet extXLocSet = Converter.xLocListToXLocSet(extXLocList).setVersion(curXLocSet.getVersion()).build();
 
+        // TODO(jdillmann): Use centralized method to check if a lease is required.
         if (extXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ)
                 || extXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE)
                 || extXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA)) {
@@ -766,33 +764,44 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
      * @return
      */
     private int calculateNumRequiredAcks(String fileId, XLocSet xLocSet) {
-        // Generate a list of ServiceUUIDs from the XLocSet.
-        int i;
-        List<ServiceUUID> OSDUUIDs = new ArrayList<ServiceUUID>(xLocSet.getReplicasCount() - 1);
-        for (i = 0; i < xLocSet.getReplicasCount() - 1; i++) {
-            // Add each head OSDUUID to the list.
-            OSDUUIDs.add(i, new ServiceUUID(Helper.getOSDUUIDFromXlocSet(xLocSet, i, 0)));
-        }
-        // Save the last OSD as the localUUID.
-        String localUUID = Helper.getOSDUUIDFromXlocSet(xLocSet, i, 0);
-        
-        // Create the policy without specifing a local OSD.
-        String replicaUpdatePolicy = xLocSet.getReplicaUpdatePolicy();
-        CoordinatedReplicaUpdatePolicy policy = null;
-        if (replicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE)) {
-            policy = new WaR1UpdatePolicy(OSDUUIDs, localUUID, fileId, null);
-        } else if (replicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA)) {
-            policy = new WaRaUpdatePolicy(OSDUUIDs, localUUID, fileId, null);
-        } else if (replicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ)) {
-            policy = new WqRqUpdatePolicy(OSDUUIDs, localUUID, fileId, null);
-        } else {
-            throw new IllegalArgumentException("unsupported replica update mode: " + replicaUpdatePolicy);
-        }
+        /*
+         * Essentially it is required to get ACKs from a majority for WqRq replicated files, 
+         * but for WaR1 it is required to 
+         *  - wait until every OSD is up to date in case of the addition of a replica
+         *  - and to wait for the invalidation/installation of the view on the removed OSD and one other.
+         *  
+         * But at the moment every read/write policy is depending on a majority due to the lease mechanism, 
+         * which results in an issue as seen at https://github.com/xtreemfs/xtreemfs/issues/235 but allows 
+         * for simpler handling of ACKs for view coordination.
+         */
 
-        // Since the policy assumes that the localUUID's state is known, we have to wait for one more ACK on operations
-        // that aren't executed from an OSD.
-        int numRequiredAcks = policy.getNumRequiredAcks(null) + 1;
+        int numRequiredAcks = (int) Math.ceil(((double) xLocSet.getReplicasCount() + 1.0) / 2.0);
         return numRequiredAcks;
+
+        // // Generate a list of ServiceUUIDs from the XLocSet.
+        // int i;
+        // List<ServiceUUID> OSDUUIDs = new ArrayList<ServiceUUID>(xLocSet.getReplicasCount() - 1);
+        // for (i = 0; i < xLocSet.getReplicasCount() - 1; i++) {
+        // // Add each head OSDUUID to the list.
+        // OSDUUIDs.add(i, new ServiceUUID(Helper.getOSDUUIDFromXlocSet(xLocSet, i, 0)));
+        // }
+        // // Save the last OSD as the localUUID.
+        // String localUUID = Helper.getOSDUUIDFromXlocSet(xLocSet, i, 0);
+        //
+        // // Create the policy without specifing a local OSD.
+        // String replicaUpdatePolicy = xLocSet.getReplicaUpdatePolicy();
+        // ReplicaUpdatePolicy policy = ReplicaUpdatePolicy.newReplicaUpdatePolicy(replicaUpdatePolicy, OSDUUIDs,
+        // localUUID, fileId, null);
+        //
+        // if (!(policy instanceof CoordinatedReplicaUpdatePolicy)) {
+        // throw new IllegalArgumentException("CoordinatedReplicaUpdatePolicy instance expected.");
+        // }
+        //
+        // // Since the policy assumes that the localUUID's state is known, we have to wait for one more ACK on
+        // operations
+        // // that aren't executed from an OSD.
+        // int numRequiredAcks = ((CoordinatedReplicaUpdatePolicy) policy).getNumRequiredAcks(null) + 1;
+        // return numRequiredAcks;
     }
 
     /**

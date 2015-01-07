@@ -14,7 +14,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.Replica;
@@ -106,16 +105,8 @@ public class ReplicatedFileState {
             remoteOSDs.add(headOSD);
         }
 
-        if (locations.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE)) {
-            // FIXME: instantiate the right policy
-            policy = new WaR1UpdatePolicy(remoteOSDs, localUUID.toString(), fileId, client);
-        } else if (locations.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA)) {
-            policy = new WaRaUpdatePolicy(remoteOSDs, localUUID.toString(), fileId, client);
-        } else if (locations.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ)) {
-            policy = new WqRqUpdatePolicy(remoteOSDs, localUUID.toString(), fileId, client);
-        } else {
-            throw new IllegalArgumentException("unsupported replica update mode: " + locations.getReplicaUpdatePolicy());
-        }
+        policy = ReplicaUpdatePolicy.newReplicaUpdatePolicy(locations.getReplicaUpdatePolicy(), remoteOSDs, localUUID.toString(),
+                fileId, client);
     }
 
     /**

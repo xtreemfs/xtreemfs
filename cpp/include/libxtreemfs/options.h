@@ -157,6 +157,8 @@ class Options {
   int max_read_tries;
   /** How often shall a failed write operation get retried? */
   int max_write_tries;
+  /** How often shall a view be tried to renewed? */
+  int max_view_renewals;
   /** How long to wait after a failed request at least? */
   int retry_delay_s;
   /** Maximum time until a connection attempt will be aborted. */

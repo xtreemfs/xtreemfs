@@ -47,72 +47,40 @@ public class RPCCaller {
             Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
             boolean uuidIteratorHasAddresses, C callRequest, CallGenerator<C, R> callGen) throws IOException,
             PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
-        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, null,
-                false, options.getMaxTries(), callRequest, null, callGen);
+        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, false,
+                options.getMaxTries(), callRequest, null, callGen);
     }
 
-    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds, Auth auth,
-            Options options, UUIDResolver uuidResolver, UUIDIterator it, boolean uuidIteratorHasAddresses,
-            XLocSetHandler<C> xLocSetHandler, C callRequest, CallGenerator<C, R> callGen) throws IOException,
-            PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
-        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, xLocSetHandler,
-                false, options.getMaxTries(), callRequest, null, callGen);
-    }
-
-    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds, Auth auth,
-            Options options, UUIDResolver uuidResolver, UUIDIterator it, boolean uuidIteratorHasAddresses,
-            boolean delayNextTry, int maxRetries, C callRequest, CallGenerator<C, R> callGen) throws IOException,
-            PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
-        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, null,
+    protected static <C, R extends Message> R
+            syncCall(SERVICES service, UserCredentials userCreds, Auth auth, Options options,
+                    UUIDResolver uuidResolver, UUIDIterator it, boolean uuidIteratorHasAddresses,
+                    boolean delayNextTry, int maxRetries, C callRequest, CallGenerator<C, R> callGen) throws IOException,
+                    PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
+        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses,
                 delayNextTry, maxRetries, callRequest, null, callGen);
     }
 
-    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds, Auth auth,
-            Options options, UUIDResolver uuidResolver, UUIDIterator it, boolean uuidIteratorHasAddresses,
-            XLocSetHandler<C> xLocSetHandler, boolean delayNextTry, int maxRetries, C callRequest,
-            CallGenerator<C, R> callGen) throws IOException, PosixErrorException, InternalServerErrorException,
+    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
+            Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
+            boolean uuidIteratorHasAddresses, C callRequest, ReusableBuffer buf, CallGenerator<C, R> callGen)
+            throws IOException, PosixErrorException, InternalServerErrorException,
             AddressToUUIDNotFoundException {
-        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, xLocSetHandler,
-                delayNextTry, maxRetries, callRequest, null, callGen);
-    }
-
-    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds, Auth auth,
-            Options options, UUIDResolver uuidResolver, UUIDIterator it, boolean uuidIteratorHasAddresses,
-            C callRequest, ReusableBuffer buf, CallGenerator<C, R> callGen) throws IOException, PosixErrorException,
-            InternalServerErrorException, AddressToUUIDNotFoundException {
-        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, null, false,
+        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, false,
                 options.getMaxTries(), callRequest, buf, callGen);
     }
 
-    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds, Auth auth,
-            Options options, UUIDResolver uuidResolver, UUIDIterator it, boolean uuidIteratorHasAddresses,
-            XLocSetHandler<C> xLocSetHandler, C callRequest, ReusableBuffer buf, CallGenerator<C, R> callGen)
-            throws IOException, PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
-        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, xLocSetHandler,
-                false, options.getMaxTries(), callRequest, buf, callGen);
-    }
-
-    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds, Auth auth,
-            Options options, UUIDResolver uuidResolver, UUIDIterator it, boolean uuidIteratorHasAddresses,
-            XLocSetHandler<C> xLocSetHandler, boolean delayNextTry, int maxRetries, C callRequest,
+    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
+            Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
+            boolean uuidIteratorHasAddresses, boolean delayNextTry, int maxRetries, C callRequest,
             ReusableBuffer buffer, CallGenerator<C, R> callGen) throws PosixErrorException, IOException,
             InternalServerErrorException, AddressToUUIDNotFoundException {
         int maxTries = maxRetries;
         int attempt = 0;
-        boolean renewXLocSet = false;
 
         R response = null;
         try {
             while (++attempt <= maxTries || maxTries == 0) {
-                // Renew the xLocSet if the request failed in the previous try due to an invalid view.
-                if (renewXLocSet && xLocSetHandler != null) {
-                    xLocSetHandler.renew();
-                    it = xLocSetHandler.updateUUIDIterator(it);
-                    callRequest = xLocSetHandler.updateXLocSetInRequest(callRequest);
-                    renewXLocSet = false;
-                }
-
-                // Retry only if it is a recoverable error (REDIRECT, IO_ERROR, INTERNAL_SERVER_ERROR, INVALID_VIEW).
+                // Retry only if it is a recoverable error (REDIRECT, IO_ERROR, INTERNAL_SERVER_ERROR).
                 boolean retry = false;
                 IOException responseError = null;
 
@@ -142,7 +110,6 @@ public class RPCCaller {
                     }
                 } catch (PBRPCException pbe) {
                     responseError = pbe;
-
                     // handle special redirect
                     if (pbe.getErrorType().equals(ErrorType.REDIRECT)) {
                         assert (pbe.getRedirectToServerUUID() != null);
@@ -171,47 +138,14 @@ public class RPCCaller {
                         continue;
                     }
 
-                    // If the view of this request is invalid (outdated xlocset), the view (and the UUIDIterator) has to
-                    // be updated and the request retried.
-                    if (pbe.getErrorType().equals(ErrorType.INVALID_VIEW)) {
-                        if (Logging.isDebug()) {
-                            Logging.logMessage(Logging.LEVEL_DEBUG, (Object) null,
-                                    "The server %s denied the requested operation because the clients view is outdated. "
-                                            + "The request will be retried once the view is renewed. Error: %s",
-                                    it.getUUID(), pbe.getErrorMessage());
-                        }
-
-                        renewXLocSet = true;
-                        retry = true;
-                    }
-
                     if (pbe.getErrorType().equals(ErrorType.IO_ERROR)
                             || pbe.getErrorType().equals(ErrorType.INTERNAL_SERVER_ERROR)) {
-                        // Log only the first retry.
-                        if (attempt == 1 && maxTries != 1) {
-                            String retriesLeft = (maxTries == 0) ? ("infinite") : (String.valueOf(maxTries - attempt));
-                            Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, pbe, "Got no response from %s,"
-                                    + "retrying (%s attemps left, waiting at least %s seconds"
-                                    + " between two attemps)", it.getUUID(), retriesLeft, options.getRetryDelay_s());
-                        }
                         // Mark the current UUID as failed and get the next one.
                         it.markUUIDAsFailed(it.getUUID());
                         retry = true;
                     }
                 } catch (IOException ioe) {
                     responseError = ioe;
-
-                    // Log only the first retry.
-                    if (attempt == 1 && maxTries != 1) {
-                        String retriesLeft = (maxTries == 0) ? ("infinite") : (String.valueOf(maxTries - attempt));
-                        Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, ioe, "Got no response from %s, "
-                                + "retrying (%s attemps left, waiting at least %s seconds"
-                                + " between two attemps) Error was: %s", it.getUUID(), retriesLeft,
-                                options.getRetryDelay_s(), ioe.getMessage());
-                        if (Logging.isDebug()) {
-                            Logging.logError(Logging.LEVEL_DEBUG, null, ioe);
-                        }
-                    }
                     // Mark the current UUID as failed and get the next one.
                     it.markUUIDAsFailed(it.getUUID());
                     retry = true;
@@ -232,6 +166,18 @@ public class RPCCaller {
                 }
 
                 if (responseError != null) {
+                    // Log only the first retry.
+                    if (attempt == 1 && maxTries != 1) {
+                        String retriesLeft = (maxTries == 0) ? ("infinite") : (String.valueOf(maxTries - attempt));
+                        Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, responseError,
+                                "Got no response from %s, " + "retrying (%s attemps left, waiting at least %s seconds"
+                                        + " between two attemps) Error was: %s", it.getUUID(), retriesLeft,
+                                options.getRetryDelay_s(), responseError.getMessage());
+                        if (Logging.isDebug()) {
+                            Logging.logError(Logging.LEVEL_DEBUG, null, responseError);
+                        }
+                    }
+                    
                     // Retry (and delay)?
                     if (retry && 
                             // Retry (and delay) only if at least one retry is left
@@ -260,7 +206,7 @@ public class RPCCaller {
      * @param delay_s
      * @throws IOException
      */
-    private static void waitDelay(long delay_s) throws IOException {
+    static void waitDelay(long delay_s) throws IOException {
         try {
             Thread.sleep(delay_s * 1000);
         } catch (InterruptedException e) {
