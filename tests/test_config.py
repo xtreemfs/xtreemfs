@@ -62,6 +62,24 @@ TestSets = {
                 'dir_repl': False,
                 'snmp': False,
     },
+    'travis-junit' : {
+                'ssl': False,
+                'mrc_repl': False,
+                'dir_repl': False,
+                'snmp': False,
+    },
+    'travis-cpp' : {
+                'ssl': False,
+                'mrc_repl': False,
+                'dir_repl': False,
+                'snmp': False,
+    },
+    'travis-valgrind' : {
+                'ssl': False,
+                'mrc_repl': False,
+                'dir_repl': False,
+                'snmp': False,
+    },
 }
 
 VolumeConfigs = {
@@ -274,19 +292,19 @@ Tests = [
         'name': 'JUnit tests',
         'file': 'junit_tests.sh',
         'VolumeConfigs': [],
-        'TestSets': [ 'full', 'short', 'short-ssl', 'travis' ]
+        'TestSets': [ 'full', 'short', 'short-ssl', 'travis-junit' ]
     },
     {
         'name': 'C++ Unit Tests',
         'file': 'cpp_unit_tests.sh',
         'VolumeConfigs': [],
-        'TestSets': [ 'full', 'short', 'short-ssl', 'travis' ]
+        'TestSets': [ 'full', 'short', 'short-ssl', 'travis-cpp' ]
     },
     {
         'name': 'Valgrind memory-leak check for C++ Unit Tests',
         'file': 'cpp_unit_tests_valgrind.sh',
         'VolumeConfigs': [],
-        'TestSets': [ 'full', 'travis' ]
+        'TestSets': [ 'full', 'travis-valgrind' ]
     },
     {
         'name': 'mkfs-lsfs-rmfs.xtreemfs test',

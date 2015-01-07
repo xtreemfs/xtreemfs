@@ -108,7 +108,7 @@ public class TortureXtreemFS {
                 if (!optPKCS12passphrase.isSet())
                     throw new InvalidUsageException("must specify a PCKS#12 passphrase for (grid)SSL mode, use "+optPKCS12passphrase.getName());
 
-                final String sslProtocol = optSSLProtocol.isSet() ? optSSLProtocol.getValue() : "ssltls";
+                final String sslProtocol = optSSLProtocol.isSet() ? optSSLProtocol.getValue() : null;
                 final boolean gridSSL = dirURL.getProtocol().equals(Schemes.SCHEME_PBRPCG);
                 sslOptions = new SSLOptions(new FileInputStream(optPKCS12file.getValue()),optPKCS12passphrase.getValue(),"PKCS12",
                         null, null, "none", false, gridSSL, sslProtocol, null);

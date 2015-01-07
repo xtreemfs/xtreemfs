@@ -69,7 +69,7 @@ public class ExampleLibxtreemfsWithSSL {
             final SSLOptions sslOptions = url.getProtocol().equals(Schemes.SCHEME_PBRPC) ? null : new SSLOptions(
                     new FileInputStream(CERT_DIR + "Client.p12"), "passphrase", SSLOptions.PKCS12_CONTAINER,
                     new FileInputStream(CERT_DIR + "trusted.jks"), "passphrase", SSLOptions.JKS_CONTAINER, false,
-                    false, "ssltls", null);
+                    false, null, null);
 
             // Alternatively, specify own certificate files for debugging:
             // final SSLOptions sslOptions = new SSLOptions(

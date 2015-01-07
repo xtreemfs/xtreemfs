@@ -14,6 +14,10 @@
 #include <string>
 #include <vector>
 
+#ifdef HAS_VALGRIND
+#include <valgrind/memcheck.h>
+#include <valgrind/valgrind.h>
+#endif  // HAS_VALGRIND
 
 #include "rpc/grid_ssl_socket_channel.h"
 #include "rpc/ssl_socket_channel.h"
@@ -215,6 +219,9 @@ void ClientConnection::PostResolve(const boost::system::error_code& err,
           << (*endpoint_iterator).host_name() << endl;
     }
 
+    if (endpoint_ != NULL) {
+      delete endpoint_;
+    }
     endpoint_ = new tcp::endpoint(*endpoint_iterator);
 
     timer_.expires_from_now(posix_time::seconds(connect_timeout_s_));
@@ -433,6 +440,14 @@ void ClientConnection::PostReadRecordMarker(
               "could not read record marker in response from '" + server_name_
                   + ":" + server_port_ + "': " + err.message());
   } else {
+#ifdef HAS_VALGRIND
+    // On some OpenSSL versions with SSLv3 connections, Valgrind reports the
+    // marker buffer as not initialized.
+    if (RUNNING_ON_VALGRIND > 0) {
+      VALGRIND_MAKE_MEM_DEFINED(receive_marker_buffer_,
+                                RecordMarker::get_size());
+    }
+#endif  // HAS_VALGRIND
     // Do read.
     receive_marker_ = new RecordMarker(receive_marker_buffer_);
 
@@ -473,6 +488,13 @@ void ClientConnection::PostReadMessage(const boost::system::error_code& err) {
               "could not read response from '" + server_name_ + ":"
                   + server_port_ + "': " + err.message());
   } else {
+#ifdef HAS_VALGRIND
+    // On some OpenSSL versions with SSLv3 connections, Valgrind reports the
+    // header buffer as not initialized.
+    if (RUNNING_ON_VALGRIND > 0) {
+      VALGRIND_MAKE_MEM_DEFINED(receive_hdr_, receive_marker_->header_len());
+    }
+#endif  // HAS_VALGRIND
     // Parse header.
     RPCHeader *respHdr = new RPCHeader();
     if (respHdr->ParseFromArray(receive_hdr_, receive_marker_->header_len())) {

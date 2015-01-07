@@ -35,6 +35,7 @@ then
   if [ ! -d "$TEST_DIR" ]; then mkdir "$TEST_DIR"; fi
   if [ ! -d "${TEST_DIR}/log" ]; then mkdir "${TEST_DIR}/log"; fi
 fi
+export XTREEMFS_TEST_DIR="$TEST_DIR"
 echo "INFO: TEST_DIR: $TEST_DIR"
 VALGRIND_LOG_FILE="${TEST_DIR}/log/valgrind.log"
 

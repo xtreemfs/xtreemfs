@@ -20,11 +20,11 @@ Mount the volume "MyVolume" (which is registered at the DIR server "remote.dirse
 .TP
 Fuse Options:
 .TP
-.B "-f, --foreground"
+.B "-f, \--foreground"
 Do not fork into background.
 .TP
-.BI "-o, --fuse_option " option
-Passes -o=<\fIoption\fR> to Fuse.
+.BI "-o, \--fuse_option " option
+Passes \-o=<\fIoption\fR> to Fuse.
 
 .TP
 ACL and extended attributes Support:
@@ -40,16 +40,16 @@ Enable user defined extended attributes.
 .TP
 General Options:
 .TP
-.BI "-d, --log-level " EMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG
+.BI "-d, \--log-level " EMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG
 The log level of the XtreemFS client.
 .TP
-.B "-h, --help"
+.B "-h, \--help"
 Print help and exit.
 .TP
-.BI "-l, --log-file-path " log_file_path
+.BI "-l, \--log-file-path " log_file_path
 Path to log file.
 .TP
-.BI "-V, --version"
+.BI "-V, \--version"
 Shows the version number.
 
 .TP
@@ -183,7 +183,7 @@ However, this might lead to inconsistencies if different clients access a file c
 
 If
 .B "-o xtreemfs_acl"
-or a gridmap file is used, the Fuse default permissions check will be disabled. In consequence, the Fuse Option "-o default_permissions" will not be sent to Fuse. In these cases, the content of the metadata cache may be spoofed by users although they are not allowed to list the directory or retrieve the stat information of a file.
+or a gridmap file is used, the Fuse default permissions check will be disabled. In consequence, the Fuse Option "\-o default_permissions" will not be sent to Fuse. In these cases, the content of the metadata cache may be spoofed by users although they are not allowed to list the directory or retrieve the stat information of a file.
 
 .SH AVAILABILITY
 The mount.xtreemfs command is part of the XtreemFS-client package and is available from \fIhttp://www.xtreemfs.org\fP.

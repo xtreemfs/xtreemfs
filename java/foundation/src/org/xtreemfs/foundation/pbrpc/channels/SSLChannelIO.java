@@ -114,6 +114,14 @@ public class SSLChannelIO extends ChannelIO {
         sslEngine.setUseClientMode(clientMode);
         sslEngine.setNeedClientAuth(true);
         
+        List<String> enabledProtocols = new ArrayList<String>();
+        for (String protocol : sslEngine.getSupportedProtocols()) {
+            if (sslOptions.isSSLEngineProtocolSupported(protocol) && !enabledProtocols.contains(protocol)) {
+                enabledProtocols.add(protocol);
+            }
+        }
+        sslEngine.setEnabledProtocols(enabledProtocols.toArray(new String[enabledProtocols.size()]));
+        
         if (clientMode) {
             // the first call for a client is wrap()
             sslEngine.beginHandshake();
@@ -133,13 +141,6 @@ public class SSLChannelIO extends ChannelIO {
         outNetBuffer = BufferPool.allocate(netBufSize);
         dummyBuffer = BufferPool.allocate(netBufSize);
         
-        List<String> enabledProtocols = new ArrayList<String>();
-        for (String protocol : sslEngine.getSupportedProtocols()) {
-            if (sslOptions.isSSLEngineProtocolSupported(protocol)) {
-                enabledProtocols.add(protocol);
-            }
-        }
-        sslEngine.setEnabledProtocols(enabledProtocols.toArray(new String[enabledProtocols.size()]));
         
         if (sslOptions.isAuthenticationWithoutEncryption()) { // only
             // authentication

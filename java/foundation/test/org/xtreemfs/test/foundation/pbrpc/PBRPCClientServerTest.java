@@ -264,10 +264,10 @@ public class PBRPCClientServerTest {
         SSLOptions clientSSL = null;
         if (pbrpcScheme.equals(Schemes.SCHEME_PBRPCS) || pbrpcScheme.equals(Schemes.SCHEME_PBRPCG)) {
             srvSSL = createSSLOptions("DIR.p12", "passphrase", SSLOptions.PKCS12_CONTAINER,
-                    "trusted.jks", "passphrase", SSLOptions.JKS_CONTAINER, pbrpcScheme.equals(Schemes.SCHEME_PBRPCG), "ssltls");
+                    "trusted.jks", "passphrase", SSLOptions.JKS_CONTAINER, pbrpcScheme.equals(Schemes.SCHEME_PBRPCG), null);
 
             clientSSL= createSSLOptions("Client.p12", "passphrase",
-                SSLOptions.PKCS12_CONTAINER, "trusted.jks", "passphrase", SSLOptions.JKS_CONTAINER, pbrpcScheme.equals(Schemes.SCHEME_PBRPCG), "ssltls");
+                SSLOptions.PKCS12_CONTAINER, "trusted.jks", "passphrase", SSLOptions.JKS_CONTAINER, pbrpcScheme.equals(Schemes.SCHEME_PBRPCG), null);
         }
 
         // System.out.println("setup done");

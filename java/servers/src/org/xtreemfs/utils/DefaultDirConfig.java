@@ -104,7 +104,7 @@ public class DefaultDirConfig extends Config {
 
             this.trustedCertsContainer = this.readRequiredString("ssl.trusted_certs.container");
             
-            this.sslProtocolString = this.readOptionalString("ssl.protocol", "ssltls");
+            this.sslProtocolString = this.readOptionalString("ssl.protocol", null);
         }
     }
 }
