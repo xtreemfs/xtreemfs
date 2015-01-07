@@ -30,7 +30,6 @@ import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
-import org.xtreemfs.osd.rwre.ReplicaUpdatePolicy;
 import org.xtreemfs.osd.stages.ReplicationStage.FetchObjectCallback;
 import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.storage.ObjectInformation;
@@ -83,7 +82,9 @@ public final class ReadOperation extends OSDOperation {
             return;
         }
 
-        if (ReplicaUpdatePolicy.requiresCoordination(rq.getLocationList())) {
+        // TODO(jdillmann): Use centralized method to check if a lease is required.
+        if (rq.getLocationList().getNumReplicas() > 1
+                && ReplicaUpdatePolicies.isRwReplicated(rq.getLocationList().getReplicaUpdatePolicy())) {
             rwReplicatedRead(rq, args);
         } else {
             final long snapVerTS = rq.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_ACCESS_SNAP? rq.getCapability().getSnapTimestamp(): 0;

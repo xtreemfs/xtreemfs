@@ -13,7 +13,6 @@ import java.util.List;
 
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.uuids.ServiceUUID;
-import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.flease.Flease;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
@@ -23,6 +22,7 @@ import org.xtreemfs.osd.rwre.ReplicatedFileState.ReplicaState;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 /**
  * 
@@ -42,8 +42,35 @@ public abstract class ReplicaUpdatePolicy {
 
     protected final String localUUID;
 
-    public ReplicaUpdatePolicy(List<ServiceUUID> remoteOSDUUIDs, String fileId,
-            String localUUID) {
+    /**
+     * Factory for generating policies objects based on their name.
+     * 
+     * @param replicaUpdatePolicy
+     *            Name of the policy.
+     * @param remoteOSDUUIDs
+     *            List of UUIDs of remote OSDs.
+     * @param localUUID
+     *            UUID of the local OSD.
+     * @param fileId
+     *            ID of the file to be replicated.
+     * @param client
+     *            OSDServiceClient instance or null.
+     * @return ReplicaUpdatePolicy
+     */
+    public static ReplicaUpdatePolicy newReplicaUpdatePolicy(String replicaUpdatePolicy,
+            List<ServiceUUID> remoteOSDUUIDs, String localUUID, String fileId, OSDServiceClient client) {
+        if (replicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE)) {
+            return new WaR1UpdatePolicy(remoteOSDUUIDs, localUUID, fileId, client);
+        } else if (replicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA)) {
+            return new WaRaUpdatePolicy(remoteOSDUUIDs, localUUID, fileId, client);
+        } else if (replicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ)) {
+            return new WqRqUpdatePolicy(remoteOSDUUIDs, localUUID, fileId, client);
+        } else {
+            throw new IllegalArgumentException("unsupported replica update mode: " + replicaUpdatePolicy);
+        }
+    }
+
+    protected ReplicaUpdatePolicy(List<ServiceUUID> remoteOSDUUIDs, String fileId, String localUUID) {
         this.remoteOSDUUIDs = remoteOSDUUIDs;
         this.cellId = fileToCellId(fileId);
         this.localUUID = localUUID;
@@ -58,18 +85,6 @@ public abstract class ReplicaUpdatePolicy {
         return new ASCIIString(FILE_CELLID_PREFIX + fileId);
     }
     
-    /**
-     * Returns true if the xLocations contains more then one replica and the policy is coordinated.
-     */
-    public static boolean requiresCoordination(XLocations xloc) {
-        return (xloc.getReplicaUpdatePolicy().length() > 0
-                && xloc.getNumReplicas() > 1
-                && (xloc.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA) 
-                    || xloc.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE)
-                    || xloc.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ))
-                );
-    }
-
     public List<ServiceUUID> getRemoteOSDUUIDs() {
         return remoteOSDUUIDs;
     }
@@ -167,5 +182,4 @@ public abstract class ReplicaUpdatePolicy {
     public abstract void onFailed() throws IOException;
 
     public abstract void closeFile();
-
 }

@@ -23,7 +23,6 @@ import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
-import org.xtreemfs.osd.rwre.ReplicaUpdatePolicy;
 import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.stages.StorageStage.WriteObjectCallback;
 import org.xtreemfs.osd.storage.ObjectInformation;
@@ -80,7 +79,9 @@ public final class WriteOperation extends OSDOperation {
             master.objectReceived();
             master.dataReceived(rq.getRPCRequest().getData().capacity());
 
-            if (ReplicaUpdatePolicy.requiresCoordination(rq.getLocationList())) {
+            // TODO(jdillmann): Use centralized method to check if a lease is required.
+            if (rq.getLocationList().getNumReplicas() > 1
+                    && ReplicaUpdatePolicies.isRwReplicated(rq.getLocationList().getReplicaUpdatePolicy())) {
                 replicatedWrite(rq,args,syncWrite);
             } else {
 

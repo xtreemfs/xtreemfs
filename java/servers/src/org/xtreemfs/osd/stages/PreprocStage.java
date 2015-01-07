@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.LRUCache;
@@ -704,7 +705,9 @@ public class PreprocStage extends Stage {
                 // Persist the view.
                 layout.setXLocSetVersionState(fileId, newstate);
                 // Inform flease about the new view.
-                if (ReplicaUpdatePolicy.requiresCoordination(locset)) {
+                // TODO(jdillmann): Use centralized method to check if a lease is required.
+                if (locset.getNumReplicas() > 1
+                        && ReplicaUpdatePolicies.isRwReplicated(locset.getReplicaUpdatePolicy())) {
                     ASCIIString cellId = ReplicaUpdatePolicy.fileToCellId(fileId);
                     master.getRWReplicationStage().setFleaseView(fileId, cellId, newstate);
                 }
@@ -812,7 +815,8 @@ public class PreprocStage extends Stage {
             state = stateBuilder.build();
             layout.setXLocSetVersionState(fileId, state);
             
-            if (ReplicaUpdatePolicy.requiresCoordination(xLoc)) {
+            // TODO(jdillmann): Use centralized method to check if a lease is required.
+            if (xLoc.getNumReplicas() > 1 && ReplicaUpdatePolicies.isRwReplicated(xLoc.getReplicaUpdatePolicy())) {
                 master.getRWReplicationStage().invalidateReplica(fileId, fileCreds, xLoc, callback);
             } else {
                 callback.invalidateComplete(true, null);
