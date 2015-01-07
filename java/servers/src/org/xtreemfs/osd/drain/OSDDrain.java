@@ -92,6 +92,9 @@ public class OSDDrain {
         public Boolean           wasAlreadyReadOnly;
 
         public String            oldReplicationPolicy;
+        
+        // Flag to determine if consistency is preserved by the MRC on adding/removing replicas.
+        public boolean           isReplicaChangeCoordinated = false;
     }
 
     private DIRClient             dirClient;
@@ -149,6 +152,9 @@ public class OSDDrain {
             // object files on OSDs will be deleted delayed.
             fileInfos = this.removeNonExistingFileIDs(fileInfos);
 
+            // get the current replica configuration
+            fileInfos = this.getReplicaInfo(fileInfos);
+
             // set ReplicationUpdatePolicy to RONLY
             fileInfos = this.setReplicationUpdatePolicyRonly(fileInfos);
 
@@ -167,11 +173,10 @@ public class OSDDrain {
             // remove replicas
             this.removeOriginalFromReplica(fileInfos);
 
-            // set every file to read/write again which wasn't set to read-only
-            // before
+            // set every file to read/write again which wasn't set to read-only before
             LinkedList<FileInformation> toSetROList = new LinkedList<FileInformation>();
             for (FileInformation fileInfo : fileInfos) {
-                if (!fileInfo.wasAlreadyReadOnly)
+                if (!fileInfo.wasAlreadyReadOnly && !fileInfo.isReplicaChangeCoordinated)
                     toSetROList.add(fileInfo);
             }
             this.setFilesReadOnlyAttribute(toSetROList, false);
@@ -360,12 +365,9 @@ public class OSDDrain {
 
         List<FileInformation> returnList = new LinkedList<FileInformation>();
 
-        // Map with VolumeName as key and sublist of fileInfos as value. Used to
-        // decrease the amount
-        // of MRC queries.
+        // Map with VolumeName as key and sublist of fileInfos as value. Used to decrease the amount of MRC queries.
         Map<String, List<FileInformation>> callMap = new HashMap<String, List<FileInformation>>();
-        // Map to store VolID-> MRCAddress Mapping to know which MRC has to be
-        // called.
+        // Map to store VolID-> MRCAddress Mapping to know which MRC has to be called.
         Map<String, InetSocketAddress> volIDMrcAddressMapping = new HashMap<String, InetSocketAddress>();
 
         for (FileInformation fileInfo : fileInfos) {
@@ -414,7 +416,57 @@ public class OSDDrain {
         return returnList;
     }
 
+    /**
+     * Get the current replica information from the MRC for every fileID in fileIDList.
+     * 
+     * @param fileInfos
+     * @throws OSDDrainException
+     */
+    public List<FileInformation> getReplicaInfo(List<FileInformation> fileInfos) throws OSDDrainException {
+        LinkedList<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
 
+        for (FileInformation fileInfo : fileInfos) {
+
+            // get Striping Policy
+            RPCResponse<XLocSet> xlocsetResp = null;
+            XLocSet xlocset = null;
+            try {
+                
+                xtreemfs_get_xlocsetRequest xlocReq = xtreemfs_get_xlocsetRequest.newBuilder()
+                        .setFileId(fileInfo.fileID).build();
+                xlocsetResp = mrcClient
+                        .xtreemfs_get_xlocset(fileInfo.mrcAddress, password, userCreds, xlocReq);
+                xlocset = xlocsetResp.get();
+            } catch (Exception e) {
+                if (Logging.isDebug()) {
+                    Logging.logError(Logging.LEVEL_WARN, this, e);
+                }
+                throw new OSDDrainException(e.getMessage(), ErrorState.GET_REPLICA_INFO, fileInfos,
+                        finishedFileInfos);
+            } finally {
+                if (xlocsetResp != null)
+                    xlocsetResp.freeBuffers();
+            }
+
+            // TODO(jdillmann): Use centralized method to check if a lease is required.
+            fileInfo.isReplicaChangeCoordinated = (xlocset.getReplicasCount() > 1 
+                    && ReplicaUpdatePolicies.isRwReplicated(xlocset.getReplicaUpdatePolicy()));
+
+            // find the replica for the given UUID
+            for (Replica replica : xlocset.getReplicasList()) {
+                if (replica.getOsdUuidsList().contains(osdUUID.toString())) {
+                    fileInfo.oldReplica = replica;
+                }
+            }
+            assert (fileInfo.oldReplica != null);
+
+            finishedFileInfos.add(fileInfo);
+        }
+        
+        return finishedFileInfos;
+    }
+
+    
     /**
      * Create a new Replica for every fileID in fileIDList on a new OSD. OSDs will be chosen by get_suitable_osds MRC
      * call.
@@ -428,29 +480,8 @@ public class OSDDrain {
         LinkedList<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
 
         for (FileInformation fileInfo : fileInfos) {
-
             // get Striping Policy
-            RPCResponse<XLocSet> xlocsetResp = null;
-            XLocSet xlocset = null;
-            try {
-
-                xtreemfs_get_xlocsetRequest xlocReq = xtreemfs_get_xlocsetRequest.newBuilder()
-                        .setFileId(fileInfo.fileID).build();
-                xlocsetResp = mrcClient.xtreemfs_get_xlocset(fileInfo.mrcAddress, password, userCreds, xlocReq);
-                xlocset = xlocsetResp.get();
-            } catch (Exception e) {
-                if (Logging.isDebug()) {
-                    Logging.logError(Logging.LEVEL_WARN, this, e);
-                }
-                throw new OSDDrainException(e.getMessage(), ErrorState.CREATE_REPLICAS, fileInfos,
-                        finishedFileInfos);
-            } finally {
-                if (xlocsetResp != null)
-                    xlocsetResp.freeBuffers();
-            }
-
-            Replica rep = xlocset.getReplicas(0);
-            StripingPolicy sp = rep.getStripingPolicy();
+            StripingPolicy sp = fileInfo.oldReplica.getStripingPolicy();
 
             // get suitable OSD for new replica
             RPCResponse<xtreemfs_get_suitable_osdsResponse> sor = null;
@@ -483,13 +514,18 @@ public class OSDDrain {
             // current solution is to use '1' for the striping width
             sp = StripingPolicy.newBuilder().setType(sp.getType()).setStripeSize(sp.getStripeSize()).setWidth(1)
                     .build();
-            Replica replica = Replica
+            Replica.Builder replica = Replica
                     .newBuilder()
                     .addOsdUuids(suitOSDResp.getOsdUuids(0))
                     .setReplicationFlags(
                             ReplicationFlags.setRandomStrategy(ReplicationFlags.setFullReplica(0)))
-                    .setStripingPolicy(sp).build();
-            fileInfo.newReplica = replica;
+                    .setStripingPolicy(sp);
+
+            if (fileInfo.isReplicaChangeCoordinated) {
+                replica.setReplicationFlags(0);
+            }
+
+            fileInfo.newReplica = replica.build();
 
             // add Replica
             RPCResponse<?> repAddResp = null;
@@ -515,7 +551,8 @@ public class OSDDrain {
     }
 
     /**
-     * Set ReplicationUpdatePolicy to RONLY for all file in fileInfos
+     * Set ReplicationUpdatePolicy to RONLY for all files in fileInfos. <br>
+     * Skips files on which replica changes are coordinated.
      * 
      * @param fileInfos
      * @return
@@ -527,8 +564,13 @@ public class OSDDrain {
         List<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
 
         for (FileInformation fileInfo : fileInfos) {
-            try {
+            // Skip coordinated files.
+            if (fileInfo.isReplicaChangeCoordinated) {
+                finishedFileInfos.add(fileInfo);
+                continue;
+            }
 
+            try {
                 fileInfo.oldReplicationPolicy = this.changeReplicationUpdatePolicy(fileInfo,
                         ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY);
                 finishedFileInfos.add(fileInfo);
@@ -563,7 +605,8 @@ public class OSDDrain {
     }
 
     /**
-     * Set all files in fileIDList to read-only to be able to RO-replicate them
+     * Set all files in fileIDList to read-only to be able to RO-replicate them. <br>
+     * Skips files on which replica changes are coordinated.
      * 
      * @param fileIDList
      * @param mode
@@ -579,6 +622,11 @@ public class OSDDrain {
         List<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
 
         for (FileInformation fileInfo : fileInfos) {
+            // Skip coordinated files.
+            if (fileInfo.isReplicaChangeCoordinated) {
+                finishedFileInfos.add(fileInfo);
+                continue;
+            }
 
             RPCResponse<xtreemfs_set_read_only_xattrResponse> resp = null;
             xtreemfs_set_read_only_xattrResponse setResponse = null;
@@ -609,8 +657,9 @@ public class OSDDrain {
     }
 
     /**
-     * Read one byte from every file in fileInfo list to trigger replication. The byte will be read from the
-     * first object on OSD(s) containing the new replica.
+     * Read one byte from every file in fileInfo list to trigger replication. The byte will be read from the first
+     * object on OSD(s) containing the new replica. <br>
+     * Skips files on which replica changes are coordinated.
      * 
      * @param fileInfos
      * @return
@@ -636,6 +685,12 @@ public class OSDDrain {
             } finally {
                 if (r1 != null)
                     r1.freeBuffers();
+            }
+
+            // Skip starting the replication for coordinated files.
+            if (fileInfo.isReplicaChangeCoordinated) {
+                finishedFileInfos.add(fileInfo);
+                continue;
             }
 
             // read a single Byte from one object of every OSD the new replica
@@ -685,6 +740,12 @@ public class OSDDrain {
 
         while (!fileInfos.isEmpty()) {
             for (FileInformation fileInfo : fileInfos) {
+                // Skip coordinated files.
+                if (fileInfo.isReplicaChangeCoordinated) {
+                    finishedFileInfos.add(fileInfo);
+                    toBeRemovedFileInfos.add(fileInfo);
+                    continue;
+                }
 
                 String fileID = fileInfo.fileID;
                 FileCredentials fc = fileInfo.fileCredentials;
@@ -756,19 +817,25 @@ public class OSDDrain {
     }
 
     /**
-     * Set ReplicationUpdatePolicy to the initial value according to FileInformation.oldReplicationPolicy for
-     * all files in fileInfos
+     * Set ReplicationUpdatePolicy to the initial value according to FileInformation.oldReplicationPolicy for all files
+     * in fileInfos.<br>
+     * Skips files on which replica changes are coordinated.
      * 
      * @return
      */
     public List<FileInformation> setReplicationPolicyToOriginal(List<FileInformation> fileInfos)
             throws OSDDrainException {
 
-        // List of files which ReplicationUpdatePolicy is already set
-        // successfully
+        // List of files which ReplicationUpdatePolicy is already set successfully
         List<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
 
         for (FileInformation fileInfo : fileInfos) {
+            // Skip coordinated files.
+            if (fileInfo.isReplicaChangeCoordinated) {
+                finishedFileInfos.add(fileInfo);
+                continue;
+            }
+
             try {
                 fileInfo.oldReplicationPolicy = this.changeReplicationUpdatePolicy(fileInfo,
                         fileInfo.oldReplicationPolicy);
@@ -799,16 +866,8 @@ public class OSDDrain {
         for (FileInformation fileInfo : fileInfos) {
             RPCResponse<FileCredentials> resp = null;
             try {
+                String headOSD = fileInfo.oldReplica.getOsdUuidsList().get(0);
                 
-                // find the head OSD for the given UUID
-                String headOSD = null;
-                XLocSet xlocs = fileInfo.fileCredentials.getXlocs();
-                for (Replica xloc : xlocs.getReplicasList()) {
-                    if (xloc.getOsdUuidsList().contains(osdUUID.toString()))
-                        headOSD = xloc.getOsdUuidsList().get(0);
-                }
-                assert (headOSD != null);
-                                
                 xtreemfs_replica_removeRequest replRemReq = xtreemfs_replica_removeRequest.newBuilder()
                         .setFileId(fileInfo.fileID).setOsdUuid(headOSD).build();
                 resp = mrcClient
@@ -948,6 +1007,16 @@ public class OSDDrain {
             if (printError) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this,
                         "Failed to check if files exist on MRC");
+                printError();
+            }
+            if (Logging.isDebug())
+                Logging.logError(Logging.LEVEL_DEBUG, this, ex);
+            break;
+            
+        case GET_REPLICA_INFO:
+            if (printError) {
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this,
+                        "Failed to to get replica info from MRC");
                 printError();
             }
             if (Logging.isDebug())

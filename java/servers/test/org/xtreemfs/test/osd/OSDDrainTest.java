@@ -262,6 +262,9 @@ public class OSDDrainTest {
                 assertEquals(testEnv.getMRCAddress(), fileInfo.mrcAddress);
             }
 
+            // get the current replica configuration
+            fileInfos = osdDrain.getReplicaInfo(fileInfos);
+
             // set ReplicationUpdatePolicy to RONLY
             fileInfos = osdDrain.setReplicationUpdatePolicyRonly(fileInfos);
             for (File file : files) {
@@ -276,6 +279,9 @@ public class OSDDrainTest {
 
             // start second OSD
             osdServer.add(new OSD(osdConfig2));
+
+            // wait until the OSD is registered and known to the MRC
+            Thread.sleep(10 * 1000);
 
             // create replications
             fileInfos = osdDrain.createReplicasForFiles(fileInfos);
@@ -317,6 +323,7 @@ public class OSDDrainTest {
 
         } catch (OSDDrainException e) {
             osdDrain.handleException(e, true);
+            throw e;
         }
 
         // test if files are the samel like before
@@ -409,6 +416,9 @@ public class OSDDrainTest {
             // get address of MRC which is responsible for every file
             osdDrain.updateMRCAddresses(fileInfos);
 
+            // get the current replica configuration
+            fileInfos = osdDrain.getReplicaInfo(fileInfos);
+
             // set ReplicationUpdatePolicy to RONLY
             fileInfos = osdDrain.setReplicationUpdatePolicyRonly(fileInfos);
 
@@ -449,6 +459,7 @@ public class OSDDrainTest {
 
         } catch (OSDDrainException e) {
             osdDrain.handleException(e, true);
+            throw e;
         }
         // test if files are the same like before
         for (int i = 0; i < NUMBER_OF_FILES; i++) {

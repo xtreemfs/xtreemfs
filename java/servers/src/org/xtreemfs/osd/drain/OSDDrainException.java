@@ -28,6 +28,7 @@ public class OSDDrainException extends Exception {
         GET_FILE_LIST,
         UPDATE_MRC_ADDRESSES,
         REMOVE_NON_EXISTING_IDS,
+        GET_REPLICA_INFO,
         SET_UPDATE_POLICY,
         SET_RONLY,
         CREATE_REPLICAS,
