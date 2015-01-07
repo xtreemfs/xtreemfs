@@ -154,7 +154,8 @@ for VERSION in $HADOOP_VERSIONS; do
    #prepare input
    mkdir input
 
-   wget -nv -O test.txt http://www.gutenberg.org/cache/epub/1661/pg1661.txt
+   wget -nv http://www.gutenberg.org/ebooks/76.txt.utf-8
+   iconv -c -f utf-8 -t ascii 76.txt.utf-8 > test.txt
 
    #test hadoop fs shell
    if [ -z "$($HADOOP_PREFIX/bin/hadoop fs -ls /hadoop2_test | grep test.txt)" ]
@@ -193,7 +194,6 @@ for VERSION in $HADOOP_VERSIONS; do
                then echo "Hadoop produced wrong output!"; RESULT=-1;
             fi
          fi
-
          $HADOOP_PREFIX/bin/hadoop fs -rm -r /hadoop2_test/output
 
          echo "Run wordcount with buffer..."
@@ -214,8 +214,8 @@ for VERSION in $HADOOP_VERSIONS; do
          fi
 
          echo "Stop Hadoop..."
-         $HADOOP_PREFIX/bin/yarn-daemon.sh stop nodemanager
-         $HADOOP_PREFIX/bin/yarn-daemon.sh stop resourcemanager
+         $HADOOP_PREFIX/sbin/yarn-daemon.sh stop nodemanager
+         $HADOOP_PREFIX/sbin/yarn-daemon.sh stop resourcemanager
          $HADOOP_PREFIX/sbin/mr-jobhistory-daemon.sh stop historyserver
 
          # check if servers stop

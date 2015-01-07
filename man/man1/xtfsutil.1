@@ -20,14 +20,14 @@ Display information about the file "/somedir/myfile":
 .B "xtfsutil xtfs-mount/somedir/myfile"
 .br
 .TP
-Add another replica to the replicated file "/somedir/myfile" which will be created on an automatically chosen OSD. If the file is not replicated yet, set a replication policy for the file first (see option -r / \-\-set-replication-policy). Or set a default replication policy for future files.
+Add another replica to the replicated file "/somedir/myfile" which will be created on an automatically chosen OSD. If the file is not replicated yet, set a replication policy for the file first (see option \-r / \-\-set-replication-policy). Or set a default replication policy for future files.
 .TP
-.B "xtfsutil --add-replica AUTO xtfs-mount/somedir/myfile"
+.B "xtfsutil \--add-replica AUTO xtfs-mount/somedir/myfile"
 .br
 .TP
 Set the default replication policy to "WqRq" and a default replication factor of 3 for the mounted volume:
 .TP
-.B "xtfsutil --set-drp --replication-policy WqRq --replication-factor 3 xtfs-mount/"
+.B "xtfsutil \--set-drp \--replication-policy WqRq \--replication-factor 3 xtfs-mount/"
 
 .SH OPTIONS
 
@@ -133,7 +133,7 @@ Changes the value of a policy attribute for a volume. See the XtreemFS user guid
 
 Policy attributes can be removed by setting an empty value, e.g.:
 
- $> xtfsutil --set-pattr 1001.domains --value "" /xtreemfs
+ $> xtfsutil \--set-pattr 1001.domains \--value "" /xtreemfs
 
 .TP
 \fB\-\-list-pattrs
@@ -157,7 +157,7 @@ Creates a snapshot of the volume/directory with the name \fIname\fP. If \fIname\
 
 .TP
 \fB\-\-create-snapshot-non-recursive \fP[\fIname\fP]
-Same as --create-snapshot but excludes any subdirectories.
+Same as \--create-snapshot but excludes any subdirectories.
 
 .TP
 \fB\-\-delete-snapshot \fP[\fIname\fP]
@@ -185,7 +185,7 @@ Prints a list of up to ten OSDs that can be used for new replicas for the specif
 
 .TP
 \fB\-r, \-\-set-replication-policy ronly|WqRq|WaR1|none (the aliases readonly|quorum|all are also allowed)
-Sets the replication policy for a file. Mode cane only be changed when a file has no replicas. See --replication-policy for values.
+Sets the replication policy for a file. Mode cane only be changed when a file has no replicas. See \--replication-policy for values.
 
 .SH "SEE ALSO"
 .BR lsfs.xtreemfs (1),

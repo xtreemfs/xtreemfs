@@ -317,7 +317,7 @@ public class FileScrubber implements Runnable {
             Replica.Builder newReplicaBuilder = Replica.newBuilder();
 
             // set OSDs
-            newReplicaBuilder.addAllOsdUuids(osds);
+            newReplicaBuilder.addAllOsdUuids(osds.subList(0, replica.getStripingPolicy().getWidth()));
 
             // recycle the replication flags of the removed replica(except for the complete
             // flag)

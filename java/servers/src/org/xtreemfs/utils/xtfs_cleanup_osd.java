@@ -132,6 +132,7 @@ public class xtfs_cleanup_osd {
                     if(trustedCAsPass != null && trustedCAsPass.equals("-")) {
                     	trustedCAsPass = new String(System.console().readPassword("Enter trust store password: "));
                     }
+                    String sslProtocolString = options.get(utils.OPTION_SSL_PROTOCOL).stringValue;
                     if (dirURL.contains(Schemes.SCHEME_PBRPCG + "://")) {
                         gridSSL = true;
                     }
@@ -152,7 +153,8 @@ public class xtfs_cleanup_osd {
                     try {
                         sslOptions = new SSLOptions(new FileInputStream(serviceCredsFile), serviceCredsPass,
                                 SSLOptions.PKCS12_CONTAINER, new FileInputStream(trustedCAsFile),
-                                trustedCAsPass, SSLOptions.JKS_CONTAINER, false, gridSSL, null);
+                                trustedCAsPass, SSLOptions.JKS_CONTAINER, false, gridSSL, sslProtocolString,
+                                null);
                     } catch (Exception e) {
                         System.err.println("unable to get SSL options, because:" + e.getMessage());
                         System.exit(1);
@@ -261,7 +263,7 @@ public class xtfs_cleanup_osd {
     }
 
     /**
-     * Prints out usage informations and terminates the application.
+     * Prints out usage information and terminates the application.
      */
     public static void usage(Map<String, CliOption> options) {
 

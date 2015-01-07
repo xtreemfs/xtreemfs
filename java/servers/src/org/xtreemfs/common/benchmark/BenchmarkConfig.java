@@ -181,6 +181,7 @@ public class BenchmarkConfig extends ServiceConfig {
                         this.getTrustedCertsContainer(),
                         false,
                         this.isGRIDSSLmode(),
+                        this.getSSLProtocolString(),
                         new PolicyContainer(this).getTrustManager()
                 );
             }

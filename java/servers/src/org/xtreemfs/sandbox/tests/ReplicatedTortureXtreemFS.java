@@ -66,6 +66,11 @@ public class ReplicatedTortureXtreemFS {
             CLOption.StringValue optPath = (StringValue) parser.addOption(new CLOption.StringValue("p", "path", "filename (default is torture.dat)"));
             CLOption.StringValue optPKCS12file = (CLOption.StringValue) parser.addOption(new CLOption.StringValue(null, "pkcs12-file-path", ""));
             CLOption.StringValue optPKCS12passphrase = (CLOption.StringValue) parser.addOption(new CLOption.StringValue(null, "pkcs12-passphrase", ""));
+            CLOption.StringValue optSSLProtocol = (CLOption.StringValue) parser.addOption(
+                    new CLOption.StringValue(null, "ssl-protocol",
+                                             "SSL/TLS version to use: sslv3, ssltls, tlsv1, tlsv11, tlsv12. 'ssltls' (default) accepts all versions, " + 
+                                             "the others accept only the exact version they name. 'tlsv12' is available in JDK 7+ only. " + 
+                                             "'tlsv11' comes with JDK 6 or 7, depending on the vendor."));
             CLOption.Switch      optRandomOnly = (Switch) parser.addOption(new CLOption.Switch("r", "random", "execute only random test"));
             CLOption.IntegerValue optReplicas = (IntegerValue) parser.addOption(new CLOption.IntegerValue("n", "num-replicas", "number of replicas to use (default is 1)"));
             CLOption.Switch      optTrunc = (Switch) parser.addOption(new CLOption.Switch("t", "truncae", "truncate to 0 instead of creating a new file"));
@@ -104,9 +109,10 @@ public class ReplicatedTortureXtreemFS {
                 if (!optPKCS12passphrase.isSet())
                     throw new InvalidUsageException("must specify a PCKS#12 passphrase for (grid)SSL mode, use "+optPKCS12passphrase.getName());
 
+                final String sslProtocol = optSSLProtocol.isSet() ? optSSLProtocol.getValue() : null;
                 final boolean gridSSL = dirURL.getProtocol().equals(Schemes.SCHEME_PBRPCG);
                 sslOptions = new SSLOptions(new FileInputStream(optPKCS12file.getValue()),optPKCS12passphrase.getValue(),"PKCS12",
-                        null, null, "none", false, gridSSL, null);
+                        null, null, "none", false, gridSSL, sslProtocol, null);
             }
 
 

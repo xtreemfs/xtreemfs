@@ -14,6 +14,7 @@ import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -113,6 +114,14 @@ public class SSLChannelIO extends ChannelIO {
         sslEngine.setUseClientMode(clientMode);
         sslEngine.setNeedClientAuth(true);
         
+        List<String> enabledProtocols = new ArrayList<String>();
+        for (String protocol : sslEngine.getSupportedProtocols()) {
+            if (sslOptions.isSSLEngineProtocolSupported(protocol) && !enabledProtocols.contains(protocol)) {
+                enabledProtocols.add(protocol);
+            }
+        }
+        sslEngine.setEnabledProtocols(enabledProtocols.toArray(new String[enabledProtocols.size()]));
+        
         if (clientMode) {
             // the first call for a client is wrap()
             sslEngine.beginHandshake();
@@ -132,7 +141,7 @@ public class SSLChannelIO extends ChannelIO {
         outNetBuffer = BufferPool.allocate(netBufSize);
         dummyBuffer = BufferPool.allocate(netBufSize);
         
-        sslEngine.setEnabledProtocols(sslEngine.getSupportedProtocols());
+        
         if (sslOptions.isAuthenticationWithoutEncryption()) { // only
             // authentication
             // without

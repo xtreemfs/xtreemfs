@@ -33,7 +33,8 @@ public interface OSDSelectionPolicy {
      * @param currentXLoc
      *            the current X-Locations list
      * @param numOSDs
-     *            the number of OSDs to select
+     *            the number of OSDs required in a valid group. This is only relevant for grouping and will be ignored
+     *            by filtering and sorting policies.
      * @return a list of selected OSDs
      */
     public ServiceSet.Builder getOSDs(ServiceSet.Builder allOSDs, InetAddress clientIP, VivaldiCoordinates clientCoords,
