@@ -519,7 +519,7 @@
 //    }
 //
 //    /**
-//     *  Prints out usage informations and terminates the application.
+//     *  Prints out usage information and terminates the application.
 //     */
 //    public static void usage(){
 //        System.out.println("dir_replication_test <master_address:port> <slave_address:port>[,<slave_address:port>]");

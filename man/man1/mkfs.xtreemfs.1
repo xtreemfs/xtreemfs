@@ -18,7 +18,7 @@ Create the volume "MyVolume" on the MRC server "remote.mrc.machine":
 .TP
 Create a volume with a default striping width of 2 meaning files will be always striped across 2 OSDs.
 .TP
-.B "mkfs.xtreemfs -p RAID0 -w 2 remote.mrc.machine/MyVolume"
+.B "mkfs.xtreemfs \-p RAID0 \-w 2 remote.mrc.machine/MyVolume"
 
 .SH OPTIONS
 
@@ -31,37 +31,37 @@ MRC's admin_password (not required if not set at the MRC).
 .TP
 Volume Options:
 .TP
-.BI "-m, --mode " mode
+.BI "-m, \--mode " mode
 Mode of the volume's root directory (777 by default).
 .TP
-.BI "-u, --owner-username " username
+.BI "-u, \--owner-username " username
 Owner of the new volume (by default it is the username of the effective user id).
 .TP
-.BI "-g, --owner-groupname " groupname
+.BI "-g, \--owner-groupname " groupname
 Owning group of the new volume (by default its the groupname of the effective 
 group id).
 .TP
-.BI "-a, --access-control-policy " NULL|POSIX|VOLUME
+.BI "-a, \--access-control-policy " NULL|POSIX|VOLUME
 Access Control Policy of the volume. By default
 .IR POSIX .
 
 .TP
 Striping Policy Options:
 .TP
-.BI "-p, --striping-policy " RAID0
+.BI "-p, \--striping-policy " RAID0
 Default striping policy for new files. Currently only the policy
 .I RAID0
 is available. Please do not get confused by the name
 .IR RAID0 .
 If the default
-.I --striping-policy-width
+.I \--striping-policy-width
 of 1 is used, all objects of a file are stored on the same OSD and there is no higher failure probability compared to storing files on other file systems. 
 
 .TP
-.BI "-s, --striping-policy-stripe-size " stripe-size
+.BI "-s, \--striping-policy-stripe-size " stripe-size
 Stripe size in kB.
 .TP
-.BI "-w, --striping-policy-width " stripe-width
+.BI "-w, \--striping-policy-width " stripe-width
 Number of OSDs (stripes) per replica.
 
 .TP
@@ -73,23 +73,23 @@ Define volume specific attributes of the form
 e.g. "chown_non_root=true".
 .TP
 .B "--chown-non-root"
-Shortcut for --volume-attribute chown_non_root=true. If this attribute is not set, regular users (everybody except root) are not allowed to change the ownership of their
+Shortcut for \--volume-attribute chown_non_root=true. If this attribute is not set, regular users (everybody except root) are not allowed to change the ownership of their
 .B own
 files.
 
 .TP
 General Options:
 .TP
-.BI "-d, --log-level " EMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG
+.BI "-d, \--log-level " EMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG
 The log level of the XtreemFS client.
 .TP
-.B "-h, --help"
+.B "-h, \--help"
 Print help and exit.
 .TP
-.BI "-l, --log-file-path " log_file_path
+.BI "-l, \--log-file-path " log_file_path
 Path to log file.
 .TP
-.BI "-V, --version"
+.BI "-V, \--version"
 Shows the version number.
 
 .TP

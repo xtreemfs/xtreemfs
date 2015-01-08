@@ -373,7 +373,7 @@ public class SetupUtils {
     public static SSLOptions createClientSSLOptions() throws IOException, FileNotFoundException {
         return new SSLOptions(new FileInputStream(CERT_DIR + "Client.p12"), "passphrase", SSLOptions.PKCS12_CONTAINER,
                 new FileInputStream(CERT_DIR + "trusted.jks"), "passphrase", SSLOptions.JKS_CONTAINER, false, false,
-                null);
+                null, null);
     }
     
     static DIRServiceClient createDIRClient(RPCNIOSocketClient client) throws IOException {

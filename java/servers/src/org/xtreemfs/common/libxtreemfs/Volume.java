@@ -540,15 +540,15 @@ public interface  Volume {
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
-     * Adds to "listOfOsdUuids" up to "numberOfOsds" UUIDs of all available OSDs where the file (described by
-     * "path") can be placed.
+     * Returns a list of all available OSDs where the file (described by "path") can be placed.
      * 
      * @param userCredentials
      *            Username and groups of the user.
      * @param path
      *            Path to the file.
      * @param numberOfOsds
-     *            Maximum number of OSDs which will be returned.
+     *            Number of OSDs required in a valid group. This is only relevant for grouping and will be ignored by
+     *            filtering and sorting policies.
      * 
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}

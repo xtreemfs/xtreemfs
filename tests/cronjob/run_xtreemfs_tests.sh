@@ -10,7 +10,7 @@
 # As of April 2013, we run this script internally every night. The results of the
 # tests are posted to the internal mailing list xtreemfs-test@googlegroups.com.
 #
-# Run it as cron job as follows: /usr/bin/wget http://xtreemfs.googlecode.com/git/tests/cronjob/run_xtreemfs_tests.sh -q -O - | bash -l
+# Run it as cron job as follows: /usr/bin/wget https://raw.githubusercontent.com/xtreemfs/xtreemfs/master/tests/cronjob/run_xtreemfs_tests.sh -q -O - | bash -l
 
 # Environment
 export LANG=en_US.UTF-8
@@ -103,11 +103,13 @@ fi
 
 # Cleanup test directory if disk is full
 min_free_space_mb=10000 # Remove all tests until enough space is available
+min_free_inodes=2000000
 while true
 do
   # Enough free space?
   free_space_mb=$(df -Pm $DIR_PREFIX | grep -v ^Filesystem | awk '{ print $4 }')
-  if [ $free_space_mb -ge $min_free_space_mb ]
+  free_inodes=$(df -i $DIR_PREFIX | grep -v ^Filesystem | awk '{ print $4 }')
+  if [ $free_space_mb -ge $min_free_space_mb ] && [ $free_inodes -ge $min_free_inodes ]
   then
     break
   fi

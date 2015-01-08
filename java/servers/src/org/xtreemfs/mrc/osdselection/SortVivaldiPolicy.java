@@ -36,8 +36,6 @@ public class SortVivaldiPolicy implements OSDSelectionPolicy {
         if (allOSDs == null)
             return null;
         
-        // TOFIX:What's up with numOSDs?
-        
         // Calculate the distances from the client to all the OSDs
         Hashtable<String, Double> distances = new Hashtable<String, Double>();
         

@@ -691,7 +691,7 @@
 //    }
 //       
 //    /**
-//     *  Prints out usage informations and terminates the application.
+//     *  Prints out usage information and terminates the application.
 //     */
 //    public static void usage(){
 //        Logging.logMessage(Logging.LEVEL_INFO,masterClient,

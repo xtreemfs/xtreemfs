@@ -1,4 +1,22 @@
 {
+   getpwnam_r
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:__nss_lookup_function
+   ...
+   fun:getpwnam_r@@GLIBC_*
+}
+{
+   getpwnam_r static mem
+   Memcheck:Leak
+   fun:malloc
+   fun:nss_parse_service_list
+   fun:__nss_database_lookup
+   ...
+   fun:getpwnam_r@@GLIBC_*
+}
+{
    getpwuid_r
    Memcheck:Leak
    fun:malloc
@@ -255,4 +273,27 @@
    fun:__run_exit_handlers
    fun:exit
    fun:(below main)
+}
+{
+   missing length field initialization in x509 encoding/decoding functions, see http://rt.openssl.org/Ticket/Display.html?id=2400
+   Memcheck:Cond
+   fun:ASN1_STRING_set
+   fun:ASN1_mbstring_ncopy
+   fun:ASN1_mbstring_copy
+   fun:ASN1_STRING_to_UTF8
+   obj:/lib*/libcrypto.so.1.0.0
+   obj:/lib*/libcrypto.so.1.0.0
+   fun:ASN1_item_ex_d2i
+   obj:/lib*/libcrypto.so.1.0.0
+   obj:/lib*/libcrypto.so.1.0.0
+   fun:ASN1_item_ex_d2i
+   obj:/lib*/libcrypto.so.1.0.0
+   obj:/lib*/libcrypto.so.1.0.0
+}
+{
+   Bad request parsing on some OpenSSL versions when using SSLv3
+   Memcheck:Cond
+   ...
+   fun:ssl3_read_bytes
+   obj:/lib*/libssl.so.1.0.0
 }

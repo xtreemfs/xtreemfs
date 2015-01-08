@@ -277,7 +277,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
                 .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
                 .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config
-                .isGRIDSSLmode(), tm1) : null;
+                .isGRIDSSLmode(), config.getSSLProtocolString(), tm1) : null;
         
         rpcServer = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, serverSSLopts,
                 config.getSocketReceiveBufferSize(), config.getMaxClientQ());
@@ -287,7 +287,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
                 .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
                 .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config
-                .isGRIDSSLmode(), tm2) : null;
+                .isGRIDSSLmode(), config.getSSLProtocolString(), tm2) : null;
         
         InetSocketAddress bindPoint = config.getAddress() != null ? new InetSocketAddress(config.getAddress(), 0)
                 : null;

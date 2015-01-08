@@ -145,7 +145,7 @@ public class ObjectDissemination {
             /*
              * Optimization: Use a cache of last completed files, so no new instance must be created every
              * time. But use file from cache only if the xLoc has not changed. Otherwise it could be not
-             * guaranteed, that the informations in the ReplicatingFile instance are correct (up-to-date).
+             * guaranteed, that the information in the ReplicatingFile instance are correct (up-to-date).
              */
             file = this.lastCompletedFilesCache.get(fileID);
             if (file == null || (file != null && file.hasXLocChanged(xLoc))) { // create new one

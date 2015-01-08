@@ -91,9 +91,17 @@ public class xtfs_mrcdbtool {
         String dumpFile = arguments.get(1);
         
         CliOption c = options.get(utils.OPTION_USER_CREDS_FILE);
-        CliOption cp = options.get(utils.OPTION_USER_CREDS_PASS);
+        String cp = options.get(utils.OPTION_USER_CREDS_PASS).stringValue;
+        if(cp != null && cp.equals("-")) {
+        	cp = new String(System.console().readPassword("Enter credentials password: "));
+        }
         CliOption t = options.get(utils.OPTION_TRUSTSTORE_FILE);
-        CliOption tp = options.get(utils.OPTION_TRUSTSTORE_PASS);
+        String tp = options.get(utils.OPTION_TRUSTSTORE_PASS).stringValue;
+        if(tp != null && tp.equals("-")) {
+        	tp = new String(System.console().readPassword("Enter trust store password: "));
+        }
+        
+        String sslProtocolString = options.get(utils.OPTION_SSL_PROTOCOL).stringValue;
         
         String host = mrc.urlValue.getHost();
         int port = mrc.urlValue.getPort();
@@ -119,9 +127,9 @@ public class xtfs_mrcdbtool {
                     gridSSL = true;
                 }
 
-                sslOptions = new SSLOptions(new FileInputStream(c.stringValue), cp.stringValue,
-                        SSLOptions.PKCS12_CONTAINER, new FileInputStream(t.stringValue), tp.stringValue,
-                        SSLOptions.JKS_CONTAINER, false, gridSSL, null);
+                sslOptions = new SSLOptions(new FileInputStream(c.stringValue), cp,
+                        SSLOptions.PKCS12_CONTAINER, new FileInputStream(t.stringValue), tp,
+                        SSLOptions.JKS_CONTAINER, false, gridSSL, sslProtocolString, null);
             }
             rpcClient = new RPCNIOSocketClient(sslOptions, Integer.MAX_VALUE - 1000, Integer.MAX_VALUE, "xtfs_mrcdbtool");
             rpcClient.start();

@@ -296,7 +296,7 @@ class TestEnvironment:
                 # Execute test...
                 t_start = time.time()
                 try:
-                    testprocess = subprocess.Popen(testargs, stdout=testlog, stderr=testlog)
+                    testprocess = subprocess.Popen(testargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                     for line in iter(testprocess.stdout.readline,''):
                         testlog.write(line)
                     testprocess.wait()
