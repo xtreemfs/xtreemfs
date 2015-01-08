@@ -44,6 +44,7 @@
    Revision 1.0 - 2007: James S. Plank.
  */
 
+#include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

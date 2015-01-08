@@ -60,3 +60,4 @@ src/liberation.lo
 src/libtiming.a
 src/reed_sol.lo
 src/timing.o
+/autom4te.cache/

@@ -62,6 +62,8 @@ same arguments, and encoder.c does error check.
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <assert.h>
+#include <unistd.h>
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <signal.h>
@@ -103,12 +105,11 @@ int main (int argc, char **argv) {
 	char *c_tech;
 	
 	int i, j;				// loop control variable, s
-	int blocksize;			// size of individual files
+	int blocksize = 0;			// size of individual files
 	int origsize;			// size of file before padding
 	int total;				// used to write data, not padding to file
 	struct stat status;		// used to find size of individual files
 	int numerased;			// number of erased files
-        int dummy;
 		
 	/* Used to recreate file names */
 	char *temp;
@@ -137,8 +138,8 @@ int main (int argc, char **argv) {
 		fprintf(stderr, "usage: inputfile\n");
 		exit(0);
 	}
-	curdir = (char *)malloc(sizeof(char)*100);
-	getcwd(curdir, 100);
+	curdir = (char *)malloc(sizeof(char)*1000);
+	assert(curdir == getcwd(curdir, 1000));
 	
 	/* Begin recreation of file names */
 	cs1 = (char*)malloc(sizeof(char)*strlen(argv[1]));
@@ -269,11 +270,11 @@ int main (int argc, char **argv) {
 					stat(fname, &status);
 					blocksize = status.st_size;
 					data[i-1] = (char *)malloc(sizeof(char)*blocksize);
-					dummy = fread(data[i-1], sizeof(char), blocksize, fp);
+					assert(blocksize == fread(data[i-1], sizeof(char), blocksize, fp));
 				}
 				else {
 					fseek(fp, blocksize*(n-1), SEEK_SET); 
-					dummy = fread(data[i-1], sizeof(char), buffersize/k, fp);
+					assert(buffersize/k == fread(data[i-1], sizeof(char), buffersize/k, fp));
 				}
 				fclose(fp);
 			}
@@ -292,11 +293,11 @@ int main (int argc, char **argv) {
 					stat(fname, &status);
 					blocksize = status.st_size;
 					coding[i-1] = (char *)malloc(sizeof(char)*blocksize);
-					dummy = fread(coding[i-1], sizeof(char), blocksize, fp);
+					assert(blocksize == fread(coding[i-1], sizeof(char), blocksize, fp));
 				}
 				else {
 					fseek(fp, blocksize*(n-1), SEEK_SET);
-					dummy = fread(coding[i-1], sizeof(char), blocksize, fp);
+					assert(blocksize == fread(coding[i-1], sizeof(char), blocksize, fp));
 				}	
 				fclose(fp);
 			}

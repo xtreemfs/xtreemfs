@@ -25,7 +25,14 @@ bin_PROGRAMS = jerasure_01 \
                encoder \
                decoder
 
+check_PROGRAMS = 
+
+TESTS=test_all_gfs.sh encode_decode.sh $(check_PROGRAMS)
+
 dist_noinst_SCRIPTS = test_all_gfs.sh time_all_gfs_argv_init.sh
+
+test_galois_SOURCES = test_galois.c
+check_PROGRAMS += test_galois
 
 jerasure_01_SOURCES = jerasure_01.c
 jerasure_02_SOURCES = jerasure_02.c

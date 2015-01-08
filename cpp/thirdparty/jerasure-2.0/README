@@ -9,10 +9,9 @@ Authors: James S. Plank (University of Tennessee)
 
 External Documentation:
 
-See the file Manual.pdf for the programmer's manual and tutorial.  This manual
-is also available at http://web.eecs.utk.edu/~plank/plank/papers/UT-EECS-14-721.html.
+See the file Manual.pdf for the programmer's manual and tutorial.
 
-See https://bitbucket.org/jimplank/gf-complete for GF-Complete.
+See https://jerasure.org/jerasure/gf-complete for GF-Complete.
 
 NOTE: You must have GF-Complete installed (or compiled) in order to use Jerasure 2.0.
 
@@ -23,11 +22,16 @@ The Examples directory contains the example programs.
 
 ------------------------------------------------------------
 
+If you do not have Autoconf 2.65 or later installed, you can simply build
+from the tarball distribution:
+
+http://www.kaymgee.com/Kevin_Greenan/Software_files/jerasure.tar.gz
+
 Installing if you are allowed to install GF-Complete on your machine:
 (You can skip the autoreconf step if you're using a tarball distribution.)
 
 1.) Install GF-Complete
-2.) autoreconf --force --install
+2.) autoreconf --force --install (*skip* if you are building from tarball)
 3.) ./configure
 4.) make
 5.) sudo make install
@@ -65,3 +69,21 @@ determine the default field to use, if one is not specified.
 
 If you would like to explore a using a different Galois Field implementation,
 please see the manual.
+
+------------------------------------------------------------
+
+Testing GF-Complete
+
+If the GF-Complete tools are installed in /usr/local/bin
+
+  make check
+
+If the GF-Complete tools are installed elsewhere
+
+  make GF_COMPLETE_DIR=$(pwd)/../gf-complete/tools check
+
+To run some tests with valgrind
+
+  make VALGRIND='valgrind --tool=memcheck --quiet' \
+       GF_COMPLETE_DIR=$(pwd)/../gf-complete/tools \
+       check

@@ -1,4 +1,4 @@
-#
+#!/bin/bash
 #
 # Copyright (c) 2013, James S. Plank and Kevin Greenan
 # All rights reserved.
@@ -37,17 +37,21 @@
 # WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
-GF_COMPLETE_DIR=/usr/local/bin
-GF_METHODS=${GF_COMPLETE_DIR}/gf_methods
+GF_METHODS=${GF_COMPLETE_DIR:-/usr/local/bin}/gf_methods
 k=12
 m=3
 seed=1370
+
+if ! test -x ${GF_METHODS} ; then
+    ${GF_METHODS}
+    exit 1
+fi
 
 # Test all w=8
 ${GF_METHODS} 8 -B -L | awk -F: '{ if ($1 == "w=8") print $2; }' |
 while read method; do
   echo "Testing ${k} ${m} 8 $seed ${method}"
-  ./reed_sol_test_gf ${k} ${m} 8 $seed ${method} | tail -n 1
+  $VALGRIND ./reed_sol_test_gf ${k} ${m} 8 $seed ${method} | tail -n 1
   if [[ $? != "0" ]]; then
     echo "Failed test for ${k} ${m} 8 $seed ${method}"
     exit 1
@@ -63,7 +67,7 @@ fi
 ${GF_METHODS} 16 -B -L | awk -F: '{ if ($1 == "w=16") print $2; }' |
 while read method; do
   echo "Testing ${k} ${m} 16 $seed ${method}"
-  ./reed_sol_test_gf ${k} ${m} 16 $seed ${method} | tail -n 1
+  $VALGRIND ./reed_sol_test_gf ${k} ${m} 16 $seed ${method} | tail -n 1
   if [[ $? != "0" ]]; then
     echo "Failed test for ${k} ${m} 16 $seed ${method}"
     exit 1
@@ -79,7 +83,7 @@ fi
 ${GF_METHODS} 32 -B -L | awk -F: '{ if ($1 == "w=32") print $2; }' |
 while read method; do
   echo "Testing ${k} ${m} 32 $seed ${method}"
-  ./reed_sol_test_gf ${k} ${m} 32 $seed ${method} | tail -n 1
+  $VALGRIND ./reed_sol_test_gf ${k} ${m} 32 $seed ${method} | tail -n 1
   if [[ $? != "0" ]]; then
     echo "Failed test for ${k} ${m} 32 $seed ${method}"
     exit 1
