@@ -781,7 +781,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
                 @Override
                 public void parseComplete(OSDRequest result, ErrorResponse error) {
-                    if(result.getCapability().getTraceConfig() != null &&
+                    if(result.getCapability() != null && result.getCapability().getTraceConfig() != null &&
                        result.getCapability().getTraceConfig().getTraceRequests()) {
                         tracingStage.traceRequest(result);
                     }
