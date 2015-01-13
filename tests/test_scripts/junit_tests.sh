@@ -119,7 +119,7 @@ while read LINE; do
     fi
       
     # If the test failed before, try and see if waiting for all ports to become free solves the problem.
-    if [ $i -gt 1 ]
+    if [ $i -gt 1 ]; then
       echo -n "Test try $i failed, waiting for ports to become free ... "
       before_wait_ports=$(date +%s)
       wait_for_time_wait_ports
