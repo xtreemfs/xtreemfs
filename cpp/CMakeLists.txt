@@ -36,7 +36,7 @@ endif(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 
 # Set paths for required thirdparty libraries.
 set(CLIENT_GOOGLE_PROTOBUF_CPP "${CMAKE_SOURCE_DIR}/thirdparty/protobuf-2.5.0")
-set(CLIENT_GF_COMPLETE_CPP "${CMAKE_SOURCE_DIR}/thirdparty/gf-complete-1.0.2")
+set(CLIENT_GF_COMPLETE_CPP "${CMAKE_SOURCE_DIR}/thirdparty/gf-complete-1.0.3")
 set(CLIENT_JERASURE_CPP "${CMAKE_SOURCE_DIR}/thirdparty/jerasure-2.0")
 if (WIN32)
   set(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY "${CLIENT_GOOGLE_PROTOBUF_CPP}/vsprojects/Release/libprotobuf.lib")
@@ -189,6 +189,10 @@ endif(BUILD_CLIENT_TESTS)
 if(BUILD_CLIENT_JERASURE)
   SET(REQUIRED_STATIC_LIBRARIES ${REQUIRED_STATIC_LIBRARIES} ${CLIENT_GF_COMPLETE_CPP_LIBRARY})
 endif(BUILD_CLIENT_JERASURE)
+add_library(jerasure STATIC IMPORTED)
+SET_PROPERTY(TARGET jerasure PROPERTY IMPORTED_LOCATION ${CLIENT_JERASURE_CPP_LIBRARY})
+include_directories(${CLIENT_GF_COMPLETE_CPP}/include)
+include_directories(${CLIENT_JERASURE_CPP}/include)
 
 foreach (STATIC_LIB_FULL_PATH ${REQUIRED_STATIC_LIBRARIES})
   if(NOT EXISTS ${STATIC_LIB_FULL_PATH})
@@ -257,6 +261,9 @@ add_library(xtreemfs ${SRCS_RPC} ${SRCS_UTIL} ${SRCS_GENERATED} ${SRCS_XTREEMFS}
 #          An alternative would be to change this file in such a way that the static libxtreemfs and libprotobuf are merged together into a static libxtreemfs.
 #          But this would require additional CMake macros as presented here: http://www.mail-archive.com/cmake@cmake.org/msg28670.html
 TARGET_LINK_LIBRARIES(xtreemfs optimized protobuf debug protobuf_debug ${Boost_LIBRARIES} ${LIBPTHREAD} ${OPENSSL_LIBRARIES} ${LIBSOCKET_SOLARIS} ${LIBNSL_SOLARIS})
+# if(BUILD_CLIENT_JERASURE)
+    TARGET_LINK_LIBRARIES(xtreemfs jerasure)
+# endif(BUILD_CLIENT_JERASURE)
 
 ADD_EXECUTABLE(example_libxtreemfs src/example_libxtreemfs/example_libxtreemfs.cpp)
 SET_TARGET_PROPERTIES(example_libxtreemfs PROPERTIES COMPILE_DEFINITIONS ${COMPILE_DEFS})
