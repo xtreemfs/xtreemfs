@@ -108,20 +108,24 @@ while read LINE; do
     i=`expr $i + 1`
   
     if [ "$RESULT" -ne "0" ]; then
-      echo -n "FAILURE"
+      echo "FAILURE"
       # Log netstat output to debug "address already in use" problems.
       temp_file="$(mktemp netstat.XXXXXX)"
       netstat -n -t -a &> "$temp_file.all"
       netstat -n -t -l &> "$temp_file.listen"
       netstat -n -t -a -o &> "$temp_file.all+timer"
     else
-      echo -n "ok"
+      echo "ok"
     fi
       
-    before_wait_ports=$(date +%s)
-    wait_for_time_wait_ports
-    after_wait_ports=$(date +%s)
-    echo " (Waited $((after_wait_ports - before_wait_ports))s for ports)"
+    # If the test failed before, try and see if waiting for all ports to become free solves the problem.
+    if [ $i -gt 1 ]
+      echo -n "Test try $i failed, waiting for ports to become free ... "
+      before_wait_ports=$(date +%s)
+      wait_for_time_wait_ports
+      after_wait_ports=$(date +%s)
+      echo " done after $((after_wait_ports - before_wait_ports))s."
+    fi
   done
 
   if [ "$RESULT" -ne "0" ]; then
