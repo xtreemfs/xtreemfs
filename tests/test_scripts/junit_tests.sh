@@ -47,6 +47,7 @@ function wait_for_time_wait_ports() {
   
   while [ -n "$(netstat -n -a -t | grep -E "$ports_regex")" ]
   do
+    echo "Port is still in use, waiting 60 seconds"
     sleep 60
   done
 }
