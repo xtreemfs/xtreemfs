@@ -45,9 +45,9 @@ function get_xtreemfs_ports() {
 function wait_for_time_wait_ports() {
   ports_regex=$(get_xtreemfs_ports)
   
-  while [ -n "$(netstat -n -l -t | grep -E "$ports_regex")" ]
+  while [ -n "$(netstat -n -a -t | grep -E "$ports_regex")" ]
   do
-    sleep 1
+    sleep 60
   done
 }
 
