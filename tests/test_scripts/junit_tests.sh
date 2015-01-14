@@ -45,7 +45,7 @@ function get_xtreemfs_ports() {
 function wait_for_time_wait_ports() {
   ports_regex=$(get_xtreemfs_ports)
   
-  while [ -n "$(netstat -n -l -t | grep -E "$ports_regex")" ]
+  while [ -n "$(netstat -n -a -t | grep -E "$ports_regex")" ]
   do
     sleep 1
   done
@@ -108,17 +108,22 @@ while read LINE; do
     i=`expr $i + 1`
   
     if [ "$RESULT" -ne "0" ]; then
-      echo "FAILURE"
+      echo -n "FAILURE, waiting for ports to become free before retrying ... "
+
       # Log netstat output to debug "address already in use" problems.
       temp_file="$(mktemp netstat.XXXXXX)"
       netstat -n -t -a &> "$temp_file.all"
       netstat -n -t -l &> "$temp_file.listen"
       netstat -n -t -a -o &> "$temp_file.all+timer"
+
+      # Wait for all ports to become free before retrying in case the cause was the "address already in use" problem.
+      before_wait_ports=$(date +%s)
+      wait_for_time_wait_ports
+      after_wait_ports=$(date +%s)
+      echo " ports free after $((after_wait_ports - before_wait_ports))s."
     else
       echo "ok"
     fi
-      
-    wait_for_time_wait_ports
   done
 
   if [ "$RESULT" -ne "0" ]; then
