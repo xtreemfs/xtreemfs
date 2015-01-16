@@ -8,6 +8,7 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_CONTAINER_UUID_ITERATOR_H_
 #define CPP_INCLUDE_LIBXTREEMFS_CONTAINER_UUID_ITERATOR_H_
 
+#include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 #include <gtest/gtest_prod.h>
 #include <list>
@@ -26,19 +27,28 @@ namespace xtreemfs {
  *  Such a setup can include multiple replicas, each with a different striping
  *  configuration. So each object can have its individual list of OSDs over all
  *  replicas. This list is needed in order to support redirection and automatic
- *  fail-over. ContainerUUIDIterator stores this list. */
+ *  fail-over. ContainerUUIDIterator stores this list. The UUIDContainer is
+ *  stored as a shared pointer at each UUIDIterator to ensure UUIDItems remain
+ *  valid as long as the UUIDIterator exists. */
 class ContainerUUIDIterator : public UUIDIterator {
  public:
   /** This ctor initializes the iterator from a given UUIDContainer and a
    *  vector of offsets. The offsets specify indices in the two-dimensional
    *  container. */
-  ContainerUUIDIterator(UUIDContainer* uuid_container,
-                        std::vector<size_t> offsets) {
-    uuid_container->FillUUIDIterator(this, offsets);
+  ContainerUUIDIterator(boost::shared_ptr<UUIDContainer> uuid_container,
+                        std::vector<size_t> offsets)
+      : uuid_container_(uuid_container) {
+    uuid_container_->FillUUIDIterator(this, offsets);
   }
   virtual void SetCurrentUUID(const std::string& uuid);
 
  private:
+  /** Reference to the container, this iterator and its UUIDs are derived from.
+   *  The container has to outlast every iterator and thus has to use a smart
+   *  pointer with reference counting.
+   */
+  boost::shared_ptr<UUIDContainer> uuid_container_;
+
   // UUIDContainer is a friend of this class
   friend void UUIDContainer::FillUUIDIterator(
       ContainerUUIDIterator* uuid_iterator, std::vector<size_t> offsets);

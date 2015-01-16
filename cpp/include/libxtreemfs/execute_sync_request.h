@@ -20,24 +20,22 @@ class SyncCallbackBase;
 
 namespace pbrpc {
 class XCap;
-class XLocSet;
 }  // namespace pbrpc
 
 class UUIDIterator;
 class UUIDResolver;
 class Options;
 class XCapHandler;
-class XLocSetHandler;
 
 class RPCOptions {
- public: 
+ public:
   typedef boost::function0<int> WasInterruptedCallback;
 
-  RPCOptions(int max_retries, 
+  RPCOptions(int max_retries,
              int retry_delay_s,
              bool delay_last_attempt,
              WasInterruptedCallback was_interrupted_cb)
-     : max_retries_(max_retries), 
+     : max_retries_(max_retries),
        retry_delay_s_(retry_delay_s),
        delay_last_attempt_(delay_last_attempt),
        was_interrupted_cb_(was_interrupted_cb) {}
@@ -45,7 +43,7 @@ class RPCOptions {
   RPCOptions(int max_retries,
              int retry_delay_s,
              WasInterruptedCallback was_interrupted_cb)
-     : max_retries_(max_retries), 
+     : max_retries_(max_retries),
        retry_delay_s_(retry_delay_s),
        delay_last_attempt_(false),
        was_interrupted_cb_(was_interrupted_cb) {}
@@ -97,31 +95,9 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
     const RPCOptions& options,
     bool uuid_iterator_has_addresses,
     XCapHandler* xcap_handler,
-    xtreemfs::pbrpc::XCap* xcap_in_req,
-    XLocSetHandler* xlocset_handler,
-    xtreemfs::pbrpc::XLocSet* xlocset_in_req);
-
-/** Executes the request without a xlocset handler. */
-rpc::SyncCallbackBase* ExecuteSyncRequest(
-    boost::function<rpc::SyncCallbackBase* (const std::string&)> sync_function,
-    UUIDIterator* uuid_iterator,
-    UUIDResolver* uuid_resolver,
-    const RPCOptions& options,
-    bool uuid_iterator_has_addresses,
-    XCapHandler* xcap_handler,
     xtreemfs::pbrpc::XCap* xcap_in_req);
 
-
 /** Executes the request without delaying the last try and no xcap handler. */
-rpc::SyncCallbackBase* ExecuteSyncRequest(
-    boost::function<rpc::SyncCallbackBase* (const std::string&)> sync_function,
-    UUIDIterator* uuid_iterator,
-    UUIDResolver* uuid_resolver,
-    const RPCOptions& options,
-    XLocSetHandler* xlocset_handler,
-    xtreemfs::pbrpc::XLocSet* xlocset_in_req);
-
-/** Executes the request without delaying the last try, no xcap and no xlocset handler. */
 rpc::SyncCallbackBase* ExecuteSyncRequest(
     boost::function<rpc::SyncCallbackBase* (const std::string&)> sync_function,
     UUIDIterator* uuid_iterator,
@@ -134,17 +110,8 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
     UUIDIterator* uuid_iterator,
     UUIDResolver* uuid_resolver,
     const RPCOptions& options,
-    bool uuid_iterator_has_addresses,
-    XLocSetHandler* xlocset_handler,
-    xtreemfs::pbrpc::XLocSet* xlocset_in_req);
-
-/** Executes the request without a xcap and a xlocset handler. */
-rpc::SyncCallbackBase* ExecuteSyncRequest(
-    boost::function<rpc::SyncCallbackBase* (const std::string&)> sync_function,
-    UUIDIterator* uuid_iterator,
-    UUIDResolver* uuid_resolver,
-    const RPCOptions& options,
     bool uuid_iterator_has_addresses);
+
 }  // namespace xtreemfs
 
 #endif  // CPP_INCLUDE_LIBXTREEMFS_CALLBACK_EXECUTE_SYNC_REQUEST_H_
