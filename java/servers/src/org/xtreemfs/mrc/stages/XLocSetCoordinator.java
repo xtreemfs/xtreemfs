@@ -775,33 +775,8 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
          * for simpler handling of ACKs for view coordination.
          */
 
-        int numRequiredAcks = (int) Math.ceil(((double) xLocSet.getReplicasCount() + 1.0) / 2.0);
+        int numRequiredAcks = xLocSet.getReplicasCount() / 2 + 1;
         return numRequiredAcks;
-
-        // // Generate a list of ServiceUUIDs from the XLocSet.
-        // int i;
-        // List<ServiceUUID> OSDUUIDs = new ArrayList<ServiceUUID>(xLocSet.getReplicasCount() - 1);
-        // for (i = 0; i < xLocSet.getReplicasCount() - 1; i++) {
-        // // Add each head OSDUUID to the list.
-        // OSDUUIDs.add(i, new ServiceUUID(Helper.getOSDUUIDFromXlocSet(xLocSet, i, 0)));
-        // }
-        // // Save the last OSD as the localUUID.
-        // String localUUID = Helper.getOSDUUIDFromXlocSet(xLocSet, i, 0);
-        //
-        // // Create the policy without specifing a local OSD.
-        // String replicaUpdatePolicy = xLocSet.getReplicaUpdatePolicy();
-        // ReplicaUpdatePolicy policy = ReplicaUpdatePolicy.newReplicaUpdatePolicy(replicaUpdatePolicy, OSDUUIDs,
-        // localUUID, fileId, null);
-        //
-        // if (!(policy instanceof CoordinatedReplicaUpdatePolicy)) {
-        // throw new IllegalArgumentException("CoordinatedReplicaUpdatePolicy instance expected.");
-        // }
-        //
-        // // Since the policy assumes that the localUUID's state is known, we have to wait for one more ACK on
-        // operations
-        // // that aren't executed from an OSD.
-        // int numRequiredAcks = ((CoordinatedReplicaUpdatePolicy) policy).getNumRequiredAcks(null) + 1;
-        // return numRequiredAcks;
     }
 
     /**

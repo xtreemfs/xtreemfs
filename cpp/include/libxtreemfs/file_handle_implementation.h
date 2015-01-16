@@ -231,7 +231,7 @@ class FileHandleImplementation
  private:
   /**
    * Execute the operation and check on invalid view exceptions.
-   * If the view the operation was executed with is outdated, it
+   * If the operation was executed with an outdated, the view
    * will be renewed and the operation retried.
    */
   template<typename T>

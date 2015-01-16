@@ -103,8 +103,8 @@ T FileHandleImplementation::ExecuteViewCheckedOperation(
 
   int attempt;
   for (attempt = 1;
-          (attempt <= options.max_retries() || options.max_retries() == 0) &&
-          !Interruptibilizer::WasInterrupted(options.was_interrupted_cb());
+       (attempt <= options.max_retries() || options.max_retries() == 0)
+          && !Interruptibilizer::WasInterrupted(options.was_interrupted_cb());
        attempt++) {
 
     try {
