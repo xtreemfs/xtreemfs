@@ -226,6 +226,7 @@ public class MRCHelper {
         
         // determine the actual striping width; if not enough OSDs are
         // available, the width will be limited to the amount of available OSDs
+        // TODO log that not enough osds are online
         int width = Math.min(stripingPolicy.getWidth(), usableOSDs.getServicesCount());
         
         // convert the set of OSDs to a string array of OSD UUIDs

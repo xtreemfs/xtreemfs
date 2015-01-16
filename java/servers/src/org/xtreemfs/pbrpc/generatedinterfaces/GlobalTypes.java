@@ -624,6 +624,10 @@ public final class GlobalTypes {
      * </pre>
      */
     STRIPING_POLICY_ERASURECODE(1, 1),
+    /**
+     * <code>STRIPING_POLICY_REED_SOL_VAN = 2;</code>
+     */
+    STRIPING_POLICY_REED_SOL_VAN(2, 2),
     ;
 
     /**
@@ -642,6 +646,10 @@ public final class GlobalTypes {
      * </pre>
      */
     public static final int STRIPING_POLICY_ERASURECODE_VALUE = 1;
+    /**
+     * <code>STRIPING_POLICY_REED_SOL_VAN = 2;</code>
+     */
+    public static final int STRIPING_POLICY_REED_SOL_VAN_VALUE = 2;
 
 
     public final int getNumber() { return value; }
@@ -650,6 +658,7 @@ public final class GlobalTypes {
       switch (value) {
         case 0: return STRIPING_POLICY_RAID0;
         case 1: return STRIPING_POLICY_ERASURECODE;
+        case 2: return STRIPING_POLICY_REED_SOL_VAN;
         default: return null;
       }
     }
@@ -9407,7 +9416,7 @@ public final class GlobalTypes {
    * <pre>
    * Response returned by OSD write and truncate operations.
    * This information is stored by the client and must be
-   * realyed to the MRC in regular intervals or when the file
+   * relayed to the MRC in regular intervals or when the file
    * is fsynced or closed.
    * In addition, the client must use this information locally
    * for open files to provide processes with an accurate
@@ -9685,7 +9694,7 @@ public final class GlobalTypes {
      * <pre>
      * Response returned by OSD write and truncate operations.
      * This information is stored by the client and must be
-     * realyed to the MRC in regular intervals or when the file
+     * relayed to the MRC in regular intervals or when the file
      * is fsynced or closed.
      * In addition, the client must use this information locally
      * for open files to provide processes with an accurate
@@ -10692,32 +10701,33 @@ public final class GlobalTypes {
       "pe\022#\n\037REPLICA_SELECTION_POLICY_SIMPLE\020\001*" +
       "i\n\nSnapConfig\022\036\n\032SNAP_CONFIG_SNAPS_DISAB" +
       "LED\020\000\022\036\n\032SNAP_CONFIG_ACCESS_CURRENT\020\001\022\033\n",
-      "\027SNAP_CONFIG_ACCESS_SNAP\020\002*P\n\022StripingPo" +
+      "\027SNAP_CONFIG_ACCESS_SNAP\020\002*r\n\022StripingPo" +
       "licyType\022\031\n\025STRIPING_POLICY_RAID0\020\000\022\037\n\033S" +
-      "TRIPING_POLICY_ERASURECODE\020\001*\270\001\n\005PORTS\022\033" +
-      "\n\025DIR_HTTP_PORT_DEFAULT\020\256\357\001\022\034\n\026DIR_PBRPC" +
-      "_PORT_DEFAULT\020\376\376\001\022\033\n\025MRC_HTTP_PORT_DEFAU" +
-      "LT\020\254\357\001\022\034\n\026MRC_PBRPC_PORT_DEFAULT\020\374\376\001\022\033\n\025" +
-      "OSD_HTTP_PORT_DEFAULT\020\260\357\001\022\034\n\026OSD_PBRPC_P" +
-      "ORT_DEFAULT\020\200\377\001*+\n\tCONSTANTS\022\036\n\032XCAP_REN" +
-      "EW_INTERVAL_IN_MIN\020\001*\202\003\n\016SYSTEM_V_FCNTL\022" +
-      "\035\n\031SYSTEM_V_FCNTL_H_O_RDONLY\020\000\022\035\n\031SYSTEM",
-      "_V_FCNTL_H_O_WRONLY\020\001\022\033\n\027SYSTEM_V_FCNTL_" +
-      "H_O_RDWR\020\002\022\035\n\031SYSTEM_V_FCNTL_H_O_APPEND\020" +
-      "\010\022\035\n\030SYSTEM_V_FCNTL_H_O_CREAT\020\200\002\022\035\n\030SYST" +
-      "EM_V_FCNTL_H_O_TRUNC\020\200\004\022\034\n\027SYSTEM_V_FCNT" +
-      "L_H_O_EXCL\020\200\010\022\033\n\027SYSTEM_V_FCNTL_H_O_SYNC" +
-      "\020\020\022\036\n\030SYSTEM_V_FCNTL_H_S_IFREG\020\200\200\002\022\036\n\030SY" +
-      "STEM_V_FCNTL_H_S_IFDIR\020\200\200\001\022\036\n\030SYSTEM_V_F" +
-      "CNTL_H_S_IFLNK\020\200\300\002\022\035\n\030SYSTEM_V_FCNTL_H_S" +
-      "_IFIFO\020\200 *\330\001\n\tREPL_FLAG\022\032\n\026REPL_FLAG_FUL" +
-      "L_REPLICA\020\001\022\031\n\025REPL_FLAG_IS_COMPLETE\020\002\022\035",
-      "\n\031REPL_FLAG_STRATEGY_RANDOM\020\004\022#\n\037REPL_FL" +
-      "AG_STRATEGY_RAREST_FIRST\020\010\022!\n\035REPL_FLAG_" +
-      "STRATEGY_SEQUENTIAL\020\020\022-\n)REPL_FLAG_STRAT" +
-      "EGY_SEQUENTIAL_PREFETCHING\020 *%\n\010SERVICES" +
-      "\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n\003OSD\020\003B(\n&org.xtree" +
-      "mfs.pbrpc.generatedinterfaces"
+      "TRIPING_POLICY_ERASURECODE\020\001\022 \n\034STRIPING" +
+      "_POLICY_REED_SOL_VAN\020\002*\270\001\n\005PORTS\022\033\n\025DIR_" +
+      "HTTP_PORT_DEFAULT\020\256\357\001\022\034\n\026DIR_PBRPC_PORT_" +
+      "DEFAULT\020\376\376\001\022\033\n\025MRC_HTTP_PORT_DEFAULT\020\254\357\001" +
+      "\022\034\n\026MRC_PBRPC_PORT_DEFAULT\020\374\376\001\022\033\n\025OSD_HT" +
+      "TP_PORT_DEFAULT\020\260\357\001\022\034\n\026OSD_PBRPC_PORT_DE" +
+      "FAULT\020\200\377\001*+\n\tCONSTANTS\022\036\n\032XCAP_RENEW_INT" +
+      "ERVAL_IN_MIN\020\001*\202\003\n\016SYSTEM_V_FCNTL\022\035\n\031SYS",
+      "TEM_V_FCNTL_H_O_RDONLY\020\000\022\035\n\031SYSTEM_V_FCN" +
+      "TL_H_O_WRONLY\020\001\022\033\n\027SYSTEM_V_FCNTL_H_O_RD" +
+      "WR\020\002\022\035\n\031SYSTEM_V_FCNTL_H_O_APPEND\020\010\022\035\n\030S" +
+      "YSTEM_V_FCNTL_H_O_CREAT\020\200\002\022\035\n\030SYSTEM_V_F" +
+      "CNTL_H_O_TRUNC\020\200\004\022\034\n\027SYSTEM_V_FCNTL_H_O_" +
+      "EXCL\020\200\010\022\033\n\027SYSTEM_V_FCNTL_H_O_SYNC\020\020\022\036\n\030" +
+      "SYSTEM_V_FCNTL_H_S_IFREG\020\200\200\002\022\036\n\030SYSTEM_V" +
+      "_FCNTL_H_S_IFDIR\020\200\200\001\022\036\n\030SYSTEM_V_FCNTL_H" +
+      "_S_IFLNK\020\200\300\002\022\035\n\030SYSTEM_V_FCNTL_H_S_IFIFO" +
+      "\020\200 *\330\001\n\tREPL_FLAG\022\032\n\026REPL_FLAG_FULL_REPL",
+      "ICA\020\001\022\031\n\025REPL_FLAG_IS_COMPLETE\020\002\022\035\n\031REPL" +
+      "_FLAG_STRATEGY_RANDOM\020\004\022#\n\037REPL_FLAG_STR" +
+      "ATEGY_RAREST_FIRST\020\010\022!\n\035REPL_FLAG_STRATE" +
+      "GY_SEQUENTIAL\020\020\022-\n)REPL_FLAG_STRATEGY_SE" +
+      "QUENTIAL_PREFETCHING\020 *%\n\010SERVICES\022\007\n\003DI" +
+      "R\020\001\022\007\n\003MRC\020\002\022\007\n\003OSD\020\003B(\n&org.xtreemfs.pb" +
+      "rpc.generatedinterfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {

@@ -33686,7 +33686,8 @@ public final class MRC {
      * <code>required fixed32 num_osds = 2;</code>
      *
      * <pre>
-     * the number of OSDs for the new replicas
+     * the number of OSDs required in a valid group
+     * ignored by filtering and sorting policies
      * </pre>
      */
     boolean hasNumOsds();
@@ -33694,7 +33695,8 @@ public final class MRC {
      * <code>required fixed32 num_osds = 2;</code>
      *
      * <pre>
-     * the number of OSDs for the new replicas
+     * the number of OSDs required in a valid group
+     * ignored by filtering and sorting policies
      * </pre>
      */
     int getNumOsds();
@@ -33974,7 +33976,8 @@ public final class MRC {
      * <code>required fixed32 num_osds = 2;</code>
      *
      * <pre>
-     * the number of OSDs for the new replicas
+     * the number of OSDs required in a valid group
+     * ignored by filtering and sorting policies
      * </pre>
      */
     public boolean hasNumOsds() {
@@ -33984,7 +33987,8 @@ public final class MRC {
      * <code>required fixed32 num_osds = 2;</code>
      *
      * <pre>
-     * the number of OSDs for the new replicas
+     * the number of OSDs required in a valid group
+     * ignored by filtering and sorting policies
      * </pre>
      */
     public int getNumOsds() {
@@ -34563,7 +34567,8 @@ public final class MRC {
        * <code>required fixed32 num_osds = 2;</code>
        *
        * <pre>
-       * the number of OSDs for the new replicas
+       * the number of OSDs required in a valid group
+       * ignored by filtering and sorting policies
        * </pre>
        */
       public boolean hasNumOsds() {
@@ -34573,7 +34578,8 @@ public final class MRC {
        * <code>required fixed32 num_osds = 2;</code>
        *
        * <pre>
-       * the number of OSDs for the new replicas
+       * the number of OSDs required in a valid group
+       * ignored by filtering and sorting policies
        * </pre>
        */
       public int getNumOsds() {
@@ -34583,7 +34589,8 @@ public final class MRC {
        * <code>required fixed32 num_osds = 2;</code>
        *
        * <pre>
-       * the number of OSDs for the new replicas
+       * the number of OSDs required in a valid group
+       * ignored by filtering and sorting policies
        * </pre>
        */
       public Builder setNumOsds(int value) {
@@ -34596,7 +34603,8 @@ public final class MRC {
        * <code>required fixed32 num_osds = 2;</code>
        *
        * <pre>
-       * the number of OSDs for the new replicas
+       * the number of OSDs required in a valid group
+       * ignored by filtering and sorting policies
        * </pre>
        */
       public Builder clearNumOsds() {

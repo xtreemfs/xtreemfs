@@ -1,5 +1,5 @@
-//automatically generated from Ping.proto at Thu Oct 16 09:46:15 CEST 2014
-//(c) 2014. See LICENSE file for details.
+//automatically generated from Ping.proto at Thu Jan 15 15:54:51 CET 2015
+//(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.foundation.pbrpc.generatedinterfaces;
 

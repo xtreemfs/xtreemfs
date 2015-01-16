@@ -138,11 +138,12 @@ inline bool SnapConfig_Parse(
 }
 enum StripingPolicyType {
   STRIPING_POLICY_RAID0 = 0,
-  STRIPING_POLICY_ERASURECODE = 1
+  STRIPING_POLICY_ERASURECODE = 1,
+  STRIPING_POLICY_REED_SOL_VAN = 2
 };
 bool StripingPolicyType_IsValid(int value);
 const StripingPolicyType StripingPolicyType_MIN = STRIPING_POLICY_RAID0;
-const StripingPolicyType StripingPolicyType_MAX = STRIPING_POLICY_ERASURECODE;
+const StripingPolicyType StripingPolicyType_MAX = STRIPING_POLICY_REED_SOL_VAN;
 const int StripingPolicyType_ARRAYSIZE = StripingPolicyType_MAX + 1;
 
 const ::google::protobuf::EnumDescriptor* StripingPolicyType_descriptor();

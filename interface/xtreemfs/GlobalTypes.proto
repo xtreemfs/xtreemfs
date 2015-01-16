@@ -106,6 +106,7 @@ enum StripingPolicyType {
     STRIPING_POLICY_RAID0 = 0;
     // Erasure code striping policy (.
     STRIPING_POLICY_ERASURECODE = 1;
+    STRIPING_POLICY_REED_SOL_VAN = 2;
 }
 
 message StripingPolicy {
