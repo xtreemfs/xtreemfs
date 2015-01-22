@@ -41,6 +41,8 @@ public abstract class StripingPolicyImpl {
             return new RAID0Impl(replica,relOsdPosition);
         } else if (replica.getStripingPolicy().getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE) {
             return new ErasureCodeImpl(replica, relOsdPosition);
+        } else if (replica.getStripingPolicy().getType() == StripingPolicyType.STRIPING_POLICY_REED_SOL_VAN) {
+            return new ErasureCodesImpl(replica, relOsdPosition);
         } else {
             throw new IllegalArgumentException("unknown striping policy requested");
         }
