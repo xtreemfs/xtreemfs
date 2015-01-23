@@ -23,6 +23,7 @@ import org.xtreemfs.osd.stages.StorageStage.InternalGetReplicaStateCallback;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateResponse.LeaseState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 /**
@@ -55,7 +56,7 @@ public class InternalRWRAuthStateInvalidatedOperation extends OSDOperation {
                 new InvalidateXLocSetCallback() {
 
                     @Override
-                    public void invalidateComplete(boolean isPrimary, ErrorResponse error) {
+                    public void invalidateComplete(LeaseState leaseState, ErrorResponse error) {
                         if (error != null) {
                             rq.sendError(error);
                         } else {

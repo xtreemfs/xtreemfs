@@ -354,8 +354,19 @@ message xtreemfs_xloc_set_invalidateRequest {
 }
 
 message xtreemfs_xloc_set_invalidateResponse {
-  required bool is_primary = 1;
-  optional ReplicaStatus status = 2;
+  enum LeaseState {
+    // The replica doesn't use lease, or an error occured.
+    NONE = 0;
+    // The replica has been the primary.
+    PRIMARY = 1;
+    // The replica has been a backup with an active primary.
+    BACKUP = 2;
+    // The replica is not active/opened.
+    IDLE = 3;
+  };
+
+  required LeaseState lease_state = 1;
+  optional ReplicaStatus replica_status = 2;
 }
 
 // Status of OSD health test
