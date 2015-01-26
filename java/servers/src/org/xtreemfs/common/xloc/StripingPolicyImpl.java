@@ -39,8 +39,6 @@ public abstract class StripingPolicyImpl {
     public static StripingPolicyImpl getPolicy(Replica replica, int relOsdPosition) {
         if (replica.getStripingPolicy().getType() == StripingPolicyType.STRIPING_POLICY_RAID0) {
             return new RAID0Impl(replica,relOsdPosition);
-        } else if (replica.getStripingPolicy().getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE) {
-            return new ErasureCodeImpl(replica, relOsdPosition);
         } else if (replica.getStripingPolicy().getType() == StripingPolicyType.STRIPING_POLICY_REED_SOL_VAN) {
             return new ErasureCodesImpl(replica, relOsdPosition);
         } else {

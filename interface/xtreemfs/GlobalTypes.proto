@@ -105,8 +105,7 @@ enum StripingPolicyType {
     // Default striping policy (round-robin distribution).
     STRIPING_POLICY_RAID0 = 0;
     // Erasure code striping policy (.
-    STRIPING_POLICY_ERASURECODE = 1;
-    STRIPING_POLICY_REED_SOL_VAN = 2;
+    STRIPING_POLICY_REED_SOL_VAN = 1;
 }
 
 message StripingPolicy {

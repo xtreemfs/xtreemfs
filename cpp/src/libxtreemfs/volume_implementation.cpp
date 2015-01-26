@@ -20,7 +20,6 @@
 #include "libxtreemfs/file_info.h"
 #include "libxtreemfs/helper.h"
 #include "libxtreemfs/stripe_translator.h"
-#include "libxtreemfs/stripe_translator_erasure_code.h"
 #include "libxtreemfs/stripe_translator_reed_sol_van.h"
 #include "libxtreemfs/stripe_translator_raid0.h"
 #include "libxtreemfs/uuid_iterator.h"
@@ -101,8 +100,6 @@ void VolumeImplementation::Start() {
 
   // Register StripingPolicies.
   stripe_translators_[STRIPING_POLICY_RAID0] = new StripeTranslatorRaid0();
-  stripe_translators_[STRIPING_POLICY_ERASURECODE] =
-      new StripeTranslatorErasureCode();
   stripe_translators_[STRIPING_POLICY_REED_SOL_VAN] =
       new StripeTranslatorReedSolVan();
 
