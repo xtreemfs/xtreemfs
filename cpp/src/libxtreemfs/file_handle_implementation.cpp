@@ -135,17 +135,18 @@ int FileHandleImplementation::Read(
 
   // Map offset to corresponding OSDs.
   std::vector<ReadOperation> operations;
-  size_t min_sucessfull_reads =
+  size_t min_successfull_reads =
   translator->TranslateReadRequest(buf, count, offset, striping_policies,
                                    &operations);
 
   boost::scoped_ptr<ContainerUUIDIterator> temp_uuid_iterator_for_striping;
 
   // Read all objects.
-  boost::dynamic_bitset<> successful_reads(operations.size());
+  std::vector<int> erasures;
   size_t received_data = 0;
+  size_t number_of_reads = operations.size();
 
-  for (size_t j = 0; j < operations.size(); j++) {
+  for (size_t j = 0; j < number_of_reads; j++) {
     // Differ between striping and the rest (replication, no replication).
     UUIDIterator* uuid_iterator;
     if (xlocs.replicas(0).osd_uuids_size() > 1) {
@@ -182,12 +183,12 @@ int FileHandleImplementation::Read(
       // TODO(mberlin): Update xloc list if newer version found (on OSD?).
       try {
         received_data +=
-          ReadFromOSD(uuid_iterator, file_credentials, operations[j].obj_number,
-              operations[j].data, operations[j].req_offset,
-              operations[j].req_size);
-        successful_reads[j] = 1;
+            ReadFromOSD(uuid_iterator, file_credentials, operations[j].obj_number,
+                    operations[j].data, operations[j].req_offset,
+                    operations[j].req_size);
         // abort loop if all data stripe reads were successful
-        if (successful_reads.count() == min_sucessfull_reads && j + 1 == min_sucessfull_reads)
+        // this criteria only works for systematic codes
+        if (erasures.size() == 0 && j + 1 == min_successfull_reads)
           break;
       } catch(IOException &e) {
         cout << "\tfailed" << endl;
@@ -217,7 +218,7 @@ int FileHandleImplementation::Read(
     }
   }
 
-  return translator->ProcessReads(&operations, &successful_reads, striping_policies, received_data, offset);
+  return translator->ProcessReads(&operations, erasures, striping_policies, received_data, offset);
 }
 
 int FileHandleImplementation::ReadFromOSD(

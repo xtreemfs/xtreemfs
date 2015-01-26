@@ -35,7 +35,7 @@ class StripeTranslatorRaid0 : public StripeTranslator {
 
   virtual size_t ProcessReads(
           std::vector<ReadOperation>* operations,
-          boost::dynamic_bitset<>* successful_reads,
+          std::vector<int>& erasures,
           PolicyContainer policies,
           size_t received_data,
           int64_t offset

@@ -137,7 +137,7 @@ size_t StripeTranslatorErasureCodes::TranslateReadRequest(
 
   size_t StripeTranslatorErasureCodes::ProcessReads(
       std::vector<ReadOperation>* operations,
-      boost::dynamic_bitset<>* successful_reads,
+      std::vector<int> &erasures,
       PolicyContainer policies,
       size_t received_data,
     int64_t offset) const {
@@ -159,7 +159,7 @@ size_t StripeTranslatorErasureCodes::TranslateReadRequest(
   char *coding[m];
 
   // if only data objects have been read cleanup and exit...nothing to do
-  if (((*successful_reads) << lines).count() == operations->size() - lines) {
+  if (erasures.size() == 0) {
     for (size_t i = operations->size() - lines; i < operations->size(); i++){
       delete (*operations)[i].data;
     }
@@ -175,33 +175,19 @@ size_t StripeTranslatorErasureCodes::TranslateReadRequest(
   // then decode
   for (int l = 0; l < lines; l++) {
     int line_offset = l * k;
-    int *erasures = new int[n + 1];
-    int erased = 0;
 
     for (int i = 0; i < k; i++) {
       cout << "setting data device to read op " << (line_offset + i) << endl;
       data[i] = (*operations)[line_offset + i].data;
-      if (!successful_reads->test(line_offset + i)) {
-        cout << "setting device " << i << " as erased" << endl;
-        erasures[erased] = i;
-        erased++;
-      }
     }
 
     for(int i = 0; i < m; i++) {
       cout << "setting coding device to read op " << (lines*k+l*m+i) << endl;
       coding[i] = (*operations)[lines * k + l * m + i].data;
-      if (!successful_reads->test(lines * k + l * m + i)) {
-        cout << "setting device " << (k + i) << " as erased" << endl;
-        erasures[erased] = k + i;
-        erased++;
-      }
     }
 
-    erasures[erased] = -1;
+    erasures.push_back(-1);
     cout << "erasures:";
-    for (int i = 0; i < n; i++)
-      cout << " " << erasures[i];
     cout << endl;
 
     this->Decode(k, m, w, data, coding, erasures, stripe_size);

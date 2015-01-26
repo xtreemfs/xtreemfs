@@ -33,7 +33,7 @@ class StripeTranslatorReedSolVan : public StripeTranslatorErasureCodes {
           unsigned int w,
           char **data,
           char **coding,
-          int *erasures,
+          vector<int> &erasures,
           unsigned int stripe_size
            ) const;
 

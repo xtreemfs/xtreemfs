@@ -78,7 +78,7 @@ size_t StripeTranslatorRaid0::TranslateReadRequest(
 
 size_t StripeTranslatorRaid0::ProcessReads(
     std::vector<ReadOperation>* read_ops,
-    boost::dynamic_bitset<>* suc_read_ops,
+    std::vector<int> &erasures,
     PolicyContainer policies,
     size_t received_data,
     int64_t offset) const {
