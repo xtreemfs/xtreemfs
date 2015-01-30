@@ -407,6 +407,7 @@ FileHandle* VolumeImplementation::OpenFileWithTruncateSize(
     file_handle->SetObjectEncryptor(
         std::auto_ptr<ObjectEncryptor>(
             new ObjectEncryptor(
+                user_credentials,
                 lockbox,
                 meta_file,
                 this,

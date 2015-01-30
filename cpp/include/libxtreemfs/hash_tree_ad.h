@@ -10,6 +10,7 @@
 #include <boost/asio/buffer.hpp>
 #include <boost/icl/interval_set.hpp>
 #include <map>
+#include <string>
 #include <vector>
 
 #include "libxtreemfs/file_handle.h"
@@ -37,9 +38,9 @@ class HashTreeAD {
   void StartRead(int start_leaf, int end_leaf);
 
   void StartWrite(int start_leaf, bool complete_start_leaf, int end_leaf,
-                  bool complete_end_leaf, bool complete_max_leaf = false);
+                  bool complete_end_leaf, bool complete_max_leaf);
 
-  void FinishWrite();
+  void FinishWrite(int start_leaf, int end_leaf, bool complete_max_leaf);
 
   void StartTruncate(int max_leaf_number, bool complete_leaf);
 
@@ -49,6 +50,8 @@ class HashTreeAD {
 
   void SetLeaf(int leaf, std::vector<unsigned char> adata,
                boost::asio::const_buffer data);
+
+  void Flush(const xtreemfs::pbrpc::UserCredentials& user_credentials);
 
   int64_t file_version();
 
@@ -131,7 +134,7 @@ class HashTreeAD {
 
   void ValidateTree();
 
-  void UpdateTree(int start_leaf, int end_leaf, int max_leaf);
+  void UpdateTree();
 
   std::vector<unsigned char> HashOfNode(Node left_child, Node right_child);
 
@@ -177,25 +180,22 @@ class HashTreeAD {
   int max_node_number_;
 
   /**
-   * Helper variable for write, storing the start_leaf parameter of StartWrite.
-   */
-  int start_leaf_;
-
-  /**
-   * Helper variable for write, storing the end_leaf parameter of StartWrite.
-   */
-  int end_leaf_;
-
-  /**
-   * Helper variable for write, storing the complete_max_leaf parameter of
-   * StartWrite.
-   */
-  bool complete_max_leaf_;
-
-  /**
    * Helper variable for a size change of tree, storing the old max leaf number.
    */
   int old_max_leaf_;
+
+  /**
+   * Helper variable for a size change of tree, storing the new max leaf number.
+   * In case of concurrent_write_ == "client" this can be different then
+   * max_leaf_number_.
+   */
+  int new_max_leaf_;
+
+  /**
+   * Helper variable for a size change of tree, storing the minimum max leaf
+   * number.
+   */
+  int min_max_leaf_;
 
   /**
    * The hash containted in the root node.
@@ -203,15 +203,30 @@ class HashTreeAD {
   std::vector<unsigned char> root_hash_;
 
   /**
+   * The root node.
+   */
+  std::vector<unsigned char> root_node_;
+
+  typedef std::map<Node, std::vector<unsigned char> > Nodes_t;
+  /**
    * Storage for the nodes.
    */
-  typedef std::map<Node, std::vector<unsigned char> > Nodes_t;
   Nodes_t nodes_;
+
+  /**
+   * The node numbers of the stored nodes.
+   */
+  boost::icl::interval_set<int> stored_nodes_;
 
   /**
    * Storage for the changed leafs.
    */
   Nodes_t changed_leafs_;
+
+  /**
+   * The leaf numbers of the changed leafs.
+   */
+  boost::icl::interval_set<int> changed_leafs_numbers_;
 
   /**
    * The node numbers of the changed nodes.

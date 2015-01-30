@@ -93,6 +93,7 @@ class OnlineTest : public ::testing::Test {
     options_.encryption_cipher = "aes-256-ctr";
     options_.encryption_hash = "sha256";
     options_.encryption_cw = "none";
+//    options_.encryption_cw = "client";
     options_.encryption_pub_keys_path = "../../tests/certs/user/";
     options_.encryption_priv_keys_path = "../../tests/certs/user/";
 //    options_.object_cache_size = 2;
@@ -155,6 +156,22 @@ class EncryptionTest : public OnlineTest {
 
   virtual void TearDown() {
     file->Close();
+
+    if (options_.encryption_cw == "client") {
+      char buffer[50];
+      file = volume_->OpenFile(
+          user_credentials_,
+          "/test_file",
+          static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_CREAT
+              | SYSTEM_V_FCNTL_H_O_RDWR));
+
+      // full read
+      ASSERT_NO_THROW({
+         file->Read(buffer, 50, 0);
+      });
+
+      file->Close();
+    }
 
     OnlineTest::TearDown();
   }
@@ -578,6 +595,24 @@ TEST_F(EncryptionTest, Write_05) {
   EXPECT_STREQ("ABCDEFGHjiklmn", buffer);
 }
 
+TEST_F(EncryptionTest, Write_06) {
+  ASSERT_NO_THROW({
+    file->Write("GH", 2, 6);
+  });
+
+  ASSERT_NO_THROW({
+    file->Write("OP", 2, 14);
+  });
+
+  ASSERT_NO_THROW({
+    file->Write("KL", 2, 10);
+  });
+
+  ASSERT_NO_THROW({
+    file->Write("gh", 2, 6);
+  });
+}
+
 TEST_F(EncryptionTest, Truncate_01) {
   char buffer[50];
   int x;
@@ -873,6 +908,38 @@ TEST_F(EncryptionTest, Truncate_08) {
   });
 }
 
+TEST_F(EncryptionTest, Truncate_09) {
+  ASSERT_NO_THROW({
+    file->Write("3Y", 2, 19);
+  });
+
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 17);
+  });
+
+  ASSERT_NO_THROW({
+    file->Write("1Y", 2, 19);
+  });
+}
+
+TEST_F(EncryptionTest, Truncate_10) {
+  ASSERT_NO_THROW({
+    file->Write("2J", 2, 7);
+  });
+
+  ASSERT_NO_THROW({
+    file->Write("1X", 2, 18);
+  });
+
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 12);
+  });
+
+  ASSERT_NO_THROW({
+    file->Write("1X", 2, 19);
+  });
+}
+
 TEST_F(EncryptionTest, Open_01) {
   char buffer[50];
   int x;
@@ -902,6 +969,11 @@ TEST_F(EncryptionTest, Open_01) {
 }
 
 TEST_F(EncryptionTest, Open_02) {
+  if (options_.encryption_cw == "client") {
+    // Concurrent open of a file is not supported for this option
+    return;
+  }
+
   char buffer[50];
   int x;
 
@@ -926,6 +998,43 @@ TEST_F(EncryptionTest, Open_02) {
     EXPECT_EQ(*(buffer + i), 0);
   }
   EXPECT_STREQ("EFGH", buffer+4);
+}
+
+TEST_F(EncryptionTest, Open_03) {
+  char buffer[50];
+  int x;
+
+  // truncate to end 9. block
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 36);
+  });
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 50, 0);
+  });
+  EXPECT_EQ(36, x);
+  buffer[x] = 0;
+  for (int i = 0; i < 36; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
+
+  file->Close();
+  file = volume_->OpenFile(
+      user_credentials_,
+      "/test_file",
+      static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_CREAT
+          | SYSTEM_V_FCNTL_H_O_RDWR));
+
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 50, 0);
+  });
+  EXPECT_EQ(36, x);
+  buffer[x] = 0;
+  for (int i = 0; i < 36; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
 }
 
 TEST_F(EncryptionTest, objectVersion_01) {
@@ -1039,9 +1148,10 @@ void cw_worker(FileHandle* file, char id) {
     char str[2];
     str[0] = id;
     str[1] = static_cast<char>(uni_65_90());
-    ASSERT_NO_THROW({
+//    ASSERT_NO_THROW({
       file->Write(str, 2, offset);
-    });
+//    });
+//    std::cout << "id: " << id << " i: " << i << " str: " << str << " offset: " << offset << std::endl;
   }
 }
 
@@ -1054,9 +1164,10 @@ void ct_worker(FileHandle* file, char id,
 
   for (int i = 0; i < 10; i++) {
     int file_size = uni_offset();
-    ASSERT_NO_THROW({
+//    ASSERT_NO_THROW({
       file->Truncate(user_credentials, file_size);
-    });
+//    });
+//    std::cout << "id: " << id << " i: " << i << " file_size: " << file_size << std::endl;
   }
 }
 

@@ -10,6 +10,7 @@
 
 #include <boost/function.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/shared_ptr.hpp>
 #include <string>
 #include <vector>
 
@@ -42,7 +43,8 @@ class ObjectEncryptor : private boost::noncopyable {
   class FileLock;
 
  public:
-  ObjectEncryptor(const pbrpc::FileLockbox& lockbox, FileHandle* meta_file,
+  ObjectEncryptor(const xtreemfs::pbrpc::UserCredentials& user_credentials,
+                  const pbrpc::FileLockbox& lockbox, FileHandle* meta_file,
                   VolumeImplementation* volume, FileInfo* file_info,
                   int object_size);
 
@@ -66,13 +68,13 @@ class ObjectEncryptor : private boost::noncopyable {
 
     const int& object_size_;
 
-    HashTreeAD hash_tree_;
+    boost::shared_ptr<HashTreeAD> hash_tree_;
 
     int64_t old_file_size_;
 
-    boost::scoped_ptr<FileLock> operation_lock_;
-
     boost::scoped_ptr<FileLock> file_lock_;
+
+    boost::shared_lock<boost::shared_mutex> operation_lock_;
 
    private:
     int EncryptEncBlock(int block_number, boost::asio::const_buffer plaintext,
@@ -94,6 +96,13 @@ class ObjectEncryptor : private boost::noncopyable {
                    PartialObjectWriterFunction writer);
 
     ~WriteOperation();
+
+   private:
+    int start_block_;
+
+    int end_block_;
+
+    bool old_last_enc_block_complete_;
   };
 
   class TruncateOperation : public Operation {
@@ -155,6 +164,14 @@ class ObjectEncryptor : private boost::noncopyable {
    * Object size in bytes.
    */
   int object_size_;
+
+  boost::scoped_ptr<FileLock> file_lock_;
+
+  boost::shared_mutex operation_mutex_;
+
+  boost::shared_ptr<HashTreeAD> hash_tree_;
+
+  xtreemfs::pbrpc::UserCredentials user_credentials_;
 
   FileInfo* file_info_;
 

@@ -51,10 +51,10 @@ int RoundUp(int num, int multiple) {
  *                  Ownership is not transfered.
  * @param object_size   Object size in kB.
  */
-ObjectEncryptor::ObjectEncryptor(const pbrpc::FileLockbox& lockbox,
-                                 FileHandle* meta_file,
-                                 VolumeImplementation* volume,
-                                 FileInfo* file_info, int object_size)
+ObjectEncryptor::ObjectEncryptor(
+    const xtreemfs::pbrpc::UserCredentials& user_credentials,
+    const pbrpc::FileLockbox& lockbox, FileHandle* meta_file,
+    VolumeImplementation* volume, FileInfo* file_info, int object_size)
     : file_enc_key_(lockbox.enc_key().begin(), lockbox.enc_key().end()),
       enc_block_size_(lockbox.block_size()),
       cipher_(lockbox.cipher()),
@@ -65,16 +65,36 @@ ObjectEncryptor::ObjectEncryptor(const pbrpc::FileLockbox& lockbox,
           lockbox.hash()),
       concurrent_write_(volume->volume_options().encryption_cw),
       object_size_(object_size * 1024),
+      user_credentials_(user_credentials),
       file_info_(file_info),
       meta_file_(meta_file) {
   assert(meta_file && volume && file_info);
   assert(object_size_ >= enc_block_size_);
   assert(object_size_ % enc_block_size_ == 0);
+  if (concurrent_write_ == "client") {
+    file_lock_.reset(new FileLock(this, 0, 0, true));
+    hash_tree_.reset(
+        new HashTreeAD(meta_file_, &sign_algo_, enc_block_size_,
+                       sign_algo_.get_hash_name(), cipher_.iv_size(),
+                       concurrent_write_));
+
+    hash_tree_->Init();
+  }
 }
 
 ObjectEncryptor::~ObjectEncryptor() {
-  if (meta_file_ != NULL) {
-    meta_file_->Close();
+  try {
+    if (concurrent_write_ == "client") {
+      hash_tree_->Flush(user_credentials_);
+      file_lock_.reset();
+    }
+    if (meta_file_ != NULL) {
+      meta_file_->Close();
+    }
+  } catch (const std::exception& e) {  // NOLINT
+    ErrorLog::error_log->AppendError(
+        "ObjectEncryptor::~ObjectEncryptor(): A exception occurred: "
+            + std::string(e.what()));
   }
 }
 
@@ -82,12 +102,20 @@ ObjectEncryptor::Operation::Operation(ObjectEncryptor* obj_enc, bool write)
     : obj_enc_(obj_enc),
       enc_block_size_(obj_enc->enc_block_size_),
       object_size_(obj_enc->object_size_),
-      hash_tree_(obj_enc->meta_file_, &obj_enc->sign_algo_,
-                 obj_enc->enc_block_size_, obj_enc->sign_algo_.get_hash_name(),
-                 obj_enc->cipher_.iv_size(), obj_enc->concurrent_write_),
       old_file_size_(0) {
+  if (obj_enc->concurrent_write_ == "client") {
+    operation_lock_ = boost::shared_lock<boost::shared_mutex>(
+        obj_enc->operation_mutex_);
+    hash_tree_ = boost::shared_ptr<HashTreeAD>(obj_enc_->hash_tree_);
+  } else {
+    hash_tree_.reset(
+        new HashTreeAD(obj_enc->meta_file_, &obj_enc->sign_algo_,
+                       obj_enc->enc_block_size_,
+                       obj_enc->sign_algo_.get_hash_name(),
+                       obj_enc->cipher_.iv_size(), obj_enc->concurrent_write_));
+  }
   if (obj_enc->concurrent_write_ == "serialize") {
-    operation_lock_.reset(new FileLock(obj_enc_, 0, 0, write));
+    file_lock_.reset(new FileLock(obj_enc_, 0, 0, write));
   }
 }
 
@@ -114,7 +142,7 @@ ObjectEncryptor::ReadOperation::ReadOperation(ObjectEncryptor* obj_enc,
     meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, false));
   }
 
-  hash_tree_.StartRead(start_block, end_block);
+  hash_tree_->StartRead(start_block, end_block);
 }
 
 ObjectEncryptor::WriteOperation::WriteOperation(
@@ -123,16 +151,16 @@ ObjectEncryptor::WriteOperation::WriteOperation(
     : Operation(obj_enc, true) {
   assert(count > 0);
 
-  int start_block = offset / enc_block_size_;
-  int end_block = (offset + count - 1) / enc_block_size_;
+  start_block_ = offset / enc_block_size_;
+  end_block_ = (offset + count - 1) / enc_block_size_;
   int old_last_incomplete_enc_block;
-  bool old_last_enc_block_complete = false;
+  old_last_enc_block_complete_ = false;
 
   if (obj_enc->concurrent_write_ == "locks"
       || obj_enc_->concurrent_write_ == "snapshots") {
     // lock file
     file_lock_.reset(
-        new FileLock(obj_enc_, start_block + 1, end_block - start_block + 1,
+        new FileLock(obj_enc_, start_block_ + 1, end_block_ - start_block_ + 1,
                      true));
   }
 
@@ -144,23 +172,25 @@ ObjectEncryptor::WriteOperation::WriteOperation(
       meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, false));
     }
 
-    hash_tree_.Init();
+    if (obj_enc->concurrent_write_ != "client") {
+      hash_tree_->Init();
+    }
 
     // increase file size if end of write is behind current file size
-    old_file_size_ = hash_tree_.file_size();
-    hash_tree_.set_file_size(std::max(old_file_size_, offset + count));
+    old_file_size_ = hash_tree_->file_size();
+    hash_tree_->set_file_size(std::max(old_file_size_, offset + count));
 
     old_last_incomplete_enc_block = old_file_size_ / enc_block_size_;
     if ((obj_enc->concurrent_write_ == "locks"
         || obj_enc_->concurrent_write_ == "snapshots")
-        && old_last_incomplete_enc_block < start_block) {
+        && old_last_incomplete_enc_block < start_block_) {
       // The write is changing the file size but has not yet locked the old last
       // incomplete enc block.
       // To prevent a concurred write to change the file size too we must first
       // extend the file lock.
       try {
         file_lock_->Change(old_last_incomplete_enc_block + 1,
-                           end_block - old_last_incomplete_enc_block + 1);
+                           end_block_ - old_last_incomplete_enc_block + 1);
       } catch (const PosixErrorException& e) {  // NOLINT
         if (e.posix_errno() != pbrpc::POSIX_ERROR_EAGAIN) {
           // Only retry if there exists a conflicting lock and the server did
@@ -172,20 +202,20 @@ ObjectEncryptor::WriteOperation::WriteOperation(
       }
     }
 
-    old_last_enc_block_complete = old_file_size_ % enc_block_size_ == 0;
+    old_last_enc_block_complete_ = old_file_size_ % enc_block_size_ == 0;
 
-    hash_tree_.StartWrite(
-        start_block,
+    hash_tree_->StartWrite(
+        start_block_,
         offset % enc_block_size_ == 0,
-        end_block,
+        end_block_,
         (offset + count) % enc_block_size_ == 0
             || (offset + count) >= old_file_size_,
-        old_last_enc_block_complete);
+        old_last_enc_block_complete_);
     break;
   }
 
-  if (old_last_incomplete_enc_block < start_block
-      && !old_last_enc_block_complete) {
+  if (old_last_incomplete_enc_block < start_block_
+      && !old_last_enc_block_complete_) {
     // write is behind the old last enc block and it was incomplete,
     // so it musst be updated.
     int old_end_object_no = old_file_size_ / object_size_;
@@ -203,7 +233,8 @@ ObjectEncryptor::WriteOperation::~WriteOperation() {
       meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, true));
     }
 
-    hash_tree_.FinishWrite();
+    hash_tree_->FinishWrite(start_block_, end_block_,
+                            old_last_enc_block_complete_);
   } catch (const std::exception& e) {  // NOLINT
     ErrorLog::error_log->AppendError(
         "WriteOperation::~WriteOperation(): A exception occurred, possibly"
@@ -233,9 +264,11 @@ ObjectEncryptor::TruncateOperation::TruncateOperation(
       meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, true));
     }
 
-    hash_tree_.Init();
+    if (obj_enc->concurrent_write_ != "client") {
+      hash_tree_->Init();
+    }
 
-    int min_file_size = std::min(hash_tree_.file_size(), new_file_size);
+    int min_file_size = std::min(hash_tree_->file_size(), new_file_size);
 
     if (obj_enc->concurrent_write_ == "locks"
         || obj_enc_->concurrent_write_ == "snapshots") {
@@ -256,22 +289,22 @@ ObjectEncryptor::TruncateOperation::TruncateOperation(
       }
     }
 
-    if (hash_tree_.file_size() == new_file_size) {
+    if (hash_tree_->file_size() == new_file_size) {
       // no truncation of hash tree needed.
       break;
     }
 
     bool min_end_enc_block_complete = min_file_size % enc_block_size_ == 0;
 
-    hash_tree_.StartTruncate(new_end_enc_block_no, min_end_enc_block_complete);
-    old_file_size_ = hash_tree_.file_size();
-    hash_tree_.set_file_size(new_file_size);
+    hash_tree_->StartTruncate(new_end_enc_block_no, min_end_enc_block_complete);
+    old_file_size_ = hash_tree_->file_size();
+    hash_tree_->set_file_size(new_file_size);
     if (!min_end_enc_block_complete) {
       int min_end_object_no = (min_file_size - 1) / object_size_;
       int min_end_object_size = min_file_size % object_size_;
       Write(min_end_object_no, NULL, min_end_object_size, 0, reader, writer);
     }
-    hash_tree_.FinishTruncate(user_credentials);
+    hash_tree_->FinishTruncate(user_credentials);
     break;
   }
 }
@@ -284,15 +317,15 @@ int ObjectEncryptor::Operation::EncryptEncBlock(
   std::vector<unsigned char>& iv = encrypt_res.first;
   int& ciphertext_len = encrypt_res.second;
   assert(ciphertext_len == boost::asio::buffer_size(plaintext));
-  hash_tree_.SetLeaf(block_number, iv,
-                     boost::asio::buffer(ciphertext, ciphertext_len));
+  hash_tree_->SetLeaf(block_number, iv,
+                      boost::asio::buffer(ciphertext, ciphertext_len));
   return ciphertext_len;
 }
 
 int ObjectEncryptor::Operation::DecryptEncBlock(
     int block_number, boost::asio::const_buffer ciphertext,
     boost::asio::mutable_buffer plaintext) {
-  std::vector<unsigned char> iv = hash_tree_.GetLeaf(block_number, ciphertext);
+  std::vector<unsigned char> iv = hash_tree_->GetLeaf(block_number, ciphertext);
   if (iv.size() == 0) {
     // block contains unencrypted 0 of a sparse file
     memset(boost::asio::buffer_cast<void*>(plaintext), 0,
@@ -322,7 +355,7 @@ int ObjectEncryptor::Operation::Read(int object_no, char* buffer,
                                      PartialObjectReaderFunction reader) {
   assert(bytes_to_read > 0);
   int object_offset = object_no * object_size_;
-  if (hash_tree_.file_size() <= object_offset + offset_in_object) {
+  if (hash_tree_->file_size() <= object_offset + offset_in_object) {
     // return if read start is behind file size
     return 0;
   }
@@ -449,7 +482,7 @@ void ObjectEncryptor::Operation::Write(int object_no, const char* buffer,
                                    enc_block_size_) - ct_offset_in_object;
   int ct_bytes_to_write = std::min(
       ct_bytes_to_write_,
-      static_cast<int>(hash_tree_.file_size() - object_offset
+      static_cast<int>(hash_tree_->file_size() - object_offset
           - ct_offset_in_object));
   int ct_end_offset_in_object = ct_offset_in_object + ct_bytes_to_write;
   int end_offset_in_object = offset_in_object + bytes_to_write;  // ???
@@ -563,6 +596,10 @@ void ObjectEncryptor::Operation::Write(int object_no, const char* buffer,
  * Calls Flush on the meta file
  */
 void ObjectEncryptor::Flush() {
+  if (concurrent_write_ == "client") {
+    boost::unique_lock<boost::shared_mutex>(operation_mutex_);
+    hash_tree_->Flush(user_credentials_);
+  }
   meta_file_->Flush();
 }
 

@@ -46,6 +46,7 @@
 #include <boost/smart_ptr/scoped_array.hpp>
 #include <algorithm>
 #include <vector>
+#include <string>
 
 #include "libxtreemfs/file_handle_implementation.h"
 #include "libxtreemfs/helper.h"
@@ -308,10 +309,9 @@ HashTreeAD::HashTreeAD(FileHandle* meta_file, SignAlgorithm* sign_algo,
       max_leaf_number_(-1),
       max_level_(0),
       max_node_number_(0),
-      start_leaf_(0),
-      end_leaf_(0),
-      complete_max_leaf_(false),
-      old_max_leaf_(0),
+      old_max_leaf_(-1),
+      new_max_leaf_(-1),
+      min_max_leaf_(-1),
       block_size_(block_size),
       hasher_(hash),
       leaf_adata_size_(leaf_adata_size),
@@ -335,6 +335,9 @@ void HashTreeAD::Init() {
   }
 
   SetSize(max_leaf_number);
+  old_max_leaf_ = max_leaf_number;
+  new_max_leaf_ = max_leaf_number;
+  min_max_leaf_ = max_leaf_number;
 }
 
 /**
@@ -345,18 +348,22 @@ void HashTreeAD::Init() {
 void HashTreeAD::StartRead(int start_leaf, int end_leaf) {
   assert(start_leaf <= end_leaf);
 
-  Init();
-  end_leaf = std::min(end_leaf, max_leaf_number_);
+  if (concurrent_write_ != "client") {
+    Init();
+  }
 
-  if (start_leaf > end_leaf) {
+  if (start_leaf > new_max_leaf_) {
     // read behind current max object
     return;
   }
 
-  boost::icl::interval_set<int> nodeNumbers = RequiredNodesForRead(start_leaf,
-                                                                   end_leaf);
-  ReadNodesFromFile(nodeNumbers);
-  ValidateTree();
+  if (min_max_leaf_ >= 0) {
+    boost::icl::interval_set<int> nodeNumbers = RequiredNodesForRead(
+        start_leaf, std::min(end_leaf, min_max_leaf_));
+    ReadNodesFromFile(nodeNumbers);
+    // TODO(plieser): cw=client: only validate new nodes
+    ValidateTree();
+  }
 }
 
 /**
@@ -368,8 +375,7 @@ void HashTreeAD::StartRead(int start_leaf, int end_leaf) {
  * @param complete_start_leaf   true if complete start leaf will be overwritten.
  * @param end_leaf    The end of the write.
  * @param complete_end_leaf   true if complete end leaf will be overwritten.
- * @param complete_max_leaf   Optional, uses for write after current max leaf.
- *                            True if old max leaf will not be changed.
+ * @param complete_max_leaf   True if old max leaf will not be changed.
  *
  * @throws XtreemFSException    If stored hash tree is invalid.
  */
@@ -378,53 +384,69 @@ void HashTreeAD::StartWrite(int start_leaf, bool complete_start_leaf,
                             bool complete_max_leaf) {
   assert(start_leaf <= end_leaf);
 
-  boost::icl::interval_set<int> nodeNumbers = RequiredNodesForWrite(
-      start_leaf, complete_start_leaf, end_leaf, complete_end_leaf,
-      complete_max_leaf);
+  boost::icl::interval_set<int> nodeNumbers;
+  if (concurrent_write_ != "client") {
+    // TODO(plieser): cw=client: delay reading of nodes to FinishWrite
+    nodeNumbers = RequiredNodesForWrite(start_leaf, complete_start_leaf,
+                                        end_leaf, complete_end_leaf,
+                                        complete_max_leaf);
+  } else {
+    if (!complete_start_leaf
+        && !boost::icl::contains(changed_leafs_numbers_, start_leaf)
+        && start_leaf <= min_max_leaf_) {
+      nodeNumbers += RequiredNodesForRead(start_leaf, start_leaf);
+    }
+    if (!complete_end_leaf
+        && !boost::icl::contains(changed_leafs_numbers_, end_leaf)
+        && end_leaf <= min_max_leaf_) {
+      nodeNumbers += RequiredNodesForRead(end_leaf, end_leaf);
+    }
+  }
   ReadNodesFromFile(nodeNumbers);
+  // TODO(plieser): cw=client: only validate new nodes
   ValidateTree();
 
-  if (end_leaf > max_leaf_number_) {
-    ChangeSize(end_leaf);
-  } else {
-    old_max_leaf_ = -3;
-  }
-  // needed by FinishWrite
-  start_leaf_ = start_leaf;
-  end_leaf_ = end_leaf;
-  complete_max_leaf_ = complete_max_leaf;
+  new_max_leaf_ = std::max(new_max_leaf_, end_leaf);
 }
 
 /**
  * Finishes a write.
+ * Parameters must be identical to the ones used in the StartWrite() call.
+ *
+ * @param start_leaf    The beginning of the write.
+ * @param end_leaf    The end of the write.
+ * @param complete_max_leaf   True if old max leaf will not be changed.
  */
-void HashTreeAD::FinishWrite() {
+void HashTreeAD::FinishWrite(int start_leaf, int end_leaf,
+                             bool complete_max_leaf) {
   if (concurrent_write_ == "locks" || concurrent_write_ == "snapshots") {
     std::vector<unsigned char> root_hash(root_hash_);
-    int max_leaf_number = max_leaf_number_;
+    // store variables that are changed by Init() and we need to restore the
+    // current state
+    int new_max_leaf = new_max_leaf_;
     int64_t file_size = file_size_;
     // get newest root hash
     Init();
     if (root_hash != root_hash_) {
       // a concurrent write/truncate occurred
-      if (max_leaf_number_ <= end_leaf_) {
+      if (max_leaf_number_ <= end_leaf) {
         // write is to the last enc block, this write could have influence on
         // the file size so restore it in case Init() changed it
         file_size_ = file_size;
       }
       // get the new hash tree
-      StartWrite(start_leaf_, true, end_leaf_, true, complete_max_leaf_);
+      StartWrite(start_leaf, true, end_leaf, true, complete_max_leaf);
     } else {
-      // restore size in case Init() changed it
+      // restore old sate in case Init() changed it
+      new_max_leaf_ = new_max_leaf;
       file_size_ = file_size;
-      if (max_leaf_number != max_leaf_number_) {
-        SetSize(max_leaf_number);
-      }
     }
   }
 
-  UpdateTree(start_leaf_, end_leaf_, old_max_leaf_);
-  WriteNodesToFile();
+  if (concurrent_write_ != "client") {
+    UpdateTree();
+    WriteNodesToFile();
+  }
 }
 
 /**
@@ -444,22 +466,47 @@ void HashTreeAD::StartTruncate(int max_leaf_number, bool complete_leaf) {
   if (max_leaf_number >= 0) {
     boost::icl::interval_set<int> nodeNumbers;
 
-    if (max_leaf_number <= max_leaf_number_) {
-      nodeNumbers = RequiredNodesForWrite(0, true, max_leaf_number,
-                                          complete_leaf);
+    if (concurrent_write_ != "client") {
+      if (max_leaf_number <= max_leaf_number_) {
+        nodeNumbers = RequiredNodesForWrite(0, true, max_leaf_number,
+                                            complete_leaf);
+      } else {
+        nodeNumbers = RequiredNodesForWrite(max_leaf_number, true,
+                                            max_leaf_number, true,
+                                            complete_leaf);
+      }
     } else {
-      nodeNumbers = RequiredNodesForWrite(max_leaf_number, true,
-                                          max_leaf_number, true, complete_leaf);
+      int max_leaf = std::min(max_leaf_number, max_leaf_number_);
+      if (!complete_leaf
+          && !boost::icl::contains(changed_leafs_numbers_, max_leaf)
+          && max_leaf >= 0 && max_leaf <= min_max_leaf_) {
+        nodeNumbers += RequiredNodesForRead(max_leaf, max_leaf);
+      }
+      if (max_leaf_number < new_max_leaf_) {
+        // remove changed leafs which are truncated
+        changed_leafs_numbers_ -= boost::icl::interval<int>::left_open(
+            max_leaf_number, boost::icl::last(changed_leafs_numbers_));
+        for (Nodes_t::iterator iter = changed_leafs_.begin();
+            iter != changed_leafs_.end(); iter++) {
+          if (iter->first.n > max_leaf_number) {
+            changed_leafs_.erase(iter);
+          }
+        }
+      }
     }
-
     ReadNodesFromFile(nodeNumbers);
+    // TODO(plieser): cw=client: only validate new nodes
     ValidateTree();
   } else {
     nodes_.clear();
+    stored_nodes_.clear();
     changed_nodes_.clear();
+    changed_leafs_.clear();
+    changed_leafs_numbers_.clear();
   }
 
-  ChangeSize(max_leaf_number);
+  new_max_leaf_ = max_leaf_number;
+  min_max_leaf_ = std::min(min_max_leaf_, max_leaf_number);
 }
 
 /**
@@ -467,9 +514,20 @@ void HashTreeAD::StartTruncate(int max_leaf_number, bool complete_leaf) {
  */
 void HashTreeAD::FinishTruncate(
     const xtreemfs::pbrpc::UserCredentials& user_credentials) {
-  UpdateTree(-1, -1, std::min(old_max_leaf_, max_leaf_number_));
-  meta_file_->Truncate(user_credentials, GetNodeStartInBytes(max_node_number_));
-  WriteNodesToFile();
+  if (concurrent_write_ != "client") {
+    if (min_max_leaf_ < old_max_leaf_) {
+      // The minimum of the max node is smaller then the current one.
+      // We need to truncate the meta file to ensure all nodes between them and
+      // which are not overwritten will be set to zero.
+      meta_file_->Truncate(
+          user_credentials,
+          GetNodeStartInBytes(
+              min_max_leaf_ >= 0 ?
+                  Node(0, min_max_leaf_).NodeNumber(this) + 1 : 0));
+    }
+    UpdateTree();
+    WriteNodesToFile();
+  }
 }
 
 /**
@@ -484,10 +542,17 @@ void HashTreeAD::FinishTruncate(
  */
 std::vector<unsigned char> HashTreeAD::GetLeaf(int leaf,
                                                boost::asio::const_buffer data) {
-  assert(leaf <= max_leaf_number_);
+  assert(leaf <= new_max_leaf_);
 
   std::vector<unsigned char> hash_value = hasher_.digest(data);
-  std::vector<unsigned char> leaf_value = nodes_.at(Node(0, leaf));
+  std::vector<unsigned char> leaf_value;
+  if (boost::icl::contains(changed_leafs_numbers_, leaf)) {
+    leaf_value = changed_leafs_.at(Node(0, leaf));
+  } else if (leaf > min_max_leaf_) {
+    leaf_value = std::vector<unsigned char>(NodeSize(0));
+  } else {
+    leaf_value = nodes_.at(Node(0, leaf));
+  }
   if (!std::equal(leaf_value.begin() + leaf_adata_size_, leaf_value.end(),
                   hash_value.begin())) {
     // hash 0 indicates special case in which all data under node is 0
@@ -520,7 +585,7 @@ void HashTreeAD::set_file_size(int64_t file_size) {
  */
 void HashTreeAD::SetLeaf(int leaf, std::vector<unsigned char> adata,
                          boost::asio::const_buffer data) {
-  assert(leaf <= max_leaf_number_);
+  assert(leaf <= new_max_leaf_);
   assert(adata.size() == leaf_adata_size_);
 
   std::vector<unsigned char> leaf_value = adata;
@@ -528,6 +593,29 @@ void HashTreeAD::SetLeaf(int leaf, std::vector<unsigned char> adata,
   leaf_value.insert(leaf_value.end(), hash_value.begin(), hash_value.end());
 
   changed_leafs_[Node(0, leaf)] = leaf_value;
+  changed_leafs_numbers_ += leaf;
+}
+
+void HashTreeAD::Flush(
+    const xtreemfs::pbrpc::UserCredentials& user_credentials) {
+  if (boost::icl::is_empty(changed_nodes_)
+      && boost::icl::is_empty(changed_leafs_numbers_)
+      && old_max_leaf_ == new_max_leaf_ && min_max_leaf_ == old_max_leaf_) {
+    // no write or truncate occurred
+    return;
+  }
+  if (min_max_leaf_ < old_max_leaf_) {
+    // The minimum of the max node is smaller then the current one.
+    // We need to truncate the meta file to ensure all nodes between them and
+    // which are not overwritten will be set to zero.
+    meta_file_->Truncate(
+        user_credentials,
+        GetNodeStartInBytes(
+            min_max_leaf_ >= 0 ?
+                Node(0, min_max_leaf_).NodeNumber(this) + 1 : 0));
+  }
+  UpdateTree();
+  WriteNodesToFile();
 }
 
 /**
@@ -557,7 +645,9 @@ void HashTreeAD::ChangeSize(int max_leaf_number) {
         }
       }
     } else {
+      // remove old root node(0,0)
       nodes_.clear();
+      stored_nodes_.clear();
     }
     SetSize(max_leaf_number);
     if (move_node) {
@@ -617,7 +707,7 @@ void HashTreeAD::SetSize(int max_leaf_number) {
  * @throws XtreemFSException   If signature of root node is invalid.
  */
 bool HashTreeAD::ReadRootNodeFromFile() {
-  std::vector<char> buffer(NodeSize(max_level_));
+  std::vector<char> buffer(NodeSize(-1));
   int bytes_read = meta_file_->Read(buffer.data(), buffer.size(), 0);
   if (bytes_read == 0) {
     // file didn't exist yet
@@ -660,8 +750,14 @@ bool HashTreeAD::ReadRootNodeFromFile() {
  * @param nodeNumbers   The node numbers of the nodes to read.
  */
 void HashTreeAD::ReadNodesFromFile(boost::icl::interval_set<int> nodeNumbers) {
-  nodes_.clear();
-  changed_nodes_.clear();
+  if (concurrent_write_ == "client") {
+    nodeNumbers -= stored_nodes_;
+    stored_nodes_ += nodeNumbers;
+  } else {
+    nodes_.clear();
+    stored_nodes_ = nodeNumbers;
+    changed_nodes_.clear();
+  }
 
   boost::scoped_array<char> buffer;
   int buffer_size = 0;
@@ -684,18 +780,25 @@ void HashTreeAD::ReadNodesFromFile(boost::icl::interval_set<int> nodeNumbers) {
     }
     int bytes_read = meta_file_->Read(buffer.get(), read_size, read_start,
                                       file_version_);
-    assert(bytes_read == read_size);
 
     for (int i = boost::icl::first(range); i <= boost::icl::last(range); i++) {
       Node node(i, this);
       int node_size = NodeSize(node.level);
-      nodes_.insert(
-          Nodes_t::value_type(
-              node,
-              std::vector<unsigned char>(
-                  buffer.get() + read_count,
-                  buffer.get() + read_count + node_size)));
-      read_count += node_size;
+      if (read_count < bytes_read) {
+        // read node from buffer
+        assert(read_count + node_size <= bytes_read);
+        nodes_.insert(
+            Nodes_t::value_type(
+                node,
+                std::vector<unsigned char>(
+                    buffer.get() + read_count,
+                    buffer.get() + read_count + node_size)));
+        read_count += node_size;
+      } else {
+        // node contains only zeros
+        nodes_.insert(
+            Nodes_t::value_type(node, std::vector<unsigned char>(node_size)));
+      }
     }
     assert(read_count == bytes_read);
   }
@@ -716,11 +819,18 @@ void HashTreeAD::WriteNodesToFile() {
     int write_start = GetNodeStartInBytes(boost::icl::first(range));
     std::vector<char> buffer;
     for (int i = boost::icl::first(range); i <= boost::icl::last(range); i++) {
-      Node node(i, this);
-      buffer.insert(buffer.end(), nodes_[node].begin(), nodes_[node].end());
+      if (i == -1) {
+        buffer.insert(buffer.end(), root_node_.begin(), root_node_.end());
+      } else {
+        Node node(i, this);
+        buffer.insert(buffer.end(), nodes_[node].begin(), nodes_[node].end());
+      }
     }
     meta_file_->Write(buffer.data(), buffer.size(), write_start, file_version_);
   }
+
+  // reset changed nodes
+  changed_nodes_.clear();
 }
 
 /**
@@ -887,68 +997,96 @@ void HashTreeAD::ValidateTree() {
 
 /**
  * Updates the hash tree.
- *
- * @param start_leaf    Beginning of the changed leafs. -1 if no leafs changed.
- * @param end_leaf      End of the changed leafs.
- * @param max_leaf    Old/new max leaf number if it was changed, otherwise -1
- * @param max_leaf    Old max leaf number if it was increased,
- *                    new max leaf number if it was decreased,
- *                    -3 if it was not changed
  */
-void HashTreeAD::UpdateTree(int start_leaf, int end_leaf, int max_leaf) {
+void HashTreeAD::UpdateTree() {
+  boost::icl::interval_set<int> nodes_to_update;
+
+  ChangeSize(new_max_leaf_);
+
+  // remove stored nodes which are now obsolete
+  changed_nodes_ -= boost::icl::interval<int>::left_open(
+      max_node_number_, boost::icl::last(changed_nodes_));
+  for (Nodes_t::iterator iter = nodes_.begin(); iter != nodes_.end(); iter++) {
+    if (iter->first.NodeNumber(this) > max_node_number_) {
+      nodes_.erase(iter);
+    }
+  }
+
   // insert changed leafs into nodes_
   BOOST_FOREACH(Nodes_t::value_type node, changed_leafs_) {
     nodes_[node.first] = node.second;
     changed_nodes_ += node.first.NodeNumber(this);
+    nodes_to_update += node.first.n;
   }
 
-  if (start_leaf > -1) {
-    // update the ancestors hashes for the leafs written to, root node excluded
-    int start_n = start_leaf;
-    int end_n = end_leaf;
-    Node skiped_node = Node(0, 0);
-    for (int level = 1; level < max_level_; level++) {
-      Node start_parent = Node(level - 1, start_n).Parent(this);
+  Node skiped_min_max_leaf_ancestor(0, 0);
+  if (min_max_leaf_ >= 0 && old_max_leaf_ != max_leaf_number_) {
+    // the write was behind the last max leaf or truncate
+    // update the ancestors (root node excluded) of the old/new max leaf
+    Node node(0, min_max_leaf_);
+    if (!boost::icl::contains(changed_nodes_, node.NodeNumber(this))) {
+      // the old max leaf was not changed, start at the lowest ancestors that
+      // needs to be changed
+      skiped_min_max_leaf_ancestor = node.Parent(
+          this, LeastSignificantBitUnset(min_max_leaf_));
+      if (skiped_min_max_leaf_ancestor.level < max_level_) {
+        skiped_min_max_leaf_ancestor = skiped_min_max_leaf_ancestor.Parent(
+            this);
+      }
+    } else {
+      nodes_to_update += min_max_leaf_;
+    }
+  }
+
+  // update the nodes, root node excluded
+  Node skiped_end_node = Node(0, 0);
+  for (int level = 1; level < max_level_; level++) {
+    boost::icl::interval_set<int> old_nodes_to_update = nodes_to_update;
+    nodes_to_update.clear();
+
+    // add skipped nodes to the notes to update
+    if (skiped_end_node.level == level) {
+      nodes_to_update += skiped_end_node.n;
+    }
+    if (skiped_min_max_leaf_ancestor.level == level) {
+      nodes_to_update += skiped_min_max_leaf_ancestor.n;
+    }
+
+    // set nodes to update based on the nodes changed on the level below
+    BOOST_FOREACH(
+        boost::icl::interval_set<int>::interval_type range,
+        old_nodes_to_update) {
+      int start_n;
+      int end_n;
+      Node start_parent = Node(level - 1, boost::icl::first(range)).Parent(
+          this);
       start_n = start_parent.n;
       if (start_parent.level != level) {
-        // skip all levels till level of start_parent
-        level = start_parent.level;
-        end_n = start_n;
+        assert(skiped_end_node.level < level);
+        skiped_end_node = start_parent;
       } else {
-        Node end_parent = Node(level - 1, end_n).Parent(this);
-        if (skiped_node.level == level) {
-          end_n = skiped_node.n;
-        } else if (end_parent.level == level) {
+        Node end_parent = Node(level - 1, boost::icl::last(range)).Parent(this);
+        if (end_parent.level == level) {
           end_n = end_parent.n;
         } else {
-          assert(skiped_node.level < level);
-          skiped_node = end_parent;
-          end_n = Node(level - 1, end_n - 2).Parent(this).n;
+          assert(skiped_end_node.level < level);
+          skiped_end_node = end_parent;
+          end_n = Node(level - 1, boost::icl::last(range) - 2).Parent(this).n;
         }
+        nodes_to_update += boost::icl::interval<int>::closed(start_n, end_n);
       }
-      for (int n = start_n; n <= end_n; n++) {
+    }
+
+    // update nodes
+    BOOST_FOREACH(
+        boost::icl::interval_set<int>::interval_type range,
+        nodes_to_update) {
+      for (int n = boost::icl::first(range); n <= boost::icl::last(range);
+          n++) {
         Node node(level, n);
         nodes_[node] = HashOfNode(node.LeftChild(this), node.RightChild(this));
         changed_nodes_ += node.NodeNumber(this);
       }
-    }
-  }
-
-  if (max_leaf >= 0
-      && (start_leaf == -1 || Node(0, start_leaf).LeftSibling().n > max_leaf)) {
-    // the write was behind the last max leaf or truncate
-    // update the ancestors (root node excluded) of the old/new max leaf
-    Node node(0, max_leaf);
-    if (!boost::icl::contains(changed_nodes_, node.NodeNumber(this))) {
-      // the old max leaf was not changed, start at the lowest ancestors that
-      // needs to be changed
-      node = node.Parent(this, LeastSignificantBitUnset(max_leaf));
-    }
-    while (node.level < max_level_ - 1) {
-      Node parent = node.Parent(this);
-      nodes_[parent] = HashOfNode(node.LeftSibling(), node.RightSibling(this));
-      changed_nodes_ += parent.NodeNumber(this);
-      node = parent;
     }
   }
 
@@ -958,14 +1096,14 @@ void HashTreeAD::UpdateTree(int start_leaf, int end_leaf, int max_leaf) {
 
   // store file version in root node
   uint64_t file_version = htobe64(file_version_);
-  std::vector<unsigned char> root_node(
+  root_node_ = std::vector<unsigned char>(
       reinterpret_cast<unsigned char*>(&file_version),
       reinterpret_cast<unsigned char*>(&file_version) + sizeof(uint64_t));
 
   // store file size in root node
   uint64_t file_size = htobe64(file_size_);
-  root_node.insert(
-      root_node.end(), reinterpret_cast<unsigned char*>(&file_size),
+  root_node_.insert(
+      root_node_.end(), reinterpret_cast<unsigned char*>(&file_size),
       reinterpret_cast<unsigned char*>(&file_size) + sizeof(uint64_t));
 
   // get root node hash
@@ -973,31 +1111,36 @@ void HashTreeAD::UpdateTree(int start_leaf, int end_leaf, int max_leaf) {
   if (max_level_ > 0) {
     // don't update the root hash if shrink truncate to complete tree and
     // last leaf was not changed
-    if (max_leaf != max_leaf_number_
-        || (!IsPowerOfTwo(max_leaf_number_ + 1) || max_leaf_number_ == 0)
-        || boost::icl::contains(changed_nodes_,
-                                Node(0, max_leaf).NodeNumber(this))) {
-      root_hash_ = HashOfNode(root.LeftChild(this), root.RightChild(this));
-    } else {
+    if (min_max_leaf_ == max_leaf_number_
+        && (IsPowerOfTwo(max_leaf_number_ + 1) && max_leaf_number_ != 0)
+        && boost::icl::is_empty(changed_nodes_)) {
       root_hash_ = nodes_[root];
+    } else {
+      root_hash_ = HashOfNode(root.LeftChild(this), root.RightChild(this));
     }
   } else {
     root_hash_ = hasher_.digest(boost::asio::const_buffer());
   }
-  root_node.insert(root_node.end(), root_hash_.begin(), root_hash_.end());
+  nodes_[root] = root_hash_;
+  root_node_.insert(root_node_.end(), root_hash_.begin(), root_hash_.end());
 
   // sign root node
-  root_node.resize(NodeSize(max_level_));
+  root_node_.resize(NodeSize(-1));
   sign_algo_->Sign(
-      boost::asio::buffer(root_node,
-                          root_node.size() - sign_algo_->get_signature_size()),
+      boost::asio::buffer(root_node_,
+                          root_node_.size() - sign_algo_->get_signature_size()),
       boost::asio::buffer(
-          root_node.data() + root_node.size()
+          root_node_.data() + root_node_.size()
               - sign_algo_->get_signature_size(),
           sign_algo_->get_signature_size()));
 
-  nodes_[root] = root_node;
   changed_nodes_ += max_node_number_;
+
+  // reset helper variables
+  old_max_leaf_ = new_max_leaf_;
+  min_max_leaf_ = new_max_leaf_;
+  changed_leafs_.clear();
+  changed_leafs_numbers_.clear();
 }
 
 /**
@@ -1041,7 +1184,7 @@ int HashTreeAD::GetNodeStartInBytes(int node_number) {
     return 0;
   }
 
-  int start = NodeSize(max_level_);
+  int start = NodeSize(-1);
   int level = 0;
   int x;
   while ((x = NumberOfNodes(level, node_number))) {
@@ -1069,13 +1212,13 @@ int HashTreeAD::NodeGroupDistance(int level) {
 }
 
 /**
- * @param level
+ * @param level   -1 for root node
  * @return The size of a node of the level in bytes.
  */
 int HashTreeAD::NodeSize(int level) {
-  assert(level <= max_level_);
+//  assert(level <= max_level_);
 
-  if (level == max_level_) {
+  if (level == -1) {
     return sizeof(uint64_t) + sizeof(uint64_t) + hasher_.digest_size()
         + sign_algo_->get_signature_size();
   } else if (level == 0) {

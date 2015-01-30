@@ -252,10 +252,10 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
       } else if (options_->encryption_cw != xattr.value()) {
         if (Logging::log->loggingActive(LEVEL_WARN)) {
           Logging::log->getLog(LEVEL_WARN)
-              << "The selected method to use to ensure consistency for"
-              "concurrent writes is different form the default one for the"
+              << "The selected method to use to ensure consistency for "
+              "concurrent writes is different form the default one for the "
               "volume.\n"
-              "This may result in corrupted files if concurrent writes do"
+              "This may result in corrupted files if concurrent writes do "
               "occur."
               << endl;
         }
