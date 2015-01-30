@@ -24,10 +24,11 @@ class ReadOperation {
 
   ReadOperation(size_t _obj_number, OSDOffsetContainer _osd_offsets,
                 size_t _req_size, size_t _req_offset,
-                char *_data)
+                char *_data, bool _owns_data = false)
       : obj_number(_obj_number), osd_offsets(_osd_offsets),
         req_size(_req_size), req_offset(_req_offset),
-        data(_data) {
+        data(_data),
+        owns_data(_owns_data) {
   };
 
   size_t obj_number;
@@ -35,6 +36,7 @@ class ReadOperation {
   size_t req_size;
   size_t req_offset;
   char *data;
+  bool owns_data;
 };
 
 class WriteOperation {

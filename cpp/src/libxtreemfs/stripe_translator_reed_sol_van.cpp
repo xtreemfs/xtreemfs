@@ -23,7 +23,7 @@ void StripeTranslatorReedSolVan::Encode(
           unsigned int k,
           unsigned int m,
           unsigned int w,
-          const char **data,
+          char **data,
           char **coding,
           unsigned int stripe_size
         ) const {
@@ -35,7 +35,7 @@ void StripeTranslatorReedSolVan::Encode(
       static_cast<int>(m),
       static_cast<int>(w),
       matrix,
-      const_cast<char**> (data),
+      data,
       coding,
       static_cast<int>(stripe_size));
 
@@ -53,12 +53,14 @@ void StripeTranslatorReedSolVan::Decode(
   // decode data here
 
   int *matrix = reed_sol_vandermonde_coding_matrix(k, m, w);
+  erasures.push_back(-1);
   jerasure_matrix_decode(
       k,
       m,
       w,
       matrix,
       1,
+      // workaround to get the raw data...in C++11 vector has a member var for that
       &erasures.front(),
       data,
       coding,

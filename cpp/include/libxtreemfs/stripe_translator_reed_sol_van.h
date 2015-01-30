@@ -22,7 +22,7 @@ class StripeTranslatorReedSolVan : public StripeTranslatorErasureCodes {
           unsigned int k,
           unsigned int m,
           unsigned int w,
-          const char *data[],
+          char *data[],
           char **coding,
           unsigned int stripe_size
            ) const;

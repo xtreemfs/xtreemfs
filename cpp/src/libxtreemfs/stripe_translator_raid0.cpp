@@ -7,7 +7,6 @@
 #include "libxtreemfs/stripe_translator_raid0.h"
 
 #include <algorithm>
-#include <boost/dynamic_bitset.hpp>
 #include <vector>
 
 using namespace std;

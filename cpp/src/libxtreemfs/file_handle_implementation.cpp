@@ -218,7 +218,15 @@ int FileHandleImplementation::Read(
     }
   }
 
-  return translator->ProcessReads(&operations, erasures, striping_policies, received_data, offset);
+  int read_data = translator->ProcessReads(&operations, erasures, striping_policies, received_data, offset);
+  for (int i = 0; i < operations.size(); i++) {
+    if (operations[i].owns_data) {
+      cout << "deleting coding buffers after write" << endl;
+      delete[] operations[i].data;
+    }
+  }
+  // exit(1);
+  return read_data;
 }
 
 int FileHandleImplementation::ReadFromOSD(
