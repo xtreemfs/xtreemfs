@@ -21,9 +21,9 @@ import org.xtreemfs.osd.rwre.RWReplicationStage.RWReplicationCallback;
 import org.xtreemfs.osd.stages.PreprocStage.InvalidateXLocSetCallback;
 import org.xtreemfs.osd.stages.StorageStage.InternalGetReplicaStateCallback;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateResponse.LeaseState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 /**

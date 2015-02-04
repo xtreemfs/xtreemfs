@@ -4502,33 +4502,33 @@ class xtreemfs_xloc_set_invalidateResponse : public ::google::protobuf::Message 
 
   // accessors -------------------------------------------------------
 
-  // required bool is_primary = 1;
-  inline bool has_is_primary() const;
-  inline void clear_is_primary();
-  static const int kIsPrimaryFieldNumber = 1;
-  inline bool is_primary() const;
-  inline void set_is_primary(bool value);
+  // required .xtreemfs.pbrpc.LeaseState lease_state = 1;
+  inline bool has_lease_state() const;
+  inline void clear_lease_state();
+  static const int kLeaseStateFieldNumber = 1;
+  inline ::xtreemfs::pbrpc::LeaseState lease_state() const;
+  inline void set_lease_state(::xtreemfs::pbrpc::LeaseState value);
 
-  // optional .xtreemfs.pbrpc.ReplicaStatus status = 2;
-  inline bool has_status() const;
-  inline void clear_status();
-  static const int kStatusFieldNumber = 2;
-  inline const ::xtreemfs::pbrpc::ReplicaStatus& status() const;
-  inline ::xtreemfs::pbrpc::ReplicaStatus* mutable_status();
-  inline ::xtreemfs::pbrpc::ReplicaStatus* release_status();
-  inline void set_allocated_status(::xtreemfs::pbrpc::ReplicaStatus* status);
+  // optional .xtreemfs.pbrpc.ReplicaStatus replica_status = 2;
+  inline bool has_replica_status() const;
+  inline void clear_replica_status();
+  static const int kReplicaStatusFieldNumber = 2;
+  inline const ::xtreemfs::pbrpc::ReplicaStatus& replica_status() const;
+  inline ::xtreemfs::pbrpc::ReplicaStatus* mutable_replica_status();
+  inline ::xtreemfs::pbrpc::ReplicaStatus* release_replica_status();
+  inline void set_allocated_replica_status(::xtreemfs::pbrpc::ReplicaStatus* replica_status);
 
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_xloc_set_invalidateResponse)
  private:
-  inline void set_has_is_primary();
-  inline void clear_has_is_primary();
-  inline void set_has_status();
-  inline void clear_has_status();
+  inline void set_has_lease_state();
+  inline void clear_has_lease_state();
+  inline void set_has_replica_status();
+  inline void clear_has_replica_status();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
-  ::xtreemfs::pbrpc::ReplicaStatus* status_;
-  bool is_primary_;
+  ::xtreemfs::pbrpc::ReplicaStatus* replica_status_;
+  int lease_state_;
 
   mutable int _cached_size_;
   ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
@@ -9096,63 +9096,64 @@ inline void xtreemfs_xloc_set_invalidateRequest::set_allocated_file_id(::std::st
 
 // xtreemfs_xloc_set_invalidateResponse
 
-// required bool is_primary = 1;
-inline bool xtreemfs_xloc_set_invalidateResponse::has_is_primary() const {
+// required .xtreemfs.pbrpc.LeaseState lease_state = 1;
+inline bool xtreemfs_xloc_set_invalidateResponse::has_lease_state() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void xtreemfs_xloc_set_invalidateResponse::set_has_is_primary() {
+inline void xtreemfs_xloc_set_invalidateResponse::set_has_lease_state() {
   _has_bits_[0] |= 0x00000001u;
 }
-inline void xtreemfs_xloc_set_invalidateResponse::clear_has_is_primary() {
+inline void xtreemfs_xloc_set_invalidateResponse::clear_has_lease_state() {
   _has_bits_[0] &= ~0x00000001u;
 }
-inline void xtreemfs_xloc_set_invalidateResponse::clear_is_primary() {
-  is_primary_ = false;
-  clear_has_is_primary();
+inline void xtreemfs_xloc_set_invalidateResponse::clear_lease_state() {
+  lease_state_ = 0;
+  clear_has_lease_state();
 }
-inline bool xtreemfs_xloc_set_invalidateResponse::is_primary() const {
-  return is_primary_;
+inline ::xtreemfs::pbrpc::LeaseState xtreemfs_xloc_set_invalidateResponse::lease_state() const {
+  return static_cast< ::xtreemfs::pbrpc::LeaseState >(lease_state_);
 }
-inline void xtreemfs_xloc_set_invalidateResponse::set_is_primary(bool value) {
-  set_has_is_primary();
-  is_primary_ = value;
+inline void xtreemfs_xloc_set_invalidateResponse::set_lease_state(::xtreemfs::pbrpc::LeaseState value) {
+  assert(::xtreemfs::pbrpc::LeaseState_IsValid(value));
+  set_has_lease_state();
+  lease_state_ = value;
 }
 
-// optional .xtreemfs.pbrpc.ReplicaStatus status = 2;
-inline bool xtreemfs_xloc_set_invalidateResponse::has_status() const {
+// optional .xtreemfs.pbrpc.ReplicaStatus replica_status = 2;
+inline bool xtreemfs_xloc_set_invalidateResponse::has_replica_status() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
-inline void xtreemfs_xloc_set_invalidateResponse::set_has_status() {
+inline void xtreemfs_xloc_set_invalidateResponse::set_has_replica_status() {
   _has_bits_[0] |= 0x00000002u;
 }
-inline void xtreemfs_xloc_set_invalidateResponse::clear_has_status() {
+inline void xtreemfs_xloc_set_invalidateResponse::clear_has_replica_status() {
   _has_bits_[0] &= ~0x00000002u;
 }
-inline void xtreemfs_xloc_set_invalidateResponse::clear_status() {
-  if (status_ != NULL) status_->::xtreemfs::pbrpc::ReplicaStatus::Clear();
-  clear_has_status();
+inline void xtreemfs_xloc_set_invalidateResponse::clear_replica_status() {
+  if (replica_status_ != NULL) replica_status_->::xtreemfs::pbrpc::ReplicaStatus::Clear();
+  clear_has_replica_status();
 }
-inline const ::xtreemfs::pbrpc::ReplicaStatus& xtreemfs_xloc_set_invalidateResponse::status() const {
-  return status_ != NULL ? *status_ : *default_instance_->status_;
+inline const ::xtreemfs::pbrpc::ReplicaStatus& xtreemfs_xloc_set_invalidateResponse::replica_status() const {
+  return replica_status_ != NULL ? *replica_status_ : *default_instance_->replica_status_;
 }
-inline ::xtreemfs::pbrpc::ReplicaStatus* xtreemfs_xloc_set_invalidateResponse::mutable_status() {
-  set_has_status();
-  if (status_ == NULL) status_ = new ::xtreemfs::pbrpc::ReplicaStatus;
-  return status_;
+inline ::xtreemfs::pbrpc::ReplicaStatus* xtreemfs_xloc_set_invalidateResponse::mutable_replica_status() {
+  set_has_replica_status();
+  if (replica_status_ == NULL) replica_status_ = new ::xtreemfs::pbrpc::ReplicaStatus;
+  return replica_status_;
 }
-inline ::xtreemfs::pbrpc::ReplicaStatus* xtreemfs_xloc_set_invalidateResponse::release_status() {
-  clear_has_status();
-  ::xtreemfs::pbrpc::ReplicaStatus* temp = status_;
-  status_ = NULL;
+inline ::xtreemfs::pbrpc::ReplicaStatus* xtreemfs_xloc_set_invalidateResponse::release_replica_status() {
+  clear_has_replica_status();
+  ::xtreemfs::pbrpc::ReplicaStatus* temp = replica_status_;
+  replica_status_ = NULL;
   return temp;
 }
-inline void xtreemfs_xloc_set_invalidateResponse::set_allocated_status(::xtreemfs::pbrpc::ReplicaStatus* status) {
-  delete status_;
-  status_ = status;
-  if (status) {
-    set_has_status();
+inline void xtreemfs_xloc_set_invalidateResponse::set_allocated_replica_status(::xtreemfs::pbrpc::ReplicaStatus* replica_status) {
+  delete replica_status_;
+  replica_status_ = replica_status;
+  if (replica_status) {
+    set_has_replica_status();
   } else {
-    clear_has_status();
+    clear_has_replica_status();
   }
 }
 

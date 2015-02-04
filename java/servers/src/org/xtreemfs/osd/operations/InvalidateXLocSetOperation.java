@@ -22,10 +22,10 @@ import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.stages.PreprocStage.InvalidateXLocSetCallback;
 import org.xtreemfs.osd.stages.StorageStage.InternalGetReplicaStateCallback;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateResponse.LeaseState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 /**

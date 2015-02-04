@@ -59,6 +59,7 @@ import org.xtreemfs.osd.stages.StorageStage.InternalGetMaxObjectNoCallback;
 import org.xtreemfs.osd.stages.StorageStage.WriteObjectCallback;
 import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
@@ -66,7 +67,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.XLocSetVersionState;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateResponse.LeaseState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 /**

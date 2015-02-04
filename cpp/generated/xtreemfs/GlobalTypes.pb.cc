@@ -59,6 +59,7 @@ const ::google::protobuf::EnumDescriptor* OSDSelectionPolicyType_descriptor_ = N
 const ::google::protobuf::EnumDescriptor* ReplicaSelectionPolicyType_descriptor_ = NULL;
 const ::google::protobuf::EnumDescriptor* SnapConfig_descriptor_ = NULL;
 const ::google::protobuf::EnumDescriptor* StripingPolicyType_descriptor_ = NULL;
+const ::google::protobuf::EnumDescriptor* LeaseState_descriptor_ = NULL;
 const ::google::protobuf::EnumDescriptor* PORTS_descriptor_ = NULL;
 const ::google::protobuf::EnumDescriptor* CONSTANTS_descriptor_ = NULL;
 const ::google::protobuf::EnumDescriptor* SYSTEM_V_FCNTL_descriptor_ = NULL;
@@ -267,11 +268,12 @@ void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto() {
   ReplicaSelectionPolicyType_descriptor_ = file->enum_type(2);
   SnapConfig_descriptor_ = file->enum_type(3);
   StripingPolicyType_descriptor_ = file->enum_type(4);
-  PORTS_descriptor_ = file->enum_type(5);
-  CONSTANTS_descriptor_ = file->enum_type(6);
-  SYSTEM_V_FCNTL_descriptor_ = file->enum_type(7);
-  REPL_FLAG_descriptor_ = file->enum_type(8);
-  SERVICES_descriptor_ = file->enum_type(9);
+  LeaseState_descriptor_ = file->enum_type(5);
+  PORTS_descriptor_ = file->enum_type(6);
+  CONSTANTS_descriptor_ = file->enum_type(7);
+  SYSTEM_V_FCNTL_descriptor_ = file->enum_type(8);
+  REPL_FLAG_descriptor_ = file->enum_type(9);
+  SERVICES_descriptor_ = file->enum_type(10);
 }
 
 namespace {
@@ -396,30 +398,32 @@ void protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto() {
     "LED\020\000\022\036\n\032SNAP_CONFIG_ACCESS_CURRENT\020\001\022\033\n"
     "\027SNAP_CONFIG_ACCESS_SNAP\020\002*P\n\022StripingPo"
     "licyType\022\031\n\025STRIPING_POLICY_RAID0\020\000\022\037\n\033S"
-    "TRIPING_POLICY_ERASURECODE\020\001*\270\001\n\005PORTS\022\033"
-    "\n\025DIR_HTTP_PORT_DEFAULT\020\256\357\001\022\034\n\026DIR_PBRPC"
-    "_PORT_DEFAULT\020\376\376\001\022\033\n\025MRC_HTTP_PORT_DEFAU"
-    "LT\020\254\357\001\022\034\n\026MRC_PBRPC_PORT_DEFAULT\020\374\376\001\022\033\n\025"
-    "OSD_HTTP_PORT_DEFAULT\020\260\357\001\022\034\n\026OSD_PBRPC_P"
-    "ORT_DEFAULT\020\200\377\001*+\n\tCONSTANTS\022\036\n\032XCAP_REN"
-    "EW_INTERVAL_IN_MIN\020\001*\202\003\n\016SYSTEM_V_FCNTL\022"
-    "\035\n\031SYSTEM_V_FCNTL_H_O_RDONLY\020\000\022\035\n\031SYSTEM"
-    "_V_FCNTL_H_O_WRONLY\020\001\022\033\n\027SYSTEM_V_FCNTL_"
-    "H_O_RDWR\020\002\022\035\n\031SYSTEM_V_FCNTL_H_O_APPEND\020"
-    "\010\022\035\n\030SYSTEM_V_FCNTL_H_O_CREAT\020\200\002\022\035\n\030SYST"
-    "EM_V_FCNTL_H_O_TRUNC\020\200\004\022\034\n\027SYSTEM_V_FCNT"
-    "L_H_O_EXCL\020\200\010\022\033\n\027SYSTEM_V_FCNTL_H_O_SYNC"
-    "\020\020\022\036\n\030SYSTEM_V_FCNTL_H_S_IFREG\020\200\200\002\022\036\n\030SY"
-    "STEM_V_FCNTL_H_S_IFDIR\020\200\200\001\022\036\n\030SYSTEM_V_F"
-    "CNTL_H_S_IFLNK\020\200\300\002\022\035\n\030SYSTEM_V_FCNTL_H_S"
-    "_IFIFO\020\200 *\330\001\n\tREPL_FLAG\022\032\n\026REPL_FLAG_FUL"
-    "L_REPLICA\020\001\022\031\n\025REPL_FLAG_IS_COMPLETE\020\002\022\035"
-    "\n\031REPL_FLAG_STRATEGY_RANDOM\020\004\022#\n\037REPL_FL"
-    "AG_STRATEGY_RAREST_FIRST\020\010\022!\n\035REPL_FLAG_"
-    "STRATEGY_SEQUENTIAL\020\020\022-\n)REPL_FLAG_STRAT"
-    "EGY_SEQUENTIAL_PREFETCHING\020 *%\n\010SERVICES"
-    "\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n\003OSD\020\003B(\n&org.xtree"
-    "mfs.pbrpc.generatedinterfaces", 3029);
+    "TRIPING_POLICY_ERASURECODE\020\001*9\n\nLeaseSta"
+    "te\022\010\n\004NONE\020\000\022\013\n\007PRIMARY\020\001\022\n\n\006BACKUP\020\002\022\010\n"
+    "\004IDLE\020\003*\270\001\n\005PORTS\022\033\n\025DIR_HTTP_PORT_DEFAU"
+    "LT\020\256\357\001\022\034\n\026DIR_PBRPC_PORT_DEFAULT\020\376\376\001\022\033\n\025"
+    "MRC_HTTP_PORT_DEFAULT\020\254\357\001\022\034\n\026MRC_PBRPC_P"
+    "ORT_DEFAULT\020\374\376\001\022\033\n\025OSD_HTTP_PORT_DEFAULT"
+    "\020\260\357\001\022\034\n\026OSD_PBRPC_PORT_DEFAULT\020\200\377\001*+\n\tCO"
+    "NSTANTS\022\036\n\032XCAP_RENEW_INTERVAL_IN_MIN\020\001*"
+    "\202\003\n\016SYSTEM_V_FCNTL\022\035\n\031SYSTEM_V_FCNTL_H_O"
+    "_RDONLY\020\000\022\035\n\031SYSTEM_V_FCNTL_H_O_WRONLY\020\001"
+    "\022\033\n\027SYSTEM_V_FCNTL_H_O_RDWR\020\002\022\035\n\031SYSTEM_"
+    "V_FCNTL_H_O_APPEND\020\010\022\035\n\030SYSTEM_V_FCNTL_H"
+    "_O_CREAT\020\200\002\022\035\n\030SYSTEM_V_FCNTL_H_O_TRUNC\020"
+    "\200\004\022\034\n\027SYSTEM_V_FCNTL_H_O_EXCL\020\200\010\022\033\n\027SYST"
+    "EM_V_FCNTL_H_O_SYNC\020\020\022\036\n\030SYSTEM_V_FCNTL_"
+    "H_S_IFREG\020\200\200\002\022\036\n\030SYSTEM_V_FCNTL_H_S_IFDI"
+    "R\020\200\200\001\022\036\n\030SYSTEM_V_FCNTL_H_S_IFLNK\020\200\300\002\022\035\n"
+    "\030SYSTEM_V_FCNTL_H_S_IFIFO\020\200 *\330\001\n\tREPL_FL"
+    "AG\022\032\n\026REPL_FLAG_FULL_REPLICA\020\001\022\031\n\025REPL_F"
+    "LAG_IS_COMPLETE\020\002\022\035\n\031REPL_FLAG_STRATEGY_"
+    "RANDOM\020\004\022#\n\037REPL_FLAG_STRATEGY_RAREST_FI"
+    "RST\020\010\022!\n\035REPL_FLAG_STRATEGY_SEQUENTIAL\020\020"
+    "\022-\n)REPL_FLAG_STRATEGY_SEQUENTIAL_PREFET"
+    "CHING\020 *%\n\010SERVICES\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n"
+    "\003OSD\020\003B(\n&org.xtreemfs.pbrpc.generatedin"
+    "terfaces", 3088);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "xtreemfs/GlobalTypes.proto", &protobuf_RegisterTypes);
   NewFileSize::default_instance_ = new NewFileSize();
@@ -528,6 +532,22 @@ bool StripingPolicyType_IsValid(int value) {
   switch(value) {
     case 0:
     case 1:
+      return true;
+    default:
+      return false;
+  }
+}
+
+const ::google::protobuf::EnumDescriptor* LeaseState_descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return LeaseState_descriptor_;
+}
+bool LeaseState_IsValid(int value) {
+  switch(value) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
       return true;
     default:
       return false;

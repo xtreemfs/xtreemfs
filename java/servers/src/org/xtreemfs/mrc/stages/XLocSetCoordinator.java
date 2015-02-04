@@ -51,6 +51,7 @@ import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.osd.rwre.CoordinatedReplicaUpdatePolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState;
@@ -58,7 +59,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateResponse.LeaseState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 /**

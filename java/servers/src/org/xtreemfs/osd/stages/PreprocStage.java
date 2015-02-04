@@ -45,11 +45,11 @@ import org.xtreemfs.osd.storage.CowPolicy.cowMode;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.StorageLayout;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.XLocSetVersionState;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateResponse.LeaseState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 import com.google.protobuf.Message;
