@@ -87,7 +87,7 @@ install-client:
 	@mkdir -p $(MAN_DIR)
 	@cp -R man/man1/*.xtreemfs* $(MAN_DIR)
 	@cp -R man/man1/xtfsutil.* $(MAN_DIR)
-	
+
 install-server:
 
 	@if [ ! -f java/servers/dist/XtreemFS.jar ]; then echo "PLEASE RUN 'make server' FIRST!"; exit 1; fi
@@ -112,7 +112,7 @@ install-server:
 	@mkdir -p $(PLUGIN_CONFIG_DIR)
 	@cp contrib/server-repl-plugin/config/dir.properties $(PLUGIN_CONFIG_DIR)
 	@cp contrib/server-repl-plugin/config/mrc.properties $(PLUGIN_CONFIG_DIR)
-	
+
 	@cp packaging/generate_uuid $(XTREEMFS_CONFIG_DIR)
 	@cp packaging/postinstall_setup.sh $(XTREEMFS_CONFIG_DIR)
 	@chmod a+x $(XTREEMFS_CONFIG_DIR)/postinstall_setup.sh
@@ -125,8 +125,8 @@ install-server:
 
 	@mkdir -p $(XTREEMFS_SHARE_DIR)
 	@cp contrib/xtreemfs-osd-farm/xtreemfs-osd-farm $(XTREEMFS_SHARE_DIR)
-	
-	@echo "to complete the server installation, please execute $(XTREEMFS_CONFIG_DIR)/postinstall_setup.sh" 
+
+	@echo "to complete the server installation, please execute $(XTREEMFS_CONFIG_DIR)/postinstall_setup.sh"
 
 install-tools:
 
@@ -152,10 +152,10 @@ uninstall:
 	@rm -rf $(DOC_DIR_SERVER)
 	@rm -rf $(DOC_DIR_CLIENT)
 	@rm -rf $(DOC_DIR_TOOLS)
-	
+
 	@rm -rf $(BIN_DIR)/xtfs*
 	@rm -rf $(BIN_DIR)/*.xtreemfs
-	
+
 	@rm -f $(SBIN_DIR)/mount.xtreemfs
 	@rm -f $(SBIN_DIR)/umount.xtreemfs
 
@@ -170,12 +170,12 @@ uninstall:
 	@rm -f $(XTREEMFS_JAR_DIR)/BabuDB_replication_plugin.jar
 
 	@rm -f $(XTREEMFS_INIT_DIR)/xtreemfs-*
-	
+
 	@rm -rf $(MAN_DIR)/xtfs*
 	@rm -rf $(MAN_DIR)/*.xtreemfs*
-	
+
 	@echo "uninstall complete"
-	
+
 purge: uninstall
 
 	@rm -rf $(XTREEMFS_CONFIG_DIR)
@@ -193,7 +193,7 @@ check_client:
 	@if [ ! $(WHICH_GPP) -a ! $(WHICH_CLANGPP) ]; then echo "C++ compiler not found";exit 1; fi;
 	@if [ ! $(CMAKE_BIN) ]; then echo "cmake not found";exit 1; fi;
 	@echo "C++ ok"
-	
+
 
 check_test:
 	@if [[ $(shell python -V 2>&1 | head -n1 | cut -d" " -f2 | cut -d. -f2) -lt 3 && $(shell python -V 2>&1 | head -n1 | cut -d" " -f2 | cut -d. -f1) -lt 3 ]]; then echo "python >= 2.4 required!"; exit 1; fi;
@@ -328,7 +328,7 @@ server_distclean: check_server
 	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/servers/build-1.6.5.xml clean || exit 1;
 
 .PHONY: hadoop-client hadoop-client_clean hadoop-client_distclean
-hadoop-client: server foundation 
+hadoop-client: server foundation
 	$(ANT_BIN) -D"file.encoding=UTF-8" -f contrib/hadoop/build.xml jar
 	@echo -e "\n\nHadoop Client was successfully compiled. You can find it here:\n\n\tcontrib/hadoop/dist/XtreemFSHadoopClient.jar\n\nSee the XtreemFS User Guide how to add it in Hadoop.\n"
 hadoop-client_clean:
@@ -345,5 +345,5 @@ pbrpcgen:
 pbrpcgen_clean:
 	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/pbrpcgen/build.xml clean || exit 1
 
-interfaces: pbrpcgen
+interfaces: pbrpcgen client_thirdparty
 	$(MAKE) -C interface

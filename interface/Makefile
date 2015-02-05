@@ -1,7 +1,7 @@
-PROTOC=/usr/local/bin/protoc
+PROTOC=../cpp/thirdparty/protobuf-2.5.0/src/protoc
 BASE_DIR=$(shell pwd)
 INCLUDE_DIR=include/
-PROTOBUF_INCLUDE=/usr/local/include/
+PROTOBUF_INCLUDE=../cpp/thirdparty/protobuf-2.5.0/src
 
 PBRPC_PLUGIN=../bin/protoc-gen-pbrpc
 PBRPCCPP_PLUGIN=../bin/protoc-gen-pbrpccpp
@@ -33,7 +33,7 @@ cpp:
 	$(PROTOC) -I$(PROTOBUF_INCLUDE) -I. -I$(@D)/xtreemfs/ $(PROTOS_SERVERS) --cpp_out=$(TARGET_DIR_CPP_CLIENT)
 	$(PROTOC) --plugin=$(PBRPCCPP_PLUGIN) -I$(PROTOBUF_INCLUDE) -I. -I$(@D)/xtreemfs/ $(PROTOS_SERVERS) --pbrpccpp_out=$(TARGET_DIR_CPP_CLIENT)
 	$(PROTOC) --plugin=$(PBRPCCPP_PLUGIN) -I$(PROTOBUF_INCLUDE) -I. -I$(@D)/pbrpc/ $(PROTOS_FOUNDATION) --pbrpccpp_out=$(TARGET_DIR_CPP_CLIENT)
-	
+
 
 servers:
 	$(PROTOC) include/Common.proto --java_out=$(TARGET_DIR_JAVA_SERVERS)
