@@ -66,7 +66,7 @@ public class TracingTest {
         Volume sourceVolume = client.openVolume(SOURCE_VOLUME, null, new Options());
         Volume targetVolume = client.openVolume(TARGET_VOLUME, null, new Options());
 
-        sourceVolume.setXAttr(uc, auth, "/", "xtreemfs.tracing_enabled", "1",
+        sourceVolume.setXAttr(uc, auth, "/", "xtreemfs.tracing_enabled", "0",
                               MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
         sourceVolume.setXAttr(uc, auth, "/", "xtreemfs.trace_target", TARGET_VOLUME,
                               MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);

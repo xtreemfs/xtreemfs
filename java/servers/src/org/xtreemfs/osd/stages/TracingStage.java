@@ -129,7 +129,6 @@ public class TracingStage extends Stage {
                 Thread.sleep(100);
             }
         } catch (InterruptedException ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
     }
 
