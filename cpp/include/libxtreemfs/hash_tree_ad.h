@@ -118,7 +118,8 @@ class HashTreeAD {
 
   bool ReadRootNodeFromFile();
 
-  void ReadNodesFromFile(boost::icl::interval_set<int> nodeNumbers);
+  boost::icl::interval_set<int> ReadNodesFromFile(
+      boost::icl::interval_set<int> nodeNumbers);
 
   void WriteNodesToFile();
 
@@ -132,7 +133,7 @@ class HashTreeAD {
                                                       bool complete_max_leaf =
                                                           false);
 
-  void ValidateTree();
+  void ValidateTree(boost::icl::interval_set<int> nodeNumbers);
 
   void UpdateTree();
 

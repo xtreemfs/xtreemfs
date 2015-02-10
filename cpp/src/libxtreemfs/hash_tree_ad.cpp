@@ -360,9 +360,7 @@ void HashTreeAD::StartRead(int start_leaf, int end_leaf) {
   if (min_max_leaf_ >= 0) {
     boost::icl::interval_set<int> nodeNumbers = RequiredNodesForRead(
         start_leaf, std::min(end_leaf, min_max_leaf_));
-    ReadNodesFromFile(nodeNumbers);
-    // TODO(plieser): cw=client: only validate new nodes
-    ValidateTree();
+    ValidateTree(ReadNodesFromFile(nodeNumbers));
   }
 }
 
@@ -386,7 +384,6 @@ void HashTreeAD::StartWrite(int start_leaf, bool complete_start_leaf,
 
   boost::icl::interval_set<int> nodeNumbers;
   if (concurrent_write_ != "client") {
-    // TODO(plieser): cw=client: delay reading of nodes to FinishWrite
     nodeNumbers = RequiredNodesForWrite(start_leaf, complete_start_leaf,
                                         end_leaf, complete_end_leaf,
                                         complete_max_leaf);
@@ -402,9 +399,7 @@ void HashTreeAD::StartWrite(int start_leaf, bool complete_start_leaf,
       nodeNumbers += RequiredNodesForRead(end_leaf, end_leaf);
     }
   }
-  ReadNodesFromFile(nodeNumbers);
-  // TODO(plieser): cw=client: only validate new nodes
-  ValidateTree();
+  ValidateTree(ReadNodesFromFile(nodeNumbers));
 
   new_max_leaf_ = std::max(new_max_leaf_, end_leaf);
 }
@@ -494,9 +489,7 @@ void HashTreeAD::StartTruncate(int max_leaf_number, bool complete_leaf) {
         }
       }
     }
-    ReadNodesFromFile(nodeNumbers);
-    // TODO(plieser): cw=client: only validate new nodes
-    ValidateTree();
+    ValidateTree(ReadNodesFromFile(nodeNumbers));
   } else {
     nodes_.clear();
     stored_nodes_.clear();
@@ -748,8 +741,10 @@ bool HashTreeAD::ReadRootNodeFromFile() {
  * Reads nodes from the meta file and stores them locally.
  *
  * @param nodeNumbers   The node numbers of the nodes to read.
+ * @return  The node numbers of the nodes which there actually read and not
+ *          already cached.
  */
-void HashTreeAD::ReadNodesFromFile(boost::icl::interval_set<int> nodeNumbers) {
+boost::icl::interval_set<int> HashTreeAD::ReadNodesFromFile(boost::icl::interval_set<int> nodeNumbers) {
   if (concurrent_write_ == "client") {
     nodeNumbers -= stored_nodes_;
     stored_nodes_ += nodeNumbers;
@@ -802,6 +797,8 @@ void HashTreeAD::ReadNodesFromFile(boost::icl::interval_set<int> nodeNumbers) {
     }
     assert(read_count == bytes_read);
   }
+
+  return nodeNumbers;
 }
 
 /**
@@ -950,9 +947,10 @@ boost::icl::interval_set<int> HashTreeAD::RequiredNodesForWrite(
 /**
  * Validates the part of the hash tree stored locally.
  *
+ * @param nodeNumbers   The nodes of the tree to validate.
  * @throws XtreemFSException    If stored hash tree is invalid.
  */
-void HashTreeAD::ValidateTree() {
+void HashTreeAD::ValidateTree(boost::icl::interval_set<int> nodeNumbers) {
   // only validate tree if it exist
   if (max_node_number_ == -1) {
     return;
@@ -970,27 +968,36 @@ void HashTreeAD::ValidateTree() {
   }
 
   BOOST_FOREACH(
-      Nodes_t::value_type node,
-      nodes_) {
-    if (node.first.level == 0) {
-      continue;
-    }
-    Node left_child = node.first.LeftChild(this);
-    if (nodes_.count(left_child) == 0) {
-      // node's children were not fetched, so don't check it's hash
-      continue;
-    }
-    Node right_child = node.first.RightChild(this);
+      boost::icl::interval_set<int>::interval_type range,
+      nodeNumbers) {
+    for (int i = boost::icl::first(range); i <= boost::icl::last(range); i++) {
+      Node node(i, this);
 
-    // hash 0 indicates special case in which all data under node is 0
-    if (all_zero(node.second)) {
-      if (all_zero(nodes_.at(left_child)) && all_zero(nodes_.at(right_child))) {
+      if (node.level == 0) {
+        // don't validate leafs
         continue;
       }
-    }
 
-    if (node.second != HashOfNode(left_child, right_child)) {
-      LogAndThrowXtreemFSException("Hash mismatch in hash tree");
+      Node left_child = node.LeftChild(this);
+      if (nodes_.count(left_child) == 0) {
+        // node's children were not fetched, so don't check it's hash
+        continue;
+      }
+      Node right_child = node.RightChild(this);
+
+      std::vector<unsigned char> node_hash = nodes_[node];
+
+      // hash 0 indicates special case in which all data under node is 0
+      if (all_zero(node_hash)) {
+        if (all_zero(nodes_.at(left_child))
+            && all_zero(nodes_.at(right_child))) {
+          continue;
+        }
+      }
+
+      if (node_hash != HashOfNode(left_child, right_child)) {
+        LogAndThrowXtreemFSException("Hash mismatch in hash tree");
+      }
     }
   }
 }
