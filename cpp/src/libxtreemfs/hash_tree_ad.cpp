@@ -744,7 +744,8 @@ bool HashTreeAD::ReadRootNodeFromFile() {
  * @return  The node numbers of the nodes which there actually read and not
  *          already cached.
  */
-boost::icl::interval_set<int> HashTreeAD::ReadNodesFromFile(boost::icl::interval_set<int> nodeNumbers) {
+boost::icl::interval_set<int> HashTreeAD::ReadNodesFromFile(
+    boost::icl::interval_set<int> nodeNumbers) {
   if (concurrent_write_ == "client") {
     nodeNumbers -= stored_nodes_;
     stored_nodes_ += nodeNumbers;
@@ -1006,7 +1007,7 @@ void HashTreeAD::ValidateTree(boost::icl::interval_set<int> nodeNumbers) {
  * Updates the hash tree.
  */
 void HashTreeAD::UpdateTree() {
-  boost::icl::interval_set<int> nodes_to_update;
+  boost::icl::interval_set<int> nodes_to_update = changed_leafs_numbers_;
 
   ChangeSize(new_max_leaf_);
 
@@ -1021,9 +1022,17 @@ void HashTreeAD::UpdateTree() {
 
   // insert changed leafs into nodes_
   BOOST_FOREACH(Nodes_t::value_type node, changed_leafs_) {
+    // TODO(plieser): perf
     nodes_[node.first] = node.second;
-    changed_nodes_ += node.first.NodeNumber(this);
-    nodes_to_update += node.first.n;
+  }
+
+  // compute nodes that will be changed
+  BOOST_FOREACH(
+      boost::icl::interval_set<int>::interval_type range,
+      changed_leafs_numbers_) {
+    changed_nodes_ += boost::icl::interval<int>::closed(
+        Node(0, boost::icl::first(range)).NodeNumber(this),
+        Node(0, boost::icl::last(range)).NodeNumber(this));
   }
 
   Node skiped_min_max_leaf_ancestor(0, 0);
@@ -1040,6 +1049,8 @@ void HashTreeAD::UpdateTree() {
         skiped_min_max_leaf_ancestor = skiped_min_max_leaf_ancestor.Parent(
             this);
       }
+      changed_nodes_ += skiped_min_max_leaf_ancestor.AncestorsWithSiblings(
+          this);
     } else {
       nodes_to_update += min_max_leaf_;
     }
@@ -1092,7 +1103,6 @@ void HashTreeAD::UpdateTree() {
           n++) {
         Node node(level, n);
         nodes_[node] = HashOfNode(node.LeftChild(this), node.RightChild(this));
-        changed_nodes_ += node.NodeNumber(this);
       }
     }
   }
