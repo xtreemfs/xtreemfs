@@ -613,6 +613,18 @@ TEST_F(EncryptionTest, Write_06) {
   });
 }
 
+TEST_F(EncryptionTest, Write_07) {
+  ASSERT_NO_THROW({
+    file->Write("ab", 2, 0);
+  });
+
+  file->Flush();
+
+  ASSERT_NO_THROW({
+    file->Write("cd", 2, 2);
+  });
+}
+
 TEST_F(EncryptionTest, Truncate_01) {
   char buffer[50];
   int x;
