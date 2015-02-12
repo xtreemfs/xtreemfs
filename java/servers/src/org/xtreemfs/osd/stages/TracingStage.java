@@ -113,6 +113,7 @@ public class TracingStage extends Stage {
         try {
             TraceInfo traceInfo = (TraceInfo) method.getArgs()[0];
             FileHandle traceTargetFile = getFileHandle(traceInfo);
+            traceTargetFile.close();
         } catch(IOException ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
@@ -134,7 +135,7 @@ public class TracingStage extends Stage {
 
     private boolean writeTraceLog() {
         //TODO(ckleineweber): Find condition that considers current OSD load
-        return (q.size() > 100);
+        return (q.size() > 0);
     }
 
     private TraceInfo createTraceInfo(OSDRequest req) {
@@ -175,10 +176,10 @@ public class TracingStage extends Stage {
                         mrcAddresses.add(mrc.getUuid());
                     }
                     client.createVolume(mrcAddresses, RPCAuthentication.authNone, uc, traceInfo.getTargetVolume());
-               } catch (InterruptedException ex) {
+                } catch (InterruptedException ex) {
                     throw new IOException(ex);
                 }
-           }
+            }
 
             volume = client.openVolume(traceInfo.getTargetVolume(), sslOpts, new Options());
             this.volumes.put(traceInfo.getTargetVolume(), volume);

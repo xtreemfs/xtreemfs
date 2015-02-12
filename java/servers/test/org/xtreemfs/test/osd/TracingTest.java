@@ -19,6 +19,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC;
 import org.xtreemfs.test.TestEnvironment;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -66,7 +67,7 @@ public class TracingTest {
         Volume sourceVolume = client.openVolume(SOURCE_VOLUME, null, new Options());
         Volume targetVolume = client.openVolume(TARGET_VOLUME, null, new Options());
 
-        sourceVolume.setXAttr(uc, auth, "/", "xtreemfs.tracing_enabled", "0",
+        sourceVolume.setXAttr(uc, auth, "/", "xtreemfs.tracing_enabled", "1",
                               MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
         sourceVolume.setXAttr(uc, auth, "/", "xtreemfs.trace_target", TARGET_VOLUME,
                               MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
@@ -79,11 +80,60 @@ public class TracingTest {
 
         byte[] writeBuffer = new byte[255];
 
-        for (long i=0; i<=100; i++)
+        for (long i=0; i<=10; i++)
             f.write(uc, writeBuffer, writeBuffer.length, i * writeBuffer.length);
 
         f.close();
         sourceVolume.unlink(uc, TEST_FILE);
+
+        client.deleteVolume(auth, uc, SOURCE_VOLUME);
+        client.deleteVolume(auth, uc, TARGET_VOLUME);
+    }
+
+
+    @Test
+    public void testVolumeCreation() throws Exception {
+        client.createVolume(env.getMRCAddress().getHostName() + ":" + env.getMRCAddress().getPort(), auth, uc,
+                            SOURCE_VOLUME);
+
+        Volume sourceVolume = client.openVolume(SOURCE_VOLUME, null, new Options());
+
+        sourceVolume.setXAttr(uc, auth, "/", "xtreemfs.tracing_enabled", "1",
+                              MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
+        sourceVolume.setXAttr(uc, auth, "/", "xtreemfs.trace_target", TARGET_VOLUME,
+                              MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
+        sourceVolume.setXAttr(uc, auth, "/", "xtreemfs.tracing_policy", "default",
+                              MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
+
+        String[] volumes = client.listVolumeNames();
+        boolean targetExisting = false;
+        for(int i = 0; i < volumes.length; i++) {
+            if(volumes[i].equals(TARGET_VOLUME)) {
+                targetExisting = true;
+            }
+        }
+        assertFalse(targetExisting);
+
+        FileHandle f = sourceVolume.openFile(uc, TEST_FILE,
+                                             GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber() |
+                                             GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY.getNumber());
+
+        byte[] writeBuffer = new byte[255];
+
+        for (long i=0; i<=10; i++)
+            f.write(uc, writeBuffer, writeBuffer.length, i * writeBuffer.length);
+
+        f.close();
+        sourceVolume.unlink(uc, TEST_FILE);
+
+        volumes = client.listVolumeNames();
+        targetExisting = false;
+        for(int i = 0; i < volumes.length; i++) {
+            if(volumes[i].equals(TARGET_VOLUME)) {
+                targetExisting = true;
+            }
+        }
+        assertTrue(targetExisting);
 
         client.deleteVolume(auth, uc, SOURCE_VOLUME);
         client.deleteVolume(auth, uc, TARGET_VOLUME);
