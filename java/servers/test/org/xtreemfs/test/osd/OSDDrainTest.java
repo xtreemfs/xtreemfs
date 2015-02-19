@@ -5,7 +5,7 @@
  *
  */
 
-package org.xtreemfs.test.osd;
+package org.xtreemfs.osd.drain;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -265,6 +265,9 @@ public class OSDDrainTest {
             // get the current replica configuration
             fileInfos = osdDrain.getReplicaInfo(fileInfos);
 
+            // Handle r/w coordinated files and remove them from the file info list.
+            fileInfos = osdDrain.drainCoordinatedFiles(fileInfos);
+
             // set ReplicationUpdatePolicy to RONLY
             fileInfos = osdDrain.setReplicationUpdatePolicyRonly(fileInfos);
             for (File file : files) {
@@ -272,7 +275,7 @@ public class OSDDrainTest {
             }
 
             // set Files read-only
-            fileInfos = osdDrain.setFilesReadOnlyAttribute(fileInfos, true);
+            fileInfos = osdDrain.setFilesReadOnlyAttribute(fileInfos);
             for (File file : files) {
                 assertTrue(file.isReadOnly());
             }
@@ -305,18 +308,13 @@ public class OSDDrainTest {
             }
 
             // set every file to read/write again which wasn't set to read-only before
-            List<FileInformation> toSetROList = new LinkedList<FileInformation>();
-            for (FileInformation fileInfo : fileInfos) {
-                if (!fileInfo.wasAlreadyReadOnly)
-                    toSetROList.add(fileInfo);
-            }
-            osdDrain.setFilesReadOnlyAttribute(toSetROList, false);
+            osdDrain.resetFilesReadOnlyAttribute(fileInfos);
             for (File file : files) {
                 assertFalse(file.isReadOnly());
             }
 
             // set ReplicationUpdatePolicy to original value
-            osdDrain.setReplicationPolicyToOriginal(fileInfos);
+            osdDrain.resetReplicationUpdatePolicy(fileInfos);
             for (File file : files) {
                 assertEquals(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE, file.getReplicaUpdatePolicy());
             }
@@ -419,11 +417,14 @@ public class OSDDrainTest {
             // get the current replica configuration
             fileInfos = osdDrain.getReplicaInfo(fileInfos);
 
+            // Handle r/w coordinated files and remove them from the file info list.
+            fileInfos = osdDrain.drainCoordinatedFiles(fileInfos);
+
             // set ReplicationUpdatePolicy to RONLY
             fileInfos = osdDrain.setReplicationUpdatePolicyRonly(fileInfos);
 
             // set Files read-only
-            fileInfos = osdDrain.setFilesReadOnlyAttribute(fileInfos, true);
+            fileInfos = osdDrain.setFilesReadOnlyAttribute(fileInfos);
 
             // create replications
             fileInfos = osdDrain.createReplicasForFiles(fileInfos);
@@ -441,18 +442,13 @@ public class OSDDrainTest {
             }
 
             // set every file to read/write again which wasn't set to read-only before
-            List<FileInformation> toSetROList = new LinkedList<FileInformation>();
-            for (FileInformation fileInfo : fileInfos) {
-                if (!fileInfo.wasAlreadyReadOnly)
-                    toSetROList.add(fileInfo);
-            }
-            osdDrain.setFilesReadOnlyAttribute(toSetROList, false);
+            osdDrain.resetFilesReadOnlyAttribute(fileInfos);
             for (File file : files) {
                 assertFalse(file.isReadOnly());
             }
 
             // set ReplicationUpdatePolicy to original value
-            osdDrain.setReplicationPolicyToOriginal(fileInfos);
+            osdDrain.resetReplicationUpdatePolicy(fileInfos);
             for (File file : files) {
                 assertEquals(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE, file.getReplicaUpdatePolicy());
             }

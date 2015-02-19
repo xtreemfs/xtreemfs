@@ -29,6 +29,7 @@ public class OSDDrainException extends Exception {
         UPDATE_MRC_ADDRESSES,
         REMOVE_NON_EXISTING_IDS,
         GET_REPLICA_INFO,
+        DRAIN_COORDINATED,
         SET_UPDATE_POLICY,
         SET_RONLY,
         CREATE_REPLICAS,
