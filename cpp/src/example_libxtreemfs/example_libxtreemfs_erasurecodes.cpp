@@ -8,6 +8,7 @@
 #include <cstring>
 
 #include <csignal>
+#include <cstdlib>
 #include <iostream>
 #include <string>
 
@@ -31,10 +32,10 @@ xtreemfs::pbrpc::Auth auth;
 string mrc = "localhost:32636";
 string dir = "localhost:32638";
 
+int default_stripe_width = 4;
+int default_parity_width = 2;
+
 void clean_up(int signum){
-  if(signum){
-    cout << "caught Ctrl-C...deleting volume" << endl;
-  }
 
   if (file != NULL) {
     // Close the file (no need to delete it, see documentation volume.h).
@@ -57,32 +58,22 @@ void clean_up(int signum){
     delete client;
   }
   cout << "cleanup completed...exiting" << endl;
-  exit(signum);
+  if(signum){
+    cout << "caught Ctrl-C...deleting volume" << endl;
+    exit(signum);
+  }
 }
 
-int main(int argc, char* argv[]) {
+int foo(size_t buf_size, size_t offset, size_t over_read){
   user_credentials.set_username("jan");
   user_credentials.add_groups("users");
   auth.set_auth_type(xtreemfs::pbrpc::AUTH_NONE);
-
-  signal(SIGINT, clean_up);
-
-  size_t buf_size = 4096;
-  string file_name = "4kB";
-  // Every operation is executed in the context of a given user and his groups.
-  // The UserCredentials object does store this information and is currently
-  // (08/2011) *only* evaluated by the MRC (although the protocol requires to
-  // send user_credentials to DIR and OSD, too).
-  // Class which allows to change options of the library.
   xtreemfs::Options options;
+  std::list<xtreemfs::pbrpc::KeyValuePair*> volume_attributes;
+  options.max_tries = 1;
+  options.max_read_tries = 1;
 
-  try {
-    options.ParseCommandLine(argc, argv);
-  } catch(const xtreemfs::XtreemFSException& e) {
-    cout << "Invalid parameters found, error: " << e.what() << endl << endl;
-    return 1;
-  }
-
+  string file_name = "test_file";
   int return_code = 0;
   try {
     // Create a new instance of a client using the DIR service at
@@ -96,9 +87,7 @@ int main(int argc, char* argv[]) {
     // Start the client (a connection to the DIR service will be setup).
     client->Start();
 
-    std::list<xtreemfs::pbrpc::KeyValuePair*> volume_attributes;
-    cout << "auth is " << auth.auth_data() << endl;
-    cout << "user_credentials are " << user_credentials.username() << " " << user_credentials.groups(0) << endl;
+    cout << "trying to create volume \"test\"" << endl;
     client->CreateVolume(mrc, //options.mrc_service_address,
                          auth,
                          user_credentials,
@@ -108,14 +97,44 @@ int main(int argc, char* argv[]) {
                          "users",
                          xtreemfs::pbrpc::ACCESS_CONTROL_POLICY_POSIX,
                          0,
-                         xtreemfs::pbrpc::STRIPING_POLICY_ERASURECODE, //options.default_striping_policy_type,
+                         xtreemfs::pbrpc::STRIPING_POLICY_REED_SOL_VAN, //options.default_striping_policy_type,
                          1, //options.default_stripe_size,
-                         3, //options.default_stripe_width,
-                         1, // default parity width
+                         default_stripe_width,
+                         default_parity_width,
                          volume_attributes);
+  } catch(const xtreemfs::XtreemFSException& e) {
+    cout << "Volume \"test\" exists already...deleting..." << endl;
+    client->DeleteVolume(mrc,
+                         auth,
+                         user_credentials,
+                         "test");
+    cout << "...and recreating" << endl;
+    client->CreateVolume(mrc, //options.mrc_service_address,
+                         auth,
+                         user_credentials,
+                         "test", //options.volume_name,
+                         511,
+                         "jan",
+                         "users",
+                         xtreemfs::pbrpc::ACCESS_CONTROL_POLICY_POSIX,
+                         0,
+                         xtreemfs::pbrpc::STRIPING_POLICY_REED_SOL_VAN, //options.default_striping_policy_type,
+                         1, //options.default_stripe_size,
+                         default_stripe_width,
+                         default_parity_width,
+                         volume_attributes);
+  }
+  try {
     volume = client->OpenVolume("test",
                                 NULL,  // No SSL options.
                                 options);
+    // volume->SetXAttr(user_credentials, "/", "xtreemfs.default_sp", "{\"pattern\":\"STRIPING_POLICY_ERASURECODE\",\"width\":3,\"parity_width\":1,\"size\":1}", xtreemfs::pbrpc::XATTR_FLAGS() );
+    // xtreemfs::pbrpc::listxattrResponse* xattrlist = volume->ListXAttrs(user_credentials, "/", false);
+    // cout << "Volume created...xattrs:" << endl;
+    // for(int i = 0; i < xattrlist->xattrs_size(); i++) {
+    //   cout << "\t" << xattrlist->xattrs(i).name() << ": " << xattrlist->xattrs(i).value() << endl;
+    // }
+
     // Open a file.
     file = volume->OpenFile(user_credentials,
                             file_name,
@@ -126,16 +145,21 @@ int main(int argc, char* argv[]) {
                             511);  // = 777 Octal.
 
     // Write to file.
-    cout << "Writing " << buf_size << " Bytes\n"
-            "to the file " << file_name << "..." << endl;
     char write_buf[buf_size];
 
     for(size_t i = 0; i < buf_size; i++)
       write_buf[i] = rand() % 256;
 
+    cout << "Writing " << buf_size << " Bytes\n"
+            "to the file " << file_name << "..." << endl;
+
     file->Write(reinterpret_cast<const char*>(&write_buf),
-                sizeof(write_buf),
-                0);
+            buf_size,
+            0);
+
+    // file->Write(reinterpret_cast<const char*>(&write_buf) + sizeof(write_buf) / 2,
+    //             sizeof(write_buf) / 2,
+    //             sizeof(write_buf) / 2);
 
     // Get file attributes.
     cout << "Getting file stats..." << endl;
@@ -144,20 +168,45 @@ int main(int argc, char* argv[]) {
     cout << "\nNew file size of " << file_name << ": "
          << stat.size() << " Bytes." << endl;
 
+    // cout << endl << "killing osd1..." << endl;
+    // system("kill $(cat /tmp/xtreemfs-test/xtreemfs_osd1.pid)");
+    // cout << "trying to read with one crashed osd..." << endl;
+
     // Read from the file.
-    char read_buf[stat.size()];
-    memset(&read_buf, 0, stat.size());
-    file->Read(reinterpret_cast<char*>(&read_buf),
-               stat.size(),  // Length.
-               0);  // Offset.
-    // cout << "\nReading the content of the file example_libxtreemfs.txt:\n\n"
-    //      << read_buf << endl;
-    cout << "comparing " << stat.size() << " bytes of read and write buffers" << endl;
-    for(int i = 0; i < buf_size; i++) {
-      if(read_buf[i] == write_buf[i]){
-        cout << "o";
-      } else {
-        cout << "x";
+    char read_buf[buf_size - offset + over_read];
+    memset(&read_buf, 0, buf_size - offset);
+    int read = file->Read(reinterpret_cast<char*>(&read_buf),
+               buf_size - offset + over_read, // Length.
+               offset);  // Offset.
+    // file->Read(reinterpret_cast<char*>(&read_buf) + buf_size / 2,
+    //            buf_size / 2,  // Length.
+    //            buf_size / 2);  // Offset.
+    cout << read << " bytes have been read, " << (buf_size - offset + over_read) << " were requested, expected " << (buf_size - offset) << endl;
+    if (read != buf_size - offset) {
+      return_code = 2;
+      cout << "#######\t\tread bytes and expected bytes differ!!!!!!!!!!!!!" << endl;
+    }
+    cout << "comparing " << (buf_size - offset) << " bytes of read and write buffers with offset " << offset  << endl;
+    char* write_loc = write_buf;
+    if(memcmp(write_loc + offset, &read_buf, buf_size - offset) == 0){
+      cout << "buffers match" << endl;
+    } else {
+      cout << "## buffers differ ##" << endl;
+      return_code = 1;
+      bool uneq = false;
+      for (int k = offset; k < buf_size; k++) {
+        if(read_buf[k - offset] == write_buf[k]){
+          if (uneq) {
+            uneq = false;
+            cout << (k - offset -1 ) << " are unequal" << endl;
+          }
+        } else {
+          if (!uneq) {
+            uneq = true;
+            cout << "bytes "<< (k - offset) << "...";
+          }
+        }
+
       }
     }
     cout << endl;
@@ -169,4 +218,116 @@ int main(int argc, char* argv[]) {
   clean_up(0);
 
   return return_code;
+}
+
+int main(int argc, char* argv[]) {
+
+  signal(SIGINT, clean_up);
+
+  int vals[] = {
+    // reads from the start
+    // 4096, 0, 0,
+    // 5000, 0, 0,
+    // 5500, 0, 0,
+    // 8000, 0, 0,
+    // 8192, 0, 0,
+    // 9000, 0, 0,
+    // 9500, 0, 0,
+    // 10240, 0, 0,
+    // 11000, 0, 0,
+    // 12000, 0, 0,
+    // // reads with offset into first object
+    // 4096, 1020, 0,
+    // 5000, 1020, 0,
+    // 5500, 1020, 0,
+    // 8000, 1020, 0,
+    // 10240, 1020, 0,
+    // 11000, 1020, 0,
+    // 12000, 1020, 0,
+    // 10240, 1020, 0,
+    // 11000, 1020, 0,
+    // 12000, 1020, 0,
+    // // reads with offset into second object
+    // 4096, 2016, 0,
+    // 5000, 2020, 0,
+    // 5500, 2020, 0,
+    // 8000, 2020, 0,
+    // 10240, 2020, 0,
+    // 11000, 2020, 0,
+    // 12000, 2020, 0,
+    // 10240, 2020, 0,
+    // 11000, 2020, 0,
+    // 12000, 2020, 0,
+    // // reads with offset into second line
+    // 4096, 2100, 0,
+    // 5000, 2100, 0,
+    // 5500, 2100, 0,
+    // 8000, 2100, 0,
+    // 10240, 2100, 0,
+    // 11000, 2100, 0,
+    // 12000, 2100, 0,
+    // 10240, 2100, 0,
+    // 11000, 2100, 0,
+    // 12000, 2100, 0,
+    // // over long reads (less than one object) without offset
+    // 4096, 0, 1020,
+    // 5000, 0, 1020,
+    // 5500, 0, 1020,
+    // 8000, 0, 1020,
+    // 10240, 0, 1020,
+    // 11000, 0, 1020,
+    // 12000, 0, 1020,
+    // 10240, 0, 1020,
+    // 11000, 0, 1020,
+    // 12000, 0, 1020,
+    // // over long reads (more than one object) without offset
+    // 4096, 0, 2020,
+    5000, 0, 2020,
+    // 5500, 0, 2020,
+    // 8000, 0, 2020,
+    // 10240, 0, 2020,
+    // 11000, 0, 2020,
+    // 12000, 0, 2020,
+    // 10240, 0, 2020,
+    // 11000, 0, 2020,
+    // 12000, 0, 2020,
+    // // various reads
+    // 4096, 1050, 100,
+    // 4096, 1020, 100,
+    // 8000, 1020, 10,
+    // 8000, 1020, 100,
+    // 8000, 1020, 200,
+    // 8192, 1020, 100,
+    // 10240, 1050, 200,
+    // 11000, 1050, 200,
+    // 12000, 1050, 200,
+    // 10240, 2020, 0,
+    // 11000, 2020, 0,
+    // 12000, 2020, 0,
+    // 10240, 2050, 0,
+    // 11000, 2050, 0,
+    // 12000, 2050, 0,
+    // 10240, 2050, 250,
+    // 11000, 2050, 250,
+    // 12000, 2050, 250,
+    // 4096, 0, 2048,
+    // 262144, 0, 2000
+  };
+
+  int wrong_fs = 0;
+  int runs = 0;
+  for (int i = 0; i < sizeof(vals) / sizeof(int); i += 3) {
+    cout << endl << "###################################################################" << endl;
+    cout << "Testing with filesize " << vals[i] << " offset " << vals [i + 1] << " over_read " << vals[i + 2] << endl << endl;
+    int res = foo(vals[i], vals[i + 1], vals[i + 2]);
+    if (res == 1) {
+      cout << "###### test case failed: filesize " << vals[i] << " offset " << vals [i + 1] << " over_read " << vals[i + 2] << endl << endl;
+      return 1;
+    }
+    if (res == 2) {
+      wrong_fs++;
+    }
+    runs++;
+  }
+  cout << "in " << runs << " runs " << wrong_fs << " times read reported wrong filesize" << endl;
 }

@@ -31,6 +31,7 @@
 #include "xtreemfs/MRCServiceClient.h"
 #include "xtreemfs/OSD.pb.h"
 #include "xtreemfs/OSDServiceClient.h"
+#include <iostream>
 
 using namespace std;
 using namespace xtreemfs::pbrpc;
@@ -135,18 +136,27 @@ int FileHandleImplementation::Read(
 
   // Map offset to corresponding OSDs.
   std::vector<ReadOperation> operations;
-  size_t min_successfull_reads =
+  size_t min_successful_reads =
   translator->TranslateReadRequest(buf, count, offset, striping_policies,
                                    &operations);
 
+  cout << "minimum successful reads: " << min_successful_reads << endl;
   boost::scoped_ptr<ContainerUUIDIterator> temp_uuid_iterator_for_striping;
 
+  for(std::vector<ReadOperation>::iterator it = operations.begin();
+          it != operations.end();
+          it++) {
+      std::cout << "--Read Operation " << (it - operations.begin())<< "--" << std::endl;
+      std::cout << "object number: " << it->obj_number << std::endl;
+      std::cout << "req size: " << it->req_size << std::endl;
+      std::cout << "req offset: " << it->req_offset << std::endl;
+      std::cout << "osd offset: " << it->osd_offsets[0] << std::endl;
+  }
   // Read all objects.
-  std::vector<int> erasures;
+  boost::dynamic_bitset<> successful_reads(operations.size());
   size_t received_data = 0;
-  size_t number_of_reads = operations.size();
 
-  for (size_t j = 0; j < number_of_reads; j++) {
+  for (size_t j = 0; j < operations.size(); j++) {
     // Differ between striping and the rest (replication, no replication).
     UUIDIterator* uuid_iterator;
     if (xlocs.replicas(0).osd_uuids_size() > 1) {
@@ -182,13 +192,26 @@ int FileHandleImplementation::Read(
     } else {
       // TODO(mberlin): Update xloc list if newer version found (on OSD?).
       try {
-        received_data +=
-            ReadFromOSD(uuid_iterator, file_credentials, operations[j].obj_number,
-                    operations[j].data, operations[j].req_offset,
-                    operations[j].req_size);
+        // if (operations[j].osd_offsets[0] == 0) {
+        // // if (operations[j].osd_offsets[0] == 1) {
+        // // if (operations[j].osd_offsets[0] == 1 ||
+        // //     operations[j].osd_offsets[0] == 0) {
+        //   cout << "simulating an erasure of osd " << operations[j].osd_offsets[0] << endl;
+        // }
+        // else {
+             size_t op_received_data =
+                ReadFromOSD(uuid_iterator, file_credentials, operations[j].obj_number,
+                        operations[j].data, operations[j].req_offset,
+                        operations[j].req_size);
+            // set operations req_size to actual received data
+            operations[j].req_size = op_received_data;
+            received_data += op_received_data;
+            successful_reads[j] = 1;
+            cout << "\tsuccess " << received_data << " bytes read from op " << j << endl;
+        // }
         // abort loop if all data stripe reads were successful
         // this criteria only works for systematic codes
-        if (erasures.size() == 0 && j + 1 == min_successfull_reads)
+        if (successful_reads.count() == min_successful_reads && j + 1 == min_successful_reads)
           break;
       } catch(IOException &e) {
         cout << "\tfailed" << endl;
@@ -215,19 +238,90 @@ int FileHandleImplementation::Read(
           throw e;
         }
       }
+      xtreemfs_internal_get_gmaxRequest gmax_request;
+      gmax_request.mutable_file_credentials()->CopyFrom(file_credentials);
+      gmax_request.set_file_id(file_credentials.xcap().file_id());
+
+      boost::scoped_ptr<rpc::SyncCallbackBase> response(
+          ExecuteSyncRequest(
+            boost::bind(
+              &xtreemfs::pbrpc::OSDServiceClient::xtreemfs_internal_get_gmax_sync,
+              osd_service_client_,
+              _1,
+              boost::cref(auth_bogus_),
+              boost::cref(user_credentials_bogus_),
+              &gmax_request),
+            uuid_iterator,
+            uuid_resolver_,
+            RPCOptions(volume_options_.max_tries,
+              volume_options_.retry_delay_s,
+              false,
+              volume_options_.was_interrupted_function),
+            false,
+            &xcap_manager_,
+            gmax_request.mutable_file_credentials()->mutable_xcap()));
+
+      xtreemfs::pbrpc::InternalGmax* gmax =
+        static_cast<xtreemfs::pbrpc::InternalGmax*>(response->response());
+      cout << "gmax reports " << (gmax->file_size()) << " bytes in epoch " << (gmax->epoch())<< endl;
     }
   }
 
-  int read_data = translator->ProcessReads(&operations, erasures, striping_policies, received_data, offset);
+  int read_data = received_data;
+  if ((successful_reads << successful_reads.size() - min_successful_reads).count() == min_successful_reads) {
+    // all data stripes have successfully been read
+    // since read ops are ordered so that necessary data reads come first received_data can simply
+    // be returned
+    cout << "only read data...no decoding necessary" << endl;
+  } else {
+    // retrieve all available gmax values
+    for (int i = 0; i < operations.size(); i++) {
+      // skip failed OSDs
+      if (successful_reads.test(i)) {
+      }
+    }
+    read_data = translator->ProcessReads(&operations, &successful_reads, striping_policies, received_data, min_successful_reads);
+  }
   for (int i = 0; i < operations.size(); i++) {
     if (operations[i].owns_data) {
-      cout << "deleting coding buffers after write" << endl;
+      cout << "deleting coding buffers after read" << endl;
       delete[] operations[i].data;
     }
   }
   // exit(1);
+
   return read_data;
 }
+  // void getFileSize(
+  //         UUIDIterator* uuid_iterator,
+  //         const FileCredentials& file_credentials) {
+  //     xtreemfs_internal_get_gmaxRequest gmax_request;
+  //     gmax_request.mutable_file_credentials()->CopyFrom(file_credentials);
+  //     gmax_request.set_file_id(file_credentials.xcap().file_id());
+  //
+  //     boost::scoped_ptr<rpc::SyncCallbackBase> response(
+  //             ExecuteSyncRequest(
+  //                 boost::bind(
+  //                     &xtreemfs::pbrpc::OSDServiceClient::write_sync,
+  //                     osd_service_client_,
+  //                     _1,
+  //                     boost::cref(auth_bogus_),
+  //                     boost::cref(user_credentials_bogus_),
+  //                     &gmax_request),
+  //                 uuid_iterator,
+  //                 uuid_resolver_,
+  //                 RPCOptions(volume_options_.max_write_tries,
+  //                     volume_options_.retry_delay_s,
+  //                     false,
+  //                     volume_options_.was_interrupted_function),
+  //                 false,
+  //                 &xcap_manager_,
+  //                 gmax_request.mutable_file_credentials()->mutable_xcap()));
+  //
+  //     xtreemfs::pbrpc::InternalGmax* gmx =
+  //         static_cast<xtreemfs::pbrpc::InternalGmax*>(response->response());
+  // }
+  //
 
 int FileHandleImplementation::ReadFromOSD(
     UUIDIterator* uuid_iterator,
@@ -303,6 +397,7 @@ int FileHandleImplementation::Write(
   for (int32_t i = 0; i < xlocs.replicas_size(); ++i) {
     striping_policies.push_back(&(xlocs.replicas(i).striping_policy()));
   }
+  cout << " width, parity_width " << (*striping_policies.begin())->width() << " " << (*striping_policies.begin())->parity_width() << endl;
 
   // NOTE: We assume that all replicas use the same striping policy type and
   //       that all replicas use the same stripe size.
@@ -313,6 +408,16 @@ int FileHandleImplementation::Write(
   std::vector<WriteOperation> operations;
   translator->TranslateWriteRequest(buf, count, offset, striping_policies,
                                    &operations);
+
+  for(std::vector<WriteOperation>::iterator it = operations.begin();
+          it != operations.end();
+          it++) {
+      std::cout << "--Write Operation--" << std::endl;
+      std::cout << "object number: " << it->obj_number << std::endl;
+      std::cout << "req size: " << it->req_size << std::endl;
+      std::cout << "req offset: " << it->req_offset << std::endl;
+      std::cout << "osd offset: " << it->osd_offsets[0] << std::endl;
+  }
 
   if (async_writes_enabled_) {
     string osd_uuid = "";
@@ -404,6 +509,7 @@ int FileHandleImplementation::Write(
                        operations[j].data, operations[j].req_size);
 
         if (operations[j].owns_data) {
+          cout << "deleting coding buffers after write" << endl;
           delete[] operations[j].data;
         }
       }

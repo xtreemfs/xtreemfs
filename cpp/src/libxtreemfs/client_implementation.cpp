@@ -28,6 +28,7 @@
 #include "xtreemfs/DIRServiceClient.h"
 #include "xtreemfs/MRCServiceClient.h"
 #include "xtreemfs/OSDServiceClient.h"
+#include <iostream>
 
 using namespace std;
 using namespace xtreemfs::pbrpc;

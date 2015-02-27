@@ -8,6 +8,7 @@
 #define CPP_INCLUDE_LIBXTREEMFS_STRIPE_TRANSLATOR_RAID0_H_
 
 #include <algorithm>
+#include <boost/dynamic_bitset.hpp>
 #include <vector>
 
 #include "libxtreemfs/stripe_translator.h"
@@ -35,10 +36,10 @@ class StripeTranslatorRaid0 : public StripeTranslator {
 
   virtual size_t ProcessReads(
           std::vector<ReadOperation>* operations,
-          std::vector<int>& erasures,
+          boost::dynamic_bitset<>* sucessful_reads,
           PolicyContainer policies,
           size_t received_data,
-          int64_t offset
+          size_t min_reads
           ) const;
 };
 }  // namespace xtreemfs

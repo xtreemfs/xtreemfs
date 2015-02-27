@@ -159,6 +159,7 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
 
     bool has_failed;
     try {
+      // blocks until response or failure
       has_failed = response->HasFailed();
     } catch (const boost::thread_interrupted&) {
         if (response != NULL) {

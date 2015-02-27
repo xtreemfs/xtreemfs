@@ -92,10 +92,10 @@ class StripeTranslator {
    */
   virtual size_t ProcessReads(
           std::vector<ReadOperation>* operations,
-          std::vector<int> &erasures,
+          boost::dynamic_bitset<>* sucessful_reads,
           PolicyContainer policies,
           size_t received_data,
-          int64_t offset
+          size_t min_reads
           ) const = 0;
 };
 

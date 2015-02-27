@@ -173,6 +173,7 @@ int main(int argc, char* argv[]) {
         cout << "  Owning group:\t\t\t" << user_credentials.groups(0) << "\n";
       }
     }
+    // TODO(jan--f) add option for default_parity_width
     cout << "  Mode:\t\t\t\t" << options.volume_mode_octal << "\n"
          << "  Access Control Policy:\t" << options.access_policy_type_string
              << "\n"
@@ -203,6 +204,9 @@ int main(int argc, char* argv[]) {
         options));
     client->Start();
 
+    cout << "address is " << options.mrc_service_address << endl;
+    cout << "auth is " << auth.auth_data() << endl;
+    cout << "user_credentials are " << user_credentials.username() << " " << user_credentials.groups(0) << endl;
     // Create the volume on the MRC.
     client->CreateVolume(options.mrc_service_address,
                          auth,
