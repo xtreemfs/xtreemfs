@@ -8,7 +8,7 @@
 #include "rpc/sync_callback.h"
 
 #include "rpc/client_request.h"
- 
+
 namespace xtreemfs {
 namespace rpc {
 
@@ -58,12 +58,12 @@ xtreemfs::pbrpc::RPCHeader::ErrorResponse* SyncCallbackBase::error() {
   WaitForResponse();
   return request_->error();
 }
- 
+
 ::google::protobuf::Message* SyncCallbackBase::response() {
   WaitForResponse();
   return request_->resp_message();
 }
- 
+
 void SyncCallbackBase::DeleteBuffers() {
   if (request_) {
     request_->clear_error();
@@ -74,3 +74,4 @@ void SyncCallbackBase::DeleteBuffers() {
 
 }  // namespace rpc
 }  // namespace xtreemfs
+

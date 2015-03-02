@@ -104,3 +104,4 @@ void UserMappingGridmapGlobus::ReadGridmapFile() {
 }
 
 }  // namespace xtreemfs
+
