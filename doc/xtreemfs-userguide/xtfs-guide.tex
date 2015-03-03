@@ -41,7 +41,7 @@ Version 1.5.x
 XtreemFS is available from the \href{http://www.XtreemFS.org}{XtreemFS website (www.XtreemFS.org)}.
 
 
-This document is \copyright{} 2009-\the\year{} by Bj\"orn Kolbeck, Jan Stender, Michael Berlin, Christoph Kleineweber, Matthias Noack, Paul Seiferth, Felix Langner, NEC HPC Europe, Felix Hupfeld, Juan Gonzales, Patrick Sch\"afer, Lukas Kairies, Jens V. Fischer, Robert Schmidtke. All rights reserved.
+This document is \copyright{} 2009-\the\year{} by Bj\"orn Kolbeck, Jan Stender, Michael Berlin, Christoph Kleineweber, Matthias Noack, Paul Seiferth, Felix Langner, NEC HPC Europe, Felix Hupfeld, Juan Gonzales, Patrick Sch\"afer, Lukas Kairies, Jens V. Fischer, Johannes Dillmann, Robert Schmidtke. All rights reserved.
 
 \setcounter{tocdepth}{2}
 \tableofcontents
@@ -983,9 +983,9 @@ Note that it is possible to specify multiple categories by means of a comma or s
 
 \subsubsection{\texttt{flease.lease\_timeout\_ms} \textit{optional}}
 \begin{tabular}{lp{10cm}}
- Services & OSD\\
+ Services & OSD, MRC\\
  Values   & milliseconds \\
- Default  & 15000 \\
+ Default  & 14000 \\
  Description & Duration of a lease in milliseconds. For read-write-replicated files, the lease timeout specifies the validity time span of a master lease. Shorter lease timeouts guarantee a shorter fail-over period in the event of a server crash, which however comes at the cost of an increased rate of lease negotiations for each open file. The lease timeout should be set to a value at least three times \texttt{flease.message\_to\_ms}.
 \end{tabular}
 
@@ -2165,6 +2165,14 @@ directory service defined by the \texttt{-dir} option (localhost:32638 in this e
 The process will be started and can be stopped by setting the option
 \texttt{-stop}. To watch the cleanup progress use option \texttt{-i} for the
 interactive mode. For further information see \texttt{man xtfs\_cleanup}.
+
+The cleanup tool is also responsible for the deletion of orhpaned metadata. Metadata can 
+not be deleted instantly because some information (particularly the XLocSets' version) is 
+required to preserve consistency, even if the file has been deleted or a replica has been 
+removed. Metadata must be retained until it is assured, that every client has a consistent
+view on the set of participating replicas. By default metadata is deleted after 600 seconds,
+which is equal to the time span a capability is valid.
+
 
 \subsection{Setting the OSD Status}
 

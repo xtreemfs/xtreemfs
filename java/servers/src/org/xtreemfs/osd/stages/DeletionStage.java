@@ -58,11 +58,11 @@ public class DeletionStage extends Stage {
     }
     
     public void deleteObjects(String fileId, FileMetadata fi, boolean isCow, OSDRequest request,
-        DeleteObjectsCallback listener) {
-        this.enqueueOperation(STAGEOP_DELETE_OBJECTS, new Object[] { fileId, isCow, fi }, request,
-            listener);
+            final boolean deleteMetadata, DeleteObjectsCallback listener) {
+        this.enqueueOperation(STAGEOP_DELETE_OBJECTS, new Object[] { fileId, isCow, fi, deleteMetadata }, request,
+                listener);
     }
-    
+
     /**
      * @return the numFilesDeleted
      */
@@ -101,6 +101,7 @@ public class DeletionStage extends Stage {
         final String fileId = (String) rq.getArgs()[0];
         final boolean cow = (Boolean) rq.getArgs()[1];
         FileMetadata fi = (FileMetadata) rq.getArgs()[2];
+        final boolean deleteMetadata = (Boolean) rq.getArgs()[3];
         
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "deleting objects of file %s",
@@ -114,7 +115,7 @@ public class DeletionStage extends Stage {
         
         // remove all local objects
         if (layout.fileExists(fileId))
-            deletor.enqueueFileForDeletion(fileId, cow, fi);
+            deletor.enqueueFileForDeletion(fileId, cow, fi, deleteMetadata);
         cback.deleteComplete(null);
     }
     
@@ -137,10 +138,10 @@ public class DeletionStage extends Stage {
             this.interrupt();
         }
         
-        public void enqueueFileForDeletion(String fileID, boolean cow, FileMetadata fi) {
+        public void enqueueFileForDeletion(String fileID, boolean cow, FileMetadata fi, boolean deleteMetadata) {
             assert (this.isAlive());
             assert (fileID != null);
-            files.add(new Object[] { fileID, cow, fi });
+            files.add(new Object[] { fileID, cow, fi, deleteMetadata });
         }
         
         public void run() {
@@ -154,6 +155,7 @@ public class DeletionStage extends Stage {
                     final String fileId = (String) file[0];
                     final boolean cow = (Boolean) file[1];
                     final FileMetadata fi = (FileMetadata) file[2];
+                    final boolean deleteMetadata = (Boolean) file[3];
                     
                     try {
                         if (Logging.isDebug())
@@ -173,9 +175,9 @@ public class DeletionStage extends Stage {
                             }
 
                             // if no previous versions exist, delete the file
-                            // including all its metadata
+                            // including all its metadata if requested
                             if (fi.getVersionTable().getVersionCount() == 0)
-                                layout.deleteFile(fileId, true);
+                                layout.deleteFile(fileId, deleteMetadata);
                             
                             // if other versions exist, only delete those
                             // objects that make up the latest version of the
@@ -196,7 +198,7 @@ public class DeletionStage extends Stage {
 
                         // otherwise ...
                         else
-                            layout.deleteFile(fileId, true);
+                            layout.deleteFile(fileId, deleteMetadata);
                         
                         yield();
                         

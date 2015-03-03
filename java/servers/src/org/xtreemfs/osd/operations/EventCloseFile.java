@@ -103,7 +103,7 @@ public class EventCloseFile extends OSDOperation {
             master.getReplicationStage().cancelReplicationForFile(fileId);
 
             // Delete the file across all stripes.
-            master.getDeletionStage().deleteObjects(fileId, fi, cowEnabled, null, new DeleteObjectsCallback() {
+            master.getDeletionStage().deleteObjects(fileId, fi, cowEnabled, null, false, new DeleteObjectsCallback() {
 
                 @Override
                 public void deleteComplete(ErrorResponse error) {

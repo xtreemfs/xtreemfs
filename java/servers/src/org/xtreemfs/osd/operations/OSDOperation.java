@@ -8,12 +8,9 @@
 
 package org.xtreemfs.osd.operations;
 
-import com.google.protobuf.Message;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
-import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
@@ -49,6 +46,17 @@ public abstract class OSDOperation {
     public abstract ErrorResponse parseRPCMessage(OSDRequest rq);
 
     public abstract boolean requiresCapability();
+
+    /**
+     * By default the view contained in the location list stored in a {@link OSDRequest} will be validated (if it is
+     * present). If it is required an operation can be allowed to run, even if the view is outdated or the replica is
+     * invalidated. The view validation will be bypassed by returning true.
+     * 
+     * @return false [default]
+     */
+    public boolean bypassViewValidation() {
+        return false;
+    }
 
     public void waitForResponses(final RPCResponse[] responses, final ResponsesListener listener) {
 

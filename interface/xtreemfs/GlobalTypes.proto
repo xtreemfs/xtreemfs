@@ -127,7 +127,7 @@ message Replica {
     // Length of this list must be equal to width
     // in striping_policy!
     repeated string osd_uuids = 1;
-    // Flags to conrol replication, e.g. transfer strategy.
+    // Flags to control replication, e.g. transfer strategy.
     required fixed32 replication_flags = 2;
     // Striping policy for this replica.
     required StripingPolicy striping_policy = 3;
@@ -136,6 +136,18 @@ message Replica {
 // List of replicas for a file.
 message Replicas {
   repeated Replica replicas = 1;
+}
+
+// The LeaseState for a Replica.
+enum LeaseState {
+  // The replica's update policy is not using lease.
+  NONE = 0;
+  // The replica is the the primary.
+  PRIMARY = 1;
+  // The replica is a backup (and an active primary exists).
+  BACKUP = 2;
+  // The replica is not active (currently no lease exists).
+  IDLE = 3;
 }
 
 // The XCap is the authorization token that allows a 

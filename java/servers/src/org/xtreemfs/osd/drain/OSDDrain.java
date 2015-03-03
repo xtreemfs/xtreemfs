@@ -42,15 +42,15 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replicas;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_check_file_existsRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_check_file_existsResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_check_file_existsResponse.FILE_STATE;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_suitable_osdsRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_suitable_osdsResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_xlocsetRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addRequest;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_listRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_read_only_xattrResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse;
@@ -76,7 +76,7 @@ public class OSDDrain {
      * <br>
      * Mar 17, 2011
      */
-    public class FileInformation {
+    public static class FileInformation {
         public String            fileID;
 
         public InetSocketAddress mrcAddress;
@@ -86,13 +86,15 @@ public class OSDDrain {
         public Replica           newReplica;
 
         // origReplica is necessary to restore the replicas if there is an error
-        // while removing the
-        // original replica
+        // while removing the original replica
         public Replica           oldReplica;
 
         public Boolean           wasAlreadyReadOnly;
 
         public String            oldReplicationPolicy;
+        
+        // Flag to determine if consistency is preserved by the MRC on adding/removing replicas.
+        public boolean           isReplicaChangeCoordinated = false;
     }
 
     private DIRClient             dirClient;
@@ -147,16 +149,20 @@ public class OSDDrain {
             this.updateMRCAddresses(fileInfos);
 
             // remove fileIDs which has no entry on MRC. Can happen because
-            // object files on OSDs
-            // will be deleted delayed.
-
+            // object files on OSDs will be deleted delayed.
             fileInfos = this.removeNonExistingFileIDs(fileInfos);
+
+            // get the current replica configuration
+            fileInfos = this.getReplicaInfo(fileInfos);
+
+            // Handle r/w coordinated files and remove them from the file info list.
+            fileInfos = drainCoordinatedFiles(fileInfos);
 
             // set ReplicationUpdatePolicy to RONLY
             fileInfos = this.setReplicationUpdatePolicyRonly(fileInfos);
 
             // set Files read-only
-            fileInfos = this.setFilesReadOnlyAttribute(fileInfos, true);
+            fileInfos = this.setFilesReadOnlyAttribute(fileInfos);
 
             // create replications
             fileInfos = this.createReplicasForFiles(fileInfos);
@@ -170,17 +176,11 @@ public class OSDDrain {
             // remove replicas
             this.removeOriginalFromReplica(fileInfos);
 
-            // set every file to read/write again which wasn't set to read-only
-            // before
-            LinkedList<FileInformation> toSetROList = new LinkedList<FileInformation>();
-            for (FileInformation fileInfo : fileInfos) {
-                if (!fileInfo.wasAlreadyReadOnly)
-                    toSetROList.add(fileInfo);
-            }
-            this.setFilesReadOnlyAttribute(toSetROList, false);
+            // set every file to read/write again which wasn't set to read-only before
+            this.resetFilesReadOnlyAttribute(fileInfos);
 
             // set ReplicationUpdatePolicy to original value
-            this.setReplicationPolicyToOriginal(fileInfos);
+            this.resetReplicationUpdatePolicy(fileInfos);
 
             // TODO: delete all files on osd
 
@@ -363,12 +363,9 @@ public class OSDDrain {
 
         List<FileInformation> returnList = new LinkedList<FileInformation>();
 
-        // Map with VolumeName as key and sublist of fileInfos as value. Used to
-        // decrease the amount
-        // of MRC queries.
+        // Map with VolumeName as key and sublist of fileInfos as value. Used to decrease the amount of MRC queries.
         Map<String, List<FileInformation>> callMap = new HashMap<String, List<FileInformation>>();
-        // Map to store VolID-> MRCAddress Mapping to know which MRC has to be
-        // called.
+        // Map to store VolID-> MRCAddress Mapping to know which MRC has to be called.
         Map<String, InetSocketAddress> volIDMrcAddressMapping = new HashMap<String, InetSocketAddress>();
 
         for (FileInformation fileInfo : fileInfos) {
@@ -391,11 +388,11 @@ public class OSDDrain {
             }
 
             RPCResponse<xtreemfs_check_file_existsResponse> r = null;
-            String bitMap = null;
+            xtreemfs_check_file_existsResponse response = null;
             try {
                 r = mrcClient.xtreemfs_check_file_exists(volIDMrcAddressMapping.get(entry.getKey()),
                         password, userCreds, fileExistsRequest.build());
-                bitMap = r.get().getBitmap();
+                response = r.get();
             } catch (Exception e) {
                 if (Logging.isDebug()) {
                     Logging.logError(Logging.LEVEL_WARN, this, e);
@@ -406,122 +403,233 @@ public class OSDDrain {
                 }
             }
 
-            assert (bitMap != "2");
+            assert (response.getVolumeExists());
 
-            for (int i = 0; i < bitMap.length(); i++) {
-                if (bitMap.charAt(i) == '1')
+            for (int i = 0; i < response.getFileStatesCount(); i++) {
+                if (response.getFileStates(i) == FILE_STATE.REGISTERED) {
                     returnList.add(entry.getValue().get(i));
+                }
             }
         }
         return returnList;
     }
 
     /**
-     * Create a new Replica for every fileID in fileIDList on a new OSD. OSDs will be chosen by
-     * get_suitable_osds MRC call.
+     * Get the current replica information from the MRC for every fileID in fileIDList.
      * 
-     * @param fileIDList
-     * @throws Exception
+     * @param fileInfos
+     * @throws OSDDrainException
      */
-    public List<FileInformation> createReplicasForFiles(List<FileInformation> fileInfos)
-            throws OSDDrainException {
-
+    public List<FileInformation> getReplicaInfo(List<FileInformation> fileInfos) throws OSDDrainException {
         LinkedList<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
 
         for (FileInformation fileInfo : fileInfos) {
 
             // get Striping Policy
-            RPCResponse<Replicas> replResp = null;
-            Replicas reps = null;
+            RPCResponse<XLocSet> xlocsetResp = null;
+            XLocSet xlocset = null;
             try {
-
-                xtreemfs_replica_listRequest rlistReq = xtreemfs_replica_listRequest.newBuilder()
+                
+                xtreemfs_get_xlocsetRequest xlocReq = xtreemfs_get_xlocsetRequest.newBuilder()
                         .setFileId(fileInfo.fileID).build();
-                replResp = mrcClient
-                        .xtreemfs_replica_list(fileInfo.mrcAddress, password, userCreds, rlistReq);
-                reps = replResp.get();
+                xlocsetResp = mrcClient
+                        .xtreemfs_get_xlocset(fileInfo.mrcAddress, password, userCreds, xlocReq);
+                xlocset = xlocsetResp.get();
             } catch (Exception e) {
                 if (Logging.isDebug()) {
                     Logging.logError(Logging.LEVEL_WARN, this, e);
                 }
-                throw new OSDDrainException(e.getMessage(), ErrorState.CREATE_REPLICAS, fileInfos,
+                throw new OSDDrainException(e.getMessage(), ErrorState.GET_REPLICA_INFO, fileInfos,
                         finishedFileInfos);
             } finally {
-                if (replResp != null)
-                    replResp.freeBuffers();
+                if (xlocsetResp != null)
+                    xlocsetResp.freeBuffers();
             }
 
-            Replica rep = reps.getReplicas(0);
-            StripingPolicy sp = rep.getStripingPolicy();
+            // TODO(jdillmann): Use centralized method to check if a lease is required.
+            fileInfo.isReplicaChangeCoordinated = (xlocset.getReplicasCount() > 1 
+                    && ReplicaUpdatePolicies.isRwReplicated(xlocset.getReplicaUpdatePolicy()));
 
-            // get suitable OSD for new replica
-            RPCResponse<xtreemfs_get_suitable_osdsResponse> sor = null;
-            xtreemfs_get_suitable_osdsResponse suitOSDResp = null;
-            try {
-                xtreemfs_get_suitable_osdsRequest sosdsReq = xtreemfs_get_suitable_osdsRequest.newBuilder()
-                        .setFileId(fileInfo.fileID).setNumOsds(1).build();
-                sor = mrcClient
-                        .xtreemfs_get_suitable_osds(fileInfo.mrcAddress, password, userCreds, sosdsReq);
-                suitOSDResp = sor.get();
-            } catch (Exception e) {
-                if (Logging.isDebug()) {
-                    Logging.logError(Logging.LEVEL_WARN, this, e);
+            // find the replica for the given UUID
+            for (Replica replica : xlocset.getReplicasList()) {
+                if (replica.getOsdUuidsList().contains(osdUUID.toString())) {
+                    fileInfo.oldReplica = replica;
                 }
-                throw new OSDDrainException(e.getMessage(), ErrorState.CREATE_REPLICAS, fileInfos,
-                        finishedFileInfos);
-            } finally {
-                if (sor != null)
-                    sor.freeBuffers();
             }
+            assert (fileInfo.oldReplica != null);
 
-            if (suitOSDResp.getOsdUuidsCount() == 0) {
-                throw new OSDDrainException("no suitable OSDs to replicate file with id" + fileInfo.fileID,
-                        ErrorState.CREATE_REPLICAS, fileInfos, finishedFileInfos);
-            }
-
-            // build new Replica
-            // TODO: set stripe-width to 1 or decide what to do with
-            // stripe-width greater than 1 (if
-            // stripe-width is greater than 1 all OSDs used in one of the other
-            // replicas couldn't
-            // be used again)
-            // current solution is to use '1' for the striping width
-            sp = StripingPolicy.newBuilder().setType(sp.getType()).setStripeSize(sp.getStripeSize()).setWidth(1)
-                    .build();
-            Replica replica = Replica
-                    .newBuilder()
-                    .addOsdUuids(suitOSDResp.getOsdUuids(0))
-                    .setReplicationFlags(
-                            ReplicationFlags.setRandomStrategy(ReplicationFlags.setFullReplica(0)))
-                    .setStripingPolicy(sp).build();
-            fileInfo.newReplica = replica;
-
-            // add Replica
-            RPCResponse<?> repAddResp = null;
-            try {
-                xtreemfs_replica_addRequest repAddReq = xtreemfs_replica_addRequest.newBuilder()
-                        .setFileId(fileInfo.fileID).setNewReplica(replica).build();
-                repAddResp = mrcClient.xtreemfs_replica_add(fileInfo.mrcAddress, password, userCreds,
-                        repAddReq);
-                repAddResp.get();
-                finishedFileInfos.add(fileInfo);
-            } catch (Exception e) {
-                if (Logging.isDebug()) {
-                    Logging.logError(Logging.LEVEL_WARN, this, e);
-                }
-                throw new OSDDrainException(e.getMessage(), ErrorState.CREATE_REPLICAS, fileInfos,
-                        finishedFileInfos);
-            } finally {
-                if (repAddResp != null)
-                    repAddResp.freeBuffers();
-            }
+            finishedFileInfos.add(fileInfo);
         }
+        
         return finishedFileInfos;
     }
 
     /**
-     * Set ReplicationUpdatePolicy to RONLY for all file in fileInfos
-     * 
+     * Handle files that are guaranteed to retain safe when adding or removing replicas
+     * because they are coordinated by the MRC. At the moment this is done for r/w replicated
+     * files.
+     * @param fileInfos List of files to move from the OSD.
+     * @return List of files not coordinated by the MRC.
+     */
+    public List<FileInformation> drainCoordinatedFiles(List<FileInformation> fileInfos) throws OSDDrainException {
+        LinkedList<FileInformation> uncoordinatedFiles = new LinkedList<FileInformation>();
+        LinkedList<FileInformation> finishedFiles = new LinkedList<FileInformation>();
+
+        for (FileInformation fileInfo : fileInfos) {
+            // Filter uncoordinated files.
+            if (!fileInfo.isReplicaChangeCoordinated) {
+                uncoordinatedFiles.add(fileInfo);
+                continue;
+            }
+
+            // Create a new replica.
+            Replica replica;
+            try {
+                replica = createReplicaForFile(fileInfo);
+                fileInfo.newReplica = replica;
+            } catch (OSDDrainException e) {
+                String message = "Could not create a replica for file with id: " + fileInfo.fileID + "\n"
+                        + "It is safe to call xtfs_remove_osd again.\n"
+                        + "Original error was:\n" + e.getMessage();
+                throw new OSDDrainException(message, ErrorState.DRAIN_COORDINATED);
+            }
+
+            // Add the replica.
+            try {
+                addReplicaToFile(fileInfo, fileInfo.newReplica);
+            } catch (OSDDrainException e) {
+                String message = "Could not add replica for file with id: " + fileInfo.fileID + "\n"
+                        + "It is safe to call xtfs_remove_osd again.\n"
+                        + "Original error was:\n" + e.getMessage();
+                throw new OSDDrainException(message, ErrorState.DRAIN_COORDINATED);
+            }
+
+            // Remove the replica on the drained OSD.
+            try {
+                removeReplica(fileInfo, fileInfo.oldReplica);
+            } catch (OSDDrainException e) {
+                // In case the old replica could not be removed inform the user to intervene manually before redraining.
+                // TODO(jdillmann): resolve fileID to path
+                String message = "Could not remove the replica for file with id: " + fileInfo.fileID
+                        + " from the OSD: " + osdUUID.toString() + "\n"
+                        + "It is NOT SAFE to call xtfs_remove_osd again. Please remove the replica manually before "
+                        + "continuing.\n"
+                        + "Original error was:\n" + e.getMessage();
+                throw new OSDDrainException(message, ErrorState.DRAIN_COORDINATED);
+            }
+
+            finishedFiles.add(fileInfo);
+        }
+
+        return uncoordinatedFiles;
+    }
+
+    /**
+     * Create a new Replica for every fileID in fileIDList on a new OSD. OSDs will be chosen by get_suitable_osds MRC
+     * call.
+     *
+     * @param fileIDList
+     * @throws Exception
+     */
+    public List<FileInformation> createReplicasForFiles(List<FileInformation> fileInfos) throws OSDDrainException {
+
+        LinkedList<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
+
+        for (FileInformation fileInfo : fileInfos) {
+            try {
+                Replica replica = createReplicaForFile(fileInfo);
+                fileInfo.newReplica = replica;
+
+                addReplicaToFile(fileInfo, replica);
+                finishedFileInfos.add(fileInfo);
+
+            } catch (OSDDrainException e) {
+                throw new OSDDrainException(e.getMessage(), ErrorState.CREATE_REPLICAS, fileInfos, finishedFileInfos);
+            }
+        }
+
+        return finishedFileInfos;
+    }
+
+    private Replica createReplicaForFile(FileInformation fileInfo) throws OSDDrainException {
+        // Get a suitable OSD for the new replica.
+        RPCResponse<xtreemfs_get_suitable_osdsResponse> suitable_osdsResponseRPCResponse = null;
+        xtreemfs_get_suitable_osdsResponse suitable_osdsResponse;
+        try {
+            xtreemfs_get_suitable_osdsRequest suitable_osdsRequest;
+            suitable_osdsRequest = xtreemfs_get_suitable_osdsRequest.newBuilder()
+                                                                    .setFileId(fileInfo.fileID)
+                                                                    .setNumOsds(1)
+                                                                    .build();
+            suitable_osdsResponseRPCResponse = mrcClient.xtreemfs_get_suitable_osds(
+                    fileInfo.mrcAddress, password, userCreds, suitable_osdsRequest);
+            suitable_osdsResponse = suitable_osdsResponseRPCResponse.get();
+        } catch (Exception e) {
+            if (Logging.isDebug()) {
+                Logging.logError(Logging.LEVEL_WARN, this, e);
+            }
+            throw new OSDDrainException("Could not get suitable OSDs for file with id: " + fileInfo.fileID,
+                                        ErrorState.CREATE_REPLICAS);
+        } finally {
+            if (suitable_osdsResponseRPCResponse != null) {
+                suitable_osdsResponseRPCResponse.freeBuffers();
+            }
+        }
+
+        if (suitable_osdsResponse.getOsdUuidsCount() == 0) {
+            throw new OSDDrainException("No suitable OSDs to replicate file with id: " + fileInfo.fileID,
+                                        ErrorState.CREATE_REPLICAS);
+        }
+
+        // build new Replica
+        // TODO: set stripe-width to 1 or decide what to do with stripe-width greater than 1 (if stripe-width is
+        // greater than 1 all OSDs used in one of the other replicas couldn't be used again)
+        // current solution is to use '1' for the striping width
+        StripingPolicy oldSP = fileInfo.oldReplica.getStripingPolicy();
+        StripingPolicy newSP = StripingPolicy.newBuilder()
+                                             .setType(oldSP.getType())
+                                             .setStripeSize(oldSP.getStripeSize())
+                                             .setWidth(1)
+                                             .build();
+        Replica.Builder replica = Replica.newBuilder()
+                                         .addOsdUuids(suitable_osdsResponse.getOsdUuids(0))
+                                         .setStripingPolicy(newSP);
+
+        if (fileInfo.isReplicaChangeCoordinated) {
+            replica.setReplicationFlags(0);
+        } else {
+            replica.setReplicationFlags(ReplicationFlags.setRandomStrategy(ReplicationFlags.setFullReplica(0)));
+        }
+
+        return replica.build();
+    }
+
+    private void addReplicaToFile(FileInformation fileInfo, Replica replica) throws OSDDrainException {
+        RPCResponse<?> response = null;
+        try {
+            xtreemfs_replica_addRequest replica_addRequest = xtreemfs_replica_addRequest.newBuilder()
+                                                                                        .setFileId(fileInfo.fileID)
+                                                                                        .setNewReplica(replica)
+                                                                                        .build();
+            response = mrcClient.xtreemfs_replica_add(fileInfo.mrcAddress, password, userCreds,
+                                                      replica_addRequest);
+            response.get();
+        } catch (Exception e) {
+            if (Logging.isDebug()) {
+                Logging.logError(Logging.LEVEL_WARN, this, e);
+            }
+            throw new OSDDrainException("Could not add replica to file with id" + fileInfo.fileID,
+                                        ErrorState.CREATE_REPLICAS);
+        } finally {
+            if (response != null) {
+                response.freeBuffers();
+            }
+        }
+    }
+
+    /**
+     * Set ReplicationUpdatePolicy to RONLY for all files in fileInfos. <br>
+     *
      * @param fileInfos
      * @return
      * @throws Exception
@@ -533,14 +641,46 @@ public class OSDDrain {
 
         for (FileInformation fileInfo : fileInfos) {
             try {
-
-                fileInfo.oldReplicationPolicy = this.changeReplicationUpdatePolicy(fileInfo,
-                        ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY);
+                fileInfo.oldReplicationPolicy = changeReplicationUpdatePolicy(fileInfo,
+                                                                              ReplicaUpdatePolicies
+                                                                                      .REPL_UPDATE_PC_RONLY);
                 finishedFileInfos.add(fileInfo);
             } catch (Exception e) {
                 throw new OSDDrainException(e.getMessage(), ErrorState.SET_UPDATE_POLICY, fileInfos,
-                        finishedFileInfos);
+                                            finishedFileInfos);
             }
+        }
+
+        return finishedFileInfos;
+    }
+
+    /**
+     * Set ReplicationUpdatePolicy to the initial value according to FileInformation.oldReplicationPolicy for all files
+     * in fileInfos.
+     *
+     * @return
+     */
+    public List<FileInformation> resetReplicationUpdatePolicy(List<FileInformation> fileInfos)
+            throws OSDDrainException {
+
+        // List of files which ReplicationUpdatePolicy is already set successfully
+        List<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
+        // List of files which could not be reset.
+        List<FileInformation> erroneousFiles = new LinkedList<FileInformation>();
+
+        for (FileInformation fileInfo : fileInfos) {
+            try {
+                fileInfo.oldReplicationPolicy = this.changeReplicationUpdatePolicy(fileInfo,
+                                                                                   fileInfo.oldReplicationPolicy);
+                finishedFileInfos.add(fileInfo);
+            } catch (Exception e) {
+                erroneousFiles.add(fileInfo);
+            }
+        }
+
+        if (!erroneousFiles.isEmpty()) {
+            throw new OSDDrainException("Failed to reset read only attribute for some files.",
+                                        ErrorState.UNSET_UPDATE_POLICY, fileInfos, finishedFileInfos);
         }
 
         return finishedFileInfos;
@@ -552,7 +692,7 @@ public class OSDDrain {
         xtreemfs_set_replica_update_policyResponse replSetResponse = null;
         try {
             respRepl = mrcClient.xtreemfs_set_replica_update_policy(fileInfo.mrcAddress, password, userCreds,
-                    fileInfo.fileID, policy);
+                                                                    fileInfo.fileID, policy);
             replSetResponse = respRepl.get();
         } catch (Exception ioe) {
             if (Logging.isDebug()) {
@@ -568,44 +708,25 @@ public class OSDDrain {
     }
 
     /**
-     * Set all files in fileIDList to read-only to be able to RO-replicate them
-     * 
+     * Set all files in fileIDList to read-only to be able to RO-replicate them. <br>
+     *
      * @param fileIDList
      * @param mode
      *            true if you want to set the files to read-only mode, false otherwise
      * @throws Exception
-     * 
+     *
      * @return {@link LinkedList} with all fileIDs which already were set to the desired mode
      */
-    public List<FileInformation> setFilesReadOnlyAttribute(List<FileInformation> fileInfos, boolean mode)
-            throws OSDDrainException {
+    public List<FileInformation> setFilesReadOnlyAttribute(List<FileInformation> fileInfos) throws OSDDrainException {
 
         // List of files which where set to read-only successfully
         List<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
 
         for (FileInformation fileInfo : fileInfos) {
-
-            RPCResponse<xtreemfs_set_read_only_xattrResponse> resp = null;
-            xtreemfs_set_read_only_xattrResponse setResponse = null;
             try {
-                resp = mrcClient.xtreemfs_set_read_only_xattr(fileInfo.mrcAddress, password, userCreds,
-                        fileInfo.fileID, mode);
-                setResponse = resp.get();
-            } catch (Exception e) {
-                if (Logging.isDebug()) {
-                    Logging.logError(Logging.LEVEL_WARN, this, e);
-                }
-                throw new OSDDrainException(e.getMessage(), ErrorState.SET_RONLY, fileInfos,
-                        finishedFileInfos);
-            } finally {
-                if (resp != null)
-                    resp.freeBuffers();
-            }
-
-            if (setResponse.getWasSet() == true) {
-                fileInfo.wasAlreadyReadOnly = false;
-            } else {
-                fileInfo.wasAlreadyReadOnly = true;
+                fileInfo.wasAlreadyReadOnly = setFileReadOnlyAttribute(fileInfo, true);
+            } catch (OSDDrainException e) {
+                throw new OSDDrainException(e.getMessage(), ErrorState.SET_RONLY, fileInfos, finishedFileInfos);
             }
             finishedFileInfos.add(fileInfo);
         }
@@ -614,9 +735,72 @@ public class OSDDrain {
     }
 
     /**
-     * Read one byte from every file in fileInfo list to trigger replication. The byte will be read from the
-     * first object on OSD(s) containing the new replica.
-     * 
+     * Reset the files read only attributes to the original value
+     * @param fileInfos
+     * @return
+     * @throws OSDDrainException
+     */
+    public List<FileInformation> resetFilesReadOnlyAttribute(List<FileInformation> fileInfos) throws OSDDrainException {
+        // List of files which where reset successfully.
+        List<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
+        // List of files which could not be reset.
+        List<FileInformation> erroneousFiles = new LinkedList<FileInformation>();
+
+        for (FileInformation fileInfo : fileInfos) {
+            // Skip files that have been read only before draining.
+            if (fileInfo.wasAlreadyReadOnly) {
+                finishedFileInfos.add(fileInfo);
+                continue;
+            }
+
+            try {
+                setFileReadOnlyAttribute(fileInfo, false);
+                finishedFileInfos.add(fileInfo);
+            } catch (OSDDrainException e) {
+                erroneousFiles.add(fileInfo);
+            }
+        }
+
+        if (!erroneousFiles.isEmpty()) {
+            throw new OSDDrainException("Failed to reset read only attribute for some files.", ErrorState.UNSET_RONLY,
+                                        fileInfos, finishedFileInfos);
+        }
+
+        return finishedFileInfos;
+    }
+
+    /**
+     * Set the read-only attribute for a single file.
+     *
+     * @param fileInfo
+     * @param mode
+     * @return true if the read-only attribute had been already set to the requested mode.
+     * @throws OSDDrainException
+     */
+    boolean setFileReadOnlyAttribute(FileInformation fileInfo, boolean mode) throws OSDDrainException {
+        RPCResponse<xtreemfs_set_read_only_xattrResponse> response = null;
+        xtreemfs_set_read_only_xattrResponse setResponse = null;
+        try {
+            response = mrcClient
+                    .xtreemfs_set_read_only_xattr(fileInfo.mrcAddress, password, userCreds, fileInfo.fileID, mode);
+            setResponse = response.get();
+        } catch (Exception e) {
+            if (Logging.isDebug()) {
+                Logging.logError(Logging.LEVEL_WARN, this, e);
+            }
+            throw new OSDDrainException(e.getMessage(), ErrorState.SET_RONLY);
+        } finally {
+            if (response != null)
+                response.freeBuffers();
+        }
+
+        return (!setResponse.getWasSet());
+    }
+
+    /**
+     * Read one byte from every file in fileInfo list to trigger replication. The byte will be read from the first
+     * object on OSD(s) containing the new replica.
+     *
      * @param fileInfos
      * @return
      * @throws Exception
@@ -630,22 +814,22 @@ public class OSDDrain {
             RPCResponse<FileCredentials> r1 = null;
             try {
                 r1 = mrcClient.xtreemfs_get_file_credentials(fileInfo.mrcAddress, password, userCreds,
-                        fileInfo.fileID);
+                                                             fileInfo.fileID);
                 fileInfo.fileCredentials = r1.get();
             } catch (Exception e) {
                 if (Logging.isDebug()) {
                     Logging.logError(Logging.LEVEL_WARN, this, e);
                 }
                 throw new OSDDrainException(e.getMessage(), ErrorState.WAIT_FOR_REPLICATION, fileInfos,
-                        finishedFileInfos);
+                                            finishedFileInfos);
             } finally {
                 if (r1 != null)
                     r1.freeBuffers();
             }
 
+
             // read a single Byte from one object of every OSD the new replica
-            // is assigned to to
-            // trigger replication
+            // is assigned to to trigger replication
             StripingPolicyImpl spol = StripingPolicyImpl.getPolicy(fileInfo.newReplica, 0);
             for (int i = 0; i < fileInfo.newReplica.getOsdUuidsCount(); i++) {
 
@@ -657,14 +841,14 @@ public class OSDDrain {
                     InetSocketAddress osd = new ServiceUUID(fileInfo.newReplica.getOsdUuids(i), resolver)
                             .getAddress();
                     r2 = osdClient.read(osd, password, userCreds, fileInfo.fileCredentials, fileInfo.fileID,
-                            obj, 0, 0, 1);
+                                        obj, 0, 0, 1);
                     r2.get();
                 } catch (Exception e) {
                     if (Logging.isDebug()) {
                         Logging.logError(Logging.LEVEL_WARN, this, e);
                     }
                     throw new OSDDrainException(e.getMessage(), ErrorState.WAIT_FOR_REPLICATION, fileInfos,
-                            finishedFileInfos);
+                                                finishedFileInfos);
                 } finally {
                     if (r2 != null)
                         r2.freeBuffers();
@@ -679,7 +863,7 @@ public class OSDDrain {
 
     /**
      * Polls MRC regularly to discover if replication is complete. Blocks until this event happens.
-     * 
+     *
      * @param fileIDList
      * @throws Exception
      */
@@ -691,7 +875,6 @@ public class OSDDrain {
 
         while (!fileInfos.isEmpty()) {
             for (FileInformation fileInfo : fileInfos) {
-
                 String fileID = fileInfo.fileID;
                 FileCredentials fc = fileInfo.fileCredentials;
                 Replica replica = fileInfo.newReplica;
@@ -710,7 +893,7 @@ public class OSDDrain {
                         InetSocketAddress osdAddress = new ServiceUUID(osdUUID, resolver).getAddress();
 
                         r = osdClient.xtreemfs_internal_get_object_set(osdAddress, password, userCreds, fc,
-                                fileID);
+                                                                       fileID);
                         ObjectList ol = r.get();
 
                         byte[] serializedBitSet = ol.getSet().toByteArray();
@@ -723,7 +906,7 @@ public class OSDDrain {
                         allInfos.addAll(fileInfos);
                         allInfos.addAll(finishedFileInfos);
                         throw new OSDDrainException(e.getMessage(), ErrorState.WAIT_FOR_REPLICATION,
-                                finishedFileInfos, allInfos);
+                                                    finishedFileInfos, allInfos);
                     } finally {
                         if (r != null) {
                             r.freeBuffers();
@@ -750,7 +933,7 @@ public class OSDDrain {
                 return finishedFileInfos;
 
             Logging.logMessage(Logging.LEVEL_INFO, Category.tool, this,
-                    "waiting 10secs for replication to be finished");
+                               "waiting 10secs for replication to be finished");
             try {
                 // wait 10sec until next poll
                 Thread.sleep(5000);
@@ -762,36 +945,8 @@ public class OSDDrain {
     }
 
     /**
-     * Set ReplicationUpdatePolicy to the initial value according to FileInformation.oldReplicationPolicy for
-     * all files in fileInfos
-     * 
-     * @return
-     */
-    public List<FileInformation> setReplicationPolicyToOriginal(List<FileInformation> fileInfos)
-            throws OSDDrainException {
-
-        // List of files which ReplicationUpdatePolicy is already set
-        // successfully
-        List<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
-
-        for (FileInformation fileInfo : fileInfos) {
-            try {
-                fileInfo.oldReplicationPolicy = this.changeReplicationUpdatePolicy(fileInfo,
-                        fileInfo.oldReplicationPolicy);
-                finishedFileInfos.add(fileInfo);
-            } catch (Exception e) {
-                throw new OSDDrainException(e.getMessage(), ErrorState.UNSET_UPDATE_POLICY, fileInfos,
-                        finishedFileInfos);
-            }
-
-        }
-
-        return finishedFileInfos;
-    }
-
-    /**
      * removes replicas of all file in fileIDList which are on osdUUID
-     * 
+     *
      * @param fileIDList
      * @param mrc
      * @param osdUUID
@@ -801,43 +956,53 @@ public class OSDDrain {
     public void removeOriginalFromReplica(List<FileInformation> fileInfos) throws OSDDrainException {
 
         List<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
+        List<FileInformation> erroneousFiles = new LinkedList<FileInformation>();
 
         for (FileInformation fileInfo : fileInfos) {
-            RPCResponse<FileCredentials> resp = null;
             try {
-                
-                // find the head OSD for the given UUID
-                String headOSD = null;
-                XLocSet xlocs = fileInfo.fileCredentials.getXlocs();
-                for (Replica xloc : xlocs.getReplicasList()) {
-                    if (xloc.getOsdUuidsList().contains(osdUUID.toString()))
-                        headOSD = xloc.getOsdUuidsList().get(0);
-                }
-                assert (headOSD != null);
-                                
-                xtreemfs_replica_removeRequest replRemReq = xtreemfs_replica_removeRequest.newBuilder()
-                        .setFileId(fileInfo.fileID).setOsdUuid(headOSD).build();
-                resp = mrcClient
-                        .xtreemfs_replica_remove(fileInfo.mrcAddress, password, userCreds, replRemReq);
-                resp.get();
+                removeReplica(fileInfo, fileInfo.oldReplica);
                 finishedFileInfos.add(fileInfo);
-            } catch (Exception e) {
-                if (Logging.isDebug()) {
-                    Logging.logError(Logging.LEVEL_WARN, this, e);
-                }
-                throw new OSDDrainException(e.getMessage(), ErrorState.REMOVE_REPLICAS, fileInfos,
-                        finishedFileInfos);
-            } finally {
-                if (resp != null)
-                    resp.freeBuffers();
+            } catch (OSDDrainException e) {
+                erroneousFiles.add(fileInfo);
             }
+        }
+
+        if (!erroneousFiles.isEmpty()) {
+            throw new OSDDrainException("Failed to remove original replicas for some files.\n"
+                                                + "It is NOT SAFE to call xtfs_remove_osd again. Please remove the "
+                                                + "replicas manually before continuing.",
+                                        ErrorState.REMOVE_REPLICAS, fileInfos, finishedFileInfos);
+        }
+    }
+
+    private void removeReplica(FileInformation fileInfo, Replica replica) throws OSDDrainException {
+        RPCResponse<?> response = null;
+
+        String headOSD = replica.getOsdUuids(0);
+        xtreemfs_replica_removeRequest replica_removeRequest;
+        replica_removeRequest = xtreemfs_replica_removeRequest.newBuilder()
+                                                              .setFileId(fileInfo.fileID)
+                                                              .setOsdUuid(headOSD)
+                                                              .build();
+        try {
+            response = mrcClient
+                    .xtreemfs_replica_remove(fileInfo.mrcAddress, password, userCreds, replica_removeRequest);
+            response.get();
+        } catch (Exception e) {
+            if (Logging.isDebug()) {
+                Logging.logError(Logging.LEVEL_WARN, this, e);
+            }
+            throw new OSDDrainException(e.getMessage(), ErrorState.REMOVE_REPLICAS);
+        } finally {
+            if (response != null)
+                response.freeBuffers();
         }
     }
 
     /**
      * Shuts down the OSD which should be removed.
      */
-    public void shutdownOsd() throws OSDDrainException {
+    void shutdownOsd() throws OSDDrainException {
 
         RPCResponse<?> r = null;
         try {
@@ -858,49 +1023,59 @@ public class OSDDrain {
      * Create original replicas again if the where removed before. Only used if an error occurs while removing
      * original replicas.
      */
-
     private void revertRemoveOriginalReplicas(List<FileInformation> fileInfos) throws OSDDrainException {
 
         List<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
+        List<FileInformation> erroneousFiles = new LinkedList<FileInformation>();
 
         for (FileInformation fileInfo : fileInfos) {
-
-            RPCResponse<?> r = null;
             try {
-                r = mrcClient.xtreemfs_replica_add(fileInfo.mrcAddress, password, userCreds, fileInfo.fileID,
-                        null, null, fileInfo.oldReplica);
-                r.get();
+                if (fileInfo.oldReplica != null) {
+                    addReplicaToFile(fileInfo, fileInfo.oldReplica);
+                }
                 finishedFileInfos.add(fileInfo);
-            } catch (Exception e) {
-                throw new OSDDrainException(e.getMessage(), ErrorState.CREATE_REPLICAS, fileInfos,
-                        finishedFileInfos);
+
+            } catch (OSDDrainException e) {
+                erroneousFiles.add(fileInfo);
             }
         }
 
+        if (!erroneousFiles.isEmpty()) {
+            throw new OSDDrainException("Failed to recreate original replicas for some files.\n"
+                                                + "It is NOT SAFE to call xtfs_remove_osd again. Please ensure the "
+                                                + "files are properly replicated before continuing.",
+                                        ErrorState.CREATE_REPLICAS, fileInfos, finishedFileInfos);
+        }
     }
 
     /**
      * Remove the newly created replicas. Only used if an error occurs while creating the replicas.
-     * 
+     *
      * @param fileInfos
      * @throws OSDDrainException
      */
     private void removeNewReplicas(List<FileInformation> fileInfos) throws OSDDrainException {
 
         List<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
+        List<FileInformation> erroneousFiles = new LinkedList<FileInformation>();
 
         for (FileInformation fileInfo : fileInfos) {
-
-            RPCResponse<FileCredentials> r = null;
             try {
-                r = mrcClient.xtreemfs_replica_remove(fileInfo.mrcAddress, password, userCreds,
-                        fileInfo.fileID, null, null, fileInfo.newReplica.getOsdUuids(0));
-                r.get();
+                if (fileInfo.newReplica != null) {
+                    removeReplica(fileInfo, fileInfo.newReplica);
+                }
                 finishedFileInfos.add(fileInfo);
-            } catch (Exception e) {
-                throw new OSDDrainException(e.getMessage(), ErrorState.CREATE_REPLICAS, fileInfos,
-                        finishedFileInfos);
+
+            } catch (OSDDrainException e) {
+                erroneousFiles.add(fileInfo);
             }
+        }
+
+        if (!erroneousFiles.isEmpty()) {
+            throw new OSDDrainException("Failed to remove new replicas for some files.\n"
+                                                + "It is NOT SAFE to call xtfs_remove_osd again. Please remove the "
+                                                + "replicas manually before continuing.",
+                                        ErrorState.CREATE_REPLICAS, fileInfos, finishedFileInfos);
         }
     }
 
@@ -960,10 +1135,29 @@ public class OSDDrain {
                 Logging.logError(Logging.LEVEL_DEBUG, this, ex);
             break;
 
+        case GET_REPLICA_INFO:
+            if (printError) {
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this,
+                        "Failed to to get replica info from MRC");
+                printError();
+            }
+            if (Logging.isDebug())
+                Logging.logError(Logging.LEVEL_DEBUG, this, ex);
+            break;
+
         case SET_SERVICE_STATUS:
             if (printError) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this,
                         "ERROR: failed to set ServiceStatus for OSD");
+                printError();
+            }
+            if (Logging.isDebug())
+                Logging.logError(Logging.LEVEL_DEBUG, this, ex);
+            break;
+
+        case DRAIN_COORDINATED:
+            if (printError) {
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this, ex.getMessage());
                 printError();
             }
             if (Logging.isDebug())
@@ -982,7 +1176,7 @@ public class OSDDrain {
             Logging.logMessage(Logging.LEVEL_INFO, Category.tool, this,
                     "Trying to revert ReplicationUpdatePolicy changes...");
             try {
-                this.setReplicationPolicyToOriginal(ex.getFileInfosCurrent());
+                this.resetReplicationUpdatePolicy(ex.getFileInfosCurrent());
                 Logging.logMessage(Logging.LEVEL_INFO, Category.tool, this,
                         "DONE reverting ReplicationUpdatePolicy changes");
             } catch (OSDDrainException ode) {
@@ -1008,7 +1202,7 @@ public class OSDDrain {
             Logging.logMessage(Logging.LEVEL_INFO, Category.tool, this,
                     "Trying to revert read-only mode changes...");
             try {
-                this.setFilesReadOnlyAttribute(ex.getFileInfosCurrent(), false);
+                resetFilesReadOnlyAttribute(ex.getFileInfosCurrent());
                 Logging.logMessage(Logging.LEVEL_INFO, Category.tool, this,
                         "DONE reverting read-only mode changes");
             } catch (OSDDrainException ode) {
@@ -1041,7 +1235,8 @@ public class OSDDrain {
             } catch (OSDDrainException ode) {
                 List<FileInformation> failedFileInfos = ode.getFileInfosAll();
                 failedFileInfos.removeAll(ode.getFileInfosCurrent());
-                String error = "From following files the newly created replicas couldn't be removed:";
+                String error = ex.getMessage() +  "\n"
+                        + "From following files the newly created replicas couldn't be removed:";
                 for (FileInformation fileInfo : failedFileInfos) {
                     error = error + "\n " + fileInfo.fileID;
                 }
@@ -1062,16 +1257,15 @@ public class OSDDrain {
             if (Logging.isDebug())
                 Logging.logError(Logging.LEVEL_DEBUG, this, ex);
 
-            Logging.logMessage(Logging.LEVEL_INFO, Category.tool, this,
-                    "Trying to remove yet replicated files...");
+            Logging.logMessage(Logging.LEVEL_INFO, Category.tool, this, "Trying to remove yet replicated files...");
             try {
                 this.removeNewReplicas(ex.getFileInfosAll());
-                Logging.logMessage(Logging.LEVEL_INFO, Category.tool, this,
-                        "DONE removing yet replicated files");
+                Logging.logMessage(Logging.LEVEL_INFO, Category.tool, this, "DONE removing yet replicated files");
             } catch (OSDDrainException ode) {
                 List<FileInformation> failedFileInfos = ode.getFileInfosAll();
                 failedFileInfos.removeAll(ode.getFileInfosCurrent());
-                String error = "From following files the newly created replicas couldn't be removed:";
+                String error = ex.getMessage() +  "\n"
+                        + "From following files the newly created replicas couldn't be removed:";
                 for (FileInformation fileInfo : failedFileInfos) {
                     error = error + "\n " + fileInfo.fileID;
                 }
@@ -1101,8 +1295,8 @@ public class OSDDrain {
             } catch (OSDDrainException ode) {
                 List<FileInformation> failedFileInfos = ode.getFileInfosAll();
                 failedFileInfos.removeAll(ode.getFileInfosCurrent());
-                String error = "From the following files the changes to the original"
-                        + "replica couldn't be reverted:";
+                String error = ex.getMessage() + "\n"
+                        + "From the following files the changes to the original replica couldn't be reverted:";
                 for (FileInformation fileInfo : failedFileInfos) {
                     error = error + "\n " + fileInfo.fileID;
                 }
@@ -1113,39 +1307,33 @@ public class OSDDrain {
                             ex.getFileInfosAll()), false);
             break;
 
-        case UNSET_RONLY:
+        case UNSET_RONLY: {
             if (printError) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this,
-                        "Failed to set files back from read-only mode");
+                                   "Failed to set files back from read-only mode");
                 printError();
             }
             if (Logging.isDebug())
                 Logging.logError(Logging.LEVEL_DEBUG, this, ex);
 
-            Logging.logMessage(Logging.LEVEL_INFO, Category.tool, this,
-                    "Trying to revert changes to read-only mode...");
-            try {
-                this.setFilesReadOnlyAttribute(ex.getFileInfosCurrent(), true);
-                Logging.logMessage(Logging.LEVEL_INFO, Category.tool, this,
-                        "DONE reverting changes to read-only mode");
-            } catch (OSDDrainException roe) {
-                List<FileInformation> failedFileInfos = roe.getFileInfosAll();
-                failedFileInfos.removeAll(roe.getFileInfosCurrent());
-                String error = "Following files couldn't set back to read-only mode:";
-                for (FileInformation fileInfo : failedFileInfos) {
-                    error = error + "\n " + fileInfo.fileID;
-                }
-                Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this, error);
+            List<FileInformation> failedFileInfos = ex.getFileInfosAll();
+            failedFileInfos.removeAll(ex.getFileInfosCurrent());
+            String error = "Following files couldn't set back to read-only mode:";
+            for (FileInformation fileInfo : failedFileInfos) {
+                error = error + "\n " + fileInfo.fileID;
             }
-            this.handleException(
-                    new OSDDrainException(ex.getMessage(), ErrorState.UNSET_RONLY, ex.getFileInfosAll(), ex
-                            .getFileInfosAll()), false);
-            break;
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this, error);
 
-        case UNSET_UPDATE_POLICY:
+            this.handleException(
+                    new OSDDrainException(ex.getMessage(), ErrorState.REMOVE_REPLICAS, ex.getFileInfosAll(),
+                                          ex.getFileInfosAll()), false);
+            break;
+        }
+
+        case UNSET_UPDATE_POLICY: {
             if (printError) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this,
-                        "Failed to set ReplicationUpdatePolicy back to the original ones");
+                                   "Failed to set ReplicationUpdatePolicy back to the original ones");
                 printError();
             }
 
@@ -1153,26 +1341,21 @@ public class OSDDrain {
                 Logging.logError(Logging.LEVEL_DEBUG, this, ex);
             }
 
-            Logging.logMessage(Logging.LEVEL_INFO, Category.tool, this,
-                    "Trying to revert changes to ReplicationUpdatePolicies...");
-            try {
-                this.setReplicationUpdatePolicyRonly(ex.getFileInfosCurrent());
-                Logging.logMessage(Logging.LEVEL_INFO, Category.tool, this,
-                        "DONE reverting changes to ReplicationUpdatePolicies");
-            } catch (OSDDrainException roe) {
-                List<FileInformation> failedFileInfos = roe.getFileInfosAll();
-                failedFileInfos.removeAll(roe.getFileInfosCurrent());
-                String error = "For the following files the changes to "
-                        + "ReplicationUpdatePolicy couldn't be reverted:";
-                for (FileInformation fileInfo : failedFileInfos) {
-                    error = error + "\n " + fileInfo.fileID;
-                }
-                Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this, error);
+            List<FileInformation> failedFileInfos = ex.getFileInfosAll();
+            failedFileInfos.removeAll(ex.getFileInfosCurrent());
+            String error = "For the following files the changes to ReplicationUpdatePolicy couldn't be reverted:";
+            for (FileInformation fileInfo : failedFileInfos) {
+                error = error + "\n " + fileInfo.fileID;
             }
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this, error);
+
+            // Rollback only the failed files.
             this.handleException(
-                    new OSDDrainException(ex.getMessage(), ErrorState.UNSET_UPDATE_POLICY, ex
-                            .getFileInfosAll(), ex.getFileInfosAll()), false);
+                    new OSDDrainException(ex.getMessage(), ErrorState.REMOVE_REPLICAS, failedFileInfos,
+                                          failedFileInfos), false);
+
             break;
+        }
 
         case SHUTDOWN_OSD:
             if (printError) {

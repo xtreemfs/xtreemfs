@@ -102,10 +102,14 @@ public final class InternalRWRFetchOperation extends OSDOperation {
     }
 
     @Override
+    public boolean bypassViewValidation() {
+        // This operation has to be used while the replicas are invalidated and a reset triggered
+        // by InternalRWRAuthStateInvalidatedOperation.
+        return true;
+    }
+
+    @Override
     public void startInternalEvent(Object[] args) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    
-
 }

@@ -8,7 +8,6 @@
 
 package org.xtreemfs.osd.operations;
 
-import com.google.protobuf.ByteString;
 import java.io.IOException;
 
 import org.xtreemfs.common.Capability;
@@ -34,6 +33,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
+
+import com.google.protobuf.ByteString;
 
 public final class LocalReadOperation extends OSDOperation {
     
@@ -178,7 +179,7 @@ public final class LocalReadOperation extends OSDOperation {
     public boolean requiresCapability() {
         return true;
     }
-    
+
     @Override
     public void startInternalEvent(Object[] args) {
         throw new UnsupportedOperationException("Not supported yet.");

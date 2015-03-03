@@ -38,6 +38,7 @@ import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.XLocSetVersionState;
 
 /**
  * 
@@ -66,6 +67,11 @@ public class HashStorageLayout extends StorageLayout {
      * file that stores the mapping between file and object versions
      */
     public static final String             CURRENT_VER_FILENAME          = ".curr_file_ver";
+
+    /**
+     * file that stores the latest XLocSet version this replica belonged to and if it is invalidated
+     */
+    public static final String             XLOC_VERSION_STATE_FILENAME   = ".version_state";
 
     public static final int                SL_TAG                        = 0x00000002;
 
@@ -114,6 +120,8 @@ public class HashStorageLayout extends StorageLayout {
     private static final int               RETRIES_INCOMPLETE_READ       = 2;
 
     private static final String            ERROR_MESSAGE_INCOMPLETE_READ = "Failed to read the requested number of bytes from the file on disk. Maybe there's a media error or the file was modified outside the scope of the OSD by another process?";
+
+    private final LRUCache<String, XLocSetVersionState> xLocSetVSCache;
 
     /** Creates a new instance of HashStorageLayout */
     public HashStorageLayout(OSDConfig config, MetadataCache cache) throws IOException {
@@ -176,6 +184,8 @@ public class HashStorageLayout extends StorageLayout {
         _stat_fileInfoLoads = 0;
 
         hashedPathCache = new LRUCache<String, String>(2048);
+
+        xLocSetVSCache = new LRUCache<String, XLocSetVersionState>(2048);
     }
 
     @Override
@@ -692,27 +702,35 @@ public class HashStorageLayout extends StorageLayout {
     }
 
     @Override
-    public void deleteFile(String fileId, boolean deleteMetadata) throws IOException {
-
+    public void deleteFile(String fileId, final boolean deleteMetadata) throws IOException {
         File fileDir = new File(generateAbsoluteFilePath(fileId));
-        File[] objs = fileDir.listFiles();
 
-        if (objs == null) {
+        // Filter metadata from the fileList, if deleteMetadata is not set.
+        File[] fileList = fileDir.listFiles(new FileFilter() {
+
+            @Override
+            public boolean accept(File pathname) {
+                if (!deleteMetadata && pathname.getName().startsWith(".")) {
+                    return false;
+                }
+
+                return true;
+            }
+        });
+
+        // Stop the execution if the directory does not exist.
+        if (fileList == null) {
             return;
         }
 
-        // otherwise, delete the file including its metadata
-        else {
+        // Delete the filtered files.
+        for (File file : fileList) {
+            file.delete();
+        }
 
-            for (File obj : objs) {
-                obj.delete();
-            }
-
-            // delete all empty dirs along the path
-            if (deleteMetadata) {
-                del(fileDir);
-            }
-
+        // Try to delete the data directory if it is empty.
+        if (deleteMetadata) {
+            del(fileDir);
         }
     }
 
@@ -1155,6 +1173,7 @@ public class HashStorageLayout extends StorageLayout {
                 File newestFirst = null;
                 File newestLast = null;
                 Long objectSize = 0L;
+                boolean isFileNameDir = false;
 
                 for (File ch : dir.listFiles()) {
                     // handle the directories (hash and fileName)
@@ -1168,6 +1187,7 @@ public class HashStorageLayout extends StorageLayout {
                             long version = getVersion(ch);
                             long objNum = getObjectNo(ch);
 
+                            isFileNameDir = true;
                             if (newestFirst == null) {
 
                                 newestFirst = newestLast = ch;
@@ -1191,30 +1211,41 @@ public class HashStorageLayout extends StorageLayout {
                                     "CleanUp: an illegal file (" + ch.getAbsolutePath()
                                             + ") was discovered and ignored.");
                         }
+                    } else if (ch != null && ch.isFile() && ch.getName().endsWith(XLOC_VERSION_STATE_FILENAME)) {
+                        // If no data file exists, but a version_state file, the whole data folder can be deleted after
+                        // a certain period.
+                        isFileNameDir = true;
                     }
                 }
 
                 // dir is a fileName-directory
-                if (newestFirst != null) {
-                    // get a preview from the file
-                    char[] preview = null;
-                    try {
-                        fReader = new FileReader(newestFirst);
-                        preview = new char[PREVIEW_LENGTH];
-                        fReader.read(preview);
-                        fReader.close();
-                    } catch (Exception e) {
-                        assert (false);
+                if (isFileNameDir) {
+
+                    if (newestFirst != null) {
+                        // get a preview from the file
+                        char[] preview = null;
+                        try {
+                            fReader = new FileReader(newestFirst);
+                            preview = new char[PREVIEW_LENGTH];
+                            fReader.read(preview);
+                            fReader.close();
+                        } catch (Exception e) {
+                            assert (false);
+                        }
+
+                        // get the metaInfo from the root-directory
+                        long stripCount = getObjectNo(newestLast);
+                        long fileSize = (stripCount == 1) ? newestFirst.length() : (objectSize * stripCount)
+                                + newestLast.length();
+
+                        // insert the data into the FileList
+                        l.files.put((WIN) ? dir.getName().replace('_', ':') : dir.getName(),
+                                new FileData(fileSize, (int) (objectSize / 1024)));
+                    } else {
+                        // No data file exists, but the folders some metadata is still in place.
+                        l.files.put((WIN) ? dir.getName().replace('_', ':') : dir.getName(), 
+                                new FileData(true));
                     }
-
-                    // get the metaInfo from the root-directory
-                    long stripCount = getObjectNo(newestLast);
-                    long fileSize = (stripCount == 1) ? newestFirst.length() : (objectSize * stripCount)
-                            + newestLast.length();
-
-                    // insert the data into the FileList
-                    l.files.put((WIN) ? dir.getName().replace('_', ':') : dir.getName(), new FileData(
-                            fileSize, (int) (objectSize / 1024)));
                 }
             } while (l.files.size() < maxNumEntries);
             l.hasMore = true;
@@ -1350,4 +1381,56 @@ public class HashStorageLayout extends StorageLayout {
         }
     }
 
+    @Override
+    public XLocSetVersionState getXLocSetVersionState(String fileId) throws IOException {
+        XLocSetVersionState state = xLocSetVSCache.get(fileId);
+
+        if (state == null) {
+            XLocSetVersionState.Builder vsbuilder = XLocSetVersionState.newBuilder();
+    
+            File fileDir = new File(generateAbsoluteFilePath(fileId));
+            File vsFile = new File(fileDir, XLOC_VERSION_STATE_FILENAME);
+    
+            FileInputStream input = null;
+            try {
+                input = new FileInputStream(vsFile);
+                vsbuilder.mergeDelimitedFrom(input);
+    
+            } catch (FileNotFoundException e) {
+                // If the file does not exist yet, set the initial state
+                vsbuilder.setInvalidated(true).setVersion(-1);
+    
+            } finally {
+                if (input != null) {
+                    input.close();
+                }
+            }
+
+            // Build the state and store it to the cache.
+            state = vsbuilder.build();
+            xLocSetVSCache.put(fileId, state);
+        }
+
+        return state;
+    }
+
+    @Override
+    public void setXLocSetVersionState(String fileId, XLocSetVersionState versionState) throws IOException {
+        File fileDir = new File(generateAbsoluteFilePath(fileId));
+        if (!fileDir.exists()) {
+            fileDir.mkdirs();
+        }
+
+        File vsFile = new File(fileDir, XLOC_VERSION_STATE_FILENAME);
+        FileOutputStream output = null;
+        try {
+            output = new FileOutputStream(vsFile);
+            versionState.writeDelimitedTo(output);
+            xLocSetVSCache.put(fileId, versionState);
+        } finally {
+            if (output != null) {
+                output.close();
+            }
+        }
+    }
 }

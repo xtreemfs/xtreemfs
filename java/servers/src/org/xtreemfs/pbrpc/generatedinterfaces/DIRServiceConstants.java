@@ -1,4 +1,4 @@
-//automatically generated from DIR.proto at Thu Jul 10 14:56:46 CEST 2014
+//automatically generated from DIR.proto at Thu Dec 11 16:09:37 CET 2014
 //(c) 2014. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;

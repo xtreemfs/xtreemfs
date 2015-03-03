@@ -89,6 +89,7 @@ enum ErrorType {
   INTERNAL_SERVER_ERROR = 5,
   ERRNO = 6,
   REDIRECT = 7,
+  INVALID_VIEW = 8,
   IO_ERROR = 100
 };
 bool ErrorType_IsValid(int value);

@@ -8,6 +8,7 @@ package org.xtreemfs.foundation.flease.acceptor;
 
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicReference;
+
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 
@@ -25,11 +26,12 @@ public class FleaseAcceptorCell implements Serializable {
     AtomicReference<FleaseMessage> latestLearn;
 
     
-    /** timestamp for last access
-     */
+    /** timestamp for last access **/
     public long lastAccess;
 
     private int viewId;
+
+    private boolean viewInvalidated = false;
             
     /**
      * Creates a new instance of CoordinationCell
@@ -109,21 +111,37 @@ public class FleaseAcceptorCell implements Serializable {
         sb.append("\n");
         
         return sb.toString();
-
     }
 
     /**
-     * @return the viewId
+     * @return The most recently set viewId.
      */
     public int getViewId() {
         return viewId;
     }
 
     /**
-     * @param viewId the viewId to set
+     * Set the acceptors viewId and clears the viewInvalidated flag.
+     * 
+     * @param viewId
+     *            The viewId to set.
      */
     public void setViewId(int viewId) {
         this.viewId = viewId;
+        this.viewInvalidated = false;
     }
 
+    /**
+     * @return true if this view is invalidated.
+     */
+    public boolean isViewInvalidated() {
+        return viewInvalidated;
+    }
+
+    /**
+     * Invalidate the current view.
+     */
+    public void invalidateView() {
+        viewInvalidated = true;
+    }
 }

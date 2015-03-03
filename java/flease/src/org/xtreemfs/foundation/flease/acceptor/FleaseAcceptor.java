@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.flease.FleaseConfig;
@@ -101,7 +102,13 @@ public class FleaseAcceptor {
 
     public void setViewId(ASCIIString cellId, int viewId) {
         FleaseAcceptorCell cell = getCell(cellId);
-        cell.setViewId(viewId);
+
+        // Set the viewId or invalidate the cell if the VIEW_ID_INVALIDATED is passed.
+        if (viewId == FleaseMessage.VIEW_ID_INVALIDATED) {
+            cell.invalidateView();
+        } else {
+            cell.setViewId(viewId);
+        }
     }
     
     private FleaseAcceptorCell getCell(FleaseMessage msg) {
@@ -118,9 +125,17 @@ public class FleaseAcceptor {
             if ((cc.lastAccess+config.getCellTimeout()) < System.currentTimeMillis()) {
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication,this,"A GCed cell "+cellId);
-                //cell is outdated and GCed
-                cc = new FleaseAcceptorCell();
-                cells.put(cellId,cc);
+                // Cell is outdated and GCed.
+
+                // Create a new cell and transfer the previous view.
+                FleaseAcceptorCell tmp = new FleaseAcceptorCell();
+                tmp.setViewId(cc.getViewId());
+                if (cc.isViewInvalidated()) {
+                    tmp.invalidateView();
+                }
+
+                cells.put(cellId, tmp);
+                cc = tmp;
             }
         }
         /*if (Logging.isDebug())
@@ -309,19 +324,19 @@ public class FleaseAcceptor {
 
 
         assert(msg.getCellId() != null);
-
-        final int myViewId = getCell(msg.getCellId()).getViewId();
-        if ( (myViewId == FleaseMessage.VIEW_ID_INVALIDATED) ||
-             (myViewId > msg.getViewId()) ) {
-            //MOEEEEp
-            FleaseMessage response = new FleaseMessage(FleaseMessage.MsgType.MSG_WRONG_VIEW, msg);
-            response.setViewId(myViewId);
-            return response;
-        }
-        if (myViewId < msg.getViewId()) {
-            //notify listener
+        final FleaseAcceptorCell cc = getCell(msg.getCellId());
+        
+        if (cc.getViewId() < msg.getViewId()) {
+            // If the local view is lower than the delivered one, the view listener has to be informed to update
+            // the local view. But the request can still be answered.
             viewListener.viewIdChangeEvent(msg.getCellId(), msg.getViewId());
-            return null;
+
+        } else if (cc.getViewId() > msg.getViewId() || (cc.getViewId() == msg.getViewId() && cc.isViewInvalidated())) {
+            // If the request is from an older view, or the a view that has been invalidated on this
+            // AcceptorCell, the request has to be aborted.
+            FleaseMessage response = new FleaseMessage(FleaseMessage.MsgType.MSG_WRONG_VIEW, msg);
+            response.setViewId(cc.getViewId());
+            return response;
         }
 
         FleaseMessage response = null;
@@ -342,9 +357,6 @@ public class FleaseAcceptor {
             Logging.logMessage(Logging.LEVEL_DEBUG,this,"response %s",(response != null) ? response.toString() : "<empty>");*/
 
         return response;
-                    
-                    
-        
     }
 
     /*private void notifyLeaseListener(FleaseAcceptorCell cell, ASCIIString leaseHolder, long leaseTimeout) {

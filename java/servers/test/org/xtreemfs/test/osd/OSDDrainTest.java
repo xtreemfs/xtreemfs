@@ -262,6 +262,12 @@ public class OSDDrainTest {
                 assertEquals(testEnv.getMRCAddress(), fileInfo.mrcAddress);
             }
 
+            // get the current replica configuration
+            fileInfos = osdDrain.getReplicaInfo(fileInfos);
+
+            // Handle r/w coordinated files and remove them from the file info list.
+            fileInfos = osdDrain.drainCoordinatedFiles(fileInfos);
+
             // set ReplicationUpdatePolicy to RONLY
             fileInfos = osdDrain.setReplicationUpdatePolicyRonly(fileInfos);
             for (File file : files) {
@@ -269,13 +275,16 @@ public class OSDDrainTest {
             }
 
             // set Files read-only
-            fileInfos = osdDrain.setFilesReadOnlyAttribute(fileInfos, true);
+            fileInfos = osdDrain.setFilesReadOnlyAttribute(fileInfos);
             for (File file : files) {
                 assertTrue(file.isReadOnly());
             }
 
             // start second OSD
             osdServer.add(new OSD(osdConfig2));
+
+            // wait until the OSD is registered and known to the MRC
+            Thread.sleep(10 * 1000);
 
             // create replications
             fileInfos = osdDrain.createReplicasForFiles(fileInfos);
@@ -299,24 +308,20 @@ public class OSDDrainTest {
             }
 
             // set every file to read/write again which wasn't set to read-only before
-            List<FileInformation> toSetROList = new LinkedList<FileInformation>();
-            for (FileInformation fileInfo : fileInfos) {
-                if (!fileInfo.wasAlreadyReadOnly)
-                    toSetROList.add(fileInfo);
-            }
-            osdDrain.setFilesReadOnlyAttribute(toSetROList, false);
+            osdDrain.resetFilesReadOnlyAttribute(fileInfos);
             for (File file : files) {
                 assertFalse(file.isReadOnly());
             }
 
             // set ReplicationUpdatePolicy to original value
-            osdDrain.setReplicationPolicyToOriginal(fileInfos);
+            osdDrain.resetReplicationUpdatePolicy(fileInfos);
             for (File file : files) {
                 assertEquals(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE, file.getReplicaUpdatePolicy());
             }
 
         } catch (OSDDrainException e) {
             osdDrain.handleException(e, true);
+            throw e;
         }
 
         // test if files are the samel like before
@@ -409,11 +414,17 @@ public class OSDDrainTest {
             // get address of MRC which is responsible for every file
             osdDrain.updateMRCAddresses(fileInfos);
 
+            // get the current replica configuration
+            fileInfos = osdDrain.getReplicaInfo(fileInfos);
+
+            // Handle r/w coordinated files and remove them from the file info list.
+            fileInfos = osdDrain.drainCoordinatedFiles(fileInfos);
+
             // set ReplicationUpdatePolicy to RONLY
             fileInfos = osdDrain.setReplicationUpdatePolicyRonly(fileInfos);
 
             // set Files read-only
-            fileInfos = osdDrain.setFilesReadOnlyAttribute(fileInfos, true);
+            fileInfos = osdDrain.setFilesReadOnlyAttribute(fileInfos);
 
             // create replications
             fileInfos = osdDrain.createReplicasForFiles(fileInfos);
@@ -431,24 +442,20 @@ public class OSDDrainTest {
             }
 
             // set every file to read/write again which wasn't set to read-only before
-            List<FileInformation> toSetROList = new LinkedList<FileInformation>();
-            for (FileInformation fileInfo : fileInfos) {
-                if (!fileInfo.wasAlreadyReadOnly)
-                    toSetROList.add(fileInfo);
-            }
-            osdDrain.setFilesReadOnlyAttribute(toSetROList, false);
+            osdDrain.resetFilesReadOnlyAttribute(fileInfos);
             for (File file : files) {
                 assertFalse(file.isReadOnly());
             }
 
             // set ReplicationUpdatePolicy to original value
-            osdDrain.setReplicationPolicyToOriginal(fileInfos);
+            osdDrain.resetReplicationUpdatePolicy(fileInfos);
             for (File file : files) {
                 assertEquals(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE, file.getReplicaUpdatePolicy());
             }
 
         } catch (OSDDrainException e) {
             osdDrain.handleException(e, true);
+            throw e;
         }
         // test if files are the same like before
         for (int i = 0; i < NUMBER_OF_FILES; i++) {

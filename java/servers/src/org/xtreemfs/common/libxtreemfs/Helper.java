@@ -8,6 +8,8 @@ package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
@@ -18,6 +20,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDSelectionPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
@@ -117,6 +120,19 @@ public class Helper {
         // Get the UUID for the first replica (r=0) and the head OSD (i.e. the
         // first stripe, s=0).
         return getOSDUUIDFromXlocSet(xlocs, 0, 0);
+    }
+
+    /**
+     * Creates a list containing the UUIDs for the head OSD of every replica in the XLocSet.
+     */
+    public static List<String> getOSDUUIDsFromXlocSet(XLocSet xlocs) {
+        List<String> uuids = new ArrayList<String>(xlocs.getReplicasCount());
+
+        for (int i = 0; i < xlocs.getReplicasCount(); i++) {
+            uuids.add(xlocs.getReplicas(i).getOsdUuids(0));
+        }
+
+        return uuids;
     }
 
     static public long extractFileIdFromXcap(XCap xcap) {
@@ -296,5 +312,22 @@ public class Helper {
         }
 
         return policiesSB.toString();
+    }
+
+    /**
+     * Convert the given flags to their corresponding bit patterns and combine them by an or.
+     * 
+     * @param flags
+     *            Variable number of SYSTEM_V_FCNTL flags
+     * @return bit pattern as an integer of the or'ed flags
+     */
+    public static int flagsToInt(SYSTEM_V_FCNTL... flags) {
+        int flagsInt = 0;
+        
+        for (SYSTEM_V_FCNTL flag: flags) {
+            flagsInt = flagsInt | flag.getNumber();
+        }
+
+        return flagsInt;
     }
 }
