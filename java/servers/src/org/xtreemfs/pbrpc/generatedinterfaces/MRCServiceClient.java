@@ -1,5 +1,5 @@
-//automatically generated from MRC.proto at Thu Dec 04 15:07:46 CET 2014
-//(c) 2014. See LICENSE file for details.
+//automatically generated from MRC.proto at Tue Mar 03 16:20:17 CET 2015
+//(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
 
@@ -542,6 +542,19 @@ public class MRCServiceClient {
     public RPCResponse<GlobalTypes.FileCredentials> xtreemfs_get_file_credentials(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, String file_id) throws IOException {
          final MRC.xtreemfs_get_file_credentialsRequest msg = MRC.xtreemfs_get_file_credentialsRequest.newBuilder().setFileId(file_id).build();
          return xtreemfs_get_file_credentials(server, authHeader, userCreds,msg);
+    }
+
+    public RPCResponse<GlobalTypes.XLocSet> xtreemfs_get_xlocset(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, MRC.xtreemfs_get_xlocsetRequest input) throws IOException {
+         if (server == null) server = defaultServer;
+         if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
+         RPCResponse<GlobalTypes.XLocSet> response = new RPCResponse<GlobalTypes.XLocSet>(GlobalTypes.XLocSet.getDefaultInstance());
+         client.sendRequest(server, authHeader, userCreds, 20001, 51, input, null, response, false);
+         return response;
+    }
+
+    public RPCResponse<GlobalTypes.XLocSet> xtreemfs_get_xlocset(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, String file_id, String path, String volume_name, GlobalTypes.XCap xcap) throws IOException {
+         final MRC.xtreemfs_get_xlocsetRequest msg = MRC.xtreemfs_get_xlocsetRequest.newBuilder().setFileId(file_id).setPath(path).setVolumeName(volume_name).setXcap(xcap).build();
+         return xtreemfs_get_xlocset(server, authHeader, userCreds,msg);
     }
 
     public boolean clientIsAlive() {

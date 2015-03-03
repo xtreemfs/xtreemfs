@@ -11,6 +11,7 @@ import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.InternalServerErrorException;
+import org.xtreemfs.common.libxtreemfs.exceptions.InvalidViewException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
 import org.xtreemfs.foundation.buffer.BufferPool;
@@ -56,7 +57,7 @@ public class RPCCaller {
                     boolean delayNextTry, int maxRetries, C callRequest, CallGenerator<C, R> callGen) throws IOException,
                     PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
         return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses,
-                delayNextTry, options.getMaxTries(), callRequest, null, callGen);
+                delayNextTry, maxRetries, callRequest, null, callGen);
     }
 
     protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
@@ -79,6 +80,10 @@ public class RPCCaller {
         R response = null;
         try {
             while (++attempt <= maxTries || maxTries == 0) {
+                // Retry only if it is a recoverable error (REDIRECT, IO_ERROR, INTERNAL_SERVER_ERROR).
+                boolean retry = false;
+                IOException responseError = null;
+
                 RPCResponse<R> r = null;
                 try {
                     // create an InetSocketAddresse depending on the uuidIterator and
@@ -104,6 +109,7 @@ public class RPCCaller {
                         BufferPool.free(r.getData());
                     }
                 } catch (PBRPCException pbe) {
+                    responseError = pbe;
                     // handle special redirect
                     if (pbe.getErrorType().equals(ErrorType.REDIRECT)) {
                         assert (pbe.getRedirectToServerUUID() != null);
@@ -131,56 +137,18 @@ public class RPCCaller {
                         it.markUUIDAsFailed(it.getUUID());
                         continue;
                     }
-                    // Retry (and delay) only if at least one retry is left
-                    if (((attempt < maxTries || maxTries == 0) ||
-                    // or this last retry should be delayed
-                            (attempt == maxTries && delayNextTry))
-                            &&
-                            // AND it is an recoverable error.
-                            (pbe.getErrorType().equals(ErrorType.IO_ERROR) || pbe.getErrorType().equals(
-                                    ErrorType.INTERNAL_SERVER_ERROR))) {
 
-                        // Log only the first retry.
-                        if (attempt == 1 && maxTries != 1) {
-                            String retriesLeft =
-                                    (maxTries == 0) ? ("infinite") : (String.valueOf(maxTries - attempt));
-                            Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, pbe,
-                                    "Got no response from %s,"
-                                            + "retrying (%s attemps left, waiting at least %s seconds"
-                                            + " between two attemps)", it.getUUID(), retriesLeft,
-                                    options.getRetryDelay_s());
-                        }
+                    if (pbe.getErrorType().equals(ErrorType.IO_ERROR)
+                            || pbe.getErrorType().equals(ErrorType.INTERNAL_SERVER_ERROR)) {
                         // Mark the current UUID as failed and get the next one.
                         it.markUUIDAsFailed(it.getUUID());
-                        waitDelay(options.getRetryDelay_s());
-                        continue;	
-                    } else {
-                        throw pbe;
+                        retry = true;
                     }
                 } catch (IOException ioe) {
-                    // Retry (and delay) only if at least one retry is left
-                    if ((attempt < maxTries || maxTries == 0)
-                            // or this last retry should be delayed
-                            || (attempt == maxTries && delayNextTry)) {
-                        // Log only the first retry.
-                        if (attempt == 1 && maxTries != 1) {
-                            String retriesLeft =
-                                    (maxTries == 0) ? ("infinite") : (String.valueOf(maxTries - attempt));
-                            Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, ioe, "Got no response from %s, "
-                                    + "retrying (%s attemps left, waiting at least %s seconds"
-                                    + " between two attemps) Error was: %s", it.getUUID(), retriesLeft,
-                                    options.getRetryDelay_s(), ioe.getMessage());
-                            if (Logging.isDebug()) {
-                                Logging.logError(Logging.LEVEL_DEBUG, null, ioe);
-                            }
-                        }
-                        // Mark the current UUID as failed and get the next one.
-                        it.markUUIDAsFailed(it.getUUID());
-                        waitDelay(options.getRetryDelay_s());
-                        continue;
-                    } else {
-                        throw ioe;
-                    }
+                    responseError = ioe;
+                    // Mark the current UUID as failed and get the next one.
+                    it.markUUIDAsFailed(it.getUUID());
+                    retry = true;
                 } catch (InterruptedException ie) {
                     // TODO: Ask what that is.
                     if (options.getInterruptSignal() == 0) {
@@ -196,6 +164,33 @@ public class RPCCaller {
                         r.freeBuffers();
                     }
                 }
+
+                if (responseError != null) {
+                    // Log only the first retry.
+                    if (attempt == 1 && maxTries != 1) {
+                        String retriesLeft = (maxTries == 0) ? ("infinite") : (String.valueOf(maxTries - attempt));
+                        Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, responseError,
+                                "Got no response from %s, " + "retrying (%s attemps left, waiting at least %s seconds"
+                                        + " between two attemps) Error was: %s", it.getUUID(), retriesLeft,
+                                options.getRetryDelay_s(), responseError.getMessage());
+                        if (Logging.isDebug()) {
+                            Logging.logError(Logging.LEVEL_DEBUG, null, responseError);
+                        }
+                    }
+                    
+                    // Retry (and delay)?
+                    if (retry && 
+                            // Retry (and delay) only if at least one retry is left
+                            (attempt < maxTries || maxTries == 0)
+                            // or this last retry should be delayed
+                            || (attempt == maxTries && delayNextTry)) {
+                        waitDelay(options.getRetryDelay_s());
+                        continue;
+                    } else {
+                        throw responseError;
+                    }
+                }
+
                 return response;
             }
         } catch (PBRPCException e) {
@@ -211,7 +206,7 @@ public class RPCCaller {
      * @param delay_s
      * @throws IOException
      */
-    private static void waitDelay(long delay_s) throws IOException {
+    static void waitDelay(long delay_s) throws IOException {
         try {
             Thread.sleep(delay_s * 1000);
         } catch (InterruptedException e) {
@@ -230,8 +225,8 @@ public class RPCCaller {
      * @param e
      * @param it
      */
-    private static void handleErrorAfterMaxTriesExceeded(PBRPCException e, UUIDIterator it)
-            throws PosixErrorException, IOException, InternalServerErrorException, XtreemFSException {
+    private static void handleErrorAfterMaxTriesExceeded(PBRPCException e, UUIDIterator it) throws PosixErrorException,
+            IOException, InternalServerErrorException, InvalidViewException, XtreemFSException {
         // By default all errors are logged as errors.
         int logLevel = Logging.LEVEL_INFO;
 
@@ -259,6 +254,11 @@ public class RPCCaller {
         case REDIRECT:
             throw new XtreemFSException("This error (A REDIRECT error was not handled "
                     + "and retried but thrown instead) should never happen. Report this");
+        case INVALID_VIEW:
+            Logging.logMessage(logLevel, Category.replication, e,
+                    "The server %s denied the requested operation because the clients view is outdated. Error: %s",
+                    it.getUUID(), e.getErrorMessage());
+            throw new InvalidViewException(e.getErrorMessage());
         default:
             errorMsg =
                     "The server " + it.getUUID() + "returned an error: " + e.getErrorType().name()

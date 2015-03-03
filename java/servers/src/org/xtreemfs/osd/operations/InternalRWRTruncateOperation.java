@@ -134,7 +134,4 @@ public final class InternalRWRTruncateOperation extends OSDOperation {
     public void startInternalEvent(Object[] args) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    
-
 }

@@ -8,15 +8,19 @@
 
 package org.xtreemfs.osd.stages;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.ReplicaUpdatePolicies;
+import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.LRUCache;
 import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
@@ -35,12 +39,17 @@ import org.xtreemfs.osd.OpenFileTable.OpenFileTableEntry;
 import org.xtreemfs.osd.operations.EventCloseFile;
 import org.xtreemfs.osd.operations.EventCreateFileVersion;
 import org.xtreemfs.osd.operations.OSDOperation;
+import org.xtreemfs.osd.rwre.ReplicaUpdatePolicy;
 import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.osd.storage.CowPolicy.cowMode;
 import org.xtreemfs.osd.storage.MetadataCache;
+import org.xtreemfs.osd.storage.StorageLayout;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.XLocSetVersionState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 import com.google.protobuf.Message;
@@ -66,6 +75,10 @@ public class PreprocStage extends Stage {
     public final static int                                 STAGEOP_PING_FILE          = 14;
     
     public final static int                                 STAGEOP_CLOSE_FILE         = 15;
+    
+    public final static int                                 STAGEOP_INVALIDATE_XLOC    = 16;
+
+    public final static int                                 STAGEOP_UPDATE_XLOC        = 17;
 
     private final static long                               OFT_CLEAN_INTERVAL         = 1000 * 60;
     
@@ -90,6 +103,8 @@ public class PreprocStage extends Stage {
     
     private final MetadataCache                             metadataCache;
     
+    private final StorageLayout                             layout;
+
     private final OSDRequestDispatcher                      master;
     
     private final boolean                                   ignoreCaps;
@@ -97,7 +112,8 @@ public class PreprocStage extends Stage {
     private static final int                                MAX_CAP_CACHE              = 20;
     
     /** Creates a new instance of AuthenticationStage */
-    public PreprocStage(OSDRequestDispatcher master, MetadataCache metadataCache, int maxRequestsQueueLength) {
+    public PreprocStage(OSDRequestDispatcher master, MetadataCache metadataCache, StorageLayout layout,
+            int maxRequestsQueueLength) {
         
         super("OSD PreProcSt", maxRequestsQueueLength);
         
@@ -106,6 +122,7 @@ public class PreprocStage extends Stage {
         xLocCache = new LRUCache<String, XLocations>(10000);
         this.master = master;
         this.metadataCache = metadataCache;
+        this.layout = layout;
         this.ignoreCaps = master.getConfig().isIgnoreCaps();
     }
     
@@ -142,6 +159,21 @@ public class PreprocStage extends Stage {
             }
         }
         
+        // Check if the request is from the same view (same XLocationSet version) and install newer one.
+        if (!request.getOperation().bypassViewValidation() && request.getLocationList() != null) {
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "STAGEOP VIEW");
+            ErrorResponse error = processValidateView(request);
+            if (error != null) {
+                callback.parseComplete(request, error);
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
+                            "request failed with an invalid view: %s", ErrorUtils.formatError(error));
+                }
+                return;
+            }
+        }
+
         String fileId = request.getFileId();
         if (fileId != null) {
             
@@ -460,6 +492,12 @@ public class PreprocStage extends Stage {
         case STAGEOP_CLOSE_FILE:
             doClose(m);
             break;
+        case STAGEOP_INVALIDATE_XLOC:
+            doInvalidateXLocSet(m);
+            break;
+        case STAGEOP_UPDATE_XLOC:
+            doUpdateXLocSetFromFlease(m);
+            break;
         default:
             Logging.logMessage(Logging.LEVEL_ERROR, this, "unknown stageop called: %d", requestedMethod);
             break;
@@ -605,8 +643,7 @@ public class PreprocStage extends Stage {
             return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES, "capability was issued for another file than the one requested");
         }
         
-        // check if the capability provides sufficient access rights for
-        // requested operation
+        // check if the capability provides sufficient access rights for requested operation
         if (rq.getOperation().getProcedureId() == OSDServiceConstants.PROC_ID_READ) {
             
             if ((rqCap.getAccessMode() & (SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY.getNumber())) != 0)
@@ -639,6 +676,170 @@ public class PreprocStage extends Stage {
         return null;
     }
     
+    private ErrorResponse processValidateView(OSDRequest request) {
+        String fileId = request.getFileId();
+        if (fileId == null || fileId.length() == 0) {
+            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL,
+                    "Invalid view. file_id must not be empty.");
+        }
+
+        XLocSetVersionState state;
+        try {
+            state = layout.getXLocSetVersionState(fileId);
+        } catch (IOException e) {
+            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
+                    "Invalid view. Local version could not be read.");
+        }
+
+        XLocations locset = request.getLocationList();
+        if (state.getVersion() == locset.getVersion() && !state.getInvalidated()) {
+            // The request is based on the same (valid) view.
+            return null;
+        } else if (locset.getVersion() > state.getVersion()) {
+            XLocSetVersionState newstate = state.toBuilder()
+                    .setInvalidated(false)
+                    .setVersion(locset.getVersion())
+                    .setModifiedTime(TimeSync.getGlobalTime())
+                    .build();
+            
+            try {
+                // Persist the view.
+                layout.setXLocSetVersionState(fileId, newstate);
+                // Inform flease about the new view.
+                // TODO(jdillmann): Use centralized method to check if a lease is required.
+                if (locset.getNumReplicas() > 1
+                        && ReplicaUpdatePolicies.isRwReplicated(locset.getReplicaUpdatePolicy())) {
+                    ASCIIString cellId = ReplicaUpdatePolicy.fileToCellId(fileId);
+                    master.getRWReplicationStage().setFleaseView(fileId, cellId, newstate);
+                }
+            } catch (IOException e) {
+                return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
+                        "Invalid view. Local version could not be written.");
+            }
+
+            // The request is valid, because it is based on a newer view.
+            return null;
+        }
+
+        // The request is either based on an outdated view, or the replica is invalidated.
+        String errorMessage = state.getInvalidated() ? "Replica is invalidated."
+                : "The request is based on an outdated view" 
+                        + "(" + locset.getVersion() + " < " + state.getVersion() + ").";
+        return ErrorUtils.getErrorResponse(ErrorType.INVALID_VIEW, POSIXErrno.POSIX_ERROR_NONE, 
+                "View is not valid. " + errorMessage);
+    }
+
+    /**
+     * Process a viewIdChangeEvent from flease and update the persistent version/state
+     */
+    public void updateXLocSetFromFlease(ASCIIString cellId, int version) {
+        enqueueOperation(STAGEOP_UPDATE_XLOC, new Object[] { cellId, version }, null, null);
+    }
+
+    private void doUpdateXLocSetFromFlease(StageRequest m) {
+        final ASCIIString cellId = (ASCIIString) m.getArgs()[0];
+        final int version = (Integer) m.getArgs()[1];
+        final String fileId = ReplicaUpdatePolicy.cellToFileId(cellId);
+
+        XLocSetVersionState state;
+        try {
+            state = layout.getXLocSetVersionState(fileId);
+        } catch (IOException e) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,
+                    "VersionState could not be read for fileId: %s", fileId);
+            return;
+        }
+
+        // If a response from a newer View is encountered, we have to install it and leave the invalidated state.
+        if (state.getVersion() < version) {
+            state = state.toBuilder()
+                        .setInvalidated(false)
+                        .setVersion(version)
+                        .setModifiedTime(TimeSync.getGlobalTime())
+                        .build();
+            try {
+                // persist the version
+                layout.setXLocSetVersionState(fileId, state);
+                // and pass it back to flease
+                master.getRWReplicationStage().setFleaseView(fileId, cellId, state);
+            } catch (IOException e) {
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,
+                        "VersionState could not be written for fileId: %s", fileId);
+                return;
+            }
+
+        }
+
+        // If the local version is greater then the one flease got from it responses, the other replicas have
+        // to update their version. There exists no path to decrement the version if it has been seen once.
+        return;
+    }
+
+    /**
+     * Invalidate the current XLocSet. The replica will not respond to read/write/truncate or flease operations until a
+     * new XLocSet is installed.<br>
+     * If the request is based on a newer XLocSet, the local XLocSet version will be updated. If the request is from an
+     * older one, an error is returned.
+     */
+    public void invalidateXLocSet(OSDRequest request, FileCredentials fileCreds, boolean validateView,
+            InvalidateXLocSetCallback listener) {
+        enqueueOperation(STAGEOP_INVALIDATE_XLOC, new Object[] { fileCreds, validateView }, request, listener);
+    }
+
+    private void doInvalidateXLocSet(StageRequest m) {
+        final OSDRequest request = m.getRequest();
+        final String fileId = request.getFileId();
+        final XLocations xLoc = request.getLocationList();
+        final FileCredentials fileCreds = (FileCredentials) m.getArgs()[0];
+        final boolean validateView = (Boolean) m.getArgs()[1];
+        final InvalidateXLocSetCallback callback = (InvalidateXLocSetCallback) m.getCallback();
+        
+        XLocSetVersionState state;
+        try {
+            XLocSetVersionState.Builder stateBuilder = layout.getXLocSetVersionState(fileId).toBuilder();
+            
+            // Return an error if the local version is newer then the requested one and the replica is not already
+            // invalidated.
+            if (validateView && !stateBuilder.getInvalidated() && stateBuilder.getVersion() > xLoc.getVersion()) {
+                throw new InvalidXLocationsException("View is not valid. The requests is based on an outdated view.");
+            }
+
+            // Update the local version if the request is newer.
+            if (stateBuilder.getVersion() < xLoc.getVersion()) {
+                stateBuilder.setVersion(xLoc.getVersion());
+            }
+            
+            // Invalidate the replica.
+            stateBuilder.setInvalidated(true)
+                        .setModifiedTime(TimeSync.getGlobalTime());
+
+            state = stateBuilder.build();
+            layout.setXLocSetVersionState(fileId, state);
+            
+            // TODO(jdillmann): Use centralized method to check if a lease is required.
+            if (xLoc.getNumReplicas() > 1 && ReplicaUpdatePolicies.isRwReplicated(xLoc.getReplicaUpdatePolicy())) {
+                master.getRWReplicationStage().invalidateReplica(fileId, fileCreds, xLoc, callback);
+            } else {
+                callback.invalidateComplete(LeaseState.NONE, null);
+            }
+
+        } catch (InvalidXLocationsException e) {
+            ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.INVALID_VIEW, POSIXErrno.POSIX_ERROR_NONE,
+                    e.getMessage(), e);
+            callback.invalidateComplete(LeaseState.NONE, error);
+        } catch (IOException e) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,
+                    "VersionState could not be written for fileId: %s", fileId);
+            ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
+                    "Invalid view. Local version could not be written.");
+            callback.invalidateComplete(LeaseState.NONE, error);
+        }
+    }
+
+    public static interface InvalidateXLocSetCallback {
+        public void invalidateComplete(LeaseState leaseState, ErrorResponse error);
+    }
+
     public int getNumOpenFiles() {
         return oft.getNumOpenFiles();
     }

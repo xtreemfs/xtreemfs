@@ -28,14 +28,14 @@ class Options;
 class XCapHandler;
 
 class RPCOptions {
- public: 
+ public:
   typedef boost::function0<int> WasInterruptedCallback;
 
-  RPCOptions(int max_retries, 
+  RPCOptions(int max_retries,
              int retry_delay_s,
              bool delay_last_attempt,
              WasInterruptedCallback was_interrupted_cb)
-     : max_retries_(max_retries), 
+     : max_retries_(max_retries),
        retry_delay_s_(retry_delay_s),
        delay_last_attempt_(delay_last_attempt),
        was_interrupted_cb_(was_interrupted_cb) {}
@@ -43,7 +43,7 @@ class RPCOptions {
   RPCOptions(int max_retries,
              int retry_delay_s,
              WasInterruptedCallback was_interrupted_cb)
-     : max_retries_(max_retries), 
+     : max_retries_(max_retries),
        retry_delay_s_(retry_delay_s),
        delay_last_attempt_(false),
        was_interrupted_cb_(was_interrupted_cb) {}

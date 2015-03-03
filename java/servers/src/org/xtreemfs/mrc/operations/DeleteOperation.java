@@ -19,11 +19,11 @@ import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
+import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.DatabaseResultSet;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.VolumeManager;
-import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.utils.Converter;
@@ -101,7 +101,7 @@ public class DeleteOperation extends MRCOperation {
         if (!file.isDirectory()) {
             
             // create a deletion capability for the file
-            Capability cap = new Capability(volume.getId() + ":" + file.getId(),
+            Capability cap = new Capability(MRCHelper.createGlobalFileId(volume, file),
                 FileAccessManager.NON_POSIX_DELETE, master.getConfig().getCapabilityTimeout(),
                 Integer.MAX_VALUE, ((InetSocketAddress) rq.getRPCRequest().getSenderAddress()).getAddress()
                         .getHostAddress(), file.getEpoch(), false,

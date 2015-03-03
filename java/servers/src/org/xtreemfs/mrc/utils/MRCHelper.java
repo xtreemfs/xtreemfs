@@ -84,6 +84,17 @@ public class MRCHelper {
         }
     }
 
+    /**
+     * Create a global fileId for the file on the volume.
+     *
+     * @param volume
+     * @param file
+     * @return Global fileId
+     */
+    public static String createGlobalFileId(VolumeInfo volume, FileMetadata file) {
+        return volume.getId() + ":" + file.getId();
+    }
+
     public static final String POLICY_ATTR_PREFIX = "policies";
 
     public static final String VOL_ATTR_PREFIX    = "volattr";
@@ -352,7 +363,7 @@ public class MRCHelper {
                     }
                 }
             case file_id:
-                return sMan.getVolumeInfo().getId() + ":" + file.getId();
+                return createGlobalFileId(sMan.getVolumeInfo(), file);
             case object_type:
                 String ref = sMan.getSoftlinkTarget(file.getId());
                 return ref != null ? "3" : file.isDirectory() ? "2" : "1";

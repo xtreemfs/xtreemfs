@@ -22,6 +22,7 @@ import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.Converter;
+import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
@@ -68,7 +69,7 @@ public class GetFileCredentialsOperation extends MRCOperation {
         String tracingPolicy = volume.getTracingPolicy();
 
         // create FileCredentials
-        Capability cap = new Capability(volume.getId() + ":" + file.getId(), FileAccessManager.O_RDONLY,
+        Capability cap = new Capability(MRCHelper.createGlobalFileId(volume, file), FileAccessManager.O_RDONLY,
                 master.getConfig().getCapabilityTimeout(), TimeSync.getGlobalTime() / 1000
                         + master.getConfig().getCapabilityTimeout(), ((InetSocketAddress) rq.getRPCRequest()
                         .getSenderAddress()).getAddress().getHostAddress(), file.getEpoch(), false,

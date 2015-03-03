@@ -366,6 +366,7 @@ done
 init_params
 drop_caches
 
+echo "Running:" $0 $@  >&2
 
 for i in $THREADS; do
   size="$(echo "$SIZE/$i"|bc)"
@@ -393,7 +394,7 @@ for i in $THREADS; do
   if [ $TYPE != "sw" ] && [ $TYPE != "usw" ]; then
     volume_index=$(echo "$i-1" | bc)
     for i in $(seq 0 $volume_index); do
-      rmfs.xtreemfs -f $MRC/benchmark$i
+      rmfs.xtreemfs -f $MRC/benchmark$i >&2
       echo "Remove volume benchmark$i"  >&2
     done
     cleanup_osd

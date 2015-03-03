@@ -12,6 +12,7 @@
 
 #include <boost/optional.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 #include <boost/thread/condition.hpp>
 #include <boost/thread/mutex.hpp>
 #include <gtest/gtest_prod.h>
@@ -52,20 +53,6 @@ class FileInfo {
            const xtreemfs::pbrpc::XLocSet& xlocset,
            const std::string& client_uuid);
   ~FileInfo();
-
-  inline void UpdateXLocSetAndRest(const xtreemfs::pbrpc::XLocSet& new_xlocset,
-                                   bool replicate_on_close) {
-    boost::mutex::scoped_lock lock(xlocset_mutex_);
-    xlocset_.CopyFrom(new_xlocset);
-    replicate_on_close_ = replicate_on_close;
-  }
-
-  /** Copies the XlocSet into new_xlocset. */
-  inline void GetXLocSet(xtreemfs::pbrpc::XLocSet* new_xlocset) {
-    assert(new_xlocset);
-    boost::mutex::scoped_lock lock(xlocset_mutex_);
-    new_xlocset->CopyFrom(xlocset_);
-  }
 
   /** Returns a new FileHandle object to which xcap belongs.
    *
@@ -197,6 +184,42 @@ class FileInfo {
       bool* wait_completed,
       boost::mutex* wait_completed_mutex);
 
+
+  void UpdateXLocSetAndRest(const xtreemfs::pbrpc::XLocSet& new_xlocset,
+                                   bool replicate_on_close);
+
+  void UpdateXLocSetAndRest(const xtreemfs::pbrpc::XLocSet& new_xlocset);
+
+  /** Copies the XlocSet into new_xlocset. */
+  void GetXLocSet(xtreemfs::pbrpc::XLocSet* new_xlocset);
+
+  /** Copies the XlocSet into new_xlocset
+   *  and returns the corresponding UUIDContainer.
+   *  The UUIDcontainer is just valid for the associated XLocSet.
+   */
+  boost::shared_ptr<UUIDContainer> GetXLocSetAndUUIDContainer(
+      xtreemfs::pbrpc::XLocSet* new_xlocset);
+
+  /** Non-recursive scoped lock which is used to prevent concurrent XLocSet
+   *  renewals from multiple FileHandles associated to the same FileInfo.
+   *
+   *  @see FileHandleImplementation::RenewXLocSet
+   */
+  class XLocSetRenewalLock {
+    private:
+      boost::mutex& m_;
+
+    public:
+      XLocSetRenewalLock(FileInfo* file_info) :
+          m_(file_info->xlocset_renewal_mutex_) {
+        m_.lock();
+      }
+
+      ~XLocSetRenewalLock() {
+        m_.unlock();
+      }
+  };
+
  private:
   /** Same as FlushPendingFileSizeUpdate(), takes special actions if called by Close(). */
   void FlushPendingFileSizeUpdate(FileHandleImplementation* file_handle,
@@ -238,11 +261,17 @@ class FileInfo {
   /** This UUIDContainer contains all OSD UUIDs for all replicas and is
    *  constructed from the xlocset_ passed to this class on construction.
    *  It is used to construct a custom ContainerUUIDIterator on the fly when
-   *  accessing striped files. */
-  UUIDContainer osd_uuid_container_;
+   *  accessing striped files.
+   *  It is managed by a smart pointer, because it has to outlast every
+   *  ContainerUUIDIterator derived from it.
+   * */
+  boost::shared_ptr<UUIDContainer> osd_uuid_container_;
 
   /** Use this to protect xlocset_ and replicate_on_close_. */
   boost::mutex xlocset_mutex_;
+
+  /** Use this to protect xlocset_ renewals. */
+  boost::mutex xlocset_renewal_mutex_;
 
   /** List of active locks (acts as a cache). The OSD allows only one lock per
    *  (client UUID, PID) tuple. */

@@ -29,6 +29,7 @@ import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
@@ -55,7 +56,6 @@ import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.osd.storage.ObjectInformation;
 import org.xtreemfs.osd.storage.ObjectInformation.ObjectStatus;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
@@ -63,6 +63,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 /**
  * attends to the replication of all objects of this file <br>
@@ -716,9 +717,14 @@ class ReplicatingFile {
                         objectList = internalReadLocalResponse.getObjectSet(0);
                     master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, data,
                         objectList, null);
+                } catch (PBRPCException e) {
+                    osdAvailability.setServiceWasNotAvailable(osd);
+                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, null, null,
+                            e.getErrorResponse());
                 } catch (IOException e) {
                     osdAvailability.setServiceWasNotAvailable(osd);
-                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, null, null, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, e.toString()));
+                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, null, null,
+                            ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, e.toString()));
                     // e.printStackTrace();
                 } catch (InterruptedException e) {
                     // ignore

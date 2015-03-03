@@ -52,6 +52,14 @@ public class UUIDIterator {
         uuids = new ArrayList<UUIDIterator.UUIDItem>();
         currentUUID = null;
     }
+    
+    /**
+     * Creates a new instance of UUIDIterator with an UUID list containing all the UUIDs in the specified collection.
+     */
+    public UUIDIterator(Collection<String> uuids) {
+        this();
+        addUUIDs(uuids);
+    }
 
     /**
      * Appends "uuid" to the list of UUIDs. Does not change the current UUID.
@@ -66,6 +74,9 @@ public class UUIDIterator {
         }
     }
     
+    /**
+     * Appends all the UUIDs in the specified collection to list of UUIDs. Does not change the current UUID.
+     */
     public synchronized void addUUIDs(Collection<String> uuids) {
         for (String uuid : uuids) {
             addUUID(uuid);
@@ -86,6 +97,14 @@ public class UUIDIterator {
     public synchronized void clearAndAddUUID(String uuid) {
         this.clear();
         this.addUUID(uuid);
+    }
+
+    /**
+     * Atomically clears the list and adds all the UUIDs in the specified collection.
+     */
+    public synchronized void clearAndAddUUIDs(Collection<String> uuids) {
+        this.clear();
+        this.addUUIDs(uuids);
     }
 
     /**

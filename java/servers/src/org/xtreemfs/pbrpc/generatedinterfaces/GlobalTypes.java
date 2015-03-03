@@ -702,6 +702,142 @@ public final class GlobalTypes {
   }
 
   /**
+   * Protobuf enum {@code xtreemfs.pbrpc.LeaseState}
+   *
+   * <pre>
+   * The LeaseState for a Replica.
+   * </pre>
+   */
+  public enum LeaseState
+      implements com.google.protobuf.ProtocolMessageEnum {
+    /**
+     * <code>NONE = 0;</code>
+     *
+     * <pre>
+     * The replica's update policy is not using lease.
+     * </pre>
+     */
+    NONE(0, 0),
+    /**
+     * <code>PRIMARY = 1;</code>
+     *
+     * <pre>
+     * The replica is the the primary.
+     * </pre>
+     */
+    PRIMARY(1, 1),
+    /**
+     * <code>BACKUP = 2;</code>
+     *
+     * <pre>
+     * The replica is a backup (and an active primary exists).
+     * </pre>
+     */
+    BACKUP(2, 2),
+    /**
+     * <code>IDLE = 3;</code>
+     *
+     * <pre>
+     * The replica is not active (currently no lease exists).
+     * </pre>
+     */
+    IDLE(3, 3),
+    ;
+
+    /**
+     * <code>NONE = 0;</code>
+     *
+     * <pre>
+     * The replica's update policy is not using lease.
+     * </pre>
+     */
+    public static final int NONE_VALUE = 0;
+    /**
+     * <code>PRIMARY = 1;</code>
+     *
+     * <pre>
+     * The replica is the the primary.
+     * </pre>
+     */
+    public static final int PRIMARY_VALUE = 1;
+    /**
+     * <code>BACKUP = 2;</code>
+     *
+     * <pre>
+     * The replica is a backup (and an active primary exists).
+     * </pre>
+     */
+    public static final int BACKUP_VALUE = 2;
+    /**
+     * <code>IDLE = 3;</code>
+     *
+     * <pre>
+     * The replica is not active (currently no lease exists).
+     * </pre>
+     */
+    public static final int IDLE_VALUE = 3;
+
+
+    public final int getNumber() { return value; }
+
+    public static LeaseState valueOf(int value) {
+      switch (value) {
+        case 0: return NONE;
+        case 1: return PRIMARY;
+        case 2: return BACKUP;
+        case 3: return IDLE;
+        default: return null;
+      }
+    }
+
+    public static com.google.protobuf.Internal.EnumLiteMap<LeaseState>
+        internalGetValueMap() {
+      return internalValueMap;
+    }
+    private static com.google.protobuf.Internal.EnumLiteMap<LeaseState>
+        internalValueMap =
+          new com.google.protobuf.Internal.EnumLiteMap<LeaseState>() {
+            public LeaseState findValueByNumber(int number) {
+              return LeaseState.valueOf(number);
+            }
+          };
+
+    public final com.google.protobuf.Descriptors.EnumValueDescriptor
+        getValueDescriptor() {
+      return getDescriptor().getValues().get(index);
+    }
+    public final com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptorForType() {
+      return getDescriptor();
+    }
+    public static final com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptor() {
+      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor().getEnumTypes().get(5);
+    }
+
+    private static final LeaseState[] VALUES = values();
+
+    public static LeaseState valueOf(
+        com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
+      if (desc.getType() != getDescriptor()) {
+        throw new java.lang.IllegalArgumentException(
+          "EnumValueDescriptor is not for this type.");
+      }
+      return VALUES[desc.getIndex()];
+    }
+
+    private final int index;
+    private final int value;
+
+    private LeaseState(int index, int value) {
+      this.index = index;
+      this.value = value;
+    }
+
+    // @@protoc_insertion_point(enum_scope:xtreemfs.pbrpc.LeaseState)
+  }
+
+  /**
    * Protobuf enum {@code xtreemfs.pbrpc.PORTS}
    *
    * <pre>
@@ -799,7 +935,7 @@ public final class GlobalTypes {
     }
     public static final com.google.protobuf.Descriptors.EnumDescriptor
         getDescriptor() {
-      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor().getEnumTypes().get(5);
+      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor().getEnumTypes().get(6);
     }
 
     private static final PORTS[] VALUES = values();
@@ -876,7 +1012,7 @@ public final class GlobalTypes {
     }
     public static final com.google.protobuf.Descriptors.EnumDescriptor
         getDescriptor() {
-      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor().getEnumTypes().get(6);
+      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor().getEnumTypes().get(7);
     }
 
     private static final CONSTANTS[] VALUES = values();
@@ -1053,7 +1189,7 @@ public final class GlobalTypes {
     }
     public static final com.google.protobuf.Descriptors.EnumDescriptor
         getDescriptor() {
-      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor().getEnumTypes().get(7);
+      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor().getEnumTypes().get(8);
     }
 
     private static final SYSTEM_V_FCNTL[] VALUES = values();
@@ -1176,7 +1312,7 @@ public final class GlobalTypes {
     }
     public static final com.google.protobuf.Descriptors.EnumDescriptor
         getDescriptor() {
-      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor().getEnumTypes().get(8);
+      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor().getEnumTypes().get(9);
     }
 
     private static final REPL_FLAG[] VALUES = values();
@@ -1267,7 +1403,7 @@ public final class GlobalTypes {
     }
     public static final com.google.protobuf.Descriptors.EnumDescriptor
         getDescriptor() {
-      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor().getEnumTypes().get(9);
+      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor().getEnumTypes().get(10);
     }
 
     private static final SERVICES[] VALUES = values();
@@ -3577,7 +3713,7 @@ public final class GlobalTypes {
      * <code>required fixed32 replication_flags = 2;</code>
      *
      * <pre>
-     * Flags to conrol replication, e.g. transfer strategy.
+     * Flags to control replication, e.g. transfer strategy.
      * </pre>
      */
     boolean hasReplicationFlags();
@@ -3585,7 +3721,7 @@ public final class GlobalTypes {
      * <code>required fixed32 replication_flags = 2;</code>
      *
      * <pre>
-     * Flags to conrol replication, e.g. transfer strategy.
+     * Flags to control replication, e.g. transfer strategy.
      * </pre>
      */
     int getReplicationFlags();
@@ -3801,7 +3937,7 @@ public final class GlobalTypes {
      * <code>required fixed32 replication_flags = 2;</code>
      *
      * <pre>
-     * Flags to conrol replication, e.g. transfer strategy.
+     * Flags to control replication, e.g. transfer strategy.
      * </pre>
      */
     public boolean hasReplicationFlags() {
@@ -3811,7 +3947,7 @@ public final class GlobalTypes {
      * <code>required fixed32 replication_flags = 2;</code>
      *
      * <pre>
-     * Flags to conrol replication, e.g. transfer strategy.
+     * Flags to control replication, e.g. transfer strategy.
      * </pre>
      */
     public int getReplicationFlags() {
@@ -4317,7 +4453,7 @@ public final class GlobalTypes {
        * <code>required fixed32 replication_flags = 2;</code>
        *
        * <pre>
-       * Flags to conrol replication, e.g. transfer strategy.
+       * Flags to control replication, e.g. transfer strategy.
        * </pre>
        */
       public boolean hasReplicationFlags() {
@@ -4327,7 +4463,7 @@ public final class GlobalTypes {
        * <code>required fixed32 replication_flags = 2;</code>
        *
        * <pre>
-       * Flags to conrol replication, e.g. transfer strategy.
+       * Flags to control replication, e.g. transfer strategy.
        * </pre>
        */
       public int getReplicationFlags() {
@@ -4337,7 +4473,7 @@ public final class GlobalTypes {
        * <code>required fixed32 replication_flags = 2;</code>
        *
        * <pre>
-       * Flags to conrol replication, e.g. transfer strategy.
+       * Flags to control replication, e.g. transfer strategy.
        * </pre>
        */
       public Builder setReplicationFlags(int value) {
@@ -4350,7 +4486,7 @@ public final class GlobalTypes {
        * <code>required fixed32 replication_flags = 2;</code>
        *
        * <pre>
-       * Flags to conrol replication, e.g. transfer strategy.
+       * Flags to control replication, e.g. transfer strategy.
        * </pre>
        */
       public Builder clearReplicationFlags() {
@@ -11819,30 +11955,31 @@ public final class GlobalTypes {
       "CESS_CURRENT\020\001\022\033\n\027SNAP_CONFIG_ACCESS_SNA" +
       "P\020\002*P\n\022StripingPolicyType\022\031\n\025STRIPING_PO" +
       "LICY_RAID0\020\000\022\037\n\033STRIPING_POLICY_ERASUREC" +
-      "ODE\020\001*\270\001\n\005PORTS\022\033\n\025DIR_HTTP_PORT_DEFAULT" +
-      "\020\256\357\001\022\034\n\026DIR_PBRPC_PORT_DEFAULT\020\376\376\001\022\033\n\025MR" +
-      "C_HTTP_PORT_DEFAULT\020\254\357\001\022\034\n\026MRC_PBRPC_POR" +
-      "T_DEFAULT\020\374\376\001\022\033\n\025OSD_HTTP_PORT_DEFAULT\020\260",
-      "\357\001\022\034\n\026OSD_PBRPC_PORT_DEFAULT\020\200\377\001*+\n\tCONS" +
-      "TANTS\022\036\n\032XCAP_RENEW_INTERVAL_IN_MIN\020\001*\202\003" +
-      "\n\016SYSTEM_V_FCNTL\022\035\n\031SYSTEM_V_FCNTL_H_O_R" +
-      "DONLY\020\000\022\035\n\031SYSTEM_V_FCNTL_H_O_WRONLY\020\001\022\033" +
-      "\n\027SYSTEM_V_FCNTL_H_O_RDWR\020\002\022\035\n\031SYSTEM_V_" +
-      "FCNTL_H_O_APPEND\020\010\022\035\n\030SYSTEM_V_FCNTL_H_O" +
-      "_CREAT\020\200\002\022\035\n\030SYSTEM_V_FCNTL_H_O_TRUNC\020\200\004" +
-      "\022\034\n\027SYSTEM_V_FCNTL_H_O_EXCL\020\200\010\022\033\n\027SYSTEM" +
-      "_V_FCNTL_H_O_SYNC\020\020\022\036\n\030SYSTEM_V_FCNTL_H_" +
-      "S_IFREG\020\200\200\002\022\036\n\030SYSTEM_V_FCNTL_H_S_IFDIR\020",
-      "\200\200\001\022\036\n\030SYSTEM_V_FCNTL_H_S_IFLNK\020\200\300\002\022\035\n\030S" +
-      "YSTEM_V_FCNTL_H_S_IFIFO\020\200 *\330\001\n\tREPL_FLAG" +
-      "\022\032\n\026REPL_FLAG_FULL_REPLICA\020\001\022\031\n\025REPL_FLA" +
-      "G_IS_COMPLETE\020\002\022\035\n\031REPL_FLAG_STRATEGY_RA" +
-      "NDOM\020\004\022#\n\037REPL_FLAG_STRATEGY_RAREST_FIRS" +
-      "T\020\010\022!\n\035REPL_FLAG_STRATEGY_SEQUENTIAL\020\020\022-" +
-      "\n)REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETCH" +
-      "ING\020 *%\n\010SERVICES\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n\003O" +
-      "SD\020\003B(\n&org.xtreemfs.pbrpc.generatedinte" +
-      "rfaces"
+      "ODE\020\001*9\n\nLeaseState\022\010\n\004NONE\020\000\022\013\n\007PRIMARY" +
+      "\020\001\022\n\n\006BACKUP\020\002\022\010\n\004IDLE\020\003*\270\001\n\005PORTS\022\033\n\025DI" +
+      "R_HTTP_PORT_DEFAULT\020\256\357\001\022\034\n\026DIR_PBRPC_POR" +
+      "T_DEFAULT\020\376\376\001\022\033\n\025MRC_HTTP_PORT_DEFAULT\020\254",
+      "\357\001\022\034\n\026MRC_PBRPC_PORT_DEFAULT\020\374\376\001\022\033\n\025OSD_" +
+      "HTTP_PORT_DEFAULT\020\260\357\001\022\034\n\026OSD_PBRPC_PORT_" +
+      "DEFAULT\020\200\377\001*+\n\tCONSTANTS\022\036\n\032XCAP_RENEW_I" +
+      "NTERVAL_IN_MIN\020\001*\202\003\n\016SYSTEM_V_FCNTL\022\035\n\031S" +
+      "YSTEM_V_FCNTL_H_O_RDONLY\020\000\022\035\n\031SYSTEM_V_F" +
+      "CNTL_H_O_WRONLY\020\001\022\033\n\027SYSTEM_V_FCNTL_H_O_" +
+      "RDWR\020\002\022\035\n\031SYSTEM_V_FCNTL_H_O_APPEND\020\010\022\035\n" +
+      "\030SYSTEM_V_FCNTL_H_O_CREAT\020\200\002\022\035\n\030SYSTEM_V" +
+      "_FCNTL_H_O_TRUNC\020\200\004\022\034\n\027SYSTEM_V_FCNTL_H_" +
+      "O_EXCL\020\200\010\022\033\n\027SYSTEM_V_FCNTL_H_O_SYNC\020\020\022\036",
+      "\n\030SYSTEM_V_FCNTL_H_S_IFREG\020\200\200\002\022\036\n\030SYSTEM" +
+      "_V_FCNTL_H_S_IFDIR\020\200\200\001\022\036\n\030SYSTEM_V_FCNTL" +
+      "_H_S_IFLNK\020\200\300\002\022\035\n\030SYSTEM_V_FCNTL_H_S_IFI" +
+      "FO\020\200 *\330\001\n\tREPL_FLAG\022\032\n\026REPL_FLAG_FULL_RE" +
+      "PLICA\020\001\022\031\n\025REPL_FLAG_IS_COMPLETE\020\002\022\035\n\031RE" +
+      "PL_FLAG_STRATEGY_RANDOM\020\004\022#\n\037REPL_FLAG_S" +
+      "TRATEGY_RAREST_FIRST\020\010\022!\n\035REPL_FLAG_STRA" +
+      "TEGY_SEQUENTIAL\020\020\022-\n)REPL_FLAG_STRATEGY_" +
+      "SEQUENTIAL_PREFETCHING\020 *%\n\010SERVICES\022\007\n\003" +
+      "DIR\020\001\022\007\n\003MRC\020\002\022\007\n\003OSD\020\003B(\n&org.xtreemfs.",
+      "pbrpc.generatedinterfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {

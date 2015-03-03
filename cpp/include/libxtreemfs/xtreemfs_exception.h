@@ -142,6 +142,12 @@ class InvalidCommandLineParametersException : public XtreemFSException {
     : XtreemFSException(msg) {}
 };
 
+class InvalidViewException : public XtreemFSException {
+ public:
+  explicit InvalidViewException(const std::string& msg)
+    : XtreemFSException(msg) {}
+};
+
 }  // namespace xtreemfs
 
 #endif  // CPP_INCLUDE_LIBXTREEMFS_XTREEMFS_EXCEPTION_H_
