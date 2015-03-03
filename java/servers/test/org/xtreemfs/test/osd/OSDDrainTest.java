@@ -5,7 +5,7 @@
  *
  */
 
-package org.xtreemfs.osd.drain;
+package org.xtreemfs.test.osd;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

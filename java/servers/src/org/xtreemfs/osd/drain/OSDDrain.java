@@ -214,7 +214,7 @@ public class OSDDrain {
      * @param status
      * @throws Exception
      */
-    void setServiceStatus(DIR.ServiceStatus status) throws OSDDrainException {
+    public void setServiceStatus(DIR.ServiceStatus status) throws OSDDrainException {
         ServiceSet sSet = null;
         try {
             sSet = dirClient.xtreemfs_service_get_by_uuid(null, RPCAuthentication.authNone,
@@ -278,7 +278,7 @@ public class OSDDrain {
      * @return {@link LinkedList}
      * @throws Exception
      */
-    LinkedList<FileInformation> getFileListOfOSD() throws OSDDrainException {
+    public LinkedList<FileInformation> getFileListOfOSD() throws OSDDrainException {
 
         LinkedList<FileInformation> osdFileList = new LinkedList<FileInformation>();
 
@@ -312,7 +312,7 @@ public class OSDDrain {
      * 
      * @param fileInfos
      */
-    void updateMRCAddresses(List<FileInformation> fileInfos) throws OSDDrainException {
+    public void updateMRCAddresses(List<FileInformation> fileInfos) throws OSDDrainException {
         for (FileInformation fileInfo : fileInfos) {
 
             String volumeUUID = fileInfo.fileID.substring(0, fileInfo.fileID.indexOf(':'));
@@ -359,7 +359,7 @@ public class OSDDrain {
      * @param fileInfos
      * @return List of FilInformation with non-existing files removed.
      */
-    List<FileInformation> removeNonExistingFileIDs(List<FileInformation> fileInfos) {
+    public List<FileInformation> removeNonExistingFileIDs(List<FileInformation> fileInfos) {
 
         List<FileInformation> returnList = new LinkedList<FileInformation>();
 
@@ -420,7 +420,7 @@ public class OSDDrain {
      * @param fileInfos
      * @throws OSDDrainException
      */
-    List<FileInformation> getReplicaInfo(List<FileInformation> fileInfos) throws OSDDrainException {
+    public List<FileInformation> getReplicaInfo(List<FileInformation> fileInfos) throws OSDDrainException {
         LinkedList<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
 
         for (FileInformation fileInfo : fileInfos) {
@@ -471,7 +471,7 @@ public class OSDDrain {
      * @param fileInfos List of files to move from the OSD.
      * @return List of files not coordinated by the MRC.
      */
-    List<FileInformation> drainCoordinatedFiles(List<FileInformation> fileInfos) throws OSDDrainException {
+    public List<FileInformation> drainCoordinatedFiles(List<FileInformation> fileInfos) throws OSDDrainException {
         LinkedList<FileInformation> uncoordinatedFiles = new LinkedList<FileInformation>();
         LinkedList<FileInformation> finishedFiles = new LinkedList<FileInformation>();
 
@@ -531,7 +531,7 @@ public class OSDDrain {
      * @param fileIDList
      * @throws Exception
      */
-    List<FileInformation> createReplicasForFiles(List<FileInformation> fileInfos) throws OSDDrainException {
+    public List<FileInformation> createReplicasForFiles(List<FileInformation> fileInfos) throws OSDDrainException {
 
         LinkedList<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
 
@@ -634,7 +634,7 @@ public class OSDDrain {
      * @return
      * @throws Exception
      */
-    List<FileInformation> setReplicationUpdatePolicyRonly(List<FileInformation> fileInfos)
+    public List<FileInformation> setReplicationUpdatePolicyRonly(List<FileInformation> fileInfos)
             throws OSDDrainException {
 
         List<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
@@ -660,7 +660,7 @@ public class OSDDrain {
      *
      * @return
      */
-    List<FileInformation> resetReplicationUpdatePolicy(List<FileInformation> fileInfos)
+    public List<FileInformation> resetReplicationUpdatePolicy(List<FileInformation> fileInfos)
             throws OSDDrainException {
 
         // List of files which ReplicationUpdatePolicy is already set successfully
@@ -717,7 +717,7 @@ public class OSDDrain {
      *
      * @return {@link LinkedList} with all fileIDs which already were set to the desired mode
      */
-    List<FileInformation> setFilesReadOnlyAttribute(List<FileInformation> fileInfos) throws OSDDrainException {
+    public List<FileInformation> setFilesReadOnlyAttribute(List<FileInformation> fileInfos) throws OSDDrainException {
 
         // List of files which where set to read-only successfully
         List<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
@@ -740,7 +740,7 @@ public class OSDDrain {
      * @return
      * @throws OSDDrainException
      */
-    List<FileInformation> resetFilesReadOnlyAttribute(List<FileInformation> fileInfos) throws OSDDrainException {
+    public List<FileInformation> resetFilesReadOnlyAttribute(List<FileInformation> fileInfos) throws OSDDrainException {
         // List of files which where reset successfully.
         List<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
         // List of files which could not be reset.
@@ -805,7 +805,7 @@ public class OSDDrain {
      * @return
      * @throws Exception
      */
-    List<FileInformation> startReplication(List<FileInformation> fileInfos) throws OSDDrainException {
+    public List<FileInformation> startReplication(List<FileInformation> fileInfos) throws OSDDrainException {
 
         List<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
 
@@ -867,7 +867,7 @@ public class OSDDrain {
      * @param fileIDList
      * @throws Exception
      */
-    List<FileInformation> waitForReplicationToComplete(List<FileInformation> fileInfos)
+    public List<FileInformation> waitForReplicationToComplete(List<FileInformation> fileInfos)
             throws OSDDrainException {
 
         List<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
@@ -953,7 +953,7 @@ public class OSDDrain {
      * @throws InterruptedException
      * @throws IOException
      */
-    void removeOriginalFromReplica(List<FileInformation> fileInfos) throws OSDDrainException {
+    public void removeOriginalFromReplica(List<FileInformation> fileInfos) throws OSDDrainException {
 
         List<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
         List<FileInformation> erroneousFiles = new LinkedList<FileInformation>();
@@ -1090,7 +1090,7 @@ public class OSDDrain {
      *            - true if an error Message should be printed. First call should be true, all other recursive
      *            calls should be false.
      */
-    void handleException(OSDDrainException ex, boolean printError) {
+    public void handleException(OSDDrainException ex, boolean printError) {
         switch (ex.getErrorState()) {
         case INITIALIZATION:
             if (printError) {
