@@ -354,8 +354,8 @@ message xtreemfs_xloc_set_invalidateRequest {
 }
 
 message xtreemfs_xloc_set_invalidateResponse {
-  required bool is_primary = 1;
-  optional ReplicaStatus status = 2;
+  required LeaseState lease_state = 1;
+  optional ReplicaStatus replica_status = 2;
 }
 
 // Status of OSD health test

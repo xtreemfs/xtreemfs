@@ -45,6 +45,7 @@ import org.xtreemfs.osd.storage.CowPolicy.cowMode;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.StorageLayout;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
@@ -819,24 +820,24 @@ public class PreprocStage extends Stage {
             if (xLoc.getNumReplicas() > 1 && ReplicaUpdatePolicies.isRwReplicated(xLoc.getReplicaUpdatePolicy())) {
                 master.getRWReplicationStage().invalidateReplica(fileId, fileCreds, xLoc, callback);
             } else {
-                callback.invalidateComplete(true, null);
+                callback.invalidateComplete(LeaseState.NONE, null);
             }
 
         } catch (InvalidXLocationsException e) {
             ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.INVALID_VIEW, POSIXErrno.POSIX_ERROR_NONE,
                     e.getMessage(), e);
-            callback.invalidateComplete(false, error);
+            callback.invalidateComplete(LeaseState.NONE, error);
         } catch (IOException e) {
             Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,
                     "VersionState could not be written for fileId: %s", fileId);
             ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
                     "Invalid view. Local version could not be written.");
-            callback.invalidateComplete(false, error);
+            callback.invalidateComplete(LeaseState.NONE, error);
         }
     }
 
     public static interface InvalidateXLocSetCallback {
-        public void invalidateComplete(boolean isPrimary, ErrorResponse error);
+        public void invalidateComplete(LeaseState leaseState, ErrorResponse error);
     }
 
     public int getNumOpenFiles() {

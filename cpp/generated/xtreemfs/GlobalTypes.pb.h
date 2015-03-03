@@ -155,6 +155,27 @@ inline bool StripingPolicyType_Parse(
   return ::google::protobuf::internal::ParseNamedEnum<StripingPolicyType>(
     StripingPolicyType_descriptor(), name, value);
 }
+enum LeaseState {
+  NONE = 0,
+  PRIMARY = 1,
+  BACKUP = 2,
+  IDLE = 3
+};
+bool LeaseState_IsValid(int value);
+const LeaseState LeaseState_MIN = NONE;
+const LeaseState LeaseState_MAX = IDLE;
+const int LeaseState_ARRAYSIZE = LeaseState_MAX + 1;
+
+const ::google::protobuf::EnumDescriptor* LeaseState_descriptor();
+inline const ::std::string& LeaseState_Name(LeaseState value) {
+  return ::google::protobuf::internal::NameOfEnum(
+    LeaseState_descriptor(), value);
+}
+inline bool LeaseState_Parse(
+    const ::std::string& name, LeaseState* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<LeaseState>(
+    LeaseState_descriptor(), name, value);
+}
 enum PORTS {
   DIR_HTTP_PORT_DEFAULT = 30638,
   DIR_PBRPC_PORT_DEFAULT = 32638,
@@ -2657,6 +2678,10 @@ inline const EnumDescriptor* GetEnumDescriptor< ::xtreemfs::pbrpc::SnapConfig>()
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::xtreemfs::pbrpc::StripingPolicyType>() {
   return ::xtreemfs::pbrpc::StripingPolicyType_descriptor();
+}
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::xtreemfs::pbrpc::LeaseState>() {
+  return ::xtreemfs::pbrpc::LeaseState_descriptor();
 }
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::xtreemfs::pbrpc::PORTS>() {

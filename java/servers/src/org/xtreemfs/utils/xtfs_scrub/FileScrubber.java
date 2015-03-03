@@ -232,10 +232,12 @@ public class FileScrubber implements Runnable {
         // Handle removed replicas.
         if (!removedReplicas.isEmpty()) {
             if (repair) {
-                printFileErrorMessage("re-creation of R/W replicated files is not supported yet");
+                recreateReplicas(removedReplicas);
+            } else {
+                printFileErrorMessage("lost " + removedReplicas.size() + " replicas due to dead OSDs");
             }
-            printFileErrorMessage("lost " + removedReplicas.size() + " replicas due to dead OSDs");
             returnStatus.add(ReturnStatus.FAILURE_REPLICAS);
+
         }
         // Check file size on MRC.
         try {
@@ -258,16 +260,6 @@ public class FileScrubber implements Runnable {
         } catch (IOException ex) {
             printFileErrorMessage("unable to get file size: " + ex);
             returnStatus.add(ReturnStatus.UNREACHABLE);
-        }
-
-        // handle removed replicas
-        if (!removedReplicas.isEmpty()) {
-            if (repair) {
-                recreateReplicas(removedReplicas);
-            } else {
-                printFileErrorMessage("lost " + removedReplicas.size() + " replicas due to dead OSDs");
-            }
-            returnStatus.add(ReturnStatus.FAILURE_REPLICAS);
         }
 
         // if everything is fine, set returnStatus to FILE_OK

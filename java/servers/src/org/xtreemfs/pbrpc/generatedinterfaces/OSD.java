@@ -32093,29 +32093,29 @@ public final class OSD {
   public interface xtreemfs_xloc_set_invalidateResponseOrBuilder
       extends com.google.protobuf.MessageOrBuilder {
 
-    // required bool is_primary = 1;
+    // required .xtreemfs.pbrpc.LeaseState lease_state = 1;
     /**
-     * <code>required bool is_primary = 1;</code>
+     * <code>required .xtreemfs.pbrpc.LeaseState lease_state = 1;</code>
      */
-    boolean hasIsPrimary();
+    boolean hasLeaseState();
     /**
-     * <code>required bool is_primary = 1;</code>
+     * <code>required .xtreemfs.pbrpc.LeaseState lease_state = 1;</code>
      */
-    boolean getIsPrimary();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState getLeaseState();
 
-    // optional .xtreemfs.pbrpc.ReplicaStatus status = 2;
+    // optional .xtreemfs.pbrpc.ReplicaStatus replica_status = 2;
     /**
-     * <code>optional .xtreemfs.pbrpc.ReplicaStatus status = 2;</code>
+     * <code>optional .xtreemfs.pbrpc.ReplicaStatus replica_status = 2;</code>
      */
-    boolean hasStatus();
+    boolean hasReplicaStatus();
     /**
-     * <code>optional .xtreemfs.pbrpc.ReplicaStatus status = 2;</code>
+     * <code>optional .xtreemfs.pbrpc.ReplicaStatus replica_status = 2;</code>
      */
-    org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus getStatus();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus getReplicaStatus();
     /**
-     * <code>optional .xtreemfs.pbrpc.ReplicaStatus status = 2;</code>
+     * <code>optional .xtreemfs.pbrpc.ReplicaStatus replica_status = 2;</code>
      */
-    org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatusOrBuilder getStatusOrBuilder();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatusOrBuilder getReplicaStatusOrBuilder();
   }
   /**
    * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_xloc_set_invalidateResponse}
@@ -32169,19 +32169,25 @@ public final class OSD {
               break;
             }
             case 8: {
-              bitField0_ |= 0x00000001;
-              isPrimary_ = input.readBool();
+              int rawValue = input.readEnum();
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState value = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState.valueOf(rawValue);
+              if (value == null) {
+                unknownFields.mergeVarintField(1, rawValue);
+              } else {
+                bitField0_ |= 0x00000001;
+                leaseState_ = value;
+              }
               break;
             }
             case 18: {
               org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.Builder subBuilder = null;
               if (((bitField0_ & 0x00000002) == 0x00000002)) {
-                subBuilder = status_.toBuilder();
+                subBuilder = replicaStatus_.toBuilder();
               }
-              status_ = input.readMessage(org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.PARSER, extensionRegistry);
+              replicaStatus_ = input.readMessage(org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.PARSER, extensionRegistry);
               if (subBuilder != null) {
-                subBuilder.mergeFrom(status_);
-                status_ = subBuilder.buildPartial();
+                subBuilder.mergeFrom(replicaStatus_);
+                replicaStatus_ = subBuilder.buildPartial();
               }
               bitField0_ |= 0x00000002;
               break;
@@ -32226,59 +32232,59 @@ public final class OSD {
     }
 
     private int bitField0_;
-    // required bool is_primary = 1;
-    public static final int IS_PRIMARY_FIELD_NUMBER = 1;
-    private boolean isPrimary_;
+    // required .xtreemfs.pbrpc.LeaseState lease_state = 1;
+    public static final int LEASE_STATE_FIELD_NUMBER = 1;
+    private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState leaseState_;
     /**
-     * <code>required bool is_primary = 1;</code>
+     * <code>required .xtreemfs.pbrpc.LeaseState lease_state = 1;</code>
      */
-    public boolean hasIsPrimary() {
+    public boolean hasLeaseState() {
       return ((bitField0_ & 0x00000001) == 0x00000001);
     }
     /**
-     * <code>required bool is_primary = 1;</code>
+     * <code>required .xtreemfs.pbrpc.LeaseState lease_state = 1;</code>
      */
-    public boolean getIsPrimary() {
-      return isPrimary_;
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState getLeaseState() {
+      return leaseState_;
     }
 
-    // optional .xtreemfs.pbrpc.ReplicaStatus status = 2;
-    public static final int STATUS_FIELD_NUMBER = 2;
-    private org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus status_;
+    // optional .xtreemfs.pbrpc.ReplicaStatus replica_status = 2;
+    public static final int REPLICA_STATUS_FIELD_NUMBER = 2;
+    private org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus replicaStatus_;
     /**
-     * <code>optional .xtreemfs.pbrpc.ReplicaStatus status = 2;</code>
+     * <code>optional .xtreemfs.pbrpc.ReplicaStatus replica_status = 2;</code>
      */
-    public boolean hasStatus() {
+    public boolean hasReplicaStatus() {
       return ((bitField0_ & 0x00000002) == 0x00000002);
     }
     /**
-     * <code>optional .xtreemfs.pbrpc.ReplicaStatus status = 2;</code>
+     * <code>optional .xtreemfs.pbrpc.ReplicaStatus replica_status = 2;</code>
      */
-    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus getStatus() {
-      return status_;
+    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus getReplicaStatus() {
+      return replicaStatus_;
     }
     /**
-     * <code>optional .xtreemfs.pbrpc.ReplicaStatus status = 2;</code>
+     * <code>optional .xtreemfs.pbrpc.ReplicaStatus replica_status = 2;</code>
      */
-    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatusOrBuilder getStatusOrBuilder() {
-      return status_;
+    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatusOrBuilder getReplicaStatusOrBuilder() {
+      return replicaStatus_;
     }
 
     private void initFields() {
-      isPrimary_ = false;
-      status_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.getDefaultInstance();
+      leaseState_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState.NONE;
+      replicaStatus_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.getDefaultInstance();
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized != -1) return isInitialized == 1;
 
-      if (!hasIsPrimary()) {
+      if (!hasLeaseState()) {
         memoizedIsInitialized = 0;
         return false;
       }
-      if (hasStatus()) {
-        if (!getStatus().isInitialized()) {
+      if (hasReplicaStatus()) {
+        if (!getReplicaStatus().isInitialized()) {
           memoizedIsInitialized = 0;
           return false;
         }
@@ -32291,10 +32297,10 @@ public final class OSD {
                         throws java.io.IOException {
       getSerializedSize();
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeBool(1, isPrimary_);
+        output.writeEnum(1, leaseState_.getNumber());
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeMessage(2, status_);
+        output.writeMessage(2, replicaStatus_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -32307,11 +32313,11 @@ public final class OSD {
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(1, isPrimary_);
+          .computeEnumSize(1, leaseState_.getNumber());
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(2, status_);
+          .computeMessageSize(2, replicaStatus_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -32421,7 +32427,7 @@ public final class OSD {
       }
       private void maybeForceBuilderInitialization() {
         if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-          getStatusFieldBuilder();
+          getReplicaStatusFieldBuilder();
         }
       }
       private static Builder create() {
@@ -32430,12 +32436,12 @@ public final class OSD {
 
       public Builder clear() {
         super.clear();
-        isPrimary_ = false;
+        leaseState_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState.NONE;
         bitField0_ = (bitField0_ & ~0x00000001);
-        if (statusBuilder_ == null) {
-          status_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.getDefaultInstance();
+        if (replicaStatusBuilder_ == null) {
+          replicaStatus_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.getDefaultInstance();
         } else {
-          statusBuilder_.clear();
+          replicaStatusBuilder_.clear();
         }
         bitField0_ = (bitField0_ & ~0x00000002);
         return this;
@@ -32469,14 +32475,14 @@ public final class OSD {
         if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
           to_bitField0_ |= 0x00000001;
         }
-        result.isPrimary_ = isPrimary_;
+        result.leaseState_ = leaseState_;
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
         }
-        if (statusBuilder_ == null) {
-          result.status_ = status_;
+        if (replicaStatusBuilder_ == null) {
+          result.replicaStatus_ = replicaStatus_;
         } else {
-          result.status_ = statusBuilder_.build();
+          result.replicaStatus_ = replicaStatusBuilder_.build();
         }
         result.bitField0_ = to_bitField0_;
         onBuilt();
@@ -32494,23 +32500,23 @@ public final class OSD {
 
       public Builder mergeFrom(org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateResponse other) {
         if (other == org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateResponse.getDefaultInstance()) return this;
-        if (other.hasIsPrimary()) {
-          setIsPrimary(other.getIsPrimary());
+        if (other.hasLeaseState()) {
+          setLeaseState(other.getLeaseState());
         }
-        if (other.hasStatus()) {
-          mergeStatus(other.getStatus());
+        if (other.hasReplicaStatus()) {
+          mergeReplicaStatus(other.getReplicaStatus());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
 
       public final boolean isInitialized() {
-        if (!hasIsPrimary()) {
+        if (!hasLeaseState()) {
           
           return false;
         }
-        if (hasStatus()) {
-          if (!getStatus().isInitialized()) {
+        if (hasReplicaStatus()) {
+          if (!getReplicaStatus().isInitialized()) {
             
             return false;
           }
@@ -32537,154 +32543,157 @@ public final class OSD {
       }
       private int bitField0_;
 
-      // required bool is_primary = 1;
-      private boolean isPrimary_ ;
+      // required .xtreemfs.pbrpc.LeaseState lease_state = 1;
+      private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState leaseState_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState.NONE;
       /**
-       * <code>required bool is_primary = 1;</code>
+       * <code>required .xtreemfs.pbrpc.LeaseState lease_state = 1;</code>
        */
-      public boolean hasIsPrimary() {
+      public boolean hasLeaseState() {
         return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       /**
-       * <code>required bool is_primary = 1;</code>
+       * <code>required .xtreemfs.pbrpc.LeaseState lease_state = 1;</code>
        */
-      public boolean getIsPrimary() {
-        return isPrimary_;
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState getLeaseState() {
+        return leaseState_;
       }
       /**
-       * <code>required bool is_primary = 1;</code>
+       * <code>required .xtreemfs.pbrpc.LeaseState lease_state = 1;</code>
        */
-      public Builder setIsPrimary(boolean value) {
+      public Builder setLeaseState(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState value) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
         bitField0_ |= 0x00000001;
-        isPrimary_ = value;
+        leaseState_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>required bool is_primary = 1;</code>
+       * <code>required .xtreemfs.pbrpc.LeaseState lease_state = 1;</code>
        */
-      public Builder clearIsPrimary() {
+      public Builder clearLeaseState() {
         bitField0_ = (bitField0_ & ~0x00000001);
-        isPrimary_ = false;
+        leaseState_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState.NONE;
         onChanged();
         return this;
       }
 
-      // optional .xtreemfs.pbrpc.ReplicaStatus status = 2;
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus status_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.getDefaultInstance();
+      // optional .xtreemfs.pbrpc.ReplicaStatus replica_status = 2;
+      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus replicaStatus_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatusOrBuilder> statusBuilder_;
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatusOrBuilder> replicaStatusBuilder_;
       /**
-       * <code>optional .xtreemfs.pbrpc.ReplicaStatus status = 2;</code>
+       * <code>optional .xtreemfs.pbrpc.ReplicaStatus replica_status = 2;</code>
        */
-      public boolean hasStatus() {
+      public boolean hasReplicaStatus() {
         return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       /**
-       * <code>optional .xtreemfs.pbrpc.ReplicaStatus status = 2;</code>
+       * <code>optional .xtreemfs.pbrpc.ReplicaStatus replica_status = 2;</code>
        */
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus getStatus() {
-        if (statusBuilder_ == null) {
-          return status_;
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus getReplicaStatus() {
+        if (replicaStatusBuilder_ == null) {
+          return replicaStatus_;
         } else {
-          return statusBuilder_.getMessage();
+          return replicaStatusBuilder_.getMessage();
         }
       }
       /**
-       * <code>optional .xtreemfs.pbrpc.ReplicaStatus status = 2;</code>
+       * <code>optional .xtreemfs.pbrpc.ReplicaStatus replica_status = 2;</code>
        */
-      public Builder setStatus(org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus value) {
-        if (statusBuilder_ == null) {
+      public Builder setReplicaStatus(org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus value) {
+        if (replicaStatusBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
           }
-          status_ = value;
+          replicaStatus_ = value;
           onChanged();
         } else {
-          statusBuilder_.setMessage(value);
+          replicaStatusBuilder_.setMessage(value);
         }
         bitField0_ |= 0x00000002;
         return this;
       }
       /**
-       * <code>optional .xtreemfs.pbrpc.ReplicaStatus status = 2;</code>
+       * <code>optional .xtreemfs.pbrpc.ReplicaStatus replica_status = 2;</code>
        */
-      public Builder setStatus(
+      public Builder setReplicaStatus(
           org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.Builder builderForValue) {
-        if (statusBuilder_ == null) {
-          status_ = builderForValue.build();
+        if (replicaStatusBuilder_ == null) {
+          replicaStatus_ = builderForValue.build();
           onChanged();
         } else {
-          statusBuilder_.setMessage(builderForValue.build());
+          replicaStatusBuilder_.setMessage(builderForValue.build());
         }
         bitField0_ |= 0x00000002;
         return this;
       }
       /**
-       * <code>optional .xtreemfs.pbrpc.ReplicaStatus status = 2;</code>
+       * <code>optional .xtreemfs.pbrpc.ReplicaStatus replica_status = 2;</code>
        */
-      public Builder mergeStatus(org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus value) {
-        if (statusBuilder_ == null) {
+      public Builder mergeReplicaStatus(org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus value) {
+        if (replicaStatusBuilder_ == null) {
           if (((bitField0_ & 0x00000002) == 0x00000002) &&
-              status_ != org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.getDefaultInstance()) {
-            status_ =
-              org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.newBuilder(status_).mergeFrom(value).buildPartial();
+              replicaStatus_ != org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.getDefaultInstance()) {
+            replicaStatus_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.newBuilder(replicaStatus_).mergeFrom(value).buildPartial();
           } else {
-            status_ = value;
+            replicaStatus_ = value;
           }
           onChanged();
         } else {
-          statusBuilder_.mergeFrom(value);
+          replicaStatusBuilder_.mergeFrom(value);
         }
         bitField0_ |= 0x00000002;
         return this;
       }
       /**
-       * <code>optional .xtreemfs.pbrpc.ReplicaStatus status = 2;</code>
+       * <code>optional .xtreemfs.pbrpc.ReplicaStatus replica_status = 2;</code>
        */
-      public Builder clearStatus() {
-        if (statusBuilder_ == null) {
-          status_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.getDefaultInstance();
+      public Builder clearReplicaStatus() {
+        if (replicaStatusBuilder_ == null) {
+          replicaStatus_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.getDefaultInstance();
           onChanged();
         } else {
-          statusBuilder_.clear();
+          replicaStatusBuilder_.clear();
         }
         bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
       /**
-       * <code>optional .xtreemfs.pbrpc.ReplicaStatus status = 2;</code>
+       * <code>optional .xtreemfs.pbrpc.ReplicaStatus replica_status = 2;</code>
        */
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.Builder getStatusBuilder() {
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.Builder getReplicaStatusBuilder() {
         bitField0_ |= 0x00000002;
         onChanged();
-        return getStatusFieldBuilder().getBuilder();
+        return getReplicaStatusFieldBuilder().getBuilder();
       }
       /**
-       * <code>optional .xtreemfs.pbrpc.ReplicaStatus status = 2;</code>
+       * <code>optional .xtreemfs.pbrpc.ReplicaStatus replica_status = 2;</code>
        */
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatusOrBuilder getStatusOrBuilder() {
-        if (statusBuilder_ != null) {
-          return statusBuilder_.getMessageOrBuilder();
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatusOrBuilder getReplicaStatusOrBuilder() {
+        if (replicaStatusBuilder_ != null) {
+          return replicaStatusBuilder_.getMessageOrBuilder();
         } else {
-          return status_;
+          return replicaStatus_;
         }
       }
       /**
-       * <code>optional .xtreemfs.pbrpc.ReplicaStatus status = 2;</code>
+       * <code>optional .xtreemfs.pbrpc.ReplicaStatus replica_status = 2;</code>
        */
       private com.google.protobuf.SingleFieldBuilder<
           org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatusOrBuilder> 
-          getStatusFieldBuilder() {
-        if (statusBuilder_ == null) {
-          statusBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+          getReplicaStatusFieldBuilder() {
+        if (replicaStatusBuilder_ == null) {
+          replicaStatusBuilder_ = new com.google.protobuf.SingleFieldBuilder<
               org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatusOrBuilder>(
-                  status_,
+                  replicaStatus_,
                   getParentForChildren(),
                   isClean());
-          status_ = null;
+          replicaStatus_ = null;
         }
-        return statusBuilder_;
+        return replicaStatusBuilder_;
       }
 
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.xtreemfs_xloc_set_invalidateResponse)
@@ -33037,111 +33046,112 @@ public final class OSD {
       "\003 \002(\007\"q\n#xtreemfs_xloc_set_invalidateReq" +
       "uest\0229\n\020file_credentials\030\001 \002(\0132\037.xtreemf" +
       "s.pbrpc.FileCredentials\022\017\n\007file_id\030\002 \002(\t" +
-      "\"i\n$xtreemfs_xloc_set_invalidateResponse" +
-      "\022\022\n\nis_primary\030\001 \002(\010\022-\n\006status\030\002 \001(\0132\035.x" +
-      "treemfs.pbrpc.ReplicaStatus*\215\001\n\017OSDHealt" +
-      "hResult\022\034\n\030OSD_HEALTH_RESULT_PASSED\020\000\022\035\n" +
-      "\031OSD_HEALTH_RESULT_WARNING\020\001\022\034\n\030OSD_HEAL",
-      "TH_RESULT_FAILED\020\002\022\037\n\033OSD_HEALTH_RESULT_" +
-      "NOT_AVAIL\020\0032\277\036\n\nOSDService\022L\n\004read\022\033.xtr" +
-      "eemfs.pbrpc.readRequest\032\032.xtreemfs.pbrpc" +
-      ".ObjectData\"\013\215\265\030\n\000\000\000\230\265\030\001\022V\n\010truncate\022\037.x" +
-      "treemfs.pbrpc.truncateRequest\032 .xtreemfs" +
-      ".pbrpc.OSDWriteResponse\"\007\215\265\030\013\000\000\000\022T\n\006unli" +
-      "nk\022\".xtreemfs.pbrpc.unlink_osd_Request\032\035" +
-      ".xtreemfs.pbrpc.emptyResponse\"\007\215\265\030\014\000\000\000\022T" +
-      "\n\005write\022\034.xtreemfs.pbrpc.writeRequest\032 ." +
-      "xtreemfs.pbrpc.OSDWriteResponse\"\013\215\265\030\r\000\000\000",
-      "\240\265\030\001\022q\n\027xtreemfs_broadcast_gmax\022..xtreem" +
-      "fs.pbrpc.xtreemfs_broadcast_gmaxRequest\032" +
-      "\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030\024\000\000\000\022" +
-      "j\n\025xtreemfs_check_object\022,.xtreemfs.pbrp" +
-      "c.xtreemfs_check_objectRequest\032\032.xtreemf" +
-      "s.pbrpc.ObjectData\"\007\215\265\030\025\000\000\000\022{\n\034xtreemfs_" +
-      "cleanup_get_results\022\034.xtreemfs.pbrpc.emp" +
-      "tyRequest\0324.xtreemfs.pbrpc.xtreemfs_clea" +
-      "nup_get_resultsResponse\"\007\215\265\030\036\000\000\000\022y\n\033xtre" +
-      "emfs_cleanup_is_running\022\034.xtreemfs.pbrpc",
-      ".emptyRequest\0323.xtreemfs.pbrpc.xtreemfs_" +
-      "cleanup_is_runningResponse\"\007\215\265\030\037\000\000\000\022o\n\026x" +
-      "treemfs_cleanup_start\022-.xtreemfs.pbrpc.x" +
-      "treemfs_cleanup_startRequest\032\035.xtreemfs." +
-      "pbrpc.emptyResponse\"\007\215\265\030 \000\000\000\022q\n\027xtreemfs" +
-      "_cleanup_status\022\034.xtreemfs.pbrpc.emptyRe" +
-      "quest\032/.xtreemfs.pbrpc.xtreemfs_cleanup_" +
-      "statusResponse\"\007\215\265\030!\000\000\000\022]\n\025xtreemfs_clea" +
-      "nup_stop\022\034.xtreemfs.pbrpc.emptyRequest\032\035" +
-      ".xtreemfs.pbrpc.emptyResponse\"\007\215\265\030\"\000\000\000\022g",
-      "\n\037xtreemfs_cleanup_versions_start\022\034.xtre" +
-      "emfs.pbrpc.emptyRequest\032\035.xtreemfs.pbrpc" +
-      ".emptyResponse\"\007\215\265\030#\000\000\000\022o\n\026xtreemfs_repa" +
-      "ir_object\022-.xtreemfs.pbrpc.xtreemfs_repa" +
-      "ir_objectRequest\032\035.xtreemfs.pbrpc.emptyR" +
-      "esponse\"\007\215\265\030$\000\000\000\022d\n\022xtreemfs_rwr_fetch\022)" +
-      ".xtreemfs.pbrpc.xtreemfs_rwr_fetchReques" +
-      "t\032\032.xtreemfs.pbrpc.ObjectData\"\007\215\265\030I\000\000\000\022u" +
-      "\n\027xtreemfs_rwr_flease_msg\022..xtreemfs.pbr" +
-      "pc.xtreemfs_rwr_flease_msgRequest\032\035.xtre",
-      "emfs.pbrpc.emptyResponse\"\013\215\265\030G\000\000\000\240\265\030\001\022^\n" +
-      "\023xtreemfs_rwr_notify\022\037.xtreemfs.pbrpc.Fi" +
-      "leCredentials\032\035.xtreemfs.pbrpc.emptyResp" +
-      "onse\"\007\215\265\030K\000\000\000\022|\n\036xtreemfs_rwr_set_primar" +
-      "y_epoch\0225.xtreemfs.pbrpc.xtreemfs_rwr_se" +
-      "t_primary_epochRequest\032\032.xtreemfs.pbrpc." +
-      "ObjectData\"\007\215\265\030N\000\000\000\022i\n\023xtreemfs_rwr_stat" +
-      "us\022*.xtreemfs.pbrpc.xtreemfs_rwr_statusR" +
-      "equest\032\035.xtreemfs.pbrpc.ReplicaStatus\"\007\215" +
-      "\265\030L\000\000\000\022m\n\025xtreemfs_rwr_truncate\022,.xtreem",
-      "fs.pbrpc.xtreemfs_rwr_truncateRequest\032\035." +
-      "xtreemfs.pbrpc.emptyResponse\"\007\215\265\030J\000\000\000\022m\n" +
-      "\023xtreemfs_rwr_update\022*.xtreemfs.pbrpc.xt" +
-      "reemfs_rwr_updateRequest\032\035.xtreemfs.pbrp" +
-      "c.emptyResponse\"\013\215\265\030H\000\000\000\240\265\030\001\022q\n\027xtreemfs" +
-      "_rwr_auth_state\022..xtreemfs.pbrpc.xtreemf" +
-      "s_rwr_auth_stateRequest\032\035.xtreemfs.pbrpc" +
-      ".emptyResponse\"\007\215\265\030O\000\000\000\022y\n\033xtreemfs_rwr_" +
-      "reset_complete\0222.xtreemfs.pbrpc.xtreemfs" +
-      "_rwr_reset_completeRequest\032\035.xtreemfs.pb",
-      "rpc.emptyResponse\"\007\215\265\030P\000\000\000\022v\n\032xtreemfs_i" +
-      "nternal_get_gmax\0221.xtreemfs.pbrpc.xtreem" +
-      "fs_internal_get_gmaxRequest\032\034.xtreemfs.p" +
-      "brpc.InternalGmax\"\007\215\265\030(\000\000\000\022h\n\032xtreemfs_i" +
-      "nternal_truncate\022\037.xtreemfs.pbrpc.trunca" +
-      "teRequest\032 .xtreemfs.pbrpc.OSDWriteRespo" +
-      "nse\"\007\215\265\030)\000\000\000\022\233\001\n\037xtreemfs_internal_get_f" +
-      "ile_size\0226.xtreemfs.pbrpc.xtreemfs_inter" +
-      "nal_get_file_sizeRequest\0327.xtreemfs.pbrp" +
-      "c.xtreemfs_internal_get_file_sizeRespons",
-      "e\"\007\215\265\030*\000\000\000\022\207\001\n\034xtreemfs_internal_read_lo" +
-      "cal\0223.xtreemfs.pbrpc.xtreemfs_internal_r" +
-      "ead_localRequest\032).xtreemfs.pbrpc.Intern" +
-      "alReadLocalResponse\"\007\215\265\030+\000\000\000\022\200\001\n xtreemf" +
-      "s_internal_get_object_set\0227.xtreemfs.pbr" +
-      "pc.xtreemfs_internal_get_object_setReque" +
-      "st\032\032.xtreemfs.pbrpc.ObjectList\"\007\215\265\030,\000\000\000\022" +
-      "\205\001\n!xtreemfs_internal_get_fileid_list\022\034." +
-      "xtreemfs.pbrpc.emptyRequest\0329.xtreemfs.p" +
-      "brpc.xtreemfs_internal_get_fileid_listRe",
-      "sponse\"\007\215\265\030-\000\000\000\022S\n\025xtreemfs_lock_acquire" +
-      "\022\033.xtreemfs.pbrpc.lockRequest\032\024.xtreemfs" +
-      ".pbrpc.Lock\"\007\215\265\0302\000\000\000\022Q\n\023xtreemfs_lock_ch" +
-      "eck\022\033.xtreemfs.pbrpc.lockRequest\032\024.xtree" +
-      "mfs.pbrpc.Lock\"\007\215\265\0303\000\000\000\022\\\n\025xtreemfs_lock" +
-      "_release\022\033.xtreemfs.pbrpc.lockRequest\032\035." +
-      "xtreemfs.pbrpc.emptyResponse\"\007\215\265\0304\000\000\000\022f\n" +
-      "\rxtreemfs_ping\022%.xtreemfs.pbrpc.xtreemfs" +
-      "_pingMesssage\032%.xtreemfs.pbrpc.xtreemfs_" +
-      "pingMesssage\"\007\215\265\030<\000\000\000\022Y\n\021xtreemfs_shutdo",
-      "wn\022\034.xtreemfs.pbrpc.emptyRequest\032\035.xtree" +
-      "mfs.pbrpc.emptyResponse\"\007\215\265\030F\000\000\000\022\222\001\n\034xtr" +
-      "eemfs_xloc_set_invalidate\0223.xtreemfs.pbr" +
-      "pc.xtreemfs_xloc_set_invalidateRequest\0324" +
-      ".xtreemfs.pbrpc.xtreemfs_xloc_set_invali" +
-      "dateResponse\"\007\215\265\030Q\000\000\000\022}\n#xtreemfs_rwr_au" +
-      "th_state_invalidated\022..xtreemfs.pbrpc.xt" +
-      "reemfs_rwr_auth_stateRequest\032\035.xtreemfs." +
-      "pbrpc.emptyResponse\"\007\215\265\030R\000\000\000\032\007\225\265\0301u\000\000B(\n" +
-      "&org.xtreemfs.pbrpc.generatedinterfaces"
+      "\"\216\001\n$xtreemfs_xloc_set_invalidateRespons" +
+      "e\022/\n\013lease_state\030\001 \002(\0162\032.xtreemfs.pbrpc." +
+      "LeaseState\0225\n\016replica_status\030\002 \001(\0132\035.xtr" +
+      "eemfs.pbrpc.ReplicaStatus*\215\001\n\017OSDHealthR" +
+      "esult\022\034\n\030OSD_HEALTH_RESULT_PASSED\020\000\022\035\n\031O",
+      "SD_HEALTH_RESULT_WARNING\020\001\022\034\n\030OSD_HEALTH" +
+      "_RESULT_FAILED\020\002\022\037\n\033OSD_HEALTH_RESULT_NO" +
+      "T_AVAIL\020\0032\277\036\n\nOSDService\022L\n\004read\022\033.xtree" +
+      "mfs.pbrpc.readRequest\032\032.xtreemfs.pbrpc.O" +
+      "bjectData\"\013\215\265\030\n\000\000\000\230\265\030\001\022V\n\010truncate\022\037.xtr" +
+      "eemfs.pbrpc.truncateRequest\032 .xtreemfs.p" +
+      "brpc.OSDWriteResponse\"\007\215\265\030\013\000\000\000\022T\n\006unlink" +
+      "\022\".xtreemfs.pbrpc.unlink_osd_Request\032\035.x" +
+      "treemfs.pbrpc.emptyResponse\"\007\215\265\030\014\000\000\000\022T\n\005" +
+      "write\022\034.xtreemfs.pbrpc.writeRequest\032 .xt",
+      "reemfs.pbrpc.OSDWriteResponse\"\013\215\265\030\r\000\000\000\240\265" +
+      "\030\001\022q\n\027xtreemfs_broadcast_gmax\022..xtreemfs" +
+      ".pbrpc.xtreemfs_broadcast_gmaxRequest\032\035." +
+      "xtreemfs.pbrpc.emptyResponse\"\007\215\265\030\024\000\000\000\022j\n" +
+      "\025xtreemfs_check_object\022,.xtreemfs.pbrpc." +
+      "xtreemfs_check_objectRequest\032\032.xtreemfs." +
+      "pbrpc.ObjectData\"\007\215\265\030\025\000\000\000\022{\n\034xtreemfs_cl" +
+      "eanup_get_results\022\034.xtreemfs.pbrpc.empty" +
+      "Request\0324.xtreemfs.pbrpc.xtreemfs_cleanu" +
+      "p_get_resultsResponse\"\007\215\265\030\036\000\000\000\022y\n\033xtreem",
+      "fs_cleanup_is_running\022\034.xtreemfs.pbrpc.e" +
+      "mptyRequest\0323.xtreemfs.pbrpc.xtreemfs_cl" +
+      "eanup_is_runningResponse\"\007\215\265\030\037\000\000\000\022o\n\026xtr" +
+      "eemfs_cleanup_start\022-.xtreemfs.pbrpc.xtr" +
+      "eemfs_cleanup_startRequest\032\035.xtreemfs.pb" +
+      "rpc.emptyResponse\"\007\215\265\030 \000\000\000\022q\n\027xtreemfs_c" +
+      "leanup_status\022\034.xtreemfs.pbrpc.emptyRequ" +
+      "est\032/.xtreemfs.pbrpc.xtreemfs_cleanup_st" +
+      "atusResponse\"\007\215\265\030!\000\000\000\022]\n\025xtreemfs_cleanu" +
+      "p_stop\022\034.xtreemfs.pbrpc.emptyRequest\032\035.x",
+      "treemfs.pbrpc.emptyResponse\"\007\215\265\030\"\000\000\000\022g\n\037" +
+      "xtreemfs_cleanup_versions_start\022\034.xtreem" +
+      "fs.pbrpc.emptyRequest\032\035.xtreemfs.pbrpc.e" +
+      "mptyResponse\"\007\215\265\030#\000\000\000\022o\n\026xtreemfs_repair" +
+      "_object\022-.xtreemfs.pbrpc.xtreemfs_repair" +
+      "_objectRequest\032\035.xtreemfs.pbrpc.emptyRes" +
+      "ponse\"\007\215\265\030$\000\000\000\022d\n\022xtreemfs_rwr_fetch\022).x" +
+      "treemfs.pbrpc.xtreemfs_rwr_fetchRequest\032" +
+      "\032.xtreemfs.pbrpc.ObjectData\"\007\215\265\030I\000\000\000\022u\n\027" +
+      "xtreemfs_rwr_flease_msg\022..xtreemfs.pbrpc",
+      ".xtreemfs_rwr_flease_msgRequest\032\035.xtreem" +
+      "fs.pbrpc.emptyResponse\"\013\215\265\030G\000\000\000\240\265\030\001\022^\n\023x" +
+      "treemfs_rwr_notify\022\037.xtreemfs.pbrpc.File" +
+      "Credentials\032\035.xtreemfs.pbrpc.emptyRespon" +
+      "se\"\007\215\265\030K\000\000\000\022|\n\036xtreemfs_rwr_set_primary_" +
+      "epoch\0225.xtreemfs.pbrpc.xtreemfs_rwr_set_" +
+      "primary_epochRequest\032\032.xtreemfs.pbrpc.Ob" +
+      "jectData\"\007\215\265\030N\000\000\000\022i\n\023xtreemfs_rwr_status" +
+      "\022*.xtreemfs.pbrpc.xtreemfs_rwr_statusReq" +
+      "uest\032\035.xtreemfs.pbrpc.ReplicaStatus\"\007\215\265\030",
+      "L\000\000\000\022m\n\025xtreemfs_rwr_truncate\022,.xtreemfs" +
+      ".pbrpc.xtreemfs_rwr_truncateRequest\032\035.xt" +
+      "reemfs.pbrpc.emptyResponse\"\007\215\265\030J\000\000\000\022m\n\023x" +
+      "treemfs_rwr_update\022*.xtreemfs.pbrpc.xtre" +
+      "emfs_rwr_updateRequest\032\035.xtreemfs.pbrpc." +
+      "emptyResponse\"\013\215\265\030H\000\000\000\240\265\030\001\022q\n\027xtreemfs_r" +
+      "wr_auth_state\022..xtreemfs.pbrpc.xtreemfs_" +
+      "rwr_auth_stateRequest\032\035.xtreemfs.pbrpc.e" +
+      "mptyResponse\"\007\215\265\030O\000\000\000\022y\n\033xtreemfs_rwr_re" +
+      "set_complete\0222.xtreemfs.pbrpc.xtreemfs_r",
+      "wr_reset_completeRequest\032\035.xtreemfs.pbrp" +
+      "c.emptyResponse\"\007\215\265\030P\000\000\000\022v\n\032xtreemfs_int" +
+      "ernal_get_gmax\0221.xtreemfs.pbrpc.xtreemfs" +
+      "_internal_get_gmaxRequest\032\034.xtreemfs.pbr" +
+      "pc.InternalGmax\"\007\215\265\030(\000\000\000\022h\n\032xtreemfs_int" +
+      "ernal_truncate\022\037.xtreemfs.pbrpc.truncate" +
+      "Request\032 .xtreemfs.pbrpc.OSDWriteRespons" +
+      "e\"\007\215\265\030)\000\000\000\022\233\001\n\037xtreemfs_internal_get_fil" +
+      "e_size\0226.xtreemfs.pbrpc.xtreemfs_interna" +
+      "l_get_file_sizeRequest\0327.xtreemfs.pbrpc.",
+      "xtreemfs_internal_get_file_sizeResponse\"" +
+      "\007\215\265\030*\000\000\000\022\207\001\n\034xtreemfs_internal_read_loca" +
+      "l\0223.xtreemfs.pbrpc.xtreemfs_internal_rea" +
+      "d_localRequest\032).xtreemfs.pbrpc.Internal" +
+      "ReadLocalResponse\"\007\215\265\030+\000\000\000\022\200\001\n xtreemfs_" +
+      "internal_get_object_set\0227.xtreemfs.pbrpc" +
+      ".xtreemfs_internal_get_object_setRequest" +
+      "\032\032.xtreemfs.pbrpc.ObjectList\"\007\215\265\030,\000\000\000\022\205\001" +
+      "\n!xtreemfs_internal_get_fileid_list\022\034.xt" +
+      "reemfs.pbrpc.emptyRequest\0329.xtreemfs.pbr",
+      "pc.xtreemfs_internal_get_fileid_listResp" +
+      "onse\"\007\215\265\030-\000\000\000\022S\n\025xtreemfs_lock_acquire\022\033" +
+      ".xtreemfs.pbrpc.lockRequest\032\024.xtreemfs.p" +
+      "brpc.Lock\"\007\215\265\0302\000\000\000\022Q\n\023xtreemfs_lock_chec" +
+      "k\022\033.xtreemfs.pbrpc.lockRequest\032\024.xtreemf" +
+      "s.pbrpc.Lock\"\007\215\265\0303\000\000\000\022\\\n\025xtreemfs_lock_r" +
+      "elease\022\033.xtreemfs.pbrpc.lockRequest\032\035.xt" +
+      "reemfs.pbrpc.emptyResponse\"\007\215\265\0304\000\000\000\022f\n\rx" +
+      "treemfs_ping\022%.xtreemfs.pbrpc.xtreemfs_p" +
+      "ingMesssage\032%.xtreemfs.pbrpc.xtreemfs_pi",
+      "ngMesssage\"\007\215\265\030<\000\000\000\022Y\n\021xtreemfs_shutdown" +
+      "\022\034.xtreemfs.pbrpc.emptyRequest\032\035.xtreemf" +
+      "s.pbrpc.emptyResponse\"\007\215\265\030F\000\000\000\022\222\001\n\034xtree" +
+      "mfs_xloc_set_invalidate\0223.xtreemfs.pbrpc" +
+      ".xtreemfs_xloc_set_invalidateRequest\0324.x" +
+      "treemfs.pbrpc.xtreemfs_xloc_set_invalida" +
+      "teResponse\"\007\215\265\030Q\000\000\000\022}\n#xtreemfs_rwr_auth" +
+      "_state_invalidated\022..xtreemfs.pbrpc.xtre" +
+      "emfs_rwr_auth_stateRequest\032\035.xtreemfs.pb" +
+      "rpc.emptyResponse\"\007\215\265\030R\000\000\000\032\007\225\265\0301u\000\000B(\n&o",
+      "rg.xtreemfs.pbrpc.generatedinterfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -33393,7 +33403,7 @@ public final class OSD {
           internal_static_xtreemfs_pbrpc_xtreemfs_xloc_set_invalidateResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_xtreemfs_xloc_set_invalidateResponse_descriptor,
-              new java.lang.String[] { "IsPrimary", "Status", });
+              new java.lang.String[] { "LeaseState", "ReplicaStatus", });
           com.google.protobuf.ExtensionRegistry registry =
             com.google.protobuf.ExtensionRegistry.newInstance();
           registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.procId);

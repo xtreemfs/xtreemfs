@@ -22,6 +22,7 @@ import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.stages.PreprocStage.InvalidateXLocSetCallback;
 import org.xtreemfs.osd.stages.StorageStage.InternalGetReplicaStateCallback;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateResponse;
@@ -57,19 +58,19 @@ public class InvalidateXLocSetOperation extends OSDOperation {
                 new InvalidateXLocSetCallback() {
 
                     @Override
-                    public void invalidateComplete(boolean isPrimary, ErrorResponse error) {
+                    public void invalidateComplete(LeaseState leaseState, ErrorResponse error) {
                         if (error != null) {
                             rq.sendError(error);
                         } else {
-                            postInvalidation(rq, isPrimary);
+                            postInvalidation(rq, leaseState);
                         }
                     }
                 });
     }
 
-    private void postInvalidation(final OSDRequest rq, final boolean isPrimary) {
+    private void postInvalidation(final OSDRequest rq, final LeaseState leaseState) {
         if (rq.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
-            invalidationFinished(rq, isPrimary, null);
+            invalidationFinished(rq, leaseState, null);
         } else {
             master.getStorageStage().internalGetReplicaState(rq.getFileId(),
                     rq.getLocationList().getLocalReplica().getStripingPolicy(), 0,
@@ -80,19 +81,19 @@ public class InvalidateXLocSetOperation extends OSDOperation {
                             if (error != null) {
                                 rq.sendError(error);
                             } else {
-                                invalidationFinished(rq, isPrimary, localState);
+                                invalidationFinished(rq, leaseState, localState);
                             }
                         }
                     });
         }
     }
 
-    private void invalidationFinished(OSDRequest rq, boolean isPrimary, ReplicaStatus localState) {
+    private void invalidationFinished(OSDRequest rq, LeaseState leaseState, ReplicaStatus localState) {
         xtreemfs_xloc_set_invalidateResponse.Builder response = xtreemfs_xloc_set_invalidateResponse.newBuilder();
-        response.setIsPrimary(isPrimary);
+        response.setLeaseState(leaseState);
 
         if (localState != null) {
-            response.setStatus(localState);
+            response.setReplicaStatus(localState);
         }
         
         rq.sendSuccess(response.build(), null);

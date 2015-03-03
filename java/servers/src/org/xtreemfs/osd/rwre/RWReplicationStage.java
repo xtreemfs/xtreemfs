@@ -59,6 +59,7 @@ import org.xtreemfs.osd.stages.StorageStage.InternalGetMaxObjectNoCallback;
 import org.xtreemfs.osd.stages.StorageStage.WriteObjectCallback;
 import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
@@ -1410,12 +1411,21 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
         } catch (IOException ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
-            callback.invalidateComplete(false, ErrorUtils.getInternalServerError(ex));
+            callback.invalidateComplete(LeaseState.NONE, ErrorUtils.getInternalServerError(ex));
             return;
         }
 
-        // Check if this replica has been primary.
-        final boolean isPrimary = state.isLocalIsPrimary();
+        // Check the replicas lease state.
+        final LeaseState leaseState;
+        if (state.isCellOpen()) {
+            if (state.isLocalIsPrimary()) {
+                leaseState = LeaseState.PRIMARY;
+            } else {
+                leaseState = LeaseState.BACKUP;
+            }
+        } else {
+            leaseState = LeaseState.IDLE;
+        }
 
         // Close the flease cell and return the lease if possible.
         fstage.closeCell(state.getPolicy().getCellId(), true);
@@ -1434,12 +1444,12 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             @Override
             public void proposalResult(ASCIIString cellId, ASCIIString leaseHolder, long leaseTimeout_ms,
                     long masterEpochNumber) {
-                callback.invalidateComplete(isPrimary, null);
+                callback.invalidateComplete(leaseState, null);
             }
 
             @Override
             public void proposalFailed(ASCIIString cellId, Throwable cause) {
-                callback.invalidateComplete(isPrimary, ErrorUtils.getInternalServerError(cause));
+                callback.invalidateComplete(leaseState, ErrorUtils.getInternalServerError(cause));
             }
         });
 

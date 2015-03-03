@@ -51,6 +51,7 @@ import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.osd.rwre.CoordinatedReplicaUpdatePolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState;
@@ -511,6 +512,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             private int             numResponses     = 0;
             private int             numErrors        = 0;
             private boolean         primaryResponded = false;
+            private boolean         primaryExists    = false;
             private RPCResponse<xtreemfs_xloc_set_invalidateResponse>[] responses;
             private ReplicaStatus[] states;
 
@@ -539,12 +541,14 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
                 try {
                     xtreemfs_xloc_set_invalidateResponse response = r.get();
 
-                    if (response.hasStatus()) {
-                        states[osdNum] = response.getStatus();
+                    if (response.hasReplicaStatus()) {
+                        states[osdNum] = response.getReplicaStatus();
                     }
 
-                    if (response.getIsPrimary()) {
+                    if (response.getLeaseState() == LeaseState.PRIMARY) {
                         primaryResponded = true;
+                    } else if (response.getLeaseState() == LeaseState.BACKUP) {
+                        primaryExists = true;
                     }
 
                     numResponses++;
@@ -579,18 +583,18 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             }
         }
 
-        // Wait until either the primary responded, every replica responded or the lease has timed out.
-        // TODO(jdillmann): Return lease information while invalidating and wait only until the actual lease timed out
-        // iff the primary didn't respond. This will also ensure no unnecessary time is spend waiting if no primary
-        // exists at all.
-        long now = System.currentTimeMillis();
-        long leaseEndTimeMs = now + leaseToMS;
+        // If a primary exists, wait until either the primary responded, every replica responded or the lease has timed out.
         synchronized (listener) {
-            while (!listener.primaryResponded
-                    && now < leaseEndTimeMs
-                    && (listener.numResponses + listener.numErrors) < responses.length) {
-                listener.wait(leaseEndTimeMs - now);
-                now = System.currentTimeMillis();
+            if (listener.primaryExists) {
+                long now = System.currentTimeMillis();
+                long leaseEndTimeMs = now + leaseToMS;
+                
+                while (!listener.primaryResponded
+                        && now < leaseEndTimeMs
+                        && (listener.numResponses + listener.numErrors) < responses.length) {
+                    listener.wait(leaseEndTimeMs - now);
+                    now = System.currentTimeMillis();
+                }
             }
         }
         
