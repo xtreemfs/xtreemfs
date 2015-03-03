@@ -151,7 +151,7 @@ public class SSLOptions {
                 } catch(SecurityException e) {
                     Logging.logMessage(Logging.LEVEL_WARN, this,
                                        "Could not remove security provider 'SunPKCS11-NSS'. This might cause TLS connections to time out. " +
-                                       "Known to affect multiple OpenJDK / NSS version combindations.");
+                                       "Known to affect multiple OpenJDK / NSS version combinations.");
                     if (Logging.isDebug()) {
                         Logging.logMessage(Logging.LEVEL_DEBUG, this, "%s:\n%s", e.getMessage(), OutputUtils.stackTraceToString(e));
                     }
