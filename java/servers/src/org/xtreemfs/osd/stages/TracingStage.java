@@ -167,18 +167,9 @@ public class TracingStage extends Stage {
             }
 
             if(!existing) {
-                try {
-                    DIR.ServiceSet mrcs = master.getDIRClient().xtreemfs_service_get_by_type(
-                             master.getConfig().getDirectoryService(), RPCAuthentication.authNone, uc,
-                             DIR.ServiceType.SERVICE_TYPE_MRC);
-                    List<String> mrcAddresses = new ArrayList<String>();
-                    for(DIR.Service mrc: mrcs.getServicesList()) {
-                        mrcAddresses.add(mrc.getUuid());
-                    }
-                    client.createVolume(mrcAddresses, RPCAuthentication.authNone, uc, traceInfo.getTargetVolume());
-                } catch (InterruptedException ex) {
-                    throw new IOException(ex);
-                }
+                client.createVolume(RPCAuthentication.authNone, uc, traceInfo.getTargetVolume(), 511, "service",
+                    "service", GlobalTypes.AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL,
+                    GlobalTypes.StripingPolicyType.STRIPING_POLICY_RAID0, 128, 1, new ArrayList<GlobalTypes.KeyValuePair>());
             }
 
             volume = client.openVolume(traceInfo.getTargetVolume(), sslOpts, new Options());
