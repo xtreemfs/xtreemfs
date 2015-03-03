@@ -203,6 +203,11 @@ public class XtreemFSFileSystem extends FileSystem {
     }
     
     @Override
+    public String getScheme() {
+        return "xtreemfs://";
+    }
+    
+    @Override
     public Configuration getConf() {
     	return conf;
     }

@@ -151,3 +151,4 @@ void UserMappingGridmapUnicore::ReadGridmapFileUnicore6(
 }
 
 }  // namespace xtreemfs
+
