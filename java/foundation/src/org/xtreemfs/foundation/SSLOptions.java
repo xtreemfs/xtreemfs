@@ -158,6 +158,28 @@ public class SSLOptions {
                 }
             }
             
+            // Re-enable disabled algorithms if the user requests it.
+            String disabledAlgorithms = Security.getProperty("jdk.tls.disabledAlgorithms");
+            if (disabledAlgorithms != null && disabledAlgorithms.contains(sslProtocol)) {
+                Logging.logMessage(Logging.LEVEL_WARN, this,
+                      "Algorithm '%s' is disabled in your java.security configuration file (see key 'jdk.tls.disabledAlgorithms'). " +
+                      "Trying to enable algorithm '%s' manually as specified in your configuration file (see key 'ssl.protocol'). " +
+                      "Consider using a newer SSL/TLS algorithm for your setup, " +
+                      "as algorithm '%s' has been disabled by default because of security issues.",
+                      sslProtocol, sslProtocol, sslProtocol);
+                try {
+                    Security.setProperty("jdk.tls.disabledAlgorithms", disabledAlgorithms.replace(sslProtocol, "").replace("  ", ""));
+                    if (Logging.isDebug()) {
+                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "Successfully removed algorithm '%s' from disabled algorithms.",
+                                sslProtocol);
+                    }
+                } catch (SecurityException e) {
+                    Logging.logMessage(Logging.LEVEL_WARN, this, "Could not remove protocol '%s' from disabled protocols. " +
+                        "This might cause SSL Handshake exceptions. For SSLv3 this is known to affect all JDKs fixing issue CVE-2014-3566.",
+                        sslProtocol);
+                }
+            }
+            
             try {
                 sslContext = SSLContext.getInstance(sslProtocol);
             } catch (NoSuchAlgorithmException e) {
@@ -166,7 +188,29 @@ public class SSLOptions {
                 if (Logging.isDebug()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, this, "%s:\n%s", e.getMessage(), OutputUtils.stackTraceToString(e));
                 }
+                
+                // If disabled algorithms have been modified before, try to reset them because the context could not be created.
+                if (disabledAlgorithms != null && disabledAlgorithms.equals(Security.getProperty("jdk.tls.disabledAlgorithms"))) {
+                    if (Logging.isDebug()) {
+                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "Trying to reset disabled algorithms.");
+                    }
+                    try {
+                        Security.setProperty("jdk.tls.disabledAlgorithms", disabledAlgorithms);
+                        if (Logging.isDebug()) {
+                            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Successfully reset disabled algorithms.");
+                        }
+                    } catch (SecurityException e1) {
+                        if (Logging.isDebug()) {
+                            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Could not reset disabled algorithms: %s", OutputUtils.stackTraceToString(e1));
+                        }
+                    }
+                }
+                
                 sslContext = SSLContext.getInstance(DEFAULT_SSL_PROTOCOL);
+            }
+            
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "Disabling the following algorithms: %s", Security.getProperty("jdk.tls.disabledAlgorithms"));
             }
             
             if (trustManager != null) {
