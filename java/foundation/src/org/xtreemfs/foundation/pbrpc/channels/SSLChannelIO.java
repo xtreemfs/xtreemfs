@@ -14,13 +14,14 @@ import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.buffer.BufferPool;
@@ -120,7 +121,13 @@ public class SSLChannelIO extends ChannelIO {
                 enabledProtocols.add(protocol);
             }
         }
-        sslEngine.setEnabledProtocols(enabledProtocols.toArray(new String[enabledProtocols.size()]));
+                
+        String[] enabledProtocolsArray = enabledProtocols.toArray(new String[enabledProtocols.size()]);
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Enabling the following protocols: %s",
+                    Arrays.toString(enabledProtocolsArray));
+        }
+        sslEngine.setEnabledProtocols(enabledProtocolsArray);
         
         if (clientMode) {
             // the first call for a client is wrap()
