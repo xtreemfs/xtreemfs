@@ -74,6 +74,9 @@ Group:          System/Filesystems
 Requires:       %{name}-backend == %{version}-%{release}
 Requires:       grep
 Requires:       jre >= 1.6.0
+%if 0%{?fedora_version} >= 21
+Requires:       redhat-lsb
+%endif
 Provides:       XtreemFS-server = %{version}
 Obsoletes:      XtreemFS-server < %{version}
 Requires(post): util-linux
