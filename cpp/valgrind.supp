@@ -297,3 +297,10 @@
    fun:ssl3_read_bytes
    obj:/lib*/libssl.so.1.0.0
 }
+{ 
+   object caching for ipv6 addresses in glibc
+   Memcheck:Leak 
+   fun:malloc 
+   fun:make_request 
+   fun:__check_pf 
+}
