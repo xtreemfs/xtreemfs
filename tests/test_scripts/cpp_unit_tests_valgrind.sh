@@ -77,7 +77,7 @@ global_rc=0
 for test in test_*
 do
   set +e
-  valgrind --leak-check=full --show-reachable=yes --error-exitcode=23 --suppressions="${XTREEMFS_DIR}/cpp/valgrind.supp" ./$test &>>$VALGRIND_LOG_FILE
+  valgrind --leak-check=full --show-reachable=yes --error-exitcode=23 --gen-suppressions=yes --suppressions="${XTREEMFS_DIR}/cpp/valgrind.supp" ./$test &>>$VALGRIND_LOG_FILE
   rc=$?
   set -e
   # Add some whitespace to the logfile between runs.
