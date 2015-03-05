@@ -233,7 +233,8 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
                    : ( service_address + " (" + service_uuid + ")"))
              + ", retrying ("
              + boost::lexical_cast<string>(retries_left)
-             + " attempts left)";
+             + " attempts left) (Possible reason: The server is using SSL,"
+             + " and the client is not.)";
         }
 
         retry = true;
