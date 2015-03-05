@@ -391,7 +391,8 @@ void AsyncWriteHandler::HandleCallback(
                 + service_address + " (" + service_uuid + ")"
                 + ", retrying ("
                 + boost::lexical_cast<std::string>(retries_left)
-                + " attempts left)";
+                + " attempts left) (Possible reason: The server is using SSL,"
+                + " and the client is not.)";
             if (xtreemfs::util::Logging::log->loggingActive(level)) {
               xtreemfs::util::Logging::log->getLog(level) << error_str << std::endl;
             }
