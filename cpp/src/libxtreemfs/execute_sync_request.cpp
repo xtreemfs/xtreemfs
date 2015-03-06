@@ -63,7 +63,7 @@ void DelayNextRetry(const RPCOptions& options,
     // Append time left to error message.
       double a = 5.0;
     msg += ", waiting "
-        + boost::str(boost::format("%.1d") % a); /* (std::max(
+        + boost::str(boost::format("%1$.1d") % a); /* (std::max(
               0.0,
               static_cast<double>(
                   delay_time_left.total_milliseconds()) / 1000)))
