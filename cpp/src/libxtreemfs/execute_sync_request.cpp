@@ -78,10 +78,13 @@ void DelayNextRetry(const RPCOptions& options,
 
   if (!delay_time_left.is_negative()) {
     try {
+        std::cout << "about to sleep" << std::endl;
       Interruptibilizer::SleepInterruptible(
           static_cast<int>(delay_time_left.total_milliseconds()),
           options.was_interrupted_cb());
+      std::cout << "done sleeping" << std::endl;
     } catch (const boost::thread_interrupted&) {
+        std::cout << "interrupted" << std::endl;
       if (response != NULL) {
         // Free response.
         response->DeleteBuffers();
