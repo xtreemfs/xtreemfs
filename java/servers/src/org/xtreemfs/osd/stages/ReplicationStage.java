@@ -16,7 +16,7 @@ import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDRequest;
@@ -165,7 +165,7 @@ public class ReplicationStage extends Stage {
         final ErrorResponse error = (ErrorResponse) rq.getArgs()[5];
 
         if (error != null) {
-            if (error.getPosixErrno() == POSIXErrno.POSIX_ERROR_EAGAIN) {
+            if (error.getErrorType() == ErrorType.INVALID_VIEW) {
                 // it could happen the request is rejected, because the XLoc is outdated caused by removing
                 // the replica of this OSD
                 // send client error

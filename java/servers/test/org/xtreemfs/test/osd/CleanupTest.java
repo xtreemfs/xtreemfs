@@ -289,7 +289,7 @@ public class CleanupTest {
         // start the cleanUp Operation
         r = env.getOSDClient().xtreemfs_cleanup_start(env.getOSDAddress(),
                 passwd, RPCAuthentication.userService,
-                killZombies, deleteVolumes, restore);
+                killZombies, deleteVolumes, restore, true, 0);
         r.get();
         r.freeBuffers();
         

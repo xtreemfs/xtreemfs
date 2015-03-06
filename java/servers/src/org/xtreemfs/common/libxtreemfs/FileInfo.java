@@ -29,8 +29,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
 
 //JCIP import net.jcip.annotations.GuardedBy;
 /**
- * Stores metadata of the the file as well as the current size. On FileInfo is responsible for all open
- * FileHandles.
+ * Stores metadata of the the file as well as the current size. One FileInfo is responsible for all open FileHandles.
  */
 public class FileInfo {
     /**
@@ -82,6 +81,11 @@ public class FileInfo {
      * Use this to protect "xlocset" and "replicateOnClose".
      */
     Object                                                  xLocSetLock;
+    
+    /**
+     * Use this to protect the renewal of xLocSets.
+     */
+    Object                                                  xLocSetRenewalLock;
 
     /**
      * UUIDIterator which contains the UUIDs of all replicas.
@@ -171,14 +175,14 @@ public class FileInfo {
         pathLock = new Object();
         xLocSetLock = new Object();
 
+        xLocSetRenewalLock = new Object();
+
         openFileHandles = new ConcurrentLinkedQueue<FileHandleImplementation>();
         activeLocks = new ConcurrentHashMap<Integer, Lock>();
 
         // Add the UUIDs of all replicas to the UUID Iterator.
         osdUuidIterator = new UUIDIterator();
-        for (int i = 0; i < xlocset.getReplicasCount(); i++) {
-            osdUuidIterator.addUUID(xlocset.getReplicas(i).getOsdUuids(0));
-        }
+        osdUuidIterator.addUUIDs(Helper.getOSDUUIDsFromXlocSet(xlocset));
 
         asyncWriteHandler = new AsyncWriteHandler(this, osdUuidIterator, volume.getUUIDResolver(),
                 volume.getOsdServiceClient(), volume.getAuthBogus(), volume.getUserCredentialsBogus(), volume
@@ -187,6 +191,11 @@ public class FileInfo {
 
         pendingFilesizeUpdates = new ArrayList<FileHandle>(volume.getOptions().getMaxWriteahead());
     }
+
+    /**
+     * @see FileInfo#updateXLocSetAndRest(XLocSet, boolean)
+     */
+
 
     /**
      * Create a copy of "newXlocSet" and save it to the "xlocset" member. "replicateOnClose" will be save in
@@ -203,6 +212,21 @@ public class FileInfo {
             xlocset = XLocSet.newBuilder(newXlocset).build();
             this.replicateOnClose = replicateOnClose;
         }
+
+        // Update the osdUuidIterator to reflect the changes in the xlocset.
+        osdUuidIterator.clearAndAddUUIDs(Helper.getOSDUUIDsFromXlocSet(newXlocset));
+    }
+
+    /**
+     * @see FileInfo#updateXLocSetAndRest(XLocSet, boolean)
+     */
+    protected void updateXLocSetAndRest(XLocSet newXlocset) {
+        synchronized (xLocSetLock) {
+            xlocset = XLocSet.newBuilder(newXlocset).build();
+        }
+
+        // Update the osdUuidIterator to reflect the changes in the xlocset.
+        osdUuidIterator.clearAndAddUUIDs(Helper.getOSDUUIDsFromXlocSet(newXlocset));
     }
 
     /**

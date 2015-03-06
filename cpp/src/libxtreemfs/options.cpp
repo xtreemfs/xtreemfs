@@ -98,6 +98,7 @@ Options::Options()
   max_tries = 40;
   max_read_tries = 40;
   max_write_tries = 40;
+  max_view_renewals = 5;
   retry_delay_s = 15;
   connect_timeout_s = 15;
   request_timeout_s = 15;
@@ -240,6 +241,10 @@ void Options::GenerateProgramOptionsDescriptions() {
         "Fuse.)"
 #endif  // __linux
         )
+    ("max-view-renewals",
+        po::value(&max_view_renewals)->default_value(max_view_renewals),
+        "Maximum number of attempts to retry a request with a renewed view "
+        "in case an outdated view error did occur.")
     ("retry-delay",
         po::value(&retry_delay_s)->default_value(retry_delay_s),
         "Wait time after a request failed until next attempt (in seconds).")
@@ -271,6 +276,7 @@ void Options::GenerateProgramOptionsDescriptions() {
             ->default_value(ssl_pem_trusted_certs_path),
         "PEM trusted certificates path. Contains all trusted CAs in one PEM "
         "encoded file.")
+#ifndef WIN32
     ("pkcs12-file-path",
         po::value(&ssl_pkcs12_path)->default_value(ssl_pkcs12_path),
         "PKCS#12 file path")
@@ -278,6 +284,7 @@ void Options::GenerateProgramOptionsDescriptions() {
         po::value(&ssl_pkcs12_pass)->default_value(ssl_pkcs12_pass),
         "PKCS#12 passphrase (If the argument is set to '-', the user will be"
         " prompted for the passphrase.)")
+#endif
     ("grid-ssl",
         po::value(&grid_ssl)->zero_tokens(),
         "Explicitly use the XtreemFS Grid-SSL mode. Same as specifying "
@@ -580,7 +587,7 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
         "If you use SSL and PEM files, you have to specify both the PEM"
         " certificate and the PEM private key.");
   }
-
+#ifndef WIN32
   // PKCS#12 and PEM files are mutually exclusive.
   if (!ssl_pem_key_path.empty() && !ssl_pkcs12_path.empty()) {
     throw InvalidCommandLineParametersException("You can only use PEM files"
@@ -593,7 +600,7 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
         " OR a PKCS#12 certificate. However, you specified the password option"
         " for both.");
   }
-
+#endif
   // If a SSL password was given via command line, clean the value from args.
   string to_be_cleaned_password;
   if (!ssl_pem_key_pass.empty() && ssl_pem_key_pass != "-") {

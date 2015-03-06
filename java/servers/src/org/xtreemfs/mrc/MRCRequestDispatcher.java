@@ -69,6 +69,7 @@ import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.osdselection.OSDStatusManager;
 import org.xtreemfs.mrc.stages.OnCloseReplicationThread;
 import org.xtreemfs.mrc.stages.ProcessingStage;
+import org.xtreemfs.mrc.stages.XLocSetCoordinator;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.DirService;
@@ -126,9 +127,14 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     private final boolean                  replicated;
 
     private List<MRCStatusListener>        statusListener;
+    
+    private final XLocSetCoordinator       xLocSetCoordinator;
+
+    private final long                     initTimeMS;
 
     public MRCRequestDispatcher(final MRCConfig config, final BabuDBConfig dbConfig) throws Exception {
-
+        initTimeMS = System.currentTimeMillis();
+        
         Logging.logMessage(Logging.LEVEL_INFO, this, "XtreemFS Metadata Service version "
                 + VersionManagement.RELEASE_VERSION);
 
@@ -203,6 +209,9 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
         osdMonitor = new OSDStatusManager(this);
         osdMonitor.setLifeCycleListener(this);
+
+        xLocSetCoordinator = new XLocSetCoordinator(this);
+        xLocSetCoordinator.setLifeCycleListener(this);
 
         procStage = new ProcessingStage(this);
 
@@ -348,6 +357,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         osdMonitor.shutdown();
 
         procStage.shutdown();
+        
+        xLocSetCoordinator.shutdown();
 
         volumeManager.shutdown();
 
@@ -391,6 +402,9 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 mrcMonitor.start();
                 mrcMonitor.waitForStartup();
             }
+            
+            xLocSetCoordinator.start();
+            xLocSetCoordinator.waitForStartup();
 
             procStage.start();
             procStage.waitForStartup();
@@ -440,6 +454,9 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
         procStage.shutdown();
         procStage.waitForShutdown();
+        
+        xLocSetCoordinator.shutdown();
+        xLocSetCoordinator.waitForShutdown();
 
         volumeManager.shutdown();
 
@@ -910,5 +927,26 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
      */
     public void resumeHeartbeatThread() {
         heartbeatThread.resumeOperation();
+    }
+
+    public XLocSetCoordinator getXLocSetCoordinator() {
+        return xLocSetCoordinator;
+    }
+
+    public ProcessingStage getProcStage() {
+        return procStage;
+    }
+
+    /**
+     * The hashCode is based on the UUID and the system time when {@link MRCRequestDispatcher} was initialized. <br>
+     * It will be unique between different MRCs and instances on the same MRC.
+     */
+    @Override
+    public int hashCode() {
+        StringBuilder hashString = new StringBuilder();
+        hashString.append(super.hashCode());
+        hashString.append(config.getUUID());
+        hashString.append(initTimeMS);
+        return hashString.toString().hashCode();
     }
 }

@@ -16,8 +16,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Stack;
 import java.util.Map.Entry;
+import java.util.Stack;
+
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.LRUCache;
 import org.xtreemfs.foundation.buffer.BufferPool;
@@ -30,6 +31,7 @@ import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.XLocSetVersionState;
 
 /**
  *
@@ -503,21 +505,31 @@ public class RealSingleFileStorageLayout extends StorageLayout {
 
     @Override
     public int getMasterEpoch(String fileId) {
-        return -1;
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public void setMasterEpoch(String fileId, int masterEpoch) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public TruncateLog getTruncateLog(String fileId) {
-        return TruncateLog.newBuilder().build();
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public void setTruncateLog(String fileId, TruncateLog log) {
-
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
+    public XLocSetVersionState getXLocSetVersionState(String fileId) throws IOException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void setXLocSetVersionState(String fileId, XLocSetVersionState versionState) throws IOException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }

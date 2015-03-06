@@ -18,17 +18,18 @@ import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.utils.Converter;
+import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
-import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replicas;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_listRequest;
 
 /**
- * 
+ * @deprecated Replaced by {@link GetXLocSetOperation}
  * @author stender
  */
+@Deprecated
 public class GetXLocListOperation extends MRCOperation {
     
     public GetXLocListOperation(MRCRequestDispatcher master) {

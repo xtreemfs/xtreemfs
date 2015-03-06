@@ -21,6 +21,7 @@ import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
+import org.xtreemfs.mrc.stages.XLocSetLock;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse;
@@ -61,29 +62,36 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
             throw new UserException(POSIXErrno.POSIX_ERROR_EPERM,
                     "replica-update policies may only be set on files");
 
-        // check whether privileged permissions are granted for adding
-        // replicas
+        // check whether privileged permissions are granted for adding replicas
         fam.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq.getDetails().superUser, rq
                 .getDetails().groupIds);
 
-        XLocList xlocs = file.getXLocList();
+        // Check if a xLocSetChange is already in progress.
+        XLocSetLock lock = master.getXLocSetCoordinator().getXLocSetLock(file, sMan);
+        if (lock.isLocked()) {
+            throw new UserException(POSIXErrno.POSIX_ERROR_EAGAIN, "xLocSet change already in progress. Please retry.");
+        }
 
-//        if (ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(xlocs.getReplUpdatePolicy()))
-//            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
-//                    "changing replica update policies of read-only-replicated files is not allowed");
+        XLocList curXLocList = file.getXLocList();
+
+        // if (ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(xlocs.getReplUpdatePolicy()))
+        // throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
+        // "changing replica update policies of read-only-replicated files is not allowed");
 
         if (ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(newReplUpdatePolicy)) {
             // if there is more than one replica, report an error
-            if (xlocs.getReplicaCount() > 1)
+            if (curXLocList.getReplicaCount() > 1)
                 throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
                         "number of replicas has to be reduced 1 before replica update policy can be set to "
                                 + ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE + " (current replica count = "
-                                + xlocs.getReplicaCount() + ")");
+                                + curXLocList.getReplicaCount() + ")");
         }
         
         if (ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA.equals(newReplUpdatePolicy)) {
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "Do no longer use the policy WaRa. Instead you're probably looking for the WaR1 policy (write all replicas, read from one)."
-                    + newReplUpdatePolicy);
+            throw new UserException(
+                    POSIXErrno.POSIX_ERROR_EINVAL,
+                    "Do no longer use the policy WaRa. Instead you're probably looking for the WaR1 policy (write all replicas, read from one)."
+                            + newReplUpdatePolicy);
         }
 
         if (!ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE.equals(newReplUpdatePolicy)
@@ -101,27 +109,25 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "RW-replication of striped files is not supported yet.");
         }
 
-        // Get old ReplicaUpdatePolicy for response
-        String oldPolicy = file.getXLocList().getReplUpdatePolicy();
-
-        // Set the Xattr value
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
-
+        // Create a new XLoc.
         XLoc[] xLocs = new XLoc[file.getXLocList().getReplicaCount()];
         for (int i = 0; i < file.getXLocList().getReplicaCount(); i++) {
             xLocs[i] = file.getXLocList().getReplica(i);
         }
+        XLocList newXLocList = sMan.createXLocList(xLocs, newReplUpdatePolicy, file.getXLocList().getVersion() + 1);
 
-        file.setXLocList(sMan.createXLocList(xLocs, rqArgs.getUpdatePolicy(),
-                file.getXLocList().getVersion() + 1));
+        // Update the X-Locations list.
+        file.setXLocList(newXLocList);
 
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
         sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
 
-        rq.setResponse(xtreemfs_set_replica_update_policyResponse.newBuilder()
-                .setOldUpdatePolicy(oldPolicy).build());
-        
-        update.execute();
+        // Set the response.
+        xtreemfs_set_replica_update_policyResponse response = xtreemfs_set_replica_update_policyResponse.newBuilder()
+                .setOldUpdatePolicy(curXLocList.getReplUpdatePolicy()).build();
+        rq.setResponse(response);
 
+        update.execute();
     }
 
 }

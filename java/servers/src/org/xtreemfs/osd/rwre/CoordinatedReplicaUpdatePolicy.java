@@ -35,6 +35,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping.Builder;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord;
@@ -48,8 +49,8 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
 
     private final OSDServiceClient client;
 
-
-    public CoordinatedReplicaUpdatePolicy(List<ServiceUUID> remoteOSDUUIDs, String localUUID, String fileId, OSDServiceClient client) throws IOException {
+    public CoordinatedReplicaUpdatePolicy(List<ServiceUUID> remoteOSDUUIDs, String localUUID, String fileId,
+            OSDServiceClient client) {
         super(remoteOSDUUIDs, fileId, localUUID);
         this.client = client;
         if (Logging.isDebug())
@@ -61,9 +62,9 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
      * @param operation
      * @return number of external acks required for an operation (majority minus local replica).
      */
-    protected abstract int getNumRequiredAcks(Operation operation);
+    public abstract int getNumRequiredAcks(Operation operation);
 
-    protected abstract boolean backupCanRead();
+    public abstract boolean backupCanRead();
    
 
     @Override
@@ -198,9 +199,29 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
     }
 
     public AuthoritativeReplicaState CalculateAuthoritativeState(ReplicaStatus[] states, String fileId) {
+        return CalculateAuthoritativeState(states, fileId, localUUID, remoteOSDUUIDs);
+    }
+
+    /**
+     * Calculate the AuthoritativeReplicaState containing information about the latest version of the file's objects and
+     * the replicas storing them.
+     * 
+     * @param states
+     *            The states array has to store at index i the ReplicaStatus returned by the replica managed by the OSD
+     *            identified by the UUID stored at position i in the remoteOSDUUIDs list.
+     * @param fileId
+     *            Identifier of the file the AuthoritativeReplicaState is calculated for.
+     * @param localUUID
+     *            Special UUID that is always linked to the last element in the states array.
+     * @param remoteOSDUUIDs
+     *            List of UUIDs that are corresponding to the entries in states.
+     * @return
+     */
+    public static AuthoritativeReplicaState CalculateAuthoritativeState(ReplicaStatus[] states, String fileId,
+            String localUUID, List<ServiceUUID> remoteOSDUUIDs) {
         StringBuilder stateStr = new StringBuilder();
-        Map<Long,TruncateRecord> truncateLog = new HashMap();
-        Map<Long,ObjectVersionMapping.Builder> all_objects = new HashMap();
+        Map<Long,TruncateRecord> truncateLog = new HashMap<Long, TruncateRecord>();
+        Map<Long,ObjectVersionMapping.Builder> all_objects = new HashMap<Long, Builder>();
         long maxTruncateEpoch = 0;
         long maxObjectVersion = 0;
 
@@ -232,8 +253,8 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                     if (i < states.length - 1) {
                         omr.addOsdUuids(remoteOSDUUIDs.get(i).toString());
                     } else {
-                        omr.addOsdUuids(localUUID);
                         // Last state is the local state, i.e. local OSD.
+                        omr.addOsdUuids(localUUID);
                     }
                 }
             }
@@ -274,7 +295,8 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
             stateStr.append(" maxTE=");
             stateStr.append(maxTruncateEpoch);
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) AUTH state for %s: %s",localUUID, fileId, stateStr.toString());
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, (Object) null,
+                        "(R:%s) AUTH state for %s: %s", localUUID, fileId, stateStr.toString());
             }
         }
 
@@ -385,7 +407,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                     if (Logging.isDebug()) {
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"replicated %s successfull for %s",operation,fileId);
                     }
-                    callback.finsihed();
+                    callback.finished();
                 }
 
             }

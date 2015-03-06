@@ -1,5 +1,5 @@
-//automatically generated from OSD.proto at Mon Nov 11 11:46:59 CET 2013
-//(c) 2013. See LICENSE file for details.
+//automatically generated from OSD.proto at Thu Dec 11 16:09:41 CET 2014
+//(c) 2014. See LICENSE file for details.
 
 #ifndef OSDSERVICECLIENT_H
 #define OSDSERVICECLIENT_H
@@ -779,6 +779,52 @@ namespace pbrpc {
                 xtreemfs::pbrpc::emptyRequest* request = NULL;
                 SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
                 client_->sendRequest(address, 30001, 70,
+                     creds, auth, request, data, data_length, NULL,
+                     NULL, sync_cb);
+                return sync_cb;
+            }
+
+            void xtreemfs_xloc_set_invalidate(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds,
+                const xtreemfs::pbrpc::xtreemfs_xloc_set_invalidateRequest* request,
+                CallbackInterface<xtreemfs::pbrpc::xtreemfs_xloc_set_invalidateResponse> *callback, void *context = NULL) {
+                const char* data = NULL; uint32_t data_length = 0;
+                client_->sendRequest(address, 30001, 81,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_xloc_set_invalidateResponse(),
+                     context, callback);
+            }
+
+            SyncCallback<xtreemfs::pbrpc::xtreemfs_xloc_set_invalidateResponse>* xtreemfs_xloc_set_invalidate_sync(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds
+                , const xtreemfs::pbrpc::xtreemfs_xloc_set_invalidateRequest* request) {
+                const char* data = NULL; uint32_t data_length = 0;
+                SyncCallback<xtreemfs::pbrpc::xtreemfs_xloc_set_invalidateResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::xtreemfs_xloc_set_invalidateResponse>();
+                client_->sendRequest(address, 30001, 81,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_xloc_set_invalidateResponse(),
+                     NULL, sync_cb);
+                return sync_cb;
+            }
+
+            void xtreemfs_rwr_auth_state_invalidated(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds,
+                const xtreemfs::pbrpc::xtreemfs_rwr_auth_stateRequest* request,
+                CallbackInterface<xtreemfs::pbrpc::emptyResponse> *callback, void *context = NULL) {
+                const char* data = NULL; uint32_t data_length = 0;
+                client_->sendRequest(address, 30001, 82,
+                     creds, auth, request, data, data_length, NULL,
+                     context, callback);
+            }
+
+            SyncCallback<xtreemfs::pbrpc::emptyResponse>* xtreemfs_rwr_auth_state_invalidated_sync(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds
+                , const xtreemfs::pbrpc::xtreemfs_rwr_auth_stateRequest* request) {
+                const char* data = NULL; uint32_t data_length = 0;
+                SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
+                client_->sendRequest(address, 30001, 82,
                      creds, auth, request, data, data_length, NULL,
                      NULL, sync_cb);
                 return sync_cb;

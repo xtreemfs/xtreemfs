@@ -227,6 +227,12 @@ Tests = [
         'TestSets': [ 'ssd' ]
     },
     {
+        'name': 'view renewal',
+        'file': '18_view_renewal.py',
+        'VolumeConfigs': [ 'regular_two_osds' ],
+        'TestSets': [ 'full', 'short', 'short-ssl' ]
+    },
+    {
         'name': 'xtfs_cleanup test',
         'file': 'system_cleanup_test.sh',
         'VolumeConfigs': ['nomdcache'],
