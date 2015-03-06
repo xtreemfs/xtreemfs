@@ -61,13 +61,15 @@ void DelayNextRetry(const RPCOptions& options,
   if (!delay_time_left.is_negative() && !msg.empty()) {
       std::cout << msg << " : " << delay_time_left.total_milliseconds() << std::endl;
     // Append time left to error message.
+      double a = 5.0;
     msg += ", waiting "
-        + boost::str(boost::format("%.1f") % (std::max(
+        + boost::str(boost::format("%.1f") % a); /* (std::max(
               0.0,
               static_cast<double>(
                   delay_time_left.total_milliseconds()) / 1000)))
-        + " more seconds till next attempt.";
+        + " more seconds till next attempt."; */
   }
+  std::cout << "about to log into log" << std::endl;
 
   if (!msg.empty()) {
     if (Logging::log->loggingActive(level)) {
