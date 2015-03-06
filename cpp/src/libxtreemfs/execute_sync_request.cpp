@@ -59,7 +59,7 @@ void DelayNextRetry(const RPCOptions& options,
 
   string msg = delay_error;
   if (!delay_time_left.is_negative() && !msg.empty()) {
-      std::cout << "here and : " << delay_time_left.total_milliseconds() << std::endl;
+      std::cout << msg << " : " << delay_time_left.total_milliseconds() << std::endl;
     // Append time left to error message.
     msg += ", waiting "
         + boost::str(boost::format("%.1f") % (std::max(
