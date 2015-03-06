@@ -306,8 +306,9 @@
 }
 {
    test for __fprintf_fp
-   Memcheck:Leak
+   Memcheck:Addr4
    fun:__fprintf_fp
    fun:vfprintf
    fun:vsnprintf
 }
+
