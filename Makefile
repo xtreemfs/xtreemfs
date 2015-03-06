@@ -55,7 +55,7 @@ CLIENT_GOOGLE_TEST_CPP_MAIN = $(CLIENT_GOOGLE_TEST_CPP)/lib/.libs/libgtest_main.
 # This prevents the target from getting executed again as long as the checkfile does not change.
 CLIENT_GOOGLE_TEST_CHECKFILE = .googletest_library_already_built
 
-TARGETS = client server foundation flease
+TARGETS = client_debug server foundation flease
 .PHONY:	clean distclean set_version
 
 all: check_server check_client check_test $(TARGETS)
