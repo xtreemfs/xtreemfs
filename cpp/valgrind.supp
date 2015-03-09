@@ -318,3 +318,11 @@
    fun:vfprintf
    fun:vsnprintf
 }
+{
+   floating point formatting in glibc
+   Memcheck:Addr8
+   fun:isnan
+   fun:__printf_fp
+   fun:vfprintf
+   fun:vsnprintf
+}
