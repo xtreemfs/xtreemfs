@@ -305,9 +305,9 @@
    fun:__check_pf 
 }
 {
-   test for __fprintf_fp
+   test for __printf_fp
    Memcheck:Addr4
-   fun:__fprintf_fp
+   fun:__printf_fp
    fun:vfprintf
    fun:vsnprintf
 }
