@@ -306,6 +306,13 @@
 }
 {
    floating point formatting in glibc
+   Memcheck:Addr1
+   fun:__printf_fp
+   fun:vfprintf
+   fun:vsnprintf
+}
+{
+   floating point formatting in glibc
    Memcheck:Addr4
    fun:__printf_fp
    fun:vfprintf
@@ -314,14 +321,7 @@
 {
    floating point formatting in glibc
    Memcheck:Addr8
-   fun:__printf_fp
-   fun:vfprintf
-   fun:vsnprintf
-}
-{
-   floating point formatting in glibc
-   Memcheck:Addr8
-   fun:isnan
+   ...
    fun:__printf_fp
    fun:vfprintf
    fun:vsnprintf
