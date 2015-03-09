@@ -17,7 +17,9 @@
 #include <boost/thread/thread.hpp>
 #include <ctime>
 #include <google/protobuf/descriptor.h>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 #include "libxtreemfs/interrupt.h"
@@ -62,14 +64,16 @@ void DelayNextRetry(const RPCOptions& options,
       std::cout << msg << " : " << delay_time_left.total_milliseconds() << std::endl;
     // Append time left to error message.
       double a = 5.0;
+      std::ostringstream out;
+      out << std::fixed << std::setprecision(1) << a;
     msg += ", waiting "
-        + boost::str(boost::format("%1.1f") % a); /* (std::max(
+        + out.str(); /* (std::max(
               0.0,
               static_cast<double>(
                   delay_time_left.total_milliseconds()) / 1000)))
         + " more seconds till next attempt."; */
   }
-  std::cout << "about to log into log" << std::endl;
+  std::cout << "about to log into log : " << msg << std::endl;
 
   if (!msg.empty()) {
     if (Logging::log->loggingActive(level)) {
