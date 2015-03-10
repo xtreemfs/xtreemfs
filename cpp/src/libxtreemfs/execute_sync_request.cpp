@@ -17,9 +17,7 @@
 #include <boost/thread/thread.hpp>
 #include <ctime>
 #include <google/protobuf/descriptor.h>
-#include <iomanip>
 #include <iostream>
-#include <sstream>
 #include <string>
 
 #include "libxtreemfs/interrupt.h"
@@ -61,19 +59,14 @@ void DelayNextRetry(const RPCOptions& options,
 
   string msg = delay_error;
   if (!delay_time_left.is_negative() && !msg.empty()) {
-      std::cout << msg << " : " << delay_time_left.total_milliseconds() << std::endl;
     // Append time left to error message.
-      double a = 5.0;
-      std::ostringstream out;
-      out << std::fixed << std::setprecision(1) << a;
     msg += ", waiting "
-        + out.str(); /* (std::max(
+        + boost::str(boost::format("%.1f") % (std::max(
               0.0,
               static_cast<double>(
                   delay_time_left.total_milliseconds()) / 1000)))
-        + " more seconds till next attempt."; */
+        + " more seconds till next attempt.";
   }
-  std::cout << "about to log into log : " << msg << std::endl;
 
   if (!msg.empty()) {
     if (Logging::log->loggingActive(level)) {
@@ -84,13 +77,10 @@ void DelayNextRetry(const RPCOptions& options,
 
   if (!delay_time_left.is_negative()) {
     try {
-        std::cout << "about to sleep" << std::endl;
       Interruptibilizer::SleepInterruptible(
           static_cast<int>(delay_time_left.total_milliseconds()),
           options.was_interrupted_cb());
-      std::cout << "done sleeping" << std::endl;
     } catch (const boost::thread_interrupted&) {
-        std::cout << "interrupted" << std::endl;
       if (response != NULL) {
         // Free response.
         response->DeleteBuffers();

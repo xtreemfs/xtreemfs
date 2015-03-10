@@ -10,7 +10,6 @@ env:
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -y libboost-all-dev libfuse-dev fuse libssl-dev libattr1-dev make cmake automake python valgrind
-  - ldd --version
 
 before_script:
   - TEST_DIR="/tmp/xtreemfs_xtestenv"
