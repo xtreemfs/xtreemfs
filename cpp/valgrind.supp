@@ -297,3 +297,32 @@
    fun:ssl3_read_bytes
    obj:/lib*/libssl.so.1.0.0
 }
+{ 
+   object caching for ipv6 addresses in glibc
+   Memcheck:Leak 
+   fun:malloc 
+   fun:make_request 
+   fun:__check_pf 
+}
+{
+   floating point formatting in glibc
+   Memcheck:Addr1
+   fun:__printf_fp
+   fun:vfprintf
+   fun:vsnprintf
+}
+{
+   floating point formatting in glibc
+   Memcheck:Addr4
+   fun:__printf_fp
+   fun:vfprintf
+   fun:vsnprintf
+}
+{
+   floating point formatting in glibc
+   Memcheck:Addr8
+   ...
+   fun:__printf_fp
+   fun:vfprintf
+   fun:vsnprintf
+}

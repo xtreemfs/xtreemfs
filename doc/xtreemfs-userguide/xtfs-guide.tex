@@ -32,7 +32,7 @@
 \begin{flushleft}
 \sffamily \begin{LARGE}The XtreemFS Installation and User Guide\end{LARGE}
 
-Version 1.5.x
+Version 1.5.1
 \end{flushleft}
 
 
@@ -47,6 +47,38 @@ This document is \copyright{} 2009-\the\year{} by Bj\"orn Kolbeck, Jan Stender, 
 \tableofcontents
 
 \chapter*{Changes}
+
+Summary of important changes in release 1.5.1:
+
+\begin{itemize}
+  \item \textbf{Improved Hadoop support}\\
+      Hadoop Adapter supports Hadoop-2.x and other applications running on the
+      YARN platform.
+  \item \textbf{Consistent adding and removing replicas for R/W replication}\\
+      Replica consistency is ensured while adding and removing replicas,
+      xtfs\_scrub can replace failed replicas automatically.
+  \item \textbf{Improved SSL mode}\\
+      The used SSL/TLS version is selectable, strict certificate chain checks
+      are possible, the SSL code on client and server side was improved.
+  \item \textbf{Better support for mounting XtreemFS using /etc/fstab}\\
+      All mount parameters can be passed to the client by mount.xtreemfs -o
+      option=value.
+  \item \textbf{Initial version of an LD\_PRELOAD based client}\\
+      The client comes in the form of a library that can be linked to an
+      application via LD\_PRELOAD. File system calls to XtreemFS are directly
+      forwarded to the services without FUSE. The client is intended for systems
+      without FUSE or performance critical applications (experimental).
+  \item \textbf{The size of a volume can be limited}\\
+      Added quota support on volume level. The capacity limits are currently
+      checked while opening a file on the MRC.
+  \item \textbf{Minor bugfixes and improvements across all components.}\\
+      See the CHANGELOG for more details and references to the issue numbers.
+  \item \textbf{OSD health monitoring}\\
+      OSDs can report their health, e.g. determined by SMART values to the DIR.
+      The results are aggregated in the DIR web interface. The default OSD
+      selection policy can skip unhealthy OSDs.
+\end{itemize}
+
 Summary of important changes in release 1.5:
 
 \begin{itemize}
@@ -2166,9 +2198,9 @@ The process will be started and can be stopped by setting the option
 \texttt{-stop}. To watch the cleanup progress use option \texttt{-i} for the
 interactive mode. For further information see \texttt{man xtfs\_cleanup}.
 
-The cleanup tool is also responsible for the deletion of orhpaned metadata. Metadata can 
-not be deleted instantly because some information (particularly the XLocSets' version) is 
-required to preserve consistency, even if the file has been deleted or a replica has been 
+The cleanup tool is also responsible for the deletion of orhpaned metadata. Metadata can
+not be deleted instantly because some information (particularly the XLocSets' version) is
+required to preserve consistency, even if the file has been deleted or a replica has been
 removed. Metadata must be retained until it is assured, that every client has a consistent
 view on the set of participating replicas. By default metadata is deleted after 600 seconds,
 which is equal to the time span a capability is valid.

@@ -1,3 +1,23 @@
+12-MAR-2015: release 1.5.1
+
+  Changes:
+    * Hadoop Adapter supports Hadoop-2.x and other applications running on the YARN platform (tested with Apache Spark and Apache Flink), new OSD selection policy that imitates the HDFS placement behavior.
+    * Consistent adding and removing replicas for R/W replication.
+    * xtfs_scrup now replaces failed replicas using the R/W replication policy.
+    * Improvements of the SSL mode: the used SSL/TLS version is selectable, strict certificate chain checks are possible, the SSL code on client and server side was improved.
+    * Support for PKCS12 certificate containers is remove from the Windows client (did not work in previous release).
+    * mount.xtreemfs accepts all parameters to be passed in the form -o option=value. If XtreemFS is mounted via /etc/fstab, mount options are passed to the XtreemFS client.
+    * Dockerfiles for the XtreemFS services are available at https://github.com/xtreemfs/xtreemfs-docker.
+    * A Vagrantfile is available in the XtreemFS repository to ease development and testing for new contributors.
+    * Fixed snapshots in the case of deleted files.
+    * Snapshots can be deleted even after inactivating snapshots for a volume (issue 290).
+    * Initial version of an LD_PRELOAD based client that bypasses FUSE (experimental).
+    * Initial implementation of volume quotas (checked only while opening files by the MRC).
+    * OSDs can report their health to the DIR (e.g. based on SMART values), which aggregates this information in the web interface. A new OSD selection policy sorts out unhealthy OSDs.
+    * Improved automatic testing: introduced Travis-CI, migrated all JUnit tests to version 4, improved reliability of nightly integration tests.
+    * Added new benchmark tool xtfs_benchmark that is based on the JAVA libxtreemfs.
+    * Many small improvements and fixes.
+
 12-MAR-2014: release 1.5 (Wonderful Waffles)
 
   Changes:
@@ -17,7 +37,7 @@
     * Improved general stability (e.g., see issues 297, 301).
     * xtfs_scrub now repairs replicas with an invalid checksum automatically.
     * Disabled deferred deletion of file data on the OSDs.
-    * Improved test coverage of nightly tests and added missing unit tests and a Valgrind leak check for C++ unit tests.    
+    * Improved test coverage of nightly tests and added missing unit tests and a Valgrind leak check for C++ unit tests.
 
 12-NOV-2012: release 1.4 (Salty Sticks)
 
