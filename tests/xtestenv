@@ -152,7 +152,7 @@ class TestEnvironment:
                                       'passphrase')
             
             if snmp_enabled:
-            	self.__dir.enable_snmp(dir_port+2000,'localhost', 
+                self.__dir.enable_snmp(dir_port+2000,'localhost',
                                        os.path.join(self.__xtreemfs_dir,"config","snmp.acl"))	 
             
             self.__dir.write_config_file()
