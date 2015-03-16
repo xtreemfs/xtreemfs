@@ -492,10 +492,11 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
         }
 
         // Find out if this known option has been explicitly specified.
-        if (find_if(regular_options.begin(), regular_options.end(),
-                    boost::bind(alg::starts_with<string, string, alg::is_equal>,
-                                _1, prefixed_long_opt, alg::is_equal()))
-                    == regular_options.end() &&
+        if ((prefixed_long_opt.empty() ||
+             find_if(regular_options.begin(), regular_options.end(),
+                     boost::bind(alg::starts_with<string, string, alg::is_equal>,
+                                 _1, prefixed_long_opt, alg::is_equal()))
+                     == regular_options.end()) &&
             (prefixed_short_opt.empty() ||
              find_if(regular_options.begin(), regular_options.end(),
                      boost::bind(alg::starts_with<string, string, alg::is_equal>,
