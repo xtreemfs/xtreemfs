@@ -14,6 +14,7 @@
 #include <boost/bind.hpp>
 #include <boost/program_options/cmdline.hpp>
 #include <boost/tokenizer.hpp>
+#include <boost/utility.hpp>
 #include <iostream>
 #include <string>
 
