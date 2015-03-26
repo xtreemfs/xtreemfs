@@ -1,0 +1,7 @@
+.classpath
+.project
+*.class
+/src/org/xtreemfs/common/libxtreemfs/swig/
+/build/
+/dist/
+/.settings/

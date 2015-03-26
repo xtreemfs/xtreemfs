@@ -228,6 +228,10 @@ ifdef BUILD_PRELOAD
 	CMAKE_BUILD_PRELOAD = -DBUILD_PRELOAD=true
 endif
 
+ifdef BUILD_JNI
+	CMAKE_BUILD_JNI = -DBUILD_JNI=true
+endif
+
 
 client_thirdparty: $(CLIENT_THIRDPARTY_REQUIREMENTS)
 
@@ -270,7 +274,7 @@ client_debug: CLIENT_DEBUG = -DCMAKE_BUILD_TYPE=Debug
 client_debug: client
 
 client: check_client client_thirdparty set_version
-	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG) $(CMAKE_BOOST_ROOT) $(CMAKE_BUILD_CLIENT_TESTS) $(CMAKE_SKIP_FUSE) ${CMAKE_BUILD_PRELOAD}
+	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG) $(CMAKE_BOOST_ROOT) $(CMAKE_BUILD_CLIENT_TESTS) $(CMAKE_SKIP_FUSE) ${CMAKE_BUILD_PRELOAD} ${CMAKE_BUILD_JNI}
 	@$(MAKE) -C $(XTREEMFS_CLIENT_BUILD_DIR)
 	@cd $(XTREEMFS_CLIENT_BUILD_DIR); for i in *.xtreemfs xtfsutil; do [ -f $(XTREEMFS_BINARIES_DIR)/$$i ] && rm -f $(XTREEMFS_BINARIES_DIR)/$$i; done; true
 	@cp   -p $(XTREEMFS_CLIENT_BUILD_DIR)/*.xtreemfs $(XTREEMFS_BINARIES_DIR)

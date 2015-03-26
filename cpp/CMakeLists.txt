@@ -340,6 +340,36 @@ if (BUILD_PRELOAD)
   ADD_EXECUTABLE(preload_test "test/ld_preload/preload_test.cpp")
 endif(BUILD_PRELOAD)
 
+
+if (BUILD_JNI)
+  FIND_PACKAGE(SWIG REQUIRED)
+  # INCLUDE(${SWIG_USE_FILE})
+  # Use modified UseSWIG.cmake
+  INCLUDE(cmake/UseSWIG.cmake)
+
+  FIND_PACKAGE(JNI REQUIRED)
+  if (JNI_FOUND)
+      message (STATUS "JNI_INCLUDE_DIRS=${JNI_INCLUDE_DIRS}")
+      message (STATUS "JNI_LIBRARIES=${JNI_LIBRARIES}")
+  endif()
+  INCLUDE_DIRECTORIES(${JNI_INCLUDE_DIRS})
+
+  SET(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_SOURCE_DIR}/../java/jni/src/org/xtreemfs/common/libxtreemfs/swig/)
+  SET(CMAKE_SWIG_FLAGS -package org.xtreemfs.common.libxtreemfs.swig)
+  
+  # Workaround to pass -D defines to SWIG -> fixed in modified UseSWIG.cmake
+  # SET(CMAKE_SWIG_FLAGS "$(CXX_DEFINES)")
+  
+  set(SRCS_LIBXTREEMFS ${SRCS_RPC} ${SRCS_UTIL} ${SRCS_GENERATED} ${SRCS_XTREEMFS})
+  set(LIBS_LIBXTREEMFS ${CLIENT_GOOGLE_PROTOBUF_CPP_DYNAMIC_LIBRARY} ${Boost_LIBRARIES} ${LIBPTHREAD} ${OPENSSL_LIBRARIES} ${LIBSOCKET_SOLARIS} ${LIBNSL_SOLARIS})
+
+  SET_SOURCE_FILES_PROPERTIES("include/swig/java.i" PROPERTIES CPLUSPLUS ON)
+  SWIG_ADD_MODULE(xtreemfs_jni java "include/swig/java.i" ${SRCS_LIBXTREEMFS})
+  SWIG_LINK_LIBRARIES(xtreemfs_jni ${LIBS_LIBXTREEMFS} ) 
+
+endif(BUILD_JNI)
+
+
 ################################################################################
 # Define building of unittests.
 ################################################################################
