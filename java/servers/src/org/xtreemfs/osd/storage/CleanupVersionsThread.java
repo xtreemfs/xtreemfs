@@ -280,8 +280,10 @@ public class CleanupVersionsThread extends LifeCycleThread {
                     if (!isRunning)
                         break;
                 }
-                
-                isRunning = false;
+
+                synchronized (this) {
+                    isRunning = false;
+                }
                 
             } while (!quit);
             
