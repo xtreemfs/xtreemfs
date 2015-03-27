@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.SSLOptions;
@@ -72,8 +73,8 @@ public class RPCNIOSocketClient extends LifeCycleThread {
     private final int                                         requestTimeout;
     
     private final int                                         connectionTimeout;
-    
-    private long                                              lastCheck;
+
+    private AtomicLong                                        lastCheck;
     
     private final Selector                                    selector;
     
@@ -132,6 +133,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 "request timeout must be smaller than connection timeout less " + TIMEOUT_GRANULARITY * 2
                     + "ms");
         }
+        this.lastCheck = new AtomicLong();
         this.requestTimeout = requestTimeout;
         this.connectionTimeout = connectionTimeout;
         this.sendBufferSize = sendBufferSize;
@@ -223,8 +225,8 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         }*/
         
         notifyStarted();
-        lastCheck = System.currentTimeMillis();
-        
+        lastCheck.set(System.currentTimeMillis());
+
         try {
             while (!quit) {
                 if (!toBeEstablished.isEmpty()) {
@@ -728,7 +730,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
     private void checkForTimers() {
         // poor man's timer
         long now = System.currentTimeMillis();
-        if (now >= lastCheck + TIMEOUT_GRANULARITY) {
+        if (now >= lastCheck.get() + TIMEOUT_GRANULARITY) {
             // check for timed out requests
             synchronized (connections) {
                 Iterator<RPCClientConnection> conIter = connections.values().iterator();
@@ -777,7 +779,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                     }
                 }
                 
-                lastCheck = now;
+                lastCheck.set(now);
             }
         }
     }
