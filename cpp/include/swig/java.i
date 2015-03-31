@@ -86,8 +86,25 @@ COLLECTION(VectorInt, std::vector<int>, Integer)
 
 %typemap(typecheck) std::string *OUTPUT = jobjectArray;
 %typemap(typecheck) std::string &OUTPUT = jobjectArray;
+// end std::string OUTPUT typemap
 
-
+// Direct ByteBuffer typemap
+// https://github.com/yuvalk/SWIGNIO
+%typemap(jni) char* BUFFER "jobject"
+%typemap(jtype) char* BUFFER "java.nio.ByteBuffer"
+%typemap(jstype) char* BUFFER "java.nio.ByteBuffer"
+%typemap(javain, pre=" assert $javainput.isDirect() : \"Buffer must be allocated direct.\";") char* BUFFER "$javainput"
+%typemap(javaout) char* BUFFER {
+  return $jnicall;
+}
+%typemap(in) char* BUFFER {
+  $1 = (char*) jenv->GetDirectBufferAddress($input);
+  if ($1 == NULL) {
+    SWIG_JavaThrowException(jenv, SWIG_JavaRuntimeException, "Unable to get address of direct buffer. Buffer must be allocated direct.");
+  }
+}
+%typemap(freearg) char* BUFFER ""
+// end Direct ByteBuffer typemap
 
 
 %{
@@ -320,10 +337,24 @@ namespace xtreemfs {
 
 %apply char *BYTE { const char *buf, char *buf };  // FileHandle::Read, FileHandle::Write
 
+
 namespace xtreemfs {
   PROTO_INPUT(xtreemfs::pbrpc::Lock, org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock, lock)
   PROTO2_RETURN(xtreemfs::pbrpc::Lock, org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock, true)
 } 
+
+
+%extend xtreemfs::FileHandle {
+  public: 
+  int readDirect(char* directBuffer, size_t count, int64_t offset) {
+    return $self->Read(directBuffer, count, offset);
+  }
+  int writeDirect(const char* directBuffer, size_t count, int64_t offset) {
+    return $self->Write(directBuffer, count, offset);
+  }
+}
+
+%apply char* BUFFER {const char* directBuffer, char* directBuffer}
 
 
 

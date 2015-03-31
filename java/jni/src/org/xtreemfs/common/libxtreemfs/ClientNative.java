@@ -53,7 +53,7 @@ public class ClientNative extends ClientProxy implements Client {
         OptionsProxy optionsNative = new OptionsProxy();
         SSLOptionsProxy sslOptionsNative = null;
         VolumeProxy volume = openVolumeProxy(volumeName, sslOptionsNative, optionsNative);
-        VolumeNative volumeNative = new VolumeNative(volume);
+        VolumeNative volumeNative = new VolumeNative(volume, volumeName);
 
         return volumeNative;
     }
