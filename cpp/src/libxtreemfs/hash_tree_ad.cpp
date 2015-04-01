@@ -183,8 +183,12 @@ bool operator!=(HashTreeAD::Node const& lhs, HashTreeAD::Node const& rhs) {
  */
 int HashTreeAD::Node::NodeNumber(const HashTreeAD* tree) const {
   // special case for root node
-  if (level == tree->max_level_) {
+  if (level == tree->max_level_ && n == 0) {
     return tree->max_node_number_;
+  }
+  // special case for all nodes behind root node
+  if (level >= tree->max_level_) {
+    return tree->max_node_number_ + 1;
   }
   return LevelStart(level) + (n / 2) * NodeGroupDistance(level) + n % 2;
 }
@@ -746,6 +750,8 @@ bool HashTreeAD::ReadRootNodeFromFile() {
  */
 boost::icl::interval_set<int> HashTreeAD::ReadNodesFromFile(
     boost::icl::interval_set<int> nodeNumbers) {
+  bool root_nood_read = false;
+
   if (concurrent_write_ == "client") {
     nodeNumbers -= stored_nodes_;
     stored_nodes_ += nodeNumbers;
@@ -762,6 +768,7 @@ boost::icl::interval_set<int> HashTreeAD::ReadNodesFromFile(
     // root node is read seperatly
     nodes_.insert(Nodes_t::value_type(Node(max_level_, 0), root_hash_));
     nodeNumbers -= max_node_number_;
+    root_nood_read = true;
   }
 
   BOOST_FOREACH(
@@ -797,6 +804,10 @@ boost::icl::interval_set<int> HashTreeAD::ReadNodesFromFile(
       }
     }
     assert(read_count == bytes_read);
+  }
+
+  if (root_nood_read) {
+    nodeNumbers += max_node_number_;
   }
 
   return nodeNumbers;
@@ -1022,11 +1033,11 @@ void HashTreeAD::UpdateTree() {
 
   // insert changed leafs into nodes_
   BOOST_FOREACH(Nodes_t::value_type node, changed_leafs_) {
-    // TODO(plieser): perf
     nodes_[node.first] = node.second;
   }
 
-  // compute nodes that will be changed
+  // compute some of the nodes that will be changed
+  // for performance only
   BOOST_FOREACH(
       boost::icl::interval_set<int>::interval_type range,
       changed_leafs_numbers_) {
@@ -1049,8 +1060,6 @@ void HashTreeAD::UpdateTree() {
         skiped_min_max_leaf_ancestor = skiped_min_max_leaf_ancestor.Parent(
             this);
       }
-      changed_nodes_ += skiped_min_max_leaf_ancestor.AncestorsWithSiblings(
-          this);
     } else {
       nodes_to_update += min_max_leaf_;
     }
@@ -1103,6 +1112,7 @@ void HashTreeAD::UpdateTree() {
           n++) {
         Node node(level, n);
         nodes_[node] = HashOfNode(node.LeftChild(this), node.RightChild(this));
+        changed_nodes_ += node.NodeNumber(this);
       }
     }
   }
