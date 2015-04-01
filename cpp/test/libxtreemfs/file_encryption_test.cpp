@@ -952,6 +952,28 @@ TEST_F(EncryptionTest, Truncate_10) {
   });
 }
 
+TEST_F(EncryptionTest, Truncate_11) {
+  ASSERT_NO_THROW({
+    file->Write("2I", 2, 6);
+  });
+
+  ASSERT_NO_THROW({
+    file->Write("3P", 2, 12);
+  });
+
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 8);
+  });
+
+  ASSERT_NO_THROW({
+    file->Write("3U", 2, 16);
+  });
+
+  ASSERT_NO_THROW({
+    file->Write("2I", 2, 6);
+  });
+}
+
 TEST_F(EncryptionTest, Open_01) {
   char buffer[50];
   int x;
