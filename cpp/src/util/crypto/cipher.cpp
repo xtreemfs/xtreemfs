@@ -24,20 +24,34 @@ Cipher::Cipher(const std::string& alg_name) {
 }
 
 /**
- * @return    Pair with first object being the iv and the second the  length of
+ * @return    Pair with first object being the iv and the second the length of
  *            the ciphertext.
  */
-
 std::pair<std::vector<unsigned char>, int> Cipher::encrypt(
     boost::asio::const_buffer plaintext, const std::vector<unsigned char>& key,
     boost::asio::mutable_buffer ciphertext) const {
+  std::vector<unsigned char> iv(iv_size());
+  RAND_bytes(iv.data(), iv.size());
+
+  return std::make_pair(iv, encrypt(plaintext, key, iv, ciphertext));
+}
+
+/**
+ * @return    The length of the ciphertext.
+ */
+int Cipher::encrypt(boost::asio::const_buffer plaintext,
+                    const std::vector<unsigned char>& key,
+                    const std::vector<unsigned char>& iv,
+                    boost::asio::mutable_buffer ciphertext) const {
   assert(key_size() == key.size());
+  assert(iv_size() == iv.size());
+  assert(
+      boost::asio::buffer_size(plaintext)
+          <= boost::asio::buffer_size(ciphertext));
 
   EVP_CIPHER_CTX *ctx;
   int len;
   int ciphertext_len;
-  std::vector<unsigned char> iv(iv_size());
-  RAND_bytes(iv.data(), iv.size());
 
   if (!(ctx = EVP_CIPHER_CTX_new())) {
     LogAndThrowOpenSSLError();
@@ -70,7 +84,7 @@ std::pair<std::vector<unsigned char>, int> Cipher::encrypt(
   ciphertext_len += len;
   assert(ciphertext_len <= boost::asio::buffer_size(ciphertext));
 
-  return std::make_pair(iv, ciphertext_len);
+  return ciphertext_len;
 }
 
 /**
@@ -80,6 +94,12 @@ int Cipher::decrypt(boost::asio::const_buffer ciphertext,
                     const std::vector<unsigned char>& key,
                     const std::vector<unsigned char>& iv,
                     boost::asio::mutable_buffer plaintext) const {
+  assert(key_size() == key.size());
+  assert(iv_size() == iv.size());
+  assert(
+      boost::asio::buffer_size(ciphertext) - block_size()
+          <= boost::asio::buffer_size(plaintext));
+
   EVP_CIPHER_CTX *ctx;
   int len;
   int plaintext_len;

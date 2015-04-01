@@ -26,6 +26,12 @@ class Cipher {
       const std::vector<unsigned char>& key,
       boost::asio::mutable_buffer ciphertext) const;
 
+  int encrypt(
+      boost::asio::const_buffer plaintext,
+      const std::vector<unsigned char>& key,
+      const std::vector<unsigned char>& iv,
+      boost::asio::mutable_buffer ciphertext) const;
+
   int decrypt(boost::asio::const_buffer ciphertext,
               const std::vector<unsigned char>& key,
               const std::vector<unsigned char>& iv,

@@ -151,6 +151,11 @@ class ObjectEncryptor : private boost::noncopyable {
   Cipher cipher_;
 
   /**
+   * The cipher used to encrypt keys.
+   */
+  Cipher key_cipher_;
+
+  /**
    * The algorithm used to sign the file.
    */
   SignAlgorithm sign_algo_;

@@ -58,6 +58,7 @@ ObjectEncryptor::ObjectEncryptor(
     : file_enc_key_(lockbox.enc_key().begin(), lockbox.enc_key().end()),
       enc_block_size_(lockbox.block_size()),
       cipher_(lockbox.cipher()),
+      key_cipher_(lockbox.cipher()),
       sign_algo_(
           AsymKey(
               std::vector<unsigned char>(lockbox.sign_key().begin(),
@@ -75,7 +76,8 @@ ObjectEncryptor::ObjectEncryptor(
     file_lock_.reset(new FileLock(this, 0, 0, true));
     hash_tree_.reset(
         new HashTreeAD(meta_file_, &sign_algo_, enc_block_size_,
-                       sign_algo_.get_hash_name(), cipher_.iv_size(),
+                       sign_algo_.get_hash_name(),
+                       cipher_.iv_size() + cipher_.key_size(),
                        concurrent_write_));
 
     hash_tree_->Init();
@@ -112,7 +114,8 @@ ObjectEncryptor::Operation::Operation(ObjectEncryptor* obj_enc, bool write)
         new HashTreeAD(obj_enc->meta_file_, &obj_enc->sign_algo_,
                        obj_enc->enc_block_size_,
                        obj_enc->sign_algo_.get_hash_name(),
-                       obj_enc->cipher_.iv_size(), obj_enc->concurrent_write_));
+                       obj_enc->cipher_.iv_size() + obj_enc->cipher_.key_size(),
+                       obj_enc->concurrent_write_));
   }
   if (obj_enc->concurrent_write_ == "serialize") {
     file_lock_.reset(new FileLock(obj_enc_, 0, 0, write));
@@ -312,12 +315,24 @@ ObjectEncryptor::TruncateOperation::TruncateOperation(
 int ObjectEncryptor::Operation::EncryptEncBlock(
     int block_number, boost::asio::const_buffer plaintext,
     boost::asio::mutable_buffer ciphertext) {
-  std::pair<std::vector<unsigned char>, int> encrypt_res = obj_enc_->cipher_
-      .encrypt(plaintext, obj_enc_->file_enc_key_, ciphertext);
-  std::vector<unsigned char>& iv = encrypt_res.first;
-  int& ciphertext_len = encrypt_res.second;
+  // generate and encrypt key
+  std::vector<unsigned char> key;
+  obj_enc_->key_cipher_.GenerateKey(&key);
+  std::vector<unsigned char> enc_key(key.size());
+  std::pair<std::vector<unsigned char>, int> encrypt_key_res = obj_enc_
+      ->key_cipher_.encrypt(boost::asio::buffer(key), obj_enc_->file_enc_key_,
+                            boost::asio::buffer(enc_key));
+  assert(key.size() == encrypt_key_res.second);
+  enc_key.insert(enc_key.begin(), encrypt_key_res.first.begin(),
+                 encrypt_key_res.first.end());
+
+  // encrypt plaintext
+  int ciphertext_len = obj_enc_->cipher_.encrypt(
+      plaintext, key, std::vector<unsigned char>(obj_enc_->cipher_.iv_size()),
+      ciphertext);
   assert(ciphertext_len == boost::asio::buffer_size(plaintext));
-  hash_tree_->SetLeaf(block_number, iv,
+
+  hash_tree_->SetLeaf(block_number, enc_key,
                       boost::asio::buffer(ciphertext, ciphertext_len));
   return ciphertext_len;
 }
@@ -325,16 +340,30 @@ int ObjectEncryptor::Operation::EncryptEncBlock(
 int ObjectEncryptor::Operation::DecryptEncBlock(
     int block_number, boost::asio::const_buffer ciphertext,
     boost::asio::mutable_buffer plaintext) {
-  std::vector<unsigned char> iv = hash_tree_->GetLeaf(block_number, ciphertext);
-  if (iv.size() == 0) {
+  std::vector<unsigned char> enc_key = hash_tree_->GetLeaf(block_number,
+                                                           ciphertext);
+
+  if (enc_key.size() == 0) {
     // block contains unencrypted 0 of a sparse file
     memset(boost::asio::buffer_cast<void*>(plaintext), 0,
            boost::asio::buffer_size(plaintext));
     return boost::asio::buffer_size(ciphertext);
   }
-  int plaintext_len = obj_enc_->cipher_.decrypt(ciphertext,
-                                                obj_enc_->file_enc_key_, iv,
-                                                plaintext);
+
+  // decrypt encrypted key
+  std::vector<unsigned char> key(obj_enc_->key_cipher_.key_size());
+  std::vector<unsigned char> iv(
+      enc_key.begin(), enc_key.begin() + obj_enc_->key_cipher_.iv_size());
+  int key_len = obj_enc_->cipher_.decrypt(
+      boost::asio::buffer(enc_key.data() + obj_enc_->key_cipher_.iv_size(),
+                          enc_key.size() - obj_enc_->key_cipher_.iv_size()),
+      obj_enc_->file_enc_key_, iv, boost::asio::buffer(key));
+  assert(key_len == key.size());
+
+  // decrypt ciphertext
+  int plaintext_len = obj_enc_->cipher_.decrypt(
+      ciphertext, key, std::vector<unsigned char>(obj_enc_->cipher_.iv_size()),
+      plaintext);
   assert(plaintext_len == boost::asio::buffer_size(ciphertext));
   return plaintext_len;
 }
