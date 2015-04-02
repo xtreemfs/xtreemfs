@@ -27,7 +27,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS;
 
-public class VolumeNative extends VolumeProxy implements Volume {
+public class NativeVolume extends VolumeProxy implements Volume {
 
     private static final String XTREEMFS_DEFAULT_RP      = "xtreemfs.default_rp";
     private static final String OSD_SELECTION_POLICY     = "xtreemfs.osel_policy";
@@ -38,12 +38,12 @@ public class VolumeNative extends VolumeProxy implements Volume {
      */
     private final String        volumeName;
 
-    public VolumeNative(VolumeProxy volume, String volumeName) {
+    public NativeVolume(VolumeProxy volume, String volumeName) {
         super(getCPtr(volume), false);
         this.volumeName = volumeName;
     }
 
-    public VolumeNative(VolumeProxy volume) {
+    public NativeVolume(VolumeProxy volume) {
         this(volume, null);
     }
 
@@ -73,18 +73,18 @@ public class VolumeNative extends VolumeProxy implements Volume {
     }
 
     @Override
-    public FileHandleNative openFile(UserCredentials userCredentials, String path, int flags) throws IOException,
+    public NativeFileHandle openFile(UserCredentials userCredentials, String path, int flags) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException {
         FileHandleProxy fileHandleProxy = openFileProxy(userCredentials, path, flags);
-        return (new FileHandleNative(fileHandleProxy));
+        return (new NativeFileHandle(fileHandleProxy));
     }
 
     @Override
-    public FileHandleNative openFile(UserCredentials userCredentials, String path, int flags, int mode)
+    public NativeFileHandle openFile(UserCredentials userCredentials, String path, int flags, int mode)
             throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException {
         FileHandleProxy fileHandleProxy = openFileProxy(userCredentials, path, flags, mode);
-        return (new FileHandleNative(fileHandleProxy));
+        return (new NativeFileHandle(fileHandleProxy));
     }
 
     @Override

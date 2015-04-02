@@ -8,9 +8,9 @@ import org.xtreemfs.common.libxtreemfs.swig.FileHandleProxy;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
 
-public class FileHandleNative extends FileHandleProxy implements FileHandle {
+public class NativeFileHandle extends FileHandleProxy implements FileHandle {
 
-    public FileHandleNative(FileHandleProxy f) {
+    public NativeFileHandle(FileHandleProxy f) {
         super(FileHandleProxy.getCPtr(f), false);
     }
 

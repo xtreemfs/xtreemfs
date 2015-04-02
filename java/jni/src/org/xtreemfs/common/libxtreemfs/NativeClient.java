@@ -22,18 +22,18 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
 
-public class ClientNative extends ClientProxy implements Client {
+public class NativeClient extends ClientProxy implements Client {
 
     private final static Auth authBogus;
     static {
         authBogus = Auth.newBuilder().setAuthType(AuthType.AUTH_NONE).build();
     }
 
-    protected ClientNative(long cPtr, boolean cMemoryOwn) {
+    protected NativeClient(long cPtr, boolean cMemoryOwn) {
         super(cPtr, cMemoryOwn);
     }
 
-    public ClientNative(ClientProxy c) {
+    public NativeClient(ClientProxy c) {
         this(ClientProxy.getCPtr(c), false);
     }
 
@@ -46,14 +46,14 @@ public class ClientNative extends ClientProxy implements Client {
     }
 
     @Override
-    public VolumeNative openVolume(String volumeName, org.xtreemfs.foundation.SSLOptions sslOptions,
+    public NativeVolume openVolume(String volumeName, org.xtreemfs.foundation.SSLOptions sslOptions,
             org.xtreemfs.common.libxtreemfs.Options options)
             throws AddressToUUIDNotFoundException, VolumeNotFoundException, IOException {
         // TODO: JNIOptions, SSLOptions
         OptionsProxy optionsNative = new OptionsProxy();
         SSLOptionsProxy sslOptionsNative = null;
         VolumeProxy volume = openVolumeProxy(volumeName, sslOptionsNative, optionsNative);
-        VolumeNative volumeNative = new VolumeNative(volume, volumeName);
+        NativeVolume volumeNative = new NativeVolume(volume, volumeName);
 
         return volumeNative;
     }
