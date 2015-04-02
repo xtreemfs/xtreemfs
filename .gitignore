@@ -11,3 +11,4 @@
 .clang_complete
 cscope.out
 .vagrant
+cov-int/
