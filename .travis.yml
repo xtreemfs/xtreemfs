@@ -1,38 +1,7 @@
-language: java
-
-jdk: openjdk6
-
 env:
   global:
     # encrypted COVERITY_SCAN_TOKEN
     - secure: "WkngHI6zO+6m8ZNqrbFZN+V8xCUxXVUMzLGBcOMa2/iiSDGxnRRpGU2jH+4Uf4ChCE4dXLrTXvs4vDjUT7aZ9KVFzcTo4HYejdLeMayFPLeztSYdFUG7EYtambZlh1Ldp67+ZBXLJ152iTWvCm5t/JXs3tA+Q5puZ24OO+U5xAE="
-  matrix:
-    # test suites to run in parallel
-    - TEST_SUITE=travis-junit
-    - TEST_SUITE=travis-cpp
-    - TEST_SUITE=travis-valgrind
-
-before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -y libboost-all-dev libfuse-dev fuse libssl-dev libattr1-dev make cmake automake python valgrind
-
-before_script:
-  - TEST_DIR="/tmp/xtreemfs_xtestenv"
-  - XTREEMFS_DIR=`pwd`
-
-script:
-  - if [ ${COVERITY_SCAN_BRANCH} != 1 ]; then
-    BUILD_CLIENT_TESTS=true make -j2;
-    ./tests/xtestenv --clean-test-dir -x $XTREEMFS_DIR -t $TEST_DIR -c $XTREEMFS_DIR/tests/test_config.py -p $TEST_SUITE;
-    fi
-
-after_failure:
-  - JUNIT_RESULT=`./contrib/travis/parse_results.py $TEST_DIR/result.json 'JUnit tests'`
-  - CPP_RESULT=`./contrib/travis/parse_results.py $TEST_DIR/result.json 'C++ Unit Tests'`
-  - VALGRIND_RESULT=`./contrib/travis/parse_results.py $TEST_DIR/result.json 'Valgrind memory-leak check for C++ Unit Tests'`
-  - if [[ $JUNIT_RESULT = "false" ]]; then cat $TEST_DIR/log/junit.log; fi
-  - if [[ $CPP_RESULT = "false" ]]; then cat cpp/build/Testing/Temporary/LastTest.log; fi
-  - if [[ $VALGRIND_RESULT = "false" ]]; then cat $TEST_DIR/log/valgrind.log; fi
 
 addons:
   coverity_scan:
