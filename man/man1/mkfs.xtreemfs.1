@@ -44,6 +44,9 @@ group id).
 .BI "-a, \--access-control-policy " NULL|POSIX|VOLUME
 Access Control Policy of the volume. By default
 .IR POSIX .
+.TP
+.BI "-q, \--quota q" quota
+Quota of the volume in bytes (default value 0, i.e. quota is disabled), format: <value>M|G|T
 
 .TP
 Striping Policy Options:
@@ -102,13 +105,26 @@ Path to PEM certificate file (for SSL installations only).
 Path to PEM private key file (for SSL installations only).
 .TP
 .BI "--pem-private-key-passphrase " pass
-Passphrase for PEM private key file (for SSL installations only)
+Passphrase for PEM private key file (for SSL installations only).
 .TP
 .BI "--pkcs12-file-path " file
 Path to PKCS#12 file (for SSL installations only).
 .TP
 .BI "--pkcs12-passphrase " pass
 Passphrase for PKCS#12 file (for SSL installations only).
+.TP
+.BI "--verify-certificates "
+Enables X.509 certificate verification.
+.BI "--ignore-verify-errors " errors
+List of error codes to ignore during certificate verification and proceed and accept, see verify(1) for the list of error codes. Only evaluated in conjunction with --verify-certificates.  E.g. '--ignore-verify-errors 20 27 21' to accept certificates with unknown issuer certificates, untrusted certificates and one-element certificate chains (typical setup for local testing).
+.TP
+.BI "--min-ssl-method " ssl-method
+SSL method that this client will accept:
+  - sslv3 accepts SSLv3 only
+  - ssltls accepts SSLv3 and TLSv1.x
+  - tlsv1 accepts TLSv1 only
+  - tlsv11 accepts TLSv1.1 only
+  - tlsv12 accepts TLSv1.2 only
 
 .TP
 Grid Support options:

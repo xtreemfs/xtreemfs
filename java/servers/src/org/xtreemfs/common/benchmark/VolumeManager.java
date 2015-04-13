@@ -186,15 +186,38 @@ class VolumeManager {
     }
 
     private int getVolStripeSize(Volume volume) throws IOException {
-        String valueStr = volume.getXAttr(config.getUserCredentials(), "", "xtreemfs.default_sp" );        
-        String sizeStr = valueStr.split(",")[2];
-        return Integer.valueOf(sizeStr.substring(sizeStr.indexOf(":")+1, sizeStr.length()-1));
+        String valueStr = volume.getXAttr(config.getUserCredentials(), "", "xtreemfs.default_sp");
+        String[] elements = valueStr.split(",");
+        String value = "128";
+        for(String element: elements) {
+            String key = element.substring(0, element.indexOf(":"));
+            if(key.contains("size")) {
+                if(element.contains("}")) {
+                    value = element.substring(element.indexOf(":") + 1, element.indexOf("}"));
+                } else {
+                    value = element.substring(element.indexOf(":") + 1);
+                }
+            }
+        }
+        return Integer.valueOf(value);
+
     }
 
     private int getVolStripeWidth(Volume volume) throws IOException {
-        String valueStr = volume.getXAttr(config.getUserCredentials(), "", "xtreemfs.default_sp" );
-        String widthStr = valueStr.split(",")[1];
-        return Integer.valueOf(widthStr.substring(widthStr.indexOf(":")+1));
+        String valueStr = volume.getXAttr(config.getUserCredentials(), "", "xtreemfs.default_sp");
+        String[] elements = valueStr.split(",");
+        String value = "1";
+        for(String element: elements) {
+            String key = element.substring(0, element.indexOf(":"));
+            if(key.contains("width")) {
+                if(element.contains("}")) {
+                    value = element.substring(element.indexOf(":") + 1, element.indexOf("}"));
+                } else {
+                    value = element.substring(element.indexOf(":") + 1);
+                }
+            }
+        }
+        return Integer.valueOf(value);
     }
     
     private void createDirStructure(Volume volume) throws IOException {

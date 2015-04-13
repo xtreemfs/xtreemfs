@@ -3,9 +3,11 @@ language: java
 jdk: openjdk6
 
 env:
-  - TEST_SUITE=travis-junit
-  - TEST_SUITE=travis-cpp
-  - TEST_SUITE=travis-valgrind
+  matrix:
+    # test suites to run in parallel
+    - TEST_SUITE=travis-junit
+    - TEST_SUITE=travis-cpp
+    - TEST_SUITE=travis-valgrind
 
 before_install:
   - sudo apt-get update -qq
@@ -26,4 +28,3 @@ after_failure:
   - if [[ $JUNIT_RESULT = "false" ]]; then cat $TEST_DIR/log/junit.log; fi
   - if [[ $CPP_RESULT = "false" ]]; then cat cpp/build/Testing/Temporary/LastTest.log; fi
   - if [[ $VALGRIND_RESULT = "false" ]]; then cat $TEST_DIR/log/valgrind.log; fi
-
