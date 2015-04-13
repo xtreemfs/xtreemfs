@@ -13,6 +13,7 @@ import org.xtreemfs.common.libxtreemfs.swig.SSLOptionsProxy;
 import org.xtreemfs.common.libxtreemfs.swig.ServiceAddresses;
 import org.xtreemfs.common.libxtreemfs.swig.VectorString;
 import org.xtreemfs.common.libxtreemfs.swig.VolumeProxy;
+import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
@@ -33,8 +34,15 @@ public class NativeClient extends ClientProxy implements Client {
         super(cPtr, cMemoryOwn);
     }
 
-    public NativeClient(ClientProxy c) {
+    protected NativeClient(ClientProxy c) {
         this(ClientProxy.getCPtr(c), false);
+    }
+
+    public static NativeClient createClient(String[] dirServiceAddressesArray, UserCredentials userCredentials,
+            SSLOptions sslOptions, Options options) {
+        ClientProxy clientProxy = NativeHelper.createClientProxy(dirServiceAddressesArray, userCredentials, sslOptions,
+                options);
+        return new NativeClient(clientProxy);
     }
 
     @Override
@@ -49,10 +57,13 @@ public class NativeClient extends ClientProxy implements Client {
     public NativeVolume openVolume(String volumeName, org.xtreemfs.foundation.SSLOptions sslOptions,
             org.xtreemfs.common.libxtreemfs.Options options)
             throws AddressToUUIDNotFoundException, VolumeNotFoundException, IOException {
-        // TODO: JNIOptions, SSLOptions
-        OptionsProxy optionsNative = new OptionsProxy();
-        SSLOptionsProxy sslOptionsNative = null;
-        VolumeProxy volume = openVolumeProxy(volumeName, sslOptionsNative, optionsNative);
+        OptionsProxy optionsProxy = NativeHelper.migrateOptions(options);
+        SSLOptionsProxy sslOptionsProxy = null;
+        if (sslOptions != null) {
+            // TODO (jdillmann): Merge from sslOptions
+            throw new RuntimeException("SSLOptions are not supported yet.");
+        }
+        VolumeProxy volume = openVolumeProxy(volumeName, sslOptionsProxy, optionsProxy);
         NativeVolume volumeNative = new NativeVolume(volume, volumeName);
 
         return volumeNative;
@@ -175,5 +186,4 @@ public class NativeClient extends ClientProxy implements Client {
         // TODO (jdillmann): Can't access DIR directly to call xtreemfs_service_get_by_name
         return null;
     }
-
 }
