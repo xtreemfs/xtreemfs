@@ -9,11 +9,11 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
 
-public class NativeFileHandle2 implements FileHandle {
+public class NativeFileHandle implements FileHandle {
 
     protected final FileHandleProxy proxy;
 
-    public NativeFileHandle2(FileHandleProxy proxy) {
+    public NativeFileHandle(FileHandleProxy proxy) {
         this.proxy = proxy;
     }
 

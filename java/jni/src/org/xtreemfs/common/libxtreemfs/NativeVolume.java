@@ -32,7 +32,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.StatVFS;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrResponse;
 
-public class NativeVolume2 implements Volume {
+public class NativeVolume implements Volume {
 
     protected final VolumeProxy   proxy;
 
@@ -45,7 +45,7 @@ public class NativeVolume2 implements Volume {
      */
     protected final String        volumeName;
 
-    public NativeVolume2(VolumeProxy proxy, String volumeName) {
+    public NativeVolume(VolumeProxy proxy, String volumeName) {
         this.proxy = proxy;
         this.volumeName = volumeName;
     }
@@ -111,11 +111,11 @@ public class NativeVolume2 implements Volume {
     }
 
     @Override
-    public NativeFileHandle2 openFile(UserCredentials userCredentials, String path, int flags, int mode)
+    public NativeFileHandle openFile(UserCredentials userCredentials, String path, int flags, int mode)
             throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException {
         FileHandleProxy fileHandleProxy = proxy.openFileProxy(userCredentials, path, flags, mode);
-        NativeFileHandle2 fileHandleNative = new NativeFileHandle2(fileHandleProxy);
+        NativeFileHandle fileHandleNative = new NativeFileHandle(fileHandleProxy);
         return fileHandleNative;
     }
 

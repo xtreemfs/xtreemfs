@@ -23,7 +23,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
 
-public class NativeClient2 implements Client {
+public class NativeClient implements Client {
     
     // Load the native library.
     static { System.loadLibrary("xtreemfs_jni"); }
@@ -35,16 +35,16 @@ public class NativeClient2 implements Client {
         authBogus = Auth.newBuilder().setAuthType(AuthType.AUTH_NONE).build();
     }
 
-    public NativeClient2(ClientProxy client) {
+    public NativeClient(ClientProxy client) {
         proxy = client;
     }
 
-    public static NativeClient2 createClient(String[] dirServiceAddressesArray, UserCredentials userCredentials,
+    public static NativeClient createClient(String[] dirServiceAddressesArray, UserCredentials userCredentials,
             SSLOptions sslOptions, Options options) {
 
         ClientProxy clientProxy = NativeHelper.createClientProxy(dirServiceAddressesArray, userCredentials, sslOptions,
                 options);
-        NativeClient2 client = new NativeClient2(clientProxy);
+        NativeClient client = new NativeClient(clientProxy);
         return client;
     }
 
@@ -67,7 +67,7 @@ public class NativeClient2 implements Client {
     }
 
     @Override
-    public NativeVolume2 openVolume(String volumeName, SSLOptions sslOptions, Options options)
+    public NativeVolume openVolume(String volumeName, SSLOptions sslOptions, Options options)
             throws AddressToUUIDNotFoundException, VolumeNotFoundException, IOException {
         OptionsProxy optionsProxy = NativeHelper.migrateOptions(options);
         SSLOptionsProxy sslOptionsProxy = null;
@@ -76,7 +76,7 @@ public class NativeClient2 implements Client {
             throw new RuntimeException("SSLOptions are not supported yet.");
         }
         VolumeProxy volume = proxy.openVolumeProxy(volumeName, sslOptionsProxy, optionsProxy);
-        NativeVolume2 nativeVolume = new NativeVolume2(volume, volumeName);
+        NativeVolume nativeVolume = new NativeVolume(volume, volumeName);
 
         return nativeVolume;
     }

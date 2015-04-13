@@ -24,23 +24,23 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
 
-public class AdminNativeClient2 extends NativeClient2 implements AdminClient {
+public class AdminNativeClient extends NativeClient implements AdminClient {
 
     private final AdminClient adminClient;
 
-    public AdminNativeClient2(ClientProxy client, AdminClient adminClient) {
+    public AdminNativeClient(ClientProxy client, AdminClient adminClient) {
         super(client);
         this.adminClient = adminClient;
     }
 
-    public static AdminNativeClient2 createClient(String[] dirServiceAddressesArray, UserCredentials userCredentials,
+    public static AdminNativeClient createClient(String[] dirServiceAddressesArray, UserCredentials userCredentials,
             SSLOptions sslOptions, Options options) {
 
         ClientProxy clientProxy = NativeHelper.createClientProxy(dirServiceAddressesArray, userCredentials, sslOptions,
                 options);
         AdminClient adminClient = ClientFactory.createAdminClient(dirServiceAddressesArray, userCredentials,
                 sslOptions, options);
-        AdminNativeClient2 client = new AdminNativeClient2(clientProxy, adminClient);
+        AdminNativeClient client = new AdminNativeClient(clientProxy, adminClient);
         return client;
     }
 
@@ -57,7 +57,7 @@ public class AdminNativeClient2 extends NativeClient2 implements AdminClient {
     }
 
     @Override
-    public AdminNativeVolume2 openVolume(String volumeName, SSLOptions sslOptions, Options options)
+    public AdminNativeVolume openVolume(String volumeName, SSLOptions sslOptions, Options options)
             throws AddressToUUIDNotFoundException, VolumeNotFoundException, IOException {
         OptionsProxy optionsProxy = NativeHelper.migrateOptions(options);
         SSLOptionsProxy sslOptionsProxy = null;
@@ -67,7 +67,7 @@ public class AdminNativeClient2 extends NativeClient2 implements AdminClient {
         }
         VolumeProxy volume = proxy.openVolumeProxy(volumeName, sslOptionsProxy, optionsProxy);
         AdminVolume adminVolume = adminClient.openVolume(volumeName, sslOptions, options);
-        AdminNativeVolume2 nativeVolume = new AdminNativeVolume2(volume, adminVolume, volumeName);
+        AdminNativeVolume nativeVolume = new AdminNativeVolume(volume, adminVolume, volumeName);
         return nativeVolume;
     }
 

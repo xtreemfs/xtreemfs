@@ -8,10 +8,10 @@ import org.xtreemfs.common.libxtreemfs.swig.FileHandleProxy;
 import org.xtreemfs.common.libxtreemfs.swig.VolumeProxy;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 
-public class AdminNativeVolume2 extends NativeVolume2 implements AdminVolume {
+public class AdminNativeVolume extends NativeVolume implements AdminVolume {
     private final AdminVolume adminVolume;
 
-    public AdminNativeVolume2(VolumeProxy proxy, AdminVolume adminVolume, String volumeName) {
+    public AdminNativeVolume(VolumeProxy proxy, AdminVolume adminVolume, String volumeName) {
         super(proxy, volumeName);
         this.adminVolume = adminVolume;
     }
@@ -23,12 +23,12 @@ public class AdminNativeVolume2 extends NativeVolume2 implements AdminVolume {
     }
 
     @Override
-    public AdminNativeFileHandle2 openFile(UserCredentials userCredentials, String path, int flags, int mode)
+    public AdminNativeFileHandle openFile(UserCredentials userCredentials, String path, int flags, int mode)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         FileHandleProxy fileHandleProxy = proxy.openFileProxy(userCredentials, path, flags, mode);
         AdminFileHandle adminFileHandle = adminVolume.openFile(userCredentials, path, flags, mode);
 
-        AdminNativeFileHandle2 fileHandleNative = new AdminNativeFileHandle2(fileHandleProxy, adminFileHandle);
+        AdminNativeFileHandle fileHandleNative = new AdminNativeFileHandle(fileHandleProxy, adminFileHandle);
         return fileHandleNative;
     }
 

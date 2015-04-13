@@ -11,11 +11,11 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 
-public class AdminNativeFileHandle2 extends NativeFileHandle2 implements AdminFileHandle {
+public class AdminNativeFileHandle extends NativeFileHandle implements AdminFileHandle {
 
     private final AdminFileHandle adminFileHandle;
 
-    public AdminNativeFileHandle2(FileHandleProxy proxy, AdminFileHandle adminFileHandle) {
+    public AdminNativeFileHandle(FileHandleProxy proxy, AdminFileHandle adminFileHandle) {
         super(proxy);
         this.adminFileHandle = adminFileHandle;
     }
