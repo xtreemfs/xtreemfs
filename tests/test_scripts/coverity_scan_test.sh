@@ -17,7 +17,7 @@ git checkout coverity_scan
 
 # This script exists in coverity_scan only and takes care of
 # not overwriting .travis.yml when merging from master.
-./merge.sh
+./merge.sh master
 
 # Trigger the coverity scan through Travis CI.
 git push origin coverity_scan
