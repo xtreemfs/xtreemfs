@@ -16,7 +16,7 @@ cd "$XTREEMFS_DIR"
 git checkout coverity_scan
 
 # This script exists in coverity_scan only and takes care of
-# not overwriting .travis.yml when mergin from master.
+# not overwriting .travis.yml when merging from master.
 ./merge.sh
 
 # Trigger the coverity scan through Travis CI.
