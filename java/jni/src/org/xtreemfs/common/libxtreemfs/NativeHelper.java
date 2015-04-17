@@ -2,14 +2,17 @@ package org.xtreemfs.common.libxtreemfs;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.List;
 
 import org.xtreemfs.common.libxtreemfs.swig.ClientProxy;
 import org.xtreemfs.common.libxtreemfs.swig.OptionsProxy;
 import org.xtreemfs.common.libxtreemfs.swig.SSLOptionsProxy;
 import org.xtreemfs.common.libxtreemfs.swig.ServiceAddresses;
-import org.xtreemfs.common.libxtreemfs.swig.VectorString;
+import org.xtreemfs.common.libxtreemfs.swig.StringMap;
+import org.xtreemfs.common.libxtreemfs.swig.StringVector;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 
 public final class NativeHelper {
 
@@ -17,7 +20,7 @@ public final class NativeHelper {
             SSLOptions sslOptions, Options options) {
 
         // TODO (jdillmann): Think about moving this to the factory.
-        VectorString dirServiceAddressesVector = VectorString.from(Arrays.asList(dirServiceAddressesArray));
+        StringVector dirServiceAddressesVector = StringVector.from(Arrays.asList(dirServiceAddressesArray));
         ServiceAddresses dirServiceAddresses = new ServiceAddresses(dirServiceAddressesVector);
         OptionsProxy optionsProxy = NativeHelper.migrateOptions(options);
         SSLOptionsProxy sslOptionsProxy = null;
@@ -55,5 +58,13 @@ public final class NativeHelper {
         op.setRetry_delay_s(o.getRetryDelay_s());
 
         return op;
+    }
+
+    public static StringMap keyValueListToMap(List<KeyValuePair> list) {
+        StringMap map = new StringMap();
+        for (KeyValuePair kv : list) {
+            map.set(kv.getKey(), kv.getValue());
+        }
+        return map;
     }
 }

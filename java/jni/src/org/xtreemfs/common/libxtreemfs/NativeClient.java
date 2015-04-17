@@ -11,7 +11,8 @@ import org.xtreemfs.common.libxtreemfs.swig.ClientProxy;
 import org.xtreemfs.common.libxtreemfs.swig.OptionsProxy;
 import org.xtreemfs.common.libxtreemfs.swig.SSLOptionsProxy;
 import org.xtreemfs.common.libxtreemfs.swig.ServiceAddresses;
-import org.xtreemfs.common.libxtreemfs.swig.VectorString;
+import org.xtreemfs.common.libxtreemfs.swig.StringMap;
+import org.xtreemfs.common.libxtreemfs.swig.StringVector;
 import org.xtreemfs.common.libxtreemfs.swig.VolumeProxy;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
@@ -90,7 +91,7 @@ public class NativeClient implements Client {
     @Override
     public void createVolume(List<String> mrcAddresses, Auth auth, UserCredentials userCredentials, String volumeName)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
-        proxy.createVolume(new ServiceAddresses(VectorString.from(mrcAddresses)), auth, userCredentials, volumeName);
+        proxy.createVolume(new ServiceAddresses(StringVector.from(mrcAddresses)), auth, userCredentials, volumeName);
     }
 
     @Override
@@ -111,17 +112,12 @@ public class NativeClient implements Client {
             AddressToUUIDNotFoundException {
         final int quota = 0;
 
-        VectorString vs = new VectorString(volumeAttributes.size());
-        for (KeyValuePair kv : volumeAttributes) {
-            String s = new String(kv.toByteArray());
-            vs.add(s);
-        }
-
+        StringMap volumeAttributesMap = NativeHelper.keyValueListToMap(volumeAttributes);
         proxy.createVolume(new ServiceAddresses(mrcAddress), auth, userCredentials, volumeName, mode, ownerUsername,
                 ownerGroupname, accessPolicyType, quota, defaultStripingPolicyType, defaultStripeSize,
-                defaultStripeWidth, vs);
+                defaultStripeWidth, volumeAttributesMap);
 
-        vs.delete();
+        volumeAttributesMap.delete();
     }
 
     @Override
@@ -132,17 +128,12 @@ public class NativeClient implements Client {
             AddressToUUIDNotFoundException {
         final int quota = 0;
 
-        VectorString vs = new VectorString(volumeAttributes.size());
-        for (KeyValuePair kv : volumeAttributes) {
-            String s = new String(kv.toByteArray());
-            vs.add(s);
-        }
-
-        proxy.createVolume(new ServiceAddresses(VectorString.from(mrcAddresses)), auth, userCredentials, volumeName,
+        StringMap volumeAttributesMap = NativeHelper.keyValueListToMap(volumeAttributes);
+        proxy.createVolume(new ServiceAddresses(StringVector.from(mrcAddresses)), auth, userCredentials, volumeName,
                 mode, ownerUsername, ownerGroupname, accessPolicyType, quota, defaultStripingPolicyType,
-                defaultStripeSize, defaultStripeWidth, vs);
+                defaultStripeSize, defaultStripeWidth, volumeAttributesMap);
 
-        vs.delete();
+        volumeAttributesMap.delete();
     }
 
     @Override
@@ -154,7 +145,7 @@ public class NativeClient implements Client {
     @Override
     public void deleteVolume(List<String> mrcAddresses, Auth auth, UserCredentials userCredentials, String volumeName)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
-        proxy.deleteVolume(new ServiceAddresses(VectorString.from(mrcAddresses)), auth, userCredentials, volumeName);
+        proxy.deleteVolume(new ServiceAddresses(StringVector.from(mrcAddresses)), auth, userCredentials, volumeName);
     }
 
     @Override
@@ -185,7 +176,7 @@ public class NativeClient implements Client {
     @Override
     public Volumes listVolumes(List<String> mrcAddresses) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException {
-        return proxy.listVolumes(new ServiceAddresses(VectorString.from(mrcAddresses)), authBogus);
+        return proxy.listVolumes(new ServiceAddresses(StringVector.from(mrcAddresses)), authBogus);
     }
 
     @Override

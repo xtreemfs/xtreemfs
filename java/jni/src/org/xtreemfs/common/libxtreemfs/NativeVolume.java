@@ -1,7 +1,6 @@
 package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -12,7 +11,7 @@ import java.util.Set;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.swig.FileHandleProxy;
-import org.xtreemfs.common.libxtreemfs.swig.VectorString;
+import org.xtreemfs.common.libxtreemfs.swig.StringList;
 import org.xtreemfs.common.libxtreemfs.swig.VolumeProxy;
 import org.xtreemfs.common.xloc.ReplicationPolicyImplementation;
 import org.xtreemfs.foundation.json.JSONException;
@@ -278,17 +277,11 @@ public class NativeVolume implements Volume {
     @Override
     public List<String> getSuitableOSDs(UserCredentials userCredentials, String path, int numberOfOsds)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
-        // TODO(jdillmann): This is really really inefficient: list will be copied 3 times!!! think of a better solution
-        VectorString vs = new VectorString();
-        proxy.getSuitableOSDs(userCredentials, path, numberOfOsds, vs);
-
-        List<String> list = new ArrayList<String>();
-        for (int i = 0, c = (int) vs.size(); i < c; ++i) {
-            list.add(vs.get(i));
-        }
-
-        vs.delete();
-        return list;
+        StringList list_of_osd_uuids = new StringList();
+        proxy.getSuitableOSDs(userCredentials, path, numberOfOsds, list_of_osd_uuids);
+        List<String> result = list_of_osd_uuids.toList();
+        list_of_osd_uuids.delete();
+        return result;
     }
 
     @Override

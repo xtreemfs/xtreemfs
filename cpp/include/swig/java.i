@@ -5,6 +5,8 @@
 %include <stdint.i>
 %include <std_string.i>
 %include <std_vector.i>
+%include "std_list.i"
+%include <std_map.i>
 %include <various.i>
 %include <typemaps.i>
 %include <enums.swg>
@@ -39,8 +41,14 @@
 %enddef // end COLLECTION
 
 // Enable vectors of Strings and Integers.
-COLLECTION(VectorString, std::vector<std::string>, String)
-COLLECTION(VectorInt, std::vector<int>, Integer)
+COLLECTION(StringVector, std::vector<std::string>, String)
+COLLECTION(IntVector, std::vector<int>, Integer)
+
+// Enable lists of Strings
+LIST(StringList, std::string, String)
+
+// Enable String Key-Value Maps
+%template(StringMap) std::map<std::string, std::string>;
 
 
 // Cast int flags generated from enums typesafe to the native C++ interface.
@@ -151,6 +159,29 @@ namespace xtreemfs {
 %rename (SSLOptionsProxy) xtreemfs::rpc::SSLOptions;
 %include "rpc/ssl_options.h" 
 
+// TODO (jdillmann): Move somewhere else
+// Ensure the OptionsProxy won't get gc'ed prior to the Volume
+%typemap(javacode) xtreemfs::Volume %{
+  private OptionsProxy optionsReference;
+  protected void addReference(OptionsProxy options) {
+    optionsReference = options;
+  }
+%}
+
+%typemap(javaout) xtreemfs::Volume* OpenVolume(const std::string& volume_name,
+      const xtreemfs::rpc::SSLOptions* ssl_options,
+      const Options& options) {
+    long cPtr = $jnicall;
+    $javaclassname ret = null;
+    if (cPtr != 0) {
+      ret = new $javaclassname(cPtr, $owner);
+      ret.addReference(options);
+    }
+    return ret;
+  }
+
+
+
 
 
 // Change libxtreemfs class members to first letter lowercase in accordance to the Java interfaces.
@@ -170,13 +201,8 @@ namespace xtreemfs {
   PROTO_ENUM(xtreemfs::pbrpc::StripingPolicyType, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType, default_striping_policy_type)
 }
 
-// TODO (jdillmann): Could be moved to client_implementation
-// TODO (jdillmann): Ensure requirements are met (e.g. pbrpc is available)
-// TODO (jdillmann): Could use byte[] instead of strings
-// TODO (jdillmann): Extend interface to use a std::map
-%{
-#include <stdexcept>
-%}
+
+// Add a createVolume implementation, that is using a map instead of a list of KeyValuePairs
 %extend xtreemfs::Client {
   public: 
   void createVolume( /* has to be first lower cased manually */
@@ -192,26 +218,17 @@ namespace xtreemfs {
       const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
       int default_stripe_size,
       int default_stripe_width,
-      const std::vector<std::string>& volume_attributes_str_serialized) {
+      const std::map<std::string, std::string>& volume_attributes_map) {
 
     std::list<xtreemfs::pbrpc::KeyValuePair*> volume_attributes;
-    xtreemfs::pbrpc::KeyValuePair* kv = 0;
 
-    // Parse the volume attributes that are serialized to strings.
-    for (std::vector<std::string>::const_iterator it = volume_attributes_str_serialized.begin();
-          it != volume_attributes_str_serialized.end();
+    // Copy the attributes from the map to a KeyValuePair list.
+    for (std::map<std::string, std::string>::const_iterator it = volume_attributes_map.begin();
+          it != volume_attributes_map.end();
           ++it) {
-      kv = new xtreemfs::pbrpc::KeyValuePair();
-      if (!kv->ParseFromString(*it)) {
-        // TODO (jdillmann): Think about Exception handling.
-        throw std::runtime_error("Unable to parse protocol message."); 
-        /*
-        SWIG_JavaThrowException(jenv,
-                                SWIG_JavaRuntimeException,
-                                "Unable to parse protocol message.");
-        */
-
-      }
+      xtreemfs::pbrpc::KeyValuePair* kv = new xtreemfs::pbrpc::KeyValuePair();
+      kv->set_key(it->first);
+      kv->set_value(it->second);
       volume_attributes.push_back(kv);
     }
 
@@ -222,7 +239,7 @@ namespace xtreemfs {
       volume_attributes
       );
 
-    // Cleanup and delete the KeyValuePairs
+    // Cleanup and delete the KeyValuePairs.
     for (std::list<xtreemfs::pbrpc::KeyValuePair*>::iterator it = volume_attributes.begin();
           it != volume_attributes.end();
           ++it) {
@@ -248,6 +265,7 @@ namespace xtreemfs {
       const std::list<xtreemfs::pbrpc::KeyValuePair*>& volume_attributes);
 
 
+
 %rename (openVolumeProxy) xtreemfs::Client::OpenVolume;
 %rename (ClientProxy) xtreemfs::Client;
 %include "libxtreemfs/client.h"
@@ -270,27 +288,6 @@ namespace xtreemfs {
 %apply long { off_t new_file_size }; //FileHandle::Truncate
 %clear uint64_t offset;
 %apply long long { uint64_t offset }; // Volume::readDir
-
-
-
-// Since lists are not supported, a intermediate vector is used for listing the OSDs.
-// TODO(jdillmann): This is really inefficent, but should work for now
-%ignore xtreemfs::Volume::GetSuitableOSDs; // ignore actual implementation
-%extend xtreemfs::Volume {
-public:
-  void getSuitableOSDs( // has to be first lower cased manually
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
-      const std::string& path,
-      int number_of_osds,
-      std::vector<std::string>* vector_of_osd_uuids) {
-    std::list<std::string> list_of_osd_uuids;
-    $self->GetSuitableOSDs(user_credentials, path, number_of_osds, &list_of_osd_uuids);
-
-    vector_of_osd_uuids->reserve(list_of_osd_uuids.size());
-    vector_of_osd_uuids->assign(list_of_osd_uuids.begin(), list_of_osd_uuids.end());
-  }
-}
-
 
 // volume.h
 namespace xtreemfs {
