@@ -6,4 +6,5 @@
 # in case of conflicts. 'our' version is the one contained
 # in this 'coverity_scan' branch. this should only be the
 # .travis.yml file
-git merge -s recursive -Xours $1
+# Do not prompt for a commit message.
+git merge -s recursive -Xours --no-edit $1
