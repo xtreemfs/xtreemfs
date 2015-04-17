@@ -130,9 +130,9 @@ mkdir -p $DIR_PREFIX
 mkdir -p $XTREEMFS_DIR
 mkdir -p $TEST_DIR
 
-# Check out
+# Check out using SSH for passwordless push using deploy keys.
 cd $XTREEMFS_DIR
-git clone https://github.com/xtreemfs/xtreemfs.git . &> $TEST_LOG
+git clone git@github.com:xtreemfs/xtreemfs.git . &> $TEST_LOG
 
 # Compile
 # 2012-11-02(mberlin): Try to disable optimizations in client compilation.
