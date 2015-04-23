@@ -81,8 +81,8 @@ void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto() {
   TraceConfig_descriptor_ = file->message_type(0);
   static const int TraceConfig_offsets_[3] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TraceConfig, trace_requests_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TraceConfig, target_volume_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TraceConfig, tracing_policy_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TraceConfig, tracing_policy_config_),
   };
   TraceConfig_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -373,85 +373,85 @@ void protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto() {
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
     "\n\032xtreemfs/GlobalTypes.proto\022\016xtreemfs.p"
     "brpc\032\023include/PBRPC.proto\032\024include/Commo"
-    "n.proto\"T\n\013TraceConfig\022\026\n\016trace_requests"
-    "\030\001 \002(\010\022\025\n\rtarget_volume\030\002 \001(\t\022\026\n\016tracing"
-    "_policy\030\003 \001(\t\"<\n\013NewFileSize\022\025\n\rsize_in_"
-    "bytes\030\001 \002(\006\022\026\n\016truncate_epoch\030\002 \002(\007\"|\n\016S"
-    "tripingPolicy\0220\n\004type\030\001 \002(\0162\".xtreemfs.p"
-    "brpc.StripingPolicyType\022\023\n\013stripe_size\030\002"
-    " \002(\007\022\r\n\005width\030\003 \002(\007\022\024\n\014parity_width\030\004 \001("
-    "\007\"p\n\007Replica\022\021\n\tosd_uuids\030\001 \003(\t\022\031\n\021repli"
-    "cation_flags\030\002 \002(\007\0227\n\017striping_policy\030\003 "
-    "\002(\0132\036.xtreemfs.pbrpc.StripingPolicy\"5\n\010R"
-    "eplicas\022)\n\010replicas\030\001 \003(\0132\027.xtreemfs.pbr"
-    "pc.Replica\"\300\002\n\004XCap\022\023\n\013access_mode\030\001 \002(\007"
-    "\022\027\n\017client_identity\030\002 \002(\t\022\025\n\rexpire_time"
-    "_s\030\003 \002(\006\022\030\n\020expire_timeout_s\030\004 \002(\007\022\017\n\007fi"
-    "le_id\030\005 \002(\t\022\032\n\022replicate_on_close\030\006 \002(\010\022"
-    "\030\n\020server_signature\030\007 \002(\t\022\026\n\016truncate_ep"
-    "och\030\010 \002(\007\022/\n\013snap_config\030\t \002(\0162\032.xtreemf"
-    "s.pbrpc.SnapConfig\022\026\n\016snap_timestamp\030\n \002"
-    "(\006\0221\n\014trace_config\030\013 \001(\0132\033.xtreemfs.pbrp"
-    "c.TraceConfig\"\201\001\n\007XLocSet\022\033\n\023read_only_f"
-    "ile_size\030\001 \002(\006\022)\n\010replicas\030\002 \003(\0132\027.xtree"
-    "mfs.pbrpc.Replica\022\035\n\025replica_update_poli"
-    "cy\030\003 \002(\t\022\017\n\007version\030\004 \002(\007\"]\n\017FileCredent"
-    "ials\022\"\n\004xcap\030\001 \002(\0132\024.xtreemfs.pbrpc.XCap"
-    "\022&\n\005xlocs\030\002 \002(\0132\027.xtreemfs.pbrpc.XLocSet"
-    "\"O\n\022FileCredentialsSet\0229\n\020file_credentia"
-    "ls\030\001 \001(\0132\037.xtreemfs.pbrpc.FileCredential"
-    "s\"U\n\022VivaldiCoordinates\022\024\n\014x_coordinate\030"
-    "\001 \002(\001\022\024\n\014y_coordinate\030\002 \002(\001\022\023\n\013local_err"
-    "or\030\003 \002(\001\"A\n\020OSDWriteResponse\022\025\n\rsize_in_"
-    "bytes\030\001 \001(\006\022\026\n\016truncate_epoch\030\002 \001(\007\"*\n\014K"
-    "eyValuePair\022\013\n\003key\030\001 \002(\t\022\r\n\005value\030\002 \002(\t*"
-    "|\n\027AccessControlPolicyType\022\036\n\032ACCESS_CON"
-    "TROL_POLICY_NULL\020\001\022\037\n\033ACCESS_CONTROL_POL"
-    "ICY_POSIX\020\002\022 \n\034ACCESS_CONTROL_POLICY_VOL"
-    "UME\020\003*\365\003\n\026OSDSelectionPolicyType\022(\n#OSD_"
-    "SELECTION_POLICY_FILTER_DEFAULT\020\350\007\022%\n OS"
-    "D_SELECTION_POLICY_FILTER_FQDN\020\351\007\022%\n OSD"
-    "_SELECTION_POLICY_FILTER_UUID\020\352\007\022%\n OSD_"
-    "SELECTION_POLICY_GROUP_DCMAP\020\320\017\022$\n\037OSD_S"
-    "ELECTION_POLICY_GROUP_FQDN\020\321\017\022$\n\037OSD_SEL"
-    "ECTION_POLICY_SORT_DCMAP\020\270\027\022#\n\036OSD_SELEC"
-    "TION_POLICY_SORT_FQDN\020\271\027\022%\n OSD_SELECTIO"
-    "N_POLICY_SORT_RANDOM\020\272\027\022&\n!OSD_SELECTION"
-    "_POLICY_SORT_VIVALDI\020\273\027\022/\n*OSD_SELECTION"
-    "_POLICY_SORT_HOST_ROUND_ROBIN\020\274\027\022#\n\036OSD_"
-    "SELECTION_POLICY_SORT_UUID\020\236\037\022&\n!OSD_SEL"
-    "ECTION_POLICY_SORT_REVERSE\020\237\037*A\n\032Replica"
-    "SelectionPolicyType\022#\n\037REPLICA_SELECTION"
-    "_POLICY_SIMPLE\020\001*i\n\nSnapConfig\022\036\n\032SNAP_C"
-    "ONFIG_SNAPS_DISABLED\020\000\022\036\n\032SNAP_CONFIG_AC"
-    "CESS_CURRENT\020\001\022\033\n\027SNAP_CONFIG_ACCESS_SNA"
-    "P\020\002*P\n\022StripingPolicyType\022\031\n\025STRIPING_PO"
-    "LICY_RAID0\020\000\022\037\n\033STRIPING_POLICY_ERASUREC"
-    "ODE\020\001*9\n\nLeaseState\022\010\n\004NONE\020\000\022\013\n\007PRIMARY"
-    "\020\001\022\n\n\006BACKUP\020\002\022\010\n\004IDLE\020\003*\270\001\n\005PORTS\022\033\n\025DI"
-    "R_HTTP_PORT_DEFAULT\020\256\357\001\022\034\n\026DIR_PBRPC_POR"
-    "T_DEFAULT\020\376\376\001\022\033\n\025MRC_HTTP_PORT_DEFAULT\020\254"
-    "\357\001\022\034\n\026MRC_PBRPC_PORT_DEFAULT\020\374\376\001\022\033\n\025OSD_"
-    "HTTP_PORT_DEFAULT\020\260\357\001\022\034\n\026OSD_PBRPC_PORT_"
-    "DEFAULT\020\200\377\001*+\n\tCONSTANTS\022\036\n\032XCAP_RENEW_I"
-    "NTERVAL_IN_MIN\020\001*\202\003\n\016SYSTEM_V_FCNTL\022\035\n\031S"
-    "YSTEM_V_FCNTL_H_O_RDONLY\020\000\022\035\n\031SYSTEM_V_F"
-    "CNTL_H_O_WRONLY\020\001\022\033\n\027SYSTEM_V_FCNTL_H_O_"
-    "RDWR\020\002\022\035\n\031SYSTEM_V_FCNTL_H_O_APPEND\020\010\022\035\n"
-    "\030SYSTEM_V_FCNTL_H_O_CREAT\020\200\002\022\035\n\030SYSTEM_V"
-    "_FCNTL_H_O_TRUNC\020\200\004\022\034\n\027SYSTEM_V_FCNTL_H_"
-    "O_EXCL\020\200\010\022\033\n\027SYSTEM_V_FCNTL_H_O_SYNC\020\020\022\036"
-    "\n\030SYSTEM_V_FCNTL_H_S_IFREG\020\200\200\002\022\036\n\030SYSTEM"
-    "_V_FCNTL_H_S_IFDIR\020\200\200\001\022\036\n\030SYSTEM_V_FCNTL"
-    "_H_S_IFLNK\020\200\300\002\022\035\n\030SYSTEM_V_FCNTL_H_S_IFI"
-    "FO\020\200 *\330\001\n\tREPL_FLAG\022\032\n\026REPL_FLAG_FULL_RE"
-    "PLICA\020\001\022\031\n\025REPL_FLAG_IS_COMPLETE\020\002\022\035\n\031RE"
-    "PL_FLAG_STRATEGY_RANDOM\020\004\022#\n\037REPL_FLAG_S"
-    "TRATEGY_RAREST_FIRST\020\010\022!\n\035REPL_FLAG_STRA"
-    "TEGY_SEQUENTIAL\020\020\022-\n)REPL_FLAG_STRATEGY_"
-    "SEQUENTIAL_PREFETCHING\020 *%\n\010SERVICES\022\007\n\003"
-    "DIR\020\001\022\007\n\003MRC\020\002\022\007\n\003OSD\020\003B(\n&org.xtreemfs."
-    "pbrpc.generatedinterfaces", 3225);
+    "n.proto\"\\\n\013TraceConfig\022\026\n\016trace_requests"
+    "\030\001 \002(\010\022\026\n\016tracing_policy\030\002 \001(\t\022\035\n\025tracin"
+    "g_policy_config\030\003 \001(\t\"<\n\013NewFileSize\022\025\n\r"
+    "size_in_bytes\030\001 \002(\006\022\026\n\016truncate_epoch\030\002 "
+    "\002(\007\"|\n\016StripingPolicy\0220\n\004type\030\001 \002(\0162\".xt"
+    "reemfs.pbrpc.StripingPolicyType\022\023\n\013strip"
+    "e_size\030\002 \002(\007\022\r\n\005width\030\003 \002(\007\022\024\n\014parity_wi"
+    "dth\030\004 \001(\007\"p\n\007Replica\022\021\n\tosd_uuids\030\001 \003(\t\022"
+    "\031\n\021replication_flags\030\002 \002(\007\0227\n\017striping_p"
+    "olicy\030\003 \002(\0132\036.xtreemfs.pbrpc.StripingPol"
+    "icy\"5\n\010Replicas\022)\n\010replicas\030\001 \003(\0132\027.xtre"
+    "emfs.pbrpc.Replica\"\300\002\n\004XCap\022\023\n\013access_mo"
+    "de\030\001 \002(\007\022\027\n\017client_identity\030\002 \002(\t\022\025\n\rexp"
+    "ire_time_s\030\003 \002(\006\022\030\n\020expire_timeout_s\030\004 \002"
+    "(\007\022\017\n\007file_id\030\005 \002(\t\022\032\n\022replicate_on_clos"
+    "e\030\006 \002(\010\022\030\n\020server_signature\030\007 \002(\t\022\026\n\016tru"
+    "ncate_epoch\030\010 \002(\007\022/\n\013snap_config\030\t \002(\0162\032"
+    ".xtreemfs.pbrpc.SnapConfig\022\026\n\016snap_times"
+    "tamp\030\n \002(\006\0221\n\014trace_config\030\013 \001(\0132\033.xtree"
+    "mfs.pbrpc.TraceConfig\"\201\001\n\007XLocSet\022\033\n\023rea"
+    "d_only_file_size\030\001 \002(\006\022)\n\010replicas\030\002 \003(\013"
+    "2\027.xtreemfs.pbrpc.Replica\022\035\n\025replica_upd"
+    "ate_policy\030\003 \002(\t\022\017\n\007version\030\004 \002(\007\"]\n\017Fil"
+    "eCredentials\022\"\n\004xcap\030\001 \002(\0132\024.xtreemfs.pb"
+    "rpc.XCap\022&\n\005xlocs\030\002 \002(\0132\027.xtreemfs.pbrpc"
+    ".XLocSet\"O\n\022FileCredentialsSet\0229\n\020file_c"
+    "redentials\030\001 \001(\0132\037.xtreemfs.pbrpc.FileCr"
+    "edentials\"U\n\022VivaldiCoordinates\022\024\n\014x_coo"
+    "rdinate\030\001 \002(\001\022\024\n\014y_coordinate\030\002 \002(\001\022\023\n\013l"
+    "ocal_error\030\003 \002(\001\"A\n\020OSDWriteResponse\022\025\n\r"
+    "size_in_bytes\030\001 \001(\006\022\026\n\016truncate_epoch\030\002 "
+    "\001(\007\"*\n\014KeyValuePair\022\013\n\003key\030\001 \002(\t\022\r\n\005valu"
+    "e\030\002 \002(\t*|\n\027AccessControlPolicyType\022\036\n\032AC"
+    "CESS_CONTROL_POLICY_NULL\020\001\022\037\n\033ACCESS_CON"
+    "TROL_POLICY_POSIX\020\002\022 \n\034ACCESS_CONTROL_PO"
+    "LICY_VOLUME\020\003*\365\003\n\026OSDSelectionPolicyType"
+    "\022(\n#OSD_SELECTION_POLICY_FILTER_DEFAULT\020"
+    "\350\007\022%\n OSD_SELECTION_POLICY_FILTER_FQDN\020\351"
+    "\007\022%\n OSD_SELECTION_POLICY_FILTER_UUID\020\352\007"
+    "\022%\n OSD_SELECTION_POLICY_GROUP_DCMAP\020\320\017\022"
+    "$\n\037OSD_SELECTION_POLICY_GROUP_FQDN\020\321\017\022$\n"
+    "\037OSD_SELECTION_POLICY_SORT_DCMAP\020\270\027\022#\n\036O"
+    "SD_SELECTION_POLICY_SORT_FQDN\020\271\027\022%\n OSD_"
+    "SELECTION_POLICY_SORT_RANDOM\020\272\027\022&\n!OSD_S"
+    "ELECTION_POLICY_SORT_VIVALDI\020\273\027\022/\n*OSD_S"
+    "ELECTION_POLICY_SORT_HOST_ROUND_ROBIN\020\274\027"
+    "\022#\n\036OSD_SELECTION_POLICY_SORT_UUID\020\236\037\022&\n"
+    "!OSD_SELECTION_POLICY_SORT_REVERSE\020\237\037*A\n"
+    "\032ReplicaSelectionPolicyType\022#\n\037REPLICA_S"
+    "ELECTION_POLICY_SIMPLE\020\001*i\n\nSnapConfig\022\036"
+    "\n\032SNAP_CONFIG_SNAPS_DISABLED\020\000\022\036\n\032SNAP_C"
+    "ONFIG_ACCESS_CURRENT\020\001\022\033\n\027SNAP_CONFIG_AC"
+    "CESS_SNAP\020\002*P\n\022StripingPolicyType\022\031\n\025STR"
+    "IPING_POLICY_RAID0\020\000\022\037\n\033STRIPING_POLICY_"
+    "ERASURECODE\020\001*9\n\nLeaseState\022\010\n\004NONE\020\000\022\013\n"
+    "\007PRIMARY\020\001\022\n\n\006BACKUP\020\002\022\010\n\004IDLE\020\003*\270\001\n\005POR"
+    "TS\022\033\n\025DIR_HTTP_PORT_DEFAULT\020\256\357\001\022\034\n\026DIR_P"
+    "BRPC_PORT_DEFAULT\020\376\376\001\022\033\n\025MRC_HTTP_PORT_D"
+    "EFAULT\020\254\357\001\022\034\n\026MRC_PBRPC_PORT_DEFAULT\020\374\376\001"
+    "\022\033\n\025OSD_HTTP_PORT_DEFAULT\020\260\357\001\022\034\n\026OSD_PBR"
+    "PC_PORT_DEFAULT\020\200\377\001*+\n\tCONSTANTS\022\036\n\032XCAP"
+    "_RENEW_INTERVAL_IN_MIN\020\001*\202\003\n\016SYSTEM_V_FC"
+    "NTL\022\035\n\031SYSTEM_V_FCNTL_H_O_RDONLY\020\000\022\035\n\031SY"
+    "STEM_V_FCNTL_H_O_WRONLY\020\001\022\033\n\027SYSTEM_V_FC"
+    "NTL_H_O_RDWR\020\002\022\035\n\031SYSTEM_V_FCNTL_H_O_APP"
+    "END\020\010\022\035\n\030SYSTEM_V_FCNTL_H_O_CREAT\020\200\002\022\035\n\030"
+    "SYSTEM_V_FCNTL_H_O_TRUNC\020\200\004\022\034\n\027SYSTEM_V_"
+    "FCNTL_H_O_EXCL\020\200\010\022\033\n\027SYSTEM_V_FCNTL_H_O_"
+    "SYNC\020\020\022\036\n\030SYSTEM_V_FCNTL_H_S_IFREG\020\200\200\002\022\036"
+    "\n\030SYSTEM_V_FCNTL_H_S_IFDIR\020\200\200\001\022\036\n\030SYSTEM"
+    "_V_FCNTL_H_S_IFLNK\020\200\300\002\022\035\n\030SYSTEM_V_FCNTL"
+    "_H_S_IFIFO\020\200 *\330\001\n\tREPL_FLAG\022\032\n\026REPL_FLAG"
+    "_FULL_REPLICA\020\001\022\031\n\025REPL_FLAG_IS_COMPLETE"
+    "\020\002\022\035\n\031REPL_FLAG_STRATEGY_RANDOM\020\004\022#\n\037REP"
+    "L_FLAG_STRATEGY_RAREST_FIRST\020\010\022!\n\035REPL_F"
+    "LAG_STRATEGY_SEQUENTIAL\020\020\022-\n)REPL_FLAG_S"
+    "TRATEGY_SEQUENTIAL_PREFETCHING\020 *%\n\010SERV"
+    "ICES\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n\003OSD\020\003B(\n&org.x"
+    "treemfs.pbrpc.generatedinterfaces", 3233);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "xtreemfs/GlobalTypes.proto", &protobuf_RegisterTypes);
   TraceConfig::default_instance_ = new TraceConfig();
@@ -677,8 +677,8 @@ bool SERVICES_IsValid(int value) {
 
 #ifndef _MSC_VER
 const int TraceConfig::kTraceRequestsFieldNumber;
-const int TraceConfig::kTargetVolumeFieldNumber;
 const int TraceConfig::kTracingPolicyFieldNumber;
+const int TraceConfig::kTracingPolicyConfigFieldNumber;
 #endif  // !_MSC_VER
 
 TraceConfig::TraceConfig()
@@ -698,8 +698,8 @@ TraceConfig::TraceConfig(const TraceConfig& from)
 void TraceConfig::SharedCtor() {
   _cached_size_ = 0;
   trace_requests_ = false;
-  target_volume_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   tracing_policy_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  tracing_policy_config_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -708,11 +708,11 @@ TraceConfig::~TraceConfig() {
 }
 
 void TraceConfig::SharedDtor() {
-  if (target_volume_ != &::google::protobuf::internal::kEmptyString) {
-    delete target_volume_;
-  }
   if (tracing_policy_ != &::google::protobuf::internal::kEmptyString) {
     delete tracing_policy_;
+  }
+  if (tracing_policy_config_ != &::google::protobuf::internal::kEmptyString) {
+    delete tracing_policy_config_;
   }
   if (this != default_instance_) {
   }
@@ -742,14 +742,14 @@ TraceConfig* TraceConfig::New() const {
 void TraceConfig::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     trace_requests_ = false;
-    if (has_target_volume()) {
-      if (target_volume_ != &::google::protobuf::internal::kEmptyString) {
-        target_volume_->clear();
-      }
-    }
     if (has_tracing_policy()) {
       if (tracing_policy_ != &::google::protobuf::internal::kEmptyString) {
         tracing_policy_->clear();
+      }
+    }
+    if (has_tracing_policy_config()) {
+      if (tracing_policy_config_ != &::google::protobuf::internal::kEmptyString) {
+        tracing_policy_config_->clear();
       }
     }
   }
@@ -774,29 +774,12 @@ bool TraceConfig::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(18)) goto parse_target_volume;
+        if (input->ExpectTag(18)) goto parse_tracing_policy;
         break;
       }
 
-      // optional string target_volume = 2;
+      // optional string tracing_policy = 2;
       case 2: {
-        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
-         parse_target_volume:
-          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-                input, this->mutable_target_volume()));
-          ::google::protobuf::internal::WireFormat::VerifyUTF8String(
-            this->target_volume().data(), this->target_volume().length(),
-            ::google::protobuf::internal::WireFormat::PARSE);
-        } else {
-          goto handle_uninterpreted;
-        }
-        if (input->ExpectTag(26)) goto parse_tracing_policy;
-        break;
-      }
-
-      // optional string tracing_policy = 3;
-      case 3: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
          parse_tracing_policy:
@@ -804,6 +787,23 @@ bool TraceConfig::MergePartialFromCodedStream(
                 input, this->mutable_tracing_policy()));
           ::google::protobuf::internal::WireFormat::VerifyUTF8String(
             this->tracing_policy().data(), this->tracing_policy().length(),
+            ::google::protobuf::internal::WireFormat::PARSE);
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(26)) goto parse_tracing_policy_config;
+        break;
+      }
+
+      // optional string tracing_policy_config = 3;
+      case 3: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_tracing_policy_config:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+                input, this->mutable_tracing_policy_config()));
+          ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+            this->tracing_policy_config().data(), this->tracing_policy_config().length(),
             ::google::protobuf::internal::WireFormat::PARSE);
         } else {
           goto handle_uninterpreted;
@@ -835,22 +835,22 @@ void TraceConfig::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteBool(1, this->trace_requests(), output);
   }
 
-  // optional string target_volume = 2;
-  if (has_target_volume()) {
-    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
-      this->target_volume().data(), this->target_volume().length(),
-      ::google::protobuf::internal::WireFormat::SERIALIZE);
-    ::google::protobuf::internal::WireFormatLite::WriteString(
-      2, this->target_volume(), output);
-  }
-
-  // optional string tracing_policy = 3;
+  // optional string tracing_policy = 2;
   if (has_tracing_policy()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->tracing_policy().data(), this->tracing_policy().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
     ::google::protobuf::internal::WireFormatLite::WriteString(
-      3, this->tracing_policy(), output);
+      2, this->tracing_policy(), output);
+  }
+
+  // optional string tracing_policy_config = 3;
+  if (has_tracing_policy_config()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+      this->tracing_policy_config().data(), this->tracing_policy_config().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE);
+    ::google::protobuf::internal::WireFormatLite::WriteString(
+      3, this->tracing_policy_config(), output);
   }
 
   if (!unknown_fields().empty()) {
@@ -866,24 +866,24 @@ void TraceConfig::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(1, this->trace_requests(), target);
   }
 
-  // optional string target_volume = 2;
-  if (has_target_volume()) {
-    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
-      this->target_volume().data(), this->target_volume().length(),
-      ::google::protobuf::internal::WireFormat::SERIALIZE);
-    target =
-      ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
-        2, this->target_volume(), target);
-  }
-
-  // optional string tracing_policy = 3;
+  // optional string tracing_policy = 2;
   if (has_tracing_policy()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->tracing_policy().data(), this->tracing_policy().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
     target =
       ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
-        3, this->tracing_policy(), target);
+        2, this->tracing_policy(), target);
+  }
+
+  // optional string tracing_policy_config = 3;
+  if (has_tracing_policy_config()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+      this->tracing_policy_config().data(), this->tracing_policy_config().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE);
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
+        3, this->tracing_policy_config(), target);
   }
 
   if (!unknown_fields().empty()) {
@@ -902,18 +902,18 @@ int TraceConfig::ByteSize() const {
       total_size += 1 + 1;
     }
 
-    // optional string target_volume = 2;
-    if (has_target_volume()) {
-      total_size += 1 +
-        ::google::protobuf::internal::WireFormatLite::StringSize(
-          this->target_volume());
-    }
-
-    // optional string tracing_policy = 3;
+    // optional string tracing_policy = 2;
     if (has_tracing_policy()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::StringSize(
           this->tracing_policy());
+    }
+
+    // optional string tracing_policy_config = 3;
+    if (has_tracing_policy_config()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::StringSize(
+          this->tracing_policy_config());
     }
 
   }
@@ -946,11 +946,11 @@ void TraceConfig::MergeFrom(const TraceConfig& from) {
     if (from.has_trace_requests()) {
       set_trace_requests(from.trace_requests());
     }
-    if (from.has_target_volume()) {
-      set_target_volume(from.target_volume());
-    }
     if (from.has_tracing_policy()) {
       set_tracing_policy(from.tracing_policy());
+    }
+    if (from.has_tracing_policy_config()) {
+      set_tracing_policy_config(from.tracing_policy_config());
     }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
@@ -977,8 +977,8 @@ bool TraceConfig::IsInitialized() const {
 void TraceConfig::Swap(TraceConfig* other) {
   if (other != this) {
     std::swap(trace_requests_, other->trace_requests_);
-    std::swap(target_volume_, other->target_volume_);
     std::swap(tracing_policy_, other->tracing_policy_);
+    std::swap(tracing_policy_config_, other->tracing_policy_config_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);

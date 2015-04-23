@@ -1368,7 +1368,7 @@ public class MRCTest {
         final String uid = "userXY";
         final List<String> gids = createGIDs("groupZ");
         final String volumeName = "testVolume";
-        final String traceTarget = "testVolume2";
+        final String tracingPolicyConfig = "config";
         final String tracingPolicy = "defaultTracingPolicy";
         final UserCredentials uc = createUserCredentials(uid, gids);
 
@@ -1379,7 +1379,7 @@ public class MRCTest {
 
         invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
                 AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, getDefaultStripingPolicy(), "", 0775,
-                traceTarget, "", "", getKVList(), 0L));
+                tracingPolicyConfig, "", "", getKVList(), 0L));
 
         invokeSync(client.open(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test.txt",
                 FileAccessManager.O_CREAT, 0774, 0, getDefaultCoordinates()));
@@ -1387,7 +1387,7 @@ public class MRCTest {
         invokeSync(client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "/",
                 "xtreemfs.tracing_enabled", "1", ByteString.copyFrom("1".getBytes()), 0));
         invokeSync(client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "/",
-                "xtreemfs.trace_target", traceTarget, ByteString.copyFrom(traceTarget.getBytes()), 0));
+                "xtreemfs.tracing_policy_config", tracingPolicy, ByteString.copyFrom(tracingPolicyConfig.getBytes()), 0));
         invokeSync(client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "/",
                 "xtreemfs.tracing_policy", tracingPolicy, ByteString.copyFrom(tracingPolicy.getBytes()), 0));
         Thread.sleep(1000);
@@ -1398,15 +1398,8 @@ public class MRCTest {
                         FileAccessManager.O_RDONLY, 0, 0, getDefaultCoordinates())).getCreds().getXcap();
 
         assertTrue(xcap.getTraceConfig().getTraceRequests());
-        assertTrue(xcap.getTraceConfig().getTargetVolume().equals(traceTarget));
+        assertTrue(xcap.getTraceConfig().getTracingPolicyConfig().equals(tracingPolicyConfig));
         assertTrue(xcap.getTraceConfig().getTracingPolicy().equals(tracingPolicy));
-
-        try {
-            // Setting the current volume as trace target should not be possible
-            invokeSync(client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "/",
-                    "xtreemfs.trace_target", volumeName, ByteString.copyFrom(volumeName.getBytes()), 0));
-            assertTrue(false);
-        } catch (Exception e) { }
     }
     
     private void assertTree(InetSocketAddress server, String uid, List<String> gids, String volumeName,

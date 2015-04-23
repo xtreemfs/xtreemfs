@@ -90,8 +90,8 @@ public class Capability {
      *            are incremented each time the file is truncated or deleted
      * @param traceRequests
      *            trace IO requests on file / volume
-     * @param traceTargetVolume
-     *            target volume for trace output
+     * @param tracingPolicyConfig
+     *            tracing policy config
      * @param tracingPolicy
      *            tracing policy
      * @param sharedSecret
@@ -99,7 +99,7 @@ public class Capability {
      */
     public Capability(String fileId, int accessMode, int validity, long expires, String clientIdentity,
         int epochNo, boolean replicateOnClose, SnapConfig snapConfig, long snapTimestamp, boolean traceRequests,
-        String traceTargetVolume, String tracingPolicy, String sharedSecret) {
+        String tracingPolicyConfig, String tracingPolicy, String sharedSecret) {
 
         this.sharedSecret = sharedSecret;
 
@@ -108,10 +108,10 @@ public class Capability {
                 setReplicateOnClose(replicateOnClose).setTruncateEpoch(epochNo).setSnapConfig(snapConfig).
                 setSnapTimestamp(snapTimestamp);
 
-        if(traceRequests && !traceTargetVolume.equals("") && !tracingPolicy.equals("")) {
+        if(traceRequests && !tracingPolicyConfig.equals("") && !tracingPolicy.equals("")) {
             TraceConfig.Builder traceConfigBuilder = TraceConfig.newBuilder();
             traceConfigBuilder.setTraceRequests(traceRequests);
-            traceConfigBuilder.setTargetVolume(traceTargetVolume);
+            traceConfigBuilder.setTracingPolicyConfig(tracingPolicyConfig);
             traceConfigBuilder.setTracingPolicy(tracingPolicy);
             builder.setTraceConfig(traceConfigBuilder.build());
         }

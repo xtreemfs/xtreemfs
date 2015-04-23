@@ -126,7 +126,7 @@ public class MRCHelper {
             set_repl_update_policy,
             default_rp,
             tracing_enabled,
-            trace_target,
+            tracing_policy_config,
             tracing_policy,
             quota
     }
@@ -479,7 +479,7 @@ public class MRCHelper {
             case tracing_enabled:
                 return file.getId() == 1 && sMan.getVolumeInfo().isTracingEnabled() ? String.valueOf(true) : "";
 
-            case trace_target:
+            case tracing_policy_config:
                 return file.getId() == 1 && sMan.getVolumeInfo().isTracingEnabled() ?
                         sMan.getVolumeInfo().getTraceTarget() : "";
 
@@ -858,10 +858,7 @@ public class MRCHelper {
             sMan.getVolumeInfo().setTracing(enableTracing, update);
 
             break;
-        case trace_target:
-            if(value.equals(sMan.getVolumeInfo().getName())) {
-                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "trace target is equal to volume");
-            }
+        case tracing_policy_config:
             sMan.getVolumeInfo().setTraceTarget(value, update);
             break;
         case tracing_policy:

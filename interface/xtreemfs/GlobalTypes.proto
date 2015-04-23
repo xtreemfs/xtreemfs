@@ -78,7 +78,7 @@ enum OSDSelectionPolicyType {
     // Reverse given list. Used only internally by unit tests.
     OSD_SELECTION_POLICY_SORT_REVERSE = 3999;
 }
-      
+
 enum ReplicaSelectionPolicyType {
   REPLICA_SELECTION_POLICY_SIMPLE = 1;
 }
@@ -98,9 +98,9 @@ message TraceConfig {
   // Set true to activate request tracing
   required bool trace_requests = 1;
   // Volume to write trace
-  optional string target_volume = 2;
+  optional string tracing_policy = 2;
   // Tracing policy
-  optional string tracing_policy = 3;
+  optional string tracing_policy_config = 3;
 }
 
 // File size update data sent by OSDs.
@@ -160,7 +160,7 @@ enum LeaseState {
   IDLE = 3;
 }
 
-// The XCap is the authorization token that allows a 
+// The XCap is the authorization token that allows a
 // client to execute operations on an OSD. It is created
 // by the MRC on open and must be renewed by the client
 // *before* it times out.
@@ -207,7 +207,7 @@ message XLocSet {
   required string replica_update_policy = 3;
   // Monotonically increasing version number of a file's XLocSet.
   // Used to identify clients with outdates XLocSets.
-  required fixed32 version = 4;        
+  required fixed32 version = 4;
 }
 
 // Information required by OSDs for all file operations.
@@ -246,11 +246,11 @@ message OSDWriteResponse {
 // TCP ports used by the services.
 // HTTP ports are used for the status pages.
 enum PORTS {
-  DIR_HTTP_PORT_DEFAULT = 30638; 
+  DIR_HTTP_PORT_DEFAULT = 30638;
   DIR_PBRPC_PORT_DEFAULT = 32638;
-  MRC_HTTP_PORT_DEFAULT = 30636; 
+  MRC_HTTP_PORT_DEFAULT = 30636;
   MRC_PBRPC_PORT_DEFAULT = 32636;
-  OSD_HTTP_PORT_DEFAULT = 30640; 
+  OSD_HTTP_PORT_DEFAULT = 30640;
   OSD_PBRPC_PORT_DEFAULT = 32640;
 }
 

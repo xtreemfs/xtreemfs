@@ -186,6 +186,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
     private List<OSDStatusListener>                     statusListener;
 
+    private OSDPolicyContainer                          policyContainer;
+
     /**
      * reachability of services
      */
@@ -250,6 +252,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             if (!objDir.mkdirs())
                 throw new IOException("unable to create object directory: " + objDir.getAbsolutePath());
         }
+
+        policyContainer = new OSDPolicyContainer(config);
         
         // -------------------------------
         // initialize communication stages
@@ -987,6 +991,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
      */
     public ServiceAvailability getServiceAvailability() {
         return serviceAvailability;
+    }
+
+    public OSDPolicyContainer getPolicyContainer() {
+        return policyContainer;
     }
 
     public void objectReceived() {

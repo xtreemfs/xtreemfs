@@ -1449,59 +1449,59 @@ public final class GlobalTypes {
      */
     boolean getTraceRequests();
 
-    // optional string target_volume = 2;
+    // optional string tracing_policy = 2;
     /**
-     * <code>optional string target_volume = 2;</code>
+     * <code>optional string tracing_policy = 2;</code>
      *
      * <pre>
      * Volume to write trace
-     * </pre>
-     */
-    boolean hasTargetVolume();
-    /**
-     * <code>optional string target_volume = 2;</code>
-     *
-     * <pre>
-     * Volume to write trace
-     * </pre>
-     */
-    java.lang.String getTargetVolume();
-    /**
-     * <code>optional string target_volume = 2;</code>
-     *
-     * <pre>
-     * Volume to write trace
-     * </pre>
-     */
-    com.google.protobuf.ByteString
-        getTargetVolumeBytes();
-
-    // optional string tracing_policy = 3;
-    /**
-     * <code>optional string tracing_policy = 3;</code>
-     *
-     * <pre>
-     * Tracing policy
      * </pre>
      */
     boolean hasTracingPolicy();
     /**
-     * <code>optional string tracing_policy = 3;</code>
+     * <code>optional string tracing_policy = 2;</code>
+     *
+     * <pre>
+     * Volume to write trace
+     * </pre>
+     */
+    java.lang.String getTracingPolicy();
+    /**
+     * <code>optional string tracing_policy = 2;</code>
+     *
+     * <pre>
+     * Volume to write trace
+     * </pre>
+     */
+    com.google.protobuf.ByteString
+        getTracingPolicyBytes();
+
+    // optional string tracing_policy_config = 3;
+    /**
+     * <code>optional string tracing_policy_config = 3;</code>
      *
      * <pre>
      * Tracing policy
      * </pre>
      */
-    java.lang.String getTracingPolicy();
+    boolean hasTracingPolicyConfig();
     /**
-     * <code>optional string tracing_policy = 3;</code>
+     * <code>optional string tracing_policy_config = 3;</code>
+     *
+     * <pre>
+     * Tracing policy
+     * </pre>
+     */
+    java.lang.String getTracingPolicyConfig();
+    /**
+     * <code>optional string tracing_policy_config = 3;</code>
      *
      * <pre>
      * Tracing policy
      * </pre>
      */
     com.google.protobuf.ByteString
-        getTracingPolicyBytes();
+        getTracingPolicyConfigBytes();
   }
   /**
    * Protobuf type {@code xtreemfs.pbrpc.TraceConfig}
@@ -1565,12 +1565,12 @@ public final class GlobalTypes {
             }
             case 18: {
               bitField0_ |= 0x00000002;
-              targetVolume_ = input.readBytes();
+              tracingPolicy_ = input.readBytes();
               break;
             }
             case 26: {
               bitField0_ |= 0x00000004;
-              tracingPolicy_ = input.readBytes();
+              tracingPolicyConfig_ = input.readBytes();
               break;
             }
           }
@@ -1637,79 +1637,24 @@ public final class GlobalTypes {
       return traceRequests_;
     }
 
-    // optional string target_volume = 2;
-    public static final int TARGET_VOLUME_FIELD_NUMBER = 2;
-    private java.lang.Object targetVolume_;
-    /**
-     * <code>optional string target_volume = 2;</code>
-     *
-     * <pre>
-     * Volume to write trace
-     * </pre>
-     */
-    public boolean hasTargetVolume() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
-    }
-    /**
-     * <code>optional string target_volume = 2;</code>
-     *
-     * <pre>
-     * Volume to write trace
-     * </pre>
-     */
-    public java.lang.String getTargetVolume() {
-      java.lang.Object ref = targetVolume_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          targetVolume_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <code>optional string target_volume = 2;</code>
-     *
-     * <pre>
-     * Volume to write trace
-     * </pre>
-     */
-    public com.google.protobuf.ByteString
-        getTargetVolumeBytes() {
-      java.lang.Object ref = targetVolume_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        targetVolume_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    // optional string tracing_policy = 3;
-    public static final int TRACING_POLICY_FIELD_NUMBER = 3;
+    // optional string tracing_policy = 2;
+    public static final int TRACING_POLICY_FIELD_NUMBER = 2;
     private java.lang.Object tracingPolicy_;
     /**
-     * <code>optional string tracing_policy = 3;</code>
+     * <code>optional string tracing_policy = 2;</code>
      *
      * <pre>
-     * Tracing policy
+     * Volume to write trace
      * </pre>
      */
     public boolean hasTracingPolicy() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
+      return ((bitField0_ & 0x00000002) == 0x00000002);
     }
     /**
-     * <code>optional string tracing_policy = 3;</code>
+     * <code>optional string tracing_policy = 2;</code>
      *
      * <pre>
-     * Tracing policy
+     * Volume to write trace
      * </pre>
      */
     public java.lang.String getTracingPolicy() {
@@ -1727,10 +1672,10 @@ public final class GlobalTypes {
       }
     }
     /**
-     * <code>optional string tracing_policy = 3;</code>
+     * <code>optional string tracing_policy = 2;</code>
      *
      * <pre>
-     * Tracing policy
+     * Volume to write trace
      * </pre>
      */
     public com.google.protobuf.ByteString
@@ -1747,10 +1692,65 @@ public final class GlobalTypes {
       }
     }
 
+    // optional string tracing_policy_config = 3;
+    public static final int TRACING_POLICY_CONFIG_FIELD_NUMBER = 3;
+    private java.lang.Object tracingPolicyConfig_;
+    /**
+     * <code>optional string tracing_policy_config = 3;</code>
+     *
+     * <pre>
+     * Tracing policy
+     * </pre>
+     */
+    public boolean hasTracingPolicyConfig() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>optional string tracing_policy_config = 3;</code>
+     *
+     * <pre>
+     * Tracing policy
+     * </pre>
+     */
+    public java.lang.String getTracingPolicyConfig() {
+      java.lang.Object ref = tracingPolicyConfig_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          tracingPolicyConfig_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string tracing_policy_config = 3;</code>
+     *
+     * <pre>
+     * Tracing policy
+     * </pre>
+     */
+    public com.google.protobuf.ByteString
+        getTracingPolicyConfigBytes() {
+      java.lang.Object ref = tracingPolicyConfig_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        tracingPolicyConfig_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private void initFields() {
       traceRequests_ = false;
-      targetVolume_ = "";
       tracingPolicy_ = "";
+      tracingPolicyConfig_ = "";
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -1772,10 +1772,10 @@ public final class GlobalTypes {
         output.writeBool(1, traceRequests_);
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeBytes(2, getTargetVolumeBytes());
+        output.writeBytes(2, getTracingPolicyBytes());
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        output.writeBytes(3, getTracingPolicyBytes());
+        output.writeBytes(3, getTracingPolicyConfigBytes());
       }
       getUnknownFields().writeTo(output);
     }
@@ -1792,11 +1792,11 @@ public final class GlobalTypes {
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(2, getTargetVolumeBytes());
+          .computeBytesSize(2, getTracingPolicyBytes());
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(3, getTracingPolicyBytes());
+          .computeBytesSize(3, getTracingPolicyConfigBytes());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -1920,9 +1920,9 @@ public final class GlobalTypes {
         super.clear();
         traceRequests_ = false;
         bitField0_ = (bitField0_ & ~0x00000001);
-        targetVolume_ = "";
-        bitField0_ = (bitField0_ & ~0x00000002);
         tracingPolicy_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        tracingPolicyConfig_ = "";
         bitField0_ = (bitField0_ & ~0x00000004);
         return this;
       }
@@ -1959,11 +1959,11 @@ public final class GlobalTypes {
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
         }
-        result.targetVolume_ = targetVolume_;
+        result.tracingPolicy_ = tracingPolicy_;
         if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
           to_bitField0_ |= 0x00000004;
         }
-        result.tracingPolicy_ = tracingPolicy_;
+        result.tracingPolicyConfig_ = tracingPolicyConfig_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1983,14 +1983,14 @@ public final class GlobalTypes {
         if (other.hasTraceRequests()) {
           setTraceRequests(other.getTraceRequests());
         }
-        if (other.hasTargetVolume()) {
+        if (other.hasTracingPolicy()) {
           bitField0_ |= 0x00000002;
-          targetVolume_ = other.targetVolume_;
+          tracingPolicy_ = other.tracingPolicy_;
           onChanged();
         }
-        if (other.hasTracingPolicy()) {
+        if (other.hasTracingPolicyConfig()) {
           bitField0_ |= 0x00000004;
-          tracingPolicy_ = other.tracingPolicy_;
+          tracingPolicyConfig_ = other.tracingPolicyConfig_;
           onChanged();
         }
         this.mergeUnknownFields(other.getUnknownFields());
@@ -2073,121 +2073,23 @@ public final class GlobalTypes {
         return this;
       }
 
-      // optional string target_volume = 2;
-      private java.lang.Object targetVolume_ = "";
-      /**
-       * <code>optional string target_volume = 2;</code>
-       *
-       * <pre>
-       * Volume to write trace
-       * </pre>
-       */
-      public boolean hasTargetVolume() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
-      }
-      /**
-       * <code>optional string target_volume = 2;</code>
-       *
-       * <pre>
-       * Volume to write trace
-       * </pre>
-       */
-      public java.lang.String getTargetVolume() {
-        java.lang.Object ref = targetVolume_;
-        if (!(ref instanceof java.lang.String)) {
-          java.lang.String s = ((com.google.protobuf.ByteString) ref)
-              .toStringUtf8();
-          targetVolume_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <code>optional string target_volume = 2;</code>
-       *
-       * <pre>
-       * Volume to write trace
-       * </pre>
-       */
-      public com.google.protobuf.ByteString
-          getTargetVolumeBytes() {
-        java.lang.Object ref = targetVolume_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          targetVolume_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <code>optional string target_volume = 2;</code>
-       *
-       * <pre>
-       * Volume to write trace
-       * </pre>
-       */
-      public Builder setTargetVolume(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000002;
-        targetVolume_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional string target_volume = 2;</code>
-       *
-       * <pre>
-       * Volume to write trace
-       * </pre>
-       */
-      public Builder clearTargetVolume() {
-        bitField0_ = (bitField0_ & ~0x00000002);
-        targetVolume_ = getDefaultInstance().getTargetVolume();
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional string target_volume = 2;</code>
-       *
-       * <pre>
-       * Volume to write trace
-       * </pre>
-       */
-      public Builder setTargetVolumeBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000002;
-        targetVolume_ = value;
-        onChanged();
-        return this;
-      }
-
-      // optional string tracing_policy = 3;
+      // optional string tracing_policy = 2;
       private java.lang.Object tracingPolicy_ = "";
       /**
-       * <code>optional string tracing_policy = 3;</code>
+       * <code>optional string tracing_policy = 2;</code>
        *
        * <pre>
-       * Tracing policy
+       * Volume to write trace
        * </pre>
        */
       public boolean hasTracingPolicy() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       /**
-       * <code>optional string tracing_policy = 3;</code>
+       * <code>optional string tracing_policy = 2;</code>
        *
        * <pre>
-       * Tracing policy
+       * Volume to write trace
        * </pre>
        */
       public java.lang.String getTracingPolicy() {
@@ -2202,10 +2104,10 @@ public final class GlobalTypes {
         }
       }
       /**
-       * <code>optional string tracing_policy = 3;</code>
+       * <code>optional string tracing_policy = 2;</code>
        *
        * <pre>
-       * Tracing policy
+       * Volume to write trace
        * </pre>
        */
       public com.google.protobuf.ByteString
@@ -2222,10 +2124,10 @@ public final class GlobalTypes {
         }
       }
       /**
-       * <code>optional string tracing_policy = 3;</code>
+       * <code>optional string tracing_policy = 2;</code>
        *
        * <pre>
-       * Tracing policy
+       * Volume to write trace
        * </pre>
        */
       public Builder setTracingPolicy(
@@ -2233,29 +2135,29 @@ public final class GlobalTypes {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000004;
+  bitField0_ |= 0x00000002;
         tracingPolicy_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>optional string tracing_policy = 3;</code>
+       * <code>optional string tracing_policy = 2;</code>
        *
        * <pre>
-       * Tracing policy
+       * Volume to write trace
        * </pre>
        */
       public Builder clearTracingPolicy() {
-        bitField0_ = (bitField0_ & ~0x00000004);
+        bitField0_ = (bitField0_ & ~0x00000002);
         tracingPolicy_ = getDefaultInstance().getTracingPolicy();
         onChanged();
         return this;
       }
       /**
-       * <code>optional string tracing_policy = 3;</code>
+       * <code>optional string tracing_policy = 2;</code>
        *
        * <pre>
-       * Tracing policy
+       * Volume to write trace
        * </pre>
        */
       public Builder setTracingPolicyBytes(
@@ -2263,8 +2165,106 @@ public final class GlobalTypes {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000004;
+  bitField0_ |= 0x00000002;
         tracingPolicy_ = value;
+        onChanged();
+        return this;
+      }
+
+      // optional string tracing_policy_config = 3;
+      private java.lang.Object tracingPolicyConfig_ = "";
+      /**
+       * <code>optional string tracing_policy_config = 3;</code>
+       *
+       * <pre>
+       * Tracing policy
+       * </pre>
+       */
+      public boolean hasTracingPolicyConfig() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>optional string tracing_policy_config = 3;</code>
+       *
+       * <pre>
+       * Tracing policy
+       * </pre>
+       */
+      public java.lang.String getTracingPolicyConfig() {
+        java.lang.Object ref = tracingPolicyConfig_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          tracingPolicyConfig_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string tracing_policy_config = 3;</code>
+       *
+       * <pre>
+       * Tracing policy
+       * </pre>
+       */
+      public com.google.protobuf.ByteString
+          getTracingPolicyConfigBytes() {
+        java.lang.Object ref = tracingPolicyConfig_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          tracingPolicyConfig_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string tracing_policy_config = 3;</code>
+       *
+       * <pre>
+       * Tracing policy
+       * </pre>
+       */
+      public Builder setTracingPolicyConfig(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+        tracingPolicyConfig_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string tracing_policy_config = 3;</code>
+       *
+       * <pre>
+       * Tracing policy
+       * </pre>
+       */
+      public Builder clearTracingPolicyConfig() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        tracingPolicyConfig_ = getDefaultInstance().getTracingPolicyConfig();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string tracing_policy_config = 3;</code>
+       *
+       * <pre>
+       * Tracing policy
+       * </pre>
+       */
+      public Builder setTracingPolicyConfigBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+        tracingPolicyConfig_ = value;
         onChanged();
         return this;
       }
@@ -5602,7 +5602,7 @@ public final class GlobalTypes {
    * Protobuf type {@code xtreemfs.pbrpc.XCap}
    *
    * <pre>
-   * The XCap is the authorization token that allows a 
+   * The XCap is the authorization token that allows a
    * client to execute operations on an OSD. It is created
    * by the MRC on open and must be renewed by the client
    * *before* it times out.
@@ -6380,7 +6380,7 @@ public final class GlobalTypes {
      * Protobuf type {@code xtreemfs.pbrpc.XCap}
      *
      * <pre>
-     * The XCap is the authorization token that allows a 
+     * The XCap is the authorization token that allows a
      * client to execute operations on an OSD. It is created
      * by the MRC on open and must be renewed by the client
      * *before* it times out.
@@ -11901,85 +11901,85 @@ public final class GlobalTypes {
     java.lang.String[] descriptorData = {
       "\n\032xtreemfs/GlobalTypes.proto\022\016xtreemfs.p" +
       "brpc\032\023include/PBRPC.proto\032\024include/Commo" +
-      "n.proto\"T\n\013TraceConfig\022\026\n\016trace_requests" +
-      "\030\001 \002(\010\022\025\n\rtarget_volume\030\002 \001(\t\022\026\n\016tracing" +
-      "_policy\030\003 \001(\t\"<\n\013NewFileSize\022\025\n\rsize_in_" +
-      "bytes\030\001 \002(\006\022\026\n\016truncate_epoch\030\002 \002(\007\"|\n\016S" +
-      "tripingPolicy\0220\n\004type\030\001 \002(\0162\".xtreemfs.p" +
-      "brpc.StripingPolicyType\022\023\n\013stripe_size\030\002" +
-      " \002(\007\022\r\n\005width\030\003 \002(\007\022\024\n\014parity_width\030\004 \001(" +
-      "\007\"p\n\007Replica\022\021\n\tosd_uuids\030\001 \003(\t\022\031\n\021repli",
-      "cation_flags\030\002 \002(\007\0227\n\017striping_policy\030\003 " +
-      "\002(\0132\036.xtreemfs.pbrpc.StripingPolicy\"5\n\010R" +
-      "eplicas\022)\n\010replicas\030\001 \003(\0132\027.xtreemfs.pbr" +
-      "pc.Replica\"\300\002\n\004XCap\022\023\n\013access_mode\030\001 \002(\007" +
-      "\022\027\n\017client_identity\030\002 \002(\t\022\025\n\rexpire_time" +
-      "_s\030\003 \002(\006\022\030\n\020expire_timeout_s\030\004 \002(\007\022\017\n\007fi" +
-      "le_id\030\005 \002(\t\022\032\n\022replicate_on_close\030\006 \002(\010\022" +
-      "\030\n\020server_signature\030\007 \002(\t\022\026\n\016truncate_ep" +
-      "och\030\010 \002(\007\022/\n\013snap_config\030\t \002(\0162\032.xtreemf" +
-      "s.pbrpc.SnapConfig\022\026\n\016snap_timestamp\030\n \002",
-      "(\006\0221\n\014trace_config\030\013 \001(\0132\033.xtreemfs.pbrp" +
-      "c.TraceConfig\"\201\001\n\007XLocSet\022\033\n\023read_only_f" +
-      "ile_size\030\001 \002(\006\022)\n\010replicas\030\002 \003(\0132\027.xtree" +
-      "mfs.pbrpc.Replica\022\035\n\025replica_update_poli" +
-      "cy\030\003 \002(\t\022\017\n\007version\030\004 \002(\007\"]\n\017FileCredent" +
-      "ials\022\"\n\004xcap\030\001 \002(\0132\024.xtreemfs.pbrpc.XCap" +
-      "\022&\n\005xlocs\030\002 \002(\0132\027.xtreemfs.pbrpc.XLocSet" +
-      "\"O\n\022FileCredentialsSet\0229\n\020file_credentia" +
-      "ls\030\001 \001(\0132\037.xtreemfs.pbrpc.FileCredential" +
-      "s\"U\n\022VivaldiCoordinates\022\024\n\014x_coordinate\030",
-      "\001 \002(\001\022\024\n\014y_coordinate\030\002 \002(\001\022\023\n\013local_err" +
-      "or\030\003 \002(\001\"A\n\020OSDWriteResponse\022\025\n\rsize_in_" +
-      "bytes\030\001 \001(\006\022\026\n\016truncate_epoch\030\002 \001(\007\"*\n\014K" +
-      "eyValuePair\022\013\n\003key\030\001 \002(\t\022\r\n\005value\030\002 \002(\t*" +
-      "|\n\027AccessControlPolicyType\022\036\n\032ACCESS_CON" +
-      "TROL_POLICY_NULL\020\001\022\037\n\033ACCESS_CONTROL_POL" +
-      "ICY_POSIX\020\002\022 \n\034ACCESS_CONTROL_POLICY_VOL" +
-      "UME\020\003*\365\003\n\026OSDSelectionPolicyType\022(\n#OSD_" +
-      "SELECTION_POLICY_FILTER_DEFAULT\020\350\007\022%\n OS" +
-      "D_SELECTION_POLICY_FILTER_FQDN\020\351\007\022%\n OSD",
-      "_SELECTION_POLICY_FILTER_UUID\020\352\007\022%\n OSD_" +
-      "SELECTION_POLICY_GROUP_DCMAP\020\320\017\022$\n\037OSD_S" +
-      "ELECTION_POLICY_GROUP_FQDN\020\321\017\022$\n\037OSD_SEL" +
-      "ECTION_POLICY_SORT_DCMAP\020\270\027\022#\n\036OSD_SELEC" +
-      "TION_POLICY_SORT_FQDN\020\271\027\022%\n OSD_SELECTIO" +
-      "N_POLICY_SORT_RANDOM\020\272\027\022&\n!OSD_SELECTION" +
-      "_POLICY_SORT_VIVALDI\020\273\027\022/\n*OSD_SELECTION" +
-      "_POLICY_SORT_HOST_ROUND_ROBIN\020\274\027\022#\n\036OSD_" +
-      "SELECTION_POLICY_SORT_UUID\020\236\037\022&\n!OSD_SEL" +
-      "ECTION_POLICY_SORT_REVERSE\020\237\037*A\n\032Replica",
-      "SelectionPolicyType\022#\n\037REPLICA_SELECTION" +
-      "_POLICY_SIMPLE\020\001*i\n\nSnapConfig\022\036\n\032SNAP_C" +
-      "ONFIG_SNAPS_DISABLED\020\000\022\036\n\032SNAP_CONFIG_AC" +
-      "CESS_CURRENT\020\001\022\033\n\027SNAP_CONFIG_ACCESS_SNA" +
-      "P\020\002*P\n\022StripingPolicyType\022\031\n\025STRIPING_PO" +
-      "LICY_RAID0\020\000\022\037\n\033STRIPING_POLICY_ERASUREC" +
-      "ODE\020\001*9\n\nLeaseState\022\010\n\004NONE\020\000\022\013\n\007PRIMARY" +
-      "\020\001\022\n\n\006BACKUP\020\002\022\010\n\004IDLE\020\003*\270\001\n\005PORTS\022\033\n\025DI" +
-      "R_HTTP_PORT_DEFAULT\020\256\357\001\022\034\n\026DIR_PBRPC_POR" +
-      "T_DEFAULT\020\376\376\001\022\033\n\025MRC_HTTP_PORT_DEFAULT\020\254",
-      "\357\001\022\034\n\026MRC_PBRPC_PORT_DEFAULT\020\374\376\001\022\033\n\025OSD_" +
-      "HTTP_PORT_DEFAULT\020\260\357\001\022\034\n\026OSD_PBRPC_PORT_" +
-      "DEFAULT\020\200\377\001*+\n\tCONSTANTS\022\036\n\032XCAP_RENEW_I" +
-      "NTERVAL_IN_MIN\020\001*\202\003\n\016SYSTEM_V_FCNTL\022\035\n\031S" +
-      "YSTEM_V_FCNTL_H_O_RDONLY\020\000\022\035\n\031SYSTEM_V_F" +
-      "CNTL_H_O_WRONLY\020\001\022\033\n\027SYSTEM_V_FCNTL_H_O_" +
-      "RDWR\020\002\022\035\n\031SYSTEM_V_FCNTL_H_O_APPEND\020\010\022\035\n" +
-      "\030SYSTEM_V_FCNTL_H_O_CREAT\020\200\002\022\035\n\030SYSTEM_V" +
-      "_FCNTL_H_O_TRUNC\020\200\004\022\034\n\027SYSTEM_V_FCNTL_H_" +
-      "O_EXCL\020\200\010\022\033\n\027SYSTEM_V_FCNTL_H_O_SYNC\020\020\022\036",
-      "\n\030SYSTEM_V_FCNTL_H_S_IFREG\020\200\200\002\022\036\n\030SYSTEM" +
-      "_V_FCNTL_H_S_IFDIR\020\200\200\001\022\036\n\030SYSTEM_V_FCNTL" +
-      "_H_S_IFLNK\020\200\300\002\022\035\n\030SYSTEM_V_FCNTL_H_S_IFI" +
-      "FO\020\200 *\330\001\n\tREPL_FLAG\022\032\n\026REPL_FLAG_FULL_RE" +
-      "PLICA\020\001\022\031\n\025REPL_FLAG_IS_COMPLETE\020\002\022\035\n\031RE" +
-      "PL_FLAG_STRATEGY_RANDOM\020\004\022#\n\037REPL_FLAG_S" +
-      "TRATEGY_RAREST_FIRST\020\010\022!\n\035REPL_FLAG_STRA" +
-      "TEGY_SEQUENTIAL\020\020\022-\n)REPL_FLAG_STRATEGY_" +
-      "SEQUENTIAL_PREFETCHING\020 *%\n\010SERVICES\022\007\n\003" +
-      "DIR\020\001\022\007\n\003MRC\020\002\022\007\n\003OSD\020\003B(\n&org.xtreemfs.",
-      "pbrpc.generatedinterfaces"
+      "n.proto\"\\\n\013TraceConfig\022\026\n\016trace_requests" +
+      "\030\001 \002(\010\022\026\n\016tracing_policy\030\002 \001(\t\022\035\n\025tracin" +
+      "g_policy_config\030\003 \001(\t\"<\n\013NewFileSize\022\025\n\r" +
+      "size_in_bytes\030\001 \002(\006\022\026\n\016truncate_epoch\030\002 " +
+      "\002(\007\"|\n\016StripingPolicy\0220\n\004type\030\001 \002(\0162\".xt" +
+      "reemfs.pbrpc.StripingPolicyType\022\023\n\013strip" +
+      "e_size\030\002 \002(\007\022\r\n\005width\030\003 \002(\007\022\024\n\014parity_wi" +
+      "dth\030\004 \001(\007\"p\n\007Replica\022\021\n\tosd_uuids\030\001 \003(\t\022",
+      "\031\n\021replication_flags\030\002 \002(\007\0227\n\017striping_p" +
+      "olicy\030\003 \002(\0132\036.xtreemfs.pbrpc.StripingPol" +
+      "icy\"5\n\010Replicas\022)\n\010replicas\030\001 \003(\0132\027.xtre" +
+      "emfs.pbrpc.Replica\"\300\002\n\004XCap\022\023\n\013access_mo" +
+      "de\030\001 \002(\007\022\027\n\017client_identity\030\002 \002(\t\022\025\n\rexp" +
+      "ire_time_s\030\003 \002(\006\022\030\n\020expire_timeout_s\030\004 \002" +
+      "(\007\022\017\n\007file_id\030\005 \002(\t\022\032\n\022replicate_on_clos" +
+      "e\030\006 \002(\010\022\030\n\020server_signature\030\007 \002(\t\022\026\n\016tru" +
+      "ncate_epoch\030\010 \002(\007\022/\n\013snap_config\030\t \002(\0162\032" +
+      ".xtreemfs.pbrpc.SnapConfig\022\026\n\016snap_times",
+      "tamp\030\n \002(\006\0221\n\014trace_config\030\013 \001(\0132\033.xtree" +
+      "mfs.pbrpc.TraceConfig\"\201\001\n\007XLocSet\022\033\n\023rea" +
+      "d_only_file_size\030\001 \002(\006\022)\n\010replicas\030\002 \003(\013" +
+      "2\027.xtreemfs.pbrpc.Replica\022\035\n\025replica_upd" +
+      "ate_policy\030\003 \002(\t\022\017\n\007version\030\004 \002(\007\"]\n\017Fil" +
+      "eCredentials\022\"\n\004xcap\030\001 \002(\0132\024.xtreemfs.pb" +
+      "rpc.XCap\022&\n\005xlocs\030\002 \002(\0132\027.xtreemfs.pbrpc" +
+      ".XLocSet\"O\n\022FileCredentialsSet\0229\n\020file_c" +
+      "redentials\030\001 \001(\0132\037.xtreemfs.pbrpc.FileCr" +
+      "edentials\"U\n\022VivaldiCoordinates\022\024\n\014x_coo",
+      "rdinate\030\001 \002(\001\022\024\n\014y_coordinate\030\002 \002(\001\022\023\n\013l" +
+      "ocal_error\030\003 \002(\001\"A\n\020OSDWriteResponse\022\025\n\r" +
+      "size_in_bytes\030\001 \001(\006\022\026\n\016truncate_epoch\030\002 " +
+      "\001(\007\"*\n\014KeyValuePair\022\013\n\003key\030\001 \002(\t\022\r\n\005valu" +
+      "e\030\002 \002(\t*|\n\027AccessControlPolicyType\022\036\n\032AC" +
+      "CESS_CONTROL_POLICY_NULL\020\001\022\037\n\033ACCESS_CON" +
+      "TROL_POLICY_POSIX\020\002\022 \n\034ACCESS_CONTROL_PO" +
+      "LICY_VOLUME\020\003*\365\003\n\026OSDSelectionPolicyType" +
+      "\022(\n#OSD_SELECTION_POLICY_FILTER_DEFAULT\020" +
+      "\350\007\022%\n OSD_SELECTION_POLICY_FILTER_FQDN\020\351",
+      "\007\022%\n OSD_SELECTION_POLICY_FILTER_UUID\020\352\007" +
+      "\022%\n OSD_SELECTION_POLICY_GROUP_DCMAP\020\320\017\022" +
+      "$\n\037OSD_SELECTION_POLICY_GROUP_FQDN\020\321\017\022$\n" +
+      "\037OSD_SELECTION_POLICY_SORT_DCMAP\020\270\027\022#\n\036O" +
+      "SD_SELECTION_POLICY_SORT_FQDN\020\271\027\022%\n OSD_" +
+      "SELECTION_POLICY_SORT_RANDOM\020\272\027\022&\n!OSD_S" +
+      "ELECTION_POLICY_SORT_VIVALDI\020\273\027\022/\n*OSD_S" +
+      "ELECTION_POLICY_SORT_HOST_ROUND_ROBIN\020\274\027" +
+      "\022#\n\036OSD_SELECTION_POLICY_SORT_UUID\020\236\037\022&\n" +
+      "!OSD_SELECTION_POLICY_SORT_REVERSE\020\237\037*A\n",
+      "\032ReplicaSelectionPolicyType\022#\n\037REPLICA_S" +
+      "ELECTION_POLICY_SIMPLE\020\001*i\n\nSnapConfig\022\036" +
+      "\n\032SNAP_CONFIG_SNAPS_DISABLED\020\000\022\036\n\032SNAP_C" +
+      "ONFIG_ACCESS_CURRENT\020\001\022\033\n\027SNAP_CONFIG_AC" +
+      "CESS_SNAP\020\002*P\n\022StripingPolicyType\022\031\n\025STR" +
+      "IPING_POLICY_RAID0\020\000\022\037\n\033STRIPING_POLICY_" +
+      "ERASURECODE\020\001*9\n\nLeaseState\022\010\n\004NONE\020\000\022\013\n" +
+      "\007PRIMARY\020\001\022\n\n\006BACKUP\020\002\022\010\n\004IDLE\020\003*\270\001\n\005POR" +
+      "TS\022\033\n\025DIR_HTTP_PORT_DEFAULT\020\256\357\001\022\034\n\026DIR_P" +
+      "BRPC_PORT_DEFAULT\020\376\376\001\022\033\n\025MRC_HTTP_PORT_D",
+      "EFAULT\020\254\357\001\022\034\n\026MRC_PBRPC_PORT_DEFAULT\020\374\376\001" +
+      "\022\033\n\025OSD_HTTP_PORT_DEFAULT\020\260\357\001\022\034\n\026OSD_PBR" +
+      "PC_PORT_DEFAULT\020\200\377\001*+\n\tCONSTANTS\022\036\n\032XCAP" +
+      "_RENEW_INTERVAL_IN_MIN\020\001*\202\003\n\016SYSTEM_V_FC" +
+      "NTL\022\035\n\031SYSTEM_V_FCNTL_H_O_RDONLY\020\000\022\035\n\031SY" +
+      "STEM_V_FCNTL_H_O_WRONLY\020\001\022\033\n\027SYSTEM_V_FC" +
+      "NTL_H_O_RDWR\020\002\022\035\n\031SYSTEM_V_FCNTL_H_O_APP" +
+      "END\020\010\022\035\n\030SYSTEM_V_FCNTL_H_O_CREAT\020\200\002\022\035\n\030" +
+      "SYSTEM_V_FCNTL_H_O_TRUNC\020\200\004\022\034\n\027SYSTEM_V_" +
+      "FCNTL_H_O_EXCL\020\200\010\022\033\n\027SYSTEM_V_FCNTL_H_O_",
+      "SYNC\020\020\022\036\n\030SYSTEM_V_FCNTL_H_S_IFREG\020\200\200\002\022\036" +
+      "\n\030SYSTEM_V_FCNTL_H_S_IFDIR\020\200\200\001\022\036\n\030SYSTEM" +
+      "_V_FCNTL_H_S_IFLNK\020\200\300\002\022\035\n\030SYSTEM_V_FCNTL" +
+      "_H_S_IFIFO\020\200 *\330\001\n\tREPL_FLAG\022\032\n\026REPL_FLAG" +
+      "_FULL_REPLICA\020\001\022\031\n\025REPL_FLAG_IS_COMPLETE" +
+      "\020\002\022\035\n\031REPL_FLAG_STRATEGY_RANDOM\020\004\022#\n\037REP" +
+      "L_FLAG_STRATEGY_RAREST_FIRST\020\010\022!\n\035REPL_F" +
+      "LAG_STRATEGY_SEQUENTIAL\020\020\022-\n)REPL_FLAG_S" +
+      "TRATEGY_SEQUENTIAL_PREFETCHING\020 *%\n\010SERV" +
+      "ICES\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n\003OSD\020\003B(\n&org.x",
+      "treemfs.pbrpc.generatedinterfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -11991,7 +11991,7 @@ public final class GlobalTypes {
           internal_static_xtreemfs_pbrpc_TraceConfig_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_TraceConfig_descriptor,
-              new java.lang.String[] { "TraceRequests", "TargetVolume", "TracingPolicy", });
+              new java.lang.String[] { "TraceRequests", "TracingPolicy", "TracingPolicyConfig", });
           internal_static_xtreemfs_pbrpc_NewFileSize_descriptor =
             getDescriptor().getMessageTypes().get(1);
           internal_static_xtreemfs_pbrpc_NewFileSize_fieldAccessorTable = new

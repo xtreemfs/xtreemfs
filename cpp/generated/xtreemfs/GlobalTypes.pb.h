@@ -353,22 +353,10 @@ class TraceConfig : public ::google::protobuf::Message {
   inline bool trace_requests() const;
   inline void set_trace_requests(bool value);
 
-  // optional string target_volume = 2;
-  inline bool has_target_volume() const;
-  inline void clear_target_volume();
-  static const int kTargetVolumeFieldNumber = 2;
-  inline const ::std::string& target_volume() const;
-  inline void set_target_volume(const ::std::string& value);
-  inline void set_target_volume(const char* value);
-  inline void set_target_volume(const char* value, size_t size);
-  inline ::std::string* mutable_target_volume();
-  inline ::std::string* release_target_volume();
-  inline void set_allocated_target_volume(::std::string* target_volume);
-
-  // optional string tracing_policy = 3;
+  // optional string tracing_policy = 2;
   inline bool has_tracing_policy() const;
   inline void clear_tracing_policy();
-  static const int kTracingPolicyFieldNumber = 3;
+  static const int kTracingPolicyFieldNumber = 2;
   inline const ::std::string& tracing_policy() const;
   inline void set_tracing_policy(const ::std::string& value);
   inline void set_tracing_policy(const char* value);
@@ -377,19 +365,31 @@ class TraceConfig : public ::google::protobuf::Message {
   inline ::std::string* release_tracing_policy();
   inline void set_allocated_tracing_policy(::std::string* tracing_policy);
 
+  // optional string tracing_policy_config = 3;
+  inline bool has_tracing_policy_config() const;
+  inline void clear_tracing_policy_config();
+  static const int kTracingPolicyConfigFieldNumber = 3;
+  inline const ::std::string& tracing_policy_config() const;
+  inline void set_tracing_policy_config(const ::std::string& value);
+  inline void set_tracing_policy_config(const char* value);
+  inline void set_tracing_policy_config(const char* value, size_t size);
+  inline ::std::string* mutable_tracing_policy_config();
+  inline ::std::string* release_tracing_policy_config();
+  inline void set_allocated_tracing_policy_config(::std::string* tracing_policy_config);
+
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.TraceConfig)
  private:
   inline void set_has_trace_requests();
   inline void clear_has_trace_requests();
-  inline void set_has_target_volume();
-  inline void clear_has_target_volume();
   inline void set_has_tracing_policy();
   inline void clear_has_tracing_policy();
+  inline void set_has_tracing_policy_config();
+  inline void clear_has_tracing_policy_config();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
-  ::std::string* target_volume_;
   ::std::string* tracing_policy_;
+  ::std::string* tracing_policy_config_;
   bool trace_requests_;
 
   mutable int _cached_size_;
@@ -1626,85 +1626,15 @@ inline void TraceConfig::set_trace_requests(bool value) {
   trace_requests_ = value;
 }
 
-// optional string target_volume = 2;
-inline bool TraceConfig::has_target_volume() const {
+// optional string tracing_policy = 2;
+inline bool TraceConfig::has_tracing_policy() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
-inline void TraceConfig::set_has_target_volume() {
+inline void TraceConfig::set_has_tracing_policy() {
   _has_bits_[0] |= 0x00000002u;
 }
-inline void TraceConfig::clear_has_target_volume() {
-  _has_bits_[0] &= ~0x00000002u;
-}
-inline void TraceConfig::clear_target_volume() {
-  if (target_volume_ != &::google::protobuf::internal::kEmptyString) {
-    target_volume_->clear();
-  }
-  clear_has_target_volume();
-}
-inline const ::std::string& TraceConfig::target_volume() const {
-  return *target_volume_;
-}
-inline void TraceConfig::set_target_volume(const ::std::string& value) {
-  set_has_target_volume();
-  if (target_volume_ == &::google::protobuf::internal::kEmptyString) {
-    target_volume_ = new ::std::string;
-  }
-  target_volume_->assign(value);
-}
-inline void TraceConfig::set_target_volume(const char* value) {
-  set_has_target_volume();
-  if (target_volume_ == &::google::protobuf::internal::kEmptyString) {
-    target_volume_ = new ::std::string;
-  }
-  target_volume_->assign(value);
-}
-inline void TraceConfig::set_target_volume(const char* value, size_t size) {
-  set_has_target_volume();
-  if (target_volume_ == &::google::protobuf::internal::kEmptyString) {
-    target_volume_ = new ::std::string;
-  }
-  target_volume_->assign(reinterpret_cast<const char*>(value), size);
-}
-inline ::std::string* TraceConfig::mutable_target_volume() {
-  set_has_target_volume();
-  if (target_volume_ == &::google::protobuf::internal::kEmptyString) {
-    target_volume_ = new ::std::string;
-  }
-  return target_volume_;
-}
-inline ::std::string* TraceConfig::release_target_volume() {
-  clear_has_target_volume();
-  if (target_volume_ == &::google::protobuf::internal::kEmptyString) {
-    return NULL;
-  } else {
-    ::std::string* temp = target_volume_;
-    target_volume_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-    return temp;
-  }
-}
-inline void TraceConfig::set_allocated_target_volume(::std::string* target_volume) {
-  if (target_volume_ != &::google::protobuf::internal::kEmptyString) {
-    delete target_volume_;
-  }
-  if (target_volume) {
-    set_has_target_volume();
-    target_volume_ = target_volume;
-  } else {
-    clear_has_target_volume();
-    target_volume_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-  }
-}
-
-// optional string tracing_policy = 3;
-inline bool TraceConfig::has_tracing_policy() const {
-  return (_has_bits_[0] & 0x00000004u) != 0;
-}
-inline void TraceConfig::set_has_tracing_policy() {
-  _has_bits_[0] |= 0x00000004u;
-}
 inline void TraceConfig::clear_has_tracing_policy() {
-  _has_bits_[0] &= ~0x00000004u;
+  _has_bits_[0] &= ~0x00000002u;
 }
 inline void TraceConfig::clear_tracing_policy() {
   if (tracing_policy_ != &::google::protobuf::internal::kEmptyString) {
@@ -1763,6 +1693,76 @@ inline void TraceConfig::set_allocated_tracing_policy(::std::string* tracing_pol
   } else {
     clear_has_tracing_policy();
     tracing_policy_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// optional string tracing_policy_config = 3;
+inline bool TraceConfig::has_tracing_policy_config() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void TraceConfig::set_has_tracing_policy_config() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void TraceConfig::clear_has_tracing_policy_config() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void TraceConfig::clear_tracing_policy_config() {
+  if (tracing_policy_config_ != &::google::protobuf::internal::kEmptyString) {
+    tracing_policy_config_->clear();
+  }
+  clear_has_tracing_policy_config();
+}
+inline const ::std::string& TraceConfig::tracing_policy_config() const {
+  return *tracing_policy_config_;
+}
+inline void TraceConfig::set_tracing_policy_config(const ::std::string& value) {
+  set_has_tracing_policy_config();
+  if (tracing_policy_config_ == &::google::protobuf::internal::kEmptyString) {
+    tracing_policy_config_ = new ::std::string;
+  }
+  tracing_policy_config_->assign(value);
+}
+inline void TraceConfig::set_tracing_policy_config(const char* value) {
+  set_has_tracing_policy_config();
+  if (tracing_policy_config_ == &::google::protobuf::internal::kEmptyString) {
+    tracing_policy_config_ = new ::std::string;
+  }
+  tracing_policy_config_->assign(value);
+}
+inline void TraceConfig::set_tracing_policy_config(const char* value, size_t size) {
+  set_has_tracing_policy_config();
+  if (tracing_policy_config_ == &::google::protobuf::internal::kEmptyString) {
+    tracing_policy_config_ = new ::std::string;
+  }
+  tracing_policy_config_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* TraceConfig::mutable_tracing_policy_config() {
+  set_has_tracing_policy_config();
+  if (tracing_policy_config_ == &::google::protobuf::internal::kEmptyString) {
+    tracing_policy_config_ = new ::std::string;
+  }
+  return tracing_policy_config_;
+}
+inline ::std::string* TraceConfig::release_tracing_policy_config() {
+  clear_has_tracing_policy_config();
+  if (tracing_policy_config_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = tracing_policy_config_;
+    tracing_policy_config_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void TraceConfig::set_allocated_tracing_policy_config(::std::string* tracing_policy_config) {
+  if (tracing_policy_config_ != &::google::protobuf::internal::kEmptyString) {
+    delete tracing_policy_config_;
+  }
+  if (tracing_policy_config) {
+    set_has_tracing_policy_config();
+    tracing_policy_config_ = tracing_policy_config;
+  } else {
+    clear_has_tracing_policy_config();
+    tracing_policy_config_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   }
 }
 
