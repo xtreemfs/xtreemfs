@@ -316,10 +316,10 @@ bool getattr(const string& xctl_file,
         cout << "Tracing enabled      ";
         if (stat.isMember("tracing_enabled")) {
           if(stat["tracing_enabled"].asString() == "true" &&
-            stat.isMember("trace_target") && stat.isMember("tracing_policy")) {
+            stat.isMember("tracing_policy_config") && stat.isMember("tracing_policy")) {
             cout << "yes" << endl;
-            cout << "Trace target         "
-              << stat["trace_target"].asString() << endl;
+            cout << "Tracing policy config         "
+              << stat["tracing_policy_config"].asString() << endl;
             cout << "Tracing policy       "
               << stat["tracing_policy"].asString() << endl;
           } else {
@@ -914,7 +914,9 @@ bool EnableDisableTracing(const string& xctl_file,
   }
   if (vm.count("enable-tracing") > 0) {
     request["enable_tracing"] = "1";
-    request["target_volume"] = vm["target-volume"].as<string>();
+    if (vm.count("tracing-policy-config") > 0 ) {
+      request["tracing_policy_config"] = vm["tracing-policy-config"].as<string>();
+    }
     if (vm.count("tracing-policy") > 0) {
       request["tracing_policy"] = vm["tracing-policy"].as<string>();
     } else {
@@ -1141,7 +1143,7 @@ int main(int argc, char **argv) {
        "Enable tracing on the volume.")
       ("disable-tracing",
        "disable tracing on the volume.")
-      ("target-volume",
+      ("tracing-policy-config",
        value<string>(),
        "Volume to write trace")
       ("tracing-policy",
@@ -1235,16 +1237,6 @@ int main(int argc, char **argv) {
            << endl
            << "Usage: xtfsutil <path>" << endl
            << desc << endl;
-      return 1;
-    }
-  }
-
-  if (vm.count("enable-tracing") > 0) {
-    if (vm.count("target-volume") == 0) {
-      cerr << "--enable-tracing is only allowed in conjunction with --target-volume" << endl
-           << endl
-           << "Usage: xtfsutil <path>" << endl
-           << tracing_desc << endl;
       return 1;
     }
   }

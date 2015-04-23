@@ -219,7 +219,7 @@ void XtfsUtilServer::OpStat(const xtreemfs::pbrpc::UserCredentials& uc,
       result["num_files"] = Json::Value(xtfs_attrs["xtreemfs.num_files"]);
       result["snapshots_enabled"] = Json::Value(xtfs_attrs["xtreemfs.snapshots_enabled"]);
       result["tracing_enabled"] = Json::Value(xtfs_attrs["xtreemfs.tracing_enabled"]);
-      result["trace_target"] = Json::Value(xtfs_attrs["xtreemfs.trace_target"]);
+      result["tracing_policy_config"] = Json::Value(xtfs_attrs["xtreemfs.tracing_policy_config"]);
       result["tracing_policy"] = Json::Value(xtfs_attrs["xtreemfs.tracing_policy"]);
 
       Json::Value usable_osds_json;
@@ -592,11 +592,11 @@ void XtfsUtilServer::OpEnableDisableTracing(
                     input["enable_tracing"].asString(),
                     xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
 
-  if (input.isMember("target_volume") && input["target_volume"].isString()) {
+  if (input.isMember("tracing_policy_config") && input["tracing_policy_config"].isString()) {
     volume_->SetXAttr(uc,
                       path,
-                      "xtreemfs.trace_target",
-                      input["target_volume"].asString(),
+                      "xtreemfs.tracing_policy_config",
+                      input["tracing_policy_config"].asString(),
                       xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
   }
 
