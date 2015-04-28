@@ -66,7 +66,7 @@ public:
 
 
 
-
+// Make a iterable Java implementation of a std::list.
 %define LIST(Name, CppType, JavaType)
 
 %typemap(javainterfaces) ListIterator<CppType> "java.util.Iterator<JavaType>"

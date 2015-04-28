@@ -1,7 +1,15 @@
+/*
+ * Copyright (c) 2015 by Johannes Dillmann, Zuse Institute Berlin
+ *
+ * Licensed under the BSD License, see LICENSE file for details.
+ *
+ */
+
+
 %module xtreemfs_jni
 %javaconst(1);
 
-
+%include "base.i"
 %include <stdint.i>
 %include <std_string.i>
 %include <std_vector.i>
@@ -11,8 +19,10 @@
 %include <typemaps.i>
 %include <enums.swg>
 
+
+// Include protobuf specific functions and 
+// assure the protobuf headers are included.
 %include "protobuf.i"
-// Assure the protobuf header are included.
 %{
 #include "pbrpc/RPC.pb.h"
 #include "xtreemfs/GlobalTypes.pb.h"
@@ -22,102 +32,19 @@
 %}
 
 
-
-
-// Extend generated collections with a static method, that allows to fill the
-// C++ structure with elements from a Java collection.
-%define COLLECTION(Name, CppCollectionType, JavaElementType)
-%typemap(javacode) CppCollectionType %{
-  public static $javaclassname from(java.util.Collection<JavaElementType> in) {
-    $javaclassname out = new $javaclassname(in.size());
-    for (JavaElementType entry : in) {
-      out.add(entry);
-    }
-    return out;
-  }
-%}
-
-%template(Name) CppCollectionType;
-%enddef // end COLLECTION
-
 // Enable vectors of Strings and Integers.
-COLLECTION(StringVector, std::vector<std::string>, String)
-COLLECTION(IntVector, std::vector<int>, Integer)
+VECTOR(StringVector, std::vector<std::string>, String)
+VECTOR(IntVector, std::vector<int>, Integer)
 
-// Enable lists of Strings
+// Enable lists of Strings.
 LIST(StringList, std::string, String)
 
-// Enable String Key-Value Maps
+// Enable String Key-Value Maps.
 %template(StringMap) std::map<std::string, std::string>;
 
 
-// Cast int flags generated from enums typesafe to the native C++ interface.
-//
-// @param flag_type type of the C++ enum
-// @param param_name the parameter name
-%define ENUM_FLAG(flag_type, param_name)
-%typemap(jni) flag_type param_name "jint"
-%typemap(jtype) flag_type param_name "int"
-%typemap(jstype) flag_type param_name "int"
-%typemap(javain) flag_type param_name "$javainput"
-%typemap(in) flag_type param_name {
-  $1 = static_cast<flag_type>($input);
-}
-%enddef // end ENUM_FLAG
-
-
-// Add a new typemap, that allows to use std::string as an OUPUT parameter.
-// http://stackoverflow.com/a/11967859
-%typemap(jni) std::string *OUTPUT, std::string &OUTPUT "jobjectArray"
-%typemap(jtype) std::string *OUTPUT, std::string &OUTPUT "String[]"
-%typemap(jstype) std::string *OUTPUT, std::string &OUTPUT "String[]"
-%typemap(javain) std::string *OUTPUT, std::string &OUTPUT "$javainput"
-%typemap(in) std::string *OUTPUT($*1_ltype temp), std::string &OUTPUT($*1_ltype temp)
-{
-  if (!$input) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "array null");
-    return $null;
-  }
-  if (JCALL1(GetArrayLength, jenv, $input) == 0) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "Array must contain at least 1 element");
-    return $null;
-  }
-  $1 = &temp; 
-}
-
-%typemap(freearg) std::string *OUTPUT, std::string &OUTPUT ""
-
-%typemap(argout) std::string *OUTPUT, std::string &OUTPUT {
-  jstring jvalue = JCALL1(NewStringUTF, jenv, temp$argnum.c_str()); 
-  JCALL3(SetObjectArrayElement, jenv, $input, 0, jvalue);
-}
-
-%typemap(typecheck) std::string *OUTPUT = jobjectArray;
-%typemap(typecheck) std::string &OUTPUT = jobjectArray;
-// end std::string OUTPUT typemap
-
-// Direct ByteBuffer typemap
-// https://github.com/yuvalk/SWIGNIO
-%typemap(jni) char* BUFFER "jobject"
-%typemap(jtype) char* BUFFER "java.nio.ByteBuffer"
-%typemap(jstype) char* BUFFER "java.nio.ByteBuffer"
-%typemap(javain, pre=" assert $javainput.isDirect() : \"Buffer must be allocated direct.\";") char* BUFFER "$javainput"
-%typemap(javaout) char* BUFFER {
-  return $jnicall;
-}
-%typemap(in) char* BUFFER {
-  $1 = (char*) jenv->GetDirectBufferAddress($input);
-  if ($1 == NULL) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaRuntimeException, "Unable to get address of direct buffer. Buffer must be allocated direct.");
-  }
-}
-%typemap(freearg) char* BUFFER ""
-// end Direct ByteBuffer typemap
-
-
-%{
-#include "libxtreemfs/typedefs.h"
-%}
+// Include supplementary classes and enums required for libxtreemfs. 
+%{ #include "libxtreemfs/typedefs.h" %}
 namespace xtreemfs {
   class ServiceAddresses {
    public:
@@ -126,26 +53,13 @@ namespace xtreemfs {
   };
 }
 
-
-%{
-#include "libxtreemfs/user_mapping.h"
-%}
+// Ignore everything except the inner enums.
+%{ #include "libxtreemfs/user_mapping.h" %}
 %rename("$ignore", "not" %$isenum, "not" %$isenumitem, regextarget=1, fullname=1) "^xtreemfs::UserMapping::"; 
 %include "libxtreemfs/user_mapping.h"
 
-
-%{
-#include "libxtreemfs/options.h"
-%}
-%rename (OptionsProxy) xtreemfs::Options;
-%rename("$ignore", %$isfunction, regextarget=1, fullname=1) "^xtreemfs::Options::";
-%ignore xtreemfs::Options::was_interrupted_function;
-%include "libxtreemfs/options.h"
-
-
-%{
-#include <boost/asio/ssl/context.hpp>
-%}
+// Ignore everything except the inner enums.
+%{ #include <boost/asio/ssl/context.hpp> %}
 %rename("SSLContext") boost::asio::ssl::context_base;
 %rename("$ignore", "not" %$isenum, "not" %$isenumitem, regextarget=1, fullname=1) "^boost::asio::ssl::context_base::"; 
 %include <boost/asio/ssl/context_base.hpp>
@@ -153,59 +67,113 @@ namespace xtreemfs {
 %import <boost/asio/ssl/context.hpp>
 
 
-%{
-#include "rpc/ssl_options.h"
-%}
+// Include the Options class. 
+// Since every option is a public member variable functions can be ignored.
+%{ #include "libxtreemfs/options.h" %}
+%rename (OptionsProxy) xtreemfs::Options;
+%rename("$ignore", %$isfunction, regextarget=1, fullname=1) "^xtreemfs::Options::";
+%ignore xtreemfs::Options::was_interrupted_function;
+%include "libxtreemfs/options.h"
+
+// Include the SSLOptions.
+// TODO (jdillmann): This could be empty in case HAS_OPENSSL is false.
+%{ #include "rpc/ssl_options.h" %}
 %rename (SSLOptionsProxy) xtreemfs::rpc::SSLOptions;
 %include "rpc/ssl_options.h" 
 
-// TODO (jdillmann): Move somewhere else
-// Ensure the OptionsProxy won't get gc'ed prior to the Volume
-%typemap(javacode) xtreemfs::Volume %{
-  private OptionsProxy optionsReference;
-  protected void addReference(OptionsProxy options) {
-    optionsReference = options;
-  }
-%}
-
-%typemap(javaout) xtreemfs::Volume* OpenVolume(const std::string& volume_name,
-      const xtreemfs::rpc::SSLOptions* ssl_options,
-      const Options& options) {
-    long cPtr = $jnicall;
-    $javaclassname ret = null;
-    if (cPtr != 0) {
-      ret = new $javaclassname(cPtr, $owner);
-      ret.addReference(options);
-    }
-    return ret;
-  }
 
 
+/*******************************************************************************
+ * Exception handling
+ * C++ exceptions have to be casted to Java exceptions.
+ ******************************************************************************/
+%{ #include "libxtreemfs/xtreemfs_exception.h" %}
 
-
-
-// Change libxtreemfs class members to first letter lowercase in accordance to the Java interfaces.
-%rename("%(firstlowercase)s", %$isfunction, %$ismember ) "";
-
-%{ 
-#include "libxtreemfs/client.h"
-%}
-// client.h
-namespace xtreemfs {
-  PROTO_INPUT(xtreemfs::pbrpc::UserCredentials, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials, user_credentials)
-  PROTO_INPUT(xtreemfs::pbrpc::Auth, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth, auth)
-
-  PROTO2_RETURN(xtreemfs::pbrpc::Volumes, org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes, true)
-
-  PROTO_ENUM(xtreemfs::pbrpc::AccessControlPolicyType, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType, access_policy_type)
-  PROTO_ENUM(xtreemfs::pbrpc::StripingPolicyType, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType, default_striping_policy_type)
+// TODO (jdillmann): Decide if the C++ Exceptions without Java counterpart should be thrown as RuntimeExceptions
+%typemap(throws, throws="org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException") 
+    xtreemfs::XtreemFSException, 
+    xtreemfs::UnknownAddressSchemeException,
+    xtreemfs::FileHandleNotFoundException,
+    xtreemfs::FileInfoNotFoundException {
+  jclass clazz = JCALL1(FindClass, jenv, "org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+  JCALL2(ThrowNew, jenv, clazz, $1.what());
+  return $null;
 }
+
+%typemap(throws, throws="java.io.IOException") xtreemfs::IOException {
+  SWIG_JavaThrowException(jenv, SWIG_JavaIOException, $1.what());
+  return $null;
+}
+
+%typemap(throws, throws="org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException") 
+      xtreemfs::AddressToUUIDNotFoundException {
+    jclass clazz =  JCALL1(FindClass, jenv, "org/xtreemfs/common/libxtreemfs/exceptions/AddressToUUIDNotFoundException");
+    JCALL2(ThrowNew, jenv, clazz, $1.what());
+    return $null;
+}
+
+%typemap(throws, throws="org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException") 
+      xtreemfs::VolumeNotFoundException {
+    jclass clazz =  JCALL1(FindClass, jenv, "org/xtreemfs/common/libxtreemfs/exceptions/VolumeNotFoundException");
+    JCALL2(ThrowNew, jenv, clazz, $1.what());
+    return $null;
+}
+
+%typemap(throws, throws="org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException") 
+      xtreemfs::PosixErrorException {
+    // TODO (jdillmann): JNI Error Handling if a method can not be found
+    jclass clazz = JCALL1(FindClass, jenv, "org/xtreemfs/common/libxtreemfs/exceptions/PosixErrorException");
+    jmethodID mid = JCALL3(GetMethodID, jenv, clazz, "<init>", "(Lorg/xtreemfs/foundation/pbrpc/generatedinterfaces/RPC$POSIXErrno;Ljava/lang/String;)V");
+
+    jclass clazz2 = JCALL1(FindClass, jenv, "org/xtreemfs/foundation/pbrpc/generatedinterfaces/RPC$POSIXErrno");
+    jmethodID mid2 = JCALL3(GetStaticMethodID, jenv, clazz2, "valueOf", "(I)Lorg/xtreemfs/foundation/pbrpc/generatedinterfaces/RPC$POSIXErrno;");
+
+    jobject posix_errno = JCALL3(CallStaticObjectMethod, jenv, clazz2, mid2, $1.posix_errno());
+    jthrowable o = static_cast<jthrowable>(JCALL4(NewObject, jenv, clazz, mid, posix_errno, $1.what()));
+    JCALL1(Throw, jenv, o);
+
+    return $null;
+}
+
+%typemap(throws) xtreemfs::OpenFileHandlesLeftException {
+  SWIG_JavaThrowException(jenv, SWIG_JavaRuntimeException, $1.what());
+}
+
+%typemap(throws, throws="org.xtreemfs.common.libxtreemfs.exceptions.UUIDNotInXlocSetException") 
+      xtreemfs::UUIDNotInXlocSetException {
+    jclass clazz =  JCALL1(FindClass, jenv, "org/xtreemfs/common/libxtreemfs/exceptions/UUIDNotInXlocSetException");
+    JCALL2(ThrowNew, jenv, clazz, $1.what());
+    return $null;
+}
+
+%define DEFAULT_EXCEPTIONS(METHOD)
+%catches(const xtreemfs::AddressToUUIDNotFoundException,
+         const xtreemfs::IOException,
+         const xtreemfs::PosixErrorException,
+         const xtreemfs::UnknownAddressSchemeException) METHOD;
+%enddef
+
+
+
+/*******************************************************************************
+ * Client
+ ******************************************************************************/
+%{ #include "libxtreemfs/client.h" %}
+
+// Define protobuf parameters and return types
+PROTO_INPUT(xtreemfs::pbrpc::UserCredentials, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials, user_credentials)
+PROTO_INPUT(xtreemfs::pbrpc::Auth, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth, auth)
+
+PROTO2_RETURN(xtreemfs::pbrpc::Volumes, org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes, true)
+
+PROTO_ENUM(xtreemfs::pbrpc::AccessControlPolicyType, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType, access_policy_type)
+PROTO_ENUM(xtreemfs::pbrpc::StripingPolicyType, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType, default_striping_policy_type)
 
 
 // Add a createVolume implementation, that is using a map instead of a list of KeyValuePairs
 %extend xtreemfs::Client {
   public: 
-  void createVolume( /* has to be first lower cased manually */
+  void createVolume( // has to lowercased manually
       const ServiceAddresses& mrc_address,
       const xtreemfs::pbrpc::Auth& auth,
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
@@ -265,19 +233,27 @@ namespace xtreemfs {
       const std::list<xtreemfs::pbrpc::KeyValuePair*>& volume_attributes);
 
 
+// Add Exception Handling
+%catches(const xtreemfs::AddressToUUIDNotFoundException, 
+         const xtreemfs::VolumeNotFoundException) xtreemfs::Client::OpenVolume;
+%catches(const xtreemfs::IOException,
+         const xtreemfs::PosixErrorException) xtreemfs::Client::CreateVolume;
+%catches(const xtreemfs::IOException,
+         const xtreemfs::PosixErrorException) xtreemfs::Client::DeleteVolume;
+%catches(const xtreemfs::AddressToUUIDNotFoundException, 
+         const xtreemfs::IOException,
+         const xtreemfs::PosixErrorException) xtreemfs::Client::ListVolumes;
+%catches(const xtreemfs::AddressToUUIDNotFoundException, 
+         const xtreemfs::UnknownAddressSchemeException) xtreemfs::Client::UUIDToAddress;
 
-%rename (openVolumeProxy) xtreemfs::Client::OpenVolume;
-%rename (ClientProxy) xtreemfs::Client;
-%include "libxtreemfs/client.h"
 
 
+/*******************************************************************************
+ * Volume
+ ******************************************************************************/
+%{ #include "libxtreemfs/volume.h" %}
 
-
-%{ 
-#include "libxtreemfs/volume.h"
-%}
-
-
+// Apply Output argument typemaps.
 %apply int *OUTPUT { int *size }; // GetXAttrSize
 %apply std::string *OUTPUT { std::string *value } // GetXAttr
 %apply std::string *OUTPUT { std::string *link_target_path } // ReadLink
@@ -287,42 +263,59 @@ namespace xtreemfs {
 %clear off_t new_file_size;
 %apply long { off_t new_file_size }; //FileHandle::Truncate
 %clear uint64_t offset;
-%apply long long { uint64_t offset }; // Volume::readDir
+%apply long long { uint64_t offset }; // Volume::ReadDir
 
-// volume.h
-namespace xtreemfs {
-  PROTO_INPUT(xtreemfs::pbrpc::UserCredentials, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials, user_credentials)
-  PROTO2_RETURN(xtreemfs::pbrpc::StatVFS, org.xtreemfs.pbrpc.generatedinterfaces.MRC.StatVFS, true)
-  PROTO_INPUT(xtreemfs::pbrpc::Stat, org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat, stat)
-  PROTO2_RETURN(xtreemfs::pbrpc::DirectoryEntries, org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries, true)
-  PROTO2_RETURN(xtreemfs::pbrpc::listxattrResponse, org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrResponse, true)
+// Define protobuf parameters and return types
+PROTO_INPUT(xtreemfs::pbrpc::UserCredentials, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials, user_credentials)
+PROTO_INPUT(xtreemfs::pbrpc::Stat, org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat, stat)
+PROTO_INPUT(xtreemfs::pbrpc::Replica, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica, new_replica)
 
-  PROTO_INPUT(xtreemfs::pbrpc::Replica, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica, new_replica)
-  PROTO2_RETURN(xtreemfs::pbrpc::Replicas, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replicas, true)
+PROTO2_RETURN(xtreemfs::pbrpc::Replicas, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replicas, true)
+PROTO2_RETURN(xtreemfs::pbrpc::DirectoryEntries, org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries, true)
+PROTO2_RETURN(xtreemfs::pbrpc::StatVFS, org.xtreemfs.pbrpc.generatedinterfaces.MRC.StatVFS, true)
+PROTO2_RETURN(xtreemfs::pbrpc::listxattrResponse, org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrResponse, true)
+
+PROTO_OUTPUT(void GetAttr, stat, xtreemfs::pbrpc::Stat, org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat)
+
+PROTO_ENUM(xtreemfs::pbrpc::XATTR_FLAGS, org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS, flags)
+
+ENUM_FLAG(xtreemfs::pbrpc::SYSTEM_V_FCNTL, flags)
+ENUM_FLAG(xtreemfs::pbrpc::ACCESS_FLAGS, flags)
+ENUM_FLAG(xtreemfs::pbrpc::Setattrs, to_set)
+
+// Add Exception Handling
+%catches(const xtreemfs::OpenFileHandlesLeftException) xtreemfs::Volume::Close;
+
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::StatFS);
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::ReadLink);
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::Symlink);
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::Link);
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::Access);
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::OpenFile);
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::Truncate);
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::GetAttr);
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::SetAttr);
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::Unlink);
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::Rename);
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::MakeDirectory);
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::DeleteDirectory);
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::ReadDir);
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::ListXAttrs);
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::SetXAttr);
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::GetXAttr);
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::GetXAttrSize);
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::RemoveXAttr);
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::AddReplica);
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::ListReplicas);
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::RemoveReplica);
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::GetSuitableOSDs);
 
 
 
-  ENUM_FLAG(xtreemfs::pbrpc::SYSTEM_V_FCNTL, flags)
-  ENUM_FLAG(xtreemfs::pbrpc::ACCESS_FLAGS, flags)
-  ENUM_FLAG(xtreemfs::pbrpc::Setattrs, to_set)
-
-  PROTO_ENUM(xtreemfs::pbrpc::XATTR_FLAGS, org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS, flags)
-
-  PROTO_OUTPUT(void GetAttr, stat, xtreemfs::pbrpc::Stat, org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat)
-}
-
-
-
-%rename (openFileProxy) xtreemfs::Volume::OpenFile;
-%rename (VolumeProxy) xtreemfs::Volume;
-%include "libxtreemfs/volume.h"
-
-
-
-
-%{
-#include "libxtreemfs/file_handle.h"
-%}
+/*******************************************************************************
+ * FileHandle
+ ******************************************************************************/
+%{ #include "libxtreemfs/file_handle.h" %}
 
 // Adapt to the types defined in the java interface.
 %clear int64_t offset;
@@ -332,28 +325,94 @@ namespace xtreemfs {
 %clear size_t count;
 %apply long { size_t count }; // FileHandle::Read, FileHandle::Write
 
+// Define protobuf parameters and return types
+PROTO_INPUT(xtreemfs::pbrpc::Lock, org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock, lock)
+PROTO2_RETURN(xtreemfs::pbrpc::Lock, org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock, true)
+
+// Use java byte[] arrays or direct buffers for read and write.
 %apply char *BYTE { const char *buf, char *buf };  // FileHandle::Read, FileHandle::Write
-
-
-namespace xtreemfs {
-  PROTO_INPUT(xtreemfs::pbrpc::Lock, org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock, lock)
-  PROTO2_RETURN(xtreemfs::pbrpc::Lock, org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock, true)
-} 
-
 
 %extend xtreemfs::FileHandle {
   public: 
-  int readDirect(char* directBuffer, size_t count, int64_t offset) {
+  int readDirect(char *directBuffer, size_t count, int64_t offset) {
     return $self->Read(directBuffer, count, offset);
   }
-  int writeDirect(const char* directBuffer, size_t count, int64_t offset) {
+  int writeDirect(const char *directBuffer, size_t count, int64_t offset) {
     return $self->Write(directBuffer, count, offset);
   }
 }
+%apply char *BUFFER {const char *directBuffer, char *directBuffer}
 
-%apply char* BUFFER {const char* directBuffer, char* directBuffer}
+// Add Exception Handling
+DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::Read);
+DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::readDirect);
+DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::Write);
+DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::writeDirect);
+DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::Flush);
+DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::Truncate);
+DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::GetAttr);
+DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::AcquireLock);
+DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::CheckLock);
+DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::ReleaseLock);
+DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::ReleaseLockOfProcess);
+
+%catches(const xtreemfs::AddressToUUIDNotFoundException,
+         const xtreemfs::IOException,
+         const xtreemfs::PosixErrorException,
+         const xtreemfs::UnknownAddressSchemeException,
+         const xtreemfs::UUIDNotInXlocSetException) 
+    xtreemfs::FileHandle::PingReplica;
+
+%catches(const xtreemfs::AddressToUUIDNotFoundException,
+         const xtreemfs::FileInfoNotFoundException,
+         const xtreemfs::FileHandleNotFoundException,
+         const xtreemfs::IOException,
+         const xtreemfs::PosixErrorException,
+         const xtreemfs::UnknownAddressSchemeException) 
+    xtreemfs::FileHandle::Close;
 
 
+
+/*******************************************************************************
+ * Garbage collection 
+ ******************************************************************************/
+// Ensure the OptionsProxy won't get gc'ed prior to the Volume
+%typemap(javacode) xtreemfs::Volume %{
+  private OptionsProxy optionsReference;
+  protected void addReference(OptionsProxy options) {
+    optionsReference = options;
+  }
+%}
+
+%typemap(javaout) xtreemfs::Volume* OpenVolume(const std::string& volume_name,
+      const xtreemfs::rpc::SSLOptions* ssl_options,
+      const Options& options) {
+    long cPtr = $jnicall;
+    $javaclassname ret = null;
+    if (cPtr != 0) {
+      ret = new $javaclassname(cPtr, $owner);
+      ret.addReference(options);
+    }
+    return ret;
+  }
+
+
+
+
+/*******************************************************************************
+ * Wrap-up
+ ******************************************************************************/
+// Change libxtreemfs class members to first letter lowercase in accordance to the Java interfaces.
+%rename("%(firstlowercase)s", %$isfunction, %$ismember ) "";
+
+// Include (and rename) the libxtreemfs.
+%rename (openVolumeProxy) xtreemfs::Client::OpenVolume;
+%rename (ClientProxy) xtreemfs::Client;
+%include "libxtreemfs/client.h"
+
+%rename (openFileProxy) xtreemfs::Volume::OpenFile;
+%rename (VolumeProxy) xtreemfs::Volume;
+%include "libxtreemfs/volume.h"
 
 %rename (FileHandleProxy) xtreemfs::FileHandle;
 %include "libxtreemfs/file_handle.h"
