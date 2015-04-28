@@ -376,26 +376,54 @@ DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::ReleaseLockOfProcess);
 /*******************************************************************************
  * Garbage collection 
  ******************************************************************************/
-// Ensure the OptionsProxy won't get gc'ed prior to the Volume
-%typemap(javacode) xtreemfs::Volume %{
+
+%newobject xtreemfs::Client::CreateClient;
+%newobject xtreemfs::Client::OpenVolume;
+%newobject xtreemfs::Volume::OpenFile;
+
+// Altough ServiceAddresses are passed by reference, their content will be 
+// copied when the UUID Iterator is generated. Otherwise they would have to be 
+// kept from being gc'ed.
+// UserCredentials are also copied to a new variable.
+
+// Options and SSLOptions have to prevented from getting garabage collected
+// on Client::CreateClient and Client::OpenVolume because they are stored as
+// references in the newly created objects.
+%typemap(javacode) xtreemfs::Client, xtreemfs::Volume %{
   private OptionsProxy optionsReference;
-  protected void addReference(OptionsProxy options) {
+  private SSLOptionsProxy sslOptionsReference;
+  protected void addReferences(OptionsProxy options, SSLOptionsProxy sslOptions) {
     optionsReference = options;
+    sslOptionsReference = sslOptions;
   }
 %}
 
-%typemap(javaout) xtreemfs::Volume* OpenVolume(const std::string& volume_name,
+%typemap(javaout) xtreemfs::Client* xtreemfs::Client::CreateClient(
+      const ServiceAddresses& dir_service_addresses,
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const xtreemfs::rpc::SSLOptions* ssl_options,
       const Options& options) {
     long cPtr = $jnicall;
     $javaclassname ret = null;
     if (cPtr != 0) {
       ret = new $javaclassname(cPtr, $owner);
-      ret.addReference(options);
+      ret.addReferences(options, ssl_options);
     }
     return ret;
-  }
+}
 
+%typemap(javaout) xtreemfs::Volume* xtreemfs::Client::OpenVolume(
+      const std::string& volume_name,
+      const xtreemfs::rpc::SSLOptions* ssl_options,
+      const Options& options) {
+    long cPtr = $jnicall;
+    $javaclassname ret = null;
+    if (cPtr != 0) {
+      ret = new $javaclassname(cPtr, $owner);
+      ret.addReferences(options, ssl_options);
+    }
+    return ret;
+}
 
 
 
