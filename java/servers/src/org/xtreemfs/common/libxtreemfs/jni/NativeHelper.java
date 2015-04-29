@@ -4,12 +4,13 @@
  * Licensed under the BSD License, see LICENSE file for details.
  *
  */
-package org.xtreemfs.common.libxtreemfs;
+package org.xtreemfs.common.libxtreemfs.jni;
 
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 
+import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.common.libxtreemfs.swig.ClientProxy;
 import org.xtreemfs.common.libxtreemfs.swig.OptionsProxy;
 import org.xtreemfs.common.libxtreemfs.swig.SSLOptionsProxy;

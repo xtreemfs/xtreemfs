@@ -4,12 +4,13 @@
  * Licensed under the BSD License, see LICENSE file for details.
  *
  */
-package org.xtreemfs.common.libxtreemfs;
+package org.xtreemfs.common.libxtreemfs.jni;
 
 import java.io.IOException;
 import java.util.List;
 
 import org.xtreemfs.common.clients.InvalidChecksumException;
+import org.xtreemfs.common.libxtreemfs.AdminFileHandle;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.swig.FileHandleProxy;

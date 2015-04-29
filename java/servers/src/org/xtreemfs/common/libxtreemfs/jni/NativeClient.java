@@ -4,12 +4,14 @@
  * Licensed under the BSD License, see LICENSE file for details.
  *
  */
-package org.xtreemfs.common.libxtreemfs;
+package org.xtreemfs.common.libxtreemfs.jni;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.xtreemfs.common.libxtreemfs.Client;
+import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
