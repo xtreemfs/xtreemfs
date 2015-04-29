@@ -11,12 +11,12 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.xtreemfs.common.libxtreemfs.Options;
-import org.xtreemfs.common.libxtreemfs.swig.ClientProxy;
-import org.xtreemfs.common.libxtreemfs.swig.OptionsProxy;
-import org.xtreemfs.common.libxtreemfs.swig.SSLOptionsProxy;
-import org.xtreemfs.common.libxtreemfs.swig.ServiceAddresses;
-import org.xtreemfs.common.libxtreemfs.swig.StringMap;
-import org.xtreemfs.common.libxtreemfs.swig.StringVector;
+import org.xtreemfs.common.libxtreemfs.jni.generated.ClientProxy;
+import org.xtreemfs.common.libxtreemfs.jni.generated.OptionsProxy;
+import org.xtreemfs.common.libxtreemfs.jni.generated.SSLOptionsProxy;
+import org.xtreemfs.common.libxtreemfs.jni.generated.ServiceAddresses;
+import org.xtreemfs.common.libxtreemfs.jni.generated.StringMap;
+import org.xtreemfs.common.libxtreemfs.jni.generated.StringVector;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;

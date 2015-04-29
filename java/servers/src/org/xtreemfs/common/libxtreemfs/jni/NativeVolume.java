@@ -16,12 +16,11 @@ import java.util.Set;
 
 import org.xtreemfs.common.libxtreemfs.FileHandle;
 import org.xtreemfs.common.libxtreemfs.Volume;
-import org.xtreemfs.common.libxtreemfs.Volume.StripeLocation;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
-import org.xtreemfs.common.libxtreemfs.swig.FileHandleProxy;
-import org.xtreemfs.common.libxtreemfs.swig.StringList;
-import org.xtreemfs.common.libxtreemfs.swig.VolumeProxy;
+import org.xtreemfs.common.libxtreemfs.jni.generated.FileHandleProxy;
+import org.xtreemfs.common.libxtreemfs.jni.generated.StringList;
+import org.xtreemfs.common.libxtreemfs.jni.generated.VolumeProxy;
 import org.xtreemfs.common.xloc.ReplicationPolicyImplementation;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;

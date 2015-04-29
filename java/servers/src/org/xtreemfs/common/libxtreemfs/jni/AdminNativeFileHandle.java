@@ -13,7 +13,7 @@ import org.xtreemfs.common.clients.InvalidChecksumException;
 import org.xtreemfs.common.libxtreemfs.AdminFileHandle;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
-import org.xtreemfs.common.libxtreemfs.swig.FileHandleProxy;
+import org.xtreemfs.common.libxtreemfs.jni.generated.FileHandleProxy;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;

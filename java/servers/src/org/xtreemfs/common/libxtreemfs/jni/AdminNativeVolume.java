@@ -12,8 +12,8 @@ import org.xtreemfs.common.libxtreemfs.AdminFileHandle;
 import org.xtreemfs.common.libxtreemfs.AdminVolume;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
-import org.xtreemfs.common.libxtreemfs.swig.FileHandleProxy;
-import org.xtreemfs.common.libxtreemfs.swig.VolumeProxy;
+import org.xtreemfs.common.libxtreemfs.jni.generated.FileHandleProxy;
+import org.xtreemfs.common.libxtreemfs.jni.generated.VolumeProxy;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 
 public class AdminNativeVolume extends NativeVolume implements AdminVolume {
