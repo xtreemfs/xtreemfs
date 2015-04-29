@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009-2012 by Paul Seiferth,
+ *               2015 by Robert Schmidtke,
  *               Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
@@ -184,6 +185,10 @@ public class XtreemFSFileSystem extends FileSystem {
         defaultVolumeDirectories = new HashSet<String>();
         defaultVolume = xtreemfsVolumes.get(defaultVolumeName);
         for (DirectoryEntry dirEntry : defaultVolume.readDir(userCredentials, "/", 0, 0, true).getEntriesList()) {
+            if (dirEntry.getName().equals("..") || dirEntry.getName().equals(".")) {
+                continue;
+            }
+            
             if (isXtreemFSDirectory("/" + dirEntry.getName(), defaultVolume)) {
                 defaultVolumeDirectories.add(dirEntry.getName());
             }
