@@ -8,19 +8,19 @@
 
 package org.xtreemfs.common.benchmark;
 
-import org.xtreemfs.common.config.PolicyContainer;
-import org.xtreemfs.common.config.ServiceConfig;
-import org.xtreemfs.common.libxtreemfs.Options;
-import org.xtreemfs.foundation.SSLOptions;
-import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
-
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+
+import org.xtreemfs.common.config.PolicyContainer;
+import org.xtreemfs.common.config.ServiceConfig;
+import org.xtreemfs.common.libxtreemfs.Options;
+import org.xtreemfs.foundation.SSLOptions;
+import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 
 /**
  * @author jensvfischer
@@ -56,7 +56,8 @@ public class BenchmarkConfig extends ServiceConfig {
             Parameter.NO_CLEANUP,
             Parameter.NO_CLEANUP_VOLUMES,
             Parameter.NO_CLEANUP_BASEFILE,
-            Parameter.OSD_CLEANUP
+            Parameter.OSD_CLEANUP,
+            Parameter.USE_JNI
     };
 
     private Options                  options;
@@ -369,6 +370,10 @@ public class BenchmarkConfig extends ServiceConfig {
             auth = RPC.Auth.newBuilder().setAuthType(RPC.AuthType.AUTH_PASSWORD).setAuthPasswd(password).build();
         }
         return auth;
+    }
+
+    public Boolean isUsingJNI() {
+        return (Boolean) parameter.get(Parameter.USE_JNI);
     }
 
 
@@ -745,6 +750,10 @@ public class BenchmarkConfig extends ServiceConfig {
             return this;
         }
 
+        public ConfigBuilder setUseJNI(boolean flag) {
+            props.setProperty(Parameter.USE_JNI.getPropertyString(), Boolean.toString(flag));
+            return this;
+        }
 
         /**
          * If set, the {@link BenchmarkConfig} will be constructed by using as many parameters as possible from the parent
