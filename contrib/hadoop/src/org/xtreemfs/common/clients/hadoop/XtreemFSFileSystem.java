@@ -560,6 +560,15 @@ public class XtreemFSFileSystem extends FileSystem {
     private String preparePath(Path path, Volume volume) {
         String pathString = makeAbsolute(path).toUri().getPath();
         if (volume == defaultVolume) {
+            String[] splitPath = pathString.split("/");
+            if (splitPath.length > 1 && splitPath[1].equals(defaultVolume.getVolumeName())) {
+                // Path starts with default volume name, strip off volume name if
+                // there is no similarly named directory in the default volume.
+                // (i.e. the default volume has been specified explicitly)
+                if (!defaultVolumeDirectories.contains(splitPath[1])) {
+                    pathString = pathString.substring(pathString.indexOf("/", 1));
+                }
+            }
             return pathString;
         } else {
             int pathBegin = pathString.indexOf("/", 1);
