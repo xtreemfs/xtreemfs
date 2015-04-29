@@ -55,6 +55,9 @@ CLIENT_GOOGLE_TEST_CPP_MAIN = $(CLIENT_GOOGLE_TEST_CPP)/lib/.libs/libgtest_main.
 # This prevents the target from getting executed again as long as the checkfile does not change.
 CLIENT_GOOGLE_TEST_CHECKFILE = .googletest_library_already_built
 
+# Path to the directory of swig generated java files according to the packages.
+XTREEMFS_JNI_JAVA_DIR = java/servers/src/org/xtreemfs/common/libxtreemfs/jni/generated
+
 TARGETS = client server foundation flease
 .PHONY:	clean distclean set_version
 
@@ -351,3 +354,16 @@ pbrpcgen_clean:
 
 interfaces: pbrpcgen client_thirdparty
 	$(MAKE) -C interface
+
+.PHONY: client_jni
+client_jni: CMAKE_BUILD_JNI = -DBUILD_JNI=true
+client_jni: client 
+
+
+.PHONY: client_jni_java
+client_jni_java: client_jni
+client_jni_java:
+	@echo "Copy generated Java files to the java source folder."
+	@-rm -rf $(XTREEMFS_JNI_JAVA_DIR)
+	@mkdir -p $(XTREEMFS_JNI_JAVA_DIR)
+	@cp $(XTREEMFS_CLIENT_BUILD_DIR)/swig_generated/*  $(XTREEMFS_JNI_JAVA_DIR)/

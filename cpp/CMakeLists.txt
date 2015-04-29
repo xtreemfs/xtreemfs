@@ -354,8 +354,8 @@ if (BUILD_JNI)
   endif()
   INCLUDE_DIRECTORIES(${JNI_INCLUDE_DIRS})
 
-  SET(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_SOURCE_DIR}/../java/jni/src/org/xtreemfs/common/libxtreemfs/swig/)
-  SET(CMAKE_SWIG_FLAGS -package org.xtreemfs.common.libxtreemfs.swig)
+  SET(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/swig_generated/)
+  SET(CMAKE_SWIG_FLAGS -package org.xtreemfs.common.libxtreemfs.jni.generated)
   
   # Workaround to pass -D defines to SWIG -> fixed in modified UseSWIG.cmake
   # SET(CMAKE_SWIG_FLAGS "$(CXX_DEFINES)")
@@ -363,8 +363,8 @@ if (BUILD_JNI)
   set(SRCS_LIBXTREEMFS ${SRCS_RPC} ${SRCS_UTIL} ${SRCS_GENERATED} ${SRCS_XTREEMFS})
   set(LIBS_LIBXTREEMFS ${CLIENT_GOOGLE_PROTOBUF_CPP_DYNAMIC_LIBRARY} ${Boost_LIBRARIES} ${LIBPTHREAD} ${OPENSSL_LIBRARIES} ${LIBSOCKET_SOLARIS} ${LIBNSL_SOLARIS})
 
-  SET_SOURCE_FILES_PROPERTIES("include/swig/java.i" PROPERTIES CPLUSPLUS ON)
-  SWIG_ADD_MODULE(xtreemfs_jni java "include/swig/java.i" ${SRCS_LIBXTREEMFS})
+  SET_SOURCE_FILES_PROPERTIES("include/swig/xtreemfs.i" PROPERTIES CPLUSPLUS ON)
+  SWIG_ADD_MODULE(xtreemfs_jni java "include/swig/xtreemfs.i" ${SRCS_LIBXTREEMFS})
   SWIG_LINK_LIBRARIES(xtreemfs_jni ${LIBS_LIBXTREEMFS} ) 
 
 endif(BUILD_JNI)

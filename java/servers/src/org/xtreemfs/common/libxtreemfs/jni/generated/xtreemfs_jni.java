@@ -9,27 +9,4 @@
 package org.xtreemfs.common.libxtreemfs.jni.generated;
 
 public class xtreemfs_jni {
-  public static int consume(String hidden, int count) {
-    return xtreemfs_jniJNI.consume(hidden, count);
-  }
-
-  public static int direct(java.nio.ByteBuffer direct, int count, long offset) {
- assert direct.isDirect() : "Buffer must be allocated direct.";
-    {
-      return xtreemfs_jniJNI.direct(direct, count, offset);
-    }
-  }
-
-  public static int array(byte[] array, int count, long offset) {
-    return xtreemfs_jniJNI.array(array, count, offset);
-  }
-
-  public static int returnplus(int i) {
-    return xtreemfs_jniJNI.returnplus(i);
-  }
-
-  public static void thrower() throws java.io.IOException {
-    xtreemfs_jniJNI.thrower();
-  }
-
 }

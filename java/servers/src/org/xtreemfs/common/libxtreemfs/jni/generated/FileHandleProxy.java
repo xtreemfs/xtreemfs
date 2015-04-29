@@ -124,8 +124,4 @@ public class FileHandleProxy {
     }
   }
 
-  public int writeDummy(byte[] buf, int count, long offset) {
-    return xtreemfs_jniJNI.FileHandleProxy_writeDummy(swigCPtr, this, buf, count, offset);
-  }
-
 }

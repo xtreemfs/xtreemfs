@@ -242,10 +242,4 @@ public class xtreemfs_jniJNI {
   public final static native void FileHandleProxy_close(long jarg1, FileHandleProxy jarg1_) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
   public final static native int FileHandleProxy_readDirect(long jarg1, FileHandleProxy jarg1_, java.nio.ByteBuffer jarg2, int jarg3, long jarg4);
   public final static native int FileHandleProxy_writeDirect(long jarg1, FileHandleProxy jarg1_, java.nio.ByteBuffer jarg2, int jarg3, long jarg4);
-  public final static native int FileHandleProxy_writeDummy(long jarg1, FileHandleProxy jarg1_, byte[] jarg2, int jarg3, long jarg4);
-  public final static native int consume(String jarg1, int jarg2);
-  public final static native int direct(java.nio.ByteBuffer jarg1, int jarg2, long jarg3);
-  public final static native int array(byte[] jarg1, int jarg2, long jarg3);
-  public final static native int returnplus(int jarg1);
-  public final static native void thrower() throws java.io.IOException;
 }
