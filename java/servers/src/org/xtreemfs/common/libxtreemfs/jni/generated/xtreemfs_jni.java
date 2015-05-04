@@ -9,4 +9,8 @@
 package org.xtreemfs.common.libxtreemfs.jni.generated;
 
 public class xtreemfs_jni {
+  public static void initialize_logger(int level) {
+    xtreemfs_jniJNI.initialize_logger__SWIG_3(level);
+  }
+
 }

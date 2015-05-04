@@ -81,6 +81,14 @@ namespace xtreemfs {
 %rename (SSLOptionsProxy) xtreemfs::rpc::SSLOptions;
 %include "rpc/ssl_options.h" 
 
+// Include the Logging class.
+%{ #include "util/logging.h" %}
+%import "util/logging.h"
+ENUM_FLAG(xtreemfs::util::LogLevel, level)
+namespace xtreemfs {
+namespace util {
+  void initialize_logger(xtreemfs::util::LogLevel level);
+}}
 
 
 /*******************************************************************************

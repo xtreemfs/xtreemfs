@@ -187,6 +187,7 @@ public class xtreemfs_jniJNI {
   public final static native boolean SSLOptionsProxy_verify_certificates(long jarg1, SSLOptionsProxy jarg1_);
   public final static native boolean SSLOptionsProxy_ignore_verify_error(long jarg1, SSLOptionsProxy jarg1_, int jarg2);
   public final static native String SSLOptionsProxy_ssl_method_string(long jarg1, SSLOptionsProxy jarg1_);
+  public final static native void initialize_logger__SWIG_3(int jarg1);
   public final static native long ClientProxy_createClient__SWIG_0(long jarg1, ServiceAddresses jarg1_, byte[] jarg2, long jarg3, SSLOptionsProxy jarg3_, long jarg4, OptionsProxy jarg4_);
   public final static native long ClientProxy_createClient__SWIG_1(long jarg1, ServiceAddresses jarg1_, byte[] jarg2, long jarg3, SSLOptionsProxy jarg3_, long jarg4, OptionsProxy jarg4_, int jarg5);
   public final static native void delete_ClientProxy(long jarg1);

@@ -22,7 +22,9 @@ import org.xtreemfs.common.libxtreemfs.jni.generated.ServiceAddresses;
 import org.xtreemfs.common.libxtreemfs.jni.generated.StringMap;
 import org.xtreemfs.common.libxtreemfs.jni.generated.StringVector;
 import org.xtreemfs.common.libxtreemfs.jni.generated.VolumeProxy;
+import org.xtreemfs.common.libxtreemfs.jni.generated.xtreemfs_jni;
 import org.xtreemfs.foundation.SSLOptions;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
@@ -37,6 +39,9 @@ public class NativeClient implements Client {
     // Load the native library.
     static {
         NativeHelper.loadLibrary("jni-xtreemfs");
+        if (Logging.getLevel() >= 0) {
+            xtreemfs_jni.initialize_logger(Logging.getLevel());
+        }
     }
 
     protected final ClientProxy proxy;

@@ -50,7 +50,7 @@ private:
   const	std::list<T>& _list;
 	typename std::list<T>::const_iterator _iter;
 public:
-	ListIterator(const std::list<T>& list) : _iter(list.begin()), _list(list) {}
+	ListIterator(const std::list<T>& list) : _list(list),  _iter(list.begin()) {}
 
 	bool hasNext() const	{
 		return _iter != _list.end();
