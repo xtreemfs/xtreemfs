@@ -36,6 +36,7 @@ XTREEMFS_INIT_DIR=$(DESTDIR)/etc/init.d
 XTREEMFS_SHARE_DIR=$(DESTDIR)/usr/share/xtreemfs
 BIN_DIR=$(DESTDIR)/usr/bin
 SBIN_DIR=$(DESTDIR)/sbin
+LIB_DIR=$(DESTDIR)/usr/local/lib
 MAN_DIR=$(DESTDIR)/usr/share/man/man1
 DOC_DIR_SERVER=$(DESTDIR)/usr/share/doc/xtreemfs-server
 DOC_DIR_CLIENT=$(DESTDIR)/usr/share/doc/xtreemfs-client
@@ -57,6 +58,7 @@ CLIENT_GOOGLE_TEST_CHECKFILE = .googletest_library_already_built
 
 # Path to the directory of swig generated java files according to the packages.
 XTREEMFS_JNI_JAVA_DIR = java/servers/src/org/xtreemfs/common/libxtreemfs/jni/generated
+XTREEMFS_JNI_LIBRARY = libjni-xtreemfs.so
 
 TARGETS = client server foundation flease
 .PHONY:	clean distclean set_version
@@ -67,7 +69,7 @@ clean: check_server check_client $(patsubst %,%_clean,$(TARGETS))
 
 distclean: check_server check_client $(patsubst %,%_distclean,$(TARGETS))
 
-install: install-client install-server install-tools
+install: install-client install-server install-tools install-libs
 
 install-client:
 
@@ -150,6 +152,13 @@ install-tools:
 	@mkdir -p $(MAN_DIR)
 	@cp -R man/man1/xtfs_* $(MAN_DIR)
 
+install-libs:
+# This could also install a shared libxtreemfs 
+# but for now it only installs the libjni-xtreemfs if it exists.
+	@if [ -f $(XTREEMFS_CLIENT_BUILD_DIR)/$(XTREEMFS_JNI_LIBRARY) ]; then \
+		cp $(XTREEMFS_CLIENT_BUILD_DIR)/$(XTREEMFS_JNI_LIBRARY) $(LIB_DIR)/$(XTREEMFS_JNI_LIBRARY); \
+	fi
+
 uninstall:
 
 	@rm -rf $(DOC_DIR_SERVER)
@@ -161,6 +170,8 @@ uninstall:
 
 	@rm -f $(SBIN_DIR)/mount.xtreemfs
 	@rm -f $(SBIN_DIR)/umount.xtreemfs
+
+	@rm -f $(LIB_DIR)/$(XTREEMFS_JNI_LIBRARY)
 
 	@rm -f $(XTREEMFS_JAR_DIR)/XtreemFS.jar
 	@rm -f $(XTREEMFS_JAR_DIR)/Foundation.jar
@@ -230,11 +241,6 @@ endif
 ifdef BUILD_PRELOAD
 	CMAKE_BUILD_PRELOAD = -DBUILD_PRELOAD=true
 endif
-
-ifdef BUILD_JNI
-	CMAKE_BUILD_JNI = -DBUILD_JNI=true
-endif
-
 
 client_thirdparty: $(CLIENT_THIRDPARTY_REQUIREMENTS)
 
@@ -355,15 +361,14 @@ pbrpcgen_clean:
 interfaces: pbrpcgen client_thirdparty
 	$(MAKE) -C interface
 
-.PHONY: client_jni
-client_jni: CMAKE_BUILD_JNI = -DBUILD_JNI=true
-client_jni: client 
+.PHONY: jni-client jni-client-java
+jni-client: CMAKE_BUILD_JNI = -DBUILD_JNI=true
+jni-client: client 
 
-
-.PHONY: client_jni_java
-client_jni_java: client_jni
-client_jni_java:
+jni-client_java: jni-client
+jni-client_java:
 	@echo "Copy generated Java files to the java source folder."
 	@-rm -rf $(XTREEMFS_JNI_JAVA_DIR)
 	@mkdir -p $(XTREEMFS_JNI_JAVA_DIR)
 	@cp $(XTREEMFS_CLIENT_BUILD_DIR)/swig_generated/*  $(XTREEMFS_JNI_JAVA_DIR)/
+

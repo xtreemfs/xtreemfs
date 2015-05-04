@@ -6,7 +6,9 @@
  */
 package org.xtreemfs.common.libxtreemfs.jni;
 
+import java.io.File;
 import java.math.BigInteger;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 
@@ -22,6 +24,52 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 
 public final class NativeHelper {
+
+    /**
+     * Load the library with the platform independent name. (f.ex. jni-libxtreemfs instead of libjni-xtreemfs.so) <br>
+     * If the library does not exists in the java.library.path, but the current class is running within a xtreemfs
+     * source directory, the cpp/build directory is searched as well.
+     * 
+     * @param name
+     */
+    public static void loadLibrary(String name) {
+        try {
+            // Try to load the library from the java.library.path
+            System.loadLibrary(name);
+
+        } catch (UnsatisfiedLinkError error) {
+            // Try to load the library directly from the build directory
+
+            // Get the URL of the current class
+            URL classURL = NativeHelper.class.getResource("NativeHelper.class");
+
+            // Abort if the class isn't a real file (and not within f.ex. a jar)
+            if (classURL == null || !"file".equalsIgnoreCase(classURL.getProtocol())) {
+                throw error;
+            }
+
+            // Search for the specific directory hierarchy
+            String path = null;
+            String[] components = classURL.getPath().split(File.separator);
+            for (int i = 0; i < components.length; i++) {
+                if (i < components.length - 2 && 
+                        "xtreemfs".equals(components[i]) && 
+                        "java".equals(components[i + 1]) && 
+                        "servers".equals(components[i + 2])) {
+                    path = String.join("/", Arrays.copyOf(components, i + 1));
+                }
+            }
+
+            // Abort if the class file isn't residing within "xtreemfs/java/servers/..."
+            if (path == null) {
+                throw error;
+            }
+
+            // Get the platform-specific library name and try to load it from the build directory.
+            String libName = System.mapLibraryName("jni-xtreemfs");
+            System.load(path + "/cpp/build/" + libName);
+        }
+    }
 
     public static ClientProxy createClientProxy(String[] dirServiceAddressesArray, UserCredentials userCredentials,
             SSLOptions sslOptions, Options options) {

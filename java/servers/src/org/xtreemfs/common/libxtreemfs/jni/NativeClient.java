@@ -35,7 +35,9 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
 public class NativeClient implements Client {
     
     // Load the native library.
-    static { System.loadLibrary("xtreemfs_jni"); }
+    static {
+        NativeHelper.loadLibrary("jni-xtreemfs");
+    }
 
     protected final ClientProxy proxy;
 
