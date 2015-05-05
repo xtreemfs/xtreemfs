@@ -7,6 +7,7 @@
 package org.xtreemfs.common.libxtreemfs.jni;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import org.xtreemfs.common.libxtreemfs.FileHandle;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
@@ -38,6 +39,18 @@ public class NativeFileHandle implements FileHandle {
         throw new RuntimeException("dataOffset param not supported in C++");
     }
 
+    public int read(UserCredentials userCredentials, ByteBuffer data, int count, long offset) throws IOException,
+            PosixErrorException, AddressToUUIDNotFoundException {
+        // UserCredentials are not used internally.
+        if (data.isDirect()) {
+            return proxy.readDirect(data, count, offset);
+        } else if (data.hasArray()) {
+            return proxy.read(data.array(), count, offset);
+        } else {
+            throw new RuntimeException("ByteBuffer has to be array backed or direct.");
+        }
+    }
+
     @Override
     public int write(UserCredentials userCredentials, byte[] data, int count, long offset) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException {
@@ -50,6 +63,18 @@ public class NativeFileHandle implements FileHandle {
     public int write(UserCredentials userCredentials, byte[] data, int dataOffset, int count, long offset)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         throw new RuntimeException("dataOffset param not supported in C++");
+    }
+
+    public int write(UserCredentials userCredentials, ByteBuffer data, int count, long offset) throws IOException,
+            PosixErrorException, AddressToUUIDNotFoundException {
+        // UserCredentials are not used internally.
+        if (data.isDirect()) {
+            return proxy.writeDirect(data, count, offset);
+        } else if (data.hasArray()) {
+            return proxy.write(data.array(), count, offset);
+        } else {
+            throw new RuntimeException("ByteBuffer has to be array backed or direct.");
+        }
     }
 
     @Override

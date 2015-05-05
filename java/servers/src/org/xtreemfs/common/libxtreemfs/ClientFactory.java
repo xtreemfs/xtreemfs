@@ -123,7 +123,7 @@ public class ClientFactory {
         case NATIVE:
             // return AdminNativeClient.createClient(dirServiceAddresses, userCredentials, sslOptions, options);
             try {
-                Class<?> clazz = Class.forName("org.xtreemfs.common.libxtreemfs.AdminNativeClient");
+                Class<?> clazz = Class.forName("org.xtreemfs.common.libxtreemfs.jni.AdminNativeClient");
                 Method factory = clazz.getMethod("createClient", String[].class, UserCredentials.class,
                         SSLOptions.class, Options.class);
                 AdminClient client = (AdminClient) factory.invoke(null, dirServiceAddresses, userCredentials,

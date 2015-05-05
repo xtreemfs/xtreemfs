@@ -49,25 +49,20 @@ public final class NativeHelper {
             }
 
             // Search for the specific directory hierarchy
-            String path = null;
-            String[] components = classURL.getPath().split(File.separator);
-            for (int i = 0; i < components.length; i++) {
-                if (i < components.length - 2 && 
-                        "xtreemfs".equals(components[i]) && 
-                        "java".equals(components[i + 1]) && 
-                        "servers".equals(components[i + 2])) {
-                    path = String.join("/", Arrays.copyOf(components, i + 1));
-                }
-            }
+            String path = classURL.getPath();
+            path = path.replace(File.separator, "/");
 
-            // Abort if the class file isn't residing within "xtreemfs/java/servers/..."
-            if (path == null) {
+            // Abort if the class file isn't residing within the java build directory,
+            // otherwise extract the prefix
+            int pos = path.lastIndexOf("/xtreemfs/java/servers/");
+            if (pos < 0) {
                 throw error;
             }
+            path = path.substring(0, pos);
 
             // Get the platform-specific library name and try to load it from the build directory.
-            String libName = System.mapLibraryName("jni-xtreemfs");
-            System.load(path + "/cpp/build/" + libName);
+            path = path + "/xtreemfs/cpp/build/" + System.mapLibraryName("jni-xtreemfs");
+            System.load(path.replace("/", File.separator));
         }
     }
 
