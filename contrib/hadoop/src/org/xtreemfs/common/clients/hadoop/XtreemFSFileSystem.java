@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009-2012 by Paul Seiferth,
+ *               2015 by Robert Schmidtke,
  *               Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
@@ -184,6 +185,10 @@ public class XtreemFSFileSystem extends FileSystem {
         defaultVolumeDirectories = new HashSet<String>();
         defaultVolume = xtreemfsVolumes.get(defaultVolumeName);
         for (DirectoryEntry dirEntry : defaultVolume.readDir(userCredentials, "/", 0, 0, true).getEntriesList()) {
+            if (dirEntry.getName().equals("..") || dirEntry.getName().equals(".")) {
+                continue;
+            }
+            
             if (isXtreemFSDirectory("/" + dirEntry.getName(), defaultVolume)) {
                 defaultVolumeDirectories.add(dirEntry.getName());
             }
@@ -560,6 +565,15 @@ public class XtreemFSFileSystem extends FileSystem {
     private String preparePath(Path path, Volume volume) {
         String pathString = makeAbsolute(path).toUri().getPath();
         if (volume == defaultVolume) {
+            String[] splitPath = pathString.split("/");
+            if (splitPath.length > 1 && splitPath[1].equals(defaultVolume.getVolumeName())) {
+                // Path starts with default volume name, strip off volume name if
+                // there is no similarly named directory in the default volume.
+                // (i.e. the default volume has been specified explicitly)
+                if (!defaultVolumeDirectories.contains(splitPath[1])) {
+                    pathString = pathString.substring(pathString.indexOf("/", 1));
+                }
+            }
             return pathString;
         } else {
             int pathBegin = pathString.indexOf("/", 1);

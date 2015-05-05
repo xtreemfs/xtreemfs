@@ -329,5 +329,11 @@ Tests = [
         'file': 'system_chstatus_test.sh',
         'VolumeConfigs': [],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
+    },
+    {
+        'name': 'Coverity Scan Test',
+        'file': 'coverity_scan_test.sh',
+        'VolumeConfigs': [],
+        'TestSets': [ 'full' ]
     }
  ]
