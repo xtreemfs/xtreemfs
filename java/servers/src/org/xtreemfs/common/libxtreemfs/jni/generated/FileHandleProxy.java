@@ -66,9 +66,15 @@ public class FileHandleProxy {
 
   public org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock acquireLock(int process_id, long offset, long length, boolean exclusive, boolean wait_for_lock) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
   byte[] buf = xtreemfs_jniJNI.FileHandleProxy_acquireLock(swigCPtr, this, process_id, offset, length, exclusive, wait_for_lock);
-  if (buf == null || buf.length == 0) {
+
+  // It is possible that a serialized protobuf message has a length of 0, for 
+  // example if it consists only of repeated fields of which none has an entry.
+  // In that case it is preferred to parse the (empty) message and return it
+  // instead of null. Null is only valid if the native call did return null.
+  if (buf == null) {
     return null;
   }
+
   try {
     return org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.parseFrom(buf);
   } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -79,9 +85,15 @@ public class FileHandleProxy {
 
   public org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock checkLock(int process_id, long offset, long length, boolean exclusive) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
   byte[] buf = xtreemfs_jniJNI.FileHandleProxy_checkLock(swigCPtr, this, process_id, offset, length, exclusive);
-  if (buf == null || buf.length == 0) {
+
+  // It is possible that a serialized protobuf message has a length of 0, for 
+  // example if it consists only of repeated fields of which none has an entry.
+  // In that case it is preferred to parse the (empty) message and return it
+  // instead of null. Null is only valid if the native call did return null.
+  if (buf == null) {
     return null;
   }
+
   try {
     return org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.parseFrom(buf);
   } catch (com.google.protobuf.InvalidProtocolBufferException e) {

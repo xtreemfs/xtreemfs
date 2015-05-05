@@ -48,9 +48,15 @@ public class VolumeProxy {
 
   public org.xtreemfs.pbrpc.generatedinterfaces.MRC.StatVFS statFS(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials user_credentials) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
   byte[] buf = xtreemfs_jniJNI.VolumeProxy_statFS(swigCPtr, this, user_credentials.toByteArray());
-  if (buf == null || buf.length == 0) {
+
+  // It is possible that a serialized protobuf message has a length of 0, for 
+  // example if it consists only of repeated fields of which none has an entry.
+  // In that case it is preferred to parse the (empty) message and return it
+  // instead of null. Null is only valid if the native call did return null.
+  if (buf == null) {
     return null;
   }
+
   try {
     return org.xtreemfs.pbrpc.generatedinterfaces.MRC.StatVFS.parseFrom(buf);
   } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -142,9 +148,15 @@ public class VolumeProxy {
 
   public org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries readDir(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials user_credentials, String path, long offset, long count, boolean names_only) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
   byte[] buf = xtreemfs_jniJNI.VolumeProxy_readDir(swigCPtr, this, user_credentials.toByteArray(), path, offset, count, names_only);
-  if (buf == null || buf.length == 0) {
+
+  // It is possible that a serialized protobuf message has a length of 0, for 
+  // example if it consists only of repeated fields of which none has an entry.
+  // In that case it is preferred to parse the (empty) message and return it
+  // instead of null. Null is only valid if the native call did return null.
+  if (buf == null) {
     return null;
   }
+
   try {
     return org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries.parseFrom(buf);
   } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -155,9 +167,15 @@ public class VolumeProxy {
 
   public org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrResponse listXAttrs(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials user_credentials, String path) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
   byte[] buf = xtreemfs_jniJNI.VolumeProxy_listXAttrs__SWIG_0(swigCPtr, this, user_credentials.toByteArray(), path);
-  if (buf == null || buf.length == 0) {
+
+  // It is possible that a serialized protobuf message has a length of 0, for 
+  // example if it consists only of repeated fields of which none has an entry.
+  // In that case it is preferred to parse the (empty) message and return it
+  // instead of null. Null is only valid if the native call did return null.
+  if (buf == null) {
     return null;
   }
+
   try {
     return org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrResponse.parseFrom(buf);
   } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -168,9 +186,15 @@ public class VolumeProxy {
 
   public org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrResponse listXAttrs(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials user_credentials, String path, boolean use_cache) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
   byte[] buf = xtreemfs_jniJNI.VolumeProxy_listXAttrs__SWIG_1(swigCPtr, this, user_credentials.toByteArray(), path, use_cache);
-  if (buf == null || buf.length == 0) {
+
+  // It is possible that a serialized protobuf message has a length of 0, for 
+  // example if it consists only of repeated fields of which none has an entry.
+  // In that case it is preferred to parse the (empty) message and return it
+  // instead of null. Null is only valid if the native call did return null.
+  if (buf == null) {
     return null;
   }
+
   try {
     return org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrResponse.parseFrom(buf);
   } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -201,9 +225,15 @@ public class VolumeProxy {
 
   public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replicas listReplicas(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials user_credentials, String path) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
   byte[] buf = xtreemfs_jniJNI.VolumeProxy_listReplicas(swigCPtr, this, user_credentials.toByteArray(), path);
-  if (buf == null || buf.length == 0) {
+
+  // It is possible that a serialized protobuf message has a length of 0, for 
+  // example if it consists only of repeated fields of which none has an entry.
+  // In that case it is preferred to parse the (empty) message and return it
+  // instead of null. Null is only valid if the native call did return null.
+  if (buf == null) {
     return null;
   }
+
   try {
     return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replicas.parseFrom(buf);
   } catch (com.google.protobuf.InvalidProtocolBufferException e) {

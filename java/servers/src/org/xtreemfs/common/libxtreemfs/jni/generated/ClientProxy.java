@@ -90,9 +90,15 @@ public class ClientProxy {
 
   public org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes listVolumes(ServiceAddresses mrc_addresses, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth auth) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException {
   byte[] buf = xtreemfs_jniJNI.ClientProxy_listVolumes(swigCPtr, this, ServiceAddresses.getCPtr(mrc_addresses), mrc_addresses, auth.toByteArray());
-  if (buf == null || buf.length == 0) {
+
+  // It is possible that a serialized protobuf message has a length of 0, for 
+  // example if it consists only of repeated fields of which none has an entry.
+  // In that case it is preferred to parse the (empty) message and return it
+  // instead of null. Null is only valid if the native call did return null.
+  if (buf == null) {
     return null;
   }
+
   try {
     return org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes.parseFrom(buf);
   } catch (com.google.protobuf.InvalidProtocolBufferException e) {
