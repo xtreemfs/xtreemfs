@@ -341,22 +341,14 @@ PROTO2_RETURN(xtreemfs::pbrpc::Lock, org.xtreemfs.pbrpc.generatedinterfaces.OSD.
 
 // Use java byte[] arrays or direct buffers for read and write.
 %apply char *BYTE { const char *buf, char *buf };  // FileHandle::Read, FileHandle::Write
-
-%extend xtreemfs::FileHandle {
-  public: 
-  int readDirect(char *directBuffer, size_t count, int64_t offset) {
-    return $self->Read(directBuffer, count, offset);
-  }
-  int writeDirect(const char *directBuffer, size_t count, int64_t offset) {
-    return $self->Write(directBuffer, count, offset);
-  }
-}
 %apply char *BUFFER {const char *directBuffer, char *directBuffer}
 
 // Add Exception Handling
 DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::Read);
+DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::read);
 DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::readDirect);
 DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::Write);
+DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::write);
 DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::writeDirect);
 DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::Flush);
 DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::Truncate);
@@ -380,6 +372,26 @@ DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::ReleaseLockOfProcess);
          const xtreemfs::PosixErrorException,
          const xtreemfs::UnknownAddressSchemeException) 
     xtreemfs::FileHandle::Close;
+
+// Add missing methods from the Java implementation.
+%extend xtreemfs::FileHandle {
+  public: 
+  int readDirect(char *directBuffer, size_t count, int64_t offset) {
+    return $self->Read(directBuffer, count, offset);
+  }
+  
+  int writeDirect(const char *directBuffer, size_t count, int64_t offset) {
+    return $self->Write(directBuffer, count, offset);
+  }
+
+  int read(char *buf, int buf_offset, size_t count, int64_t offset) {
+    return $self->Read(buf + buf_offset, count, offset);
+  }
+  
+  int write(const char *buf, int buf_offset, size_t count, int64_t offset) {
+    return $self->Write(buf + buf_offset, count, offset);
+  }
+}
 
 
 

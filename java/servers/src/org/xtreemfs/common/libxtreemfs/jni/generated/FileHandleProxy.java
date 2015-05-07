@@ -36,11 +36,11 @@ public class FileHandleProxy {
   }
 
   public int read(byte[] buf, int count, long offset) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
-    return xtreemfs_jniJNI.FileHandleProxy_read(swigCPtr, this, buf, count, offset);
+    return xtreemfs_jniJNI.FileHandleProxy_read__SWIG_0(swigCPtr, this, buf, count, offset);
   }
 
   public int write(byte[] buf, int count, long offset) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
-    return xtreemfs_jniJNI.FileHandleProxy_write(swigCPtr, this, buf, count, offset);
+    return xtreemfs_jniJNI.FileHandleProxy_write__SWIG_0(swigCPtr, this, buf, count, offset);
   }
 
   public void flush() throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
@@ -122,18 +122,26 @@ public class FileHandleProxy {
     xtreemfs_jniJNI.FileHandleProxy_close(swigCPtr, this);
   }
 
-  public int readDirect(java.nio.ByteBuffer directBuffer, int count, long offset) {
+  public int readDirect(java.nio.ByteBuffer directBuffer, int count, long offset) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
  assert directBuffer.isDirect() : "Buffer must be allocated direct.";
     {
       return xtreemfs_jniJNI.FileHandleProxy_readDirect(swigCPtr, this, directBuffer, count, offset);
     }
   }
 
-  public int writeDirect(java.nio.ByteBuffer directBuffer, int count, long offset) {
+  public int writeDirect(java.nio.ByteBuffer directBuffer, int count, long offset) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
  assert directBuffer.isDirect() : "Buffer must be allocated direct.";
     {
       return xtreemfs_jniJNI.FileHandleProxy_writeDirect(swigCPtr, this, directBuffer, count, offset);
     }
+  }
+
+  public int read(byte[] buf, int buf_offset, int count, long offset) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
+    return xtreemfs_jniJNI.FileHandleProxy_read__SWIG_1(swigCPtr, this, buf, buf_offset, count, offset);
+  }
+
+  public int write(byte[] buf, int buf_offset, int count, long offset) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
+    return xtreemfs_jniJNI.FileHandleProxy_write__SWIG_1(swigCPtr, this, buf, buf_offset, count, offset);
   }
 
 }

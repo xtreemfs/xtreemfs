@@ -33,10 +33,10 @@ public class NativeFileHandle implements FileHandle {
     }
 
     @Override
-    @Deprecated
     public int read(UserCredentials userCredentials, byte[] data, int dataOffset, int count, long offset)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
-        throw new RuntimeException("dataOffset param not supported in C++");
+        // UserCredentials are not used internally.
+        return proxy.read(data, dataOffset, count, offset);
     }
 
     public int read(UserCredentials userCredentials, ByteBuffer data, int count, long offset) throws IOException,
@@ -59,10 +59,10 @@ public class NativeFileHandle implements FileHandle {
     }
 
     @Override
-    @Deprecated
     public int write(UserCredentials userCredentials, byte[] data, int dataOffset, int count, long offset)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
-        throw new RuntimeException("dataOffset param not supported in C++");
+        // UserCredentials are not used internally.
+        return proxy.write(data, dataOffset, count, offset);
     }
 
     public int write(UserCredentials userCredentials, ByteBuffer data, int count, long offset) throws IOException,
