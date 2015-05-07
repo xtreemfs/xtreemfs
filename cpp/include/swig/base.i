@@ -44,7 +44,7 @@
 
 
 
-// Add a new typemap, that allows to use std::string as an OUPUT parameter.
+// Add a new typemap, that allows to use std::string as an OUTPUT parameter.
 // http://stackoverflow.com/a/11967859
 %typemap(jni) std::string *OUTPUT, std::string &OUTPUT "jobjectArray"
 %typemap(jtype) std::string *OUTPUT, std::string &OUTPUT "String[]"

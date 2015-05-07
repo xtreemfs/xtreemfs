@@ -74,7 +74,7 @@ public class ClientProxy {
     long cPtr = xtreemfs_jniJNI.ClientProxy_openVolumeProxy(swigCPtr, this, volume_name, SSLOptionsProxy.getCPtr(ssl_options), ssl_options, OptionsProxy.getCPtr(options), options);
     VolumeProxy ret = null;
     if (cPtr != 0) {
-      ret = new VolumeProxy(cPtr, true);
+      ret = new VolumeProxy(cPtr, false);
       ret.addReferences(options, ssl_options);
     }
     return ret;

@@ -83,17 +83,17 @@ public class VolumeProxy {
 
   public FileHandleProxy openFileProxy(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials user_credentials, String path, int flags) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
     long cPtr = xtreemfs_jniJNI.VolumeProxy_openFileProxy__SWIG_0(swigCPtr, this, user_credentials.toByteArray(), path, flags);
-    return (cPtr == 0) ? null : new FileHandleProxy(cPtr, true);
+    return (cPtr == 0) ? null : new FileHandleProxy(cPtr, false);
   }
 
   public FileHandleProxy openFileProxy(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials user_credentials, String path, int flags, long mode) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
     long cPtr = xtreemfs_jniJNI.VolumeProxy_openFileProxy__SWIG_1(swigCPtr, this, user_credentials.toByteArray(), path, flags, mode);
-    return (cPtr == 0) ? null : new FileHandleProxy(cPtr, true);
+    return (cPtr == 0) ? null : new FileHandleProxy(cPtr, false);
   }
 
   public FileHandleProxy openFileProxy(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials user_credentials, String path, int flags, long mode, long attributes) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
     long cPtr = xtreemfs_jniJNI.VolumeProxy_openFileProxy__SWIG_2(swigCPtr, this, user_credentials.toByteArray(), path, flags, mode, attributes);
-    return (cPtr == 0) ? null : new FileHandleProxy(cPtr, true);
+    return (cPtr == 0) ? null : new FileHandleProxy(cPtr, false);
   }
 
   public void truncate(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials user_credentials, String path, int new_file_size) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {

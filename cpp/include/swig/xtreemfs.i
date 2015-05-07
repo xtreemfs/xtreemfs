@@ -88,6 +88,7 @@ ENUM_FLAG(xtreemfs::util::LogLevel, level)
 namespace xtreemfs {
 namespace util {
   void initialize_logger(xtreemfs::util::LogLevel level);
+  void shutdown_logger();
 }}
 
 
@@ -96,6 +97,7 @@ namespace util {
  * C++ exceptions have to be casted to Java exceptions.
  ******************************************************************************/
 %{ #include "libxtreemfs/xtreemfs_exception.h" %}
+// TODO (jdillmann): JNI Error Handling if a method can not be found
 
 // TODO (jdillmann): Decide if the C++ Exceptions without Java counterpart should be thrown as RuntimeExceptions
 %typemap(throws, throws="org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException") 
@@ -129,7 +131,6 @@ namespace util {
 
 %typemap(throws, throws="org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException") 
       xtreemfs::PosixErrorException {
-    // TODO (jdillmann): JNI Error Handling if a method can not be found
     jclass clazz = JCALL1(FindClass, jenv, "org/xtreemfs/common/libxtreemfs/exceptions/PosixErrorException");
     jmethodID mid = JCALL3(GetMethodID, jenv, clazz, "<init>", "(Lorg/xtreemfs/foundation/pbrpc/generatedinterfaces/RPC$POSIXErrno;Ljava/lang/String;)V");
 
@@ -137,7 +138,8 @@ namespace util {
     jmethodID mid2 = JCALL3(GetStaticMethodID, jenv, clazz2, "valueOf", "(I)Lorg/xtreemfs/foundation/pbrpc/generatedinterfaces/RPC$POSIXErrno;");
 
     jobject posix_errno = JCALL3(CallStaticObjectMethod, jenv, clazz2, mid2, $1.posix_errno());
-    jthrowable o = static_cast<jthrowable>(JCALL4(NewObject, jenv, clazz, mid, posix_errno, $1.what()));
+    jstring what = JCALL1(NewStringUTF, jenv, $1.what());
+    jthrowable o = static_cast<jthrowable>(JCALL4(NewObject, jenv, clazz, mid, posix_errno, what));
     JCALL1(Throw, jenv, o);
 
     return $null;
@@ -386,8 +388,6 @@ DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::ReleaseLockOfProcess);
  ******************************************************************************/
 
 %newobject xtreemfs::Client::CreateClient;
-%newobject xtreemfs::Client::OpenVolume;
-%newobject xtreemfs::Volume::OpenFile;
 
 // Altough ServiceAddresses are passed by reference, their content will be 
 // copied when the UUID Iterator is generated. Otherwise they would have to be 
