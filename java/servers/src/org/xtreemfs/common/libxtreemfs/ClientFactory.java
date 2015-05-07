@@ -7,6 +7,7 @@
 
 package org.xtreemfs.common.libxtreemfs;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import org.xtreemfs.foundation.SSLOptions;
@@ -73,7 +74,17 @@ public class ClientFactory {
                         .invoke(null, dirServiceAddresses, userCredentials, sslOptions, options);
 
                 return client;
-            } catch (ReflectiveOperationException e) {
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException(e);
+            } catch (InvocationTargetException e) {
+                throw new RuntimeException(e);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            } catch (SecurityException e) {
                 throw new RuntimeException(e);
             }
 
@@ -130,7 +141,17 @@ public class ClientFactory {
                         sslOptions, options);
 
                 return client;
-            } catch (ReflectiveOperationException e) {
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException(e);
+            } catch (InvocationTargetException e) {
+                throw new RuntimeException(e);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            } catch (SecurityException e) {
                 throw new RuntimeException(e);
             }
 
