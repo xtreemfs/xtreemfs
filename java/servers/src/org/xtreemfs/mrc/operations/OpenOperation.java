@@ -146,10 +146,18 @@ public class OpenOperation extends MRCOperation {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EIO, "FIFOs not supported");
                 }
                 
+                // Inherit the groupId if the setgid bit is set
+                String groupId = rq.getDetails().groupIds.get(0);
+                int parentMode = faMan.getPosixAccessMode(sMan, res.getParentDir(), rq.getDetails().userId,
+                        rq.getDetails().groupIds);
+                if ((parentMode & 02000) > 0) {
+                    groupId = res.getParentDir().getOwningGroupId();
+                }
+
                 // create the metadata object
-                file = sMan.createFile(fileId, res.getParentDirId(), res.getFileName(), time, time, time, rq
-                        .getDetails().userId, rq.getDetails().groupIds.get(0), rqArgs.getMode(), rqArgs
-                        .getAttributes(), 0, false, 0, 0, update);
+                file = sMan.createFile(fileId, res.getParentDirId(), res.getFileName(), time, time, time,
+                        rq.getDetails().userId, groupId, rqArgs.getMode(), rqArgs.getAttributes(), 0, false, 0, 0,
+                        update);
                 
                 // set the file ID as the last one
                 sMan.setLastFileId(fileId, update);
