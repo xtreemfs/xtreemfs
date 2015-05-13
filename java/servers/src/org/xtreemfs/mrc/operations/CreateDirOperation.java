@@ -74,9 +74,11 @@ public class CreateDirOperation extends MRCOperation {
         
         // Inherit the groupId if the setgid bit is set
         String groupId = rq.getDetails().groupIds.get(0);
+        int mode = rqArgs.getMode();
         int parentMode = faMan.getPosixAccessMode(sMan, parent, rq.getDetails().userId, rq.getDetails().groupIds);
         if ((parentMode & 02000) > 0) {
             groupId = parent.getOwningGroupId();
+            mode = mode | 02000;
         }
 
         // prepare directory creation in database
@@ -90,7 +92,7 @@ public class CreateDirOperation extends MRCOperation {
         
         // create the metadata object
         sMan.createDir(fileId, parent.getId(), res.getFileName(), time, time, time, rq.getDetails().userId, groupId,
-                rqArgs.getMode(), 0, update);
+                mode, 0, update);
         
         // set the file ID as the last one
         sMan.setLastFileId(fileId, update);

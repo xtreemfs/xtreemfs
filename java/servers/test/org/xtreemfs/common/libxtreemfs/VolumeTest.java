@@ -1006,6 +1006,10 @@ public class VolumeTest {
         }
     }
 
+    /**
+     * Test if files inherit the group from its parent if the setgid bit is set, and if subdirectories inherit the group
+     * and the setgid bit.
+     */
     @Test
     public void testSetgid() throws Exception {
         VOLUME_NAME = "testSetgid";
@@ -1023,18 +1027,21 @@ public class VolumeTest {
         UserCredentials rootCreds = userCredentials.toBuilder().setUsername("root").setGroups(0, "root").build();
         volume.setAttr(rootCreds, "/DIR1", stat, Setattrs.SETATTR_MODE.getNumber() | Setattrs.SETATTR_GID.getNumber());
 
+        // Test if the setgid bit and the group is set
         stat = volume.getAttr(userCredentials, "/DIR1");
-        assertEquals(mode, stat.getMode());
+        assertEquals(02000, stat.getMode() & 02000);
         assertEquals("foobar", stat.getGroupId());
 
+        // Test if new subdirectories inherit the setgid bit and the group
         volume.createDirectory(userCredentials, "/DIR1/DIR2", 0777);
         stat = volume.getAttr(userCredentials, "/DIR1/DIR2");
+        assertEquals(02000, stat.getMode() & 02000);
         assertEquals("foobar", stat.getGroupId());
 
+        // Test if new files inherit the group
         FileHandle fh = volume.openFile(userCredentials, "/DIR1/FILE1",
                 SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber());
         fh.close();
-
         stat = volume.getAttr(userCredentials, "/DIR1/FILE1");
         assertEquals("foobar", stat.getGroupId());
 
