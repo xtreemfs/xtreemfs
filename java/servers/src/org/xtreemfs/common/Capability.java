@@ -108,7 +108,7 @@ public class Capability {
                 setReplicateOnClose(replicateOnClose).setTruncateEpoch(epochNo).setSnapConfig(snapConfig).
                 setSnapTimestamp(snapTimestamp);
 
-        if(traceRequests && !tracingPolicyConfig.equals("") && !tracingPolicy.equals("")) {
+        if(traceRequests && !tracingPolicy.equals("")) {
             TraceConfig.Builder traceConfigBuilder = TraceConfig.newBuilder();
             traceConfigBuilder.setTraceRequests(traceRequests);
             traceConfigBuilder.setTracingPolicyConfig(tracingPolicyConfig);

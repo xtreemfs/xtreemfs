@@ -859,7 +859,7 @@ public class MRCHelper {
 
             break;
         case tracing_policy_config:
-            sMan.getVolumeInfo().setTraceTarget(value, update);
+            sMan.getVolumeInfo().setTracingPolicyConfig(value, update);
             break;
         case tracing_policy:
             sMan.getVolumeInfo().setTracingPolicy(value, update);

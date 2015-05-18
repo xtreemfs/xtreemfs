@@ -169,7 +169,7 @@ public interface VolumeInfo {
      *
      * @param traceTarget trace target volume
      */
-    public void setTraceTarget(String traceTarget, AtomicDBUpdate update) throws DatabaseException;
+    public void setTracingPolicyConfig(String traceTarget, AtomicDBUpdate update) throws DatabaseException;
 
     /**
      * Specifies tracing policy

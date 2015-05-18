@@ -151,10 +151,8 @@ public class TracingTest {
 
         sourceVolume.setXAttr(uc, auth, "/", "xtreemfs.tracing_enabled", "1",
                 MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
-        sourceVolume.setXAttr(uc, auth, "/", "xtreemfs.tracing_policy_config", "asdf",
-                MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
         sourceVolume.setXAttr(uc, auth, "/", "xtreemfs.tracing_policy", SOCKET_BASED_TRACING_POLICY,
-                              MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
+                MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
 
         FileHandle f = sourceVolume.openFile(uc, TEST_FILE,
                                              GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber() |

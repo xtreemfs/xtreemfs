@@ -117,7 +117,7 @@ public class BabuDBSnapshotVolumeInfo implements VolumeInfo {
     }
 
     @Override
-    public void setTraceTarget(String traceTarget, AtomicDBUpdate update) throws DatabaseException {
+    public void setTracingPolicyConfig(String traceTarget, AtomicDBUpdate update) throws DatabaseException {
         sMan.throwException();
     }
 
