@@ -204,7 +204,8 @@ public class XtreemFSFileSystem extends FileSystem {
             }
         }
 
-        fileSystemURI = uri;
+        this.fileSystemURI = URI.create(uri.getScheme() + "://" + uri.getAuthority()
+                + "/" + getVolumeFromPath(new Path(uri)).getVolumeName());
         workingDirectory = getHomeDirectory();
 
         if (Logging.isDebug()) {
