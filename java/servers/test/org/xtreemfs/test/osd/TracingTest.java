@@ -15,6 +15,8 @@ import org.xtreemfs.common.libxtreemfs.*;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
+import org.xtreemfs.osd.operations.*;
+import org.xtreemfs.osd.tracing.TraceInfo;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC;
 import org.xtreemfs.test.TestEnvironment;
@@ -135,6 +137,14 @@ public class TracingTest {
                         System.out.println(line);
                         if(!line.equals(""))
                             tracedLines.incrementAndGet();
+
+                        try {
+                            TraceInfo traceInfo = new TraceInfo(line);
+                            assertTrue(traceInfo.getOperation().equals(org.xtreemfs.osd.operations.WriteOperation.class.toString()));
+                            assertTrue(traceInfo.getLength() > 0);
+                        } catch (IllegalArgumentException ex) {
+                            fail();
+                        }
                     }
                     s.close();
                 } catch(Exception ex) {
