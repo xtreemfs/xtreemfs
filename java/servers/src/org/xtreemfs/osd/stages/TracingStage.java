@@ -11,6 +11,7 @@ package org.xtreemfs.osd.stages;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.tracing.TraceInfo;
 import org.xtreemfs.osd.tracing.TracingPolicy;
 
 /**
@@ -29,14 +30,15 @@ public class TracingStage extends Stage {
         try {
             short policyId = getPolicyId(method);
             TracingPolicy policy = getPolicy(policyId);
-            policy.traceRequest(method.getRequest());
+            policy.traceRequest(method.getRequest(), (TraceInfo) method.getArgs()[0]);
         } catch (Exception ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
     }
 
     public void traceRequest(OSDRequest req) {
-        this.enqueueOperation(req.getOperation().getProcedureId(), new Object[]{}, req, null);
+        TraceInfo traceInfo = new TraceInfo(master, req);
+        this.enqueueOperation(req.getOperation().getProcedureId(), new Object[]{ traceInfo }, req, null);
     }
 
     private TracingPolicy getPolicy(short id) throws Exception {

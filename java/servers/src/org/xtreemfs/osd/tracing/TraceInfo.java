@@ -8,34 +8,62 @@
 
 package org.xtreemfs.osd.tracing;
 
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.osd.OSDRequest;
+import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.operations.ReadOperation;
+import org.xtreemfs.osd.operations.TruncateOperation;
+import org.xtreemfs.osd.operations.WriteOperation;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD;
+
 /**
 * @author Christoph Kleineweber <kleineweber@zib.de>
 */
 public class TraceInfo {
-    private String user;
-    private String group;
     private String operation;
-    private String arguments;
     private String fileId;
-    private String reqId;
+    private long reqId;
     private String client;
-    private String timeStamp;
-    private String targetVolume;
+    private String osd;
+    private long timeStamp;
+    private long offset;
+    private long length;
 
-    public String getUser() {
-        return user;
+    public TraceInfo(OSDRequestDispatcher master, OSDRequest req) {
+        operation = req.getOperation().getClass().toString();
+        fileId = req.getFileId();
+        reqId = req.getRequestId();
+        client = req.getCapability().getClientIdentity();
+        osd = master.getConfig().getUUID().toString();
+        timeStamp = TimeSync.getGlobalTime();
+
+        if(req.getOperation() instanceof WriteOperation) {
+            OSD.writeRequest args = (OSD.writeRequest) req.getRequestArgs();
+            offset = args.getOffset();
+            length = req.getRPCRequest().getData().capacity();
+        } else if (req.getOperation() instanceof ReadOperation) {
+            OSD.readRequest args = (OSD.readRequest) req.getRequestArgs();
+            offset = args.getOffset();
+            length = req.getRPCRequest().getData().capacity();
+        } else if (req.getOperation() instanceof TruncateOperation) {
+            OSD.truncateRequest args = (OSD.truncateRequest) req.getRequestArgs();
+            offset = args.getNewFileSize();
+            length = 0L;
+        } else {
+            offset = 0L;
+            length = 0L;
+        }
     }
 
-    public void setUser(String user) {
-        this.user = user;
-    }
-
-    public String getGroup() {
-        return group;
-    }
-
-    public void setGroup(String group) {
-        this.group = group;
+    public TraceInfo() {
+        operation = "";
+        fileId = "";
+        reqId = 0L;
+        client = "";
+        osd = "";
+        timeStamp = 0L;
+        offset = 0L;
+        length = 0L;
     }
 
     public String getOperation() {
@@ -46,14 +74,6 @@ public class TraceInfo {
         this.operation = operation;
     }
 
-    public String getArguments() {
-        return arguments;
-    }
-
-    public void setArguments(String arguments) {
-        this.arguments = arguments;
-    }
-
     public String getFileId() {
         return fileId;
     }
@@ -62,11 +82,11 @@ public class TraceInfo {
         this.fileId = fileId;
     }
 
-    public String getReqId() {
+    public long getReqId() {
         return reqId;
     }
 
-    public void setReqId(String reqId) {
+    public void setReqId(long reqId) {
         this.reqId = reqId;
     }
 
@@ -78,19 +98,41 @@ public class TraceInfo {
         this.client = client;
     }
 
-    public String getTimeStamp() {
+    public long getTimeStamp() {
         return timeStamp;
     }
 
-    public void setTimeStamp(String timeStamp) {
+    public void setTimeStamp(long timeStamp) {
         this.timeStamp = timeStamp;
     }
 
-    public String getTargetVolume() {
-        return targetVolume;
+    public long getOffset() {
+        return offset;
     }
 
-    public void setTargetVolume(String targetVolume) {
-        this.targetVolume = targetVolume;
+    public void setOffset(long offset) {
+        this.offset = offset;
+    }
+
+    public long getLength() {
+        return length;
+    }
+
+    public void setLength(long length) {
+        this.length = length;
+    }
+
+    public String getOsd() {
+        return osd;
+    }
+
+    public void setOsd(String osd) {
+        this.osd = osd;
+    }
+
+    @Override
+    public String toString() {
+        return operation + "," + fileId + "," + reqId + "," + client + "," + osd + "," + timeStamp + "," + offset +
+                ","  + length;
     }
 }

@@ -128,9 +128,8 @@ public class TracingTest {
                 try {
                     String line;
                     Thread.sleep(1000);
-                    Socket s = new Socket("localhost", 9999);
+                    Socket s = new Socket("localhost", SOCKET_BASED_TRACING_PORT);
                     BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
-                    long lines = 0;
 
                     while((line = in.readLine()) != null) {
                         System.out.println(line);
@@ -161,20 +160,12 @@ public class TracingTest {
                                              GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber() |
                                              GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY.getNumber());
 
-        byte[] writeBuffer = new byte[128 * 1024];
+        byte[] writeBuffer = new byte[255];
 
-        long t1 = System.currentTimeMillis();
         for (long i=0; i<=MAX_WRITES; i++)
             f.write(uc, writeBuffer, writeBuffer.length, i * writeBuffer.length);
-        long t2 = System.currentTimeMillis();
 
         f.close();
-
-        long seconds = (t2-t1)/1000;
-        long writtenData = (MAX_WRITES * writeBuffer.length) / (1024*1024) ;
-        System.out.println("Time: " + seconds + "s");
-        System.out.println("Written data: " + writtenData + " MB");
-        System.out.println("Throughput: " + (double) writtenData / (double) seconds + " MB/s");
 
         sourceVolume.unlink(uc, TEST_FILE);
         Thread.sleep(1000);

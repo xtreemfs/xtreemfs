@@ -8,7 +8,6 @@
 
 package org.xtreemfs.osd.tracing;
 
-import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.osd.OSDRequest;
 
@@ -29,7 +28,7 @@ public class SocketOutputTracingPolicy implements TracingPolicy {
     private static PrintWriter out = null;
 
     @Override
-    public void traceRequest(OSDRequest req) {
+    public void traceRequest(OSDRequest req, TraceInfo traceInfo) {
         if(out == null) {
             try {
                 initSocket();
@@ -38,7 +37,7 @@ public class SocketOutputTracingPolicy implements TracingPolicy {
                 return;
             }
         }
-        out.write(getTraceString(req) + "\n");
+        out.write(traceInfo.toString() + "\n");
         out.flush();
     }
 
@@ -48,15 +47,5 @@ public class SocketOutputTracingPolicy implements TracingPolicy {
         serverSocket.bind(new InetSocketAddress(9999));
         Socket clientSocket = serverSocket.accept();
         this.out = new PrintWriter(clientSocket.getOutputStream(), true);
-    }
-
-    private String getTraceString(OSDRequest req) {
-        // TODO(ckleineweber): extract operation details (offset, length, etc.)
-        String result = TimeSync.getGlobalTime() + "," +
-                req.getRPCRequest().getConnection().getChannel().socket().getLocalAddress() + ":" + req.getRPCRequest().getConnection().getChannel().socket().getLocalPort() + "," +
-                req.getRPCRequest().getSenderAddress().toString() + "," +
-                req.getOperation().getClass().toString() + "," +
-                req.getFileId();
-        return result;
     }
 }

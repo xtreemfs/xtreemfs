@@ -14,5 +14,5 @@ import org.xtreemfs.osd.OSDRequest;
  * @author Christoph Kleineweber <kleineweber@zib.de>
  */
 public interface TracingPolicy {
-    void traceRequest(OSDRequest req);
+    void traceRequest(OSDRequest req, TraceInfo traceInfo);
 }
