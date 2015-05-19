@@ -85,7 +85,7 @@ public class XtreemFSFileSystem extends FileSystem {
 
         String defaultURIString = conf.get("fs.defaultFS");
         if (defaultURIString == null) {
-            defaultURIString = conf.get("fs.name.default");
+            defaultURIString = conf.get("fs.default.name");
         }
 
         if (defaultURIString == null) {
