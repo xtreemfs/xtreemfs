@@ -83,16 +83,17 @@ public class XtreemFSFileSystem extends FileSystem {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "init : " + uri);
         }
 
-        URI defaultURI = URI.create(conf.get("fs.defaultFS"));
-        if (defaultURI == null) {
-            defaultURI = URI.create(conf.get(("fs.name.default")));
+        String defaultURIString = conf.get("fs.defaultFS");
+        if (defaultURIString == null) {
+            defaultURIString = conf.get("fs.name.default");
         }
 
-        if (defaultURI == null) {
+        if (defaultURIString == null) {
             throw new IOException("You have to specify a default volume name in"
                     + " core-site.xml! (fs.defaultFS (or deprecated fs.default.name)");
         }
 
+        URI defaultURI = URI.create(defaultURIString);
         String defaultVolumeName = defaultURI.getPath().split("/")[1];
 
         if (defaultURI == null) {
