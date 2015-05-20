@@ -83,11 +83,26 @@ public class XtreemFSFileSystem extends FileSystem {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "init : " + uri);
         }
 
-        String defaultVolumeName = conf.get("xtreemfs.defaultVolumeName");
+        String defaultURIString = conf.get("fs.defaultFS");
+        if (defaultURIString == null) {
+            defaultURIString = conf.get("fs.default.name");
+        }
 
-        if (defaultVolumeName == null) {
+        if (defaultURIString == null) {
             throw new IOException("You have to specify a default volume name in"
-                    + " core-site.xml! (xtreemfs.defaultVolumeName)");
+                    + " core-site.xml! (as the path part of fs.defaultFS (or deprecated fs.default.name)");
+        }
+
+        URI defaultURI = URI.create(defaultURIString);
+
+        String defaultVolumeName;
+
+        if (defaultURI.getPath() == null) {
+            defaultVolumeName = conf.get("xtreemfs.defaultVolumeName");
+            Logging.logMessage(Logging.LEVEL_WARN, this, "DEPRECATION WARNING: option xtreemfs.defaultVolumeName is "
+                    + "deprecated; specify the default volume as path component of fs.defaultFS");
+        } else {
+            defaultVolumeName = defaultURI.getPath().split("/")[1];
         }
 
         useReadBuffer = conf.getBoolean("xtreemfs.io.buffer.read", false);
@@ -194,7 +209,8 @@ public class XtreemFSFileSystem extends FileSystem {
             }
         }
 
-        fileSystemURI = uri;
+        this.fileSystemURI = URI.create(uri.getScheme() + "://" + uri.getAuthority()
+                + "/" + getVolumeFromPath(new Path(uri)).getVolumeName());
         workingDirectory = getHomeDirectory();
 
         if (Logging.isDebug()) {
