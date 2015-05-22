@@ -97,7 +97,7 @@ public class XtreemFSFileSystem extends FileSystem {
 
         String defaultVolumeName;
 
-        if (defaultURI.getPath() == null) {
+        if (defaultURI.getPath() == null || "".equals(defaultURI.getPath())) {
             defaultVolumeName = conf.get("xtreemfs.defaultVolumeName");
             Logging.logMessage(Logging.LEVEL_WARN, this, "DEPRECATION WARNING: option xtreemfs.defaultVolumeName is "
                     + "deprecated; specify the default volume as path component of fs.defaultFS");
