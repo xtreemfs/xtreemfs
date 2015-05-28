@@ -26,7 +26,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 public final class NativeHelper {
 
     /**
-     * Load the library with the platform independent name. (f.ex. jni-libxtreemfs instead of libjni-xtreemfs.so) <br>
+     * Load the library with the platform independent name. (f.ex. jni-xtreemfs instead of libjni-xtreemfs.so) <br>
      * If the library does not exists in the java.library.path, but the current class is running within a xtreemfs
      * source directory, the cpp/build directory is searched as well.
      * 
@@ -41,19 +41,26 @@ public final class NativeHelper {
             // Try to load the library directly from the build directory
 
             // Get the URL of the current class
-            URL classURL = NativeHelper.class.getResource("NativeHelper.class");
+            URL classURL = NativeHelper.class.getResource(NativeHelper.class.getSimpleName() + ".class");
 
             // Abort if the class isn't a real file (and not within f.ex. a jar)
-            if (classURL == null || !"file".equalsIgnoreCase(classURL.getProtocol())) {
+            if (classURL == null) {
                 throw error;
             }
 
-            // Search for the specific directory hierarchy
-            String path = classURL.getPath();
-            path = path.replace(File.separator, "/");
+            String path;
+            if ("file".equalsIgnoreCase(classURL.getProtocol())) {
+                path = classURL.getPath();
+            } else if ("jar".equalsIgnoreCase(classURL.getProtocol()) && classURL.getPath().startsWith("file:")) {
+                // Strip the "file:" prefix and split at the "!"
+                path = classURL.getPath().substring(5).split("!")[0];
+            } else {
+                throw error;
+            }
 
             // Abort if the class file isn't residing within the java build directory,
             // otherwise extract the prefix
+            path = path.replace(File.separator, "/");
             int pos = path.lastIndexOf("/xtreemfs/java/servers/");
             if (pos < 0) {
                 throw error;
@@ -61,8 +68,10 @@ public final class NativeHelper {
             path = path.substring(0, pos);
 
             // Get the platform-specific library name and try to load it from the build directory.
-            path = path + "/xtreemfs/cpp/build/" + System.mapLibraryName("jni-xtreemfs");
-            System.load(path.replace("/", File.separator));
+            path = path + "/xtreemfs/cpp/build/" + System.mapLibraryName(name);
+
+            path = path.replace("/", File.separator);
+            System.load(path);
         }
     }
 
