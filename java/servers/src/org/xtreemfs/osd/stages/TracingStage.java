@@ -37,7 +37,7 @@ public class TracingStage extends Stage {
     }
 
     public void traceRequest(OSDRequest req) {
-        TraceInfo traceInfo = new TraceInfo(master, req);
+       TraceInfo traceInfo = new TraceInfo(master, req);
         this.enqueueOperation(req.getOperation().getProcedureId(), new Object[]{ traceInfo }, req, null);
     }
 

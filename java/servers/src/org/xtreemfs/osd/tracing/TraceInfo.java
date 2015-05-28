@@ -45,7 +45,7 @@ public class TraceInfo {
         } else if (req.getOperation() instanceof ReadOperation) {
             OSD.readRequest args = (OSD.readRequest) req.getRequestArgs();
             offset = args.getOffset();
-            length = req.getRPCRequest().getData().capacity();
+            length = args.getLength();
         } else if (req.getOperation() instanceof TruncateOperation) {
             OSD.truncateRequest args = (OSD.truncateRequest) req.getRequestArgs();
             offset = args.getNewFileSize();
