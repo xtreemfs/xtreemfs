@@ -32,6 +32,15 @@ public class TraceInfo {
 
     public TraceInfo(OSDRequestDispatcher master, OSDRequest req) {
         operation = req.getOperation().getClass().toString();
+        if(req.getOperation() instanceof WriteOperation) {
+            operation = "w";
+        } else if (req.getOperation() instanceof ReadOperation) {
+            operation = "r";
+        } else if (req.getOperation() instanceof TruncateOperation) {
+            operation = "t";
+        } else {
+            operation = req.getOperation().getClass().getName();
+        }
         fileId = req.getFileId();
         reqId = req.getRequestId();
         client = req.getCapability().getClientIdentity();
@@ -40,11 +49,15 @@ public class TraceInfo {
 
         if(req.getOperation() instanceof WriteOperation) {
             OSD.writeRequest args = (OSD.writeRequest) req.getRequestArgs();
-            offset = args.getOffset();
+            offset = args.getObjectNumber() *
+                    (long)args.getFileCredentials().getXlocs().getReplicas(0).getStripingPolicy().getStripeSize() +
+                    (long) args.getOffset();
             length = req.getRPCRequest().getData().capacity();
         } else if (req.getOperation() instanceof ReadOperation) {
             OSD.readRequest args = (OSD.readRequest) req.getRequestArgs();
-            offset = args.getOffset();
+            offset = args.getObjectNumber() *
+                    (long)args.getFileCredentials().getXlocs().getReplicas(0).getStripingPolicy().getStripeSize() +
+                    (long) args.getOffset();
             length = args.getLength();
         } else if (req.getOperation() instanceof TruncateOperation) {
             OSD.truncateRequest args = (OSD.truncateRequest) req.getRequestArgs();
