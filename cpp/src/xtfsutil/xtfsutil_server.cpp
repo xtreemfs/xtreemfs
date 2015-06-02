@@ -586,26 +586,32 @@ void XtfsUtilServer::OpEnableDisableTracing(
 
   const string path = input["path"].asString();
 
-  volume_->SetXAttr(uc,
-                    path,
-                    "xtreemfs.tracing_enabled",
-                    input["enable_tracing"].asString(),
-                    xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
-
-  if (input.isMember("tracing_policy_config") && input["tracing_policy_config"].isString()) {
+  if(input["enable_tracing"] == "1") {
     volume_->SetXAttr(uc,
                       path,
-                      "xtreemfs.tracing_policy_config",
-                      input["tracing_policy_config"].asString(),
+                      "xtreemfs.tracing_enabled",
+                      input["enable_tracing"].asString(),
                       xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
-  }
 
-  if (input.isMember("tracing_policy") && input["tracing_policy"].isString()) {
-    volume_->SetXAttr(uc,
-                      path,
-                      "xtreemfs.tracing_policy",
-                      input["tracing_policy"].asString(),
-                      xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
+    if (input.isMember("tracing_policy_config") && input["tracing_policy_config"].isString()) {
+      volume_->SetXAttr(uc,
+                        path,
+                        "xtreemfs.tracing_policy_config",
+                        input["tracing_policy_config"].asString(),
+                        xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
+    }
+
+    if (input.isMember("tracing_policy") && input["tracing_policy"].isString()) {
+      volume_->SetXAttr(uc,
+                        path,
+                        "xtreemfs.tracing_policy",
+                        input["tracing_policy"].asString(),
+                        xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
+    }
+  } else {
+    volume_->RemoveXAttr(uc, path, "xtreemfs.tracing_enabled");
+    volume_->RemoveXAttr(uc, path, "xtreemfs.tracing_policy");
+    volume_->RemoveXAttr(uc, path, "xtreemfs.tracing_policy_config");
   }
 
   (*output)["result"] = Json::Value(Json::objectValue);
