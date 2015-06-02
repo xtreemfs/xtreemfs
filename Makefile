@@ -36,7 +36,7 @@ XTREEMFS_INIT_DIR=$(DESTDIR)/etc/init.d
 XTREEMFS_SHARE_DIR=$(DESTDIR)/usr/share/xtreemfs
 BIN_DIR=$(DESTDIR)/usr/bin
 SBIN_DIR=$(DESTDIR)/sbin
-LIB_DIR=$(DESTDIR)/usr/local/lib
+LIB_DIR=$(DESTDIR)/usr/lib
 MAN_DIR=$(DESTDIR)/usr/share/man/man1
 DOC_DIR_SERVER=$(DESTDIR)/usr/share/doc/xtreemfs-server
 DOC_DIR_CLIENT=$(DESTDIR)/usr/share/doc/xtreemfs-client
@@ -155,6 +155,7 @@ install-tools:
 install-libs:
 # This could also install a shared libxtreemfs 
 # but for now it only installs the libjni-xtreemfs if it exists.
+	@mkdir -p $(LIB_DIR)
 	@if [ -f $(XTREEMFS_CLIENT_BUILD_DIR)/$(XTREEMFS_JNI_LIBRARY) ]; then \
 		cp $(XTREEMFS_CLIENT_BUILD_DIR)/$(XTREEMFS_JNI_LIBRARY) $(LIB_DIR)/$(XTREEMFS_JNI_LIBRARY); \
 	fi
@@ -228,6 +229,10 @@ ifdef BUILD_CLIENT_TESTS
 	CMAKE_BUILD_CLIENT_TESTS = -DBUILD_CLIENT_TESTS=true
 endif
 
+ifdef BUILD_JNI
+	CMAKE_BUILD_JNI = -DBUILD_JNI=true
+endif
+
 # Do not use env variables to control the CMake behavior as stated in http://www.cmake.org/Wiki/CMake_FAQ#How_can_I_get_or_set_environment_variables.3F
 # Instead define them via -D, so they will be cached.
 ifdef BOOST_ROOT
@@ -246,7 +251,7 @@ client_thirdparty: $(CLIENT_THIRDPARTY_REQUIREMENTS)
 
 $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY): $(CLIENT_GOOGLE_PROTOBUF_CPP)/src/**
 	@echo "client_thirdparty: Configuring and building required Google protobuf library..."
-	@cd $(CLIENT_GOOGLE_PROTOBUF_CPP) && LIBS=-lpthread ./configure $(PROTOBUF_DISABLE_64_BIT_SOLARIS) >/dev/null
+	@cd $(CLIENT_GOOGLE_PROTOBUF_CPP) && LIBS=-lpthread ./configure --with-pic $(PROTOBUF_DISABLE_64_BIT_SOLARIS) >/dev/null
 	@$(MAKE) -C $(CLIENT_GOOGLE_PROTOBUF_CPP) >/dev/null
 	@echo "client_thirdparty: ...completed building required Google protobuf library."
 	@touch $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY)
