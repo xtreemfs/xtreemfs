@@ -1344,7 +1344,8 @@ int main(int argc, char **argv) {
     ++operationsCount;
     failedOperationsCount += SetVolumeQuota(xctl_file, path_on_volume, vm) ? 0 : 1;
   }
-  if (vm.count("enable-tracing") > 0) {
+  if (vm.count("enable-tracing") > 0 ||
+      vm.count("disable-tracing") > 0) {
     ++operationsCount;
     failedOperationsCount += EnableDisableTracing(xctl_file, path_on_volume, vm) ? 0 : 1;
   }
