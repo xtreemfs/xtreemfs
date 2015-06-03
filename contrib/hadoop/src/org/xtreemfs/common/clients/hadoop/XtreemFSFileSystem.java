@@ -209,8 +209,17 @@ public class XtreemFSFileSystem extends FileSystem {
             }
         }
 
+        /* getVolumeFromPath relies on workingDirectory to be set (via makeAbsolute)
+         * and getHomeDirectory relies on this.fileSystemURI to be set
+         * uris that initialize a Filesystem can be assumed to be absolute
+         */
+        Path uriPath = new Path(uri);
+        // if no path is given prepend /
+        if (! uriPath.isAbsolute()) {
+            uriPath = new Path("/", uriPath);
+        }
         this.fileSystemURI = URI.create(uri.getScheme() + "://" + uri.getAuthority()
-                + "/" + getVolumeFromPath(new Path(uri)).getVolumeName());
+                + "/" + getVolumeFromAbsolutePath(uriPath).getVolumeName());
         workingDirectory = getHomeDirectory();
 
         if (Logging.isDebug()) {
@@ -607,10 +616,20 @@ public class XtreemFSFileSystem extends FileSystem {
      * @throws IOException
      */
     private Volume getVolumeFromPath(Path path) {
-        String pathString = makeAbsolute(path).toUri().getPath();
-        String[] splittedPath = pathString.split("/");
-        if (splittedPath.length > 1 && defaultVolumeDirectories.contains(splittedPath[1])
-                || pathString.lastIndexOf("/") == 0) {
+        return getVolumeFromAbsolutePath(makeAbsolute(path));
+    }
+
+    /**
+     * Returns the volume name from the path or the default volume, if the path does not contain a volume name or the
+     * default volume has a directory equally named to the volume.
+     *
+     * @param path
+     * @return
+     * @throws IOException
+     */
+    private Volume getVolumeFromAbsolutePath(Path path) {
+        String pathString = path.toUri().getPath();
+        if (isDirOrFileInDefVol(pathString)) {
             // First part of path is a directory or path is a file in the root of defaultVolume
             return defaultVolume;
         } else {
@@ -625,5 +644,15 @@ public class XtreemFSFileSystem extends FileSystem {
                 return volume;
             }
         }
+    }
+
+    private boolean isDirOrFileInDefVol(String pathString) {
+        String[]splitPath = pathString.split("/");
+        if (splitPath.length > 1 && defaultVolumeDirectories.contains(splitPath[1])
+                || pathString.lastIndexOf("/") == 0) {
+            // First part of path is a directory or path is a file in the root of defaultVolume
+            return true;
+        } else
+            return false;
     }
 }
