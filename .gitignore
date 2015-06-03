@@ -12,3 +12,6 @@
 cscope.out
 .vagrant
 cov-int/
+/out/
+*.directory
+
