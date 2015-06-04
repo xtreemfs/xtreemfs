@@ -56,8 +56,6 @@ CLIENT_GOOGLE_TEST_CPP_MAIN = $(CLIENT_GOOGLE_TEST_CPP)/lib/.libs/libgtest_main.
 # This prevents the target from getting executed again as long as the checkfile does not change.
 CLIENT_GOOGLE_TEST_CHECKFILE = .googletest_library_already_built
 
-# Path to the directory of swig generated java files according to the packages.
-XTREEMFS_JNI_JAVA_DIR = java/servers/src/org/xtreemfs/common/libxtreemfs/jni/generated
 XTREEMFS_JNI_LIBRARY = libjni-xtreemfs.so
 
 TARGETS = client server foundation flease
@@ -229,8 +227,11 @@ ifdef BUILD_CLIENT_TESTS
 	CMAKE_BUILD_CLIENT_TESTS = -DBUILD_CLIENT_TESTS=true
 endif
 
+CMAKE_GENERATE_JNI = -DGENERATE_JNI=false
 ifdef BUILD_JNI
 	CMAKE_BUILD_JNI = -DBUILD_JNI=true
+else
+	CMAKE_BUILD_JNI = -DBUILD_JNI=false
 endif
 
 # Do not use env variables to control the CMake behavior as stated in http://www.cmake.org/Wiki/CMake_FAQ#How_can_I_get_or_set_environment_variables.3F
@@ -288,7 +289,7 @@ client_debug: CLIENT_DEBUG = -DCMAKE_BUILD_TYPE=Debug
 client_debug: client
 
 client: check_client client_thirdparty set_version
-	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG) $(CMAKE_BOOST_ROOT) $(CMAKE_BUILD_CLIENT_TESTS) $(CMAKE_SKIP_FUSE) ${CMAKE_BUILD_PRELOAD} ${CMAKE_BUILD_JNI}
+	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG) $(CMAKE_BOOST_ROOT) $(CMAKE_BUILD_CLIENT_TESTS) $(CMAKE_SKIP_FUSE) ${CMAKE_BUILD_PRELOAD} ${CMAKE_BUILD_JNI} ${CMAKE_GENERATE_JNI}
 	@$(MAKE) -C $(XTREEMFS_CLIENT_BUILD_DIR)
 	@cd $(XTREEMFS_CLIENT_BUILD_DIR); for i in *.xtreemfs xtfsutil; do [ -f $(XTREEMFS_BINARIES_DIR)/$$i ] && rm -f $(XTREEMFS_BINARIES_DIR)/$$i; done; true
 	@cp   -p $(XTREEMFS_CLIENT_BUILD_DIR)/*.xtreemfs $(XTREEMFS_BINARIES_DIR)
@@ -366,14 +367,11 @@ pbrpcgen_clean:
 interfaces: pbrpcgen client_thirdparty
 	$(MAKE) -C interface
 
-.PHONY: jni-client jni-client-java
+.PHONY: jni-client 
 jni-client: CMAKE_BUILD_JNI = -DBUILD_JNI=true
 jni-client: client 
 
-jni-client_java: jni-client
-jni-client_java:
-	@echo "Copy generated Java files to the java source folder."
-	@-rm -rf $(XTREEMFS_JNI_JAVA_DIR)
-	@mkdir -p $(XTREEMFS_JNI_JAVA_DIR)
-	@cp $(XTREEMFS_CLIENT_BUILD_DIR)/swig_generated/*  $(XTREEMFS_JNI_JAVA_DIR)/
+.PHONY: jni-client-generate
+jni-client-generate: CMAKE_GENERATE_JNI = -DGENERATE_JNI=true
+jni-client-generate: client
 

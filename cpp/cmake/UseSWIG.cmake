@@ -121,7 +121,6 @@ macro(SWIG_ADD_SOURCE_TO_MODULE name outfiles infile)
       "${swig_generated_file_fullname}/${swig_source_file_relative_path}")
   endif()
   set(swig_generated_file_fulldir ${swig_generated_file_fullname})
-  message(STATUS "fulldir: " ${swig_generated_file_fullname} " - " ${swig_generated_file_fulldir})
   # If CMAKE_SWIG_OUTDIR was specified then pass it to -outdir
   if(CMAKE_SWIG_OUTDIR)
     set(swig_outdir ${CMAKE_SWIG_OUTDIR})
@@ -192,6 +191,20 @@ macro(SWIG_ADD_SOURCE_TO_MODULE name outfiles infile)
   set(${outfiles} "${swig_generated_file_fullname}" ${swig_extra_generated_files})
 endmacro()
 
+macro(SWIG_GENERATE_SOURCES name outfiles swig_dot_i_sources)
+  set(swig_generated_sources)
+  foreach(it ${swig_dot_i_sources})
+    SWIG_ADD_SOURCE_TO_MODULE(${name} swig_generated_source ${it})
+    set(swig_generated_sources ${swig_generated_sources} "${swig_generated_source}")
+  endforeach()
+  get_directory_property(swig_extra_clean_files ADDITIONAL_MAKE_CLEAN_FILES)
+  set_directory_properties(PROPERTIES
+    ADDITIONAL_MAKE_CLEAN_FILES "${swig_extra_clean_files};${swig_generated_sources}")
+
+  set(${outfiles} ${swig_generated_sources})
+endmacro()
+
+
 #
 # Create Swig module
 #
@@ -207,14 +220,7 @@ macro(SWIG_ADD_MODULE name language)
     endif()
   endforeach()
 
-  set(swig_generated_sources)
-  foreach(it ${swig_dot_i_sources})
-    SWIG_ADD_SOURCE_TO_MODULE(${name} swig_generated_source ${it})
-    set(swig_generated_sources ${swig_generated_sources} "${swig_generated_source}")
-  endforeach()
-  get_directory_property(swig_extra_clean_files ADDITIONAL_MAKE_CLEAN_FILES)
-  set_directory_properties(PROPERTIES
-    ADDITIONAL_MAKE_CLEAN_FILES "${swig_extra_clean_files};${swig_generated_sources}")
+  SWIG_GENERATE_SOURCES(name, swig_generated_sources, ${swig_dot_i_sources})
   add_library(${SWIG_MODULE_${name}_REAL_NAME}
     MODULE
     ${swig_generated_sources}
