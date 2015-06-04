@@ -216,7 +216,7 @@ public class XtreemFSFileSystem extends FileSystem {
         Path uriPath = new Path(uri);
         // if no path is given prepend /
         if (! uriPath.isAbsolute()) {
-            uriPath = new Path("/", uriPath);
+            uriPath = new Path(uriPath, "/");
         }
         this.fileSystemURI = URI.create(uri.getScheme() + "://" + uri.getAuthority()
                 + "/" + getVolumeFromAbsolutePath(uriPath).getVolumeName());
