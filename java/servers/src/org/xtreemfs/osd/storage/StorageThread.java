@@ -87,11 +87,11 @@ public class StorageThread extends Stage {
     
     public static final int      STAGEOP_DELETE_OBJECTS        = 14;
     
-    private final MetadataCache        cache;
+    private MetadataCache        cache;
     
-    private final StorageLayout        layout;
+    private StorageLayout        layout;
     
-    private final OSDRequestDispatcher master;
+    private OSDRequestDispatcher master;
     
     private final boolean        checksumsEnabled;
     
@@ -546,7 +546,7 @@ public class StorageThread extends Stage {
                 
                 // check whether the file size might have changed; in this case,
                 // ensure that the X-New-Filesize header will be set
-                if (newFS > fi.getFilesize() && objNo == fi.getLastObjectNumber()
+                if (newFS > fi.getFilesize() && objNo >= fi.getLastObjectNumber()
                     && objNo >= fi.getGlobalLastObjectNumber()) {
                     // Metadata meta = info.getMetadata();
                     // meta.putKnownSize(newFS);
@@ -566,32 +566,32 @@ public class StorageThread extends Stage {
                 fi.setFilesize(newFS);
                 
                 // if the written object has a larger ID than the largest
-                // globally-known object of this file, send 'globalMax' messages
+                // locally-known object of the file, send 'globalMax' messages
                 // to all other OSDs and update local globalMax
-                if (objNo > fi.getGlobalLastObjectNumber()) {
-                    // send UDP packets...
-                    final List<ServiceUUID> osds = xloc.getLocalReplica().getOSDs();
-                    final ServiceUUID localUUID = master.getConfig().getUUID();
-                    if (osds.size() > 1) {
-
-                        RPCHeader.RequestHeader rqHdr = RPCHeader.RequestHeader.newBuilder()
-                                .setAuthData(RPCAuthentication.authNone).setUserCreds(RPCAuthentication.userService)
-                                .setInterfaceId(OSDServiceConstants.INTERFACE_ID)
-                                .setProcId(OSDServiceConstants.PROC_ID_XTREEMFS_BROADCAST_GMAX).build();
-                        RPCHeader header = RPCHeader.newBuilder().setCallId(0).setMessageType(MessageType.RPC_REQUEST)
-                                .setRequestHeader(rqHdr).build();
-                        xtreemfs_broadcast_gmaxRequest gmaxRq = xtreemfs_broadcast_gmaxRequest.newBuilder()
-                                .setFileId(fileId).setTruncateEpoch(fi.getTruncateEpoch()).setLastObject(objNo)
-                                .setFileSize(newFS).build();
-
-                        for (ServiceUUID osd : osds) {
-                            if (!osd.equals(localUUID)) {
-                                master.sendUDPMessage(header, gmaxRq, osd.getAddress());
+                if (objNo > fi.getLastObjectNumber()) {
+                    if (objNo > fi.getGlobalLastObjectNumber()) {
+                        // send UDP packets...
+                        final List<ServiceUUID> osds = xloc.getLocalReplica().getOSDs();
+                        final ServiceUUID localUUID = master.getConfig().getUUID();
+                        if (osds.size() > 1) {
+                            
+                            RPCHeader.RequestHeader rqHdr = RPCHeader.RequestHeader.newBuilder().setAuthData(
+                                RPCAuthentication.authNone).setUserCreds(RPCAuthentication.userService)
+                                    .setInterfaceId(OSDServiceConstants.INTERFACE_ID).setProcId(
+                                        OSDServiceConstants.PROC_ID_XTREEMFS_BROADCAST_GMAX).build();
+                            RPCHeader header = RPCHeader.newBuilder().setCallId(0).setMessageType(
+                                MessageType.RPC_REQUEST).setRequestHeader(rqHdr).build();
+                            xtreemfs_broadcast_gmaxRequest gmaxRq = xtreemfs_broadcast_gmaxRequest
+                                    .newBuilder().setFileId(fileId).setTruncateEpoch(fi.getTruncateEpoch())
+                                    .setLastObject(objNo).build();
+                            
+                            for (ServiceUUID osd : osds) {
+                                if (!osd.equals(localUUID)) {
+                                    master.sendUDPMessage(header, gmaxRq, osd.getAddress());
+                                }
                             }
                         }
                     }
-
-                    fi.setGlobalLastObjectNumber(objNo);
                 }
             }
             if (Logging.isDebug())
