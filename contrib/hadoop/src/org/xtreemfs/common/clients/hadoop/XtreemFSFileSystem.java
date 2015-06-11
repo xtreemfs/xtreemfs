@@ -109,6 +109,8 @@ public class XtreemFSFileSystem extends FileSystem {
         int uriPort = uri.getPort();
         if (uriPort  == -1) {
             uriPort = STANDARD_DIR_PORT;
+            Logging.logMessage(Logging.LEVEL_INFO, this, "No DIR port was specified"
+                    + "using standard port " + STANDARD_DIR_PORT);
         }
 
         useReadBuffer = conf.getBoolean("xtreemfs.io.buffer.read", false);
