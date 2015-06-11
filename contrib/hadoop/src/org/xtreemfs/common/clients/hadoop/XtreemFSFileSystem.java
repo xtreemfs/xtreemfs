@@ -90,8 +90,8 @@ public class XtreemFSFileSystem extends FileSystem {
         }
 
         if (defaultURIString == null) {
-            throw new IOException("You have to specify a default volume name in"
-                    + " core-site.xml! (as the path part of fs.defaultFS (or deprecated fs.default.name)");
+            throw new IOException("You have to specify a default volume name in "
+                    + "core-site.xml! (as the path part of fs.defaultFS (or deprecated fs.default.name)");
         }
 
         URI defaultURI = URI.create(defaultURIString);
@@ -109,7 +109,7 @@ public class XtreemFSFileSystem extends FileSystem {
         int uriPort = uri.getPort();
         if (uriPort  == -1) {
             uriPort = STANDARD_DIR_PORT;
-            Logging.logMessage(Logging.LEVEL_INFO, this, "No DIR port was specified"
+            Logging.logMessage(Logging.LEVEL_INFO, this, "No DIR port was specified "
                     + "using standard port " + STANDARD_DIR_PORT);
         }
 
