@@ -67,6 +67,7 @@ public class XtreemFSFileSystem extends FileSystem {
     private int                 writeBufferSize;
     private Volume              defaultVolume;
     private Configuration       conf;
+    private static final int    STANDARD_DIR_PORT = 32638;
 
     @Override
     public void initialize(URI uri, Configuration conf) throws IOException {
@@ -89,8 +90,8 @@ public class XtreemFSFileSystem extends FileSystem {
         }
 
         if (defaultURIString == null) {
-            throw new IOException("You have to specify a default volume name in"
-                    + " core-site.xml! (as the path part of fs.defaultFS (or deprecated fs.default.name)");
+            throw new IOException("You have to specify a default volume name in "
+                    + "core-site.xml! (as the path part of fs.defaultFS (or deprecated fs.default.name)");
         }
 
         URI defaultURI = URI.create(defaultURIString);
@@ -103,6 +104,13 @@ public class XtreemFSFileSystem extends FileSystem {
                     + "deprecated; specify the default volume as path component of fs.defaultFS");
         } else {
             defaultVolumeName = defaultURI.getPath().split("/")[1];
+        }
+
+        int uriPort = uri.getPort();
+        if (uriPort  == -1) {
+            uriPort = STANDARD_DIR_PORT;
+            Logging.logMessage(Logging.LEVEL_INFO, this, "No DIR port was specified "
+                    + "using standard port " + STANDARD_DIR_PORT);
         }
 
         useReadBuffer = conf.getBoolean("xtreemfs.io.buffer.read", false);
@@ -167,7 +175,7 @@ public class XtreemFSFileSystem extends FileSystem {
         // Initialize XtreemFS Client with default Options.
         Options xtreemfsOptions = new Options();
         xtreemfsOptions.setMetadataCacheSize(0);
-        xtreemfsClient = ClientFactory.createClient(uri.getHost() + ":" + uri.getPort(), userCredentials, sslOptions,
+        xtreemfsClient = ClientFactory.createClient(uri.getHost() + ":" + uriPort, userCredentials, sslOptions,
                 xtreemfsOptions);
         try {
             // TODO: Fix stupid Exception in libxtreemfs
@@ -218,8 +226,11 @@ public class XtreemFSFileSystem extends FileSystem {
         if (! uriPath.isAbsolute()) {
             uriPath = new Path(uriPath, "/");
         }
-        this.fileSystemURI = URI.create(uri.getScheme() + "://" + uri.getAuthority()
-                + "/" + getVolumeFromAbsolutePath(uriPath).getVolumeName());
+
+        this.fileSystemURI = URI.create(uri.getScheme() + "://"
+                + uri.getHost() + ":"
+                + uriPort + "/"
+                + getVolumeFromAbsolutePath(uriPath).getVolumeName());
         workingDirectory = getHomeDirectory();
 
         if (Logging.isDebug()) {
