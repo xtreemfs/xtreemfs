@@ -67,6 +67,7 @@ public class XtreemFSFileSystem extends FileSystem {
     private int                 writeBufferSize;
     private Volume              defaultVolume;
     private Configuration       conf;
+    private static final int    STANDARD_DIR_PORT = 32638;
 
     @Override
     public void initialize(URI uri, Configuration conf) throws IOException {
@@ -218,8 +219,16 @@ public class XtreemFSFileSystem extends FileSystem {
         if (! uriPath.isAbsolute()) {
             uriPath = new Path(uriPath, "/");
         }
-        this.fileSystemURI = URI.create(uri.getScheme() + "://" + uri.getAuthority()
-                + "/" + getVolumeFromAbsolutePath(uriPath).getVolumeName());
+
+        int uriPort = uri.getPort();
+        if (uriPort  == -1) {
+            uriPort = STANDARD_DIR_PORT;
+        }
+
+        this.fileSystemURI = URI.create(uri.getScheme() + "://"
+                + uri.getHost() + ":"
+                + uriPort + "/"
+                + getVolumeFromAbsolutePath(uriPath).getVolumeName());
         workingDirectory = getHomeDirectory();
 
         if (Logging.isDebug()) {
