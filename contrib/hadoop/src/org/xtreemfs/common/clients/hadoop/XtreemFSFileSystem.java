@@ -106,6 +106,11 @@ public class XtreemFSFileSystem extends FileSystem {
             defaultVolumeName = defaultURI.getPath().split("/")[1];
         }
 
+        int uriPort = uri.getPort();
+        if (uriPort  == -1) {
+            uriPort = STANDARD_DIR_PORT;
+        }
+
         useReadBuffer = conf.getBoolean("xtreemfs.io.buffer.read", false);
         readBufferSize = conf.getInt("xtreemfs.io.buffer.size.read", 0);
         if (useReadBuffer && readBufferSize == 0) {
@@ -168,7 +173,7 @@ public class XtreemFSFileSystem extends FileSystem {
         // Initialize XtreemFS Client with default Options.
         Options xtreemfsOptions = new Options();
         xtreemfsOptions.setMetadataCacheSize(0);
-        xtreemfsClient = ClientFactory.createClient(uri.getHost() + ":" + uri.getPort(), userCredentials, sslOptions,
+        xtreemfsClient = ClientFactory.createClient(uri.getHost() + ":" + uriPort, userCredentials, sslOptions,
                 xtreemfsOptions);
         try {
             // TODO: Fix stupid Exception in libxtreemfs
@@ -218,11 +223,6 @@ public class XtreemFSFileSystem extends FileSystem {
         // if no path is given prepend /
         if (! uriPath.isAbsolute()) {
             uriPath = new Path(uriPath, "/");
-        }
-
-        int uriPort = uri.getPort();
-        if (uriPort  == -1) {
-            uriPort = STANDARD_DIR_PORT;
         }
 
         this.fileSystemURI = URI.create(uri.getScheme() + "://"
