@@ -347,14 +347,12 @@ void HashTreeAD::Init() {
 /**
  * Starts a read from start_leaf to end_leaf.
  *
+ * Init() needs to be called first.
+ *
  * @throws XtreemFSException    If stored hash tree is invalid.
  */
 void HashTreeAD::StartRead(int start_leaf, int end_leaf) {
   assert(start_leaf <= end_leaf);
-
-  if (concurrent_write_ != "client") {
-    Init();
-  }
 
   if (start_leaf > new_max_leaf_) {
     // read behind current max object
@@ -563,6 +561,34 @@ std::vector<unsigned char> HashTreeAD::GetLeaf(int leaf,
                                     leaf_value.begin() + leaf_adata_size_);
 }
 
+/**
+ * Returns the additional data of a leaf.
+ * StartRead must be called first.
+ * Returns empty vector in case of the unencrypted 0 of a sparse file are read.
+ *
+ * @param leaf    Leaf number.
+ */
+std::vector<unsigned char> HashTreeAD::GetLeaf(int leaf) {
+  assert(leaf <= new_max_leaf_);
+
+  std::vector<unsigned char> leaf_value;
+  if (boost::icl::contains(changed_leafs_numbers_, leaf)) {
+    leaf_value = changed_leafs_.at(Node(0, leaf));
+  } else if (leaf > min_max_leaf_) {
+    return std::vector<unsigned char>();
+  } else {
+    leaf_value = nodes_.at(Node(0, leaf));
+  }
+
+  // hash 0 indicates special case in which all data under node is 0
+  if (all_zero(leaf_value)) {
+    return std::vector<unsigned char>();
+  } else {
+    return std::vector<unsigned char>(leaf_value.begin(),
+                                      leaf_value.begin() + leaf_adata_size_);
+  }
+}
+
 int64_t HashTreeAD::file_size() {
   return file_size_;
 }
@@ -593,13 +619,28 @@ void HashTreeAD::SetLeaf(int leaf, std::vector<unsigned char> adata,
   changed_leafs_numbers_ += leaf;
 }
 
-void HashTreeAD::Flush(
-    const xtreemfs::pbrpc::UserCredentials& user_credentials) {
-  if (boost::icl::is_empty(changed_nodes_)
+void HashTreeAD::SetLeafAdata(int leaf, std::vector<unsigned char> adata) {
+  assert(leaf <= new_max_leaf_);
+  assert(adata.size() == leaf_adata_size_);
+
+  if (!boost::icl::contains(changed_leafs_numbers_, leaf)) {
+    changed_leafs_[Node(0, leaf)] = nodes_.at(Node(0, leaf));
+    changed_leafs_numbers_ += leaf;
+  }
+  std::copy(adata.begin(), adata.end(),
+            changed_leafs_.at(Node(0, leaf)).begin());
+}
+
+void HashTreeAD::Flush(const xtreemfs::pbrpc::UserCredentials& user_credentials,
+                       bool force_flush) {
+  if (!force_flush && boost::icl::is_empty(changed_nodes_)
       && boost::icl::is_empty(changed_leafs_numbers_)
       && old_max_leaf_ == new_max_leaf_ && min_max_leaf_ == old_max_leaf_) {
     // no write or truncate occurred
     return;
+  }
+  if (new_max_leaf_ == -2) {
+    new_max_leaf_ = -1;
   }
   if (min_max_leaf_ < old_max_leaf_) {
     // The minimum of the max node is smaller then the current one.

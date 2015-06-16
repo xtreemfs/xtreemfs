@@ -1222,6 +1222,14 @@ void FileHandleImplementation::SetObjectEncryptor(
   object_encryptor_ = object_encryptor;
 }
 
+void FileHandleImplementation::Reencrypt(
+    const xtreemfs::pbrpc::UserCredentials& user_credentials,
+    const std::vector<unsigned char> &new_file_enc_key_,
+    const xtreemfs::AsymKey &new_sign_key) {
+  ObjectEncryptor::ReencryptOperation(object_encryptor_.get(), user_credentials,
+                                      new_file_enc_key_, new_sign_key);
+}
+
 XCapManager::XCapManager(
     const xtreemfs::pbrpc::XCap& xcap,
     xtreemfs::pbrpc::MRCServiceClient* mrc_service_client,

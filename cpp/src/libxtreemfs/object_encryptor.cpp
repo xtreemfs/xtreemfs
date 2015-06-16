@@ -145,6 +145,10 @@ ObjectEncryptor::ReadOperation::ReadOperation(ObjectEncryptor* obj_enc,
     meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, false));
   }
 
+  if (obj_enc_->concurrent_write_ != "client") {
+    hash_tree_->Init();
+  }
+
   hash_tree_->StartRead(start_block, end_block);
 }
 
@@ -312,10 +316,76 @@ ObjectEncryptor::TruncateOperation::TruncateOperation(
   }
 }
 
+ObjectEncryptor::ReencryptOperation::ReencryptOperation(
+    ObjectEncryptor* obj_enc,
+    const xtreemfs::pbrpc::UserCredentials& user_credentials,
+    const std::vector<unsigned char> &new_file_enc_key_,
+    const xtreemfs::AsymKey &new_sign_key)
+    : Operation(obj_enc, true) {
+
+  if (obj_enc_->concurrent_write_ == "locks"
+      || obj_enc_->concurrent_write_ == "snapshots") {
+    // lock complete file +  meta file
+    file_lock_.reset(new FileLock(obj_enc_, 0, 0, true));
+  }
+
+  if (obj_enc->concurrent_write_ != "client") {
+    hash_tree_->Init();
+  }
+
+  // reencrypt only if file is on empty
+  if (hash_tree_->file_size() > 0) {
+    int end_block = (hash_tree_->file_size() - 1) / enc_block_size_;
+
+    // get all leafs
+    hash_tree_->StartRead(0, end_block);
+
+    // reencrypt all block keys in leafs with new encryption key
+    for (int i = 0; i <= end_block; i++) {
+      std::vector<unsigned char> enc_key = hash_tree_->GetLeaf(i);
+
+      if (enc_key.size() == 0) {
+        // block contains unencrypted 0 of a sparse file
+        continue;
+      }
+
+      // decrypt encrypted block key
+      std::vector<unsigned char> key(obj_enc_->key_cipher_.key_size());
+      std::vector<unsigned char> iv(
+          enc_key.begin(), enc_key.begin() + obj_enc_->key_cipher_.iv_size());
+      int key_len = obj_enc_->key_cipher_.decrypt(
+          boost::asio::buffer(enc_key.data() + obj_enc_->key_cipher_.iv_size(),
+                              enc_key.size() - obj_enc_->key_cipher_.iv_size()),
+          obj_enc_->file_enc_key_, iv, boost::asio::buffer(key));
+      assert(key_len == key.size());
+
+      // encrypt block key with new file key
+      std::vector<unsigned char> new_enc_key(key.size());
+      std::pair<std::vector<unsigned char>, int> encrypt_key_res = obj_enc_
+          ->key_cipher_.encrypt(boost::asio::buffer(key), new_file_enc_key_,
+                                boost::asio::buffer(new_enc_key));
+      assert(key.size() == encrypt_key_res.second);
+      // insert iv before key
+      new_enc_key.insert(new_enc_key.begin(), encrypt_key_res.first.begin(),
+                         encrypt_key_res.first.end());
+
+      hash_tree_->SetLeafAdata(i, new_enc_key);
+    }
+  }
+
+  // set new keys
+  // TODO(plieser): set the new keys for all open file handles
+  obj_enc_->file_enc_key_ = new_file_enc_key_;
+  obj_enc_->sign_algo_.set_key(new_sign_key);
+
+  // update tree
+  hash_tree_->Flush(user_credentials, true);
+}
+
 int ObjectEncryptor::Operation::EncryptEncBlock(
     int block_number, boost::asio::const_buffer plaintext,
     boost::asio::mutable_buffer ciphertext) {
-  // generate and encrypt key
+  // generate and encrypt block key
   std::vector<unsigned char> key;
   obj_enc_->key_cipher_.GenerateKey(&key);
   std::vector<unsigned char> enc_key(key.size());
@@ -323,6 +393,7 @@ int ObjectEncryptor::Operation::EncryptEncBlock(
       ->key_cipher_.encrypt(boost::asio::buffer(key), obj_enc_->file_enc_key_,
                             boost::asio::buffer(enc_key));
   assert(key.size() == encrypt_key_res.second);
+  // insert iv before key
   enc_key.insert(enc_key.begin(), encrypt_key_res.first.begin(),
                  encrypt_key_res.first.end());
 
@@ -350,11 +421,11 @@ int ObjectEncryptor::Operation::DecryptEncBlock(
     return boost::asio::buffer_size(ciphertext);
   }
 
-  // decrypt encrypted key
+  // decrypt encrypted block key
   std::vector<unsigned char> key(obj_enc_->key_cipher_.key_size());
   std::vector<unsigned char> iv(
       enc_key.begin(), enc_key.begin() + obj_enc_->key_cipher_.iv_size());
-  int key_len = obj_enc_->cipher_.decrypt(
+  int key_len = obj_enc_->key_cipher_.decrypt(
       boost::asio::buffer(enc_key.data() + obj_enc_->key_cipher_.iv_size(),
                           enc_key.size() - obj_enc_->key_cipher_.iv_size()),
       obj_enc_->file_enc_key_, iv, boost::asio::buffer(key));

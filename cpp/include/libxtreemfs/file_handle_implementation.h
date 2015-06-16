@@ -237,6 +237,10 @@ class FileHandleImplementation
 
   void SetObjectEncryptor(std::auto_ptr<ObjectEncryptor> object_encryptor);
 
+  void Reencrypt(const xtreemfs::pbrpc::UserCredentials& user_credentials,
+                 const std::vector<unsigned char> &new_file_enc_key_,
+                 const xtreemfs::AsymKey &new_sign_key);
+
  private:
   /** Implements callback for an async xtreemfs_update_file_size request. */
   virtual void CallFinished(

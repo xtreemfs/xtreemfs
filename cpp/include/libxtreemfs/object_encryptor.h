@@ -113,6 +113,14 @@ class ObjectEncryptor : private boost::noncopyable {
                       PartialObjectWriterFunction writer);
   };
 
+  class ReencryptOperation : public Operation {
+   public:
+    ReencryptOperation(ObjectEncryptor* obj_enc,
+                       const xtreemfs::pbrpc::UserCredentials& user_credentials,
+                       const std::vector<unsigned char> &new_file_enc_key_,
+                       const xtreemfs::AsymKey &new_sign_key);
+  };
+
   void Flush();
 
   static bool IsEncMetaFile(const std::string& path);

@@ -48,10 +48,15 @@ class HashTreeAD {
 
   std::vector<unsigned char> GetLeaf(int leaf, boost::asio::const_buffer data);
 
+  std::vector<unsigned char> GetLeaf(int leaf);
+
   void SetLeaf(int leaf, std::vector<unsigned char> adata,
                boost::asio::const_buffer data);
 
-  void Flush(const xtreemfs::pbrpc::UserCredentials& user_credentials);
+  void SetLeafAdata(int leaf, std::vector<unsigned char> adata);
+
+  void Flush(const xtreemfs::pbrpc::UserCredentials& user_credentials,
+             bool force_flush = false);
 
   int64_t file_version();
 

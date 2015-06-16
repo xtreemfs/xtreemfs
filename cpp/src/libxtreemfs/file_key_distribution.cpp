@@ -9,6 +9,7 @@
 
 #include <sys/stat.h>
 
+#include <boost/scope_exit.hpp>
 #include <string>
 #include <vector>
 
@@ -79,7 +80,7 @@ FileHandle* FileKeyDistribution::OpenMetaFile(
     } else {
       *lockbox = GetFileKeys(user_credentials, file_path, xcap.file_id());
     }
-  } catch (const std::exception& e) {
+  } catch (const std::exception& e) {  // NOLINT
     if (meta_file) {
       meta_file->Close();
     }
@@ -143,14 +144,26 @@ void FileKeyDistribution::ChangeAccessRights(
     new_meta_data.set_group_id(stat.group_id());
   }
 
-  // create new lockbox
-  // TODO(plieser): generate new keys and re-encrypt the file.
+  // create new read/write lockbox
   // TODO(plieser): delete old lockboxes
   FileLockbox new_lockbox_rw = GetLockbox(
       user_credentials, file_path,
       key_storage_.GetPubKey("user." + old_meta_data.user_id() + ".enc"),
       "user." + old_meta_data.user_id() + ".enc", true);
   new_lockbox_rw.set_salt(new_meta_data.salt());
+  // generate and set new file enc key
+  Cipher cipher(volume_->volume_options().encryption_cipher);
+  std::vector<unsigned char> enc_key;
+  cipher.GenerateKey(&enc_key);
+  new_lockbox_rw.set_enc_key(enc_key.data(), enc_key.size());
+  // generate and set new file sign key
+  AsymKey file_sign_key("RSA");
+  std::vector<unsigned char> encoded_file_sign_key = file_sign_key
+      .GetDEREncodedKey();
+  new_lockbox_rw.set_sign_key(encoded_file_sign_key.data(),
+                              encoded_file_sign_key.size());
+
+  // create new read only lockbox
   FileLockbox new_lockbox_r(new_lockbox_rw);
   std::vector<unsigned char> encoded_pub_file_sign_key = AsymKey(
       std::vector<unsigned char>(new_lockbox_rw.sign_key().begin(),
@@ -158,6 +171,20 @@ void FileKeyDistribution::ChangeAccessRights(
       .GetDEREncodedPubKey();
   new_lockbox_r.set_sign_key(encoded_pub_file_sign_key.data(),
                              encoded_pub_file_sign_key.size());
+
+  // reencrypt file
+  {
+    FileHandleImplementation* file =
+        reinterpret_cast<FileHandleImplementation*>(volume_->OpenFile(
+            user_credentials, file_path, pbrpc::SYSTEM_V_FCNTL_H_O_RDWR));
+
+    BOOST_SCOPE_EXIT((&file)) {
+        file->Close();
+      }
+    BOOST_SCOPE_EXIT_END
+
+    file->Reencrypt(user_credentials, enc_key, file_sign_key);
+  }
 
   SetMetadataAndLockbox(user_credentials, file_path, new_meta_data,
                         new_lockbox_rw, new_lockbox_r);
