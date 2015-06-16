@@ -9,8 +9,9 @@
 package org.xtreemfs.common.xloc;
 
 import java.util.Iterator;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
+
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 
 
@@ -58,6 +59,15 @@ public abstract class StripingPolicyImpl {
 
     public StripingPolicy getPolicy() {
         return this.policy;
+    }
+
+    /**
+     * returns the relative position of the current OSD regarding the ordering of the stripped object
+     * 
+     * @return the relative OSD position
+     */
+    public int getRelativeOSDPosition() {
+        return relOsdPosition;
     }
 
     /**
