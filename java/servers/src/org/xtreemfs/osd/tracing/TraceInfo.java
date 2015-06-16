@@ -29,6 +29,7 @@ public class TraceInfo {
     private long timeStamp;
     private long offset;
     private long length;
+    private String policyConfig;
 
     public TraceInfo(OSDRequestDispatcher master, OSDRequest req) {
         operation = req.getOperation().getClass().toString();
@@ -46,6 +47,7 @@ public class TraceInfo {
         client = req.getCapability().getClientIdentity();
         osd = master.getConfig().getUUID().toString();
         timeStamp = TimeSync.getGlobalTime();
+        policyConfig = req.getCapability().getTraceConfig().getTracingPolicyConfig();
 
         if(req.getOperation() instanceof WriteOperation) {
             OSD.writeRequest args = (OSD.writeRequest) req.getRequestArgs();
@@ -196,5 +198,13 @@ public class TraceInfo {
     public String toString() {
         return operation + "," + fileId + "," + reqId + "," + client + "," + osd + "," + timeStamp + "," + offset +
                 ","  + length;
+    }
+
+    public String getPolicyConfig() {
+        return policyConfig;
+    }
+
+    public void setPolicyConfig(String policyConfig) {
+        this.policyConfig = policyConfig;
     }
 }

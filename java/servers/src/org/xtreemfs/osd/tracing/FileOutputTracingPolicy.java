@@ -22,7 +22,7 @@ public class FileOutputTracingPolicy implements TracingPolicy {
 
     @Override
     public void traceRequest(OSDRequest req, TraceInfo traceInfo) {
-        final String policyConfig = req.getCapability().getTraceConfig().getTracingPolicyConfig();
+        final String policyConfig = traceInfo.getPolicyConfig();
         if(policyConfig!= null && !policyConfig.equals("")) {
             File f = new File(policyConfig);
             try {
