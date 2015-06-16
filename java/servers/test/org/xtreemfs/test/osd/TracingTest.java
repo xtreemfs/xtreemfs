@@ -140,7 +140,7 @@ public class TracingTest {
 
                         try {
                             TraceInfo traceInfo = new TraceInfo(line);
-                            assertTrue(traceInfo.getOperation().equals(org.xtreemfs.osd.operations.WriteOperation.class.toString()));
+                            assertTrue(traceInfo.getOperation().equals("w"));
                             assertTrue(traceInfo.getLength() > 0);
                         } catch (IllegalArgumentException ex) {
                             fail();
