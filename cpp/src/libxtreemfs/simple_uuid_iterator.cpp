@@ -21,6 +21,10 @@ SimpleUUIDIterator::SimpleUUIDIterator(const xtreemfs::pbrpc::XLocSet& xlocs) {
   ClearAndGetOSDUUIDsFromXlocSet(xlocs);
 }
 
+SimpleUUIDIterator::SimpleUUIDIterator(const ServiceAddresses& service_addresses) {
+  AddUUIDs(service_addresses);
+}
+
 SimpleUUIDIterator::~SimpleUUIDIterator() {
   for (list<UUIDItem*>::iterator it = uuids_.begin();
        it != uuids_.end();
@@ -37,6 +41,22 @@ void SimpleUUIDIterator::AddUUID(const std::string& uuid) {
 
   // If its the first element, set the current UUID to the first element.
   if (uuids_.size() == 1) {
+    current_uuid_ = uuids_.begin();
+  }
+}
+
+void SimpleUUIDIterator::AddUUIDs(const ServiceAddresses& service_addresses) {
+  boost::mutex::scoped_lock lock(mutex_);
+
+  ServiceAddresses::Addresses as_list = service_addresses.GetAddresses();
+  for (ServiceAddresses::Addresses::const_iterator iter = as_list.begin();
+       iter != as_list.end(); ++iter) {
+    UUIDItem* entry = new UUIDItem(*iter);
+    uuids_.push_back(entry);
+  }
+
+  // If the UUIDIterator has been empty before, set the first element as the current UUID.
+  if (uuids_.size() == service_addresses.size()) {
     current_uuid_ = uuids_.begin();
   }
 }

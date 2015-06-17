@@ -49,7 +49,7 @@ class ClientTestFastLingerTimeoutConnectTimeout_LingerTests_Test;
 class DIRUUIDResolver : public UUIDResolver {
  public:
   DIRUUIDResolver(
-      const ServiceAddresses& dir_service_addresses,
+      SimpleUUIDIterator& dir_service_addresses,
       const pbrpc::UserCredentials& user_credentials,
       const Options& options);
 
@@ -65,7 +65,7 @@ class DIRUUIDResolver : public UUIDResolver {
                                    SimpleUUIDIterator* uuid_iterator);
 
  private:
-  SimpleUUIDIterator dir_service_addresses_;
+  SimpleUUIDIterator& dir_service_addresses_;
 
   /** The auth_type of this object will always be set to AUTH_NONE. */
   // TODO(mberlin): change this when the DIR service supports real auth.
@@ -74,7 +74,7 @@ class DIRUUIDResolver : public UUIDResolver {
   /** These credentials will be used for messages to the DIR service. */
   const pbrpc::UserCredentials dir_service_user_credentials_;
 
-  /** A DIRServiceClient is a wrapper for an RPC Client. */
+  /** A DIRServiceClient is a wrapper for a RPC Client. */
   boost::scoped_ptr<pbrpc::DIRServiceClient> dir_service_client_;
 
   /** Caches service UUIDs -> (address, port, TTL). */
@@ -146,6 +146,15 @@ class ClientImplementation : public Client {
    *  check the authentication data (except Create, Delete, ListVolume(s)). */
   xtreemfs::pbrpc::Auth auth_bogus_;
 
+  /** The PBRPC protocol requires an Auth & UserCredentials object in every
+   *  request. However there are many operations which do not check the content
+   *  of this operation and therefore we use bogus objects then.
+   *  user_credentials_bogus will only contain a user "xtreemfs".
+   *
+   *  @remark Cannot be set to const because it's modified inside the
+   *          constructor VolumeImplementation(). */
+  xtreemfs::pbrpc::UserCredentials user_credentials_bogus_;
+
   /** Options class which contains the log_level string and logfile path. */
   const xtreemfs::Options& options_;
 
@@ -159,6 +168,11 @@ class ClientImplementation : public Client {
   boost::scoped_ptr<rpc::Client> network_client_;
   boost::scoped_ptr<boost::thread> network_client_thread_;
 
+  /** A DIRServiceClient is a wrapper for a RPC Client. */
+  boost::scoped_ptr<pbrpc::DIRServiceClient> dir_service_client_;
+
+
+  SimpleUUIDIterator dir_service_addresses_;
   DIRUUIDResolver uuid_resolver_;
 
   /** Random, non-persistent UUID to distinguish locks of different clients. */

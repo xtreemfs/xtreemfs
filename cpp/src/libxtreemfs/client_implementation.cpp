@@ -35,22 +35,13 @@ using namespace xtreemfs::util;
 
 namespace xtreemfs {
 
-static void AddAddresses(const ServiceAddresses& service_addresses,
-                         SimpleUUIDIterator* uuid_iterator) {
-  ServiceAddresses::Addresses as_list = service_addresses.GetAddresses();
-  for (ServiceAddresses::Addresses::const_iterator iter = as_list.begin();
-       iter != as_list.end(); ++iter) {
-    uuid_iterator->AddUUID(*iter);
-  }
-}
-
 DIRUUIDResolver::DIRUUIDResolver(
-    const ServiceAddresses& dir_addresses,
+    SimpleUUIDIterator& dir_service_addresses,
     const pbrpc::UserCredentials& user_credentials,
     const Options& options)
-    : dir_service_user_credentials_(user_credentials),
+    : dir_service_addresses_(dir_service_addresses),
+      dir_service_user_credentials_(user_credentials),
       options_(options) {
-  AddAddresses(dir_addresses, &dir_service_addresses_);
   // Currently no AUTH is needed to access the DIR.
   dir_service_auth_.set_auth_type(AUTH_NONE);
 }
@@ -276,12 +267,15 @@ ClientImplementation::ClientImplementation(
     : was_shutdown_(false),
       options_(options),
       dir_service_ssl_options_(ssl_options),
-      uuid_resolver_(dir_service_addresses,
+      dir_service_addresses_(dir_service_addresses),
+      uuid_resolver_(dir_service_addresses_,
                      user_credentials,
                      options) {
 
   // Set bogus auth object.
   auth_bogus_.set_auth_type(AUTH_NONE);
+  // Set username "xtreemfs" as it does not get checked at server side.
+  user_credentials_bogus_.set_username("xtreemfs");
 
   initialize_logger(options.log_level_string,
                     options.log_file_path,
@@ -341,6 +335,7 @@ void ClientImplementation::Start() {
   GenerateVersion4UUID(&client_uuid_);
   assert(!client_uuid_.empty());
 
+  dir_service_client_.reset(new DIRServiceClient(network_client_.get()));
   uuid_resolver_.Initialize(network_client_.get());
 
   // Start vivaldi thread if configured
@@ -462,8 +457,7 @@ void ClientImplementation::CreateVolume(
         ->set_value((*it)->value());
   }
 
-  SimpleUUIDIterator temp_uuid_iterator_with_addresses;
-  AddAddresses(mrc_address, &temp_uuid_iterator_with_addresses);
+  SimpleUUIDIterator temp_uuid_iterator_with_addresses(mrc_address);
 
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
@@ -491,8 +485,7 @@ void ClientImplementation::DeleteVolume(
   xtreemfs_rmvolRequest rmvol_request;
   rmvol_request.set_volume_name(volume_name);
 
-  SimpleUUIDIterator temp_uuid_iterator_with_addresses;
-  AddAddresses(mrc_address, &temp_uuid_iterator_with_addresses);
+  SimpleUUIDIterator temp_uuid_iterator_with_addresses(mrc_address);
 
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
@@ -519,8 +512,7 @@ xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(
   UserCredentials user_credentials;
   user_credentials.set_username("xtreemfs");
 
-  SimpleUUIDIterator mrc_service_addresses_;
-  AddAddresses(mrc_addresses, &mrc_service_addresses_);
+  SimpleUUIDIterator mrc_service_addresses_(mrc_addresses);
 
   // Retrieve the list of volumes from the MRC.
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
