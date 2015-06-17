@@ -27,52 +27,107 @@ public final class NativeHelper {
 
     /**
      * Load the library with the platform independent name. (f.ex. jni-xtreemfs instead of libjni-xtreemfs.so) <br>
-     * If the library does not exists in the java.library.path, but the current class is running within a xtreemfs
-     * source directory, the cpp/build directory is searched as well.
+     * Locally built libraries from the source tree are preferred. On Linux feasible directories within the FHS are
+     * searched. Finally the common library path is searched.
      * 
      * @param name
      */
     public static void loadLibrary(String name) {
-        try {
-            // Try to load the library from the java.library.path
-            System.loadLibrary(name);
+        String libname = System.mapLibraryName(name);
 
-        } catch (UnsatisfiedLinkError error) {
-            // Try to load the library directly from the build directory
-
-            // Get the URL of the current class
-            URL classURL = NativeHelper.class.getResource(NativeHelper.class.getSimpleName() + ".class");
-
-            // Abort if the class isn't a real file (and not within f.ex. a jar)
-            if (classURL == null) {
-                throw error;
-            }
-
-            String path;
-            if ("file".equalsIgnoreCase(classURL.getProtocol())) {
-                path = classURL.getPath();
-            } else if ("jar".equalsIgnoreCase(classURL.getProtocol()) && classURL.getPath().startsWith("file:")) {
-                // Strip the "file:" prefix and split at the "!"
-                path = classURL.getPath().substring(5).split("!")[0];
-            } else {
-                throw error;
-            }
-
-            // Abort if the class file isn't residing within the java build directory,
-            // otherwise extract the prefix
-            path = path.replace(File.separator, "/");
-            int pos = path.lastIndexOf("/xtreemfs/java/servers/");
-            if (pos < 0) {
-                throw error;
-            }
-            path = path.substring(0, pos);
-
-            // Get the platform-specific library name and try to load it from the build directory.
-            path = path + "/xtreemfs/cpp/build/" + System.mapLibraryName(name);
-
-            path = path.replace("/", File.separator);
-            System.load(path);
+        // Prefer recently build libs from the source tree.
+        if (tryLoadLibraryFromBuildDir(libname)) {
+            return;
         }
+
+        // Try to find the correct lib directory within the Filesystem Hierarchy Standard
+        String os = System.getProperty("os.name");
+        if (os.equals("Linux")) {
+            if (tryLoadLibraryFromFHS(libname)) {
+                return;
+            }
+        }
+
+        // Finally try to load the lib from the common library path.
+        System.loadLibrary(name);
+    }
+
+    /**
+     * Try to load the library from the build directory.
+     * 
+     * @param filename
+     * @return true if the library has been loaded
+     */
+    private static boolean tryLoadLibraryFromBuildDir(String filename) {
+        // Try to load the library directly from the build directory
+        // Get the URL of the current class
+        URL classURL = NativeHelper.class.getResource(NativeHelper.class.getSimpleName() + ".class");
+        // Abort if the class isn't a real file (and not within f.ex. a jar)
+        if (classURL == null) {
+            return false;
+        }
+
+        String path;
+        if ("file".equalsIgnoreCase(classURL.getProtocol())) {
+            path = classURL.getPath();
+        } else if ("jar".equalsIgnoreCase(classURL.getProtocol()) && classURL.getPath().startsWith("file:")) {
+            // Strip the "file:" prefix and split at the "!"
+            path = classURL.getPath().substring(5).split("!")[0];
+        } else {
+            return false;
+        }
+
+        // Abort if the class file isn't residing within the java build directory,
+        // otherwise extract the prefix
+        path = path.replace(File.separator, "/");
+        int pos = path.lastIndexOf("/xtreemfs/java/servers/");
+        if (pos < 0) {
+            return false;
+        }
+        path = path.substring(0, pos);
+
+        // Try to load the library from the build directory
+        path = path + "/xtreemfs/cpp/build/" + filename;
+        path = path.replace("/", File.separator);
+
+        return tryLoadLibrary(path);
+    }
+
+    /**
+     * Try to load the library from the lib directories defined in the Filesystem Hierarchy Standard.
+     * 
+     * @param filename
+     * @return true if the library has been loaded
+     */
+    private static boolean tryLoadLibraryFromFHS(String filename) {
+        if (tryLoadLibrary("/usr/lib64/xtreemfs/" + filename)) {
+            return true;
+        }
+
+        if (tryLoadLibrary("/usr/lib/xtreemfs/" + filename)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Try to load the library from the path.
+     * 
+     * @param filepath
+     *            Full absolute path to the library.
+     * @return true If the library has been loaded
+     */
+    static boolean tryLoadLibrary(String filepath) {
+        try {
+            System.load(filepath);
+        } catch (Exception e) {
+            return false;
+        } catch (UnsatisfiedLinkError e) {
+            return false;
+        }
+
+        return true;
     }
 
     public static ClientProxy createClientProxy(String[] dirServiceAddressesArray, UserCredentials userCredentials,

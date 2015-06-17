@@ -34,9 +34,9 @@ XTREEMFS_CONFIG_PARENT_DIR=$(DESTDIR)/etc/xos
 XTREEMFS_CONFIG_DIR=$(XTREEMFS_CONFIG_PARENT_DIR)/xtreemfs
 XTREEMFS_INIT_DIR=$(DESTDIR)/etc/init.d
 XTREEMFS_SHARE_DIR=$(DESTDIR)/usr/share/xtreemfs
+XTREEMFS_LIB_DIR=$(DESTDIR)/usr/lib/xtreemfs
 BIN_DIR=$(DESTDIR)/usr/bin
 SBIN_DIR=$(DESTDIR)/sbin
-LIB_DIR=$(DESTDIR)/usr/lib
 MAN_DIR=$(DESTDIR)/usr/share/man/man1
 DOC_DIR_SERVER=$(DESTDIR)/usr/share/doc/xtreemfs-server
 DOC_DIR_CLIENT=$(DESTDIR)/usr/share/doc/xtreemfs-client
@@ -153,9 +153,9 @@ install-tools:
 install-libs:
 # This could also install a shared libxtreemfs 
 # but for now it only installs the libjni-xtreemfs if it exists.
-	@mkdir -p $(LIB_DIR)
+	@mkdir -p $(XTREEMFS_LIB_DIR) 
 	@if [ -f $(XTREEMFS_CLIENT_BUILD_DIR)/$(XTREEMFS_JNI_LIBRARY) ]; then \
-		cp $(XTREEMFS_CLIENT_BUILD_DIR)/$(XTREEMFS_JNI_LIBRARY) $(LIB_DIR)/$(XTREEMFS_JNI_LIBRARY); \
+		cp $(XTREEMFS_CLIENT_BUILD_DIR)/$(XTREEMFS_JNI_LIBRARY) $(XTREEMFS_LIB_DIR)/$(XTREEMFS_JNI_LIBRARY); \
 	fi
 
 uninstall:
@@ -170,7 +170,8 @@ uninstall:
 	@rm -f $(SBIN_DIR)/mount.xtreemfs
 	@rm -f $(SBIN_DIR)/umount.xtreemfs
 
-	@rm -f $(LIB_DIR)/$(XTREEMFS_JNI_LIBRARY)
+	@rm -f $(XTREEMFS_LIB_DIR)/$(XTREEMFS_JNI_LIBRARY)
+	@rmdir $(XTREEMFS_LIB_DIR)
 
 	@rm -f $(XTREEMFS_JAR_DIR)/XtreemFS.jar
 	@rm -f $(XTREEMFS_JAR_DIR)/Foundation.jar
