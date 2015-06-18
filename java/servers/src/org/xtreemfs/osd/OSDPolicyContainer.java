@@ -13,6 +13,7 @@ import org.xtreemfs.common.config.PolicyContainer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.tracing.FileOutputTracingPolicy;
+import org.xtreemfs.osd.tracing.RabbitMQOutputTracingPolicy;
 import org.xtreemfs.osd.tracing.SocketOutputTracingPolicy;
 import org.xtreemfs.osd.tracing.TracingPolicy;
 
@@ -25,7 +26,7 @@ public class OSDPolicyContainer extends PolicyContainer {
     private static final String[] POLICY_INTERFACES = { TracingPolicy.class.getName() };
 
     private static final String[] BUILT_IN_POLICIES = { FileOutputTracingPolicy.class.getName(),
-            SocketOutputTracingPolicy.class.getName()};
+            SocketOutputTracingPolicy.class.getName(), RabbitMQOutputTracingPolicy.class.getName() };
 
     private final OSDConfig config;
 
