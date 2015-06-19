@@ -32,7 +32,6 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 
 /**
- *
  * @author bjko
  */
 public class FleaseProposer {
@@ -46,16 +45,11 @@ public class FleaseProposer {
     final FleaseCommunicationInterface comm;
 
     //private long lastBallotNo;
-
+    private final FleaseStatusListener leaseListener;
+    private final LearnEventListener evListener;
+    private final FleaseLocalQueueInterface localQueue;
+    private final MasterEpochHandlerInterface meHandler;
     private FleaseViewChangeListenerInterface viewListener;
-
-    private final FleaseStatusListener          leaseListener;
-
-    private final LearnEventListener            evListener;
-
-    private final FleaseLocalQueueInterface     localQueue;
-
-    private final MasterEpochHandlerInterface   meHandler;
 
     public FleaseProposer(
             FleaseConfig config,
@@ -69,7 +63,7 @@ public class FleaseProposer {
         this.config = config;
         this.localAcceptor = localAcceptor;
         this.comm = comm;
-        assert(leaseListener != null);
+        assert (leaseListener != null);
         this.leaseListener = leaseListener;
         this.evListener = evListener;
         this.localQueue = localQueue;
@@ -83,7 +77,7 @@ public class FleaseProposer {
 
     public void setViewId(ASCIIString cellId, int viewId) {
         FleaseProposerCell cell = cells.get(cellId);
-        
+
         // Set the view only if the cell is already open. New cells have to be opened with a viewId @see FleaseStage.openCell()
         if (cell != null) {
             cell.setViewId(viewId);
@@ -171,7 +165,7 @@ public class FleaseProposer {
             //can safely start the proposal
             cell.setNumFailures(0);
             cell.setHandoverTo(null);
-            startPrepare(cell,config.getIdentity());
+            startPrepare(cell, config.getIdentity());
         } else {
             cell.addAction(ActionName.PROPOSER_ACQUIRE_LEASE, "not idle");
             if (Logging.isDebug()) {
@@ -240,7 +234,7 @@ public class FleaseProposer {
         //we can safely set the instance no +1
         //ONLY ALLOWED DURING RENEW!
 
-        startPrepare(cell,config.getIdentity());
+        startPrepare(cell, config.getIdentity());
     }
 
     public void handoverLease(ASCIIString cellId, ASCIIString newOwner) throws FleaseException {
@@ -273,9 +267,9 @@ public class FleaseProposer {
         if (localInfo.getLeaseTimeout() - config.getDMax()
                 < TimeSync.getGlobalTime() + config.getRoundTimeout() * 2) {
             throw new FleaseException("cannot handover lease, not enough time left for renew! "
-                + (localInfo.getLeaseTimeout() - config.getDMax())
-                + " < "
-                + (TimeSync.getGlobalTime() + config.getRoundTimeout() * 2));
+                    + (localInfo.getLeaseTimeout() - config.getDMax())
+                    + " < "
+                    + (TimeSync.getGlobalTime() + config.getRoundTimeout() * 2));
         }
         //we can safely set the instance no +1
         //ONLY ALLOWED DURING RENEW!
@@ -287,7 +281,7 @@ public class FleaseProposer {
                     null,
                     0,
                     FleaseMessage.IGNORE_MASTER_EPOCH);
-            startPrepare(cell,newOwner);
+            startPrepare(cell, newOwner);
         }
     }
 
@@ -305,7 +299,7 @@ public class FleaseProposer {
             }
             return;
         }
-        
+
         try {
             //reject anything if viewID < own viewID or if own viewId is -1
             //ignore if viewId > own viewID but notify listener
@@ -321,7 +315,7 @@ public class FleaseProposer {
                 }
                 return;
             }
-    
+
             if (myViewId > msg.getViewId()) {
                 //drop
                 if (Logging.isDebug() && config.isDebugPrintMessages()) {
@@ -336,7 +330,7 @@ public class FleaseProposer {
                 }
                 return;
             }
-    
+
             //events
             switch (cell.getCellState()) {
                 case IDLE: {
@@ -349,7 +343,7 @@ public class FleaseProposer {
                                     "P restart event: %s",
                                     msg.toString());
                         }
-                        startPrepare(cell,config.getIdentity());
+                        startPrepare(cell, config.getIdentity());
                     } else if (msg.getMsgType() == FleaseMessage.MsgType.EVENT_RENEW) {
                         cell.addAction(ActionName.PROPOSER_RENEW_EVENT);
                         if (Logging.isDebug()) {
@@ -485,14 +479,14 @@ public class FleaseProposer {
                 //cancel(cell, ex, 0);
             }
         }
-        
+
         FleaseMessage timer = new FleaseMessage(MsgType.EVENT_TIMEOUT_PREPARE);
         timer.setCellId(cell.getCellId());
         timer.setProposalNo(cell.getBallotNo());
         timer.validateMessage();
         comm.requestTimer(timer, TimeSync.getLocalSystemTime() + config.getRoundTimeout());
         cell.addAction(ActionName.PROPOSER_SCHEDULED_TIMEOUT);
-        
+
         assertState(cell.getMessageSent() != null, cell);
         assertState(cell.getMessageSent().getProposalNo() != null, cell);
         cell.setCellState(State.WAIT_FOR_PREP_ACK);
@@ -500,8 +494,8 @@ public class FleaseProposer {
         final FleaseMessage localResponse = localAcceptor.handlePREPARE(msg);
         if (localResponse != null) {
             if (meHandler != null
-                && cell.isRequestMasteEpoch()
-                && localResponse.getMsgType() == FleaseMessage.MsgType.MSG_PREPARE_ACK) {
+                    && cell.isRequestMasteEpoch()
+                    && localResponse.getMsgType() == FleaseMessage.MsgType.MSG_PREPARE_ACK) {
                 meHandler.sendMasterEpoch(localResponse,
                         new MasterEpochHandlerInterface.Continuation() {
                             @Override
@@ -520,7 +514,7 @@ public class FleaseProposer {
         cell.addAction(ActionName.PROPOSER_PREPARE_PROCESS_RESPONSE);
         assertState(cell.getCellState() == State.WAIT_FOR_PREP_ACK, cell);
         assertState(cell.getMessageSent() != null, cell);
-        
+
         if (msg.getMsgType() != MsgType.MSG_PREPARE_ACK
                 && msg.getMsgType() != MsgType.MSG_PREPARE_NACK
                 && msg.getMsgType() != MsgType.MSG_WRONG_VIEW
@@ -552,10 +546,10 @@ public class FleaseProposer {
         if (msg.getSendTimestamp() > currentTime + config.getDMax()) {
             cell.addAction(ActionName.PROPOSER_RECEIVED_OUT_OF_SYNC_MSG,
                     msg.getSendTimestamp()
-                    + " > "
-                    + currentTime
-                    + "+"
-                    + config.getDMax());
+                            + " > "
+                            + currentTime
+                            + "+"
+                            + config.getDMax());
             //drop outdated message
             Logging.logMessage(Logging.LEVEL_WARN,
                     Logging.Category.replication,
@@ -568,7 +562,7 @@ public class FleaseProposer {
                     msg.toString());
             cell.addAction(ActionName.PROPOSER_PREPARE_FAILED);
             cancel(cell,
-                   new FleaseException("System is not in sync (clock sync drift exceeded)!"), 0);
+                    new FleaseException("System is not in sync (clock sync drift exceeded)!"), 0);
             return;
         }
 
@@ -619,8 +613,8 @@ public class FleaseProposer {
                         //check for previously accepted proposals
                         if (!resp.getPrevProposalNo().isEmpty()) {
                             if (prevAccepted == null
-                                || resp.getPrevProposalNo().after(
-                                        prevAccepted.getPrevProposalNo())) {
+                                    || resp.getPrevProposalNo().after(
+                                    prevAccepted.getPrevProposalNo())) {
                                 prevAccepted = resp;
                             }
                         }
@@ -684,11 +678,11 @@ public class FleaseProposer {
                         //renew!
                         assertState(
                                 cell.getMessageSent().getLeaseHolder().equals(config.getIdentity())
-                                || cell.isHandoverInProgress(),
+                                        || cell.isHandoverInProgress(),
                                 cell);
                         assertState(
                                 cell.getMessageSent().getLeaseTimeout() >=
-                                    prevAccepted.getLeaseTimeout(),
+                                        prevAccepted.getLeaseTimeout(),
                                 cell);
                         cell.addAction(ActionName.PROPOSER_PREPARE_IMPLICIT_RENEW);
                         if (Logging.isDebug() && config.isDebugPrintMessages()) {
@@ -696,7 +690,7 @@ public class FleaseProposer {
                                     Logging.Category.replication,
                                     this,
                                     "P prepare ACK processing with my proposal (renew): "
-                                        + "prev=%s/%d %s",
+                                            + "prev=%s/%d %s",
                                     prevAccepted.getLeaseHolder(),
                                     prevAccepted.getLeaseTimeout(),
                                     prevAccepted.getPrevProposalNo());
@@ -767,8 +761,8 @@ public class FleaseProposer {
                         }
                     }
                 }
-                assert(maxMasterEpoch > -1) : "no valid master epoch sent: "+maxMasterEpoch;
-                cell.setMasterEpochNumber(maxMasterEpoch+1);
+                assert (maxMasterEpoch > -1) : "no valid master epoch sent: " + maxMasterEpoch;
+                cell.setMasterEpochNumber(maxMasterEpoch + 1);
                 cell.addAction(ActionName.PROPOSER_PREPARE_MAX_MASTER_EPOCH,
                         Long.toString(maxMasterEpoch));
                 if (Logging.isDebug() && config.isDebugPrintMessages()) {
@@ -776,7 +770,7 @@ public class FleaseProposer {
                             Logging.Category.replication,
                             this,
                             "P using masterEpoch %s",
-                            maxMasterEpoch+1);
+                            maxMasterEpoch + 1);
                 }
             }
 
@@ -835,8 +829,8 @@ public class FleaseProposer {
         final FleaseMessage localResponse = localAcceptor.handleACCEPT(msg);
         if (localResponse != null) {
             if (meHandler != null
-                && cell.isRequestMasteEpoch()
-                && localResponse.getMsgType() == FleaseMessage.MsgType.MSG_ACCEPT_ACK) {
+                    && cell.isRequestMasteEpoch()
+                    && localResponse.getMsgType() == FleaseMessage.MsgType.MSG_ACCEPT_ACK) {
                 meHandler.storeMasterEpoch(localResponse,
                         new MasterEpochHandlerInterface.Continuation() {
                             @Override
@@ -872,10 +866,10 @@ public class FleaseProposer {
             //drop outdated message
             cell.addAction(ActionName.PROPOSER_RECEIVED_OUT_OF_SYNC_MSG,
                     msg.getSendTimestamp()
-                    + " > "
-                    + TimeSync.getGlobalTime()
-                    + "+"
-                    + config.getDMax());
+                            + " > "
+                            + TimeSync.getGlobalTime()
+                            + "+"
+                            + config.getDMax());
             Logging.logMessage(Logging.LEVEL_WARN,
                     Logging.Category.replication,
                     this,
@@ -888,7 +882,7 @@ public class FleaseProposer {
                     new FleaseException("System is not in sync (clock sync drift exceeded)!"), 0);
             return;
         }
-        
+
         if (msg.getMsgType() != MsgType.MSG_ACCEPT_ACK
                 && msg.getMsgType() != MsgType.MSG_ACCEPT_NACK
                 && msg.getMsgType() != MsgType.MSG_WRONG_VIEW
@@ -972,7 +966,7 @@ public class FleaseProposer {
                 //request a timer event for restart
                 cancel(cell,
                         new FleaseException("proposal was overruled by remote proposal "
-                                +"during ACCEPT"),
+                                + "during ACCEPT"),
                         0);
                 return;
             }
@@ -1016,14 +1010,14 @@ public class FleaseProposer {
                     cell.getBallotNo().getProposalNo() + 1,
                     cell.getBallotNo().getSenderId()));
 
-            startPrepare(cell,cell.getMessageSent().getLeaseHolder());
+            startPrepare(cell, cell.getMessageSent().getLeaseHolder());
 
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.replication, this,
                         "P finished round, lease has timed out, restart prepare: %s",
                         msg.toString());
             }
-            
+
         } else if (msg.hasNotTimedOut(config, TimeSync.getGlobalTime())) {
             //lease is valid, do learn step
 
@@ -1064,7 +1058,7 @@ public class FleaseProposer {
             localAcceptor.handleLEARN(msg);
 
             if (!FleaseStage.DISABLE_RENEW_FOR_TESTING
-                && cell.getMessageSent().getLeaseHolder().equals(config.getIdentity())) {
+                    && cell.getMessageSent().getLeaseHolder().equals(config.getIdentity())) {
                 //renew after half of the time
                 //FIXE: could be relaxed
                 final long renewTime =
@@ -1128,7 +1122,7 @@ public class FleaseProposer {
     }
 
     public long globalToLocalTime(long globalTime) {
-        return globalTime-TimeSync.getInstance().getDrift();
+        return globalTime - TimeSync.getInstance().getDrift();
     }
 
     public void cancel(FleaseProposerCell cell, Throwable reason, long retryAfter_ms) {
@@ -1189,7 +1183,7 @@ public class FleaseProposer {
                     Logging.Category.replication,
                     this,
                     "Invalid state detected. State: %s",
-                     cell);
+                    cell);
             throw new AssertionError("Invalid state in cell "
                     + (cell != null ? cell.getCellId() : "NULL"));
         }
