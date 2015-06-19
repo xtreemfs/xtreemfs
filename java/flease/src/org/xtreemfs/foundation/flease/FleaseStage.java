@@ -35,7 +35,6 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 
 /**
- *
  * @author bjko
  */
 public class FleaseStage extends LifeCycleThread implements LearnEventListener, FleaseLocalQueueInterface {
@@ -49,55 +48,41 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
     public static final boolean DISABLE_RENEW_FOR_TESTING = false;
 
     public static final boolean COLLECT_STATISTICS = false;
-
-    private final FleaseProposer proposer;
-
-    private final FleaseAcceptor acceptor;
-
-    private final PriorityQueue<TimerEntry> timers;
-
-    private final PriorityQueue<Flease> leaseTimeouts;
-
-    private final LinkedBlockingQueue messages;
-
-    private volatile boolean quit;
-
-    private long lastTimerRun;
-
-    private final FleaseConfig config;
-
-    private final FleaseMessageSenderInterface sender;
-
     public static final int MAX_BATCH_SIZE = 20;
-
+    private final FleaseProposer proposer;
+    private final FleaseAcceptor acceptor;
+    private final PriorityQueue<TimerEntry> timers;
+    private final PriorityQueue<Flease> leaseTimeouts;
+    private final LinkedBlockingQueue messages;
+    private final FleaseConfig config;
+    private final FleaseMessageSenderInterface sender;
     private final FleaseStatusListener leaseListener;
-
     private final AtomicReference<List<Integer>> durRequests, durMsgs, durTimers;
-
-    private final AtomicInteger                  inRequests, inMsgs, inTimers, outMsgs;
-
-    private final FleaseStats                    statThr;
-
-    private final MasterEpochHandlerInterface    meHandler;
+    private final AtomicInteger inRequests, inMsgs, inTimers, outMsgs;
+    private final FleaseStats statThr;
+    private final MasterEpochHandlerInterface meHandler;
+    private volatile boolean quit;
+    private long lastTimerRun;
 
     /**
      * Creates a new instance of Flease.
-     * @param config flease configuration used for all cells and leases.
-     * @param lockfileDir a lockfile for this flease instance is created in this directory.
-     * @param sender interface to send flease messages to other flease nodes.
+     *
+     * @param config               flease configuration used for all cells and leases.
+     * @param lockfileDir          a lockfile for this flease instance is created in this directory.
+     * @param sender               interface to send flease messages to other flease nodes.
      * @param ignoreLockForTesting should only be used by unit tests.
-     * @param viewListener not used at the moment, can be null.
-     * @param leaseListener listener is notified when the lease changes for any open cell.
-     * @param meHandler handler for storing/retrieving master epochs, can be null.
+     * @param viewListener         not used at the moment, can be null.
+     * @param leaseListener        listener is notified when the lease changes for any open cell.
+     * @param meHandler            handler for storing/retrieving master epochs, can be null.
      * @throws IOException
      */
     public FleaseStage(FleaseConfig config, String lockfileDir,
-            final FleaseMessageSenderInterface sender, boolean ignoreLockForTesting,
-            final FleaseViewChangeListenerInterface viewListener, final FleaseStatusListener leaseListener,
-            final MasterEpochHandlerInterface meHandler) throws IOException {
+                       final FleaseMessageSenderInterface sender, boolean ignoreLockForTesting,
+                       final FleaseViewChangeListenerInterface viewListener, final FleaseStatusListener leaseListener,
+                       final MasterEpochHandlerInterface meHandler) throws IOException {
         super("FleaseSt");
         assert (sender != null);
-        assert(leaseListener != null);
+        assert (leaseListener != null);
 
         timers = new PriorityQueue<TimerEntry>();
         messages = new LinkedBlockingQueue();
@@ -116,7 +101,7 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
             public void requestTimer(FleaseMessage msg, long timestamp) {
                 createTimer(msg, timestamp);
             }
-        }, leaseListener, this, this,meHandler);
+        }, leaseListener, this, this, meHandler);
         acceptor.setViewChangeListener(viewListener);
         proposer.setViewChangeListener(viewListener);
         this.sender = sender;
@@ -135,7 +120,7 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
             inTimers = new AtomicInteger();
             inMsgs = new AtomicInteger();
             outMsgs = new AtomicInteger();
-            statThr = new FleaseStats(this, lockfileDir+"/flease.stats");
+            statThr = new FleaseStats(this, lockfileDir + "/flease.stats");
         } else {
             durRequests = null;
             durTimers = null;
@@ -160,19 +145,15 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
     /**
      * Opens a cell. The leaseListener will be notified of all lease events for this cell. The local flease
      * instance will try to acquire the lease.
-     * 
-     * @param cellId
-     *            unique ID of the cell to open.
-     * @param acceptors
-     *            list of remote flease instances, do not include local flease instance.
-     * @param requestMasterEpoch
-     *            if true, a master epoch will be requested when the local instance is lease owner.
-     * @param viewId
-     *            the current view id to open the cell with.
+     *
+     * @param cellId             unique ID of the cell to open.
+     * @param acceptors          list of remote flease instances, do not include local flease instance.
+     * @param requestMasterEpoch if true, a master epoch will be requested when the local instance is lease owner.
+     * @param viewId             the current view id to open the cell with.
      * @return
      */
     public FleaseFuture openCell(ASCIIString cellId, List<InetSocketAddress> acceptors, boolean requestMasterEpoch,
-            int viewId) {
+                                 int viewId) {
         FleaseFuture f = new FleaseFuture();
         Request rq = new Request(Request.RequestType.OPEN_CELL_REQUEST);
         rq.cellId = cellId;
@@ -191,7 +172,7 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
     public void batchOpenCells(ASCIIString[] cellIds, List<InetSocketAddress>[] acceptors, boolean requestMasterEpoch) {
 
         List<Request> batch = new ArrayList(cellIds.length);
-        for (int i =0; i < cellIds.length; i++) {
+        for (int i = 0; i < cellIds.length; i++) {
             Request rq = new Request(Request.RequestType.OPEN_CELL_REQUEST);
             rq.cellId = cellIds[i];
             rq.acceptors = acceptors[i];
@@ -199,10 +180,10 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
             rq.requestME = requestMasterEpoch;
             batch.add(rq);
         }
-        
+
         for (int i = 0; i < batch.size(); i += MAX_BATCH_SIZE) {
-            int endIndex = i+MAX_BATCH_SIZE;
-            if (endIndex > batch.size()-1)
+            int endIndex = i + MAX_BATCH_SIZE;
+            if (endIndex > batch.size() - 1)
                 endIndex = batch.size();
             List<Request> sublist = batch.subList(i, endIndex);
 
@@ -217,6 +198,7 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
     /**
      * Closes a cell which must be open. If the local instance is the current lease owner,
      * the lease will not be renewed.
+     *
      * @param cellId
      * @param returnLease if true, the lease will immediately be released.
      * @return
@@ -293,7 +275,7 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
 
     public void learnedEvent(ASCIIString cellId, ASCIIString leaseHolder, long leaseTimeout_ms, long masterEpochNumber) {
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"learned event: "+leaseHolder+"/"+leaseTimeout_ms);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "learned event: " + leaseHolder + "/" + leaseTimeout_ms);
         }
         Flease newFlease = new Flease(cellId, leaseHolder, leaseTimeout_ms, masterEpochNumber);
         Flease oldFlease = proposer.updatePrevLeaseForCell(cellId, newFlease);
@@ -309,7 +291,7 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
                 }
             }
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"lease state change: %s %s %d",cellId,leaseHolder,leaseTimeout_ms);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "lease state change: %s %s %d", cellId, leaseHolder, leaseTimeout_ms);
             }
             leaseListener.statusChanged(cellId, newFlease);
             if (ENABLE_TIMEOUT_EVENTS) {
@@ -424,7 +406,7 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
                         }
                         if (COLLECT_STATISTICS) {
                             long rqEnd = System.nanoTime();
-                            durMsgs.get().add(Integer.valueOf((int)(rqEnd-rqStart)));
+                            durMsgs.get().add(Integer.valueOf((int) (rqEnd - rqStart)));
                             outMsgs.incrementAndGet();
                         }
                     } else {
@@ -433,8 +415,8 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
                             case OPEN_CELL_REQUEST: {
                                 assert (rq.acceptors != null);
                                 try {
-                                proposer.openCell(rq.cellId, rq.acceptors, rq.requestME, rq.viewId);
-                                acceptor.setViewId(rq.cellId, rq.viewId);
+                                    proposer.openCell(rq.cellId, rq.acceptors, rq.requestME, rq.viewId);
+                                    acceptor.setViewId(rq.cellId, rq.viewId);
                                     if (rq.listener != null)
                                         rq.listener.proposalResult(rq.cellId, null, 0, FleaseMessage.IGNORE_MASTER_EPOCH);
                                 } catch (FleaseException ex) {
@@ -477,10 +459,10 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
                         }
                         if (COLLECT_STATISTICS) {
                             long rqEnd = System.nanoTime();
-                            durRequests.get().add(Integer.valueOf((int)(rqEnd-rqStart)));
+                            durRequests.get().add(Integer.valueOf((int) (rqEnd - rqStart)));
                         }
                     }
-                    
+
                 }
                 if (DISABLE_RENEW_FOR_TESTING) {
                     Thread.sleep(0, 2);
@@ -518,7 +500,7 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
         }
         if (e.getScheduledTime() <= now + TIMER_INTERVAL_IN_MS) {
             //execute timer
-            
+
             do {
                 e = timers.poll();
 
@@ -535,7 +517,7 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
 
                 if (COLLECT_STATISTICS) {
                     long rqEnd = System.nanoTime();
-                    durTimers.get().add(Integer.valueOf((int)(rqEnd-rqStart)));
+                    durTimers.get().add(Integer.valueOf((int) (rqEnd - rqStart)));
                 }
 
                 e = timers.peek();
@@ -543,7 +525,7 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
                     return TIMER_INTERVAL_IN_MS;
                 }
             } while (e.getScheduledTime() <= now + TIMER_INTERVAL_IN_MS);
-            
+
             return (int) (e.getScheduledTime() - now);
         } else {
             //tell how long we have to wait
@@ -553,7 +535,7 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
 
     private void checkLeaseTimeouts() {
         final long now = TimeSync.getGlobalTime();
-        final long deadline = now + TIMER_INTERVAL_IN_MS + TimeSync.getLocalRenewInterval()+config.getToNotification_ms();
+        final long deadline = now + TIMER_INTERVAL_IN_MS + TimeSync.getLocalRenewInterval() + config.getToNotification_ms();
 
         Flease f = leaseTimeouts.peek();
         if (f == null)
@@ -564,7 +546,7 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
                 f = leaseTimeouts.poll();
 
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"lease state change: %s timed out (old lease: %s)",f.getCellId(),f.toString());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "lease state change: %s timed out (old lease: %s)", f.getCellId(), f.toString());
                 }
                 proposer.updatePrevLeaseForCell(f.getCellId(), f.EMPTY_LEASE);
                 leaseListener.statusChanged(f.getCellId(), Flease.EMPTY_LEASE);
@@ -621,6 +603,11 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
         messages.add(message);
     }
 
+    private static interface FleaseStateCallback {
+
+        public void localStateResult(Map<ASCIIString, FleaseMessage> state);
+    }
+
     private final static class TimerEntry implements Comparable {
 
         private final long scheduledTime;
@@ -651,8 +638,21 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
 
     private final static class Request {
 
+        public final RequestType type;
         public boolean autoRenew;
         public boolean requestME;
+
+        ;
+        public ASCIIString cellId;
+        public ASCIIString newLeaseOwner; //< for handover only!
+        public List<InetSocketAddress> acceptors;
+        public FleaseListener listener;
+        public int viewId;
+        public FleaseStateCallback cback;
+
+        public Request(RequestType type) {
+            this.type = type;
+        }
 
         public enum RequestType {
 
@@ -664,28 +664,6 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
             GET_STATE,
             SET_VIEW
 
-        };
-        public final RequestType type;
-
-        public ASCIIString cellId;
-
-        public ASCIIString newLeaseOwner; //< for handover only!
-
-        public List<InetSocketAddress> acceptors;
-
-        public FleaseListener listener;
-
-        public int viewId;
-
-        public FleaseStateCallback cback;
-
-        public Request(RequestType type) {
-            this.type = type;
         }
-    }
-
-    private static interface FleaseStateCallback {
-
-        public void localStateResult(Map<ASCIIString, FleaseMessage> state);
     }
 }
