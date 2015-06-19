@@ -9,6 +9,7 @@ package org.xtreemfs.foundation.flease.proposer;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.flease.Flease;
@@ -20,10 +21,54 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 
 /**
- *
  * @author bjko
  */
 public class FleaseProposerCell {
+
+    public static enum State {
+        IDLE,
+        WAIT_FOR_PREP_ACK,
+        WAIT_FOR_ACCEPT_ACK,
+    }
+
+    private final ASCIIString cellId;
+    private final List<FleaseListener> listeners;
+    private final List<FleaseMessage> responses;
+    private final int majority;
+    private final CellActionList actions;
+    private ProposalNumber ballotNo;
+    private List<InetSocketAddress> acceptors;
+    private State cellState;
+    private int numFailures;
+    private long lastPrepateTimestamp_ms;
+    private int viewId;
+    private Flease prevLease;
+    private boolean markedClose;
+    private ASCIIString handoverTo;
+    private boolean requestMasteEpoch;
+    private long masterEpochNumber;
+    /**
+     * the value to use for prepare, accept and learn
+     * might be != than the local host, if the proposer
+     * must use a previously accepted value
+     */
+    private FleaseMessage messageSent;
+
+    FleaseProposerCell(ASCIIString cellId, List<InetSocketAddress> acceptors, long senderId) {
+        this.actions = new CellActionList();
+        this.cellId = cellId;
+        this.acceptors = acceptors;
+        this.responses = new ArrayList(acceptors.size() + 1);
+        this.listeners = new ArrayList(5);
+        this.ballotNo = new ProposalNumber(TimeSync.getGlobalTime(), senderId);
+        this.majority = (int) Math.floor((acceptors.size() + 1.0) / 2.0) + 1;
+        this.prevLease = Flease.EMPTY_LEASE;
+        this.markedClose = false;
+        this.handoverTo = null;
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "opened new cell id %s with majority = %d ", cellId, majority);
+        }
+    }
 
     /**
      * @return the responses
@@ -53,12 +98,12 @@ public class FleaseProposerCell {
         return lastPrepateTimestamp_ms;
     }
 
-    public void setViewId(int viewId) {
-        this.viewId = viewId;
-    }
-
     public int getViewId() {
         return this.viewId;
+    }
+
+    public void setViewId(int viewId) {
+        this.viewId = viewId;
     }
 
     public boolean isHandoverInProgress() {
@@ -121,71 +166,12 @@ public class FleaseProposerCell {
         this.masterEpochNumber = masterEpochNumber;
     }
 
-    public static enum State {
-        IDLE,
-        WAIT_FOR_PREP_ACK,
-        WAIT_FOR_ACCEPT_ACK,
-    };
-
-    private final ASCIIString                   cellId;
-
-    private ProposalNumber ballotNo;
-
-    private List<InetSocketAddress> acceptors;
-
-    private final List<FleaseListener> listeners;
-
-    private final List<FleaseMessage>      responses;
-
-    private State cellState;
-
-    private int   numFailures;
-
-    private final int   majority;
-
-    private long  lastPrepateTimestamp_ms;
-
-    private int   viewId;
-
-    private Flease prevLease;
-
-    private boolean markedClose;
-
-    private ASCIIString handoverTo;
-
-    private boolean requestMasteEpoch;
-
-    private long masterEpochNumber;
-    
-    private final CellActionList actions;
-
-    /**
-     * the value to use for prepare, accept and learn
-     * might be != than the local host, if the proposer
-     * must use a previously accepted value
-     */
-    private FleaseMessage           messageSent;
-
-    FleaseProposerCell(ASCIIString cellId, List<InetSocketAddress> acceptors, long senderId) {
-        this.actions = new CellActionList();
-        this.cellId = cellId;
-        this.acceptors = acceptors;
-        this.responses = new ArrayList(acceptors.size()+1);
-        this.listeners = new ArrayList(5);
-        this.ballotNo = new ProposalNumber(TimeSync.getGlobalTime(),senderId);
-        this.majority = (int) Math.floor((acceptors.size()+1.0)/ 2.0) + 1;
-        this.prevLease = Flease.EMPTY_LEASE;
-        this.markedClose = false;
-        this.handoverTo = null;
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"opened new cell id %s with majority = %d ",cellId,majority);
-        }
-    }
-    
     public void addAction(ActionName actionName) {
         actions.addAction(actionName);
     }
-    
+
+    ;
+
     public void addAction(ActionName actionName, String message) {
         actions.addAction(actionName, message);
     }
@@ -327,5 +313,4 @@ public class FleaseProposerCell {
         text.append("}");
         return text.toString();
     }
-
 }
