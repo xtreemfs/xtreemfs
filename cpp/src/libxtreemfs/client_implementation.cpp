@@ -603,6 +603,20 @@ xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(
   return static_cast<xtreemfs::pbrpc::Volumes*>(response->response());
 }
 
+std::vector<std::string> ClientImplementation::ListVolumeNames() {
+  boost::scoped_ptr<ServiceSet> volumes(GetServicesByType(SERVICE_TYPE_VOLUME));
+
+  const int size = volumes->services_size();
+  std::vector<std::string> names(size);
+
+  for (int i = 0; i < size; ++i) {
+    const Service& volume = volumes->services(i);
+    names.push_back(volume.name());
+  }
+
+  return names;
+}
+
 /** ClientImplementation already implements UUIDResolver and therefore this
  *  returns just a cast to this. */
 UUIDResolver* ClientImplementation::GetUUIDResolver() {

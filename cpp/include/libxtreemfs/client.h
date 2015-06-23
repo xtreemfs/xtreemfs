@@ -155,7 +155,7 @@ class Client {
       int mode,
       const std::string& owner_username,
       const std::string& owner_groupname,
-      const xtreemfs::pbrpc::AccessControlPolicyType& access_policy,
+      const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
       long volume_quota,
       const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
       int default_stripe_size,
@@ -195,6 +195,14 @@ class Client {
   virtual xtreemfs::pbrpc::Volumes* ListVolumes(
       const ServiceAddresses& mrc_addresses,
       const xtreemfs::pbrpc::Auth& auth) = 0;
+
+  /** Returns the available volumes as list of names
+   *
+   * @throws AddressToUUIDNotFoundException
+   * @throws IOException
+   * @throws PosixErrorException
+   */
+  virtual std::vector<std::string> ListVolumeNames() = 0;
 
   /** Resolves the address (ip-address:port) for a given UUID.
    *

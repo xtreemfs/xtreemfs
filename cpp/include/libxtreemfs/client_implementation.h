@@ -146,6 +146,8 @@ class ClientImplementation : public Client {
       const ServiceAddresses& mrc_addresses,
       const pbrpc::Auth& auth);
 
+  virtual std::vector<std::string> ListVolumeNames();
+
   virtual UUIDResolver* GetUUIDResolver();
 
   virtual std::string UUIDToAddress(const std::string& uuid);
