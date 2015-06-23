@@ -15,24 +15,20 @@ import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 /**
  * A coordination cell is used to separate concurrent lease nogitiations
  * for individual objects (e.g. volumes on the MRC).
+ *
  * @author bjko
  */
 public class FleaseAcceptorCell implements Serializable {
 
-    FleaseMessage prepared;
-
-    FleaseMessage accepted;
-
-    AtomicReference<FleaseMessage> latestLearn;
-
-    
-    /** timestamp for last access **/
+    // timestamp for last access
     public long lastAccess;
-
+    FleaseMessage prepared;
+    FleaseMessage accepted;
+    AtomicReference<FleaseMessage> latestLearn;
     private int viewId;
 
     private boolean viewInvalidated = false;
-            
+
     /**
      * Creates a new instance of CoordinationCell
      */
@@ -48,12 +44,13 @@ public class FleaseAcceptorCell implements Serializable {
     }
 
     public void setLatestLearn(FleaseMessage msg) {
-        assert(msg.getMsgType() == FleaseMessage.MsgType.MSG_LEARN);
+        assert (msg.getMsgType() == FleaseMessage.MsgType.MSG_LEARN);
         latestLearn.set(msg);
     }
 
     /**
      * Getter for property lastPrep.
+     *
      * @return Value of property lastPrep.
      */
     public FleaseMessage getPrepared() {
@@ -62,7 +59,8 @@ public class FleaseAcceptorCell implements Serializable {
 
     /**
      * Setter for property lastPrep.
-     * @param lastPrep New value of property lastPrep.
+     *
+     * @param prepared New prepared message
      */
     public void setPrepared(FleaseMessage prepared) {
         this.prepared = prepared;
@@ -70,6 +68,7 @@ public class FleaseAcceptorCell implements Serializable {
 
     /**
      * Getter for property accepted.
+     *
      * @return Value of property accepted.
      */
     public FleaseMessage getAccepted() {
@@ -78,11 +77,12 @@ public class FleaseAcceptorCell implements Serializable {
 
     /**
      * Setter for property accepted.
+     *
      * @param accepted New value of property accepted.
      */
     public void setAccepted(FleaseMessage accepted) {
-        assert(accepted.getLeaseHolder() != null);
-        assert(accepted.getLeaseTimeout() > 0);
+        assert (accepted.getLeaseHolder() != null);
+        assert (accepted.getLeaseTimeout() > 0);
         this.accepted = accepted;
     }
 
@@ -94,6 +94,7 @@ public class FleaseAcceptorCell implements Serializable {
         this.lastAccess = System.currentTimeMillis();
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
@@ -109,7 +110,7 @@ public class FleaseAcceptorCell implements Serializable {
         sb.append("isLrnd ");
         sb.append(isLearned());
         sb.append("\n");
-        
+
         return sb.toString();
     }
 
@@ -122,9 +123,8 @@ public class FleaseAcceptorCell implements Serializable {
 
     /**
      * Set the acceptors viewId and clears the viewInvalidated flag.
-     * 
-     * @param viewId
-     *            The viewId to set.
+     *
+     * @param viewId The viewId to set.
      */
     public void setViewId(int viewId) {
         this.viewId = viewId;
