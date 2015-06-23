@@ -84,6 +84,14 @@ public class ClientProxy {
     xtreemfs_jniJNI.ClientProxy_createVolume__SWIG_0(swigCPtr, this, ServiceAddresses.getCPtr(mrc_address), mrc_address, auth.toByteArray(), user_credentials.toByteArray(), volume_name);
   }
 
+  public void createVolume(ServiceAddresses mrc_address, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth auth, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials user_credentials, String volume_name, int mode, String owner_username, String owner_groupname, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType access_policy_type, int quota, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType default_striping_policy_type, int default_stripe_size, int default_stripe_width, StringMap volume_attributes) throws java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException {
+    xtreemfs_jniJNI.ClientProxy_createVolume__SWIG_1(swigCPtr, this, ServiceAddresses.getCPtr(mrc_address), mrc_address, auth.toByteArray(), user_credentials.toByteArray(), volume_name, mode, owner_username, owner_groupname, access_policy_type.getNumber(), quota, default_striping_policy_type.getNumber(), default_stripe_size, default_stripe_width, StringMap.getCPtr(volume_attributes), volume_attributes);
+  }
+
+  public void createVolume(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth auth, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials user_credentials, String volume_name, int mode, String owner_username, String owner_groupname, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType access_policy_type, int volume_quota, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType default_striping_policy_type, int default_stripe_size, int default_stripe_width, StringMap volume_attributes) throws java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException {
+    xtreemfs_jniJNI.ClientProxy_createVolume__SWIG_2(swigCPtr, this, auth.toByteArray(), user_credentials.toByteArray(), volume_name, mode, owner_username, owner_groupname, access_policy_type.getNumber(), volume_quota, default_striping_policy_type.getNumber(), default_stripe_size, default_stripe_width, StringMap.getCPtr(volume_attributes), volume_attributes);
+  }
+
   public void deleteVolume(ServiceAddresses mrc_address, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth auth, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials user_credentials, String volume_name) throws java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException {
     xtreemfs_jniJNI.ClientProxy_deleteVolume(swigCPtr, this, ServiceAddresses.getCPtr(mrc_address), mrc_address, auth.toByteArray(), user_credentials.toByteArray(), volume_name);
   }
@@ -107,20 +115,12 @@ public class ClientProxy {
   }
 }
 
-  public StringVector listVolumeNames() {
+  public StringVector listVolumeNames() throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException {
     return new StringVector(xtreemfs_jniJNI.ClientProxy_listVolumeNames(swigCPtr, this), true);
   }
 
   public String uUIDToAddress(String uuid) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
     return xtreemfs_jniJNI.ClientProxy_uUIDToAddress(swigCPtr, this, uuid);
-  }
-
-  public void createVolume(ServiceAddresses mrc_address, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth auth, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials user_credentials, String volume_name, int mode, String owner_username, String owner_groupname, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType access_policy_type, int quota, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType default_striping_policy_type, int default_stripe_size, int default_stripe_width, StringMap volume_attributes_map) {
-    xtreemfs_jniJNI.ClientProxy_createVolume__SWIG_1(swigCPtr, this, ServiceAddresses.getCPtr(mrc_address), mrc_address, auth.toByteArray(), user_credentials.toByteArray(), volume_name, mode, owner_username, owner_groupname, access_policy_type.getNumber(), quota, default_striping_policy_type.getNumber(), default_stripe_size, default_stripe_width, StringMap.getCPtr(volume_attributes_map), volume_attributes_map);
-  }
-
-  public void createVolume(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth auth, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials user_credentials, String volume_name, int mode, String owner_username, String owner_groupname, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType access_policy_type, int quota, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType default_striping_policy_type, int default_stripe_size, int default_stripe_width, StringMap volume_attributes_map) {
-    xtreemfs_jniJNI.ClientProxy_createVolume__SWIG_2(swigCPtr, this, auth.toByteArray(), user_credentials.toByteArray(), volume_name, mode, owner_username, owner_groupname, access_policy_type.getNumber(), quota, default_striping_policy_type.getNumber(), default_stripe_size, default_stripe_width, StringMap.getCPtr(volume_attributes_map), volume_attributes_map);
   }
 
   public enum ClientImplementationType {

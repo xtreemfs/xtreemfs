@@ -179,96 +179,7 @@ PROTO2_RETURN(xtreemfs::pbrpc::Volumes, org.xtreemfs.pbrpc.generatedinterfaces.M
 PROTO_ENUM(xtreemfs::pbrpc::AccessControlPolicyType, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType, access_policy_type)
 PROTO_ENUM(xtreemfs::pbrpc::StripingPolicyType, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType, default_striping_policy_type)
 
-
-// Add a createVolume implementation, that is using a map instead of a list of KeyValuePairs
-%extend xtreemfs::Client {
-  public: 
-  void createVolume( // has to be lowercased manually
-      const ServiceAddresses& mrc_address,
-      const xtreemfs::pbrpc::Auth& auth,
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
-      const std::string& volume_name,
-      int mode,
-      const std::string& owner_username,
-      const std::string& owner_groupname,
-      const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
-      long quota,
-      const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
-      int default_stripe_size,
-      int default_stripe_width,
-      const std::map<std::string, std::string>& volume_attributes_map) {
-
-    std::list<xtreemfs::pbrpc::KeyValuePair*> volume_attributes;
-
-    // Copy the attributes from the map to a KeyValuePair list.
-    for (std::map<std::string, std::string>::const_iterator it = volume_attributes_map.begin();
-          it != volume_attributes_map.end();
-          ++it) {
-      xtreemfs::pbrpc::KeyValuePair* kv = new xtreemfs::pbrpc::KeyValuePair();
-      kv->set_key(it->first);
-      kv->set_value(it->second);
-      volume_attributes.push_back(kv);
-    }
-
-    // Call the actual implementation.
-    $self->CreateVolume(mrc_address, auth, user_credentials, volume_name, mode,
-      owner_username, owner_groupname, access_policy_type, quota,
-      default_striping_policy_type, default_stripe_size, default_stripe_width,
-      volume_attributes
-      );
-
-    // Cleanup and delete the KeyValuePairs.
-    for (std::list<xtreemfs::pbrpc::KeyValuePair*>::iterator it = volume_attributes.begin();
-          it != volume_attributes.end();
-          ++it) {
-      delete *it;
-    }
-  }
-
-  void createVolume( // has to be lowercased manually
-      const xtreemfs::pbrpc::Auth& auth,
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
-      const std::string& volume_name,
-      int mode,
-      const std::string& owner_username,
-      const std::string& owner_groupname,
-      const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
-      long quota,
-      const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
-      int default_stripe_size,
-      int default_stripe_width,
-      const std::map<std::string, std::string>& volume_attributes_map) {
-
-    std::list<xtreemfs::pbrpc::KeyValuePair*> volume_attributes;
-
-    // Copy the attributes from the map to a KeyValuePair list.
-    for (std::map<std::string, std::string>::const_iterator it = volume_attributes_map.begin();
-          it != volume_attributes_map.end();
-          ++it) {
-      xtreemfs::pbrpc::KeyValuePair* kv = new xtreemfs::pbrpc::KeyValuePair();
-      kv->set_key(it->first);
-      kv->set_value(it->second);
-      volume_attributes.push_back(kv);
-    }
-
-    // Call the actual implementation.
-    $self->CreateVolume(auth, user_credentials, volume_name, mode,
-      owner_username, owner_groupname, access_policy_type, quota,
-      default_striping_policy_type, default_stripe_size, default_stripe_width,
-      volume_attributes
-      );
-
-    // Cleanup and delete the KeyValuePairs.
-    for (std::list<xtreemfs::pbrpc::KeyValuePair*>::iterator it = volume_attributes.begin();
-          it != volume_attributes.end();
-          ++it) {
-      delete *it;
-    }
-  }
-
-}
-
-// Ignore the actual implementations
+// Ignore the deprecated implementation
 %rename ("$ignore") xtreemfs::Client::CreateVolume(
       const ServiceAddresses& mrc_address,
       const xtreemfs::pbrpc::Auth& auth,
@@ -284,19 +195,6 @@ PROTO_ENUM(xtreemfs::pbrpc::StripingPolicyType, org.xtreemfs.pbrpc.generatedinte
       int default_stripe_width,
       const std::list<xtreemfs::pbrpc::KeyValuePair*>& volume_attributes);
 
-%rename ("$ignore") xtreemfs::Client::CreateVolume( 
-      const xtreemfs::pbrpc::Auth& auth,
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
-      const std::string& volume_name,
-      int mode,
-      const std::string& owner_username,
-      const std::string& owner_groupname,
-      const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
-      long quota,
-      const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
-      int default_stripe_size,
-      int default_stripe_width,
-      const std::list<xtreemfs::pbrpc::KeyValuePair*>& volume_attributes);
 
 // Add Exception Handling
 %catches(const xtreemfs::AddressToUUIDNotFoundException, 
@@ -308,6 +206,9 @@ PROTO_ENUM(xtreemfs::pbrpc::StripingPolicyType, org.xtreemfs.pbrpc.generatedinte
 %catches(const xtreemfs::AddressToUUIDNotFoundException, 
          const xtreemfs::IOException,
          const xtreemfs::PosixErrorException) xtreemfs::Client::ListVolumes;
+%catches(const xtreemfs::AddressToUUIDNotFoundException, 
+         const xtreemfs::IOException,
+         const xtreemfs::PosixErrorException) xtreemfs::Client::ListVolumeNames;
 %catches(const xtreemfs::AddressToUUIDNotFoundException, 
          const xtreemfs::UnknownAddressSchemeException) xtreemfs::Client::UUIDToAddress;
 
