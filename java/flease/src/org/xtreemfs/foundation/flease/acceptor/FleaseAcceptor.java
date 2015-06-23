@@ -26,25 +26,14 @@ import org.xtreemfs.foundation.logging.Logging.Category;
  */
 public class FleaseAcceptor {
 
-    /**
-     * filename to use for storing state permanently
-     */
     public static final String LOCKFILE_NAME = "flease_lock.";
-    /**
-     * Instances of the Multipaxos
-     */
     public final Map<ASCIIString, FleaseAcceptorCell> cells;
-    /**
-     * lockfile full path
-     */
     private final String lockfile;
 
     private final long waitUntilTimestamp_ms;
     private final FleaseConfig config;
     private final LearnEventListener evtListener;
-    /**
-     * set to true to quit
-     */
+    // set to true to quit
     public boolean quit;
     private FleaseViewChangeListenerInterface viewListener;
 
@@ -103,31 +92,31 @@ public class FleaseAcceptor {
     }
 
     private FleaseAcceptorCell getCell(ASCIIString cellId) {
-        FleaseAcceptorCell cc = cells.get(cellId);
-        if (cc == null) {
-            cc = new FleaseAcceptorCell();
-            cells.put(cellId, cc);
+        FleaseAcceptorCell cell = cells.get(cellId);
+        if (cell == null) {
+            cell = new FleaseAcceptorCell();
+            cells.put(cellId, cell);
         } else {
-            if ((cc.lastAccess + config.getCellTimeout()) < System.currentTimeMillis()) {
+            if ((cell.lastAccess + config.getCellTimeout()) < System.currentTimeMillis()) {
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "A GCed cell " + cellId);
                 // Cell is outdated and GCed.
 
                 // Create a new cell and transfer the previous view.
                 FleaseAcceptorCell tmp = new FleaseAcceptorCell();
-                tmp.setViewId(cc.getViewId());
-                if (cc.isViewInvalidated()) {
+                tmp.setViewId(cell.getViewId());
+                if (cell.isViewInvalidated()) {
                     tmp.invalidateView();
                 }
 
                 cells.put(cellId, tmp);
-                cc = tmp;
+                cell = tmp;
             }
         }
         /*if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG,this,"using cell "+cellId);*/
-        cc.touch();
-        return cc;
+        cell.touch();
+        return cell;
     }
 
     /**
@@ -138,39 +127,38 @@ public class FleaseAcceptor {
      */
     public FleaseMessage handlePREPARE(FleaseMessage msg) {
 
-        final FleaseAcceptorCell cc = getCell(msg);
-        cc.touch();
+        final FleaseAcceptorCell cell = getCell(msg);
+        cell.touch();
 
-        if ((cc.getPrepared() != null) && (cc.getPrepared().after(msg))) {
+        if ((cell.getPrepared() != null) && (cell.getPrepared().after(msg))) {
             if (Logging.isDebug() && config.isDebugPrintMessages()) {
-                final String preped = (cc.getPrepared() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cc.getPrepared().getProposalNo().toString();
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "A prepare NACK p:" + preped + " is after " + msg.getProposalNo() + "");
+                final String prepared = (cell.getPrepared() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cell.getPrepared().getProposalNo().toString();
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "A prepare NACK p:" + prepared + " is after " + msg.getProposalNo() + "");
             }
             FleaseMessage reject = new FleaseMessage(
                     FleaseMessage.MsgType.MSG_PREPARE_NACK, msg);
-            reject.setPrevProposalNo(cc.getPrepared().getProposalNo());
+            reject.setPrevProposalNo(cell.getPrepared().getProposalNo());
             reject.setLeaseHolder(null);
             reject.setLeaseTimeout(0);
             reject.setSendTimestamp(TimeSync.getGlobalTime());
             return reject;
         } else {
             if (Logging.isDebug() && config.isDebugPrintMessages()) {
-                final String preped = (cc.getPrepared() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cc.getPrepared().getProposalNo().toString();
-                final String acced = (cc.getAccepted() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cc.getAccepted().getProposalNo() + "=" + cc.getAccepted().getLeaseHolder() + "/" + cc.getAccepted().getLeaseTimeout();
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "A prepare ACK  p:" + preped + " -> " + msg.getProposalNo() + " a:" + acced);
+                final String prepared = (cell.getPrepared() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cell.getPrepared().getProposalNo().toString();
+                final String accepted = (cell.getAccepted() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cell.getAccepted().getProposalNo() + "=" + cell.getAccepted().getLeaseHolder() + "/" + cell.getAccepted().getLeaseTimeout();
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "A prepare ACK  p:" + prepared + " -> " + msg.getProposalNo() + " a:" + accepted);
             }
-            // lastPrepared = msg;
-            cc.setPrepared(msg);
+            cell.setPrepared(msg);
             // FIXME:Persistently write to disk
             FleaseMessage response = new FleaseMessage(
                     FleaseMessage.MsgType.MSG_PREPARE_ACK, msg);
 
-            if (cc.getAccepted() != null) {
+            if (cell.getAccepted() != null) {
 
-                response.setPrevProposalNo(cc.getAccepted().getProposalNo());
-                response.setLeaseHolder(cc.getAccepted().getLeaseHolder());
+                response.setPrevProposalNo(cell.getAccepted().getProposalNo());
+                response.setLeaseHolder(cell.getAccepted().getLeaseHolder());
                 assert (response.getLeaseHolder() != null);
-                response.setLeaseTimeout(cc.getAccepted()
+                response.setLeaseTimeout(cell.getAccepted()
                         .getLeaseTimeout());
             }
             response.setSendTimestamp(TimeSync.getGlobalTime());
@@ -188,32 +176,32 @@ public class FleaseAcceptor {
      */
     public FleaseMessage handleACCEPT(FleaseMessage msg) {
 
-        final FleaseAcceptorCell cc = getCell(msg);
+        final FleaseAcceptorCell cell = getCell(msg);
 
-        cc.touch();
-        if ((cc.getPrepared() != null) && (cc.getPrepared().after(msg))) {
+        cell.touch();
+        if ((cell.getPrepared() != null) && (cell.getPrepared().after(msg))) {
             // reject the request
             if (Logging.isDebug() && config.isDebugPrintMessages()) {
-                final String preped = (cc.getPrepared() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cc.getPrepared().getProposalNo().toString();
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "A accept  NACK p:" + preped + " is after " + msg.getProposalNo() + "");
+                final String prepared = (cell.getPrepared() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cell.getPrepared().getProposalNo().toString();
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "A accept  NACK p:" + prepared + " is after " + msg.getProposalNo() + "");
             }
             FleaseMessage tmp = new FleaseMessage(
                     FleaseMessage.MsgType.MSG_ACCEPT_NACK, msg);
             tmp.setSendTimestamp(TimeSync.getGlobalTime());
             tmp.setLeaseHolder(null);
             tmp.setLeaseTimeout(0);
-            tmp.setPrevProposalNo(cc.getPrepared().getProposalNo());
+            tmp.setPrevProposalNo(cell.getPrepared().getProposalNo());
             return tmp;
         } else {
             // okay accept it
             if (Logging.isDebug() && config.isDebugPrintMessages()) {
-                final String preped = (cc.getPrepared() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cc.getPrepared().getProposalNo().toString();
-                final String acced = (cc.getAccepted() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cc.getAccepted().getProposalNo() + "=" + cc.getAccepted().getLeaseHolder() + "/" + cc.getAccepted().getLeaseTimeout();
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "A accept  ACK  p:" + preped + " a: " + acced + " -> " + msg.getProposalNo() + "=" + msg.getLeaseHolder() + "/" + msg.getLeaseTimeout());
+                final String prepared = (cell.getPrepared() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cell.getPrepared().getProposalNo().toString();
+                final String accepted = (cell.getAccepted() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cell.getAccepted().getProposalNo() + "=" + cell.getAccepted().getLeaseHolder() + "/" + cell.getAccepted().getLeaseTimeout();
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "A accept  ACK  p:" + prepared + " a: " + accepted + " -> " + msg.getProposalNo() + "=" + msg.getLeaseHolder() + "/" + msg.getLeaseTimeout());
             }
             assert (msg.getLeaseHolder() != null);
-            cc.setAccepted(msg);
-            cc.setPrepared(msg);
+            cell.setAccepted(msg);
+            cell.setPrepared(msg);
 
 
             FleaseMessage tmp = new FleaseMessage(
@@ -231,23 +219,23 @@ public class FleaseAcceptor {
      * @param msg incomming message
      */
     public void handleLEARN(FleaseMessage msg) {
-        final FleaseAcceptorCell cc = getCell(msg);
+        final FleaseAcceptorCell cell = getCell(msg);
 
-        cc.touch();
-        if ((cc.getPrepared() != null) && (cc.getPrepared().after(msg))
-                || (cc.getAccepted() != null) && (cc.getAccepted().after(msg))) {
+        cell.touch();
+        if ((cell.getPrepared() != null) && (cell.getPrepared().after(msg))
+                || (cell.getAccepted() != null) && (cell.getAccepted().after(msg))) {
             if (Logging.isDebug() && config.isDebugPrintMessages())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "A ignore outdated LEARN message " + msg.getProposalNo());
         } else {
             if (Logging.isDebug() && config.isDebugPrintMessages()) {
-                final String preped = (cc.getPrepared() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cc.getPrepared().getProposalNo().toString();
-                final String acced = (cc.getAccepted() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cc.getAccepted().getProposalNo() + "=" + cc.getAccepted().getLeaseHolder() + "/" + cc.getAccepted().getLeaseTimeout();
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "A learn        p:" + preped + " a: " + acced + " -> " + msg.getProposalNo() + "=" + msg.getLeaseHolder() + "/" + msg.getLeaseTimeout());
+                final String prepared = (cell.getPrepared() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cell.getPrepared().getProposalNo().toString();
+                final String accepted = (cell.getAccepted() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cell.getAccepted().getProposalNo() + "=" + cell.getAccepted().getLeaseHolder() + "/" + cell.getAccepted().getLeaseTimeout();
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "A learn        p:" + prepared + " a: " + accepted + " -> " + msg.getProposalNo() + "=" + msg.getLeaseHolder() + "/" + msg.getLeaseTimeout());
             }
 
-            cc.setAccepted(msg);
-            cc.setPrepared(msg);
-            cc.setLatestLearn(msg);
+            cell.setAccepted(msg);
+            cell.setPrepared(msg);
+            cell.setLatestLearn(msg);
             evtListener.learnedEvent(msg.getCellId(), msg.getLeaseHolder(), msg.getLeaseTimeout(), msg.getMasterEpochNumber());
         }
 
@@ -302,18 +290,18 @@ public class FleaseAcceptor {
 
 
         assert (msg.getCellId() != null);
-        final FleaseAcceptorCell cc = getCell(msg.getCellId());
+        final FleaseAcceptorCell cell = getCell(msg.getCellId());
 
-        if (cc.getViewId() < msg.getViewId()) {
+        if (cell.getViewId() < msg.getViewId()) {
             // If the local view is lower than the delivered one, the view listener has to be informed to update
             // the local view. But the request can still be answered.
             viewListener.viewIdChangeEvent(msg.getCellId(), msg.getViewId());
 
-        } else if (cc.getViewId() > msg.getViewId() || (cc.getViewId() == msg.getViewId() && cc.isViewInvalidated())) {
+        } else if (cell.getViewId() > msg.getViewId() || (cell.getViewId() == msg.getViewId() && cell.isViewInvalidated())) {
             // If the request is from an older view, or the a view that has been invalidated on this
             // AcceptorCell, the request has to be aborted.
             FleaseMessage response = new FleaseMessage(FleaseMessage.MsgType.MSG_WRONG_VIEW, msg);
-            response.setViewId(cc.getViewId());
+            response.setViewId(cell.getViewId());
             return response;
         }
 
