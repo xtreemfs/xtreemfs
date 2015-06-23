@@ -421,7 +421,6 @@ void ClientImplementation::CloseVolume(xtreemfs::Volume* volume) {
   }
 }
 
-
 pbrpc::ServiceSet* ClientImplementation::GetServicesByType(const xtreemfs::pbrpc::ServiceType service_type) {
   boost::scoped_ptr<rpc::SyncCallbackBase> response;
   try {
@@ -432,6 +431,39 @@ pbrpc::ServiceSet* ClientImplementation::GetServicesByType(const xtreemfs::pbrpc
         boost::bind(
             &xtreemfs::pbrpc::DIRServiceClient
                 ::xtreemfs_service_get_by_type_sync,
+            dir_service_client_.get(),
+            _1,
+            boost::cref(dir_service_auth_),
+            boost::cref(dir_service_user_credentials_),
+            &request),
+        &dir_uuid_iterator_,
+        NULL,
+        RPCOptionsFromOptions(options_),
+        true));
+  } catch (const XtreemFSException& e) {
+    if (response.get()) {
+      response->DeleteBuffers();
+    }
+    throw;
+  }
+
+  // Delete everything except the response.
+  delete[] response->data();
+  delete response->error();
+
+  return static_cast<ServiceSet*>(response->response());
+}
+
+pbrpc::ServiceSet* ClientImplementation::GetServicesByName(const std::string service_name) {
+  boost::scoped_ptr<rpc::SyncCallbackBase> response;
+  try {
+    serviceGetByNameRequest request;
+    request.set_name(service_name);
+
+    response.reset(ExecuteSyncRequest(
+        boost::bind(
+            &xtreemfs::pbrpc::DIRServiceClient
+                ::xtreemfs_service_get_by_name_sync,
             dir_service_client_.get(),
             _1,
             boost::cref(dir_service_auth_),
@@ -572,7 +604,6 @@ void ClientImplementation::CreateVolume(
                default_stripe_width, volume_attributes);
 }
 
-
 void ClientImplementation::DeleteVolume(
     const ServiceAddresses& mrc_address,
     const xtreemfs::pbrpc::Auth& auth,
@@ -599,6 +630,36 @@ void ClientImplementation::DeleteVolume(
           RPCOptionsFromOptions(options_),
           true));
   response->DeleteBuffers();
+}
+
+void ClientImplementation::DeleteVolume(
+    const xtreemfs::pbrpc::Auth& auth,
+    const xtreemfs::pbrpc::UserCredentials& user_credentials,
+    const std::string& volume_name) {
+
+  boost::scoped_ptr<ServiceSet> service_set(GetServicesByName(volume_name));
+  if (service_set->services_size() == 0) {
+    throw IOException("volume '" + volume_name + "' does not exist");
+  }
+
+  const Service& service = service_set->services(0);
+  if (service.type() != SERVICE_TYPE_VOLUME) {
+    throw IOException("service '" + volume_name + "' is not a volume");
+  }
+
+  const ServiceDataMap& data_map = service.data();
+
+  std::string mrc_uuid;
+  for (int i = 0, l = data_map.data_size(); i < l; ++i) {
+    const KeyValuePair& pair = data_map.data(i);
+    if (pair.key() == "mrc") {
+      mrc_uuid = pair.value();
+      break;
+    }
+  }
+
+  ServiceAddresses mrc_address(UUIDToAddress(mrc_uuid));
+  DeleteVolume(mrc_address, auth, user_credentials, volume_name);
 }
 
 xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(

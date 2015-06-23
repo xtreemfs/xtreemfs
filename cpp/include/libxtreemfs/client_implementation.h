@@ -157,6 +157,11 @@ class ClientImplementation : public Client {
       const pbrpc::UserCredentials& user_credentials,
       const std::string& volume_name);
 
+  virtual void DeleteVolume(
+      const xtreemfs::pbrpc::Auth& auth,
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      const std::string& volume_name);
+
   virtual pbrpc::Volumes* ListVolumes(
       const ServiceAddresses& mrc_addresses,
       const pbrpc::Auth& auth);
@@ -176,6 +181,16 @@ class ClientImplementation : public Client {
    *
    * @remark Ownership of the return value is transferred to the caller. */
   pbrpc::ServiceSet* GetServicesByType(const xtreemfs::pbrpc::ServiceType service_type);
+
+  /** Returns a ServiceSet with all services of the given name
+   *
+   * @param string Name of the Service
+   *
+   * @throws IOException
+   * @throws PosixErrorException
+   *
+   * @remark Ownership of the return value is transferred to the caller. */
+  pbrpc::ServiceSet* GetServicesByName(const std::string service_name);
 
   const pbrpc::VivaldiCoordinates& GetVivaldiCoordinates() const;
 

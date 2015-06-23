@@ -240,6 +240,21 @@ class Client {
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& volume_name) = 0;
 
+  /** Deletes the volume "volume_name".
+   *
+   * @param auth            Authentication data, e.g. of type AUTH_PASSWORD.
+   * @param user_credentials    Username and groups of the user who executes
+   *                        CreateVolume().
+   * @param volume_name     Name of the volume to be deleted.
+   *
+   * @throws IOException
+   * @throws PosixErrorException
+   */
+  virtual void DeleteVolume(
+      const xtreemfs::pbrpc::Auth& auth,
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      const std::string& volume_name) = 0;
+
   /** Returns the available volumes on a MRC.
    *
    * @param mrc_addresses                       ServiceAddresses object which
