@@ -3787,7 +3787,7 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
 }
 
 
-SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtreemfs_1jniJNI_ClientProxy_1deleteVolume(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jbyteArray jarg3, jbyteArray jarg4, jstring jarg5) {
+SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtreemfs_1jniJNI_ClientProxy_1deleteVolume_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jbyteArray jarg3, jbyteArray jarg4, jstring jarg5) {
   xtreemfs::Client *arg1 = (xtreemfs::Client *) 0 ;
   xtreemfs::ServiceAddresses *arg2 = 0 ;
   xtreemfs::pbrpc::Auth *arg3 = 0 ;
@@ -3843,6 +3843,82 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
   jenv->ReleaseStringUTFChars(jarg5, arg5_pstr); 
   try {
     (arg1)->DeleteVolume((xtreemfs::ServiceAddresses const &)*arg2,(xtreemfs::pbrpc::Auth const &)*arg3,(xtreemfs::pbrpc::UserCredentials const &)*arg4,(std::string const &)*arg5);
+  }
+  catch(xtreemfs::IOException const &_e) {
+    {
+      SWIG_JavaThrowException(jenv, SWIG_JavaIOException, (&_e)->what());
+      return ;
+    }
+  }
+  catch(xtreemfs::PosixErrorException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/PosixErrorException");
+      jmethodID mid = jenv->GetMethodID(clazz, "<init>", "(Lorg/xtreemfs/foundation/pbrpc/generatedinterfaces/RPC$POSIXErrno;Ljava/lang/String;)V");
+      
+      jclass clazz2 = jenv->FindClass("org/xtreemfs/foundation/pbrpc/generatedinterfaces/RPC$POSIXErrno");
+      jmethodID mid2 = jenv->GetStaticMethodID(clazz2, "valueOf", "(I)Lorg/xtreemfs/foundation/pbrpc/generatedinterfaces/RPC$POSIXErrno;");
+      
+      jobject posix_errno = jenv->CallStaticObjectMethod(clazz2, mid2, (&_e)->posix_errno());
+      jstring what = jenv->NewStringUTF((&_e)->what());
+      jthrowable o = static_cast<jthrowable>(jenv->NewObject(clazz, mid, posix_errno, what));
+      jenv->Throw(o);
+      
+      return ;
+    }
+  }
+  
+}
+
+
+SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtreemfs_1jniJNI_ClientProxy_1deleteVolume_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jbyteArray jarg2, jbyteArray jarg3, jstring jarg4) {
+  xtreemfs::Client *arg1 = (xtreemfs::Client *) 0 ;
+  xtreemfs::pbrpc::Auth *arg2 = 0 ;
+  xtreemfs::pbrpc::UserCredentials *arg3 = 0 ;
+  std::string *arg4 = 0 ;
+  xtreemfs::pbrpc::Auth temp2 ;
+  xtreemfs::pbrpc::UserCredentials temp3 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(xtreemfs::Client **)&jarg1; 
+  {
+    int proto_size = 0;
+    boost::scoped_ptr<char> proto_buffer(
+      JNIUtil::MakeCharArray(jenv, jarg2, &proto_size));
+    
+    bool parsed_ok = temp2.ParseFromArray(proto_buffer.get(), proto_size);
+    if (!parsed_ok) {
+      SWIG_JavaThrowException(jenv,
+        SWIG_JavaRuntimeException,
+        "Unable to parse xtreemfs::pbrpc::Auth protocol message.");
+    }
+    arg2 = &temp2;
+  }
+  {
+    int proto_size = 0;
+    boost::scoped_ptr<char> proto_buffer(
+      JNIUtil::MakeCharArray(jenv, jarg3, &proto_size));
+    
+    bool parsed_ok = temp3.ParseFromArray(proto_buffer.get(), proto_size);
+    if (!parsed_ok) {
+      SWIG_JavaThrowException(jenv,
+        SWIG_JavaRuntimeException,
+        "Unable to parse xtreemfs::pbrpc::UserCredentials protocol message.");
+    }
+    arg3 = &temp3;
+  }
+  if(!jarg4) {
+    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null string");
+    return ;
+  }
+  const char *arg4_pstr = (const char *)jenv->GetStringUTFChars(jarg4, 0); 
+  if (!arg4_pstr) return ;
+  std::string arg4_str(arg4_pstr);
+  arg4 = &arg4_str;
+  jenv->ReleaseStringUTFChars(jarg4, arg4_pstr); 
+  try {
+    (arg1)->DeleteVolume((xtreemfs::pbrpc::Auth const &)*arg2,(xtreemfs::pbrpc::UserCredentials const &)*arg3,(std::string const &)*arg4);
   }
   catch(xtreemfs::IOException const &_e) {
     {

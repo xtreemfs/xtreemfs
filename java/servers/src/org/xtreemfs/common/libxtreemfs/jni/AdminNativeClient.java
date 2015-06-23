@@ -23,7 +23,6 @@ import org.xtreemfs.common.libxtreemfs.jni.generated.OptionsProxy;
 import org.xtreemfs.common.libxtreemfs.jni.generated.SSLOptionsProxy;
 import org.xtreemfs.common.libxtreemfs.jni.generated.VolumeProxy;
 import org.xtreemfs.foundation.SSLOptions;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
@@ -132,12 +131,6 @@ public class AdminNativeClient extends NativeClient implements AdminClient {
     @Override
     public Set<String> getRemovedOsds() throws IOException {
         return adminClient.getRemovedOsds();
-    }
-
-    @Override
-    public void deleteVolume(Auth auth, UserCredentials userCredentials, String volumeName) throws IOException,
-            PosixErrorException, AddressToUUIDNotFoundException {
-        adminClient.deleteVolume(auth, userCredentials, volumeName);
     }
 
     @Override

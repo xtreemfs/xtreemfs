@@ -93,7 +93,11 @@ public class ClientProxy {
   }
 
   public void deleteVolume(ServiceAddresses mrc_address, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth auth, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials user_credentials, String volume_name) throws java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException {
-    xtreemfs_jniJNI.ClientProxy_deleteVolume(swigCPtr, this, ServiceAddresses.getCPtr(mrc_address), mrc_address, auth.toByteArray(), user_credentials.toByteArray(), volume_name);
+    xtreemfs_jniJNI.ClientProxy_deleteVolume__SWIG_0(swigCPtr, this, ServiceAddresses.getCPtr(mrc_address), mrc_address, auth.toByteArray(), user_credentials.toByteArray(), volume_name);
+  }
+
+  public void deleteVolume(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth auth, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials user_credentials, String volume_name) throws java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException {
+    xtreemfs_jniJNI.ClientProxy_deleteVolume__SWIG_1(swigCPtr, this, auth.toByteArray(), user_credentials.toByteArray(), volume_name);
   }
 
   public org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes listVolumes(ServiceAddresses mrc_addresses, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth auth) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException {

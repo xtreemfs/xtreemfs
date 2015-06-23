@@ -173,8 +173,7 @@ public class NativeClient implements Client {
     @Override
     public void deleteVolume(Auth auth, UserCredentials userCredentials, String volumeName) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException {
-        // TODO (jdillmann): Can't access DIR directly to call xtreemfs_service_get_by_name
-        throw new RuntimeException("Not implemented yet.");
+        proxy.deleteVolume(auth, userCredentials, volumeName);
     }
 
     @Override
