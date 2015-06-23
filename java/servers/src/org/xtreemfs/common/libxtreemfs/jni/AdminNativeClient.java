@@ -29,9 +29,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
 
 public class AdminNativeClient extends NativeClient implements AdminClient {
@@ -138,16 +135,6 @@ public class AdminNativeClient extends NativeClient implements AdminClient {
     }
 
     @Override
-    public void createVolume(Auth auth, UserCredentials userCredentials, String volumeName, int mode,
-            String ownerUsername, String ownerGroupname, AccessControlPolicyType accessPolicyType,
-            StripingPolicyType defaultStripingPolicyType, int defaultStripeSize, int defaultStripeWidth,
-            List<KeyValuePair> volumeAttributes) throws IOException, PosixErrorException,
-            AddressToUUIDNotFoundException {
-        adminClient.createVolume(auth, userCredentials, volumeName, mode, ownerUsername, ownerGroupname,
-                accessPolicyType, defaultStripingPolicyType, defaultStripeSize, defaultStripeWidth, volumeAttributes);
-    }
-
-    @Override
     public void deleteVolume(Auth auth, UserCredentials userCredentials, String volumeName) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException {
         adminClient.deleteVolume(auth, userCredentials, volumeName);
@@ -156,11 +143,6 @@ public class AdminNativeClient extends NativeClient implements AdminClient {
     @Override
     public Volumes listVolumes() throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         return adminClient.listVolumes();
-    }
-
-    @Override
-    public String[] listVolumeNames() throws IOException {
-        return adminClient.listVolumeNames();
     }
 
     @Override

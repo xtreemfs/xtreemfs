@@ -46,9 +46,11 @@ public class NativeClient implements Client {
 
     protected final ClientProxy proxy;
 
-    protected final static Auth authBogus;
+    protected final static Auth dirServiceAuth;
     static {
-        authBogus = Auth.newBuilder().setAuthType(AuthType.AUTH_NONE).build();
+        // TODO: change this when the DIR service supports real auth.
+        // @see ClientImplementation.dirServiceAuth
+        dirServiceAuth = Auth.newBuilder().setAuthType(AuthType.AUTH_NONE).build();
     }
 
     public NativeClient(ClientProxy client) {
@@ -115,8 +117,13 @@ public class NativeClient implements Client {
             StripingPolicyType defaultStripingPolicyType, int defaultStripeSize, int defaultStripeWidth,
             List<KeyValuePair> volumeAttributes) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException {
-        // TODO (jdillmann): Can't access DIR directly to call xtreemfs_service_get_by_name
-        throw new RuntimeException("Not implemented yet.");
+        final int quota = 0;
+
+        StringMap volumeAttributesMap = NativeHelper.keyValueListToMap(volumeAttributes);
+        proxy.createVolume(auth, userCredentials, volumeName, mode, ownerUsername, ownerGroupname, accessPolicyType,
+                quota, defaultStripingPolicyType, defaultStripeSize, defaultStripeWidth, volumeAttributesMap);
+
+        volumeAttributesMap.delete();
     }
 
     @Override
@@ -173,36 +180,35 @@ public class NativeClient implements Client {
     @Override
     public Volumes listVolumes(String mrcAddress) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException {
-        return proxy.listVolumes(new ServiceAddresses(mrcAddress), authBogus);
+        return proxy.listVolumes(new ServiceAddresses(mrcAddress), dirServiceAuth);
     }
 
     @Override
     public Volumes listVolumes() throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
-        // TODO (jdillmann): Can't access DIR directly to call xtreemfs_service_get_by_name
-        throw new RuntimeException("Not implemented yet.");
+        throw new RuntimeException("Not implemented in the C++ library.");
     }
 
     @Override
     public String[] listVolumeNames() throws IOException {
-        // TODO (jdillmann): Can't access DIR directly to call xtreemfs_service_get_by_name
-        throw new RuntimeException("Not implemented yet.");
+        StringVector result = proxy.listVolumeNames();
+        String[] out = result.toArray();
+        result.delete();
+        return out;
     }
 
     @Override
     public Volumes listVolumes(List<String> mrcAddresses) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException {
-        return proxy.listVolumes(new ServiceAddresses(StringVector.from(mrcAddresses)), authBogus);
+        return proxy.listVolumes(new ServiceAddresses(StringVector.from(mrcAddresses)), dirServiceAuth);
     }
 
     @Override
     public Map<String, Service> listServers() throws IOException, PosixErrorException {
-        // TODO (jdillmann): Can't access DIR directly to call xtreemfs_service_get_by_name
-        throw new RuntimeException("Not implemented yet.");
+        throw new RuntimeException("Not implemented in the C++ library.");
     }
 
     @Override
     public Map<String, Service> listOSDsAndAttributes() throws IOException, PosixErrorException {
-        // TODO (jdillmann): Can't access DIR directly to call xtreemfs_service_get_by_name
-        throw new RuntimeException("Not implemented yet.");
+        throw new RuntimeException("Not implemented in the C++ library.");
     }
 }

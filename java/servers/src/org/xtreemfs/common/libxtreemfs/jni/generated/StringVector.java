@@ -43,6 +43,15 @@ public class StringVector {
     return out;
   }
 
+  public String[] toArray() {
+    int size = (int) this.size();
+    String[] out = new String[size];
+    for (int i = 0; i < size; ++i) {
+      out[i] = this.get(i);
+    }
+    return out;
+  }
+
   public StringVector() {
     this(xtreemfs_jniJNI.new_StringVector__SWIG_0(), true);
   }

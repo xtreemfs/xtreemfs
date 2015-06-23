@@ -21,6 +21,15 @@
     }
     return out;
   }
+
+  public JavaElementType[] toArray() {
+    int size = (int) this.size();
+    JavaElementType[] out = new JavaElementType[size];
+    for (int i = 0; i < size; ++i) {
+      out[i] = this.get(i);
+    }
+    return out;
+  }
 %}
 
 %template(Name) CppCollectionType;

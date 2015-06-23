@@ -43,6 +43,15 @@ public class IntVector {
     return out;
   }
 
+  public Integer[] toArray() {
+    int size = (int) this.size();
+    Integer[] out = new Integer[size];
+    for (int i = 0; i < size; ++i) {
+      out[i] = this.get(i);
+    }
+    return out;
+  }
+
   public IntVector() {
     this(xtreemfs_jniJNI.new_IntVector__SWIG_0(), true);
   }
