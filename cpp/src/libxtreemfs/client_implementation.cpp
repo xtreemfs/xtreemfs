@@ -36,10 +36,10 @@ using namespace xtreemfs::util;
 namespace xtreemfs {
 
 DIRUUIDResolver::DIRUUIDResolver(
-    SimpleUUIDIterator& dir_service_addresses,
+    SimpleUUIDIterator& dir_uuid_iterator,
     const pbrpc::UserCredentials& user_credentials,
     const Options& options)
-    : dir_service_addresses_(dir_service_addresses),
+    : dir_uuid_iterator_(dir_uuid_iterator),
       dir_service_user_credentials_(user_credentials),
       options_(options) {
   // Currently no AUTH is needed to access the DIR.
@@ -80,7 +80,7 @@ void DIRUUIDResolver::UUIDToAddressWithOptions(const std::string& uuid,
               boost::cref(dir_service_auth_),
               boost::cref(dir_service_user_credentials_),
               &rq),
-          &dir_service_addresses_,
+          &dir_uuid_iterator_,
           NULL,
           options,
           true));
@@ -166,7 +166,7 @@ void DIRUUIDResolver::VolumeNameToMRCUUID(const std::string& volume_name,
               boost::cref(dir_service_auth_),
               boost::cref(dir_service_user_credentials_),
               &rq),
-          &dir_service_addresses_,
+          &dir_uuid_iterator_,
           NULL,
           RPCOptionsFromOptions(options_),
           true));
@@ -225,7 +225,7 @@ void DIRUUIDResolver::VolumeNameToMRCUUID(const std::string& volume_name,
               boost::cref(dir_service_auth_),
               boost::cref(dir_service_user_credentials_),
               &rq),
-          &dir_service_addresses_,
+          &dir_uuid_iterator_,
           NULL,
           RPCOptionsFromOptions(options_),
           true));
@@ -267,8 +267,8 @@ ClientImplementation::ClientImplementation(
     : was_shutdown_(false),
       options_(options),
       dir_service_ssl_options_(ssl_options),
-      dir_service_addresses_(dir_service_addresses),
-      uuid_resolver_(dir_service_addresses_,
+      dir_uuid_iterator_(dir_service_addresses),
+      uuid_resolver_(dir_uuid_iterator_,
                      user_credentials,
                      options) {
 
@@ -283,7 +283,7 @@ ClientImplementation::ClientImplementation(
   initialize_error_log(20);
 
   if (options_.vivaldi_enable) {
-    vivaldi_.reset(new Vivaldi(dir_service_addresses,
+    vivaldi_.reset(new Vivaldi(dir_uuid_iterator_,
                                GetUUIDResolver(),
                                options_));
   }

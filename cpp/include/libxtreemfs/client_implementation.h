@@ -49,7 +49,7 @@ class ClientTestFastLingerTimeoutConnectTimeout_LingerTests_Test;
 class DIRUUIDResolver : public UUIDResolver {
  public:
   DIRUUIDResolver(
-      SimpleUUIDIterator& dir_service_addresses,
+      SimpleUUIDIterator& dir_uuid_iterator,
       const pbrpc::UserCredentials& user_credentials,
       const Options& options);
 
@@ -65,7 +65,7 @@ class DIRUUIDResolver : public UUIDResolver {
                                    SimpleUUIDIterator* uuid_iterator);
 
  private:
-  SimpleUUIDIterator& dir_service_addresses_;
+  SimpleUUIDIterator& dir_uuid_iterator_;
 
   /** The auth_type of this object will always be set to AUTH_NONE. */
   // TODO(mberlin): change this when the DIR service supports real auth.
@@ -172,7 +172,7 @@ class ClientImplementation : public Client {
   boost::scoped_ptr<pbrpc::DIRServiceClient> dir_service_client_;
 
 
-  SimpleUUIDIterator dir_service_addresses_;
+  SimpleUUIDIterator dir_uuid_iterator_;
   DIRUUIDResolver uuid_resolver_;
 
   /** Random, non-persistent UUID to distinguish locks of different clients. */

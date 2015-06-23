@@ -70,7 +70,7 @@ class Vivaldi {
   /**
    * @remarks   Ownership is not transferred.
    */
-  Vivaldi(const ServiceAddresses& dir_addresses,
+  Vivaldi(SimpleUUIDIterator& dir_uuid_iterator,
           UUIDResolver* uuid_resolver,
           const Options& options);
   
@@ -85,7 +85,7 @@ class Vivaldi {
 
   boost::scoped_ptr<pbrpc::DIRServiceClient> dir_client_;
   boost::scoped_ptr<pbrpc::OSDServiceClient> osd_client_;
-  SimpleUUIDIterator& dir_service_addresses_;
+  SimpleUUIDIterator& dir_uuid_iterator_;
   UUIDResolver* uuid_resolver_;
 
   /** Shallow copy of the Client's options, with disabled retry and interrupt

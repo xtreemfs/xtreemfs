@@ -36,10 +36,10 @@ using namespace xtreemfs::util;
 namespace xtreemfs {
     
 Vivaldi::Vivaldi(
-    SimpleUUIDIterator& dir_service_addresses,
+    SimpleUUIDIterator& dir_uuid_iterator,
     UUIDResolver* uuid_resolver,
     const Options& options)
-    : dir_service_addresses_(dir_service_addresses),
+    : dir_uuid_iterator_(dir_uuid_iterator),
       uuid_resolver_(uuid_resolver),
       vivaldi_options_(options) {
   srand(static_cast<unsigned int>(time(NULL)));
@@ -279,7 +279,7 @@ void Vivaldi::Run() {
                         boost::cref(auth_bogus_),
                         boost::cref(user_credentials_bogus_),
                         own_node.GetCoordinates()),
-                    &dir_service_addresses_,
+                    &dir_uuid_iterator_,
                     NULL,
                     RPCOptionsFromOptions(vivaldi_options_),
                     true));
@@ -413,7 +413,7 @@ bool Vivaldi::UpdateKnownOSDs(list<KnownOSD>* updated_osds,
             boost::cref(auth_bogus_),
             boost::cref(user_credentials_bogus_),
             &request),
-        &dir_service_addresses_,
+        &dir_uuid_iterator_,
         NULL,
         RPCOptionsFromOptions(vivaldi_options_),
         true));
