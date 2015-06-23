@@ -22,6 +22,8 @@
 #include "util/synchronized_queue.h"
 #include "libxtreemfs/async_write_handler.h"
 
+#include "xtreemfs/DIR.pb.h"
+
 namespace boost {
 class thread;
 }  // namespace boost
@@ -120,6 +122,20 @@ class ClientImplementation : public Client {
       int default_stripe_width,
       const std::list<pbrpc::KeyValuePair*>& volume_attributes);
 
+  virtual void CreateVolume(
+      const xtreemfs::pbrpc::Auth& auth,
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      const std::string& volume_name,
+      int mode,
+      const std::string& owner_username,
+      const std::string& owner_groupname,
+      const xtreemfs::pbrpc::AccessControlPolicyType& access_policy,
+      long volume_quota,
+      const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
+      int default_stripe_size,
+      int default_stripe_width,
+      const std::list<xtreemfs::pbrpc::KeyValuePair*>& volume_attributes);
+
   virtual void DeleteVolume(
       const ServiceAddresses& mrc_address,
       const pbrpc::Auth& auth,
@@ -134,6 +150,16 @@ class ClientImplementation : public Client {
 
   virtual std::string UUIDToAddress(const std::string& uuid);
 
+  /** Returns a ServiceSet with all services of the given type.
+   *
+   * @param serviceType Type of the Service
+   *
+   * @throws IOException
+   * @throws PosixErrorException
+   *
+   * @remark Ownership of the return value is transferred to the caller. */
+  pbrpc::ServiceSet* GetServicesByType(const xtreemfs::pbrpc::ServiceType service_type);
+
   const pbrpc::VivaldiCoordinates& GetVivaldiCoordinates() const;
 
   util::SynchronizedQueue<AsyncWriteHandler::CallbackEntry>& GetAsyncWriteCallbackQueue();
@@ -146,14 +172,12 @@ class ClientImplementation : public Client {
    *  check the authentication data (except Create, Delete, ListVolume(s)). */
   xtreemfs::pbrpc::Auth auth_bogus_;
 
-  /** The PBRPC protocol requires an Auth & UserCredentials object in every
-   *  request. However there are many operations which do not check the content
-   *  of this operation and therefore we use bogus objects then.
-   *  user_credentials_bogus will only contain a user "xtreemfs".
-   *
-   *  @remark Cannot be set to const because it's modified inside the
-   *          constructor VolumeImplementation(). */
-  xtreemfs::pbrpc::UserCredentials user_credentials_bogus_;
+  /** The auth_type of this object will always be set to AUTH_NONE. */
+  // TODO(mberlin): change this when the DIR service supports real auth.
+  xtreemfs::pbrpc::Auth dir_service_auth_;
+
+  /** These credentials will be used for messages to the DIR service. */
+  xtreemfs::pbrpc::UserCredentials dir_service_user_credentials_;
 
   /** Options class which contains the log_level string and logfile path. */
   const xtreemfs::Options& options_;

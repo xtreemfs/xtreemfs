@@ -145,6 +145,23 @@ class Client {
       int default_stripe_width,
       const std::list<xtreemfs::pbrpc::KeyValuePair*>& volume_attributes) = 0;
 
+  /** Creates a volume on the first found MRC.
+   *
+   */
+  virtual void CreateVolume(
+      const xtreemfs::pbrpc::Auth& auth,
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      const std::string& volume_name,
+      int mode,
+      const std::string& owner_username,
+      const std::string& owner_groupname,
+      const xtreemfs::pbrpc::AccessControlPolicyType& access_policy,
+      long volume_quota,
+      const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
+      int default_stripe_size,
+      int default_stripe_width,
+      const std::list<xtreemfs::pbrpc::KeyValuePair*>& volume_attributes) = 0;
+
   // TODO(mberlin): Also provide a method which accepts a list of MRC addresses.
   /** Deletes the volume "volume_name" at the MRC "mrc_address".
    *

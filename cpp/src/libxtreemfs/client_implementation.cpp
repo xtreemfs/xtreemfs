@@ -265,6 +265,7 @@ ClientImplementation::ClientImplementation(
     const rpc::SSLOptions* ssl_options,
     const Options& options)
     : was_shutdown_(false),
+      dir_service_user_credentials_(user_credentials),
       options_(options),
       dir_service_ssl_options_(ssl_options),
       dir_uuid_iterator_(dir_service_addresses),
@@ -274,8 +275,9 @@ ClientImplementation::ClientImplementation(
 
   // Set bogus auth object.
   auth_bogus_.set_auth_type(AUTH_NONE);
-  // Set username "xtreemfs" as it does not get checked at server side.
-  user_credentials_bogus_.set_username("xtreemfs");
+
+  // Currently no AUTH is needed to access the DIR.
+  dir_service_auth_.set_auth_type(AUTH_NONE);
 
   initialize_logger(options.log_level_string,
                     options.log_file_path,
@@ -417,6 +419,71 @@ void ClientImplementation::CloseVolume(xtreemfs::Volume* volume) {
       it = list_open_volumes_.erase(it);
     }
   }
+}
+
+
+pbrpc::ServiceSet* ClientImplementation::GetServicesByType(const xtreemfs::pbrpc::ServiceType service_type) {
+  boost::scoped_ptr<rpc::SyncCallbackBase> response;
+  try {
+    serviceGetByTypeRequest request;
+    request.set_type(service_type);
+
+    response.reset(ExecuteSyncRequest(
+        boost::bind(
+            &xtreemfs::pbrpc::DIRServiceClient
+                ::xtreemfs_service_get_by_type_sync,
+            dir_service_client_.get(),
+            _1,
+            boost::cref(dir_service_auth_),
+            boost::cref(dir_service_user_credentials_),
+            &request),
+        &dir_uuid_iterator_,
+        NULL,
+        RPCOptionsFromOptions(options_),
+        true));
+  } catch (const XtreemFSException& e) {
+    if (response.get()) {
+      response->DeleteBuffers();
+    }
+    throw;
+  }
+
+  // Delete everything except the response.
+  delete[] response->data();
+  delete response->error();
+
+  return static_cast<ServiceSet*>(response->response());
+}
+
+
+void ClientImplementation::CreateVolume(
+    const xtreemfs::pbrpc::Auth& auth,
+    const xtreemfs::pbrpc::UserCredentials& user_credentials,
+    const std::string& volume_name,
+    int mode,
+    const std::string& owner_username,
+    const std::string& owner_groupname,
+    const xtreemfs::pbrpc::AccessControlPolicyType& access_policy,
+    long volume_quota,
+    const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
+    int default_stripe_size,
+    int default_stripe_width,
+    const std::list<xtreemfs::pbrpc::KeyValuePair*>& volume_attributes) {
+
+  boost::scoped_ptr<ServiceSet> service_set(GetServicesByType(SERVICE_TYPE_MRC));
+  if (service_set->services_size() == 0) {
+    throw IOException("no MRC available for volume creation");
+  }
+
+  ServiceAddresses mrc_address;
+  for (int i = 0; i < service_set->services_size(); i++) {
+    const Service& service = service_set->services(i);
+    std::string address = UUIDToAddress(service.uuid());
+    mrc_address.Add(address);
+  }
+
+  CreateVolume(mrc_address, auth, user_credentials, volume_name, mode, owner_username, owner_groupname, access_policy, volume_quota,
+               default_striping_policy_type, default_stripe_size, default_stripe_width, volume_attributes);
 }
 
 void ClientImplementation::CreateVolume(
