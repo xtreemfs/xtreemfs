@@ -455,35 +455,33 @@ pbrpc::ServiceSet* ClientImplementation::GetServicesByType(const xtreemfs::pbrpc
   return static_cast<ServiceSet*>(response->response());
 }
 
-
 void ClientImplementation::CreateVolume(
+    const ServiceAddresses& mrc_address,
     const xtreemfs::pbrpc::Auth& auth,
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& volume_name,
     int mode,
     const std::string& owner_username,
     const std::string& owner_groupname,
-    const xtreemfs::pbrpc::AccessControlPolicyType& access_policy,
+    const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
     long volume_quota,
     const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
     int default_stripe_size,
     int default_stripe_width,
     const std::list<xtreemfs::pbrpc::KeyValuePair*>& volume_attributes) {
 
-  boost::scoped_ptr<ServiceSet> service_set(GetServicesByType(SERVICE_TYPE_MRC));
-  if (service_set->services_size() == 0) {
-    throw IOException("no MRC available for volume creation");
+  std::map<std::string, std::string> volume_attributes_map;
+  for (list<KeyValuePair*>::const_iterator it = volume_attributes.begin();
+       it != volume_attributes.end();
+       ++it) {
+    volume_attributes_map[(*it)->key()] = (*it)->value();
   }
 
-  ServiceAddresses mrc_address;
-  for (int i = 0; i < service_set->services_size(); i++) {
-    const Service& service = service_set->services(i);
-    std::string address = UUIDToAddress(service.uuid());
-    mrc_address.Add(address);
-  }
-
-  CreateVolume(mrc_address, auth, user_credentials, volume_name, mode, owner_username, owner_groupname, access_policy, volume_quota,
-               default_striping_policy_type, default_stripe_size, default_stripe_width, volume_attributes);
+  return CreateVolume(mrc_address, auth, user_credentials, volume_name, mode,
+                      owner_username, owner_groupname, access_policy_type,
+                      volume_quota, default_striping_policy_type,
+                      default_stripe_size, default_stripe_width,
+                      volume_attributes_map);
 }
 
 void ClientImplementation::CreateVolume(
@@ -494,12 +492,12 @@ void ClientImplementation::CreateVolume(
     int mode,
     const std::string& owner_username,
     const std::string& owner_groupname,
-    const xtreemfs::pbrpc::AccessControlPolicyType& access_policy,
+    const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
     long volume_quota,
     const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
     int default_stripe_size,
     int default_stripe_width,
-    const std::list<xtreemfs::pbrpc::KeyValuePair*>& volume_attributes) {
+    const std::map<std::string, std::string>& volume_attributes) {
   MRCServiceClient mrc_service_client(network_client_.get());
 
   xtreemfs::pbrpc::Volume new_volume;
@@ -508,20 +506,20 @@ void ClientImplementation::CreateVolume(
   new_volume.set_name(volume_name);
   new_volume.set_owner_user_id(owner_username);
   new_volume.set_owner_group_id(owner_groupname);
-  new_volume.set_access_control_policy(access_policy);
+  new_volume.set_access_control_policy(access_policy_type);
   new_volume.set_quota(volume_quota);
   new_volume.mutable_default_striping_policy()
       ->set_type(default_striping_policy_type);
   new_volume.mutable_default_striping_policy()
       ->set_stripe_size(default_stripe_size);
   new_volume.mutable_default_striping_policy()->set_width(default_stripe_width);
-  for (list<KeyValuePair*>::const_iterator it = volume_attributes.begin();
-       it != volume_attributes.end();
-       ++it) {
-    new_volume.add_attrs();
-    new_volume.mutable_attrs(new_volume.attrs_size() - 1)->set_key((*it)->key());
-    new_volume.mutable_attrs(new_volume.attrs_size() - 1)
-        ->set_value((*it)->value());
+
+  for (std::map<std::string, std::string>::const_iterator it = volume_attributes.begin();
+      it != volume_attributes.end();
+      ++it) {
+    KeyValuePair* attr = new_volume.add_attrs();
+    attr->set_key(it->first);
+    attr->set_value(it->second);
   }
 
   SimpleUUIDIterator temp_uuid_iterator_with_addresses(mrc_address);
@@ -541,6 +539,39 @@ void ClientImplementation::CreateVolume(
           true));
   response->DeleteBuffers();
 }
+
+void ClientImplementation::CreateVolume(
+    const xtreemfs::pbrpc::Auth& auth,
+    const xtreemfs::pbrpc::UserCredentials& user_credentials,
+    const std::string& volume_name,
+    int mode,
+    const std::string& owner_username,
+    const std::string& owner_groupname,
+    const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
+    long volume_quota,
+    const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
+    int default_stripe_size,
+    int default_stripe_width,
+    const std::map<std::string, std::string>& volume_attributes) {
+
+  boost::scoped_ptr<ServiceSet> service_set(GetServicesByType(SERVICE_TYPE_MRC));
+  if (service_set->services_size() == 0) {
+    throw IOException("no MRC available for volume creation");
+  }
+
+  ServiceAddresses mrc_address;
+  for (int i = 0; i < service_set->services_size(); i++) {
+    const Service& service = service_set->services(i);
+    std::string address = UUIDToAddress(service.uuid());
+    mrc_address.Add(address);
+  }
+
+  CreateVolume(mrc_address, auth, user_credentials, volume_name, mode,
+               owner_username, owner_groupname, access_policy_type, volume_quota,
+               default_striping_policy_type, default_stripe_size,
+               default_stripe_width, volume_attributes);
+}
+
 
 void ClientImplementation::DeleteVolume(
     const ServiceAddresses& mrc_address,

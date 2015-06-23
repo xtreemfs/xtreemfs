@@ -115,12 +115,27 @@ class ClientImplementation : public Client {
       int mode,
       const std::string& owner_username,
       const std::string& owner_groupname,
-      const pbrpc::AccessControlPolicyType& access_policy,
+      const pbrpc::AccessControlPolicyType& access_policy_type,
       long volume_quota,
       const pbrpc::StripingPolicyType& default_striping_policy_type,
       int default_stripe_size,
       int default_stripe_width,
       const std::list<pbrpc::KeyValuePair*>& volume_attributes);
+
+  virtual void CreateVolume(
+      const ServiceAddresses& mrc_address,
+      const xtreemfs::pbrpc::Auth& auth,
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      const std::string& volume_name,
+      int mode,
+      const std::string& owner_username,
+      const std::string& owner_groupname,
+      const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
+      long quota,
+      const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
+      int default_stripe_size,
+      int default_stripe_width,
+      const std::map<std::string, std::string>& volume_attributes);
 
   virtual void CreateVolume(
       const xtreemfs::pbrpc::Auth& auth,
@@ -129,12 +144,12 @@ class ClientImplementation : public Client {
       int mode,
       const std::string& owner_username,
       const std::string& owner_groupname,
-      const xtreemfs::pbrpc::AccessControlPolicyType& access_policy,
+      const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
       long volume_quota,
       const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
       int default_stripe_size,
       int default_stripe_width,
-      const std::list<xtreemfs::pbrpc::KeyValuePair*>& volume_attributes);
+      const std::map<std::string, std::string>& volume_attributes);
 
   virtual void DeleteVolume(
       const ServiceAddresses& mrc_address,
