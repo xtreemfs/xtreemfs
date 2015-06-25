@@ -173,11 +173,10 @@ public class BenchmarkConfig extends ServiceConfig {
         if (isUsingSSL()) {
             if (null == sslOptions) {
                 sslOptions = new SSLOptions(
-                        new FileInputStream(this.getServiceCredsFile()),
+                        this.getServiceCredsFile(),
                         this.getServiceCredsPassphrase(),
                         this.getServiceCredsContainer(),
-                        new FileInputStream(
-                        this.getTrustedCertsFile()),
+                        this.getTrustedCertsFile(),
                         this.getTrustedCertsPassphrase(),
                         this.getTrustedCertsContainer(),
                         false,

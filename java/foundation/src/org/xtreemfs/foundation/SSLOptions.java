@@ -8,6 +8,7 @@
 
 package org.xtreemfs.foundation;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyManagementException;
@@ -53,11 +54,13 @@ public class SSLOptions {
      * file with the private key and the public cert for the server
      */
     private final InputStream  serverCredentialFile;
+    private final String       serverCredentialFilePath;
     
     /**
      * file with trusted public certs
      */
     private final InputStream  trustedCertificatesFile;
+    private final String       trustedCertificatesFilePath;
     
     /**
      * passphrase of the server credential file
@@ -91,13 +94,38 @@ public class SSLOptions {
     
     private final boolean      useFakeSSLMode;
     
+    public SSLOptions(String serverCredentialFilePath, String serverCredentialFilePassphrase,
+            String serverCredentialFileContainer, String trustedCertificatesFilePath,
+            String trustedCertificatesFilePassphrase, String trustedCertificatesFileContainer,
+            boolean authenticationWithoutEncryption, boolean useFakeSSLMode, String sslProtocolString,
+            TrustManager trustManager) throws IOException {
+        this(serverCredentialFilePath, new FileInputStream(serverCredentialFilePath), serverCredentialFilePassphrase,
+                serverCredentialFileContainer, trustedCertificatesFilePath, new FileInputStream(
+                        trustedCertificatesFilePath), trustedCertificatesFilePassphrase,
+                trustedCertificatesFileContainer, authenticationWithoutEncryption, useFakeSSLMode, sslProtocolString,
+                trustManager);
+    }
+
     public SSLOptions(InputStream serverCredentialFile, String serverCredentialFilePassphrase,
         String serverCredentialFileContainer, InputStream trustedCertificatesFile,
         String trustedCertificatesFilePassphrase, String trustedCertificatesFileContainer,
         boolean authenticationWithoutEncryption, boolean useFakeSSLMode, String sslProtocolString,
         TrustManager trustManager) throws IOException {
-        
+        this(null, serverCredentialFile, serverCredentialFilePassphrase, serverCredentialFileContainer, null,
+                trustedCertificatesFile, trustedCertificatesFilePassphrase, trustedCertificatesFileContainer,
+                authenticationWithoutEncryption, useFakeSSLMode, sslProtocolString, trustManager);
+    }
+
+    private SSLOptions(String serverCredentialFilePath, InputStream serverCredentialFile,
+            String serverCredentialFilePassphrase, String serverCredentialFileContainer,
+            String trustedCertificatesFilePath, InputStream trustedCertificatesFile,
+            String trustedCertificatesFilePassphrase, String trustedCertificatesFileContainer,
+            boolean authenticationWithoutEncryption, boolean useFakeSSLMode, String sslProtocolString,
+            TrustManager trustManager) throws IOException {
+
+        this.serverCredentialFilePath = serverCredentialFilePath;
         this.serverCredentialFile = serverCredentialFile;
+        this.trustedCertificatesFilePath = trustedCertificatesFilePath;
         this.trustedCertificatesFile = trustedCertificatesFile;
         
         if (serverCredentialFilePassphrase != null)
@@ -245,6 +273,10 @@ public class SSLOptions {
         return this.serverCredentialFile;
     }
     
+    public String getServerCredentialFilePath() {
+        return this.serverCredentialFilePath;
+    }
+
     public String getServerCredentialFileContainer() {
         return this.serverCredentialFileContainer;
     }
@@ -257,6 +289,10 @@ public class SSLOptions {
         return this.trustedCertificatesFile;
     }
     
+    public String getTrustedCertificatesFilePath() {
+        return this.trustedCertificatesFilePath;
+    }
+
     public String getTrustedCertificatesFileContainer() {
         return this.trustedCertificatesFileContainer;
     }
