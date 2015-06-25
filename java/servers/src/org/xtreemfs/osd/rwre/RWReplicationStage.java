@@ -1382,9 +1382,9 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
      * 
      * @param fileId
      *            to close.
-     * @param fileCredentials
+     * @param fileCreds
      *            used to call {@link #getState(FileCredentials, XLocations, boolean, boolean)}.
-     * @param xLocations
+     * @param xLoc
      *            used to call {@link #getState(FileCredentials, XLocations, boolean, boolean)}.
      * @param callback
      *            to execute after the view has been invalidated.

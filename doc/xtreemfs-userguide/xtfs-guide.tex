@@ -2627,9 +2627,9 @@ To enable database replication across a set of DIR or MRC instances, it is neces
 \end{itemize}
 
 \subsubsection{Enabling and Configuring MRC Replication}
-The replication of the database requires that all records are synchronously written to disk. Therefore, the parameter \texttt{babudb.sync} has to be changed to the value \texttt{FSYNCDATA} in the MRC configuration file \texttt{/etc/xos/xtreemfs/mrcconfig.properties}:
+The replication of the database requires that all records are synchronously written to disk. Therefore, the parameter \texttt{babudb.sync} has to be changed to the value \texttt{FDATASYNC} in the MRC configuration file \texttt{/etc/xos/xtreemfs/mrcconfig.properties}:
 \begin{verbatim}
-babudb.sync = FSYNCDATA
+babudb.sync = FDATASYNC
 \end{verbatim}
 
 To configure multiple MRC instances as replicas of each other, it is necessary to enable and configure the replication plug-in across these instances. This is done by setting the property \texttt{babudb.plugin.0} in each MRC configuration file, such that it points to the plug-in's configuration file. In order to activate the plug-in, un-comment the following line in the MRC configuration file \texttt{/etc/xos/xtreemfs/mrcconfig.properties}:
@@ -2671,17 +2671,17 @@ Please make sure that all replicated instances have consistent configurations be
 When mounting a volume with an XtreemFS client it is not necessary to specify the list of MRC replicas since the client automatically retrieves the MRC replicas of each volume.
 
 \subsubsection{Enabling and Configuring DIR Replication}
-DIR replication is enabled and configured in the exact same way as MRC replication. Change \texttt{/etc/xos/xtreemfs/server-repl-plugin/dir.properties} accordingly to configure the plug-in. If you use the default DIR configuration, the parameter \texttt{babudb.sync} is already set to \texttt{FSYNCDATA}.
+DIR replication is enabled and configured in the exact same way as MRC replication. Change \texttt{/etc/xos/xtreemfs/server-repl-plugin/dir.properties} accordingly to configure the plug-in. If you use the default DIR configuration, the parameter \texttt{babudb.sync} is already set to \texttt{FDATASYNC}.
 
 In order to ensure that MRCs and OSDs know all DIR replicas, you have to add the addresses of all DIR replicas to each MRC and OSD configuration file (e.g.,  \texttt{/etc/xos/xtreemfs/mrcconfig.properties} and \texttt{/etc/xos/xtreemfs/osdconfig.properties}). Specify the first DIR replica in the options \texttt{dir\_service.host} and \texttt{dir\_service.port} and all subsequent ones in the options \texttt{dir\_service.<i>.host} and \texttt{dir\_service.<i>.port} where i starts from one. For example:
 
 \begin{verbatim}
 dir_service.host = first-DIR-replica
 dir_service.port = 32638
-dir_service1.host = second-DIR-replica
-dir_service1.port = 32638
-dir_service2.host = third-DIR-replica
-dir_service2.port = 32638
+dir_service.1.host = second-DIR-replica
+dir_service.1.port = 32638
+dir_service.2.host = third-DIR-replica
+dir_service.2.port = 32638
 \end{verbatim}
 
 This allows the MRCs and OSDs to fail over to each DIR replica. The default MRC and OSD configuration files already contain commented entries which you just have to un-comment and edit.
@@ -3081,20 +3081,16 @@ Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the
     <name>fs.AbstractFileSystem.xtreemfs.impl</name>
     <value>org.xtreemfs.common.clients.hadoop.XtreemFS</value>
     <description>
-       The abstract file system for xtreemfs: URIs. (Hadoop 2.x only)
+        The abstract file system for xtreemfs: URIs. (Hadoop 2.x only)
     </description>
 </property>
 
   <property>
     <name>fs.default.name</name>
-    <value>xtreemfs://localhost:32638</value>
-    <description>Address for the DIR.</description>
-  </property>
-
-  <property>
-    <name>xtreemfs.defaultVolumeName</name>
-    <value>volumeName</value>
-    <description>Name of the default volume to use within XtreemFS.</description>
+    <value>xtreemfs://localhost:32638/defaultVolumeName</value>
+    <description>
+        Address for the DIR with the default volume name to use.
+    </description>
   </property>
 
   <property>
@@ -3111,7 +3107,7 @@ Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the
 	\item The next property makes Hadoop use the DIR instead of a
 	NameNode, therefore address and port of the DIR has to be populated. In this case the DIR is located at
 	\textit{localhost:32638}.
-	\item The third property specifies the name of the default volume to use within XtreemFS. Make sure, that the volume (here    	named \textit{volumeName}) does exist. If the volume is not available Hadoop will not be able to use XtreemFS.
+	It also specifies the name of the default volume to use within XtreemFS. Make sure, that the volume (here    	named \textit{volumeName}) does exist. If the volume is not available Hadoop will not be able to use XtreemFS.
 	\item The last property tells Hadoop the buffer size that will be used when reading/writing files.
 	This size should be exactly the default stripesize of your volume. Note that this value is measured in bytes while the
 	stripe size of your volume usually is measured in kilo bytes.

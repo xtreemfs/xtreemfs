@@ -14,6 +14,7 @@
 #include <boost/bind.hpp>
 #include <boost/program_options/cmdline.hpp>
 #include <boost/tokenizer.hpp>
+#include <boost/utility.hpp>
 #include <iostream>
 #include <string>
 
@@ -491,19 +492,21 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
         }
 
         // Find out if this known option has been explicitly specified.
-        if (find_if(regular_options.begin(), regular_options.end(),
-                    boost::bind(alg::starts_with<string, string, alg::is_equal>,
-                                _1, prefixed_long_opt, alg::is_equal()))
-                    == regular_options.end() &&
-            find_if(regular_options.begin(), regular_options.end(),
-                    boost::bind(alg::starts_with<string, string, alg::is_equal>,
-                                _1, prefixed_short_opt, alg::is_equal()))
-                    == regular_options.end()) {
+        if ((prefixed_long_opt.empty() ||
+             find_if(regular_options.begin(), regular_options.end(),
+                     boost::bind(alg::starts_with<string, string, alg::is_equal>,
+                                 _1, prefixed_long_opt, alg::is_equal()))
+                     == regular_options.end()) &&
+            (prefixed_short_opt.empty() ||
+             find_if(regular_options.begin(), regular_options.end(),
+                     boost::bind(alg::starts_with<string, string, alg::is_equal>,
+                                 _1, prefixed_short_opt, alg::is_equal()))
+                     == regular_options.end())) {
           // Explicitly set option for later parsing.
           regular_options.push_back(
               prefixed_long_opt.empty() ? prefixed_short_opt : prefixed_long_opt);
           regular_options.insert(
-              regular_options.end(), ++(key_values.begin()), key_values.end());
+              regular_options.end(), boost::next(key_values.begin()), key_values.end());
         } else {
           // Known option is explicitly specified, do not set.
         }

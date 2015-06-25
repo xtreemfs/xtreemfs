@@ -11,6 +11,7 @@ package org.xtreemfs.mrc.osdselection;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.util.Properties;
@@ -40,7 +41,9 @@ public abstract class DCMapPolicyBase implements OSDSelectionPolicy {
         try {
             File f = new File(CONFIG_FILE_PATH);
             Properties p = new Properties();
-            p.load(new FileInputStream(f));
+            InputStream fileInputStream = new FileInputStream(f);
+            p.load(fileInputStream);
+            fileInputStream.close();
             readConfig(p);
             int maxCacheSize = Integer.valueOf(p.getProperty("max_cache_size", "1000").trim());
             matchingDCcache = new LRUCache<Inet4Address, Integer>(maxCacheSize);
