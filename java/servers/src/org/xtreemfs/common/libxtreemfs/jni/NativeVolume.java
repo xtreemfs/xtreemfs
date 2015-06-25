@@ -15,6 +15,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.xtreemfs.common.libxtreemfs.FileHandle;
+import org.xtreemfs.common.libxtreemfs.Helper;
 import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
@@ -346,8 +347,8 @@ public class NativeVolume implements Volume {
     @Override
     public List<StripeLocation> getStripeLocations(UserCredentials userCredentials, String path, long startSize,
             long length) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
-        // TODO (jdillmann): Missing in C++
-        throw new RuntimeException("Method missing in C++");
+        Replicas replicas = listReplicas(userCredentials, path);
+        return Helper.getStripeLocationsFromReplicas(replicas, startSize, length);
     }
 
     @Override

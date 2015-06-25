@@ -40,21 +40,21 @@ import org.xtreemfs.test.TestHelper;
  */
 public class ReadOnlyReplicationTest {
     @Rule
-    public final TestRule               testLog = TestHelper.testLog;
+    public final TestRule          testLog = TestHelper.testLog;
 
-    private static TestEnvironment      testEnv;
+    private static TestEnvironment testEnv;
 
-    private static UserCredentials      userCredentials;
+    private static UserCredentials userCredentials;
 
-    private static Auth                 auth        = RPCAuthentication.authNone;
+    private static Auth            auth    = RPCAuthentication.authNone;
 
-    private static String               mrcAddress;
+    private static String          mrcAddress;
 
-    private static String               dirAddress;
+    private static String          dirAddress;
 
-    private static ClientImplementation client;
+    private static Client          client;
 
-    private static Options              options;
+    private static Options         options;
 
     @BeforeClass
     public static void initializeTest() throws Exception {
@@ -74,8 +74,7 @@ public class ReadOnlyReplicationTest {
         new MRCServiceClient(testEnv.getRpcClient(), testEnv.getMRCAddress());
 
         options = new Options();
-        client = (ClientImplementation) ClientFactory
-                .createClient(dirAddress, userCredentials, null, options);
+        client = ClientFactory.createClient(dirAddress, userCredentials, null, options);
         client.start();
     }
 

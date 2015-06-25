@@ -8,7 +8,6 @@ package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -1655,32 +1654,8 @@ public class VolumeImplementation implements Volume, AdminVolume {
     public List<StripeLocation> getStripeLocations(UserCredentials userCredentials, String path,
             long startSize, long length) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException {
-        FileHandleImplementation fileHandle = (FileHandleImplementation) this.openFile(userCredentials, path,
-                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
-        XLocSet xLocs = fileHandle.getXlocSet();
-        fileHandle.close();
-
-        long stripeSize = xLocs.getReplicas(0).getStripingPolicy().getStripeSize() * 1024;
-        long indexOfFirstStripeToConsider = (startSize / stripeSize);
-        long remainingLengthOfFirstStripe = Math.min(length, stripeSize - (startSize % stripeSize));
-        int numberOfStrips = (int) (length / stripeSize + 1);
-
-        List<StripeLocation> stripeLocations = new ArrayList<StripeLocation>(numberOfStrips);
-        // add first Stripe
-        List<String> uuids = Helper.getOSDUUIDsForStripeFromXLocSet(xLocs, indexOfFirstStripeToConsider);
-        List<String> hostnames = Helper.getOSDHostnamesFromUUIDs(uuids);
-        stripeLocations.add(new StripeLocation(startSize, remainingLengthOfFirstStripe, 
-                uuids.toArray(new String[uuids.size()]), hostnames.toArray(new String[hostnames.size()])));
-
-        for (long index = indexOfFirstStripeToConsider + 1; index * stripeSize < startSize + length; index++) {
-            uuids = Helper.getOSDUUIDsForStripeFromXLocSet(xLocs, index);
-            hostnames = Helper.getOSDHostnamesFromUUIDs(uuids);
-            stripeLocations.add(new StripeLocation(index * stripeSize, 
-                    Math.min(stripeSize, startSize + length - index * stripeSize), 
-                    uuids.toArray(new String[uuids.size()]), 
-                    hostnames.toArray(new String[hostnames.size()])));
-        }
-        return stripeLocations;
+        Replicas replicas = listReplicas(userCredentials, path);
+        return Helper.getStripeLocationsFromReplicas(replicas, startSize, length);
     }
 
     @Override
