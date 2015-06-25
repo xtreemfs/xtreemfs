@@ -183,11 +183,6 @@ public class NativeClient implements Client {
     }
 
     @Override
-    public Volumes listVolumes() throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
-        throw new RuntimeException("Not implemented in the C++ library.");
-    }
-
-    @Override
     public String[] listVolumeNames() throws IOException {
         StringVector result = proxy.listVolumeNames();
         String[] out = result.toArray();
@@ -199,6 +194,11 @@ public class NativeClient implements Client {
     public Volumes listVolumes(List<String> mrcAddresses) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException {
         return proxy.listVolumes(new ServiceAddresses(StringVector.from(mrcAddresses)), dirServiceAuth);
+    }
+
+    @Override
+    public Volumes listVolumes() throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+        throw new RuntimeException("Not implemented in the C++ library.");
     }
 
     @Override

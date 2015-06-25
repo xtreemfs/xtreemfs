@@ -7,6 +7,7 @@
 package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +15,8 @@ import java.util.Random;
 
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
+import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
@@ -133,6 +136,50 @@ public class Helper {
         }
 
         return uuids;
+    }
+
+    /**
+     * Returns a list containing the UUIDs for the OSDs responsible for the stripe
+     * 
+     * @param xlocs
+     * @param stripeIndex
+     * @return list containing the OSD UUIDs
+     */
+    public static List<String> getOSDUUIDsForStripeFromXLocSet(XLocSet xlocs, long stripeIndex) {
+        ArrayList<String> uuids = new ArrayList<String>(xlocs.getReplicasCount());
+        for (Replica replica : xlocs.getReplicasList()) {
+            int osdIndex = (int) stripeIndex % replica.getStripingPolicy().getWidth();
+            uuids.add(replica.getOsdUuids(osdIndex));
+        }
+        return uuids;
+    }
+
+    /**
+     * Returns a list containing the hostnames for the OSDs responsible for the given UUIDs.
+     * 
+     * @param uuids
+     *            List of UUIDs as strings
+     * @return list containing the OSD hostnames as strings
+     */
+    public static List<String> getOSDHostnamesFromUUIDs(List<String> uuids) {
+        ArrayList<String> names = new ArrayList<String>(uuids.size());
+        
+        for (String uuidString : uuids) {
+            ServiceUUID uuid = new ServiceUUID(uuidString);
+            
+            try {
+                InetAddress addr = uuid.getAddress().getAddress();
+                String hostname = addr.getHostName();
+
+                if (!hostname.equals(addr.getHostAddress())) {
+                    names.add(hostname);
+                }
+            } catch (UnknownUUIDException e) {
+                Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.net, (Object) null,
+                        "Could not find host for UUID '%s'", uuidString);
+            }
+        }
+        return names;
     }
 
     static public long extractFileIdFromXcap(XCap xcap) {

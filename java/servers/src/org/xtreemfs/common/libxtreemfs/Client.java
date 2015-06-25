@@ -260,7 +260,6 @@ public interface Client {
      * @throws IOException
      * @throws PosixErrorException
      */
-    @Deprecated
     public void deleteVolume(Auth auth, UserCredentials userCredentials, String volumeName)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
