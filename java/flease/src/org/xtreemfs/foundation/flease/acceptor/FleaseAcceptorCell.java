@@ -13,7 +13,7 @@ import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 
 /**
- * A coordination cell is used to separate concurrent lease nogitiations
+ * A coordination cell is used to separate concurrent lease negotiations
  * for individual objects (e.g. volumes on the MRC).
  *
  * @author bjko
