@@ -548,7 +548,7 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
                 if (Logging.isDebug()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "lease state change: %s timed out (old lease: %s)", f.getCellId(), f.toString());
                 }
-                proposer.updatePrevLeaseForCell(f.getCellId(), f.EMPTY_LEASE);
+                proposer.updatePrevLeaseForCell(f.getCellId(), Flease.EMPTY_LEASE);
                 leaseListener.statusChanged(f.getCellId(), Flease.EMPTY_LEASE);
                 //create restart event
                 FleaseMessage restartEvt = new FleaseMessage(FleaseMessage.MsgType.EVENT_RESTART);
@@ -603,9 +603,9 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
         messages.add(message);
     }
 
-    private static interface FleaseStateCallback {
+    private interface FleaseStateCallback {
 
-        public void localStateResult(Map<ASCIIString, FleaseMessage> state);
+        void localStateResult(Map<ASCIIString, FleaseMessage> state);
     }
 
     private final static class TimerEntry implements Comparable {
