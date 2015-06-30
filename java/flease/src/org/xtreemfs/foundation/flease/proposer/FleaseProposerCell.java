@@ -40,12 +40,12 @@ public class FleaseProposerCell {
     private List<InetSocketAddress> acceptors;
     private State cellState;
     private int numFailures;
-    private long lastPrepateTimestamp_ms;
+    private long lastPrepareTimestamp_ms;
     private int viewId;
     private Flease prevLease;
     private boolean markedClose;
     private ASCIIString handoverTo;
-    private boolean requestMasteEpoch;
+    private boolean requestMasterEpoch;
     private long masterEpochNumber;
     /**
      * the value to use for prepare, accept and learn
@@ -92,10 +92,10 @@ public class FleaseProposerCell {
     }
 
     /**
-     * @return the lastPrepateTimestamp_ms
+     * @return the lastPrepareTimestamp_ms
      */
     public long getLastPrepareTimestamp_ms() {
-        return lastPrepateTimestamp_ms;
+        return lastPrepareTimestamp_ms;
     }
 
     public int getViewId() {
@@ -142,14 +142,14 @@ public class FleaseProposerCell {
      * @return the requestMasteEpoch
      */
     public boolean isRequestMasteEpoch() {
-        return requestMasteEpoch;
+        return requestMasterEpoch;
     }
 
     /**
      * @param requestMasteEpoch the requestMasteEpoch to set
      */
     public void setRequestMasteEpoch(boolean requestMasteEpoch) {
-        this.requestMasteEpoch = requestMasteEpoch;
+        this.requestMasterEpoch = requestMasteEpoch;
     }
 
     /**
@@ -255,7 +255,7 @@ public class FleaseProposerCell {
     }
 
     public void touch() {
-        this.lastPrepateTimestamp_ms = TimeSync.getLocalSystemTime();
+        this.lastPrepareTimestamp_ms = TimeSync.getLocalSystemTime();
     }
 
     /**
@@ -292,7 +292,7 @@ public class FleaseProposerCell {
         text.append(" majority:");
         text.append(majority);
         text.append(" lastPTSP:");
-        text.append(lastPrepateTimestamp_ms);
+        text.append(lastPrepareTimestamp_ms);
         text.append(" viewId:");
         text.append(viewId);
         text.append(" prevL:");
@@ -300,7 +300,7 @@ public class FleaseProposerCell {
         text.append(" markedClose:");
         text.append(markedClose);
         text.append(" rqME:");
-        text.append(requestMasteEpoch);
+        text.append(requestMasterEpoch);
         text.append(" msgSent:");
         text.append(messageSent);
         text.append(" responses:");
