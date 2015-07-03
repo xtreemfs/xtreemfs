@@ -59,14 +59,15 @@ public abstract class ReplicaUpdatePolicy {
      */
     public static ReplicaUpdatePolicy newReplicaUpdatePolicy(String replicaUpdatePolicy,
             List<ServiceUUID> remoteOSDUUIDs, String localUUID, String fileId, OSDServiceClient client) {
-        if (replicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE)) {
-            return new WaR1UpdatePolicy(remoteOSDUUIDs, localUUID, fileId, client);
-        } else if (replicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA)) {
-            return new WaRaUpdatePolicy(remoteOSDUUIDs, localUUID, fileId, client);
-        } else if (replicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ)) {
-            return new WqRqUpdatePolicy(remoteOSDUUIDs, localUUID, fileId, client);
-        } else {
-            throw new IllegalArgumentException("unsupported replica update mode: " + replicaUpdatePolicy);
+        switch (replicaUpdatePolicy) {
+            case ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE:
+                return new WaR1UpdatePolicy(remoteOSDUUIDs, localUUID, fileId, client);
+            case ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA:
+                return new WaRaUpdatePolicy(remoteOSDUUIDs, localUUID, fileId, client);
+            case ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ:
+                return new WqRqUpdatePolicy(remoteOSDUUIDs, localUUID, fileId, client);
+            default:
+                throw new IllegalArgumentException("unsupported replica update mode: " + replicaUpdatePolicy);
         }
     }
 
@@ -113,7 +114,8 @@ public abstract class ReplicaUpdatePolicy {
      * called to execute a reset
      * 
      * @param credentials
-     * @param maxLocalOV
+     * @param localReplicaState
+     * @param callback
      */
     public abstract void executeReset(
         FileCredentials credentials,
