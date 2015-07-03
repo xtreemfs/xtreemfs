@@ -1284,8 +1284,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         try {
             Map<String, Map<String, String>> status = new HashMap();
 
-            Map<ASCIIString, FleaseMessage> fleaseState = fstage.getLocalState();
-
             for (String fileId : this.files.keySet()) {
                 Map<String, String> fStatus = new HashMap();
                 final ReplicatedFileState fState = files.get(fileId);
