@@ -309,14 +309,14 @@ public class ReplicatedFileState {
     }
 
     /**
-     * @return the primary
+     * @return the lease
      */
     public Flease getLease() {
         return lease;
     }
 
     /**
-     * @param primary the primary to set
+     * @param lease the lease to set
      */
     public void setLease(Flease lease) {
         this.lease = lease;
