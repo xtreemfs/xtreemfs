@@ -182,7 +182,7 @@ public class PreprocStage extends Stage {
             
             CowPolicy cowPolicy = CowPolicy.PolicyNoCow;
 
-            // check if snasphots are enabled and a write operation is executed;
+            // check if snapshots are enabled and a write operation is executed;
             // this is required to create new snapshots when files open for
             // writing are closed, even if the same files are still open for
             // reading
@@ -507,6 +507,7 @@ public class PreprocStage extends Stage {
     
     private boolean parseRequest(OSDRequest rq) {
 
+        //TODO jan: first two tests are already done by OSDRequestDispatcher...check if necessary
         RPCHeader hdr = rq.getRpcRequest().getHeader();
 
         if (hdr.getMessageType() != MessageType.RPC_REQUEST) {
