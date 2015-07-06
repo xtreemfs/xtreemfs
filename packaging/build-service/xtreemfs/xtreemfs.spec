@@ -74,9 +74,7 @@ Group:          System/Filesystems
 Requires:       %{name}-backend == %{version}-%{release}
 Requires:       grep
 Requires:       jre >= 1.6.0
-%if 0%{?fedora_version} >= 21
 Requires:       initscripts
-%endif
 Provides:       XtreemFS-server = %{version}
 Obsoletes:      XtreemFS-server < %{version}
 Requires(post): util-linux
@@ -100,6 +98,17 @@ XtreemFS is a distributed and replicated file system for the internet. For more 
 
 This package contains XtreemFS administration tools.
 
+%package libxtreemfs-jni
+Summary:       XtreemFS JNI library
+Group:         Development/Libraries/Java
+Provides:      XtreemFS-JNI = %{version}
+Obsoletes:     XtreemFS-JNI < %{version}
+
+%description libxtreemfs-jni
+XtreemFS is a distributed and replicated file system for the Internet. For more details, visit www.xtreemfs.org.
+
+This package contains the XtreemFS JNI client library.
+
 %prep
 %setup -q -n XtreemFS-%{version}
 
@@ -108,6 +117,7 @@ This package contains XtreemFS administration tools.
 export ANT_OPTS=-D"file.encoding=UTF-8"
 export CFLAGS="$RPM_OPT_FLAGS -fno-strict-aliasing"
 export CXXFLAGS=$CFLAGS
+export BUILD_JNI=true
 
 %if 0%{?mandriva_version} == 2008 || 0%{?centos_version} >= 501 || 0%{?rhel_version} >= 501 || 0%{?suse_version} == 1030
 export CCFLAGS="$CCFLAGS -fPIC"
@@ -118,7 +128,10 @@ make %{?jobs:-j%jobs}
 %install
 export NO_BRP_CHECK_BYTECODE_VERSION=true
 
-make install DESTDIR=$RPM_BUILD_ROOT
+make install \
+  DESTDIR=$RPM_BUILD_ROOT \
+  LIB_DIR=%{_libdir}/%{name} 
+
 ln -sf /usr/bin/mount.xtreemfs ${RPM_BUILD_ROOT}/sbin/mount.xtreemfs
 ln -sf /usr/bin/umount.xtreemfs ${RPM_BUILD_ROOT}/sbin/umount.xtreemfs
 
@@ -137,6 +150,7 @@ rm $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-tools/LICENSE
 rmdir $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-tools
 
 rm $RPM_BUILD_ROOT/etc/xos/xtreemfs/postinstall_setup.sh
+
 
 %pre server
 /usr/sbin/groupadd xtreemfs 2>/dev/null || :
@@ -244,6 +258,12 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) /etc/xos/xtreemfs/default_dir
 /usr/bin/xtfs_*
 /usr/share/man/man1/xtfs_*
+%doc LICENSE
+
+%files libxtreemfs-jni
+%defattr(-,root,root,-)
+%dir %{_libdir}/%{name}/
+%{_libdir}/%{name}/libjni-xtreemfs.so
 %doc LICENSE
 
 %changelog
