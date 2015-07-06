@@ -14,7 +14,9 @@ import java.util.List;
 
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.common.libxtreemfs.jni.generated.ClientProxy;
+import org.xtreemfs.common.libxtreemfs.jni.generated.IntVector;
 import org.xtreemfs.common.libxtreemfs.jni.generated.OptionsProxy;
+import org.xtreemfs.common.libxtreemfs.jni.generated.SSLContext;
 import org.xtreemfs.common.libxtreemfs.jni.generated.SSLOptionsProxy;
 import org.xtreemfs.common.libxtreemfs.jni.generated.ServiceAddresses;
 import org.xtreemfs.common.libxtreemfs.jni.generated.StringMap;
@@ -132,16 +134,11 @@ public final class NativeHelper {
 
     public static ClientProxy createClientProxy(String[] dirServiceAddressesArray, UserCredentials userCredentials,
             SSLOptions sslOptions, Options options) {
-
         // TODO (jdillmann): Think about moving this to the factory.
         StringVector dirServiceAddressesVector = StringVector.from(Arrays.asList(dirServiceAddressesArray));
         ServiceAddresses dirServiceAddresses = new ServiceAddresses(dirServiceAddressesVector);
         OptionsProxy optionsProxy = NativeHelper.migrateOptions(options);
-        SSLOptionsProxy sslOptionsProxy = null;
-        if (sslOptions != null) {
-            // TODO (jdillmann): Merge from sslOptions
-            throw new RuntimeException("SSLOptions are not supported yet.");
-        }
+        SSLOptionsProxy sslOptionsProxy = NativeHelper.migrateSSLOptions(sslOptions);
 
         return ClientProxy.createClient(dirServiceAddresses, userCredentials, sslOptionsProxy, optionsProxy);
     }
@@ -154,7 +151,6 @@ public final class NativeHelper {
         op.setMax_tries(o.getMaxTries());
         op.setMax_read_tries(o.getMaxReadTries());
         op.setMax_view_renewals(o.getMaxViewRenewals());
-        // TODO (jdillmann): check if maxWriteahed is in bytes or kb
         op.setAsync_writes_max_request_size_kb(o.getMaxWriteahead());
         op.setEnable_async_writes(o.getMaxWriteahead() > 0);
         op.setPeriodic_file_size_updates_interval_s(o.getPeriodicFileSizeUpdatesIntervalS());
@@ -163,8 +159,8 @@ public final class NativeHelper {
         // Migrate also Java defaults (TODO: ?)
         op.setConnect_timeout_s(o.getConnectTimeout_s());
         // o.getInterruptSignal()
-        op.setLinger_timeout_s(o.getLingerTimeout_s());
         op.setAsync_writes_max_requests(o.getMaxWriteaheadRequests());
+        op.setLinger_timeout_s(o.getLingerTimeout_s());
         op.setMetadata_cache_size(BigInteger.valueOf(o.getMetadataCacheSize()));
         op.setMetadata_cache_ttl_s(BigInteger.valueOf(o.getMetadataCacheTTLs()));
         op.setPeriodic_xcap_renewal_interval_s(o.getPeriodicXcapRenewalIntervalS());
@@ -172,6 +168,41 @@ public final class NativeHelper {
         op.setRetry_delay_s(o.getRetryDelay_s());
 
         return op;
+    }
+
+    public static SSLOptionsProxy migrateSSLOptions(SSLOptions o) {
+        if (o == null) {
+            return null;
+        }
+
+        // Java is using PKCS#12 certificates
+        // Ignore PEM related parameters.
+        String ssl_pem_path = "";
+        String ssl_pem_cert_path = "";
+        String ssl_pem_key_pass = "";
+        String ssl_pem_trusted_certs_path = "";
+
+        // Get the Path to the required server certificates
+        String ssl_pkcs12_path = o.getServerCredentialFilePath();
+        String ssl_pkcs12_pass = o.getServerCredentialFilePassphrase();
+
+        // PKCS#12 certificates are converted to pem in the C++ client.
+        SSLContext.file_format format = SSLContext.file_format.pem;
+
+        // Grid mode is called FakeSSLMode in the Java client
+        boolean use_grid_ssl = o.isFakeSSLMode();
+
+        // Get the SSL protocol string that has been used for initialization
+        String ssl_method_string = o.getSSLProtocolString();
+
+        // Verifying certificates is not enabled in Java
+        // TODO: Ask Robert if this is true
+        boolean ssl_verify_certificates = false;
+        IntVector ssl_ignore_verify_errors = new IntVector(0);
+
+        return new SSLOptionsProxy(ssl_pem_path, ssl_pem_cert_path, ssl_pem_key_pass, ssl_pem_trusted_certs_path,
+                ssl_pkcs12_path, ssl_pkcs12_pass, format, use_grid_ssl, ssl_verify_certificates,
+                ssl_ignore_verify_errors, ssl_method_string);
     }
 
     public static StringMap keyValueListToMap(List<KeyValuePair> list) {

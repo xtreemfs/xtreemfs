@@ -94,6 +94,9 @@ public class SSLOptions {
     
     private final boolean      useFakeSSLMode;
     
+    /** The SSL protocol this SSLOptions instance has been initalized with */
+    private final String       sslProtocolString;
+
     public SSLOptions(String serverCredentialFilePath, String serverCredentialFilePassphrase,
             String serverCredentialFileContainer, String trustedCertificatesFilePath,
             String trustedCertificatesFilePassphrase, String trustedCertificatesFileContainer,
@@ -145,6 +148,7 @@ public class SSLOptions {
         
         this.useFakeSSLMode = useFakeSSLMode;
         
+        this.sslProtocolString = sslProtocolString;
         sslContext = createSSLContext(sslProtocolStringToProtocol(sslProtocolString), trustManager);
     }
     
@@ -282,7 +286,7 @@ public class SSLOptions {
     }
     
     public String getServerCredentialFilePassphrase() {
-        return this.serverCredentialFilePassphrase.toString();
+        return String.valueOf(this.serverCredentialFilePassphrase);
     }
     
     public InputStream getTrustedCertificatesFile() {
@@ -298,7 +302,7 @@ public class SSLOptions {
     }
     
     public String getTrustedCertificatesFilePassphrase() {
-        return this.trustedCertificatesFilePassphrase.toString();
+        return String.valueOf(this.trustedCertificatesFilePassphrase);
     }
     
     public SSLContext getSSLContext() {
@@ -313,6 +317,10 @@ public class SSLOptions {
         return sslContext.getProtocol();
     }
     
+    public String getSSLProtocolString() {
+        return sslProtocolString;
+    }
+
     public boolean isSSLEngineProtocolSupported(String sslEngineProtocol) {
         // Protocol names in JDK 5, 6: SSLv2Hello, SSLv3, TLSv1
         // Additionally in JDK 7, 8: TLSv1.2
