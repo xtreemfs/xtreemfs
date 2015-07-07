@@ -262,8 +262,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
     private void executeSetAuthState(final ReplicaStatus localState, final AuthoritativeReplicaState authState,
             ReplicatedFileState state, final String fileId) {
-        // Calculate what we need to do locally based on the local state.
-        boolean resetRequired = localState.getTruncateEpoch() < authState.getTruncateEpoch();
         // Create a list of missing objects.
         Map<Long, Long> objectsToBeDeleted = new HashMap();
         for (ObjectVersion localObject : localState.getObjectVersionsList()) {
@@ -344,7 +342,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     return;
                 }
 
-                boolean leaseOk = false;
                 if (error == null) {
                     boolean localIsPrimary = (lease.getLeaseHolder() != null)
                             && (lease.getLeaseHolder().equals(localID));
@@ -1322,8 +1319,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         if ((fState != null) && (fState.getLease() != null) && (!fState.getLease().isEmptyLease())) {
             if (fState.getLease().isValid()) {
                     primary = "" + fState.getLease().getLeaseHolder();
-            } else {
-                // outdated lease
             }
         }
         return primary;
