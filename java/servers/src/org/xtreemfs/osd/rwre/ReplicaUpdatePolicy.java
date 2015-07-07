@@ -113,7 +113,8 @@ public abstract class ReplicaUpdatePolicy {
      * called to execute a reset
      * 
      * @param credentials
-     * @param maxLocalOV
+     * @param localReplicaState
+     * @param callback
      */
     public abstract void executeReset(
         FileCredentials credentials,
