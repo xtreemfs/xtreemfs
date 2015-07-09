@@ -138,13 +138,7 @@ void DIRUUIDResolver::UUIDToAddressWithOptions(const std::string& uuid,
   }
 }
 
-void DIRUUIDResolver::VolumeNameToMRCUUID(const std::string& volume_name,
-                                          std::string* mrc_uuid) {
-  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-     Logging::log->getLog(LEVEL_DEBUG)
-         << "MRC: searching volume on MRC: " << volume_name << endl;
-  }
-
+string parse_volume_name(const std::string& volume_name) {
   // Check if there is a @ in the volume_name.
   // Everything behind the @ has to be removed as it identifies the snapshot.
   string parsed_volume_name = volume_name;
@@ -153,25 +147,19 @@ void DIRUUIDResolver::VolumeNameToMRCUUID(const std::string& volume_name,
     parsed_volume_name = volume_name.substr(0, at_pos);
   }
 
-  serviceGetByNameRequest rq = serviceGetByNameRequest();
-  rq.set_name(parsed_volume_name);
+  return parsed_volume_name;
+}
 
-  boost::scoped_ptr<rpc::SyncCallbackBase> response(
-      ExecuteSyncRequest(
-          boost::bind(
-              &xtreemfs::pbrpc::DIRServiceClient::
-                  xtreemfs_service_get_by_name_sync,
-              dir_service_client_.get(),
-              _1,
-              boost::cref(dir_service_auth_),
-              boost::cref(dir_service_user_credentials_),
-              &rq),
-          &dir_uuid_iterator_,
-          NULL,
-          RPCOptionsFromOptions(options_),
-          true));
+void DIRUUIDResolver::VolumeNameToMRCUUID(const std::string& volume_name,
+                                          std::string* mrc_uuid) {
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+     Logging::log->getLog(LEVEL_DEBUG)
+         << "MRC: searching volume on MRC: " << volume_name << endl;
+  }
 
-  ServiceSet* service_set = static_cast<ServiceSet*>(response->response());
+  string parsed_volume_name = parse_volume_name(volume_name);
+  boost::scoped_ptr<ServiceSet> service_set(GetServicesByName(parsed_volume_name));
+
   *mrc_uuid = "";
   for (int i = 0; i < service_set->services_size(); i++) {
     Service service = service_set->services(i);
@@ -187,7 +175,6 @@ void DIRUUIDResolver::VolumeNameToMRCUUID(const std::string& volume_name,
     }
   }
 
-  response->DeleteBuffers();
   if (mrc_uuid->empty()) {
     Logging::log->getLog(LEVEL_ERROR) << "No MRC found for volume: "
         << volume_name << std::endl;
@@ -204,34 +191,10 @@ void DIRUUIDResolver::VolumeNameToMRCUUID(const std::string& volume_name,
          << "MRC: searching volume on MRC: " << volume_name << endl;
   }
 
-  // Check if there is a @ in the volume_name.
-  // Everything behind the @ has to be removed as it identifies the snapshot.
-  string parsed_volume_name = volume_name;
-  size_t at_pos = volume_name.find("@");
-  if (at_pos != string::npos) {
-    parsed_volume_name = volume_name.substr(0, at_pos);
-  }
-
-  serviceGetByNameRequest rq = serviceGetByNameRequest();
-  rq.set_name(parsed_volume_name);
-
-  boost::scoped_ptr<rpc::SyncCallbackBase> response(
-      ExecuteSyncRequest(
-          boost::bind(
-              &xtreemfs::pbrpc::DIRServiceClient::
-                  xtreemfs_service_get_by_name_sync,
-              dir_service_client_.get(),
-              _1,
-              boost::cref(dir_service_auth_),
-              boost::cref(dir_service_user_credentials_),
-              &rq),
-          &dir_uuid_iterator_,
-          NULL,
-          RPCOptionsFromOptions(options_),
-          true));
+  string parsed_volume_name = parse_volume_name(volume_name);
+  boost::scoped_ptr<ServiceSet> service_set(GetServicesByName(parsed_volume_name));
 
   bool mrc_found = false;
-  ServiceSet* service_set = static_cast<ServiceSet*>(response->response());
   for (int i = 0; i < service_set->services_size(); i++) {
     Service service = service_set->services(i);
     if ((service.type() == SERVICE_TYPE_VOLUME)
@@ -251,13 +214,86 @@ void DIRUUIDResolver::VolumeNameToMRCUUID(const std::string& volume_name,
     }
   }
 
-  response->DeleteBuffers();
   if (!mrc_found) {
     Logging::log->getLog(LEVEL_ERROR) << "No MRC found for volume: "
         << volume_name << std::endl;
     throw VolumeNotFoundException(volume_name);
   }
 }
+
+vector<string> DIRUUIDResolver::VolumeNameToMRCUUIDs(const string& volume_name) {
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+     Logging::log->getLog(LEVEL_DEBUG)
+         << "MRC: searching volume on MRC: " << volume_name << endl;
+  }
+
+  string parsed_volume_name = parse_volume_name(volume_name);
+  boost::scoped_ptr<ServiceSet> service_set(GetServicesByName(parsed_volume_name));
+
+  vector<string> result;
+  for (int i = 0; i < service_set->services_size(); i++) {
+    Service service = service_set->services(i);
+    if ((service.type() == SERVICE_TYPE_VOLUME)
+          && (service.name() == parsed_volume_name)) {
+      const ServiceDataMap& data = service.data();
+      for (int j = 0; j < data.data_size(); j++) {
+        if (data.data(j).key().substr(0, 3) == "mrc") {
+          if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+            Logging::log->getLog(LEVEL_DEBUG)
+                << "MRC with UUID: " << data.data(j).value()
+                << " added (key: " << data.data(j).key() << ")." << std::endl;
+          }
+          result.push_back(data.data(j).value());
+        }
+      }
+    }
+  }
+
+  if (result.empty()) {
+    Logging::log->getLog(LEVEL_ERROR) << "No MRC found for volume: "
+        << volume_name << std::endl;
+    throw VolumeNotFoundException(volume_name);
+  }
+
+  return result;
+}
+
+
+ServiceSet* DIRUUIDResolver::GetServicesByName(const std::string& volume_name) {
+  boost::scoped_ptr<rpc::SyncCallbackBase> response;
+  try {
+    serviceGetByNameRequest rq = serviceGetByNameRequest();
+    rq.set_name(volume_name);
+
+    response.reset(ExecuteSyncRequest(
+        boost::bind(
+            &xtreemfs::pbrpc::DIRServiceClient::
+                xtreemfs_service_get_by_name_sync,
+            dir_service_client_.get(),
+            _1,
+            boost::cref(dir_service_auth_),
+            boost::cref(dir_service_user_credentials_),
+            &rq),
+        &dir_uuid_iterator_,
+        NULL,
+        RPCOptionsFromOptions(options_),
+        true));
+
+  } catch (const XtreemFSException& e) {
+    if (response.get()) {
+      response->DeleteBuffers();
+    }
+    throw;
+  }
+
+  // Delete everything except the response.
+  delete[] response->data();
+  delete response->error();
+
+  return static_cast<ServiceSet*>(response->response());
+}
+
+
 
 ClientImplementation::ClientImplementation(
     const ServiceAddresses& dir_service_addresses,
@@ -697,13 +733,12 @@ xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(
 
 std::vector<std::string> ClientImplementation::ListVolumeNames() {
   boost::scoped_ptr<ServiceSet> volumes(GetServicesByType(SERVICE_TYPE_VOLUME));
-
   const int size = volumes->services_size();
   std::vector<std::string> names(size);
 
   for (int i = 0; i < size; ++i) {
     const Service& volume = volumes->services(i);
-    names.push_back(volume.name());
+    names[i] = volume.name();
   }
 
   return names;

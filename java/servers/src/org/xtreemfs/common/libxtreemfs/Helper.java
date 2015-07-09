@@ -9,6 +9,7 @@ package org.xtreemfs.common.libxtreemfs;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -16,8 +17,6 @@ import java.util.Random;
 import org.xtreemfs.common.libxtreemfs.Volume.StripeLocation;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
-import org.xtreemfs.common.uuids.ServiceUUID;
-import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
@@ -158,13 +157,16 @@ public class Helper {
 
 
     /**
+     * Get the StripeLocations required for the Hadoop driver.
      * 
      * @param replicas
      * @param startSize
      * @param length
-     * @return
+     * @param uuidResolver
+     * @return list of StripeLocations
      */
-    public static List<StripeLocation> getStripeLocationsFromReplicas(Replicas replicas, long startSize, long length) {
+    public static List<StripeLocation> getStripeLocationsFromReplicas(Replicas replicas, long startSize, long length,
+            UUIDResolver uuidResolver) {
         long stripeSize = replicas.getReplicas(0).getStripingPolicy().getStripeSize() * 1024;
         long indexOfFirstStripeToConsider = (startSize / stripeSize);
         long remainingLengthOfFirstStripe = Math.min(length, stripeSize - (startSize % stripeSize));
@@ -173,13 +175,13 @@ public class Helper {
         List<StripeLocation> stripeLocations = new ArrayList<StripeLocation>(numberOfStrips);
         // add first Stripe
         List<String> uuids = Helper.getOSDUUIDsFromReplicas(replicas, indexOfFirstStripeToConsider);
-        List<String> hostnames = Helper.getOSDHostnamesFromUUIDs(uuids);
+        List<String> hostnames = Helper.getOSDHostnamesFromUUIDs(uuids, uuidResolver);
         stripeLocations.add(new StripeLocation(startSize, remainingLengthOfFirstStripe, uuids.toArray(new String[uuids
                 .size()]), hostnames.toArray(new String[hostnames.size()])));
 
         for (long index = indexOfFirstStripeToConsider + 1; index * stripeSize < startSize + length; index++) {
             uuids = Helper.getOSDUUIDsFromReplicas(replicas, index);
-            hostnames = Helper.getOSDHostnamesFromUUIDs(uuids);
+            hostnames = Helper.getOSDHostnamesFromUUIDs(uuids, uuidResolver);
             stripeLocations.add(new StripeLocation(index * stripeSize, Math.min(stripeSize, startSize + length - index
                     * stripeSize), uuids.toArray(new String[uuids.size()]), hostnames.toArray(new String[hostnames
                     .size()])));
@@ -192,22 +194,29 @@ public class Helper {
      * 
      * @param uuids
      *            List of UUIDs as strings
+     * @param uuidResolver
      * @return list containing the OSD hostnames as strings
      */
-    public static List<String> getOSDHostnamesFromUUIDs(List<String> uuids) {
+    public static List<String> getOSDHostnamesFromUUIDs(List<String> uuids, UUIDResolver uuidResolver) {
         ArrayList<String> names = new ArrayList<String>(uuids.size());
         
         for (String uuidString : uuids) {
-            ServiceUUID uuid = new ServiceUUID(uuidString);
-            
             try {
-                InetAddress addr = uuid.getAddress().getAddress();
-                String hostname = addr.getHostName();
+                String addressString = uuidResolver.uuidToAddress(uuidString);
+                addressString = addressString.substring(0, addressString.lastIndexOf(':'));
 
-                if (!hostname.equals(addr.getHostAddress())) {
+                InetAddress address = InetAddress.getByName(addressString);
+                String hostname = address.getHostName();
+
+                // Ignore entries, that can not be resolved to a hostname.
+                if (!hostname.equals(address.getHostAddress())) {
                     names.add(hostname);
                 }
-            } catch (UnknownUUIDException e) {
+                
+            } catch (AddressToUUIDNotFoundException e) {
+                Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.net, (Object) null,
+                        "Could not find host for UUID '%s'", uuidString);
+            } catch (UnknownHostException e) {
                 Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.net, (Object) null,
                         "Could not find host for UUID '%s'", uuidString);
             }

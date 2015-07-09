@@ -188,6 +188,10 @@ public class xtreemfs_jniJNI {
   public final static native boolean SSLOptionsProxy_ignore_verify_error(long jarg1, SSLOptionsProxy jarg1_, int jarg2);
   public final static native String SSLOptionsProxy_ssl_method_string(long jarg1, SSLOptionsProxy jarg1_);
   public final static native void initialize_logger__SWIG_3(int jarg1);
+  public final static native void delete_UUIDResolverProxy(long jarg1);
+  public final static native void UUIDResolverProxy_uUIDToAddress(long jarg1, UUIDResolverProxy jarg1_, String jarg2, String[] jarg3) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
+  public final static native void UUIDResolverProxy_volumeNameToMRCUUID(long jarg1, UUIDResolverProxy jarg1_, String jarg2, String[] jarg3) throws org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
+  public final static native long UUIDResolverProxy_volumeNameToMRCUUIDs(long jarg1, UUIDResolverProxy jarg1_, String jarg2) throws org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
   public final static native long ClientProxy_createClient__SWIG_0(long jarg1, ServiceAddresses jarg1_, byte[] jarg2, long jarg3, SSLOptionsProxy jarg3_, long jarg4, OptionsProxy jarg4_);
   public final static native long ClientProxy_createClient__SWIG_1(long jarg1, ServiceAddresses jarg1_, byte[] jarg2, long jarg3, SSLOptionsProxy jarg3_, long jarg4, OptionsProxy jarg4_, int jarg5);
   public final static native void delete_ClientProxy(long jarg1);
@@ -202,6 +206,7 @@ public class xtreemfs_jniJNI {
   public final static native byte[] ClientProxy_listVolumes(long jarg1, ClientProxy jarg1_, long jarg2, ServiceAddresses jarg2_, byte[] jarg3) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
   public final static native long ClientProxy_listVolumeNames(long jarg1, ClientProxy jarg1_) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
   public final static native String ClientProxy_uUIDToAddress(long jarg1, ClientProxy jarg1_, String jarg2) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
+  public final static native long ClientProxy_getUUIDResolver(long jarg1, ClientProxy jarg1_);
   public final static native void delete_VolumeProxy(long jarg1);
   public final static native void VolumeProxy_close(long jarg1, VolumeProxy jarg1_);
   public final static native byte[] VolumeProxy_statFS(long jarg1, VolumeProxy jarg1_, byte[] jarg2) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;

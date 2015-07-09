@@ -74,8 +74,12 @@ public class NativeClient implements Client {
     @Override
     public void start(boolean startThreadsAsDaemons) throws Exception {
         if (startThreadsAsDaemons) {
-            throw new RuntimeException("starting threads as daemons is not supported.");
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                        "Starting the native client with daemon threads is not supported");
+            }
         }
+
         start();
     }
 
@@ -94,7 +98,7 @@ public class NativeClient implements Client {
             throw new RuntimeException("SSLOptions are not supported yet.");
         }
         VolumeProxy volume = proxy.openVolumeProxy(volumeName, sslOptionsProxy, optionsProxy);
-        NativeVolume nativeVolume = new NativeVolume(volume, volumeName);
+        NativeVolume nativeVolume = new NativeVolume(this, volume, volumeName);
 
         return nativeVolume;
     }
@@ -194,6 +198,10 @@ public class NativeClient implements Client {
     public Volumes listVolumes(List<String> mrcAddresses) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException {
         return proxy.listVolumes(new ServiceAddresses(StringVector.from(mrcAddresses)), dirServiceAuth);
+    }
+
+    NativeUUIDResolver getUUIDResolver() {
+        return new NativeUUIDResolver(proxy.getUUIDResolver());
     }
 
     @Override

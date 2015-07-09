@@ -7,9 +7,8 @@
 
 package org.xtreemfs.common.libxtreemfs;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
+import org.xtreemfs.common.libxtreemfs.jni.AdminNativeClient;
+import org.xtreemfs.common.libxtreemfs.jni.NativeClient;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 
@@ -26,6 +25,11 @@ public class ClientFactory {
     public enum ClientType {
         JAVA, NATIVE
     }
+
+    /**
+     * Specifies the default ClientType that is used if the parameter is omitted.
+     */
+    final static ClientType defaultType = ClientType.JAVA;
 
     /**
      * Returns an instance of a default client of the specified type with one DIR Address.
@@ -65,29 +69,7 @@ public class ClientFactory {
             SSLOptions sslOptions, Options options) {
         switch (type) {
         case NATIVE:
-            // return NativeClient.createClient(dirServiceAddresses, userCredentials, sslOptions, options);
-            try {
-                Class<?> clazz = Class.forName("org.xtreemfs.common.libxtreemfs.jni.NativeClient");
-                Method factory = clazz.getMethod("createClient", String[].class, UserCredentials.class,
-                        SSLOptions.class, Options.class);
-                Client client = (Client) factory
-                        .invoke(null, dirServiceAddresses, userCredentials, sslOptions, options);
-
-                return client;
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            } catch (NoSuchMethodException e) {
-                throw new RuntimeException(e);
-            } catch (IllegalArgumentException e) {
-                throw new RuntimeException(e);
-            } catch (InvocationTargetException e) {
-                throw new RuntimeException(e);
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
-            } catch (SecurityException e) {
-                throw new RuntimeException(e);
-            }
-
+            return NativeClient.createClient(dirServiceAddresses, userCredentials, sslOptions, options);
         case JAVA:
         default:
             return new ClientImplementation(dirServiceAddresses, userCredentials, sslOptions, options);
@@ -132,29 +114,7 @@ public class ClientFactory {
             UserCredentials userCredentials, SSLOptions sslOptions, Options options) {
         switch (type) {
         case NATIVE:
-            // return AdminNativeClient.createClient(dirServiceAddresses, userCredentials, sslOptions, options);
-            try {
-                Class<?> clazz = Class.forName("org.xtreemfs.common.libxtreemfs.jni.AdminNativeClient");
-                Method factory = clazz.getMethod("createClient", String[].class, UserCredentials.class,
-                        SSLOptions.class, Options.class);
-                AdminClient client = (AdminClient) factory.invoke(null, dirServiceAddresses, userCredentials,
-                        sslOptions, options);
-
-                return client;
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            } catch (NoSuchMethodException e) {
-                throw new RuntimeException(e);
-            } catch (IllegalArgumentException e) {
-                throw new RuntimeException(e);
-            } catch (InvocationTargetException e) {
-                throw new RuntimeException(e);
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
-            } catch (SecurityException e) {
-                throw new RuntimeException(e);
-            }
-
+            return AdminNativeClient.createClient(dirServiceAddresses, userCredentials, sslOptions, options);
         case JAVA:
         default:
             return new ClientImplementation(dirServiceAddresses, userCredentials, sslOptions, options);
@@ -177,7 +137,7 @@ public class ClientFactory {
             Options options) {
         String[] dirAddresses = new String[1];
         dirAddresses[0] = dirServiceAddress;
-        return createClient(ClientType.JAVA, dirAddresses, userCredentials, sslOptions, options);
+        return createClient(defaultType, dirAddresses, userCredentials, sslOptions, options);
     }
 
     /**
@@ -194,7 +154,7 @@ public class ClientFactory {
      */
     public static Client createClient(String[] dirServiceAddresses, UserCredentials userCredentials,
             SSLOptions sslOptions, Options options) {
-        return createClient(ClientType.JAVA, dirServiceAddresses, userCredentials, sslOptions, options);
+        return createClient(defaultType, dirServiceAddresses, userCredentials, sslOptions, options);
     }
 
     /**
@@ -213,7 +173,7 @@ public class ClientFactory {
             SSLOptions sslOptions, Options options) {
         String[] dirAddresses = new String[1];
         dirAddresses[0] = dirServiceAddress;
-        return createAdminClient(ClientType.JAVA, dirAddresses, userCredentials, sslOptions, options);
+        return createAdminClient(defaultType, dirAddresses, userCredentials, sslOptions, options);
     }
 
     /**
@@ -231,6 +191,6 @@ public class ClientFactory {
      */
     public static AdminClient createAdminClient(String[] dirServiceAddresses, UserCredentials userCredentials,
             SSLOptions sslOptions, Options options) {
-        return createAdminClient(ClientType.JAVA, dirServiceAddresses, userCredentials, sslOptions, options);
+        return createAdminClient(defaultType, dirServiceAddresses, userCredentials, sslOptions, options);
     }
 }

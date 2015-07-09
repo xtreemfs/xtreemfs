@@ -269,7 +269,11 @@ public class FileInfo {
         // by fileHandle.
 
         // remove file handle.
-        openFileHandles.remove(fileHandle);
+        boolean removed = openFileHandles.remove(fileHandle);
+        if (!removed) {
+            Logging.logMessage(Logging.LEVEL_WARN, this, "FileHandle for fileId %s has been closed multiple times.",
+                    fileId);
+        }
 
         // Decreasing reference count is handle by Volume.closeFile().
         volume.closeFile(fileId, this, fileHandle);

@@ -65,11 +65,12 @@ class DIRUUIDResolver : public UUIDResolver {
                                    std::string* uuid);
   virtual void VolumeNameToMRCUUID(const std::string& volume_name,
                                    SimpleUUIDIterator* uuid_iterator);
+  virtual std::vector<std::string> VolumeNameToMRCUUIDs(const std::string& volume_name);
 
  private:
   SimpleUUIDIterator& dir_uuid_iterator_;
-
   /** The auth_type of this object will always be set to AUTH_NONE. */
+
   // TODO(mberlin): change this when the DIR service supports real auth.
   pbrpc::Auth dir_service_auth_;
 
@@ -84,6 +85,8 @@ class DIRUUIDResolver : public UUIDResolver {
 
   /** Options class which contains the log_level string and logfile path. */
   const Options& options_;
+
+  pbrpc::ServiceSet* GetServicesByName(const std::string& volume_name);
 };
 
 /**

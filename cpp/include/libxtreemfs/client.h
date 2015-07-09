@@ -285,6 +285,11 @@ class Client {
    * @throws UnknownAddressSchemeException
    */
   virtual std::string UUIDToAddress(const std::string& uuid) = 0;
+
+  /** Return the UUIDResolver for this client implementation
+   *  This is only needed for the SWIG generated Java Native Interface
+   */
+  virtual UUIDResolver* GetUUIDResolver() = 0;
 };
 
 }  // namespace xtreemfs

@@ -1655,7 +1655,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
             long startSize, long length) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException {
         Replicas replicas = listReplicas(userCredentials, path);
-        return Helper.getStripeLocationsFromReplicas(replicas, startSize, length);
+        return Helper.getStripeLocationsFromReplicas(replicas, startSize, length, uuidResolver);
     }
 
     @Override

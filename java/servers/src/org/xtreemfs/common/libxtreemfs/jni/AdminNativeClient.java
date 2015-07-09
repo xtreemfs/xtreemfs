@@ -14,6 +14,7 @@ import java.util.Set;
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.AdminVolume;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
+import org.xtreemfs.common.libxtreemfs.ClientFactory.ClientType;
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
@@ -44,8 +45,8 @@ public class AdminNativeClient extends NativeClient implements AdminClient {
 
         ClientProxy clientProxy = NativeHelper.createClientProxy(dirServiceAddressesArray, userCredentials, sslOptions,
                 options);
-        AdminClient adminClient = ClientFactory.createAdminClient(dirServiceAddressesArray, userCredentials,
-                sslOptions, options);
+        AdminClient adminClient = ClientFactory.createAdminClient(ClientType.JAVA, dirServiceAddressesArray,
+                userCredentials, sslOptions, options);
         AdminNativeClient client = new AdminNativeClient(clientProxy, adminClient);
         return client;
     }
@@ -73,7 +74,7 @@ public class AdminNativeClient extends NativeClient implements AdminClient {
         }
         VolumeProxy volume = proxy.openVolumeProxy(volumeName, sslOptionsProxy, optionsProxy);
         AdminVolume adminVolume = adminClient.openVolume(volumeName, sslOptions, options);
-        AdminNativeVolume nativeVolume = new AdminNativeVolume(volume, adminVolume, volumeName);
+        AdminNativeVolume nativeVolume = new AdminNativeVolume(this, volume, adminVolume, volumeName);
         return nativeVolume;
     }
 

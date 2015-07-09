@@ -320,6 +320,7 @@ SWIGINTERN bool std_map_Sl_std_string_Sc_std_string_Sg__has_key(std::map< std::s
  #include "rpc/ssl_options.h" 
  #include "util/logging.h" 
  #include "libxtreemfs/xtreemfs_exception.h" 
+ #include "libxtreemfs/uuid_resolver.h" 
  #include "libxtreemfs/client.h" 
  #include "libxtreemfs/volume.h" 
  #include "libxtreemfs/file_handle.h" 
@@ -3257,6 +3258,156 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
 }
 
 
+SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtreemfs_1jniJNI_delete_1UUIDResolverProxy(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+  xtreemfs::UUIDResolver *arg1 = (xtreemfs::UUIDResolver *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  arg1 = *(xtreemfs::UUIDResolver **)&jarg1; 
+  delete arg1;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtreemfs_1jniJNI_UUIDResolverProxy_1uUIDToAddress(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jobjectArray jarg3) {
+  xtreemfs::UUIDResolver *arg1 = (xtreemfs::UUIDResolver *) 0 ;
+  std::string *arg2 = 0 ;
+  std::string *arg3 = (std::string *) 0 ;
+  std::string temp3 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(xtreemfs::UUIDResolver **)&jarg1; 
+  if(!jarg2) {
+    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null string");
+    return ;
+  }
+  const char *arg2_pstr = (const char *)jenv->GetStringUTFChars(jarg2, 0); 
+  if (!arg2_pstr) return ;
+  std::string arg2_str(arg2_pstr);
+  arg2 = &arg2_str;
+  jenv->ReleaseStringUTFChars(jarg2, arg2_pstr); 
+  {
+    if (!jarg3) {
+      SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "array null");
+      return ;
+    }
+    if (jenv->GetArrayLength(jarg3) == 0) {
+      SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "Array must contain at least 1 element");
+      return ;
+    }
+    arg3 = &temp3; 
+  }
+  try {
+    (arg1)->UUIDToAddress((std::string const &)*arg2,arg3);
+  }
+  catch(xtreemfs::AddressToUUIDNotFoundException const &_e) {
+    {
+      jclass clazz =  jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/AddressToUUIDNotFoundException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
+  catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
+  
+  {
+    jstring jvalue = jenv->NewStringUTF(temp3.c_str()); 
+    jenv->SetObjectArrayElement(jarg3, 0, jvalue);
+  }
+  
+}
+
+
+SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtreemfs_1jniJNI_UUIDResolverProxy_1volumeNameToMRCUUID(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jobjectArray jarg3) {
+  xtreemfs::UUIDResolver *arg1 = (xtreemfs::UUIDResolver *) 0 ;
+  std::string *arg2 = 0 ;
+  std::string *arg3 = (std::string *) 0 ;
+  std::string temp3 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(xtreemfs::UUIDResolver **)&jarg1; 
+  if(!jarg2) {
+    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null string");
+    return ;
+  }
+  const char *arg2_pstr = (const char *)jenv->GetStringUTFChars(jarg2, 0); 
+  if (!arg2_pstr) return ;
+  std::string arg2_str(arg2_pstr);
+  arg2 = &arg2_str;
+  jenv->ReleaseStringUTFChars(jarg2, arg2_pstr); 
+  {
+    if (!jarg3) {
+      SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "array null");
+      return ;
+    }
+    if (jenv->GetArrayLength(jarg3) == 0) {
+      SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "Array must contain at least 1 element");
+      return ;
+    }
+    arg3 = &temp3; 
+  }
+  try {
+    (arg1)->VolumeNameToMRCUUID((std::string const &)*arg2,arg3);
+  }
+  catch(xtreemfs::VolumeNotFoundException const &_e) {
+    {
+      jclass clazz =  jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/VolumeNotFoundException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
+  
+  {
+    jstring jvalue = jenv->NewStringUTF(temp3.c_str()); 
+    jenv->SetObjectArrayElement(jarg3, 0, jvalue);
+  }
+  
+}
+
+
+SWIGEXPORT jlong JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtreemfs_1jniJNI_UUIDResolverProxy_1volumeNameToMRCUUIDs(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+  jlong jresult = 0 ;
+  xtreemfs::UUIDResolver *arg1 = (xtreemfs::UUIDResolver *) 0 ;
+  std::string *arg2 = 0 ;
+  std::vector< std::string > result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(xtreemfs::UUIDResolver **)&jarg1; 
+  if(!jarg2) {
+    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null string");
+    return 0;
+  }
+  const char *arg2_pstr = (const char *)jenv->GetStringUTFChars(jarg2, 0); 
+  if (!arg2_pstr) return 0;
+  std::string arg2_str(arg2_pstr);
+  arg2 = &arg2_str;
+  jenv->ReleaseStringUTFChars(jarg2, arg2_pstr); 
+  try {
+    result = (arg1)->VolumeNameToMRCUUIDs((std::string const &)*arg2);
+  }
+  catch(xtreemfs::VolumeNotFoundException const &_e) {
+    {
+      jclass clazz =  jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/VolumeNotFoundException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
+  
+  *(std::vector< std::string > **)&jresult = new std::vector< std::string >((const std::vector< std::string > &)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT jlong JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtreemfs_1jniJNI_ClientProxy_1createClient_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jbyteArray jarg2, jlong jarg3, jobject jarg3_, jlong jarg4, jobject jarg4_) {
   jlong jresult = 0 ;
   xtreemfs::ServiceAddresses *arg1 = 0 ;
@@ -4111,6 +4262,21 @@ SWIGEXPORT jstring JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xt
   }
   
   jresult = jenv->NewStringUTF((&result)->c_str()); 
+  return jresult;
+}
+
+
+SWIGEXPORT jlong JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtreemfs_1jniJNI_ClientProxy_1getUUIDResolver(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jlong jresult = 0 ;
+  xtreemfs::Client *arg1 = (xtreemfs::Client *) 0 ;
+  xtreemfs::UUIDResolver *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(xtreemfs::Client **)&jarg1; 
+  result = (xtreemfs::UUIDResolver *)(arg1)->GetUUIDResolver();
+  *(xtreemfs::UUIDResolver **)&jresult = result; 
   return jresult;
 }
 

@@ -42,6 +42,10 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrResponse;
 
 public class NativeVolume implements Volume {
 
+    protected final NativeClient  client;
+
+    protected final NativeUUIDResolver uuidResolver;
+
     protected final VolumeProxy   proxy;
 
     protected static final String XTREEMFS_DEFAULT_RP      = "xtreemfs.default_rp";
@@ -53,9 +57,12 @@ public class NativeVolume implements Volume {
      */
     protected final String        volumeName;
 
-    public NativeVolume(VolumeProxy proxy, String volumeName) {
+    public NativeVolume(NativeClient client, VolumeProxy proxy, String volumeName) {
+        this.client = client;
         this.proxy = proxy;
         this.volumeName = volumeName;
+
+        this.uuidResolver = client.getUUIDResolver();
     }
 
     @Override
@@ -70,9 +77,7 @@ public class NativeVolume implements Volume {
 
     @Override
     public void start(boolean startThreadsAsDaemons) throws Exception {
-        if (startThreadsAsDaemons) {
-            throw new RuntimeException("starting threads as daemons is not supported.");
-        }
+        // not needed for the C++ volume
     }
 
     @Override
@@ -348,7 +353,7 @@ public class NativeVolume implements Volume {
     public List<StripeLocation> getStripeLocations(UserCredentials userCredentials, String path, long startSize,
             long length) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         Replicas replicas = listReplicas(userCredentials, path);
-        return Helper.getStripeLocationsFromReplicas(replicas, startSize, length);
+        return Helper.getStripeLocationsFromReplicas(replicas, startSize, length, uuidResolver);
     }
 
     @Override

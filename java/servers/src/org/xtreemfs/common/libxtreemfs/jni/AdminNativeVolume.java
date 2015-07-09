@@ -19,8 +19,8 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 public class AdminNativeVolume extends NativeVolume implements AdminVolume {
     private final AdminVolume adminVolume;
 
-    public AdminNativeVolume(VolumeProxy proxy, AdminVolume adminVolume, String volumeName) {
-        super(proxy, volumeName);
+    public AdminNativeVolume(AdminNativeClient client, VolumeProxy proxy, AdminVolume adminVolume, String volumeName) {
+        super(client, proxy, volumeName);
         this.adminVolume = adminVolume;
     }
 

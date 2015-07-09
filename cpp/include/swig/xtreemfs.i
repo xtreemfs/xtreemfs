@@ -166,6 +166,27 @@ namespace util {
 
 
 /*******************************************************************************
+ * UUIDResolver
+ ******************************************************************************/
+%{ #include "libxtreemfs/uuid_resolver.h" %}
+
+%apply std::string *OUTPUT { std::string *address } // UUIDToAddress
+%apply std::string *OUTPUT { std::string *mrc_uuid } // VolumeNameToMRCUUID
+
+%rename("$ignore") xtreemfs::UUIDResolver::UUIDToAddressWithOptions;
+%rename("$ignore") xtreemfs::UUIDResolver::VolumeNameToMRCUUID(
+      const std::string& volume_name,
+      SimpleUUIDIterator* uuid_iterator);
+
+// Add Exception Handling
+%catches(const xtreemfs::AddressToUUIDNotFoundException, 
+         const xtreemfs::UnknownAddressSchemeException) xtreemfs::UUIDResolver::UUIDToAddress;
+%catches(const xtreemfs::VolumeNotFoundException) xtreemfs::UUIDResolver::VolumeNameToMRCUUID;
+%catches(const xtreemfs::VolumeNotFoundException) xtreemfs::UUIDResolver::VolumeNameToMRCUUIDs;
+
+
+
+/*******************************************************************************
  * Client
  ******************************************************************************/
 %{ #include "libxtreemfs/client.h" %}
@@ -408,6 +429,10 @@ DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::ReleaseLockOfProcess);
  ******************************************************************************/
 // Change libxtreemfs class members to first letter lowercase in accordance to the Java interfaces.
 %rename("%(firstlowercase)s", %$isfunction, %$ismember ) "";
+
+// Include utility classes.
+%rename (UUIDResolverProxy) xtreemfs::UUIDResolver;
+%include "libxtreemfs/uuid_resolver.h"
 
 // Include (and rename) the libxtreemfs.
 %rename (openVolumeProxy) xtreemfs::Client::OpenVolume;

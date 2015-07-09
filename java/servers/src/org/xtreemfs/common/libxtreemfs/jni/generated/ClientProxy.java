@@ -127,6 +127,11 @@ public class ClientProxy {
     return xtreemfs_jniJNI.ClientProxy_uUIDToAddress(swigCPtr, this, uuid);
   }
 
+  public UUIDResolverProxy getUUIDResolver() {
+    long cPtr = xtreemfs_jniJNI.ClientProxy_getUUIDResolver(swigCPtr, this);
+    return (cPtr == 0) ? null : new UUIDResolverProxy(cPtr, false);
+  }
+
   public enum ClientImplementationType {
     kDefaultClient;
 
