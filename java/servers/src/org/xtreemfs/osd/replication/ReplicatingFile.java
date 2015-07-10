@@ -109,7 +109,6 @@ class ReplicatingFile {
          * is used for (complete) replicating an object which was previously
          * chosen to be replicated
          * 
-         * @param objectNo
          * @throws TransferStrategyException
          */
         public void replicateObject() throws TransferStrategyException {
@@ -751,7 +750,6 @@ class ReplicatingFile {
      * necessary
      * 
      * @throws IOException
-     * @throws ONCRPCException
      */
     public void checkCap() throws IOException {
         try {
