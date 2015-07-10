@@ -52,6 +52,7 @@ import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.operations.EventRWRStatus;
 import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.rwre.ReplicatedFileState.ReplicaState;
+import org.xtreemfs.osd.stages.FleaseMasterEpochStage;
 import org.xtreemfs.osd.stages.PreprocStage.InvalidateXLocSetCallback;
 import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.osd.stages.StorageStage.DeleteObjectsCallback;
@@ -132,7 +133,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
     private final Queue<ReplicatedFileState>       filesInReset;
 
-    private final FleaseMasterEpochThread          masterEpochThread;
+    private final FleaseMasterEpochStage masterEpochStage;
 
     private final AtomicInteger                    externalRequestsInQueue;
 
@@ -152,7 +153,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
         localID = new ASCIIString(master.getConfig().getUUID().toString());
 
-        masterEpochThread = new FleaseMasterEpochThread(master.getStorageStage().getStorageLayout(),
+        masterEpochStage = new FleaseMasterEpochStage(master.getStorageStage().getStorageLayout(),
                 maxRequestsQueueLength);
 
         FleaseConfig fcfg = new FleaseConfig(master.getConfig().getFleaseLeaseToMS(), master.getConfig()
@@ -180,13 +181,13 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                         // flush pending requests
                         eventLeaseStateChanged(cellID, null, error);
                     }
-                }, masterEpochThread);
+                }, masterEpochStage);
         fstage.setLifeCycleListener(master);
     }
 
     @Override
     public void start() {
-        masterEpochThread.start();
+        masterEpochStage.start();
         client.start();
         fleaseClient.start();
         fstage.start();
@@ -198,13 +199,13 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         client.shutdown();
         fleaseClient.shutdown();
         fstage.shutdown();
-        masterEpochThread.shutdown();
+        masterEpochStage.shutdown();
         super.shutdown();
     }
 
     @Override
     public void waitForStartup() throws Exception {
-        masterEpochThread.waitForStartup();
+        masterEpochStage.waitForStartup();
         client.waitForStartup();
         fleaseClient.waitForStartup();
         fstage.waitForStartup();
@@ -216,7 +217,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         client.waitForShutdown();
         fleaseClient.waitForShutdown();
         fstage.waitForShutdown();
-        masterEpochThread.waitForShutdown();
+        masterEpochStage.waitForShutdown();
         super.waitForShutdown();
     }
 

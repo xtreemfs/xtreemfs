@@ -432,7 +432,7 @@ public abstract class StorageLayout {
     public abstract boolean isCompatibleVersion(int layoutVersionTag);
 
     /**
-     * Retrieves the FleaseM master epoch stored for a file.
+     * Retrieves the Flease master epoch stored for a file.
      * @param fileId
      * @return current master epoch stored on disk.
      */

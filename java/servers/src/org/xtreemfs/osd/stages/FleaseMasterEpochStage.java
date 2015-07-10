@@ -6,13 +6,14 @@
  *
  */
 
-package org.xtreemfs.osd.rwre;
+package org.xtreemfs.osd.stages;
 
 import java.io.IOException;
 
 import org.xtreemfs.foundation.flease.MasterEpochHandlerInterface;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.osd.rwre.ReplicaUpdatePolicy;
 import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.osd.storage.StorageLayout;
 
@@ -20,13 +21,13 @@ import org.xtreemfs.osd.storage.StorageLayout;
  *
  * @author bjko
  */
-public class FleaseMasterEpochThread extends Stage implements MasterEpochHandlerInterface {
+public class FleaseMasterEpochStage extends Stage implements MasterEpochHandlerInterface {
     private static final int STAGEOP_GET_MEPOCH = 1;
     private static final int STAGEOP_SET_MEPOCH = 2;
 
     private final StorageLayout layout;
 
-    public FleaseMasterEpochThread(StorageLayout layout, int maxRequestsQueueLength) {
+    public FleaseMasterEpochStage(StorageLayout layout, int maxRequestsQueueLength) {
         super("FlMEpoThr", maxRequestsQueueLength);
         this.layout = layout;
     }
