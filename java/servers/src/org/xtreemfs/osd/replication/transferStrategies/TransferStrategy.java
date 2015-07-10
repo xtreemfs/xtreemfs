@@ -94,9 +94,6 @@ public abstract class TransferStrategy {
      */
     protected Map<ServiceUUID, ObjectSetInfo> objectsOnOSDs;
 
-    /**
-     * @param rqDetails
-     */
     protected TransferStrategy(String fileID, XLocations xLoc, ServiceAvailability osdAvailability) {
         super();
         this.xLoc = xLoc;

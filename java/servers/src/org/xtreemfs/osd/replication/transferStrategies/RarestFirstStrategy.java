@@ -28,9 +28,6 @@ public class RarestFirstStrategy extends RandomStrategy {
 
     protected RarestFirstObjectSelection objectSelection;
 
-    /**
-     * @param rqDetails
-     */
     public RarestFirstStrategy(String fileId, XLocations xLoc, ServiceAvailability osdAvailability) {
         super(fileId, xLoc, osdAvailability);
         this.objectSelection = new RarestFirstObjectSelection();
