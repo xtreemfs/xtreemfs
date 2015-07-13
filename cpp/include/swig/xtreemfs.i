@@ -219,6 +219,7 @@ PROTO_ENUM(xtreemfs::pbrpc::StripingPolicyType, org.xtreemfs.pbrpc.generatedinte
 
 // Add Exception Handling
 %catches(const xtreemfs::AddressToUUIDNotFoundException, 
+         const xtreemfs::UnknownAddressSchemeException,
          const xtreemfs::VolumeNotFoundException) xtreemfs::Client::OpenVolume;
 %catches(const xtreemfs::IOException,
          const xtreemfs::PosixErrorException) xtreemfs::Client::CreateVolume;

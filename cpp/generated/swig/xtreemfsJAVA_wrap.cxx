@@ -3569,6 +3569,13 @@ SWIGEXPORT jlong JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtre
       return 0;
     }
   }
+  catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
   catch(xtreemfs::VolumeNotFoundException const &_e) {
     {
       jclass clazz =  jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/VolumeNotFoundException");

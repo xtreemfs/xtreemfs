@@ -36,7 +36,7 @@ public class StringVector {
   }
 
   public static StringVector from(java.util.Collection<String> in) {
-    StringVector out = new StringVector(in.size());
+    StringVector out = new StringVector();
     for (String entry : in) {
       out.add(entry);
     }

@@ -70,7 +70,7 @@ public class ClientProxy {
     xtreemfs_jniJNI.ClientProxy_shutdown(swigCPtr, this);
   }
 
-  public VolumeProxy openVolumeProxy(String volume_name, SSLOptionsProxy ssl_options, OptionsProxy options) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException {
+  public VolumeProxy openVolumeProxy(String volume_name, SSLOptionsProxy ssl_options, OptionsProxy options) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException, org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException {
     long cPtr = xtreemfs_jniJNI.ClientProxy_openVolumeProxy(swigCPtr, this, volume_name, SSLOptionsProxy.getCPtr(ssl_options), ssl_options, OptionsProxy.getCPtr(options), options);
     VolumeProxy ret = null;
     if (cPtr != 0) {

@@ -15,7 +15,7 @@
 %define VECTOR(Name, CppCollectionType, JavaElementType)
 %typemap(javacode) CppCollectionType %{
   public static $javaclassname from(java.util.Collection<JavaElementType> in) {
-    $javaclassname out = new $javaclassname(in.size());
+    $javaclassname out = new $javaclassname();
     for (JavaElementType entry : in) {
       out.add(entry);
     }

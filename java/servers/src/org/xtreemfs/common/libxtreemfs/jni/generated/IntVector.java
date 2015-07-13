@@ -36,7 +36,7 @@ public class IntVector {
   }
 
   public static IntVector from(java.util.Collection<Integer> in) {
-    IntVector out = new IntVector(in.size());
+    IntVector out = new IntVector();
     for (Integer entry : in) {
       out.add(entry);
     }
