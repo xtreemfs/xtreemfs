@@ -86,7 +86,7 @@ public final class BufferPool {
     
     /**
      * Get a new buffer. The Buffer is taken from the pool or created if none is
-     * available or the size exceedes the largest class.
+     * available or the size exceeds the largest class.
      * 
      * @param size
      *            the buffer's size in bytes
