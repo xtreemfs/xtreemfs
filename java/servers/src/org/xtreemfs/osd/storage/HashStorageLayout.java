@@ -738,7 +738,7 @@ public class HashStorageLayout extends StorageLayout {
         File storageDirFile = new File(this.storageDir);
         for (File p = parent; p != null && p.list().length <= 1 && !p.equals(storageDirFile); p = p
                 .getParentFile()) {
-            parent.delete();
+            p.delete();
         }
     }
 
