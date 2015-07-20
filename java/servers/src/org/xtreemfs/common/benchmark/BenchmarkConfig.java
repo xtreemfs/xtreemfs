@@ -8,7 +8,6 @@
 
 package org.xtreemfs.common.benchmark;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
@@ -749,8 +748,14 @@ public class BenchmarkConfig extends ServiceConfig {
             return this;
         }
 
-        public ConfigBuilder setUseJNI(boolean flag) {
-            props.setProperty(Parameter.USE_JNI.getPropertyString(), Boolean.toString(flag));
+        /**
+         * If set, the Benchmark is performed using JNI (and thus the C++ library) instead of the pure Java library.
+         * Default: false.
+         * 
+         * @return the builder
+         */
+        public ConfigBuilder setUseJNI() {
+            props.setProperty(Parameter.USE_JNI.getPropertyString(), Boolean.toString(true));
             return this;
         }
 
