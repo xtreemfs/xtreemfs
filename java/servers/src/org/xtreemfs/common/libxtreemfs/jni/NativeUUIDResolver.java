@@ -34,7 +34,12 @@ public class NativeUUIDResolver implements UUIDResolver {
     @Override
     public String volumeNameToMRCUUID(String volumeName) throws VolumeNotFoundException, AddressToUUIDNotFoundException {
         String[] mrc_uuid = { null };
-        proxy.volumeNameToMRCUUID(volumeName, mrc_uuid);
+
+        try {
+            proxy.volumeNameToMRCUUID(volumeName, mrc_uuid);
+        } catch (XtreemFSException e) {
+            throw new VolumeNotFoundException(volumeName);
+        }
 
         return mrc_uuid[0];
     }
@@ -44,7 +49,13 @@ public class NativeUUIDResolver implements UUIDResolver {
             AddressToUUIDNotFoundException {
         assert (uuidIterator != null);
 
-        StringVector result = proxy.volumeNameToMRCUUIDs(volumeName);
+        StringVector result;
+        try {
+            result = proxy.volumeNameToMRCUUIDs(volumeName);
+        } catch (XtreemFSException e) {
+            throw new VolumeNotFoundException(volumeName);
+        }
+
         for (int i = 0, c = (int) result.size(); i < c; ++i) {
             uuidIterator.addUUID(result.get(i));
         }
@@ -55,7 +66,12 @@ public class NativeUUIDResolver implements UUIDResolver {
     @Override
     public List<String> volumeNameToMRCUUIDs(String volumeName) throws VolumeNotFoundException,
             AddressToUUIDNotFoundException {
-        StringVector result = proxy.volumeNameToMRCUUIDs(volumeName);
+        StringVector result;
+        try {
+            result = proxy.volumeNameToMRCUUIDs(volumeName);
+        } catch (XtreemFSException e) {
+            throw new VolumeNotFoundException(volumeName);
+        }
         List<String> ret = Arrays.asList(result.toArray());
 
         result.delete();

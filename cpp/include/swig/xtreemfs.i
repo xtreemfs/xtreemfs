@@ -99,7 +99,6 @@ namespace util {
 %{ #include "libxtreemfs/xtreemfs_exception.h" %}
 // TODO (jdillmann): JNI Error Handling if a method can not be found
 
-// TODO (jdillmann): Decide if the C++ Exceptions without Java counterpart should be thrown as RuntimeExceptions
 %typemap(throws, throws="org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException") 
     xtreemfs::XtreemFSException, 
     xtreemfs::UnknownAddressSchemeException,
@@ -160,7 +159,8 @@ namespace util {
 %catches(const xtreemfs::AddressToUUIDNotFoundException,
          const xtreemfs::IOException,
          const xtreemfs::PosixErrorException,
-         const xtreemfs::UnknownAddressSchemeException) METHOD;
+         const xtreemfs::UnknownAddressSchemeException,
+         const xtreemfs::XtreemFSException) METHOD;
 %enddef
 
 
@@ -180,9 +180,14 @@ namespace util {
 
 // Add Exception Handling
 %catches(const xtreemfs::AddressToUUIDNotFoundException, 
-         const xtreemfs::UnknownAddressSchemeException) xtreemfs::UUIDResolver::UUIDToAddress;
-%catches(const xtreemfs::VolumeNotFoundException) xtreemfs::UUIDResolver::VolumeNameToMRCUUID;
-%catches(const xtreemfs::VolumeNotFoundException) xtreemfs::UUIDResolver::VolumeNameToMRCUUIDs;
+         const xtreemfs::UnknownAddressSchemeException,
+         const xtreemfs::XtreemFSException) xtreemfs::UUIDResolver::UUIDToAddress;
+%catches(const xtreemfs::VolumeNotFoundException,
+         const xtreemfs::AddressToUUIDNotFoundException,
+         const xtreemfs::XtreemFSException) xtreemfs::UUIDResolver::VolumeNameToMRCUUID;
+%catches(const xtreemfs::VolumeNotFoundException,
+         const xtreemfs::AddressToUUIDNotFoundException,
+         const xtreemfs::XtreemFSException) xtreemfs::UUIDResolver::VolumeNameToMRCUUIDs;
 
 
 
@@ -218,21 +223,28 @@ PROTO_ENUM(xtreemfs::pbrpc::StripingPolicyType, org.xtreemfs.pbrpc.generatedinte
 
 
 // Add Exception Handling
+%catches(const xtreemfs::XtreemFSException) xtreemfs::Client::Start;
 %catches(const xtreemfs::AddressToUUIDNotFoundException, 
          const xtreemfs::UnknownAddressSchemeException,
-         const xtreemfs::VolumeNotFoundException) xtreemfs::Client::OpenVolume;
+         const xtreemfs::VolumeNotFoundException,
+         const xtreemfs::XtreemFSException) xtreemfs::Client::OpenVolume;
 %catches(const xtreemfs::IOException,
-         const xtreemfs::PosixErrorException) xtreemfs::Client::CreateVolume;
+         const xtreemfs::PosixErrorException,
+         const xtreemfs::XtreemFSException) xtreemfs::Client::CreateVolume;
 %catches(const xtreemfs::IOException,
-         const xtreemfs::PosixErrorException) xtreemfs::Client::DeleteVolume;
+         const xtreemfs::PosixErrorException,
+         const xtreemfs::XtreemFSException) xtreemfs::Client::DeleteVolume;
 %catches(const xtreemfs::AddressToUUIDNotFoundException, 
          const xtreemfs::IOException,
-         const xtreemfs::PosixErrorException) xtreemfs::Client::ListVolumes;
+         const xtreemfs::PosixErrorException,
+         const xtreemfs::XtreemFSException) xtreemfs::Client::ListVolumes;
 %catches(const xtreemfs::AddressToUUIDNotFoundException, 
          const xtreemfs::IOException,
-         const xtreemfs::PosixErrorException) xtreemfs::Client::ListVolumeNames;
+         const xtreemfs::PosixErrorException,
+         const xtreemfs::XtreemFSException) xtreemfs::Client::ListVolumeNames;
 %catches(const xtreemfs::AddressToUUIDNotFoundException, 
-         const xtreemfs::UnknownAddressSchemeException) xtreemfs::Client::UUIDToAddress;
+         const xtreemfs::UnknownAddressSchemeException,
+         const xtreemfs::XtreemFSException) xtreemfs::Client::UUIDToAddress;
 
 
 
@@ -340,7 +352,8 @@ DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::ReleaseLockOfProcess);
          const xtreemfs::IOException,
          const xtreemfs::PosixErrorException,
          const xtreemfs::UnknownAddressSchemeException,
-         const xtreemfs::UUIDNotInXlocSetException) 
+         const xtreemfs::UUIDNotInXlocSetException,
+         const xtreemfs::XtreemFSException) 
     xtreemfs::FileHandle::PingReplica;
 
 %catches(const xtreemfs::AddressToUUIDNotFoundException,
@@ -348,7 +361,8 @@ DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::ReleaseLockOfProcess);
          const xtreemfs::FileHandleNotFoundException,
          const xtreemfs::IOException,
          const xtreemfs::PosixErrorException,
-         const xtreemfs::UnknownAddressSchemeException) 
+         const xtreemfs::UnknownAddressSchemeException,
+         const xtreemfs::XtreemFSException) 
     xtreemfs::FileHandle::Close;
 
 // Add missing methods from the Java implementation.

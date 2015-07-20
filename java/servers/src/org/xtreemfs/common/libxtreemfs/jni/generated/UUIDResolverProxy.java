@@ -39,11 +39,11 @@ public class UUIDResolverProxy {
     xtreemfs_jniJNI.UUIDResolverProxy_uUIDToAddress(swigCPtr, this, uuid, address);
   }
 
-  public void volumeNameToMRCUUID(String volume_name, String[] mrc_uuid) throws org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException {
+  public void volumeNameToMRCUUID(String volume_name, String[] mrc_uuid) throws org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException, org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
     xtreemfs_jniJNI.UUIDResolverProxy_volumeNameToMRCUUID(swigCPtr, this, volume_name, mrc_uuid);
   }
 
-  public StringVector volumeNameToMRCUUIDs(String volume_name) throws org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException {
+  public StringVector volumeNameToMRCUUIDs(String volume_name) throws org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException, org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
     return new StringVector(xtreemfs_jniJNI.UUIDResolverProxy_volumeNameToMRCUUIDs(swigCPtr, this, volume_name), true);
   }
 

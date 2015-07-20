@@ -3315,6 +3315,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
       return ;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
   
   {
     jstring jvalue = jenv->NewStringUTF(temp3.c_str()); 
@@ -3364,6 +3371,20 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
       return ;
     }
   }
+  catch(xtreemfs::AddressToUUIDNotFoundException const &_e) {
+    {
+      jclass clazz =  jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/AddressToUUIDNotFoundException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
   
   {
     jstring jvalue = jenv->NewStringUTF(temp3.c_str()); 
@@ -3398,6 +3419,20 @@ SWIGEXPORT jlong JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtre
   catch(xtreemfs::VolumeNotFoundException const &_e) {
     {
       jclass clazz =  jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/VolumeNotFoundException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
+  catch(xtreemfs::AddressToUUIDNotFoundException const &_e) {
+    {
+      jclass clazz =  jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/AddressToUUIDNotFoundException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
       jenv->ThrowNew(clazz, (&_e)->what());
       return 0;
     }
@@ -3583,6 +3618,13 @@ SWIGEXPORT jlong JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtre
       return 0;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
   
   *(xtreemfs::Volume **)&jresult = result; 
   return jresult;
@@ -3665,6 +3707,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
       jthrowable o = static_cast<jthrowable>(jenv->NewObject(clazz, mid, posix_errno, what));
       jenv->Throw(o);
       
+      return ;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
       return ;
     }
   }
@@ -3808,6 +3857,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
       return ;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
   
 }
 
@@ -3941,6 +3997,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
       return ;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
   
 }
 
@@ -4024,6 +4087,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
       return ;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
   
 }
 
@@ -4100,6 +4170,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
       return ;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
   
 }
 
@@ -4167,6 +4244,13 @@ SWIGEXPORT jbyteArray JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated
       return 0;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
   
   {
     boost::scoped_ptr<char> buf(new char[result->ByteSize()]);
@@ -4225,6 +4309,13 @@ SWIGEXPORT jlong JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtre
       return 0;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
   
   *(std::vector< std::string > **)&jresult = new std::vector< std::string >((const std::vector< std::string > &)result); 
   return jresult;
@@ -4261,6 +4352,13 @@ SWIGEXPORT jstring JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xt
     }
   }
   catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
     {
       jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
       jenv->ThrowNew(clazz, (&_e)->what());
@@ -4380,6 +4478,13 @@ SWIGEXPORT jbyteArray JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated
       return 0;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
   
   {
     boost::scoped_ptr<char> buf(new char[result->ByteSize()]);
@@ -4481,6 +4586,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
       return ;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
   
   {
     jstring jvalue = jenv->NewStringUTF(temp4.c_str()); 
@@ -4565,6 +4677,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
     }
   }
   catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
     {
       jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
       jenv->ThrowNew(clazz, (&_e)->what());
@@ -4656,6 +4775,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
       return ;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
   
 }
 
@@ -4729,6 +4855,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
     }
   }
   catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
     {
       jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
       jenv->ThrowNew(clazz, (&_e)->what());
@@ -4816,6 +4949,13 @@ SWIGEXPORT jlong JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtre
       return 0;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
   
   *(xtreemfs::FileHandle **)&jresult = result; 
   return jresult;
@@ -4895,6 +5035,13 @@ SWIGEXPORT jlong JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtre
     }
   }
   catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
     {
       jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
       jenv->ThrowNew(clazz, (&_e)->what());
@@ -4988,6 +5135,13 @@ SWIGEXPORT jlong JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtre
       return 0;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
   
   *(xtreemfs::FileHandle **)&jresult = result; 
   return jresult;
@@ -5061,6 +5215,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
     }
   }
   catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
     {
       jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
       jenv->ThrowNew(clazz, (&_e)->what());
@@ -5142,6 +5303,13 @@ SWIGEXPORT jbyteArray JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated
     }
   }
   catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
     {
       jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
       jenv->ThrowNew(clazz, (&_e)->what());
@@ -5233,6 +5401,13 @@ SWIGEXPORT jbyteArray JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated
     }
   }
   catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
     {
       jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
       jenv->ThrowNew(clazz, (&_e)->what());
@@ -5341,6 +5516,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
       return ;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
   
 }
 
@@ -5410,6 +5592,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
     }
   }
   catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
     {
       jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
       jenv->ThrowNew(clazz, (&_e)->what());
@@ -5501,6 +5690,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
       return ;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
   
 }
 
@@ -5578,6 +5774,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
       return ;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
   
 }
 
@@ -5647,6 +5850,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
     }
   }
   catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
     {
       jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
       jenv->ThrowNew(clazz, (&_e)->what());
@@ -5730,6 +5940,13 @@ SWIGEXPORT jbyteArray JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated
     }
   }
   catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
     {
       jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
       jenv->ThrowNew(clazz, (&_e)->what());
@@ -5826,6 +6043,13 @@ SWIGEXPORT jbyteArray JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated
       return 0;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
   
   {
     boost::scoped_ptr<char> buf(new char[result->ByteSize()]);
@@ -5912,6 +6136,13 @@ SWIGEXPORT jbyteArray JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated
     }
   }
   catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
     {
       jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
       jenv->ThrowNew(clazz, (&_e)->what());
@@ -6035,6 +6266,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
       return ;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
   
 }
 
@@ -6129,6 +6367,13 @@ SWIGEXPORT jboolean JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_x
     }
   }
   catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
     {
       jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
       jenv->ThrowNew(clazz, (&_e)->what());
@@ -6243,6 +6488,13 @@ SWIGEXPORT jboolean JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_x
       return 0;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
   
   jresult = (jboolean)result; 
   {
@@ -6329,6 +6581,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
     }
   }
   catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
     {
       jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
       jenv->ThrowNew(clazz, (&_e)->what());
@@ -6425,6 +6684,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
       return ;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
   
 }
 
@@ -6496,6 +6762,13 @@ SWIGEXPORT jbyteArray JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated
     }
   }
   catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
     {
       jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
       jenv->ThrowNew(clazz, (&_e)->what());
@@ -6600,6 +6873,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
       return ;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
   
 }
 
@@ -6680,6 +6960,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
       return ;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
   
 }
 
@@ -6744,6 +7031,13 @@ SWIGEXPORT jint JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
     }
   }
   catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
     {
       jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
       jenv->ThrowNew(clazz, (&_e)->what());
@@ -6816,6 +7110,13 @@ SWIGEXPORT jint JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
       return 0;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
   
   jresult = (jint)result; 
   {
@@ -6866,6 +7167,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
     }
   }
   catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
     {
       jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
       jenv->ThrowNew(clazz, (&_e)->what());
@@ -6933,6 +7241,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
     }
   }
   catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
     {
       jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
       jenv->ThrowNew(clazz, (&_e)->what());
@@ -7010,6 +7325,13 @@ SWIGEXPORT jbyteArray JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated
       return 0;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
   
   {
     boost::scoped_ptr<char> buf(new char[arg3->ByteSize()]);
@@ -7074,6 +7396,13 @@ SWIGEXPORT jbyteArray JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated
     }
   }
   catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
     {
       jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
       jenv->ThrowNew(clazz, (&_e)->what());
@@ -7153,6 +7482,13 @@ SWIGEXPORT jbyteArray JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated
       return 0;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
   
   {
     boost::scoped_ptr<char> buf(new char[result->ByteSize()]);
@@ -7224,6 +7560,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
       return ;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
   
 }
 
@@ -7289,6 +7632,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
       return ;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
   
 }
 
@@ -7335,6 +7685,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
     }
   }
   catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
     {
       jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
       jenv->ThrowNew(clazz, (&_e)->what());
@@ -7408,6 +7765,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
       return ;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
   
 }
 
@@ -7472,6 +7836,13 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
       return ;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
   
 }
 
@@ -7529,6 +7900,13 @@ SWIGEXPORT jint JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
     }
   }
   catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
     {
       jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
       jenv->ThrowNew(clazz, (&_e)->what());
@@ -7601,6 +7979,13 @@ SWIGEXPORT jint JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
       return 0;
     }
   }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
   
   jresult = (jint)result; 
   
@@ -7660,6 +8045,13 @@ SWIGEXPORT jint JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
     }
   }
   catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
     {
       jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
       jenv->ThrowNew(clazz, (&_e)->what());
@@ -7728,6 +8120,13 @@ SWIGEXPORT jint JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
     }
   }
   catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return 0;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
     {
       jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
       jenv->ThrowNew(clazz, (&_e)->what());
