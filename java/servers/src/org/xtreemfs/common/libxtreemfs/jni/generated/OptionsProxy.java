@@ -184,14 +184,6 @@ public class OptionsProxy {
     return xtreemfs_jniJNI.OptionsProxy_enable_atime_get(swigCPtr, this);
   }
 
-  public void setObject_cache_size(int value) {
-    xtreemfs_jniJNI.OptionsProxy_object_cache_size_set(swigCPtr, this, value);
-  }
-
-  public int getObject_cache_size() {
-    return xtreemfs_jniJNI.OptionsProxy_object_cache_size_get(swigCPtr, this);
-  }
-
   public void setMax_tries(int value) {
     xtreemfs_jniJNI.OptionsProxy_max_tries_set(swigCPtr, this, value);
   }

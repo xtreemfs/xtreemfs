@@ -1853,34 +1853,6 @@ SWIGEXPORT jboolean JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_x
 }
 
 
-SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtreemfs_1jniJNI_OptionsProxy_1object_1cache_1size_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
-  xtreemfs::Options *arg1 = (xtreemfs::Options *) 0 ;
-  int arg2 ;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  arg1 = *(xtreemfs::Options **)&jarg1; 
-  arg2 = (int)jarg2; 
-  if (arg1) (arg1)->object_cache_size = arg2;
-}
-
-
-SWIGEXPORT jint JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtreemfs_1jniJNI_OptionsProxy_1object_1cache_1size_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
-  jint jresult = 0 ;
-  xtreemfs::Options *arg1 = (xtreemfs::Options *) 0 ;
-  int result;
-  
-  (void)jenv;
-  (void)jcls;
-  (void)jarg1_;
-  arg1 = *(xtreemfs::Options **)&jarg1; 
-  result = (int) ((arg1)->object_cache_size);
-  jresult = (jint)result; 
-  return jresult;
-}
-
-
 SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtreemfs_1jniJNI_OptionsProxy_1max_1tries_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
   xtreemfs::Options *arg1 = (xtreemfs::Options *) 0 ;
   int arg2 ;

@@ -161,7 +161,6 @@ public final class NativeHelper {
         // o.getInterruptSignal()
         op.setAsync_writes_max_requests(o.getMaxWriteaheadRequests());
         op.setLinger_timeout_s(o.getLingerTimeout_s());
-        op.setMetadata_cache_size(BigInteger.valueOf(o.getMetadataCacheSize()));
         op.setMetadata_cache_ttl_s(BigInteger.valueOf(o.getMetadataCacheTTLs()));
         op.setPeriodic_xcap_renewal_interval_s(o.getPeriodicXcapRenewalIntervalS());
         op.setRequest_timeout_s(o.getRequestTimeout_s());

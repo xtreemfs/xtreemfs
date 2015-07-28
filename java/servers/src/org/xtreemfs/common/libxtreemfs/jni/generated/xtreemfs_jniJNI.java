@@ -100,8 +100,6 @@ public class xtreemfs_jniJNI {
   public final static native int OptionsProxy_readdir_chunk_size_get(long jarg1, OptionsProxy jarg1_);
   public final static native void OptionsProxy_enable_atime_set(long jarg1, OptionsProxy jarg1_, boolean jarg2);
   public final static native boolean OptionsProxy_enable_atime_get(long jarg1, OptionsProxy jarg1_);
-  public final static native void OptionsProxy_object_cache_size_set(long jarg1, OptionsProxy jarg1_, int jarg2);
-  public final static native int OptionsProxy_object_cache_size_get(long jarg1, OptionsProxy jarg1_);
   public final static native void OptionsProxy_max_tries_set(long jarg1, OptionsProxy jarg1_, int jarg2);
   public final static native int OptionsProxy_max_tries_get(long jarg1, OptionsProxy jarg1_);
   public final static native void OptionsProxy_max_read_tries_set(long jarg1, OptionsProxy jarg1_, int jarg2);
