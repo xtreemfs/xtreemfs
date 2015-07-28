@@ -357,7 +357,7 @@ if (GENERATE_JNI OR BUILD_JNI)
   set(JNI_GEN_JAVA_PKG "org.xtreemfs.common.libxtreemfs.jni.generated")
   set(JNI_GEN_JAVA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../java/servers/src/org/xtreemfs/common/libxtreemfs/jni/generated")
   set(JNI_GEN_C_DIR "${CMAKE_CURRENT_SOURCE_DIR}/generated/swig")
-  set(JNI_GEN_C_FILE "${JNI_GEN_C_DIR}/xtreemfsJAVA_wrap.cxx")
+  set(JNI_GEN_C_FILE "${JNI_GEN_C_DIR}/xtreemfsJAVA_wrap.cpp")
 
   set(SRCS_LIBXTREEMFS ${SRCS_RPC} ${SRCS_UTIL} ${SRCS_GENERATED} ${SRCS_XTREEMFS})
   set(LIBS_LIBXTREEMFS protobuf ${Boost_LIBRARIES} ${LIBPTHREAD} ${OPENSSL_LIBRARIES} ${LIBSOCKET_SOLARIS} ${LIBNSL_SOLARIS})

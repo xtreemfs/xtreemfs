@@ -3550,7 +3550,17 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
   (void)jcls;
   (void)jarg1_;
   arg1 = *(xtreemfs::Client **)&jarg1; 
-  (arg1)->Start();
+  try {
+    (arg1)->Start();
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
+  
 }
 
 

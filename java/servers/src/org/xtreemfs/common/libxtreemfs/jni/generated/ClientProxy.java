@@ -62,7 +62,7 @@ public class ClientProxy {
     return ret;
 }
 
-  public void start() {
+  public void start() throws org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
     xtreemfs_jniJNI.ClientProxy_start(swigCPtr, this);
   }
 
