@@ -31,23 +31,23 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
 
-public class AdminNativeClient extends NativeClient implements AdminClient {
+public class NativeAdminClient extends NativeClient implements AdminClient {
 
     private final AdminClient adminClient;
 
-    public AdminNativeClient(ClientProxy client, AdminClient adminClient) {
+    public NativeAdminClient(ClientProxy client, AdminClient adminClient) {
         super(client);
         this.adminClient = adminClient;
     }
 
-    public static AdminNativeClient createClient(String[] dirServiceAddressesArray, UserCredentials userCredentials,
+    public static NativeAdminClient createClient(String[] dirServiceAddressesArray, UserCredentials userCredentials,
             SSLOptions sslOptions, Options options) {
 
         ClientProxy clientProxy = NativeHelper.createClientProxy(dirServiceAddressesArray, userCredentials, sslOptions,
                 options);
         AdminClient adminClient = ClientFactory.createAdminClient(ClientType.JAVA, dirServiceAddressesArray,
                 userCredentials, sslOptions, options);
-        AdminNativeClient client = new AdminNativeClient(clientProxy, adminClient);
+        NativeAdminClient client = new NativeAdminClient(clientProxy, adminClient);
         return client;
     }
 
@@ -64,17 +64,14 @@ public class AdminNativeClient extends NativeClient implements AdminClient {
     }
 
     @Override
-    public AdminNativeVolume openVolume(String volumeName, SSLOptions sslOptions, Options options)
+    public NativeAdminVolume openVolume(String volumeName, SSLOptions sslOptions, Options options)
             throws AddressToUUIDNotFoundException, VolumeNotFoundException, IOException {
         OptionsProxy optionsProxy = NativeHelper.migrateOptions(options);
-        SSLOptionsProxy sslOptionsProxy = null;
-        if (sslOptions != null) {
-            // TODO (jdillmann): Merge from sslOptions
-            throw new RuntimeException("SSLOptions are not supported yet.");
-        }
+        SSLOptionsProxy sslOptionsProxy = NativeHelper.migrateSSLOptions(sslOptions);
+
         VolumeProxy volume = proxy.openVolumeProxy(volumeName, sslOptionsProxy, optionsProxy);
         AdminVolume adminVolume = adminClient.openVolume(volumeName, sslOptions, options);
-        AdminNativeVolume nativeVolume = new AdminNativeVolume(this, volume, adminVolume, volumeName);
+        NativeAdminVolume nativeVolume = new NativeAdminVolume(this, volume, adminVolume, volumeName);
         return nativeVolume;
     }
 

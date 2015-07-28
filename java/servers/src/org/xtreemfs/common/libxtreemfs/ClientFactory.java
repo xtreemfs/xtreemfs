@@ -7,7 +7,7 @@
 
 package org.xtreemfs.common.libxtreemfs;
 
-import org.xtreemfs.common.libxtreemfs.jni.AdminNativeClient;
+import org.xtreemfs.common.libxtreemfs.jni.NativeAdminClient;
 import org.xtreemfs.common.libxtreemfs.jni.NativeClient;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
@@ -114,7 +114,7 @@ public class ClientFactory {
             UserCredentials userCredentials, SSLOptions sslOptions, Options options) {
         switch (type) {
         case NATIVE:
-            return AdminNativeClient.createClient(dirServiceAddresses, userCredentials, sslOptions, options);
+            return NativeAdminClient.createClient(dirServiceAddresses, userCredentials, sslOptions, options);
         case JAVA:
         default:
             return new ClientImplementation(dirServiceAddresses, userCredentials, sslOptions, options);

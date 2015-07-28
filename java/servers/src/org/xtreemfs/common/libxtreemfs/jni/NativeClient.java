@@ -92,11 +92,8 @@ public class NativeClient implements Client {
     public NativeVolume openVolume(String volumeName, SSLOptions sslOptions, Options options)
             throws AddressToUUIDNotFoundException, VolumeNotFoundException, IOException {
         OptionsProxy optionsProxy = NativeHelper.migrateOptions(options);
-        SSLOptionsProxy sslOptionsProxy = null;
-        if (sslOptions != null) {
-            // TODO (jdillmann): Merge from sslOptions
-            throw new RuntimeException("SSLOptions are not supported yet.");
-        }
+        SSLOptionsProxy sslOptionsProxy = NativeHelper.migrateSSLOptions(sslOptions);
+
         VolumeProxy volume = proxy.openVolumeProxy(volumeName, sslOptionsProxy, optionsProxy);
         NativeVolume nativeVolume = new NativeVolume(this, volume, volumeName);
 

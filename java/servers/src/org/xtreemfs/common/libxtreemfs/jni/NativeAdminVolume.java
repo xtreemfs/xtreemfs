@@ -14,12 +14,14 @@ import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.jni.generated.FileHandleProxy;
 import org.xtreemfs.common.libxtreemfs.jni.generated.VolumeProxy;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS;
 
-public class AdminNativeVolume extends NativeVolume implements AdminVolume {
+public class NativeAdminVolume extends NativeVolume implements AdminVolume {
     private final AdminVolume adminVolume;
 
-    public AdminNativeVolume(AdminNativeClient client, VolumeProxy proxy, AdminVolume adminVolume, String volumeName) {
+    public NativeAdminVolume(NativeAdminClient client, VolumeProxy proxy, AdminVolume adminVolume, String volumeName) {
         super(client, proxy, volumeName);
         this.adminVolume = adminVolume;
     }
@@ -31,12 +33,12 @@ public class AdminNativeVolume extends NativeVolume implements AdminVolume {
     }
 
     @Override
-    public AdminNativeFileHandle openFile(UserCredentials userCredentials, String path, int flags, int mode)
+    public NativeAdminFileHandle openFile(UserCredentials userCredentials, String path, int flags, int mode)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         FileHandleProxy fileHandleProxy = proxy.openFileProxy(userCredentials, path, flags, mode);
         AdminFileHandle adminFileHandle = adminVolume.openFile(userCredentials, path, flags, mode);
 
-        AdminNativeFileHandle fileHandleNative = new AdminNativeFileHandle(fileHandleProxy, adminFileHandle);
+        NativeAdminFileHandle fileHandleNative = new NativeAdminFileHandle(fileHandleProxy, adminFileHandle);
         return fileHandleNative;
     }
 
@@ -49,6 +51,12 @@ public class AdminNativeVolume extends NativeVolume implements AdminVolume {
     public void unlink(UserCredentials userCredentials, String path, boolean unlinkOnlyAtMrc) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException {
         adminVolume.unlink(userCredentials, path, unlinkOnlyAtMrc);
+    }
+
+    @Override
+    public void setXAttr(UserCredentials userCredentials, Auth auth, String path, String name, String value,
+            XATTR_FLAGS flags) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+        adminVolume.setXAttr(userCredentials, auth, path, name, value, flags);
     }
 
 }

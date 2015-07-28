@@ -237,7 +237,7 @@ public class NativeVolume implements Volume {
     @Override
     public void setXAttr(UserCredentials userCredentials, Auth auth, String path, String name, String value,
             XATTR_FLAGS flags) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
-        // TODO(jdillmann): Auth param missing in C++
+        throw new RuntimeException("Not implemented in the C++ library.");
     }
 
     @Override
