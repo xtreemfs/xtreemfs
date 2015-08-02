@@ -173,8 +173,7 @@ ObjectEncryptor::WriteOperation::WriteOperation(
 
   while (true) {
     boost::scoped_ptr<FileLock> meta_file_lock;
-    if (obj_enc->concurrent_write_ == "locks"
-        || obj_enc_->concurrent_write_ == "snapshots") {
+    if (obj_enc_->concurrent_write_ == "locks") {
       // lock meta file
       meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, false));
     }
