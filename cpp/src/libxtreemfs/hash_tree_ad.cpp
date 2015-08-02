@@ -747,7 +747,7 @@ void HashTreeAD::SetSize(int max_leaf_number) {
 bool HashTreeAD::ReadRootNodeFromFile() {
   std::vector<char> buffer(NodeSize(-1));
   int bytes_read = meta_file_->Read(buffer.data(), buffer.size(), 0);
-  if (bytes_read == 0) {
+  if (bytes_read == 0 || all_zero(buffer.begin(), buffer.end())) {
     // file didn't exist yet
     // TODO(plieser): file didn't exist yet is not yet a trustable input
     file_size_ = 0;
@@ -858,10 +858,9 @@ boost::icl::interval_set<int> HashTreeAD::ReadNodesFromFile(
  * Writes changed nodes to meta file.
  */
 void HashTreeAD::WriteNodesToFile() {
-  // root node is at the beginning of the file
+  // root node is at the beginning of the file and will be writen last
   assert(boost::icl::contains(changed_nodes_, max_node_number_));
   changed_nodes_.subtract(max_node_number_);
-  changed_nodes_ += -1;
 
   BOOST_FOREACH(
       boost::icl::interval_set<int>::interval_type range,
@@ -869,15 +868,15 @@ void HashTreeAD::WriteNodesToFile() {
     int write_start = GetNodeStartInBytes(boost::icl::first(range));
     std::vector<char> buffer;
     for (int i = boost::icl::first(range); i <= boost::icl::last(range); i++) {
-      if (i == -1) {
-        buffer.insert(buffer.end(), root_node_.begin(), root_node_.end());
-      } else {
-        Node node(i, this);
-        buffer.insert(buffer.end(), nodes_[node].begin(), nodes_[node].end());
-      }
+      Node node(i, this);
+      buffer.insert(buffer.end(), nodes_[node].begin(), nodes_[node].end());
     }
     meta_file_->Write(buffer.data(), buffer.size(), write_start, file_version_);
   }
+
+  // write root node
+  meta_file_->Write(reinterpret_cast<char*>(root_node_.data()),
+                    root_node_.size(), 0, file_version_);
 
   // reset changed nodes
   changed_nodes_.clear();
