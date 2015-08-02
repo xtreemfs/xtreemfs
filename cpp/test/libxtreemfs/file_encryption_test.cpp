@@ -1246,7 +1246,7 @@ TEST_F(EncryptionTest, ConcurrentWrite_02) {
 }
 
 TEST_F(EncryptionTest, ConcurrentWrite_03) {
-  options_.encryption_cw = "snapshots";
+  options_.encryption_cw = "partial-cow";
 
   file->Close();
   file = volume_->OpenFile(
@@ -1290,7 +1290,7 @@ void cw_04_write_3(FileHandle* file, char id) {
 }
 
 TEST_F(EncryptionTest, ConcurrentWrite_04) {
-  options_.encryption_cw = "snapshots";
+  options_.encryption_cw = "partial-cow";
 
   file->Close();
   file = volume_->OpenFile(

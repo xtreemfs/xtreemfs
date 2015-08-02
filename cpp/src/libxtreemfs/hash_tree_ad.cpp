@@ -416,7 +416,7 @@ void HashTreeAD::StartWrite(int start_leaf, bool complete_start_leaf,
  */
 void HashTreeAD::FinishWrite(int start_leaf, int end_leaf,
                              bool complete_max_leaf) {
-  if (concurrent_write_ == "locks" || concurrent_write_ == "snapshots") {
+  if (concurrent_write_ == "locks" || concurrent_write_ == "partial-cow") {
     std::vector<unsigned char> root_hash(root_hash_);
     // store variables that are changed by Init() and we need to restore the
     // current state
@@ -1157,7 +1157,7 @@ void HashTreeAD::UpdateTree() {
     }
   }
 
-  if (concurrent_write_ == "snapshots") {
+  if (concurrent_write_ == "partial-cow") {
     file_version_++;
   }
 

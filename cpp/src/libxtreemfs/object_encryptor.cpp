@@ -133,7 +133,7 @@ ObjectEncryptor::ReadOperation::ReadOperation(ObjectEncryptor* obj_enc,
   int end_block = (offset + count - 1) / enc_block_size_;
 
   if (obj_enc_->concurrent_write_ == "locks"
-      || obj_enc_->concurrent_write_ == "snapshots") {
+      || obj_enc_->concurrent_write_ == "partial-cow") {
     // lock file
     file_lock_.reset(
         new FileLock(obj_enc_, start_block + 1, end_block - start_block + 1,
@@ -164,7 +164,7 @@ ObjectEncryptor::WriteOperation::WriteOperation(
   old_last_enc_block_complete_ = false;
 
   if (obj_enc->concurrent_write_ == "locks"
-      || obj_enc_->concurrent_write_ == "snapshots") {
+      || obj_enc_->concurrent_write_ == "partial-cow") {
     // lock file
     file_lock_.reset(
         new FileLock(obj_enc_, start_block_ + 1, end_block_ - start_block_ + 1,
@@ -188,7 +188,7 @@ ObjectEncryptor::WriteOperation::WriteOperation(
 
     old_last_incomplete_enc_block = old_file_size_ / enc_block_size_;
     if ((obj_enc->concurrent_write_ == "locks"
-        || obj_enc_->concurrent_write_ == "snapshots")
+        || obj_enc_->concurrent_write_ == "partial-cow")
         && old_last_incomplete_enc_block < start_block_) {
       // The write is changing the file size but has not yet locked the old last
       // incomplete enc block.
@@ -234,7 +234,7 @@ ObjectEncryptor::WriteOperation::~WriteOperation() {
   try {
     boost::scoped_ptr<FileLock> meta_file_lock;
     if (obj_enc_->concurrent_write_ == "locks"
-        || obj_enc_->concurrent_write_ == "snapshots") {
+        || obj_enc_->concurrent_write_ == "partial-cow") {
       // lock meta file
       meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, true));
     }
@@ -265,7 +265,7 @@ ObjectEncryptor::TruncateOperation::TruncateOperation(
   while (true) {
     boost::scoped_ptr<FileLock> meta_file_lock;
     if (obj_enc->concurrent_write_ == "locks"
-        || obj_enc_->concurrent_write_ == "snapshots") {
+        || obj_enc_->concurrent_write_ == "partial-cow") {
       // lock meta file
       meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, true));
     }
@@ -277,7 +277,7 @@ ObjectEncryptor::TruncateOperation::TruncateOperation(
     int min_file_size = std::min(hash_tree_->file_size(), new_file_size);
 
     if (obj_enc->concurrent_write_ == "locks"
-        || obj_enc_->concurrent_write_ == "snapshots") {
+        || obj_enc_->concurrent_write_ == "partial-cow") {
       // To prevent concurrent change of file size
       // lock the file from min_file_size to end.
       try {
@@ -323,7 +323,7 @@ ObjectEncryptor::ReencryptOperation::ReencryptOperation(
     : Operation(obj_enc, true) {
 
   if (obj_enc_->concurrent_write_ == "locks"
-      || obj_enc_->concurrent_write_ == "snapshots") {
+      || obj_enc_->concurrent_write_ == "partial-cow") {
     // lock complete file +  meta file
     file_lock_.reset(new FileLock(obj_enc_, 0, 0, true));
   }
