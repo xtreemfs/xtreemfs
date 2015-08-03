@@ -412,7 +412,7 @@ public class StorageThread extends Stage {
     }
     
     /**
-     * Reads an object from disk and checks the checksum
+     * returns the OSDs view of a files size
      * 
      * @param rq
      */

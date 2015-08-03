@@ -1,21 +1,17 @@
 package org.xtreemfs.sandbox;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.Arrays;
-
-import org.xtreemfs.common.libxtreemfs.Client;
-import org.xtreemfs.common.libxtreemfs.ClientFactory;
-import org.xtreemfs.common.libxtreemfs.FileHandle;
-import org.xtreemfs.common.libxtreemfs.Options;
-import org.xtreemfs.common.libxtreemfs.Volume;
+import org.xtreemfs.common.libxtreemfs.*;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.Schemes;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
-import org.xtreemfs.foundation.util.ONCRPCServiceURL;
+import org.xtreemfs.foundation.util.PBRPCServiceURL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.PORTS;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * Minimal example which uses the libxtreemfs for Java and default SSL certificates from tests/certs/ to test
@@ -62,7 +58,7 @@ public class ExampleLibxtreemfsWithSSL {
         try {
             // Parse command line parameter.
             int lastSlashIndex = args[0].lastIndexOf('/');
-            final ONCRPCServiceURL url = new ONCRPCServiceURL(args[0].substring(0, lastSlashIndex),
+            final PBRPCServiceURL url = new PBRPCServiceURL(args[0].substring(0, lastSlashIndex),
                     Schemes.SCHEME_PBRPC, PORTS.DIR_PBRPC_PORT_DEFAULT.getNumber());
             final String volumeName = args[0].substring(lastSlashIndex + 1);
 
@@ -73,7 +69,7 @@ public class ExampleLibxtreemfsWithSSL {
             final SSLOptions sslOptions = url.getProtocol().equals(Schemes.SCHEME_PBRPC) ? null : new SSLOptions(
                     new FileInputStream(CERT_DIR + "Client.p12"), "passphrase", SSLOptions.PKCS12_CONTAINER,
                     new FileInputStream(CERT_DIR + "trusted.jks"), "passphrase", SSLOptions.JKS_CONTAINER, false,
-                    false, null);
+                    false, null, null);
 
             // Alternatively, specify own certificate files for debugging:
             // final SSLOptions sslOptions = new SSLOptions(

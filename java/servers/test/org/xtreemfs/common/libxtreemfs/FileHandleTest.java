@@ -10,6 +10,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileWriter;
 
 import org.junit.After;
@@ -819,8 +820,16 @@ public class FileHandleTest {
         String filePath = hsl.generateAbsoluteFilePath(fileHandle.getGlobalFileId());
 
         File fileDir = new File(filePath);
-        FileWriter writer = new FileWriter(fileDir.listFiles()[0], true);
+        File[] fileList = fileDir.listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File pathname) {
+                // Filter .dot files.
+                return (!pathname.getName().startsWith("."));
+            }
+        });
+        assertTrue(fileList.length > 0);
 
+        FileWriter writer = new FileWriter(fileList[0], true);
         writer.write("foofoofoofoo");
         writer.close();
 

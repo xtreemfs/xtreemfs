@@ -821,11 +821,12 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
                 .setAuthPasswd(AuthPassword.newBuilder().setPassword(password).build()).build();
     }
 
-    public void startCleanUp(String osdUUID, String password, boolean remove, boolean deleteVolumes,
-            boolean restore) throws IOException {
+    public void startCleanUp(String osdUUID, String password, boolean remove, boolean deleteVolumes, boolean restore,
+            boolean removeMetdata, int metaDataTimeoutS) throws IOException {
         try {
             xtreemfs_cleanup_startRequest request = xtreemfs_cleanup_startRequest.newBuilder()
                     .setRemoveZombies(remove).setRemoveUnavailVolume(deleteVolumes).setLostAndFound(restore)
+                    .setDeleteMetadata(removeMetdata).setMetadataTimeout(metaDataTimeoutS)
                     .build();
             Auth pw = StringToAuth(password);
             UUIDIterator it = new UUIDIterator();
@@ -838,8 +839,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
                         public RPCResponse<emptyResponse> executeCall(InetSocketAddress server,
                                 Auth authHeader, UserCredentials userCreds,
                                 xtreemfs_cleanup_startRequest input) throws IOException {
-                            return osdServiceClient.xtreemfs_cleanup_start(server, authHeader, userCreds,
-                                    input);
+                            return osdServiceClient.xtreemfs_cleanup_start(server, authHeader, userCreds, input);
                         }
                     });
         } catch (Exception e) {

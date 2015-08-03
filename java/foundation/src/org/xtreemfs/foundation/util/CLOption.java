@@ -170,7 +170,7 @@ public abstract class CLOption {
 
     public static class URLValue extends CLOption {
 
-        protected ONCRPCServiceURL value;
+        protected PBRPCServiceURL value;
 
         protected final String defaultSchema;
 
@@ -193,7 +193,7 @@ public abstract class CLOption {
         public void parse(String value) throws IllegalArgumentException {
             super.parse(value);
             try {
-                this.value = new ONCRPCServiceURL(value, defaultSchema, defaultPort);
+                this.value = new PBRPCServiceURL(value, defaultSchema, defaultPort);
             } catch (MalformedURLException ex) {
                 throw new IllegalArgumentException("'"+value+"' is not a valid URL ("+ex.getMessage()+")");
             }
@@ -204,7 +204,7 @@ public abstract class CLOption {
             return true;
         }
 
-        public ONCRPCServiceURL getValue() {
+        public PBRPCServiceURL getValue() {
             return value;
         }
     }

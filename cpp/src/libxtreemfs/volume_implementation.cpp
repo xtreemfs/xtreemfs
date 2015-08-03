@@ -1385,30 +1385,38 @@ void VolumeImplementation::AddReplica(
 xtreemfs::pbrpc::Replicas* VolumeImplementation::ListReplicas(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path) {
-  xtreemfs_replica_listRequest replica_listRequest;
-  replica_listRequest.set_volume_name(volume_name_);
-  replica_listRequest.set_path(path);
+  xtreemfs_get_xlocsetRequest get_xlocsetRequest;
+  get_xlocsetRequest.set_volume_name(volume_name_);
+  get_xlocsetRequest.set_path(path);
 
   // Retrieve list of replicas.
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(
           boost::bind(
-              &xtreemfs::pbrpc::MRCServiceClient::xtreemfs_replica_list_sync,
+              &xtreemfs::pbrpc::MRCServiceClient::xtreemfs_get_xlocset_sync,
               mrc_service_client_.get(),
               _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials),
-              &replica_listRequest),
+              &get_xlocsetRequest),
           mrc_uuid_iterator_.get(),
           uuid_resolver_,
           RPCOptionsFromOptions(volume_options_)));
 
-  // Delete everything except the response.
-  delete[] response->data();
-  delete response->error();
+  // Create new replicas object to fill from the returned xlocset.
+  xtreemfs::pbrpc::Replicas* replicas = new xtreemfs::pbrpc::Replicas();
+
+  // Extract the replicas from the XLocSet
+  xtreemfs::pbrpc::XLocSet* xlocset = static_cast<xtreemfs::pbrpc::XLocSet*>(response->response());
+  for (int i = 0; i < xlocset->replicas_size(); i++) {
+    replicas->add_replicas()->CopyFrom(xlocset->replicas(i));
+  }
+
+  // Cleanup.
+  response->DeleteBuffers();
 
   // Return the Replicas object.
-  return static_cast<xtreemfs::pbrpc::Replicas*>(response->response());
+  return replicas;
 }
 
 void VolumeImplementation::RemoveReplica(
@@ -1458,6 +1466,18 @@ void VolumeImplementation::RemoveReplica(
           &osd_uuid_iterator,
           uuid_resolver_,
           RPCOptionsFromOptions(volume_options_)));
+
+  // Update the local XLocSet cached at FileInfo if it exists.
+  uint64_t file_id = ExtractFileIdFromXCap(creds->xcap());
+  map<uint64_t, FileInfo*>::const_iterator it = open_file_table_.find(file_id);
+  if (it != open_file_table_.end()) {
+    // File has already been opened: refresh the xlocset.
+    // TODO(jdillmann): Return the new XLocSet and the replicateOnClose flag with the response. // NOLINT
+    FileHandle* file_handle = OpenFile(user_credentials,
+                                       path,
+                                       SYSTEM_V_FCNTL_H_O_RDONLY);
+    file_handle->Close();
+  }
 
   // Cleanup.
   response_mrc->DeleteBuffers();

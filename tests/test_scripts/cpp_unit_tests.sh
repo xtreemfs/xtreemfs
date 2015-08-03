@@ -16,6 +16,7 @@ cd "$XTREEMFS_DIR"
 
 export XTREEMFS_DIR_URL="$2"
 export XTREEMFS_MRC_URL="$3"
+export XTREEMFS_TEST_DIR="$4"
 
 cd cpp/build
 make test

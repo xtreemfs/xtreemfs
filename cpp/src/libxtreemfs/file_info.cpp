@@ -7,6 +7,8 @@
 
 #include "libxtreemfs/file_info.h"
 
+#include <boost/make_shared.hpp>
+
 #include "libxtreemfs/file_handle_implementation.h"
 #include "libxtreemfs/helper.h"
 #include "libxtreemfs/options.h"
@@ -37,7 +39,7 @@ FileInfo::FileInfo(
       replicate_on_close_(replicate_on_close),
       reference_count_(0),
       xlocset_(xlocset),
-      osd_uuid_container_(xlocset),
+      osd_uuid_iterator_(xlocset),
       max_unique_pid_(0),
       client_uuid_(client_uuid),
       osd_write_response_(NULL),
@@ -60,17 +62,9 @@ FileInfo::FileInfo(
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif  // _MSC_VER
-  // Add the head OSD UUIDs of all replicas to the UUID Iterator.
-  for (int i = 0; i < xlocset_.replicas_size(); i++) {
-    osd_uuid_iterator_.AddUUID(xlocset_.replicas(i).osd_uuids(0));
-  }
-  if (volume->volume_options().object_cache_size > 0) {
-    const int object_size = 
-        xlocset_.replicas(0).striping_policy().stripe_size() * 1024;
-    object_cache_.reset(
-        new ObjectCache(volume->volume_options().object_cache_size,
-                        object_size));
-  }
+
+  // Make an UUID container managed by a smart pointer.
+  osd_uuid_container_ = boost::make_shared<UUIDContainer>(xlocset);
 }
 
 FileInfo::~FileInfo() {
@@ -94,13 +88,11 @@ FileHandleImplementation* FileInfo::CreateFileHandle(
       xcap,
       volume_->mrc_uuid_iterator(),
       &osd_uuid_iterator_,
-      &osd_uuid_container_,
       volume_->uuid_resolver(),
       volume_->mrc_service_client(),
       volume_->osd_service_client(),
       volume_->stripe_translators(),
       async_writes_enabled,
-      object_cache_.get(),
       volume_->volume_options(),
       volume_->auth_bogus(),
       volume_->user_credentials_bogus());
@@ -486,5 +478,38 @@ bool FileInfo::WaitForPendingAsyncWritesNonBlocking(
                                       wait_completed_mutex);
 }
 
+void FileInfo::UpdateXLocSetAndRest(const xtreemfs::pbrpc::XLocSet& new_xlocset,
+                                    bool replicate_on_close) {
+  boost::mutex::scoped_lock lock(xlocset_mutex_);
+
+  xlocset_.CopyFrom(new_xlocset);
+  osd_uuid_iterator_.ClearAndGetOSDUUIDsFromXlocSet(new_xlocset);
+  osd_uuid_container_ = boost::make_shared<UUIDContainer>(new_xlocset);
+
+  replicate_on_close_ = replicate_on_close;
+}
+
+void FileInfo::UpdateXLocSetAndRest(
+    const xtreemfs::pbrpc::XLocSet& new_xlocset) {
+  boost::mutex::scoped_lock lock(xlocset_mutex_);
+
+  xlocset_.CopyFrom(new_xlocset);
+  osd_uuid_iterator_.ClearAndGetOSDUUIDsFromXlocSet(new_xlocset);
+  osd_uuid_container_ = boost::make_shared<UUIDContainer>(new_xlocset);
+}
+
+void FileInfo::GetXLocSet(xtreemfs::pbrpc::XLocSet* new_xlocset) {
+  assert(new_xlocset);
+  boost::mutex::scoped_lock lock(xlocset_mutex_);
+  new_xlocset->CopyFrom(xlocset_);
+}
+
+boost::shared_ptr<UUIDContainer> FileInfo::GetXLocSetAndUUIDContainer(xtreemfs::pbrpc::XLocSet* new_xlocset) {
+  assert(new_xlocset);
+  boost::mutex::scoped_lock lock(xlocset_mutex_);
+  new_xlocset->CopyFrom(xlocset_);
+
+  return osd_uuid_container_;
+}
 
 }  // namespace xtreemfs

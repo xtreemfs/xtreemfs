@@ -122,8 +122,15 @@ public class xtfs_remove_osd {
                             || dirURL.contains(Schemes.SCHEME_PBRPCG + "://") && sslOptions == null) {
                         String serviceCredsFile = options.get(utils.OPTION_USER_CREDS_FILE).stringValue;
                         String serviceCredsPass = options.get(utils.OPTION_USER_CREDS_PASS).stringValue;
+                        if(serviceCredsPass != null && serviceCredsPass.equals("-")) {
+                        	serviceCredsPass = new String(System.console().readPassword("Enter credentials password: "));
+                        }
                         String trustedCAsFile = options.get(utils.OPTION_TRUSTSTORE_FILE).stringValue;
                         String trustedCAsPass = options.get(utils.OPTION_TRUSTSTORE_PASS).stringValue;
+                        if(trustedCAsPass != null && trustedCAsPass.equals("-")) {
+                        	trustedCAsPass = new String(System.console().readPassword("Enter trust store password: "));
+                        }
+                        String sslProtocolString = options.get(utils.OPTION_SSL_PROTOCOL).stringValue;
                         if (dirURL.contains(Schemes.SCHEME_PBRPCG + "://")) {
                             gridSSL = true;
                         }
@@ -145,7 +152,7 @@ public class xtfs_remove_osd {
                             sslOptions = new SSLOptions(new FileInputStream(serviceCredsFile),
                                     serviceCredsPass, SSLOptions.PKCS12_CONTAINER, new FileInputStream(
                                             trustedCAsFile), trustedCAsPass, SSLOptions.JKS_CONTAINER, false,
-                                    gridSSL, null);
+                                    gridSSL, sslProtocolString, null);
                         } catch (Exception e) {
                             System.err.println("unable to get SSL options, because:" + e.getMessage());
                             System.exit(1);

@@ -11,13 +11,14 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.flease.Flease;
 import org.xtreemfs.foundation.flease.FleaseConfig;
 import org.xtreemfs.foundation.flease.FleaseStage;
-import org.xtreemfs.foundation.flease.FleaseViewChangeListenerInterface;
 import org.xtreemfs.foundation.flease.FleaseStatusListener;
+import org.xtreemfs.foundation.flease.FleaseViewChangeListenerInterface;
 import org.xtreemfs.foundation.flease.MasterEpochHandlerInterface;
 import org.xtreemfs.foundation.flease.acceptor.FleaseAcceptor;
 import org.xtreemfs.foundation.flease.acceptor.LearnEventListener;
@@ -80,13 +81,14 @@ public class FleaseProposer {
         viewListener = listener;
     }
 
-    public void setViewId(ASCIIString cellId, int viewId) throws FleaseException {
+    public void setViewId(ASCIIString cellId, int viewId) {
         FleaseProposerCell cell = cells.get(cellId);
-        if (cell == null) {
-            throw new FleaseException("cell must be opened before any operation!");
+        
+        // Set the view only if the cell is already open. New cells have to be opened with a viewId @see FleaseStage.openCell()
+        if (cell != null) {
+            cell.setViewId(viewId);
+            cell.addAction(ActionName.PROPOSER_SET_VIEWID, Integer.toString(viewId));
         }
-        cell.setViewId(viewId);
-        cell.addAction(ActionName.PROPOSER_SET_VIEWID, Integer.toString(viewId));
     }
 
     public Flease updatePrevLeaseForCell(ASCIIString cellId, Flease lease) {
@@ -113,12 +115,14 @@ public class FleaseProposer {
     public void openCell(
             ASCIIString cellId,
             List<InetSocketAddress> acceptors,
-            boolean requestMasterEpoch) throws FleaseException {
+            boolean requestMasterEpoch,
+            int viewId) throws FleaseException {
         FleaseProposerCell cell = cells.get(cellId);
         if (cell == null) {
             cell = new FleaseProposerCell(cellId, acceptors, config.getSenderId());
             cell.setCellState(State.IDLE);
             cell.setRequestMasteEpoch(requestMasterEpoch);
+            cell.setViewId(viewId);
             cells.put(cellId, cell);
             cell.addAction(ActionName.PROPOSER_CELL_OPENED);
             if (Logging.isDebug()) {
@@ -455,6 +459,7 @@ public class FleaseProposer {
         msg.setLeaseTimeout(TimeSync.getGlobalTime() + config.getMaxLeaseTimeout());
         msg.setSendTimestamp(TimeSync.getGlobalTime());
         msg.setSender(null);
+        msg.setViewId(cell.getViewId());
         if (cell.isRequestMasteEpoch()) {
             msg.setMasterEpochNumber(FleaseMessage.REQUEST_MASTER_EPOCH);
             cell.addAction(ActionName.PROPOSER_REQUEST_MASTER_EPOCH);
@@ -632,7 +637,7 @@ public class FleaseProposer {
                 }
             }
 
-            if (maxViewId != cell.getViewId()) {
+            if (maxViewId > cell.getViewId()) {
                 cell.addAction(ActionName.PROPOSER_VIEW_OUTDATED,
                         maxViewId + "!=" + cell.getViewId());
                 if (Logging.isDebug()) {
@@ -795,6 +800,7 @@ public class FleaseProposer {
         msg.setLeaseTimeout(cell.getMessageSent().getLeaseTimeout());
         msg.setSendTimestamp(TimeSync.getGlobalTime());
         msg.setSender(null);
+        msg.setViewId(cell.getViewId());
         if (cell.isRequestMasteEpoch())
             msg.setMasterEpochNumber(cell.getMasterEpochNumber());
         cell.setMessageSent(msg);
@@ -936,7 +942,7 @@ public class FleaseProposer {
                 }
             }
 
-            if (maxViewId != cell.getViewId()) {
+            if (maxViewId > cell.getViewId()) {
                 if (Logging.isDebug() && config.isDebugPrintMessages()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG,
                             Logging.Category.replication,
@@ -990,6 +996,7 @@ public class FleaseProposer {
         msg.setLeaseTimeout(cell.getMessageSent().getLeaseTimeout());
         msg.setSendTimestamp(TimeSync.getGlobalTime());
         msg.setSender(null);
+        msg.setViewId(cell.getViewId());
         if (cell.isRequestMasteEpoch()) {
             assertState(cell.getMasterEpochNumber() > -1, cell);
             msg.setMasterEpochNumber(cell.getMasterEpochNumber());

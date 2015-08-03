@@ -24,6 +24,7 @@ import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.XLocSetVersionState;
 
 /**
  * Abstracts object data access from underlying on-disk storage layout.
@@ -175,20 +176,19 @@ public abstract class StorageLayout {
      * 
      * @param fileId
      *            fileId of the object
+     * @param md
+     *            file metadata
      * @param objNo
      *            object number
+     * @param offset
+     *            offset
+     * @param length
+     *            length
      * @param version
      *            version to be read
-     * @param checksum
-     *            the checksum currently stored with the object
-     * @param sp
-     *            the striping policy assigned to the file
-     * @param osdNumber
-     *            the number of the OSD assigned to the object
      * @throws java.io.IOException
      *             when the object cannot be read
-     * @return a buffer containing the object, or a <code>null</code> if the
-     *         object does not exist
+     * @return ObjectInformation
      */
     
     public abstract ObjectInformation readObject(String fileId, FileMetadata md, long objNo, int offset,
@@ -199,21 +199,20 @@ public abstract class StorageLayout {
      * 
      * @param fileId
      *            the file Id the object belongs to
-     * @param objNo
-     *            object number
+     * @param md
+     *            file metadata
      * @param data
      *            buffer with the data to be written
-     * @param version
-     *            the version to be written
+     * @param objNo
+     *            object number
      * @param offset
      *            the relative offset in the object at which to write the buffer
-     * @param currentChecksum
-     *            the checksum currently assigned to the object; if OSD
-     *            checksums are disabled, <code>null</code> can be used
-     * @param sp
-     *            the striping policy assigned to the file
-     * @param osdNumber
-     *            the number of the OSD responsible for the object
+     * @param newVersion
+     *            new file version
+     * @param sync
+     *            write synchronously
+     * @param cow
+     *            use cow
      * @throws java.io.IOException
      *             when the object cannot be written
      */
@@ -227,6 +226,7 @@ public abstract class StorageLayout {
      * @param md
      * @param objNo
      * @param newLength
+     * @param newVersion
      * @param cow
      * @throws IOException
      */
@@ -234,10 +234,13 @@ public abstract class StorageLayout {
         long newVersion, boolean cow) throws IOException;
     
     /**
-     * Deletes all versions of all objects of a file.
+     * Deletes all versions of all objects of a file. <br>
+     * Metadata (like the MasterEpoch, XLocSetVersionState, TruncateLog, ...) are kept unless deleteMetadata is set.
      * 
      * @param fileId
      *            the ID of the file
+     * @param deleteMetadata
+     *            delete metadata and empty directories.
      * @throws IOException
      *             if an error occurred while deleting the objects
      */
@@ -248,6 +251,8 @@ public abstract class StorageLayout {
      * 
      * @param fileId
      *            the ID of the file
+     * @param md
+     *            file metadata
      * @param objNo
      *            the number of the object to delete
      * @param version
@@ -263,10 +268,10 @@ public abstract class StorageLayout {
      * 
      * @param fileId
      *            the ID of the file
+     * @param md
+     *            file metadata
      * @param objNo
      *            the number of the object to create
-     * @param sp
-     *            the striping policy assigned to the file
      * @param version
      *            the version of the object to create
      * @param size
@@ -372,6 +377,9 @@ public abstract class StorageLayout {
                 writeData = obj.getData();
                 writeData.position(offset);
                 writeData.put(data);
+                for (int i = obj.getData().capacity(); i < offset; i++) {
+                    writeData.put((byte) 0);
+                }
                 BufferPool.free(data);
             } else {
                 // copy old data and then new data
@@ -418,6 +426,7 @@ public abstract class StorageLayout {
      * returns a list of all local saved objects of this file
      * 
      * @param fileId
+     * @param md
      * @return null, if file does not exist, otherwise objectList
      */
     public abstract ObjectSet getObjectSet(String fileId, FileMetadata md);
@@ -452,6 +461,22 @@ public abstract class StorageLayout {
      */
     public abstract ArrayList<String> getFileIDList();
     
+    /**
+     * Retrieves the XLocSet version and invalidated sate for a replica
+     * 
+     * @param fileId
+     * @return current version and state stored on disk
+     */
+    public abstract XLocSetVersionState getXLocSetVersionState(String fileId) throws IOException;
+
+    /**
+     * Stores the XLocSet version for a replica on stable storage
+     * 
+     * @param fileId
+     * @param versionState
+     */
+    public abstract void setXLocSetVersionState(String fileId, XLocSetVersionState versionState) throws IOException;
+
     public static final class FileList {
         // directories to scan
         final Stack<String>         status;
@@ -469,12 +494,19 @@ public abstract class StorageLayout {
     
     public static final class FileData {
         final long size;
-        
         final int  objectSize;
-        
+        final boolean metaDataOnly;
+
         FileData(long size, int objectSize) {
             this.size = size;
             this.objectSize = objectSize;
+            this.metaDataOnly = false;
+        }
+
+        FileData(boolean metaDataOnly) {
+            this.size = 0;
+            this.objectSize = 0;
+            this.metaDataOnly = metaDataOnly;
         }
     }
 }

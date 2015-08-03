@@ -17,6 +17,7 @@ import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.REPL_FLAG;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replicas;
@@ -29,7 +30,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrResponse;
 /**
  * Represents a volume. A volume object can be obtain by opening a volume with a client.
  */
-public interface  Volume {
+public interface Volume {
 
     public void internalShutdown();
 
@@ -540,15 +541,15 @@ public interface  Volume {
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
-     * Adds to "listOfOsdUuids" up to "numberOfOsds" UUIDs of all available OSDs where the file (described by
-     * "path") can be placed.
+     * Returns a list of all available OSDs where the file (described by "path") can be placed.
      * 
      * @param userCredentials
      *            Username and groups of the user.
      * @param path
      *            Path to the file.
      * @param numberOfOsds
-     *            Maximum number of OSDs which will be returned.
+     *            Number of OSDs required in a valid group. This is only relevant for grouping and will be ignored by
+     *            filtering and sorting policies.
      * 
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
@@ -581,10 +582,25 @@ public interface  Volume {
             PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
-     * Returns a list of {@link StripeLocation} where each stripe of the file is located. To determine where
-     * the a particular stripe is located the UUIDs of all replicas which have a copy of this stripe will be
-     * collected and resolved to hostnames. If a uuid can't be resolved it will be deleted from the list
-     * because HDFS can't handle IP addresses.
+     * Gets the default replication policy for "directory".
+     * 
+     * @param userCredentials
+     *            Username and groups of the user.
+     * @param directory
+     *            Path of the directory.
+     * @return {@link ReplicationPolicy}
+     * @throws IOException
+     * @throws PosixErrorException
+     * @throws AddressToUUIDNotFoundException
+     */
+    public ReplicationPolicy getDefaultReplicationPolicy(UserCredentials userCredentials, String directory)
+            throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
+
+    /**
+     * Returns a list of {@link StripeLocation} where each stripe of the file is located. To determine where the a
+     * particular stripe is located the UUIDs of all replicas which have a copy of this stripe will be collected and
+     * resolved to hostnames. If a uuid can't be resolved it will be deleted from the list because HDFS can't handle IP
+     * addresses.
      * 
      * @param userCredentials
      *            Username and groups of the user.

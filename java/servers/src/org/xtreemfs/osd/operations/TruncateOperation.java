@@ -69,8 +69,11 @@ public final class TruncateOperation extends OSDOperation {
             return;
         }
 
-        if ((rq.getLocationList().getReplicaUpdatePolicy().length() == 0)
-            || (rq.getLocationList().getNumReplicas() == 1)) {
+        // TODO(jdillmann): Use centralized method to check if a lease is required.
+        if (rq.getLocationList().getNumReplicas() > 1
+                && ReplicaUpdatePolicies.isRwReplicated(rq.getLocationList().getReplicaUpdatePolicy())) {
+            rwReplicatedTruncate(rq, args);
+        } else {
 
             master.getStorageStage().truncate(args.getFileId(), args.getNewFileSize(),
                 rq.getLocationList().getLocalReplica().getStripingPolicy(),
@@ -83,8 +86,6 @@ public final class TruncateOperation extends OSDOperation {
                         step2(rq, args, result, error);
                     }
             });
-        } else {
-            rwReplicatedTruncate(rq, args);
         }
     }
 

@@ -10,6 +10,8 @@ set(COMPILE_DEFS "_FILE_OFFSET_BITS=64")
 # Uncomment this to enable boost::asio debug output.
 #add_definitions(-DBOOST_ASIO_ENABLE_HANDLER_TRACKING)
 
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+
 # Set variables and required libraries.
 ##########################################
 if (CMAKE_COMPILER_IS_GNUCXX)
@@ -152,7 +154,7 @@ if (NOT Boost_FOUND)
 endif(NOT Boost_FOUND)
 include_directories(${Boost_INCLUDE_DIRS})
 
-find_package(OpenSSL QUIET)
+find_package(OpenSSL)
 if (NOT OPENSSL_FOUND)
 # OpenSSL find_package script cannot cope with /usr/lib64 directory under Cmake 2.8.3.
   set(LIBCRYPTO "crypto")
@@ -162,6 +164,14 @@ endif(NOT OPENSSL_FOUND)
 include_directories(${OPENSSL_INCLUDE_DIR})
 # Comment this definition if the XtreemFS source should not depend on OpenSSL.
 add_definitions(-DHAS_OPENSSL)
+
+find_package(Valgrind)
+if (VALGRIND_FOUND)
+  include_directories(${VALGRIND_INCLUDE_DIR})
+  add_definitions(-DHAS_VALGRIND)
+else (VALGRIND_FOUND)
+  message(WARNING "Valgrind headers not found, running memcheck might report false positives.")
+endif (VALGRIND_FOUND)
 
 SET(REQUIRED_STATIC_LIBRARIES ${CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY})
 if(BUILD_CLIENT_TESTS)
@@ -239,6 +249,10 @@ TARGET_LINK_LIBRARIES(xtreemfs optimized protobuf debug protobuf_debug ${Boost_L
 ADD_EXECUTABLE(example_libxtreemfs src/example_libxtreemfs/example_libxtreemfs.cpp)
 SET_TARGET_PROPERTIES(example_libxtreemfs PROPERTIES COMPILE_DEFINITIONS ${COMPILE_DEFS})
 TARGET_LINK_LIBRARIES(example_libxtreemfs xtreemfs)
+
+ADD_EXECUTABLE(example_replication src/example_libxtreemfs/example_replication.cpp)
+SET_TARGET_PROPERTIES(example_replication PROPERTIES COMPILE_DEFINITIONS ${COMPILE_DEFS})
+TARGET_LINK_LIBRARIES(example_replication xtreemfs)
 
 file(GLOB_RECURSE SRCS_MKFS src/mkfs.xtreemfs/*.cpp)
 ADD_EXECUTABLE(mkfs.xtreemfs ${SRCS_MKFS})

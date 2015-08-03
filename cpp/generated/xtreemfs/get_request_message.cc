@@ -1,5 +1,5 @@
-//automatically generated at Mon Nov 11 11:46:59 CET 2013
-//(c) 2013. See LICENSE file for details.
+//automatically generated at Thu Dec 11 16:09:40 CET 2014
+//(c) 2014. See LICENSE file for details.
 
 #include "xtreemfs/get_request_message.h"
 
@@ -251,6 +251,10 @@ google::protobuf::Message* GetMessageForProcID(uint32_t interface_id,
           return new xtreemfs::pbrpc::xtreemfs_get_file_credentialsRequest();
           break;
         }
+        case 51: {
+          return new xtreemfs::pbrpc::xtreemfs_get_xlocsetRequest();
+          break;
+        }
         default: {
           return NULL;
         }
@@ -390,6 +394,14 @@ google::protobuf::Message* GetMessageForProcID(uint32_t interface_id,
         }
         case 70: {
           return new xtreemfs::pbrpc::emptyRequest();
+          break;
+        }
+        case 81: {
+          return new xtreemfs::pbrpc::xtreemfs_xloc_set_invalidateRequest();
+          break;
+        }
+        case 82: {
+          return new xtreemfs::pbrpc::xtreemfs_rwr_auth_stateRequest();
           break;
         }
         default: {

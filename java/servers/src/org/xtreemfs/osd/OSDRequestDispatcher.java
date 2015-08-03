@@ -8,7 +8,6 @@
 
 package org.xtreemfs.osd;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -81,12 +80,14 @@ import org.xtreemfs.osd.operations.GetFileIDListOperation;
 import org.xtreemfs.osd.operations.GetObjectSetOperation;
 import org.xtreemfs.osd.operations.InternalGetFileSizeOperation;
 import org.xtreemfs.osd.operations.InternalGetGmaxOperation;
+import org.xtreemfs.osd.operations.InternalRWRAuthStateInvalidatedOperation;
 import org.xtreemfs.osd.operations.InternalRWRAuthStateOperation;
 import org.xtreemfs.osd.operations.InternalRWRFetchOperation;
 import org.xtreemfs.osd.operations.InternalRWRStatusOperation;
 import org.xtreemfs.osd.operations.InternalRWRTruncateOperation;
 import org.xtreemfs.osd.operations.InternalRWRUpdateOperation;
 import org.xtreemfs.osd.operations.InternalTruncateOperation;
+import org.xtreemfs.osd.operations.InvalidateXLocSetOperation;
 import org.xtreemfs.osd.operations.LocalReadOperation;
 import org.xtreemfs.osd.operations.LockAcquireOperation;
 import org.xtreemfs.osd.operations.LockCheckOperation;
@@ -277,7 +278,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
                 .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
                 .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config
-                .isGRIDSSLmode(), tm1) : null;
+                .isGRIDSSLmode(), config.getSSLProtocolString(), tm1) : null;
         
         rpcServer = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, serverSSLopts,
                 config.getSocketReceiveBufferSize(), config.getMaxClientQ());
@@ -287,7 +288,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
                 .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
                 .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config
-                .isGRIDSSLmode(), tm2) : null;
+                .isGRIDSSLmode(), config.getSSLProtocolString(), tm2) : null;
         
         InetSocketAddress bindPoint = config.getAddress() != null ? new InetSocketAddress(config.getAddress(), 0)
                 : null;
@@ -327,7 +328,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         udpCom = new RPCUDPSocketServer(config.getPort(), this);
         udpCom.setLifeCycleListener(this);
         
-        preprocStage = new PreprocStage(this, metadataCache, config.getMaxRequestsQueueLength());
+        preprocStage = new PreprocStage(this, metadataCache, storageLayout, config.getMaxRequestsQueueLength());
         preprocStage.setLifeCycleListener(this);
         
         stStage = new StorageStage(this, metadataCache, storageLayout, config.getStorageThreads(), config.getMaxRequestsQueueLength());
@@ -889,6 +890,12 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         operations.put(op.getProcedureId(), op);
 
         op = new InternalRWRAuthStateOperation(this);
+        operations.put(op.getProcedureId(), op);
+
+        op = new InvalidateXLocSetOperation(this);
+        operations.put(op.getProcedureId(), op);
+
+        op = new InternalRWRAuthStateInvalidatedOperation(this);
         operations.put(op.getProcedureId(), op);
 
         // --internal events here--

@@ -14,12 +14,14 @@ import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.buffer.BufferPool;
@@ -113,6 +115,20 @@ public class SSLChannelIO extends ChannelIO {
         sslEngine.setUseClientMode(clientMode);
         sslEngine.setNeedClientAuth(true);
         
+        List<String> enabledProtocols = new ArrayList<String>();
+        for (String protocol : sslEngine.getSupportedProtocols()) {
+            if (sslOptions.isSSLEngineProtocolSupported(protocol) && !enabledProtocols.contains(protocol)) {
+                enabledProtocols.add(protocol);
+            }
+        }
+                
+        String[] enabledProtocolsArray = enabledProtocols.toArray(new String[enabledProtocols.size()]);
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Enabling the following protocols: %s",
+                    Arrays.toString(enabledProtocolsArray));
+        }
+        sslEngine.setEnabledProtocols(enabledProtocolsArray);
+        
         if (clientMode) {
             // the first call for a client is wrap()
             sslEngine.beginHandshake();
@@ -132,7 +148,7 @@ public class SSLChannelIO extends ChannelIO {
         outNetBuffer = BufferPool.allocate(netBufSize);
         dummyBuffer = BufferPool.allocate(netBufSize);
         
-        sslEngine.setEnabledProtocols(sslEngine.getSupportedProtocols());
+        
         if (sslOptions.isAuthenticationWithoutEncryption()) { // only
             // authentication
             // without

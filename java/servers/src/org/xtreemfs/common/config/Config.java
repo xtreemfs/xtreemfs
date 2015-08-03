@@ -8,15 +8,13 @@
 
 package org.xtreemfs.common.config;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Properties;
 
+import com.google.protobuf.ByteString;
 import org.xtreemfs.foundation.logging.Logging;
 
 /**
@@ -38,7 +36,9 @@ abstract public class Config {
     /** Creates a new instance of {@link Config} */
     public Config(String filename) throws IOException {
         props = new Properties();
-        props.load(new FileInputStream(filename));
+        InputStream configInputStream = new FileInputStream(filename);
+        props.load(configInputStream);
+        configInputStream.close();
     }
 
     /**
@@ -47,8 +47,10 @@ abstract public class Config {
      * @throws IOException 
      * @throws FileNotFoundException 
      */
-    protected void write(String filename) throws FileNotFoundException, IOException {
-        props.store(new FileOutputStream(filename), "");
+    protected void write(String filename) throws IOException {
+        OutputStream fileOutputStream = new FileOutputStream(filename);
+        props.store(fileOutputStream, "");
+        fileOutputStream.close();
     }
     
     protected int readRequiredInt(String paramName) {

@@ -8,6 +8,15 @@
 
 package org.xtreemfs.common.benchmark;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
@@ -16,9 +25,6 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC;
-
-import java.io.IOException;
-import java.util.*;
 
 /**
  * Volume Manager (Singleton).
@@ -180,15 +186,38 @@ class VolumeManager {
     }
 
     private int getVolStripeSize(Volume volume) throws IOException {
-        String valueStr = volume.getXAttr(config.getUserCredentials(), "", "xtreemfs.default_sp" );        
-        String sizeStr = valueStr.split(",")[2];
-        return Integer.valueOf(sizeStr.substring(sizeStr.indexOf(":")+1, sizeStr.length()-1));
+        String valueStr = volume.getXAttr(config.getUserCredentials(), "", "xtreemfs.default_sp");
+        String[] elements = valueStr.split(",");
+        String value = "128";
+        for(String element: elements) {
+            String key = element.substring(0, element.indexOf(":"));
+            if(key.contains("size")) {
+                if(element.contains("}")) {
+                    value = element.substring(element.indexOf(":") + 1, element.indexOf("}"));
+                } else {
+                    value = element.substring(element.indexOf(":") + 1);
+                }
+            }
+        }
+        return Integer.valueOf(value);
+
     }
 
     private int getVolStripeWidth(Volume volume) throws IOException {
-        String valueStr = volume.getXAttr(config.getUserCredentials(), "", "xtreemfs.default_sp" );
-        String widthStr = valueStr.split(",")[1];
-        return Integer.valueOf(widthStr.substring(widthStr.indexOf(":")+1));
+        String valueStr = volume.getXAttr(config.getUserCredentials(), "", "xtreemfs.default_sp");
+        String[] elements = valueStr.split(",");
+        String value = "1";
+        for(String element: elements) {
+            String key = element.substring(0, element.indexOf(":"));
+            if(key.contains("width")) {
+                if(element.contains("}")) {
+                    value = element.substring(element.indexOf(":") + 1, element.indexOf("}"));
+                } else {
+                    value = element.substring(element.indexOf(":") + 1);
+                }
+            }
+        }
+        return Integer.valueOf(value);
     }
     
     private void createDirStructure(Volume volume) throws IOException {
@@ -413,7 +442,7 @@ class VolumeManager {
 
         for (String osd : uuids) {
             Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.tool, this, "Starting cleanup of OSD %s", osd);
-            client.startCleanUp(osd, pwd, true, true, false);
+            client.startCleanUp(osd, pwd, true, true, false, true, 0);
         }
 
         boolean cleanUpIsRunning = true;

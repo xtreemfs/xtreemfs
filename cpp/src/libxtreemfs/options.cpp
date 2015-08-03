@@ -8,7 +8,13 @@
 
 #include "libxtreemfs/options.h"
 
+#include <algorithm>  // std::find_if
+#include <boost/algorithm/string/compare.hpp>
+#include <boost/algorithm/string.hpp>  // boost::algorithm::starts_with
+#include <boost/bind.hpp>
 #include <boost/program_options/cmdline.hpp>
+#include <boost/tokenizer.hpp>
+#include <boost/utility.hpp>
 #include <iostream>
 #include <string>
 
@@ -32,6 +38,7 @@ using namespace std;
 using namespace xtreemfs::pbrpc;
 using namespace xtreemfs::util;
 
+namespace alg = boost::algorithm;
 namespace po = boost::program_options;
 namespace style = boost::program_options::command_line_style;
 
@@ -47,7 +54,8 @@ Options::Options()
 #endif  // HAS_OPENSSL
       grid_options_("Grid Support options"),
       vivaldi_options_("Vivaldi Options"),
-      xtreemfs_advanced_options_("XtreemFS Advanced options") {
+      xtreemfs_advanced_options_("XtreemFS Advanced options"),
+      alternative_options_("Alternative Specification of options") {
   version_string = XTREEMFS_VERSION_STRING;
 
   // XtreemFS URL Options.
@@ -71,7 +79,6 @@ Options::Options()
   async_writes_max_requests = 10;  // Only 10 pending requests allowed by default.
   readdir_chunk_size = 1024;
   enable_atime = false;
-  object_cache_size = 0;
 
   // Error Handling options.
   // A RPC call may be retried up to "max{_read|_write|}_tries" times. The
@@ -92,6 +99,7 @@ Options::Options()
   max_tries = 40;
   max_read_tries = 40;
   max_write_tries = 40;
+  max_view_renewals = 5;
   retry_delay_s = 15;
   connect_timeout_s = 15;
   request_timeout_s = 15;
@@ -102,9 +110,12 @@ Options::Options()
   ssl_pem_cert_path = "";
   ssl_pem_key_path = "";
   ssl_pem_key_pass = "";
+  ssl_pem_trusted_certs_path = "";
   ssl_pkcs12_path = "";
   ssl_pkcs12_pass = "";
   grid_ssl = false;
+  ssl_verify_certificates = false;
+  ssl_method_string = "ssltls";
 
   // encryption options.
   encryption = false;
@@ -217,10 +228,7 @@ void Options::GenerateProgramOptionsDescriptions() {
         " will block if this limit is reached first.")
     ("readdir-chunk-size",
         po::value(&readdir_chunk_size)->default_value(readdir_chunk_size),
-        "Number of entries requested per readdir.")
-    ("object-cache-size",
-        po::value(&object_cache_size)->default_value(object_cache_size),
-        "Number of cached objects per file.");
+        "Number of entries requested per readdir.");
 
   error_handling_.add_options()
     ("max-tries",
@@ -244,6 +252,10 @@ void Options::GenerateProgramOptionsDescriptions() {
         "Fuse.)"
 #endif  // __linux
         )
+    ("max-view-renewals",
+        po::value(&max_view_renewals)->default_value(max_view_renewals),
+        "Maximum number of attempts to retry a request with a renewed view "
+        "in case an outdated view error did occur.")
     ("retry-delay",
         po::value(&retry_delay_s)->default_value(retry_delay_s),
         "Wait time after a request failed until next attempt (in seconds).")
@@ -270,6 +282,12 @@ void Options::GenerateProgramOptionsDescriptions() {
         po::value(&ssl_pem_key_pass)->default_value(ssl_pem_key_pass),
         "PEM private key passphrase  (If the argument is set to '-', the user"
         " will be prompted for the passphrase.)")
+    ("pem-trusted-certificates-file-path",
+        po::value(&ssl_pem_trusted_certs_path)
+            ->default_value(ssl_pem_trusted_certs_path),
+        "PEM trusted certificates path. Contains all trusted CAs in one PEM "
+        "encoded file.")
+#ifndef WIN32
     ("pkcs12-file-path",
         po::value(&ssl_pkcs12_path)->default_value(ssl_pkcs12_path),
         "PKCS#12 file path")
@@ -277,10 +295,34 @@ void Options::GenerateProgramOptionsDescriptions() {
         po::value(&ssl_pkcs12_pass)->default_value(ssl_pkcs12_pass),
         "PKCS#12 passphrase (If the argument is set to '-', the user will be"
         " prompted for the passphrase.)")
+#endif
     ("grid-ssl",
         po::value(&grid_ssl)->zero_tokens(),
         "Explicitly use the XtreemFS Grid-SSL mode. Same as specifying "
-        "pbrpcg:// in the volume URL.");
+        "pbrpcg:// in the volume URL.")
+    ("verify-certificates",
+        po::value(&ssl_verify_certificates)->default_value(ssl_verify_certificates)
+            ->zero_tokens(),
+        "Enables X.509 certificate verification.")
+    ("ignore-verify-errors",
+        po::value(&ssl_ignore_verify_errors)->multitoken(),
+        "List of error codes to ignore during certificate verification and "
+        "proceed and accept, see verify(1) for the list of error codes. Only "
+        "evaluated in conjunction with --verify-certificates. E.g.\n"
+        "  '--ignore-verify-errors 20 27 21' to accept certificates with "
+        "unknown issuer certificates, untrusted certificates and one-element "
+        "certificate chains (typical setup for local testing).")
+    ("min-ssl-method",
+        po::value(&ssl_method_string)->default_value(ssl_method_string),
+        "SSL method that this client will accept:\n"
+        "  - sslv3 accepts SSLv3 only\n"
+        "  - ssltls accepts SSLv3 and TLSv1.x\n"
+        "  - tlsv1 accepts TLSv1 only"
+#if (BOOST_VERSION > 105300)
+        "\n  - tlsv11 accepts TLSv1.1 only\n"
+        "  - tlsv12 accepts TLSv1.2 only"
+#endif  // BOOST_VERSION > 105300
+        );
 
   encryption_options_.add_options()
     ("encryption",
@@ -393,6 +435,19 @@ void Options::GenerateProgramOptionsDescriptions() {
         "this signal was sent in earlier versions."
         );
 
+  alternative_options_.add_options()
+    (",o",
+        po::value< std::vector<std::string> >(&alternative_options_list),
+        "Alternatively specify all options as a key=value1=value2 tuple list. "
+        "E.g.\n"
+        "  '--opt1 --opt2 arg2 --opt3 arg3 arg4' can become\n"
+        "  '-o opt1,opt2=arg2,opt3=arg3=arg4'.\n"
+        "Overridden by explicitly specified options, e.g.\n"
+        "  '--log-level DEBUG' overrides '-o log-level=INFO'.\n"
+        "Short option names must be prefixed with '-' anyway, "
+        "e.g. '-o -d=DEBUG'. Unrecognized options are retained, "
+        "e.g. for Fuse, see 'Fuse Options'.");
+
   // These options are parsed
   all_descriptions_.add(general_).add(optimizations_).add(error_handling_)
 #ifdef HAS_OPENSSL
@@ -405,7 +460,7 @@ void Options::GenerateProgramOptionsDescriptions() {
 #ifdef HAS_OPENSSL
       .add(ssl_options_).add(encryption_options_)
 #endif  // HAS_OPENSSL
-      .add(grid_options_).add(vivaldi_options_);
+      .add(grid_options_).add(vivaldi_options_).add(alternative_options_);
 
 
   all_descriptions_initialized_ = true;
@@ -414,25 +469,108 @@ void Options::GenerateProgramOptionsDescriptions() {
 std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
   GenerateProgramOptionsDescriptions();
 
-  // Parse command line.
+  // Parse alternative options specification first,
+  // and potentially override using explicit options later.
+  po::parsed_options parsed = po::command_line_parser(argc, argv)
+    .options(alternative_options_)
+    .allow_unregistered()
+    .style(style::default_style & ~style::allow_guessing)
+    .run();
   boost::program_options::variables_map vm;
+  po::store(parsed, vm);
+  po::notify(vm);
+
+  // Collect all non-alternative options, i.e. all regular ones,
+  // and the ones that are completely unknown.
+  vector<string> regular_options = po::collect_unrecognized(parsed.options,
+                                                            po::include_positional);
+
+  // Collect options that are not meant to be set via alternative specification.
+  vector<string> unrecognized_alternative_options;
+
+  typedef boost::tokenizer< boost::char_separator<char> > tokenizer;
+  boost::char_separator<char> list_separator(",");
+  boost::char_separator<char> tuple_separator("=");
+
+  // Walk all alternative options, represented as a list of comma separated
+  // key=value1=value2... tuples.
+  for (vector<string>::iterator alternative_options = alternative_options_list.begin();
+      alternative_options != alternative_options_list.end();
+      ++alternative_options) {
+    // Split the current comma separated list into key=value1=value2... tuples.
+    tokenizer tuples(*alternative_options, list_separator);
+    for (tokenizer::iterator tuple = tuples.begin();
+        tuple != tuples.end();
+        ++tuple) {
+      // Split the key=value1=value2... tuple into key and values.
+      tokenizer key_values(*tuple, tuple_separator);
+
+      // Find out whether this is a known option.
+      const po::option_description *opt_desc = all_descriptions_.find_nothrow(
+          *(key_values.begin()), false);
+      if (opt_desc != NULL) {
+        // Extract long and short option names from the formatted parameter
+        // '-o [ --opt ]' or '--opt' or '-o [ -- ]' (boost 1.48)
+        // '-o [ --opt ]' or '--opt' or '-o'        (boost 1.57)
+        // FIXME use po::option_description::canonical_display_name
+        // when upgrading boost.
+        const string format_opt = opt_desc->format_name();
+        string prefixed_long_opt = "", prefixed_short_opt = "";
+        if(format_opt.substr(0, 2) == "--") {
+          // No short option available.
+          prefixed_long_opt = format_opt;
+        } else {
+          // Short option available, covers the other two cases.
+          prefixed_short_opt = format_opt.substr(0, 2);
+          if(format_opt.length() > 9) {
+            prefixed_long_opt = format_opt.substr(5, format_opt.length() - 7);
+          }
+        }
+
+        // Find out if this known option has been explicitly specified.
+        if ((prefixed_long_opt.empty() ||
+             find_if(regular_options.begin(), regular_options.end(),
+                     boost::bind(alg::starts_with<string, string, alg::is_equal>,
+                                 _1, prefixed_long_opt, alg::is_equal()))
+                     == regular_options.end()) &&
+            (prefixed_short_opt.empty() ||
+             find_if(regular_options.begin(), regular_options.end(),
+                     boost::bind(alg::starts_with<string, string, alg::is_equal>,
+                                 _1, prefixed_short_opt, alg::is_equal()))
+                     == regular_options.end())) {
+          // Explicitly set option for later parsing.
+          regular_options.push_back(
+              prefixed_long_opt.empty() ? prefixed_short_opt : prefixed_long_opt);
+          regular_options.insert(
+              regular_options.end(), boost::next(key_values.begin()), key_values.end());
+        } else {
+          // Known option is explicitly specified, do not set.
+        }
+      } else {
+        // Not an option that is supposed to be set via alternative specification,
+        // so just add it back the way it came in.
+        unrecognized_alternative_options.push_back("-o");
+        unrecognized_alternative_options.insert(
+            unrecognized_alternative_options.end(),
+            key_values.begin(), key_values.end());
+      }
+    }
+  }
+
+  vm.clear();
   try {
-    po::store(po::command_line_parser(argc, argv)
-        .options(all_descriptions_)
-        .allow_unregistered()
-        .style(style::default_style & ~style::allow_guessing)
-        .run(), vm);
+    // Parse non-alternative options normally.
+    parsed = po::command_line_parser(regular_options)
+      .options(all_descriptions_)
+      .allow_unregistered()
+      .style(style::default_style & ~style::allow_guessing)
+      .run();
+    po::store(parsed, vm);
     po::notify(vm);
   } catch(const std::exception& e) {
     // Rethrow boost errors due to invalid command line parameters.
     throw InvalidCommandLineParametersException(string(e.what()));
   }
-
-  po::parsed_options parsed = po::command_line_parser(argc, argv)
-  .options(all_descriptions_)
-  .allow_unregistered()
-  .style(style::default_style & ~style::allow_guessing)
-  .run();
 
   if (metadata_cache_size < readdir_chunk_size && metadata_cache_size != 0) {
     cerr << "Warning: Please set the metadata cache size at least as high as "
@@ -451,11 +589,6 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
       vm.count("async-writes-max-reqs"))) {
     throw InvalidCommandLineParametersException("You specified async-writes-*"
         " options but did not set enable-async-writes.");
-  }
-
-  if (enable_async_writes && object_cache_size > 0) {
-    throw InvalidCommandLineParametersException(
-        "Only one of async. writes and the object cache may be enabled.");
   }
 
   // Show help if no arguments given.
@@ -488,7 +621,7 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
         "If you use SSL and PEM files, you have to specify both the PEM"
         " certificate and the PEM private key.");
   }
-
+#ifndef WIN32
   // PKCS#12 and PEM files are mutually exclusive.
   if (!ssl_pem_key_path.empty() && !ssl_pkcs12_path.empty()) {
     throw InvalidCommandLineParametersException("You can only use PEM files"
@@ -501,7 +634,7 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
         " OR a PKCS#12 certificate. However, you specified the password option"
         " for both.");
   }
-
+#endif
   // If a SSL password was given via command line, clean the value from args.
   string to_be_cleaned_password;
   if (!ssl_pem_key_pass.empty() && ssl_pem_key_pass != "-") {
@@ -548,8 +681,10 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
   }
 #endif  // HAS_OPENSSL
 
-  // Return unparsed options.
-  return po::collect_unrecognized(parsed.options, po::include_positional);
+  // Return all unparsed options.
+  vector<string> unparsed_options = po::collect_unrecognized(parsed.options, po::include_positional);
+  unparsed_options.insert(unparsed_options.end(), unrecognized_alternative_options.begin(), unrecognized_alternative_options.end());
+  return unparsed_options;
 }
 
 void Options::ParseURL(XtreemFSServiceType service_type) {
@@ -630,9 +765,13 @@ xtreemfs::rpc::SSLOptions* Options::GenerateSSLOptions() const {
   if (SSLEnabled()) {
     opts = new xtreemfs::rpc::SSLOptions(
         ssl_pem_key_path, ssl_pem_cert_path, ssl_pem_key_pass,  // PEM.
+        ssl_pem_trusted_certs_path,  // PEM.
         ssl_pkcs12_path, ssl_pkcs12_pass,  // PKCS12.
         boost::asio::ssl::context::pem,
-        grid_ssl || protocol == PBRPCURL::GetSchemePBRPCG());
+        grid_ssl || protocol == PBRPCURL::GetSchemePBRPCG(),
+        ssl_verify_certificates,
+        ssl_ignore_verify_errors,
+        ssl_method_string);
   }
 #else
   opts = new xtreemfs::rpc::SSLOptions();

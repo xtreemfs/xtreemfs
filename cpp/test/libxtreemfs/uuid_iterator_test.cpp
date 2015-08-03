@@ -8,7 +8,9 @@
 
 #include <gtest/gtest.h>
 
+#include <boost/make_shared.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -297,7 +299,8 @@ TEST_F(ContainerUUIDIteratorTest, CreateContainerAndGetUUID) {
     striping_policies.push_back(&(xlocs.replicas(i).striping_policy()));
   }
 
-  boost::scoped_ptr<UUIDContainer> uuid_container(new UUIDContainer(xlocs));
+  boost::shared_ptr<UUIDContainer> uuid_container =
+      boost::make_shared<UUIDContainer>(xlocs);
 
   // NOTE: We assume that all replicas use the same striping policy type and
   //       that all replicas use the same stripe size.
@@ -316,7 +319,7 @@ TEST_F(ContainerUUIDIteratorTest, CreateContainerAndGetUUID) {
 
     // Create a UUIDIterator for a specific set of offsets
     boost::scoped_ptr<ContainerUUIDIterator> uuid_iterator(
-        new ContainerUUIDIterator(uuid_container.get(),
+        new ContainerUUIDIterator(uuid_container,
                                   operations[0].osd_offsets));
 
     // check results

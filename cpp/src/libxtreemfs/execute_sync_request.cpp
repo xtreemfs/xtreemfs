@@ -233,7 +233,8 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
                    : ( service_address + " (" + service_uuid + ")"))
              + ", retrying ("
              + boost::lexical_cast<string>(retries_left)
-             + " attempts left)";
+             + " attempts left) (Possible reason: The server is using SSL,"
+             + " and the client is not.)";
         }
 
         retry = true;
@@ -396,6 +397,18 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
         }
         ErrorLog::error_log->AppendError(error);
         throw XtreemFSException(error);
+      }
+      case INVALID_VIEW: {
+        error = "The server "
+            + (uuid_iterator_has_addresses ? service_address
+                : ( service_address + " (" + service_uuid + ")"))
+            + " denied the requested operation because the clients view is " +
+            + "outdated. The request will be retried once the view is renewed.";
+        if (Logging::log->loggingActive(level)) {
+          Logging::log->getLog(level) << error << endl;
+        }
+        ErrorLog::error_log->AppendError(error);
+        throw InvalidViewException(error);
       }
       default:  {
         string error_type_name

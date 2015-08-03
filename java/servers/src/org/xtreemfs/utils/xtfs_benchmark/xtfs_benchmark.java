@@ -88,6 +88,11 @@ public class xtfs_benchmark {
             results.addAll(result);
         }
 
+        if(cliOptions.unalignedSequentialWriteBenchmarkIsSet()) {
+            result = controller.startUnalignedSequentialWriteBenchmark(cliOptions.getSequentialSize(), cliOptions.getNumberOfThreads());
+            results.addAll(result);
+        }
+
         if (cliOptions.sequentialReadBenchmarkIsSet()) {
             result = controller.startSequentialReadBenchmark(cliOptions.getSequentialSize(), cliOptions.getNumberOfThreads());
             results.addAll(result);

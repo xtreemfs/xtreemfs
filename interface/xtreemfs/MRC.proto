@@ -454,6 +454,17 @@ message xtreemfs_check_file_existsRequest {
   required string osd_uuid = 3;
 }
 
+message xtreemfs_check_file_existsResponse {
+  required bool volume_exists = 1;
+
+  enum FILE_STATE {
+    DELETED=0;
+    REGISTERED=1;
+    ABANDONED=2;
+  }
+  repeated FILE_STATE file_states = 2 [packed=true]; 
+}
+
 // dumps or restores the MRC database
 message xtreemfs_dump_restore_databaseRequest {
   // the path to the dump file on the MRC host
@@ -467,17 +478,14 @@ message xtreemfs_get_suitable_osdsRequest {
   // or path and volume_name to file.
   optional string path = 3;
   optional string volume_name = 4;
-  // the number of OSDs for the new replicas
+  // the number of OSDs required in a valid group
+  // ignored by filtering and sorting policies
   required fixed32 num_osds = 2;
 }
 
 // returns a list of suitable OSDs
 message xtreemfs_get_suitable_osdsResponse {
   repeated string osd_uuids = 1;
-}
-
-message xtreemfs_check_file_existsResponse {
-  required string bitmap = 1;
 }
 
 message timestampResponse {
@@ -507,13 +515,24 @@ message xtreemfs_replica_addRequest {
   required Replica new_replica = 2;
 }
 
-// requests a list of all replicas of a file
+// requests a list of all replicas of a file (deprecated)
 message xtreemfs_replica_listRequest {
   // the file ID
   optional string file_id = 1;
   // or path and volume_name to file.
   optional string path = 2;
   optional string volume_name = 3;
+}
+
+// requests the xLocSet of a file
+message xtreemfs_get_xlocsetRequest {
+  // the file ID
+  optional string file_id = 1;
+  // or path and volume_name to file
+  optional string path = 2;
+  optional string volume_name = 3;
+  // or a valid XCap.
+  optional XCap xcap = 4;
 }
 
 // removes a replica from a file
@@ -747,7 +766,7 @@ service MRCService {
     option(proc_id)=39;
   };
 
-  // lists all replicas of a file
+  // lists all replicas of a file (deprecated)
   rpc xtreemfs_replica_list(xtreemfs_replica_listRequest) returns(Replicas) {
     option(proc_id)=40;
   };
@@ -797,4 +816,8 @@ service MRCService {
     option(proc_id)=50;	  
   }; 
 
+  // Returns the current xLocSet for the specified file.
+  rpc xtreemfs_get_xlocset(xtreemfs_get_xlocsetRequest) returns(XLocSet) {
+    option(proc_id)=51;
+  };
 }

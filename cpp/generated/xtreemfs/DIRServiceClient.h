@@ -1,5 +1,5 @@
-//automatically generated from DIR.proto at Mon Nov 11 11:46:59 CET 2013
-//(c) 2013. See LICENSE file for details.
+//automatically generated from DIR.proto at Thu Dec 11 16:09:40 CET 2014
+//(c) 2014. See LICENSE file for details.
 
 #ifndef DIRSERVICECLIENT_H
 #define DIRSERVICECLIENT_H

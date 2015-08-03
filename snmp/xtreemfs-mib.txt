@@ -50,7 +50,7 @@
    -- a truth value
       Boolean ::=   INTEGER { true(1), false(2) }
 
-	-- GROUP general: It represents informations that
+	-- GROUP general: It represents information that
 	-- all services (DIR, MRC, OSD) have in common.
 	jvmUsedMemory OBJECT-TYPE
 		SYNTAX Long
@@ -160,7 +160,7 @@
          "Returns the UUID of the service."
    ::= { general 13 } 
 
-	-- GROUP dir: It represents informations that
+	-- GROUP dir: It represents information that
 	-- related to the DIR.
 	addressMappingCount OBJECT-TYPE
 		SYNTAX INTEGER

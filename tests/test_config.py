@@ -62,6 +62,24 @@ TestSets = {
                 'dir_repl': False,
                 'snmp': False,
     },
+    'travis-junit' : {
+                'ssl': False,
+                'mrc_repl': False,
+                'dir_repl': False,
+                'snmp': False,
+    },
+    'travis-cpp' : {
+                'ssl': False,
+                'mrc_repl': False,
+                'dir_repl': False,
+                'snmp': False,
+    },
+    'travis-valgrind' : {
+                'ssl': False,
+                'mrc_repl': False,
+                'dir_repl': False,
+                'snmp': False,
+    },
 }
 
 VolumeConfigs = {
@@ -209,6 +227,12 @@ Tests = [
         'TestSets': [ 'ssd' ]
     },
     {
+        'name': 'view renewal',
+        'file': '18_view_renewal.py',
+        'VolumeConfigs': [ 'regular_two_osds' ],
+        'TestSets': [ 'full', 'short', 'short-ssl' ]
+    },
+    {
         'name': 'xtfs_cleanup test',
         'file': 'system_cleanup_test.sh',
         'VolumeConfigs': ['nomdcache'],
@@ -274,19 +298,19 @@ Tests = [
         'name': 'JUnit tests',
         'file': 'junit_tests.sh',
         'VolumeConfigs': [],
-        'TestSets': [ 'full', 'short', 'short-ssl', 'travis' ]
+        'TestSets': [ 'full', 'short', 'short-ssl', 'travis-junit' ]
     },
     {
         'name': 'C++ Unit Tests',
         'file': 'cpp_unit_tests.sh',
         'VolumeConfigs': [],
-        'TestSets': [ 'full', 'short', 'short-ssl', 'travis' ]
+        'TestSets': [ 'full', 'short', 'short-ssl', 'travis-cpp' ]
     },
     {
         'name': 'Valgrind memory-leak check for C++ Unit Tests',
         'file': 'cpp_unit_tests_valgrind.sh',
         'VolumeConfigs': [],
-        'TestSets': [ 'full' ]
+        'TestSets': [ 'full', 'travis-valgrind' ]
     },
     {
         'name': 'mkfs-lsfs-rmfs.xtreemfs test',
@@ -305,5 +329,11 @@ Tests = [
         'file': 'system_chstatus_test.sh',
         'VolumeConfigs': [],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
+    },
+    {
+        'name': 'Coverity Scan Test',
+        'file': 'coverity_scan_test.sh',
+        'VolumeConfigs': [],
+        'TestSets': [ 'full' ]
     }
  ]

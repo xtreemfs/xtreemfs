@@ -3,7 +3,7 @@ Section: utils
 Priority: optional
 Maintainer: XtreemFS Project <xtreemfs-users@googlegroups.com>
 Homepage: http://www.xtreemfs.org/
-Standards-Version: 3.7.2
+Standards-Version: 3.9.6
 
 Package: xtreemfs-client
 Architecture: any

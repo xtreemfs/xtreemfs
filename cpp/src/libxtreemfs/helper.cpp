@@ -552,9 +552,9 @@ boost::unordered_set<std::string> GetNetworks() {
  *  Parses human-readable byte number to byte count. Returns -1 if byte_number is not parsable.
  */
 long parseByteNumber(std::string byte_number) {
-	std::string multiplier;
-  int coeff;
-	std::stringstream ss;
+  std::string multiplier;
+  long long coeff;
+  std::stringstream ss;
   ss << byte_number;
   ss >> coeff;
   ss >> multiplier;
@@ -568,16 +568,18 @@ long parseByteNumber(std::string byte_number) {
     return -1;
   }
 
-	int exp  = 0;
-	int unit = 1024;
-	switch (multiplier[0]) {
-		case 'K':  exp =  3; break;
-		case 'M':  exp =  6; break;
-		case 'G':  exp =  9; break;
-		case 'T':  exp =  12; break;
-		default:   return -1;
-	}
-	return coeff * pow(unit, exp / 3);
+  long factor = 1L;
+
+  switch (multiplier[0]) {
+    case 'K': factor = 1024L; break;
+    case 'M': factor = 1024L*1024L; break;
+    case 'G': factor = 1024L*1024L*1024L; break;
+    case 'T': factor = 1024L*1024L*1024L*1024L; break;
+    case 'P': factor = 1024L*1024L*1024L*1024L*1024L; break;
+    case 'E': factor = 1024L*1024L*1024L*1024L*1024L*1024L; break;
+    default:   return -1;
+  }
+  return coeff * factor;
 }
 
 void LogAndThrowXtreemFSException(std::string error_msg) {

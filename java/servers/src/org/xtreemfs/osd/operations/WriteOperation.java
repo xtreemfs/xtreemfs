@@ -79,8 +79,11 @@ public final class WriteOperation extends OSDOperation {
             master.objectReceived();
             master.dataReceived(rq.getRPCRequest().getData().capacity());
 
-            if ( (rq.getLocationList().getReplicaUpdatePolicy().length() == 0)
-               || (rq.getLocationList().getNumReplicas() == 1) ){
+            // TODO(jdillmann): Use centralized method to check if a lease is required.
+            if (rq.getLocationList().getNumReplicas() > 1
+                    && ReplicaUpdatePolicies.isRwReplicated(rq.getLocationList().getReplicaUpdatePolicy())) {
+                replicatedWrite(rq,args,syncWrite);
+            } else {
 
                 Long newObjectVersion = args.getObjectVersion() > 0 ? args.getObjectVersion() : null;
 
@@ -94,8 +97,6 @@ public final class WriteOperation extends OSDOperation {
                                 sendResult(rq, result, error);
                             }
                         });
-            } else {
-                replicatedWrite(rq,args,syncWrite);
             }
         }
     }
@@ -226,7 +227,4 @@ public final class WriteOperation extends OSDOperation {
     public void startInternalEvent(Object[] args) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    
-
 }

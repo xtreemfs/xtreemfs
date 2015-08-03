@@ -301,48 +301,51 @@ public class VolumeTest {
         assertEquals(3, entrySet.getEntriesCount());
     }
 
-//    TODO(stenjan): Fix this issue and comment it out again.
-//    @Test
-//    public void testCreateDirWithEmptyPathComponents() throws Exception {
-//        VOLUME_NAME = "testCreateDirWithEmptyPathComponents";
-//        // Both directories should be created under "/"
-//        final String DIR1 = "/test";
-//        final String DIR2 = "/test//";
-//        final String DIR3 = "/test//testdir";
-//
-//        // create volume
-//        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME, 0, userCredentials.getUsername(),
-//                userCredentials.getGroups(0), AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL,
-//                StripingPolicyType.STRIPING_POLICY_RAID0, defaultStripingPolicy.getStripeSize(),
-//                defaultStripingPolicy.getWidth(), new ArrayList<KeyValuePair>());
-//
-//        Volume volume = client.openVolume(VOLUME_NAME, null, options);
-//
-//        // create some files and directories
-//        try {
-//            volume.createDirectory(userCredentials, DIR1, 0755);
-//            volume.createDirectory(userCredentials, DIR2, 0755);
-//            volume.createDirectory(userCredentials, DIR3, 0755);
-//        } catch (IOException ioe) {
-//            fail("failed to create testdirs");
-//        }
-//
-//        // test 'readDir' and 'stat'
-//        DirectoryEntries entrySet = null;
-//
-//        entrySet = volume.readDir(userCredentials, DIR2, 0, 1000, false);
-//        assertEquals(3, entrySet.getEntriesCount());
-//        assertEquals("..", entrySet.getEntries(0).getName());
-//        assertEquals(".", entrySet.getEntries(1).getName());
-//        assertEquals(DIR3, "/" + entrySet.getEntries(2).getName());
-//
-//        entrySet = volume.readDir(userCredentials, DIR3, 0, 1000, false);
-//        assertEquals(0, entrySet.getEntriesCount());
-//
-//        volume.removeDirectory(userCredentials, DIR3);
-//        entrySet = volume.readDir(userCredentials, DIR1, 0, 1000, false);
-//        assertEquals(2, entrySet.getEntriesCount());
-//    }
+    @Test
+    public void testCreateDirWithEmptyPathComponents() throws Exception {
+        VOLUME_NAME = "testCreateDirWithEmptyPathComponents";
+        // Both directories should be created under "/"
+        final String DIR1 = "/test";
+        final String DIR2 = "/test//";
+        final String DIR3 = "/test//testdir";
+
+        // create volume
+        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME, 0, userCredentials.getUsername(),
+                userCredentials.getGroups(0), AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL,
+                StripingPolicyType.STRIPING_POLICY_RAID0, defaultStripingPolicy.getStripeSize(),
+                defaultStripingPolicy.getWidth(), new ArrayList<KeyValuePair>());
+
+        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+
+        // create some files and directories
+        try {
+            volume.createDirectory(userCredentials, DIR1, 0755);
+            volume.createDirectory(userCredentials, DIR3, 0755);
+        } catch (IOException ioe) {
+            fail("failed to create testdirs");
+        }
+
+        try {
+            volume.createDirectory(userCredentials, DIR2, 0755);
+            fail("existing directory could be created");
+        } catch (IOException ioe) {}
+
+        // test 'readDir' and 'stat'
+        DirectoryEntries entrySet = null;
+
+        entrySet = volume.readDir(userCredentials, DIR2, 0, 1000, false);
+        assertEquals(3, entrySet.getEntriesCount());
+        assertEquals("..", entrySet.getEntries(0).getName());
+        assertEquals(".", entrySet.getEntries(1).getName());
+        assertEquals("/testdir", "/" + entrySet.getEntries(2).getName());
+
+        entrySet = volume.readDir(userCredentials, DIR3, 0, 1000, false);
+        assertEquals(2, entrySet.getEntriesCount());
+
+        volume.removeDirectory(userCredentials, DIR3);
+        entrySet = volume.readDir(userCredentials, DIR1, 0, 1000, false);
+        assertEquals(2, entrySet.getEntriesCount());
+    }
 
     @Test
     public void testHardLink() throws Exception {
@@ -1001,5 +1004,47 @@ public class VolumeTest {
                 assertTrue(false);
             }
         }
+    }
+
+    /**
+     * Test if files inherit the group from its parent if the setgid bit is set, and if subdirectories inherit the group
+     * and the setgid bit.
+     */
+    @Test
+    public void testSetgid() throws Exception {
+        VOLUME_NAME = "testSetgid";
+        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
+        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+
+        volume.createDirectory(userCredentials, "/DIR1", 0777);
+
+        Stat stat;
+        stat = volume.getAttr(userCredentials, "/DIR1");
+
+        int mode = stat.getMode() | 02000;
+        stat = stat.toBuilder().setGroupId("foobar").setMode(mode).build();
+
+        UserCredentials rootCreds = userCredentials.toBuilder().setUsername("root").setGroups(0, "root").build();
+        volume.setAttr(rootCreds, "/DIR1", stat, Setattrs.SETATTR_MODE.getNumber() | Setattrs.SETATTR_GID.getNumber());
+
+        // Test if the setgid bit and the group is set
+        stat = volume.getAttr(userCredentials, "/DIR1");
+        assertEquals(02000, stat.getMode() & 02000);
+        assertEquals("foobar", stat.getGroupId());
+
+        // Test if new subdirectories inherit the setgid bit and the group
+        volume.createDirectory(userCredentials, "/DIR1/DIR2", 0777);
+        stat = volume.getAttr(userCredentials, "/DIR1/DIR2");
+        assertEquals(02000, stat.getMode() & 02000);
+        assertEquals("foobar", stat.getGroupId());
+
+        // Test if new files inherit the group
+        FileHandle fh = volume.openFile(userCredentials, "/DIR1/FILE1",
+                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber());
+        fh.close();
+        stat = volume.getAttr(userCredentials, "/DIR1/FILE1");
+        assertEquals("foobar", stat.getGroupId());
+
+        volume.close();
     }
 }

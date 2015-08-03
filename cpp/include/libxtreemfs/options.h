@@ -86,9 +86,13 @@ class Options {
    *  - ssl_pem_key_path
    *  - ssl_pem_cert_path
    *  - ssl_pem_key_pass
+   *  - ssl_pem_trusted_certs_path
    *  - ssl_pkcs12_path
    *  - ssl_pkcs12_pass
-   *  - grid_ssl || protocol.
+   *  - grid_ssl || protocol
+   *  - verify_certificates
+   *  - ignore_verify_errors
+   *  - ssl_method
    *
    * @remark Ownership is transferred to caller. May be NULL.
    */
@@ -147,8 +151,6 @@ class Options {
   int readdir_chunk_size;
   /** True, if atime requests are enabled in Fuse/not ignored by the library. */
   bool enable_atime;
-  /** Cached objects per file. A value <= 0 disables the object cache. */
-  int object_cache_size;
 
   // Error Handling options.
   /** How often shall a failed operation get retried? */
@@ -157,6 +159,8 @@ class Options {
   int max_read_tries;
   /** How often shall a failed write operation get retried? */
   int max_write_tries;
+  /** How often shall a view be tried to renewed? */
+  int max_view_renewals;
   /** How long to wait after a failed request at least? */
   int retry_delay_s;
   /** Maximum time until a connection attempt will be aborted. */
@@ -172,11 +176,21 @@ class Options {
   std::string ssl_pem_cert_path;
   std::string ssl_pem_key_path;
   std::string ssl_pem_key_pass;
+  std::string ssl_pem_trusted_certs_path;
   std::string ssl_pkcs12_path;
   std::string ssl_pkcs12_pass;
   /** True, if the XtreemFS Grid-SSL Mode (only SSL handshake, no encryption of
    *  data itself) shall be used. */
   bool grid_ssl;
+
+  /** True if certificates shall be verified. */
+  bool ssl_verify_certificates;
+  /** List of openssl verify error codes to ignore during verification and
+   * accept anyway. Only used when ssl_verify_certificates = true. */
+  std::vector<int> ssl_ignore_verify_errors;
+  
+  /** SSL version that this client should accept. */
+  std::string ssl_method_string;
 
   // encryption options.
   bool encryption;
@@ -235,6 +249,9 @@ class Options {
   int periodic_xcap_renewal_interval_s;
   /** Skewness of the Zipf distribution used for vivaldi OSD selection */
   double vivaldi_zipf_generator_skew;
+
+  /** May contain all previous options in key=value pair lists. */
+  std::vector<std::string> alternative_options_list;
 
   // Internal options, not available from the command line interface.
   /** If not NULL, called to find out if request was interrupted. */
@@ -317,6 +334,9 @@ class Options {
 
   /** Deprecated options which are kept to ensure backward compatibility. */
   boost::program_options::options_description deprecated_options_;
+
+  /** Specify all previous options in key=value pair lists. */
+  boost::program_options::options_description alternative_options_;
 };
 
 }  // namespace xtreemfs

@@ -388,7 +388,7 @@ bool SetDefaultSP(const string& xctl_file,
         << width << " / " << size << "kB" << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Setting Default Striping Policy FAILED" << endl;
     return false;
   }
 }
@@ -409,7 +409,7 @@ bool SetVolumeQuota(const string& xctl_file,
     cout << "Set volume quota to " << quota << "." << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Setting Volume Quota FAILED" << endl;
     return false;
   }
 }
@@ -477,7 +477,7 @@ bool SetDefaultRP(const string& xctl_file,
         << factor << " replicas" << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Setting Default Replication Policy FAILED" << endl;
     return false;
   }
 }
@@ -557,7 +557,7 @@ bool SetReplicationPolicy(const string& xctl_file,
     }
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Setting Replication Policy FAILED" << endl;
     return false;
   }
 }
@@ -589,7 +589,7 @@ bool AddReplica(const string& xctl_file,
         << response["result"]["osd"].asString() << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Adding Replica FAILED" << endl;
     return false;
   }
 }
@@ -610,7 +610,7 @@ bool DeleteReplica(const string& xctl_file,
         << osd_uuid << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Deleting Replica FAILED" << endl;
     return false;
   }
 }
@@ -630,7 +630,7 @@ bool ShowErrors(const string& xctl_file,
     cout << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Showing Errors FAILED" << endl;
     return false;
   }
 }
@@ -651,7 +651,7 @@ bool GetSuitableOSDs(const string& xctl_file,
     }
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Getting Suitable OSDs FAILED" << endl;
     return false;
   }
 }
@@ -711,7 +711,7 @@ bool SetOSP(const string& xctl_file,
         << policy << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Setting OSD Selection Policy FAILED" << endl;
     return false;
   }
 }
@@ -747,7 +747,7 @@ bool SetRSP(const string& xctl_file,
         << policy << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Setting Replica Selection Policy FAILED" << endl;
     return false;
   }
 }
@@ -773,7 +773,7 @@ bool SetPolicyAttr(const string& xctl_file,
         << vm["value"].as<string>() << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Setting Policy Attribute FAILED" << endl;
     return false;
   }
 }
@@ -794,7 +794,7 @@ bool ListPolicyAttrs(const string& xctl_file,
     }
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Listing Policy Attributes FAILED" << endl;
     return false;
   }
 }
@@ -816,10 +816,10 @@ bool EnableDisableSnapshots(const string& xctl_file,
 
   Json::Value response;
   if (executeOperation(xctl_file, request, &response)) {
-    cout << "Success." << endl;
+    cout << "Enabling/Disabling Snapshot succeeded." << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Enabling/Disabling Snapshot FAILED" << endl;
     return false;
   }
 }
@@ -850,13 +850,13 @@ bool ListSnapshots(const string& xctl_file,
           cout << "- " << snapshots[i].asString() << endl;
         }
       } else {
-        cerr << "FAILED (to parse the list of snapshots)" << endl;
+        cerr << "Listing Snapshots FAILED (to parse the list of snapshots)" << endl;
         return false;
       }
     }
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Listing Snapshots FAILED" << endl;
     return false;
   }
 }
@@ -880,10 +880,10 @@ bool CreateDeleteSnapshot(const string& xctl_file,
 
   Json::Value response;
   if (executeOperation(xctl_file, request, &response)) {
-    cout << "Success." << endl;
+    cout << "Creating/Deleting Snapshot succeeded." << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Creating/Deleting Snapshot FAILED" << endl;
     return false;
   }
 }
@@ -908,10 +908,10 @@ bool SetRemoveACL(const string& xctl_file,
 
   Json::Value response;
   if (executeOperation(xctl_file, request, &response)) {
-    cout << "Success." << endl;
+    cout << "Setting/Modifying/Removing ACL succeeded." << endl;
     return true;
   } else {
-    cerr << "FAILED" << endl;
+    cerr << "Setting/Modifying/Removong ACL FAILED" << endl;
     return false;
   }
 }
@@ -1213,44 +1213,86 @@ int main(int argc, char **argv) {
                            + "-"
                            + boost::lexical_cast<string>(getpid());
 
+  size_t operationsCount = 0, failedOperationsCount = 0;
+
   if (vm.count("set-dsp") > 0) {
-    return SetDefaultSP(xctl_file, path_on_volume, vm) ? 0 : 1;
-  } else if (vm.count("set-drp") > 0) {
-    return SetDefaultRP(xctl_file, path_on_volume, vm) ? 0 : 1;
-  } else if (vm.count("set-osp") > 0) {
-    return SetOSP(xctl_file, path_on_volume, vm) ? 0 : 1;
-  } else if (vm.count("set-rsp") > 0) {
-    return SetRSP(xctl_file, path_on_volume, vm) ? 0 : 1;
-  } else if (vm.count("set-pattr") > 0) {
-    return SetPolicyAttr(xctl_file, path_on_volume, vm) ? 0 : 1;
-  } else if (vm.count("list-pattrs") > 0) {
-    return ListPolicyAttrs(xctl_file, path_on_volume, vm) ? 0 : 1;
-  } else if (vm.count("set-replication-policy") > 0) {
-    return SetReplicationPolicy(xctl_file, path_on_volume, vm) ? 0 : 1;
-  } else if (vm.count("add-replica") > 0) {
-    return AddReplica(xctl_file, path_on_volume, vm, option_add_replica) ? 0
+    ++operationsCount;
+    failedOperationsCount += SetDefaultSP(xctl_file, path_on_volume, vm) ? 0 : 1;
+  }
+  if (vm.count("set-drp") > 0) {
+    ++operationsCount;
+    failedOperationsCount += SetDefaultRP(xctl_file, path_on_volume, vm) ? 0 : 1;
+  }
+  if (vm.count("set-osp") > 0) {
+    ++operationsCount;
+    failedOperationsCount += SetOSP(xctl_file, path_on_volume, vm) ? 0 : 1;
+  }
+  if (vm.count("set-rsp") > 0) {
+    ++operationsCount;
+    failedOperationsCount += SetRSP(xctl_file, path_on_volume, vm) ? 0 : 1;
+  }
+  if (vm.count("set-pattr") > 0) {
+    ++operationsCount;
+    failedOperationsCount += SetPolicyAttr(xctl_file, path_on_volume, vm) ? 0 : 1;
+  }
+  if (vm.count("list-pattrs") > 0) {
+    ++operationsCount;
+    failedOperationsCount += ListPolicyAttrs(xctl_file, path_on_volume, vm) ? 0 : 1;
+  }
+  if (vm.count("set-replication-policy") > 0) {
+    ++operationsCount;
+    failedOperationsCount += SetReplicationPolicy(xctl_file, path_on_volume, vm) ? 0 : 1;
+  }
+  if (vm.count("add-replica") > 0) {
+    ++operationsCount;
+    failedOperationsCount += AddReplica(xctl_file, path_on_volume, vm, option_add_replica) ? 0
            : 1;
-  } else if (vm.count("delete-replica") > 0) {
-    return DeleteReplica(xctl_file, path_on_volume, vm) ? 0 : 1;
-  } else if (vm.count("list-osds") > 0) {
-    return GetSuitableOSDs(xctl_file, path_on_volume, vm) ? 0 : 1;
-  } else if (vm.count("set-acl") > 0 ||
-             vm.count("del-acl") > 0) {
-    return SetRemoveACL(xctl_file, path_on_volume, vm) ? 0 : 1;
-  } else if (vm.count("enable-snapshots") > 0 ||
-             vm.count("disable-snapshots") > 0) {
-    return EnableDisableSnapshots(xctl_file, path_on_volume, vm) ? 0 : 1;
-  } else if (vm.count("list-snapshots") > 0) {
-    return ListSnapshots(xctl_file, path_on_volume, vm) ? 0 : 1;
-  } else if (vm.count("create-snapshot") > 0 ||
-             vm.count("create-snapshot-non-recursive") > 0 ||
-             vm.count("delete-snapshot") > 0) {
-    return CreateDeleteSnapshot(xctl_file, path_on_volume, vm) ? 0 : 1;
-  } else if (vm.count("errors") > 0) {
-    return ShowErrors(xctl_file, path_on_volume, vm) ? 0 : 1;
-  } else if (vm.count("set-quota") > 0) {
-	return SetVolumeQuota(xctl_file, path_on_volume, vm) ? 0 : 1;
+  }
+  if (vm.count("delete-replica") > 0) {
+    ++operationsCount;
+    failedOperationsCount += DeleteReplica(xctl_file, path_on_volume, vm) ? 0 : 1;
+  }
+  if (vm.count("list-osds") > 0) {
+    ++operationsCount;
+    failedOperationsCount += GetSuitableOSDs(xctl_file, path_on_volume, vm) ? 0 : 1;
+  }
+  if (vm.count("set-acl") > 0 ||
+      vm.count("del-acl") > 0) {
+    ++operationsCount;
+    failedOperationsCount += SetRemoveACL(xctl_file, path_on_volume, vm) ? 0 : 1;
+  }
+  if (vm.count("enable-snapshots") > 0 ||
+      vm.count("disable-snapshots") > 0) {
+    ++operationsCount;
+    failedOperationsCount += EnableDisableSnapshots(xctl_file, path_on_volume, vm) ? 0 : 1;
+  }
+  if (vm.count("list-snapshots") > 0) {
+    ++operationsCount;
+    failedOperationsCount += ListSnapshots(xctl_file, path_on_volume, vm) ? 0 : 1;
+  }
+  if (vm.count("create-snapshot") > 0 ||
+      vm.count("create-snapshot-non-recursive") > 0 ||
+      vm.count("delete-snapshot") > 0) {
+    ++operationsCount;
+    failedOperationsCount += CreateDeleteSnapshot(xctl_file, path_on_volume, vm) ? 0 : 1;
+  }
+  if (vm.count("errors") > 0) {
+    ++operationsCount;
+    failedOperationsCount += ShowErrors(xctl_file, path_on_volume, vm) ? 0 : 1;
+  }
+  if (vm.count("set-quota") > 0) {
+    ++operationsCount;
+	failedOperationsCount += SetVolumeQuota(xctl_file, path_on_volume, vm) ? 0 : 1;
+  }
+  if(operationsCount == 0){
+    ++operationsCount;
+    failedOperationsCount += getattr(xctl_file, path_on_volume) ? 0 : 1;
+  }
+
+  if(failedOperationsCount > 0) {
+    cerr << failedOperationsCount << " of " << operationsCount << " operation(s) failed." << endl;
+    return 1;
   } else {
-    return getattr(xctl_file, path_on_volume) ? 0 : 1;
+    return 0;
   }
 }

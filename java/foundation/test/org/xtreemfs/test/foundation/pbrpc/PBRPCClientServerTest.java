@@ -264,10 +264,10 @@ public class PBRPCClientServerTest {
         SSLOptions clientSSL = null;
         if (pbrpcScheme.equals(Schemes.SCHEME_PBRPCS) || pbrpcScheme.equals(Schemes.SCHEME_PBRPCG)) {
             srvSSL = createSSLOptions("DIR.p12", "passphrase", SSLOptions.PKCS12_CONTAINER,
-                    "trusted.jks", "passphrase", SSLOptions.JKS_CONTAINER,pbrpcScheme.equals(Schemes.SCHEME_PBRPCG));
+                    "trusted.jks", "passphrase", SSLOptions.JKS_CONTAINER, pbrpcScheme.equals(Schemes.SCHEME_PBRPCG), null);
 
             clientSSL= createSSLOptions("Client.p12", "passphrase",
-                SSLOptions.PKCS12_CONTAINER, "trusted.jks", "passphrase", SSLOptions.JKS_CONTAINER,pbrpcScheme.equals(Schemes.SCHEME_PBRPCG));
+                SSLOptions.PKCS12_CONTAINER, "trusted.jks", "passphrase", SSLOptions.JKS_CONTAINER, pbrpcScheme.equals(Schemes.SCHEME_PBRPCG), null);
         }
 
         // System.out.println("setup done");
@@ -320,7 +320,7 @@ public class PBRPCClientServerTest {
     }
 
     private SSLOptions createSSLOptions(String keyStoreName, String ksPassphrase,
-        String ksContainerType, String trustStoreName, String tsPassphrase, String tsContainerType, boolean gridSSL)
+        String ksContainerType, String trustStoreName, String tsPassphrase, String tsContainerType, boolean gridSSL, String sslProtocolString)
         throws IOException {
 
         ClassLoader cl = this.getClass().getClassLoader();
@@ -349,7 +349,7 @@ public class PBRPCClientServerTest {
             }
         }
 
-        return new SSLOptions(ks, ksPassphrase, ksContainerType, ts, tsPassphrase, tsContainerType, false, gridSSL, null);
+        return new SSLOptions(ks, ksPassphrase, ksContainerType, ts, tsPassphrase, tsContainerType, false, gridSSL, sslProtocolString, null);
     }
 
     private static interface ResponseCreator {

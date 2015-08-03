@@ -17,24 +17,35 @@ SLEEP=true
 BASEFILE_SIZE="100g"
 
 # the directories for the logfiles and the results
-LOG_DIR="$HOME/log"
-RESULT_DIR="$HOME/result"
+LOG_BASE=${BENCH_LOG:-$HOME}
+LOG_DIR="$LOG_BASE/log"
+RESULT_DIR="$LOG_BASE/result"
 
 # Drops caches after each benchmark. Uncomment to activate
 # cp "drop_caches" to "/usr/local/bin" and add "ALL ALL=NOPASSWD: /usr/local/bin/drop_caches" to sudoers file
-DROP_CACHES_CALL="sudo /usr/bin/drop_caches"
+DROP_CACHES=${BENCH_DROP_CACHES:-"/usr/local/bin/drop_caches"}
+if [[ $DROP_CACHES != "false" ]]; then
+  DROP_CACHES_CALL="sudo ${DROP_CACHES}"
+fi
 
 # IP and Port of the DIR
-DIR="localhost:32638"
+DIR=${BENCH_DIR:-"localhost:32638"}
 
 # IP and Port of the MRC
-MRC="localhost:32636"
+MRC=${BENCH_MRC:-"localhost:32636"}
 
 # space separed list of OSD_UUIDS, e.g. "osd1 osd2 ..."
-OSD_UUIDS="test-osd0"
+OSD_UUIDS=${BENCH_OSD_UUIDS:-"test-osd0"}
 
-# the chunksize (aka blocksize) for the benchmarks
-CHUNKSIZE="128K"
+# stripe size for a volume
+STRIPE_SIZE="128K"
+
+# request size for each I/O operation
+REQUEST_SIZE=$STRIPE_SIZE
+
+# replication settings
+REPLICATION_POLICY=""
+REPLICATION_FACTOR=1
 
 check_env(){
   # check XTREEMFS
@@ -69,7 +80,7 @@ printUsage() {
   cat << EOF
 
 Synopsis
-  $(basename $0) -t TYPE -s NUMBER [-b NUMBER -e NUMBER] [-r NUMBER] [-v]
+  $(basename $0) -t TYPE -s NUMBER [-x NUMBER] [-p POLICY -f NUMBER] [-b NUMBER -e NUMBER] [-r NUMBER] [-v]
   Run a XtreemFS benchmark series, i.e. a series of benchmarks with increasing
   numbers of threads. Logs are placed in \$HOME/log/, results in \$HOME/results
   (can be changed at the head of the script).
@@ -77,12 +88,27 @@ Synopsis
   -t type
     Type of benchmarks to run. Type can be either of the following:
       sw sequential write
+      usw unaligned sequential write
       sr sequential read
       rw random write
       rr random read
 
   -s size
-    Size of one benchmark, modifier M (for MiB) or G (for GiB) is mandatory.
+    Size of one benchmark, modifier K (for KiB), M (for MiB) or G (for GiB) is mandatory.
+
+  -c size
+    Size of each read/write request, modifier K (for KiB), M (for MiB) or G (for GiB) is mandatory.
+    Defaults to 128K.
+
+  -i size
+    Stripe size for each volume, modifier K (for KiB), M (for MiB) or G (for GiB) is mandatory.
+    Defaults to 128K.
+
+  -p policy
+    Replication policy to use. Defaults to none.
+
+  -f factor
+    Replication factor to use. Defaults to 1.
 
   -b number of threads to beginn the benchmark series
     Minimum number of threads to be run as the benchmarks series.
@@ -118,13 +144,15 @@ init_params(){
   THREADS="$(seq $BEGIN $END)"
   REPETITIONS="$(seq 1 $REPETITIONS)"
 
-  NOW=$(date +"%y-%m-%d_%H-%M")
+  # use second resolution in case multiple benchmarks are run per minute
+  NOW=$(date +"%y-%m-%d_%H-%M-%S")
   # redirect stdout and stderr
   exec 2> >(tee $LOG_DIR/$TYPE-$NOW.log)
   exec > >(tee $RESULT_DIR/$TYPE-$NOW.csv)
 
   BASEFILE_SIZE=$(parse_size $BASEFILE_SIZE)
-  CHUNKSIZE=$(parse_size $CHUNKSIZE)
+  REQUEST_SIZE=$(parse_size $REQUEST_SIZE)
+  STRIPE_SIZE=$(parse_size $STRIPE_SIZE)
 
 }
 
@@ -166,7 +194,7 @@ prepare_seq_read(){
   for i in $(seq 1 $threads); do
     local index=$(echo "$i-1"|bc)
     timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -sw -ssize $1 --no-cleanup --user $USER \
-      ${VOLUMES[$index]}
+      ${VOLUMES[$index]} --stripe-size $STRIPE_SIZE --chunk-size $REQUEST_SIZE
   done
 }
 
@@ -178,14 +206,14 @@ prepare_random(){
   local volume_index=$(echo "$threads-1" | bc)
   for i in $(seq 0 $volume_index); do VOLUMES[$i]=benchmark$i; done
 
-  # calc basefile size and round to a number divideable through CHUNKSIZE
-  local basefile_size=$(echo "(($BASEFILE_SIZE/$threads)/$CHUNKSIZE)*$CHUNKSIZE" | bc)
+  # calc basefile size and round to a number divideable through REQUEST_SIZE
+  local basefile_size=$(echo "(($BASEFILE_SIZE/$threads)/$REQUEST_SIZE)*$REQUEST_SIZE" | bc)
 
   echo -e "\nPreparing random benchmark: Creating a basefiles\n"  >&2
   for i in $(seq 1 $threads); do
     local index=$(echo "$i-1"|bc)
-    timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -rr -rsize $CHUNKSIZE --no-cleanup-basefile --no-cleanup-volumes --user $USER \
-      --basefile-size $basefile_size ${VOLUMES[$index]}
+    timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -rr -rsize $REQUEST_SIZE --no-cleanup-basefile --no-cleanup-volumes --user $USER \
+      --basefile-size $basefile_size ${VOLUMES[$index]} --stripe-size $STRIPE_SIZE --chunk-size $REQUEST_SIZE
   done
 }
 
@@ -194,15 +222,23 @@ run_benchmark(){
   local benchType=$1
   local size=$2
   local threads=$3
+  local replicationOpt=""
+  if [[ $REPLICATION_POLICY != "" ]]; then
+    replicationOpt="--replication-policy $REPLICATION_POLICY"
+  fi
+
   if [ $benchType = "sr" ]; then
-    XTREEMFS=$XTREEMFS timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -ssize $size -n $threads --no-cleanup-volumes --user $USER
-  elif [ $benchType = "sw" ]; then
-    XTREEMFS=$XTREEMFS timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -ssize $size -n $threads --user $USER
+    XTREEMFS=$XTREEMFS timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -ssize $size -n $threads --no-cleanup-volumes --user $USER \
+     $replicationOpt --replication-factor $REPLICATION_FACTOR --chunk-size $REQUEST_SIZE --stripe-size $STRIPE_SIZE
+  elif [ $benchType = "sw" ] || [ $benchType = "usw" ]; then
+    XTREEMFS=$XTREEMFS timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -ssize $size -n $threads --user $USER \
+     $replicationOpt --replication-factor $REPLICATION_FACTOR --chunk-size $REQUEST_SIZE --stripe-size $STRIPE_SIZE
   elif [ $benchType = "rw" ] || [ $benchType = "rr" ]; then
-    # calc basefile size and round to a number divideable through CHUNKSIZE
-    local basefile_size=$(echo "(($BASEFILE_SIZE/$threads)/$CHUNKSIZE)*$CHUNKSIZE" | bc)
+    # calc basefile size and round to a number divideable through REQUEST_SIZE
+    local basefile_size=$(echo "(($BASEFILE_SIZE/$threads)/$REQUEST_SIZE)*$REQUEST_SIZE" | bc)
     XTREEMFS=$XTREEMFS timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -rsize $size --basefile-size $basefile_size -n $threads \
-      --no-cleanup-basefile --no-cleanup-volumes --user $USER
+      --no-cleanup-basefile --no-cleanup-volumes --user $USER \
+      $replicationOpt --replication-factor $REPLICATION_FACTOR --chunk-size $REQUEST_SIZE --stripe-size $STRIPE_SIZE
   fi
 
   local bench_exit_status=$?
@@ -278,28 +314,24 @@ REPETITIONS=1
 
 
 # parse options
-while getopts ":t:s:b:e:r:c:v" opt; do
+while getopts ":t:s:c:i:b:e:r:p:f:v" opt; do
   case $opt in
     t)
-      if [ $OPTARG = "sw" ] || [ $OPTARG = "sr" ]  || [ $OPTARG = "rw" ] || [ $OPTARG = "rr" ]; then
+      if [ $OPTARG = "sw" ] || [ $OPTARG = "usw" ] || [ $OPTARG = "sr" ]  || [ $OPTARG = "rw" ] || [ $OPTARG = "rr" ]; then
         TYPE=$OPTARG
       else
-        echo 'wrong argument to -t. Needs to be either "sw", "sr", "rw" or "rr"'
+        echo 'wrong argument to -t. Needs to be either "sw", "usw", "sr", "rw" or "rr"'
         exit 1
       fi
       ;;
     s)
-      index=$(echo `expr match $OPTARG '[0-9]\+'`)
-      SIZE=${OPTARG:0:$index}
-      modifier=${OPTARG:$index}
-      if [ $modifier = "M" ]; then
-        SIZE=$(echo "$SIZE*2^20" | bc)
-      elif [ $modifier = "G" ]; then
-        SIZE=$(echo "$SIZE*2^30" | bc)
-      else
-        echo "Wrong size modifier. Only 'M' and 'G' are allowed"
-        exit 1
-      fi
+      SIZE=$(parse_size $OPTARG)
+      ;;
+    c)
+      REQUEST_SIZE=$(parse_size $OPTARG)
+      ;;
+    i)
+      STRIPE_SIZE=$(parse_size $OPTARG)
       ;;
     b)
       BEGIN=$OPTARG
@@ -310,12 +342,15 @@ while getopts ":t:s:b:e:r:c:v" opt; do
     r)
       REPETITIONS=$OPTARG
       ;;
+    p)
+      REPLICATION_POLICY=$OPTARG
+      ;;
+    f)
+      REPLICATION_FACTOR=$OPTARG
+      ;;
     v)
       SLEEP=false
       set -x
-      ;;
-    c)
-      CONFIG=$OPTARG
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -331,14 +366,17 @@ done
 init_params
 drop_caches
 
+echo "Running:" $0 $@  >&2
 
 for i in $THREADS; do
   size="$(echo "$SIZE/$i"|bc)"
-  size="$(echo "($size/$CHUNKSIZE)*$CHUNKSIZE" | bc)" # round down to a size divideable through the CHUNKSIZE
+  if [ $TYPE != "usw" ]; then
+    size="$(echo "($size/$REQUEST_SIZE)*$REQUEST_SIZE" | bc)" # round down to a size divideable through the REQUEST_SIZE
+  fi
 
   if [ $TYPE = "sr" ]; then
     prepare_seq_read $size $i
-    cleanup_osd18:30
+    cleanup_osd
   elif [ $TYPE = "rw" ] || [ $TYPE = "rr" ]; then
     prepare_random $i
   fi
@@ -353,10 +391,10 @@ for i in $THREADS; do
   done
 
   # seq write benchmarks run cleanup after every benchmark, so this would be redundant
-  if [ $TYPE != "sw" ]; then
+  if [ $TYPE != "sw" ] && [ $TYPE != "usw" ]; then
     volume_index=$(echo "$i-1" | bc)
     for i in $(seq 0 $volume_index); do
-      rmfs.xtreemfs -f $MRC/benchmark$i
+      rmfs.xtreemfs -f $MRC/benchmark$i >&2
       echo "Remove volume benchmark$i"  >&2
     done
     cleanup_osd

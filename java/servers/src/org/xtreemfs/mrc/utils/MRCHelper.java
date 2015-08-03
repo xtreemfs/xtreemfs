@@ -83,6 +83,17 @@ public class MRCHelper {
             return localFileId;
         }
     }
+    
+    /**
+     * Create a global fileId for the file on the volume.
+     * 
+     * @param volume
+     * @param file
+     * @return Global fileId
+     */
+    public static String createGlobalFileId(VolumeInfo volume, FileMetadata file) {
+        return volume.getId() + ":" + file.getId();
+    }
 
     private final static byte[] NULL_BYTE_ARRAY             = new byte[0];
     

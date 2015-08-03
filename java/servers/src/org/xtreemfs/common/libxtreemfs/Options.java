@@ -59,6 +59,10 @@ public class Options {
      */
     private final int  maxWriteTries         = 40;
     /**
+     * How often shall a view be tried to renewed?
+     */
+    private int        maxViewRenewals     = 5;
+    /**
      * How long to wait after a failed request? Default: 15
      */
     private final int  retryDelay_s          = 15;
@@ -220,6 +224,14 @@ public class Options {
 
     protected int getMaxWriteTries() {
         return maxWriteTries;
+    }
+
+    public int getMaxViewRenewals() {
+        return maxViewRenewals;
+    }
+
+    public void setMaxViewRenewals(int maxViewRenewals) {
+        this.maxViewRenewals = maxViewRenewals;
     }
 
     public int getRetryDelay_s() {

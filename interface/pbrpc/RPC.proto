@@ -93,6 +93,8 @@ enum ErrorType {
     ERRNO = 6;
     // Server redirects to another server implementing the same interface.
     REDIRECT = 7;
+    // Request failed, due to an invalid view (i.e. an outdated xlocset).
+    INVALID_VIEW = 8;
     // Generic IO_ERROR to be used by the RPC implementation.
     IO_ERROR = 100;
 }

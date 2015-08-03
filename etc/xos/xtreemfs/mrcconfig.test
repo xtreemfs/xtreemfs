@@ -39,8 +39,8 @@ osd_check_interval = 10
 # Directory Service endpoint
 dir_service.host = localhost
 dir_service.port = 32638
-#dir_service1.host = localhost
-#dir_service1.port = 32639
+#dir_service.1.host = localhost
+#dir_service.1.port = 32639
 
 # specify whether access time stamps are updated
 no_atime = true
