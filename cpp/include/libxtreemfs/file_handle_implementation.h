@@ -43,7 +43,6 @@ class writeRequest;
 }  // namespace pbrpc
 
 class FileInfo;
-class ObjectCache;
 class Options;
 class StripeTranslator;
 class UUIDIterator;
@@ -129,7 +128,6 @@ class FileHandleImplementation
       const std::map<pbrpc::StripingPolicyType,
                      StripeTranslator*>& stripe_translators,
       bool async_writes_enabled,
-      ObjectCache* object_cache,  // owned by the caller
       const Options& options,
       const pbrpc::Auth& auth_bogus,
       const pbrpc::UserCredentials& user_credentials_bogus);
@@ -352,9 +350,6 @@ class FileHandleImplementation
    *  file_handle is broken and no further writes/reads/truncates are possible.
    */
   bool async_writes_failed_;
-
-  /** The object cache, or NULL if not enabled. */
-  ObjectCache* object_cache_;
 
   const Options& volume_options_;
 
