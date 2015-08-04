@@ -351,6 +351,24 @@ int FileHandleImplementation::DoWrite(
   if (async_writes_enabled_) {
     string osd_uuid = "";
     writeRequest* write_request = NULL;
+
+    boost::shared_ptr<ObjectEncryptor::WriteOperation> enc_write_op;
+    PartialObjectReaderFunction reader;
+    if (object_encryptor_.get() != NULL) {
+      // encryption is enabled
+      assert(object_version == 0);
+
+      reader = boost::bind(&FileHandleImplementation::ReadFromOSD, this,
+                           osd_uuid_iterator_, file_credentials, _1,
+                           object_version, _2, _3, _4);
+      PartialObjectWriterFunction writer = boost::bind(
+          &FileHandleImplementation::WriteToOSD, this, osd_uuid_iterator_,
+          file_credentials, _1, object_version, _3, _2, _4);
+
+      enc_write_op = boost::make_shared<ObjectEncryptor::WriteOperation>(
+          object_encryptor_.get(), offset, count, reader, writer);
+    }
+
     // Write all objects.
     for (size_t j = 0; j < operations.size(); j++) {
       write_request = new writeRequest();
@@ -372,20 +390,6 @@ int FileHandleImplementation::DoWrite(
       AsyncWriteBuffer* write_buffer;
       if (object_encryptor_.get() != NULL) {
         // encryption is enabled
-        assert(object_version == 0);
-        // TODO(plieser): create WriteOperation outside of loop; combine with sync?
-        PartialObjectReaderFunction reader_partial = boost::bind(
-            &FileHandleImplementation::ReadFromOSD, this, osd_uuid_iterator_,
-            file_credentials, _1, object_version, _2, _3, _4);
-        boost::shared_ptr<ObjectEncryptor::WriteOperation> enc_write_op =
-            boost::make_shared<ObjectEncryptor::WriteOperation>(
-                object_encryptor_.get(),
-                offset,
-                count,
-                reader_partial,
-                boost::bind(&FileHandleImplementation::WriteToOSD, this,
-                            osd_uuid_iterator_, file_credentials, _1,
-                            object_version, _3, _2, _4));
         if (xlocs.replicas(0).osd_uuids_size() > 1) {
           // Replica is striped. Pick UUID from xlocset.
           write_buffer = new AsyncWriteBuffer(
@@ -397,8 +401,8 @@ int FileHandleImplementation::DoWrite(
               GetOSDUUIDFromXlocSet(xlocs,
                                     0,  // Use first and only replica.
                                     operations[j].osd_offsets[0]),
-              enc_write_op,
-              reader_partial);
+                                    enc_write_op,
+                                    reader);
         } else {
               write_buffer = new AsyncWriteBuffer(
                   write_request,
@@ -407,7 +411,7 @@ int FileHandleImplementation::DoWrite(
                   this,
                   &xcap_manager_,
                   enc_write_op,
-                  reader_partial);
+                  reader);
         }
       } else {
         if (xlocs.replicas(0).osd_uuids_size() > 1) {
@@ -436,6 +440,9 @@ int FileHandleImplementation::DoWrite(
       // AsyncWriteHandler.
     }
   } else {
+    // Synchronous writes.
+    string osd_uuid = "";
+
     boost::scoped_ptr<ObjectEncryptor::WriteOperation> enc_write_op;
     if (object_encryptor_.get() != NULL) {
       // encryption is enabled
@@ -453,8 +460,6 @@ int FileHandleImplementation::DoWrite(
                                               count, reader, writer));
     }
 
-    // Synchronous writes.
-    string osd_uuid = "";
     // Write all objects.
     for (size_t j = 0; j < operations.size(); j++) {
       // Differentiate between striping and the rest.
