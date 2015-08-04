@@ -242,6 +242,13 @@ message xtreemfs_cleanup_statusResponse {
   required string status = 1;
 }
 
+// finalize latest voucher and old vouchers for a specific file
+message xtreemfs_finalize_vouchersRequest {
+  required FileCredentials file_credentials = 1;
+  // list of expire times, which should be finalized
+  repeated fixed64 expire_time_ms = 2;
+}
+
 message xtreemfs_rwr_fetchRequest {
   required FileCredentials file_credentials = 1;
   required string file_id = 2;
@@ -453,6 +460,11 @@ service OSDService {
   // Part of the experimental snapshots implementation.
   rpc xtreemfs_cleanup_versions_start(emptyRequest) returns(emptyResponse) {
     option(proc_id)=35;
+  };
+  
+  // finalize multiple requests with voucher information
+  rpc xtreemfs_finalize_vouchers(xtreemfs_finalize_vouchersRequest) returns(OSDFinalizeVouchersResponse) {
+    option(proc_id)=22;
   };
 
   // Triggers the OSD to fetch an Object form another Replica.

@@ -465,6 +465,15 @@ message xtreemfs_check_file_existsResponse {
   repeated FILE_STATE file_states = 2 [packed=true]; 
 }
 
+message xtreemfs_clear_vouchersRequest {
+  // latest xcap containing file id and client id
+  required FileCredentials creds = 1;
+  
+  repeated OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;
+  
+  repeated fixed64 expire_time_ms = 3;
+}
+
 // dumps or restores the MRC database
 message xtreemfs_dump_restore_databaseRequest {
   // the path to the dump file on the MRC host
@@ -720,6 +729,10 @@ service MRCService {
   // checks if a certain set of files exist
   rpc xtreemfs_check_file_exists(xtreemfs_check_file_existsRequest) returns(xtreemfs_check_file_existsResponse) {
     option(proc_id)=31;
+  };
+  
+  rpc xtreemfs_clear_vouchers(xtreemfs_clear_vouchersRequest) returns(emptyResponse) {
+    option(proc_id)=52;
   };
 
   // dumps the MRC database to a dump file on the MRC host
