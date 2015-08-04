@@ -468,6 +468,202 @@ void FileHandleImplementation::DoFlush(bool close_file) {
   }
 }
 
+void FileHandleImplementation::ClearVoucher() {
+
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+    Logging::log->getLog(LEVEL_DEBUG) << "Clear Voucher" << endl;
+  }
+
+  // Create copies of required data.
+  FileCredentials file_credentials;
+  xcap_manager_.GetXCap(file_credentials.mutable_xcap());
+  file_info_->GetXLocSet(file_credentials.mutable_xlocs());
+
+  // check for read only access
+  bool writeTruncateCreateMode = (file_credentials.xcap().access_mode()
+      & (SYSTEM_V_FCNTL_H_O_WRONLY | SYSTEM_V_FCNTL_H_O_RDWR
+          | SYSTEM_V_FCNTL_H_O_TRUNC | SYSTEM_V_FCNTL_H_O_CREAT)) != 0;
+  if (!writeTruncateCreateMode) {
+    Logging::log->getLog(LEVEL_DEBUG)
+        << "Skip clear voucher, because the access mode doesn't match any write, "
+        "truncate or create mode."
+        << endl;
+
+    //FIXME cleanup necessary?
+    xcap_manager_.GetOldExpireTimes().clear();
+
+    return;
+  }
+
+  // Use references for shorter code.
+  const XLocSet& xlocs = file_credentials.xlocs();
+
+  if (xlocs.replicas_size() == 0) {
+    string path;
+    file_info_->GetPath(&path);
+    string error = "No replica found for file: " + path;
+    Logging::log->getLog(LEVEL_ERROR) << error << endl;
+    ErrorLog::error_log->AppendError(error);
+    throw PosixErrorException(POSIX_ERROR_EIO, error);
+  }
+
+  // Prepare the finalize voucher request (for the OSDs)
+  xtreemfs_finalize_vouchersRequest finalizeVouchersRequest;
+  finalizeVouchersRequest.mutable_file_credentials()->CopyFrom(
+      file_credentials);
+
+  boost::mutex::scoped_lock lock(xcap_manager_.GetOldExpireTimesMutex());
+  std::list< ::google::protobuf::uint64> oldExpireTimesMs = xcap_manager_
+      .GetOldExpireTimes();
+
+  // Prepare the clear voucher request (for the MRC)
+  xtreemfs_clear_vouchersRequest clearVouchersRequest;
+  clearVouchersRequest.mutable_creds()->CopyFrom(file_credentials);
+
+  // add old expire times to both requests
+  for (list< ::google::protobuf::uint64>::iterator it = oldExpireTimesMs.begin();
+      it != oldExpireTimesMs.end(); ++it) {
+    finalizeVouchersRequest.add_expire_time_ms(*it);
+    clearVouchersRequest.add_expire_time_ms(*it);
+  }
+  oldExpireTimesMs.clear();
+
+  int osdCount = xlocs.replicas(0).osd_uuids_size();
+
+  // Prepare response data
+  int curTry = 0;
+  int maxTries = volume_options_.max_tries;
+  ::google::protobuf::uint64 truncEpoch = -1;  // local compare to reduce unnecessary messages
+  xtreemfs::pbrpc::OSDFinalizeVouchersResponse* osdFinalizeVouchersResponses[osdCount];
+  bool consistentResponses = true;
+
+  // send finalize request to the OSDs
+  for (int i = 0; i < osdCount; i++) {
+
+    // Differentiate between striping and the rest.
+    UUIDIterator* uuid_iterator = NULL;
+    SimpleUUIDIterator temp_uuid_iterator_for_striping;
+    if (xlocs.replicas(0).osd_uuids_size() > 1) {
+      // Replica is striped. Pick UUID from xlocset.
+      string osd_uuid = GetOSDUUIDFromXlocSet(xlocs, 0,  // Use first and only replica.
+                                              i);
+      temp_uuid_iterator_for_striping.AddUUID(osd_uuid);
+      uuid_iterator = &temp_uuid_iterator_for_striping;
+    } else {
+      // TODO(mberlin): Enhance UUIDIterator to read from different replicas.
+      // TODO(baerhold): If a replica is used, knows all changes already?
+      uuid_iterator = osd_uuid_iterator_;
+    }
+
+    // using scoped ptr to delete responses; reponse data won't be
+    // automatically deleted, so delete manually later
+    boost::scoped_ptr<rpc::SyncCallbackBase> response(
+        ExecuteSyncRequest(
+            boost::bind(
+                &xtreemfs::pbrpc::OSDServiceClient::xtreemfs_finalize_vouchers_sync,
+                osd_service_client_, _1, boost::cref(auth_bogus_),
+                boost::cref(user_credentials_bogus_), &finalizeVouchersRequest),
+            uuid_iterator,
+            uuid_resolver_,
+            RPCOptions(volume_options_.max_read_tries,
+                       volume_options_.retry_delay_s, false,
+                       volume_options_.was_interrupted_function),
+            false,
+            &xcap_manager_,
+            finalizeVouchersRequest.mutable_file_credentials()->mutable_xcap()));
+
+    osdFinalizeVouchersResponses[i] =
+        static_cast<xtreemfs::pbrpc::OSDFinalizeVouchersResponse*>(response
+            ->response());
+
+    if (osdCount > 1) {
+      // Check whether the response data matches the data of the other responses
+
+      if (truncEpoch == -1) {
+        truncEpoch = osdFinalizeVouchersResponses[i]->truncate_epoch();
+      } else if (truncEpoch != osdFinalizeVouchersResponses[i]->truncate_epoch()) {
+        // osd write responses didn't match each other: redo until max tries
+
+        curTry++;
+        if (curTry == maxTries) {
+
+          // reached maxTries: create log entry
+          string error = "Couldn't retrieve consistent responses "
+              "from OSD hosts for voucher finalization.";
+          if (Logging::log->loggingActive(LEVEL_ERROR)) {
+            Logging::log->getLog(LEVEL_ERROR) << error << endl;
+          }
+          ErrorLog::error_log->AppendError(error);
+          consistentResponses = false;
+          break;
+        } else {
+          i = 0;
+
+          // delete old responses
+          for (int y = 0; y < osdCount; y++) {
+            if (osdFinalizeVouchersResponses[y]) {
+              delete osdFinalizeVouchersResponses[y];
+              osdFinalizeVouchersResponses[y] = NULL;
+            }
+          }  // for
+        }  // if
+
+      }
+    }  // if: osCound
+
+    // delete unnecessary data
+    delete[] response->data();
+    delete response->error();
+  }  // for OSD Finalize Request
+
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+    Logging::log->getLog(LEVEL_DEBUG) << "OSD Finished with Result: "
+                                      << consistentResponses << endl;
+  }
+
+  // if responses are consistent, perform MRC request
+  if (consistentResponses) {
+
+    // copy osd responses into mrc request
+    for (int i = 0; i < osdCount; i++) {
+      if (osdFinalizeVouchersResponses[i]) {
+        xtreemfs::pbrpc::OSDFinalizeVouchersResponse* curResponse =
+            clearVouchersRequest.add_osd_finalize_vouchers_response();
+        curResponse->CopyFrom(*osdFinalizeVouchersResponses[i]);
+
+//        clearVouchersRequest.mutable_osd_finalize_vouchers_response(i)->CopyFrom(
+//            *osdFinalizeVouchersResponses[i]);
+      }
+    }
+
+    boost::scoped_ptr<rpc::SyncCallbackBase> response(
+        ExecuteSyncRequest(
+            boost::bind(
+                &xtreemfs::pbrpc::MRCServiceClient::xtreemfs_clear_vouchers_sync,
+                mrc_service_client_,
+                _1,
+                boost::cref(auth_bogus_),
+                boost::cref(user_credentials_bogus_),
+                &clearVouchersRequest),
+            mrc_uuid_iterator_,
+            uuid_resolver_,
+            RPCOptionsFromOptions(volume_options_),
+            false,
+            &xcap_manager_,
+            clearVouchersRequest.mutable_creds()->mutable_xcap()));
+
+    // clear empty response
+    response->DeleteBuffers();
+  }
+
+  //  clean up all remaining data
+  for (int i = 0; i < osdCount; i++) {
+    if (osdFinalizeVouchersResponses[i]) {
+      delete osdFinalizeVouchersResponses[i];
+    }
+  }
+} // ClearVoucher
+
 void FileHandleImplementation::Truncate(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     int64_t new_file_size) {
@@ -883,6 +1079,8 @@ void FileHandleImplementation::DoPingReplica(
 void FileHandleImplementation::Close() {
   try {
     Flush(true);  // true = Tell Flush() the file will be closed.
+
+    ClearVoucher();
   } catch(const XtreemFSException&) {
     // Current C++ does not allow to store the exception and rethrow it outside
     // the catch block. We also don't want to use an extra meta object with a
@@ -1123,7 +1321,7 @@ XCapManager::XCapManager(
         uuid_resolver_(uuid_resolver),
         mrc_uuid_iterator_(mrc_uuid_iterator),
         auth_bogus_(auth_bogus),
-        user_credentials_bogus_(user_credentials_bogus) {}
+        user_credentials_bogus_(user_credentials_bogus){}
 
 void XCapManager::WaitForPendingXCapRenewal() {
   boost::mutex::scoped_lock lock(mutex_);
@@ -1149,11 +1347,29 @@ uint64_t XCapManager::GetFileId() {
   return ExtractFileIdFromXCap(xcap_);
 }
 
+std::list< ::google::protobuf::uint64> XCapManager::GetOldExpireTimes() {
+  return old_expire_times_;
+}
+
+boost::mutex& XCapManager::GetOldExpireTimesMutex() {
+  return old_expire_times_mutex_;
+}
+
 void XCapManager::RenewXCapAsync(const RPCOptions& options) {
+  RenewXCapAsync(options, NULL);
+}
+
+void XCapManager::RenewXCapAsync(const RPCOptions& options, PosixErrorException* writeback) {
   // TODO(mberlin): Only renew after some time has elapsed.
   // TODO(mberlin): Cope with local clocks which have a high clock skew.
   {
     boost::mutex::scoped_lock lock(mutex_);
+
+    if (writeback != NULL) {
+      boost::mutex::scoped_lock xcap_renewal_error_writebacks_lock(xcap_renewal_error_writebacks_mutex_);
+      xcap_renewal_error_writebacks_.push_back(writeback);
+    }
+
     if (xcap_renewal_pending_) {
       if (Logging::log->loggingActive(LEVEL_DEBUG)) {
         Logging::log->getLog(LEVEL_DEBUG)
@@ -1166,6 +1382,9 @@ void XCapManager::RenewXCapAsync(const RPCOptions& options) {
     }
 
     xcap_renewal_pending_ = true;
+
+    boost::mutex::scoped_lock old_expire_times_lock(old_expire_times_mutex_);
+    old_expire_times_.push_back(xcap_.expire_time_ms());
   }
 
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
@@ -1204,6 +1423,7 @@ void XCapManager::CallFinished(
   boost::scoped_ptr<XCap> autodelete_xcap(new_xcap);
   boost::scoped_ptr<RPCHeader::ErrorResponse> autodelete_error(error);
   boost::scoped_array<char> autodelete_data(data);
+  boost::mutex::scoped_lock xcap_renewal_error_writebacks_lock(xcap_renewal_error_writebacks_mutex_);
 
   if (error != NULL) {
     Logging::log->getLog(LEVEL_ERROR)
@@ -1211,17 +1431,64 @@ void XCapManager::CallFinished(
         << " failed. Error: " << error->DebugString() << endl;
     ErrorLog::error_log->AppendError(
         "Renewing XCap failed: " + error->DebugString());
+
+    // check for ENOSPC Posix Error due to vouchers
+    if (error->error_type() == ERRNO
+        && error->posix_errno() == POSIX_ERROR_ENOSPC) {
+
+      // if an POSIX ENOSPC error occured, throw a PosixException
+      string posix_errno_string = boost::lexical_cast<string>(
+          POSIX_ERROR_ENOSPC);
+      const ::google::protobuf::EnumValueDescriptor* enum_desc =
+          POSIXErrno_descriptor()->FindValueByNumber(POSIX_ERROR_ENOSPC);
+      if (enum_desc) {
+        posix_errno_string = enum_desc->name();
+      }
+
+      string error_msg = "Could not renew the XCap due to insufficient space."
+          " Error Value: " + posix_errno_string + " Error message: "
+          + error->error_message();
+      if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+        Logging::log->getLog(LEVEL_DEBUG) << error_msg << endl;
+        ErrorLog::error_log->AppendError(error_msg);
+      }
+
+      // set registered writebacks to current exception
+
+      for (list<PosixErrorException*>::iterator it =
+          xcap_renewal_error_writebacks_.begin();
+          it != xcap_renewal_error_writebacks_.end(); ++it) {
+        *(*it) = PosixErrorException(POSIX_ERROR_ENOSPC, error_msg);
+      }
+    }
   } else {
     // Overwrite current XCap only by a newer one (i.e. later expire time).
-    if (new_xcap->expire_time_s() > xcap_.expire_time_s()) {
+        // FIXME(baerhold): compare expire_time_ms in future
+    if (new_xcap->expire_time_s() > xcap_.expire_time_s() ||
+        (new_xcap->expire_time_s() == xcap_.expire_time_s() && new_xcap->voucher_size() > xcap_.voucher_size())) {
       SetXCap(*new_xcap);
 
       if (Logging::log->loggingActive(LEVEL_DEBUG)) {
         Logging::log->getLog(LEVEL_DEBUG)
             << "XCap renewed for file_id: " << GetFileId() << endl;
       }
+    } else{
+      if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+        // FIXME(remove): No else really needed
+        Logging::log->getLog(LEVEL_DEBUG) << "Didn't renewed XCap for file_id: "
+                                          << GetFileId() << ". "
+                                          "Expire Time Old/New: "
+                                          << new_xcap->expire_time_s() << "/"
+                                          << xcap_.expire_time_s() << ". "
+                                          "Voucher Size Old/New: "
+                                          << new_xcap->voucher_size() << "/"
+                                          << xcap_.voucher_size() << ". " << endl;
+      }
     }
   }
+
+  xcap_renewal_error_writebacks_.clear();
+
   boost::mutex::scoped_lock lock(mutex_);
   xcap_renewal_pending_ = false;
   xcap_renewal_pending_cond_.notify_all();

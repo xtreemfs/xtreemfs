@@ -15,6 +15,7 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <gtest/gtest_prod.h>
+#include <list>
 #include <map>
 #include <string>
 
@@ -26,6 +27,7 @@
 #include "libxtreemfs/file_handle.h"
 #include "libxtreemfs/interrupt.h"
 #include "libxtreemfs/xcap_handler.h"
+#include "libxtreemfs/xtreemfs_exception.h"
 
 namespace xtreemfs {
 
@@ -65,6 +67,9 @@ class XCapManager :
   /** Renew xcap_ asynchronously. */
   void RenewXCapAsync(const RPCOptions& options);
 
+  /** Renew xcap_ asynchronously. Add writeback, in case of an error */
+  void RenewXCapAsync(const RPCOptions& options, PosixErrorException* writeback);
+
   /** Blocks until the callback has completed (if an XCapRenewal is pending). */
   void WaitForPendingXCapRenewal();
 
@@ -76,6 +81,12 @@ class XCapManager :
 
   /** Get the file id from the capability. */
   uint64_t GetFileId();
+
+  /** Returns the list of old expire times. */
+  std::list< ::google::protobuf::uint64> GetOldExpireTimes();
+
+  /** Returns the mutex related to list of old expire times. */
+  boost::mutex& GetOldExpireTimesMutex();
 
  private:
   /** Implements callback for an async xtreemfs_renew_capability request. */
@@ -96,6 +107,18 @@ class XCapManager :
 
   /** Used to wait for pending XCap renewal callbacks. */
   boost::condition xcap_renewal_pending_cond_;
+
+  /** Used to keep track of possible writebacks of errros, occured at the renewal. */
+  std::list<PosixErrorException*> xcap_renewal_error_writebacks_;
+
+  /** Any modification on the xcap_renewal_error_writebacks_ list have to obtain this lock first. */
+  boost::mutex xcap_renewal_error_writebacks_mutex_;
+
+  /** Used to keep track of old expire times to finalize voucher requests. **/
+  std::list< ::google::protobuf::uint64> old_expire_times_;
+
+  /** Use this to protect old_expire_times. */
+  boost::mutex old_expire_times_mutex_;
 
   /** UUIDIterator of the MRC. */
   pbrpc::MRCServiceClient* mrc_service_client_;
@@ -251,6 +274,9 @@ class FileHandleImplementation
 
   /** Actual implementation of Flush(). */
   void DoFlush(bool close_file);
+
+  /** Finalize Voucher Acitivites */
+  void ClearVoucher();
 
   /** Actual implementation of Read(). */
   int DoRead(

@@ -148,6 +148,12 @@ class InvalidViewException : public XtreemFSException {
     : XtreemFSException(msg) {}
 };
 
+class InsufficientVoucherException : public XtreemFSException {
+ public:
+  explicit InsufficientVoucherException(const std::string& msg)
+    : XtreemFSException(msg) {}
+};
+
 }  // namespace xtreemfs
 
 #endif  // CPP_INCLUDE_LIBXTREEMFS_XTREEMFS_EXCEPTION_H_
