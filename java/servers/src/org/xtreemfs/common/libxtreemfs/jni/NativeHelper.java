@@ -22,20 +22,34 @@ import org.xtreemfs.common.libxtreemfs.jni.generated.ServiceAddresses;
 import org.xtreemfs.common.libxtreemfs.jni.generated.StringMap;
 import org.xtreemfs.common.libxtreemfs.jni.generated.StringVector;
 import org.xtreemfs.foundation.SSLOptions;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 
 public final class NativeHelper {
 
+    /** Set to true after loadLibrary has been called the first time. */
+    private static boolean loadLibraryCalled = false;
+    /** Contains a single path where the libraries are searched. */
+    private static String  xtreemfsLibPath   = null;
+
     /**
      * Load the library with the platform independent name. (f.ex. jni-xtreemfs instead of libjni-xtreemfs.so) <br>
-     * Locally built libraries from the source tree are preferred. On Linux feasible directories within the FHS are
-     * searched. Finally the common library path is searched.
+     * A configured xtreemfsLibPath is tried first. Then locally built libraries from the source tree. On Linux
+     * feasible directories within the FHS are searched. Finally the common library path is searched.
      * 
      * @param name
      */
     public static void loadLibrary(String name) {
+        loadLibraryCalled = true;
+
+        // Get platform specific library filename.
         String libname = System.mapLibraryName(name);
+
+        // At first try to load the library from the configured build path
+        if (tryLoadFromXtreemfsLibPath(libname)) {
+            return;
+        }
 
         // Prefer recently build libs from the source tree.
         if (tryLoadLibraryFromBuildDir(libname)) {
@@ -53,6 +67,76 @@ public final class NativeHelper {
         // Finally try to load the lib from the common library path.
         System.loadLibrary(name);
     }
+    
+    /**
+     * Try to load the library from the library path set by {@link #setXtreemfsLibPath(String)}
+     * 
+     * @param filename
+     * @return true if the library has been loaded
+     */
+    private static boolean tryLoadFromXtreemfsLibPath(String filename) {
+        // Skip if no library path is set.
+        if (xtreemfsLibPath == null || xtreemfsLibPath.isEmpty()) {
+            return false;
+        }
+
+        String libFilepath = xtreemfsLibPath + File.separator + filename;
+        return tryLoadLibrary(libFilepath);
+    }
+
+    /**
+     * Set the library path. This should be done before loadLibrary has been called the first time.
+     * 
+     * @param libraryPath
+     */
+    public static void setXtreemfsLibPath(String libraryPath) {
+        // Ignore if the library path didn't change.
+        if (libraryPath == xtreemfsLibPath) {
+            return;
+        }
+
+        if (loadLibraryCalled) {
+            if (Logging.getLevel() >= 0) {
+                Logging.logMessage(Logging.LEVEL_WARN, (Object) null,
+                        "NativeHelper.setXtreemfsLibpath has been called after loadLibrary.");
+            }
+        }
+
+        xtreemfsLibPath = libraryPath;
+    }
+
+    /*
+    public static boolean addToLibraryPath(String libraryPath) {
+        try {
+            String javaLibraryPath = System.getProperty("java.library.path");
+
+            // Check if the path is already contained.
+            if (javaLibraryPath.contains(libraryPath)) {
+                return true;
+            }
+
+            // Throw an error if a library had been searched before.
+            if (loadLibraryCalled) {
+                if (Logging.getLevel() >= 0) {
+                    Logging.logMessage(Logging.LEVEL_WARN, (Object) null,
+                            "NativeHelper.setXtreemfsLibpath has been called after addToLibraryPath.");
+                }
+            }
+
+            // Add the new path to the search path.
+            javaLibraryPath = libraryPath + File.pathSeparator + javaLibraryPath;
+            System.setProperty("java.library.path", javaLibraryPath);
+
+            // Set sys_paths to null so that java.library.path will be reevaluated next time it is needed.
+            final Field sysPathsField = ClassLoader.class.getDeclaredField("sys_paths");
+            sysPathsField.setAccessible(true);
+            sysPathsField.set(null, null);
+
+        } catch (SecurityException e) {
+            return false;
+        }
+    }
+    */
 
     /**
      * Try to load the library from the build directory.
