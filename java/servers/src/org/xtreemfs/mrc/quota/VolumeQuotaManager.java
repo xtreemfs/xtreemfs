@@ -21,6 +21,7 @@ public class VolumeQuotaManager {
     private static final int     maxVoucherSize   = 25 * 1024 * 1024; // 25 MB
 
     private final StorageManager volStorageManager;
+    private final QuotaChangeListener quotaChangeListener;
 
     private final String         volumeId;
 
@@ -38,7 +39,10 @@ public class VolumeQuotaManager {
         this.volStorageManager = volStorageManager;
         this.volumeId = volumeId;
 
-        System.out.println(getClass() + "Constructor" + "[id " + volumeId + "]");
+        quotaChangeListener = new QuotaChangeListener(this);
+        volStorageManager.addVolumeChangeListener(quotaChangeListener);
+
+        System.out.println(getClass() + "Constructor" + "[id " + volumeId + "]"); // FIXME(remove)
     }
 
     public void init() {
@@ -171,6 +175,18 @@ public class VolumeQuotaManager {
      */
     public String getVolumeId() {
         return volumeId;
+    }
+
+    /**
+     * @param volumeQuota
+     *            the volumeQuota to set
+     */
+    public void setVolumeQuota(long volumeQuota) {
+        this.volumeQuota = volumeQuota;
+
+        setActive(volumeQuota != 0);
+
+        System.out.println(getClass() + " setVolumeQuota: " + volumeQuota + " active: " + (volumeQuota != 0)); // FIXME(remove)
     }
 
     /**
