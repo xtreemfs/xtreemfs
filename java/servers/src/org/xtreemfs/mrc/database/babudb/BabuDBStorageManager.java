@@ -97,6 +97,10 @@ public class BabuDBStorageManager implements StorageManager {
     
     protected static final String            VOL_QUOTA_ATTR_NAME        = "quota";
     
+    protected static final String            VOL_BSPACE_ATTR_NAME       = "blockedSpace";
+
+    protected static final String            VOL_USPACE_ATTR_NAME       = "usedSpace";
+
     protected static final int[]             ALL_INDICES                = { FILE_INDEX, XATTRS_INDEX, ACL_INDEX,
             FILE_ID_INDEX, VOLUME_INDEX                                };
     
@@ -577,6 +581,40 @@ public class BabuDBStorageManager implements StorageManager {
     }
 
     @Override
+    public long getVolumeBlockedSpace() throws DatabaseException {
+        try {
+            byte[] blockedSpace = getXAttr(1, SYSTEM_UID, VOL_BSPACE_ATTR_NAME);
+            if (blockedSpace == null)
+                return 0;
+            else {
+                return Long.valueOf(new String(blockedSpace));
+            }
+
+        } catch (DatabaseException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
+    public long getVolumeUsedSpace() throws DatabaseException {
+        try {
+            byte[] usedSpace = getXAttr(1, SYSTEM_UID, VOL_USPACE_ATTR_NAME);
+            if (usedSpace == null)
+                return 0;
+            else {
+                return Long.valueOf(new String(usedSpace));
+            }
+
+        } catch (DatabaseException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
     public FileMetadata getMetadata(long fileId) throws DatabaseException {
         
         try {
@@ -812,6 +850,22 @@ public class BabuDBStorageManager implements StorageManager {
     }
 
     @Override
+    public void setVolumeBlockedSpace(long blockedSpace, AtomicDBUpdate update) throws DatabaseException {
+        // ByteBuffer buffer = ByteBuffer.allocate(2 * (Long.SIZE / 8));
+        // buffer.putLong(usedSpace);
+        // buffer.putLong(blockedSpace);
+
+        setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_BSPACE_ATTR_NAME,
+                String.valueOf(blockedSpace).getBytes(), update);
+    }
+
+    @Override
+    public void setVolumeUsedSpace(long usedSpace, AtomicDBUpdate update) throws DatabaseException {
+        setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_USPACE_ATTR_NAME, String.valueOf(usedSpace)
+                .getBytes(), update);
+    }
+
+    @Override
     public void setMetadata(FileMetadata metadata, byte type, AtomicDBUpdate update) throws DatabaseException {
         
         assert (metadata instanceof BufferBackedFileMetadata);
@@ -987,6 +1041,7 @@ public class BabuDBStorageManager implements StorageManager {
         it.free();
     }
     
+    @Override
     public void dumpDB(BufferedWriter xmlWriter) throws DatabaseException, IOException {
         DBAdminHelper.dumpVolume(xmlWriter, this);
     }

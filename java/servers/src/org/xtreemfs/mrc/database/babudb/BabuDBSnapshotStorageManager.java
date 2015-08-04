@@ -81,6 +81,10 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     
     protected static final String          VOL_QUOTA                  = "quota";
     
+    protected static final String          VOL_BSPACE_ATTR_NAME       = "blockedSpace";
+
+    protected static final String          VOL_USPACE_ATTR_NAME       = "usedSpace";
+
     protected static final int[]           ALL_INDICES                = { FILE_INDEX, XATTRS_INDEX,
         ACL_INDEX, FILE_ID_INDEX, VOLUME_INDEX                       };
     
@@ -206,6 +210,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
         }
     }
     
+    @Override
     public long getVolumeQuota() throws DatabaseException {
         try {
             byte[] quotaBytes = getXAttr(1, SYSTEM_UID, VOL_QUOTA);
@@ -214,6 +219,40 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
             } else {
                 return Long.valueOf(new String(quotaBytes));
             }
+        } catch (DatabaseException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
+    public long getVolumeBlockedSpace() throws DatabaseException {
+        try {
+            byte[] blockedSpace = getXAttr(1, SYSTEM_UID, VOL_BSPACE_ATTR_NAME);
+            if (blockedSpace == null)
+                return 0;
+            else {
+                return Long.valueOf(new String(blockedSpace));
+            }
+
+        } catch (DatabaseException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
+    public long getVolumeUsedSpace() throws DatabaseException {
+        try {
+            byte[] usedSpace = getXAttr(1, SYSTEM_UID, VOL_USPACE_ATTR_NAME);
+            if (usedSpace == null)
+                return 0;
+            else {
+                return Long.valueOf(new String(usedSpace));
+            }
+
         } catch (DatabaseException exc) {
             throw exc;
         } catch (Exception exc) {
@@ -545,6 +584,16 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     
     @Override
     public void setVolumeQuota(long quota, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setVolumeBlockedSpace(long blockedSpace, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setVolumeUsedSpace(long usedSpace, AtomicDBUpdate update) throws DatabaseException {
         throwException();
     }
 
