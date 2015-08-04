@@ -1,5 +1,5 @@
-//automatically generated from MRC.proto at Thu Dec 11 16:09:40 CET 2014
-//(c) 2014. See LICENSE file for details.
+//automatically generated from MRC.proto at Mon Jul 27 14:04:38 CEST 2015
+//(c) 2015. See LICENSE file for details.
 
 #ifndef MRCSERVICECONSTANTS_H_
 #define MRCSERVICECONSTANTS_H_
@@ -30,6 +30,7 @@ const uint32_t PROC_ID_UNLINK = 19;
 const uint32_t PROC_ID_ACCESS = 20;
 const uint32_t PROC_ID_XTREEMFS_CHECKPOINT = 30;
 const uint32_t PROC_ID_XTREEMFS_CHECK_FILE_EXISTS = 31;
+const uint32_t PROC_ID_XTREEMFS_CLEAR_VOUCHERS = 52;
 const uint32_t PROC_ID_XTREEMFS_DUMP_DATABASE = 32;
 const uint32_t PROC_ID_XTREEMFS_GET_SUITABLE_OSDS = 33;
 const uint32_t PROC_ID_XTREEMFS_INTERNAL_DEBUG = 34;

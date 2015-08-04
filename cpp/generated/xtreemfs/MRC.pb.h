@@ -72,6 +72,7 @@ class unlinkResponse;
 class accessRequest;
 class xtreemfs_check_file_existsRequest;
 class xtreemfs_check_file_existsResponse;
+class xtreemfs_clear_vouchersRequest;
 class xtreemfs_dump_restore_databaseRequest;
 class xtreemfs_get_suitable_osdsRequest;
 class xtreemfs_get_suitable_osdsResponse;
@@ -4184,6 +4185,116 @@ class xtreemfs_check_file_existsResponse : public ::google::protobuf::Message {
 
   void InitAsDefaultInstance();
   static xtreemfs_check_file_existsResponse* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class xtreemfs_clear_vouchersRequest : public ::google::protobuf::Message {
+ public:
+  xtreemfs_clear_vouchersRequest();
+  virtual ~xtreemfs_clear_vouchersRequest();
+
+  xtreemfs_clear_vouchersRequest(const xtreemfs_clear_vouchersRequest& from);
+
+  inline xtreemfs_clear_vouchersRequest& operator=(const xtreemfs_clear_vouchersRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const xtreemfs_clear_vouchersRequest& default_instance();
+
+  void Swap(xtreemfs_clear_vouchersRequest* other);
+
+  // implements Message ----------------------------------------------
+
+  xtreemfs_clear_vouchersRequest* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const xtreemfs_clear_vouchersRequest& from);
+  void MergeFrom(const xtreemfs_clear_vouchersRequest& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required .xtreemfs.pbrpc.FileCredentials creds = 1;
+  inline bool has_creds() const;
+  inline void clear_creds();
+  static const int kCredsFieldNumber = 1;
+  inline const ::xtreemfs::pbrpc::FileCredentials& creds() const;
+  inline ::xtreemfs::pbrpc::FileCredentials* mutable_creds();
+  inline ::xtreemfs::pbrpc::FileCredentials* release_creds();
+  inline void set_allocated_creds(::xtreemfs::pbrpc::FileCredentials* creds);
+
+  // repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;
+  inline int osd_finalize_vouchers_response_size() const;
+  inline void clear_osd_finalize_vouchers_response();
+  static const int kOsdFinalizeVouchersResponseFieldNumber = 2;
+  inline const ::xtreemfs::pbrpc::OSDFinalizeVouchersResponse& osd_finalize_vouchers_response(int index) const;
+  inline ::xtreemfs::pbrpc::OSDFinalizeVouchersResponse* mutable_osd_finalize_vouchers_response(int index);
+  inline ::xtreemfs::pbrpc::OSDFinalizeVouchersResponse* add_osd_finalize_vouchers_response();
+  inline const ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::OSDFinalizeVouchersResponse >&
+      osd_finalize_vouchers_response() const;
+  inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::OSDFinalizeVouchersResponse >*
+      mutable_osd_finalize_vouchers_response();
+
+  // repeated fixed64 expire_time_ms = 3;
+  inline int expire_time_ms_size() const;
+  inline void clear_expire_time_ms();
+  static const int kExpireTimeMsFieldNumber = 3;
+  inline ::google::protobuf::uint64 expire_time_ms(int index) const;
+  inline void set_expire_time_ms(int index, ::google::protobuf::uint64 value);
+  inline void add_expire_time_ms(::google::protobuf::uint64 value);
+  inline const ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >&
+      expire_time_ms() const;
+  inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
+      mutable_expire_time_ms();
+
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_clear_vouchersRequest)
+ private:
+  inline void set_has_creds();
+  inline void clear_has_creds();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::xtreemfs::pbrpc::FileCredentials* creds_;
+  ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::OSDFinalizeVouchersResponse > osd_finalize_vouchers_response_;
+  ::google::protobuf::RepeatedField< ::google::protobuf::uint64 > expire_time_ms_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
+
+  friend void  protobuf_AddDesc_xtreemfs_2fMRC_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fMRC_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fMRC_2eproto();
+
+  void InitAsDefaultInstance();
+  static xtreemfs_clear_vouchersRequest* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -11963,6 +12074,98 @@ xtreemfs_check_file_existsResponse::file_states() const {
 inline ::google::protobuf::RepeatedField<int>*
 xtreemfs_check_file_existsResponse::mutable_file_states() {
   return &file_states_;
+}
+
+// -------------------------------------------------------------------
+
+// xtreemfs_clear_vouchersRequest
+
+// required .xtreemfs.pbrpc.FileCredentials creds = 1;
+inline bool xtreemfs_clear_vouchersRequest::has_creds() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void xtreemfs_clear_vouchersRequest::set_has_creds() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void xtreemfs_clear_vouchersRequest::clear_has_creds() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void xtreemfs_clear_vouchersRequest::clear_creds() {
+  if (creds_ != NULL) creds_->::xtreemfs::pbrpc::FileCredentials::Clear();
+  clear_has_creds();
+}
+inline const ::xtreemfs::pbrpc::FileCredentials& xtreemfs_clear_vouchersRequest::creds() const {
+  return creds_ != NULL ? *creds_ : *default_instance_->creds_;
+}
+inline ::xtreemfs::pbrpc::FileCredentials* xtreemfs_clear_vouchersRequest::mutable_creds() {
+  set_has_creds();
+  if (creds_ == NULL) creds_ = new ::xtreemfs::pbrpc::FileCredentials;
+  return creds_;
+}
+inline ::xtreemfs::pbrpc::FileCredentials* xtreemfs_clear_vouchersRequest::release_creds() {
+  clear_has_creds();
+  ::xtreemfs::pbrpc::FileCredentials* temp = creds_;
+  creds_ = NULL;
+  return temp;
+}
+inline void xtreemfs_clear_vouchersRequest::set_allocated_creds(::xtreemfs::pbrpc::FileCredentials* creds) {
+  delete creds_;
+  creds_ = creds;
+  if (creds) {
+    set_has_creds();
+  } else {
+    clear_has_creds();
+  }
+}
+
+// repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;
+inline int xtreemfs_clear_vouchersRequest::osd_finalize_vouchers_response_size() const {
+  return osd_finalize_vouchers_response_.size();
+}
+inline void xtreemfs_clear_vouchersRequest::clear_osd_finalize_vouchers_response() {
+  osd_finalize_vouchers_response_.Clear();
+}
+inline const ::xtreemfs::pbrpc::OSDFinalizeVouchersResponse& xtreemfs_clear_vouchersRequest::osd_finalize_vouchers_response(int index) const {
+  return osd_finalize_vouchers_response_.Get(index);
+}
+inline ::xtreemfs::pbrpc::OSDFinalizeVouchersResponse* xtreemfs_clear_vouchersRequest::mutable_osd_finalize_vouchers_response(int index) {
+  return osd_finalize_vouchers_response_.Mutable(index);
+}
+inline ::xtreemfs::pbrpc::OSDFinalizeVouchersResponse* xtreemfs_clear_vouchersRequest::add_osd_finalize_vouchers_response() {
+  return osd_finalize_vouchers_response_.Add();
+}
+inline const ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::OSDFinalizeVouchersResponse >&
+xtreemfs_clear_vouchersRequest::osd_finalize_vouchers_response() const {
+  return osd_finalize_vouchers_response_;
+}
+inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::OSDFinalizeVouchersResponse >*
+xtreemfs_clear_vouchersRequest::mutable_osd_finalize_vouchers_response() {
+  return &osd_finalize_vouchers_response_;
+}
+
+// repeated fixed64 expire_time_ms = 3;
+inline int xtreemfs_clear_vouchersRequest::expire_time_ms_size() const {
+  return expire_time_ms_.size();
+}
+inline void xtreemfs_clear_vouchersRequest::clear_expire_time_ms() {
+  expire_time_ms_.Clear();
+}
+inline ::google::protobuf::uint64 xtreemfs_clear_vouchersRequest::expire_time_ms(int index) const {
+  return expire_time_ms_.Get(index);
+}
+inline void xtreemfs_clear_vouchersRequest::set_expire_time_ms(int index, ::google::protobuf::uint64 value) {
+  expire_time_ms_.Set(index, value);
+}
+inline void xtreemfs_clear_vouchersRequest::add_expire_time_ms(::google::protobuf::uint64 value) {
+  expire_time_ms_.Add(value);
+}
+inline const ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >&
+xtreemfs_clear_vouchersRequest::expire_time_ms() const {
+  return expire_time_ms_;
+}
+inline ::google::protobuf::RepeatedField< ::google::protobuf::uint64 >*
+xtreemfs_clear_vouchersRequest::mutable_expire_time_ms() {
+  return &expire_time_ms_;
 }
 
 // -------------------------------------------------------------------

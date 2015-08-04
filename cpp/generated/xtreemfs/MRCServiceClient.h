@@ -1,5 +1,5 @@
-//automatically generated from MRC.proto at Thu Dec 11 16:09:40 CET 2014
-//(c) 2014. See LICENSE file for details.
+//automatically generated from MRC.proto at Mon Jul 27 14:04:38 CEST 2015
+//(c) 2015. See LICENSE file for details.
 
 #ifndef MRCSERVICECLIENT_H
 #define MRCSERVICECLIENT_H
@@ -509,6 +509,29 @@ namespace pbrpc {
                 SyncCallback<xtreemfs::pbrpc::xtreemfs_check_file_existsResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::xtreemfs_check_file_existsResponse>();
                 client_->sendRequest(address, 20001, 31,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_check_file_existsResponse(),
+                     NULL, sync_cb);
+                return sync_cb;
+            }
+
+            void xtreemfs_clear_vouchers(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds,
+                const xtreemfs::pbrpc::xtreemfs_clear_vouchersRequest* request,
+                CallbackInterface<xtreemfs::pbrpc::emptyResponse> *callback, void *context = NULL) {
+                const char* data = NULL; uint32_t data_length = 0;
+                client_->sendRequest(address, 20001, 52,
+                     creds, auth, request, data, data_length, NULL,
+                     context, callback);
+            }
+
+            SyncCallback<xtreemfs::pbrpc::emptyResponse>* xtreemfs_clear_vouchers_sync(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds
+                , const xtreemfs::pbrpc::xtreemfs_clear_vouchersRequest* request) {
+                const char* data = NULL; uint32_t data_length = 0;
+                SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
+                client_->sendRequest(address, 20001, 52,
+                     creds, auth, request, data, data_length, NULL,
                      NULL, sync_cb);
                 return sync_cb;
             }

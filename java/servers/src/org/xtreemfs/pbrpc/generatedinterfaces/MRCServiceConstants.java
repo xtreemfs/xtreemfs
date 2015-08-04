@@ -1,5 +1,5 @@
-//automatically generated from MRC.proto at Thu Dec 11 16:09:37 CET 2014
-//(c) 2014. See LICENSE file for details.
+//automatically generated from MRC.proto at Mon Jul 27 14:04:38 CEST 2015
+//(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
 
@@ -29,6 +29,7 @@ public class MRCServiceConstants {
     public static final int PROC_ID_ACCESS = 20;
     public static final int PROC_ID_XTREEMFS_CHECKPOINT = 30;
     public static final int PROC_ID_XTREEMFS_CHECK_FILE_EXISTS = 31;
+    public static final int PROC_ID_XTREEMFS_CLEAR_VOUCHERS = 52;
     public static final int PROC_ID_XTREEMFS_DUMP_DATABASE = 32;
     public static final int PROC_ID_XTREEMFS_GET_SUITABLE_OSDS = 33;
     public static final int PROC_ID_XTREEMFS_INTERNAL_DEBUG = 34;
@@ -73,6 +74,7 @@ public class MRCServiceConstants {
            case 20: return MRC.accessRequest.getDefaultInstance();
            case 30: return null;
            case 31: return MRC.xtreemfs_check_file_existsRequest.getDefaultInstance();
+           case 52: return MRC.xtreemfs_clear_vouchersRequest.getDefaultInstance();
            case 32: return MRC.xtreemfs_dump_restore_databaseRequest.getDefaultInstance();
            case 33: return MRC.xtreemfs_get_suitable_osdsRequest.getDefaultInstance();
            case 34: return MRC.stringMessage.getDefaultInstance();
@@ -121,6 +123,7 @@ public class MRCServiceConstants {
            case 20: return null;
            case 30: return null;
            case 31: return MRC.xtreemfs_check_file_existsResponse.getDefaultInstance();
+           case 52: return null;
            case 32: return null;
            case 33: return MRC.xtreemfs_get_suitable_osdsResponse.getDefaultInstance();
            case 34: return MRC.stringMessage.getDefaultInstance();

@@ -48,6 +48,9 @@ const ::google::protobuf::internal::GeneratedMessageReflection*
 const ::google::protobuf::Descriptor* VivaldiCoordinates_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   VivaldiCoordinates_reflection_ = NULL;
+const ::google::protobuf::Descriptor* OSDFinalizeVouchersResponse_descriptor_ = NULL;
+const ::google::protobuf::internal::GeneratedMessageReflection*
+  OSDFinalizeVouchersResponse_reflection_ = NULL;
 const ::google::protobuf::Descriptor* OSDWriteResponse_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   OSDWriteResponse_reflection_ = NULL;
@@ -142,7 +145,7 @@ void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto() {
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(Replicas));
   XCap_descriptor_ = file->message_type(4);
-  static const int XCap_offsets_[10] = {
+  static const int XCap_offsets_[12] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(XCap, access_mode_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(XCap, client_identity_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(XCap, expire_time_s_),
@@ -153,6 +156,8 @@ void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto() {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(XCap, truncate_epoch_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(XCap, snap_config_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(XCap, snap_timestamp_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(XCap, voucher_size_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(XCap, expire_time_ms_),
   };
   XCap_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -231,7 +236,25 @@ void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(VivaldiCoordinates));
-  OSDWriteResponse_descriptor_ = file->message_type(9);
+  OSDFinalizeVouchersResponse_descriptor_ = file->message_type(9);
+  static const int OSDFinalizeVouchersResponse_offsets_[4] = {
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(OSDFinalizeVouchersResponse, osd_uuid_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(OSDFinalizeVouchersResponse, server_signature_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(OSDFinalizeVouchersResponse, size_in_bytes_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(OSDFinalizeVouchersResponse, truncate_epoch_),
+  };
+  OSDFinalizeVouchersResponse_reflection_ =
+    new ::google::protobuf::internal::GeneratedMessageReflection(
+      OSDFinalizeVouchersResponse_descriptor_,
+      OSDFinalizeVouchersResponse::default_instance_,
+      OSDFinalizeVouchersResponse_offsets_,
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(OSDFinalizeVouchersResponse, _has_bits_[0]),
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(OSDFinalizeVouchersResponse, _unknown_fields_),
+      -1,
+      ::google::protobuf::DescriptorPool::generated_pool(),
+      ::google::protobuf::MessageFactory::generated_factory(),
+      sizeof(OSDFinalizeVouchersResponse));
+  OSDWriteResponse_descriptor_ = file->message_type(10);
   static const int OSDWriteResponse_offsets_[2] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(OSDWriteResponse, size_in_bytes_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(OSDWriteResponse, truncate_epoch_),
@@ -247,7 +270,7 @@ void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(OSDWriteResponse));
-  KeyValuePair_descriptor_ = file->message_type(10);
+  KeyValuePair_descriptor_ = file->message_type(11);
   static const int KeyValuePair_offsets_[2] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(KeyValuePair, key_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(KeyValuePair, value_),
@@ -305,6 +328,8 @@ void protobuf_RegisterTypes(const ::std::string&) {
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
     VivaldiCoordinates_descriptor_, &VivaldiCoordinates::default_instance());
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
+    OSDFinalizeVouchersResponse_descriptor_, &OSDFinalizeVouchersResponse::default_instance());
+  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
     OSDWriteResponse_descriptor_, &OSDWriteResponse::default_instance());
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
     KeyValuePair_descriptor_, &KeyValuePair::default_instance());
@@ -331,6 +356,8 @@ void protobuf_ShutdownFile_xtreemfs_2fGlobalTypes_2eproto() {
   delete FileCredentialsSet_reflection_;
   delete VivaldiCoordinates::default_instance_;
   delete VivaldiCoordinates_reflection_;
+  delete OSDFinalizeVouchersResponse::default_instance_;
+  delete OSDFinalizeVouchersResponse_reflection_;
   delete OSDWriteResponse::default_instance_;
   delete OSDWriteResponse_reflection_;
   delete KeyValuePair::default_instance_;
@@ -357,73 +384,77 @@ void protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto() {
     "_flags\030\002 \002(\007\0227\n\017striping_policy\030\003 \002(\0132\036."
     "xtreemfs.pbrpc.StripingPolicy\"5\n\010Replica"
     "s\022)\n\010replicas\030\001 \003(\0132\027.xtreemfs.pbrpc.Rep"
-    "lica\"\215\002\n\004XCap\022\023\n\013access_mode\030\001 \002(\007\022\027\n\017cl"
+    "lica\"\301\002\n\004XCap\022\023\n\013access_mode\030\001 \002(\007\022\027\n\017cl"
     "ient_identity\030\002 \002(\t\022\025\n\rexpire_time_s\030\003 \002"
     "(\006\022\030\n\020expire_timeout_s\030\004 \002(\007\022\017\n\007file_id\030"
     "\005 \002(\t\022\032\n\022replicate_on_close\030\006 \002(\010\022\030\n\020ser"
     "ver_signature\030\007 \002(\t\022\026\n\016truncate_epoch\030\010 "
     "\002(\007\022/\n\013snap_config\030\t \002(\0162\032.xtreemfs.pbrp"
-    "c.SnapConfig\022\026\n\016snap_timestamp\030\n \002(\006\"\201\001\n"
-    "\007XLocSet\022\033\n\023read_only_file_size\030\001 \002(\006\022)\n"
-    "\010replicas\030\002 \003(\0132\027.xtreemfs.pbrpc.Replica"
-    "\022\035\n\025replica_update_policy\030\003 \002(\t\022\017\n\007versi"
-    "on\030\004 \002(\007\"]\n\017FileCredentials\022\"\n\004xcap\030\001 \002("
-    "\0132\024.xtreemfs.pbrpc.XCap\022&\n\005xlocs\030\002 \002(\0132\027"
-    ".xtreemfs.pbrpc.XLocSet\"O\n\022FileCredentia"
-    "lsSet\0229\n\020file_credentials\030\001 \001(\0132\037.xtreem"
-    "fs.pbrpc.FileCredentials\"U\n\022VivaldiCoord"
-    "inates\022\024\n\014x_coordinate\030\001 \002(\001\022\024\n\014y_coordi"
-    "nate\030\002 \002(\001\022\023\n\013local_error\030\003 \002(\001\"A\n\020OSDWr"
-    "iteResponse\022\025\n\rsize_in_bytes\030\001 \001(\006\022\026\n\016tr"
-    "uncate_epoch\030\002 \001(\007\"*\n\014KeyValuePair\022\013\n\003ke"
-    "y\030\001 \002(\t\022\r\n\005value\030\002 \002(\t*|\n\027AccessControlP"
-    "olicyType\022\036\n\032ACCESS_CONTROL_POLICY_NULL\020"
-    "\001\022\037\n\033ACCESS_CONTROL_POLICY_POSIX\020\002\022 \n\034AC"
-    "CESS_CONTROL_POLICY_VOLUME\020\003*\365\003\n\026OSDSele"
-    "ctionPolicyType\022(\n#OSD_SELECTION_POLICY_"
-    "FILTER_DEFAULT\020\350\007\022%\n OSD_SELECTION_POLIC"
-    "Y_FILTER_FQDN\020\351\007\022%\n OSD_SELECTION_POLICY"
-    "_FILTER_UUID\020\352\007\022%\n OSD_SELECTION_POLICY_"
-    "GROUP_DCMAP\020\320\017\022$\n\037OSD_SELECTION_POLICY_G"
-    "ROUP_FQDN\020\321\017\022$\n\037OSD_SELECTION_POLICY_SOR"
-    "T_DCMAP\020\270\027\022#\n\036OSD_SELECTION_POLICY_SORT_"
-    "FQDN\020\271\027\022%\n OSD_SELECTION_POLICY_SORT_RAN"
-    "DOM\020\272\027\022&\n!OSD_SELECTION_POLICY_SORT_VIVA"
-    "LDI\020\273\027\022/\n*OSD_SELECTION_POLICY_SORT_HOST"
-    "_ROUND_ROBIN\020\274\027\022#\n\036OSD_SELECTION_POLICY_"
-    "SORT_UUID\020\236\037\022&\n!OSD_SELECTION_POLICY_SOR"
-    "T_REVERSE\020\237\037*A\n\032ReplicaSelectionPolicyTy"
-    "pe\022#\n\037REPLICA_SELECTION_POLICY_SIMPLE\020\001*"
-    "i\n\nSnapConfig\022\036\n\032SNAP_CONFIG_SNAPS_DISAB"
-    "LED\020\000\022\036\n\032SNAP_CONFIG_ACCESS_CURRENT\020\001\022\033\n"
-    "\027SNAP_CONFIG_ACCESS_SNAP\020\002*P\n\022StripingPo"
-    "licyType\022\031\n\025STRIPING_POLICY_RAID0\020\000\022\037\n\033S"
-    "TRIPING_POLICY_ERASURECODE\020\001*9\n\nLeaseSta"
-    "te\022\010\n\004NONE\020\000\022\013\n\007PRIMARY\020\001\022\n\n\006BACKUP\020\002\022\010\n"
-    "\004IDLE\020\003*\270\001\n\005PORTS\022\033\n\025DIR_HTTP_PORT_DEFAU"
-    "LT\020\256\357\001\022\034\n\026DIR_PBRPC_PORT_DEFAULT\020\376\376\001\022\033\n\025"
-    "MRC_HTTP_PORT_DEFAULT\020\254\357\001\022\034\n\026MRC_PBRPC_P"
-    "ORT_DEFAULT\020\374\376\001\022\033\n\025OSD_HTTP_PORT_DEFAULT"
-    "\020\260\357\001\022\034\n\026OSD_PBRPC_PORT_DEFAULT\020\200\377\001*+\n\tCO"
-    "NSTANTS\022\036\n\032XCAP_RENEW_INTERVAL_IN_MIN\020\001*"
-    "\202\003\n\016SYSTEM_V_FCNTL\022\035\n\031SYSTEM_V_FCNTL_H_O"
-    "_RDONLY\020\000\022\035\n\031SYSTEM_V_FCNTL_H_O_WRONLY\020\001"
-    "\022\033\n\027SYSTEM_V_FCNTL_H_O_RDWR\020\002\022\035\n\031SYSTEM_"
-    "V_FCNTL_H_O_APPEND\020\010\022\035\n\030SYSTEM_V_FCNTL_H"
-    "_O_CREAT\020\200\002\022\035\n\030SYSTEM_V_FCNTL_H_O_TRUNC\020"
-    "\200\004\022\034\n\027SYSTEM_V_FCNTL_H_O_EXCL\020\200\010\022\033\n\027SYST"
-    "EM_V_FCNTL_H_O_SYNC\020\020\022\036\n\030SYSTEM_V_FCNTL_"
-    "H_S_IFREG\020\200\200\002\022\036\n\030SYSTEM_V_FCNTL_H_S_IFDI"
-    "R\020\200\200\001\022\036\n\030SYSTEM_V_FCNTL_H_S_IFLNK\020\200\300\002\022\035\n"
-    "\030SYSTEM_V_FCNTL_H_S_IFIFO\020\200 *\330\001\n\tREPL_FL"
-    "AG\022\032\n\026REPL_FLAG_FULL_REPLICA\020\001\022\031\n\025REPL_F"
-    "LAG_IS_COMPLETE\020\002\022\035\n\031REPL_FLAG_STRATEGY_"
-    "RANDOM\020\004\022#\n\037REPL_FLAG_STRATEGY_RAREST_FI"
-    "RST\020\010\022!\n\035REPL_FLAG_STRATEGY_SEQUENTIAL\020\020"
-    "\022-\n)REPL_FLAG_STRATEGY_SEQUENTIAL_PREFET"
-    "CHING\020 *%\n\010SERVICES\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n"
-    "\003OSD\020\003B(\n&org.xtreemfs.pbrpc.generatedin"
-    "terfaces", 3088);
+    "c.SnapConfig\022\026\n\016snap_timestamp\030\n \002(\006\022\027\n\014"
+    "voucher_size\030\013 \002(\006:\0010\022\031\n\016expire_time_ms\030"
+    "\014 \002(\006:\0010\"\201\001\n\007XLocSet\022\033\n\023read_only_file_s"
+    "ize\030\001 \002(\006\022)\n\010replicas\030\002 \003(\0132\027.xtreemfs.p"
+    "brpc.Replica\022\035\n\025replica_update_policy\030\003 "
+    "\002(\t\022\017\n\007version\030\004 \002(\007\"]\n\017FileCredentials\022"
+    "\"\n\004xcap\030\001 \002(\0132\024.xtreemfs.pbrpc.XCap\022&\n\005x"
+    "locs\030\002 \002(\0132\027.xtreemfs.pbrpc.XLocSet\"O\n\022F"
+    "ileCredentialsSet\0229\n\020file_credentials\030\001 "
+    "\001(\0132\037.xtreemfs.pbrpc.FileCredentials\"U\n\022"
+    "VivaldiCoordinates\022\024\n\014x_coordinate\030\001 \002(\001"
+    "\022\024\n\014y_coordinate\030\002 \002(\001\022\023\n\013local_error\030\003 "
+    "\002(\001\"x\n\033OSDFinalizeVouchersResponse\022\020\n\010os"
+    "d_uuid\030\001 \002(\t\022\030\n\020server_signature\030\002 \002(\t\022\025"
+    "\n\rsize_in_bytes\030\003 \002(\006\022\026\n\016truncate_epoch\030"
+    "\004 \002(\006\"A\n\020OSDWriteResponse\022\025\n\rsize_in_byt"
+    "es\030\001 \001(\006\022\026\n\016truncate_epoch\030\002 \001(\007\"*\n\014KeyV"
+    "aluePair\022\013\n\003key\030\001 \002(\t\022\r\n\005value\030\002 \002(\t*|\n\027"
+    "AccessControlPolicyType\022\036\n\032ACCESS_CONTRO"
+    "L_POLICY_NULL\020\001\022\037\n\033ACCESS_CONTROL_POLICY"
+    "_POSIX\020\002\022 \n\034ACCESS_CONTROL_POLICY_VOLUME"
+    "\020\003*\365\003\n\026OSDSelectionPolicyType\022(\n#OSD_SEL"
+    "ECTION_POLICY_FILTER_DEFAULT\020\350\007\022%\n OSD_S"
+    "ELECTION_POLICY_FILTER_FQDN\020\351\007\022%\n OSD_SE"
+    "LECTION_POLICY_FILTER_UUID\020\352\007\022%\n OSD_SEL"
+    "ECTION_POLICY_GROUP_DCMAP\020\320\017\022$\n\037OSD_SELE"
+    "CTION_POLICY_GROUP_FQDN\020\321\017\022$\n\037OSD_SELECT"
+    "ION_POLICY_SORT_DCMAP\020\270\027\022#\n\036OSD_SELECTIO"
+    "N_POLICY_SORT_FQDN\020\271\027\022%\n OSD_SELECTION_P"
+    "OLICY_SORT_RANDOM\020\272\027\022&\n!OSD_SELECTION_PO"
+    "LICY_SORT_VIVALDI\020\273\027\022/\n*OSD_SELECTION_PO"
+    "LICY_SORT_HOST_ROUND_ROBIN\020\274\027\022#\n\036OSD_SEL"
+    "ECTION_POLICY_SORT_UUID\020\236\037\022&\n!OSD_SELECT"
+    "ION_POLICY_SORT_REVERSE\020\237\037*A\n\032ReplicaSel"
+    "ectionPolicyType\022#\n\037REPLICA_SELECTION_PO"
+    "LICY_SIMPLE\020\001*i\n\nSnapConfig\022\036\n\032SNAP_CONF"
+    "IG_SNAPS_DISABLED\020\000\022\036\n\032SNAP_CONFIG_ACCES"
+    "S_CURRENT\020\001\022\033\n\027SNAP_CONFIG_ACCESS_SNAP\020\002"
+    "*P\n\022StripingPolicyType\022\031\n\025STRIPING_POLIC"
+    "Y_RAID0\020\000\022\037\n\033STRIPING_POLICY_ERASURECODE"
+    "\020\001*9\n\nLeaseState\022\010\n\004NONE\020\000\022\013\n\007PRIMARY\020\001\022"
+    "\n\n\006BACKUP\020\002\022\010\n\004IDLE\020\003*\270\001\n\005PORTS\022\033\n\025DIR_H"
+    "TTP_PORT_DEFAULT\020\256\357\001\022\034\n\026DIR_PBRPC_PORT_D"
+    "EFAULT\020\376\376\001\022\033\n\025MRC_HTTP_PORT_DEFAULT\020\254\357\001\022"
+    "\034\n\026MRC_PBRPC_PORT_DEFAULT\020\374\376\001\022\033\n\025OSD_HTT"
+    "P_PORT_DEFAULT\020\260\357\001\022\034\n\026OSD_PBRPC_PORT_DEF"
+    "AULT\020\200\377\001*+\n\tCONSTANTS\022\036\n\032XCAP_RENEW_INTE"
+    "RVAL_IN_MIN\020\001*\202\003\n\016SYSTEM_V_FCNTL\022\035\n\031SYST"
+    "EM_V_FCNTL_H_O_RDONLY\020\000\022\035\n\031SYSTEM_V_FCNT"
+    "L_H_O_WRONLY\020\001\022\033\n\027SYSTEM_V_FCNTL_H_O_RDW"
+    "R\020\002\022\035\n\031SYSTEM_V_FCNTL_H_O_APPEND\020\010\022\035\n\030SY"
+    "STEM_V_FCNTL_H_O_CREAT\020\200\002\022\035\n\030SYSTEM_V_FC"
+    "NTL_H_O_TRUNC\020\200\004\022\034\n\027SYSTEM_V_FCNTL_H_O_E"
+    "XCL\020\200\010\022\033\n\027SYSTEM_V_FCNTL_H_O_SYNC\020\020\022\036\n\030S"
+    "YSTEM_V_FCNTL_H_S_IFREG\020\200\200\002\022\036\n\030SYSTEM_V_"
+    "FCNTL_H_S_IFDIR\020\200\200\001\022\036\n\030SYSTEM_V_FCNTL_H_"
+    "S_IFLNK\020\200\300\002\022\035\n\030SYSTEM_V_FCNTL_H_S_IFIFO\020"
+    "\200 *\330\001\n\tREPL_FLAG\022\032\n\026REPL_FLAG_FULL_REPLI"
+    "CA\020\001\022\031\n\025REPL_FLAG_IS_COMPLETE\020\002\022\035\n\031REPL_"
+    "FLAG_STRATEGY_RANDOM\020\004\022#\n\037REPL_FLAG_STRA"
+    "TEGY_RAREST_FIRST\020\010\022!\n\035REPL_FLAG_STRATEG"
+    "Y_SEQUENTIAL\020\020\022-\n)REPL_FLAG_STRATEGY_SEQ"
+    "UENTIAL_PREFETCHING\020 *%\n\010SERVICES\022\007\n\003DIR"
+    "\020\001\022\007\n\003MRC\020\002\022\007\n\003OSD\020\003B(\n&org.xtreemfs.pbr"
+    "pc.generatedinterfaces", 3262);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "xtreemfs/GlobalTypes.proto", &protobuf_RegisterTypes);
   NewFileSize::default_instance_ = new NewFileSize();
@@ -435,6 +466,7 @@ void protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto() {
   FileCredentials::default_instance_ = new FileCredentials();
   FileCredentialsSet::default_instance_ = new FileCredentialsSet();
   VivaldiCoordinates::default_instance_ = new VivaldiCoordinates();
+  OSDFinalizeVouchersResponse::default_instance_ = new OSDFinalizeVouchersResponse();
   OSDWriteResponse::default_instance_ = new OSDWriteResponse();
   KeyValuePair::default_instance_ = new KeyValuePair();
   NewFileSize::default_instance_->InitAsDefaultInstance();
@@ -446,6 +478,7 @@ void protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto() {
   FileCredentials::default_instance_->InitAsDefaultInstance();
   FileCredentialsSet::default_instance_->InitAsDefaultInstance();
   VivaldiCoordinates::default_instance_->InitAsDefaultInstance();
+  OSDFinalizeVouchersResponse::default_instance_->InitAsDefaultInstance();
   OSDWriteResponse::default_instance_->InitAsDefaultInstance();
   KeyValuePair::default_instance_->InitAsDefaultInstance();
   ::google::protobuf::internal::OnShutdown(&protobuf_ShutdownFile_xtreemfs_2fGlobalTypes_2eproto);
@@ -1740,6 +1773,8 @@ const int XCap::kServerSignatureFieldNumber;
 const int XCap::kTruncateEpochFieldNumber;
 const int XCap::kSnapConfigFieldNumber;
 const int XCap::kSnapTimestampFieldNumber;
+const int XCap::kVoucherSizeFieldNumber;
+const int XCap::kExpireTimeMsFieldNumber;
 #endif  // !_MSC_VER
 
 XCap::XCap()
@@ -1768,6 +1803,8 @@ void XCap::SharedCtor() {
   truncate_epoch_ = 0u;
   snap_config_ = 0;
   snap_timestamp_ = GOOGLE_ULONGLONG(0);
+  voucher_size_ = GOOGLE_ULONGLONG(0);
+  expire_time_ms_ = GOOGLE_ULONGLONG(0);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -1836,6 +1873,8 @@ void XCap::Clear() {
   if (_has_bits_[8 / 32] & (0xffu << (8 % 32))) {
     snap_config_ = 0;
     snap_timestamp_ = GOOGLE_ULONGLONG(0);
+    voucher_size_ = GOOGLE_ULONGLONG(0);
+    expire_time_ms_ = GOOGLE_ULONGLONG(0);
   }
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
   mutable_unknown_fields()->Clear();
@@ -2010,6 +2049,38 @@ bool XCap::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
+        if (input->ExpectTag(89)) goto parse_voucher_size;
+        break;
+      }
+
+      // required fixed64 voucher_size = 11 [default = 0];
+      case 11: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
+         parse_voucher_size:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
+                 input, &voucher_size_)));
+          set_has_voucher_size();
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(97)) goto parse_expire_time_ms;
+        break;
+      }
+
+      // required fixed64 expire_time_ms = 12 [default = 0];
+      case 12: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
+         parse_expire_time_ms:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
+                 input, &expire_time_ms_)));
+          set_has_expire_time_ms();
+        } else {
+          goto handle_uninterpreted;
+        }
         if (input->ExpectAtEnd()) return true;
         break;
       }
@@ -2095,6 +2166,16 @@ void XCap::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(10, this->snap_timestamp(), output);
   }
 
+  // required fixed64 voucher_size = 11 [default = 0];
+  if (has_voucher_size()) {
+    ::google::protobuf::internal::WireFormatLite::WriteFixed64(11, this->voucher_size(), output);
+  }
+
+  // required fixed64 expire_time_ms = 12 [default = 0];
+  if (has_expire_time_ms()) {
+    ::google::protobuf::internal::WireFormatLite::WriteFixed64(12, this->expire_time_ms(), output);
+  }
+
   if (!unknown_fields().empty()) {
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         unknown_fields(), output);
@@ -2169,6 +2250,16 @@ void XCap::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(10, this->snap_timestamp(), target);
   }
 
+  // required fixed64 voucher_size = 11 [default = 0];
+  if (has_voucher_size()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(11, this->voucher_size(), target);
+  }
+
+  // required fixed64 expire_time_ms = 12 [default = 0];
+  if (has_expire_time_ms()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(12, this->expire_time_ms(), target);
+  }
+
   if (!unknown_fields().empty()) {
     target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
         unknown_fields(), target);
@@ -2239,6 +2330,16 @@ int XCap::ByteSize() const {
       total_size += 1 + 8;
     }
 
+    // required fixed64 voucher_size = 11 [default = 0];
+    if (has_voucher_size()) {
+      total_size += 1 + 8;
+    }
+
+    // required fixed64 expire_time_ms = 12 [default = 0];
+    if (has_expire_time_ms()) {
+      total_size += 1 + 8;
+    }
+
   }
   if (!unknown_fields().empty()) {
     total_size +=
@@ -2298,6 +2399,12 @@ void XCap::MergeFrom(const XCap& from) {
     if (from.has_snap_timestamp()) {
       set_snap_timestamp(from.snap_timestamp());
     }
+    if (from.has_voucher_size()) {
+      set_voucher_size(from.voucher_size());
+    }
+    if (from.has_expire_time_ms()) {
+      set_expire_time_ms(from.expire_time_ms());
+    }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
 }
@@ -2315,7 +2422,7 @@ void XCap::CopyFrom(const XCap& from) {
 }
 
 bool XCap::IsInitialized() const {
-  if ((_has_bits_[0] & 0x000003ff) != 0x000003ff) return false;
+  if ((_has_bits_[0] & 0x00000fff) != 0x00000fff) return false;
 
   return true;
 }
@@ -2332,6 +2439,8 @@ void XCap::Swap(XCap* other) {
     std::swap(truncate_epoch_, other->truncate_epoch_);
     std::swap(snap_config_, other->snap_config_);
     std::swap(snap_timestamp_, other->snap_timestamp_);
+    std::swap(voucher_size_, other->voucher_size_);
+    std::swap(expire_time_ms_, other->expire_time_ms_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);
@@ -3452,6 +3561,365 @@ void VivaldiCoordinates::Swap(VivaldiCoordinates* other) {
   ::google::protobuf::Metadata metadata;
   metadata.descriptor = VivaldiCoordinates_descriptor_;
   metadata.reflection = VivaldiCoordinates_reflection_;
+  return metadata;
+}
+
+
+// ===================================================================
+
+#ifndef _MSC_VER
+const int OSDFinalizeVouchersResponse::kOsdUuidFieldNumber;
+const int OSDFinalizeVouchersResponse::kServerSignatureFieldNumber;
+const int OSDFinalizeVouchersResponse::kSizeInBytesFieldNumber;
+const int OSDFinalizeVouchersResponse::kTruncateEpochFieldNumber;
+#endif  // !_MSC_VER
+
+OSDFinalizeVouchersResponse::OSDFinalizeVouchersResponse()
+  : ::google::protobuf::Message() {
+  SharedCtor();
+}
+
+void OSDFinalizeVouchersResponse::InitAsDefaultInstance() {
+}
+
+OSDFinalizeVouchersResponse::OSDFinalizeVouchersResponse(const OSDFinalizeVouchersResponse& from)
+  : ::google::protobuf::Message() {
+  SharedCtor();
+  MergeFrom(from);
+}
+
+void OSDFinalizeVouchersResponse::SharedCtor() {
+  _cached_size_ = 0;
+  osd_uuid_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  server_signature_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  size_in_bytes_ = GOOGLE_ULONGLONG(0);
+  truncate_epoch_ = GOOGLE_ULONGLONG(0);
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+}
+
+OSDFinalizeVouchersResponse::~OSDFinalizeVouchersResponse() {
+  SharedDtor();
+}
+
+void OSDFinalizeVouchersResponse::SharedDtor() {
+  if (osd_uuid_ != &::google::protobuf::internal::kEmptyString) {
+    delete osd_uuid_;
+  }
+  if (server_signature_ != &::google::protobuf::internal::kEmptyString) {
+    delete server_signature_;
+  }
+  if (this != default_instance_) {
+  }
+}
+
+void OSDFinalizeVouchersResponse::SetCachedSize(int size) const {
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+}
+const ::google::protobuf::Descriptor* OSDFinalizeVouchersResponse::descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return OSDFinalizeVouchersResponse_descriptor_;
+}
+
+const OSDFinalizeVouchersResponse& OSDFinalizeVouchersResponse::default_instance() {
+  if (default_instance_ == NULL) protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto();
+  return *default_instance_;
+}
+
+OSDFinalizeVouchersResponse* OSDFinalizeVouchersResponse::default_instance_ = NULL;
+
+OSDFinalizeVouchersResponse* OSDFinalizeVouchersResponse::New() const {
+  return new OSDFinalizeVouchersResponse;
+}
+
+void OSDFinalizeVouchersResponse::Clear() {
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    if (has_osd_uuid()) {
+      if (osd_uuid_ != &::google::protobuf::internal::kEmptyString) {
+        osd_uuid_->clear();
+      }
+    }
+    if (has_server_signature()) {
+      if (server_signature_ != &::google::protobuf::internal::kEmptyString) {
+        server_signature_->clear();
+      }
+    }
+    size_in_bytes_ = GOOGLE_ULONGLONG(0);
+    truncate_epoch_ = GOOGLE_ULONGLONG(0);
+  }
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+  mutable_unknown_fields()->Clear();
+}
+
+bool OSDFinalizeVouchersResponse::MergePartialFromCodedStream(
+    ::google::protobuf::io::CodedInputStream* input) {
+#define DO_(EXPRESSION) if (!(EXPRESSION)) return false
+  ::google::protobuf::uint32 tag;
+  while ((tag = input->ReadTag()) != 0) {
+    switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
+      // required string osd_uuid = 1;
+      case 1: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+                input, this->mutable_osd_uuid()));
+          ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+            this->osd_uuid().data(), this->osd_uuid().length(),
+            ::google::protobuf::internal::WireFormat::PARSE);
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(18)) goto parse_server_signature;
+        break;
+      }
+
+      // required string server_signature = 2;
+      case 2: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_server_signature:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+                input, this->mutable_server_signature()));
+          ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+            this->server_signature().data(), this->server_signature().length(),
+            ::google::protobuf::internal::WireFormat::PARSE);
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(25)) goto parse_size_in_bytes;
+        break;
+      }
+
+      // required fixed64 size_in_bytes = 3;
+      case 3: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
+         parse_size_in_bytes:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
+                 input, &size_in_bytes_)));
+          set_has_size_in_bytes();
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(33)) goto parse_truncate_epoch;
+        break;
+      }
+
+      // required fixed64 truncate_epoch = 4;
+      case 4: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
+         parse_truncate_epoch:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
+                 input, &truncate_epoch_)));
+          set_has_truncate_epoch();
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectAtEnd()) return true;
+        break;
+      }
+
+      default: {
+      handle_uninterpreted:
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_END_GROUP) {
+          return true;
+        }
+        DO_(::google::protobuf::internal::WireFormat::SkipField(
+              input, tag, mutable_unknown_fields()));
+        break;
+      }
+    }
+  }
+  return true;
+#undef DO_
+}
+
+void OSDFinalizeVouchersResponse::SerializeWithCachedSizes(
+    ::google::protobuf::io::CodedOutputStream* output) const {
+  // required string osd_uuid = 1;
+  if (has_osd_uuid()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+      this->osd_uuid().data(), this->osd_uuid().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE);
+    ::google::protobuf::internal::WireFormatLite::WriteString(
+      1, this->osd_uuid(), output);
+  }
+
+  // required string server_signature = 2;
+  if (has_server_signature()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+      this->server_signature().data(), this->server_signature().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE);
+    ::google::protobuf::internal::WireFormatLite::WriteString(
+      2, this->server_signature(), output);
+  }
+
+  // required fixed64 size_in_bytes = 3;
+  if (has_size_in_bytes()) {
+    ::google::protobuf::internal::WireFormatLite::WriteFixed64(3, this->size_in_bytes(), output);
+  }
+
+  // required fixed64 truncate_epoch = 4;
+  if (has_truncate_epoch()) {
+    ::google::protobuf::internal::WireFormatLite::WriteFixed64(4, this->truncate_epoch(), output);
+  }
+
+  if (!unknown_fields().empty()) {
+    ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
+        unknown_fields(), output);
+  }
+}
+
+::google::protobuf::uint8* OSDFinalizeVouchersResponse::SerializeWithCachedSizesToArray(
+    ::google::protobuf::uint8* target) const {
+  // required string osd_uuid = 1;
+  if (has_osd_uuid()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+      this->osd_uuid().data(), this->osd_uuid().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE);
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
+        1, this->osd_uuid(), target);
+  }
+
+  // required string server_signature = 2;
+  if (has_server_signature()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+      this->server_signature().data(), this->server_signature().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE);
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
+        2, this->server_signature(), target);
+  }
+
+  // required fixed64 size_in_bytes = 3;
+  if (has_size_in_bytes()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(3, this->size_in_bytes(), target);
+  }
+
+  // required fixed64 truncate_epoch = 4;
+  if (has_truncate_epoch()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(4, this->truncate_epoch(), target);
+  }
+
+  if (!unknown_fields().empty()) {
+    target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
+        unknown_fields(), target);
+  }
+  return target;
+}
+
+int OSDFinalizeVouchersResponse::ByteSize() const {
+  int total_size = 0;
+
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    // required string osd_uuid = 1;
+    if (has_osd_uuid()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::StringSize(
+          this->osd_uuid());
+    }
+
+    // required string server_signature = 2;
+    if (has_server_signature()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::StringSize(
+          this->server_signature());
+    }
+
+    // required fixed64 size_in_bytes = 3;
+    if (has_size_in_bytes()) {
+      total_size += 1 + 8;
+    }
+
+    // required fixed64 truncate_epoch = 4;
+    if (has_truncate_epoch()) {
+      total_size += 1 + 8;
+    }
+
+  }
+  if (!unknown_fields().empty()) {
+    total_size +=
+      ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
+        unknown_fields());
+  }
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = total_size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+  return total_size;
+}
+
+void OSDFinalizeVouchersResponse::MergeFrom(const ::google::protobuf::Message& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  const OSDFinalizeVouchersResponse* source =
+    ::google::protobuf::internal::dynamic_cast_if_available<const OSDFinalizeVouchersResponse*>(
+      &from);
+  if (source == NULL) {
+    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
+  } else {
+    MergeFrom(*source);
+  }
+}
+
+void OSDFinalizeVouchersResponse::MergeFrom(const OSDFinalizeVouchersResponse& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    if (from.has_osd_uuid()) {
+      set_osd_uuid(from.osd_uuid());
+    }
+    if (from.has_server_signature()) {
+      set_server_signature(from.server_signature());
+    }
+    if (from.has_size_in_bytes()) {
+      set_size_in_bytes(from.size_in_bytes());
+    }
+    if (from.has_truncate_epoch()) {
+      set_truncate_epoch(from.truncate_epoch());
+    }
+  }
+  mutable_unknown_fields()->MergeFrom(from.unknown_fields());
+}
+
+void OSDFinalizeVouchersResponse::CopyFrom(const ::google::protobuf::Message& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void OSDFinalizeVouchersResponse::CopyFrom(const OSDFinalizeVouchersResponse& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool OSDFinalizeVouchersResponse::IsInitialized() const {
+  if ((_has_bits_[0] & 0x0000000f) != 0x0000000f) return false;
+
+  return true;
+}
+
+void OSDFinalizeVouchersResponse::Swap(OSDFinalizeVouchersResponse* other) {
+  if (other != this) {
+    std::swap(osd_uuid_, other->osd_uuid_);
+    std::swap(server_signature_, other->server_signature_);
+    std::swap(size_in_bytes_, other->size_in_bytes_);
+    std::swap(truncate_epoch_, other->truncate_epoch_);
+    std::swap(_has_bits_[0], other->_has_bits_[0]);
+    _unknown_fields_.Swap(&other->_unknown_fields_);
+    std::swap(_cached_size_, other->_cached_size_);
+  }
+}
+
+::google::protobuf::Metadata OSDFinalizeVouchersResponse::GetMetadata() const {
+  protobuf_AssignDescriptorsOnce();
+  ::google::protobuf::Metadata metadata;
+  metadata.descriptor = OSDFinalizeVouchersResponse_descriptor_;
+  metadata.reflection = OSDFinalizeVouchersResponse_reflection_;
   return metadata;
 }
 

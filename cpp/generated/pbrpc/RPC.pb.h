@@ -90,6 +90,7 @@ enum ErrorType {
   ERRNO = 6,
   REDIRECT = 7,
   INVALID_VIEW = 8,
+  INSUFFICIENT_VOUCHER = 9,
   IO_ERROR = 100
 };
 bool ErrorType_IsValid(int value);
