@@ -34,6 +34,7 @@ import org.xtreemfs.mrc.operations.AccessOperation;
 import org.xtreemfs.mrc.operations.AddReplicaOperation;
 import org.xtreemfs.mrc.operations.CheckFileListOperation;
 import org.xtreemfs.mrc.operations.CheckpointOperation;
+import org.xtreemfs.mrc.operations.ClearVouchersOperation;
 import org.xtreemfs.mrc.operations.CreateDirOperation;
 import org.xtreemfs.mrc.operations.CreateLinkOperation;
 import org.xtreemfs.mrc.operations.CreateSymLinkOperation;
@@ -153,6 +154,7 @@ public class ProcessingStage extends MRCStage {
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_SET_READ_ONLY_XATTR, new SetReadOnlyXattrOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_GET_FILE_CREDENTIALS, new GetFileCredentialsOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_GET_XLOCSET, new GetXLocSetOperation(master));
+        operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_CLEAR_VOUCHERS, new ClearVouchersOperation(master));
     }
     
     public Map<Integer, Integer> get_opCountMap() {

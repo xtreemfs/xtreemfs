@@ -67,6 +67,9 @@ import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.database.babudb.BabuDBVolumeManager;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.osdselection.OSDStatusManager;
+import org.xtreemfs.mrc.quota.MRCQuotaManager;
+import org.xtreemfs.mrc.quota.MRCVoucherManager;
+import org.xtreemfs.mrc.quota.VolumeQuotaManager;
 import org.xtreemfs.mrc.stages.OnCloseReplicationThread;
 import org.xtreemfs.mrc.stages.ProcessingStage;
 import org.xtreemfs.mrc.stages.XLocSetCoordinator;
@@ -129,6 +132,10 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     private List<MRCStatusListener>        statusListener;
     
     private final XLocSetCoordinator       xLocSetCoordinator;
+
+    private final MRCQuotaManager          mrcQuotaManager;
+
+    private final MRCVoucherManager        mrcVoucherManager;
 
     private final long                     initTimeMS;
 
@@ -214,6 +221,9 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         xLocSetCoordinator.setLifeCycleListener(this);
 
         procStage = new ProcessingStage(this);
+
+        mrcQuotaManager = new MRCQuotaManager();
+        mrcVoucherManager = new MRCVoucherManager(mrcQuotaManager);
 
         volumeManager = new BabuDBVolumeManager(this, dbConfig);
         fileAccessManager = new FileAccessManager(volumeManager, policyContainer);
@@ -389,6 +399,14 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
             volumeManager.init();
             volumeManager.addVolumeChangeListener(osdMonitor);
+
+            for (StorageManager storageManager : volumeManager.getStorageManagers()) {
+
+                VolumeQuotaManager volumeQuotaManager = new VolumeQuotaManager(storageManager, storageManager
+                        .getVolumeInfo().getId());
+                volumeQuotaManager.init();
+                mrcQuotaManager.addVolumeQuotaManager(volumeQuotaManager);
+            }
 
             heartbeatThread.initialize();
             heartbeatThread.start();
@@ -935,6 +953,20 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
     public ProcessingStage getProcStage() {
         return procStage;
+    }
+
+    /**
+     * @return the mrcQuotaManager
+     */
+    public MRCQuotaManager getMrcQuotaManager() {
+        return mrcQuotaManager;
+    }
+
+    /**
+     * @return the mrcVoucherManager
+     */
+    public MRCVoucherManager getMrcVoucherManager() {
+        return mrcVoucherManager;
     }
 
     /**
