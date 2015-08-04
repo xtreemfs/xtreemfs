@@ -39,6 +39,7 @@ import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
+import org.xtreemfs.common.libxtreemfs.jni.NativeHelper;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
@@ -168,11 +169,21 @@ public class XtreemFSFileSystem extends FileSystem {
                             false), false, sslProtocolString, null);
         }
 
+        ClientFactory.ClientType clientType = ClientFactory.ClientType.JAVA;
+        if (conf.getBoolean("xtreemfs.jni.enabled", false)) {
+            clientType = ClientFactory.ClientType.NATIVE;
+        }
+
+        String libraryPath = conf.get("xtreemfs.jni.library.path");
+        if (libraryPath != null && !libraryPath.isEmpty()) {
+            NativeHelper.setXtreemfsLibPath(libraryPath);
+        }
+
         // Initialize XtreemFS Client with default Options.
         Options xtreemfsOptions = new Options();
         xtreemfsOptions.setMetadataCacheSize(0);
-        xtreemfsClient = ClientFactory.createClient(uri.getHost() + ":" + uriPort, userCredentials, sslOptions,
-                xtreemfsOptions);
+        xtreemfsClient = ClientFactory.createClient(clientType, uri.getHost() + ":" + uriPort, userCredentials,
+                sslOptions, xtreemfsOptions);
         try {
             // TODO: Fix stupid Exception in libxtreemfs
             xtreemfsClient.start(true);
