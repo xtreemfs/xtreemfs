@@ -99,11 +99,16 @@ public class OpenOperation extends MRCOperation {
         // check whether the file/directory exists
         try {
             
+
             // check if volume is full
-            long volumeQuota = volume.getVolumeQuota();
-            if ((write || create) && volumeQuota != 0 && volumeQuota <= volume.getVolumeSize()) {
-                throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "the volume's quota is reached");
+            if (create || truncate || write) {
+                master.getMrcVoucherManager().checkVoucherAvailability(volume.getId());
             }
+
+            // long volumeQuota = volume.getVolumeQuota();
+            // if ((write || create) && volumeQuota != 0 && volumeQuota <= volume.getVolumeSize()) {
+            // throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "the volume's quota is reached");
+            // }
             
             res.checkIfFileDoesNotExist();
             
@@ -301,17 +306,25 @@ public class OpenOperation extends MRCOperation {
         xLocSet.clearReplicas();
         xLocSet.addAllReplicas(sortedReplList);
         xLocSet.setReadOnlyFileSize(file.getSize());
-        
+
         // issue a new capability
-        Capability cap = new Capability(MRCHelper.createGlobalFileId(volume, file), rqArgs.getFlags(), master
-                .getConfig().getCapabilityTimeout(), TimeSync.getGlobalTime() / 1000
-            + master.getConfig().getCapabilityTimeout(), ((InetSocketAddress) rq.getRPCRequest()
-                .getSenderAddress()).getAddress().getHostAddress(), trEpoch, replicateOnClose, !volume
-                .isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
-            : volume.isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP
-                : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, volume.getCreationTime(), master.getConfig()
-                .getCapabilitySecret());
-        
+        String globalFileId = MRCHelper.createGlobalFileId(volume, file);
+        long expireMs = TimeSync.getGlobalTime() + master.getConfig().getCapabilityTimeout() * 1000;
+        String clientID = ((InetSocketAddress) rq.getRPCRequest().getSenderAddress()).getAddress().getHostAddress();
+
+        long voucherSize = 0; // FIXME(baerhold) Export default value to a proper place
+        if (create || truncate || write) {
+            voucherSize = master.getMrcVoucherManager().getVoucher(volume.getId(), globalFileId, clientID,
+                    file.getSize(), expireMs);
+        }
+
+        Capability cap = new Capability(globalFileId, rqArgs.getFlags(), master.getConfig().getCapabilityTimeout(),
+                TimeSync.getGlobalTime() / 1000 + master.getConfig().getCapabilityTimeout(), clientID, trEpoch,
+                replicateOnClose, !volume.isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
+                        : volume.isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP
+                                : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, volume.getCreationTime(), voucherSize,
+                expireMs, master.getConfig().getCapabilitySecret());
+
         if (Logging.isDebug())
             Logging
                     .logMessage(Logging.LEVEL_DEBUG, Category.proc, this,

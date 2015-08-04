@@ -134,6 +134,11 @@ public class DeleteOperation extends MRCOperation {
         if (file.getLinkCount() > 1)
             MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan, time, update);
         
+        // FIXME(baerhold): Switch to existing update
+        if (!file.isDirectory() && file.getSize() > 0)
+            master.getMrcQuotaManager().getVolumeQuotaManagerById(volume.getId())
+                    .updateSpaceUsage(-1 * file.getSize(), 0);
+
         // set the response, depending on whether the request was for
         // deleting a
         // file or directory

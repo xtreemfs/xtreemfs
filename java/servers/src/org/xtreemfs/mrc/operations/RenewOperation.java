@@ -16,8 +16,6 @@ import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
 
-import com.google.protobuf.Message;
-
 /**
  * 
  * @author stender
@@ -47,12 +45,16 @@ public class RenewOperation extends MRCOperation {
         if (cap.hasExpired() && !renewTimedOutCaps)
             throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, cap + " has expired");
         
+        // get new voucher, if capability are still valid for vouchers
+        long newExpireMs = TimeSync.getGlobalTime() + master.getConfig().getCapabilityTimeout() * 1000;
+        long voucherSize = master.getMrcVoucherManager().checkAndRenewVoucher(cap.getFileId(), cap.getClientIdentity(),
+                cap.getExpireMs(), newExpireMs);
+
         Capability newCap = new Capability(cap.getFileId(), cap.getAccessMode(), master.getConfig()
-                .getCapabilityTimeout(), TimeSync.getGlobalTime() / 1000
-            + master.getConfig().getCapabilityTimeout(), cap.getClientIdentity(), cap.getEpochNo(), cap
-                .isReplicateOnClose(), cap.getSnapConfig(), cap.getSnapTimestamp(), master.getConfig()
-                .getCapabilitySecret());
-        
+                .getCapabilityTimeout(), TimeSync.getGlobalTime() / 1000 + master.getConfig().getCapabilityTimeout(),
+                cap.getClientIdentity(), cap.getEpochNo(), cap.isReplicateOnClose(), cap.getSnapConfig(),
+                cap.getSnapTimestamp(), voucherSize, newExpireMs, master.getConfig().getCapabilitySecret());
+
         // set the response
         rq.setResponse(newCap.getXCap());
         finishRequest(rq);
