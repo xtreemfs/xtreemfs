@@ -230,7 +230,7 @@ int FileHandleImplementation::DoRead(
       PartialObjectReaderFunction reader;
       reader = boost::bind(&FileHandleImplementation::ReadFromOSD, this,
                            uuid_iterator, file_credentials, _1,
-                           object_version, _2, _3, _4);
+                           _2, _3, _4, _5);
       received_data += enc_read_op->Read(operations[j].obj_number,
                                          operations[j].data,
                                          operations[j].req_offset,
@@ -360,10 +360,10 @@ int FileHandleImplementation::DoWrite(
 
       reader = boost::bind(&FileHandleImplementation::ReadFromOSD, this,
                            osd_uuid_iterator_, file_credentials, _1,
-                           object_version, _2, _3, _4);
+                           _2, _3, _4, _5);
       PartialObjectWriterFunction writer = boost::bind(
           &FileHandleImplementation::WriteToOSD, this, osd_uuid_iterator_,
-          file_credentials, _1, object_version, _3, _2, _4);
+          file_credentials, _1, _2, _4, _3, _5);
 
       enc_write_op = boost::make_shared<ObjectEncryptor::WriteOperation>(
           object_encryptor_.get(), offset, count, reader, writer);
@@ -450,10 +450,10 @@ int FileHandleImplementation::DoWrite(
 
       PartialObjectReaderFunction reader = boost::bind(
           &FileHandleImplementation::ReadFromOSD, this, osd_uuid_iterator_,
-          file_credentials, _1, 0, _2, _3, _4);
+          file_credentials, _1, _2, _3, _4, _5);
       PartialObjectWriterFunction writer = boost::bind(
           &FileHandleImplementation::WriteToOSD, this, osd_uuid_iterator_,
-          file_credentials, _1, 0, _3, _2, _4);
+          file_credentials, _1, _2, _4, _3, _5);
 
       enc_write_op.reset(
           new ObjectEncryptor::WriteOperation(object_encryptor_.get(), offset,
@@ -481,10 +481,10 @@ int FileHandleImplementation::DoWrite(
         // encryption is enabled
         PartialObjectReaderFunction reader = boost::bind(
             &FileHandleImplementation::ReadFromOSD, this, uuid_iterator,
-            file_credentials, _1, object_version, _2, _3, _4);
+            file_credentials, _1, _2, _3, _4, _5);
         PartialObjectWriterFunction writer = boost::bind(
             &FileHandleImplementation::WriteToOSD, this, uuid_iterator,
-            file_credentials, _1, object_version, _3, _2, _4);
+            file_credentials, _1, _2, _4, _3, _5);
         enc_write_op->Write(operations[j].obj_number, operations[j].data,
                            operations[j].req_offset, operations[j].req_size,
                            reader, writer);
@@ -647,10 +647,10 @@ void FileHandleImplementation::DoTruncatePhaseTwoAndThree(
 
     PartialObjectReaderFunction reader = boost::bind(
         &FileHandleImplementation::ReadFromOSD, this, osd_uuid_iterator_,
-        file_credentials, _1, 0, _2, _3, _4);
+        file_credentials, _1, _2, _3, _4, _5);
     PartialObjectWriterFunction writer = boost::bind(
         &FileHandleImplementation::WriteToOSD, this, osd_uuid_iterator_,
-        file_credentials, _1, 0, _3, _2, _4);
+        file_credentials, _1, _2, _4, _3, _5);
 
     enc_truncate_op.reset(
         new ObjectEncryptor::TruncateOperation(object_encryptor_.get(),

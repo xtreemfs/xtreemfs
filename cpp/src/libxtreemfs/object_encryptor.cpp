@@ -465,7 +465,8 @@ int ObjectEncryptor::Operation::Read(int object_no, char* buffer,
                                  enc_block_size_) - ct_offset_in_object;
 
   std::vector<unsigned char> ciphertext(ct_bytes_to_read);
-  int bytes_read = reader(object_no, reinterpret_cast<char*>(ciphertext.data()),
+  int bytes_read = reader(object_no, 0,
+                          reinterpret_cast<char*>(ciphertext.data()),
                           ct_offset_in_object, ct_bytes_to_read);
   ciphertext.resize(bytes_read);
 
@@ -603,7 +604,7 @@ void ObjectEncryptor::Operation::Write(int object_no, const char* buffer,
     if (old_file_size_ > object_offset + ct_offset_in_object) {
       // 1. read the old enc block if it is not behind old file size
       std::vector<unsigned char> old_ct_block(enc_block_size_);
-      int bytes_read = reader(object_no,
+      int bytes_read = reader(object_no, 0,
                               reinterpret_cast<char*>(old_ct_block.data()),
                               ct_offset_in_object, enc_block_size_);
       old_ct_block.resize(bytes_read);
@@ -643,7 +644,7 @@ void ObjectEncryptor::Operation::Write(int object_no, const char* buffer,
       // 1. read the old enc block if it is not behind old file size or
       // is not getting completely overwritten
       std::vector<unsigned char> old_ct_block(enc_block_size_);
-      int bytes_read = reader(object_no,
+      int bytes_read = reader(object_no, 0,
                               reinterpret_cast<char*>(old_ct_block.data()),
                               ct_end_offset_in_object - new_pt_block_len,
                               enc_block_size_);
@@ -687,7 +688,7 @@ void ObjectEncryptor::Operation::Write(int object_no, const char* buffer,
   }
   assert(buffer_offset <= bytes_to_write);
 
-  writer(object_no, reinterpret_cast<char*>(ciphertext.data()),
+  writer(object_no, 0, reinterpret_cast<char*>(ciphertext.data()),
          ct_offset_in_object, ct_bytes_to_write);
 }
 

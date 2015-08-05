@@ -13,12 +13,13 @@
 #include "xtreemfs/OSD.pb.h"
 
 namespace {
-void WriteToBuffer(int object_no, const char* buffer_in, int offset_in_object,
-                   int bytes_to_write,
+void WriteToBuffer(int object_no, int object_version, const char* buffer_in,
+                   int offset_in_object, int bytes_to_write,
                    xtreemfs::pbrpc::writeRequest* write_request,
                    char** buffer_out, size_t* buffer_out_len) {
   assert(buffer_in && buffer_out && buffer_out_len);
   assert(write_request->object_number() == object_no);
+  write_request->set_object_version(object_version);
   write_request->set_offset(offset_in_object);
   *buffer_out_len = bytes_to_write;
   *buffer_out = new char[bytes_to_write];
@@ -82,8 +83,9 @@ AsyncWriteBuffer::AsyncWriteBuffer(xtreemfs::pbrpc::writeRequest* write_request,
       enc_write_op_(enc_write_op) {
   assert(write_request && data && file_handle);
 
+  //TODO(plieser): support write to specific object version
   PartialObjectWriterFunction writer_partial = boost::bind(&WriteToBuffer, _1,
-                                                           _2, _3, _4,
+                                                           _2, _3, _4, _5,
                                                            write_request,
                                                            &this->data,
                                                            &this->data_length);
@@ -111,8 +113,9 @@ AsyncWriteBuffer::AsyncWriteBuffer(xtreemfs::pbrpc::writeRequest* write_request,
       enc_write_op_(enc_write_op) {
   assert(write_request && data && file_handle);
 
+  //TODO(plieser): support write to specific object version
   PartialObjectWriterFunction writer_partial = boost::bind(&WriteToBuffer, _1,
-                                                           _2, _3, _4,
+                                                           _2, _3, _4, _5,
                                                            write_request,
                                                            &this->data,
                                                            &this->data_length);
