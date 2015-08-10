@@ -18,7 +18,7 @@ before_script:
   - XTREEMFS_DIR=`pwd`
 
 script:
-  - BUILD_CLIENT_TESTS=true make -j2
+  - BUILD_CLIENT_TESTS=1; BUILD_JNI=1; make -j2
   - ./tests/xtestenv --clean-test-dir -x $XTREEMFS_DIR -t $TEST_DIR -c $XTREEMFS_DIR/tests/test_config.py -p $TEST_SUITE
 
 after_failure:
