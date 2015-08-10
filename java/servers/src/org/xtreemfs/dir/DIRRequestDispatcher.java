@@ -8,7 +8,6 @@
 
 package org.xtreemfs.dir;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -157,11 +156,10 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
                 throw new IOException(e);
             }
             
-            sslOptions = new SSLOptions(new FileInputStream(config.getServiceCredsFile()), config
-                    .getServiceCredsPassphrase(), config.getServiceCredsContainer(), new FileInputStream(
-                config.getTrustedCertsFile()), config.getTrustedCertsPassphrase(), config
-                    .getTrustedCertsContainer(), false, config.isGRIDSSLmode(),
-                    config.getSSLProtocolString(), tm);
+            sslOptions = new SSLOptions(config.getServiceCredsFile(), config.getServiceCredsPassphrase(),
+                    config.getServiceCredsContainer(), config.getTrustedCertsFile(),
+                    config.getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false,
+                    config.isGRIDSSLmode(), config.getSSLProtocolString(), tm);
             
             if (Logging.isInfo() && tm != null)
                 Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this,

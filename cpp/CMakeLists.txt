@@ -237,9 +237,19 @@ MESSAGE(STATUS "Configuring XtreemFS Client Library (libxtreemfs) and Volume Too
 INCLUDE_DIRECTORIES(include generated)
 file(GLOB_RECURSE SRCS_RPC src/rpc/*.cpp include/rpc/*.h)
 file(GLOB_RECURSE SRCS_UTIL src/util/*.cpp include/util/*.h)
+
 file(GLOB_RECURSE SRCS_GENERATED generated/*.cc generated/*.h)
+# Ignore SWIG generated files
+file(GLOB_RECURSE SRCS_GENERATED_IGNORES generated/swig/*)
+if(SRCS_GENERATED_IGNORES)
+  foreach(SRCS_GENERATED_IGNORE "${SRCS_GENERATED_IGNORES}")
+    list(REMOVE_ITEM SRCS_GENERATED ${SRCS_GENERATED_IGNORE})
+  endforeach(SRCS_GENERATED_IGNORE)
+endif(SRCS_GENERATED_IGNORES)
+
 file(GLOB_RECURSE SRCS_XTREEMFS src/libxtreemfs/*.cpp include/libxtreemfs/*.h)
 add_library(xtreemfs ${SRCS_RPC} ${SRCS_UTIL} ${SRCS_GENERATED} ${SRCS_XTREEMFS})
+# set_property(TARGET xtreemfs PROPERTY COMPILE_FLAGS "-fPIC")
 # WARNING: The resulting static libxtreemfs does NOT contain the required static library protobuf.
 #          If you want to use a static libxtreemfs, you have to use a CMake file like this which does automatically add the static libxtreemfs and libprotobuf to the executable.
 #          An alternative would be to change this file in such a way that the static libxtreemfs and libprotobuf are merged together into a static libxtreemfs.
@@ -339,6 +349,71 @@ if (BUILD_PRELOAD)
                         ${CLIENT_GOOGLE_PROTOBUF_CPP_DYNAMIC_LIBRARY})
   ADD_EXECUTABLE(preload_test "test/ld_preload/preload_test.cpp")
 endif(BUILD_PRELOAD)
+
+if (GENERATE_JNI OR BUILD_JNI)
+  MESSAGE(STATUS "Configuring JNI Library.")
+
+  set(JNI_LIB_NAME "jni-xtreemfs")
+  set(JNI_GEN_JAVA_PKG "org.xtreemfs.common.libxtreemfs.jni.generated")
+  set(JNI_GEN_JAVA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../java/servers/src/org/xtreemfs/common/libxtreemfs/jni/generated")
+  set(JNI_GEN_C_DIR "${CMAKE_CURRENT_SOURCE_DIR}/generated/swig")
+  set(JNI_GEN_C_FILE "${JNI_GEN_C_DIR}/xtreemfsJAVA_wrap.cpp")
+
+  set(SRCS_LIBXTREEMFS ${SRCS_RPC} ${SRCS_UTIL} ${SRCS_GENERATED} ${SRCS_XTREEMFS})
+  set(LIBS_LIBXTREEMFS protobuf ${Boost_LIBRARIES} ${LIBPTHREAD} ${OPENSSL_LIBRARIES} ${LIBSOCKET_SOLARIS} ${LIBNSL_SOLARIS})
+
+  find_package(JNI REQUIRED)
+  include_directories(${JNI_INCLUDE_DIRS})
+
+  # The JNI library has to be a shared objects and requires to build the sources
+  # itself or could use objects built with PIC.
+  add_library(${JNI_LIB_NAME} MODULE ${JNI_GEN_C_FILE} ${SRCS_LIBXTREEMFS})
+  target_link_libraries(${JNI_LIB_NAME} ${LIBS_LIBXTREEMFS})
+
+  if (APPLE)
+    # JNI will look for a library whose name is platform dependent, namely
+    #   MacOS  : libLIBRARY.jnilib
+    #   Windows: LIBRARY.dll
+    #   Linux  : libLIBRARY.so
+    set_target_properties (${JNI_LIB_NAME} PROPERTIES SUFFIX ".jnilib")
+  endif ()
+
+
+  if (GENERATE_JNI)
+    MESSAGE(STATUS "Configuring JNI generator.")
+    find_package(SWIG REQUIRED)
+    # include(${SWIG_USE_FILE})
+    # Use modified UseSWIG.cmake
+    include(cmake/UseSWIG.cmake)
+  
+    set(CMAKE_SWIG_OUTDIR "${CMAKE_CURRENT_BINARY_DIR}/swig_generated/java")
+    set(CMAKE_SWIG_FLAGS -package ${JNI_GEN_JAVA_PKG})
+    
+    # Workaround to pass -D defines to SWIG -> fixed in modified UseSWIG.cmake
+    # set(CMAKE_SWIG_FLAGS "$(CXX_DEFINES)")
+    
+    set_source_files_properties("include/swig/xtreemfs.i" PROPERTIES CPLUSPLUS ON)
+    # swig_add_module(${JNI_LIB_NAME} java "include/swig/xtreemfs.i" ${SRCS_LIBXTREEMFS})
+    SWIG_MODULE_INITIALIZE(${JNI_LIB_NAME} java)
+    SWIG_GENERATE_SOURCES(${JNI_LIB_NAME} swig_generated_sources "include/swig/xtreemfs.i")
+    # This assumes, that only one file is created. This is currently true for 
+    # the xtreemfs.i and the UseSWIG macros, but could fail with future versions
+    list(GET swig_generated_sources 0 swig_generated_file)
+
+    # Add a file target which invokes swig when used as a source
+    # The JNI_GEN_C_FILE will be used by the jni library and thus the generated 
+    # files are copied in time to the correct path.
+    add_custom_command(
+      OUTPUT ${JNI_GEN_C_FILE}
+      COMMAND ${CMAKE_COMMAND} -E copy ${swig_generated_file} ${JNI_GEN_C_FILE}
+      COMMAND ${CMAKE_COMMAND} -E remove_directory ${JNI_GEN_JAVA_DIR}
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${JNI_GEN_JAVA_DIR}
+      COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SWIG_OUTDIR} ${JNI_GEN_JAVA_DIR}
+      DEPENDS ${swig_generated_file})
+
+  endif(GENERATE_JNI)
+endif(GENERATE_JNI OR BUILD_JNI)
+
 
 ################################################################################
 # Define building of unittests.

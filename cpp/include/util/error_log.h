@@ -23,7 +23,7 @@ class ErrorLog {
  public:
   static ErrorLog* error_log;
 
-  ErrorLog(int max_entries) : max_entries_(max_entries) {}
+  ErrorLog(int max_entries) : init_count_(1), max_entries_(max_entries) {}
   ~ErrorLog() {}
 
   void AppendError(const std::string& message) {
@@ -39,7 +39,20 @@ class ErrorLog {
     return error_messages_;
   }
 
+  void register_init() {
+    ++init_count_;
+  }
+
+  bool register_shutdown() {
+    if (init_count_ > 0) {
+      return (--init_count_ == 0);
+    }
+    return false;
+  }
+
  private:
+  /** Contains the number of possible instances, by counting inits and shutdowns. */
+  int init_count_;
   int max_entries_;
   boost::mutex error_messages_mutex_;
   std::list<std::string> error_messages_;

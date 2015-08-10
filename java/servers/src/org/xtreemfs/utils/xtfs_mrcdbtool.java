@@ -8,7 +8,6 @@
 
 package org.xtreemfs.utils;
 
-import java.io.FileInputStream;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -127,8 +126,7 @@ public class xtfs_mrcdbtool {
                     gridSSL = true;
                 }
 
-                sslOptions = new SSLOptions(new FileInputStream(c.stringValue), cp,
-                        SSLOptions.PKCS12_CONTAINER, new FileInputStream(t.stringValue), tp,
+                sslOptions = new SSLOptions(c.stringValue, cp, SSLOptions.PKCS12_CONTAINER, t.stringValue, tp,
                         SSLOptions.JKS_CONTAINER, false, gridSSL, sslProtocolString, null);
             }
             rpcClient = new RPCNIOSocketClient(sslOptions, Integer.MAX_VALUE - 1000, Integer.MAX_VALUE, "xtfs_mrcdbtool");

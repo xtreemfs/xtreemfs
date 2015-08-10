@@ -280,12 +280,14 @@ public interface Client {
     /**
      * Returns the available volumes on a MRC.
      * 
+     * 
      * @throws AddressToUUIDNotFoundException
      * @throws IOException
      * @throws PosixErrorException
      * 
      * @remark Ownership of the return value is transferred to the caller.
      */
+    @Deprecated
     public Volumes listVolumes() throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -320,6 +322,7 @@ public interface Client {
      * @throws IOException
      * @throws PosixErrorException
      */
+    @Deprecated
     public Map<String, Service> listServers() throws IOException, PosixErrorException;
 
     /**
@@ -329,5 +332,6 @@ public interface Client {
      * @throws IOException
      * @throws PosixErrorException
      */
+    @Deprecated
     public Map<String, Service> listOSDsAndAttributes() throws IOException, PosixErrorException;
 }

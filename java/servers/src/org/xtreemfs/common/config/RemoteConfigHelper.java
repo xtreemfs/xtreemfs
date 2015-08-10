@@ -7,7 +7,6 @@
  */
 package org.xtreemfs.common.config;
 
-import java.io.FileInputStream;
 import java.util.HashMap;
 
 import org.xtreemfs.dir.DIRClient;
@@ -36,11 +35,10 @@ public class RemoteConfigHelper {
             Logging.logMessage(Logging.LEVEL_INFO, null, "Loading configuration from DIR (will retry up to %d times)", retries);
     
             SSLOptions sslOptions;
-            sslOptions = config.isUsingSSL() ? new SSLOptions(new FileInputStream(
-                    config.getServiceCredsFile()), config.getServiceCredsPassphrase(),
-                    config.getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()),
-                    config.getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false,
-                    config.isGRIDSSLmode(), config.getSSLProtocolString(),
+            sslOptions = config.isUsingSSL() ? new SSLOptions(config.getServiceCredsFile(),
+                    config.getServiceCredsPassphrase(), config.getServiceCredsContainer(),
+                    config.getTrustedCertsFile(), config.getTrustedCertsPassphrase(),
+                    config.getTrustedCertsContainer(), false, config.isGRIDSSLmode(), config.getSSLProtocolString(),
                     new PolicyContainer(config).getTrustManager()) : null;
     
             RPCNIOSocketClient clientStage = new RPCNIOSocketClient(sslOptions, 1000, 60 * 1000, "RemoteConfigHelper");

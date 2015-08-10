@@ -8,10 +8,9 @@
 
 package org.xtreemfs.foundation.util;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
@@ -39,9 +38,9 @@ public class PingServer {
 
             SSLOptions ssl = null;
             if (true) {
-                ssl = new SSLOptions(new FileInputStream(PingServer.CERT_DIR + "Client.p12"),
-                "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(PingServer.CERT_DIR + "trusted.jks"),
-                "passphrase", SSLOptions.JKS_CONTAINER, false, true, null, null);
+                ssl = new SSLOptions(PingServer.CERT_DIR + "Client.p12", "passphrase", SSLOptions.PKCS12_CONTAINER,
+                        PingServer.CERT_DIR + "trusted.jks", "passphrase", SSLOptions.JKS_CONTAINER, false, true, null,
+                        null);
             }
 
             RPCNIOSocketServer server = new RPCNIOSocketServer(12345, null, new RPCServerRequestListener() {

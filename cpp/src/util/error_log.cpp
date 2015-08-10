@@ -17,11 +17,21 @@ namespace xtreemfs {
 namespace util {
 
 void initialize_error_log(int max_entries) {
+  // Do not initialize the error log multiple times.
+  if (ErrorLog::error_log) {
+    ErrorLog::error_log->register_init();
+    return;
+  }
+
   ErrorLog::error_log = new ErrorLog(max_entries);
 }
 
 void shutdown_error_log() {
-  delete ErrorLog::error_log;
+  // Delete the logging only if no instance is left.
+  if (ErrorLog::error_log && ErrorLog::error_log->register_shutdown()) {
+    delete ErrorLog::error_log;
+    ErrorLog::error_log = NULL;
+  }
 }
 
 ErrorLog* ErrorLog::error_log = NULL;
