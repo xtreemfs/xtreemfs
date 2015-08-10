@@ -12,24 +12,25 @@ import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
 
-/** TODO: Brief description of the purpose of this type and its relation to other types. */
+/**
+ * This class contains all relevant information regarding the quota of an volume.
+ * 
+ * It also allocates resources for requesting parties and blocks them, until they get freed.
+ */
 public class VolumeQuotaManager {
 
-    // TODO(baerhold): export to config later on
-    private static final int     concurrentAccess = 1000;            // concurrent user * parallel file access
-    private static final int     minVoucherSize   = 5 * 1024 * 1024; // 5 MB
-    private static final int     maxVoucherSize   = 25 * 1024 * 1024; // 25 MB
-
-    private final StorageManager volStorageManager;
+    private final StorageManager      volStorageManager;
     private final QuotaChangeListener quotaChangeListener;
 
-    private final String         volumeId;
+    private final String              volumeId;
 
-    private boolean              active           = false;
+    private boolean                   active             = false;
 
-    private long                 volumeQuota      = 0;
-    private long                 curBlockedSpace  = 0;
-    private long                 curUsedSpace     = 0;
+    private long                      volumeQuota        = 0;
+    private long                      curBlockedSpace    = 0;
+    private long                      curUsedSpace       = 0;
+
+    private long                      volumeVoucherSize = 250 * 1024 * 1024; // 100 MB
 
     /**
      * 
@@ -50,6 +51,7 @@ public class VolumeQuotaManager {
             volumeQuota = volStorageManager.getVolumeQuota();
             curBlockedSpace = volStorageManager.getVolumeBlockedSpace();
             curUsedSpace = volStorageManager.getVolumeUsedSpace();
+            // defaultVoucherSize = volStorageManager.
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
@@ -89,16 +91,9 @@ public class VolumeQuotaManager {
                     + "\" is reached");
         }
 
-        long voucherSize = (long) Math.floor(currentFreeSpace / concurrentAccess);
-        if (voucherSize < minVoucherSize) {
-
-            if (currentFreeSpace >= minVoucherSize) {
-                voucherSize = minVoucherSize;
-            } else {
-                voucherSize = currentFreeSpace;
-            }
-        } else if (voucherSize > maxVoucherSize) {
-            voucherSize = maxVoucherSize;
+        long voucherSize = volumeVoucherSize;
+        if (currentFreeSpace >= volumeVoucherSize) {
+            voucherSize = currentFreeSpace;
         }
 
         // block voucherSize to
@@ -187,6 +182,12 @@ public class VolumeQuotaManager {
         setActive(volumeQuota != 0);
 
         System.out.println(getClass() + " setVolumeQuota: " + volumeQuota + " active: " + (volumeQuota != 0)); // FIXME(remove)
+    }
+    
+    public void setVolumeVoucherSize(long volumeVoucherSize) {
+        this.volumeVoucherSize = volumeVoucherSize;
+
+        System.out.println(getClass() + " setVolumeVoucherSize: " + volumeVoucherSize); // FIXME(remove)
     }
 
     /**

@@ -73,6 +73,13 @@ public interface VolumeInfo {
      * @return the volume's quota in bytes
      */
     public long getVolumeQuota() throws DatabaseException;
+
+    /**
+     * Returns the volume's voucher size in bytes.
+     * 
+     * @return the volume's voucher size in bytes.
+     */
+    public long getVolumeVoucherSize() throws DatabaseException;
     /**
      * Returns the number of files currently stored in the volume.
      * 
@@ -142,6 +149,15 @@ public interface VolumeInfo {
      * @throws DatabaseException
      */
     public void setVolumeQuota(long quota, AtomicDBUpdate update) throws DatabaseException;
+
+    /**
+     * Set the volume's voucher size
+     * 
+     * @param voucherSize
+     *            voucher size in bytes
+     * @throws DatabaseException
+     */
+    public void setVolumeVoucherSize(long voucherSize, AtomicDBUpdate update) throws DatabaseException;
 
     /**
      * Adds <code>diff</code> to the current volume size.

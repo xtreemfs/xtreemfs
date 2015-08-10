@@ -101,6 +101,8 @@ public class BabuDBStorageManager implements StorageManager {
 
     protected static final String            VOL_USPACE_ATTR_NAME       = "usedSpace";
 
+    protected static final String            VOL_VOUCHERSIZE_ATTR_NAME  = "voucherSize";
+
     protected static final int[]             ALL_INDICES                = { FILE_INDEX, XATTRS_INDEX, ACL_INDEX,
             FILE_ID_INDEX, VOLUME_INDEX                                };
     
@@ -614,6 +616,24 @@ public class BabuDBStorageManager implements StorageManager {
         }
     }
 
+
+    @Override
+    public long getVolumeVoucherSize() throws DatabaseException {
+        try {
+            byte[] voucherSize = getXAttr(1, SYSTEM_UID, VOL_VOUCHERSIZE_ATTR_NAME);
+            if (voucherSize == null)
+                return 0;
+            else {
+                return Long.valueOf(new String(voucherSize));
+            }
+
+        } catch (DatabaseException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
     @Override
     public FileMetadata getMetadata(long fileId) throws DatabaseException {
         
@@ -866,6 +886,12 @@ public class BabuDBStorageManager implements StorageManager {
     }
 
     @Override
+    public void setVolumeVoucherSize(long voucherSize, AtomicDBUpdate update) throws DatabaseException {
+        setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_VOUCHERSIZE_ATTR_NAME,
+                String.valueOf(voucherSize).getBytes(), update);
+    }
+
+    @Override
     public void setMetadata(FileMetadata metadata, byte type, AtomicDBUpdate update) throws DatabaseException {
         
         assert (metadata instanceof BufferBackedFileMetadata);
@@ -1085,7 +1111,7 @@ public class BabuDBStorageManager implements StorageManager {
             throw new DatabaseException(exc);
         }
     }
-    
+
     protected void notifyVolumeChange(VolumeInfo vol) {
         for (VolumeChangeListener listener : vcListeners)
             listener.volumeChanged(vol);

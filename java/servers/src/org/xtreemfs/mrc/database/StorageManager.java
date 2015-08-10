@@ -119,6 +119,8 @@ public interface StorageManager {
 
     public void setVolumeUsedSpace(long usedSpace, AtomicDBUpdate update) throws DatabaseException;
 
+    public void setVolumeVoucherSize(long voucherSize, AtomicDBUpdate update) throws DatabaseException;
+
     public void setDefaultReplicationPolicy(long fileId, ReplicationPolicy defaultRp,
         AtomicDBUpdate update) throws DatabaseException;
     
@@ -143,6 +145,8 @@ public interface StorageManager {
     public long getVolumeBlockedSpace() throws DatabaseException;
 
     public long getVolumeUsedSpace() throws DatabaseException;
+
+    public long getVolumeVoucherSize() throws DatabaseException;
 
     public String getSoftlinkTarget(long fileId) throws DatabaseException;
     

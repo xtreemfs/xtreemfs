@@ -85,6 +85,8 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
 
     protected static final String          VOL_USPACE_ATTR_NAME       = "usedSpace";
 
+    protected static final String          VOL_VOUCHERSIZE_ATTR_NAME  = "voucherSize";
+
     protected static final int[]           ALL_INDICES                = { FILE_INDEX, XATTRS_INDEX,
         ACL_INDEX, FILE_ID_INDEX, VOLUME_INDEX                       };
     
@@ -251,6 +253,23 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
                 return 0;
             else {
                 return Long.valueOf(new String(usedSpace));
+            }
+
+        } catch (DatabaseException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
+    public long getVolumeVoucherSize() throws DatabaseException {
+        try {
+            byte[] voucherSize = getXAttr(1, SYSTEM_UID, VOL_VOUCHERSIZE_ATTR_NAME);
+            if (voucherSize == null)
+                return 0;
+            else {
+                return Long.valueOf(new String(voucherSize));
             }
 
         } catch (DatabaseException exc) {
@@ -594,6 +613,11 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
 
     @Override
     public void setVolumeUsedSpace(long usedSpace, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setVolumeVoucherSize(long voucherSize, AtomicDBUpdate update) throws DatabaseException {
         throwException();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 by rob, Zuse Institute Berlin
+ * Copyright (c) 2015 by Robert Bärhold, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -23,6 +23,7 @@ public class QuotaChangeListener implements VolumeChangeListener {
 
         try {
             volumeQuotaManager.setVolumeQuota(vol.getVolumeQuota());
+            volumeQuotaManager.setVolumeVoucherSize(vol.getVolumeVoucherSize());
         } catch (DatabaseException e) {
             // FIXME(baerhold): Handle -> Debug
             e.printStackTrace();
@@ -38,5 +39,4 @@ public class QuotaChangeListener implements VolumeChangeListener {
     public void attributeSet(String volumeId, String key, String value) {
         // TODO Auto-generated method stub: check, when it will be called
     }
-
 }

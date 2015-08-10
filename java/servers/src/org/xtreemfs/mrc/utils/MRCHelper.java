@@ -125,7 +125,8 @@ public class MRCHelper {
             mark_replica_complete,
             set_repl_update_policy,
             default_rp,
-            quota
+            quota,
+            vouchersize
     }
     
     public enum FileType {
@@ -841,7 +842,15 @@ public class MRCHelper {
             if (file.getId() != 1)
                 throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "quota must be set on volume root");
 
-            sMan.getVolumeInfo().setVolumeQuota((long) Long.valueOf(value), update);
+            sMan.getVolumeInfo().setVolumeQuota(Long.valueOf(value), update);
+
+            break;
+
+        case vouchersize:
+            if (file.getId() != 1)
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "voucher size must be set on volume root");
+
+            sMan.getVolumeInfo().setVolumeVoucherSize(Long.valueOf(value), update);
 
             break;
 

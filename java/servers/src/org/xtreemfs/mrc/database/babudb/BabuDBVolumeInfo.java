@@ -40,6 +40,8 @@ public class BabuDBVolumeInfo implements VolumeInfo {
 
     private long                 quota;
 
+    private long                 voucherSize;
+
     public void init(BabuDBStorageManager sMan, String id, String name, short[] osdPolicy, short[] replicaPolicy,
             short acPolicy, boolean allowSnaps, long quota, AtomicDBUpdate update) throws DatabaseException {
         
@@ -51,6 +53,7 @@ public class BabuDBVolumeInfo implements VolumeInfo {
         this.acPolicy = acPolicy;
         this.allowSnaps = allowSnaps;
         this.quota = quota;
+        this.voucherSize = 250 * 1024 * 1024; // 250 MB; FIXME(baerhold): don't use a hardcoded value here
         
         // set the policies
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_ID_ATTR_NAME, id.getBytes(), true, update);
@@ -65,6 +68,8 @@ public class BabuDBVolumeInfo implements VolumeInfo {
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_QUOTA_ATTR_NAME, String.valueOf(quota)
                 .getBytes(),
                 true, update);
+        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_VOUCHERSIZE_ATTR_NAME,
+                String.valueOf(voucherSize).getBytes(), true, update);
     }
     
     public void init(BabuDBStorageManager sMan) throws DatabaseException {
@@ -82,6 +87,8 @@ public class BabuDBVolumeInfo implements VolumeInfo {
             byte[] replicaPolicyAttr = sMan.getXAttr(1, StorageManager.SYSTEM_UID,
                     BabuDBStorageManager.REPL_POL_ATTR_NAME);
             byte[] quotaAttr = sMan.getXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_QUOTA_ATTR_NAME);
+            byte[] voucherSizeAttr = sMan.getXAttr(1, StorageManager.SYSTEM_UID,
+                    BabuDBStorageManager.VOL_VOUCHERSIZE_ATTR_NAME);
             
             if (idAttr != null)
                 id = new String(idAttr);
@@ -114,6 +121,9 @@ public class BabuDBVolumeInfo implements VolumeInfo {
 
             if (quotaAttr != null)
                 quota = Long.valueOf(new String(quotaAttr));
+
+            if (voucherSizeAttr != null)
+                voucherSize = Long.valueOf(new String(voucherSizeAttr));
 
         } catch (NumberFormatException exc) {
             Logging.logError(Logging.LEVEL_ERROR, this, exc);
@@ -152,6 +162,11 @@ public class BabuDBVolumeInfo implements VolumeInfo {
     }
 
     @Override
+    public long getVolumeVoucherSize() throws DatabaseException {
+        return voucherSize;
+    }
+
+    @Override
     public void setOsdPolicy(short[] osdPolicy, AtomicDBUpdate update) throws DatabaseException {
         this.osdPolicy = osdPolicy;
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.OSD_POL_ATTR_NAME, Converter
@@ -181,6 +196,14 @@ public class BabuDBVolumeInfo implements VolumeInfo {
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_QUOTA_ATTR_NAME, String.valueOf(quota)
                 .getBytes(),
                 update);
+        sMan.notifyVolumeChange(this);
+    }
+
+    @Override
+    public void setVolumeVoucherSize(long voucherSize, AtomicDBUpdate update) throws DatabaseException {
+        this.voucherSize = voucherSize;
+        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_VOUCHERSIZE_ATTR_NAME,
+                String.valueOf(voucherSize).getBytes(), update);
         sMan.notifyVolumeChange(this);
     }
 
