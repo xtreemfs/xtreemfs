@@ -7,7 +7,6 @@
  */
 package org.xtreemfs.utils;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -149,10 +148,9 @@ public class xtfs_remove_osd {
 
                         // TODO: support custom SSL trust managers
                         try {
-                            sslOptions = new SSLOptions(new FileInputStream(serviceCredsFile),
-                                    serviceCredsPass, SSLOptions.PKCS12_CONTAINER, new FileInputStream(
-                                            trustedCAsFile), trustedCAsPass, SSLOptions.JKS_CONTAINER, false,
-                                    gridSSL, sslProtocolString, null);
+                            sslOptions = new SSLOptions(serviceCredsFile, serviceCredsPass,
+                                    SSLOptions.PKCS12_CONTAINER, trustedCAsFile, trustedCAsPass,
+                                    SSLOptions.JKS_CONTAINER, false, gridSSL, sslProtocolString, null);
                         } catch (Exception e) {
                             System.err.println("unable to get SSL options, because:" + e.getMessage());
                             System.exit(1);

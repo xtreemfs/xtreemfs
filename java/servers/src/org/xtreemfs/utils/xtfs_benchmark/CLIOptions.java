@@ -8,23 +8,23 @@
 
 package org.xtreemfs.utils.xtfs_benchmark;
 
-import org.xtreemfs.common.benchmark.BenchmarkConfig;
-import org.xtreemfs.common.benchmark.BenchmarkUtils;
-import org.xtreemfs.common.config.ServiceConfig;
-import org.xtreemfs.foundation.pbrpc.Schemes;
-import org.xtreemfs.foundation.util.CLIParser;
-import org.xtreemfs.utils.DefaultDirConfig;
-import org.xtreemfs.utils.utils;
+import static org.xtreemfs.foundation.util.CLIParser.parseCLI;
+import static org.xtreemfs.foundation.util.CLIParser.CliOption.OPTIONTYPE.STRING;
+import static org.xtreemfs.foundation.util.CLIParser.CliOption.OPTIONTYPE.SWITCH;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.xtreemfs.common.benchmark.BenchmarkConfig.ConfigBuilder;
-import static org.xtreemfs.foundation.util.CLIParser.CliOption.OPTIONTYPE.STRING;
-import static org.xtreemfs.foundation.util.CLIParser.CliOption.OPTIONTYPE.SWITCH;
-import static org.xtreemfs.foundation.util.CLIParser.parseCLI;
+import org.xtreemfs.common.benchmark.BenchmarkConfig;
+import org.xtreemfs.common.benchmark.BenchmarkConfig.ConfigBuilder;
+import org.xtreemfs.common.benchmark.BenchmarkUtils;
+import org.xtreemfs.common.config.ServiceConfig;
+import org.xtreemfs.foundation.pbrpc.Schemes;
+import org.xtreemfs.foundation.util.CLIParser;
+import org.xtreemfs.utils.DefaultDirConfig;
+import org.xtreemfs.utils.utils;
 
 /**
  * Class implementing the commandline options for {@link xtfs_benchmark}.
@@ -64,6 +64,7 @@ class CLIOptions {
     private static final String              NO_CLEANUP_BASEFILE;
     private static final String              OSD_CLEANUP;
     private static final String              CONFIG;
+    private static final String              USE_JNI;
 
     static {
         DIR_ADDRESSES = "-dir-addresses";
@@ -94,6 +95,7 @@ class CLIOptions {
         NO_CLEANUP_BASEFILE = "-no-cleanup-basefile";
         OSD_CLEANUP = "-osd-cleanup";
         CONFIG = "-config";
+        USE_JNI = "-use-jni";
     }
 
     CLIOptions() {
@@ -127,6 +129,7 @@ class CLIOptions {
         setNoCleanupOfBasefile();
         setOsdCleanup();
         setConfig();
+        setUseJNI();
         return builder.build();
     }
 
@@ -197,6 +200,9 @@ class CLIOptions {
                 + "--no-cleanup-volumes. Created Files and volumes need to be removed manually";
         options.put(NO_CLEANUP_BASEFILE, new CLIParser.CliOption(SWITCH, noCleanupBasefileDescription, ""));
         options.put(OSD_CLEANUP, new CLIParser.CliOption(SWITCH, "Run OSD cleanup after the benchmarks", ""));
+
+        options.put(USE_JNI, new CLIParser.CliOption(SWITCH,
+                "Use JNI (with the C++ library) instead of the Java client.", ""));
     }
 
     boolean usageIsSet() {
@@ -384,6 +390,12 @@ class CLIOptions {
             config.setDefaults(BenchmarkConfig.getBenchmarkParameter());
             builder.setParent(config);
         }
+    }
+
+    private void setUseJNI() {
+        boolean switchValue = options.get(USE_JNI).switchValue;
+        if (switchValue)
+            builder.setUseJNI();
     }
 
     int getNumberOfThreads() {

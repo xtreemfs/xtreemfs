@@ -240,6 +240,16 @@ protected:
       }
       xtreemfs_test_dir_ += "log/";
     }
+
+    char *tmpdir = getenv("TMPDIR");
+    if (tmpdir != NULL) {
+      tmpdir_.assign(tmpdir);
+      if (!boost::algorithm::ends_with(tmpdir_, "/")) {
+        tmpdir_.push_back('/');
+      }
+    } else {
+      tmpdir_ = "/tmp/";
+    }
   }
   
   virtual void SetUp() {
@@ -294,6 +304,8 @@ protected:
       unlink(mrc_log_file_name_.c_str());
       unlink(osd_log_file_name_.c_str());
     }
+
+    shutdown_logger();
   }
   
   void CreateOpenDeleteVolume(std::string volume_name) {
@@ -344,6 +356,8 @@ protected:
   std::string mrc_log_file_name_;
   std::string osd_log_file_name_;
   
+  std::string tmpdir_;
+
   xtreemfs::Options dir_url_;
   xtreemfs::Options mrc_url_;
   
@@ -424,7 +438,7 @@ protected:
             "../../tests/certs/client_ssl_test/Client_Root_Root.p12"));
         ASSERT_EQ(2, count_occurrences_in_file(
             options_.log_file_path,
-            "Writing 1 verification certificates to /tmp/ca"));
+            "Writing 1 verification certificates to " + tmpdir_ + "ca"));
         break;
       case kPEM:
         ASSERT_EQ(2, count_occurrences_in_file(
@@ -515,7 +529,7 @@ protected:
             "../../tests/certs/client_ssl_test/Client_Leaf_Chain.p12"));
         ASSERT_EQ(2, count_occurrences_in_file(
             options_.log_file_path,
-            "Writing 3 verification certificates to /tmp/ca"));
+            "Writing 3 verification certificates to " + tmpdir_ + "ca"));
         break;
       case kPEM:
         ASSERT_EQ(2, count_occurrences_in_file(

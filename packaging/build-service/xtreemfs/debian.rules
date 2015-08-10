@@ -15,6 +15,9 @@ endif
 BUILD_DIR:=$(CURDIR)/debian/xtreemfs
 export ANT_OPTS=-D"file.encoding=UTF-8"
 
+# Build JNI library
+export BUILD_JNI=true
+
 build: build-stamp
 build-stamp:
 	dh_testdir
@@ -127,6 +130,14 @@ install: build
 	         $(BUILD_DIR)/usr/share/man/man1/xtfs_*
 	mkdir -p $(BUILD_DIR)-tools/usr/share/doc/xtreemfs-tools
 	cp    -t $(BUILD_DIR)-tools/usr/share/doc/xtreemfs-tools \
+	         $(CURDIR)/LICENSE
+
+	# move files to the libxtreemfs-jni package
+	mkdir -p $(CURDIR)/debian/libxtreemfs-jni/usr/lib/xtreemfs
+	mv    -t $(CURDIR)/debian/libxtreemfs-jni/usr/lib/xtreemfs \
+         $(BUILD_DIR)/usr/lib/xtreemfs/libjni-xtreemfs.so
+	mkdir -p $(CURDIR)/debian/libxtreemfs-jni/usr/share/doc/libxtreemfs-jni
+	cp    -t $(CURDIR)/debian/libxtreemfs-jni/usr/share/doc/libxtreemfs-jni \
 	         $(CURDIR)/LICENSE
 
 # Build architecture-independent files here.
