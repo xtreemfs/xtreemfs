@@ -92,7 +92,7 @@ public class VolumeQuotaManager {
         }
 
         long voucherSize = volumeVoucherSize;
-        if (currentFreeSpace >= volumeVoucherSize) {
+        if (volumeVoucherSize > currentFreeSpace) {
             voucherSize = currentFreeSpace;
         }
 
