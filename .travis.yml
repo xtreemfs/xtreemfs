@@ -9,9 +9,21 @@ env:
     - TEST_SUITE=travis-cpp
     - TEST_SUITE=travis-valgrind
 
-before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -y libboost-all-dev libfuse-dev fuse libssl-dev libattr1-dev make cmake automake python valgrind
+sudo: false
+
+addons:
+  apt:
+    packages:
+      - libboost-all-dev
+      - libfuse-dev 
+      - fuse 
+      - libssl-dev
+      - libattr1-dev
+      - make
+      - cmake
+      - automake 
+      - python
+      - valgrind
 
 before_script:
   - TEST_DIR="/tmp/xtreemfs_xtestenv"
