@@ -168,20 +168,32 @@ public class XtreemFSFileSystem extends FileSystem {
                     trustedCertificatesFileContainer, conf.getBoolean("xtreemfs.ssl.authenticationWithoutEncryption",
                             false), false, sslProtocolString, null);
         }
-
+        
+        // Initialize default options
+        Options xtreemfsOptions = new Options();
+        xtreemfsOptions.setMetadataCacheSize(0);
+        
+        // Use the native client and use async writes if requested.
         ClientFactory.ClientType clientType = ClientFactory.ClientType.JAVA;
         if (conf.getBoolean("xtreemfs.jni.enabled", false)) {
             clientType = ClientFactory.ClientType.NATIVE;
+            
+            String libraryPath = conf.get("xtreemfs.jni.library-path");
+            if (libraryPath != null && !libraryPath.isEmpty()) {
+                NativeHelper.setXtreemfsLibPath(libraryPath);
+            }
+            
+            if (conf.getBoolean("xtreemfs.async-writes.enabled", false)) {
+                xtreemfsOptions.setEnableAsyncWrites(true);
+            }
+            
+            int maxWriteAhead = conf.getInt("xtreemfs.async-writes.max-requests", -1);
+            if (maxWriteAhead > -1) {
+                xtreemfsOptions.setMaxWriteAhead(maxWriteAhead);
+            }
         }
-
-        String libraryPath = conf.get("xtreemfs.jni.library.path");
-        if (libraryPath != null && !libraryPath.isEmpty()) {
-            NativeHelper.setXtreemfsLibPath(libraryPath);
-        }
-
-        // Initialize XtreemFS Client with default Options.
-        Options xtreemfsOptions = new Options();
-        xtreemfsOptions.setMetadataCacheSize(0);
+        
+        // Initialize XtreemFS Client
         xtreemfsClient = ClientFactory.createClient(clientType, uri.getHost() + ":" + uriPort, userCredentials,
                 sslOptions, xtreemfsOptions);
         try {
