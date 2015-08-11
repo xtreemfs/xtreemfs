@@ -178,16 +178,16 @@ public class XtreemFSFileSystem extends FileSystem {
         if (conf.getBoolean("xtreemfs.jni.enabled", false)) {
             clientType = ClientFactory.ClientType.NATIVE;
             
-            String libraryPath = conf.get("xtreemfs.jni.library-path");
+            String libraryPath = conf.get("xtreemfs.jni.libraryPath");
             if (libraryPath != null && !libraryPath.isEmpty()) {
                 NativeHelper.setXtreemfsLibPath(libraryPath);
             }
             
-            if (conf.getBoolean("xtreemfs.async-writes.enabled", false)) {
+            if (conf.getBoolean("xtreemfs.asyncWrites.enabled", false)) {
                 xtreemfsOptions.setEnableAsyncWrites(true);
             }
             
-            int maxWriteAhead = conf.getInt("xtreemfs.async-writes.max-requests", -1);
+            int maxWriteAhead = conf.getInt("xtreemfs.asyncWrites.maxRequests", -1);
             if (maxWriteAhead > -1) {
                 xtreemfsOptions.setMaxWriteAhead(maxWriteAhead);
             }
