@@ -7,9 +7,22 @@ env:
     # encrypted COVERITY_SCAN_TOKEN
     - secure: "WkngHI6zO+6m8ZNqrbFZN+V8xCUxXVUMzLGBcOMa2/iiSDGxnRRpGU2jH+4Uf4ChCE4dXLrTXvs4vDjUT7aZ9KVFzcTo4HYejdLeMayFPLeztSYdFUG7EYtambZlh1Ldp67+ZBXLJ152iTWvCm5t/JXs3tA+Q5puZ24OO+U5xAE="
 
-before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -y libboost-all-dev libfuse-dev fuse libssl-dev libattr1-dev make cmake automake python valgrind
+sudo: false
+
+addons:
+  apt:
+    packages:
+      - libboost-all-dev
+      - libfuse-dev 
+      - fuse 
+      - libssl-dev
+      - libattr1-dev
+      - make
+      - cmake
+      - automake 
+      - python
+      - valgrind
+      - net-tools
 
 script:
   - true

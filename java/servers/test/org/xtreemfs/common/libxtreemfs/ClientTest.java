@@ -280,6 +280,7 @@ public class ClientTest {
         options.setPeriodicFileSizeUpdatesIntervalS(10);
         // maxwriteAhead != 0 enables async writes as long as file isn't opened
         // with O_SYNC
+        options.setEnableAsyncWrites(true);
         options.setMaxWriteAhead(1024);
 
         String dirAddress = testEnv.getDIRAddress().getHostName() + ":" + testEnv.getDIRAddress().getPort();
