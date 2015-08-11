@@ -30,10 +30,15 @@ public class Options {
     private final long metadataCacheTTLs     = 120;
 
     /**
-     * Maximum number of pending bytes (of async writes) per file. TODO: Reenable async writes when retry
-     * support is completed.
+     * Enable asynchronous writes. <br>
+     * Currently only operative through the native C++ client.
      */
-    private int        maxWriteahead         = 0;
+    private boolean    enableAsyncWrites     = false;
+
+    /**
+     * Maximum number of pending bytes (of async writes) per file.
+     */
+    private int        maxWriteahead         = 128 * 1024;
 
     /**
      * Maximum number of pending async write requests per file. Default: 10
@@ -238,6 +243,10 @@ public class Options {
         return retryDelay_s;
     }
 
+    public boolean isEnableAsyncWrites() {
+        return enableAsyncWrites;
+    }
+
     public int getMaxWriteahead() {
         return maxWriteahead;
     }
@@ -256,6 +265,10 @@ public class Options {
 
     public void setPeriodicFileSizeUpdatesIntervalS(int periodicFileSizeUpdatesIntervalS) {
         this.periodicFileSizeUpdatesIntervalS = periodicFileSizeUpdatesIntervalS;
+    }
+
+    public void setEnableAsyncWrites(boolean enableAsyncWrites) {
+        this.enableAsyncWrites = enableAsyncWrites;
     }
     
     public void setMaxWriteAhead(int maxWriteAhead) {

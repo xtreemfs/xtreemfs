@@ -474,7 +474,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
      */
     public AdminFileHandle openFile(UserCredentials userCredentials, String path, int flags, int mode,
             int truncateNewFileSize) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
-        boolean asyncWritesEnabled = (volumeOptions.getMaxWriteahead() > 0);
+        boolean asyncWritesEnabled = volumeOptions.isEnableAsyncWrites();
 
         if ((SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_SYNC.getNumber() & flags) > 0) {
             if (Logging.isDebug()) {

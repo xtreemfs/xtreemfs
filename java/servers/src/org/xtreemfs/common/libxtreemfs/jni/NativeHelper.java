@@ -230,17 +230,17 @@ public final class NativeHelper {
     public static OptionsProxy migrateOptions(Options o) {
         OptionsProxy op = new OptionsProxy();
 
-        // Migrate the options, that are setable as Java Options
+        // Migrate the options, that are modifiable as Java Options
         op.setMetadata_cache_size(BigInteger.valueOf(o.getMetadataCacheSize()));
         op.setMax_tries(o.getMaxTries());
         op.setMax_read_tries(o.getMaxReadTries());
         op.setMax_view_renewals(o.getMaxViewRenewals());
         op.setAsync_writes_max_request_size_kb(o.getMaxWriteahead());
-        op.setEnable_async_writes(o.getMaxWriteahead() > 0);
+        op.setEnable_async_writes(o.isEnableAsyncWrites());
         op.setPeriodic_file_size_updates_interval_s(o.getPeriodicFileSizeUpdatesIntervalS());
         op.setReaddir_chunk_size(o.getReaddirChunkSize());
 
-        // Migrate also Java defaults (TODO: ?)
+        // Migrate the Java defaults, too
         op.setConnect_timeout_s(o.getConnectTimeout_s());
         // o.getInterruptSignal()
         op.setAsync_writes_max_requests(o.getMaxWriteaheadRequests());
