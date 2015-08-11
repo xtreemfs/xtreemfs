@@ -1363,10 +1363,11 @@ void XCapManager::RenewXCapAsync(const RPCOptions& options, PosixErrorException*
   // TODO(mberlin): Only renew after some time has elapsed.
   // TODO(mberlin): Cope with local clocks which have a high clock skew.
   {
+    // get first writeback mutex due to same order of locks in the CallFinished method
+    boost::mutex::scoped_lock xcap_renewal_error_writebacks_lock(xcap_renewal_error_writebacks_mutex_);
     boost::mutex::scoped_lock lock(mutex_);
 
     if (writeback != NULL) {
-      boost::mutex::scoped_lock xcap_renewal_error_writebacks_lock(xcap_renewal_error_writebacks_mutex_);
       xcap_renewal_error_writebacks_.push_back(writeback);
     }
 
