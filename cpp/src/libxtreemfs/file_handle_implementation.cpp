@@ -297,7 +297,7 @@ int FileHandleImplementation::Read(
   }
   // exit(1);
 
-  return min(read_data, reported_fs);
+  return min(read_data, reported_fs - offset);
 }
   // void getFileSize(
   //         UUIDIterator* uuid_iterator,
