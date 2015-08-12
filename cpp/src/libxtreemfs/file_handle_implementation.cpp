@@ -10,6 +10,7 @@
 
 #include <boost/bind.hpp>
 #include <boost/dynamic_bitset.hpp>
+#include <algorithm>    // std::min
 #include <map>
 #include <memory>
 #include <string>
@@ -155,6 +156,8 @@ int FileHandleImplementation::Read(
   // Read all objects.
   boost::dynamic_bitset<> successful_reads(operations.size());
   size_t received_data = 0;
+  size_t reported_fs = 0;
+  size_t epoch = 0;
 
   for (size_t j = 0; j < operations.size(); j++) {
     // Differ between striping and the rest (replication, no replication).
@@ -192,13 +195,13 @@ int FileHandleImplementation::Read(
     } else {
       // TODO(mberlin): Update xloc list if newer version found (on OSD?).
       try {
-        // if (operations[j].osd_offsets[0] == 0) {
-        // // if (operations[j].osd_offsets[0] == 1) {
-        // // if (operations[j].osd_offsets[0] == 1 ||
-        // //     operations[j].osd_offsets[0] == 0) {
-        //   cout << "simulating an erasure of osd " << operations[j].osd_offsets[0] << endl;
-        // }
-        // else {
+        if (operations[j].osd_offsets[0] == 0) {
+        // if (operations[j].osd_offsets[0] == 1) {
+        // if (operations[j].osd_offsets[0] == 1 ||
+        //     operations[j].osd_offsets[0] == 0) {
+          cout << "simulating an erasure of osd " << operations[j].osd_offsets[0] << endl;
+        }
+        else {
              size_t op_received_data =
                 ReadFromOSD(uuid_iterator, file_credentials, operations[j].obj_number,
                         operations[j].data, operations[j].req_offset,
@@ -208,7 +211,7 @@ int FileHandleImplementation::Read(
             received_data += op_received_data;
             successful_reads[j] = 1;
             cout << "\tsuccess " << received_data << " bytes read from op " << j << endl;
-        // }
+        }
         // abort loop if all data stripe reads were successful
         // this criteria only works for systematic codes
         if (successful_reads.count() == min_successful_reads && j + 1 == min_successful_reads)
@@ -263,11 +266,15 @@ int FileHandleImplementation::Read(
 
       xtreemfs::pbrpc::InternalGmax* gmax =
         static_cast<xtreemfs::pbrpc::InternalGmax*>(response->response());
-      cout << "gmax reports " << (gmax->file_size()) << " bytes in epoch " << (gmax->epoch())<< endl;
+      if (gmax->epoch() >= epoch && gmax->file_size() > reported_fs) {
+          reported_fs = gmax->file_size();
+          epoch = gmax->epoch();
+      }
     }
   }
+  cout << "gmax reports " << reported_fs << " bytes in epoch " << epoch << endl;
 
-  int read_data = received_data;
+  size_t read_data = received_data;
   if ((successful_reads << successful_reads.size() - min_successful_reads).count() == min_successful_reads) {
     // all data stripes have successfully been read
     // since read ops are ordered so that necessary data reads come first received_data can simply
@@ -290,7 +297,7 @@ int FileHandleImplementation::Read(
   }
   // exit(1);
 
-  return read_data;
+  return min(read_data, reported_fs);
 }
   // void getFileSize(
   //         UUIDIterator* uuid_iterator,

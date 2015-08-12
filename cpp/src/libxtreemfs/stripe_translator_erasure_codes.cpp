@@ -262,8 +262,11 @@ namespace {
     size_t read_data = 0;
 
     for (int i = 0; i < k; i++) {
+      //is the first op starting at osd 0?
       int line_pos = operations->at(data_read).osd_offsets[0];
       if (line_pos != i) {
+
+        // if not there must be a auxiliary read before actual read position for reconstruction
         assert(i == operations->at(aux_read).osd_offsets[0]);
         assert(operations->at(aux_read).req_offset == 0);
 
@@ -273,11 +276,13 @@ namespace {
           cout << "copy data from data device " << i << " to op " << (aux_read) << endl;
           memcpy(operations->at(aux_read).data, data[i], req_size);
         } else {
-          cout << "copy data from op " << aux_read << " to data device " << (i) << endl;
-          memcpy(data[i], operations->at(aux_read).data, req_size);
-
           if (!successful_reads->test(aux_read)) {
+            cout << "read op " << data_read << " is erased and needs to be reconstructed" << endl;
+            // push i since i is the position int the current line
             erasures->push_back(i);
+          } else {
+            cout << "copy data from op " << aux_read << " to data device " << (i) << endl;
+            memcpy(data[i], operations->at(aux_read).data, req_size);
           }
         }
         if (successful_reads->test(aux_read)) {
@@ -286,24 +291,33 @@ namespace {
         }
         ++aux_read;
       } else {
+
+        // reads that start at the beginning of a line
         assert(i == operations->at(data_read).osd_offsets[0]);
 
         size_t req_offset = operations->at(data_read).req_offset;
         size_t req_size = operations->at(data_read).req_size;
         if(after_encoding) {
-          cout << "copy data from data device " << i << " to op " << (data_read) << " size, offset " << req_size << " , " << req_offset << endl;
+          cout << "copy data from data device " << i << " to op " << (data_read) << " size " << req_size << ", offset " << req_offset << endl;
           memcpy(operations->at(data_read).data, data[i] + req_offset, req_size);
           read_data += req_size;
           cout << "\tincreasing read_data by " << req_size << " bytes to " << read_data << endl;
         } else {
-          cout << "copy data from op " << data_read << " to data device " << (i) << " size, offset " << req_size << " , " << req_offset << endl;
-          memset(data[i], 0, req_offset);
-          if (req_offset + req_size < stripe_size) {
-            memset(data[i] + req_offset + req_size, 0, stripe_size - req_offset - req_size);
-          }
-          memcpy(data[i] + req_offset, operations->at(data_read).data, req_size);
           if (!successful_reads->test(data_read)) {
+            cout << "read op " << data_read << " is erased and needs to be reconstructed" << endl;
+            // push i since i is the position int the current line
             erasures->push_back(i);
+          } else {
+            cout << "copy data from op " << data_read << " to data device " << (i) << " size " << req_size << ", offset " << req_offset << endl;
+            if (req_offset != 0) {
+              cout << "\top has offset...setting first " << req_offset << " bytes to zero" << endl;
+              memset(data[i], 0, req_offset);
+            }
+            if (req_offset + req_size < stripe_size) {
+              cout << "\tsetting last " << stripe_size - req_offset - req_size << " bytes to 0" << endl;
+              memset(data[i] + req_offset + req_size, 0, stripe_size - req_offset - req_size);
+            }
+            memcpy(data[i] + req_offset, operations->at(data_read).data, req_size);
           }
         }
         if (successful_reads->test(data_read)) {
@@ -312,7 +326,9 @@ namespace {
         }
         ++data_read;
 
-        if (req_size < stripe_size && operations->at(data_read).osd_offsets[0] != data_read) {
+        // this must only happen if there is a short first object and no second.
+        // check if first object was erased and this might be a second
+        if (req_size < stripe_size && operations->at(data_read).osd_offsets[0] != data_read && i == 0) {
           cout << "first object short..." << endl;
           if(!after_encoding){
             for (int j = 1; j < k; j++) {
@@ -334,14 +350,17 @@ namespace {
         cout << "copy data from coding device " << i << " to op " << (aux_read) << endl;
         memcpy(operations->at(aux_read).data, coding[i] + req_offset, req_size);
       } else {
-          cout << "copy data from op " << aux_read << " to coding device " << (i) << endl;
-        memset(coding[i], 0, req_offset);
-        if (req_offset + req_size < stripe_size) {
-          memset(coding[i] + req_offset + req_size, 0, stripe_size - req_offset - req_size);
-        }
-        memcpy(coding[i] + req_offset, operations->at(aux_read).data, req_size);
         if (!successful_reads->test(aux_read)) {
+          cout << "read op " << aux_read << " is erased and needs to be reconstructed" << endl;
+          // push i since i is the position int the current line
           erasures->push_back(i);
+        } else {
+          cout << "copy data from op " << aux_read << " to coding device " << (i) << endl;
+          memset(coding[i], 0, req_offset);
+          if (req_offset + req_size < stripe_size) {
+            memset(coding[i] + req_offset + req_size, 0, stripe_size - req_offset - req_size);
+          }
+          memcpy(coding[i] + req_offset, operations->at(aux_read).data, req_size);
         }
       }
       if (successful_reads->test(aux_read)) {
@@ -357,7 +376,7 @@ namespace {
 } // namespace
 
 // TODO TODO any offset that is not divideable by 16 will cause gf-complete to crap out since it
-// wants src and dest buffers aligned to each other on 16 byte boundries. so either make it mor
+// wants src and dest buffers aligned to each other on 16 byte boundries. so either make it more
 // complex or copy every line to its own n*stripe_size buffer and do coding there.
 size_t StripeTranslatorErasureCodes::ProcessReads(
     std::vector<ReadOperation>* operations,
