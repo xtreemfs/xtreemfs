@@ -158,6 +158,7 @@ int FileHandleImplementation::Read(
   size_t received_data = 0;
   size_t reported_fs = 0;
   size_t epoch = 0;
+  size_t stripe_size = (*striping_policies.begin())->stripe_size() * 1024;
 
   for (size_t j = 0; j < operations.size(); j++) {
     // Differ between striping and the rest (replication, no replication).
@@ -195,27 +196,27 @@ int FileHandleImplementation::Read(
     } else {
       // TODO(mberlin): Update xloc list if newer version found (on OSD?).
       try {
-        if (operations[j].osd_offsets[0] == 0) {
+        // if (operations[j].osd_offsets[0] == 0) {
         // if (operations[j].osd_offsets[0] == 1) {
-        // if (operations[j].osd_offsets[0] == 1 ||
-        //     operations[j].osd_offsets[0] == 0) {
-          cout << "simulating an erasure of osd " << operations[j].osd_offsets[0] << endl;
+        if (operations[j].osd_offsets[0] == 1 ||
+            operations[j].osd_offsets[0] == 0) {
+          cout << "simulating an erasure of osd " << operations[j].osd_offsets[0] << " received no data from op " << j << endl;
         }
         else {
              size_t op_received_data =
                 ReadFromOSD(uuid_iterator, file_credentials, operations[j].obj_number,
                         operations[j].data, operations[j].req_offset,
                         operations[j].req_size);
+            received_data += op_received_data;
             // set operations req_size to actual received data
             operations[j].req_size = op_received_data;
-            received_data += op_received_data;
             successful_reads[j] = 1;
-            cout << "\tsuccess " << received_data << " bytes read from op " << j << endl;
+            cout << "success " << op_received_data << " bytes read from op " << j << endl;
+            if (op_received_data < stripe_size) {
+              memset(operations[j].data + op_received_data, 0 , stripe_size - op_received_data);
+              cout << "less then stripe_size (" << stripe_size << ") data received...setting rest of data buffer to zero for decoding" << endl;
+            }
         }
-        // abort loop if all data stripe reads were successful
-        // this criteria only works for systematic codes
-        if (successful_reads.count() == min_successful_reads && j + 1 == min_successful_reads)
-          break;
       } catch(IOException &e) {
         cout << "\tfailed" << endl;
         if (Logging::log->loggingActive(LEVEL_DEBUG)) {
@@ -241,6 +242,9 @@ int FileHandleImplementation::Read(
           throw e;
         }
       }
+    }
+    // retrieve all available gmax values
+    if (successful_reads.test(j)) {
       xtreemfs_internal_get_gmaxRequest gmax_request;
       gmax_request.mutable_file_credentials()->CopyFrom(file_credentials);
       gmax_request.set_file_id(file_credentials.xcap().file_id());
@@ -275,20 +279,8 @@ int FileHandleImplementation::Read(
   cout << "gmax reports " << reported_fs << " bytes in epoch " << epoch << endl;
 
   size_t read_data = received_data;
-  if ((successful_reads << successful_reads.size() - min_successful_reads).count() == min_successful_reads) {
-    // all data stripes have successfully been read
-    // since read ops are ordered so that necessary data reads come first received_data can simply
-    // be returned
-    cout << "only read data...no decoding necessary" << endl;
-  } else {
-    // retrieve all available gmax values
-    for (int i = 0; i < operations.size(); i++) {
-      // skip failed OSDs
-      if (successful_reads.test(i)) {
-      }
-    }
-    read_data = translator->ProcessReads(&operations, &successful_reads, striping_policies, received_data, min_successful_reads);
-  }
+  read_data = translator->ProcessReads(&operations, buf, count, offset, &successful_reads,
+      striping_policies, received_data, min_successful_reads);
   for (int i = 0; i < operations.size(); i++) {
     if (operations[i].owns_data) {
       cout << "deleting coding buffers after read" << endl;

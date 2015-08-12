@@ -35,6 +35,9 @@ class StripeTranslatorErasureCodes : public StripeTranslator {
 
   virtual size_t ProcessReads(
           std::vector<ReadOperation>* operations,
+          char *buf,
+          size_t size,
+          int64_t offset,
           boost::dynamic_bitset<>* successful_reads,
           PolicyContainer policies,
           size_t received_data,

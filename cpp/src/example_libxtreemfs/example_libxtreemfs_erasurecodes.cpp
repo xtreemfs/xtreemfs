@@ -225,6 +225,7 @@ int main(int argc, char* argv[]) {
   signal(SIGINT, clean_up);
 
   int vals[] = {
+    // TODO add short reads too
     // reads from the start
     4096, 0, 0,
     5000, 0, 0,
