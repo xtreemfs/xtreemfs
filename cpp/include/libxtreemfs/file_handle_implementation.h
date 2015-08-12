@@ -18,11 +18,13 @@
 #include <list>
 #include <map>
 #include <string>
+#include <vector>
 
 #include "pbrpc/RPC.pb.h"
 #include "rpc/callback_interface.h"
 #include "xtreemfs/GlobalTypes.pb.h"
 #include "xtreemfs/MRC.pb.h"
+#include "xtreemfs/OSD.pb.h"
 #include "libxtreemfs/client_implementation.h"
 #include "libxtreemfs/file_handle.h"
 #include "libxtreemfs/interrupt.h"
@@ -51,6 +53,86 @@ class UUIDIterator;
 class UUIDResolver;
 class Volume;
 class XCapManager;
+class VoucherManager;
+
+class VoucherManager : public rpc::CallbackInterface<xtreemfs::pbrpc::OSDFinalizeVouchersResponse> {
+ public:
+  VoucherManager(FileInfo* file_info, XCapManager* xcap_manager,
+                 pbrpc::MRCServiceClient* mrc_service_client,
+                 pbrpc::OSDServiceClient* osd_service_client_,
+                 UUIDResolver* uuid_resolver, UUIDIterator* mrc_uuid_iterator,
+                 UUIDIterator* osd_uuid_iterator,
+                 const Options& volume_options,
+                 const pbrpc::Auth& auth_bogus,
+                 const pbrpc::UserCredentials& user_credentials_bogus);
+
+  void finalizeAndClear();
+ private:
+  /**  */
+  void finalizeVoucher(xtreemfs::pbrpc::xtreemfs_finalize_vouchersRequest* finalizeVouchersRequest);
+
+  /**  */
+  void clearVoucher(xtreemfs::pbrpc::xtreemfs_clear_vouchersRequest* clearVouchersRequest);
+
+  bool checkResponseConsistency();
+
+  void cleanupOSDResponses();
+
+  /** Implements callback for an async xtreemfs_renew_capability request. */
+  virtual void CallFinished(xtreemfs::pbrpc::OSDFinalizeVouchersResponse* response_message,
+                            char* data,
+                            uint32_t data_length,
+                            pbrpc::RPCHeader::ErrorResponse* error,
+                            void* context);
+
+  /** Use this mutex guarantee a single call of finalize and clear. */
+  boost::mutex mutex_;
+
+  /** Used to wait on the condition. */
+  boost::mutex cond_mutex_;
+
+  /** Used to wait for finalize voucher respones of used OSDs. */
+  boost::condition osd_finalize_pending_cond;
+
+  /** number of osds, we expect a reponse of. */
+  int osdCount;
+
+
+  /** Used to keep save current osd finalize voucher responses*/
+  std::vector<xtreemfs::pbrpc::OSDFinalizeVouchersResponse*> osdFinalizeVoucherResponseVector_;
+
+
+  /** Multiple FileHandle may refer to the same File and therefore unique file
+   * properties (e.g. Path, FileId, XlocSet) are stored in a FileInfo object. */
+  FileInfo* file_info_;
+
+  /** Pointer to the XCapManager instance of the file handle. */
+  XCapManager* xcap_manager_;
+
+  /** Pointer to object owned by VolumeImplemention */
+  pbrpc::MRCServiceClient* mrc_service_client_;
+
+  /** Pointer to object owned by VolumeImplemention */
+  pbrpc::OSDServiceClient* osd_service_client_;
+
+  /** UUID resolver*/
+  UUIDResolver* uuid_resolver_;
+
+  /** UUIDIterator of the MRC. */
+  UUIDIterator* mrc_uuid_iterator_;
+
+  /** UUIDIterator which contains the UUIDs of all replicas. */
+  UUIDIterator* osd_uuid_iterator_;
+
+  const Options& volume_options_;
+
+  /** Auth needed for ServiceClients. Always set to AUTH_NONE by Volume. */
+  const pbrpc::Auth& auth_bogus_;
+
+  /** For same reason needed as auth_bogus_. Always set to user "xtreemfs". */
+  const pbrpc::UserCredentials& user_credentials_bogus_;
+};
+
 
 class XCapManager :
     public rpc::CallbackInterface<xtreemfs::pbrpc::XCap>,

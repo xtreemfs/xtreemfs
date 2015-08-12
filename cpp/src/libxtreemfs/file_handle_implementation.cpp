@@ -468,202 +468,6 @@ void FileHandleImplementation::DoFlush(bool close_file) {
   }
 }
 
-void FileHandleImplementation::ClearVoucher() {
-
-  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-    Logging::log->getLog(LEVEL_DEBUG) << "Clear Voucher" << endl;
-  }
-
-  // Create copies of required data.
-  FileCredentials file_credentials;
-  xcap_manager_.GetXCap(file_credentials.mutable_xcap());
-  file_info_->GetXLocSet(file_credentials.mutable_xlocs());
-
-  // check for read only access
-  bool writeTruncateCreateMode = (file_credentials.xcap().access_mode()
-      & (SYSTEM_V_FCNTL_H_O_WRONLY | SYSTEM_V_FCNTL_H_O_RDWR
-          | SYSTEM_V_FCNTL_H_O_TRUNC | SYSTEM_V_FCNTL_H_O_CREAT)) != 0;
-  if (!writeTruncateCreateMode) {
-    Logging::log->getLog(LEVEL_DEBUG)
-        << "Skip clear voucher, because the access mode doesn't match any write, "
-        "truncate or create mode."
-        << endl;
-
-    //FIXME cleanup necessary?
-    xcap_manager_.GetOldExpireTimes().clear();
-
-    return;
-  }
-
-  // Use references for shorter code.
-  const XLocSet& xlocs = file_credentials.xlocs();
-
-  if (xlocs.replicas_size() == 0) {
-    string path;
-    file_info_->GetPath(&path);
-    string error = "No replica found for file: " + path;
-    Logging::log->getLog(LEVEL_ERROR) << error << endl;
-    ErrorLog::error_log->AppendError(error);
-    throw PosixErrorException(POSIX_ERROR_EIO, error);
-  }
-
-  // Prepare the finalize voucher request (for the OSDs)
-  xtreemfs_finalize_vouchersRequest finalizeVouchersRequest;
-  finalizeVouchersRequest.mutable_file_credentials()->CopyFrom(
-      file_credentials);
-
-  boost::mutex::scoped_lock lock(xcap_manager_.GetOldExpireTimesMutex());
-  std::list< ::google::protobuf::uint64> oldExpireTimesMs = xcap_manager_
-      .GetOldExpireTimes();
-
-  // Prepare the clear voucher request (for the MRC)
-  xtreemfs_clear_vouchersRequest clearVouchersRequest;
-  clearVouchersRequest.mutable_creds()->CopyFrom(file_credentials);
-
-  // add old expire times to both requests
-  for (list< ::google::protobuf::uint64>::iterator it = oldExpireTimesMs.begin();
-      it != oldExpireTimesMs.end(); ++it) {
-    finalizeVouchersRequest.add_expire_time_ms(*it);
-    clearVouchersRequest.add_expire_time_ms(*it);
-  }
-  oldExpireTimesMs.clear();
-
-  int osdCount = xlocs.replicas(0).osd_uuids_size();
-
-  // Prepare response data
-  int curTry = 0;
-  int maxTries = volume_options_.max_tries;
-  ::google::protobuf::uint64 truncEpoch = -1;  // local compare to reduce unnecessary messages
-  xtreemfs::pbrpc::OSDFinalizeVouchersResponse* osdFinalizeVouchersResponses[osdCount];
-  bool consistentResponses = true;
-
-  // send finalize request to the OSDs
-  for (int i = 0; i < osdCount; i++) {
-
-    // Differentiate between striping and the rest.
-    UUIDIterator* uuid_iterator = NULL;
-    SimpleUUIDIterator temp_uuid_iterator_for_striping;
-    if (xlocs.replicas(0).osd_uuids_size() > 1) {
-      // Replica is striped. Pick UUID from xlocset.
-      string osd_uuid = GetOSDUUIDFromXlocSet(xlocs, 0,  // Use first and only replica.
-                                              i);
-      temp_uuid_iterator_for_striping.AddUUID(osd_uuid);
-      uuid_iterator = &temp_uuid_iterator_for_striping;
-    } else {
-      // TODO(mberlin): Enhance UUIDIterator to read from different replicas.
-      // TODO(baerhold): If a replica is used, knows all changes already?
-      uuid_iterator = osd_uuid_iterator_;
-    }
-
-    // using scoped ptr to delete responses; reponse data won't be
-    // automatically deleted, so delete manually later
-    boost::scoped_ptr<rpc::SyncCallbackBase> response(
-        ExecuteSyncRequest(
-            boost::bind(
-                &xtreemfs::pbrpc::OSDServiceClient::xtreemfs_finalize_vouchers_sync,
-                osd_service_client_, _1, boost::cref(auth_bogus_),
-                boost::cref(user_credentials_bogus_), &finalizeVouchersRequest),
-            uuid_iterator,
-            uuid_resolver_,
-            RPCOptions(volume_options_.max_read_tries,
-                       volume_options_.retry_delay_s, false,
-                       volume_options_.was_interrupted_function),
-            false,
-            &xcap_manager_,
-            finalizeVouchersRequest.mutable_file_credentials()->mutable_xcap()));
-
-    osdFinalizeVouchersResponses[i] =
-        static_cast<xtreemfs::pbrpc::OSDFinalizeVouchersResponse*>(response
-            ->response());
-
-    if (osdCount > 1) {
-      // Check whether the response data matches the data of the other responses
-
-      if (truncEpoch == -1) {
-        truncEpoch = osdFinalizeVouchersResponses[i]->truncate_epoch();
-      } else if (truncEpoch != osdFinalizeVouchersResponses[i]->truncate_epoch()) {
-        // osd write responses didn't match each other: redo until max tries
-
-        curTry++;
-        if (curTry == maxTries) {
-
-          // reached maxTries: create log entry
-          string error = "Couldn't retrieve consistent responses "
-              "from OSD hosts for voucher finalization.";
-          if (Logging::log->loggingActive(LEVEL_ERROR)) {
-            Logging::log->getLog(LEVEL_ERROR) << error << endl;
-          }
-          ErrorLog::error_log->AppendError(error);
-          consistentResponses = false;
-          break;
-        } else {
-          i = 0;
-
-          // delete old responses
-          for (int y = 0; y < osdCount; y++) {
-            if (osdFinalizeVouchersResponses[y]) {
-              delete osdFinalizeVouchersResponses[y];
-              osdFinalizeVouchersResponses[y] = NULL;
-            }
-          }  // for
-        }  // if
-
-      }
-    }  // if: osCound
-
-    // delete unnecessary data
-    delete[] response->data();
-    delete response->error();
-  }  // for OSD Finalize Request
-
-  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-    Logging::log->getLog(LEVEL_DEBUG) << "OSD Finished with Result: "
-                                      << consistentResponses << endl;
-  }
-
-  // if responses are consistent, perform MRC request
-  if (consistentResponses) {
-
-    // copy osd responses into mrc request
-    for (int i = 0; i < osdCount; i++) {
-      if (osdFinalizeVouchersResponses[i]) {
-        xtreemfs::pbrpc::OSDFinalizeVouchersResponse* curResponse =
-            clearVouchersRequest.add_osd_finalize_vouchers_response();
-        curResponse->CopyFrom(*osdFinalizeVouchersResponses[i]);
-
-//        clearVouchersRequest.mutable_osd_finalize_vouchers_response(i)->CopyFrom(
-//            *osdFinalizeVouchersResponses[i]);
-      }
-    }
-
-    boost::scoped_ptr<rpc::SyncCallbackBase> response(
-        ExecuteSyncRequest(
-            boost::bind(
-                &xtreemfs::pbrpc::MRCServiceClient::xtreemfs_clear_vouchers_sync,
-                mrc_service_client_,
-                _1,
-                boost::cref(auth_bogus_),
-                boost::cref(user_credentials_bogus_),
-                &clearVouchersRequest),
-            mrc_uuid_iterator_,
-            uuid_resolver_,
-            RPCOptionsFromOptions(volume_options_),
-            false,
-            &xcap_manager_,
-            clearVouchersRequest.mutable_creds()->mutable_xcap()));
-
-    // clear empty response
-    response->DeleteBuffers();
-  }
-
-  //  clean up all remaining data
-  for (int i = 0; i < osdCount; i++) {
-    if (osdFinalizeVouchersResponses[i]) {
-      delete osdFinalizeVouchersResponses[i];
-    }
-  }
-} // ClearVoucher
-
 void FileHandleImplementation::Truncate(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     int64_t new_file_size) {
@@ -1080,7 +884,12 @@ void FileHandleImplementation::Close() {
   try {
     Flush(true);  // true = Tell Flush() the file will be closed.
 
-    ClearVoucher();
+    VoucherManager voucherManager(file_info_, &xcap_manager_,
+                                  mrc_service_client_, osd_service_client_, uuid_resolver_,
+                                  mrc_uuid_iterator_, osd_uuid_iterator_, volume_options_,
+                                  auth_bogus_, user_credentials_bogus_);
+
+    voucherManager.finalizeAndClear();
   } catch(const XtreemFSException&) {
     // Current C++ does not allow to store the exception and rethrow it outside
     // the catch block. We also don't want to use an extra meta object with a
@@ -1495,6 +1304,269 @@ void XCapManager::CallFinished(
   boost::mutex::scoped_lock lock(mutex_);
   xcap_renewal_pending_ = false;
   xcap_renewal_pending_cond_.notify_all();
+}
+
+VoucherManager::VoucherManager(
+    FileInfo* file_info, XCapManager* xcap_manager,
+    pbrpc::MRCServiceClient* mrc_service_client,
+    pbrpc::OSDServiceClient* osd_service_client, UUIDResolver* uuid_resolver,
+    UUIDIterator* mrc_uuid_iterator, UUIDIterator* osd_uuid_iterator,
+    const Options& volume_options, const pbrpc::Auth& auth_bogus,
+    const pbrpc::UserCredentials& user_credentials_bogus)
+    : osdCount(0),
+      file_info_(file_info),
+      xcap_manager_(xcap_manager),
+      mrc_service_client_(mrc_service_client),
+      osd_service_client_(osd_service_client),
+      uuid_resolver_(uuid_resolver),
+      mrc_uuid_iterator_(mrc_uuid_iterator),
+      osd_uuid_iterator_(osd_uuid_iterator),
+      volume_options_(volume_options),
+      auth_bogus_(auth_bogus),
+      user_credentials_bogus_(user_credentials_bogus) {
+
+}
+
+void VoucherManager::finalizeAndClear(){
+
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+    Logging::log->getLog(LEVEL_DEBUG) << " FinalizeAndClear " << endl;
+  }
+
+  boost::mutex::scoped_lock lock(mutex_);
+
+  // Create copies of required data.
+  FileCredentials file_credentials;
+  xcap_manager_->GetXCap(file_credentials.mutable_xcap());
+  file_info_->GetXLocSet(file_credentials.mutable_xlocs());
+
+  // check for read only access
+  {
+    bool writeTruncateCreateMode = (file_credentials.xcap().access_mode()
+        & (SYSTEM_V_FCNTL_H_O_WRONLY | SYSTEM_V_FCNTL_H_O_RDWR
+            | SYSTEM_V_FCNTL_H_O_TRUNC | SYSTEM_V_FCNTL_H_O_CREAT)) != 0;
+    if (!writeTruncateCreateMode) {
+      Logging::log->getLog(LEVEL_DEBUG)
+          << "Skip clear voucher, because the access mode doesn't match any write, "
+          "truncate or create mode."
+          << endl;
+
+      xcap_manager_->GetOldExpireTimes().clear();
+
+      return;
+    }
+  }
+
+  // Use references for shorter code.
+  const XLocSet& xlocs = file_credentials.xlocs();
+
+  if (xlocs.replicas_size() == 0) {
+    string path;
+    file_info_->GetPath(&path);
+    string error = "No replica found for file: " + path;
+    Logging::log->getLog(LEVEL_ERROR) << error << endl;
+    ErrorLog::error_log->AppendError(error);
+    throw PosixErrorException(POSIX_ERROR_EIO, error);
+  }
+  osdCount = xlocs.replicas(0).osd_uuids_size();
+
+  // Prepare the finalize voucher request (for the OSDs)
+  xtreemfs_finalize_vouchersRequest finalizeVouchersRequest;
+  finalizeVouchersRequest.mutable_file_credentials()->CopyFrom(
+      file_credentials);
+
+  // Prepare the clear voucher request (for the MRC)
+  xtreemfs_clear_vouchersRequest clearVouchersRequest;
+  clearVouchersRequest.mutable_creds()->CopyFrom(file_credentials);
+
+  {
+    boost::mutex::scoped_lock lock(xcap_manager_->GetOldExpireTimesMutex());
+    std::list< ::google::protobuf::uint64> oldExpireTimesMs = xcap_manager_->GetOldExpireTimes();
+
+    // add old expire times to both requests
+    for (list< ::google::protobuf::uint64>::iterator it =
+        oldExpireTimesMs.begin(); it != oldExpireTimesMs.end(); ++it) {
+      finalizeVouchersRequest.add_expire_time_ms(*it);
+      clearVouchersRequest.add_expire_time_ms(*it);
+    }
+    oldExpireTimesMs.clear();
+  }
+
+  bool consistentResponses = false;
+  for (int curTry = 1; curTry <= volume_options_.max_tries; curTry++) {
+
+    boost::mutex::scoped_lock cond_lock(cond_mutex_);
+
+    finalizeVoucher(&finalizeVouchersRequest);
+
+    osd_finalize_pending_cond.wait(cond_lock);
+
+    consistentResponses = checkResponseConsistency();
+
+    if (consistentResponses) {
+      if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+        Logging::log->getLog(LEVEL_DEBUG) << "Got consistent responses on try "
+                                          << curTry << "." << endl;
+      }
+      break;
+    } else {
+      if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+        Logging::log->getLog(LEVEL_DEBUG) << "Not consistent responses on try "
+                                          << curTry << ". Retry will be initiated." << endl;
+      }
+
+      // cleanup old responses
+      cleanupOSDResponses();
+    }
+  }
+
+  if(!consistentResponses) {
+    string error = "Couldn't retrieve consistent responses "
+        "from OSD hosts for voucher finalization.";
+    if (Logging::log->loggingActive(LEVEL_ERROR)) {
+      Logging::log->getLog(LEVEL_ERROR) << error << endl;
+    }
+    ErrorLog::error_log->AppendError(error);
+
+    return;
+  }
+
+  // if responses are consistent, perform MRC request
+  clearVoucher(&clearVouchersRequest);
+
+  cleanupOSDResponses();
+}
+
+void VoucherManager::finalizeVoucher(
+    xtreemfs_finalize_vouchersRequest* finalizeVouchersRequest) {
+
+  const XLocSet& xlocs = finalizeVouchersRequest->file_credentials().xlocs();
+
+  // send finalize request to the OSDs
+  for (int i = 0; i < osdCount; i++) {
+    string osd_uuid;
+    string osd_address;
+    try {
+      osd_uuid = GetOSDUUIDFromXlocSet(xlocs, 0, i);  // FIXME(baerhold) use replica 0 by default
+      uuid_resolver_->UUIDToAddressWithOptions(
+          osd_uuid, &osd_address, RPCOptionsFromOptions(volume_options_));
+
+      // async call, which get handled by CallFinished afterwards
+      osd_service_client_->xtreemfs_finalize_vouchers(osd_address, auth_bogus_,
+                                                      user_credentials_bogus_,
+                                                      finalizeVouchersRequest,
+                                                      this,
+                                                      NULL);
+
+    } catch (const XtreemFSException&) {
+      // do nothing.
+    }
+  }  // for OSD Finalize Request
+}
+
+void VoucherManager::clearVoucher(
+    xtreemfs_clear_vouchersRequest* clearVouchersRequest) {
+
+  // copy osd responses into mrc request
+  for (vector<xtreemfs::pbrpc::OSDFinalizeVouchersResponse*>::iterator it =
+      osdFinalizeVoucherResponseVector_.begin();
+      it != osdFinalizeVoucherResponseVector_.end(); ++it) {
+    xtreemfs::pbrpc::OSDFinalizeVouchersResponse* curResponse =
+        clearVouchersRequest->add_osd_finalize_vouchers_response();
+    curResponse->CopyFrom(*(*it));
+  }
+
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
+          boost::bind(
+              &xtreemfs::pbrpc::MRCServiceClient::xtreemfs_clear_vouchers_sync,
+              mrc_service_client_,
+              _1,
+              boost::cref(auth_bogus_),
+              boost::cref(user_credentials_bogus_),
+              clearVouchersRequest),
+          mrc_uuid_iterator_,
+          uuid_resolver_,
+          RPCOptionsFromOptions(volume_options_),
+          false,
+          xcap_manager_,
+          clearVouchersRequest->mutable_creds()->mutable_xcap()));
+
+  // clear empty response and possible errors
+  response->DeleteBuffers();
+}
+
+bool VoucherManager::checkResponseConsistency() {
+
+  bool consistentResponses = true;
+
+  if (osdCount == 1){ // nothing to check
+    return consistentResponses;
+  }
+
+  // Check whether the response data matches the data of the other responses
+  if (osdFinalizeVoucherResponseVector_.size() == osdCount){
+
+    // local compare to reduce unnecessary messages to the MRC
+    ::google::protobuf::uint64 truncEpoch = -1;
+    for (vector<xtreemfs::pbrpc::OSDFinalizeVouchersResponse*>::iterator it =
+        osdFinalizeVoucherResponseVector_.begin();
+        it != osdFinalizeVoucherResponseVector_.end(); ++it) {
+
+      if (truncEpoch == -1) {
+        truncEpoch = (*it)->truncate_epoch();
+      } else if (truncEpoch != (*it)->truncate_epoch()) {
+        // osd finalize responses didn't match each other
+        consistentResponses = false;
+        break;
+      }
+    }
+  } else {
+    consistentResponses = false;
+  }
+
+  return consistentResponses;
+}
+
+void VoucherManager::cleanupOSDResponses() {
+
+  // delete responses and clear vector
+  for (vector<xtreemfs::pbrpc::OSDFinalizeVouchersResponse*>::iterator it =
+      osdFinalizeVoucherResponseVector_.begin();
+      it != osdFinalizeVoucherResponseVector_.end(); ++it) {
+    delete (*it);
+  }  // for
+  osdFinalizeVoucherResponseVector_.clear();
+}
+
+void VoucherManager::CallFinished(
+    xtreemfs::pbrpc::OSDFinalizeVouchersResponse* response_message, char* data,
+    uint32_t data_length, xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
+    void* context) {
+
+  boost::scoped_ptr<RPCHeader::ErrorResponse> autodelete_error(error);
+  boost::scoped_array<char> autodelete_data(data);
+  boost::mutex::scoped_lock cond_lock(cond_mutex_);
+
+  if (error != NULL) {
+    string error_message = "Finalize Voucher failed for file with id: "
+        + boost::lexical_cast<std::string>(xcap_manager_->GetFileId())
+        + " . Error: " + error->DebugString();
+    Logging::log->getLog(LEVEL_ERROR) << error_message << endl;
+    ErrorLog::error_log->AppendError(error_message);
+
+    // notify wait to retry
+    osd_finalize_pending_cond.notify_all();
+
+    return;
+  } else {
+    // Add current response to the response vector
+    osdFinalizeVoucherResponseVector_.push_back(response_message);
+  }
+
+  if (osdFinalizeVoucherResponseVector_.size() == osdCount) {
+    osd_finalize_pending_cond.notify_all();
+  }
 }
 
 }  // namespace xtreemfs
