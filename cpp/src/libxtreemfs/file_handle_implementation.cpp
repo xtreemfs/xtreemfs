@@ -1362,6 +1362,8 @@ void XCapManager::RenewXCapAsync(const RPCOptions& options) {
 void XCapManager::RenewXCapAsync(const RPCOptions& options, PosixErrorException* writeback) {
   // TODO(mberlin): Only renew after some time has elapsed.
   // TODO(mberlin): Cope with local clocks which have a high clock skew.
+  uint64_t fileID = GetFileId();
+
   {
     // get first writeback mutex due to same order of locks in the CallFinished method
     boost::mutex::scoped_lock xcap_renewal_error_writebacks_lock(xcap_renewal_error_writebacks_mutex_);
@@ -1375,7 +1377,7 @@ void XCapManager::RenewXCapAsync(const RPCOptions& options, PosixErrorException*
       if (Logging::log->loggingActive(LEVEL_DEBUG)) {
         Logging::log->getLog(LEVEL_DEBUG)
             << "XCap renew already in progress, ignoring. file_id: "
-            << GetFileId() << " Expiration in: "
+            << fileID << " Expiration in: "
             << (xcap_.expire_time_s() - time(NULL))
             << endl;
       }
@@ -1390,7 +1392,7 @@ void XCapManager::RenewXCapAsync(const RPCOptions& options, PosixErrorException*
 
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
     Logging::log->getLog(LEVEL_DEBUG)
-        << "Renew XCap for file_id: " << GetFileId()
+        << "Renew XCap for file_id: " << fileID
         << " Expiration in: " << (xcap_.expire_time_s() - time(NULL))
         << endl;
   }
