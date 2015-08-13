@@ -185,6 +185,8 @@ int main(int argc, char* argv[]) {
              << options.default_stripe_size << "\n"
          << "  Default stripe width (# OSDs):\t"
              << options.default_stripe_width << "\n"
+         << "  Default parity width (# OSDs):\t"
+             << options.default_parity_width << "\n"
          << "\n";
     if (options.volume_attributes.size() > 0) {
       cout << "  Volume attributes (Name = Value)" << endl;

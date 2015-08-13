@@ -94,6 +94,9 @@ class MkfsOptions : public Options {
   /** Default stripe width for new files (number of OSDs per replica). */
   int default_stripe_width;
 
+  /** Default parity width for new files (number of parity OSDs per replica). */
+  int default_parity_width;
+
   /** List of user defined volume attributes. */
   std::list<xtreemfs::pbrpc::KeyValuePair*> volume_attributes;
 

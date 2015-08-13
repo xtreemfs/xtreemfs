@@ -82,6 +82,7 @@ MkfsOptions::MkfsOptions() : Options() {
   default_striping_policy_type_string = "RAID0";
   default_stripe_size = 128;
   default_stripe_width = 1;
+  default_parity_width = 0;
 
   po::options_description striping_policy_descriptions_(
       "Striping Policy Options");
@@ -95,7 +96,10 @@ MkfsOptions::MkfsOptions() : Options() {
        "Stripe size in kB.")
       ("striping-policy-width,w",
        po::value(&default_stripe_width)->default_value(default_stripe_width),
-       "Number of OSDs (stripes) per replica.");
+       "Number of OSDs (stripes) per replica.")
+      ("parity-width,r",
+       po::value(&default_parity_width)->default_value(default_parity_width),
+       "Number of OSDs for parity information.");
 
   // Volume Attributes.
   chown_non_root = false;
