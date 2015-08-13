@@ -264,7 +264,7 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
   size_t buf_pos = 0;
 
   for (int l = 0; l < lines; l++) {
-    cout << to_process << " bytes to decode" << endl;
+    cout << endl << to_process << " bytes to decode" << endl;
     if (to_process > 0) {
       vector<int> erasures;
       int line_offset = l * n;
@@ -278,7 +278,7 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
           // push i since i is the position int the current line
           erasures.push_back(i);
         } else {
-          cout << "copy data from op " << data_read << " to data device " << (i) << endl;
+          cout << "copy " << stripe_size << " bytes from op " << data_read << " to data device " << (i) << endl;
           memcpy(data[i], operations->at(data_read).data, stripe_size);
         }
       }
@@ -313,6 +313,10 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
           continue;
         }
         size_t op_size = min(operations->at(data_read).req_size - offset, size);
+        if (op_size == 0) {
+          break;
+        }
+        cout << "size: " << size << ", req - off: " << operations->at(data_read).req_size - offset << endl;
         cout << "copy " << op_size << " bytes from data device " << i << " at position " << offset << " to buffer at " << (buf_pos) << endl;
         memcpy(buf + buf_pos, data[i] + offset, op_size);
         size -= op_size;
@@ -322,7 +326,8 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
     }
   }
 
-  return min(received_data, read_data);
+  cout << received_data << " have been received" << endl;
+  return buf_pos;
 }
 
 }  // namespace xtreemfs

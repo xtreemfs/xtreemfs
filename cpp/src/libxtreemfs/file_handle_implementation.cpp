@@ -196,10 +196,10 @@ int FileHandleImplementation::Read(
     } else {
       // TODO(mberlin): Update xloc list if newer version found (on OSD?).
       try {
-        // if (operations[j].osd_offsets[0] == 0) {
+        if (operations[j].osd_offsets[0] == 0) {
         // if (operations[j].osd_offsets[0] == 1) {
-        if (operations[j].osd_offsets[0] == 1 ||
-            operations[j].osd_offsets[0] == 0) {
+        // if (operations[j].osd_offsets[0] == 1 ||
+        //     operations[j].osd_offsets[0] == 0) {
           cout << "simulating an erasure of osd " << operations[j].osd_offsets[0] << " received no data from op " << j << endl;
         }
         else {
@@ -289,7 +289,7 @@ int FileHandleImplementation::Read(
   }
   // exit(1);
 
-  return min(read_data, reported_fs - offset);
+  return read_data;
 }
   // void getFileSize(
   //         UUIDIterator* uuid_iterator,
