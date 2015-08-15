@@ -1330,7 +1330,9 @@ VoucherManager::VoucherManager(
 void VoucherManager::finalizeAndClear(){
 
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-    Logging::log->getLog(LEVEL_DEBUG) << " FinalizeAndClear " << endl;
+    Logging::log->getLog(LEVEL_DEBUG)
+        << "VoucherManager will finalize and clear all voucher information for file: "
+        << xcap_manager_->GetFileId() << endl;
   }
 
   boost::mutex::scoped_lock lock(mutex_);
@@ -1393,7 +1395,8 @@ void VoucherManager::finalizeAndClear(){
   }
 
   bool consistentResponses = false;
-  for (int curTry = 1; curTry <= volume_options_.max_tries; curTry++) {
+  // FIXME(baerhold): Don't use "read tries", choose something else...
+  for (int curTry = 1; curTry <= volume_options_.max_read_tries; curTry++) {
 
     boost::mutex::scoped_lock cond_lock(cond_mutex_);
 
@@ -1440,6 +1443,11 @@ void VoucherManager::finalizeAndClear(){
 void VoucherManager::finalizeVoucher(
     xtreemfs_finalize_vouchersRequest* finalizeVouchersRequest) {
 
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+    Logging::log->getLog(LEVEL_DEBUG) << "Sending finalizeVouchersRequest to "
+                                      << osdCount << " OSD(s)." << endl;
+  }
+
   const XLocSet& xlocs = finalizeVouchersRequest->file_credentials().xlocs();
 
   // send finalize request to the OSDs
@@ -1466,6 +1474,11 @@ void VoucherManager::finalizeVoucher(
 
 void VoucherManager::clearVoucher(
     xtreemfs_clear_vouchersRequest* clearVouchersRequest) {
+
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+    Logging::log->getLog(LEVEL_DEBUG)
+        << "Sending clearVoucherRequest to the MRC." << endl;
+  }
 
   // copy osd responses into mrc request
   for (vector<xtreemfs::pbrpc::OSDFinalizeVouchersResponse*>::iterator it =
@@ -1501,6 +1514,12 @@ bool VoucherManager::checkResponseConsistency() {
   bool consistentResponses = true;
 
   if (osdCount == 1){ // nothing to check
+    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+      Logging::log->getLog(LEVEL_DEBUG)
+          << "Skipped checkResponseConsistency: only one OSD involved. "
+          << endl;
+    }
+
     return consistentResponses;
   }
 
@@ -1517,11 +1536,25 @@ bool VoucherManager::checkResponseConsistency() {
         truncEpoch = (*it)->truncate_epoch();
       } else if (truncEpoch != (*it)->truncate_epoch()) {
         // osd finalize responses didn't match each other
+
+        if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+          Logging::log->getLog(LEVEL_DEBUG) << "Inconsistent truncate epoch: "
+                                            << (*it)->truncate_epoch()
+                                            << "; expected: " << truncEpoch
+                                            << endl;
+        }
         consistentResponses = false;
         break;
       }
     }
   } else {
+    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+      Logging::log->getLog(LEVEL_DEBUG)
+          << "Inconsistent response size: "
+          << osdFinalizeVoucherResponseVector_.size() << "; expected: "
+          << osdCount << endl;
+    }
+
     consistentResponses = false;
   }
 
@@ -1546,7 +1579,6 @@ void VoucherManager::CallFinished(
 
   boost::scoped_ptr<RPCHeader::ErrorResponse> autodelete_error(error);
   boost::scoped_array<char> autodelete_data(data);
-  boost::mutex::scoped_lock cond_lock(cond_mutex_);
 
   if (error != NULL) {
     string error_message = "Finalize Voucher failed for file with id: "
@@ -1561,10 +1593,16 @@ void VoucherManager::CallFinished(
     return;
   } else {
     // Add current response to the response vector
+    boost::mutex::scoped_lock cond_lock(cond_mutex_);
     osdFinalizeVoucherResponseVector_.push_back(response_message);
   }
 
   if (osdFinalizeVoucherResponseVector_.size() == osdCount) {
+    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+      Logging::log->getLog(LEVEL_DEBUG) << "Got all expected responses!"
+                                        << endl;
+    }
+
     osd_finalize_pending_cond.notify_all();
   }
 }
