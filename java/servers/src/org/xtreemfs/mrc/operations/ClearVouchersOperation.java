@@ -78,7 +78,6 @@ public class ClearVouchersOperation extends MRCOperation {
                         + " does not have a valid signature");
             }
 
-            newFileSizeMax = osdFinalizeVouchersResponse.getSizeInBytes();
             if (osdFinalizeVouchersResponse.getSizeInBytes() > newFileSizeMax) {
                 newFileSizeMax = osdFinalizeVouchersResponse.getSizeInBytes();
             }
