@@ -134,7 +134,7 @@ public class DeleteOperation extends MRCOperation {
         if (file.getLinkCount() > 1)
             MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan, time, update);
         
-        // FIXME(baerhold): Switch to existing update
+        // FIXME(baerhold): Switch to existing update & delete operation of MRCVM due to minus space issues
         if (!file.isDirectory() && file.getSize() > 0)
             master.getMrcQuotaManager().getVolumeQuotaManagerById(volume.getId())
                     .updateSpaceUsage(-1 * file.getSize(), 0);
