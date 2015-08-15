@@ -79,6 +79,9 @@ public class ClearVouchersOperation extends MRCOperation {
             }
 
             newFileSizeMax = osdFinalizeVouchersResponse.getSizeInBytes();
+            if (osdFinalizeVouchersResponse.getSizeInBytes() > newFileSizeMax) {
+                newFileSizeMax = osdFinalizeVouchersResponse.getSizeInBytes();
+            }
         }
 
         if (newFileSizeMax == -1) {
