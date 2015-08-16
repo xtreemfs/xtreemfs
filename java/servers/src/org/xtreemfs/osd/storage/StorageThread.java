@@ -526,7 +526,8 @@ public class StorageThread extends Stage {
             layout.writeObject(fileId, fi, data, objNo, offset, newVersion, syncWrite, isCow);
             
             // if a new version was created, update the "latest versions" file
-            if (cow.cowEnabled() && (isCow || largestV == 0))
+            // TODO(plieser): should latest obj version be the highest or last written?
+            if (newVersionArg != null && cow.cowEnabled() && (isCow || largestV == 0))
                 layout.updateCurrentObjVersion(fileId, objNo, newVersion);
             
             if (isCow)

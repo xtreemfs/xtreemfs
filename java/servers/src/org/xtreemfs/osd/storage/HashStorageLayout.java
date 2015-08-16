@@ -445,6 +445,7 @@ public class HashStorageLayout extends StorageLayout {
             oldFile.delete();
         }
 
+        // TODO(plieser): should latest obj version be the highest or last written?
         md.updateObjectVersion(objNo, newVersion);
         md.updateObjectChecksum(objNo, newVersion, newChecksum);
     }
