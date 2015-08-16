@@ -1168,6 +1168,50 @@ TEST_F(EncryptionTest, objectVersion_02) {
   file_handle->Close();
 }
 
+TEST_F(EncryptionTest, objectVersion_03) {
+  char buffer[50];
+  buffer[2] = 0;
+
+  FileHandleImplementation* file_handle =
+      static_cast<FileHandleImplementation*>(volume_->OpenFile(
+          user_credentials_,
+          "/.xtreemfs_enc_meta_files/test",
+          static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_CREAT
+              | SYSTEM_V_FCNTL_H_O_RDWR),
+          511));
+
+  EXPECT_TRUE(ObjectEncryptor::IsEncMetaFile("/.xtreemfs_enc_meta_files/test"));
+
+  file_handle->Write("00", 2, 0);
+  ASSERT_NO_THROW({
+    file_handle->Read(buffer, 10, 0);
+  });
+  EXPECT_STREQ("00", buffer);
+
+  file_handle->Write("2", 1, 1, 2);
+  ASSERT_NO_THROW({
+    file_handle->Read(buffer, 10, 0);
+  });
+  EXPECT_STREQ("02", buffer);
+
+  file_handle->Write("1", 1, 0, 1);
+  ASSERT_NO_THROW({
+    file_handle->Read(buffer, 10, 0, 1);
+  });
+  EXPECT_STREQ("12", buffer);
+  ASSERT_NO_THROW({
+    file_handle->Read(buffer, 10, 0, 2);
+  });
+  EXPECT_STREQ("02", buffer);
+  // the default obj version is not the highest but the last written
+  ASSERT_NO_THROW({
+    file_handle->Read(buffer, 10, 0);
+  });
+  EXPECT_STREQ("12", buffer);
+
+  file_handle->Close();
+}
+
 void cw_worker(FileHandle* file, char id) {
   boost::mt19937 rng(static_cast<int>(id));
   boost::uniform_int<> uni_dist_offset(0, 20);
