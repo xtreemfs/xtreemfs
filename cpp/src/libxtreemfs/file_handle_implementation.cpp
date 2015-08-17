@@ -93,6 +93,23 @@ FileHandleImplementation::FileHandleImplementation(
   if (async_writes_enabled_) {
     object_cache_ = NULL;
   }
+  // Create copies of required data.
+  FileCredentials file_credentials;
+  xcap_manager_.GetXCap(file_credentials.mutable_xcap());
+  file_info_->GetXLocSet(file_credentials.mutable_xlocs());
+  // get all striping policies
+  StripeTranslator::PolicyContainer striping_policies;
+  for (int32_t i = 0; i < file_credentials.mutable_xlocs()->replicas_size(); ++i) {
+    striping_policies.push_back(&(file_credentials.mutable_xlocs()->replicas(i).striping_policy()));
+  }
+  int s_width = (*striping_policies.begin())->width();
+  int p_width = (*striping_policies.begin())->parity_width();
+  int s_size = (*striping_policies.begin())->stripe_size() * 1024; // kbytes damnit!!!
+  cout << "setting up cache for " << (s_width - p_width) * s_size << " (" << s_width << ", " << p_width << ") byte sized lines" << endl;
+  l_size = (s_width - p_width) * s_size;
+  write_cache = new char[l_size];
+  internal_offset = 0;
+  cache_size = 0;
 }
 
 FileHandleImplementation::~FileHandleImplementation() {}
@@ -370,6 +387,76 @@ int FileHandleImplementation::Write(
     const char *buf,
     size_t count,
     int64_t offset) {
+
+  assert(internal_offset == offset);
+
+  write_helper(buf, count, 0);
+
+  return count;
+}
+
+void FileHandleImplementation::write_helper(
+    const char *buf,
+    size_t count,
+    size_t buf_offset
+    ) {
+
+  cout << "call to write_helper(buf, " << count << ", " << buf_offset << ",)" << endl;
+  // cache should be flushed when full
+  assert(cache_size != l_size);
+
+  // write op has more then one line and cache is empty
+  if (count >= l_size && cache_size == 0) {
+
+    cout << "writing more then one line...writing as much lines as possible" << endl;
+    size_t w_size = 0;
+    while (count - w_size >= l_size) {
+      w_size += l_size;
+    }
+    internal_write(buf + buf_offset, w_size, internal_offset);
+    count -= w_size;
+    buf_offset += w_size;
+    internal_offset += w_size;
+  }
+
+  if (count > l_size - cache_size) {
+    cout << "copy to cache and recurse " << l_size << ", " << cache_size << endl;
+    // fill up cache, write and recurse
+    memcpy(write_cache + cache_size, buf + buf_offset, l_size - cache_size);
+
+    flush_w_cache();
+    cache_size = 0;
+    buf_offset += l_size - cache_size;
+
+    write_helper(buf + buf_offset, count, buf_offset);
+  } else {
+    // write rest of op into cache and return
+    memcpy(write_cache + cache_size, buf + buf_offset, count);
+    cache_size += count;
+    cout << "cached " << count << " bytes; cache_size is now " << cache_size << endl;
+    if (cache_size == l_size) {
+      flush_w_cache();
+    }
+    return;
+  }
+
+}
+
+void FileHandleImplementation::flush_w_cache() {
+  if (cache_size > 0) {
+    cout << "flushing cache to offset " << internal_offset << endl;
+    internal_write(write_cache, cache_size, internal_offset);
+    internal_offset += cache_size;
+    cache_size = 0;
+  }
+  return;
+}
+
+int FileHandleImplementation::internal_write(
+    const char *buf,
+    size_t count,
+    int64_t offset) {
+  Logging::log->getLog(LEVEL_DEBUG) << "write operation " << count << " bytes" << endl;
   if (async_writes_enabled_) {
     ThrowIfAsyncWritesFailed();
   }
@@ -380,6 +467,10 @@ int FileHandleImplementation::Write(
   // Use references for shorter code.
   const string& global_file_id = file_credentials.xcap().file_id();
   const XLocSet& xlocs = file_credentials.xlocs();
+  StripeTranslator::PolicyContainer striping_policies;
+  for (int32_t i = 0; i < xlocs.replicas_size(); ++i) {
+    striping_policies.push_back(&(xlocs.replicas(i).striping_policy()));
+  }
 
   if (xlocs.replicas_size() == 0) {
     string path;
@@ -390,13 +481,6 @@ int FileHandleImplementation::Write(
   }
 
   // Map operation to stripes.
-
-  // get all striping policies
-  StripeTranslator::PolicyContainer striping_policies;
-  for (int32_t i = 0; i < xlocs.replicas_size(); ++i) {
-    striping_policies.push_back(&(xlocs.replicas(i).striping_policy()));
-  }
-  cout << " width, parity_width " << (*striping_policies.begin())->width() << " " << (*striping_policies.begin())->parity_width() << endl;
 
   // NOTE: We assume that all replicas use the same striping policy type and
   //       that all replicas use the same stripe size.
@@ -582,6 +666,7 @@ void FileHandleImplementation::Flush() {
 }
 
 void FileHandleImplementation::Flush(bool close_file) {
+  flush_w_cache();
   if (object_cache_ != NULL) {
     FileCredentials file_credentials;
     xcap_manager_.GetXCap(file_credentials.mutable_xcap());

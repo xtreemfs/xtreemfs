@@ -209,6 +209,9 @@ void MkfsOptions::ParseCommandLine(int argc, char** argv) {
   if (boost::iequals(default_striping_policy_type_string, "RAID0")) {
     default_striping_policy_type = xtreemfs::pbrpc::STRIPING_POLICY_RAID0;
   } else if (boost::iequals(default_striping_policy_type_string,
+		  	  	  	  	  	"REED_SOL_VAN")) {
+	default_striping_policy_type = xtreemfs::pbrpc::STRIPING_POLICY_REED_SOL_VAN;
+  } else if (boost::iequals(default_striping_policy_type_string,
 		  	  	  	  	  	"ERASURECODE")) {
 	default_striping_policy_type = xtreemfs::pbrpc::STRIPING_POLICY_ERASURECODE;
   } else {

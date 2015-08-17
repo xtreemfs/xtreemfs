@@ -222,6 +222,7 @@ int main(int argc, char* argv[]) {
                          options.default_striping_policy_type,
                          options.default_stripe_size,
                          options.default_stripe_width,
+                         options.default_parity_width,
                          options.volume_attributes);
   } catch (const XtreemFSException& e) {
     success = false;

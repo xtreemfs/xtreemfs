@@ -254,6 +254,12 @@ class FileHandleImplementation
       int offset_in_object,
       int bytes_to_read);
 
+  virtual int internal_write(const char *buf, size_t count, int64_t offset);
+
+  virtual void write_helper(const char *buf, size_t count, size_t buf_offset);
+
+  virtual void flush_w_cache();
+
   /** Write data to the OSD. Objects owned by the caller. */
   void WriteToOSD(
       UUIDIterator* uuid_iterator,
@@ -262,6 +268,11 @@ class FileHandleImplementation
       int offset_in_object,
       const char* buffer,
       int bytes_to_write);
+
+  char* write_cache;
+  size_t internal_offset;
+  size_t cache_size;
+  size_t l_size;
 
   /** Any modification to the object must obtain a lock first. */
   boost::mutex mutex_;

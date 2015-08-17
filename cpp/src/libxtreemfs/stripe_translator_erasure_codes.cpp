@@ -116,6 +116,7 @@ void StripeTranslatorErasureCodes::TranslateWriteRequest(
 
     this->Encode(k, m, w, data, coding, stripe_size);
 
+    int coding_obj_number = (obj_number - 1) - ((obj_number - 1) % k);
     for (int i = 0; i < m; i++){
       std::vector<size_t> osd_offsets;
       osd_offsets.push_back(k + i);
@@ -127,11 +128,11 @@ void StripeTranslatorErasureCodes::TranslateWriteRequest(
         memcpy(coded, coding[i], coding_size);
         delete[] coding[i];
         operations->push_back(
-            WriteOperation(line_offset, osd_offsets, coding_size, 0,
+            WriteOperation(coding_obj_number, osd_offsets, coding_size, 0,
               coded, true));
       } else {
         operations->push_back(
-            WriteOperation(line_offset, osd_offsets, stripe_size, 0,
+            WriteOperation(coding_obj_number, osd_offsets, stripe_size, 0,
               coding[i], true));
       }
     }

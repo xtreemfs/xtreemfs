@@ -42,7 +42,8 @@ public abstract class StripingPolicyImpl {
         } else if (replica.getStripingPolicy().getType() == StripingPolicyType.STRIPING_POLICY_REED_SOL_VAN) {
             return new ErasureCodesImpl(replica, relOsdPosition);
         } else {
-            throw new IllegalArgumentException("unknown striping policy requested");
+            throw new IllegalArgumentException("unknown striping policy requested...request was " +
+                replica.getStripingPolicy().getType());
         }
     }
 
@@ -125,9 +126,6 @@ public abstract class StripingPolicyImpl {
      * Returns a virtual iterator which iterates over all objects the given OSD should save. It starts with
      * the correct object in the row of startObjectNo (inclusive) and ends with endObjectNo (maybe inclusive).
      *
-     * @param osdIndex
-     * @param filesize
-     * @return
      */
     public abstract Iterator<Long> getObjectsOfOSD(final int osdIndex, final long startObjectNo,
             final long endObjectNo);

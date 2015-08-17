@@ -157,6 +157,8 @@ int foo(size_t buf_size, size_t offset, size_t over_read){
             buf_size,
             0);
 
+    file->Flush();
+
     // file->Write(reinterpret_cast<const char*>(&write_buf) + sizeof(write_buf) / 2,
     //             sizeof(write_buf) / 2,
     //             sizeof(write_buf) / 2);
