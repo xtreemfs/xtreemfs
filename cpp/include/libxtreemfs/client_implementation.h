@@ -22,6 +22,8 @@
 #include "util/synchronized_queue.h"
 #include "libxtreemfs/async_write_handler.h"
 
+#include "xtreemfs/DIR.pb.h"
+
 namespace boost {
 class thread;
 }  // namespace boost
@@ -49,7 +51,7 @@ class ClientTestFastLingerTimeoutConnectTimeout_LingerTests_Test;
 class DIRUUIDResolver : public UUIDResolver {
  public:
   DIRUUIDResolver(
-      const ServiceAddresses& dir_service_addresses,
+      SimpleUUIDIterator& dir_uuid_iterator,
       const pbrpc::UserCredentials& user_credentials,
       const Options& options);
 
@@ -63,18 +65,19 @@ class DIRUUIDResolver : public UUIDResolver {
                                    std::string* uuid);
   virtual void VolumeNameToMRCUUID(const std::string& volume_name,
                                    SimpleUUIDIterator* uuid_iterator);
+  virtual std::vector<std::string> VolumeNameToMRCUUIDs(const std::string& volume_name);
 
  private:
-  SimpleUUIDIterator dir_service_addresses_;
-
+  SimpleUUIDIterator& dir_uuid_iterator_;
   /** The auth_type of this object will always be set to AUTH_NONE. */
+
   // TODO(mberlin): change this when the DIR service supports real auth.
   pbrpc::Auth dir_service_auth_;
 
   /** These credentials will be used for messages to the DIR service. */
   const pbrpc::UserCredentials dir_service_user_credentials_;
 
-  /** A DIRServiceClient is a wrapper for an RPC Client. */
+  /** A DIRServiceClient is a wrapper for a RPC Client. */
   boost::scoped_ptr<pbrpc::DIRServiceClient> dir_service_client_;
 
   /** Caches service UUIDs -> (address, port, TTL). */
@@ -82,6 +85,8 @@ class DIRUUIDResolver : public UUIDResolver {
 
   /** Options class which contains the log_level string and logfile path. */
   const Options& options_;
+
+  pbrpc::ServiceSet* GetServicesByName(const std::string& volume_name);
 };
 
 /**
@@ -113,12 +118,41 @@ class ClientImplementation : public Client {
       int mode,
       const std::string& owner_username,
       const std::string& owner_groupname,
-      const pbrpc::AccessControlPolicyType& access_policy,
+      const pbrpc::AccessControlPolicyType& access_policy_type,
       long volume_quota,
       const pbrpc::StripingPolicyType& default_striping_policy_type,
       int default_stripe_size,
       int default_stripe_width,
       const std::list<pbrpc::KeyValuePair*>& volume_attributes);
+
+  virtual void CreateVolume(
+      const ServiceAddresses& mrc_address,
+      const xtreemfs::pbrpc::Auth& auth,
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      const std::string& volume_name,
+      int mode,
+      const std::string& owner_username,
+      const std::string& owner_groupname,
+      const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
+      long quota,
+      const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
+      int default_stripe_size,
+      int default_stripe_width,
+      const std::map<std::string, std::string>& volume_attributes);
+
+  virtual void CreateVolume(
+      const xtreemfs::pbrpc::Auth& auth,
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      const std::string& volume_name,
+      int mode,
+      const std::string& owner_username,
+      const std::string& owner_groupname,
+      const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
+      long volume_quota,
+      const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
+      int default_stripe_size,
+      int default_stripe_width,
+      const std::map<std::string, std::string>& volume_attributes);
 
   virtual void DeleteVolume(
       const ServiceAddresses& mrc_address,
@@ -126,13 +160,40 @@ class ClientImplementation : public Client {
       const pbrpc::UserCredentials& user_credentials,
       const std::string& volume_name);
 
+  virtual void DeleteVolume(
+      const xtreemfs::pbrpc::Auth& auth,
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      const std::string& volume_name);
+
   virtual pbrpc::Volumes* ListVolumes(
       const ServiceAddresses& mrc_addresses,
       const pbrpc::Auth& auth);
 
+  virtual std::vector<std::string> ListVolumeNames();
+
   virtual UUIDResolver* GetUUIDResolver();
 
   virtual std::string UUIDToAddress(const std::string& uuid);
+
+  /** Returns a ServiceSet with all services of the given type.
+   *
+   * @param serviceType Type of the Service
+   *
+   * @throws IOException
+   * @throws PosixErrorException
+   *
+   * @remark Ownership of the return value is transferred to the caller. */
+  pbrpc::ServiceSet* GetServicesByType(const xtreemfs::pbrpc::ServiceType service_type);
+
+  /** Returns a ServiceSet with all services of the given name
+   *
+   * @param string Name of the Service
+   *
+   * @throws IOException
+   * @throws PosixErrorException
+   *
+   * @remark Ownership of the return value is transferred to the caller. */
+  pbrpc::ServiceSet* GetServicesByName(const std::string service_name);
 
   const pbrpc::VivaldiCoordinates& GetVivaldiCoordinates() const;
 
@@ -145,6 +206,13 @@ class ClientImplementation : public Client {
   /** Auth of type AUTH_NONE which is required for most operations which do not
    *  check the authentication data (except Create, Delete, ListVolume(s)). */
   xtreemfs::pbrpc::Auth auth_bogus_;
+
+  /** The auth_type of this object will always be set to AUTH_NONE. */
+  // TODO(mberlin): change this when the DIR service supports real auth.
+  xtreemfs::pbrpc::Auth dir_service_auth_;
+
+  /** These credentials will be used for messages to the DIR service. */
+  xtreemfs::pbrpc::UserCredentials dir_service_user_credentials_;
 
   /** Options class which contains the log_level string and logfile path. */
   const xtreemfs::Options& options_;
@@ -159,6 +227,11 @@ class ClientImplementation : public Client {
   boost::scoped_ptr<rpc::Client> network_client_;
   boost::scoped_ptr<boost::thread> network_client_thread_;
 
+  /** A DIRServiceClient is a wrapper for a RPC Client. */
+  boost::scoped_ptr<pbrpc::DIRServiceClient> dir_service_client_;
+
+
+  SimpleUUIDIterator dir_uuid_iterator_;
   DIRUUIDResolver uuid_resolver_;
 
   /** Random, non-persistent UUID to distinguish locks of different clients. */

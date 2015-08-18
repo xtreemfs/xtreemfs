@@ -120,11 +120,6 @@ MkfsOptions::MkfsOptions() : Options() {
 }
 
 MkfsOptions::~MkfsOptions() {
-  for (list<KeyValuePair*>::iterator it = volume_attributes.begin();
-       it != volume_attributes.end();
-       ++it) {
-    delete *it;  // Free memory.
-  }
 }
 
 
@@ -239,13 +234,12 @@ void MkfsOptions::ParseCommandLine(int argc, char** argv) {
     }
 
     // Parse attribute.
-    KeyValuePair* attribute = new KeyValuePair();
-    attribute->set_key(volume_attributes_strings[i].substr(0, first_match));
-    attribute->set_value(volume_attributes_strings[i].substr(
+    const std::string key = volume_attributes_strings[i].substr(0, first_match);
+    const std::string value = volume_attributes_strings[i].substr(
         min(first_match + 1, volume_attributes_strings[i].length()),
         max(static_cast<size_t>(0),
-            volume_attributes_strings[i].length() - first_match)));
-    volume_attributes.push_back(attribute);
+            volume_attributes_strings[i].length() - first_match));
+    volume_attributes[key] = value;
   }
 }
 

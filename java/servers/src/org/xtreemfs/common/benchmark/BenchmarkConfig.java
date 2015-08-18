@@ -8,19 +8,18 @@
 
 package org.xtreemfs.common.benchmark;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+
 import org.xtreemfs.common.config.PolicyContainer;
 import org.xtreemfs.common.config.ServiceConfig;
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
-
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
 
 /**
  * @author jensvfischer
@@ -56,7 +55,8 @@ public class BenchmarkConfig extends ServiceConfig {
             Parameter.NO_CLEANUP,
             Parameter.NO_CLEANUP_VOLUMES,
             Parameter.NO_CLEANUP_BASEFILE,
-            Parameter.OSD_CLEANUP
+            Parameter.OSD_CLEANUP,
+            Parameter.USE_JNI
     };
 
     private Options                  options;
@@ -172,11 +172,10 @@ public class BenchmarkConfig extends ServiceConfig {
         if (isUsingSSL()) {
             if (null == sslOptions) {
                 sslOptions = new SSLOptions(
-                        new FileInputStream(this.getServiceCredsFile()),
+                        this.getServiceCredsFile(),
                         this.getServiceCredsPassphrase(),
                         this.getServiceCredsContainer(),
-                        new FileInputStream(
-                        this.getTrustedCertsFile()),
+                        this.getTrustedCertsFile(),
                         this.getTrustedCertsPassphrase(),
                         this.getTrustedCertsContainer(),
                         false,
@@ -369,6 +368,10 @@ public class BenchmarkConfig extends ServiceConfig {
             auth = RPC.Auth.newBuilder().setAuthType(RPC.AuthType.AUTH_PASSWORD).setAuthPasswd(password).build();
         }
         return auth;
+    }
+
+    public Boolean isUsingJNI() {
+        return (Boolean) parameter.get(Parameter.USE_JNI);
     }
 
 
@@ -745,6 +748,16 @@ public class BenchmarkConfig extends ServiceConfig {
             return this;
         }
 
+        /**
+         * If set, the Benchmark is performed using JNI (and thus the C++ library) instead of the pure Java library.
+         * Default: false.
+         * 
+         * @return the builder
+         */
+        public ConfigBuilder setUseJNI() {
+            props.setProperty(Parameter.USE_JNI.getPropertyString(), Boolean.toString(true));
+            return this;
+        }
 
         /**
          * If set, the {@link BenchmarkConfig} will be constructed by using as many parameters as possible from the parent

@@ -5,20 +5,33 @@ jdk: openjdk6
 env:
   matrix:
     # test suites to run in parallel
-    - TEST_SUITE=travis-junit
-    - TEST_SUITE=travis-cpp
-    - TEST_SUITE=travis-valgrind
+    - TEST_SUITE=travis-junit     BUILD_JNI=true
+    - TEST_SUITE=travis-cpp       BUILD_CLIENT_TESTS=true
+    - TEST_SUITE=travis-valgrind  BUILD_CLIENT_TESTS=true
 
-before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -y libboost-all-dev libfuse-dev fuse libssl-dev libattr1-dev make cmake automake python valgrind
+sudo: false
+
+addons:
+  apt:
+    packages:
+      - libboost-all-dev
+      - libfuse-dev 
+      - fuse 
+      - libssl-dev
+      - libattr1-dev
+      - make
+      - cmake
+      - automake 
+      - python
+      - valgrind
+      - net-tools
 
 before_script:
   - TEST_DIR="/tmp/xtreemfs_xtestenv"
   - XTREEMFS_DIR=`pwd`
 
 script:
-  - BUILD_CLIENT_TESTS=true make -j2
+  - make -j2
   - ./tests/xtestenv --clean-test-dir -x $XTREEMFS_DIR -t $TEST_DIR -c $XTREEMFS_DIR/tests/test_config.py -p $TEST_SUITE
 
 after_failure:

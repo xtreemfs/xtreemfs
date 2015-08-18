@@ -94,8 +94,8 @@ class MkfsOptions : public Options {
   /** Default stripe width for new files (number of OSDs per replica). */
   int default_stripe_width;
 
-  /** List of user defined volume attributes. */
-  std::list<xtreemfs::pbrpc::KeyValuePair*> volume_attributes;
+  /** Map of user defined volume attributes. */
+  std::map<std::string, std::string> volume_attributes;
 
   /** Will be parsed by ParseCommandLine() to set volume_attributes. */
   std::vector<std::string> volume_attributes_strings;
