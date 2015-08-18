@@ -104,7 +104,7 @@ message TruncateLog {
   repeated TruncateRecord records = 1;
 }
 
-// Version of the latest XLocSet a Replica has beeen part of 
+// Version of the latest XLocSet a Replica has been part of
 // and a flag indicating if the Replica is currently participating
 // in a XLocSetChange 
 message XLocSetVersionState {
