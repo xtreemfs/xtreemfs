@@ -26,6 +26,7 @@ import org.xtreemfs.osd.rwre.RWReplicationStage;
 import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.stages.StorageStage.WriteObjectCallback;
 import org.xtreemfs.osd.storage.ObjectInformation;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest;
@@ -82,7 +83,13 @@ public final class WriteOperation extends OSDOperation {
             // TODO(jdillmann): Use centralized method to check if a lease is required.
             if (rq.getLocationList().getNumReplicas() > 1
                     && ReplicaUpdatePolicies.isRwReplicated(rq.getLocationList().getReplicaUpdatePolicy())) {
+
                 replicatedWrite(rq,args,syncWrite);
+
+            } else if (sp.getPolicy().getType() == GlobalTypes.StripingPolicyType.STRIPING_POLICY_ERASURECODE) {
+
+                ecWrite(rq, args, syncWrite);
+
             } else {
 
                 ReusableBuffer viewBuffer = rq.getRPCRequest().getData().createViewBuffer();
@@ -97,6 +104,10 @@ public final class WriteOperation extends OSDOperation {
                         });
             }
         }
+    }
+
+    public void ecWrite(final OSDRequest rq, final writeRequest args, final boolean syncWrite) {
+        // TODO(jan): add write code..see how replicatedWrite interacts with RWReplicationStage
     }
 
     public void replicatedWrite(final OSDRequest rq, final writeRequest args, final boolean syncWrite) {
