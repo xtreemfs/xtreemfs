@@ -79,7 +79,6 @@ public class FileVoucherManager {
 
         // check for maximum allowed size
         if (newFileSize <= voucherSizeMax) {
-            System.out.println(getClass() + " checkMaxVoucherSize: " + newFileSize + " # " + voucherSizeMax); // FIXME(remove)
             return true;
         } else {
             return false;

@@ -88,7 +88,6 @@ public class OSDVoucherManager {
         fileVoucherManager.invalidateVouchers(clientId, expireTimeSet);
 
         if (fileVoucherManager.isObsolete()) {
-            System.out.println("Remove Obsolete Voucher"); // FIXME(remove)
             fileVoucherManagerMap.remove(fileId);
         }
     }

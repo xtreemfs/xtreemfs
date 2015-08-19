@@ -186,8 +186,6 @@ public class PreprocStage extends Stage {
                             | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber() | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY
                                 .getNumber()) & request.getCapability().getAccessMode()) > 0;
 
-            System.out.println(getClass() + " doPrepareRequest: " + fileId + " -> " + writeAccess); // FIXME(remove)
-
             // configure quota
             if (writeAccess) {
                 OSDVoucherManager osdVoucherManager = master.getOsdVoucherManager();
