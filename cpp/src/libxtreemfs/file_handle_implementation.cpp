@@ -388,7 +388,7 @@ int FileHandleImplementation::Write(
     size_t count,
     int64_t offset) {
 
-  assert(internal_offset == offset);
+  assert(internal_offset + cache_size == offset);
 
   write_helper(buf, count, 0);
 
