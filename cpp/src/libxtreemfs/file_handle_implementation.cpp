@@ -306,6 +306,7 @@ int FileHandleImplementation::Read(
   }
   // exit(1);
 
+  cout << "returning " << read_data << " bytes; received " << received_data << endl;
   return read_data;
 }
   // void getFileSize(
