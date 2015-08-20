@@ -52,6 +52,9 @@ public class RenewOperation extends MRCOperation {
         if (renewCapabilityRequest.getIncreaseVoucher()) {
             voucherSize = master.getMrcVoucherManager().checkAndRenewVoucher(cap.getFileId(), cap.getClientIdentity(),
                     cap.getExpireMs(), newExpireMs);
+        } else {
+            master.getMrcVoucherManager().addRenewedTimestamp(cap.getFileId(), cap.getClientIdentity(),
+                    cap.getExpireMs(), newExpireMs);
         }
 
         Capability newCap = new Capability(cap.getFileId(), cap.getAccessMode(), master.getConfig()

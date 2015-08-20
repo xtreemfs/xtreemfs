@@ -48,7 +48,7 @@ public class FileVoucherManager {
         }
 
         blockedSpace += voucherSize;
-        clientVoucherManager.addVoucher(expireTime, fileSize + blockedSpace);
+        clientVoucherManager.addVoucher(expireTime);
 
         return fileSize + blockedSpace;
     }
@@ -124,6 +124,39 @@ public class FileVoucherManager {
         }
 
         return newMaxFileSize;
+    }
+
+    /**
+     * Add a new timestamp for an open voucher after a periodic capability renew.
+     * 
+     * FIXME(baerhold): merge with checkAndRenew somehow...
+     * 
+     * @param clientID
+     * @param oldExpireTime
+     * @param newExpireTime
+     * @throws UserException
+     *             if parameter couldn't be found
+     */
+    public void addRenewedTimestamp(String clientID, long oldExpireTime, long newExpireTime) throws UserException {
+        boolean error = false;
+
+        ClientVoucherManager clientVoucherManager = openVoucherMap.get(clientID);
+        if (clientVoucherManager != null) {
+
+            boolean hasActiveExpireTime = clientVoucherManager.hasActiveExpireTime(oldExpireTime);
+            if (hasActiveExpireTime) {
+                clientVoucherManager.addVoucher(newExpireTime);
+            } else {
+                error = true;
+            }
+        } else {
+            error = true;
+        }
+
+        if (error) {
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "Couldn't find voucher for ClientID: " + clientID
+                    + " and expire time: " + oldExpireTime);
+        }
     }
 
     /**

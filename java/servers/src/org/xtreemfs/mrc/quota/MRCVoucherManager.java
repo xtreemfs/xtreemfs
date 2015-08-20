@@ -62,7 +62,6 @@ public class MRCVoucherManager {
 
             System.out.println(getClass() + " VoucherSize: " + voucherSize); // FIXME(remove)
 
-
             synchronized (fileVoucherMap) {
                 FileVoucherManager fileVoucherManager = fileVoucherMap.get(fileID);
                 if (fileVoucherManager == null) {
@@ -127,18 +126,18 @@ public class MRCVoucherManager {
         synchronized (fileVoucherMap) {
             FileVoucherManager fileVoucherManager = fileVoucherMap.get(fileID);
 
-            try{
+            try {
 
                 if (fileVoucherManager != null) {
                     voucherSize = fileVoucherManager.checkAndRenewVoucher(clientID, oldExpireTime, newExpireTime);
                 } else {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No open voucher for fileID " + fileID);
                 }
-            }catch(UserException userException){
-                if(userException.getErrno() == POSIXErrno.POSIX_ERROR_EINVAL){
+            } catch (UserException userException) {
+                if (userException.getErrno() == POSIXErrno.POSIX_ERROR_EINVAL) {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "Cap with expire time " + oldExpireTime
-                            + " has already been cleared!");                
-                }else{
+                            + " has already been cleared!");
+                } else {
                     // unexpected Error
                     throw userException;
                 }
@@ -146,6 +145,31 @@ public class MRCVoucherManager {
         }
 
         return voucherSize;
+    }
+
+    public void addRenewedTimestamp(String fileID, String clientID, long oldExpireTime, long newExpireTime)
+            throws UserException {
+
+        synchronized (fileVoucherMap) {
+            FileVoucherManager fileVoucherManager = fileVoucherMap.get(fileID);
+
+            try {
+
+                if (fileVoucherManager != null) {
+                    fileVoucherManager.addRenewedTimestamp(clientID, oldExpireTime, newExpireTime);
+                } else {
+                    throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No open voucher for fileID " + fileID);
+                }
+            } catch (UserException userException) {
+                if (userException.getErrno() == POSIXErrno.POSIX_ERROR_EINVAL) {
+                    throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "Cap with expire time " + oldExpireTime
+                            + " has already been cleared!");
+                } else {
+                    // unexpected Error
+                    throw userException;
+                }
+            }
+        }
     }
 
     /*
@@ -164,14 +188,13 @@ public class MRCVoucherManager {
     public static void main(String[] args) throws Exception {
         // FIXME(baerhold): Export to test
         // VolumeQuotaManager volumeQuotaManager = new VolumeQuotaManager("blubb", 150 * 1024 * 1024);
-        
+
         MRCQuotaManager mrcQuotaManager_ = new MRCQuotaManager();
-        
+
         // mrcQuotaManager_.addVolumeQuotaManager(volumeQuotaManager);
-        
-        
+
         MRCVoucherManager mrcVoucherManager = new MRCVoucherManager(mrcQuotaManager_);
-        
+
         System.out.println(mrcVoucherManager.getVoucher("blubb", "file1", "client1", 0, 123456789));
         System.out.println(mrcVoucherManager.getVoucher("blubb", "file1", "client2", 0, 1234567890));
         System.out.println(mrcVoucherManager.getVoucher("blubb", "file1", "client1", 0, 1234567891));

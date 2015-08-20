@@ -6,8 +6,8 @@
  */
 package org.xtreemfs.mrc.quota;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -24,7 +24,7 @@ public class ClientVoucherManager {
     private final String          clientID;
 
     // manage xcaps by expire time <> voucher size
-    private final Map<Long, Long> xcapExpireTimeMap = new HashMap<Long, Long>();
+    private final List<Long> xcapExpireTimeList = new ArrayList<Long>();
 
     /**
      * 
@@ -34,13 +34,13 @@ public class ClientVoucherManager {
         this.fileID = fileID;
     }
 
-    public void addVoucher(long expireTime, long voucherSize) {
+    public void addVoucher(long expireTime) {
 
-        if (!xcapExpireTimeMap.containsKey(expireTime)) {
-            xcapExpireTimeMap.put(expireTime, voucherSize);
+        if (!xcapExpireTimeList.contains(expireTime)) {
+            xcapExpireTimeList.add(expireTime);
         } else {
-            System.out.println("ERROR - FIXME given");
-            // FIXME: throw exception?
+            System.out.println("ERROR - FIXME given: " + getClass() + " Method: addVoucher");
+            // FIXME(baerhold): throw exception?
             // throw new Exception("ExpireTime (" + expireTime + ") is already in the list for file " +
             // this.fileID);
         }
@@ -49,21 +49,21 @@ public class ClientVoucherManager {
     public void clearVouchers(Set<Long> expireTimes) {
 
         for (Long expireTime : expireTimes) {
-            if (xcapExpireTimeMap.containsKey(expireTime)) {
-                xcapExpireTimeMap.remove(expireTime);
+            if (xcapExpireTimeList.contains(expireTime)) {
+                xcapExpireTimeList.remove(expireTime);
             } else {
-                System.out.println("ERROR - FIXME given");
-                // FIXME: exception? this shouldnt occure, but do we care about it?
+                System.out.println("ERROR - FIXME given: " + getClass() + " Method: clearVouchers");
+                // FIXME(baerhold): exception? this shouldnt occure, but do we care about it?
             }
         }
     }
 
     public boolean hasActiveExpireTime(long expireTime) {
-        return xcapExpireTimeMap.containsKey(expireTime);
+        return xcapExpireTimeList.contains(expireTime);
     }
 
     public boolean isEmpty() {
-        return xcapExpireTimeMap.isEmpty();
+        return xcapExpireTimeList.isEmpty();
     }
 
     /**
@@ -87,7 +87,7 @@ public class ClientVoucherManager {
      */
     @Override
     public String toString() {
-        return "ClientVoucherManager [fileID=" + fileID + ", clientID=" + clientID + ", xcapExpireTimeMap="
-                + xcapExpireTimeMap + "]";
+        return "ClientVoucherManager [fileID=" + fileID + ", clientID=" + clientID + ", xcapExpireTimeList="
+                + xcapExpireTimeList + "]";
     }
 }
