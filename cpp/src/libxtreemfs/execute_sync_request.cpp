@@ -273,7 +273,7 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
         XCapManager* xcap_manager_ = dynamic_cast<XCapManager*>(xcap_handler);
         if (xcap_manager_) {
           PosixErrorException p(POSIX_ERROR_NONE, "");
-          xcap_manager_->RenewXCapAsync(renewOptions, &p);
+          xcap_manager_->RenewXCapAsync(renewOptions, true, &p);
           xcap_manager_->WaitForPendingXCapRenewal();
 
           if(p.posix_errno() != POSIX_ERROR_NONE){

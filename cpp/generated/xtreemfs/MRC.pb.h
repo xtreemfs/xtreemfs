@@ -84,6 +84,7 @@ class xtreemfs_replica_addRequest;
 class xtreemfs_replica_listRequest;
 class xtreemfs_get_xlocsetRequest;
 class xtreemfs_replica_removeRequest;
+class xtreemfs_renew_capabilityRequest;
 class xtreemfs_restore_fileRequest;
 class xtreemfs_rmvolRequest;
 class xtreemfs_update_file_sizeRequest;
@@ -5450,6 +5451,100 @@ class xtreemfs_replica_removeRequest : public ::google::protobuf::Message {
 
   void InitAsDefaultInstance();
   static xtreemfs_replica_removeRequest* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class xtreemfs_renew_capabilityRequest : public ::google::protobuf::Message {
+ public:
+  xtreemfs_renew_capabilityRequest();
+  virtual ~xtreemfs_renew_capabilityRequest();
+
+  xtreemfs_renew_capabilityRequest(const xtreemfs_renew_capabilityRequest& from);
+
+  inline xtreemfs_renew_capabilityRequest& operator=(const xtreemfs_renew_capabilityRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const xtreemfs_renew_capabilityRequest& default_instance();
+
+  void Swap(xtreemfs_renew_capabilityRequest* other);
+
+  // implements Message ----------------------------------------------
+
+  xtreemfs_renew_capabilityRequest* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const xtreemfs_renew_capabilityRequest& from);
+  void MergeFrom(const xtreemfs_renew_capabilityRequest& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required .xtreemfs.pbrpc.XCap xcap = 1;
+  inline bool has_xcap() const;
+  inline void clear_xcap();
+  static const int kXcapFieldNumber = 1;
+  inline const ::xtreemfs::pbrpc::XCap& xcap() const;
+  inline ::xtreemfs::pbrpc::XCap* mutable_xcap();
+  inline ::xtreemfs::pbrpc::XCap* release_xcap();
+  inline void set_allocated_xcap(::xtreemfs::pbrpc::XCap* xcap);
+
+  // optional bool increaseVoucher = 2 [default = false];
+  inline bool has_increasevoucher() const;
+  inline void clear_increasevoucher();
+  static const int kIncreaseVoucherFieldNumber = 2;
+  inline bool increasevoucher() const;
+  inline void set_increasevoucher(bool value);
+
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_renew_capabilityRequest)
+ private:
+  inline void set_has_xcap();
+  inline void clear_has_xcap();
+  inline void set_has_increasevoucher();
+  inline void clear_has_increasevoucher();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::xtreemfs::pbrpc::XCap* xcap_;
+  bool increasevoucher_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
+
+  friend void  protobuf_AddDesc_xtreemfs_2fMRC_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fMRC_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fMRC_2eproto();
+
+  void InitAsDefaultInstance();
+  static xtreemfs_renew_capabilityRequest* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -13748,6 +13843,70 @@ inline void xtreemfs_replica_removeRequest::set_allocated_osd_uuid(::std::string
     clear_has_osd_uuid();
     osd_uuid_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   }
+}
+
+// -------------------------------------------------------------------
+
+// xtreemfs_renew_capabilityRequest
+
+// required .xtreemfs.pbrpc.XCap xcap = 1;
+inline bool xtreemfs_renew_capabilityRequest::has_xcap() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void xtreemfs_renew_capabilityRequest::set_has_xcap() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void xtreemfs_renew_capabilityRequest::clear_has_xcap() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void xtreemfs_renew_capabilityRequest::clear_xcap() {
+  if (xcap_ != NULL) xcap_->::xtreemfs::pbrpc::XCap::Clear();
+  clear_has_xcap();
+}
+inline const ::xtreemfs::pbrpc::XCap& xtreemfs_renew_capabilityRequest::xcap() const {
+  return xcap_ != NULL ? *xcap_ : *default_instance_->xcap_;
+}
+inline ::xtreemfs::pbrpc::XCap* xtreemfs_renew_capabilityRequest::mutable_xcap() {
+  set_has_xcap();
+  if (xcap_ == NULL) xcap_ = new ::xtreemfs::pbrpc::XCap;
+  return xcap_;
+}
+inline ::xtreemfs::pbrpc::XCap* xtreemfs_renew_capabilityRequest::release_xcap() {
+  clear_has_xcap();
+  ::xtreemfs::pbrpc::XCap* temp = xcap_;
+  xcap_ = NULL;
+  return temp;
+}
+inline void xtreemfs_renew_capabilityRequest::set_allocated_xcap(::xtreemfs::pbrpc::XCap* xcap) {
+  delete xcap_;
+  xcap_ = xcap;
+  if (xcap) {
+    set_has_xcap();
+  } else {
+    clear_has_xcap();
+  }
+}
+
+// optional bool increaseVoucher = 2 [default = false];
+inline bool xtreemfs_renew_capabilityRequest::has_increasevoucher() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void xtreemfs_renew_capabilityRequest::set_has_increasevoucher() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void xtreemfs_renew_capabilityRequest::clear_has_increasevoucher() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void xtreemfs_renew_capabilityRequest::clear_increasevoucher() {
+  increasevoucher_ = false;
+  clear_has_increasevoucher();
+}
+inline bool xtreemfs_renew_capabilityRequest::increasevoucher() const {
+  return increasevoucher_;
+}
+inline void xtreemfs_renew_capabilityRequest::set_increasevoucher(bool value) {
+  set_has_increasevoucher();
+  increasevoucher_ = value;
 }
 
 // -------------------------------------------------------------------

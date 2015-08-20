@@ -555,6 +555,13 @@ message xtreemfs_replica_removeRequest {
   required string osd_uuid = 2;
 }
 
+message xtreemfs_renew_capabilityRequest {
+  // the XCap
+  required XCap xcap = 1;
+  // hint, whether to increase voucher or not
+  optional bool increaseVoucher = 2 [default = false];
+}
+
 // restores a file w/ orphaned file content by creating a new metadata object
 message xtreemfs_restore_fileRequest {
   // the path to the restored file
@@ -766,7 +773,7 @@ service MRCService {
   };
 
   // renews an existing capability to extend the validity period
-  rpc xtreemfs_renew_capability(XCap) returns(XCap) {
+  rpc xtreemfs_renew_capability(xtreemfs_renew_capabilityRequest) returns(XCap) {
     option(proc_id)=37;
   };
 

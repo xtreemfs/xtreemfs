@@ -1165,17 +1165,20 @@ boost::mutex& XCapManager::GetOldExpireTimesMutex() {
 }
 
 void XCapManager::RenewXCapAsync(const RPCOptions& options) {
-  RenewXCapAsync(options, NULL);
+  RenewXCapAsync(options, false, NULL);
 }
 
-void XCapManager::RenewXCapAsync(const RPCOptions& options, PosixErrorException* writeback) {
+void XCapManager::RenewXCapAsync(const RPCOptions& options,
+                                 const bool increaseVoucher,
+                                 PosixErrorException* writeback) {
   // TODO(mberlin): Only renew after some time has elapsed.
   // TODO(mberlin): Cope with local clocks which have a high clock skew.
   uint64_t fileID = GetFileId();
 
   {
     // get first writeback mutex due to same order of locks in the CallFinished method
-    boost::mutex::scoped_lock xcap_renewal_error_writebacks_lock(xcap_renewal_error_writebacks_mutex_);
+    boost::mutex::scoped_lock xcap_renewal_error_writebacks_lock(
+        xcap_renewal_error_writebacks_mutex_);
     boost::mutex::scoped_lock lock(mutex_);
 
     if (writeback != NULL) {
@@ -1206,8 +1209,9 @@ void XCapManager::RenewXCapAsync(const RPCOptions& options, PosixErrorException*
         << endl;
   }
 
-  XCap xcap;
-  GetXCap(&xcap);
+  xtreemfs_renew_capabilityRequest renewCapabilityRequest;
+  GetXCap(renewCapabilityRequest.mutable_xcap());
+  renewCapabilityRequest.set_increasevoucher(increaseVoucher);
 
   string mrc_uuid;
   string mrc_address;
@@ -1218,7 +1222,7 @@ void XCapManager::RenewXCapAsync(const RPCOptions& options, PosixErrorException*
         mrc_address,
         auth_bogus_,
         user_credentials_bogus_,
-        &xcap,
+        &renewCapabilityRequest,
         this,
         NULL);
   } catch (const XtreemFSException&) {

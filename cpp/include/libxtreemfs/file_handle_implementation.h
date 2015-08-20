@@ -150,7 +150,8 @@ class XCapManager :
   void RenewXCapAsync(const RPCOptions& options);
 
   /** Renew xcap_ asynchronously. Add writeback, in case of an error */
-  void RenewXCapAsync(const RPCOptions& options, PosixErrorException* writeback);
+  void RenewXCapAsync(const RPCOptions& options, const bool increaseVoucher,
+                      PosixErrorException* writeback);
 
   /** Blocks until the callback has completed (if an XCapRenewal is pending). */
   void WaitForPendingXCapRenewal();

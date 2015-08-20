@@ -14,7 +14,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_renew_capabilityRequest;
 
 /**
  * 
@@ -32,10 +32,11 @@ public class RenewOperation extends MRCOperation {
     @Override
     public void startRequest(MRCRequest rq) throws Throwable {
         
-        final XCap xcap = (XCap) rq.getRequestArgs();
+        final xtreemfs_renew_capabilityRequest renewCapabilityRequest = (xtreemfs_renew_capabilityRequest) rq
+                .getRequestArgs();
         
         // create a capability object to verify the capability
-        Capability cap = new Capability(xcap, master.getConfig().getCapabilitySecret());
+        Capability cap = new Capability(renewCapabilityRequest.getXcap(), master.getConfig().getCapabilitySecret());
         
         // check whether the capability has a valid signature
         if (!cap.hasValidSignature())
@@ -47,8 +48,11 @@ public class RenewOperation extends MRCOperation {
         
         // get new voucher, if capability are still valid for vouchers
         long newExpireMs = TimeSync.getGlobalTime() + master.getConfig().getCapabilityTimeout() * 1000;
-        long voucherSize = master.getMrcVoucherManager().checkAndRenewVoucher(cap.getFileId(), cap.getClientIdentity(),
-                cap.getExpireMs(), newExpireMs);
+        long voucherSize = cap.getVoucherSize();
+        if (renewCapabilityRequest.getIncreaseVoucher()) {
+            voucherSize = master.getMrcVoucherManager().checkAndRenewVoucher(cap.getFileId(), cap.getClientIdentity(),
+                    cap.getExpireMs(), newExpireMs);
+        }
 
         Capability newCap = new Capability(cap.getFileId(), cap.getAccessMode(), master.getConfig()
                 .getCapabilityTimeout(), TimeSync.getGlobalTime() / 1000 + master.getConfig().getCapabilityTimeout(),

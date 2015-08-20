@@ -60,6 +60,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_renew_capabilityRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList;
@@ -787,10 +788,13 @@ class ReplicatingFile {
                     }
                     
                 }
-                
+
+                xtreemfs_renew_capabilityRequest renewCapabilityRequest = xtreemfs_renew_capabilityRequest.newBuilder()
+                        .setXcap(cap.getXCap()).setIncreaseVoucher(false).build();
+
                 // update Xcap
-                RPCResponse<XCap> r = master.getMRCClient().xtreemfs_renew_capability(mrcAddress, RPCAuthentication.authNone, RPCAuthentication.userService, 
-                    cap.getXCap());
+                RPCResponse<XCap> r = master.getMRCClient().xtreemfs_renew_capability(mrcAddress,
+                        RPCAuthentication.authNone, RPCAuthentication.userService, renewCapabilityRequest);
                 XCap xCap = r.get();
                 r.freeBuffers();
                 
