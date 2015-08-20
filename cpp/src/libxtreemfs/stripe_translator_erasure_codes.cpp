@@ -308,7 +308,7 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
 
       for (int i = 0; i < k; i++) {
         int data_read = line_offset + i;
-        if (offset > stripe_size) {
+        if (offset >= stripe_size) {
           cout << "skipping object due to offset" << endl;
           offset -= stripe_size;
           continue;
