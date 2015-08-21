@@ -257,7 +257,6 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
   for (int i = 0; i < m; i++) {
     coding[i] = new char[stripe_size];
   }
-  size_t read_data = 0;
   cout << lines << " lines must be reconstructed" << endl;
   cout << "successful_reads is " << *successful_reads << endl;
 
@@ -325,6 +324,15 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
         offset = 0;
       }
     }
+  }
+
+  cout << "deleteing data and coding buffers..." << endl;
+  for (int i = 0; i < k; i++) {
+    delete[] data[i];
+  }
+
+  for (int i = 0; i < m; i++) {
+    delete[] coding[i];
   }
 
   cout << received_data << " have been received" << endl;
