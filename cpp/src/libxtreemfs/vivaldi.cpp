@@ -35,20 +35,12 @@ using namespace xtreemfs::util;
 
 namespace xtreemfs {
     
-static void AddAddresses(const ServiceAddresses& service_addresses,
-                         SimpleUUIDIterator* uuid_iterator) {
-  ServiceAddresses::Addresses as_list = service_addresses.GetAddresses();
-  for (ServiceAddresses::Addresses::const_iterator iter = as_list.begin();
-       iter != as_list.end(); ++iter) {
-    uuid_iterator->AddUUID(*iter);
-  }
-}
-
 Vivaldi::Vivaldi(
-    const ServiceAddresses& dir_addresses,
+    SimpleUUIDIterator& dir_uuid_iterator,
     UUIDResolver* uuid_resolver,
     const Options& options)
-    : uuid_resolver_(uuid_resolver),
+    : dir_uuid_iterator_(dir_uuid_iterator),
+      uuid_resolver_(uuid_resolver),
       vivaldi_options_(options) {
   srand(static_cast<unsigned int>(time(NULL)));
   // Set AuthType to AUTH_NONE as it's currently not used.
@@ -59,9 +51,6 @@ Vivaldi::Vivaldi(
   // Vivaldi requests do not have to be retried nor interrupted.
   vivaldi_options_.max_tries = 1;
   vivaldi_options_.was_interrupted_function = NULL;
-
-  dir_service_addresses_.reset(new SimpleUUIDIterator());
-  AddAddresses(dir_addresses, dir_service_addresses_.get());
 }
 
 void Vivaldi::Initialize(rpc::Client* rpc_client) {
@@ -290,7 +279,7 @@ void Vivaldi::Run() {
                         boost::cref(auth_bogus_),
                         boost::cref(user_credentials_bogus_),
                         own_node.GetCoordinates()),
-                    dir_service_addresses_.get(),
+                    &dir_uuid_iterator_,
                     NULL,
                     RPCOptionsFromOptions(vivaldi_options_),
                     true));
@@ -424,7 +413,7 @@ bool Vivaldi::UpdateKnownOSDs(list<KnownOSD>* updated_osds,
             boost::cref(auth_bogus_),
             boost::cref(user_credentials_bogus_),
             &request),
-        dir_service_addresses_.get(),
+        &dir_uuid_iterator_,
         NULL,
         RPCOptionsFromOptions(vivaldi_options_),
         true));

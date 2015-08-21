@@ -44,6 +44,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceDataMap;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceGetByNameRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceGetByTypeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceGetByUUIDRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceRegisterRequest;
@@ -661,27 +662,16 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         }
 
         // Check if there is an '@' in the volume. Everything behind the '@' is
-        // the snapshot,
-        // cut if off.
+        // the snapshot, cut if off.
         String parsedVolumeName = parseVolumeName(volumeName);
-        ServiceSet sSet = null;
-        try {
-            sSet = RPCCaller.<String, ServiceSet> syncCall(SERVICES.DIR, this.dirServiceUserCredentials,
-                    this.dirServiceAuth, this.options, this, this.dirServiceAddresses, true,
-                    parsedVolumeName, new CallGenerator<String, ServiceSet>() {
 
-                        @Override
-                        public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
-                                UserCredentials userCreds, String input) throws IOException {
-                            return ClientImplementation.this.dirServiceClient.xtreemfs_service_get_by_name(
-                                    server, authHeader, userCreds, input);
-                        }
-                    });
+        ServiceSet sSet;
+        try {
+            sSet = getServicesByName(parsedVolumeName);
         } catch (IOException e) {
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "volumeNameToMRCUUID: "
-                        + "couldn't resolve mrc UUID for volumeName %s Reason: %s", volumeName,
-                        e.getMessage());
+                        + "couldn't resolve mrc UUID for volumeName %s Reason: %s", volumeName, e.getMessage());
             }
 
             throw new VolumeNotFoundException(parsedVolumeName);
@@ -739,26 +729,16 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
         }
 
         // Check if there is a @ in the volume_name.
-        // Everything behind the @ has to be removed as it identifies the
-        // snapshot.
+        // Everything behind the @ has to be removed as it identifies the snapshot.
         String parsedVolumeName = parseVolumeName(volumeName);
-        ServiceSet sSet = null;
+
+        ServiceSet sSet;
         try {
-            sSet = RPCCaller.<String, ServiceSet> syncCall(SERVICES.DIR, this.dirServiceUserCredentials,
-                    this.dirServiceAuth, this.options, this, this.dirServiceAddresses, true,
-                    parsedVolumeName, new CallGenerator<String, ServiceSet>() {
-                        @Override
-                        public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
-                                UserCredentials userCreds, String input) throws IOException {
-                            return ClientImplementation.this.dirServiceClient.xtreemfs_service_get_by_name(
-                                    server, authHeader, userCreds, input);
-                        }
-                    });
+            sSet = getServicesByName(parsedVolumeName);
         } catch (IOException e) {
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "volumeNameToMRCUUID: "
-                        + "couldn't resolve mrc UUID for volumeName %s Reason: %s", volumeName,
-                        e.getMessage());
+                        + "couldn't resolve mrc UUID for volumeName %s Reason: %s", volumeName, e.getMessage());
             }
 
             throw new VolumeNotFoundException(parsedVolumeName);
@@ -790,6 +770,59 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
             }
             throw new VolumeNotFoundException(parsedVolumeName);
         }
+    }
+
+    @Override
+    public List<String> volumeNameToMRCUUIDs(String volumeName) throws VolumeNotFoundException,
+            AddressToUUIDNotFoundException {
+        assert (!volumeName.isEmpty());
+
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "Searching MRC for volume %s", volumeName);
+        }
+
+        // Check if there is a @ in the volume_name.
+        // Everything behind the @ has to be removed as it identifies the snapshot.
+        String parsedVolumeName = parseVolumeName(volumeName);
+
+        ServiceSet sSet;
+        try {
+            sSet = getServicesByName(parsedVolumeName);
+        } catch (IOException e) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "volumeNameToMRCUUID: "
+                        + "couldn't resolve mrc UUID for volumeName %s Reason: %s", volumeName, e.getMessage());
+            }
+
+            throw new VolumeNotFoundException(parsedVolumeName);
+        }
+
+        // Iterate over ServiceSet to find an appropriate MRC
+        LinkedList<String> result = new LinkedList<String>();
+        for (Service service : sSet.getServicesList()) {
+            if (service.getType().equals(ServiceType.SERVICE_TYPE_VOLUME) && service.getName().equals(parsedVolumeName)) {
+                for (KeyValuePair kvp : service.getData().getDataList()) {
+                    if (kvp.getKey().substring(0, 3).equals("mrc")) {
+                        if (Logging.isDebug()) {
+                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "MRC with UUID: %s"
+                                    + " added (key: %s).", kvp.getValue(), kvp.getKey());
+                        }
+                        result.add(kvp.getValue());
+                    }
+                }
+            }
+        }
+
+        // Error handling
+        if (result.isEmpty()) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "No MRC found for volume $s.",
+                        parsedVolumeName);
+            }
+            throw new VolumeNotFoundException(parsedVolumeName);
+        }
+
+        return result;
     }
 
     /**
@@ -978,10 +1011,27 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
                     }
                 });
 
+        assert (sSet != null);
         if (sSet.getServicesCount() == 0) {
             throw new IOException("No Service with UUID " + uuid + " available");
         }
         return sSet.getServices(0);
+    }
+
+    ServiceSet getServicesByName(String name) throws IOException {
+        serviceGetByNameRequest request = serviceGetByNameRequest.newBuilder().setName(name).build();
+        ServiceSet sSet = RPCCaller.<serviceGetByNameRequest, ServiceSet> syncCall(SERVICES.DIR,
+                dirServiceUserCredentials, dirServiceAuth, options, this, dirServiceAddresses, true, request,
+                new CallGenerator<serviceGetByNameRequest, ServiceSet>() {
+                    @Override
+                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, serviceGetByNameRequest input) throws IOException {
+                        return dirServiceClient.xtreemfs_service_get_by_name(server, authHeader, userCreds, input);
+                    }
+                });
+
+        assert (sSet != null);
+        return sSet;
     }
 
     public void setOSDServiceStatus(String osdUUID, ServiceStatus serviceStatus) throws IOException {

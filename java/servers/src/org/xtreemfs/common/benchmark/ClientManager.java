@@ -8,12 +8,12 @@
 
 package org.xtreemfs.common.benchmark;
 
+import java.util.LinkedList;
+
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.Client;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.foundation.logging.Logging;
-
-import java.util.LinkedList;
 
 /**
  * Handles client creation, startup and deletion centrally.
@@ -35,7 +35,9 @@ class ClientManager {
 
     /* create and start an AdminClient. */
     AdminClient getNewClient() throws Exception {
-        AdminClient client = ClientFactory.createAdminClient(config.getDirAddresses(), config.getUserCredentials(),
+        ClientFactory.ClientType clientType = config.isUsingJNI() ? ClientFactory.ClientType.NATIVE  :ClientFactory.ClientType.JAVA;
+        AdminClient client = ClientFactory.createAdminClient(clientType,
+                config.getDirAddresses(), config.getUserCredentials(),
                 config.getSslOptions(), config.getOptions());
         clients.add(client);
         client.start();

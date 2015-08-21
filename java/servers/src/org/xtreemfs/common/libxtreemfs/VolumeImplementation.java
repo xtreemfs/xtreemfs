@@ -7,9 +7,7 @@
 package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -17,7 +15,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
 
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.libxtreemfs.RPCCaller.CallGenerator;
@@ -477,7 +474,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
      */
     public AdminFileHandle openFile(UserCredentials userCredentials, String path, int flags, int mode,
             int truncateNewFileSize) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
-        boolean asyncWritesEnabled = (volumeOptions.getMaxWriteahead() > 0);
+        boolean asyncWritesEnabled = volumeOptions.isEnableAsyncWrites();
 
         if ((SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_SYNC.getNumber() & flags) > 0) {
             if (Logging.isDebug()) {
@@ -1657,32 +1654,8 @@ public class VolumeImplementation implements Volume, AdminVolume {
     public List<StripeLocation> getStripeLocations(UserCredentials userCredentials, String path,
             long startSize, long length) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException {
-        FileHandleImplementation fileHandle = (FileHandleImplementation) this.openFile(userCredentials, path,
-                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
-        XLocSet xLocs = fileHandle.getXlocSet();
-        fileHandle.close();
-
-        long stripeSize = xLocs.getReplicas(0).getStripingPolicy().getStripeSize() * 1024;
-        long indexOfFirstStripeToConsider = (startSize / stripeSize);
-        long remainingLengthOfFirstStripe = Math.min(length, stripeSize - (startSize % stripeSize));
-        int numberOfStrips = (int) (length / stripeSize + 1);
-
-        List<StripeLocation> stripeLocations = new ArrayList<StripeLocation>(numberOfStrips);
-        // add first Stripe
-        ArrayList<String> uuids = getUuidsForStripeFromReplicas(xLocs.getReplicasList(),
-                indexOfFirstStripeToConsider);
-        ArrayList<String> hostnames = resolveHostnamesFromUuids(uuids);
-        stripeLocations.add(new StripeLocation(startSize, remainingLengthOfFirstStripe, uuids
-                .toArray(new String[uuids.size()]), hostnames.toArray(new String[hostnames.size()])));
-
-        for (long index = indexOfFirstStripeToConsider + 1; index * stripeSize < startSize + length; index++) {
-            uuids = getUuidsForStripeFromReplicas(xLocs.getReplicasList(), index);
-            hostnames = resolveHostnamesFromUuids(uuids);
-            stripeLocations.add(new StripeLocation(index * stripeSize, Math.min(stripeSize, startSize
-                    + length - index * stripeSize), uuids.toArray(new String[uuids.size()]), hostnames
-                    .toArray(new String[hostnames.size()])));
-        }
-        return stripeLocations;
+        Replicas replicas = listReplicas(userCredentials, path);
+        return Helper.getStripeLocationsFromReplicas(replicas, startSize, length, uuidResolver);
     }
 
     @Override
@@ -1691,58 +1664,6 @@ public class VolumeImplementation implements Volume, AdminVolume {
                 .getStripingPolicy();
         Stat fileAttr = this.getAttr(userCredentials, path);
         return Helper.getNumObjects(userCredentials, fileAttr, stripingPolicy);
-    }
-
-    private ArrayList<String> resolveHostnamesFromUuids(ArrayList<String> uuids)
-            throws AddressToUUIDNotFoundException {
-        ArrayList<String> hostnames = new ArrayList<String>();
-        for (int i = 0; i < uuids.size(); i++) {
-            String hostname = uuidResolver.uuidToAddress(uuids.get(i));
-            hostname = hostname.substring(0, hostname.lastIndexOf(':'));
-            if (isIpAddress(hostname)) {
-                try {
-                    InetSocketAddress address = new InetSocketAddress(InetAddress.getByName(hostname), 0);
-                    hostname = address.getHostName();
-                } catch (Exception e) {
-                    hostname = null;
-                }
-
-                if (hostname == null) {
-                    // if hostname can't be resolved correctly, delete corresponding uuid. Also decrement
-                    // the counter i to not skip entries in the uuid list!
-                    if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this,
-                                "Couldn't resolve hostname for uuid %s", uuids.get(i));
-                    }
-                    uuids.remove(i);
-                    i--;
-                } else {
-                    hostnames.add(hostname);
-                }
-            } else {
-                hostnames.add(hostname);
-            }
-        }
-        return hostnames;
-    }
-
-    private ArrayList<String> getUuidsForStripeFromReplicas(List<Replica> replicasList, long stripeIndex) {
-        ArrayList<String> uuids = new ArrayList<String>();
-        for (Replica replica : replicasList) {
-            int osdIndex = (int) stripeIndex % replica.getStripingPolicy().getWidth();
-            uuids.add(replica.getOsdUuids(osdIndex));
-        }
-        return uuids;
-    }
-
-    private boolean isIpAddress(String hostname) {
-        // TODO: Move this Function to a place where it can be reused.
-        final String IPADDRESS_PATTERN = "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-                + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-                + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
-
-        Pattern pattern = Pattern.compile(IPADDRESS_PATTERN);
-        return pattern.matcher(hostname).matches();
     }
 
     @Override

@@ -40,7 +40,8 @@ public abstract class StripingPolicyImpl {
         if (replica.getStripingPolicy().getType() == StripingPolicyType.STRIPING_POLICY_RAID0) {
             return new RAID0Impl(replica,relOsdPosition);
         } else {
-            throw new IllegalArgumentException("unknown striping polciy requested");
+            throw new IllegalArgumentException("unknown striping policy requested...request was " +
+                    replica.getStripingPolicy().getType());
         }
     }
 

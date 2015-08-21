@@ -27,11 +27,11 @@ namespace xtreemfs {
 namespace util {
 
 Logging::Logging(LogLevel level, std::ostream* stream)
-    : log_stream_(*stream), log_file_stream_(stream), level_(level) {
+    : log_stream_(*stream), log_file_stream_(stream), level_(level), init_count_(1) {
 }
 
 Logging::Logging(LogLevel level)
-    : log_stream_(std::cout), log_file_stream_(NULL), level_(level) {
+    : log_stream_(std::cout), log_file_stream_(NULL), level_(level), init_count_(1) {
 }
 
 Logging::~Logging() {
@@ -97,6 +97,17 @@ bool Logging::loggingActive(LogLevel level) {
   return (level <= level_);
 }
 
+void Logging::register_init() {
+  ++init_count_;
+}
+
+bool Logging::register_shutdown() {
+  if (init_count_ > 0) {
+    return (--init_count_ == 0);
+  }
+  return false;
+}
+
 LogLevel stringToLevel(std::string stringLevel, LogLevel defaultLevel) {
   if (stringLevel == "EMERG") {
     return LEVEL_EMERG;
@@ -133,6 +144,7 @@ void initialize_logger(std::string stringLevel,
 void initialize_logger(LogLevel level, std::string logfilePath) {
   // Do not initialize the logging multiple times.
   if (Logging::log) {
+    Logging::log->register_init();
     return;
   }
 
@@ -158,14 +170,18 @@ void initialize_logger(LogLevel level, std::string logfilePath) {
 void initialize_logger(LogLevel level) {
   // Do not initialize the logging multiple times.
   if (Logging::log) {
+    Logging::log->register_init();
     return;
   }
   Logging::log = new Logging(level);
 }
 
 void shutdown_logger() {
-  delete Logging::log;
-  Logging::log = NULL;
+  // Delete the logging only if no instance is left.
+  if (Logging::log && Logging::log->register_shutdown()) {
+    delete Logging::log;
+    Logging::log = NULL;
+  }
 }
 
 Logging* Logging::log = NULL;

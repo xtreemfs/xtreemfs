@@ -9,6 +9,7 @@
 #define CPP_INCLUDE_LIBXTREEMFS_UUID_RESOLVER_H_
 
 #include <string>
+#include <vector>
 
 namespace xtreemfs {
 
@@ -51,6 +52,12 @@ class UUIDResolver {
    */
   virtual void VolumeNameToMRCUUID(const std::string& volume_name,
                                    SimpleUUIDIterator* uuid_iterator) = 0;
+
+  /** Resolves the list of UUIDs of the MRC replicas and returns them as a vector.
+   *
+   *  @throws VolumeNotFoundException
+   */
+  virtual std::vector<std::string> VolumeNameToMRCUUIDs(const std::string& volume_name) = 0;
 };
 
 }  // namespace xtreemfs

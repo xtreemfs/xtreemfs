@@ -207,7 +207,7 @@ public class Logging {
             }
         }
     }
-    
+
     public static char getLevelName(int level) {
         switch (level) {
         case LEVEL_EMERG:
@@ -246,6 +246,18 @@ public class Logging {
         }
     }
     
+    /**
+     * Returns the current logging level if logging has been started or a negative value (-1) otherwise.
+     * 
+     * @return logging level or -1
+     */
+    public static int getLevel() {
+        if (instance == null)
+            return -1;
+        else
+            return instance.level;
+    }
+
     public static boolean isDebug() {
         if (instance == null)
             return false;
