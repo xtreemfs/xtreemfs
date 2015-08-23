@@ -169,7 +169,6 @@ size_t StripeTranslatorErasureCodes::TranslateReadRequest(
   // index where data reads are inserted...corresponds to the minimum number of reads when no
   // erasures are present
   size_t data_reads = 0;
-  size_t processed_size = 0;
 
   cout << "size: " << size << " offset: " << offset << endl;
 

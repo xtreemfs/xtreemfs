@@ -213,11 +213,14 @@ int FileHandleImplementation::Read(
     } else {
       // TODO(mberlin): Update xloc list if newer version found (on OSD?).
       try {
-        if (operations[j].osd_offsets[0] == 0) {
+          //TODO only simulate erasure when using erasure codes
+        bool ec = xtreemfs::pbrpc::StripingPolicyType_Name((*striping_policies.begin())->type()) == "STRIPING_POLICY_REED_SOL_VAN";
+        // cout << "#### str pol: " << xtreemfs::pbrpc::StripingPolicyType_Name((*striping_policies.begin())->type()) << " ec: " << ec << endl;
+        if (operations[j].osd_offsets[0] == 0 && ec) {
         // if (operations[j].osd_offsets[0] == 1) {
         // if (operations[j].osd_offsets[0] == 1 ||
         //     operations[j].osd_offsets[0] == 0) {
-          cout << "simulating an erasure of osd " << operations[j].osd_offsets[0] << " received no data from op " << j << endl;
+          cout << "[ec] simulating an erasure of osd " << operations[j].osd_offsets[0] << " received no data from op " << j << endl;
         }
         else {
              size_t op_received_data =
