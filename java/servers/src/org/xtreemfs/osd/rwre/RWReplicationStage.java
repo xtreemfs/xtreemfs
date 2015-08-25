@@ -1020,7 +1020,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "open file: " + fileId);
             // "open" file
-            state = new ReplicatedFileState(fileId, loc, master.getConfig().getUUID(), fstage, osdClient);
+            state = new ReplicatedFileState(fileId, loc, master.getConfig().getUUID(), osdClient);
             files.put(fileId, state);
             state.setCredentials(credentials);
             state.setForceReset(forceReset);

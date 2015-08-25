@@ -20,7 +20,6 @@ import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.flease.Flease;
-import org.xtreemfs.foundation.flease.FleaseStage;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
@@ -45,11 +44,9 @@ public class ReplicatedFileState {
         BACKUP, 
         PRIMARY, 
         INVALIDATED
-    };
+    }
 
     private final AtomicInteger        queuedData;
-
-    private List<ServiceUUID>          remoteOSDs;
 
     private ReplicaUpdatePolicy        policy;
 
@@ -83,8 +80,8 @@ public class ReplicatedFileState {
 
     private boolean                    invalidatedReset;
 
-    public ReplicatedFileState(String fileId, XLocations locations, ServiceUUID localUUID, FleaseStage fstage,
-            OSDServiceClient client) throws UnknownUUIDException, IOException {
+    public ReplicatedFileState(String fileId, XLocations locations, ServiceUUID localUUID,
+                               OSDServiceClient client) throws UnknownUUIDException, IOException {
         queuedData = new AtomicInteger();
         pendingRequests = new LinkedList();
         this.fileId = fileId;
@@ -97,7 +94,7 @@ public class ReplicatedFileState {
         this.invalidated = false;
         this.invalidatedReset = false;
 
-        remoteOSDs = new ArrayList(locations.getNumReplicas() - 1);
+        List<ServiceUUID> remoteOSDs = new ArrayList(locations.getNumReplicas() - 1);
         for (Replica r : locations.getReplicas()) {
             final ServiceUUID headOSD = r.getHeadOsd();
             if (headOSD.equals(localUUID))
@@ -221,8 +218,6 @@ public class ReplicatedFileState {
 
     /**
      * Appends the request to the end of the list of pending requests.
-     * 
-     * @param request
      */
     public void addPendingRequest(StageRequest request) {
         pendingRequests.add(request);
