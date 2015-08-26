@@ -32,6 +32,7 @@ import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
+import org.xtreemfs.mrc.quota.QuotaFileInformation;
 import org.xtreemfs.mrc.stages.XLocSetLock;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper;
@@ -99,17 +100,6 @@ public class OpenOperation extends MRCOperation {
         // check whether the file/directory exists
         try {
             
-
-            // check if volume is full
-            if (create || truncate || write) {
-                master.getMrcVoucherManager().checkVoucherAvailability(volume.getId());
-            }
-
-            // long volumeQuota = volume.getVolumeQuota();
-            // if ((write || create) && volumeQuota != 0 && volumeQuota <= volume.getVolumeSize()) {
-            // throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "the volume's quota is reached");
-            // }
-            
             res.checkIfFileDoesNotExist();
             
             // check if O_CREAT and O_EXCL are set; if so, send an exception
@@ -118,6 +108,12 @@ public class OpenOperation extends MRCOperation {
             
             file = res.getFile();
             
+            // check quota
+            if (create || truncate || write) {
+                QuotaFileInformation quotaFileInformation = new QuotaFileInformation(volume.getId(), file);
+                master.getMrcVoucherManager().checkVoucherAvailability(quotaFileInformation);
+            }
+
             if (file.isDirectory() || sMan.getSoftlinkTarget(file.getId()) != null)
                 throw new UserException(POSIXErrno.POSIX_ERROR_EISDIR, "open is restricted to files");
             
@@ -158,6 +154,11 @@ public class OpenOperation extends MRCOperation {
                 if ((parentMode & 02000) > 0) {
                     groupId = res.getParentDir().getOwningGroupId();
                 }
+
+                // check quota
+                QuotaFileInformation quotaFileInformation = new QuotaFileInformation(volume.getId(), fileId,
+                        rq.getDetails().userId, groupId, 0);
+                master.getMrcVoucherManager().checkVoucherAvailability(quotaFileInformation);
 
                 // create the metadata object
                 file = sMan.createFile(fileId, res.getParentDirId(), res.getFileName(), time, time, time,
@@ -312,10 +313,10 @@ public class OpenOperation extends MRCOperation {
         long expireMs = TimeSync.getGlobalTime() + master.getConfig().getCapabilityTimeout() * 1000;
         String clientID = ((InetSocketAddress) rq.getRPCRequest().getSenderAddress()).getAddress().getHostAddress();
 
-        long voucherSize = 0; // FIXME(baerhold) Export default value to a proper place
+        long voucherSize = 0; // FIXME(baerhold): Export default value to a proper place
         if (create || truncate || write) {
-            voucherSize = master.getMrcVoucherManager().getVoucher(volume.getId(), globalFileId, clientID,
-                    file.getSize(), expireMs);
+            QuotaFileInformation quotaFileInformation = new QuotaFileInformation(volume.getId(), file);
+            master.getMrcVoucherManager().getVoucher(quotaFileInformation, clientID, expireMs, update);
         }
 
         Capability cap = new Capability(globalFileId, rqArgs.getFlags(), master.getConfig().getCapabilityTimeout(),

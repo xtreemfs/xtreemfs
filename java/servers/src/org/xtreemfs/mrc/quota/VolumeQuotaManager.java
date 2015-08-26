@@ -6,6 +6,7 @@
  */
 package org.xtreemfs.mrc.quota;
 
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
@@ -42,8 +43,6 @@ public class VolumeQuotaManager {
 
         quotaChangeListener = new QuotaChangeListener(this);
         volStorageManager.addVolumeChangeListener(quotaChangeListener);
-
-        System.out.println(getClass() + "Constructor" + "[id " + volumeId + "]"); // FIXME(remove)
     }
 
     public void init() {
@@ -60,30 +59,29 @@ public class VolumeQuotaManager {
             setActive(true);
         }
 
-        System.out.println(getClass() + "init " + "[curVolumeSpace=" + curUsedSpace + ", curBlockedSpace="
-                + curBlockedSpace + ", maxVolumeSpace=" + volumeQuota + "]"); // FIXME(remove)
+        Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager loaded for volume: " + volumeId
+                + ". [curVolumeSpace=" + curUsedSpace + ", curBlockedSpace=" + curBlockedSpace + ", maxVolumeSpace="
+                + volumeQuota + "]");
     }
 
     private long getFreeSpace() {
         return volumeQuota - (curUsedSpace + curBlockedSpace);
     }
 
-    public long checkVoucherAvailability() throws UserException {
-        return getVoucher(true);
+    public boolean checkVoucherAvailability() throws UserException {
+        return getVoucher(true, null) > -1;
     }
 
-    public long getVoucher() throws UserException {
-        return getVoucher(false);
+    public long getVoucher(AtomicDBUpdate update) throws UserException {
+        return getVoucher(false, update);
     }
 
     // TODO: pass user and user group to calculate over all voucher
-    public synchronized long getVoucher(boolean test) throws UserException {
+    public synchronized long getVoucher(boolean test, AtomicDBUpdate update) throws UserException {
 
         if (!active) {
             return 0;
         }
-
-        System.out.println(getClass() + " getVoucher: test=" + test);// FIXME(remove)
 
         long currentFreeSpace = getFreeSpace();
         if (currentFreeSpace <= 0) {
@@ -96,26 +94,20 @@ public class VolumeQuotaManager {
             voucherSize = currentFreeSpace;
         }
 
-        // block voucherSize to
+        // save voucherSize as blocked, if it isn't just a check
         if (!test) {
             curBlockedSpace += voucherSize;
 
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
+                    + ") increased blocked space by: " + voucherSize + " to: " + curBlockedSpace);
             try {
-                AtomicDBUpdate update = volStorageManager.createAtomicDBUpdate(null, null);
-
                 volStorageManager.setVolumeBlockedSpace(curBlockedSpace, update);
-
-                update.execute();
-
             } catch (DatabaseException e) {
-                // FIXME(baerhold): perform DB update outside
+                // this should never occure here, cause it will be executed outside
+                // FIXME(baerhold): Use Logging?
                 e.printStackTrace();
             }
-
         }
-
-        System.out.println(getClass() + " getVoucher: voucherSize=" + voucherSize + " [curVolumeSpace=" + curUsedSpace
-                + ", curBlockedSpace=" + curBlockedSpace + ", volumeQuota=" + volumeQuota + "]"); // FIXME(remove)
 
         return voucherSize;
     }
@@ -131,7 +123,7 @@ public class VolumeQuotaManager {
      * @param clearBlockedSpace
      *            unused blocked space
      */
-    public synchronized void updateSpaceUsage(long fileSizeDifference, long clearBlockedSpace) {
+    public synchronized void updateSpaceUsage(long fileSizeDifference, long clearBlockedSpace, AtomicDBUpdate update) {
         if (!active) {
             return;
         }
@@ -139,19 +131,16 @@ public class VolumeQuotaManager {
         curUsedSpace += fileSizeDifference;
         curBlockedSpace -= clearBlockedSpace;
 
-        System.out.println(getClass() + " updateSpaceUsage: " + "[curVolumeSpace=" + curUsedSpace
-                + ", curBlockedSpace=" + curBlockedSpace + ", volumeQuota=" + volumeQuota + "]"); // FIXME(remove)
+        Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
+                + ") updated space usage: curVolumeSpace=" + curUsedSpace + ", curBlockedSpace=" + curBlockedSpace
+                + ", volumeQuota=" + volumeQuota);
 
         try {
-            AtomicDBUpdate update = volStorageManager.createAtomicDBUpdate(null, null);
-
             volStorageManager.setVolumeBlockedSpace(curBlockedSpace, update);
             volStorageManager.setVolumeUsedSpace(curUsedSpace, update);
-
-            update.execute();
-
         } catch (DatabaseException e) {
-            // FIXME(baerhold): perform DB update outside
+            // this should never occure here, cause it will be executed outside
+            // FIXME(baerhold): Use Logging?
             e.printStackTrace();
         }
 
@@ -181,13 +170,15 @@ public class VolumeQuotaManager {
 
         setActive(volumeQuota != 0);
 
-        System.out.println(getClass() + " setVolumeQuota: " + volumeQuota + " active: " + (volumeQuota != 0)); // FIXME(remove)
+        Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId + ") changed quota to: "
+                + volumeQuota);
     }
     
     public void setVolumeVoucherSize(long volumeVoucherSize) {
         this.volumeVoucherSize = volumeVoucherSize;
 
-        System.out.println(getClass() + " setVolumeVoucherSize: " + volumeVoucherSize); // FIXME(remove)
+        Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId + ") set voucher size to: "
+                + volumeVoucherSize);
     }
 
     /**
@@ -202,6 +193,10 @@ public class VolumeQuotaManager {
      *            the active to set
      */
     public void setActive(boolean active) {
+
+        Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId + ") changed active state to: "
+                + active);
+
         this.active = active;
     }
 

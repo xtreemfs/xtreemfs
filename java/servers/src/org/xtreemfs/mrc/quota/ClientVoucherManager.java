@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import org.xtreemfs.foundation.logging.Logging;
+
 /**
  * TODO: Brief description of the purpose of this type and its relation to other types.
  * 
@@ -39,10 +41,8 @@ public class ClientVoucherManager {
         if (!xcapExpireTimeList.contains(expireTime)) {
             xcapExpireTimeList.add(expireTime);
         } else {
-            System.out.println("ERROR - FIXME given: " + getClass() + " Method: addVoucher");
-            // FIXME(baerhold): throw exception?
-            // throw new Exception("ExpireTime (" + expireTime + ") is already in the list for file " +
-            // this.fileID);
+            Logging.logMessage(Logging.LEVEL_WARN, this, "Duplicate expireTime has been added for file: " + fileID
+                    + " and client: " + clientID);
         }
     }
 
@@ -52,8 +52,8 @@ public class ClientVoucherManager {
             if (xcapExpireTimeList.contains(expireTime)) {
                 xcapExpireTimeList.remove(expireTime);
             } else {
-                System.out.println("ERROR - FIXME given: " + getClass() + " Method: clearVouchers");
-                // FIXME(baerhold): exception? this shouldnt occure, but do we care about it?
+                Logging.logMessage(Logging.LEVEL_WARN, this, "ExpireTime " + expireTime
+                        + " couldn't be recognized for file: " + fileID + " and client: " + clientID);
             }
         }
     }

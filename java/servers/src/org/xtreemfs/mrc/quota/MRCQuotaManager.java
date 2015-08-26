@@ -9,6 +9,8 @@ package org.xtreemfs.mrc.quota;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.xtreemfs.foundation.logging.Logging;
+
 /** TODO: Brief description of the purpose of this type and its relation to other types. */
 public class MRCQuotaManager {
 
@@ -21,14 +23,17 @@ public class MRCQuotaManager {
     }
 
     public void loadVolumeQuotaManager() {
-        // TODO: load from DB
+        // TODO(baerhold): load from DB
     }
 
     public void addVolumeQuotaManager(VolumeQuotaManager volumeQuotaManager) throws Exception {
 
         String volumeId = volumeQuotaManager.getVolumeId();
         if (!volQuotaManMap.containsKey(volumeId)) {
-            System.out.println(getClass() + " addVQM: " + volumeId); // FIXME(remove)
+
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Registered new VolumeQuotaManager with volumeId: "
+                    + volumeId);
+
             volQuotaManMap.put(volumeId, volumeQuotaManager);
         } else {
             throw new Exception("There's already a " + VolumeQuotaManager.class.getName() + " registered for the Id "

@@ -12,12 +12,16 @@ import java.util.Set;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.quota.FinalizeVoucherResponseHelper;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
+import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
+import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
@@ -40,9 +44,9 @@ public class ClearVouchersOperation extends MRCOperation {
             throw new DatabaseException(ExceptionType.REDIRECT);
         // TODO : redirect really necessary? generalize?
 
-        System.out.println(getClass() + " startRequest"); // FIXME(remove)
-
         final xtreemfs_clear_vouchersRequest cvRequest = (xtreemfs_clear_vouchersRequest) rq.getRequestArgs();
+
+        Logging.logMessage(Logging.LEVEL_DEBUG, this, "Got a clear voucher Request! " + cvRequest.toString());
 
         Capability cap = new Capability(cvRequest.getCreds().getXcap(), master.getConfig().getCapabilitySecret());
         Set<Long> expireTimeSet = new HashSet<Long>(cvRequest.getExpireTimeMsList());
@@ -70,12 +74,21 @@ public class ClearVouchersOperation extends MRCOperation {
 
         FinalizeVoucherResponseHelper responseHelper = new FinalizeVoucherResponseHelper(master.getConfig()
                 .getCapabilitySecret());
+
         long newFileSizeMax = -1;
+        long truncateEpoch = -1;
         for (OSDFinalizeVouchersResponse osdFinalizeVouchersResponse : osdFinalizeVouchersResponseList) {
             boolean valid = responseHelper.validateSignature(osdFinalizeVouchersResponse, expireTimeSet);
             if (!valid) {
                 throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, osdFinalizeVouchersResponse
                         + " does not have a valid signature");
+            }
+
+            if (truncateEpoch == -1) {
+                osdFinalizeVouchersResponse.getTruncateEpoch();
+            } else if (truncateEpoch != osdFinalizeVouchersResponse.getTruncateEpoch()) {
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, osdFinalizeVouchersResponse
+                        + " does not match the truncateEpoch of other responses:" + truncateEpoch);
             }
 
             if (osdFinalizeVouchersResponse.getSizeInBytes() > newFileSizeMax) {
@@ -85,15 +98,19 @@ public class ClearVouchersOperation extends MRCOperation {
 
         if (newFileSizeMax == -1) {
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
-                    "The OSDFinalizeVouchersResponse(s) did not contain a valid filesize");
+                    "The OSDFinalizeVouchersResponse(s) did not contain a valid filesize or valid truncate epoch.");
         }
 
-        master.getMrcVoucherManager().clearVouchers(cap.getFileId(), cap.getClientIdentity(), newFileSizeMax,
-                expireTimeSet);
+        GlobalFileIdResolver globalFileIdResolver = new GlobalFileIdResolver(cap.getFileId());
+        StorageManager sMan = master.getVolumeManager().getStorageManager(globalFileIdResolver.getVolumeId());
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
 
-        // TODO: update file size for storage
+        master.getMrcVoucherManager().clearVouchers(cap.getFileId(), cap.getClientIdentity(), expireTimeSet,
+                newFileSizeMax, update);
+
+        // TODO(baerhold): update file size for storage
 
         rq.setResponse(emptyResponse.getDefaultInstance());
-        finishRequest(rq);
+        update.execute();
     }
 }

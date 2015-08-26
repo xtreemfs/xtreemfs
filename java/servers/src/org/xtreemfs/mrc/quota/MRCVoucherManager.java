@@ -7,14 +7,14 @@
 
 package org.xtreemfs.mrc.quota;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.UserException;
+import org.xtreemfs.mrc.database.AtomicDBUpdate;
 
 /**
  * This class manages all voucher requested affairs and if necessary, it delegates them to reference classes.
@@ -24,6 +24,8 @@ import org.xtreemfs.mrc.UserException;
  */
 public class MRCVoucherManager {
 
+    private final static long                     noVoucherValue = -1;
+    
     private final MRCQuotaManager                 mrcQuotaManager;
 
     // TODO: split by volume UUID, if possible
@@ -48,61 +50,114 @@ public class MRCVoucherManager {
      * @throws UserException
      *             iff an error occured at getting the voucher
      */
-    public long getVoucher(String volumeId, String fileID, String clientID, long fileSize, long expireTime)
+    public long getVoucher(QuotaFileInformation quotaFileInformation, String clientID, long expireTime,
+            AtomicDBUpdate update)
             throws UserException {
 
-        System.out.println(getClass() + " getVoucher: " + fileID); // FIXME(remove)
+        Logging.logMessage(Logging.LEVEL_DEBUG, this, "Client " + clientID + " requests a voucher for file: "
+                + quotaFileInformation.getGlobalFileID());
 
-        long newMaxFileSize = fileSize;
+        long newMaxFileSize = quotaFileInformation.getFileSize();
 
-        if (mrcQuotaManager.hasActiveVolumeQuotaManager(volumeId)) {
+        if (mrcQuotaManager.hasActiveVolumeQuotaManager(quotaFileInformation.getVolumeId())) {
 
-            VolumeQuotaManager volumeQuotaManager = mrcQuotaManager.getVolumeQuotaManagerById(volumeId);
-            long voucherSize = volumeQuotaManager.getVoucher();
-
-            System.out.println(getClass() + " VoucherSize: " + voucherSize); // FIXME(remove)
+            VolumeQuotaManager volumeQuotaManager = mrcQuotaManager.getVolumeQuotaManagerById(quotaFileInformation
+                    .getVolumeId());
+            long voucherSize = volumeQuotaManager.getVoucher(update);
 
             synchronized (fileVoucherMap) {
-                FileVoucherManager fileVoucherManager = fileVoucherMap.get(fileID);
+                FileVoucherManager fileVoucherManager = fileVoucherMap.get(quotaFileInformation.getGlobalFileID());
                 if (fileVoucherManager == null) {
-                    fileVoucherManager = new FileVoucherManager(volumeQuotaManager, fileID, fileSize);
-                    fileVoucherMap.put(fileID, fileVoucherManager);
+                    fileVoucherManager = new FileVoucherManager(volumeQuotaManager,
+                            quotaFileInformation.getGlobalFileID(), quotaFileInformation.getFileSize());
+                    fileVoucherMap.put(quotaFileInformation.getGlobalFileID(), fileVoucherManager);
                 }
                 newMaxFileSize = fileVoucherManager.addVoucher(clientID, expireTime, voucherSize);
             }
 
+        } else {
+            newMaxFileSize = noVoucherValue; // FIXME(baerhold): export default for "unlimited" to proper place
         }
 
         return newMaxFileSize;
     }
 
-    public void checkVoucherAvailability(String volumeId) throws UserException {
+    /**
+     * TODO: adapt to user and group quota
+     * 
+     * @param quotaFileInformation
+     * @throws UserException
+     */
+    public void checkVoucherAvailability(QuotaFileInformation quotaFileInformation) throws UserException {
 
-        if (mrcQuotaManager.hasActiveVolumeQuotaManager(volumeId)) {
+        Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                "Check voucher availability for file: " + quotaFileInformation.getGlobalFileID());
 
-            VolumeQuotaManager volumeQuotaManager = mrcQuotaManager.getVolumeQuotaManagerById(volumeId);
+        if (mrcQuotaManager.hasActiveVolumeQuotaManager(quotaFileInformation.getVolumeId())) {
+
+            VolumeQuotaManager volumeQuotaManager = mrcQuotaManager.getVolumeQuotaManagerById(quotaFileInformation
+                    .getVolumeId());
+
+            // ignore return value, because if no voucher is available, an exception will be thrown
             volumeQuotaManager.checkVoucherAvailability();
         }
     }
 
-    public void clearVouchers(String fileID, String clientID, long fileSize, Set<Long> expireTimes) {
+    public void clearVouchers(String globalFileID, String clientID, Set<Long> expireTimes,
+            long fileSize, AtomicDBUpdate update) {
 
-        System.out.println(getClass() + " clearVoucher: " + fileID); // FIXME(remove)
+        Logging.logMessage(Logging.LEVEL_DEBUG, this, "Clear voucher for file: " + globalFileID + ". Client: "
+                + clientID + " fileSize: " + fileSize + " expireTimes: " + expireTimes.toString());
 
         synchronized (fileVoucherMap) {
-            FileVoucherManager fileVoucherManager = fileVoucherMap.get(fileID);
+            FileVoucherManager fileVoucherManager = fileVoucherMap.get(globalFileID);
 
             if (fileVoucherManager != null) {
-                fileVoucherManager.clearVouchers(clientID, fileSize, expireTimes);
+                fileVoucherManager.clearVouchers(clientID, fileSize, expireTimes, update);
 
                 if (fileVoucherManager.isCleared()) {
-                    fileVoucherMap.remove(fileID);
+                    fileVoucherMap.remove(globalFileID);
                 }
             } else {
-                System.out.println("ERROR - FIXME given");
-                // FIXME: throw exception? --> tell the user, that the voucher couldn't be cleared and that theres
-                // blocked space regarding the quota (or just a WARNING?)
+                Logging.logMessage(Logging.LEVEL_WARN, this,
+                        "Couldn't clear voucher, because no open voucher was issued for file: " + globalFileID
+                                + ". Client: " + clientID + " fileSize: " + fileSize + " expireTimes: "
+                                + expireTimes.toString());
             }
+        }
+    }
+
+    /**
+     * Clear open vouchers and delete file via file voucher manager or directly on the volume quota manager, if no
+     * vouchers are currently active.
+     * 
+     * @param quotaFileInformation
+     * @param update
+     */
+    public void deleteFile(QuotaFileInformation quotaFileInformation, AtomicDBUpdate update) {
+
+        synchronized (fileVoucherMap) {
+            FileVoucherManager fileVoucherManager = fileVoucherMap.get(quotaFileInformation.getGlobalFileID());
+
+            if (fileVoucherManager != null) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                        "Delete file with voucher: " + quotaFileInformation.getGlobalFileID());
+
+                // mark file as deleted and remove file voucher manager
+                fileVoucherManager.deleteFile(update);
+                fileVoucherMap.remove(quotaFileInformation.getGlobalFileID());
+            } else {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                        "Delete file without voucher: " + quotaFileInformation.getGlobalFileID());
+
+                // check for active volume quota manager and reduce used space by file size
+                if (mrcQuotaManager.hasActiveVolumeQuotaManager(quotaFileInformation.getVolumeId())) {
+                    VolumeQuotaManager volumeQuotaManager = mrcQuotaManager
+                            .getVolumeQuotaManagerById(quotaFileInformation.getVolumeId());
+                    volumeQuotaManager.updateSpaceUsage(-1 * quotaFileInformation.getFileSize(), 0, update);
+                }
+            }
+
         }
     }
 
@@ -118,7 +173,8 @@ public class MRCVoucherManager {
      * @throws UserException
      *             if parameter couldn't be found or if no new voucher could be acquired
      */
-    public long checkAndRenewVoucher(String fileID, String clientID, long oldExpireTime, long newExpireTime)
+    public long checkAndRenewVoucher(String fileID, String clientID, long oldExpireTime, long newExpireTime,
+            AtomicDBUpdate update)
             throws UserException {
 
         long voucherSize = 0;
@@ -129,7 +185,8 @@ public class MRCVoucherManager {
             try {
 
                 if (fileVoucherManager != null) {
-                    voucherSize = fileVoucherManager.checkAndRenewVoucher(clientID, oldExpireTime, newExpireTime);
+                    voucherSize = fileVoucherManager.checkAndRenewVoucher(clientID, oldExpireTime, newExpireTime,
+                            update);
                 } else {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No open voucher for fileID " + fileID);
                 }
@@ -147,6 +204,15 @@ public class MRCVoucherManager {
         return voucherSize;
     }
 
+    /**
+     * Used for periodic xcap renewal to avoid an increase of the voucher
+     * 
+     * @param fileID
+     * @param clientID
+     * @param oldExpireTime
+     * @param newExpireTime
+     * @throws UserException
+     */
     public void addRenewedTimestamp(String fileID, String clientID, long oldExpireTime, long newExpireTime)
             throws UserException {
 
@@ -185,50 +251,50 @@ public class MRCVoucherManager {
         return builder.toString();
     }
 
-    public static void main(String[] args) throws Exception {
-        // FIXME(baerhold): Export to test
-        // VolumeQuotaManager volumeQuotaManager = new VolumeQuotaManager("blubb", 150 * 1024 * 1024);
-
-        MRCQuotaManager mrcQuotaManager_ = new MRCQuotaManager();
-
-        // mrcQuotaManager_.addVolumeQuotaManager(volumeQuotaManager);
-
-        MRCVoucherManager mrcVoucherManager = new MRCVoucherManager(mrcQuotaManager_);
-
-        System.out.println(mrcVoucherManager.getVoucher("blubb", "file1", "client1", 0, 123456789));
-        System.out.println(mrcVoucherManager.getVoucher("blubb", "file1", "client2", 0, 1234567890));
-        System.out.println(mrcVoucherManager.getVoucher("blubb", "file1", "client1", 0, 1234567891));
-        System.out.println(mrcVoucherManager.getVoucher("blubb", "file2", "client1", 0, 1234567892));
-        System.out.println(mrcVoucherManager.getVoucher("blubb", "file2", "client1", 10, 1234567893));
-        System.out.println(mrcVoucherManager.getVoucher("blubb", "file3", "client1", 0, 1234567894));
-        System.out.println(mrcVoucherManager.getVoucher("blubb", "file4", "client1", 0, 1234567895));
-        System.out.println(mrcVoucherManager.getVoucher("blubb", "file1", "client1", 0, 1234567896));
-        System.out.println(mrcVoucherManager.getVoucher("blubb", "file1", "client2", 0, 1234567897));
-
-        System.out.println(mrcVoucherManager.toString());
-        System.out.println(mrcQuotaManager_.toString());
-
-        // curBlockedSpace: 47158920 -> file blocked space 1-4: (26214400, 10485760, 5242880, 5242880)
-
-        mrcVoucherManager.clearVouchers("file4", "client1", 3 * 1024 * 1024,
-                new HashSet<Long>(Arrays.asList(new Long(1234567895))));
-        mrcVoucherManager.clearVouchers("file2", "client1", 5 * 1024 * 1024,
-                new HashSet<Long>(Arrays.asList(new Long(1234567893))));
-        mrcVoucherManager.clearVouchers("file3", "client1", 1 * 1024 * 1024,
-                new HashSet<Long>(Arrays.asList(new Long(1234567894))));
-        mrcVoucherManager.clearVouchers("file2", "client1", 7 * 1024 * 1024,
-                new HashSet<Long>(Arrays.asList(new Long(1234567892))));
-        mrcVoucherManager.clearVouchers("file1", "client1", 4 * 1024 * 1024,
-                new HashSet<Long>(Arrays.asList(new Long(1234567891))));
-        mrcVoucherManager.clearVouchers("file1", "client2", 8 * 1024 * 1024,
-                new HashSet<Long>(Arrays.asList(new Long(1234567897), new Long(1234567890))));
-        mrcVoucherManager.clearVouchers("file1", "client1", 20 * 1024 * 1024,
-                new HashSet<Long>(Arrays.asList(new Long(123456789), new Long(1234567896))));
-
-        System.out.println(mrcVoucherManager.toString());
-        System.out.println(mrcQuotaManager_.toString());
-
-        // blockSpace = 0
-        // curVolSpace = 32505856
-    }
+    // public static void main(String[] args) throws Exception {
+    // // FIXME(baerhold): Export to test
+    // // VolumeQuotaManager volumeQuotaManager = new VolumeQuotaManager("blubb", 150 * 1024 * 1024);
+    //
+    // MRCQuotaManager mrcQuotaManager_ = new MRCQuotaManager();
+    //
+    // // mrcQuotaManager_.addVolumeQuotaManager(volumeQuotaManager);
+    //
+    // MRCVoucherManager mrcVoucherManager = new MRCVoucherManager(mrcQuotaManager_);
+    //
+    // System.out.println(mrcVoucherManager.getVoucher("blubb", "file1", "client1", 0, 123456789));
+    // System.out.println(mrcVoucherManager.getVoucher("blubb", "file1", "client2", 0, 1234567890));
+    // System.out.println(mrcVoucherManager.getVoucher("blubb", "file1", "client1", 0, 1234567891));
+    // System.out.println(mrcVoucherManager.getVoucher("blubb", "file2", "client1", 0, 1234567892));
+    // System.out.println(mrcVoucherManager.getVoucher("blubb", "file2", "client1", 10, 1234567893));
+    // System.out.println(mrcVoucherManager.getVoucher("blubb", "file3", "client1", 0, 1234567894));
+    // System.out.println(mrcVoucherManager.getVoucher("blubb", "file4", "client1", 0, 1234567895));
+    // System.out.println(mrcVoucherManager.getVoucher("blubb", "file1", "client1", 0, 1234567896));
+    // System.out.println(mrcVoucherManager.getVoucher("blubb", "file1", "client2", 0, 1234567897));
+    //
+    // System.out.println(mrcVoucherManager.toString());
+    // System.out.println(mrcQuotaManager_.toString());
+    //
+    // // curBlockedSpace: 47158920 -> file blocked space 1-4: (26214400, 10485760, 5242880, 5242880)
+    //
+    // mrcVoucherManager.clearVouchers("file4", "client1", 3 * 1024 * 1024,
+    // new HashSet<Long>(Arrays.asList(new Long(1234567895))));
+    // mrcVoucherManager.clearVouchers("file2", "client1", 5 * 1024 * 1024,
+    // new HashSet<Long>(Arrays.asList(new Long(1234567893))));
+    // mrcVoucherManager.clearVouchers("file3", "client1", 1 * 1024 * 1024,
+    // new HashSet<Long>(Arrays.asList(new Long(1234567894))));
+    // mrcVoucherManager.clearVouchers("file2", "client1", 7 * 1024 * 1024,
+    // new HashSet<Long>(Arrays.asList(new Long(1234567892))));
+    // mrcVoucherManager.clearVouchers("file1", "client1", 4 * 1024 * 1024,
+    // new HashSet<Long>(Arrays.asList(new Long(1234567891))));
+    // mrcVoucherManager.clearVouchers("file1", "client2", 8 * 1024 * 1024,
+    // new HashSet<Long>(Arrays.asList(new Long(1234567897), new Long(1234567890))));
+    // mrcVoucherManager.clearVouchers("file1", "client1", 20 * 1024 * 1024,
+    // new HashSet<Long>(Arrays.asList(new Long(123456789), new Long(1234567896))));
+    //
+    // System.out.println(mrcVoucherManager.toString());
+    // System.out.println(mrcQuotaManager_.toString());
+    //
+    // // blockSpace = 0
+    // // curVolSpace = 32505856
+    // }
 }

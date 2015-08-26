@@ -10,8 +10,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.UserException;
+import org.xtreemfs.mrc.database.AtomicDBUpdate;
 
 /**
  * The FileVoucherManager manages the different ClientVoucherManager regarding the different files by the file ID.
@@ -53,9 +55,7 @@ public class FileVoucherManager {
         return fileSize + blockedSpace;
     }
 
-    public void clearVouchers(String clientID, long fileSize, Set<Long> expireTimes) {
-
-        System.out.println(getClass() + " clearVoucher");
+    public void clearVouchers(String clientID, long fileSize, Set<Long> expireTimes, AtomicDBUpdate update) {
 
         ClientVoucherManager clientVoucherManager = openVoucherMap.get(clientID);
 
@@ -74,21 +74,30 @@ public class FileVoucherManager {
                 if ((this.fileSize + blockedSpace) - fileSize >= 0) {
                     long fileSizeDifference = fileSize - this.fileSize;
 
-                    volumeQuotaManager.updateSpaceUsage(fileSizeDifference, blockedSpace);
+                    volumeQuotaManager.updateSpaceUsage(fileSizeDifference, blockedSpace, update);
                     this.fileSize = fileSize;
                 } else {
-                    System.out.println("ERROR - FIXME given");
-                    // FIXME: throw exception? should not be possible by definition
+                    Logging.logMessage(Logging.LEVEL_ERROR, this, "New filesize exceeds the issued space! fileID: "
+                            + fileID + ", client: " + clientID + ", maximum filesize: "
+                            + (this.fileSize + blockedSpace) + ", new filesize: " + fileSize);
                 }
             }
         } else {
-            System.out.println("ERROR - FIXME given");
-            // FIXME: throw exception? should not be possible
+            Logging.logMessage(Logging.LEVEL_WARN, this, "No ClientVoucherManager is registered for client: "
+                    + clientID + "! fileID: " + fileID + ", new filesize: " + fileSize);
         }
     }
 
     /**
-     * Checks whether there is an entry for the clientID and oldExpireTime and iff so, it get's a new voucher for the
+     * Deleting a file will result in a clearance of blocked space and a negative file sizes update
+     */
+    public void deleteFile(AtomicDBUpdate update) {
+        openVoucherMap.clear();
+        volumeQuotaManager.updateSpaceUsage(-1 * fileSize, blockedSpace, update);
+    }
+
+    /**
+     * Checks whether there is an entry for the clientID and oldExpireTime and iff so, issue a new voucher for the
      * newExpireTime
      * 
      * @param clientID
@@ -98,7 +107,8 @@ public class FileVoucherManager {
      * @throws UserException
      *             if parameter couldn't be found or if no voucher could be acquired
      */
-    public long checkAndRenewVoucher(String clientID, long oldExpireTime, long newExpireTime) throws UserException {
+    public long checkAndRenewVoucher(String clientID, long oldExpireTime, long newExpireTime, AtomicDBUpdate update)
+            throws UserException {
 
         long newMaxFileSize = fileSize + blockedSpace;
         boolean error = false;
@@ -108,9 +118,13 @@ public class FileVoucherManager {
 
             boolean hasActiveExpireTime = clientVoucherManager.hasActiveExpireTime(oldExpireTime);
             if (hasActiveExpireTime) {
-                long voucherSize = volumeQuotaManager.getVoucher();
+                long voucherSize = volumeQuotaManager.getVoucher(update);
 
                 newMaxFileSize = addVoucher(clientID, newExpireTime, voucherSize);
+
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "Renew voucher to " + newMaxFileSize + ". fileID: "
+                        + fileID + ", client: " + clientID + ", oldExpireTime: " + oldExpireTime + ", newExpireTime: "
+                        + newExpireTime);
             } else {
                 error = true;
             }
@@ -146,6 +160,9 @@ public class FileVoucherManager {
             boolean hasActiveExpireTime = clientVoucherManager.hasActiveExpireTime(oldExpireTime);
             if (hasActiveExpireTime) {
                 clientVoucherManager.addVoucher(newExpireTime);
+
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "Added new expireTime: " + newExpireTime
+                        + " for fileID: " + fileID + " and client: " + clientID);
             } else {
                 error = true;
             }
