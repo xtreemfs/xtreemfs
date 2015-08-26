@@ -17,6 +17,7 @@ import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.quota.MRCVoucherManager;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_renew_capabilityRequest;
 
@@ -57,16 +58,19 @@ public class RenewOperation extends MRCOperation {
         // get new voucher, if capability are still valid for vouchers
         long newExpireMs = TimeSync.getGlobalTime() + master.getConfig().getCapabilityTimeout() * 1000;
         long voucherSize = cap.getVoucherSize();
-        if (renewCapabilityRequest.getIncreaseVoucher()) {
-            GlobalFileIdResolver globalFileIdResolver = new GlobalFileIdResolver(cap.getFileId());
-            StorageManager sMan = master.getVolumeManager().getStorageManager(globalFileIdResolver.getVolumeId());
-            AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
-            voucherSize = master.getMrcVoucherManager().checkAndRenewVoucher(cap.getFileId(), cap.getClientIdentity(),
-                    cap.getExpireMs(), newExpireMs, update);
-            update.execute(); // FIXME(baerhold): Switch to method scope variable and replace finishRequest(rq)
-        } else {
-            master.getMrcVoucherManager().addRenewedTimestamp(cap.getFileId(), cap.getClientIdentity(),
-                    cap.getExpireMs(), newExpireMs);
+        
+        if (MRCVoucherManager.checkManageableAccess(cap.getAccessMode())) {
+            if (renewCapabilityRequest.getIncreaseVoucher()) {
+                GlobalFileIdResolver globalFileIdResolver = new GlobalFileIdResolver(cap.getFileId());
+                StorageManager sMan = master.getVolumeManager().getStorageManager(globalFileIdResolver.getVolumeId());
+                AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
+                voucherSize = master.getMrcVoucherManager().checkAndRenewVoucher(cap.getFileId(),
+                        cap.getClientIdentity(), cap.getExpireMs(), newExpireMs, update);
+                update.execute(); // FIXME(baerhold): Switch to method scope variable and replace finishRequest(rq)
+            } else {
+                master.getMrcVoucherManager().addRenewedTimestamp(cap.getFileId(), cap.getClientIdentity(),
+                        cap.getExpireMs(), newExpireMs);
+            }
         }
 
         Capability newCap = new Capability(cap.getFileId(), cap.getAccessMode(), master.getConfig()

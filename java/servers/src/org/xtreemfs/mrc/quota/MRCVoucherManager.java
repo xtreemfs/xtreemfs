@@ -14,6 +14,7 @@ import java.util.Set;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.UserException;
+import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 
 /**
@@ -174,8 +175,7 @@ public class MRCVoucherManager {
      *             if parameter couldn't be found or if no new voucher could be acquired
      */
     public long checkAndRenewVoucher(String fileID, String clientID, long oldExpireTime, long newExpireTime,
-            AtomicDBUpdate update)
-            throws UserException {
+            AtomicDBUpdate update) throws UserException {
 
         long voucherSize = 0;
 
@@ -220,7 +220,7 @@ public class MRCVoucherManager {
             FileVoucherManager fileVoucherManager = fileVoucherMap.get(fileID);
 
             try {
-
+                // FIXME(baerhold): check volume on active quota # same for RenewVoucher
                 if (fileVoucherManager != null) {
                     fileVoucherManager.addRenewedTimestamp(clientID, oldExpireTime, newExpireTime);
                 } else {
@@ -236,6 +236,22 @@ public class MRCVoucherManager {
                 }
             }
         }
+    }
+
+    /**
+     * General check, whether it is manageable at all, because e.g. read access won't be managed
+     * 
+     * @param flags
+     *            access flags
+     * @return true, if the flags indicate a voucher management, regardless of a real active quota
+     */
+    public static boolean checkManageableAccess(int flags) {
+
+        boolean create = (flags & FileAccessManager.O_CREAT) != 0;
+        boolean truncate = (flags & FileAccessManager.O_TRUNC) != 0;
+        boolean write = (flags & (FileAccessManager.O_WRONLY | FileAccessManager.O_RDWR)) != 0;
+
+        return create || truncate || write;
     }
 
     /*
