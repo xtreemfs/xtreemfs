@@ -266,6 +266,7 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
     cout << endl << to_process << " bytes to decode" << endl;
     if (to_process > 0) {
       vector<int> erasures;
+      bool erased = 0;
       int line_offset = l * n;
 
       for (int i = 0; i < k; i++) {
@@ -276,6 +277,7 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
           cout << "read op " << data_read << " is erased and needs to be reconstructed" << endl;
           // push i since i is the position int the current line
           erasures.push_back(i);
+          erased = 1;
         } else {
           cout << "copy " << stripe_size << " bytes from op " << data_read << " to data device " << (i) << endl;
           memcpy(data[i], operations->at(data_read).data, stripe_size);
@@ -296,8 +298,10 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
       }
 
       // exit(1);
-      cout << "decoding line " << l << endl;
-      this->Decode(k, m, w, data, coding, erasures, stripe_size);
+      if (erased) {
+        cout << "decoding line " << l << endl;
+        this->Decode(k, m, w, data, coding, erasures, stripe_size);
+      }
 
       while (offset > k * stripe_size) {
         offset -= k * stripe_size;
