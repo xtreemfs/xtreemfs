@@ -1280,8 +1280,8 @@ void XCapManager::CallFinished(
   } else {
     // Overwrite current XCap only by a newer one (i.e. later expire time).
         // FIXME(baerhold): compare expire_time_ms in future
-    if (new_xcap->expire_time_s() > xcap_.expire_time_s() ||
-        (new_xcap->expire_time_s() == xcap_.expire_time_s() && new_xcap->voucher_size() > xcap_.voucher_size())) {
+    if (new_xcap->expire_time_ms() > xcap_.expire_time_ms() ||
+        (new_xcap->expire_time_ms() == xcap_.expire_time_ms() && new_xcap->voucher_size() > xcap_.voucher_size())) {
       SetXCap(*new_xcap);
 
       if (Logging::log->loggingActive(LEVEL_DEBUG)) {
@@ -1293,9 +1293,9 @@ void XCapManager::CallFinished(
         // FIXME(remove): No else really needed
         Logging::log->getLog(LEVEL_DEBUG) << "Didn't renewed XCap for file_id: "
                                           << GetFileId() << ". "
-                                          "Expire Time Old/New: "
-                                          << new_xcap->expire_time_s() << "/"
-                                          << xcap_.expire_time_s() << ". "
+                                          "Expire Time Old/New (ms): "
+                                          << new_xcap->expire_time_ms() << "/"
+                                          << xcap_.expire_time_ms() << ". "
                                           "Voucher Size Old/New: "
                                           << new_xcap->voucher_size() << "/"
                                           << xcap_.voucher_size() << ". " << endl;
