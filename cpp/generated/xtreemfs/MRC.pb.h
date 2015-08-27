@@ -91,6 +91,7 @@ class xtreemfs_set_replica_update_policyResponse;
 class xtreemfs_set_read_only_xattrRequest;
 class xtreemfs_set_read_only_xattrResponse;
 class xtreemfs_get_file_credentialsRequest;
+class xtreemfs_reselect_osdsRequest;
 
 enum xtreemfs_check_file_existsResponse_FILE_STATE {
   xtreemfs_check_file_existsResponse_FILE_STATE_DELETED = 0,
@@ -6136,6 +6137,120 @@ class xtreemfs_get_file_credentialsRequest : public ::google::protobuf::Message 
 
   void InitAsDefaultInstance();
   static xtreemfs_get_file_credentialsRequest* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class xtreemfs_reselect_osdsRequest : public ::google::protobuf::Message {
+ public:
+  xtreemfs_reselect_osdsRequest();
+  virtual ~xtreemfs_reselect_osdsRequest();
+
+  xtreemfs_reselect_osdsRequest(const xtreemfs_reselect_osdsRequest& from);
+
+  inline xtreemfs_reselect_osdsRequest& operator=(const xtreemfs_reselect_osdsRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const xtreemfs_reselect_osdsRequest& default_instance();
+
+  void Swap(xtreemfs_reselect_osdsRequest* other);
+
+  // implements Message ----------------------------------------------
+
+  xtreemfs_reselect_osdsRequest* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const xtreemfs_reselect_osdsRequest& from);
+  void MergeFrom(const xtreemfs_reselect_osdsRequest& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required string path = 1;
+  inline bool has_path() const;
+  inline void clear_path();
+  static const int kPathFieldNumber = 1;
+  inline const ::std::string& path() const;
+  inline void set_path(const ::std::string& value);
+  inline void set_path(const char* value);
+  inline void set_path(const char* value, size_t size);
+  inline ::std::string* mutable_path();
+  inline ::std::string* release_path();
+  inline void set_allocated_path(::std::string* path);
+
+  // required string volume_name = 2;
+  inline bool has_volume_name() const;
+  inline void clear_volume_name();
+  static const int kVolumeNameFieldNumber = 2;
+  inline const ::std::string& volume_name() const;
+  inline void set_volume_name(const ::std::string& value);
+  inline void set_volume_name(const char* value);
+  inline void set_volume_name(const char* value, size_t size);
+  inline ::std::string* mutable_volume_name();
+  inline ::std::string* release_volume_name();
+  inline void set_allocated_volume_name(::std::string* volume_name);
+
+  // optional .xtreemfs.pbrpc.VivaldiCoordinates coordinates = 3;
+  inline bool has_coordinates() const;
+  inline void clear_coordinates();
+  static const int kCoordinatesFieldNumber = 3;
+  inline const ::xtreemfs::pbrpc::VivaldiCoordinates& coordinates() const;
+  inline ::xtreemfs::pbrpc::VivaldiCoordinates* mutable_coordinates();
+  inline ::xtreemfs::pbrpc::VivaldiCoordinates* release_coordinates();
+  inline void set_allocated_coordinates(::xtreemfs::pbrpc::VivaldiCoordinates* coordinates);
+
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_reselect_osdsRequest)
+ private:
+  inline void set_has_path();
+  inline void clear_has_path();
+  inline void set_has_volume_name();
+  inline void clear_has_volume_name();
+  inline void set_has_coordinates();
+  inline void clear_has_coordinates();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::std::string* path_;
+  ::std::string* volume_name_;
+  ::xtreemfs::pbrpc::VivaldiCoordinates* coordinates_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
+
+  friend void  protobuf_AddDesc_xtreemfs_2fMRC_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fMRC_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fMRC_2eproto();
+
+  void InitAsDefaultInstance();
+  static xtreemfs_reselect_osdsRequest* default_instance_;
 };
 // ===================================================================
 
@@ -14430,6 +14545,188 @@ inline void xtreemfs_get_file_credentialsRequest::set_allocated_file_id(::std::s
   } else {
     clear_has_file_id();
     file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// -------------------------------------------------------------------
+
+// xtreemfs_reselect_osdsRequest
+
+// required string path = 1;
+inline bool xtreemfs_reselect_osdsRequest::has_path() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void xtreemfs_reselect_osdsRequest::set_has_path() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void xtreemfs_reselect_osdsRequest::clear_has_path() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void xtreemfs_reselect_osdsRequest::clear_path() {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
+    path_->clear();
+  }
+  clear_has_path();
+}
+inline const ::std::string& xtreemfs_reselect_osdsRequest::path() const {
+  return *path_;
+}
+inline void xtreemfs_reselect_osdsRequest::set_path(const ::std::string& value) {
+  set_has_path();
+  if (path_ == &::google::protobuf::internal::kEmptyString) {
+    path_ = new ::std::string;
+  }
+  path_->assign(value);
+}
+inline void xtreemfs_reselect_osdsRequest::set_path(const char* value) {
+  set_has_path();
+  if (path_ == &::google::protobuf::internal::kEmptyString) {
+    path_ = new ::std::string;
+  }
+  path_->assign(value);
+}
+inline void xtreemfs_reselect_osdsRequest::set_path(const char* value, size_t size) {
+  set_has_path();
+  if (path_ == &::google::protobuf::internal::kEmptyString) {
+    path_ = new ::std::string;
+  }
+  path_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* xtreemfs_reselect_osdsRequest::mutable_path() {
+  set_has_path();
+  if (path_ == &::google::protobuf::internal::kEmptyString) {
+    path_ = new ::std::string;
+  }
+  return path_;
+}
+inline ::std::string* xtreemfs_reselect_osdsRequest::release_path() {
+  clear_has_path();
+  if (path_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = path_;
+    path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void xtreemfs_reselect_osdsRequest::set_allocated_path(::std::string* path) {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
+    delete path_;
+  }
+  if (path) {
+    set_has_path();
+    path_ = path;
+  } else {
+    clear_has_path();
+    path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// required string volume_name = 2;
+inline bool xtreemfs_reselect_osdsRequest::has_volume_name() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void xtreemfs_reselect_osdsRequest::set_has_volume_name() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void xtreemfs_reselect_osdsRequest::clear_has_volume_name() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void xtreemfs_reselect_osdsRequest::clear_volume_name() {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
+    volume_name_->clear();
+  }
+  clear_has_volume_name();
+}
+inline const ::std::string& xtreemfs_reselect_osdsRequest::volume_name() const {
+  return *volume_name_;
+}
+inline void xtreemfs_reselect_osdsRequest::set_volume_name(const ::std::string& value) {
+  set_has_volume_name();
+  if (volume_name_ == &::google::protobuf::internal::kEmptyString) {
+    volume_name_ = new ::std::string;
+  }
+  volume_name_->assign(value);
+}
+inline void xtreemfs_reselect_osdsRequest::set_volume_name(const char* value) {
+  set_has_volume_name();
+  if (volume_name_ == &::google::protobuf::internal::kEmptyString) {
+    volume_name_ = new ::std::string;
+  }
+  volume_name_->assign(value);
+}
+inline void xtreemfs_reselect_osdsRequest::set_volume_name(const char* value, size_t size) {
+  set_has_volume_name();
+  if (volume_name_ == &::google::protobuf::internal::kEmptyString) {
+    volume_name_ = new ::std::string;
+  }
+  volume_name_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* xtreemfs_reselect_osdsRequest::mutable_volume_name() {
+  set_has_volume_name();
+  if (volume_name_ == &::google::protobuf::internal::kEmptyString) {
+    volume_name_ = new ::std::string;
+  }
+  return volume_name_;
+}
+inline ::std::string* xtreemfs_reselect_osdsRequest::release_volume_name() {
+  clear_has_volume_name();
+  if (volume_name_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = volume_name_;
+    volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void xtreemfs_reselect_osdsRequest::set_allocated_volume_name(::std::string* volume_name) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
+    delete volume_name_;
+  }
+  if (volume_name) {
+    set_has_volume_name();
+    volume_name_ = volume_name;
+  } else {
+    clear_has_volume_name();
+    volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// optional .xtreemfs.pbrpc.VivaldiCoordinates coordinates = 3;
+inline bool xtreemfs_reselect_osdsRequest::has_coordinates() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void xtreemfs_reselect_osdsRequest::set_has_coordinates() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void xtreemfs_reselect_osdsRequest::clear_has_coordinates() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void xtreemfs_reselect_osdsRequest::clear_coordinates() {
+  if (coordinates_ != NULL) coordinates_->::xtreemfs::pbrpc::VivaldiCoordinates::Clear();
+  clear_has_coordinates();
+}
+inline const ::xtreemfs::pbrpc::VivaldiCoordinates& xtreemfs_reselect_osdsRequest::coordinates() const {
+  return coordinates_ != NULL ? *coordinates_ : *default_instance_->coordinates_;
+}
+inline ::xtreemfs::pbrpc::VivaldiCoordinates* xtreemfs_reselect_osdsRequest::mutable_coordinates() {
+  set_has_coordinates();
+  if (coordinates_ == NULL) coordinates_ = new ::xtreemfs::pbrpc::VivaldiCoordinates;
+  return coordinates_;
+}
+inline ::xtreemfs::pbrpc::VivaldiCoordinates* xtreemfs_reselect_osdsRequest::release_coordinates() {
+  clear_has_coordinates();
+  ::xtreemfs::pbrpc::VivaldiCoordinates* temp = coordinates_;
+  coordinates_ = NULL;
+  return temp;
+}
+inline void xtreemfs_reselect_osdsRequest::set_allocated_coordinates(::xtreemfs::pbrpc::VivaldiCoordinates* coordinates) {
+  delete coordinates_;
+  coordinates_ = coordinates;
+  if (coordinates) {
+    set_has_coordinates();
+  } else {
+    clear_has_coordinates();
   }
 }
 

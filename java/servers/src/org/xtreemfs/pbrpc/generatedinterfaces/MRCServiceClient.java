@@ -1,5 +1,5 @@
-//automatically generated from MRC.proto at Thu Dec 11 16:09:37 CET 2014
-//(c) 2014. See LICENSE file for details.
+//automatically generated from MRC.proto at Wed Aug 26 15:46:36 CEST 2015
+//(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
 
@@ -555,6 +555,19 @@ public class MRCServiceClient {
     public RPCResponse<GlobalTypes.XLocSet> xtreemfs_get_xlocset(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, String file_id, String path, String volume_name, GlobalTypes.XCap xcap) throws IOException {
          final MRC.xtreemfs_get_xlocsetRequest msg = MRC.xtreemfs_get_xlocsetRequest.newBuilder().setFileId(file_id).setPath(path).setVolumeName(volume_name).setXcap(xcap).build();
          return xtreemfs_get_xlocset(server, authHeader, userCreds,msg);
+    }
+
+    public RPCResponse<GlobalTypes.XLocSet> xtreemfs_reselect_osds(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, MRC.xtreemfs_reselect_osdsRequest input) throws IOException {
+         if (server == null) server = defaultServer;
+         if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
+         RPCResponse<GlobalTypes.XLocSet> response = new RPCResponse<GlobalTypes.XLocSet>(GlobalTypes.XLocSet.getDefaultInstance());
+         client.sendRequest(server, authHeader, userCreds, 20001, 52, input, null, response, false);
+         return response;
+    }
+
+    public RPCResponse<GlobalTypes.XLocSet> xtreemfs_reselect_osds(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, String path, String volume_name, GlobalTypes.VivaldiCoordinates coordinates) throws IOException {
+         final MRC.xtreemfs_reselect_osdsRequest msg = MRC.xtreemfs_reselect_osdsRequest.newBuilder().setPath(path).setVolumeName(volume_name).setCoordinates(coordinates).build();
+         return xtreemfs_reselect_osds(server, authHeader, userCreds,msg);
     }
 
     public boolean clientIsAlive() {

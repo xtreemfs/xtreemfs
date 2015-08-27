@@ -605,9 +605,24 @@ message xtreemfs_set_read_only_xattrResponse {
   required bool was_set = 1;
 }
 
-message xtreemfs_get_file_credentialsRequest{
+message xtreemfs_get_file_credentialsRequest {
   required string file_id = 1;
 }
+
+
+message xtreemfs_reselect_osdsRequest {
+  // path and volume_name to file.
+  required string path = 1;
+  required string volume_name = 2;
+
+  // optional set of Vivaldi cooridnates of the client, which can be
+  // used to order the list of replicas
+  optional VivaldiCoordinates coordinates = 3;
+}
+
+// message xtreemfs_reselect_osdsResponse {
+// 
+// }
 
 service MRCService {
   
@@ -819,5 +834,9 @@ service MRCService {
   // Returns the current xLocSet for the specified file.
   rpc xtreemfs_get_xlocset(xtreemfs_get_xlocsetRequest) returns(XLocSet) {
     option(proc_id)=51;
+  };
+
+  rpc xtreemfs_reselect_osds(xtreemfs_reselect_osdsRequest) returns(XLocSet) {
+    option(proc_id)=52;
   };
 }

@@ -1,5 +1,5 @@
-//automatically generated from MRC.proto at Thu Dec 11 16:09:40 CET 2014
-//(c) 2014. See LICENSE file for details.
+//automatically generated from MRC.proto at Wed Aug 26 15:46:36 CEST 2015
+//(c) 2015. See LICENSE file for details.
 
 #ifndef MRCSERVICECLIENT_H
 #define MRCSERVICECLIENT_H
@@ -968,6 +968,29 @@ namespace pbrpc {
                 const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::XLocSet>* sync_cb = new SyncCallback<xtreemfs::pbrpc::XLocSet>();
                 client_->sendRequest(address, 20001, 51,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::XLocSet(),
+                     NULL, sync_cb);
+                return sync_cb;
+            }
+
+            void xtreemfs_reselect_osds(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds,
+                const xtreemfs::pbrpc::xtreemfs_reselect_osdsRequest* request,
+                CallbackInterface<xtreemfs::pbrpc::XLocSet> *callback, void *context = NULL) {
+                const char* data = NULL; uint32_t data_length = 0;
+                client_->sendRequest(address, 20001, 52,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::XLocSet(),
+                     context, callback);
+            }
+
+            SyncCallback<xtreemfs::pbrpc::XLocSet>* xtreemfs_reselect_osds_sync(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds
+                , const xtreemfs::pbrpc::xtreemfs_reselect_osdsRequest* request) {
+                const char* data = NULL; uint32_t data_length = 0;
+                SyncCallback<xtreemfs::pbrpc::XLocSet>* sync_cb = new SyncCallback<xtreemfs::pbrpc::XLocSet>();
+                client_->sendRequest(address, 20001, 52,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::XLocSet(),
                      NULL, sync_cb);
                 return sync_cb;
