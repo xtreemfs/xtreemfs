@@ -148,7 +148,7 @@ public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoord
                     "Replica cannot be removed because the file's replication policy is set to 'none' i.e., "
                             + "the file has only one replica which shouldn't be deleted. Delete the whole file instead.");
         }
-
+        
         // Find and remove the replica from the X-Locations list.
         int i = 0;
         XLoc replica = null;
@@ -200,8 +200,8 @@ public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoord
         }
 
         XLocSetCoordinator coordinator = master.getXLocSetCoordinator();
-        XLocSetCoordinator.RequestMethod m = coordinator.removeReplicas(fileId, file, oldXLocList, newXLocList, rq,
-                this);
+        XLocSetCoordinator.RequestMethod m = coordinator.requestXLocSetChange(fileId, file, oldXLocList, newXLocList,
+                rq, this);
 
         // Make an update with the RequestMethod as context and the Coordinator as callback. This will enqueue
         // the RequestMethod when the update is complete

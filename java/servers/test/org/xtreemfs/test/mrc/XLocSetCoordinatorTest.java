@@ -49,7 +49,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
-public class VersionedXLocSetTest {
+public class XLocSetCoordinatorTest {
     private static TestEnvironment testEnv;
 
     private static UserCredentials userCredentials;
@@ -76,7 +76,7 @@ public class VersionedXLocSetTest {
 
     @BeforeClass
     public static void initializeTest() throws Exception {
-        System.out.println("TEST: " + VersionedXLocSetTest.class.getSimpleName());
+        System.out.println("TEST: " + XLocSetCoordinatorTest.class.getSimpleName());
 
         // cleanup
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
@@ -143,7 +143,7 @@ public class VersionedXLocSetTest {
 
         // Setup a full read only replica with sequential access strategy.
         int repl_flags = ReplicationFlags.setFullReplica(ReplicationFlags.setSequentialStrategy(0));
-        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY, 2,
+        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY, 3,
                 repl_flags);
 
         volume.close();

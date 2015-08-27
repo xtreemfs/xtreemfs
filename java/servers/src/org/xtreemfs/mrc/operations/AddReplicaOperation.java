@@ -169,7 +169,8 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
         XLocList extXLocList = sMan.createXLocList(repls, xLocList.getReplUpdatePolicy(), xLocList.getVersion() + 1);
 
         XLocSetCoordinator coordinator = master.getXLocSetCoordinator();
-        XLocSetCoordinator.RequestMethod m = coordinator.addReplicas(fileId, file, xLocList, extXLocList, rq, this);
+        XLocSetCoordinator.RequestMethod m = coordinator.requestXLocSetChange(fileId, file, xLocList, extXLocList, rq,
+                this);
         
         // Make an update with the RequestMethod as context and the Coordinator as callback. This will enqueue
         // the RequestMethod when the update is complete.
