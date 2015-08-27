@@ -104,15 +104,22 @@ FileHandleImplementation::FileHandleImplementation(
   }
   int s_width = (*striping_policies.begin())->width();
   int p_width = (*striping_policies.begin())->parity_width();
-  int s_size = (*striping_policies.begin())->stripe_size() * 1024; // kbytes damnit!!!
+  s_size = (*striping_policies.begin())->stripe_size() * 1024; // kbytes damnit!!!
   cout << "setting up cache for " << (s_width - p_width) * s_size << " (" << s_width << ", " << p_width << ") byte sized lines" << endl;
   l_size = (s_width - p_width) * s_size;
   write_cache = new char[l_size];
   internal_offset = 0;
   cache_size = 0;
+
+  read_cache = new char[l_size];
+  rcache_offset = 0;
+  rcache_size = 0;
 }
 
-FileHandleImplementation::~FileHandleImplementation() {}
+FileHandleImplementation::~FileHandleImplementation() {
+  delete[] write_cache;
+  delete[] read_cache;
+}
 
 int FileHandleImplementation::Read(
     char *buf,
@@ -121,6 +128,17 @@ int FileHandleImplementation::Read(
   if (async_writes_enabled_) {
     file_info_->WaitForPendingAsyncWrites();
     ThrowIfAsyncWritesFailed();
+  }
+
+  // determine if we can settle read request from cache
+  if (offset >= rcache_offset && offset < rcache_offset + rcache_size && // offset falls into cache
+    offset + count <= rcache_offset + rcache_size) {
+    memcpy(buf, read_cache + (offset - rcache_offset), count);
+    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+      Logging::log->getLog(LEVEL_DEBUG) << "read cache hit" << endl;
+    }
+    cout << "READ CACHE HIT" << endl;
+    return count;
   }
 
   // Prepare request object.
@@ -296,6 +314,23 @@ int FileHandleImplementation::Read(
       }
     }
   }
+  // cache line if read was smaller then line
+  if (count < l_size && offset % s_size == 0) {
+    int64_t o = offset;
+    rcache_offset = 0;
+    while (o > l_size) {
+      o -= l_size;
+      rcache_offset += l_size;
+    }
+    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+      Logging::log->getLog(LEVEL_DEBUG) << "caching full read" << endl;
+    }
+    cout << "CACHING READ " << endl;
+    for (size_t j = 0; j < operations.size(); j++) {
+      memcpy(read_cache + j * s_size, operations[j].data, s_size);
+    }
+  }
+
   cout << "gmax reports " << reported_fs << " bytes in epoch " << epoch << endl;
 
   size_t read_data = received_data;

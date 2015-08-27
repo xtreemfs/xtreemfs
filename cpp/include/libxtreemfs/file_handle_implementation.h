@@ -272,7 +272,12 @@ class FileHandleImplementation
   char* write_cache;
   size_t internal_offset;
   size_t cache_size;
+  int s_size;
   size_t l_size;
+
+  char* read_cache;
+  size_t rcache_offset;
+  size_t rcache_size;
 
   /** Any modification to the object must obtain a lock first. */
   boost::mutex mutex_;
