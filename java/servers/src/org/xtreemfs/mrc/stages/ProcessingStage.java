@@ -58,6 +58,7 @@ import org.xtreemfs.mrc.operations.ReadLinkOperation;
 import org.xtreemfs.mrc.operations.RemoveReplicaOperation;
 import org.xtreemfs.mrc.operations.RemoveXAttrOperation;
 import org.xtreemfs.mrc.operations.RenewOperation;
+import org.xtreemfs.mrc.operations.ReselectOSDsOperation;
 import org.xtreemfs.mrc.operations.RestoreDBOperation;
 import org.xtreemfs.mrc.operations.RestoreFileOperation;
 import org.xtreemfs.mrc.operations.SetReadOnlyXattrOperation;
@@ -153,6 +154,7 @@ public class ProcessingStage extends MRCStage {
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_SET_READ_ONLY_XATTR, new SetReadOnlyXattrOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_GET_FILE_CREDENTIALS, new GetFileCredentialsOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_GET_XLOCSET, new GetXLocSetOperation(master));
+        operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_RESELECT_OSDS, new ReselectOSDsOperation(master));
     }
     
     public Map<Integer, Integer> get_opCountMap() {
