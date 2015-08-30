@@ -316,7 +316,7 @@ public class OpenOperation extends MRCOperation {
         long voucherSize = 0; // FIXME(baerhold): Export default value to a proper place
         if (create || truncate || write) {
             QuotaFileInformation quotaFileInformation = new QuotaFileInformation(volume.getId(), file);
-            master.getMrcVoucherManager().getVoucher(quotaFileInformation, clientID, expireMs, update);
+            voucherSize = master.getMrcVoucherManager().getVoucher(quotaFileInformation, clientID, expireMs, update);
         }
 
         Capability cap = new Capability(globalFileId, rqArgs.getFlags(), master.getConfig().getCapabilityTimeout(),
