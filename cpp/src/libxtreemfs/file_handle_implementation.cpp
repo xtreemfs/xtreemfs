@@ -315,18 +315,17 @@ int FileHandleImplementation::Read(
     }
   }
   // cache line if read was smaller then line
-  if (count < l_size && offset % s_size == 0) {
-    int64_t o = offset;
-    rcache_offset = 0;
-    while (o > l_size) {
-      o -= l_size;
-      rcache_offset += l_size;
+  if (count <= l_size && offset % s_size == 0) {
+    rcache_offset = offset;
+    while (rcache_offset % l_size != 0) {
+      rcache_offset -= s_size;
     }
+    rcache_size = l_size;
     if (Logging::log->loggingActive(LEVEL_DEBUG)) {
       Logging::log->getLog(LEVEL_DEBUG) << "caching full read" << endl;
     }
-    cout << "CACHING READ " << endl;
-    for (size_t j = 0; j < operations.size(); j++) {
+    int pw = (*striping_policies.begin())->parity_width();
+    for (size_t j = 0; j < operations.size() - pw; j++) {
       memcpy(read_cache + j * s_size, operations[j].data, s_size);
     }
   }

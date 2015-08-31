@@ -170,11 +170,12 @@ size_t StripeTranslatorErasureCodes::TranslateReadRequest(
   // erasures are present
   size_t data_reads = 0;
 
+  cout << endl<< "translating new read request" << endl;
   cout << "size: " << size << " offset: " << offset << endl;
 
   // skip as many full lines as possible
   cout << "skipping line offset from " << offset;
-  while (offset > stripe_size * k) {
+  while (offset >= stripe_size * k) {
     offset -= stripe_size * k;
     obj_number += k;
   }
@@ -263,7 +264,7 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
   size_t buf_pos = 0;
 
   for (int l = 0; l < lines; l++) {
-    cout << endl << to_process << " bytes to decode" << endl;
+    cout << to_process << " bytes to decode" << endl;
     if (to_process > 0) {
       vector<int> erasures;
       bool erased = 0;
@@ -303,7 +304,7 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
         this->Decode(k, m, w, data, coding, erasures, stripe_size);
       }
 
-      while (offset > k * stripe_size) {
+      while (offset >= k * stripe_size) {
         offset -= k * stripe_size;
         cout << "line skipped" << endl;
       }
