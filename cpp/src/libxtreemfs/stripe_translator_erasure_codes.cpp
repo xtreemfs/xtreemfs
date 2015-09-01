@@ -90,6 +90,7 @@ void StripeTranslatorErasureCodes::TranslateWriteRequest(
           memcpy(data[i], buf + buffer_offset, req_size);
           memset(data[i] + req_size, 0, stripe_size - req_size);
         } else {
+          // or pass a pointer to the user buffer
           data[i] = const_cast<char*>(buf + buffer_offset);
         }
 

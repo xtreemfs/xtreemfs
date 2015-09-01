@@ -108,8 +108,8 @@ FileHandleImplementation::FileHandleImplementation(
   cout << "setting up cache for " << (s_width - p_width) * s_size << " (" << s_width << ", " << p_width << ") byte sized lines" << endl;
   l_size = (s_width - p_width) * s_size;
   write_cache = new char[l_size];
-  internal_offset = 0;
-  cache_size = 0;
+  wcache_offset = 0;
+  wcache_size = 0;
 
   read_cache = new char[l_size];
   rcache_offset = 0;
@@ -191,13 +191,15 @@ int FileHandleImplementation::Read(
   // Read all objects.
   boost::dynamic_bitset<> successful_reads(operations.size());
   size_t received_data = 0;
-  size_t reported_fs = 0;
-  size_t epoch = 0;
   size_t stripe_size = (*striping_policies.begin())->stripe_size() * 1024;
+  unsigned int m = (*striping_policies.begin())->parity_width(); // parith width
+  unsigned int n = (*striping_policies.begin())->width(); // overall stripe width
+  unsigned int k = n - m; // data stripe width
+  bool erasure = false;
 
+  UUIDIterator* uuid_iterator;
   for (size_t j = 0; j < operations.size(); j++) {
     // Differ between striping and the rest (replication, no replication).
-    UUIDIterator* uuid_iterator;
     if (xlocs.replicas(0).osd_uuids_size() > 1) {
       // Replica is striped. Get a UUID iterator from OSD offsets
       temp_uuid_iterator_for_striping.reset(
@@ -229,18 +231,25 @@ int FileHandleImplementation::Read(
           operations[j].req_size,
           reader, writer);
     } else {
+      if (j % n >= k) {
+        // skip coding reads on the first pass; assume everything will go fine and all OSDs will
+        // answer
+        if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+          Logging::log->getLog(LEVEL_DEBUG) << "skipping coding read " << j % n << " in line " << j / n << endl;
+        }
+        continue;
+      }
       // TODO(mberlin): Update xloc list if newer version found (on OSD?).
       try {
-          //TODO only simulate erasure when using erasure codes
-        bool ec = xtreemfs::pbrpc::StripingPolicyType_Name((*striping_policies.begin())->type()) == "STRIPING_POLICY_REED_SOL_VAN";
-        // cout << "#### str pol: " << xtreemfs::pbrpc::StripingPolicyType_Name((*striping_policies.begin())->type()) << " ec: " << ec << endl;
-        if (operations[j].osd_offsets[0] == 0 && ec) {
+        // bool ec = xtreemfs::pbrpc::StripingPolicyType_Name((*striping_policies.begin())->type()) == "STRIPING_POLICY_REED_SOL_VAN";
+        // if (operations[j].osd_offsets[0] == 0 && ec) {
         // if (operations[j].osd_offsets[0] == 1) {
         // if (operations[j].osd_offsets[0] == 1 ||
         //     operations[j].osd_offsets[0] == 0) {
-          cout << "[ec] simulating an erasure of osd " << operations[j].osd_offsets[0] << " received no data from op " << j << endl;
-        }
-        else {
+        //   erasure = 1;
+        //   cout << "[ec] simulating an erasure of osd " << operations[j].osd_offsets[0] << " received no data from op " << j << endl;
+        // }
+        // else {
              size_t op_received_data =
                 ReadFromOSD(uuid_iterator, file_credentials, operations[j].obj_number,
                         operations[j].data, operations[j].req_offset,
@@ -254,7 +263,7 @@ int FileHandleImplementation::Read(
               memset(operations[j].data + op_received_data, 0 , stripe_size - op_received_data);
               cout << "less then stripe_size (" << stripe_size << ") data received...setting rest of data buffer to zero for decoding" << endl;
             }
-        }
+        // }
       } catch(IOException &e) {
         cout << "\tfailed" << endl;
         if (Logging::log->loggingActive(LEVEL_DEBUG)) {
@@ -264,6 +273,7 @@ int FileHandleImplementation::Read(
           if (Logging::log->loggingActive(LEVEL_DEBUG)) {
             Logging::log->getLog(LEVEL_DEBUG) << "parity data exists...trying to finish read operation" << endl;
           }
+          erasure = true;
         } else {
           throw e;
         }
@@ -281,41 +291,40 @@ int FileHandleImplementation::Read(
         }
       }
     }
-    // retrieve all available gmax values
-    if (successful_reads.test(j)) {
-      xtreemfs_internal_get_gmaxRequest gmax_request;
-      gmax_request.mutable_file_credentials()->CopyFrom(file_credentials);
-      gmax_request.set_file_id(file_credentials.xcap().file_id());
+  }
 
-      boost::scoped_ptr<rpc::SyncCallbackBase> response(
-          ExecuteSyncRequest(
-            boost::bind(
-              &xtreemfs::pbrpc::OSDServiceClient::xtreemfs_internal_get_gmax_sync,
-              osd_service_client_,
-              _1,
-              boost::cref(auth_bogus_),
-              boost::cref(user_credentials_bogus_),
-              &gmax_request),
-            uuid_iterator,
-            uuid_resolver_,
-            RPCOptions(volume_options_.max_tries,
-              volume_options_.retry_delay_s,
-              false,
-              volume_options_.was_interrupted_function),
-            false,
-            &xcap_manager_,
-            gmax_request.mutable_file_credentials()->mutable_xcap()));
-
-      xtreemfs::pbrpc::InternalGmax* gmax =
-        static_cast<xtreemfs::pbrpc::InternalGmax*>(response->response());
-      if (gmax->epoch() >= epoch && gmax->file_size() > reported_fs) {
-          reported_fs = gmax->file_size();
-          epoch = gmax->epoch();
+  if (erasure) {
+    for (size_t j = 0; j < operations.size(); j++) {
+      if (j % n < k) {
+        // skip data reads...everything available is read already
+        continue;
+      }
+      // Replica is striped. Get a UUID iterator from OSD offsets
+      temp_uuid_iterator_for_striping.reset(
+          new ContainerUUIDIterator(osd_uuid_container_,
+            operations[j].osd_offsets));
+      uuid_iterator = temp_uuid_iterator_for_striping.get();
+      if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+        Logging::log->getLog(LEVEL_DEBUG) << "reading coding object " << j << endl;
+      }
+      size_t op_received_data =
+        ReadFromOSD(uuid_iterator, file_credentials, operations[j].obj_number,
+            operations[j].data, operations[j].req_offset,
+            operations[j].req_size);
+      received_data += op_received_data;
+      // set operations req_size to actual received data
+      operations[j].req_size = op_received_data;
+      successful_reads[j] = 1;
+      cout << "success " << op_received_data << " bytes read from op " << j << endl;
+      if (op_received_data < stripe_size) {
+        memset(operations[j].data + op_received_data, 0 , stripe_size - op_received_data);
+        cout << "less then stripe_size (" << stripe_size << ") data received...setting rest of data buffer to zero for decoding" << endl;
       }
     }
   }
-  // cache line if read was smaller then line
-  if (count <= l_size && offset % s_size == 0) {
+
+  // cache line if read was smaller then line size and no erasure occured
+  if (count <= l_size && offset % s_size == 0 && !erasure) {
     rcache_offset = offset;
     while (rcache_offset % l_size != 0) {
       rcache_offset -= s_size;
@@ -329,8 +338,6 @@ int FileHandleImplementation::Read(
       memcpy(read_cache + j * s_size, operations[j].data, s_size);
     }
   }
-
-  cout << "gmax reports " << reported_fs << " bytes in epoch " << epoch << endl;
 
   size_t read_data = received_data;
   read_data = translator->ProcessReads(&operations, buf, count, offset, &successful_reads,
@@ -426,7 +433,7 @@ int FileHandleImplementation::Write(
     size_t count,
     int64_t offset) {
 
-  assert(internal_offset + cache_size == offset);
+  assert(wcache_offset + wcache_size == offset);
 
   write_helper(buf, count, 0);
 
@@ -441,38 +448,38 @@ void FileHandleImplementation::write_helper(
 
   cout << "call to write_helper(buf, " << count << ", " << buf_offset << ",)" << endl;
   // cache should be flushed when full
-  assert(cache_size != l_size);
+  assert(wcache_size != l_size);
 
   // write op has more then one line and cache is empty
-  if (count >= l_size && cache_size == 0) {
+  if (count >= l_size && wcache_size == 0) {
 
     cout << "writing more then one line...writing as much lines as possible" << endl;
     size_t w_size = 0;
     while (count - w_size >= l_size) {
       w_size += l_size;
     }
-    internal_write(buf + buf_offset, w_size, internal_offset);
+    internal_write(buf + buf_offset, w_size, wcache_offset);
     count -= w_size;
     buf_offset += w_size;
-    internal_offset += w_size;
+    wcache_offset += w_size;
   }
 
-  if (count > l_size - cache_size) {
-    cout << "copy to cache and recurse " << l_size << ", " << cache_size << endl;
+  if (count > l_size - wcache_size) {
+    cout << "copy to cache and recurse " << l_size << ", " << wcache_size << endl;
     // fill up cache, write and recurse
-    memcpy(write_cache + cache_size, buf + buf_offset, l_size - cache_size);
+    memcpy(write_cache + wcache_size, buf + buf_offset, l_size - wcache_size);
 
     flush_w_cache();
-    cache_size = 0;
-    buf_offset += l_size - cache_size;
+    wcache_size = 0;
+    buf_offset += l_size - wcache_size;
 
     write_helper(buf + buf_offset, count, buf_offset);
   } else {
     // write rest of op into cache and return
-    memcpy(write_cache + cache_size, buf + buf_offset, count);
-    cache_size += count;
-    cout << "cached " << count << " bytes; cache_size is now " << cache_size << endl;
-    if (cache_size == l_size) {
+    memcpy(write_cache + wcache_size, buf + buf_offset, count);
+    wcache_size += count;
+    cout << "cached " << count << " bytes; wcache_size is now " << wcache_size << endl;
+    if (wcache_size == l_size) {
       flush_w_cache();
     }
     return;
@@ -481,11 +488,11 @@ void FileHandleImplementation::write_helper(
 }
 
 void FileHandleImplementation::flush_w_cache() {
-  if (cache_size > 0) {
-    cout << "flushing cache to offset " << internal_offset << endl;
-    internal_write(write_cache, cache_size, internal_offset);
-    internal_offset += cache_size;
-    cache_size = 0;
+  if (wcache_size > 0) {
+    cout << "flushing cache to offset " << wcache_offset << endl;
+    internal_write(write_cache, wcache_size, wcache_offset);
+    wcache_offset += wcache_size;
+    wcache_size = 0;
   }
   return;
 }
@@ -705,6 +712,11 @@ void FileHandleImplementation::Flush() {
 
 void FileHandleImplementation::Flush(bool close_file) {
   flush_w_cache();
+  // invalidate caches
+  wcache_size = 0;
+  wcache_offset = 0;
+  rcache_size = 0;
+  rcache_offset = 0;
   if (object_cache_ != NULL) {
     FileCredentials file_credentials;
     xcap_manager_.GetXCap(file_credentials.mutable_xcap());
@@ -1115,6 +1127,11 @@ void FileHandleImplementation::Close() {
     // Rethrow exception.
     throw;
   }
+  // invalidate caches
+  wcache_size = 0;
+  wcache_offset = 0;
+  rcache_size = 0;
+  rcache_offset = 0;
   file_info_->CloseFileHandle(this);
 }
 

@@ -270,8 +270,8 @@ class FileHandleImplementation
       int bytes_to_write);
 
   char* write_cache;
-  size_t internal_offset;
-  size_t cache_size;
+  size_t wcache_offset;
+  size_t wcache_size;
   int s_size;
   size_t l_size;
 
