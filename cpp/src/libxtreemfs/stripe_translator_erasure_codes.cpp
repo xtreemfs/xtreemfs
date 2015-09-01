@@ -229,7 +229,7 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
     boost::dynamic_bitset<>* successful_reads,
     PolicyContainer policies,
     size_t received_data,
-    size_t min_reads) const {
+    bool erasure) const {
 
   // number of OSDs
   unsigned int n =(*policies.begin())->width();
@@ -258,19 +258,18 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
   for (int i = 0; i < m; i++) {
     coding[i] = new char[stripe_size];
   }
-  cout << lines << " lines must be reconstructed" << endl;
+  cout << lines << " lines must be processed" << endl;
   cout << "successful_reads is " << *successful_reads << endl;
 
-  long to_process = received_data;
   size_t buf_pos = 0;
 
   for (int l = 0; l < lines; l++) {
-    cout << to_process << " bytes to decode" << endl;
-    if (to_process > 0) {
-      vector<int> erasures;
-      bool erased = 0;
-      int line_offset = l * n;
 
+    vector<int> erasures;
+    int line_offset = l * n;
+
+    if (erasure) {
+      // only needs decoding if erasures happened
       for (int i = 0; i < k; i++) {
         //is the first op starting at osd 0?
 
@@ -279,7 +278,6 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
           cout << "read op " << data_read << " is erased and needs to be reconstructed" << endl;
           // push i since i is the position int the current line
           erasures.push_back(i);
-          erased = 1;
         } else {
           cout << "copy " << stripe_size << " bytes from op " << data_read << " to data device " << (i) << endl;
           memcpy(data[i], operations->at(data_read).data, stripe_size);
@@ -300,34 +298,37 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
       }
 
       // exit(1);
-      if (erased) {
-        cout << "decoding line " << l << endl;
-        this->Decode(k, m, w, data, coding, erasures, stripe_size);
-      }
+      cout << "decoding line " << l << endl;
+      this->Decode(k, m, w, data, coding, erasures, stripe_size);
+    }
 
-      while (offset >= k * stripe_size) {
-        offset -= k * stripe_size;
-        cout << "line skipped" << endl;
-      }
+    while (offset >= k * stripe_size) {
+      offset -= k * stripe_size;
+      cout << "line skipped" << endl;
+    }
 
-      for (int i = 0; i < k; i++) {
-        int data_read = line_offset + i;
-        if (offset >= stripe_size) {
-          cout << "skipping object due to offset" << endl;
-          offset -= stripe_size;
-          continue;
-        }
-        size_t op_size = min(operations->at(data_read).req_size - offset, size);
-        if (op_size == 0) {
-          break;
-        }
-        cout << "size: " << size << ", req - off: " << operations->at(data_read).req_size - offset << endl;
+    for (int i = 0; i < k; i++) {
+      int data_read = line_offset + i;
+      if (offset >= stripe_size) {
+        cout << "skipping object due to offset" << endl;
+        offset -= stripe_size;
+        continue;
+      }
+      size_t op_size = min(operations->at(data_read).req_size - offset, size);
+      if (op_size == 0) {
+        break;
+      }
+      cout << "size: " << size << ", req - off: " << operations->at(data_read).req_size - offset << endl;
+      if (erasure) {
         cout << "copy " << op_size << " bytes from data device " << i << " at position " << offset << " to buffer at " << (buf_pos) << endl;
         memcpy(buf + buf_pos, data[i] + offset, op_size);
-        size -= op_size;
-        buf_pos += op_size;
-        offset = 0;
+      } else {
+        cout << "copy " << op_size << " bytes from directly from op " << data_read << " at position " << offset << " to buffer at " << (buf_pos) << endl;
+        memcpy(buf + buf_pos,  operations->at(data_read).data + offset, op_size);
       }
+      size -= op_size;
+      buf_pos += op_size;
+      offset = 0;
     }
   }
 

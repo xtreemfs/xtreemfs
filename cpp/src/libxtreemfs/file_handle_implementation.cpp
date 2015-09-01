@@ -341,7 +341,7 @@ int FileHandleImplementation::Read(
 
   size_t read_data = received_data;
   read_data = translator->ProcessReads(&operations, buf, count, offset, &successful_reads,
-      striping_policies, received_data, min_successful_reads);
+      striping_policies, received_data, erasure);
   for (int i = 0; i < operations.size(); i++) {
     if (operations[i].owns_data) {
       cout << "deleting coding buffers after read" << endl;

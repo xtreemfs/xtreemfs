@@ -84,7 +84,8 @@ size_t StripeTranslatorRaid0::ProcessReads(
     boost::dynamic_bitset<>* successful_reads,
     PolicyContainer policies,
     size_t received_data,
-    size_t min_reads) const {
+    bool erasure
+  ) const {
   // nothing to do here
   return received_data;
 }

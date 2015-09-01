@@ -42,7 +42,7 @@ class StripeTranslatorRaid0 : public StripeTranslator {
           boost::dynamic_bitset<>* sucessful_reads,
           PolicyContainer policies,
           size_t received_data,
-          size_t min_reads
+          bool erasure
           ) const;
 };
 }  // namespace xtreemfs
