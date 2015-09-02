@@ -91,18 +91,13 @@ public class XtreemFSFileOutputStream extends OutputStream {
 
     @Override
     public synchronized void close() throws IOException {
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Closing file %s", fileName);
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            new Throwable().printStackTrace(pw);
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "StackTrace: %s", sw.toString());
+        if (closed) {
+            Logging.logMessage(Logging.LEVEL_WARN, this, "Attempting to close already closed file %s", fileName);
+            return;
         }
         
-        if(closed) {
-            return;
-        } else {
-            closed = true;
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Closing file %s", fileName);
         }
 
         if (useBuffer && buffer.position() > 0) {
@@ -113,6 +108,7 @@ public class XtreemFSFileOutputStream extends OutputStream {
         }
         super.close();
         fileHandle.close();
+        closed = true;
     }
 
     private synchronized void writeToBuffer(byte b[], int off, int len) throws IOException {
