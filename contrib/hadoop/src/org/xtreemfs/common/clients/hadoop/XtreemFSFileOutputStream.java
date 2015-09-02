@@ -8,6 +8,8 @@ package org.xtreemfs.common.clients.hadoop;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.ByteBuffer;
 
 import org.xtreemfs.common.libxtreemfs.FileHandle;
@@ -30,6 +32,8 @@ public class XtreemFSFileOutputStream extends OutputStream {
     private boolean         useBuffer;
 
     private ByteBuffer      buffer;
+    
+    private boolean         closed;
 
     public XtreemFSFileOutputStream(UserCredentials userCredentials, FileHandle fileHandle, String fileName,
             boolean useBuffer, int bufferSize) throws IOException {
@@ -42,6 +46,8 @@ public class XtreemFSFileOutputStream extends OutputStream {
         this.fileHandle = fileHandle;
         this.fileName = fileName;
         this.useBuffer = useBuffer;
+        this.closed = false;
+        
         if (useBuffer) {
             this.buffer = ByteBuffer.allocateDirect(bufferSize);
         }
@@ -87,6 +93,16 @@ public class XtreemFSFileOutputStream extends OutputStream {
     public synchronized void close() throws IOException {
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "Closing file %s", fileName);
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            new Throwable().printStackTrace(pw);
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "StackTrace: %s", sw.toString());
+        }
+        
+        if(closed) {
+            return;
+        } else {
+            closed = true;
         }
 
         if (useBuffer && buffer.position() > 0) {
