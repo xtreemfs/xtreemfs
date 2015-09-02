@@ -8,8 +8,6 @@ package org.xtreemfs.common.clients.hadoop;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.nio.ByteBuffer;
 
 import org.xtreemfs.common.libxtreemfs.FileHandle;
