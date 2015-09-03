@@ -90,7 +90,8 @@ public class XtreemFSFileOutputStream extends OutputStream {
     @Override
     public synchronized void close() throws IOException {
         if (closed) {
-            Logging.logMessage(Logging.LEVEL_WARN, this, "Attempting to close already closed file %s", fileName);
+            Logging.logMessage(Logging.LEVEL_WARN, this,
+                    "Ignoring attempt to close already closed file %s", fileName);
             return;
         }
         
