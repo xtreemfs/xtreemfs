@@ -13,6 +13,8 @@ import java.io.IOException;
 
 import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.metadata.FileVoucherClientInfo;
+import org.xtreemfs.mrc.metadata.FileVoucherInfo;
 import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XAttr;
@@ -112,7 +114,12 @@ public interface StorageManager {
     
     public void setDefaultStripingPolicy(long fileId, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy defaultSp,
         AtomicDBUpdate update) throws DatabaseException;
-    
+
+    public void setFileVoucherInfo(FileVoucherInfo fileVoucherInfo, AtomicDBUpdate update) throws DatabaseException;
+
+    public void setFileVoucherClientInfo(FileVoucherClientInfo fileVoucherClientInfo, AtomicDBUpdate update)
+            throws DatabaseException;
+
     public void setVolumeQuota(long quota, AtomicDBUpdate update) throws DatabaseException;
 
     public void setVolumeBlockedSpace(long blockedSpace, AtomicDBUpdate update) throws DatabaseException;
@@ -139,7 +146,13 @@ public interface StorageManager {
     public StripingPolicy getDefaultStripingPolicy(long fileId) throws DatabaseException;
     
     public ReplicationPolicy getDefaultReplicationPolicy(long fileId) throws DatabaseException;
-    
+
+    public FileVoucherInfo getFileVoucherInfo(long fileId) throws DatabaseException;
+
+    public FileVoucherClientInfo getFileVoucherClientInfo(long fileId, String clientId) throws DatabaseException;
+
+    public DatabaseResultSet<FileVoucherClientInfo> getAllFileVoucherClientInfo(long fileId) throws DatabaseException;
+
     public long getVolumeQuota() throws DatabaseException;
 
     public long getVolumeBlockedSpace() throws DatabaseException;

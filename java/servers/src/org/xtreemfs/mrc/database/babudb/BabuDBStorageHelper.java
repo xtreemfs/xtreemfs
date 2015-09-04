@@ -22,9 +22,11 @@ import org.xtreemfs.mrc.database.DatabaseResultSet;
 import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.BufferBackedACLEntry;
 import org.xtreemfs.mrc.metadata.BufferBackedFileMetadata;
+import org.xtreemfs.mrc.metadata.BufferBackedFileVoucherClientInfo;
 import org.xtreemfs.mrc.metadata.BufferBackedRCMetadata;
 import org.xtreemfs.mrc.metadata.BufferBackedXAttr;
 import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.metadata.FileVoucherClientInfo;
 import org.xtreemfs.mrc.metadata.XAttr;
 
 public class BabuDBStorageHelper {
@@ -136,6 +138,7 @@ public class BabuDBStorageHelper {
             throw new UnsupportedOperationException();
         }
         
+        @Override
         public void destroy() {
             it.free();
         }
@@ -144,9 +147,9 @@ public class BabuDBStorageHelper {
     
     static class XAttrIterator implements DatabaseResultSet<XAttr> {
         
-        private ResultSet<byte[], byte[]> it;
+        private final ResultSet<byte[], byte[]> it;
         
-        private String                    owner;
+        private final String                    owner;
         
         private BufferBackedXAttr         next;
         
@@ -208,6 +211,7 @@ public class BabuDBStorageHelper {
             throw new UnsupportedOperationException();
         }
         
+        @Override
         public void destroy() {
             it.free();
         }
@@ -216,7 +220,7 @@ public class BabuDBStorageHelper {
     
     static class ACLIterator implements DatabaseResultSet<ACLEntry> {
         
-        private ResultSet<byte[], byte[]> it;
+        private final ResultSet<byte[], byte[]> it;
         
         public ACLIterator(ResultSet<byte[], byte[]> it) {
             this.it = it;
@@ -238,12 +242,44 @@ public class BabuDBStorageHelper {
             throw new UnsupportedOperationException();
         }
         
+        @Override
         public void destroy() {
             it.free();
         }
         
     }
     
+    static class FileVoucherClientInfoIterator implements DatabaseResultSet<FileVoucherClientInfo> {
+
+        private final ResultSet<byte[], byte[]> it;
+
+        public FileVoucherClientInfoIterator(ResultSet<byte[], byte[]> it) {
+            this.it = it;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return it.hasNext();
+        }
+
+        @Override
+        public FileVoucherClientInfo next() {
+            Entry<byte[], byte[]> entry = it.next();
+            return new BufferBackedFileVoucherClientInfo(entry.getKey(), entry.getValue());
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void destroy() {
+            it.free();
+        }
+
+    }
+
     public static byte[] getLastAssignedFileId(Database database) throws BabuDBException {
         
         byte[] bytes = database.lookup(BabuDBStorageManager.VOLUME_INDEX, BabuDBStorageManager.LAST_ID_KEY,
@@ -426,6 +462,36 @@ public class BabuDBStorageHelper {
         return buf;
     }
     
+    /**
+     * Generates the key for a FileVoucherInfo based on the key identifer, the fileID and the word "info", seperated by
+     * dots.
+     * 
+     * @param fileId
+     *            the id of the file related to this key
+     * @return the byte array with the generated key
+     */
+    public static byte[] createFileVoucherInfoKey(long fileId) {
+        String keyString = BabuDBStorageManager.FILE_VOUCHER_KEY_IDENTIFER + "." + fileId + ".info";
+
+        return keyString.getBytes();
+    }
+
+    /**
+     * Generates the key for a FileVoucherInfo based on the key identifer, the fileID and the clientID, seperated by
+     * dots.
+     * 
+     * @param fileId
+     *            the id of the file related to this key
+     * @param clientId
+     *            the id of the client related to this key
+     * @return
+     */
+    public static byte[] createFileVoucherClientInfoKey(long fileId, String clientId) {
+        String keyString = BabuDBStorageManager.FILE_VOUCHER_KEY_IDENTIFER + "." + fileId + "." + clientId;
+
+        return keyString.getBytes();
+    }
+
     public static short getXAttrCollisionNumber(byte[] key) {
         
         short collNum = 0;

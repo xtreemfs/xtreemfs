@@ -26,12 +26,17 @@ import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeChangeListener;
 import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.ACLIterator;
+import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.FileVoucherClientInfoIterator;
 import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.XAttrIterator;
 import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.BufferBackedACLEntry;
 import org.xtreemfs.mrc.metadata.BufferBackedFileMetadata;
+import org.xtreemfs.mrc.metadata.BufferBackedFileVoucherClientInfo;
+import org.xtreemfs.mrc.metadata.BufferBackedFileVoucherInfo;
 import org.xtreemfs.mrc.metadata.BufferBackedXAttr;
 import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.metadata.FileVoucherClientInfo;
+import org.xtreemfs.mrc.metadata.FileVoucherInfo;
 import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XAttr;
@@ -212,6 +217,45 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
         }
     }
     
+    @Override
+    public FileVoucherInfo getFileVoucherInfo(long fileId) throws DatabaseException {
+        try {
+            byte[] key = BabuDBStorageHelper.createFileVoucherInfoKey(fileId);
+            byte[] value = database.lookup(VOLUME_INDEX, key, null).get();
+
+            return value == null ? null : new BufferBackedFileVoucherInfo(key, value);
+
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
+    public FileVoucherClientInfo getFileVoucherClientInfo(long fileId, String clientId) throws DatabaseException {
+        try {
+            byte[] key = BabuDBStorageHelper.createFileVoucherClientInfoKey(fileId, clientId);
+            byte[] value = database.lookup(VOLUME_INDEX, key, null).get();
+
+            return value == null ? null : new BufferBackedFileVoucherClientInfo(key, value);
+
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
+    public DatabaseResultSet<FileVoucherClientInfo> getAllFileVoucherClientInfo(long fileId) throws DatabaseException {
+        try {
+            byte[] prefixKey = BabuDBStorageHelper.createFileVoucherClientInfoKey(fileId, "");
+            ResultSet<byte[], byte[]> it = database.prefixLookup(VOLUME_INDEX, prefixKey, null).get();
+
+            return new FileVoucherClientInfoIterator(it);
+
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
     @Override
     public long getVolumeQuota() throws DatabaseException {
         try {
@@ -601,6 +645,17 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
         throwException();
     }
     
+    @Override
+    public void setFileVoucherClientInfo(FileVoucherClientInfo fileVoucherClientInfo, AtomicDBUpdate update)
+            throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setFileVoucherInfo(FileVoucherInfo fileVoucherInfo, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
     @Override
     public void setVolumeQuota(long quota, AtomicDBUpdate update) throws DatabaseException {
         throwException();
