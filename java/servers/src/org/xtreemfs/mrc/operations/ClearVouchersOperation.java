@@ -21,6 +21,8 @@ import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.quota.QuotaFileInformation;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponse;
@@ -105,7 +107,11 @@ public class ClearVouchersOperation extends MRCOperation {
         StorageManager sMan = master.getVolumeManager().getStorageManager(globalFileIdResolver.getVolumeId());
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
 
-        master.getMrcVoucherManager().clearVouchers(cap.getFileId(), cap.getClientIdentity(), expireTimeSet,
+        FileMetadata metadata = sMan.getMetadata(globalFileIdResolver.getLocalFileId());
+        QuotaFileInformation quotaFileInformation = new QuotaFileInformation(globalFileIdResolver.getVolumeId(),
+                metadata);
+
+        master.getMrcVoucherManager().clearVouchers(quotaFileInformation, cap.getClientIdentity(), expireTimeSet,
                 newFileSizeMax, update);
 
         // TODO(baerhold): update file size for storage

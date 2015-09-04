@@ -25,12 +25,9 @@ public class VolumeQuotaManager {
 
     private final String              volumeId;
 
-    private boolean                   active             = false;
+    private boolean                   active            = false;
 
-    private long                      volumeQuota        = 0;
-    private long                      curBlockedSpace    = 0;
-    private long                      curUsedSpace       = 0;
-
+    private long                      volumeQuota       = 0;
     private long                      volumeVoucherSize = 250 * 1024 * 1024; // 100 MB
 
     /**
@@ -47,25 +44,13 @@ public class VolumeQuotaManager {
 
     public void init() {
         try {
-            volumeQuota = volStorageManager.getVolumeQuota();
-            curBlockedSpace = volStorageManager.getVolumeBlockedSpace();
-            curUsedSpace = volStorageManager.getVolumeUsedSpace();
-            // defaultVoucherSize = volStorageManager.
+            setVolumeQuota(volStorageManager.getVolumeQuota());
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
 
-        if (volumeQuota > 0) {
-            setActive(true);
-        }
-
         Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager loaded for volume: " + volumeId
-                + ". [curVolumeSpace=" + curUsedSpace + ", curBlockedSpace=" + curBlockedSpace + ", maxVolumeSpace="
-                + volumeQuota + "]");
-    }
-
-    private long getFreeSpace() {
-        return volumeQuota - (curUsedSpace + curBlockedSpace);
+                + ". [maxVolumeSpace=" + volumeQuota + "]");
     }
 
     public boolean checkVoucherAvailability() throws UserException {
@@ -77,39 +62,43 @@ public class VolumeQuotaManager {
     }
 
     // TODO: pass user and user group to calculate over all voucher
-    public synchronized long getVoucher(boolean test, AtomicDBUpdate update) throws UserException {
+    private synchronized long getVoucher(boolean test, AtomicDBUpdate update) throws UserException {
 
         if (!active) {
             return 0;
         }
 
-        long currentFreeSpace = getFreeSpace();
-        if (currentFreeSpace <= 0) {
-            throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "The quota of the volume \"" + volumeId
-                    + "\" is reached");
-        }
+        try {
+            long usedSpace = volStorageManager.getVolumeUsedSpace();
+            long blockedSpace = volStorageManager.getVolumeBlockedSpace();
 
-        long voucherSize = volumeVoucherSize;
-        if (volumeVoucherSize > currentFreeSpace) {
-            voucherSize = currentFreeSpace;
-        }
-
-        // save voucherSize as blocked, if it isn't just a check
-        if (!test) {
-            curBlockedSpace += voucherSize;
-
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
-                    + ") increased blocked space by: " + voucherSize + " to: " + curBlockedSpace);
-            try {
-                volStorageManager.setVolumeBlockedSpace(curBlockedSpace, update);
-            } catch (DatabaseException e) {
-                // this should never occure here, cause it will be executed outside
-                // FIXME(baerhold): Use Logging?
-                e.printStackTrace();
+            long currentFreeSpace = volumeQuota - (usedSpace + blockedSpace);
+            if (currentFreeSpace <= 0) {
+                throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "The quota of the volume \"" + volumeId
+                        + "\" is reached");
             }
-        }
 
-        return voucherSize;
+            long voucherSize = volumeVoucherSize;
+            if (volumeVoucherSize > currentFreeSpace) {
+                voucherSize = currentFreeSpace;
+            }
+
+            // save voucherSize as blocked, if it isn't just a check
+            if (!test) {
+                blockedSpace += voucherSize;
+                volStorageManager.setVolumeBlockedSpace(blockedSpace, update);
+
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
+                        + ") increased blocked space by: " + voucherSize + " to: " + blockedSpace);
+            }
+
+            return voucherSize;
+        } catch (DatabaseException e) {
+            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
+                    "An error occured during the interaction with the database!");
+        }
     }
 
     /**
@@ -122,36 +111,39 @@ public class VolumeQuotaManager {
      *            updated file size difference
      * @param clearBlockedSpace
      *            unused blocked space
+     * @throws UserException
      */
-    public synchronized void updateSpaceUsage(long fileSizeDifference, long clearBlockedSpace, AtomicDBUpdate update) {
+    public synchronized void updateSpaceUsage(long fileSizeDifference, long clearBlockedSpace, AtomicDBUpdate update)
+            throws UserException {
         if (!active) {
             return;
         }
 
-        curUsedSpace += fileSizeDifference;
-        curBlockedSpace -= clearBlockedSpace;
-
-        Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
-                + ") updated space usage: curVolumeSpace=" + curUsedSpace + ", curBlockedSpace=" + curBlockedSpace
-                + ", volumeQuota=" + volumeQuota);
-
         try {
-            volStorageManager.setVolumeBlockedSpace(curBlockedSpace, update);
-            volStorageManager.setVolumeUsedSpace(curUsedSpace, update);
+            long usedSpace = volStorageManager.getVolumeUsedSpace();
+            long blockedSpace = volStorageManager.getVolumeBlockedSpace();
+
+            usedSpace += fileSizeDifference;
+            blockedSpace -= clearBlockedSpace;
+
+            volStorageManager.setVolumeUsedSpace(usedSpace, update);
+            volStorageManager.setVolumeBlockedSpace(blockedSpace, update);
+
+            if (usedSpace < 0) {
+                Logging.logMessage(Logging.LEVEL_WARN, this, "VolumeQuotaManager(" + volumeId
+                        + ") got negative space consumption! Please check the functionality!");
+            }
+
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
+                    + ") updated space usage: usedSpace=" + usedSpace + ", blockedSpace=" + blockedSpace
+                    + ", volumeQuota=" + volumeQuota);
+
         } catch (DatabaseException e) {
-            // this should never occure here, cause it will be executed outside
-            // FIXME(baerhold): Use Logging?
-            e.printStackTrace();
+            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
+                    "An error occured during the interaction with the database!");
         }
-
-    }
-
-    /**
-     * 
-     * @return whether the volume has full or not
-     */
-    public boolean isVolumeFull() {
-        return (getFreeSpace() <= 0);
     }
 
     /**
@@ -159,6 +151,13 @@ public class VolumeQuotaManager {
      */
     public String getVolumeId() {
         return volumeId;
+    }
+
+    /**
+     * @return the volStorageManager
+     */
+    public StorageManager getVolStorageManager() {
+        return volStorageManager;
     }
 
     /**
@@ -173,7 +172,7 @@ public class VolumeQuotaManager {
         Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId + ") changed quota to: "
                 + volumeQuota);
     }
-    
+
     public void setVolumeVoucherSize(long volumeVoucherSize) {
         this.volumeVoucherSize = volumeVoucherSize;
 
@@ -200,14 +199,9 @@ public class VolumeQuotaManager {
         this.active = active;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
         return "VolumeQuotaManager [volumeId=" + volumeId + ", active=" + active + ", volumeQuota=" + volumeQuota
-                + ", curVolumeSpace=" + curUsedSpace + ", curBlockedSpace=" + curBlockedSpace + "]";
+                + ", volumeVoucherSize=" + volumeVoucherSize + "]";
     }
 }
