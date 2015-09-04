@@ -18,19 +18,19 @@ public class QuotaFileInformation {
     private final long   fileId;
     private final String ownerId;
     private final String ownerGroupId;
-    private final long   fileSize;
+    private final long   filesize;
 
     public QuotaFileInformation(String volumeId, FileMetadata fileMetadata) {
         this(volumeId, fileMetadata.getId(), fileMetadata.getOwnerId(), fileMetadata.getOwningGroupId(), fileMetadata
                 .getSize());
     }
 
-    public QuotaFileInformation(String volumeId, long fileId, String ownerId, String ownerGroupId, long fileSize) {
+    public QuotaFileInformation(String volumeId, long fileId, String ownerId, String ownerGroupId, long filesize) {
         this.volumeId = volumeId;
         this.fileId = fileId;
         this.ownerId = ownerId;
         this.ownerGroupId = ownerGroupId;
-        this.fileSize = fileSize;
+        this.filesize = filesize;
     }
 
     /**
@@ -38,7 +38,7 @@ public class QuotaFileInformation {
      * 
      * @return
      */
-    public String getGlobalFileID() {
+    public String getGlobalFileId() {
         return volumeId + ":" + fileId;
     }
 
@@ -75,7 +75,7 @@ public class QuotaFileInformation {
     /**
      * @return the fileSize
      */
-    public long getFileSize() {
-        return fileSize;
+    public long getFilesize() {
+        return filesize;
     }
 }
