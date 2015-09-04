@@ -24,11 +24,12 @@ class ReadOperation {
 
   ReadOperation(size_t _obj_number, OSDOffsetContainer _osd_offsets,
                 size_t _req_size, size_t _req_offset,
-                char *_data, bool _owns_data = false)
+                char *_data, bool _owns_data = false, bool _is_aux = false)
       : obj_number(_obj_number), osd_offsets(_osd_offsets),
         req_size(_req_size), req_offset(_req_offset),
         data(_data),
-        owns_data(_owns_data) {
+        owns_data(_owns_data),
+        is_aux(_is_aux) {
   };
 
   size_t obj_number;
@@ -37,6 +38,7 @@ class ReadOperation {
   size_t req_offset;
   char *data;
   bool owns_data;
+  bool is_aux;
 };
 
 class WriteOperation {
@@ -75,10 +77,8 @@ class StripeTranslator {
   /*
    * fills operations vector with ReadOperations necessary for the Read operation. The read
    * operations are ordered to be excuted in the returned sequence.
-   *
-   * returns the number of successful stripe reads necessary for the whole ReadOp to suceed.
    */
-  virtual size_t TranslateReadRequest(
+  virtual void TranslateReadRequest(
       char *buf,
       size_t size,
       int64_t offset,

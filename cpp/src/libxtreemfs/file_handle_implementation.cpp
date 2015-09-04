@@ -10,7 +10,6 @@
 
 #include <boost/bind.hpp>
 #include <boost/dynamic_bitset.hpp>
-#include <algorithm>    // std::min
 #include <map>
 #include <memory>
 #include <string>
@@ -172,11 +171,9 @@ int FileHandleImplementation::Read(
 
   // Map offset to corresponding OSDs.
   std::vector<ReadOperation> operations;
-  size_t min_successful_reads =
   translator->TranslateReadRequest(buf, count, offset, striping_policies,
                                    &operations);
 
-  cout << "minimum successful reads: " << min_successful_reads << endl;
   boost::scoped_ptr<ContainerUUIDIterator> temp_uuid_iterator_for_striping;
 
   for(std::vector<ReadOperation>::iterator it = operations.begin();
@@ -187,6 +184,7 @@ int FileHandleImplementation::Read(
       std::cout << "req size: " << it->req_size << std::endl;
       std::cout << "req offset: " << it->req_offset << std::endl;
       std::cout << "osd offset: " << it->osd_offsets[0] << std::endl;
+      std::cout << "aux read: " << it->is_aux << std::endl;
   }
   // Read all objects.
   boost::dynamic_bitset<> successful_reads(operations.size());
@@ -231,11 +229,11 @@ int FileHandleImplementation::Read(
           operations[j].req_size,
           reader, writer);
     } else {
-      if (j % n >= k) {
+      if (operations[j].is_aux) {
         // skip coding reads on the first pass; assume everything will go fine and all OSDs will
         // answer
         if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-          Logging::log->getLog(LEVEL_DEBUG) << "skipping coding read " << j % n << " in line " << j / n << endl;
+          Logging::log->getLog(LEVEL_DEBUG) << "skipping auxilliary read " << j % n << " in line " << j / n << endl;
         }
         continue;
       }
@@ -295,7 +293,7 @@ int FileHandleImplementation::Read(
 
   if (erasure) {
     for (size_t j = 0; j < operations.size(); j++) {
-      if (j % n < k) {
+      if (!operations[j].is_aux) {
         // skip data reads...everything available is read already
         continue;
       }

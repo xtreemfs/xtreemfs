@@ -45,7 +45,7 @@ void StripeTranslatorRaid0::TranslateWriteRequest(
   }
 }
 
-size_t StripeTranslatorRaid0::TranslateReadRequest(
+void StripeTranslatorRaid0::TranslateReadRequest(
     char *buf,
     size_t size,
     int64_t offset,
@@ -73,7 +73,6 @@ size_t StripeTranslatorRaid0::TranslateReadRequest(
 
     start += req_size;
   }
-  return operations->size();
 }
 
 size_t StripeTranslatorRaid0::ProcessReads(

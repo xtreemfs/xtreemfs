@@ -151,7 +151,7 @@ void StripeTranslatorErasureCodes::TranslateWriteRequest(
   }
 }
 
-size_t StripeTranslatorErasureCodes::TranslateReadRequest(
+void StripeTranslatorErasureCodes::TranslateReadRequest(
     char *buf,
     size_t size,
     int64_t offset,
@@ -170,6 +170,7 @@ size_t StripeTranslatorErasureCodes::TranslateReadRequest(
   // index where data reads are inserted...corresponds to the minimum number of reads when no
   // erasures are present
   size_t data_reads = 0;
+  size_t size_n_offset = size + offset;
 
   cout << endl<< "translating new read request" << endl;
   cout << "size: " << size << " offset: " << offset << endl;
@@ -181,6 +182,8 @@ size_t StripeTranslatorErasureCodes::TranslateReadRequest(
     obj_number += k;
   }
   cout << " to " << offset << endl;
+
+  assert(offset < k * stripe_size);
 
   int objects = 1 + ((size + offset - 1) / stripe_size);
   int lines = 1 + ((objects - 1) / k);
@@ -195,11 +198,21 @@ size_t StripeTranslatorErasureCodes::TranslateReadRequest(
       std::vector<size_t> osd_offsets;
       osd_offsets.push_back(i);
 
-      operations->push_back(
-          ReadOperation(obj_number, osd_offsets, stripe_size, 0,
-            new char[stripe_size], true));
+      cout << "offset: " << offset << " stripe_size: " << stripe_size << " size_n_offset: " << size_n_offset << endl;
+      if (offset >= (int64_t) stripe_size || size_n_offset == 0) {
+        operations->push_back(
+            ReadOperation(obj_number, osd_offsets, stripe_size, 0,
+              new char[stripe_size], true, true));
+        cout << "pushing aux read" << endl;
+      } else {
+        operations->push_back(
+            ReadOperation(obj_number, osd_offsets, stripe_size, 0,
+              new char[stripe_size], true));
+        cout << "pushing mandatory read" << endl;
+      }
+      offset -= min(offset, (int64_t) stripe_size);
+      size_n_offset -= min(size_n_offset, stripe_size);
       data_reads++;
-      cout << "added data read operation at end" << endl;
       obj_number++;
     }
 
@@ -208,17 +221,15 @@ size_t StripeTranslatorErasureCodes::TranslateReadRequest(
       std::vector<size_t> osd_offsets;
       osd_offsets.push_back(k + i);
 
-      // push coding read
+      // push coding read; is always an aux read
       operations->push_back(
           ReadOperation(coding_obj_number, osd_offsets, stripe_size, 0,
-            new char[stripe_size], true));
+            new char[stripe_size], true, true));
       cout << "pushed code read op to the back" << endl;
     }
 
   }
   cout << "translate read req is done..." << endl;
-  // return how many successful reads are necessary
-  return data_reads;
 }
 
 size_t StripeTranslatorErasureCodes::ProcessReads(
@@ -306,6 +317,8 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
       offset -= k * stripe_size;
       cout << "line skipped" << endl;
     }
+
+    assert(offset < k * stripe_size);
 
     for (int i = 0; i < k; i++) {
       int data_read = line_offset + i;
