@@ -14,6 +14,7 @@ import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeInfo;
+import org.xtreemfs.mrc.quota.VolumeQuotaManager;
 import org.xtreemfs.mrc.utils.Converter;
 
 /**
@@ -53,7 +54,7 @@ public class BabuDBVolumeInfo implements VolumeInfo {
         this.acPolicy = acPolicy;
         this.allowSnaps = allowSnaps;
         this.quota = quota;
-        this.voucherSize = 250 * 1024 * 1024; // 250 MB; FIXME(baerhold): don't use a hardcoded value here
+        this.voucherSize = VolumeQuotaManager.defaultVoucherSize;
         
         // set the policies
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_ID_ATTR_NAME, id.getBytes(), true, update);
