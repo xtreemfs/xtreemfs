@@ -20,7 +20,7 @@ import org.xtreemfs.mrc.database.StorageManager;
  */
 public class VolumeQuotaManager {
 
-    public final static long          defaultVoucherSize = 1 * 1024 * 1024;  // 1 MB
+    public final static long          defaultVoucherSize = 250 * 1024 * 1024; // 250 MB
 
     private final StorageManager      volStorageManager;
     private final QuotaChangeListener quotaChangeListener;
@@ -30,7 +30,7 @@ public class VolumeQuotaManager {
     private boolean                   active            = false;
 
     private long                      volumeQuota       = 0;
-    private long                      volumeVoucherSize = 250 * 1024 * 1024; // 100 MB
+    private long                      volumeVoucherSize  = 0;
 
     /**
      * 
