@@ -24,7 +24,8 @@ import org.xtreemfs.osd.OSDRequestDispatcher;
  */
 public class OSDVoucherManager {
 
-    private final static boolean                  active                = true;
+    // keep in sync with MRCVoucherManager
+    private final static long                     unlimitedVoucher      = -1;
 
     @SuppressWarnings("unused")
     // FIXME: remove unused?
@@ -40,7 +41,7 @@ public class OSDVoucherManager {
 
     public void registerFileVoucher(String fileId, String clientId, long expireTime, long voucherSize) {
 
-        if (voucherSize <= 0 || !active) {
+        if (voucherSize == unlimitedVoucher) {
             return;
         }
 
@@ -56,10 +57,6 @@ public class OSDVoucherManager {
     public boolean checkMaxVoucherSize(String fileId, String clientId, long expireTime, long newFileSize)
             throws VoucherErrorException {
 
-        if (!active) {
-            return true;
-        }
-
         boolean result = false;
 
         FileVoucherManager fileVoucherManager = fileVoucherManagerMap.get(fileId);
@@ -74,10 +71,6 @@ public class OSDVoucherManager {
     }
 
     public void invalidateFileVouchers(String fileId, String clientId, Set<Long> expireTimeSet) {
-
-        if (!active) {
-            return;
-        }
 
         FileVoucherManager fileVoucherManager = fileVoucherManagerMap.get(fileId);
         if (fileVoucherManager == null) {

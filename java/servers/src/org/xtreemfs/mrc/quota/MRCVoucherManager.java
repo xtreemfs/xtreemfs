@@ -30,7 +30,7 @@ import org.xtreemfs.mrc.metadata.FileVoucherInfo;
  */
 public class MRCVoucherManager {
 
-    private final static long     noVoucherValue = -1;
+    private final static long     unlimitedVoucher = -1; // keep in sync with OSDVoucherManager
 
     private final MRCQuotaManager mrcQuotaManager;
 
@@ -39,13 +39,12 @@ public class MRCVoucherManager {
     }
 
     public long getVoucher(QuotaFileInformation quotaFileInformation, String clientId, long expireTime,
-            AtomicDBUpdate update)
-            throws UserException {
+            AtomicDBUpdate update) throws UserException {
 
         Logging.logMessage(Logging.LEVEL_DEBUG, this, "Client " + clientId + " requests a voucher for file: "
                 + quotaFileInformation.getGlobalFileId());
 
-        long newMaxFileSize = quotaFileInformation.getFilesize();
+        long newMaxFileSize = 0;
 
         if (mrcQuotaManager.hasActiveVolumeQuotaManager(quotaFileInformation.getVolumeId())) {
 
@@ -94,7 +93,7 @@ public class MRCVoucherManager {
                 }
             }
         } else {
-            newMaxFileSize = noVoucherValue; // FIXME(baerhold): export default for "unlimited" to proper place
+            newMaxFileSize = unlimitedVoucher; // FIXME(baerhold): export default for "unlimited" to proper place
         }
 
         return newMaxFileSize;
@@ -277,7 +276,7 @@ public class MRCVoucherManager {
                                     + ", oldExpireTime: " + oldExpireTime + ", newExpireTime: " + newExpireTime);
                         } else {
                             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
-                                    "Invalid database strucure: no general voucher information saved for fileId:"
+                                    "Invalid database structure: no general voucher information saved for fileId:"
                                             + quotaFileInformation.getGlobalFileId());
                         }
 
