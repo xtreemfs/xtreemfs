@@ -67,10 +67,9 @@ public class MRCVoucherManager {
                                 quotaFileInformation.getFilesize(), voucherSize);
                     } else {
                         if (fileVoucherClientInfo == null) {
-                            fileVoucherInfo.addClient(voucherSize);
-                        } else {
-                            fileVoucherInfo.increaseBlockedSpaceByValue(voucherSize);
+                            fileVoucherInfo.increaseClientCount();
                         }
+                        fileVoucherInfo.increaseBlockedSpaceByValue(voucherSize);
                     }
 
                     if (fileVoucherClientInfo == null) {
@@ -146,7 +145,7 @@ public class MRCVoucherManager {
                         FileVoucherInfo fileVoucherInfo = storageManager.getFileVoucherInfo(quotaFileInformation
                                 .getFileId());
 
-                        fileVoucherInfo.removeClient();
+                        fileVoucherInfo.decreaseClientCount();
 
                         // if there is no open voucher anymore, clear general information and update quota information
                         if (fileVoucherInfo.getClientCount() == 0) {

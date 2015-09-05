@@ -10,16 +10,14 @@ package org.xtreemfs.mrc.metadata;
 public interface FileVoucherInfo {
 
     /**
-     * Increases the client counter by 1 and the blocked space by the parameter.
-     * 
-     * @param additionalBlockedSpace
+     * Increases the client counter by 1.
      */
-    public void addClient(long additionalBlockedSpace);
+    public void increaseClientCount();
 
     /**
      * Reduces the client counter by 1.
      */
-    public void removeClient();
+    public void decreaseClientCount();
 
     /**
      * Increases the blocked space by the parameter.

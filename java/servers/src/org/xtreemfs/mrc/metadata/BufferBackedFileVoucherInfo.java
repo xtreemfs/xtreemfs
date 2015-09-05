@@ -53,14 +53,12 @@ public class BufferBackedFileVoucherInfo extends BufferBackedIndexMetadata imple
     }
 
     @Override
-    public void addClient(long additionalBlockedSpace) {
+    public void increaseClientCount() {
         clientCount++;
-
-        increaseBlockedSpaceByValue(additionalBlockedSpace);
     }
 
     @Override
-    public void removeClient() {
+    public void decreaseClientCount() {
         clientCount--;
     }
 
