@@ -471,7 +471,8 @@ public class BabuDBStorageHelper {
      * @return the byte array with the generated key
      */
     public static byte[] createFileVoucherInfoKey(long fileId) {
-        String keyString = BabuDBStorageManager.FILE_VOUCHER_KEY_IDENTIFER + "." + fileId + ".info";
+        // i = info
+        String keyString = BabuDBStorageManager.FILE_VOUCHER_KEY_IDENTIFER + "." + fileId + ".i";
 
         return keyString.getBytes();
     }
@@ -487,7 +488,8 @@ public class BabuDBStorageHelper {
      * @return
      */
     public static byte[] createFileVoucherClientInfoKey(long fileId, String clientId) {
-        String keyString = BabuDBStorageManager.FILE_VOUCHER_KEY_IDENTIFER + "." + fileId + "." + clientId;
+        // c = client
+        String keyString = BabuDBStorageManager.FILE_VOUCHER_KEY_IDENTIFER + "." + fileId + ".c." + clientId;
 
         return keyString.getBytes();
     }
