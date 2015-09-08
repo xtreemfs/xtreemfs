@@ -476,6 +476,9 @@ public class MRCHelper {
 
             case quota:
                 return String.valueOf(sMan.getVolumeInfo().getVolumeQuota());
+
+            case vouchersize:
+                return String.valueOf(sMan.getVolumeInfo().getVolumeVoucherSize());
             }
         }
         
