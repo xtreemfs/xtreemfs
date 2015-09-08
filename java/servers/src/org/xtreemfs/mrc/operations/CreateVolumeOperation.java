@@ -162,8 +162,9 @@ public class CreateVolumeOperation extends MRCOperation {
             thr.start();
             
             // create the quota manager for the new volume, which will register itself
-            new VolumeQuotaManager(master.getMrcQuotaManager(), master.getVolumeManager().getStorageManager(volumeId),
-                    volumeId);
+            VolumeQuotaManager volumeQuotaManager = new VolumeQuotaManager(master.getMrcQuotaManager(), master
+                    .getVolumeManager().getStorageManager(volumeId), volumeId);
+            volumeQuotaManager.init();
 
         } catch (UserException exc) {
             if (Logging.isDebug())
