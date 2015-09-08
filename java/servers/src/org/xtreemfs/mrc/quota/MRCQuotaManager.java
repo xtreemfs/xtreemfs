@@ -50,8 +50,8 @@ public class MRCQuotaManager {
         return (volumeQuotaManager == null) ? false : volumeQuotaManager.isActive();
     }
 
-    public void removeVolumeQuotaManager(String volumeName) {
-        volQuotaManMap.remove(volumeName);
+    public void removeVolumeQuotaManager(String volumeId) {
+        volQuotaManMap.remove(volumeId);
     }
 
     /*
