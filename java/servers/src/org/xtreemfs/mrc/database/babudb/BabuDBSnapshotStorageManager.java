@@ -42,6 +42,7 @@ import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XAttr;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
+import org.xtreemfs.mrc.quota.VolumeQuotaManager;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.DBAdminHelper;
 import org.xtreemfs.mrc.utils.Path;
@@ -91,6 +92,10 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     protected static final String          VOL_USPACE_ATTR_NAME       = "usedSpace";
 
     protected static final String          VOL_VOUCHERSIZE_ATTR_NAME  = "voucherSize";
+
+    protected static final String          VOL_DEFAULT_U_QUOTA_ATTR_NAME = "defaultUserQuota";
+
+    protected static final String          VOL_DEFAULT_G_QUOTA_ATTR_NAME = "defaultGroupQuota";
 
     protected static final int[]           ALL_INDICES                = { FILE_INDEX, XATTRS_INDEX,
         ACL_INDEX, FILE_ID_INDEX, VOLUME_INDEX                       };
@@ -314,6 +319,40 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
                 return 0;
             else {
                 return Long.valueOf(new String(voucherSize));
+            }
+
+        } catch (DatabaseException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
+    public long getVolumeDefaultGroupQuota() throws DatabaseException {
+        try {
+            byte[] defaultGroupQuota = getXAttr(1, SYSTEM_UID, VOL_DEFAULT_G_QUOTA_ATTR_NAME);
+            if (defaultGroupQuota == null)
+                return VolumeQuotaManager.defaultGroupQuota;
+            else {
+                return Long.valueOf(new String(defaultGroupQuota));
+            }
+
+        } catch (DatabaseException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
+    public long getVolumeDefaultUserQuota() throws DatabaseException {
+        try {
+            byte[] defaultUserQuota = getXAttr(1, SYSTEM_UID, VOL_DEFAULT_U_QUOTA_ATTR_NAME);
+            if (defaultUserQuota == null)
+                return VolumeQuotaManager.defaultUserQuota;
+            else {
+                return Long.valueOf(new String(defaultUserQuota));
             }
 
         } catch (DatabaseException exc) {
@@ -673,6 +712,16 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
 
     @Override
     public void setVolumeVoucherSize(long voucherSize, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setVolumeDefaultGroupQuota(long defaultGroupQuota, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setVolumeDefaultUserQuota(long defaultUserQuota, AtomicDBUpdate update) throws DatabaseException {
         throwException();
     }
 

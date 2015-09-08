@@ -21,6 +21,8 @@ import org.xtreemfs.mrc.database.StorageManager;
 public class VolumeQuotaManager {
 
     public final static long          defaultVoucherSize = 250 * 1024 * 1024; // 250 MB
+    public final static long          defaultUserQuota   = -1;               // no limit
+    public final static long          defaultGroupQuota  = -1;               // no limit
 
     private final StorageManager      volStorageManager;
     private final QuotaChangeListener quotaChangeListener;
@@ -30,8 +32,10 @@ public class VolumeQuotaManager {
 
     private boolean                   active            = false;
 
-    private long                      volumeQuota       = 0;
-    private long                      volumeVoucherSize  = 0;
+    private long                      volumeQuota             = 0;
+    private long                      volumeVoucherSize       = 0;
+    private long                      volumeDefaultUserQuota  = 0;
+    private long                      volumeDefaultGroupQuota = 0;
 
     /**
      * Creates the volume quota manager and register at the mrc quota manager. Add a change listener to the volume info
@@ -60,12 +64,14 @@ public class VolumeQuotaManager {
         try {
             setVolumeQuota(volStorageManager.getVolumeQuota());
             setVolumeVoucherSize(volStorageManager.getVolumeVoucherSize());
+            setVolumeDefaultGroupQuota(volStorageManager.getVolumeDefaultGroupQuota());
+            setVolumeDefaultUserQuota(volStorageManager.getVolumeDefaultUserQuota());
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
 
         Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager loaded for volume: " + volumeId
-                + ". [volumeQuota=" + volumeQuota + ", volumeVoucherSize=" + volumeVoucherSize + "]");
+                + ". [volumeQuota=" + volumeQuota + ", ]");
     }
 
     public boolean checkVoucherAvailability(QuotaFileInformation quotaFileInformation) throws UserException {
@@ -263,6 +269,20 @@ public class VolumeQuotaManager {
 
         Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId + ") set voucher size to: "
                 + volumeVoucherSize);
+    }
+
+    public void setVolumeDefaultGroupQuota(long volumeDefaultGroupQuota) {
+        this.volumeDefaultGroupQuota = volumeDefaultGroupQuota;
+
+        Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
+                + ") set default group quota to: " + volumeDefaultGroupQuota);
+    }
+
+    public void setVolumeDefaultUserQuota(long volumeDefaultUserQuota) {
+        this.volumeDefaultUserQuota = volumeDefaultUserQuota;
+
+        Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
+                + ") set default user quota to: " + volumeDefaultUserQuota);
     }
 
     /**

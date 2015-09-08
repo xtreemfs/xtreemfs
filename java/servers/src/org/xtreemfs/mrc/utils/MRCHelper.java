@@ -126,7 +126,9 @@ public class MRCHelper {
             set_repl_update_policy,
             default_rp,
             quota,
-            vouchersize
+            vouchersize,
+            defaultuserquota,
+            defaultgroupquota
     }
     
     public enum FileType {
@@ -479,6 +481,12 @@ public class MRCHelper {
 
             case vouchersize:
                 return String.valueOf(sMan.getVolumeInfo().getVolumeVoucherSize());
+
+            case defaultgroupquota:
+                return String.valueOf(sMan.getVolumeInfo().getVolumeDefaultGroupQuota());
+
+            case defaultuserquota:
+                return String.valueOf(sMan.getVolumeInfo().getVolumeDefaultUserQuota());
             }
         }
         
@@ -854,6 +862,22 @@ public class MRCHelper {
                 throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "voucher size must be set on volume root");
 
             sMan.getVolumeInfo().setVolumeVoucherSize(Long.valueOf(value), update);
+
+            break;
+
+        case defaultgroupquota:
+            if (file.getId() != 1)
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "default group quota must be set on volume root");
+
+            sMan.getVolumeInfo().setVolumeDefaultGroupQuota(Long.valueOf(value), update);
+
+            break;
+
+        case defaultuserquota:
+            if (file.getId() != 1)
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "default user quota must be set on volume root");
+
+            sMan.getVolumeInfo().setVolumeDefaultUserQuota(Long.valueOf(value), update);
 
             break;
 

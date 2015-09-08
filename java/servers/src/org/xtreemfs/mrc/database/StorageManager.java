@@ -128,6 +128,10 @@ public interface StorageManager {
 
     public void setVolumeVoucherSize(long voucherSize, AtomicDBUpdate update) throws DatabaseException;
 
+    public void setVolumeDefaultUserQuota(long defaultUserQuota, AtomicDBUpdate update) throws DatabaseException;
+
+    public void setVolumeDefaultGroupQuota(long defaultGroupQuota, AtomicDBUpdate update) throws DatabaseException;
+
     public void setDefaultReplicationPolicy(long fileId, ReplicationPolicy defaultRp,
         AtomicDBUpdate update) throws DatabaseException;
     
@@ -160,6 +164,10 @@ public interface StorageManager {
     public long getVolumeUsedSpace() throws DatabaseException;
 
     public long getVolumeVoucherSize() throws DatabaseException;
+
+    public long getVolumeDefaultUserQuota() throws DatabaseException;
+
+    public long getVolumeDefaultGroupQuota() throws DatabaseException;
 
     public String getSoftlinkTarget(long fileId) throws DatabaseException;
     
