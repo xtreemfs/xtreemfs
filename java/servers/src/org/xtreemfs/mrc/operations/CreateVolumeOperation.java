@@ -161,10 +161,9 @@ public class CreateVolumeOperation extends MRCOperation {
             Thread thr = new Thread(rqThr);
             thr.start();
             
-            // FIXME(baerhold): Change to parameter - DONE: volData.getQuota() ?!
-            VolumeQuotaManager volumeQuotaManager = new VolumeQuotaManager(master.getVolumeManager().getStorageManager(
-                    volumeId), volumeId);
-            master.getMrcQuotaManager().addVolumeQuotaManager(volumeQuotaManager);
+            // create the quota manager for the new volume, which will register itself
+            new VolumeQuotaManager(master.getMrcQuotaManager(), master.getVolumeManager().getStorageManager(volumeId),
+                    volumeId);
 
         } catch (UserException exc) {
             if (Logging.isDebug())

@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.database.VolumeManager;
 
 /** TODO: Brief description of the purpose of this type and its relation to other types. */
 public class MRCQuotaManager {
@@ -22,8 +24,19 @@ public class MRCQuotaManager {
     public MRCQuotaManager() {
     }
 
-    public void loadVolumeQuotaManager() {
-        // TODO(baerhold): load from DB
+    /**
+     * Loads all existing volume quota manager from the database and initiates them.
+     * 
+     * @param volumeManager
+     * @throws Exception
+     */
+    public void initializeVolumeQuotaManager(VolumeManager volumeManager) throws Exception {
+        for (StorageManager storageManager : volumeManager.getStorageManagers()) {
+
+            VolumeQuotaManager volumeQuotaManager = new VolumeQuotaManager(this, storageManager, storageManager
+                    .getVolumeInfo().getId());
+            volumeQuotaManager.init();
+        }
     }
 
     public void addVolumeQuotaManager(VolumeQuotaManager volumeQuotaManager) throws Exception {
@@ -54,11 +67,6 @@ public class MRCQuotaManager {
         volQuotaManMap.remove(volumeId);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see java.lang.Object#toString()
-     */
     @Override
     public String toString() {
         return "MRCQuotaManager [volQuotaManMap=" + volQuotaManMap + "]";

@@ -68,7 +68,6 @@ import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.osdselection.OSDStatusManager;
 import org.xtreemfs.mrc.quota.MRCQuotaManager;
 import org.xtreemfs.mrc.quota.MRCVoucherManager;
-import org.xtreemfs.mrc.quota.VolumeQuotaManager;
 import org.xtreemfs.mrc.stages.OnCloseReplicationThread;
 import org.xtreemfs.mrc.stages.ProcessingStage;
 import org.xtreemfs.mrc.stages.XLocSetCoordinator;
@@ -397,13 +396,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             volumeManager.init();
             volumeManager.addVolumeChangeListener(osdMonitor);
 
-            for (StorageManager storageManager : volumeManager.getStorageManagers()) {
-
-                VolumeQuotaManager volumeQuotaManager = new VolumeQuotaManager(storageManager, storageManager
-                        .getVolumeInfo().getId());
-                volumeQuotaManager.init();
-                mrcQuotaManager.addVolumeQuotaManager(volumeQuotaManager);
-            }
+            mrcQuotaManager.initializeVolumeQuotaManager(volumeManager);
 
             heartbeatThread.initialize();
             heartbeatThread.start();
