@@ -24,6 +24,7 @@ public class VolumeQuotaManager {
 
     private final StorageManager      volStorageManager;
     private final QuotaChangeListener quotaChangeListener;
+    private final MRCQuotaManager     mrcQuotaManager;
 
     private final String              volumeId;
 
@@ -33,12 +34,19 @@ public class VolumeQuotaManager {
     private long                      volumeVoucherSize  = 0;
 
     /**
+     * Creates the volume quota manager and register at the mrc quota manager. Add a change listener to the volume info
+     * to get up to date information.
      * 
+     * @throws Exception
      */
-    public VolumeQuotaManager(StorageManager volStorageManager, String volumeId) {
+    public VolumeQuotaManager(MRCQuotaManager mrcQuotaManager, StorageManager volStorageManager, String volumeId)
+            throws Exception {
 
+        this.mrcQuotaManager = mrcQuotaManager;
         this.volStorageManager = volStorageManager;
         this.volumeId = volumeId;
+
+        mrcQuotaManager.addVolumeQuotaManager(this);
 
         quotaChangeListener = new QuotaChangeListener(this);
         volStorageManager.addVolumeChangeListener(quotaChangeListener);
@@ -47,12 +55,13 @@ public class VolumeQuotaManager {
     public void init() {
         try {
             setVolumeQuota(volStorageManager.getVolumeQuota());
+            setVolumeVoucherSize(volStorageManager.getVolumeVoucherSize());
         } catch (DatabaseException e) {
             e.printStackTrace();
         }
 
         Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager loaded for volume: " + volumeId
-                + ". [maxVolumeSpace=" + volumeQuota + "]");
+                + ". [volumeQuota=" + volumeQuota + ", volumeVoucherSize=" + volumeVoucherSize + "]");
     }
 
     public boolean checkVoucherAvailability() throws UserException {
@@ -147,6 +156,15 @@ public class VolumeQuotaManager {
                     "An error occured during the interaction with the database!");
         }
     }
+
+    /**
+     * Deletes the volumes quota manager by unregister itself at the mrc quota manager.
+     */
+    public void delete() {
+        mrcQuotaManager.removeVolumeQuotaManager(volumeId);
+    }
+
+    // Getter & Setter
 
     /**
      * @return the volumeName

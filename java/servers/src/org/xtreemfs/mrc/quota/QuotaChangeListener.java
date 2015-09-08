@@ -32,7 +32,7 @@ public class QuotaChangeListener implements VolumeChangeListener {
 
     @Override
     public void volumeDeleted(String volumeId) {
-        volumeQuotaManager.setActive(false);
+        volumeQuotaManager.delete();
     }
 
     @Override
