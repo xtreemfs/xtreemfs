@@ -23,6 +23,9 @@ import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.BufferBackedACLEntry;
 import org.xtreemfs.mrc.metadata.BufferBackedFileMetadata;
 import org.xtreemfs.mrc.metadata.BufferBackedFileVoucherClientInfo;
+import org.xtreemfs.mrc.metadata.BufferBackedOwnerQuotaInfo;
+import org.xtreemfs.mrc.metadata.BufferBackedOwnerQuotaInfo.OwnerType;
+import org.xtreemfs.mrc.metadata.BufferBackedOwnerQuotaInfo.QuotaInfo;
 import org.xtreemfs.mrc.metadata.BufferBackedRCMetadata;
 import org.xtreemfs.mrc.metadata.BufferBackedXAttr;
 import org.xtreemfs.mrc.metadata.FileMetadata;
@@ -492,6 +495,21 @@ public class BabuDBStorageHelper {
         String keyString = BabuDBStorageManager.FILE_VOUCHER_KEY_IDENTIFER + "." + fileId + ".c." + clientId;
 
         return keyString.getBytes();
+    }
+
+    /**
+     * Generates the key for the quota information quota, usedSpace or blockedSpace (QuotaInfo) for a user or group
+     * (OwnerType) combined with the ownerType id, e.g. userId as ownerId.
+     * 
+     * @param ownerType
+     * @param quotaInfo
+     * @param id
+     * @return
+     */
+    public static byte[] createOwnerQuotaInfoKey(OwnerType ownerType, QuotaInfo quotaInfo, String id) {
+        String key = BufferBackedOwnerQuotaInfo.QUOTA_KEY_IDENTIFIER + "." + ownerType.getDbAttrSubKey() + "." + id
+                + "." + quotaInfo.getDbAttrSubKey();
+        return key.getBytes();
     }
 
     public static short getXAttrCollisionNumber(byte[] key) {
