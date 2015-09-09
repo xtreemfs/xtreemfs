@@ -19,18 +19,21 @@ public class QuotaFileInformation {
     private final String ownerId;
     private final String ownerGroupId;
     private final long   filesize;
+    private final int    replicaCount;
 
     public QuotaFileInformation(String volumeId, FileMetadata fileMetadata) {
         this(volumeId, fileMetadata.getId(), fileMetadata.getOwnerId(), fileMetadata.getOwningGroupId(), fileMetadata
-                .getSize());
+                .getSize(), fileMetadata.getXLocList().getReplicaCount());
     }
 
-    public QuotaFileInformation(String volumeId, long fileId, String ownerId, String ownerGroupId, long filesize) {
+    public QuotaFileInformation(String volumeId, long fileId, String ownerId, String ownerGroupId, long filesize,
+            int replicaCount) {
         this.volumeId = volumeId;
         this.fileId = fileId;
         this.ownerId = ownerId;
         this.ownerGroupId = ownerGroupId;
         this.filesize = filesize;
+        this.replicaCount = replicaCount;
     }
 
     /**
@@ -77,5 +80,12 @@ public class QuotaFileInformation {
      */
     public long getFilesize() {
         return filesize;
+    }
+
+    /**
+     * @return the replicaCount
+     */
+    public int getReplicaCount() {
+        return replicaCount;
     }
 }

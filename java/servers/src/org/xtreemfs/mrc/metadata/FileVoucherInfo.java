@@ -40,4 +40,9 @@ public interface FileVoucherInfo {
      * @return the blockedSpace
      */
     public long getBlockedSpace();
+
+    /**
+     * @return the replica count
+     */
+    public long getReplicaCount();
 }

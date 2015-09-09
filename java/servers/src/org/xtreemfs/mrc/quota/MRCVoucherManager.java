@@ -30,7 +30,7 @@ import org.xtreemfs.mrc.metadata.FileVoucherInfo;
  */
 public class MRCVoucherManager {
 
-    private final static long     unlimitedVoucher = -1; // keep in sync with OSDVoucherManager
+    public final static long      unlimitedVoucher = -1; // keep in sync with OSDVoucherManager
 
     private final MRCQuotaManager mrcQuotaManager;
 
@@ -50,7 +50,7 @@ public class MRCVoucherManager {
 
             VolumeQuotaManager volumeQuotaManager = mrcQuotaManager.getVolumeQuotaManagerById(quotaFileInformation
                     .getVolumeId());
-            long voucherSize = volumeQuotaManager.getVoucher(update);
+            long voucherSize = volumeQuotaManager.getVoucher(quotaFileInformation, update);
 
             StorageManager storageManager = volumeQuotaManager.getVolStorageManager();
             synchronized (this) {
@@ -64,7 +64,7 @@ public class MRCVoucherManager {
                         assert (fileVoucherClientInfo == null); // it has to be null
 
                         fileVoucherInfo = new BufferBackedFileVoucherInfo(quotaFileInformation.getFileId(),
-                                quotaFileInformation.getFilesize(), voucherSize);
+                                quotaFileInformation.getFilesize(), quotaFileInformation.getReplicaCount(), voucherSize);
                     } else {
                         if (fileVoucherClientInfo == null) {
                             fileVoucherInfo.increaseClientCount();
@@ -115,7 +115,7 @@ public class MRCVoucherManager {
                     .getVolumeId());
 
             // ignore return value, because if no voucher is available, an exception will be thrown
-            volumeQuotaManager.checkVoucherAvailability();
+            volumeQuotaManager.checkVoucherAvailability(quotaFileInformation);
         }
     }
 
@@ -145,13 +145,20 @@ public class MRCVoucherManager {
                         FileVoucherInfo fileVoucherInfo = storageManager.getFileVoucherInfo(quotaFileInformation
                                 .getFileId());
 
+                        if (fileVoucherInfo == null) {
+                            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
+                                    "Invalid database structure: no general voucher information saved for fileId:"
+                                            + quotaFileInformation.getGlobalFileId());
+                        }
+
                         fileVoucherInfo.decreaseClientCount();
 
                         // if there is no open voucher anymore, clear general information and update quota information
                         if (fileVoucherInfo.getClientCount() == 0) {
+                            int replicaCount = quotaFileInformation.getReplicaCount();
                             long fileSizeDifference = fileSize - fileVoucherInfo.getFilesize();
-                            volumeQuotaManager.updateSpaceUsage(fileSizeDifference, fileVoucherInfo.getBlockedSpace(),
-                                    update);
+                            volumeQuotaManager.updateSpaceUsage(replicaCount * fileSizeDifference, replicaCount
+                                    * fileVoucherInfo.getBlockedSpace(), update);
                         }
 
                         storageManager.setFileVoucherInfo(fileVoucherInfo, update);
@@ -191,12 +198,15 @@ public class MRCVoucherManager {
 
                 FileVoucherInfo fileVoucherInfo = storageManager.getFileVoucherInfo(quotaFileInformation.getFileId());
 
+                int replicaCount = quotaFileInformation.getReplicaCount();
                 if (fileVoucherInfo != null) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, this,
                             "Delete file with voucher: " + quotaFileInformation.getGlobalFileId());
 
-                    volumeQuotaManager.updateSpaceUsage(-1 * fileVoucherInfo.getFilesize(),
-                            fileVoucherInfo.getBlockedSpace(), update);
+                    checkReplicaCount(fileVoucherInfo, replicaCount);
+
+                    volumeQuotaManager.updateSpaceUsage(-1 * replicaCount * fileVoucherInfo.getFilesize(), replicaCount
+                            * fileVoucherInfo.getBlockedSpace(), update);
 
                     // get all open client information and delete them
                     allFileVoucherClientInfo = storageManager.getAllFileVoucherClientInfo(quotaFileInformation
@@ -213,7 +223,8 @@ public class MRCVoucherManager {
 
                     // check for active volume quota manager and reduce used space by file size
                     if (volumeQuotaManager.isActive()) {
-                        volumeQuotaManager.updateSpaceUsage(-1 * quotaFileInformation.getFilesize(), 0, update);
+                        volumeQuotaManager.updateSpaceUsage(-1 * replicaCount * quotaFileInformation.getFilesize(), 0,
+                                update);
                     }
                 }
             } catch (DatabaseException e) {
@@ -260,7 +271,7 @@ public class MRCVoucherManager {
                 if (fileVoucherClientInfo != null) {
                     if (fileVoucherClientInfo.hasExpireTime(oldExpireTime)) {
 
-                        long voucherSize = volumeQuotaManager.getVoucher(update);
+                        long voucherSize = volumeQuotaManager.getVoucher(quotaFileInformation, update);
 
                         FileVoucherInfo fileVoucherInfo = storageManager.getFileVoucherInfo(quotaFileInformation
                                 .getFileId());
@@ -364,11 +375,21 @@ public class MRCVoucherManager {
         return create || truncate || write;
     }
 
-    /*
-     * (non-Javadoc)
+    /**
+     * Tries to match the replica count to the saved replica count in the general file voucher info and if it doesn't
+     * match, it will throw an exception
      * 
-     * @see java.lang.Object#toString()
+     * @param fileVoucherInfo
+     * @param replicaCount
+     * @throws UserException
      */
+    private void checkReplicaCount(FileVoucherInfo fileVoucherInfo, int replicaCount) throws UserException {
+        if (replicaCount != fileVoucherInfo.getReplicaCount()) {
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
+                    "Current replica count doesn't match the replica count on the first voucher creation.");
+        }
+    }
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();

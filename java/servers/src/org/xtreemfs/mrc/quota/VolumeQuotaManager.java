@@ -64,16 +64,17 @@ public class VolumeQuotaManager {
                 + ". [volumeQuota=" + volumeQuota + ", volumeVoucherSize=" + volumeVoucherSize + "]");
     }
 
-    public boolean checkVoucherAvailability() throws UserException {
-        return getVoucher(true, null) > -1;
+    public boolean checkVoucherAvailability(QuotaFileInformation quotaFileInformation) throws UserException {
+        long voucherSize = getVoucher(quotaFileInformation, true, null);
+        return voucherSize > 0 || voucherSize == MRCVoucherManager.unlimitedVoucher;
     }
 
-    public long getVoucher(AtomicDBUpdate update) throws UserException {
-        return getVoucher(false, update);
+    public long getVoucher(QuotaFileInformation quotaFileInformation, AtomicDBUpdate update) throws UserException {
+        return getVoucher(quotaFileInformation, false, update);
     }
 
-    // TODO: pass user and user group to calculate over all voucher
-    private synchronized long getVoucher(boolean test, AtomicDBUpdate update) throws UserException {
+    private synchronized long getVoucher(QuotaFileInformation quotaFileInformation, boolean test, AtomicDBUpdate update)
+            throws UserException {
 
         if (!active) {
             return 0;
@@ -82,25 +83,27 @@ public class VolumeQuotaManager {
         try {
             long usedSpace = volStorageManager.getVolumeUsedSpace();
             long blockedSpace = volStorageManager.getVolumeBlockedSpace();
+            int replicaCount = quotaFileInformation.getReplicaCount();
 
             long currentFreeSpace = volumeQuota - (usedSpace + blockedSpace);
-            if (currentFreeSpace <= 0) {
+            if ((currentFreeSpace / replicaCount) <= 0) {
                 throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "The quota of the volume \"" + volumeId
                         + "\" is reached");
             }
 
             long voucherSize = volumeVoucherSize;
-            if (volumeVoucherSize > currentFreeSpace) {
-                voucherSize = currentFreeSpace;
+            if ((replicaCount * volumeVoucherSize) > currentFreeSpace) {
+                voucherSize = currentFreeSpace / replicaCount;
             }
 
             // save voucherSize as blocked, if it isn't just a check
             if (!test) {
-                blockedSpace += voucherSize;
+                blockedSpace += replicaCount * voucherSize;
                 volStorageManager.setVolumeBlockedSpace(blockedSpace, update);
 
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
-                        + ") increased blocked space by: " + voucherSize + " to: " + blockedSpace);
+                        + ") increased blocked space by: " + replicaCount + " * " + voucherSize + " to: "
+                        + blockedSpace);
             }
 
             return voucherSize;

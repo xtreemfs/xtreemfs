@@ -15,13 +15,17 @@ import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper;
  */
 public class BufferBackedFileVoucherInfo extends BufferBackedIndexMetadata implements FileVoucherInfo {
 
-    private final static int valLength   = Integer.SIZE / Byte.SIZE + 2 * Long.SIZE / Byte.SIZE;
-    private final static int fsOffset    = Integer.SIZE / Byte.SIZE;
-    private final static int bsOffset    = fsOffset + Long.SIZE / Byte.SIZE;
+    private final static int valLength = 2 * Integer.SIZE / Byte.SIZE + 2 * Long.SIZE / Byte.SIZE;
+    private final static int ccOffset  = 0;
+    private final static int rcOffset  = ccOffset + Integer.SIZE / Byte.SIZE;
+    private final static int fsOffset  = rcOffset + Integer.SIZE / Byte.SIZE;
+    private final static int bsOffset  = fsOffset + Long.SIZE / Byte.SIZE;
 
-    private int              clientCount = 0;
-    private long             filesize    = 0;
+    private final long       filesize;
+    private final int        replicaCount;
+
     private long             blockedSpace;
+    private int              clientCount;
 
     /**
      * @param key
@@ -33,17 +37,20 @@ public class BufferBackedFileVoucherInfo extends BufferBackedIndexMetadata imple
         super(key, 0, key.length, val, 0, val.length);
 
         ByteBuffer tmp = ByteBuffer.wrap(val);
-        clientCount = tmp.getInt(0);
+        clientCount = tmp.getInt(ccOffset);
+        replicaCount = tmp.getInt(rcOffset);
         filesize = tmp.getLong(fsOffset);
         blockedSpace = tmp.getLong(bsOffset);
     }
 
-    public BufferBackedFileVoucherInfo(long fileId, long filesize, long blockedSpace) {
+    public BufferBackedFileVoucherInfo(long fileId, long filesize, int replicaCount, long blockedSpace) {
 
         super(null, 0, 0, null, 0, 0);
 
-        this.clientCount = 1;
+        this.replicaCount = replicaCount;
         this.filesize = filesize;
+
+        this.clientCount = 1;
         this.blockedSpace = blockedSpace;
 
         keyBuf = BabuDBStorageHelper.createFileVoucherInfoKey(fileId);
@@ -80,7 +87,8 @@ public class BufferBackedFileVoucherInfo extends BufferBackedIndexMetadata imple
             valBuf = new byte[valLength];
 
             ByteBuffer tmp = ByteBuffer.wrap(valBuf);
-            tmp.putInt(clientCount);
+            tmp.putInt(ccOffset, clientCount);
+            tmp.putInt(rcOffset, replicaCount);
             tmp.putLong(fsOffset, filesize);
             tmp.putLong(bsOffset, blockedSpace);
         }
@@ -111,5 +119,10 @@ public class BufferBackedFileVoucherInfo extends BufferBackedIndexMetadata imple
     @Override
     public long getBlockedSpace() {
         return blockedSpace;
+    }
+
+    @Override
+    public long getReplicaCount() {
+        return replicaCount;
     }
 }
