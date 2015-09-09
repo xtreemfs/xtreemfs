@@ -96,6 +96,8 @@ public class BufferBackedOwnerQuotaInfo extends BufferBackedIndexMetadata implem
 
     @Override
     public void setValue(long value) {
+        this.value = value;
+
         if (valBuf == null) {
             valLen = Long.SIZE / Byte.SIZE;
             valBuf = new byte[valLen];
