@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.xtreemfs.common.quota.QuotaConstants;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
@@ -23,9 +24,6 @@ import org.xtreemfs.osd.OSDRequestDispatcher;
  * is. Therefore, this class doesn't have to be thread-safe.
  */
 public class OSDVoucherManager {
-
-    // keep in sync with MRCVoucherManager
-    private final static long                     unlimitedVoucher      = -1;
 
     @SuppressWarnings("unused")
     // FIXME: remove unused?
@@ -41,7 +39,7 @@ public class OSDVoucherManager {
 
     public void registerFileVoucher(String fileId, String clientId, long expireTime, long voucherSize) {
 
-        if (voucherSize == unlimitedVoucher) {
+        if (voucherSize == QuotaConstants.unlimited) {
             return;
         }
 

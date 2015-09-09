@@ -9,6 +9,7 @@ package org.xtreemfs.mrc.quota;
 
 import java.util.Set;
 
+import org.xtreemfs.common.quota.QuotaConstants;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.UserException;
@@ -29,8 +30,6 @@ import org.xtreemfs.mrc.metadata.FileVoucherInfo;
  * this. False: XLockCoordinator handling add/remove replica works in a separate thread.
  */
 public class MRCVoucherManager {
-
-    public final static long      unlimitedVoucher = -1; // keep in sync with OSDVoucherManager
 
     private final MRCQuotaManager mrcQuotaManager;
 
@@ -107,7 +106,8 @@ public class MRCVoucherManager {
                         "An error occured during the interaction with the database!");
             }
         } else {
-            newMaxFileSize = unlimitedVoucher; // FIXME(baerhold): export default for "unlimited" to proper place
+            newMaxFileSize = QuotaConstants.unlimited; // FIXME(baerhold): export default for "unlimited" to proper
+                                                       // place
         }
 
         return newMaxFileSize;
