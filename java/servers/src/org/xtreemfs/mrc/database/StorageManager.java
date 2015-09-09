@@ -15,6 +15,7 @@ import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.FileVoucherClientInfo;
 import org.xtreemfs.mrc.metadata.FileVoucherInfo;
+import org.xtreemfs.mrc.metadata.OwnerQuotaInfo;
 import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XAttr;
@@ -132,6 +133,18 @@ public interface StorageManager {
 
     public void setVolumeDefaultGroupQuota(long defaultGroupQuota, AtomicDBUpdate update) throws DatabaseException;
 
+    public void setUserQuota(OwnerQuotaInfo ownerQuotaInfo, AtomicDBUpdate update) throws DatabaseException;
+
+    public void setUserUsedSpace(OwnerQuotaInfo ownerQuotaInfo, AtomicDBUpdate update) throws DatabaseException;
+
+    public void setUserBlockedSpace(OwnerQuotaInfo ownerQuotaInfo, AtomicDBUpdate update) throws DatabaseException;
+
+    public void setGroupQuota(OwnerQuotaInfo ownerQuotaInfo, AtomicDBUpdate update) throws DatabaseException;
+
+    public void setGroupusedSpace(OwnerQuotaInfo ownerQuotaInfo, AtomicDBUpdate update) throws DatabaseException;
+
+    public void setGroupBlockedSpace(OwnerQuotaInfo ownerQuotaInfo, AtomicDBUpdate update) throws DatabaseException;
+
     public void setDefaultReplicationPolicy(long fileId, ReplicationPolicy defaultRp,
         AtomicDBUpdate update) throws DatabaseException;
     
@@ -168,6 +181,18 @@ public interface StorageManager {
     public long getVolumeDefaultUserQuota() throws DatabaseException;
 
     public long getVolumeDefaultGroupQuota() throws DatabaseException;
+
+    public OwnerQuotaInfo getUserQuota(String userId) throws DatabaseException;
+
+    public OwnerQuotaInfo getUserUsedSpace(String userId) throws DatabaseException;
+
+    public OwnerQuotaInfo getUserBlockedSpace(String userId) throws DatabaseException;
+
+    public OwnerQuotaInfo getGroupQuota(String groupId) throws DatabaseException;
+
+    public OwnerQuotaInfo getGroupUsedSpace(String groupId) throws DatabaseException;
+
+    public OwnerQuotaInfo getGroupBlockedSpace(String groupId) throws DatabaseException;
 
     public String getSoftlinkTarget(long fileId) throws DatabaseException;
     

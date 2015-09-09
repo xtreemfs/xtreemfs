@@ -33,10 +33,14 @@ import org.xtreemfs.mrc.metadata.BufferBackedACLEntry;
 import org.xtreemfs.mrc.metadata.BufferBackedFileMetadata;
 import org.xtreemfs.mrc.metadata.BufferBackedFileVoucherClientInfo;
 import org.xtreemfs.mrc.metadata.BufferBackedFileVoucherInfo;
+import org.xtreemfs.mrc.metadata.BufferBackedOwnerQuotaInfo;
+import org.xtreemfs.mrc.metadata.BufferBackedOwnerQuotaInfo.OwnerType;
+import org.xtreemfs.mrc.metadata.BufferBackedOwnerQuotaInfo.QuotaInfo;
 import org.xtreemfs.mrc.metadata.BufferBackedXAttr;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.FileVoucherClientInfo;
 import org.xtreemfs.mrc.metadata.FileVoucherInfo;
+import org.xtreemfs.mrc.metadata.OwnerQuotaInfo;
 import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XAttr;
@@ -357,6 +361,49 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
 
         } catch (DatabaseException exc) {
             throw exc;
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
+    public OwnerQuotaInfo getGroupQuota(String groupId) throws DatabaseException {
+        return getOwnerQuotaInfo(OwnerType.GROUP, QuotaInfo.QUOTA, groupId);
+    }
+
+    @Override
+    public OwnerQuotaInfo getGroupBlockedSpace(String groupId) throws DatabaseException {
+        return getOwnerQuotaInfo(OwnerType.GROUP, QuotaInfo.BLOCKED, groupId);
+    }
+
+    @Override
+    public OwnerQuotaInfo getGroupUsedSpace(String groupId) throws DatabaseException {
+        return getOwnerQuotaInfo(OwnerType.GROUP, QuotaInfo.USED, groupId);
+    }
+
+    @Override
+    public OwnerQuotaInfo getUserQuota(String userId) throws DatabaseException {
+        return getOwnerQuotaInfo(OwnerType.USER, QuotaInfo.QUOTA, userId);
+    }
+
+    @Override
+    public OwnerQuotaInfo getUserBlockedSpace(String userId) throws DatabaseException {
+        return getOwnerQuotaInfo(OwnerType.USER, QuotaInfo.BLOCKED, userId);
+    }
+
+    @Override
+    public OwnerQuotaInfo getUserUsedSpace(String userId) throws DatabaseException {
+        return getOwnerQuotaInfo(OwnerType.USER, QuotaInfo.USED, userId);
+    }
+
+    private OwnerQuotaInfo getOwnerQuotaInfo(OwnerType ownerType, QuotaInfo quotaInfo, String id)
+            throws DatabaseException {
+        try {
+            byte[] key = BabuDBStorageHelper.createOwnerQuotaInfoKey(ownerType, quotaInfo, id);
+            byte[] value = database.lookup(VOLUME_INDEX, key, null).get();
+
+            return value == null ? null : new BufferBackedOwnerQuotaInfo(key, value);
+
         } catch (Exception exc) {
             throw new DatabaseException(exc);
         }
@@ -722,6 +769,36 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
 
     @Override
     public void setVolumeDefaultUserQuota(long defaultUserQuota, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setGroupQuota(OwnerQuotaInfo ownerQuotaInfo, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setGroupBlockedSpace(OwnerQuotaInfo ownerQuotaInfo, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setGroupusedSpace(OwnerQuotaInfo ownerQuotaInfo, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setUserQuota(OwnerQuotaInfo ownerQuotaInfo, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setUserBlockedSpace(OwnerQuotaInfo ownerQuotaInfo, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setUserUsedSpace(OwnerQuotaInfo ownerQuotaInfo, AtomicDBUpdate update) throws DatabaseException {
         throwException();
     }
 
