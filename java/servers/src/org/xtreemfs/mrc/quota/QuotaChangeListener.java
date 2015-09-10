@@ -25,6 +25,8 @@ public class QuotaChangeListener implements VolumeChangeListener {
         try {
             volumeQuotaManager.setVolumeQuota(vol.getVolumeQuota());
             volumeQuotaManager.setVolumeVoucherSize(vol.getVolumeVoucherSize());
+            volumeQuotaManager.setVolumeDefaultGroupQuota(vol.getVolumeDefaultGroupQuota());
+            volumeQuotaManager.setVolumeDefaultUserQuota(vol.getVolumeDefaultUserQuota());
         } catch (DatabaseException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
         }
