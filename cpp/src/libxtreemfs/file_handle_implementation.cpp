@@ -190,9 +190,6 @@ int FileHandleImplementation::Read(
   boost::dynamic_bitset<> successful_reads(operations.size());
   size_t received_data = 0;
   size_t stripe_size = (*striping_policies.begin())->stripe_size() * 1024;
-  unsigned int m = (*striping_policies.begin())->parity_width(); // parith width
-  unsigned int n = (*striping_policies.begin())->width(); // overall stripe width
-  unsigned int k = n - m; // data stripe width
   bool erasure = false;
 
   UUIDIterator* uuid_iterator;
@@ -233,7 +230,8 @@ int FileHandleImplementation::Read(
         // skip coding reads on the first pass; assume everything will go fine and all OSDs will
         // answer
         if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-          Logging::log->getLog(LEVEL_DEBUG) << "skipping auxilliary read " << j % n << " in line " << j / n << endl;
+          unsigned int n = (*striping_policies.begin())->width(); // overall stripe width
+          Logging::log->getLog(LEVEL_DEBUG) << "skipping auxiliary read " << j % n << " in line " << j / n << endl;
         }
         continue;
       }
@@ -257,10 +255,6 @@ int FileHandleImplementation::Read(
             operations[j].req_size = op_received_data;
             successful_reads[j] = 1;
             cout << "success " << op_received_data << " bytes read from op " << j << endl;
-            if (op_received_data < stripe_size) {
-              memset(operations[j].data + op_received_data, 0 , stripe_size - op_received_data);
-              cout << "less then stripe_size (" << stripe_size << ") data received...setting rest of data buffer to zero for decoding" << endl;
-            }
         // }
       } catch(IOException &e) {
         cout << "\tfailed" << endl;
@@ -276,7 +270,7 @@ int FileHandleImplementation::Read(
           throw e;
         }
         cout << "caught exception " << e.what() << endl;
-      } catch (InternalServerErrorException &e){
+      } catch (InternalServerErrorException &e) {
         if (Logging::log->loggingActive(LEVEL_DEBUG)) {
           Logging::log->getLog(LEVEL_DEBUG) << "failed read operation" << endl;
         }
@@ -284,6 +278,7 @@ int FileHandleImplementation::Read(
           if (Logging::log->loggingActive(LEVEL_DEBUG)) {
             Logging::log->getLog(LEVEL_DEBUG) << "parity data exists...trying to finish read operation" << endl;
           }
+          erasure = true;
         } else {
           throw e;
         }
@@ -305,18 +300,42 @@ int FileHandleImplementation::Read(
       if (Logging::log->loggingActive(LEVEL_DEBUG)) {
         Logging::log->getLog(LEVEL_DEBUG) << "reading coding object " << j << endl;
       }
-      size_t op_received_data =
-        ReadFromOSD(uuid_iterator, file_credentials, operations[j].obj_number,
-            operations[j].data, operations[j].req_offset,
-            operations[j].req_size);
-      received_data += op_received_data;
-      // set operations req_size to actual received data
-      operations[j].req_size = op_received_data;
-      successful_reads[j] = 1;
-      cout << "success " << op_received_data << " bytes read from op " << j << endl;
-      if (op_received_data < stripe_size) {
-        memset(operations[j].data + op_received_data, 0 , stripe_size - op_received_data);
-        cout << "less then stripe_size (" << stripe_size << ") data received...setting rest of data buffer to zero for decoding" << endl;
+      try {
+        size_t op_received_data =
+          ReadFromOSD(uuid_iterator, file_credentials, operations[j].obj_number,
+              operations[j].data, operations[j].req_offset,
+              operations[j].req_size);
+        received_data += op_received_data;
+        // set operations req_size to actual received data
+        operations[j].req_size = op_received_data;
+        successful_reads[j] = 1;
+        cout << "success " << op_received_data << " bytes read from op " << j << endl;
+      } catch(IOException &e) {
+        cout << "\tfailed" << endl;
+        if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+          Logging::log->getLog(LEVEL_DEBUG) << "failed read operation" << endl;
+        }
+        if ((*striping_policies.begin())->parity_width() > 0) {
+          if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+            Logging::log->getLog(LEVEL_DEBUG) << "parity data exists...trying to finish read operation" << endl;
+          }
+          erasure = true;
+        } else {
+          throw e;
+        }
+        cout << "caught exception " << e.what() << endl;
+      } catch (InternalServerErrorException &e) {
+        if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+          Logging::log->getLog(LEVEL_DEBUG) << "failed read operation" << endl;
+        }
+        if ((*striping_policies.begin())->parity_width() > 0) {
+          if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+            Logging::log->getLog(LEVEL_DEBUG) << "parity data exists...trying to finish read operation" << endl;
+          }
+          erasure = true;
+        } else {
+          throw e;
+        }
       }
     }
   }
@@ -337,9 +356,8 @@ int FileHandleImplementation::Read(
     }
   }
 
-  size_t read_data = received_data;
-  read_data = translator->ProcessReads(&operations, buf, count, offset, &successful_reads,
-      striping_policies, received_data, erasure);
+  received_data = translator->ProcessReads(&operations, buf, count, offset, &successful_reads,
+      striping_policies, erasure);
   for (int i = 0; i < operations.size(); i++) {
     if (operations[i].owns_data) {
       cout << "deleting coding buffers after read" << endl;
@@ -348,8 +366,8 @@ int FileHandleImplementation::Read(
   }
   // exit(1);
 
-  cout << "returning " << read_data << " bytes; received " << received_data << endl;
-  return read_data;
+  cout << "returning " << received_data << " bytes; received " << received_data << endl;
+  return received_data;
 }
   // void getFileSize(
   //         UUIDIterator* uuid_iterator,

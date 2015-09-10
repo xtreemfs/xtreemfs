@@ -82,10 +82,13 @@ size_t StripeTranslatorRaid0::ProcessReads(
     uint64_t offset,
     boost::dynamic_bitset<>* successful_reads,
     PolicyContainer policies,
-    size_t received_data,
     bool erasure
   ) const {
   // nothing to do here
+  size_t received_data = 0;
+  for (int i = 0; i < read_ops->size(); i++) {
+    received_data += read_ops->at(i).req_size;
+  }
   return received_data;
 }
 

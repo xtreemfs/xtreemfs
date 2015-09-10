@@ -97,7 +97,6 @@ class StripeTranslator {
           uint64_t offset,
           boost::dynamic_bitset<>* sucessful_reads,
           PolicyContainer policies,
-          size_t received_data,
           bool erasure
           ) const = 0;
 };

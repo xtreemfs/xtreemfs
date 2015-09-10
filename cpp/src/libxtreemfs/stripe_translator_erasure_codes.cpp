@@ -167,10 +167,7 @@ void StripeTranslatorErasureCodes::TranslateReadRequest(
   // number of data OSDs
   unsigned int k = n - m;
   size_t obj_number = 0;
-  // index where data reads are inserted...corresponds to the minimum number of reads when no
-  // erasures are present
-  size_t data_reads = 0;
-  size_t size_n_offset = size + offset;
+  size_t op_end = size + offset; // the end of operation
 
   cout << endl<< "translating new read request" << endl;
   cout << "size: " << size << " offset: " << offset << endl;
@@ -198,8 +195,8 @@ void StripeTranslatorErasureCodes::TranslateReadRequest(
       std::vector<size_t> osd_offsets;
       osd_offsets.push_back(i);
 
-      cout << "offset: " << offset << " stripe_size: " << stripe_size << " size_n_offset: " << size_n_offset << endl;
-      if (offset >= (int64_t) stripe_size || size_n_offset == 0) {
+      cout << "offset: " << offset << " stripe_size: " << stripe_size << " op_end: " << op_end << endl;
+      if (offset >= stripe_size || op_end == 0) {
         operations->push_back(
             ReadOperation(obj_number, osd_offsets, stripe_size, 0,
               new char[stripe_size], true, true));
@@ -210,9 +207,8 @@ void StripeTranslatorErasureCodes::TranslateReadRequest(
               new char[stripe_size], true));
         cout << "pushing mandatory read" << endl;
       }
-      offset -= min(offset, (int64_t) stripe_size);
-      size_n_offset -= min(size_n_offset, stripe_size);
-      data_reads++;
+      offset -= min(offset, stripe_size);
+      op_end -= min(op_end, stripe_size);
       obj_number++;
     }
 
@@ -239,7 +235,6 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
     uint64_t offset,
     boost::dynamic_bitset<>* successful_reads,
     PolicyContainer policies,
-    size_t received_data,
     bool erasure) const {
 
   // number of OSDs
@@ -290,6 +285,13 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
           // push i since i is the position int the current line
           erasures.push_back(i);
         } else {
+          size_t req_size = operations->at(data_read).req_size;
+          // pad data with zeros if request is shorter then stripe_size. zeros act as neutral
+          // element in reconstruction
+          if (req_size < stripe_size) {
+            memset(operations->at(data_read).data + req_size, 0 , stripe_size - req_size);
+            cout << "less then stripe_size (" << stripe_size << ") data received...setting rest of data buffer to zero for decoding" << endl;
+          }
           cout << "copy " << stripe_size << " bytes from op " << data_read << " to data device " << (i) << endl;
           memcpy(data[i], operations->at(data_read).data, stripe_size);
         }
@@ -303,14 +305,25 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
           // push i since i is the position int the current line
           erasures.push_back(i);
         } else {
+          size_t req_size = operations->at(code_read).req_size;
+          // pad data with zeros if request is shorter then stripe_size. zeros act as neutral
+          // element in reconstruction
+          if (req_size < stripe_size) {
+            memset(operations->at(code_read).data + req_size, 0 , stripe_size - req_size);
+            cout << "less then stripe_size (" << stripe_size << ") data received...setting rest of data buffer to zero for decoding" << endl;
+          }
           cout << "copy data from op " << code_read << " to code device " << (i) << endl;
           memcpy(coding[i], operations->at(code_read).data, stripe_size);
         }
       }
 
       // exit(1);
-      cout << "decoding line " << l << endl;
-      this->Decode(k, m, w, data, coding, erasures, stripe_size);
+      if (erasures.size() <= m) {
+        cout << "decoding line " << l << endl;
+        this->Decode(k, m, w, data, coding, erasures, stripe_size);
+      } else {
+        throw new IOException;
+      }
     }
 
     while (offset >= k * stripe_size) {
@@ -354,7 +367,6 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
     delete[] coding[i];
   }
 
-  cout << received_data << " have been received" << endl;
   return buf_pos;
 }
 

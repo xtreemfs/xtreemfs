@@ -40,7 +40,6 @@ class StripeTranslatorErasureCodes : public StripeTranslator {
           uint64_t offset,
           boost::dynamic_bitset<>* successful_reads,
           PolicyContainer policies,
-          size_t received_data,
           bool erasure
           ) const;
 
