@@ -8,6 +8,8 @@ package org.xtreemfs.common.quota;
 
 public class QuotaConstants {
 
-    public final static long unlimited = -1;
+    public final static long unlimitedVoucher = -1;
+    public final static long unlimitedQuota   = 0;
+    public final static long noQuota          = -1;
 
 }

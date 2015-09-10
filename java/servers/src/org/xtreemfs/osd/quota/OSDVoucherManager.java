@@ -39,7 +39,7 @@ public class OSDVoucherManager {
 
     public void registerFileVoucher(String fileId, String clientId, long expireTime, long voucherSize) {
 
-        if (voucherSize == QuotaConstants.unlimited) {
+        if (voucherSize == QuotaConstants.unlimitedVoucher) {
             return;
         }
 

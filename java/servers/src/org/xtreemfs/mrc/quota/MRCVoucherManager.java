@@ -106,8 +106,7 @@ public class MRCVoucherManager {
                         "An error occured during the interaction with the database!");
             }
         } else {
-            newMaxFileSize = QuotaConstants.unlimited; // FIXME(baerhold): export default for "unlimited" to proper
-                                                       // place
+            newMaxFileSize = QuotaConstants.unlimitedVoucher;
         }
 
         return newMaxFileSize;
