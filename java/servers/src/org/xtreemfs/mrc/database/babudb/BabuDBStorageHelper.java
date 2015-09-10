@@ -23,9 +23,6 @@ import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.BufferBackedACLEntry;
 import org.xtreemfs.mrc.metadata.BufferBackedFileMetadata;
 import org.xtreemfs.mrc.metadata.BufferBackedFileVoucherClientInfo;
-import org.xtreemfs.mrc.metadata.BufferBackedOwnerQuotaInfo;
-import org.xtreemfs.mrc.metadata.BufferBackedOwnerQuotaInfo.OwnerType;
-import org.xtreemfs.mrc.metadata.BufferBackedOwnerQuotaInfo.QuotaInfo;
 import org.xtreemfs.mrc.metadata.BufferBackedRCMetadata;
 import org.xtreemfs.mrc.metadata.BufferBackedXAttr;
 import org.xtreemfs.mrc.metadata.FileMetadata;
@@ -283,6 +280,61 @@ public class BabuDBStorageHelper {
 
     }
 
+    public enum OwnerType {
+
+        USER("u"), GROUP("g");
+
+        private final String dbAttrSubKey;
+
+        private OwnerType(String dbAttrSubKey) {
+            this.dbAttrSubKey = dbAttrSubKey;
+        }
+
+        public static OwnerType getByDbAttrSubkey(String dbAttrSubkey) {
+            for (OwnerType ownerType : OwnerType.values()) {
+                if (ownerType.getDbAttrSubKey().equals(dbAttrSubkey)) {
+                    return ownerType;
+                }
+            }
+
+            return null;
+        }
+
+        /**
+         * @return the dbAttrSubKey
+         */
+        public String getDbAttrSubKey() {
+            return dbAttrSubKey;
+        }
+    }
+
+    public enum QuotaInfo {
+        QUOTA("q"), USED("u"), BLOCKED("b");
+
+        private final String dbAttrSubKey;
+
+        private QuotaInfo(String dbAttrSubKey) {
+            this.dbAttrSubKey = dbAttrSubKey;
+        }
+
+        public static QuotaInfo getByDbAttrSubkey(String dbAttrSubkey) {
+            for (QuotaInfo quotaInfo : QuotaInfo.values()) {
+                if (quotaInfo.getDbAttrSubKey().equals(dbAttrSubkey)) {
+                    return quotaInfo;
+                }
+            }
+
+            return null;
+        }
+
+        /**
+         * @return the dbAttrSubKey
+         */
+        public String getDbAttrSubKey() {
+            return dbAttrSubKey;
+        }
+    }
+
     public static byte[] getLastAssignedFileId(Database database) throws BabuDBException {
         
         byte[] bytes = database.lookup(BabuDBStorageManager.VOLUME_INDEX, BabuDBStorageManager.LAST_ID_KEY,
@@ -507,7 +559,7 @@ public class BabuDBStorageHelper {
      * @return
      */
     public static byte[] createOwnerQuotaInfoKey(OwnerType ownerType, QuotaInfo quotaInfo, String id) {
-        String key = BufferBackedOwnerQuotaInfo.QUOTA_KEY_IDENTIFIER + "." + ownerType.getDbAttrSubKey() + "." + id
+        String key = BabuDBStorageManager.QUOTA_KEY_IDENTIFIER + "." + ownerType.getDbAttrSubKey() + "." + id
                 + "." + quotaInfo.getDbAttrSubKey();
         return key.getBytes();
     }

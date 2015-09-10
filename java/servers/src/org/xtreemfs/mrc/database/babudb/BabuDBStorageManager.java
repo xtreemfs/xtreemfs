@@ -27,6 +27,7 @@ import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.babudb.index.DefaultByteRangeComparator;
 import org.xtreemfs.babudb.snapshots.DefaultSnapshotConfig;
 import org.xtreemfs.babudb.snapshots.SnapshotConfig;
+import org.xtreemfs.common.quota.QuotaConstants;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
@@ -37,15 +38,14 @@ import org.xtreemfs.mrc.database.VolumeChangeListener;
 import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.ACLIterator;
 import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.FileVoucherClientInfoIterator;
+import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.OwnerType;
+import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.QuotaInfo;
 import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.XAttrIterator;
 import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.BufferBackedACLEntry;
 import org.xtreemfs.mrc.metadata.BufferBackedFileMetadata;
 import org.xtreemfs.mrc.metadata.BufferBackedFileVoucherClientInfo;
 import org.xtreemfs.mrc.metadata.BufferBackedFileVoucherInfo;
-import org.xtreemfs.mrc.metadata.BufferBackedOwnerQuotaInfo;
-import org.xtreemfs.mrc.metadata.BufferBackedOwnerQuotaInfo.OwnerType;
-import org.xtreemfs.mrc.metadata.BufferBackedOwnerQuotaInfo.QuotaInfo;
 import org.xtreemfs.mrc.metadata.BufferBackedStripingPolicy;
 import org.xtreemfs.mrc.metadata.BufferBackedXAttr;
 import org.xtreemfs.mrc.metadata.BufferBackedXLoc;
@@ -53,7 +53,6 @@ import org.xtreemfs.mrc.metadata.BufferBackedXLocList;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.FileVoucherClientInfo;
 import org.xtreemfs.mrc.metadata.FileVoucherInfo;
-import org.xtreemfs.mrc.metadata.OwnerQuotaInfo;
 import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XAttr;
@@ -88,6 +87,8 @@ public class BabuDBStorageManager implements StorageManager {
     public static final String               FILE_VOUCHER_KEY_IDENTIFER = "v";           // TODO(baerhold) copy to
                                                                                           // Snapshot
 
+    public static final String               QUOTA_KEY_IDENTIFIER       = "q";
+    
     private static final String              DEFAULT_SP_ATTR_NAME       = "sp";
     
     private static final String              DEFAULT_RP_ATTR_NAME       = "rp";
@@ -724,42 +725,46 @@ public class BabuDBStorageManager implements StorageManager {
     }
 
     @Override
-    public OwnerQuotaInfo getGroupQuota(String groupId) throws DatabaseException {
-        return getOwnerQuotaInfo(OwnerType.GROUP, QuotaInfo.QUOTA, groupId);
+    public long getGroupQuota(String groupId) throws DatabaseException {
+        return getOwnerQuotaInfo(OwnerType.GROUP, QuotaInfo.QUOTA, groupId, QuotaConstants.noQuota);
     }
 
     @Override
-    public OwnerQuotaInfo getGroupBlockedSpace(String groupId) throws DatabaseException {
-        return getOwnerQuotaInfo(OwnerType.GROUP, QuotaInfo.BLOCKED, groupId);
+    public long getGroupBlockedSpace(String groupId) throws DatabaseException {
+        return getOwnerQuotaInfo(OwnerType.GROUP, QuotaInfo.BLOCKED, groupId, 0);
     }
 
     @Override
-    public OwnerQuotaInfo getGroupUsedSpace(String groupId) throws DatabaseException {
-        return getOwnerQuotaInfo(OwnerType.GROUP, QuotaInfo.USED, groupId);
+    public long getGroupUsedSpace(String groupId) throws DatabaseException {
+        return getOwnerQuotaInfo(OwnerType.GROUP, QuotaInfo.USED, groupId, 0);
     }
 
     @Override
-    public OwnerQuotaInfo getUserQuota(String userId) throws DatabaseException {
-        return getOwnerQuotaInfo(OwnerType.USER, QuotaInfo.QUOTA, userId);
+    public long getUserQuota(String userId) throws DatabaseException {
+        return getOwnerQuotaInfo(OwnerType.USER, QuotaInfo.QUOTA, userId, QuotaConstants.noQuota);
     }
 
     @Override
-    public OwnerQuotaInfo getUserBlockedSpace(String userId) throws DatabaseException {
-        return getOwnerQuotaInfo(OwnerType.USER, QuotaInfo.BLOCKED, userId);
+    public long getUserBlockedSpace(String userId) throws DatabaseException {
+        return getOwnerQuotaInfo(OwnerType.USER, QuotaInfo.BLOCKED, userId, 0);
     }
 
     @Override
-    public OwnerQuotaInfo getUserUsedSpace(String userId) throws DatabaseException {
-        return getOwnerQuotaInfo(OwnerType.USER, QuotaInfo.USED, userId);
+    public long getUserUsedSpace(String userId) throws DatabaseException {
+        return getOwnerQuotaInfo(OwnerType.USER, QuotaInfo.USED, userId, 0);
     }
 
-    private OwnerQuotaInfo getOwnerQuotaInfo(OwnerType ownerType, QuotaInfo quotaInfo, String id)
+    private long getOwnerQuotaInfo(OwnerType ownerType, QuotaInfo quotaInfo, String id, long defaultValue)
             throws DatabaseException {
         try {
             byte[] key = BabuDBStorageHelper.createOwnerQuotaInfoKey(ownerType, quotaInfo, id);
             byte[] value = database.lookup(VOLUME_INDEX, key, null).get();
 
-            return value == null ? null : new BufferBackedOwnerQuotaInfo(key, value);
+            if (value == null)
+                return defaultValue;
+            else {
+                return Long.valueOf(new String(value));
+            }
 
         } catch (Exception exc) {
             throw new DatabaseException(exc);
@@ -1052,65 +1057,60 @@ public class BabuDBStorageManager implements StorageManager {
     }
 
     @Override
-    public void setGroupQuota(OwnerQuotaInfo ownerQuotaInfo, AtomicDBUpdate update) throws DatabaseException {
+    public void setGroupQuota(String groupId, Long quota, AtomicDBUpdate update) throws DatabaseException {
 
-        assert (ownerQuotaInfo.getOwnerType().equals(OwnerType.GROUP));
-        assert (ownerQuotaInfo.getQuotaInfo().equals(QuotaInfo.QUOTA));
+        assert (groupId != null && groupId.isEmpty());
 
-        setOwnerQuotaInfo(ownerQuotaInfo, update);
+        setOwnerQuotaInfo(groupId, quota, OwnerType.GROUP, QuotaInfo.QUOTA, update);
     }
 
     @Override
-    public void setGroupBlockedSpace(OwnerQuotaInfo ownerQuotaInfo, AtomicDBUpdate update) throws DatabaseException {
+    public void setGroupBlockedSpace(String groupId, Long blockedSpace, AtomicDBUpdate update) throws DatabaseException {
 
-        assert (ownerQuotaInfo.getOwnerType().equals(OwnerType.GROUP));
-        assert (ownerQuotaInfo.getQuotaInfo().equals(QuotaInfo.BLOCKED));
+        assert (groupId != null && groupId.isEmpty());
 
-        setOwnerQuotaInfo(ownerQuotaInfo, update);
+        setOwnerQuotaInfo(groupId, blockedSpace, OwnerType.GROUP, QuotaInfo.BLOCKED, update);
     }
 
     @Override
-    public void setGroupusedSpace(OwnerQuotaInfo ownerQuotaInfo, AtomicDBUpdate update) throws DatabaseException {
+    public void setGroupUsedSpace(String groupId, Long usedSpace, AtomicDBUpdate update) throws DatabaseException {
 
-        assert (ownerQuotaInfo.getOwnerType().equals(OwnerType.GROUP));
-        assert (ownerQuotaInfo.getQuotaInfo().equals(QuotaInfo.USED));
+        assert (groupId != null && groupId.isEmpty());
 
-        setOwnerQuotaInfo(ownerQuotaInfo, update);
+        setOwnerQuotaInfo(groupId, usedSpace, OwnerType.GROUP, QuotaInfo.USED, update);
     }
 
     @Override
-    public void setUserQuota(OwnerQuotaInfo ownerQuotaInfo, AtomicDBUpdate update) throws DatabaseException {
+    public void setUserQuota(String userId, Long quota, AtomicDBUpdate update) throws DatabaseException {
 
-        assert (ownerQuotaInfo.getOwnerType().equals(OwnerType.USER));
-        assert (ownerQuotaInfo.getQuotaInfo().equals(QuotaInfo.QUOTA));
+        assert (userId != null && userId.isEmpty());
 
-        setOwnerQuotaInfo(ownerQuotaInfo, update);
+        setOwnerQuotaInfo(userId, quota, OwnerType.USER, QuotaInfo.QUOTA, update);
     }
 
     @Override
-    public void setUserBlockedSpace(OwnerQuotaInfo ownerQuotaInfo, AtomicDBUpdate update) throws DatabaseException {
+    public void setUserBlockedSpace(String userId, Long blockedSpace, AtomicDBUpdate update) throws DatabaseException {
 
-        assert (ownerQuotaInfo.getOwnerType().equals(OwnerType.USER));
-        assert (ownerQuotaInfo.getQuotaInfo().equals(QuotaInfo.BLOCKED));
+        assert (userId != null && userId.isEmpty());
 
-        setOwnerQuotaInfo(ownerQuotaInfo, update);
+        setOwnerQuotaInfo(userId, blockedSpace, OwnerType.USER, QuotaInfo.BLOCKED, update);
     }
 
     @Override
-    public void setUserUsedSpace(OwnerQuotaInfo ownerQuotaInfo, AtomicDBUpdate update) throws DatabaseException {
+    public void setUserUsedSpace(String userId, Long usedSpace, AtomicDBUpdate update) throws DatabaseException {
 
-        assert (ownerQuotaInfo.getOwnerType().equals(OwnerType.USER));
-        assert (ownerQuotaInfo.getQuotaInfo().equals(QuotaInfo.USED));
+        assert (userId != null && userId.isEmpty());
 
-        setOwnerQuotaInfo(ownerQuotaInfo, update);
+        setOwnerQuotaInfo(userId, usedSpace, OwnerType.USER, QuotaInfo.USED, update);
     }
 
-    private void setOwnerQuotaInfo(OwnerQuotaInfo ownerQuotaInfo, AtomicDBUpdate update) throws DatabaseException {
-        assert (ownerQuotaInfo instanceof BufferBackedOwnerQuotaInfo);
+    private void setOwnerQuotaInfo(String id, Long value, OwnerType ownerType, QuotaInfo quotaInfo,
+            AtomicDBUpdate update) throws DatabaseException {
 
-        BufferBackedOwnerQuotaInfo bufferBackedInfo = (BufferBackedOwnerQuotaInfo) ownerQuotaInfo;
+        byte[] keyBuf = BabuDBStorageHelper.createOwnerQuotaInfoKey(ownerType, quotaInfo, id);
+        byte[] valueBuf = value == null ? null : String.valueOf(value).getBytes();
 
-        update.addUpdate(VOLUME_INDEX, bufferBackedInfo.getKeyBuf(), bufferBackedInfo.getValBuf());
+        update.addUpdate(VOLUME_INDEX, keyBuf, valueBuf);
     }
 
     @Override
