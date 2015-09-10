@@ -189,7 +189,6 @@ int FileHandleImplementation::Read(
   // Read all objects.
   boost::dynamic_bitset<> successful_reads(operations.size());
   size_t received_data = 0;
-  size_t stripe_size = (*striping_policies.begin())->stripe_size() * 1024;
   bool erasure = false;
 
   UUIDIterator* uuid_iterator;
