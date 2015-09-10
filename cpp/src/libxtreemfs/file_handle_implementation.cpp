@@ -123,7 +123,7 @@ FileHandleImplementation::~FileHandleImplementation() {
 int FileHandleImplementation::Read(
     char *buf,
     size_t count,
-    int64_t offset) {
+    uint64_t offset) {
   if (async_writes_enabled_) {
     file_info_->WaitForPendingAsyncWrites();
     ThrowIfAsyncWritesFailed();
@@ -429,7 +429,7 @@ int FileHandleImplementation::ReadFromOSD(
 int FileHandleImplementation::Write(
     const char *buf,
     size_t count,
-    int64_t offset) {
+    uint64_t offset) {
 
   assert(wcache_offset + wcache_size == offset);
 
@@ -498,7 +498,7 @@ void FileHandleImplementation::flush_w_cache() {
 int FileHandleImplementation::internal_write(
     const char *buf,
     size_t count,
-    int64_t offset) {
+    uint64_t offset) {
   Logging::log->getLog(LEVEL_DEBUG) << "write operation " << count << " bytes" << endl;
   if (async_writes_enabled_) {
     ThrowIfAsyncWritesFailed();
@@ -744,7 +744,7 @@ void FileHandleImplementation::Flush(bool close_file) {
 
 void FileHandleImplementation::Truncate(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
-    int64_t new_file_size) {
+    uint64_t new_file_size) {
   file_info_->WaitForPendingAsyncWrites();
   ThrowIfAsyncWritesFailed();
 
@@ -777,7 +777,7 @@ void FileHandleImplementation::Truncate(
 }
 
 void FileHandleImplementation::TruncatePhaseTwoAndThree(
-    int64_t new_file_size) {
+    uint64_t new_file_size) {
   // 2. Call truncate at the head OSD.
   truncateRequest truncate_rq;
   file_info_->GetXLocSet(

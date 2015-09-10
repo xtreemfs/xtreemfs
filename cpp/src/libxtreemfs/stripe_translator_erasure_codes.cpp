@@ -33,7 +33,7 @@ namespace xtreemfs {
 void StripeTranslatorErasureCodes::TranslateWriteRequest(
     const char *buf,
     size_t size,
-    int64_t offset,
+    uint64_t offset,
     PolicyContainer policies,
     std::vector<WriteOperation>* operations) const {
 
@@ -154,7 +154,7 @@ void StripeTranslatorErasureCodes::TranslateWriteRequest(
 void StripeTranslatorErasureCodes::TranslateReadRequest(
     char *buf,
     size_t size,
-    int64_t offset,
+    uint64_t offset,
     PolicyContainer policies,
     std::vector<ReadOperation>* operations) const {
 
@@ -236,7 +236,7 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
     std::vector<ReadOperation>* operations,
     char *buf,
     size_t size,
-    int64_t offset,
+    uint64_t offset,
     boost::dynamic_bitset<>* successful_reads,
     PolicyContainer policies,
     size_t received_data,

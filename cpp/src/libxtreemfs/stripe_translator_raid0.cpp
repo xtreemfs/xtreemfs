@@ -18,7 +18,7 @@ namespace xtreemfs {
 void StripeTranslatorRaid0::TranslateWriteRequest(
     const char *buf,
     size_t size,
-    int64_t offset,
+    uint64_t offset,
     PolicyContainer policies,
     std::vector<WriteOperation>* operations) const {
   // stripe size is stored in kB
@@ -48,7 +48,7 @@ void StripeTranslatorRaid0::TranslateWriteRequest(
 void StripeTranslatorRaid0::TranslateReadRequest(
     char *buf,
     size_t size,
-    int64_t offset,
+    uint64_t offset,
     PolicyContainer policies,
     std::vector<ReadOperation>* operations) const {
   // stripe size is stored in kB
@@ -79,7 +79,7 @@ size_t StripeTranslatorRaid0::ProcessReads(
     std::vector<ReadOperation>* read_ops,
     char *buf,
     size_t size,
-    int64_t offset,
+    uint64_t offset,
     boost::dynamic_bitset<>* successful_reads,
     PolicyContainer policies,
     size_t received_data,

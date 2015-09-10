@@ -23,14 +23,14 @@ class StripeTranslatorRaid0 : public StripeTranslator {
   virtual void TranslateWriteRequest(
       const char *buf,
       size_t size,
-      int64_t offset,
+      uint64_t offset,
       PolicyContainer policies,
       std::vector<WriteOperation>* operations) const;
 
   virtual void TranslateReadRequest(
       char *buf,
       size_t size,
-      int64_t offset,
+      uint64_t offset,
       PolicyContainer policies,
       std::vector<ReadOperation>* operations) const;
 
@@ -38,7 +38,7 @@ class StripeTranslatorRaid0 : public StripeTranslator {
           std::vector<ReadOperation>* operations,
           char *buf,
           size_t size,
-          int64_t offset,
+          uint64_t offset,
           boost::dynamic_bitset<>* sucessful_reads,
           PolicyContainer policies,
           size_t received_data,

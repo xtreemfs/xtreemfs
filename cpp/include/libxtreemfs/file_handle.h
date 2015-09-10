@@ -38,7 +38,7 @@ class FileHandle {
   virtual int Read(
       char *buf,
       size_t count,
-      int64_t offset) = 0;
+      uint64_t offset) = 0;
 
   /** Write to a file 'count' bytes at file offset 'offset' from 'buf'.
    *
@@ -65,7 +65,7 @@ class FileHandle {
   virtual int Write(
       const char *buf,
       size_t count,
-      int64_t offset) = 0;
+      uint64_t offset) = 0;
 
   /** Flushes pending writes and file size updates (corresponds to a fsync()
    *  system call).
@@ -89,7 +89,7 @@ class FileHandle {
    **/
   virtual void Truncate(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
-      int64_t new_file_size) = 0;
+      uint64_t new_file_size) = 0;
 
   /** Retrieve the attributes of this file and writes the result in "stat".
    *

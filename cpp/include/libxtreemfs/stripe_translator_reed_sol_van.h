@@ -24,7 +24,7 @@ class StripeTranslatorReedSolVan : public StripeTranslatorErasureCodes {
           unsigned int w,
           char *data[],
           char **coding,
-          unsigned int stripe_size
+          size_t stripe_size
            ) const;
 
    virtual void Decode(
@@ -34,7 +34,7 @@ class StripeTranslatorReedSolVan : public StripeTranslatorErasureCodes {
           char **data,
           char **coding,
           vector<int> &erasures,
-          unsigned int stripe_size
+          size_t stripe_size
            ) const;
 
 };

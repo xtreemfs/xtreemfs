@@ -22,14 +22,14 @@ class StripeTranslatorErasureCodes : public StripeTranslator {
   virtual void TranslateWriteRequest(
       const char *buf,
       size_t size,
-      int64_t offset,
+      uint64_t offset,
       PolicyContainer policies,
       std::vector<WriteOperation>* operations) const;
 
   virtual void TranslateReadRequest(
       char *buf,
       size_t size,
-      int64_t offset,
+      uint64_t offset,
       PolicyContainer policies,
       std::vector<ReadOperation>* operations) const;
 
@@ -37,7 +37,7 @@ class StripeTranslatorErasureCodes : public StripeTranslator {
           std::vector<ReadOperation>* operations,
           char *buf,
           size_t size,
-          int64_t offset,
+          uint64_t offset,
           boost::dynamic_bitset<>* successful_reads,
           PolicyContainer policies,
           size_t received_data,
@@ -50,7 +50,7 @@ class StripeTranslatorErasureCodes : public StripeTranslator {
           unsigned int w,
           char *data[],
           char **coding,
-          unsigned int stripe_size
+          size_t stripe_size
           ) const = 0;
 
   virtual void Decode(
@@ -60,7 +60,7 @@ class StripeTranslatorErasureCodes : public StripeTranslator {
           char **data,
           char **coding,
           vector<int> &erasures,
-          unsigned int stripe_size
+          size_t stripe_size
           ) const = 0;
 };
 }  // namespace xtreemfs

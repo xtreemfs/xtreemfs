@@ -135,15 +135,15 @@ class FileHandleImplementation
 
   virtual ~FileHandleImplementation();
 
-  virtual int Read(char *buf, size_t count, int64_t offset);
+  virtual int Read(char *buf, size_t count, uint64_t offset);
 
-  virtual int Write(const char *buf, size_t count, int64_t offset);
+  virtual int Write(const char *buf, size_t count, uint64_t offset);
 
   virtual void Flush();
 
   virtual void Truncate(
       const pbrpc::UserCredentials& user_credentials,
-      int64_t new_file_size);
+      uint64_t new_file_size);
 
   /** Used by Truncate() and Volume->OpenFile() to truncate the file to
    *  "new_file_size" on the OSD and update the file size at the MRC.
@@ -153,7 +153,7 @@ class FileHandleImplementation
    * @throws PosixErrorException
    * @throws UnknownAddressSchemeException
    **/
-  void TruncatePhaseTwoAndThree(int64_t new_file_size);
+  void TruncatePhaseTwoAndThree(uint64_t new_file_size);
 
   virtual void GetAttr(
       const pbrpc::UserCredentials& user_credentials,
@@ -254,7 +254,7 @@ class FileHandleImplementation
       int offset_in_object,
       int bytes_to_read);
 
-  virtual int internal_write(const char *buf, size_t count, int64_t offset);
+  virtual int internal_write(const char *buf, size_t count, uint64_t offset);
 
   virtual void write_helper(const char *buf, size_t count, size_t buf_offset);
 

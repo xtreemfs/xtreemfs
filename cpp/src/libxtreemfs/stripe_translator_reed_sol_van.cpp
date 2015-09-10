@@ -25,7 +25,7 @@ void StripeTranslatorReedSolVan::Encode(
           unsigned int w,
           char **data,
           char **coding,
-          unsigned int stripe_size
+          size_t stripe_size
         ) const {
   //encode data here
 
@@ -48,7 +48,7 @@ void StripeTranslatorReedSolVan::Decode(
           char **data,
           char **coding,
           vector<int> &erasures,
-          unsigned int stripe_size
+          size_t stripe_size
         ) const {
   // decode data here
 
