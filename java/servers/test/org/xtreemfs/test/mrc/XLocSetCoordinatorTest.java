@@ -19,7 +19,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.AdminFileHandle;
@@ -48,8 +50,12 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 public class XLocSetCoordinatorTest {
+    @Rule
+    public final TestRule testLog = TestHelper.testLog;
+
     private static TestEnvironment testEnv;
 
     private static UserCredentials userCredentials;
@@ -76,8 +82,6 @@ public class XLocSetCoordinatorTest {
 
     @BeforeClass
     public static void initializeTest() throws Exception {
-        System.out.println("TEST: " + XLocSetCoordinatorTest.class.getSimpleName());
-
         // cleanup
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
         Logging.start(Logging.LEVEL_WARN);

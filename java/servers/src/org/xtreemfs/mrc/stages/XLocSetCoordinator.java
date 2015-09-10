@@ -426,6 +426,8 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
      */
     private ReplicaStatus[] invalidateReplicas(String fileId, Capability cap, XLocSet xLocSet, int numAcksRequired)
             throws InterruptedException, MRCException {
+        Logging.logMessage(Logging.LEVEL_DEBUG, this, "invalidateReplicas called with %d numAcksRequired",
+                numAcksRequired);
 
         @SuppressWarnings("unchecked")
         final RPCResponse<xtreemfs_xloc_set_invalidateResponse>[] responses = new RPCResponse[xLocSet
@@ -528,16 +530,24 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             }
         }
 
-        // If a primary exists, wait until either the primary responded, every replica responded or the lease has timed out.
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "invalidateReplicas invalidated %d replicas",
+                    listener.numResponses);
+        }
+
+        // If a primary exists, wait until the lease has timed out.
+        // This is required, since the lease can't be actively returned.
         synchronized (listener) {
             if (listener.primaryExists) {
                 long now = System.currentTimeMillis();
-                long leaseEndTimeMs = now + leaseToMS;
+                long leaseEndTimeMS = now + leaseToMS;
                 
-                while (!listener.primaryResponded
-                        && now < leaseEndTimeMs
-                        && (listener.numResponses + listener.numErrors) < responses.length) {
-                    listener.wait(leaseEndTimeMs - now);
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                        "invalidateReplicas is waiting on the primary (now: %d, until: %d, timeout: ).", now,
+                        leaseEndTimeMS, leaseToMS);
+
+                while (now < leaseEndTimeMS) {
+                    listener.wait(leaseEndTimeMS - now);
                     now = System.currentTimeMillis();
                 }
             }
