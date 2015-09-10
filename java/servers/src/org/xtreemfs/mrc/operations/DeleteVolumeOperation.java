@@ -72,9 +72,6 @@ public class DeleteVolumeOperation extends MRCOperation {
         try {
             master.getVolumeManager().deleteVolume(volume.getId(), master, rq);
 
-            master.getMrcQuotaManager().getVolumeQuotaManagerById(volume.getId()).setActive(false);
-            master.getMrcQuotaManager().removeVolumeQuotaManager(volume.getId());
-
             master.notifyVolumeDeleted();   
         } finally {
             master.resumeHeartbeatThread();
