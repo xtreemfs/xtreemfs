@@ -419,9 +419,9 @@ int FileHandleImplementation::Write(
     size_t count,
     uint64_t offset) {
 
-  assert(wcache_offset + wcache_size == offset);
 
   if (ec) {
+    assert(wcache_offset + wcache_size == offset);
     write_helper(buf, count, 0);
   } else {
     internal_write(buf, count, offset);
