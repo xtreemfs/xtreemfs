@@ -6,6 +6,7 @@
  */
 package org.xtreemfs.mrc.quota;
 
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.VolumeChangeListener;
 import org.xtreemfs.mrc.database.VolumeInfo;
@@ -25,18 +26,21 @@ public class QuotaChangeListener implements VolumeChangeListener {
             volumeQuotaManager.setVolumeQuota(vol.getVolumeQuota());
             volumeQuotaManager.setVolumeVoucherSize(vol.getVolumeVoucherSize());
         } catch (DatabaseException e) {
-            // FIXME(baerhold): Handle -> Debug
-            e.printStackTrace();
+            Logging.logError(Logging.LEVEL_ERROR, this, e);
         }
     }
 
     @Override
     public void volumeDeleted(String volumeId) {
-        volumeQuotaManager.delete();
+        try {
+            volumeQuotaManager.delete();
+        } catch (Exception e) {
+            Logging.logError(Logging.LEVEL_ERROR, this, e);
+        }
     }
 
     @Override
     public void attributeSet(String volumeId, String key, String value) {
-        // TODO Auto-generated method stub: check, when it will be called
+        // nothing to do
     }
 }
