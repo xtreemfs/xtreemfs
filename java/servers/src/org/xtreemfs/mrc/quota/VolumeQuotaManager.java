@@ -52,6 +52,10 @@ public class VolumeQuotaManager {
         volStorageManager.addVolumeChangeListener(quotaChangeListener);
     }
 
+    /**
+     * Sets the volume specific members with the database values instead of pulling them on every request. They will be
+     * uptodate due to the change listener on the volume.
+     */
     public void init() {
         try {
             setVolumeQuota(volStorageManager.getVolumeQuota());
@@ -73,6 +77,15 @@ public class VolumeQuotaManager {
         return getVoucher(quotaFileInformation, false, update);
     }
 
+    /**
+     * Checks the active quota and returns a voucher, if no exception occured
+     * 
+     * @param quotaFileInformation
+     * @param test
+     * @param update
+     * @return
+     * @throws UserException
+     */
     private synchronized long getVoucher(QuotaFileInformation quotaFileInformation, boolean test, AtomicDBUpdate update)
             throws UserException {
 
@@ -160,6 +173,15 @@ public class VolumeQuotaManager {
         }
     }
 
+    /**
+     * Checks the quota and adds the replica values, if enough space is avilable
+     * 
+     * @param quotaFileInformation
+     * @param filesize
+     * @param blockedSpace
+     * @param update
+     * @throws UserException
+     */
     public synchronized void addReplica(QuotaFileInformation quotaFileInformation, long filesize, long blockedSpace,
             AtomicDBUpdate update) throws UserException {
         
@@ -232,6 +254,10 @@ public class VolumeQuotaManager {
                 + volumeQuota);
     }
 
+    /**
+     * @param volumeVoucherSize
+     *            the volumeVoucherSize to set
+     */
     public void setVolumeVoucherSize(long volumeVoucherSize) {
         this.volumeVoucherSize = volumeVoucherSize;
 
