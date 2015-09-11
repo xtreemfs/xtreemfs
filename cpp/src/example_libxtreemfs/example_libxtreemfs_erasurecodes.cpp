@@ -32,8 +32,10 @@ xtreemfs::pbrpc::Auth auth;
 string mrc = "localhost:32636";
 string dir = "localhost:32638";
 
-int default_stripe_width = 4;
-int default_parity_width = 2;
+int default_stripe_width = 2;
+int default_parity_width = 0;
+xtreemfs::pbrpc::StripingPolicyType striping_policy = xtreemfs::pbrpc::STRIPING_POLICY_RAID0;
+// xtreemfs::pbrpc::StripingPolciyType striping_policy = xtreemfs::pbrpc::STRIPING_POLICY_REED_SOL_VAN;
 
 void clean_up(int signum){
 
@@ -64,7 +66,7 @@ void clean_up(int signum){
   }
 }
 
-int foo(size_t buf_size, size_t offset, size_t over_read){
+int run_test(size_t buf_size, size_t offset, size_t over_read){
   user_credentials.set_username("jan");
   user_credentials.add_groups("users");
   auth.set_auth_type(xtreemfs::pbrpc::AUTH_NONE);
@@ -97,7 +99,7 @@ int foo(size_t buf_size, size_t offset, size_t over_read){
                          "users",
                          xtreemfs::pbrpc::ACCESS_CONTROL_POLICY_POSIX,
                          0,
-                         xtreemfs::pbrpc::STRIPING_POLICY_REED_SOL_VAN, //options.default_striping_policy_type,
+                         striping_policy,
                          1, //options.default_stripe_size,
                          default_stripe_width,
                          default_parity_width,
@@ -118,7 +120,7 @@ int foo(size_t buf_size, size_t offset, size_t over_read){
                          "users",
                          xtreemfs::pbrpc::ACCESS_CONTROL_POLICY_POSIX,
                          0,
-                         xtreemfs::pbrpc::STRIPING_POLICY_REED_SOL_VAN, //options.default_striping_policy_type,
+                         striping_policy,
                          1, //options.default_stripe_size,
                          default_stripe_width,
                          default_parity_width,
@@ -322,7 +324,7 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < sizeof(vals) / sizeof(int); i += 3) {
     cout << endl << "###################################################################" << endl;
     cout << "Testing with filesize " << vals[i] << " offset " << vals [i + 1] << " over_read " << vals[i + 2] << endl << endl;
-    int res = foo(vals[i], vals[i + 1], vals[i + 2]);
+    int res = run_test(vals[i], vals[i + 1], vals[i + 2]);
     if (res == 1) {
       cout << "###### test case failed: filesize " << vals[i] << " offset " << vals [i + 1] << " over_read " << vals[i + 2] << endl << endl;
       for (int i = 0; i < wrong_fs.size(); i += 3) {

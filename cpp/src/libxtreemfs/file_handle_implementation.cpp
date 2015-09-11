@@ -101,23 +101,22 @@ FileHandleImplementation::FileHandleImplementation(
   for (int32_t i = 0; i < file_credentials.mutable_xlocs()->replicas_size(); ++i) {
     striping_policies.push_back(&(file_credentials.mutable_xlocs()->replicas(i).striping_policy()));
   }
-  int s_width = (*striping_policies.begin())->width();
-  int p_width = (*striping_policies.begin())->parity_width();
-  s_size = (*striping_policies.begin())->stripe_size() * 1024; // kbytes damnit!!!
-  cout << "setting up cache for " << (s_width - p_width) * s_size << " (" << s_width << ", " << p_width << ") byte sized lines" << endl;
-  l_size = (s_width - p_width) * s_size;
-  write_cache = new char[l_size];
-  wcache_offset = 0;
-  wcache_size = 0;
+  ec = xtreemfs::pbrpc::StripingPolicyType_Name((*striping_policies.begin())->type()) == "STRIPING_POLICY_REED_SOL_VAN";
+  if (ec) {
+    int s_width = (*striping_policies.begin())->width();
+    int p_width = (*striping_policies.begin())->parity_width();
+    s_size = (*striping_policies.begin())->stripe_size() * 1024; // kbytes damnit!!!
+    cout << "setting up cache for " << (s_width - p_width) * s_size << " (" << s_width << ", " << p_width << ") byte sized lines" << endl;
+    l_size = (s_width - p_width) * s_size;
+    write_cache = new char[l_size];
+    wcache_offset = 0;
+    wcache_size = 0;
+  }
 
-  read_cache = new char[l_size];
-  rcache_offset = 0;
-  rcache_size = 0;
 }
 
 FileHandleImplementation::~FileHandleImplementation() {
   delete[] write_cache;
-  delete[] read_cache;
 }
 
 int FileHandleImplementation::Read(
@@ -127,17 +126,6 @@ int FileHandleImplementation::Read(
   if (async_writes_enabled_) {
     file_info_->WaitForPendingAsyncWrites();
     ThrowIfAsyncWritesFailed();
-  }
-
-  // determine if we can settle read request from cache
-  if (offset >= rcache_offset && offset < rcache_offset + rcache_size && // offset falls into cache
-    offset + count <= rcache_offset + rcache_size) {
-    memcpy(buf, read_cache + (offset - rcache_offset), count);
-    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-      Logging::log->getLog(LEVEL_DEBUG) << "read cache hit" << endl;
-    }
-    cout << "READ CACHE HIT" << endl;
-    return count;
   }
 
   // Prepare request object.
@@ -236,7 +224,6 @@ int FileHandleImplementation::Read(
       }
       // TODO(mberlin): Update xloc list if newer version found (on OSD?).
       try {
-        // bool ec = xtreemfs::pbrpc::StripingPolicyType_Name((*striping_policies.begin())->type()) == "STRIPING_POLICY_REED_SOL_VAN";
         // if (operations[j].osd_offsets[0] == 0 && ec) {
         // if (operations[j].osd_offsets[0] == 1) {
         // if (operations[j].osd_offsets[0] == 1 ||
@@ -339,22 +326,6 @@ int FileHandleImplementation::Read(
     }
   }
 
-  // cache line if read was smaller then line size and no erasure occured
-  if (count <= l_size && offset % s_size == 0 && !erasure) {
-    rcache_offset = offset;
-    while (rcache_offset % l_size != 0) {
-      rcache_offset -= s_size;
-    }
-    rcache_size = l_size;
-    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-      Logging::log->getLog(LEVEL_DEBUG) << "caching full read" << endl;
-    }
-    int pw = (*striping_policies.begin())->parity_width();
-    for (size_t j = 0; j < operations.size() - pw; j++) {
-      memcpy(read_cache + j * s_size, operations[j].data, s_size);
-    }
-  }
-
   received_data = translator->ProcessReads(&operations, buf, count, offset, &successful_reads,
       striping_policies, erasure);
   for (int i = 0; i < operations.size(); i++) {
@@ -450,7 +421,11 @@ int FileHandleImplementation::Write(
 
   assert(wcache_offset + wcache_size == offset);
 
-  write_helper(buf, count, 0);
+  if (ec) {
+    write_helper(buf, count, 0);
+  } else {
+    internal_write(buf, count, offset);
+  }
 
   return count;
 }
@@ -730,8 +705,6 @@ void FileHandleImplementation::Flush(bool close_file) {
   // invalidate caches
   wcache_size = 0;
   wcache_offset = 0;
-  rcache_size = 0;
-  rcache_offset = 0;
   if (object_cache_ != NULL) {
     FileCredentials file_credentials;
     xcap_manager_.GetXCap(file_credentials.mutable_xcap());
@@ -1145,8 +1118,6 @@ void FileHandleImplementation::Close() {
   // invalidate caches
   wcache_size = 0;
   wcache_offset = 0;
-  rcache_size = 0;
-  rcache_offset = 0;
   file_info_->CloseFileHandle(this);
 }
 

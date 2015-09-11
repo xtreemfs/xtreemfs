@@ -223,7 +223,7 @@ class FileHandleImplementation
 
   /** Execute period tasks */
   void ExecutePeriodTasks(const RPCOptions& options);
-  
+
   /** XCapHandler: Get current capability.*/
   virtual void GetXCap(xtreemfs::pbrpc::XCap* xcap);
 
@@ -269,15 +269,12 @@ class FileHandleImplementation
       const char* buffer,
       int bytes_to_write);
 
+  bool ec;
   char* write_cache;
   size_t wcache_offset;
   size_t wcache_size;
   int s_size;
   size_t l_size;
-
-  char* read_cache;
-  size_t rcache_offset;
-  size_t rcache_size;
 
   /** Any modification to the object must obtain a lock first. */
   boost::mutex mutex_;
