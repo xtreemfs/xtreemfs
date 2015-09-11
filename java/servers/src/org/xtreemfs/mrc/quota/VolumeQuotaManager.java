@@ -160,6 +160,42 @@ public class VolumeQuotaManager {
         }
     }
 
+    public synchronized void addReplica(QuotaFileInformation quotaFileInformation, long filesize, long blockedSpace,
+            AtomicDBUpdate update) throws UserException {
+        
+        if(!active) {
+            return;
+        }
+        
+        try{
+            long volumeUsedSpace = volStorageManager.getVolumeUsedSpace();
+            long volumeBlockedSpace = volStorageManager.getVolumeBlockedSpace();
+
+            long currentFreeSpace = volumeQuota - (volumeUsedSpace + volumeBlockedSpace);
+            if (currentFreeSpace < (filesize + blockedSpace)) {
+                throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "The quota of the volume \"" + volumeId
+                        + "\" is reached");
+            }
+            
+            volumeUsedSpace += filesize;
+            volumeBlockedSpace += blockedSpace;
+
+            volStorageManager.setVolumeUsedSpace(volumeUsedSpace, update);
+            volStorageManager.setVolumeBlockedSpace(volumeBlockedSpace, update);
+
+
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
+                    + ") updated space usage: usedSpace=" + volumeUsedSpace + ", blockedSpace=" + volumeBlockedSpace
+                    + ", volumeQuota=" + volumeQuota);
+            
+        }catch(DatabaseException e){
+            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
+                    "An error occured during the interaction with the database!");
+        }
+    }
+
     /**
      * Deletes the volumes quota manager by unregister itself at the mrc quota manager.
      */

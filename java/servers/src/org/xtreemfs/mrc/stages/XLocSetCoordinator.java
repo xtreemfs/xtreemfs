@@ -44,10 +44,13 @@ import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.operations.MRCOperation;
+import org.xtreemfs.mrc.quota.QuotaFileInformation;
 import org.xtreemfs.mrc.utils.Converter;
+import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.osd.rwre.CoordinatedReplicaUpdatePolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
@@ -77,7 +80,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
     protected volatile boolean           quit;
     private final MRCRequestDispatcher   master;
-    private BlockingQueue<RequestMethod> q;
+    private final BlockingQueue<RequestMethod> q;
 
     /** The lease timeout is needed to ensure no primary can exist after invalidating. */
     private final int                    leaseToMS;
@@ -513,8 +516,8 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             private int             numErrors        = 0;
             private boolean         primaryResponded = false;
             private boolean         primaryExists    = false;
-            private RPCResponse<xtreemfs_xloc_set_invalidateResponse>[] responses;
-            private ReplicaStatus[] states;
+            private final RPCResponse<xtreemfs_xloc_set_invalidateResponse>[] responses;
+            private final ReplicaStatus[] states;
 
             public InvalidatedResponseListener(RPCResponse<xtreemfs_xloc_set_invalidateResponse>[] responses) {
                 this.responses = responses;
@@ -814,6 +817,21 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         MRCOperation op = m.getOperation();
         MRCRequest rq = m.getRequest();
         try {
+
+            // remove already added replica from quota via voucher management
+            if (m.getRequestType().equals(RequestType.ADD_REPLICAS)) {
+                VolumeManager vMan = master.getVolumeManager();
+                GlobalFileIdResolver idRes = new GlobalFileIdResolver(m.getFileId());
+                StorageManager sMan = vMan.getStorageManager(idRes.getVolumeId());
+
+                FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
+                QuotaFileInformation quotaFileInformation = new QuotaFileInformation(idRes.getVolumeId(), file);
+
+                AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
+                master.getMrcVoucherManager().removeReplica(quotaFileInformation, update);
+                update.execute();
+            }
+
             // simply rethrow the exception
             throw err;
 

@@ -27,6 +27,7 @@ import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
+import org.xtreemfs.mrc.quota.QuotaFileInformation;
 import org.xtreemfs.mrc.stages.XLocSetCoordinator;
 import org.xtreemfs.mrc.stages.XLocSetCoordinatorCallback;
 import org.xtreemfs.mrc.stages.XLocSetLock;
@@ -238,6 +239,10 @@ public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoord
 
         // Update the X-Locations list.
         sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
+
+        // remove replica from voucher service
+        QuotaFileInformation quotaFileInformation = new QuotaFileInformation(idRes.getVolumeId(), file);
+        master.getMrcVoucherManager().removeReplica(quotaFileInformation, update);
 
         // Unlock the replica.
         master.getXLocSetCoordinator().unlockXLocSet(file, sMan, update);

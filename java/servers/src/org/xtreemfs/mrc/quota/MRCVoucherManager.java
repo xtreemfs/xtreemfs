@@ -359,6 +359,60 @@ public class MRCVoucherManager {
         }
     }
 
+    public void addReplica(QuotaFileInformation quotaFileInformation, AtomicDBUpdate update) throws UserException {
+
+        synchronized (this) {
+            try {
+                VolumeQuotaManager volumeQuotaManager = mrcQuotaManager.getVolumeQuotaManagerById(quotaFileInformation
+                        .getVolumeId());
+                StorageManager storageManager = volumeQuotaManager.getVolStorageManager();
+
+                FileVoucherInfo fileVoucherInfo = storageManager.getFileVoucherInfo(quotaFileInformation.getFileId());
+
+                long filesize = quotaFileInformation.getFilesize();
+                long blockedSpace = 0;
+                if (fileVoucherInfo != null) {
+                    filesize = fileVoucherInfo.getFilesize();
+                    blockedSpace = fileVoucherInfo.getBlockedSpace();
+                    volumeQuotaManager.addReplica(quotaFileInformation, filesize, blockedSpace, update);
+                }
+            } catch (DatabaseException e) {
+                Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+
+                throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
+                        "An error occured during the interaction with the database!");
+            }
+        }
+    }
+
+    public void removeReplica(QuotaFileInformation quotaFileInformation, AtomicDBUpdate update) throws UserException {
+
+        synchronized (this) {
+            try {
+                VolumeQuotaManager volumeQuotaManager = mrcQuotaManager.getVolumeQuotaManagerById(quotaFileInformation
+                        .getVolumeId());
+                StorageManager storageManager = volumeQuotaManager.getVolStorageManager();
+
+                FileVoucherInfo fileVoucherInfo = storageManager.getFileVoucherInfo(quotaFileInformation.getFileId());
+
+                long filesizeDifference = -1 * quotaFileInformation.getFilesize();
+                long clearBlockedSpace = 0;
+                if (fileVoucherInfo != null) {
+                    filesizeDifference = -1 * fileVoucherInfo.getFilesize();
+                    clearBlockedSpace = fileVoucherInfo.getBlockedSpace();
+                }
+
+                volumeQuotaManager.updateSpaceUsage(filesizeDifference, clearBlockedSpace, update);
+            } catch (DatabaseException e) {
+                Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+
+                throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
+                        "An error occured during the interaction with the database!");
+            }
+        }
+
+    }
+
     /**
      * General check, whether it is manageable at all, because e.g. read access won't be managed
      * 
