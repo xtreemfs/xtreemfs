@@ -116,7 +116,9 @@ FileHandleImplementation::FileHandleImplementation(
 }
 
 FileHandleImplementation::~FileHandleImplementation() {
-  delete[] write_cache;
+  if (ec) {
+    delete[] write_cache;
+  }
 }
 
 int FileHandleImplementation::Read(
@@ -336,7 +338,7 @@ int FileHandleImplementation::Read(
   }
   // exit(1);
 
-  cout << "returning " << received_data << " bytes; received " << received_data << endl;
+  cout << "returning " << received_data << endl;
   return received_data;
 }
   // void getFileSize(
@@ -701,10 +703,13 @@ void FileHandleImplementation::Flush() {
 }
 
 void FileHandleImplementation::Flush(bool close_file) {
-  flush_w_cache();
-  // invalidate caches
-  wcache_size = 0;
-  wcache_offset = 0;
+  if (ec) {
+    // invalidate caches
+    cout << "flushing wcache" << endl;
+    flush_w_cache();
+    wcache_size = 0;
+    wcache_offset = 0;
+  }
   if (object_cache_ != NULL) {
     FileCredentials file_credentials;
     xcap_manager_.GetXCap(file_credentials.mutable_xcap());
@@ -1115,9 +1120,6 @@ void FileHandleImplementation::Close() {
     // Rethrow exception.
     throw;
   }
-  // invalidate caches
-  wcache_size = 0;
-  wcache_offset = 0;
   file_info_->CloseFileHandle(this);
 }
 
