@@ -19,7 +19,8 @@ public class QuotaFileInformation {
     private final String ownerId;
     private final String ownerGroupId;
     private final long   filesize;
-    private final int    replicaCount;
+
+    private int          replicaCount;
 
     public QuotaFileInformation(String volumeId, FileMetadata fileMetadata) {
         this(volumeId, fileMetadata.getId(), fileMetadata.getOwnerId(), fileMetadata.getOwningGroupId(), fileMetadata
@@ -43,6 +44,14 @@ public class QuotaFileInformation {
      */
     public String getGlobalFileId() {
         return volumeId + ":" + fileId;
+    }
+
+    /**
+     * @param replicaCount
+     *            the replicaCount to set
+     */
+    public void setReplicaCount(int replicaCount) {
+        this.replicaCount = replicaCount;
     }
 
     // Getter:

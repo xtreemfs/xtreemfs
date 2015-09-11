@@ -27,6 +27,18 @@ public interface FileVoucherInfo {
     public void increaseBlockedSpaceByValue(long additionalBlockedSpace);
 
     /**
+     * Increases the replica count.
+     */
+    public void increaseReplicaCount();
+
+    /**
+     * Decreases the replica count.
+     */
+    public void decreaseReplicaCount();
+
+    // Getter
+
+    /**
      * @return the clientCount
      */
     public int getClientCount();
@@ -44,5 +56,5 @@ public interface FileVoucherInfo {
     /**
      * @return the replica count
      */
-    public long getReplicaCount();
+    public int getReplicaCount();
 }

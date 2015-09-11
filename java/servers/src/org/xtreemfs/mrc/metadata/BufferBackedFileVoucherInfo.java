@@ -22,10 +22,10 @@ public class BufferBackedFileVoucherInfo extends BufferBackedIndexMetadata imple
     private final static int bsOffset  = fsOffset + Long.SIZE / Byte.SIZE;
 
     private final long       filesize;
-    private final int        replicaCount;
 
     private long             blockedSpace;
     private int              clientCount;
+    private int              replicaCount;
 
     /**
      * @param key
@@ -67,6 +67,16 @@ public class BufferBackedFileVoucherInfo extends BufferBackedIndexMetadata imple
     @Override
     public void decreaseClientCount() {
         clientCount--;
+    }
+
+    @Override
+    public void increaseReplicaCount() {
+        replicaCount++;
+    }
+
+    @Override
+    public void decreaseReplicaCount() {
+        replicaCount--;
     }
 
     @Override
@@ -122,7 +132,7 @@ public class BufferBackedFileVoucherInfo extends BufferBackedIndexMetadata imple
     }
 
     @Override
-    public long getReplicaCount() {
+    public int getReplicaCount() {
         return replicaCount;
     }
 }
