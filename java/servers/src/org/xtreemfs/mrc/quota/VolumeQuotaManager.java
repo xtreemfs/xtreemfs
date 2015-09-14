@@ -6,8 +6,10 @@
  */
 package org.xtreemfs.mrc.quota;
 
+import org.xtreemfs.common.quota.QuotaConstants;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
@@ -20,17 +22,15 @@ import org.xtreemfs.mrc.database.StorageManager;
  */
 public class VolumeQuotaManager {
 
-    public final static long          defaultVoucherSize = 250 * 1024 * 1024; // 250 MB
-    public final static long          defaultUserQuota   = -1;               // no limit
-    public final static long          defaultGroupQuota  = -1;               // no limit
+    public final static long          defaultVoucherSize      = 250 * 1024 * 1024;            // 250 MB
+    public final static long          defaultUserQuota        = QuotaConstants.unlimitedQuota; // no limit
+    public final static long          defaultGroupQuota       = QuotaConstants.unlimitedQuota; // no limit
 
     private final StorageManager      volStorageManager;
     private final QuotaChangeListener quotaChangeListener;
     private final MRCQuotaManager     mrcQuotaManager;
 
     private final String              volumeId;
-
-    private boolean                   active            = false;
 
     private long                      volumeQuota             = 0;
     private long                      volumeVoucherSize       = 0;
@@ -41,10 +41,10 @@ public class VolumeQuotaManager {
      * Creates the volume quota manager and register at the mrc quota manager. Add a change listener to the volume info
      * to get up to date information.
      * 
-     * @throws Exception
+     * @throws MRCException
      */
     public VolumeQuotaManager(MRCQuotaManager mrcQuotaManager, StorageManager volStorageManager, String volumeId)
-            throws Exception {
+            throws MRCException {
 
         this.mrcQuotaManager = mrcQuotaManager;
         this.volStorageManager = volStorageManager;
@@ -71,12 +71,14 @@ public class VolumeQuotaManager {
         }
 
         Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager loaded for volume: " + volumeId
-                + ". [volumeQuota=" + volumeQuota + ", ]");
+                + ". [volumeQuota=" + volumeQuota + ", volumeVoucherSize=" + volumeVoucherSize
+                + ", volumeDefaultGroupQuota=" + volumeDefaultGroupQuota + ", volumeDefaultUserQuota="
+                + volumeDefaultUserQuota + "]");
     }
 
     public boolean checkVoucherAvailability(QuotaFileInformation quotaFileInformation) throws UserException {
         long voucherSize = getVoucher(quotaFileInformation, true, null);
-        return voucherSize > 0 || voucherSize == MRCVoucherManager.unlimitedVoucher;
+        return voucherSize > 0 || voucherSize == QuotaConstants.unlimitedVoucher;
     }
 
     public long getVoucher(QuotaFileInformation quotaFileInformation, AtomicDBUpdate update) throws UserException {
@@ -95,43 +97,29 @@ public class VolumeQuotaManager {
     private synchronized long getVoucher(QuotaFileInformation quotaFileInformation, boolean test, AtomicDBUpdate update)
             throws UserException {
 
-        if (!active) {
-            return 0;
+        int replicaCount = quotaFileInformation.getReplicaCount();
+        QuotaInformation quotaInformation = getAndApplyQuotaInformation(quotaFileInformation, !test, update);
+        long freeSpace = quotaInformation.getFreeSpace();
+
+        long voucherSize = volumeVoucherSize;
+        if (quotaInformation.getVolumeQuota() == QuotaConstants.unlimitedQuota
+                && quotaInformation.getUserQuota() == QuotaConstants.unlimitedQuota
+                && quotaInformation.getGroupQuota() == QuotaConstants.unlimitedQuota) {
+            // no quota set at all: unlimited voucher
+            voucherSize = QuotaConstants.unlimitedVoucher;
+        } else if (freeSpace / replicaCount == 0) { // can't get negative
+            throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "The " + quotaInformation.getQuotaType()
+                    + " quota has been reached!");
+        } else if ((replicaCount * voucherSize) > freeSpace) {
+            voucherSize = freeSpace / replicaCount;
         }
 
-        try {
-            long usedSpace = volStorageManager.getVolumeUsedSpace();
-            long blockedSpace = volStorageManager.getVolumeBlockedSpace();
-            int replicaCount = quotaFileInformation.getReplicaCount();
-
-            long currentFreeSpace = volumeQuota - (usedSpace + blockedSpace);
-            if ((currentFreeSpace / replicaCount) <= 0) {
-                throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "The quota of the volume \"" + volumeId
-                        + "\" is reached");
-            }
-
-            long voucherSize = volumeVoucherSize;
-            if ((replicaCount * volumeVoucherSize) > currentFreeSpace) {
-                voucherSize = currentFreeSpace / replicaCount;
-            }
-
-            // save voucherSize as blocked, if it isn't just a check
-            if (!test) {
-                blockedSpace += replicaCount * voucherSize;
-                volStorageManager.setVolumeBlockedSpace(blockedSpace, update);
-
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
-                        + ") increased blocked space by: " + replicaCount + " * " + voucherSize + " to: "
-                        + blockedSpace);
-            }
-
-            return voucherSize;
-        } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
-
-            throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+        // save voucherSize as blocked, if it isn't just a check
+        if (!test) {
+            updateSpaceUsage(quotaFileInformation, quotaInformation, 0, replicaCount * voucherSize, update);
         }
+
+        return voucherSize;
     }
 
     /**
@@ -146,31 +134,77 @@ public class VolumeQuotaManager {
      *            unused blocked space
      * @throws UserException
      */
-    public synchronized void updateSpaceUsage(long fileSizeDifference, long clearBlockedSpace, AtomicDBUpdate update)
-            throws UserException {
-        if (!active) {
-            return;
-        }
+    public synchronized void updateSpaceUsage(QuotaFileInformation quotaFileInformation, long fileSizeDifference,
+            long blockedSpaceDifference, AtomicDBUpdate update) throws UserException {
+
+        QuotaInformation quotaInformation = getAndApplyQuotaInformation(quotaFileInformation, true, update);
+
+        updateSpaceUsage(quotaFileInformation, quotaInformation, fileSizeDifference, blockedSpaceDifference, update);
+
+    }
+
+    public synchronized void updateSpaceUsage(QuotaFileInformation quotaFileInformation,
+            QuotaInformation quotaInformation, long filesizeDifference, long blockedSpaceDifference,
+            AtomicDBUpdate update) throws UserException {
+
+        String ownerId = quotaFileInformation.getOwnerId();
+        String ownerGroupId = quotaFileInformation.getOwnerGroupId();
 
         try {
-            long usedSpace = volStorageManager.getVolumeUsedSpace();
-            long blockedSpace = volStorageManager.getVolumeBlockedSpace();
+            if (filesizeDifference != 0) {
+                long volumeUsedSpace = quotaInformation.getVolumeUsedSpace() + filesizeDifference;
+                checkNegativeValue(volumeUsedSpace, "volume", true);
+                volStorageManager.setVolumeUsedSpace(volumeUsedSpace, update);
 
-            usedSpace += fileSizeDifference;
-            blockedSpace -= clearBlockedSpace;
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
+                        + ") changed volume used space by: " + filesizeDifference + " to: " + volumeUsedSpace);
 
-            volStorageManager.setVolumeUsedSpace(usedSpace, update);
-            volStorageManager.setVolumeBlockedSpace(blockedSpace, update);
+                long userUsedSpace = quotaInformation.getUserUsedSpace() + filesizeDifference;
+                checkNegativeValue(userUsedSpace, "ownerId: " + ownerId, true);
+                volStorageManager.setUserUsedSpace(ownerId, userUsedSpace, update);
 
-            if (usedSpace < 0) {
-                Logging.logMessage(Logging.LEVEL_WARN, this, "VolumeQuotaManager(" + volumeId
-                        + ") got negative space consumption! Please check the functionality!");
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
+                        + ") changed owner used space by: " + filesizeDifference + " to: " + userUsedSpace);
+
+                long groupUsedSpace = quotaInformation.getGroupUsedSpace() + filesizeDifference;
+                checkNegativeValue(groupUsedSpace, "ownerGroupId: " + ownerGroupId, true);
+                volStorageManager.setGroupUsedSpace(ownerGroupId, groupUsedSpace, update);
+
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
+                        + ") changed owner group used space by: " + filesizeDifference + " to: " + groupUsedSpace);
             }
 
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
-                    + ") updated space usage: usedSpace=" + usedSpace + ", blockedSpace=" + blockedSpace
-                    + ", volumeQuota=" + volumeQuota);
+            if (blockedSpaceDifference != 0) {
+                if (quotaInformation.getVolumeQuota() != QuotaConstants.unlimitedQuota) {
+                    long volumeBlockedSpace = quotaInformation.getVolumeBlockedSpace() + blockedSpaceDifference;
+                    checkNegativeValue(volumeBlockedSpace, "volume", false);
+                    volStorageManager.setVolumeBlockedSpace(volumeBlockedSpace, update);
 
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
+                            + ") changed volume blocked space by: " + blockedSpaceDifference + " to: "
+                            + volumeBlockedSpace);
+                }
+
+                if (quotaInformation.getUserQuota() != QuotaConstants.unlimitedQuota) {
+                    long userBlockedSpace = quotaInformation.getUserBlockedSpace() + blockedSpaceDifference;
+                    checkNegativeValue(userBlockedSpace, "ownerId: " + ownerId, false);
+                    volStorageManager.setUserBlockedSpace(ownerId, userBlockedSpace, update);
+
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
+                            + ") changed owner blocked space by: " + blockedSpaceDifference + " to: "
+                            + userBlockedSpace);
+                }
+
+                if (quotaInformation.getGroupQuota() != QuotaConstants.unlimitedQuota) {
+                    long groupBlockedSpace = quotaInformation.getGroupBlockedSpace() + blockedSpaceDifference;
+                    checkNegativeValue(groupBlockedSpace, "ownerGroupId: " + ownerGroupId, false);
+                    volStorageManager.setGroupBlockedSpace(ownerGroupId, groupBlockedSpace, update);
+
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
+                            + ") changed owner group blocked space by: " + blockedSpaceDifference + " to: "
+                            + groupBlockedSpace);
+                }
+            }
         } catch (DatabaseException e) {
             Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
 
@@ -190,80 +224,166 @@ public class VolumeQuotaManager {
      */
     public synchronized void addReplica(QuotaFileInformation quotaFileInformation, long filesize, long blockedSpace,
             AtomicDBUpdate update) throws UserException {
-        
-        if(!active) {
-            return;
+
+        Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
+                + ") tries to add a replica to current space information");
+
+        QuotaInformation quotaInformation = getAndApplyQuotaInformation(quotaFileInformation, true, update);
+
+        if (quotaInformation.getFreeSpace() < (filesize + blockedSpace)) {
+            throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "Not enough space for a new replica! The "
+                    + quotaInformation.getQuotaType() + " quota has been reached!");
         }
-        
-        try{
+
+        updateSpaceUsage(quotaFileInformation, quotaInformation, filesize, blockedSpace, update);
+    }
+
+    /**
+     * Gets all quota information, applies the default user and group quota and saves them, if it has to.
+     * 
+     * @param quotaFileInformation
+     * @param saveAppliedDefaultQuota
+     * @param update
+     * @return
+     * @throws UserException
+     */
+    private QuotaInformation getAndApplyQuotaInformation(QuotaFileInformation quotaFileInformation,
+            boolean saveAppliedDefaultQuota, AtomicDBUpdate update) throws UserException {
+
+        QuotaInformation quotaInformation = null;
+
+        try {
+            boolean userQuotaDefined = false, groupQuotaDefined = false;
+
+            String ownerId = quotaFileInformation.getOwnerId();
+            String ownerGroupId = quotaFileInformation.getOwnerGroupId();
+
+            long userQuota = volStorageManager.getUserQuota(ownerId);
+            long groupQuota = volStorageManager.getGroupQuota(ownerGroupId);
+            quotaInformation = new QuotaInformation(volumeQuota, userQuota, groupQuota);
+
             long volumeUsedSpace = volStorageManager.getVolumeUsedSpace();
-            long volumeBlockedSpace = volStorageManager.getVolumeBlockedSpace();
+            quotaInformation.setVolumeUsedSpace(volumeUsedSpace);
 
-            long currentFreeSpace = volumeQuota - (volumeUsedSpace + volumeBlockedSpace);
-            if (currentFreeSpace < (filesize + blockedSpace)) {
-                throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "The quota of the volume \"" + volumeId
-                        + "\" is reached");
+            // check volume quota
+            if (volumeQuota != QuotaConstants.unlimitedQuota) {
+                long volumeBlockedSpace = volStorageManager.getVolumeBlockedSpace();
+                quotaInformation.setVolumeBlockedSpace(volumeBlockedSpace);
+
+                long volumeFreeSpace = volumeQuota - (volumeUsedSpace + volumeBlockedSpace);
+                if (volumeFreeSpace < quotaInformation.getFreeSpace()) {
+                    quotaInformation.setFreeSpace(volumeFreeSpace);
+                    quotaInformation.setQuotaType("volume");
+                }
             }
-            
-            volumeUsedSpace += filesize;
-            volumeBlockedSpace += blockedSpace;
 
-            volStorageManager.setVolumeUsedSpace(volumeUsedSpace, update);
-            volStorageManager.setVolumeBlockedSpace(volumeBlockedSpace, update);
+            // check user quota
+            if (userQuota == QuotaConstants.noQuota) {
+                // set default user quota as new owner quota, if it had no value
+                userQuota = volumeDefaultUserQuota;
+                quotaInformation.setUserQuota(userQuota);
+                userQuotaDefined = true;
+            }
 
+            long userUsedSpace = volStorageManager.getUserUsedSpace(ownerId);
+            quotaInformation.setUserUsedSpace(userUsedSpace);
 
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
-                    + ") updated space usage: usedSpace=" + volumeUsedSpace + ", blockedSpace=" + volumeBlockedSpace
-                    + ", volumeQuota=" + volumeQuota);
-            
-        }catch(DatabaseException e){
+            if (userQuota != QuotaConstants.unlimitedQuota) {
+                long userBlockedSpace = volStorageManager.getUserBlockedSpace(ownerId);
+                quotaInformation.setUserBlockedSpace(userBlockedSpace);
+
+                long userFreeSpace = userQuota - (userUsedSpace + userBlockedSpace);
+                if (userFreeSpace < quotaInformation.getFreeSpace()) {
+                    quotaInformation.setFreeSpace(userFreeSpace);
+                    quotaInformation.setQuotaType("file owner");
+                }
+            }
+
+            // check group quota
+            if (groupQuota == QuotaConstants.noQuota) {
+                // set default group quota as new owner group quota, if it had no value
+                groupQuota = volumeDefaultGroupQuota;
+                quotaInformation.setGroupQuota(groupQuota);
+                groupQuotaDefined = true;
+            }
+
+            long groupUsedSpace = volStorageManager.getGroupUsedSpace(ownerGroupId);
+            quotaInformation.setGroupUsedSpace(groupUsedSpace);
+
+            if (groupQuota != QuotaConstants.unlimitedQuota) {
+                long groupBlockedSpace = volStorageManager.getGroupBlockedSpace(ownerGroupId);
+                quotaInformation.setGroupBlockedSpace(groupBlockedSpace);
+
+                long groupFreeSpace = groupQuota - (groupUsedSpace + groupBlockedSpace);
+                if (groupFreeSpace < quotaInformation.getFreeSpace()) {
+                    quotaInformation.setFreeSpace(groupFreeSpace);
+                    quotaInformation.setQuotaType("file owner group");
+                }
+            }
+
+            // apply newly set quota
+            if (saveAppliedDefaultQuota) {
+                if (userQuota != QuotaConstants.unlimitedQuota && userQuotaDefined) {
+                    volStorageManager.setUserQuota(ownerId, userQuota, update);
+                }
+
+                if (groupQuota != QuotaConstants.unlimitedQuota && groupQuotaDefined) {
+                    volStorageManager.setGroupQuota(ownerGroupId, groupQuota, update);
+                }
+            }
+        } catch (DatabaseException e) {
             Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
                     "An error occured during the interaction with the database!");
         }
+
+        return quotaInformation;
+    }
+
+    /**
+     * Checks, whether a value is negative and iff so, a warning will be logged which type of space and whose space got
+     * negative.
+     * 
+     * @param value
+     * @param errorHint
+     * @param isUsedSpace
+     */
+    private void checkNegativeValue(long value, String errorHint, boolean isUsedSpace) {
+        String spaceType = isUsedSpace ? "used" : "blocked";
+        if (value < 0) {
+            Logging.logMessage(Logging.LEVEL_WARN, this, "VolumeQuotaManager(" + volumeId
+                    + ") got negative space consumption for the " + spaceType + " space of the " + errorHint
+                    + "! Please check the functionality!");
+        }
     }
 
     /**
      * Deletes the volumes quota manager by unregister itself at the mrc quota manager.
+     * 
+     * @throws Exception
      */
-    public void delete() {
-        mrcQuotaManager.removeVolumeQuotaManager(volumeId);
+    public synchronized void delete() throws Exception {
+        mrcQuotaManager.removeVolumeQuotaManager(this);
     }
 
     // Getter & Setter
 
-    /**
-     * @return the volumeName
-     */
     public String getVolumeId() {
         return volumeId;
     }
 
-    /**
-     * @return the volStorageManager
-     */
     public StorageManager getVolStorageManager() {
         return volStorageManager;
     }
 
-    /**
-     * @param volumeQuota
-     *            the volumeQuota to set
-     */
     public void setVolumeQuota(long volumeQuota) {
         this.volumeQuota = volumeQuota;
-
-        setActive(volumeQuota != 0);
 
         Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId + ") changed quota to: "
                 + volumeQuota);
     }
 
-    /**
-     * @param volumeVoucherSize
-     *            the volumeVoucherSize to set
-     */
     public void setVolumeVoucherSize(long volumeVoucherSize) {
         this.volumeVoucherSize = volumeVoucherSize;
 
@@ -271,42 +391,136 @@ public class VolumeQuotaManager {
                 + volumeVoucherSize);
     }
 
-    public void setVolumeDefaultGroupQuota(long volumeDefaultGroupQuota) {
-        this.volumeDefaultGroupQuota = volumeDefaultGroupQuota;
-
-        Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
-                + ") set default group quota to: " + volumeDefaultGroupQuota);
-    }
-
     public void setVolumeDefaultUserQuota(long volumeDefaultUserQuota) {
         this.volumeDefaultUserQuota = volumeDefaultUserQuota;
 
         Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
-                + ") set default user quota to: " + volumeDefaultUserQuota);
+                + ") set volume default user quota to: " + volumeDefaultUserQuota);
     }
 
-    /**
-     * @return the active
-     */
-    public boolean isActive() {
-        return active;
-    }
+    public void setVolumeDefaultGroupQuota(long volumeDefaultGroupQuota) {
+        this.volumeDefaultGroupQuota = volumeDefaultGroupQuota;
 
-    /**
-     * @param active
-     *            the active to set
-     */
-    public void setActive(boolean active) {
-
-        Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId + ") changed active state to: "
-                + active);
-
-        this.active = active;
+        Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
+                + ") set volume default group quota to: " + volumeDefaultGroupQuota);
     }
 
     @Override
     public String toString() {
-        return "VolumeQuotaManager [volumeId=" + volumeId + ", active=" + active + ", volumeQuota=" + volumeQuota
-                + ", volumeVoucherSize=" + volumeVoucherSize + "]";
+        return "VolumeQuotaManager [volumeId=" + volumeId + ", volumeQuota=" + volumeQuota + ", volumeVoucherSize="
+                + volumeVoucherSize + ", volumeDefaultUserQuota=" + volumeDefaultUserQuota
+                + ", volumeDefaultGroupQuota=" + volumeDefaultGroupQuota + "]";
+    }
+
+    private class QuotaInformation {
+
+        private long   freeSpace          = Long.MAX_VALUE;
+        private String quotaType          = null;
+
+        private long   volumeQuota        = 0;
+        private long   userQuota          = 0;
+        private long   groupQuota         = 0;
+
+        private long   volumeUsedSpace    = 0;
+        private long   userUsedSpace      = 0;
+        private long   groupUsedSpace     = 0;
+
+        private long   volumeBlockedSpace = 0;
+        private long   userBlockedSpace   = 0;
+        private long   groupBlockedSpace  = 0;
+
+        public QuotaInformation(long volumeQuota, long userQuota, long groupQuota) {
+            this.volumeQuota = volumeQuota;
+            this.userQuota = userQuota;
+            this.groupQuota = groupQuota;
+        }
+
+        // Getter
+
+        public long getFreeSpace() {
+            return freeSpace;
+        }
+
+        public String getQuotaType() {
+            return quotaType;
+        }
+
+        public long getVolumeQuota() {
+            return volumeQuota;
+        }
+
+        public long getUserQuota() {
+            return userQuota;
+        }
+
+        public long getGroupQuota() {
+            return groupQuota;
+        }
+
+        public long getVolumeUsedSpace() {
+            return volumeUsedSpace;
+        }
+
+        public long getUserUsedSpace() {
+            return userUsedSpace;
+        }
+
+        public long getGroupUsedSpace() {
+            return groupUsedSpace;
+        }
+
+        public long getVolumeBlockedSpace() {
+            return volumeBlockedSpace;
+        }
+
+        public long getUserBlockedSpace() {
+            return userBlockedSpace;
+        }
+
+        public long getGroupBlockedSpace() {
+            return groupBlockedSpace;
+        }
+
+        // Setter
+
+        public void setUserQuota(long userQuota) {
+            this.userQuota = userQuota;
+        }
+
+        public void setGroupQuota(long groupQuota) {
+            this.groupQuota = groupQuota;
+        }
+
+        public void setVolumeUsedSpace(long volumeUsedSpace) {
+            this.volumeUsedSpace = volumeUsedSpace;
+        }
+
+        public void setUserUsedSpace(long userUsedSpace) {
+            this.userUsedSpace = userUsedSpace;
+        }
+
+        public void setGroupUsedSpace(long groupUsedSpace) {
+            this.groupUsedSpace = groupUsedSpace;
+        }
+
+        public void setVolumeBlockedSpace(long volumeBlockedSpace) {
+            this.volumeBlockedSpace = volumeBlockedSpace;
+        }
+
+        public void setUserBlockedSpace(long userBlockedSpace) {
+            this.userBlockedSpace = userBlockedSpace;
+        }
+
+        public void setGroupBlockedSpace(long groupBlockedSpace) {
+            this.groupBlockedSpace = groupBlockedSpace;
+        }
+
+        public void setFreeSpace(long freeSpace) {
+            this.freeSpace = freeSpace;
+        }
+
+        public void setQuotaType(String quotaType) {
+            this.quotaType = quotaType;
+        }
     }
 }

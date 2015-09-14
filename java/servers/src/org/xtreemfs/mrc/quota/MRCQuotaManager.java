@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeManager;
 
@@ -28,9 +29,9 @@ public class MRCQuotaManager {
      * Loads all existing volume quota manager from the database and initiates them.
      * 
      * @param volumeManager
-     * @throws Exception
+     * @throws MRCException
      */
-    public void initializeVolumeQuotaManager(VolumeManager volumeManager) throws Exception {
+    public void initializeVolumeQuotaManager(VolumeManager volumeManager) throws MRCException {
         for (StorageManager storageManager : volumeManager.getStorageManagers()) {
 
             VolumeQuotaManager volumeQuotaManager = new VolumeQuotaManager(this, storageManager, storageManager
@@ -39,7 +40,7 @@ public class MRCQuotaManager {
         }
     }
 
-    public void addVolumeQuotaManager(VolumeQuotaManager volumeQuotaManager) throws Exception {
+    public void addVolumeQuotaManager(VolumeQuotaManager volumeQuotaManager) throws MRCException {
 
         String volumeId = volumeQuotaManager.getVolumeId();
         if (!volQuotaManMap.containsKey(volumeId)) {
@@ -49,22 +50,31 @@ public class MRCQuotaManager {
 
             volQuotaManMap.put(volumeId, volumeQuotaManager);
         } else {
-            throw new Exception("There's already a " + VolumeQuotaManager.class.getName() + " registered for the Id "
-                    + volumeId);
+            throw new MRCException("There's already a VolumeQuotaManager registered for the volumeId " + volumeId);
         }
     }
 
-    public VolumeQuotaManager getVolumeQuotaManagerById(String volumeId) {
-        return volQuotaManMap.get(volumeId);
+    public VolumeQuotaManager getVolumeQuotaManagerById(String volumeId) throws MRCException {
+
+        if (volQuotaManMap.containsKey(volumeId)) {
+            return volQuotaManMap.get(volumeId);
+        } else {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Return VolumeQuotaManager for volumeId: " + volumeId);
+            throw new MRCException("There's no VolumeQuotaManager registered for the volumeId " + volumeId);
+        }
     }
 
-    public boolean hasActiveVolumeQuotaManager(String volumeName) {
-        VolumeQuotaManager volumeQuotaManager = getVolumeQuotaManagerById(volumeName);
-        return (volumeQuotaManager == null) ? false : volumeQuotaManager.isActive();
-    }
+    public void removeVolumeQuotaManager(VolumeQuotaManager volumeQuotaManager) throws MRCException {
 
-    public void removeVolumeQuotaManager(String volumeId) {
-        volQuotaManMap.remove(volumeId);
+        String volumeId = volumeQuotaManager.getVolumeId();
+        if (volQuotaManMap.containsKey(volumeId)) {
+
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Unregister VolumeQuotaManager with volumeId: " + volumeId);
+
+            volQuotaManMap.remove(volumeId);
+        } else {
+            throw new MRCException("There's no VolumeQuotaManager registered for the volumeId " + volumeId);
+        }
     }
 
     @Override

@@ -12,6 +12,7 @@ import java.util.Set;
 import org.xtreemfs.common.quota.QuotaConstants;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
@@ -56,57 +57,62 @@ public class MRCVoucherManager {
 
         long newMaxFileSize = 0;
 
-        if (mrcQuotaManager.hasActiveVolumeQuotaManager(quotaFileInformation.getVolumeId())) {
+        try {
+            VolumeQuotaManager volumeQuotaManager = mrcQuotaManager.getVolumeQuotaManagerById(quotaFileInformation
+                    .getVolumeId());
+            StorageManager storageManager = volumeQuotaManager.getVolStorageManager();
 
-            try {
-                VolumeQuotaManager volumeQuotaManager = mrcQuotaManager.getVolumeQuotaManagerById(quotaFileInformation
-                        .getVolumeId());
-                StorageManager storageManager = volumeQuotaManager.getVolStorageManager();
+            FileVoucherInfo fileVoucherInfo = storageManager.getFileVoucherInfo(quotaFileInformation.getFileId());
+            FileVoucherClientInfo fileVoucherClientInfo = storageManager.getFileVoucherClientInfo(
+                    quotaFileInformation.getFileId(), clientId);
 
-                FileVoucherInfo fileVoucherInfo = storageManager.getFileVoucherInfo(quotaFileInformation.getFileId());
-                FileVoucherClientInfo fileVoucherClientInfo = storageManager.getFileVoucherClientInfo(
-                        quotaFileInformation.getFileId(), clientId);
-
-                long voucherSize;
-                if (fileVoucherInfo == null) {
-                    assert (fileVoucherClientInfo == null); // it has to be null
-
-                    voucherSize = volumeQuotaManager.getVoucher(quotaFileInformation, update);
-
-                    fileVoucherInfo = new BufferBackedFileVoucherInfo(quotaFileInformation.getFileId(),
-                            quotaFileInformation.getFilesize(), quotaFileInformation.getReplicaCount(), voucherSize);
-                } else {
-                    if (fileVoucherClientInfo == null) {
-                        fileVoucherInfo.increaseClientCount();
-                    }
-
-                    // overwrite replica count, because an added replica don't has to be installed yet, but is covered
-                    // by the voucher and quota management.
-                    quotaFileInformation.setReplicaCount(fileVoucherInfo.getReplicaCount());
-                    voucherSize = volumeQuotaManager.getVoucher(quotaFileInformation, update);
-
-                    fileVoucherInfo.increaseBlockedSpaceByValue(voucherSize);
-                }
-
-                if (fileVoucherClientInfo == null) {
-                    fileVoucherClientInfo = new BufferBackedFileVoucherClientInfo(quotaFileInformation.getFileId(),
-                            clientId, expireTime);
-                } else {
-                    fileVoucherClientInfo.addExpireTime(expireTime);
-                }
-
-                newMaxFileSize = fileVoucherInfo.getFilesize() + fileVoucherInfo.getBlockedSpace();
-
-                storageManager.setFileVoucherInfo(fileVoucherInfo, update);
-                storageManager.setFileVoucherClientInfo(fileVoucherClientInfo, update);
-            } catch (DatabaseException e) {
-                Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
-
-                throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                        "An error occured during the interaction with the database!");
+            if (fileVoucherInfo != null) {
+                // overwrite replica count, because an added replica don't has to be installed yet, but is covered
+                // by the voucher and quota management.
+                quotaFileInformation.setReplicaCount(fileVoucherInfo.getReplicaCount());
             }
-        } else {
-            newMaxFileSize = QuotaConstants.unlimitedVoucher;
+
+            long voucherSize = volumeQuotaManager.getVoucher(quotaFileInformation, update);
+            long newBlockedSpace = voucherSize;
+            if (voucherSize == QuotaConstants.unlimitedVoucher) {
+                newMaxFileSize = QuotaConstants.unlimitedVoucher;
+                newBlockedSpace = 0;
+            }
+
+            if (fileVoucherInfo == null) {
+                assert (fileVoucherClientInfo == null); // it has to be null
+
+                fileVoucherInfo = new BufferBackedFileVoucherInfo(quotaFileInformation.getFileId(),
+                        quotaFileInformation.getFilesize(), quotaFileInformation.getReplicaCount(), newBlockedSpace);
+            } else {
+                if (fileVoucherClientInfo == null) {
+                    fileVoucherInfo.increaseClientCount();
+                }
+                fileVoucherInfo.increaseBlockedSpaceByValue(newBlockedSpace);
+            }
+
+            if (fileVoucherClientInfo == null) {
+                fileVoucherClientInfo = new BufferBackedFileVoucherClientInfo(quotaFileInformation.getFileId(),
+                        clientId, expireTime);
+            } else {
+                fileVoucherClientInfo.addExpireTime(expireTime);
+            }
+
+            if (voucherSize != QuotaConstants.unlimitedVoucher) {
+                newMaxFileSize = fileVoucherInfo.getFilesize() + fileVoucherInfo.getBlockedSpace();
+            }
+
+            storageManager.setFileVoucherInfo(fileVoucherInfo, update);
+            storageManager.setFileVoucherClientInfo(fileVoucherClientInfo, update);
+        } catch (DatabaseException e) {
+            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
+                    "An error occured during the interaction with the database!");
+        } catch (MRCException e) {
+            Logging.logError(Logging.LEVEL_ERROR, this, e);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
         }
 
         return newMaxFileSize;
@@ -123,28 +129,30 @@ public class MRCVoucherManager {
         Logging.logMessage(Logging.LEVEL_DEBUG, this,
                 "Check voucher availability for file: " + quotaFileInformation.getGlobalFileId());
 
-        if (mrcQuotaManager.hasActiveVolumeQuotaManager(quotaFileInformation.getVolumeId())) {
-            try {
-                VolumeQuotaManager volumeQuotaManager = mrcQuotaManager.getVolumeQuotaManagerById(quotaFileInformation
-                        .getVolumeId());
-                StorageManager storageManager = volumeQuotaManager.getVolStorageManager();
+        try {
+            VolumeQuotaManager volumeQuotaManager = mrcQuotaManager.getVolumeQuotaManagerById(quotaFileInformation
+                    .getVolumeId());
+            StorageManager storageManager = volumeQuotaManager.getVolStorageManager();
 
-                FileVoucherInfo fileVoucherInfo;
-                fileVoucherInfo = storageManager.getFileVoucherInfo(quotaFileInformation.getFileId());
-                if (fileVoucherInfo != null) {
-                    // overwrite replica count, because an added replica don't has to be installed yet, but is covered
-                    // by the voucher and quota management.
-                    quotaFileInformation.setReplicaCount(fileVoucherInfo.getReplicaCount());
-                }
-
-                // ignore return value, because if no voucher is available, an exception will be thrown
-                volumeQuotaManager.checkVoucherAvailability(quotaFileInformation);
-            } catch (DatabaseException e) {
-                Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
-
-                throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                        "An error occured during the interaction with the database!");
+            FileVoucherInfo fileVoucherInfo;
+            fileVoucherInfo = storageManager.getFileVoucherInfo(quotaFileInformation.getFileId());
+            if (fileVoucherInfo != null) {
+                // overwrite replica count, because an added replica don't has to be installed yet, but is covered
+                // by the voucher and quota management.
+                quotaFileInformation.setReplicaCount(fileVoucherInfo.getReplicaCount());
             }
+
+            // ignore return value, because if no voucher is available, an exception will be thrown
+            volumeQuotaManager.checkVoucherAvailability(quotaFileInformation);
+        } catch (DatabaseException e) {
+            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
+                    "An error occured during the interaction with the database!");
+        } catch (MRCException e) {
+            Logging.logError(Logging.LEVEL_ERROR, this, e);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
         }
     }
 
@@ -196,8 +204,8 @@ public class MRCVoucherManager {
                     if (fileVoucherInfo.getClientCount() == 0) {
                         int replicaCount = fileVoucherInfo.getReplicaCount();
                         long fileSizeDifference = fileSize - fileVoucherInfo.getFilesize();
-                        volumeQuotaManager.updateSpaceUsage(replicaCount * fileSizeDifference, replicaCount
-                                * fileVoucherInfo.getBlockedSpace(), update);
+                        volumeQuotaManager.updateSpaceUsage(quotaFileInformation, replicaCount * fileSizeDifference, -1
+                                * replicaCount * fileVoucherInfo.getBlockedSpace(), update);
                     }
 
                     storageManager.setFileVoucherInfo(fileVoucherInfo, update);
@@ -215,6 +223,10 @@ public class MRCVoucherManager {
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
                     "An error occured during the interaction with the database!");
+        } catch (MRCException e) {
+            Logging.logError(Logging.LEVEL_ERROR, this, e);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
         }
     }
 
@@ -249,8 +261,9 @@ public class MRCVoucherManager {
                 // the voucher and quota management.
                 replicaCount = fileVoucherInfo.getReplicaCount();
 
-                volumeQuotaManager.updateSpaceUsage(-1 * replicaCount * fileVoucherInfo.getFilesize(), replicaCount
-                        * fileVoucherInfo.getBlockedSpace(), update);
+                volumeQuotaManager.updateSpaceUsage(quotaFileInformation,
+                        -1 * replicaCount * fileVoucherInfo.getFilesize(),
+                        -1 * replicaCount * fileVoucherInfo.getBlockedSpace(), update);
 
                 // get all open client information and delete them
                 allFileVoucherClientInfo = storageManager.getAllFileVoucherClientInfo(quotaFileInformation.getFileId());
@@ -265,16 +278,18 @@ public class MRCVoucherManager {
                         "Delete file without voucher: " + quotaFileInformation.getGlobalFileId());
 
                 // check for active volume quota manager and reduce used space by file size
-                if (volumeQuotaManager.isActive()) {
-                    volumeQuotaManager.updateSpaceUsage(-1 * replicaCount * quotaFileInformation.getFilesize(), 0,
-                            update);
-                }
+                volumeQuotaManager.updateSpaceUsage(quotaFileInformation,
+                        -1 * replicaCount * quotaFileInformation.getFilesize(), 0, update);
             }
         } catch (DatabaseException e) {
             Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
                     "An error occured during the interaction with the database!");
+        } catch (MRCException e) {
+            Logging.logError(Logging.LEVEL_ERROR, this, e);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
         } finally {
             if (allFileVoucherClientInfo != null) {
                 allFileVoucherClientInfo.destroy();
@@ -323,13 +338,20 @@ public class MRCVoucherManager {
                         quotaFileInformation.setReplicaCount(fileVoucherInfo.getReplicaCount());
                         long voucherSize = volumeQuotaManager.getVoucher(quotaFileInformation, update);
 
+                        if (voucherSize == QuotaConstants.unlimitedVoucher) {
+                            voucherSize = 0;
+                            newMaxFileSize = QuotaConstants.unlimitedVoucher;
+                        }
+
                         fileVoucherInfo.increaseBlockedSpaceByValue(voucherSize);
                         storageManager.setFileVoucherInfo(fileVoucherInfo, update);
 
                         fileVoucherClientInfo.addExpireTime(newExpireTime);
                         storageManager.setFileVoucherClientInfo(fileVoucherClientInfo, update);
 
-                        newMaxFileSize = fileVoucherInfo.getFilesize() + fileVoucherInfo.getBlockedSpace();
+                        if (voucherSize != QuotaConstants.unlimitedVoucher) {
+                            newMaxFileSize = fileVoucherInfo.getFilesize() + fileVoucherInfo.getBlockedSpace();
+                        }
 
                         Logging.logMessage(Logging.LEVEL_DEBUG, this, "Renew voucher to " + newMaxFileSize
                                 + ". fileId: " + quotaFileInformation.getFileId() + ", client: " + clientId
@@ -352,6 +374,10 @@ public class MRCVoucherManager {
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
                     "An error occured during the interaction with the database!");
+        } catch (MRCException e) {
+            Logging.logError(Logging.LEVEL_ERROR, this, e);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
         }
 
         return newMaxFileSize;
@@ -402,6 +428,10 @@ public class MRCVoucherManager {
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
                     "An error occured during the interaction with the database!");
+        } catch (MRCException e) {
+            Logging.logError(Logging.LEVEL_ERROR, this, e);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
         }
     }
 
@@ -430,18 +460,24 @@ public class MRCVoucherManager {
             if (fileVoucherInfo != null) {
                 filesize = fileVoucherInfo.getFilesize();
                 blockedSpace = fileVoucherInfo.getBlockedSpace();
-
-                // update file voucher info
-                fileVoucherInfo.increaseReplicaCount();
-                storageManager.setFileVoucherInfo(fileVoucherInfo, update);
             }
 
             volumeQuotaManager.addReplica(quotaFileInformation, filesize, blockedSpace, update);
+
+            // update file voucher info, if add replica didn't throw an error
+            if (fileVoucherInfo != null) {
+                fileVoucherInfo.increaseReplicaCount();
+                storageManager.setFileVoucherInfo(fileVoucherInfo, update);
+            }
         } catch (DatabaseException e) {
             Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
                     "An error occured during the interaction with the database!");
+        } catch (MRCException e) {
+            Logging.logError(Logging.LEVEL_ERROR, this, e);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
         }
     }
 
@@ -469,19 +505,23 @@ public class MRCVoucherManager {
             long clearBlockedSpace = 0;
             if (fileVoucherInfo != null) {
                 filesizeDifference = -1 * fileVoucherInfo.getFilesize();
-                clearBlockedSpace = fileVoucherInfo.getBlockedSpace();
+                clearBlockedSpace = -1 * fileVoucherInfo.getBlockedSpace();
 
                 // update file voucher info
                 fileVoucherInfo.decreaseReplicaCount();
                 storageManager.setFileVoucherInfo(fileVoucherInfo, update);
             }
 
-            volumeQuotaManager.updateSpaceUsage(filesizeDifference, clearBlockedSpace, update);
+            volumeQuotaManager.updateSpaceUsage(quotaFileInformation, filesizeDifference, clearBlockedSpace, update);
         } catch (DatabaseException e) {
             Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
                     "An error occured during the interaction with the database!");
+        } catch (MRCException e) {
+            Logging.logError(Logging.LEVEL_ERROR, this, e);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
         }
     }
 
