@@ -80,9 +80,11 @@ class stringMessage;
 class xtreemfs_listdirRequest;
 class xtreemfs_listdirResponse;
 class xtreemfs_replica_addRequest;
+class xtreemfs_replica_addResponse;
 class xtreemfs_replica_listRequest;
 class xtreemfs_get_xlocsetRequest;
 class xtreemfs_replica_removeRequest;
+class xtreemfs_replica_removeResponse;
 class xtreemfs_restore_fileRequest;
 class xtreemfs_rmvolRequest;
 class xtreemfs_update_file_sizeRequest;
@@ -92,6 +94,7 @@ class xtreemfs_set_read_only_xattrRequest;
 class xtreemfs_set_read_only_xattrResponse;
 class xtreemfs_get_file_credentialsRequest;
 class xtreemfs_reselect_osdsRequest;
+class xtreemfs_reselect_osdsResponse;
 
 enum xtreemfs_check_file_existsResponse_FILE_STATE {
   xtreemfs_check_file_existsResponse_FILE_STATE_DELETED = 0,
@@ -4965,6 +4968,103 @@ class xtreemfs_replica_addRequest : public ::google::protobuf::Message {
 };
 // -------------------------------------------------------------------
 
+class xtreemfs_replica_addResponse : public ::google::protobuf::Message {
+ public:
+  xtreemfs_replica_addResponse();
+  virtual ~xtreemfs_replica_addResponse();
+
+  xtreemfs_replica_addResponse(const xtreemfs_replica_addResponse& from);
+
+  inline xtreemfs_replica_addResponse& operator=(const xtreemfs_replica_addResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const xtreemfs_replica_addResponse& default_instance();
+
+  void Swap(xtreemfs_replica_addResponse* other);
+
+  // implements Message ----------------------------------------------
+
+  xtreemfs_replica_addResponse* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const xtreemfs_replica_addResponse& from);
+  void MergeFrom(const xtreemfs_replica_addResponse& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required string file_id = 1;
+  inline bool has_file_id() const;
+  inline void clear_file_id();
+  static const int kFileIdFieldNumber = 1;
+  inline const ::std::string& file_id() const;
+  inline void set_file_id(const ::std::string& value);
+  inline void set_file_id(const char* value);
+  inline void set_file_id(const char* value, size_t size);
+  inline ::std::string* mutable_file_id();
+  inline ::std::string* release_file_id();
+  inline void set_allocated_file_id(::std::string* file_id);
+
+  // required int32 expected_xlocset_version = 2;
+  inline bool has_expected_xlocset_version() const;
+  inline void clear_expected_xlocset_version();
+  static const int kExpectedXlocsetVersionFieldNumber = 2;
+  inline ::google::protobuf::int32 expected_xlocset_version() const;
+  inline void set_expected_xlocset_version(::google::protobuf::int32 value);
+
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_replica_addResponse)
+ private:
+  inline void set_has_file_id();
+  inline void clear_has_file_id();
+  inline void set_has_expected_xlocset_version();
+  inline void clear_has_expected_xlocset_version();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::std::string* file_id_;
+  ::google::protobuf::int32 expected_xlocset_version_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
+
+  friend void  protobuf_AddDesc_xtreemfs_2fMRC_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fMRC_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fMRC_2eproto();
+
+  void InitAsDefaultInstance();
+  static xtreemfs_replica_addResponse* default_instance_;
+};
+// -------------------------------------------------------------------
+
 class xtreemfs_replica_listRequest : public ::google::protobuf::Message {
  public:
   xtreemfs_replica_listRequest();
@@ -5340,6 +5440,127 @@ class xtreemfs_replica_removeRequest : public ::google::protobuf::Message {
 
   void InitAsDefaultInstance();
   static xtreemfs_replica_removeRequest* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class xtreemfs_replica_removeResponse : public ::google::protobuf::Message {
+ public:
+  xtreemfs_replica_removeResponse();
+  virtual ~xtreemfs_replica_removeResponse();
+
+  xtreemfs_replica_removeResponse(const xtreemfs_replica_removeResponse& from);
+
+  inline xtreemfs_replica_removeResponse& operator=(const xtreemfs_replica_removeResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const xtreemfs_replica_removeResponse& default_instance();
+
+  void Swap(xtreemfs_replica_removeResponse* other);
+
+  // implements Message ----------------------------------------------
+
+  xtreemfs_replica_removeResponse* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const xtreemfs_replica_removeResponse& from);
+  void MergeFrom(const xtreemfs_replica_removeResponse& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required string file_id = 1;
+  inline bool has_file_id() const;
+  inline void clear_file_id();
+  static const int kFileIdFieldNumber = 1;
+  inline const ::std::string& file_id() const;
+  inline void set_file_id(const ::std::string& value);
+  inline void set_file_id(const char* value);
+  inline void set_file_id(const char* value, size_t size);
+  inline ::std::string* mutable_file_id();
+  inline ::std::string* release_file_id();
+  inline void set_allocated_file_id(::std::string* file_id);
+
+  // required int32 expected_xlocset_version = 2;
+  inline bool has_expected_xlocset_version() const;
+  inline void clear_expected_xlocset_version();
+  static const int kExpectedXlocsetVersionFieldNumber = 2;
+  inline ::google::protobuf::int32 expected_xlocset_version() const;
+  inline void set_expected_xlocset_version(::google::protobuf::int32 value);
+
+  // required .xtreemfs.pbrpc.XLocSet unlink_xloc = 3;
+  inline bool has_unlink_xloc() const;
+  inline void clear_unlink_xloc();
+  static const int kUnlinkXlocFieldNumber = 3;
+  inline const ::xtreemfs::pbrpc::XLocSet& unlink_xloc() const;
+  inline ::xtreemfs::pbrpc::XLocSet* mutable_unlink_xloc();
+  inline ::xtreemfs::pbrpc::XLocSet* release_unlink_xloc();
+  inline void set_allocated_unlink_xloc(::xtreemfs::pbrpc::XLocSet* unlink_xloc);
+
+  // required .xtreemfs.pbrpc.XCap unlink_xcap = 4;
+  inline bool has_unlink_xcap() const;
+  inline void clear_unlink_xcap();
+  static const int kUnlinkXcapFieldNumber = 4;
+  inline const ::xtreemfs::pbrpc::XCap& unlink_xcap() const;
+  inline ::xtreemfs::pbrpc::XCap* mutable_unlink_xcap();
+  inline ::xtreemfs::pbrpc::XCap* release_unlink_xcap();
+  inline void set_allocated_unlink_xcap(::xtreemfs::pbrpc::XCap* unlink_xcap);
+
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_replica_removeResponse)
+ private:
+  inline void set_has_file_id();
+  inline void clear_has_file_id();
+  inline void set_has_expected_xlocset_version();
+  inline void clear_has_expected_xlocset_version();
+  inline void set_has_unlink_xloc();
+  inline void clear_has_unlink_xloc();
+  inline void set_has_unlink_xcap();
+  inline void clear_has_unlink_xcap();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::std::string* file_id_;
+  ::xtreemfs::pbrpc::XLocSet* unlink_xloc_;
+  ::xtreemfs::pbrpc::XCap* unlink_xcap_;
+  ::google::protobuf::int32 expected_xlocset_version_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(4 + 31) / 32];
+
+  friend void  protobuf_AddDesc_xtreemfs_2fMRC_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fMRC_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fMRC_2eproto();
+
+  void InitAsDefaultInstance();
+  static xtreemfs_replica_removeResponse* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -6251,6 +6472,103 @@ class xtreemfs_reselect_osdsRequest : public ::google::protobuf::Message {
 
   void InitAsDefaultInstance();
   static xtreemfs_reselect_osdsRequest* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class xtreemfs_reselect_osdsResponse : public ::google::protobuf::Message {
+ public:
+  xtreemfs_reselect_osdsResponse();
+  virtual ~xtreemfs_reselect_osdsResponse();
+
+  xtreemfs_reselect_osdsResponse(const xtreemfs_reselect_osdsResponse& from);
+
+  inline xtreemfs_reselect_osdsResponse& operator=(const xtreemfs_reselect_osdsResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const xtreemfs_reselect_osdsResponse& default_instance();
+
+  void Swap(xtreemfs_reselect_osdsResponse* other);
+
+  // implements Message ----------------------------------------------
+
+  xtreemfs_reselect_osdsResponse* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const xtreemfs_reselect_osdsResponse& from);
+  void MergeFrom(const xtreemfs_reselect_osdsResponse& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required string file_id = 1;
+  inline bool has_file_id() const;
+  inline void clear_file_id();
+  static const int kFileIdFieldNumber = 1;
+  inline const ::std::string& file_id() const;
+  inline void set_file_id(const ::std::string& value);
+  inline void set_file_id(const char* value);
+  inline void set_file_id(const char* value, size_t size);
+  inline ::std::string* mutable_file_id();
+  inline ::std::string* release_file_id();
+  inline void set_allocated_file_id(::std::string* file_id);
+
+  // required int32 expected_xlocset_version = 2;
+  inline bool has_expected_xlocset_version() const;
+  inline void clear_expected_xlocset_version();
+  static const int kExpectedXlocsetVersionFieldNumber = 2;
+  inline ::google::protobuf::int32 expected_xlocset_version() const;
+  inline void set_expected_xlocset_version(::google::protobuf::int32 value);
+
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_reselect_osdsResponse)
+ private:
+  inline void set_has_file_id();
+  inline void clear_has_file_id();
+  inline void set_has_expected_xlocset_version();
+  inline void clear_has_expected_xlocset_version();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::std::string* file_id_;
+  ::google::protobuf::int32 expected_xlocset_version_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
+
+  friend void  protobuf_AddDesc_xtreemfs_2fMRC_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fMRC_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fMRC_2eproto();
+
+  void InitAsDefaultInstance();
+  static xtreemfs_reselect_osdsResponse* default_instance_;
 };
 // ===================================================================
 
@@ -12914,6 +13232,102 @@ inline void xtreemfs_replica_addRequest::set_allocated_new_replica(::xtreemfs::p
 
 // -------------------------------------------------------------------
 
+// xtreemfs_replica_addResponse
+
+// required string file_id = 1;
+inline bool xtreemfs_replica_addResponse::has_file_id() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void xtreemfs_replica_addResponse::set_has_file_id() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void xtreemfs_replica_addResponse::clear_has_file_id() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void xtreemfs_replica_addResponse::clear_file_id() {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
+    file_id_->clear();
+  }
+  clear_has_file_id();
+}
+inline const ::std::string& xtreemfs_replica_addResponse::file_id() const {
+  return *file_id_;
+}
+inline void xtreemfs_replica_addResponse::set_file_id(const ::std::string& value) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(value);
+}
+inline void xtreemfs_replica_addResponse::set_file_id(const char* value) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(value);
+}
+inline void xtreemfs_replica_addResponse::set_file_id(const char* value, size_t size) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* xtreemfs_replica_addResponse::mutable_file_id() {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  return file_id_;
+}
+inline ::std::string* xtreemfs_replica_addResponse::release_file_id() {
+  clear_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = file_id_;
+    file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void xtreemfs_replica_addResponse::set_allocated_file_id(::std::string* file_id) {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
+    delete file_id_;
+  }
+  if (file_id) {
+    set_has_file_id();
+    file_id_ = file_id;
+  } else {
+    clear_has_file_id();
+    file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// required int32 expected_xlocset_version = 2;
+inline bool xtreemfs_replica_addResponse::has_expected_xlocset_version() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void xtreemfs_replica_addResponse::set_has_expected_xlocset_version() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void xtreemfs_replica_addResponse::clear_has_expected_xlocset_version() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void xtreemfs_replica_addResponse::clear_expected_xlocset_version() {
+  expected_xlocset_version_ = 0;
+  clear_has_expected_xlocset_version();
+}
+inline ::google::protobuf::int32 xtreemfs_replica_addResponse::expected_xlocset_version() const {
+  return expected_xlocset_version_;
+}
+inline void xtreemfs_replica_addResponse::set_expected_xlocset_version(::google::protobuf::int32 value) {
+  set_has_expected_xlocset_version();
+  expected_xlocset_version_ = value;
+}
+
+// -------------------------------------------------------------------
+
 // xtreemfs_replica_listRequest
 
 // optional string file_id = 1;
@@ -13659,6 +14073,178 @@ inline void xtreemfs_replica_removeRequest::set_allocated_osd_uuid(::std::string
   } else {
     clear_has_osd_uuid();
     osd_uuid_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// -------------------------------------------------------------------
+
+// xtreemfs_replica_removeResponse
+
+// required string file_id = 1;
+inline bool xtreemfs_replica_removeResponse::has_file_id() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void xtreemfs_replica_removeResponse::set_has_file_id() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void xtreemfs_replica_removeResponse::clear_has_file_id() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void xtreemfs_replica_removeResponse::clear_file_id() {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
+    file_id_->clear();
+  }
+  clear_has_file_id();
+}
+inline const ::std::string& xtreemfs_replica_removeResponse::file_id() const {
+  return *file_id_;
+}
+inline void xtreemfs_replica_removeResponse::set_file_id(const ::std::string& value) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(value);
+}
+inline void xtreemfs_replica_removeResponse::set_file_id(const char* value) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(value);
+}
+inline void xtreemfs_replica_removeResponse::set_file_id(const char* value, size_t size) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* xtreemfs_replica_removeResponse::mutable_file_id() {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  return file_id_;
+}
+inline ::std::string* xtreemfs_replica_removeResponse::release_file_id() {
+  clear_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = file_id_;
+    file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void xtreemfs_replica_removeResponse::set_allocated_file_id(::std::string* file_id) {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
+    delete file_id_;
+  }
+  if (file_id) {
+    set_has_file_id();
+    file_id_ = file_id;
+  } else {
+    clear_has_file_id();
+    file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// required int32 expected_xlocset_version = 2;
+inline bool xtreemfs_replica_removeResponse::has_expected_xlocset_version() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void xtreemfs_replica_removeResponse::set_has_expected_xlocset_version() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void xtreemfs_replica_removeResponse::clear_has_expected_xlocset_version() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void xtreemfs_replica_removeResponse::clear_expected_xlocset_version() {
+  expected_xlocset_version_ = 0;
+  clear_has_expected_xlocset_version();
+}
+inline ::google::protobuf::int32 xtreemfs_replica_removeResponse::expected_xlocset_version() const {
+  return expected_xlocset_version_;
+}
+inline void xtreemfs_replica_removeResponse::set_expected_xlocset_version(::google::protobuf::int32 value) {
+  set_has_expected_xlocset_version();
+  expected_xlocset_version_ = value;
+}
+
+// required .xtreemfs.pbrpc.XLocSet unlink_xloc = 3;
+inline bool xtreemfs_replica_removeResponse::has_unlink_xloc() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void xtreemfs_replica_removeResponse::set_has_unlink_xloc() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void xtreemfs_replica_removeResponse::clear_has_unlink_xloc() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void xtreemfs_replica_removeResponse::clear_unlink_xloc() {
+  if (unlink_xloc_ != NULL) unlink_xloc_->::xtreemfs::pbrpc::XLocSet::Clear();
+  clear_has_unlink_xloc();
+}
+inline const ::xtreemfs::pbrpc::XLocSet& xtreemfs_replica_removeResponse::unlink_xloc() const {
+  return unlink_xloc_ != NULL ? *unlink_xloc_ : *default_instance_->unlink_xloc_;
+}
+inline ::xtreemfs::pbrpc::XLocSet* xtreemfs_replica_removeResponse::mutable_unlink_xloc() {
+  set_has_unlink_xloc();
+  if (unlink_xloc_ == NULL) unlink_xloc_ = new ::xtreemfs::pbrpc::XLocSet;
+  return unlink_xloc_;
+}
+inline ::xtreemfs::pbrpc::XLocSet* xtreemfs_replica_removeResponse::release_unlink_xloc() {
+  clear_has_unlink_xloc();
+  ::xtreemfs::pbrpc::XLocSet* temp = unlink_xloc_;
+  unlink_xloc_ = NULL;
+  return temp;
+}
+inline void xtreemfs_replica_removeResponse::set_allocated_unlink_xloc(::xtreemfs::pbrpc::XLocSet* unlink_xloc) {
+  delete unlink_xloc_;
+  unlink_xloc_ = unlink_xloc;
+  if (unlink_xloc) {
+    set_has_unlink_xloc();
+  } else {
+    clear_has_unlink_xloc();
+  }
+}
+
+// required .xtreemfs.pbrpc.XCap unlink_xcap = 4;
+inline bool xtreemfs_replica_removeResponse::has_unlink_xcap() const {
+  return (_has_bits_[0] & 0x00000008u) != 0;
+}
+inline void xtreemfs_replica_removeResponse::set_has_unlink_xcap() {
+  _has_bits_[0] |= 0x00000008u;
+}
+inline void xtreemfs_replica_removeResponse::clear_has_unlink_xcap() {
+  _has_bits_[0] &= ~0x00000008u;
+}
+inline void xtreemfs_replica_removeResponse::clear_unlink_xcap() {
+  if (unlink_xcap_ != NULL) unlink_xcap_->::xtreemfs::pbrpc::XCap::Clear();
+  clear_has_unlink_xcap();
+}
+inline const ::xtreemfs::pbrpc::XCap& xtreemfs_replica_removeResponse::unlink_xcap() const {
+  return unlink_xcap_ != NULL ? *unlink_xcap_ : *default_instance_->unlink_xcap_;
+}
+inline ::xtreemfs::pbrpc::XCap* xtreemfs_replica_removeResponse::mutable_unlink_xcap() {
+  set_has_unlink_xcap();
+  if (unlink_xcap_ == NULL) unlink_xcap_ = new ::xtreemfs::pbrpc::XCap;
+  return unlink_xcap_;
+}
+inline ::xtreemfs::pbrpc::XCap* xtreemfs_replica_removeResponse::release_unlink_xcap() {
+  clear_has_unlink_xcap();
+  ::xtreemfs::pbrpc::XCap* temp = unlink_xcap_;
+  unlink_xcap_ = NULL;
+  return temp;
+}
+inline void xtreemfs_replica_removeResponse::set_allocated_unlink_xcap(::xtreemfs::pbrpc::XCap* unlink_xcap) {
+  delete unlink_xcap_;
+  unlink_xcap_ = unlink_xcap;
+  if (unlink_xcap) {
+    set_has_unlink_xcap();
+  } else {
+    clear_has_unlink_xcap();
   }
 }
 
@@ -14728,6 +15314,102 @@ inline void xtreemfs_reselect_osdsRequest::set_allocated_coordinates(::xtreemfs:
   } else {
     clear_has_coordinates();
   }
+}
+
+// -------------------------------------------------------------------
+
+// xtreemfs_reselect_osdsResponse
+
+// required string file_id = 1;
+inline bool xtreemfs_reselect_osdsResponse::has_file_id() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void xtreemfs_reselect_osdsResponse::set_has_file_id() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void xtreemfs_reselect_osdsResponse::clear_has_file_id() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void xtreemfs_reselect_osdsResponse::clear_file_id() {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
+    file_id_->clear();
+  }
+  clear_has_file_id();
+}
+inline const ::std::string& xtreemfs_reselect_osdsResponse::file_id() const {
+  return *file_id_;
+}
+inline void xtreemfs_reselect_osdsResponse::set_file_id(const ::std::string& value) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(value);
+}
+inline void xtreemfs_reselect_osdsResponse::set_file_id(const char* value) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(value);
+}
+inline void xtreemfs_reselect_osdsResponse::set_file_id(const char* value, size_t size) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* xtreemfs_reselect_osdsResponse::mutable_file_id() {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  return file_id_;
+}
+inline ::std::string* xtreemfs_reselect_osdsResponse::release_file_id() {
+  clear_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = file_id_;
+    file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void xtreemfs_reselect_osdsResponse::set_allocated_file_id(::std::string* file_id) {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
+    delete file_id_;
+  }
+  if (file_id) {
+    set_has_file_id();
+    file_id_ = file_id;
+  } else {
+    clear_has_file_id();
+    file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// required int32 expected_xlocset_version = 2;
+inline bool xtreemfs_reselect_osdsResponse::has_expected_xlocset_version() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void xtreemfs_reselect_osdsResponse::set_has_expected_xlocset_version() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void xtreemfs_reselect_osdsResponse::clear_has_expected_xlocset_version() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void xtreemfs_reselect_osdsResponse::clear_expected_xlocset_version() {
+  expected_xlocset_version_ = 0;
+  clear_has_expected_xlocset_version();
+}
+inline ::google::protobuf::int32 xtreemfs_reselect_osdsResponse::expected_xlocset_version() const {
+  return expected_xlocset_version_;
+}
+inline void xtreemfs_reselect_osdsResponse::set_expected_xlocset_version(::google::protobuf::int32 value) {
+  set_has_expected_xlocset_version();
+  expected_xlocset_version_ = value;
 }
 
 

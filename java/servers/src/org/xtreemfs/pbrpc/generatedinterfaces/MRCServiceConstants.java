@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Wed Aug 26 15:46:36 CEST 2015
+//automatically generated from MRC.proto at Mon Sep 14 11:28:51 CEST 2015
 //(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -131,9 +131,9 @@ public class MRCServiceConstants {
            case 47: return null;
            case 37: return GlobalTypes.XCap.getDefaultInstance();
            case 38: return null;
-           case 39: return null;
+           case 39: return MRC.xtreemfs_replica_addResponse.getDefaultInstance();
            case 40: return GlobalTypes.Replicas.getDefaultInstance();
-           case 41: return GlobalTypes.FileCredentials.getDefaultInstance();
+           case 41: return MRC.xtreemfs_replica_removeResponse.getDefaultInstance();
            case 42: return null;
            case 43: return null;
            case 44: return null;
@@ -143,7 +143,7 @@ public class MRCServiceConstants {
            case 49: return MRC.xtreemfs_set_read_only_xattrResponse.getDefaultInstance();
            case 50: return GlobalTypes.FileCredentials.getDefaultInstance();
            case 51: return GlobalTypes.XLocSet.getDefaultInstance();
-           case 52: return GlobalTypes.XLocSet.getDefaultInstance();
+           case 52: return MRC.xtreemfs_reselect_osdsResponse.getDefaultInstance();
            default: throw new RuntimeException("unknown procedure id");
         }
     }

@@ -515,6 +515,11 @@ message xtreemfs_replica_addRequest {
   required Replica new_replica = 2;
 }
 
+message xtreemfs_replica_addResponse {
+  required string file_id = 1;
+  required int32 expected_xlocset_version = 2;
+}
+
 // requests a list of all replicas of a file (deprecated)
 message xtreemfs_replica_listRequest {
   // the file ID
@@ -544,6 +549,13 @@ message xtreemfs_replica_removeRequest {
   optional string volume_name = 4;
   // the UUID of the head OSD of the replica to remove
   required string osd_uuid = 2;
+}
+
+message xtreemfs_replica_removeResponse {
+  required string file_id = 1;
+  required int32 expected_xlocset_version = 2;
+  required XLocSet unlink_xloc = 3;
+  required XCap unlink_xcap = 4;
 }
 
 // restores a file w/ orphaned file content by creating a new metadata object
@@ -620,9 +632,10 @@ message xtreemfs_reselect_osdsRequest {
   optional VivaldiCoordinates coordinates = 3;
 }
 
-// message xtreemfs_reselect_osdsResponse {
-// 
-// }
+message xtreemfs_reselect_osdsResponse {
+  required string file_id = 1;
+  required int32 expected_xlocset_version = 2;
+}
 
 service MRCService {
   
@@ -777,7 +790,7 @@ service MRCService {
   };
  
   // adds a replica to a file
-  rpc xtreemfs_replica_add(xtreemfs_replica_addRequest) returns(emptyResponse) {
+  rpc xtreemfs_replica_add(xtreemfs_replica_addRequest) returns(xtreemfs_replica_addResponse) {
     option(proc_id)=39;
   };
 
@@ -787,7 +800,7 @@ service MRCService {
   };
 
   // removes a replica from a file
-  rpc xtreemfs_replica_remove(xtreemfs_replica_removeRequest) returns(FileCredentials) {
+  rpc xtreemfs_replica_remove(xtreemfs_replica_removeRequest) returns(xtreemfs_replica_removeResponse) {
     option(proc_id)=41;
   };
 
@@ -836,7 +849,7 @@ service MRCService {
     option(proc_id)=51;
   };
 
-  rpc xtreemfs_reselect_osds(xtreemfs_reselect_osdsRequest) returns(XLocSet) {
+  rpc xtreemfs_reselect_osds(xtreemfs_reselect_osdsRequest) returns(xtreemfs_reselect_osdsResponse) {
     option(proc_id)=52;
   };
 }
