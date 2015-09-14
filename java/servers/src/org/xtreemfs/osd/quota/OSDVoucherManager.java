@@ -37,7 +37,8 @@ public class OSDVoucherManager {
         master = dispatcher;
     }
 
-    public void registerFileVoucher(String fileId, String clientId, long expireTime, long voucherSize) {
+    public void registerFileVoucher(String fileId, String clientId, long expireTime, long voucherSize)
+            throws VoucherErrorException {
 
         if (voucherSize == QuotaConstants.unlimitedVoucher) {
             return;

@@ -34,25 +34,35 @@ public class FileVoucherManager {
     }
 
     /**
+     * 
+     * @param clientId
      * @param expireTime
      * @param voucherSize
+     * @throws VoucherErrorException
      */
-    public void addVoucher(String clientId, long expireTime, long voucherSize) {
+    public void addVoucher(String clientId, long expireTime, long voucherSize) throws VoucherErrorException {
         Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
                 "Add Voucher! [FileID: %s, ClientId %s, expireTime: %s, voucherSize: %s]", fileId, clientId,
                 expireTime, voucherSize);
-        if (!clientExpireTimeSet.contains(clientId + expireTime)) {
-            clientExpireTimeSet.add(clientId + expireTime);
-            voucherSizeMax = (voucherSizeMax < voucherSize) ? voucherSize : voucherSizeMax;
-            latestExpireTime = (latestExpireTime < expireTime) ? expireTime : latestExpireTime;
 
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
-                    "Register Voucher! [FileID: %s, ClientId %s, latestExpireTime: %d, voucherSizeMaz: %d]", fileId,
-                    clientId, latestExpireTime, voucherSizeMax);
+        if (!invalidClientExpireTimeSet.contains(clientId + expireTime)) {
+            if (!clientExpireTimeSet.contains(clientId + expireTime)) {
+                clientExpireTimeSet.add(clientId + expireTime);
+                voucherSizeMax = (voucherSizeMax < voucherSize) ? voucherSize : voucherSizeMax;
+                latestExpireTime = (latestExpireTime < expireTime) ? expireTime : latestExpireTime;
+
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
+                        "Register Voucher! [FileID: %s, ClientId %s, latestExpireTime: %d, voucherSizeMaz: %d]",
+                        fileId, clientId, latestExpireTime, voucherSizeMax);
+            } else {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
+                        "Voucher already registered! [FileID: %s, ClientId %s, expireTime: %d, voucherSize: %d]",
+                        fileId, clientId, expireTime, voucherSize);
+            }
         } else {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
-                    "Didn't register Voucher! [FileID: %s, ClientId %s, expireTime: %d, voucherSize: %d]", fileId,
-                    clientId, expireTime, voucherSize);
+            throw new VoucherErrorException(String.format(
+                    "The given xcap has already been invalidated! [FielID: %s, ClientId: %s, expireTime: %s]", fileId,
+                    clientId, expireTime));
         }
     }
 
@@ -61,15 +71,18 @@ public class FileVoucherManager {
      * There is no need to block them, because it only checks the limit from the whole beginning. Concurrent access
      * can't effect this.
      * 
+     * @param clientId
+     * @param expireTime
      * @param newFileSize
+     * @return
+     * @throws VoucherErrorException
      */
     public boolean checkMaxVoucherSize(String clientId, long expireTime, long newFileSize) throws VoucherErrorException {
 
-        // FIXME switch to regular Exception: UserException are only used on MRC!
         if (!clientExpireTimeSet.contains(clientId + expireTime)) {
             if (invalidClientExpireTimeSet.contains(clientId + expireTime)) {
                 throw new VoucherErrorException(String.format(
-                        "The given voucher has already been invalidated! [FielID: %s, ClientId: %s, expireTime: %s]",
+                        "The given xcap has already been invalidated! [FielID: %s, ClientId: %s, expireTime: %s]",
                         fileId, clientId, expireTime));
             } else {
                 Logging.logMessage(Logging.LEVEL_WARN, Category.proc, this,
@@ -78,15 +91,20 @@ public class FileVoucherManager {
         }
 
         // check for maximum allowed size
-        if (newFileSize <= voucherSizeMax) {
+        if (clientExpireTimeSet.isEmpty() || newFileSize <= voucherSizeMax) {
             return true;
         } else {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
+                    "New file size is less than the maximum allowed: "
+                            + "[FileID: %s, ClientId %s, newFileSize: %s, maxFileSize: %s]", fileId, clientId,
+                    newFileSize, voucherSizeMax);
+
             return false;
         }
     }
 
     /**
-     * TODO: save invalidated Vouchers locally in case of a crash approach
+     * TODO(baerhold): save invalidated Vouchers locally in case of a crash approach
      * 
      * @param clientId
      * @param expireTimeSet

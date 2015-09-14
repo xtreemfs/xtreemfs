@@ -40,6 +40,7 @@ import org.xtreemfs.osd.operations.EventCloseFile;
 import org.xtreemfs.osd.operations.EventCreateFileVersion;
 import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.quota.OSDVoucherManager;
+import org.xtreemfs.osd.quota.VoucherErrorException;
 import org.xtreemfs.osd.rwre.ReplicaUpdatePolicy;
 import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.osd.storage.CowPolicy.cowMode;
@@ -186,13 +187,25 @@ public class PreprocStage extends Stage {
                             | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber() | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY
                                 .getNumber()) & request.getCapability().getAccessMode()) > 0;
 
-            // configure quota
+            // configure quota, if valid
             if (writeAccess) {
                 OSDVoucherManager osdVoucherManager = master.getOsdVoucherManager();
                 Capability capability = request.getCapability();
-                osdVoucherManager.registerFileVoucher(fileId, capability.getClientIdentity(),
-                        capability.getExpireMs(),
-                        capability.getVoucherSize());
+                try {
+                    osdVoucherManager.registerFileVoucher(fileId, capability.getClientIdentity(),
+                            capability.getExpireMs(), capability.getVoucherSize());
+                } catch (VoucherErrorException ex) {
+                    if (Logging.isDebug()) {
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
+                                "Failed to process doPrepareRequest() request due to the following VoucherErrorException:");
+                        Logging.logError(Logging.LEVEL_DEBUG, this, ex);
+                    }
+
+                    // FIXME (baerhold) writeComplete - change EACCES to ...?
+                    callback.parseComplete(request, ErrorUtils.getErrorResponse(ErrorType.ERRNO,
+                            POSIXErrno.POSIX_ERROR_EACCES, ex.toString(), ex));
+                    return;
+                }
             }
 
             CowPolicy cowPolicy = CowPolicy.PolicyNoCow;
