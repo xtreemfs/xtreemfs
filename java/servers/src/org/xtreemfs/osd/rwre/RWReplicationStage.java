@@ -480,6 +480,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 } else {
                     fetchObjects();
                 }
+            } else {
+                Logging.logMessage(Logging.LEVEL_WARN, this, "file state not found after deleting objects");
             }
 
         } catch (Exception ex) {
@@ -500,6 +502,11 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 file.setNumObjectsPending(file.getNumObjectsPending() + 1);
                 numObjsInFlight++;
                 fetchObject(file.getFileId(), o);
+            } else {
+                // reset complete!
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                        "(R:%s) RESET complete for file %s", localID, file.getFileId());
+                doOpen(file);
             }
 
             if (!file.getObjectsToFetch().isEmpty()) {
@@ -991,12 +998,14 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
 
     private void processFileClosed(StageRequest method) {
-        try {
-            final String fileId = (String) method.getArgs()[0];
+        final String fileId = (String) method.getArgs()[0];
+        final ReplicatedFileState file = files.get(fileId);
+
+        // Files that are invalidated and in reset have to be kept open until the reset is finished.
+        if (file != null && !file.isInvalidatedReset()) {
             closeFileState(fileId, false);
-        } catch (Exception ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
+
     }
 
     private void closeFileState(String fileId, boolean returnLease) {
