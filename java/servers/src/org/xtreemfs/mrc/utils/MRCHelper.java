@@ -128,7 +128,9 @@ public class MRCHelper {
             quota,
             vouchersize,
             defaultuserquota,
-            defaultgroupquota
+            defaultgroupquota,
+            userquota,
+            groupquota
     }
     
     public enum FileType {
@@ -334,10 +336,21 @@ public class MRCHelper {
         
         if (keyString.startsWith(POLICY_ATTR_PREFIX + "."))
             return getPolicyValue(sMan, keyString);
-        
+
         if (keyString.startsWith(VOL_ATTR_PREFIX + "."))
             return getVolAttrValue(sMan, keyString);
-        
+
+        // get subkey in case of user or group quota
+        String subKey = "";
+        if (keyString.startsWith(SysAttrs.groupquota.name()) || keyString.startsWith(SysAttrs.userquota.name())) {
+            String[] split = keyString.split("\\.", 2);
+            if (split.length != 2)
+                return "No group or user specified!";
+
+            keyString = split[0].trim();
+            subKey = split[1].trim();
+        }
+
         SysAttrs key = null;
         try {
             key = SysAttrs.valueOf(keyString);
@@ -487,6 +500,18 @@ public class MRCHelper {
 
             case defaultuserquota:
                 return String.valueOf(sMan.getVolumeInfo().getVolumeDefaultUserQuota());
+
+            case userquota:
+                if (subKey == null || subKey.isEmpty())
+                    throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No user specified!");
+
+                return String.valueOf(sMan.getUserQuota(subKey));
+
+            case groupquota:
+                if (subKey == null || subKey.isEmpty())
+                    throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No group specified!");
+
+                return String.valueOf(sMan.getGroupQuota(subKey));
             }
         }
         
@@ -502,7 +527,18 @@ public class MRCHelper {
             setPolicyValue(sMan, keyString, value, update);
             return;
         }
-        
+
+        // get subkey in case of user or group quota
+        String subKey = "";
+        if (keyString.startsWith(SysAttrs.groupquota.name()) || keyString.startsWith(SysAttrs.userquota.name())) {
+            String[] split = keyString.split("\\.", 2);
+            if (split.length != 2)
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No group or user specified!");
+
+            keyString = split[0].trim();
+            subKey = split[1].trim();
+        }
+
         SysAttrs key = null;
         try {
             key = SysAttrs.valueOf(keyString);
@@ -878,6 +914,31 @@ public class MRCHelper {
                 throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "default user quota must be set on volume root");
 
             sMan.getVolumeInfo().setVolumeDefaultUserQuota(Long.valueOf(value), update);
+
+            break;
+
+        case userquota:
+            if (file.getId() != 1)
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "Specific user quota must be set on volume root");
+
+            if (subKey == null || subKey.isEmpty())
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No user specified!");
+
+            sMan.setUserQuota(subKey, Long.valueOf(value), update);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, "Set user quota of " + subKey + " to: " + value);
+
+            break;
+        case groupquota:
+            if (file.getId() != 1)
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
+                        "Specific group quota must be set on volume root");
+
+            if (subKey == null || subKey.isEmpty())
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No group specified!");
+
+
+            sMan.setGroupQuota(subKey, Long.valueOf(value), update);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, "Set group quota of " + subKey + " to: " + value);
 
             break;
 
