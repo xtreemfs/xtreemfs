@@ -22,6 +22,7 @@ import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
@@ -33,6 +34,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntry;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Setattrs;
@@ -46,8 +48,11 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.openResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.unlinkResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_suitable_osdsRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_suitable_osdsResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_xlocsetRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_update_file_sizeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
@@ -751,6 +756,7 @@ public class Volume {
     void addReplica(File file, int width, List<String> osdSet, int flags, UserCredentials userCreds) throws IOException {
 
         RPCResponse<openResponse> response1 = null;
+        RPCResponse<xtreemfs_replica_addResponse> response2 = null;
         RPCResponse response3 = null;
         final String fullPath = fixPath(volumeName + file.getPath());
         final String fixedVol = fixPath(volumeName);
@@ -774,10 +780,9 @@ public class Volume {
 
             xtreemfs_replica_addRequest request = xtreemfs_replica_addRequest.newBuilder().setNewReplica(newReplica)
                     .setFileId(oldCreds.getXcap().getFileId()).build();
-            response3 = mrcClient.xtreemfs_replica_add(null, RPCAuthentication.authNone, userCreds, request);
-            response3.get();
-            response3.freeBuffers();
-            response3 = null;
+            response2 = mrcClient.xtreemfs_replica_add(null, RPCAuthentication.authNone, userCreds, request);
+            xtreemfs_replica_addResponse addResponse = response2.get();
+            waitForXLocSetInstallation(addResponse.getFileId(), addResponse.getExpectedXlocsetVersion());
 
             if (readOnlyRepl) {
                 if ((flags & GlobalTypes.REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber()) > 0) {
@@ -820,6 +825,8 @@ public class Volume {
         } finally {
             if (response1 != null)
                 response1.freeBuffers();
+            if (response2 != null)
+                response2.freeBuffers();
             if (response3 != null)
                 response3.freeBuffers();
         }
@@ -828,7 +835,7 @@ public class Volume {
     void removeReplica(File file, String headOSDuuid, UserCredentials userCreds) throws IOException {
 
         RPCResponse<openResponse> response1 = null;
-        RPCResponse<FileCredentials> response2 = null;
+        RPCResponse<xtreemfs_replica_removeResponse> response2 = null;
         RPCResponse response3 = null;
         final String fullPath = fixPath(volumeName + file.getPath());
         final String fixedVol = fixPath(volumeName);
@@ -842,7 +849,11 @@ public class Volume {
                     .setOsdUuid(headOSDuuid).setFileId(oldCreds.getXcap().getFileId()).build();
 
             response2 = mrcClient.xtreemfs_replica_remove(null, RPCAuthentication.authNone, userCreds, request);
-            FileCredentials delCap = response2.get();
+            xtreemfs_replica_removeResponse removeResponse = response2.get();
+            FileCredentials delCap = FileCredentials.newBuilder().setXlocs(removeResponse.getUnlinkXloc())
+                    .setXcap(removeResponse.getUnlinkXcap()).build();
+            
+            waitForXLocSetInstallation(removeResponse.getFileId(), removeResponse.getExpectedXlocsetVersion());
 
             ServiceUUID osd = new ServiceUUID(headOSDuuid, uuidResolver);
 
@@ -869,6 +880,59 @@ public class Volume {
             if (response3 != null)
                 response3.freeBuffers();
         }
+    }
+
+    private XLocSet waitForXLocSetInstallation(String fileId, int expectedVersion) throws IOException {
+        // The delay to wait between to pings in seconds.
+        int delay_s = 10;
+
+        // The initial call is made without delay.
+        XLocSet xLocSet = getXLocSet(fileId);
+
+        // Periodically ping the MRC to request the current XLocSet.
+        while (xLocSet.getVersion() < expectedVersion) {
+            try {
+                Thread.sleep(delay_s * 1000);
+            } catch (InterruptedException e) {
+                String msg = "Caught interrupt while waiting for the next poll, abort waiting for xLocSet installation.";
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, e, msg);
+                }
+                throw new IOException(msg);
+            }
+
+            xLocSet = getXLocSet(fileId);
+        }
+
+        if (xLocSet.getVersion() > expectedVersion) {
+            // TODO (jdillmann): Unexpected! Decide what to do
+        }
+
+        return xLocSet;
+    }
+
+    private XLocSet getXLocSet(String fileId) throws IOException {
+
+        RPCResponse<XLocSet> response = null;
+        XLocSet xloc;
+
+        xtreemfs_get_xlocsetRequest.Builder reqBuilder = xtreemfs_get_xlocsetRequest.newBuilder();
+        reqBuilder.setFileId(fileId);
+
+        try {
+            response = mrcClient.xtreemfs_get_xlocset(null, RPCAuthentication.authNone, userCreds, reqBuilder.build());
+            xloc = response.get();
+        } catch (PBRPCException ex) {
+            throw wrapException(ex);
+        } catch (InterruptedException ex) {
+            throw wrapException(ex);
+        } finally {
+            if (response != null)
+                response.freeBuffers();
+        }
+
+        assert (xloc != null);
+        return xloc;
     }
 
     void shutdown() {

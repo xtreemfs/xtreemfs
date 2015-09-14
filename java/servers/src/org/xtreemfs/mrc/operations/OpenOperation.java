@@ -187,7 +187,7 @@ public class OpenOperation extends MRCOperation {
                 master.getXLocSetCoordinator().unlockXLocSet(file, sMan, update);
             } else {
                 throw new UserException(POSIXErrno.POSIX_ERROR_EAGAIN,
-                        "xLocSet change already in progress. Please retry.");
+                        "xLocSet change in progress. Please retry later.");
             }
         }
 

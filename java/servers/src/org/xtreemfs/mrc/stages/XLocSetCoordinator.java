@@ -31,9 +31,7 @@ import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -42,12 +40,12 @@ import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
-import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.operations.MRCOperation;
 import org.xtreemfs.mrc.utils.Converter;
+import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.osd.rwre.CoordinatedReplicaUpdatePolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
@@ -118,8 +116,6 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
     /**
      * Choose the matching method and process the request.
      * 
-     * ErrorHandling is done separately in the handleError method.
-     * 
      * @param m
      */
     private void processRequest(RequestMethod m) throws InterruptedException {
@@ -134,7 +130,12 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         } catch (InterruptedException e) {
             throw e;
         } catch (Throwable e) {
-            handleError(m, e);
+            // Try to handle the error from the
+            try {
+                m.getCallback().handleInstallXLocSetError(e, m.getFileId(), m.getNewXLocList(), m.getCurXLocList());
+            } catch (Throwable e2) {
+                Logging.logError(Logging.LEVEL_ERROR, this, e2);
+            }
         }
     }
 
@@ -262,8 +263,6 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
     }
 
     private void processXLocSetChange(final RequestMethod m) throws Throwable {
-        final MRCRequest rq = m.getRequest();
-
         final String fileId = m.getFileId();
         final Capability cap = m.getCapability();
 
@@ -306,10 +305,15 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         }
 
         // Call the installXLocSet method in the context of the ProcessingStage.
-        master.getProcStage().enqueueInternalCallbackOperation(rq, new InternalCallbackInterface() {
+        master.getProcStage().enqueueInternalCallbackOperation(new InternalCallbackInterface() {
             @Override
-            public void execute(MRCRequest rq) throws Throwable {
-                m.getCallback().installXLocSet(rq, fileId, newXLocList, curXLocList);
+            public void execute() throws Throwable {
+                final XLocSetCoordinatorCallback callback = m.getCallback();
+                try {
+                    callback.installXLocSet(fileId, newXLocList, curXLocList);
+                } catch (Throwable e) {
+                    callback.handleInstallXLocSetError(e, fileId, newXLocList, curXLocList);
+                }
             }
         });
     }
@@ -320,31 +324,63 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
      * Currently the lock is saving the {@link MRCRequestDispatcher#hashCode()} to be able to identify if a previous MRC
      * instance crashed while a xLocSet change was in progress.
      * 
-     * @param file
+     * @param fileId
      * @param sMan
      * @param update
      * @throws DatabaseException
      */
-    public void lockXLocSet(FileMetadata file, StorageManager sMan, AtomicDBUpdate update) throws DatabaseException {
+    public void lockXLocSet(long fileId, StorageManager sMan, AtomicDBUpdate update) throws DatabaseException {
         byte[] hashValue = new byte[4];
         ByteBuffer hashByte = ByteBuffer.wrap(hashValue).putInt(master.hashCode());
-        sMan.setXAttr(file.getId(), StorageManager.SYSTEM_UID, StorageManager.SYS_ATTR_KEY_PREFIX
+        sMan.setXAttr(fileId, StorageManager.SYSTEM_UID, StorageManager.SYS_ATTR_KEY_PREFIX
                 + XLocSetCoordinator.XLOCSET_CHANGE_ATTR_KEY, hashValue, update);
         hashByte.clear();
     }
 
     /**
+     * @see #lockXLocSet(long, StorageManager, AtomicDBUpdate)
+     */
+    public void lockXLocSet(FileMetadata file, StorageManager sMan, AtomicDBUpdate update) throws DatabaseException {
+        lockXLocSet(file.getId(), sMan, update);
+    }
+
+    /**
+     * @see #lockXLocSet(long, StorageManager, AtomicDBUpdate)
+     */
+    public void lockXLocSet(String fileId, StorageManager sMan, AtomicDBUpdate update) throws DatabaseException,
+            UserException {
+        GlobalFileIdResolver idRes = new GlobalFileIdResolver(fileId);
+        lockXLocSet(idRes.getLocalFileId(), sMan, update);
+    }
+
+    /**
      * Unlock the xLocSet for a file. This will clear the lock in the database.
      * 
-     * @param file
+     * @param fileId
      * @param sMan
      * @param update
      * @throws DatabaseException
      */
-    public void unlockXLocSet(FileMetadata file, StorageManager sMan, AtomicDBUpdate update)
+    public void unlockXLocSet(long fileId, StorageManager sMan, AtomicDBUpdate update)
             throws DatabaseException {
-        sMan.setXAttr(file.getId(), StorageManager.SYSTEM_UID, StorageManager.SYS_ATTR_KEY_PREFIX
+        sMan.setXAttr(fileId, StorageManager.SYSTEM_UID, StorageManager.SYS_ATTR_KEY_PREFIX
                 + XLocSetCoordinator.XLOCSET_CHANGE_ATTR_KEY, null, update);
+    }
+
+    /**
+     * @see #unlockXLocSet(long, StorageManager, AtomicDBUpdate)
+     */
+    public void unlockXLocSet(FileMetadata file, StorageManager sMan, AtomicDBUpdate update) throws DatabaseException {
+        unlockXLocSet(file.getId(), sMan, update);
+    }
+
+    /**
+     * @see #unlockXLocSet(long, StorageManager, AtomicDBUpdate)
+     */
+    public void unlockXLocSet(String fileId, StorageManager sMan, AtomicDBUpdate update)
+            throws DatabaseException, UserException {
+        GlobalFileIdResolver idRes = new GlobalFileIdResolver(fileId);
+        unlockXLocSet(idRes.getLocalFileId(), sMan, update);
     }
 
     /**
@@ -352,16 +388,16 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
      * the case, it can be assumed the previous MRC crashed and the {@link XLocSetLock} should be released and replicas
      * revalidated.
      * 
-     * @param file
+     * @param fileId
      * @param sMan
      * @return XLocSetLock
      * @throws DatabaseException
      */
-    public XLocSetLock getXLocSetLock(FileMetadata file, StorageManager sMan) throws DatabaseException {
+    public XLocSetLock getXLocSetLock(long fileId, StorageManager sMan) throws DatabaseException {
         XLocSetLock lock;
 
         // Check if a hashCode has been saved to to the files XAttr to lock the xLocSet.
-        byte[] prevHashBytes = sMan.getXAttr(file.getId(), StorageManager.SYSTEM_UID,
+        byte[] prevHashBytes = sMan.getXAttr(fileId, StorageManager.SYSTEM_UID,
                 StorageManager.SYS_ATTR_KEY_PREFIX + XLocSetCoordinator.XLOCSET_CHANGE_ATTR_KEY);
         if (prevHashBytes != null) {
             // Check if the saved hashCode differs from the current one. If this is the case, the MRC has crashed.
@@ -381,6 +417,20 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         return lock;
     }
 
+    /**
+     * @see #getXLocSetLock(long, StorageManager)
+     */
+    public XLocSetLock getXLocSetLock(FileMetadata file, StorageManager sMan) throws DatabaseException {
+        return getXLocSetLock(file.getId(), sMan);
+    }
+
+    /**
+     * @see #getXLocSetLock(long, StorageManager)
+     */
+    public XLocSetLock getXLocSetLock(String fileId, StorageManager sMan) throws DatabaseException, UserException {
+        GlobalFileIdResolver idRes = new GlobalFileIdResolver(fileId);
+        return getXLocSetLock(idRes.getLocalFileId(), sMan);
+    }
 
     /**
      * Build a valid Capability for the given file
@@ -440,8 +490,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             ServiceUUID OSDServiceUUID = new ServiceUUID(Helper.getOSDUUIDFromXlocSet(xLocSet, i, 0));
             try {
                 responses[i] = client.xtreemfs_xloc_set_invalidate(OSDServiceUUID.getAddress(),
-                        RPCAuthentication.authNone,
-                        RPCAuthentication.userService, creds, fileId);
+                        RPCAuthentication.authNone, RPCAuthentication.userService, creds, fileId);
             } catch (IOException ex) {
                 if (Logging.isDebug()) {
                     Logging.logError(Logging.LEVEL_DEBUG, this, ex);
@@ -494,6 +543,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
                     if (response.getLeaseState() == LeaseState.PRIMARY) {
                         primaryResponded = true;
+                        primaryExists = true;
                     } else if (response.getLeaseState() == LeaseState.BACKUP) {
                         primaryExists = true;
                     }
@@ -537,6 +587,8 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
         // If a primary exists, wait until the lease has timed out.
         // This is required, since the lease can't be actively returned.
+        // TODO (jdillmann): If the primary did response we could continue to update phase (but still would have to wait
+        // until leaseTO before finally installing the new xLoc)
         synchronized (listener) {
             if (listener.primaryExists) {
                 long now = System.currentTimeMillis();
@@ -805,6 +857,9 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
         RequestMethod m = (RequestMethod) context;
         q.add(m);
+
+        // The request can be finished as soon as the xlocset is locked.
+        master.finished(result, m.getRequest());
     }
 
     @Override
@@ -817,59 +872,4 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         RequestMethod m = (RequestMethod) context;
         master.failed(error, m.getRequest());
     }
-
-    // TODO(jdillmann): Share error reporting between ProcessingStage.parseAndExecure and this
-    private void handleError(RequestMethod m, Throwable err) {
-        MRCOperation op = m.getOperation();
-        MRCRequest rq = m.getRequest();
-        try {
-            // simply rethrow the exception
-            throw err;
-
-        } catch (UserException exc) {
-            reportUserError(op, rq, exc, exc.getErrno());
-
-        } catch (MRCException exc) {
-            Throwable cause = exc.getCause();
-            if (cause instanceof DatabaseException
-                    && ((DatabaseException) cause).getType() == ExceptionType.NOT_ALLOWED)
-                reportUserError(op, rq, exc, POSIXErrno.POSIX_ERROR_EPERM);
-            else
-                reportServerError(op, rq, exc);
-
-        } catch (DatabaseException exc) {
-            if (exc.getType() == ExceptionType.NOT_ALLOWED) {
-                reportUserError(op, rq, exc, POSIXErrno.POSIX_ERROR_EPERM);
-            } else if (exc.getType() == ExceptionType.REDIRECT) {
-                try {
-                    redirect(rq,
-                            exc.getAttachment() != null ? (String) exc.getAttachment() : master.getReplMasterUUID());
-                } catch (MRCException e) {
-                    reportServerError(op, rq, e);
-                }
-            } else
-                reportServerError(op, rq, exc);
-
-        } catch (Throwable exc) {
-            reportServerError(op, rq, exc);
-        }
-    }
-
-    private void reportUserError(MRCOperation op, MRCRequest rq, Throwable exc, POSIXErrno errno) {
-        if (Logging.isDebug())
-            Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, exc);
-        op.finishRequest(rq, new ErrorRecord(ErrorType.ERRNO, errno, exc.getMessage(), exc));
-    }
-
-    private void reportServerError(MRCOperation op, MRCRequest rq, Throwable exc) {
-        if (Logging.isDebug())
-            Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, exc);
-        op.finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
-                "An error has occurred at the MRC. Details: " + exc.getMessage(), exc));
-    }
-
-    private void redirect(MRCRequest rq, String uuid) {
-        rq.getRPCRequest().sendRedirect(uuid);
-    }
-
 }
