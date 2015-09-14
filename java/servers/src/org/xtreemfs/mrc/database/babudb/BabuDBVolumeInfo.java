@@ -73,14 +73,13 @@ public class BabuDBVolumeInfo implements VolumeInfo {
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.ALLOW_SNAPS_ATTR_NAME,
                 String.valueOf(allowSnaps).getBytes(), true, update);
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_QUOTA_ATTR_NAME, String.valueOf(quota)
-                .getBytes(),
-                true, update);
+                .getBytes(), true, update);
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_VOUCHERSIZE_ATTR_NAME,
                 String.valueOf(voucherSize).getBytes(), true, update);
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_DEFAULT_G_QUOTA_ATTR_NAME,
-                String.valueOf(defaultGroupQuota).getBytes(), update);
+                String.valueOf(defaultGroupQuota).getBytes(), true, update);
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_DEFAULT_U_QUOTA_ATTR_NAME,
-                String.valueOf(defaultUserQuota).getBytes(), update);
+                String.valueOf(defaultUserQuota).getBytes(), true, update);
     }
     
     public void init(BabuDBStorageManager sMan) throws DatabaseException {
