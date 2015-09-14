@@ -44,7 +44,7 @@ public class Capability {
     private XCap         xcap;
     
     private final String sharedSecret;
-    
+
     /**
      * Creates a capability from a given set of data. A signature will be added
      * automatically. This constructor is meant to initially create a capability
@@ -58,9 +58,13 @@ public class Capability {
      *            the relative validity time span in seconds
      * @param expires
      *            the absolute expiration time stamp (seconds since 1970)
+     * @param clientIdentity
      * @param epochNo
      *            the epoch number associated with the capability; epoch numbers
      *            are incremented each time the file is truncated or deleted
+     * @param replicateOnClose
+     * @param snapConfig
+     * @param snapTimestamp
      * @param sharedSecret
      *            the shared secret to be used to sign the capability
      */
