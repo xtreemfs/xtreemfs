@@ -28,6 +28,8 @@ TestRPCServerMRC::TestRPCServerMRC() : file_size_(1024 * 1024) {
       Op(this, &TestRPCServerMRC::UpdateFileSizeOperation);
   operations_[PROC_ID_FTRUNCATE] =
       Op(this, &TestRPCServerMRC::FTruncate);
+  operations_[PROC_ID_XTREEMFS_CLEAR_VOUCHERS] =
+      Op(this, &TestRPCServerMRC::ClearVoucherOperation);
 }
 
 google::protobuf::Message* TestRPCServerMRC::OpenOperation(
@@ -53,6 +55,11 @@ google::protobuf::Message* TestRPCServerMRC::OpenOperation(
   xcap->set_snap_config(SNAP_CONFIG_SNAPS_DISABLED);
   xcap->set_snap_timestamp(0);
   xcap->set_truncate_epoch(0);
+  xcap->set_voucher_size(-1); //FIXME(baerhold): export?
+
+  struct timeval tp;
+  gettimeofday(&tp, NULL);
+  xcap->set_expire_time_ms(tp.tv_sec * 1000 + tp.tv_usec / 1000);
 
   XLocSet* xlocset = response->mutable_creds()->mutable_xlocs();
   xlocset->set_read_only_file_size(file_size_);
@@ -129,6 +136,18 @@ google::protobuf::Message* TestRPCServerMRC::FTruncate(
   response->set_expire_timeout_s(3600);
 
   return response;
+}
+
+google::protobuf::Message* TestRPCServerMRC::ClearVoucherOperation(
+    const pbrpc::Auth& auth,
+    const pbrpc::UserCredentials& user_credentials,
+    const google::protobuf::Message& request,
+    const char* data,
+    uint32_t data_len,
+    boost::scoped_array<char>* response_data,
+    uint32_t* response_data_len) {
+
+  return new emptyResponse();
 }
 
 
