@@ -1059,7 +1059,7 @@ public class BabuDBStorageManager implements StorageManager {
     @Override
     public void setGroupQuota(String groupId, Long quota, AtomicDBUpdate update) throws DatabaseException {
 
-        assert (groupId != null && groupId.isEmpty());
+        assert (groupId != null && !groupId.isEmpty());
 
         setOwnerQuotaInfo(groupId, quota, OwnerType.GROUP, QuotaInfo.QUOTA, update);
     }
@@ -1067,7 +1067,7 @@ public class BabuDBStorageManager implements StorageManager {
     @Override
     public void setGroupBlockedSpace(String groupId, Long blockedSpace, AtomicDBUpdate update) throws DatabaseException {
 
-        assert (groupId != null && groupId.isEmpty());
+        assert (groupId != null && !groupId.isEmpty());
 
         setOwnerQuotaInfo(groupId, blockedSpace, OwnerType.GROUP, QuotaInfo.BLOCKED, update);
     }
@@ -1075,7 +1075,7 @@ public class BabuDBStorageManager implements StorageManager {
     @Override
     public void setGroupUsedSpace(String groupId, Long usedSpace, AtomicDBUpdate update) throws DatabaseException {
 
-        assert (groupId != null && groupId.isEmpty());
+        assert (groupId != null && !groupId.isEmpty());
 
         setOwnerQuotaInfo(groupId, usedSpace, OwnerType.GROUP, QuotaInfo.USED, update);
     }
@@ -1083,7 +1083,7 @@ public class BabuDBStorageManager implements StorageManager {
     @Override
     public void setUserQuota(String userId, Long quota, AtomicDBUpdate update) throws DatabaseException {
 
-        assert (userId != null && userId.isEmpty());
+        assert (userId != null && !userId.isEmpty());
 
         setOwnerQuotaInfo(userId, quota, OwnerType.USER, QuotaInfo.QUOTA, update);
     }
@@ -1091,7 +1091,7 @@ public class BabuDBStorageManager implements StorageManager {
     @Override
     public void setUserBlockedSpace(String userId, Long blockedSpace, AtomicDBUpdate update) throws DatabaseException {
 
-        assert (userId != null && userId.isEmpty());
+        assert (userId != null && !userId.isEmpty());
 
         setOwnerQuotaInfo(userId, blockedSpace, OwnerType.USER, QuotaInfo.BLOCKED, update);
     }
@@ -1099,7 +1099,7 @@ public class BabuDBStorageManager implements StorageManager {
     @Override
     public void setUserUsedSpace(String userId, Long usedSpace, AtomicDBUpdate update) throws DatabaseException {
 
-        assert (userId != null && userId.isEmpty());
+        assert (userId != null && !userId.isEmpty());
 
         setOwnerQuotaInfo(userId, usedSpace, OwnerType.USER, QuotaInfo.USED, update);
     }
