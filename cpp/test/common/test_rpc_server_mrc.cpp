@@ -93,12 +93,16 @@ google::protobuf::Message* TestRPCServerMRC::RenewCapabilityOperation(
     uint32_t data_len,
     boost::scoped_array<char>* response_data,
     uint32_t* response_data_len) {
-  const XCap* rq = reinterpret_cast<const XCap*>(&request);
+  const xtreemfs_renew_capabilityRequest* rq = reinterpret_cast<const xtreemfs_renew_capabilityRequest*>(&request);
 
-  XCap* response = new XCap(*rq);
+  XCap* response = new XCap(rq->xcap());
 
   response->set_expire_time_s(time(0) + 3600);
   response->set_expire_timeout_s(3600);
+
+  struct timeval tp;
+  gettimeofday(&tp, NULL);
+  response->set_expire_time_ms(tp.tv_sec * 1000 + tp.tv_usec / 1000);
 
   return response;
 }
