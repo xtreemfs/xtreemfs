@@ -504,7 +504,8 @@ public class StorageThread extends Stage {
             }
             
             // check quota
-            if (!master.getOsdVoucherManager().checkMaxVoucherSize(fileId,
+            if (rq.getRequest() != null
+                    && !master.getOsdVoucherManager().checkMaxVoucherSize(fileId,
                     rq.getRequest().getCapability().getClientIdentity(), rq.getRequest().getCapability().getExpireMs(),
                     sp.getObjectStartOffset(objNo) + offset + dataCapacity)) {
                 BufferPool.free(data);
@@ -745,7 +746,8 @@ public class StorageThread extends Stage {
                 newGlobalLastObject = sp.getObjectNoForOffset(newFileSize - 1);
             } else if (fi.getFilesize() < newFileSize) {
                 // check quota
-                if (!master.getOsdVoucherManager().checkMaxVoucherSize(fileId,
+                if (rq.getRequest() != null
+                        && !master.getOsdVoucherManager().checkMaxVoucherSize(fileId,
                         rq.getRequest().getCapability().getClientIdentity(),
                         rq.getRequest().getCapability().getExpireMs(), newFileSize)) {
                     if (Logging.isDebug()) {
