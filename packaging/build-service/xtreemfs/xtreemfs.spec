@@ -125,6 +125,11 @@ export BUILD_JNI=true
 export CCFLAGS="$CCFLAGS -fPIC"
 %endif
 
+# Fix CMake error on centos6 (see https://public.kitware.com/Bug/view.php?id=15270)
+%if 0%{?centos_version} == 600 || 0%{?redhat_version} == 600
+export NO_BOOST_CMAKE=true
+%endif
+
 make %{?jobs:-j%jobs}
 
 %install
