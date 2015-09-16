@@ -255,15 +255,18 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
   // char bufs of operations can not be used for decoding since gf-complete expects src and dest
   // buffers to be aligned on 16 byte boundries with respect to each other
   // this limitation prohibtes certain offsets (when offset % 16 != 0)
-  char *data[k];
-  for (int i = 0; i < k; i++) {
-    data[i] = new char[stripe_size];
+  if (erasure) {
+    char *data[k];
+    for (int i = 0; i < k; i++) {
+      data[i] = new char[stripe_size];
+    }
+
+    char *coding[m];
+    for (int i = 0; i < m; i++) {
+      coding[i] = new char[stripe_size];
+    }
   }
 
-  char *coding[m];
-  for (int i = 0; i < m; i++) {
-    coding[i] = new char[stripe_size];
-  }
   cout << lines << " lines must be processed" << endl;
   cout << "successful_reads is " << *successful_reads << endl;
 
@@ -358,13 +361,15 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
     }
   }
 
-  cout << "deleteing data and coding buffers..." << endl;
-  for (int i = 0; i < k; i++) {
-    delete[] data[i];
-  }
+  if (erasure) {
+    cout << "deleteing data and coding buffers..." << endl;
+    for (int i = 0; i < k; i++) {
+      delete[] data[i];
+    }
 
-  for (int i = 0; i < m; i++) {
-    delete[] coding[i];
+    for (int i = 0; i < m; i++) {
+      delete[] coding[i];
+    }
   }
 
   return buf_pos;
