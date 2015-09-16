@@ -108,14 +108,14 @@ public class OpenOperation extends MRCOperation {
             
             file = res.getFile();
             
+            if (file.isDirectory() || sMan.getSoftlinkTarget(file.getId()) != null)
+                throw new UserException(POSIXErrno.POSIX_ERROR_EISDIR, "open is restricted to files");
+
             // check quota
             if (create || truncate || write) {
                 QuotaFileInformation quotaFileInformation = new QuotaFileInformation(volume.getId(), file);
                 master.getMrcVoucherManager().checkVoucherAvailability(quotaFileInformation);
             }
-
-            if (file.isDirectory() || sMan.getSoftlinkTarget(file.getId()) != null)
-                throw new UserException(POSIXErrno.POSIX_ERROR_EISDIR, "open is restricted to files");
             
             // check whether the file is marked as 'read-only'; in this
             // case, throw an exception if write access is requested
