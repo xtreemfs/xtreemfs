@@ -32,10 +32,10 @@ xtreemfs::pbrpc::Auth auth;
 string mrc = "localhost:32636";
 string dir = "localhost:32638";
 
-int default_stripe_width = 2;
-int default_parity_width = 0;
-xtreemfs::pbrpc::StripingPolicyType striping_policy = xtreemfs::pbrpc::STRIPING_POLICY_RAID0;
-// xtreemfs::pbrpc::StripingPolciyType striping_policy = xtreemfs::pbrpc::STRIPING_POLICY_REED_SOL_VAN;
+int default_stripe_width = 4;
+int default_parity_width = 2;
+// xtreemfs::pbrpc::StripingPolicyType striping_policy = xtreemfs::pbrpc::STRIPING_POLICY_RAID0;
+xtreemfs::pbrpc::StripingPolicyType striping_policy = xtreemfs::pbrpc::STRIPING_POLICY_REED_SOL_VAN;
 
 void clean_up(int signum){
 

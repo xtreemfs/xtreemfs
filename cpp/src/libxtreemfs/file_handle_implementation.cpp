@@ -169,7 +169,7 @@ int FileHandleImplementation::Read(
   for(std::vector<ReadOperation>::iterator it = operations.begin();
           it != operations.end();
           it++) {
-      std::cout << "--Read Operation " << (it - operations.begin())<< "--" << std::endl;
+      std::cout << "--Read Operation " << (it - operations.begin()) << "--" << std::endl;
       std::cout << "object number: " << it->obj_number << std::endl;
       std::cout << "req size: " << it->req_size << std::endl;
       std::cout << "req offset: " << it->req_offset << std::endl;
@@ -253,7 +253,7 @@ int FileHandleImplementation::Read(
           if (Logging::log->loggingActive(LEVEL_DEBUG)) {
             Logging::log->getLog(LEVEL_DEBUG) << "parity data exists...trying to finish read operation" << endl;
           }
-          erasure = true;
+          erasure = 1;
         } else {
           throw e;
         }
@@ -266,7 +266,7 @@ int FileHandleImplementation::Read(
           if (Logging::log->loggingActive(LEVEL_DEBUG)) {
             Logging::log->getLog(LEVEL_DEBUG) << "parity data exists...trying to finish read operation" << endl;
           }
-          erasure = true;
+          erasure = 1;
         } else {
           throw e;
         }
@@ -533,7 +533,7 @@ int FileHandleImplementation::internal_write(
   for(std::vector<WriteOperation>::iterator it = operations.begin();
           it != operations.end();
           it++) {
-      std::cout << "--Write Operation--" << std::endl;
+      std::cout << "--Write Operation " << (it - operations.begin()) << "--" << std::endl;
       std::cout << "object number: " << it->obj_number << std::endl;
       std::cout << "req size: " << it->req_size << std::endl;
       std::cout << "req offset: " << it->req_offset << std::endl;

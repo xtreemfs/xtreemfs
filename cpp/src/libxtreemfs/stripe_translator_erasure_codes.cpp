@@ -167,7 +167,7 @@ void StripeTranslatorErasureCodes::TranslateReadRequest(
   // number of data OSDs
   unsigned int k = n - m;
   size_t obj_number = 0;
-  size_t op_end = size + offset; // the end of operation
+  size_t cbuf_pos = 0;
 
   cout << endl<< "translating new read request" << endl;
   cout << "size: " << size << " offset: " << offset << endl;
@@ -195,20 +195,45 @@ void StripeTranslatorErasureCodes::TranslateReadRequest(
       std::vector<size_t> osd_offsets;
       osd_offsets.push_back(i);
 
-      cout << "offset: " << offset << " stripe_size: " << stripe_size << " op_end: " << op_end << endl;
-      if (offset >= stripe_size || op_end == 0) {
+      if (offset >= stripe_size || cbuf_pos == size) {
+        // aux read before or after requested range
         operations->push_back(
             ReadOperation(obj_number, osd_offsets, stripe_size, 0,
               new char[stripe_size], true, true));
         cout << "pushing aux read" << endl;
+        offset -= stripe_size;
+      } else if (offset > 0 && cbuf_pos == 0) {
+        // add a short aux read before the user request
+        operations->push_back(
+            ReadOperation(obj_number, osd_offsets, offset, 0,
+              new char[offset], true, true));
+        cout << "pushing aux read" << endl;
+        // then mandatory op
+        operations->push_back(
+            ReadOperation(obj_number, osd_offsets, stripe_size - offset, offset,
+              buf + cbuf_pos));
+        cout << "pushing mandatory read to cbuf_pos " << cbuf_pos << endl;
+        cbuf_pos += stripe_size - offset;
+        offset = 0;
+      } else if (offset == 0 && size - cbuf_pos < stripe_size) {
+        // mandatory op
+        operations->push_back(
+            ReadOperation(obj_number, osd_offsets, size - cbuf_pos, 0,
+              buf + cbuf_pos));
+        cout << "pushing mandatory read to cbuf_pos " << cbuf_pos << endl;
+        // add a short aux read after the user request
+        operations->push_back(
+            ReadOperation(obj_number, osd_offsets, stripe_size - (size - cbuf_pos), size - cbuf_pos,
+              new char[stripe_size - (size - cbuf_pos)], true, true));
+        cout << "pushing aux read" << endl;
+        cbuf_pos = size;
       } else {
         operations->push_back(
             ReadOperation(obj_number, osd_offsets, stripe_size, 0,
-              new char[stripe_size], true));
-        cout << "pushing mandatory read" << endl;
+              buf + cbuf_pos));
+        cout << "pushing mandatory full read to cbuf_pos " << cbuf_pos << endl;
+        cbuf_pos += stripe_size;
       }
-      offset -= min(offset, stripe_size);
-      op_end -= min(op_end, stripe_size);
       obj_number++;
     }
 
@@ -223,7 +248,6 @@ void StripeTranslatorErasureCodes::TranslateReadRequest(
             new char[stripe_size], true, true));
       cout << "pushed code read op to the back" << endl;
     }
-
   }
   cout << "translate read req is done..." << endl;
 }
@@ -237,25 +261,35 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
     PolicyContainer policies,
     bool erasure) const {
 
-  // number of OSDs
-  unsigned int n =(*policies.begin())->width();
-  // how many (poss. incomplete)  lines does this operation contain
-  // (x + y - 1) / y is apperantly a common idiom for quick ceil(x / y) can overflow in x + y though
-  // 1 + ((x - 1) / y avoids overflow problem
-  int lines = 1 + ((operations->size() - 1) / n);
+  size_t buf_pos = 0;
+  if (!erasure) {
+    // only count bytes if no erasure were detected
+    cout << "no decoding necessary" << endl;
+    for (int i = 0; i < operations->size(); i++) {
+      if (!operations->at(i).is_aux) {
+        buf_pos += operations->at(i).req_size;
+      }
+    }
+  } else {
+    //decode otherwise
+    // number of OSDs
+    unsigned int n =(*policies.begin())->width();
+    // how many (poss. incomplete)  lines does this operation contain
+    // (x + y - 1) / y is apperantly a common idiom for quick ceil(x / y) can overflow in x + y though
+    // 1 + ((x - 1) / y avoids overflow problem
+    int lines = 1 + ((operations->size() - 1) / n);
 
-  //  stripe size is stored in kB
-  size_t stripe_size = (*policies.begin())->stripe_size() * 1024;
-  // number of parity OSDs
-  unsigned int m =(*policies.begin())->parity_width();
-  // number of data OSDs
-  unsigned int k = n - m;
-  // word size for the encoder
-  int w = 32;
-  // char bufs of operations can not be used for decoding since gf-complete expects src and dest
-  // buffers to be aligned on 16 byte boundries with respect to each other
-  // this limitation prohibtes certain offsets (when offset % 16 != 0)
-  if (erasure) {
+    //  stripe size is stored in kB
+    size_t stripe_size = (*policies.begin())->stripe_size() * 1024;
+    // number of parity OSDs
+    unsigned int m =(*policies.begin())->parity_width();
+    // number of data OSDs
+    unsigned int k = n - m;
+    // word size for the encoder
+    int w = 32;
+    // char bufs of operations can not be used for decoding since gf-complete expects src and dest
+    // buffers to be aligned on 16 byte boundries with respect to each other
+    // this limitation prohibtes certain offsets (when offset % 16 != 0)
     char *data[k];
     for (int i = 0; i < k; i++) {
       data[i] = new char[stripe_size];
@@ -265,19 +299,16 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
     for (int i = 0; i < m; i++) {
       coding[i] = new char[stripe_size];
     }
-  }
 
-  cout << lines << " lines must be processed" << endl;
-  cout << "successful_reads is " << *successful_reads << endl;
+    cout << lines << " lines must be processed" << endl;
+    cout << "successful_reads is " << *successful_reads << endl;
 
-  size_t buf_pos = 0;
 
-  for (int l = 0; l < lines; l++) {
+    for (int l = 0; l < lines; l++) {
 
-    vector<int> erasures;
-    int line_offset = l * n;
+      vector<int> erasures;
+      int line_offset = l * n;
 
-    if (erasure) {
       // only needs decoding if erasures happened
       for (int i = 0; i < k; i++) {
         //is the first op starting at osd 0?
@@ -327,48 +358,43 @@ size_t StripeTranslatorErasureCodes::ProcessReads(
       } else {
         throw new IOException;
       }
-    }
 
-    while (offset >= k * stripe_size) {
-      offset -= k * stripe_size;
-      cout << "line skipped" << endl;
-    }
-
-    assert(offset < k * stripe_size);
-
-    for (int i = 0; i < k; i++) {
-      int data_read = line_offset + i;
-      if (offset >= stripe_size) {
-        cout << "skipping object due to offset" << endl;
-        offset -= stripe_size;
-        continue;
+      while (offset >= k * stripe_size) {
+        offset -= k * stripe_size;
+        cout << "line skipped" << endl;
       }
-      size_t op_size = min(operations->at(data_read).req_size - offset, size);
-      if (op_size == 0) {
-        break;
-      }
-      cout << "size: " << size << ", req - off: " << operations->at(data_read).req_size - offset << endl;
-      if (erasure) {
+
+      assert(offset < k * stripe_size);
+
+      for (int i = 0; i < k; i++) {
+        int data_read = line_offset + i;
+        if (offset >= stripe_size) {
+          cout << "skipping object due to offset" << endl;
+          offset -= stripe_size;
+          continue;
+        }
+        size_t op_size = min(operations->at(data_read).req_size - offset, size);
+        if (op_size == 0) {
+          break;
+        }
+        cout << "size: " << size << ", req - off: " << operations->at(data_read).req_size - offset << endl;
         cout << "copy " << op_size << " bytes from data device " << i << " at position " << offset << " to buffer at " << (buf_pos) << endl;
         memcpy(buf + buf_pos, data[i] + offset, op_size);
-      } else {
-        cout << "copy " << op_size << " bytes from directly from op " << data_read << " at position " << offset << " to buffer at " << (buf_pos) << endl;
-        memcpy(buf + buf_pos,  operations->at(data_read).data + offset, op_size);
+        size -= op_size;
+        buf_pos += op_size;
+        offset = 0;
       }
-      size -= op_size;
-      buf_pos += op_size;
-      offset = 0;
-    }
-  }
-
-  if (erasure) {
-    cout << "deleteing data and coding buffers..." << endl;
-    for (int i = 0; i < k; i++) {
-      delete[] data[i];
     }
 
-    for (int i = 0; i < m; i++) {
-      delete[] coding[i];
+    if (erasure) {
+      cout << "deleteing data and coding buffers..." << endl;
+      for (int i = 0; i < k; i++) {
+        delete[] data[i];
+      }
+
+      for (int i = 0; i < m; i++) {
+        delete[] coding[i];
+      }
     }
   }
 
