@@ -502,17 +502,17 @@ public class MRCVoucherManager {
             FileVoucherInfo fileVoucherInfo = storageManager.getFileVoucherInfo(quotaFileInformation.getFileId());
 
             long filesizeDifference = -1 * quotaFileInformation.getFilesize();
-            long clearBlockedSpace = 0;
+            long blockedSpaceDifference = 0;
             if (fileVoucherInfo != null) {
                 filesizeDifference = -1 * fileVoucherInfo.getFilesize();
-                clearBlockedSpace = -1 * fileVoucherInfo.getBlockedSpace();
+                blockedSpaceDifference = -1 * fileVoucherInfo.getBlockedSpace();
 
                 // update file voucher info
                 fileVoucherInfo.decreaseReplicaCount();
                 storageManager.setFileVoucherInfo(fileVoucherInfo, update);
             }
 
-            volumeQuotaManager.updateSpaceUsage(quotaFileInformation, filesizeDifference, clearBlockedSpace, update);
+            volumeQuotaManager.updateSpaceUsage(quotaFileInformation, filesizeDifference, blockedSpaceDifference, update);
         } catch (DatabaseException e) {
             Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
 
