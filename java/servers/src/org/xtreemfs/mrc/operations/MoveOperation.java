@@ -217,10 +217,7 @@ public class MoveOperation extends MRCOperation {
                     throw new UserException(POSIXErrno.POSIX_ERROR_ENOTEMPTY, "target directory '" + tRes
                         + "' is not empty");
                 else {
-                    // delete quota information
-                    FileMetadata metadata = sMan.getMetadata(tRes.getParentDirId(), tRes.getFileName());
-                    QuotaFileInformation quotaFileInformation = new QuotaFileInformation(volume.getId(), metadata);
-                    master.getMrcVoucherManager().deleteFile(quotaFileInformation, update);
+                    // cause it's a directory, no quota information has to be adjusted
 
                     // delete file
                     sMan.delete(tRes.getParentDirId(), tRes.getFileName(), update);
