@@ -512,7 +512,95 @@ public class MRCVoucherManager {
                 storageManager.setFileVoucherInfo(fileVoucherInfo, update);
             }
 
-            volumeQuotaManager.updateSpaceUsage(quotaFileInformation, filesizeDifference, blockedSpaceDifference, update);
+            volumeQuotaManager.updateSpaceUsage(quotaFileInformation, filesizeDifference, blockedSpaceDifference,
+                    update);
+        } catch (DatabaseException e) {
+            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
+                    "An error occured during the interaction with the database!");
+        } catch (MRCException e) {
+            Logging.logError(Logging.LEVEL_ERROR, this, e);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+        }
+    }
+
+    /**
+     * Transfers the space information (used & blocked) for a file to the new owner using the stats of the open
+     * FileVoucherInfo or if it has no open voucher, the saved MRC values.
+     * 
+     * @param quotaFileInformation
+     * @param newOwnerId
+     * @param update
+     * @throws UserException
+     */
+    public synchronized void transferOwnerSpace(QuotaFileInformation quotaFileInformation, String newOwnerId,
+            AtomicDBUpdate update) throws UserException {
+
+        Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                "Transfer space of the file " + quotaFileInformation.getGlobalFileId() + " to the new owner.");
+
+        try {
+            VolumeQuotaManager volumeQuotaManager = mrcQuotaManager.getVolumeQuotaManagerById(quotaFileInformation
+                    .getVolumeId());
+            StorageManager storageManager = volumeQuotaManager.getVolStorageManager();
+
+            FileVoucherInfo fileVoucherInfo = storageManager.getFileVoucherInfo(quotaFileInformation.getFileId());
+
+            long filesize = quotaFileInformation.getFilesize();
+            long blockedSpace = 0;
+            if (fileVoucherInfo != null) {
+                filesize = fileVoucherInfo.getFilesize();
+                blockedSpace = fileVoucherInfo.getBlockedSpace();
+            }
+
+            volumeQuotaManager.transferOwnerSpace(quotaFileInformation, newOwnerId, filesize, blockedSpace, update);
+
+        } catch (DatabaseException e) {
+            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
+                    "An error occured during the interaction with the database!");
+        } catch (MRCException e) {
+            Logging.logError(Logging.LEVEL_ERROR, this, e);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+        }
+    }
+
+    /**
+     * Transfers the space information (used & blocked) for a file to the new owner group using the stats of the open
+     * FileVoucherInfo or if it has no open voucher, the saved MRC values.
+     * 
+     * @param quotaFileInformation
+     * @param newOwnerGroupId
+     * @param update
+     * @throws UserException
+     */
+    public synchronized void transferOwnerGroupSpace(QuotaFileInformation quotaFileInformation, String newOwnerGroupId,
+            AtomicDBUpdate update) throws UserException {
+
+        Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                "Transfer space of the file " + quotaFileInformation.getGlobalFileId() + " to the new owner group.");
+
+        try {
+            VolumeQuotaManager volumeQuotaManager = mrcQuotaManager.getVolumeQuotaManagerById(quotaFileInformation
+                    .getVolumeId());
+            StorageManager storageManager = volumeQuotaManager.getVolStorageManager();
+
+            FileVoucherInfo fileVoucherInfo = storageManager.getFileVoucherInfo(quotaFileInformation.getFileId());
+
+            long filesize = quotaFileInformation.getFilesize();
+            long blockedSpace = 0;
+            if (fileVoucherInfo != null) {
+                filesize = fileVoucherInfo.getFilesize();
+                blockedSpace = fileVoucherInfo.getBlockedSpace();
+            }
+
+            volumeQuotaManager.transferOwnerGroupSpace(quotaFileInformation, newOwnerGroupId, filesize, blockedSpace,
+                    update);
+
         } catch (DatabaseException e) {
             Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
 

@@ -147,9 +147,16 @@ public class VolumeQuotaManager {
             QuotaInformation quotaInformation, long filesizeDifference, long blockedSpaceDifference,
             AtomicDBUpdate update) throws UserException {
 
-        String ownerId = quotaFileInformation.getOwnerId();
-        String ownerGroupId = quotaFileInformation.getOwnerGroupId();
+        updateVolumeSpaceUsage(quotaFileInformation, quotaInformation, filesizeDifference, blockedSpaceDifference,
+                update);
+        updateUserSpaceUsage(quotaFileInformation, quotaInformation, filesizeDifference, blockedSpaceDifference, update);
+        updateGroupSpaceUsage(quotaFileInformation, quotaInformation, filesizeDifference, blockedSpaceDifference,
+                update);
+    }
 
+    public synchronized void updateVolumeSpaceUsage(QuotaFileInformation quotaFileInformation,
+            QuotaInformation quotaInformation, long filesizeDifference, long blockedSpaceDifference,
+            AtomicDBUpdate update) throws UserException {
         try {
             if (filesizeDifference != 0) {
                 long volumeUsedSpace = quotaInformation.getVolumeUsedSpace() + filesizeDifference;
@@ -158,20 +165,6 @@ public class VolumeQuotaManager {
 
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
                         + ") changed volume used space by: " + filesizeDifference + " to: " + volumeUsedSpace);
-
-                long userUsedSpace = quotaInformation.getUserUsedSpace() + filesizeDifference;
-                checkNegativeValue(userUsedSpace, "ownerId: " + ownerId, true);
-                volStorageManager.setUserUsedSpace(ownerId, userUsedSpace, update);
-
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
-                        + ") changed owner used space by: " + filesizeDifference + " to: " + userUsedSpace);
-
-                long groupUsedSpace = quotaInformation.getGroupUsedSpace() + filesizeDifference;
-                checkNegativeValue(groupUsedSpace, "ownerGroupId: " + ownerGroupId, true);
-                volStorageManager.setGroupUsedSpace(ownerGroupId, groupUsedSpace, update);
-
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
-                        + ") changed owner group used space by: " + filesizeDifference + " to: " + groupUsedSpace);
             }
 
             if (blockedSpaceDifference != 0) {
@@ -184,25 +177,74 @@ public class VolumeQuotaManager {
                             + ") changed volume blocked space by: " + blockedSpaceDifference + " to: "
                             + volumeBlockedSpace);
                 }
+            }
+        } catch (DatabaseException e) {
+            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
 
+            throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
+                    "An error occured during the interaction with the database!");
+        }
+    }
+
+    public synchronized void updateUserSpaceUsage(QuotaFileInformation quotaFileInformation,
+            QuotaInformation quotaInformation, long filesizeDifference, long blockedSpaceDifference,
+            AtomicDBUpdate update) throws UserException {
+
+        String ownerId = quotaFileInformation.getOwnerId();
+        try {
+            if (filesizeDifference != 0) {
+                long userUsedSpace = quotaInformation.getUserUsedSpace() + filesizeDifference;
+                checkNegativeValue(userUsedSpace, "ownerId: " + ownerId, true);
+                volStorageManager.setUserUsedSpace(ownerId, userUsedSpace, update);
+
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId + ") changed owner ("
+                        + ownerId + ") used space by: " + filesizeDifference + " to: " + userUsedSpace);
+            }
+
+            if (blockedSpaceDifference != 0) {
                 if (quotaInformation.getUserQuota() != QuotaConstants.unlimitedQuota) {
                     long userBlockedSpace = quotaInformation.getUserBlockedSpace() + blockedSpaceDifference;
                     checkNegativeValue(userBlockedSpace, "ownerId: " + ownerId, false);
                     volStorageManager.setUserBlockedSpace(ownerId, userBlockedSpace, update);
 
                     Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
-                            + ") changed owner blocked space by: " + blockedSpaceDifference + " to: "
+                            + ") changed owner (" + ownerId + ") blocked space by: " + blockedSpaceDifference + " to: "
                             + userBlockedSpace);
                 }
+            }
+        } catch (DatabaseException e) {
+            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
 
+            throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
+                    "An error occured during the interaction with the database!");
+        }
+    }
+
+    public synchronized void updateGroupSpaceUsage(QuotaFileInformation quotaFileInformation,
+            QuotaInformation quotaInformation, long filesizeDifference, long blockedSpaceDifference,
+            AtomicDBUpdate update) throws UserException {
+
+        String ownerGroupId = quotaFileInformation.getOwnerGroupId();
+        try {
+            if (filesizeDifference != 0) {
+                long groupUsedSpace = quotaInformation.getGroupUsedSpace() + filesizeDifference;
+                checkNegativeValue(groupUsedSpace, "ownerGroupId: " + ownerGroupId, true);
+                volStorageManager.setGroupUsedSpace(ownerGroupId, groupUsedSpace, update);
+
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
+                        + ") changed owner group (" + ownerGroupId + ") used space by: " + filesizeDifference + " to: "
+                        + groupUsedSpace);
+            }
+
+            if (blockedSpaceDifference != 0) {
                 if (quotaInformation.getGroupQuota() != QuotaConstants.unlimitedQuota) {
                     long groupBlockedSpace = quotaInformation.getGroupBlockedSpace() + blockedSpaceDifference;
                     checkNegativeValue(groupBlockedSpace, "ownerGroupId: " + ownerGroupId, false);
                     volStorageManager.setGroupBlockedSpace(ownerGroupId, groupBlockedSpace, update);
 
                     Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
-                            + ") changed owner group blocked space by: " + blockedSpaceDifference + " to: "
-                            + groupBlockedSpace);
+                            + ") changed owner group (" + ownerGroupId + ") blocked space by: "
+                            + blockedSpaceDifference + " to: " + groupBlockedSpace);
                 }
             }
         } catch (DatabaseException e) {
@@ -226,7 +268,7 @@ public class VolumeQuotaManager {
             AtomicDBUpdate update) throws UserException {
 
         Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
-                + ") tries to add a replica to current space information");
+                + ") tries to add a replica to current space information.");
 
         QuotaInformation quotaInformation = getAndApplyQuotaInformation(quotaFileInformation, true, update);
 
@@ -236,6 +278,81 @@ public class VolumeQuotaManager {
         }
 
         updateSpaceUsage(quotaFileInformation, quotaInformation, filesize, blockedSpace, update);
+    }
+
+    /**
+     * Transfers the space information (used & blocked) for a file to the new owner
+     * 
+     * @param quotaFileInformation
+     * @param newOwnerId
+     * @param filesize
+     * @param blockedSpace
+     * @param update
+     * @throws UserException
+     */
+    @SuppressWarnings("unused")
+    public synchronized void transferOwnerSpace(QuotaFileInformation quotaFileInformation, String newOwnerId,
+            long filesize, long blockedSpace, AtomicDBUpdate update) throws UserException {
+
+        Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
+                + ") tries transfer the space information to the new owner.");
+
+        QuotaFileInformation newQuotaFileInformation = new QuotaFileInformation(quotaFileInformation);
+        newQuotaFileInformation.setOwnerId(newOwnerId);
+
+        QuotaInformation quotaInformationOldOwner = getAndApplyQuotaInformation(quotaFileInformation, true, update);
+        QuotaInformation quotaInformationNewOwner = getAndApplyQuotaInformation(newQuotaFileInformation, true, update);
+
+        // SuppressWarning(unused): Due to checkQuotaOnChown, which is currently a hardcoded switch
+        if (QuotaConstants.checkQuotaOnChown && quotaInformationNewOwner.getFreeSpace() < (filesize + blockedSpace)) {
+            throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "Not enough space the transfer ownership! The "
+                    + quotaInformationNewOwner.getQuotaType() + " quota has been reached!");
+        }
+
+        // remove space from old owner
+        updateUserSpaceUsage(quotaFileInformation, quotaInformationOldOwner, -1 * filesize, -1 * blockedSpace, update);
+
+        // add space to new owner
+        updateUserSpaceUsage(newQuotaFileInformation, quotaInformationNewOwner, filesize, blockedSpace, update);
+    }
+
+    /**
+     * Transfers the space information (used & blocked) for a file to the new owner group
+     * 
+     * @param quotaFileInformation
+     * @param newOwnerGroupId
+     * @param filesize
+     * @param blockedSpace
+     * @param update
+     * @throws UserException
+     */
+    @SuppressWarnings("unused")
+    public synchronized void transferOwnerGroupSpace(QuotaFileInformation quotaFileInformation, String newOwnerGroupId,
+            long filesize, long blockedSpace, AtomicDBUpdate update) throws UserException {
+
+        Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
+                + ") tries transfer the space information to the new owner group.");
+
+        QuotaFileInformation newQuotaFileInformation = new QuotaFileInformation(quotaFileInformation);
+        newQuotaFileInformation.setOwnerGroupId(newOwnerGroupId);
+
+        QuotaInformation quotaInformationOldOwnerGroup = getAndApplyQuotaInformation(quotaFileInformation, true, update);
+        QuotaInformation quotaInformationNewOwnerGroup = getAndApplyQuotaInformation(newQuotaFileInformation, true,
+                update);
+
+        // SuppressWarning(unused): Due to checkQuotaOnChown, which is currently a hardcoded switch
+        if (QuotaConstants.checkQuotaOnChown
+                && quotaInformationNewOwnerGroup.getFreeSpace() < (filesize + blockedSpace)) {
+            throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "Not enough space the transfer ownership! The "
+                    + quotaInformationNewOwnerGroup.getQuotaType() + " quota has been reached!");
+        }
+
+        // remove space from old owner group
+        updateGroupSpaceUsage(quotaFileInformation, quotaInformationOldOwnerGroup, -1 * filesize, -1 * blockedSpace,
+                update);
+
+        // add space to new owner group
+        updateGroupSpaceUsage(newQuotaFileInformation, quotaInformationNewOwnerGroup, filesize, blockedSpace, update);
     }
 
     /**
