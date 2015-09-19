@@ -1431,6 +1431,12 @@ public class HashStorageLayout extends StorageLayout {
 
     @Override
     public Set<String> getInvalidClientExpireTimeSet(String fileId) throws IOException {
+
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
+                    "get invalid client expire times for file id: %s", fileId);
+        }
+
         File fileDir = new File(generateAbsoluteFilePath(fileId));
         File invalidClientExpireTimeFile = new File(fileDir, QUOTA_INVALID_EXPIRE_TIMES_FILENAME);
 
@@ -1463,6 +1469,13 @@ public class HashStorageLayout extends StorageLayout {
 
     @Override
     public void setInvalidClientExpireTimeSet(String fileId, Set<String> invalidClientExpireTimeSet) throws IOException {
+
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
+                    "set invalid client expire times for file id %s and count of expire times %d", fileId,
+                    invalidClientExpireTimeSet.size());
+        }
+
         File fileDir = new File(generateAbsoluteFilePath(fileId));
         if (!fileDir.exists()) {
             fileDir.mkdirs();
