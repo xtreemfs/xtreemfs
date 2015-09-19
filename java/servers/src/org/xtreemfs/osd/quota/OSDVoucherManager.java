@@ -20,8 +20,8 @@ import org.xtreemfs.osd.OSDRequestDispatcher;
 /**
  * This class handles all given vouchers on the OSD by managing a responsible manager per file.
  * 
- * All requests are splitted among the StorageThreads by fileId, so that concurrent access on a single file not possible
- * is. Therefore, this class doesn't have to be thread-safe.
+ * All requests are splitted among the StorageThreads by fileId, so that concurrent access on a single file is not
+ * possible. Therefore, this class doesn't have to be thread-safe.
  */
 public class OSDVoucherManager {
 
