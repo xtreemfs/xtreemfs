@@ -7,6 +7,7 @@
 package org.xtreemfs.osd.quota;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 import org.xtreemfs.foundation.TimeSync;
@@ -45,9 +46,9 @@ public class FileVoucherManager {
                 "Add Voucher! [FileID: %s, ClientId %s, expireTime: %s, voucherSize: %s]", fileId, clientId,
                 expireTime, voucherSize);
 
-        if (!invalidClientExpireTimeSet.contains(clientId + expireTime)) {
-            if (!clientExpireTimeSet.contains(clientId + expireTime)) {
-                clientExpireTimeSet.add(clientId + expireTime);
+        if (!invalidClientExpireTimeSet.contains(expireTime + "." + clientId)) {
+            if (!clientExpireTimeSet.contains(expireTime + "." + clientId)) {
+                clientExpireTimeSet.add(expireTime + "." + clientId);
                 voucherSizeMax = (voucherSizeMax < voucherSize) ? voucherSize : voucherSizeMax;
                 latestExpireTime = (latestExpireTime < expireTime) ? expireTime : latestExpireTime;
 
@@ -79,8 +80,8 @@ public class FileVoucherManager {
      */
     public boolean checkMaxVoucherSize(String clientId, long expireTime, long newFileSize) throws VoucherErrorException {
 
-        if (!clientExpireTimeSet.contains(clientId + expireTime)) {
-            if (invalidClientExpireTimeSet.contains(clientId + expireTime)) {
+        if (!clientExpireTimeSet.contains(expireTime + "." + clientId)) {
+            if (invalidClientExpireTimeSet.contains(expireTime + "." + clientId)) {
                 throw new VoucherErrorException(String.format(
                         "The given xcap has already been invalidated! [FielID: %s, ClientId: %s, expireTime: %s]",
                         fileId, clientId, expireTime));
@@ -111,9 +112,23 @@ public class FileVoucherManager {
      */
     public void invalidateVouchers(String clientId, Set<Long> expireTimeSet) {
 
+        long currentTime = TimeSync.getGlobalTime();
+
+        // delete expired expire times
+        Iterator<String> it = invalidClientExpireTimeSet.iterator();
+        while (it.hasNext()) {
+            String invalidClientEntry = it.next();
+            String expireTime = invalidClientEntry.substring(0, invalidClientEntry.indexOf("."));
+            if (currentTime > Long.valueOf(expireTime)) {
+                it.remove();
+            } else {
+                break;
+            }
+        }
+
         for (Long expireTime : expireTimeSet) {
-            clientExpireTimeSet.remove(clientId + expireTime);
-            invalidClientExpireTimeSet.add(clientId + expireTime);
+            clientExpireTimeSet.remove(expireTime + "." + clientId);
+            invalidClientExpireTimeSet.add(expireTime + "." + clientId);
 
             // unseen vouchers have to be recognized for the latestExpireTime as well
             latestExpireTime = (latestExpireTime < expireTime) ? expireTime : latestExpireTime;
@@ -128,6 +143,6 @@ public class FileVoucherManager {
      * @return
      */
     public boolean isObsolete() {
-        return (TimeSync.getGlobalTime() / 1000) > latestExpireTime;
+        return TimeSync.getGlobalTime() > latestExpireTime;
     }
 }
