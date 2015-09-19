@@ -6,6 +6,7 @@
  */
 package org.xtreemfs.osd.quota;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -15,7 +16,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
-import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.storage.StorageLayout;
 
 /**
  * This class handles all given vouchers on the OSD by managing a responsible manager per file.
@@ -25,20 +26,18 @@ import org.xtreemfs.osd.OSDRequestDispatcher;
  */
 public class OSDVoucherManager {
 
-    @SuppressWarnings("unused")
-    // FIXME: remove unused?
-    private final OSDRequestDispatcher            master;
     private final Map<String, FileVoucherManager> fileVoucherManagerMap = new HashMap<String, FileVoucherManager>();
+    private final StorageLayout                   storageLayout;
 
     /**
      * 
      */
-    public OSDVoucherManager(OSDRequestDispatcher dispatcher) {
-        master = dispatcher;
+    public OSDVoucherManager(StorageLayout storageLayout) {
+        this.storageLayout = storageLayout;
     }
 
     public void registerFileVoucher(String fileId, String clientId, long expireTime, long voucherSize)
-            throws VoucherErrorException {
+            throws VoucherErrorException, IOException {
 
         if (voucherSize == QuotaConstants.unlimitedVoucher) {
             return;
@@ -46,7 +45,7 @@ public class OSDVoucherManager {
 
         FileVoucherManager fileVoucherManager = fileVoucherManagerMap.get(fileId);
         if (fileVoucherManager == null) {
-            fileVoucherManager = new FileVoucherManager(fileId);
+            fileVoucherManager = new FileVoucherManager(fileId, storageLayout);
             fileVoucherManagerMap.put(fileId, fileVoucherManager);
         }
 
@@ -69,17 +68,18 @@ public class OSDVoucherManager {
         return result;
     }
 
-    public void invalidateFileVouchers(String fileId, String clientId, Set<Long> expireTimeSet) {
+    public void invalidateFileVouchers(String fileId, String clientId, Set<Long> expireTimeSet) throws IOException {
 
         FileVoucherManager fileVoucherManager = fileVoucherManagerMap.get(fileId);
         if (fileVoucherManager == null) {
-            fileVoucherManager = new FileVoucherManager(fileId);
+            fileVoucherManager = new FileVoucherManager(fileId, storageLayout);
             fileVoucherManagerMap.put(fileId, fileVoucherManager);
         }
 
         fileVoucherManager.invalidateVouchers(clientId, expireTimeSet);
 
         if (fileVoucherManager.isObsolete()) {
+            fileVoucherManager.delete();
             fileVoucherManagerMap.remove(fileId);
         }
     }

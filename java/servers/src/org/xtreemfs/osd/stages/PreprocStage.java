@@ -205,6 +205,16 @@ public class PreprocStage extends Stage {
                     callback.parseComplete(request, ErrorUtils.getErrorResponse(ErrorType.ERRNO,
                             POSIXErrno.POSIX_ERROR_EACCES, ex.toString(), ex));
                     return;
+                } catch (IOException ex) {
+                    if (Logging.isDebug()) {
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
+                                "Failed to process doPrepareRequest() request due to the following IOException:");
+                    }
+                    Logging.logError(Logging.LEVEL_ERROR, this, ex);
+
+                    // FIXME (baerhold) writeComplete - change EACCES to ...?
+                    callback.parseComplete(request, ErrorUtils.getErrorResponse(ErrorType.IO_ERROR,
+                            POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex));
                 }
             }
 

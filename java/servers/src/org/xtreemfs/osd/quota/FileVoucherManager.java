@@ -6,6 +6,7 @@
  */
 package org.xtreemfs.osd.quota;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -13,6 +14,7 @@ import java.util.Set;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.osd.storage.StorageLayout;
 
 /**
  * Manages all vouchers regarding open(ed) files.
@@ -23,15 +25,20 @@ import org.xtreemfs.foundation.logging.Logging.Category;
 public class FileVoucherManager {
 
     private final String      fileId;
+    private final StorageLayout storageLayout;
 
     private final Set<String> clientExpireTimeSet        = new HashSet<String>();
-    private final Set<String> invalidClientExpireTimeSet = new HashSet<String>();
+    private final Set<String> invalidClientExpireTimeSet;
 
     private long              voucherSizeMax             = 0;
     private long              latestExpireTime           = 0;
 
-    public FileVoucherManager(String fileId) {
+    public FileVoucherManager(String fileId, StorageLayout storageLayout) throws IOException {
         this.fileId = fileId;
+        this.storageLayout = storageLayout;
+
+        invalidClientExpireTimeSet = storageLayout.getInvalidClientExpireTimeSet(fileId);
+        removeObsoleteInvalidTimes();
     }
 
     /**
@@ -105,13 +112,38 @@ public class FileVoucherManager {
     }
 
     /**
-     * TODO(baerhold): save invalidated Vouchers locally in case of a crash approach
+     * Invalidates client expire times and saves all invalid times locally
      * 
      * @param clientId
      * @param expireTimeSet
+     * @throws IOException
      */
-    public void invalidateVouchers(String clientId, Set<Long> expireTimeSet) {
+    public void invalidateVouchers(String clientId, Set<Long> expireTimeSet) throws IOException {
 
+        removeObsoleteInvalidTimes();
+
+        long currentTime = TimeSync.getGlobalTime();
+        for (Long expireTime : expireTimeSet) {
+            if (currentTime > expireTime) {
+                continue;
+            }
+
+            clientExpireTimeSet.remove(expireTime + "." + clientId);
+            invalidClientExpireTimeSet.add(expireTime + "." + clientId);
+
+            // unseen vouchers have to be recognized for the latestExpireTime as well
+            latestExpireTime = (latestExpireTime < expireTime) ? expireTime : latestExpireTime;
+        }
+
+        storageLayout.setInvalidClientExpireTimeSet(fileId, invalidClientExpireTimeSet);
+
+        return;
+    }
+
+    /**
+     * removes invalid client expire times, which are already obsolete
+     */
+    private void removeObsoleteInvalidTimes() {
         long currentTime = TimeSync.getGlobalTime();
 
         // delete expired expire times
@@ -125,16 +157,6 @@ public class FileVoucherManager {
                 break;
             }
         }
-
-        for (Long expireTime : expireTimeSet) {
-            clientExpireTimeSet.remove(expireTime + "." + clientId);
-            invalidClientExpireTimeSet.add(expireTime + "." + clientId);
-
-            // unseen vouchers have to be recognized for the latestExpireTime as well
-            latestExpireTime = (latestExpireTime < expireTime) ? expireTime : latestExpireTime;
-        }
-
-        return;
     }
 
     /**
@@ -144,5 +166,10 @@ public class FileVoucherManager {
      */
     public boolean isObsolete() {
         return TimeSync.getGlobalTime() > latestExpireTime;
+    }
+
+    public void delete() throws IOException {
+        removeObsoleteInvalidTimes();
+        storageLayout.setInvalidClientExpireTimeSet(fileId, invalidClientExpireTimeSet);
     }
 }

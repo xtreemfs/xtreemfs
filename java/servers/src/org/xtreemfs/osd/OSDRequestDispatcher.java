@@ -521,7 +521,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             notifyConfigurationChange();
         }
         
-        osdVoucherManager = new OSDVoucherManager(this);
+        osdVoucherManager = new OSDVoucherManager(storageLayout);
         
         
         if (Logging.isDebug())
