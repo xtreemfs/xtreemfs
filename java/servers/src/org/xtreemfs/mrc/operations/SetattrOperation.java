@@ -124,10 +124,13 @@ public class SetattrOperation extends MRCOperation {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EPERM,
                         "changing owners is restricted to superusers");
 
-                // transfer space information from old owner to new owner
-                QuotaFileInformation quotaFileInformation = new QuotaFileInformation(sMan.getVolumeInfo().getId(), file);
-                master.getMrcVoucherManager().transferOwnerSpace(quotaFileInformation, rqArgs.getStbuf().getUserId(),
-                        update);
+                // transfer file space information from old owner to new owner
+                if (!file.isDirectory()) {
+                    QuotaFileInformation quotaFileInformation = new QuotaFileInformation(sMan.getVolumeInfo().getId(),
+                            file);
+                    master.getMrcVoucherManager().transferOwnerSpace(quotaFileInformation,
+                            rqArgs.getStbuf().getUserId(), update);
+                }
             }
             
             if (setGID) {
@@ -142,10 +145,13 @@ public class SetattrOperation extends MRCOperation {
                         POSIXErrno.POSIX_ERROR_EPERM,
                         "changing owning groups is restricted to superusers or file owners who are in the group that is supposed to be assigned");
 
-                // transfer space information from old owner group to new owner group
-                QuotaFileInformation quotaFileInformation = new QuotaFileInformation(sMan.getVolumeInfo().getId(), file);
-                master.getMrcVoucherManager().transferOwnerGroupSpace(quotaFileInformation,
-                        rqArgs.getStbuf().getGroupId(), update);
+                // transfer file space information from old owner group to new owner group
+                if (!file.isDirectory()) {
+                    QuotaFileInformation quotaFileInformation = new QuotaFileInformation(sMan.getVolumeInfo().getId(),
+                            file);
+                    master.getMrcVoucherManager().transferOwnerGroupSpace(quotaFileInformation,
+                            rqArgs.getStbuf().getGroupId(), update);
+                }
             }
             
             // change owner and owning group
