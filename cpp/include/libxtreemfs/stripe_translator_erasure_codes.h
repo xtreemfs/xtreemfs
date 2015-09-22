@@ -9,7 +9,6 @@
 
 #include "libxtreemfs/stripe_translator.h"
 #include <algorithm>
-#include <boost/dynamic_bitset.hpp>
 #include <vector>
 
 using namespace std;
@@ -38,7 +37,6 @@ class StripeTranslatorErasureCodes : public StripeTranslator {
           char *buf,
           size_t size,
           uint64_t offset,
-          boost::dynamic_bitset<>* successful_reads,
           PolicyContainer policies,
           bool erasure
           ) const;

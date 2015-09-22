@@ -177,7 +177,6 @@ int FileHandleImplementation::Read(
       std::cout << "aux read: " << it->is_aux << std::endl;
   }
   // Read all objects.
-  boost::dynamic_bitset<> successful_reads(operations.size());
   size_t received_data = 0;
   bool erasure = false;
 
@@ -239,9 +238,8 @@ int FileHandleImplementation::Read(
                         operations[j].data, operations[j].req_offset,
                         operations[j].req_size);
             received_data += op_received_data;
-            // set operations req_size to actual received data
-            operations[j].req_size = op_received_data;
-            successful_reads[j] = 1;
+            operations[j].recv_size = op_received_data;
+            operations[j].success = 1;
             cout << "success " << op_received_data << " bytes read from op " << j << endl;
         // }
       } catch(IOException &e) {
@@ -295,8 +293,8 @@ int FileHandleImplementation::Read(
               operations[j].req_size);
         received_data += op_received_data;
         // set operations req_size to actual received data
-        operations[j].req_size = op_received_data;
-        successful_reads[j] = 1;
+        operations[j].recv_size = op_received_data;
+        operations[j].success = 1;
         cout << "success " << op_received_data << " bytes read from op " << j << endl;
       } catch(IOException &e) {
         cout << "\tfailed" << endl;
@@ -328,11 +326,11 @@ int FileHandleImplementation::Read(
     }
   }
 
-  received_data = translator->ProcessReads(&operations, buf, count, offset, &successful_reads,
+  received_data = translator->ProcessReads(&operations, buf, count, offset,
       striping_policies, erasure);
 
   for (int i = 0; i < operations.size(); i++) {
-    if (operations[i].owns_data) {
+    if (operations[i].is_aux) {
       cout << "deleting coding buffers after read" << endl;
       delete[] operations[i].data;
     }
@@ -629,7 +627,7 @@ int FileHandleImplementation::internal_write(
                        operations[j].obj_number, operations[j].req_offset,
                        operations[j].data, operations[j].req_size);
 
-        if (operations[j].owns_data) {
+        if (operations[j].is_aux) {
           cout << "deleting coding buffers after write" << endl;
           delete[] operations[j].data;
         }

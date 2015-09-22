@@ -10,7 +10,6 @@
 
 #include <stdint.h>
 
-#include <boost/dynamic_bitset.hpp>
 #include <list>
 #include <vector>
 
@@ -24,12 +23,13 @@ class ReadOperation {
 
   ReadOperation(size_t _obj_number, OSDOffsetContainer _osd_offsets,
                 size_t _req_size, size_t _req_offset,
-                char *_data, bool _owns_data = false, bool _is_aux = false)
+                char *_data, bool _is_aux = 0)
       : obj_number(_obj_number), osd_offsets(_osd_offsets),
         req_size(_req_size), req_offset(_req_offset),
         data(_data),
-        owns_data(_owns_data),
-        is_aux(_is_aux) {
+        is_aux(_is_aux),
+        success(0),
+        recv_size(0) {
   };
 
   size_t obj_number;
@@ -37,8 +37,9 @@ class ReadOperation {
   size_t req_size;
   size_t req_offset;
   char *data;
-  bool owns_data;
   bool is_aux;
+  bool success;
+  size_t recv_size;
 };
 
 class WriteOperation {
@@ -47,11 +48,11 @@ class WriteOperation {
 
   WriteOperation(size_t _obj_number, OSDOffsetContainer _osd_offsets,
                  size_t _req_size, size_t _req_offset,
-                 const char *_data, bool _owns_data = false)
+                 const char *_data, bool _is_aux = 0)
       : obj_number(_obj_number), osd_offsets(_osd_offsets),
         req_size(_req_size), req_offset(_req_offset),
         data(_data),
-        owns_data(_owns_data) {
+        is_aux(_is_aux) {
   };
 
   size_t obj_number;
@@ -59,7 +60,7 @@ class WriteOperation {
   size_t req_size;
   size_t req_offset;
   const char *data;
-  bool owns_data;
+  bool is_aux;
 };
 
 class StripeTranslator {
@@ -95,7 +96,6 @@ class StripeTranslator {
           char *buf,
           size_t size,
           uint64_t offset,
-          boost::dynamic_bitset<>* sucessful_reads,
           PolicyContainer policies,
           bool erasure
           ) const = 0;

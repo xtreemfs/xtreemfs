@@ -80,7 +80,6 @@ size_t StripeTranslatorRaid0::ProcessReads(
     char *buf,
     size_t size,
     uint64_t offset,
-    boost::dynamic_bitset<>* successful_reads,
     PolicyContainer policies,
     bool erasure
   ) const {

@@ -8,7 +8,6 @@
 #define CPP_INCLUDE_LIBXTREEMFS_STRIPE_TRANSLATOR_RAID0_H_
 
 #include <algorithm>
-#include <boost/dynamic_bitset.hpp>
 #include <vector>
 
 #include "libxtreemfs/stripe_translator.h"
@@ -39,7 +38,6 @@ class StripeTranslatorRaid0 : public StripeTranslator {
           char *buf,
           size_t size,
           uint64_t offset,
-          boost::dynamic_bitset<>* sucessful_reads,
           PolicyContainer policies,
           bool erasure
           ) const;

@@ -8,7 +8,6 @@
 #include "libxtreemfs/xtreemfs_exception.h"
 
 #include <algorithm>
-#include <boost/dynamic_bitset.hpp>
 #include <jerasure.h>
 #include <reed_sol.h>
 #include <vector>
