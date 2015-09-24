@@ -130,7 +130,11 @@ public class MRCHelper {
             defaultuserquota,
             defaultgroupquota,
             userquota,
-            groupquota
+            userusedspace,
+            userblockedspace,
+            groupquota,
+            groupusedspace,
+            groupblockedspace
     }
     
     public enum FileType {
@@ -342,7 +346,11 @@ public class MRCHelper {
 
         // get subkey in case of user or group quota
         String subKey = "";
-        if (keyString.startsWith(SysAttrs.groupquota.name()) || keyString.startsWith(SysAttrs.userquota.name())) {
+        if (keyString.startsWith(SysAttrs.groupquota.name()) || keyString.startsWith(SysAttrs.groupblockedspace.name())
+                || keyString.startsWith(SysAttrs.groupusedspace.name())
+                || keyString.startsWith(SysAttrs.userquota.name())
+                || keyString.startsWith(SysAttrs.userblockedspace.name())
+                || keyString.startsWith(SysAttrs.userusedspace.name())) {
             String[] split = keyString.split("\\.", 2);
             if (split.length != 2)
                 return "No group or user specified!";
@@ -512,6 +520,26 @@ public class MRCHelper {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No group specified!");
 
                 return String.valueOf(sMan.getGroupQuota(subKey));
+            case userblockedspace:
+                if (subKey == null || subKey.isEmpty())
+                    throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No user specified!");
+
+                return String.valueOf(sMan.getUserBlockedSpace(subKey));
+            case userusedspace:
+                if (subKey == null || subKey.isEmpty())
+                    throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No user specified!");
+
+                return String.valueOf(sMan.getUserUsedSpace(subKey));
+            case groupblockedspace:
+                if (subKey == null || subKey.isEmpty())
+                    throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No group specified!");
+
+                return String.valueOf(sMan.getGroupBlockedSpace(subKey));
+            case groupusedspace:
+                if (subKey == null || subKey.isEmpty())
+                    throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No group specified!");
+
+                return String.valueOf(sMan.getGroupUsedSpace(subKey));
             }
         }
         
@@ -530,7 +558,11 @@ public class MRCHelper {
 
         // get subkey in case of user or group quota
         String subKey = "";
-        if (keyString.startsWith(SysAttrs.groupquota.name()) || keyString.startsWith(SysAttrs.userquota.name())) {
+        if (keyString.startsWith(SysAttrs.groupquota.name()) || keyString.startsWith(SysAttrs.groupblockedspace.name())
+                || keyString.startsWith(SysAttrs.groupusedspace.name())
+                || keyString.startsWith(SysAttrs.userquota.name())
+                || keyString.startsWith(SysAttrs.userblockedspace.name())
+                || keyString.startsWith(SysAttrs.userusedspace.name())) {
             String[] split = keyString.split("\\.", 2);
             if (split.length != 2)
                 throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No group or user specified!");
@@ -941,6 +973,15 @@ public class MRCHelper {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, "Set group quota of " + subKey + " to: " + value);
 
             break;
+
+        case userblockedspace:
+            throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "User blocked space can't be set!");
+        case userusedspace:
+            throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "User used space can't be set!");
+        case groupblockedspace:
+            throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "Group blocked space can't be set!");
+        case groupusedspace:
+            throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "Group used space can't be set!");
 
         default:
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "system attribute '" + keyString + "' is immutable");
