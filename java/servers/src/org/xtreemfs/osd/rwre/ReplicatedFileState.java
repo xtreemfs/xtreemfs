@@ -41,10 +41,10 @@ public class ReplicatedFileState {
         INITIALIZING, 
         OPEN, 
         RESET, 
+        RESET_COMPLETE,
         WAITING_FOR_LEASE, 
         BACKUP, 
-        PRIMARY, 
-        INVALIDATED
+        PRIMARY
     };
 
     private final AtomicInteger        queuedData;

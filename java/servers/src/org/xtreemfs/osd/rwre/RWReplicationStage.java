@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.XLocations;
@@ -94,7 +95,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
     public static final int STAGEOP_SETVIEW                   = 21;
     public static final int STAGEOP_INVALIDATEVIEW            = 22;
-    public static final int STAGEOP_FETCHINVALIDATED          = 23;
+    public static final int STAGEOP_INVALIDATED_RESET         = 23;
 
     public  static enum Operation {
         READ,
@@ -147,7 +148,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         files = new HashMap<String, ReplicatedFileState>();
         cellToFileId = new HashMap<ASCIIString, String>();
         numObjsInFlight = 0;
-        filesInReset = new LinkedList();
+        filesInReset = new LinkedList<ReplicatedFileState>();
         externalRequestsInQueue = new AtomicInteger(0);
 
         localID = new ASCIIString(master.getConfig().getUUID().toString());
@@ -311,7 +312,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
                         "(R:%s) replica RESET finished (replica is up-to-date): %s", localID, state.getFileId());
             }
-            doOpen(state);
+            doResetComplete(state);
         }
     }
 
@@ -493,20 +494,29 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
         while (numObjsInFlight < MAX_OBJS_IN_FLIGHT) {
 
-            ReplicatedFileState file = filesInReset.poll();
-            if (file == null)
+            ReplicatedFileState fileInReset = filesInReset.poll();
+            if (fileInReset == null)
                 break;
+
+            // Don't fetch objects for closed files.
+            // This should not happen while a RESET is in progress, since #processObjectFetched calls ping.
+            // If a file is deleted, the filestate will be cleared, too. But in that case it is reasonable to
+            // abort the RESET.
+            ReplicatedFileState file = files.get(fileInReset.getFileId());
+            if (file == null || file != fileInReset) {
+                continue;
+            }
 
             if (!file.getObjectsToFetch().isEmpty()) {
                 ObjectVersionMapping o = file.getObjectsToFetch().remove(0);
                 file.setNumObjectsPending(file.getNumObjectsPending() + 1);
                 numObjsInFlight++;
-                fetchObject(file.getFileId(), o);
+                fetchObject(file, o);
             } else {
                 // reset complete!
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
                         "(R:%s) RESET complete for file %s", localID, file.getFileId());
-                doOpen(file);
+                doResetComplete(file);
             }
 
             if (!file.getObjectsToFetch().isEmpty()) {
@@ -515,12 +525,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         }
     }
 
-    private void fetchObject(final String fileId, final ObjectVersionMapping record) {
-        ReplicatedFileState state = files.get(fileId);
-        if (state == null) {
-            return;
-        }
-
+    private void fetchObject(final ReplicatedFileState state, final ObjectVersionMapping record) {
+        final String fileId = state.getFileId();
         try {
             final ServiceUUID osd = new ServiceUUID(record.getOsdUuidsList().get(0));
             // fetch that object
@@ -551,7 +557,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                                            null,
                                            ErrorUtils.getErrorResponse(ex.getErrorType(), ex.getPOSIXErrno(), ex.toString(), ex));
                     } catch (Exception ex) {
-                        eventObjectFetched(fileId,
+                        eventObjectFetched(
+                                fileId,
                                            record,
                                            null,
                                            ErrorUtils.getErrorResponse(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_NONE, ex.toString(), ex));
@@ -561,7 +568,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 }
             });
         } catch (IOException ex) {
-            eventObjectFetched(fileId, record, null, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex));
+            eventObjectFetched(fileId, record, null,
+                    ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex));
         }
 
     }
@@ -623,7 +631,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                         // reset complete!
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
                                 "(R:%s) RESET complete for file %s", localID, fileId);
-                        doOpen(state);
+                        doResetComplete(state);
                     }
                 }
             }
@@ -655,6 +663,21 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         OSDOperation op = master.getInternalEvent(EventRWRStatus.class);
         op.startInternalEvent(new Object[] { file.getFileId(), file.getsPolicy() });
 
+    }
+
+    private void doResetComplete(final ReplicatedFileState file) {
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "(R:%s) replica state changed for %s from %s to %s", localID,
+                    file.getFileId(), file.getState(), ReplicaState.RESET_COMPLETE);
+        }
+        file.setState(ReplicaState.RESET_COMPLETE);
+
+        if (file.isInvalidated()) {
+            // If the file has been invalidated don't go into open state again.
+            doInvalidated(file);
+        } else {
+            doOpen(file);
+        }
     }
 
     private void processReplicaStateAvailExecReset(StageRequest method) {
@@ -710,10 +733,9 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
 
     private void doWaitingForLease(final ReplicatedFileState file) {
-        // If the file is invalidated a XLocSetChange is in progress and we can assume, that no primary exists.
-        if (file.isInvalidated()) {
-            doInvalidated(file);
-        } else if (file.getPolicy().requiresLease()) {
+        assert (!file.isInvalidated());
+            
+        if (file.getPolicy().requiresLease()) {
             if (file.isCellOpen()) {
                 if (file.isLocalIsPrimary()) {
                     doPrimary(file);
@@ -759,8 +781,14 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     file.getFileId(), file.getState(), ReplicaState.OPEN);
         }
         file.setState(ReplicaState.OPEN);
+
         if (file.hasPendingRequests()) {
-            doWaitingForLease(file);
+            if (file.isInvalidated()) {
+                // If the file has been invalidated don't wait for lease.
+                doInvalidated(file);
+            } else {
+                doWaitingForLease(file);
+            }
         }
     }
 
@@ -808,20 +836,11 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
     private void doInvalidated(final ReplicatedFileState file) {
         assert (file.isInvalidated());
-
-
+        // Keep the current fileState and re-enqueue the requests.
         if (file.isInvalidatedReset()) {
             // The AuthState has been set and the file is up to date.
-            if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                        "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(),
-                        file.getState(), ReplicaState.INVALIDATED);
-            }
-
             file.setInvalidatedReset(false);
-            file.setState(ReplicaState.INVALIDATED);
         }
-        file.setPrimaryReset(false);
         while (file.hasPendingRequests()) {
             enqueuePrioritized(file.removePendingRequest());
         }
@@ -833,7 +852,9 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 ErrorUtils.formatError(ex));
         file.setPrimaryReset(false);
         file.setState(ReplicaState.OPEN);
+        file.setInvalidatedReset(false);
         file.setCellOpen(false);
+        // TODO (jdillmann): Should numObjectsPending and objectsToFetch be cleared, too?
         fstage.closeCell(file.getPolicy().getCellId(), false);
         file.clearPendingRequests(ex);
     }
@@ -977,7 +998,9 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         case STAGEOP_GETSTATUS: processGetStatus(method); break;
         case STAGEOP_SETVIEW: processSetFleaseView(method); break;
         case STAGEOP_INVALIDATEVIEW: processInvalidateReplica(method); break;
-        case STAGEOP_FETCHINVALIDATED: processFetchInvalidated(method); break;
+        case STAGEOP_INVALIDATED_RESET: processInvalidatedReplicaReset(method); break;
+        // TODO: externalRequestsInQueue.decrementAndGet(); ????
+
         default : throw new IllegalArgumentException("no such stageop");
         }
     }
@@ -999,21 +1022,28 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
     private void processFileClosed(StageRequest method) {
         final String fileId = (String) method.getArgs()[0];
-        final ReplicatedFileState file = files.get(fileId);
-
-        // Files that are invalidated and in reset have to be kept open until the reset is finished.
-        if (file != null && !file.isInvalidatedReset()) {
-            closeFileState(fileId, false);
-        }
-
+        // Files are closed due to a timer in the openFileTable or if they are unlinked.
+        // Since the openFileTable is pinged on most operations and an unlinked file is no longer available the fileState
+        // can be closed.
+        // TODO (jdillmann): Correct errno would be probably EBADF (9)
+        ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_EIO,
+                "file has been closed");
+        closeFileState(fileId, false, error);
     }
 
-    private void closeFileState(String fileId, boolean returnLease) {
+    private void closeFileState(String fileId, boolean returnLease, ErrorResponse error) {
         ReplicatedFileState state = files.remove(fileId);
         if (state != null) {
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "closing file %s", fileId);
             }
+
+            if (error == null) {
+                error = ErrorUtils.getErrorResponse(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_NONE,
+                        "file has been closed");
+            }
+
+            state.clearPendingRequests(error);
             state.getPolicy().closeFile();
             if (state.getPolicy().requiresLease())
                 fstage.closeCell(state.getPolicy().getCellId(), returnLease);
@@ -1185,7 +1215,27 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 switch (state.getState()) {
                 case WAITING_FOR_LEASE:
                 case INITIALIZING:
-                case RESET:
+                case RESET: {
+                    if (Logging.isDebug()) {
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                                "enqeue update for %s (state is %s)", fileId, state.getState());
+                    }
+                    if (state.sizeOfPendingRequests() > MAX_PENDING_PER_FILE) {
+                        if (Logging.isDebug()) {
+                            Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                                    "rejecting request: too many requests (is: %d, max %d) in queue for file %s",
+                                    state.sizeOfPendingRequests(), MAX_PENDING_PER_FILE, fileId);
+                        }
+                        callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR,
+                                POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
+                        return;
+                    } else {
+                        state.addPendingRequest(method);
+                    }
+                    return;
+                }
+
+                case RESET_COMPLETE:
                 case OPEN: {
                     if (Logging.isDebug()) {
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
@@ -1203,13 +1253,14 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     } else {
                         state.addPendingRequest(method);
                     }
-                    if (state.getState() == ReplicaState.OPEN) {
-                        // immediately change to backup mode...no need to check the lease
-                        doWaitingForLease(state);
-                    }
+
+                    // immediately change to backup mode...no need to check the lease
+                    doWaitingForLease(state);
+
                     return;
                 }
                 }
+
                 if (!state.getPolicy().acceptRemoteUpdate(objVersion)) {
                     Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,
                             "received outdated object version %d for file %s", objVersion, fileId);
@@ -1248,6 +1299,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     }
                     return;
                 }
+
+                case RESET_COMPLETE:
                 case OPEN: {
                     if (state.sizeOfPendingRequests() > MAX_PENDING_PER_FILE) {
                         if (Logging.isDebug()) {
@@ -1365,9 +1418,21 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         }
 
         // Close ReplicatedFileState opened in a previous view to ensure no outdated UUIDList can exist.
+        // This will also cancel any pending (invalidated) resets.
+        // ATTENTION: Some objectsToFetch in flight could be lost until the ReplicatedFileState is opened again.
         ReplicatedFileState state = files.get(fileId);
-        if (state != null && state.getLocations().getVersion() < versionState.getVersion()) {
-            closeFileState(fileId, true);
+        if (state != null) {
+            // Abort if the view to be set is older than the current one.
+            if (state.getLocations().getVersion() < versionState.getVersion()) {
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
+                        "(R:%s) requested to set an older view than stored in the ReplicatedFileState for %s.",
+                        localID, fileId);
+                return;
+            }
+
+            ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.INVALID_VIEW, POSIXErrno.POSIX_ERROR_NONE,
+                    "file has been closed due to a new view");
+            closeFileState(fileId, true, error);
         }
 
         fstage.setViewId(cellId, viewId, new FleaseListener() {
@@ -1437,6 +1502,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         }
 
         // Close the flease cell and return the lease if possible.
+        state.setCellOpen(false);
         fstage.closeCell(state.getPolicy().getCellId(), true);
         cellToFileId.remove(state.getPolicy().getCellId());
 
@@ -1464,13 +1530,13 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
     }
 
-    public void fetchInvalidated(String fileId, AuthoritativeReplicaState authState, ReplicaStatus localState,
+    public void invalidatedReplicaReset(String fileId, AuthoritativeReplicaState authState, ReplicaStatus localState,
             FileCredentials credentials, XLocations xloc, RWReplicationCallback callback, OSDRequest request) {
-        this.enqueueOperation(STAGEOP_FETCHINVALIDATED,
+        this.enqueueOperation(STAGEOP_INVALIDATED_RESET,
                 new Object[] { fileId, authState, localState, credentials, xloc }, request, null, callback);
     }
 
-    private void processFetchInvalidated(StageRequest method) {
+    private void processInvalidatedReplicaReset(StageRequest method) {
         final RWReplicationCallback callback = (RWReplicationCallback) method.getCallback();
         try {
             final String fileId = (String) method.getArgs()[0];
@@ -1511,25 +1577,32 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 break;
 
             case OPEN:
-            case WAITING_FOR_LEASE:
-            case BACKUP:
-            case PRIMARY:
                 // At this point it is ensured, that no other Request is queued. Therefore the AuthState can be set
                 // regardless of the state.
                 state.setInvalidatedReset(true);
+                state.setForceReset(false);
+                state.setPrimaryReset(false);
+                state.setCellOpen(false);
                 state.addPendingRequest(method);
                 executeSetAuthState(localState, authState, state, fileId);
                 break;
 
-            case INVALIDATED:
+            case RESET_COMPLETE:
                 // The AuthState has been set and the Replica is up to date.
 
                 // Close the file by clearing the state.
-                closeFileState(fileId, true);
+                closeFileState(fileId, true, null);
 
                 // Finish the request.
                 callback.success(0);
                 break;
+                
+            case WAITING_FOR_LEASE:
+            case BACKUP:
+            case PRIMARY:
+                throw new XtreemFSException(
+                        String.format("(R:%s) Replica for %s ended up in bad state %s while being invalidated.", 
+                                      localID, fileId, state.getState()));
             }
 
         } catch (Exception ex) {

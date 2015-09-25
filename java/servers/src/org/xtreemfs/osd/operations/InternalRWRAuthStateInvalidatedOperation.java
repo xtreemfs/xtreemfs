@@ -89,7 +89,7 @@ public class InternalRWRAuthStateInvalidatedOperation extends OSDOperation {
         final XLocations xloc = rq.getLocationList();
         final xtreemfs_rwr_auth_stateRequest args = (xtreemfs_rwr_auth_stateRequest) rq.getRequestArgs();
 
-        master.getRWReplicationStage().fetchInvalidated(fileId, args.getState(), localState, args.getFileCredentials(),
+        master.getRWReplicationStage().invalidatedReplicaReset(fileId, args.getState(), localState, args.getFileCredentials(),
                 xloc, new RWReplicationCallback() {
 
                     @Override
