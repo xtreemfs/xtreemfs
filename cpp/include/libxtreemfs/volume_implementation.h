@@ -217,6 +217,11 @@ class VolumeImplementation : public Volume {
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& path);
 
+  void GetXLocSet(
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      const std::string& file_id,
+      xtreemfs::pbrpc::XLocSet* xlocset);
+
   virtual void RemoveReplica(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& path,
@@ -320,6 +325,12 @@ class VolumeImplementation : public Volume {
 
   /** Write back file_sizes of every FileInfo object in open_file_table_. */
   void PeriodicFileSizeUpdate();
+
+  void WaitForXLocSetInstallation(
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      const std::string& file_id,
+      int expected_version,
+      xtreemfs::pbrpc::XLocSet* xlocset);
 
   /** Reference to Client which did open this volume. */
   ClientImplementation* client_;

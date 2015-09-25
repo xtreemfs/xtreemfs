@@ -1321,20 +1321,25 @@ public class VolumeImplementation implements Volume, AdminVolume {
                 });
 
         
-        waitForXLocSetInstallation(userCredentials, response.getFileId(), response.getExpectedXlocsetVersion());
-        
-        // Renew the local XLocSet by reopening the file.
-        // TODO(jdillmann): Return the updated XLocSet as a response to the addReplicaOperation.
-        AdminFileHandle fileHandle = openFile(userCredentials, path,
-                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
+        XLocSet newXLocSet = waitForXLocSetInstallation(userCredentials, response.getFileId(),
+                response.getExpectedXlocsetVersion());
 
-        // Only the files with the RONLY policy have to be pinged. WqRq, WaR1, WaRa policies handled on the MRC side by
-        // the XLocSetCoordinator.
-        if (fileHandle.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
-            // Trigger the replication at this point by reading at least one byte.
-            fileHandle.pingReplica(userCredentials, newReplica.getOsdUuids(0));
+        // Update the local XLocSet cached at FileInfo if it exists.
+        FileInfo fi = openFileTable.get(Helper.extractFileIdFromGlobalFileId(response.getFileId()));
+        if (fi != null) {
+            fi.updateXLocSetAndRest(newXLocSet);
         }
-        fileHandle.close();
+        
+        // Trigger the ronly replication at this point by reading at least one byte.
+        if (newXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
+            AdminFileHandle fileHandle = openFile(userCredentials, path,
+                    SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
+            try {
+                fileHandle.pingReplica(userCredentials, newReplica.getOsdUuids(0));
+            } finally {
+                fileHandle.close();
+            }
+        }
     }
 
     /*
