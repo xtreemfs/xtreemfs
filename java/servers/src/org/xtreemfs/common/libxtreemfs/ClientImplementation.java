@@ -38,6 +38,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.*;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
@@ -49,22 +50,16 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceGetByTypeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceGetByUUIDRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceRegisterRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceRegisterResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SERVICES;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
-import org.xtreemfs.pbrpc.generatedinterfaces.Scheduler;
-import org.xtreemfs.pbrpc.generatedinterfaces.SchedulerServiceClient;
 
 /**
  * Standard implementation of the client. Used only internally.
@@ -421,6 +416,8 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
                     userCredentials, 
                     GlobalTypes.OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_UUID.getNumber()+".uuids", 
                     osdStr);
+            volume.setXAttr(userCredentials, "/", "xtreemfs.quota",
+                    new Integer(capacity * 1024 * 1024 * 1024).toString(), MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
 
         } catch(Exception ex) {
             deleteReservation(schedulerAddress, auth, userCredentials, volumeName);
