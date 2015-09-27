@@ -68,8 +68,10 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
 
     @Override
     public E remove() {
-        if (new Date().getTime() - this.lastReset > this.resetTimeout)
+        if (new Date().getTime() - this.lastReset > this.resetTimeout) {
             this.requestCount.clear();
+            this.lastReset = new Date().getTime();
+        }
 
         Queue<E> resultQueue = this.getNextQueue();
 
@@ -81,8 +83,10 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
 
     @Override
     public E poll() {
-        if (new Date().getTime() - this.lastReset > this.resetTimeout)
+        if (new Date().getTime() - this.lastReset > this.resetTimeout) {
             this.requestCount.clear();
+            this.lastReset = new Date().getTime();
+        }
 
         Queue<E> resultQueue = this.getNextQueue();
 
@@ -94,8 +98,10 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
 
     @Override
     public E element() {
-        if (new Date().getTime() - this.lastReset > this.resetTimeout)
+        if (new Date().getTime() - this.lastReset > this.resetTimeout) {
             this.requestCount.clear();
+            this.lastReset = new Date().getTime();
+        }
 
         Queue<E> resultQueue = this.getNextQueue();
 
@@ -107,8 +113,10 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
 
     @Override
     public E peek() {
-        if (new Date().getTime() - this.lastReset > this.resetTimeout)
+        if (new Date().getTime() - this.lastReset > this.resetTimeout) {
             this.requestCount.clear();
+            this.lastReset = new Date().getTime();
+        }
 
         Queue<E> resultQueue = this.getNextQueue();
 
@@ -141,8 +149,10 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
         E element = null;
         Queue<E> q;
 
-        if (new Date().getTime() - this.lastReset > this.resetTimeout)
+        if (new Date().getTime() - this.lastReset > this.resetTimeout) {
             this.requestCount.clear();
+            this.lastReset = new Date().getTime();
+        }
 
         while(element == null) {
             while((q = this.getNextQueue()) == null) {
@@ -161,8 +171,10 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
         Date t = new Date();
         Queue<E> resultQueue;
 
-        if (new Date().getTime() - this.lastReset > this.resetTimeout)
+        if (new Date().getTime() - this.lastReset > this.resetTimeout) {
             this.requestCount.clear();
+            this.lastReset = new Date().getTime();
+        }
 
         while((resultQueue = this.getNextQueue()) == null &&
                 new Date().getTime() - t.getTime() < unit.toMillis(timeout))
