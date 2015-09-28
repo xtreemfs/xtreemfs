@@ -108,11 +108,15 @@ public class ClearVouchersOperation extends MRCOperation {
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
 
         FileMetadata metadata = sMan.getMetadata(globalFileIdResolver.getLocalFileId());
-        QuotaFileInformation quotaFileInformation = new QuotaFileInformation(globalFileIdResolver.getVolumeId(),
-                metadata);
 
-        master.getMrcVoucherManager().clearVouchers(quotaFileInformation, cap.getClientIdentity(), expireTimeSet,
-                newFileSizeMax, update);
+        // check for deleted file
+        if (metadata != null) {
+            QuotaFileInformation quotaFileInformation = new QuotaFileInformation(globalFileIdResolver.getVolumeId(),
+                    metadata);
+
+            master.getMrcVoucherManager().clearVouchers(quotaFileInformation, cap.getClientIdentity(), expireTimeSet,
+                    newFileSizeMax, update);
+        }
 
         // TODO(baerhold): update file size for storage
 
