@@ -417,7 +417,7 @@ public class ClientImplementation implements UUIDResolver, Client, AdminClient {
                     GlobalTypes.OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_UUID.getNumber()+".uuids", 
                     osdStr);
             volume.setXAttr(userCredentials, "/", "xtreemfs.quota",
-                    new Integer(capacity * 1024 * 1024 * 1024).toString(), MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
+                    new Long(capacity * 1024L * 1024L * 1024L).toString(), MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
 
         } catch(Exception ex) {
             deleteReservation(schedulerAddress, auth, userCredentials, volumeName);
