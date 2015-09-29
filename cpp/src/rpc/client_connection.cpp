@@ -259,7 +259,7 @@ void ClientConnection::PostConnect(const boost::system::error_code& err,
             << err.message() << "\n";
       }
 
-      PostResolve(err, endpoint_iterator);
+      PostResolve(boost::system::error_code(), endpoint_iterator);
     } else {
       Reset();
       string ssl_error_info;
