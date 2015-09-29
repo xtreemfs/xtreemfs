@@ -95,7 +95,7 @@ public class StorageThread extends Stage {
     public static final int            STAGEOP_FINALIZE_VOUCHERS     = 15;
 
     private final MetadataCache        cache;
-    
+
     private final StorageLayout        layout;
     
     private final OSDRequestDispatcher master;
@@ -552,7 +552,7 @@ public class StorageThread extends Stage {
             // if the write refers to the last known object or to an object
             // beyond, i.e. the file size and globalMax are potentially
             // affected:
-            if (objNo >= fi.getLastObjectNumber() && !gMaxOff) {
+            if (objNo >= fi.getLastObjectNumber()) {
                 
                 long newObjSize = dataLength + offset;
                 
@@ -591,7 +591,7 @@ public class StorageThread extends Stage {
                 // if the written object has a larger ID than the largest
                 // locally-known object of the file, send 'globalMax' messages
                 // to all other OSDs and update local globalMax
-                if (objNo > fi.getLastObjectNumber()) {
+                if (objNo > fi.getLastObjectNumber() && !gMaxOff) {
                     if (objNo > fi.getGlobalLastObjectNumber()) {
                         // send UDP packets...
                         final List<ServiceUUID> osds = xloc.getLocalReplica().getOSDs();
