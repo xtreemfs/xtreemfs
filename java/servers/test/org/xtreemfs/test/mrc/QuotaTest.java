@@ -195,6 +195,8 @@ public class QuotaTest {
 
         // check user/group space usage values on startup
         {
+            assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
+            assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
@@ -238,8 +240,9 @@ public class QuotaTest {
             String[] xattrNamesValue = new String[] { "xtreemfs.userusedspace." + USERNAME,
                     "xtreemfs.userblockedspace." + USERNAME, "xtreemfs.groupusedspace." + GROUPNAME,
                     "xtreemfs.groupblockedspace." + GROUPNAME };
+            String[] xattrNamesVolume = new String[] { "xtreemfs.blockedspace", "xtreemfs.usedspace" };
 
-            String[][] xattrNames = new String[][] { xattrNamesEmptyValue, xattrNamesValue };
+            String[][] xattrNames = new String[][] { xattrNamesEmptyValue, xattrNamesValue, xattrNamesVolume };
 
             for (String[] xattrNameArray : xattrNames) {
                 for (String xattrName : xattrNameArray) {
@@ -281,6 +284,8 @@ public class QuotaTest {
                         | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber());
 
         // check blocked space: no quota -> no blocked space
+        assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
+        assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
         assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
         assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
         assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
@@ -309,6 +314,7 @@ public class QuotaTest {
         fileHandle.close();
 
         // check user/group space usage values on startup
+        assertEquals(Long.toString(data.length()), volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
         assertEquals(Long.toString(data.length()),
                 volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
         assertEquals(Long.toString(data.length()),
@@ -332,7 +338,8 @@ public class QuotaTest {
         Volume volume = client.openVolume(VOLUME_NAME, null, options);
 
         // set vouchersize > quota, so that the voucher will block all space
-        volume.setXAttr(userCredentials, "/", "xtreemfs.vouchersize", "10", XATTR_FLAGS.XATTR_FLAGS_CREATE);
+        String voucherSize = "10";
+        volume.setXAttr(userCredentials, "/", "xtreemfs.vouchersize", voucherSize, XATTR_FLAGS.XATTR_FLAGS_CREATE);
 
         boolean error, firstPass;
         String quota = "5";
@@ -349,7 +356,11 @@ public class QuotaTest {
                             | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
                             | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber());
 
-            // check blocked space: no quota -> no blocked space
+            // check blocked space for volume
+            assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
+            assertEquals(quota, volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
+
+            // check blocked space for user/group: no quota -> no blocked space
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
@@ -378,14 +389,18 @@ public class QuotaTest {
 
             fileHandle.close();
 
+            assertEquals(quota, volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
+            assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
             assertEquals(quota, volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
             assertEquals(quota, volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
 
             volume.unlink(userCredentials, FILEPATH);
 
+            assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
 
+            // reset to unlimited
             volume.setXAttr(userCredentials, "/", "xtreemfs.quota", "0", XATTR_FLAGS.XATTR_FLAGS_CREATE);
         }
 
@@ -403,7 +418,9 @@ public class QuotaTest {
                             | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
                             | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber());
 
-            // check blocked space: no quota -> no blocked space
+            // check blocked space
+            assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
+            assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
             assertEquals(quota, volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
@@ -431,16 +448,20 @@ public class QuotaTest {
 
             fileHandle.close();
 
+            assertEquals(quota, volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
+            assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
             assertEquals(quota, volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
-            assertEquals(quota, volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
-
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
+            assertEquals(quota, volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
+            assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupblockedspace." + GROUPNAME));
 
             volume.unlink(userCredentials, FILEPATH);
 
+            assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
 
+            // reset to unlimted
             volume.setXAttr(userCredentials, "/", "xtreemfs.userquota." + USERNAME, "0", XATTR_FLAGS.XATTR_FLAGS_CREATE);
         }
 
@@ -458,7 +479,9 @@ public class QuotaTest {
                             | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
                             | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber());
 
-            // check blocked space: no quota -> no blocked space
+            // check blocked space
+            assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
+            assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
@@ -486,13 +509,16 @@ public class QuotaTest {
 
             fileHandle.close();
 
+            assertEquals(quota, volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
             assertEquals(quota, volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
             assertEquals(quota, volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
 
+            assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupblockedspace." + GROUPNAME));
 
             volume.unlink(userCredentials, FILEPATH);
 
+            assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
 
@@ -541,10 +567,12 @@ public class QuotaTest {
                             | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
                             | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber());
 
-            // check blocked space: no quota -> no blocked space
+            // check blocked space
+            assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
 
+            assertEquals(voucherSize, volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
             assertEquals(voucherSize, volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
             assertEquals(voucherSize, volume.getXAttr(userCredentials, "/", "xtreemfs.groupblockedspace." + GROUPNAME));
 
@@ -568,18 +596,22 @@ public class QuotaTest {
                 assertTrue(error);
             }
 
+            assertEquals(quota, volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
             assertEquals(quota, volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
             assertEquals(quota, volume.getXAttr(userCredentials, "/", "xtreemfs.groupblockedspace." + GROUPNAME));
 
             fileHandle.close();
 
+            assertEquals(quota, volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
             assertEquals(quota, volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
             assertEquals(quota, volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
+            assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupblockedspace." + GROUPNAME));
 
             volume.unlink(userCredentials, FILEPATH);
 
+            assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
         }
@@ -638,8 +670,10 @@ public class QuotaTest {
         fileHandle = volume.openFile(userCredentials, FILEPATH, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber());
 
         // check space usage
+        assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
         assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
         assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
+        assertEquals(voucherSize, volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
         assertEquals(voucherSize, volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
         assertEquals(voucherSize, volume.getXAttr(userCredentials, "/", "xtreemfs.groupblockedspace." + GROUPNAME));
 
@@ -650,9 +684,10 @@ public class QuotaTest {
             firstPass = false;
             try {
                 addReplicas(volume, FILEPATH, 1);
-
+                assertEquals(fileSize2X, volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
                 assertEquals(fileSize2X, volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
                 assertEquals(fileSize2X, volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
+                assertEquals(voucherSize2X, volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
                 assertEquals(voucherSize2X,
                         volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
                 assertEquals(voucherSize2X,
@@ -677,21 +712,26 @@ public class QuotaTest {
 
             volume.removeReplica(userCredentials, FILEPATH, osdUuid1);
 
+            assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
             assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
             assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
+            assertEquals(voucherSize, volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
             assertEquals(voucherSize, volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
             assertEquals(voucherSize, volume.getXAttr(userCredentials, "/", "xtreemfs.groupblockedspace." + GROUPNAME));
         }
 
         fileHandle.close();
 
+        assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
         assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
         assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
+        assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
         assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
         assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupblockedspace." + GROUPNAME));
 
         volume.unlink(userCredentials, FILEPATH);
 
+        assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
         assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
         assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
 
@@ -758,8 +798,10 @@ public class QuotaTest {
             try {
                 addReplicas(volume, FILEPATH, 1);
 
+                assertEquals(fileSize2X, volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
                 assertEquals(fileSize2X, volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
                 assertEquals(fileSize2X, volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
+                assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
                 assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
                 assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupblockedspace." + GROUPNAME));
 
@@ -782,14 +824,17 @@ public class QuotaTest {
 
             volume.removeReplica(userCredentials, FILEPATH, osdUuid1);
 
+            assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
             assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
             assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
+            assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupblockedspace." + GROUPNAME));
         }
 
         volume.unlink(userCredentials, FILEPATH);
 
+        assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
         assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
         assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
 
@@ -842,16 +887,20 @@ public class QuotaTest {
 
         fileHandle = volume.openFile(userCredentials, FILEPATH, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber());
 
+        assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
         assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
         assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
+        assertEquals(voucherSize, volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
         assertEquals(voucherSize, volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
         assertEquals(voucherSize, volume.getXAttr(userCredentials, "/", "xtreemfs.groupblockedspace." + GROUPNAME));
 
         volume.unlink(userCredentials, FILEPATH);
         fileHandle.close();
 
+        assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
         assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
         assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
+        assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
         assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
         assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupblockedspace." + GROUPNAME));
 
@@ -871,6 +920,7 @@ public class QuotaTest {
         String voucherSize = "5";
         String fileSize = "5";
 
+        // set credentials on root, because only superuser can perform chown
         UserCredentials userCredentials2 = UserCredentials.newBuilder().setUsername("root").addGroups("root").build();
 
         // Create and open volume.
@@ -914,6 +964,7 @@ public class QuotaTest {
         Stat newStat = Stat.newBuilder(stat).setGroupId(GROUPNAME + 2).setUserId(USERNAME + 2).build();
         volume.setAttr(userCredentials2, FILEPATH, newStat, 6); // 6 = user and group
 
+        assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
         assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
         assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
         assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME + 2));
@@ -923,13 +974,17 @@ public class QuotaTest {
 
         fileHandle = volume.openFile(userCredentials, FILEPATH, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber());
 
+        assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
         assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME + 2));
         assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME + 2));
+        assertEquals(voucherSize, volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
         assertEquals(voucherSize, volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME + 2));
         assertEquals(voucherSize, volume.getXAttr(userCredentials, "/", "xtreemfs.groupblockedspace." + GROUPNAME + 2));
 
         volume.setAttr(userCredentials2, FILEPATH, stat, 6); // 6 = user and group
 
+        assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
+        assertEquals(voucherSize, volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
         assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME + 2));
         assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME + 2));
         assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME + 2));
@@ -966,6 +1021,9 @@ public class QuotaTest {
         fileHandle.close();
 
         volume.unlink(userCredentials, FILEPATH);
+
+        assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
+        assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
 
         assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
         assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
@@ -1022,12 +1080,14 @@ public class QuotaTest {
                         | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
                         | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY.getNumber(), 0777);
 
+        assertEquals(voucherSize, volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
         assertEquals(voucherSize, volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
         assertEquals(voucherSize, volume.getXAttr(userCredentials, "/", "xtreemfs.groupblockedspace." + GROUPNAME));
 
         fileHandle.write(userCredentials, getContent(fileSizeString).getBytes(), Integer.parseInt(fileSizeString), 0);
         fileHandle.close();
 
+        assertEquals(fileSizeString, volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
         assertEquals(fileSizeString, volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
         assertEquals(fileSizeString, volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
 
@@ -1125,12 +1185,14 @@ public class QuotaTest {
                             | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
                             | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY.getNumber(), 0777);
 
+            assertEquals(voucherSize, volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
             assertEquals(voucherSize, volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
             assertEquals(voucherSize, volume.getXAttr(userCredentials, "/", "xtreemfs.groupblockedspace." + GROUPNAME));
 
             fileHandle.write(userCredentials, getContent(fileSize).getBytes(), Integer.parseInt(fileSize), 0);
             fileHandle.close();
 
+            assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
             assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
             assertEquals(fileSize, volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
         }
@@ -1155,6 +1217,7 @@ public class QuotaTest {
             }
 
             // check blocked space & write content
+            assertEquals(voucherSizeDouble, volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
             assertEquals(voucherSizeDouble,
                     volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
             assertEquals(voucherSizeDouble,
@@ -1166,6 +1229,7 @@ public class QuotaTest {
                     Integer.parseInt(fileSize));
             fileHandle.close();
 
+            assertEquals(voucherSizeDouble, volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
             assertEquals(voucherSizeDouble,
                     volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
             assertEquals(voucherSizeDouble,
@@ -1175,9 +1239,11 @@ public class QuotaTest {
                     Integer.parseInt(fileSizeDouble));
             fileHandle2.close();
 
+            assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupblockedspace." + GROUPNAME));
 
+            assertEquals(fileSizeTriple, volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
             assertEquals(fileSizeTriple, volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
             assertEquals(fileSizeTriple, volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
         }
