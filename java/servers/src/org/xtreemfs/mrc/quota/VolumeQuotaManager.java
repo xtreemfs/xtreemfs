@@ -304,11 +304,6 @@ public class VolumeQuotaManager {
         QuotaInformation quotaInformationNewOwner = getAndApplyUserQuotaInformation(null, newQuotaFileInformation,
                 true, update);
 
-        System.out.println("Cur Owner vs New: " + quotaFileInformation.getOwnerId() + " vs " + newOwnerId);
-        System.out.println("Cur Owner Group: " + quotaFileInformation.getOwnerGroupId());
-        System.out.println("Free Space vs needed: " + quotaInformationNewOwner.getFreeSpace() + " vs " + filesize
-                + " + " + blockedSpace);
-
         // SuppressWarning(unused): Due to checkQuotaOnChown, which is currently a hardcoded switch
         if (QuotaConstants.checkQuotaOnChown && quotaInformationNewOwner.getFreeSpace() < (filesize + blockedSpace)) {
             throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "Not enough space the transfer ownership! The "
@@ -345,12 +340,6 @@ public class VolumeQuotaManager {
                 true, update);
         QuotaInformation quotaInformationNewOwnerGroup = getAndApplyGroupQuotaInformation(null,
                 newQuotaFileInformation, true, update);
-
-        System.out.println("Cur Owner: " + quotaFileInformation.getOwnerId());
-        System.out.println("Cur Owner Group vs New: " + quotaFileInformation.getOwnerGroupId() + " vs "
-                + newOwnerGroupId);
-        System.out.println("Free Space vs needed: " + quotaInformationNewOwnerGroup.getFreeSpace() + " vs " + filesize
-                + " + " + blockedSpace);
 
         // SuppressWarning(unused): Due to checkQuotaOnChown, which is currently a hardcoded switch
         if (QuotaConstants.checkQuotaOnChown
