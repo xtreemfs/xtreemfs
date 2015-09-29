@@ -129,6 +129,8 @@ public class MRCHelper {
             vouchersize,
             defaultuserquota,
             defaultgroupquota,
+            usedspace,
+            blockedspace,
             userquota,
             userusedspace,
             userblockedspace,
@@ -508,6 +510,12 @@ public class MRCHelper {
 
             case defaultuserquota:
                 return String.valueOf(sMan.getVolumeInfo().getVolumeDefaultUserQuota());
+
+            case blockedspace:
+                return String.valueOf(sMan.getVolumeBlockedSpace());
+
+            case usedspace:
+                return String.valueOf(sMan.getVolumeUsedSpace());
 
             case userquota:
                 if (subKey == null || subKey.isEmpty())
@@ -948,6 +956,12 @@ public class MRCHelper {
             sMan.getVolumeInfo().setVolumeDefaultUserQuota(Long.valueOf(value), update);
 
             break;
+
+        case blockedspace:
+            throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "Volume blocked space can't be set!");
+
+        case used_space:
+            throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "Volume used space can't be set!");
 
         case userquota:
             if (file.getId() != 1)
