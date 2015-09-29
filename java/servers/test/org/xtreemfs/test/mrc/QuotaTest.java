@@ -14,7 +14,6 @@ import java.util.List;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
@@ -590,8 +589,6 @@ public class QuotaTest {
     }
 
     @Test
-    @Ignore("XtreemFS bug on replication: get wrong file meta info wrong new OSD")
-    // FIXME(baerhold): remove if fixed
     public void testReplicaOpenFile() throws Exception {
         final String VOLUME_NAME = VOLUMENAME + "testAddReplica";
 
