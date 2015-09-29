@@ -30,7 +30,6 @@ import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestHelper;
 
-@Ignore("JNI library is required, but not build by default")
 public class NativeTest {
     @Rule
     public final TestRule          testLog = TestHelper.testLog;
@@ -83,7 +82,8 @@ public class NativeTest {
                 "/bla.tzt",
                 SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                         | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
-                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber());
+                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(),
+                0777);
 
         // Get file attributes
         Stat stat = volume.getAttr(userCredentials, "/bla.tzt");
@@ -105,10 +105,11 @@ public class NativeTest {
             assertEquals(readData[i], data.getBytes()[i]);
         }
 
+
         fileHandle.close();
+        volume.close();
 
         client.deleteVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
-
         client.shutdown();
     }
 
