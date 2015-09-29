@@ -290,7 +290,6 @@ public class VolumeQuotaManager {
      * @param update
      * @throws UserException
      */
-    @SuppressWarnings("unused")
     public synchronized void transferOwnerSpace(QuotaFileInformation quotaFileInformation, String newOwnerId,
             long filesize, long blockedSpace, AtomicDBUpdate update) throws UserException {
 
@@ -300,8 +299,15 @@ public class VolumeQuotaManager {
         QuotaFileInformation newQuotaFileInformation = new QuotaFileInformation(quotaFileInformation);
         newQuotaFileInformation.setOwnerId(newOwnerId);
 
-        QuotaInformation quotaInformationOldOwner = getAndApplyQuotaInformation(quotaFileInformation, true, update);
-        QuotaInformation quotaInformationNewOwner = getAndApplyQuotaInformation(newQuotaFileInformation, true, update);
+        QuotaInformation quotaInformationOldOwner = getAndApplyUserQuotaInformation(null, quotaFileInformation, true,
+                update);
+        QuotaInformation quotaInformationNewOwner = getAndApplyUserQuotaInformation(null, newQuotaFileInformation,
+                true, update);
+
+        System.out.println("Cur Owner vs New: " + quotaFileInformation.getOwnerId() + " vs " + newOwnerId);
+        System.out.println("Cur Owner Group: " + quotaFileInformation.getOwnerGroupId());
+        System.out.println("Free Space vs needed: " + quotaInformationNewOwner.getFreeSpace() + " vs " + filesize
+                + " + " + blockedSpace);
 
         // SuppressWarning(unused): Due to checkQuotaOnChown, which is currently a hardcoded switch
         if (QuotaConstants.checkQuotaOnChown && quotaInformationNewOwner.getFreeSpace() < (filesize + blockedSpace)) {
@@ -326,7 +332,6 @@ public class VolumeQuotaManager {
      * @param update
      * @throws UserException
      */
-    @SuppressWarnings("unused")
     public synchronized void transferOwnerGroupSpace(QuotaFileInformation quotaFileInformation, String newOwnerGroupId,
             long filesize, long blockedSpace, AtomicDBUpdate update) throws UserException {
 
@@ -336,9 +341,16 @@ public class VolumeQuotaManager {
         QuotaFileInformation newQuotaFileInformation = new QuotaFileInformation(quotaFileInformation);
         newQuotaFileInformation.setOwnerGroupId(newOwnerGroupId);
 
-        QuotaInformation quotaInformationOldOwnerGroup = getAndApplyQuotaInformation(quotaFileInformation, true, update);
-        QuotaInformation quotaInformationNewOwnerGroup = getAndApplyQuotaInformation(newQuotaFileInformation, true,
-                update);
+        QuotaInformation quotaInformationOldOwnerGroup = getAndApplyGroupQuotaInformation(null, quotaFileInformation,
+                true, update);
+        QuotaInformation quotaInformationNewOwnerGroup = getAndApplyGroupQuotaInformation(null,
+                newQuotaFileInformation, true, update);
+
+        System.out.println("Cur Owner: " + quotaFileInformation.getOwnerId());
+        System.out.println("Cur Owner Group vs New: " + quotaFileInformation.getOwnerGroupId() + " vs "
+                + newOwnerGroupId);
+        System.out.println("Free Space vs needed: " + quotaInformationNewOwnerGroup.getFreeSpace() + " vs " + filesize
+                + " + " + blockedSpace);
 
         // SuppressWarning(unused): Due to checkQuotaOnChown, which is currently a hardcoded switch
         if (QuotaConstants.checkQuotaOnChown
@@ -367,18 +379,27 @@ public class VolumeQuotaManager {
     private QuotaInformation getAndApplyQuotaInformation(QuotaFileInformation quotaFileInformation,
             boolean saveAppliedDefaultQuota, AtomicDBUpdate update) throws UserException {
 
-        QuotaInformation quotaInformation = null;
+        QuotaInformation quotaInformation = new QuotaInformation(volumeQuota, 0, 0);
+
+        quotaInformation = getAndApplyVolumeQuotaInformation(quotaInformation, quotaFileInformation,
+                saveAppliedDefaultQuota, update);
+        quotaInformation = getAndApplyUserQuotaInformation(quotaInformation, quotaFileInformation,
+                saveAppliedDefaultQuota, update);
+        quotaInformation = getAndApplyGroupQuotaInformation(quotaInformation, quotaFileInformation,
+                saveAppliedDefaultQuota, update);
+
+        return quotaInformation;
+    }
+
+    private QuotaInformation getAndApplyVolumeQuotaInformation(QuotaInformation quotaInformation,
+            QuotaFileInformation quotaFileInformation, boolean saveAppliedDefaultQuota, AtomicDBUpdate update)
+            throws UserException {
+
+        if (quotaInformation == null) {
+            quotaInformation = new QuotaInformation(volumeQuota, 0, 0);
+        }
 
         try {
-            boolean userQuotaDefined = false, groupQuotaDefined = false;
-
-            String ownerId = quotaFileInformation.getOwnerId();
-            String ownerGroupId = quotaFileInformation.getOwnerGroupId();
-
-            long userQuota = volStorageManager.getUserQuota(ownerId);
-            long groupQuota = volStorageManager.getGroupQuota(ownerGroupId);
-            quotaInformation = new QuotaInformation(volumeQuota, userQuota, groupQuota);
-
             long volumeUsedSpace = volStorageManager.getVolumeUsedSpace();
             quotaInformation.setVolumeUsedSpace(volumeUsedSpace);
 
@@ -393,6 +414,31 @@ public class VolumeQuotaManager {
                     quotaInformation.setQuotaType("volume");
                 }
             }
+
+        } catch (DatabaseException e) {
+            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
+                    "An error occured during the interaction with the database!");
+        }
+
+        return quotaInformation;
+    }
+
+    private QuotaInformation getAndApplyUserQuotaInformation(QuotaInformation quotaInformation,
+            QuotaFileInformation quotaFileInformation, boolean saveAppliedDefaultQuota, AtomicDBUpdate update)
+            throws UserException {
+
+        if (quotaInformation == null) {
+            quotaInformation = new QuotaInformation(volumeQuota, 0, 0);
+        }
+
+        try {
+            boolean userQuotaDefined = false;
+            String ownerId = quotaFileInformation.getOwnerId();
+
+            long userQuota = volStorageManager.getUserQuota(ownerId);
+            quotaInformation.setUserQuota(userQuota);
 
             // check user quota
             if (userQuota == QuotaConstants.noQuota) {
@@ -415,6 +461,37 @@ public class VolumeQuotaManager {
                     quotaInformation.setQuotaType("file owner");
                 }
             }
+
+            // apply newly set quota
+            if (saveAppliedDefaultQuota) {
+                if (userQuota != QuotaConstants.unlimitedQuota && userQuotaDefined) {
+                    volStorageManager.setUserQuota(ownerId, userQuota, update);
+                }
+            }
+        } catch (DatabaseException e) {
+            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
+                    "An error occured during the interaction with the database!");
+        }
+
+        return quotaInformation;
+    }
+
+    private QuotaInformation getAndApplyGroupQuotaInformation(QuotaInformation quotaInformation,
+            QuotaFileInformation quotaFileInformation, boolean saveAppliedDefaultQuota, AtomicDBUpdate update)
+            throws UserException {
+
+        if (quotaInformation == null) {
+            quotaInformation = new QuotaInformation(volumeQuota, 0, 0);
+        }
+
+        try {
+            boolean groupQuotaDefined = false;
+            String ownerGroupId = quotaFileInformation.getOwnerGroupId();
+
+            long groupQuota = volStorageManager.getGroupQuota(ownerGroupId);
+            quotaInformation.setGroupQuota(groupQuota);
 
             // check group quota
             if (groupQuota == QuotaConstants.noQuota) {
@@ -440,10 +517,6 @@ public class VolumeQuotaManager {
 
             // apply newly set quota
             if (saveAppliedDefaultQuota) {
-                if (userQuota != QuotaConstants.unlimitedQuota && userQuotaDefined) {
-                    volStorageManager.setUserQuota(ownerId, userQuota, update);
-                }
-
                 if (groupQuota != QuotaConstants.unlimitedQuota && groupQuotaDefined) {
                     volStorageManager.setGroupQuota(ownerGroupId, groupQuota, update);
                 }
