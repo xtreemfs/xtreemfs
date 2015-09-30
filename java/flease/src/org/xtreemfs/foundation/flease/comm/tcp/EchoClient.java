@@ -27,10 +27,9 @@ public class EchoClient {
         // TODO code application logic here
 
         Logging.start(Logging.LEVEL_DEBUG);
-        TimeSync ts = TimeSync.initializeLocal(50);
 
         try {
-            ts.waitForStartup();
+            TimeSync ts = TimeSync.initializeLocal(50);
 
             TCPClient com = new TCPClient(3334,null, new NIOServer() {
 
