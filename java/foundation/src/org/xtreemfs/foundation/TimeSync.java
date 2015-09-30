@@ -239,7 +239,7 @@ public final class TimeSync extends LifeCycleThread {
         return s;
     }
     
-    public static TimeSync initializeLocal(int localTimeRenew) {
+    public static TimeSync initializeLocal(int localTimeRenew) throws Exception {
         if (theInstance != null) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.lifecycle, null, "time sync already running",
                 new Object[0]);
@@ -248,17 +248,13 @@ public final class TimeSync extends LifeCycleThread {
         
         TimeSync s = new TimeSync(ExtSyncSource.LOCAL_CLOCK, null, null, 0, localTimeRenew);
         s.start();
-
-        try {
-            s.waitForStartup();
-        } catch (Exception e) {
-            Logging.logError(Logging.LEVEL_ERROR, null, e);
-        }
+        s.waitForStartup();
 
         return s;
     }
 
-    public static TimeSync initializeGPSD(InetSocketAddress gpsd, int timeSyncInterval, int localTimeRenew) {
+    public static TimeSync initializeGPSD(InetSocketAddress gpsd, int timeSyncInterval, int localTimeRenew)
+            throws Exception {
         if (theInstance != null) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.lifecycle, null, "time sync already running",
                 new Object[0]);
@@ -267,12 +263,7 @@ public final class TimeSync extends LifeCycleThread {
 
         TimeSync s = new TimeSync(ExtSyncSource.GPSD, null, gpsd, timeSyncInterval, localTimeRenew);
         s.start();
-
-        try {
-            s.waitForStartup();
-        } catch (Exception e) {
-            Logging.logError(Logging.LEVEL_ERROR, null, e);
-        }
+        s.waitForStartup();
 
         return s;
     }
