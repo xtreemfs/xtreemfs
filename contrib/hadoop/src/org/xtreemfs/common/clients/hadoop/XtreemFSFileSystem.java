@@ -562,7 +562,7 @@ public class XtreemFSFileSystem extends FileSystem {
             stat = xtreemfsVolume.getAttr(userCredentials, pathString);
         } catch (PosixErrorException pee) {
             if (pee.getPosixError().equals(POSIXErrno.POSIX_ERROR_ENOENT)) {
-                throw new FileNotFoundException();
+                throw new FileNotFoundException(pathString);
             }
             throw pee;
         }
