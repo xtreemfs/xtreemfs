@@ -57,7 +57,7 @@ public class Client {
     private final Map<String, Volume>       volumeMap;
     
     public Client(InetSocketAddress[] dirAddresses, int requestTimeout, int connectionTimeout, SSLOptions ssl)
-        throws IOException {
+            throws Exception {
         this.dirAddress = dirAddresses;
         mdClient = new RPCNIOSocketClient(ssl, requestTimeout, connectionTimeout, "Client (dir)");
         osdClient = new RPCNIOSocketClient(ssl, requestTimeout, connectionTimeout, "Client (osd)");
