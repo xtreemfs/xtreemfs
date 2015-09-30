@@ -13,12 +13,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-
 import java.net.Socket;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 
@@ -248,6 +248,13 @@ public final class TimeSync extends LifeCycleThread {
         
         TimeSync s = new TimeSync(ExtSyncSource.LOCAL_CLOCK, null, null, 0, localTimeRenew);
         s.start();
+
+        try {
+            s.waitForStartup();
+        } catch (Exception e) {
+            Logging.logError(Logging.LEVEL_ERROR, null, e);
+        }
+
         return s;
     }
 
@@ -260,6 +267,13 @@ public final class TimeSync extends LifeCycleThread {
 
         TimeSync s = new TimeSync(ExtSyncSource.GPSD, null, gpsd, timeSyncInterval, localTimeRenew);
         s.start();
+
+        try {
+            s.waitForStartup();
+        } catch (Exception e) {
+            Logging.logError(Logging.LEVEL_ERROR, null, e);
+        }
+
         return s;
     }
     
@@ -275,6 +289,7 @@ public final class TimeSync extends LifeCycleThread {
     /**
      * stop the thread
      */
+    @Override
     public void shutdown() {
         quit = true;
         this.interrupt();
