@@ -13,12 +13,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-
 import java.net.Socket;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 
@@ -239,7 +239,7 @@ public final class TimeSync extends LifeCycleThread {
         return s;
     }
     
-    public static TimeSync initializeLocal(int localTimeRenew) {
+    public static TimeSync initializeLocal(int localTimeRenew) throws Exception {
         if (theInstance != null) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.lifecycle, null, "time sync already running",
                 new Object[0]);
@@ -248,10 +248,13 @@ public final class TimeSync extends LifeCycleThread {
         
         TimeSync s = new TimeSync(ExtSyncSource.LOCAL_CLOCK, null, null, 0, localTimeRenew);
         s.start();
+        s.waitForStartup();
+
         return s;
     }
 
-    public static TimeSync initializeGPSD(InetSocketAddress gpsd, int timeSyncInterval, int localTimeRenew) {
+    public static TimeSync initializeGPSD(InetSocketAddress gpsd, int timeSyncInterval, int localTimeRenew)
+            throws Exception {
         if (theInstance != null) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.lifecycle, null, "time sync already running",
                 new Object[0]);
@@ -260,6 +263,8 @@ public final class TimeSync extends LifeCycleThread {
 
         TimeSync s = new TimeSync(ExtSyncSource.GPSD, null, gpsd, timeSyncInterval, localTimeRenew);
         s.start();
+        s.waitForStartup();
+
         return s;
     }
     
@@ -275,6 +280,7 @@ public final class TimeSync extends LifeCycleThread {
     /**
      * stop the thread
      */
+    @Override
     public void shutdown() {
         quit = true;
         this.interrupt();

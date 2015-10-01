@@ -41,7 +41,7 @@ public class FleaseAcceptorTest {
     private static File              testDir;
     
     @BeforeClass
-    public static void setUpClass() {
+    public static void setUpClass() throws Exception {
         testDir = new File("/tmp/xtreemfs-test/");
         FSUtils.delTree(testDir);
         testDir.mkdirs();
