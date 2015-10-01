@@ -266,9 +266,9 @@ public class ClientTest {
         }
 
         fileHandle.close();
+        volume.close();
 
         client.deleteVolume(mrcAddress, auth, userCredentials, VOLUME_NAME_1);
-
         client.shutdown();
     }
 
@@ -322,6 +322,8 @@ public class ClientTest {
         }
 
         fileHandle.close();
+        volume.close();
+
         client.deleteVolume(mrcAddress, auth, userCredentials, VOLUME_NAME_1);
         client.shutdown();
     }
@@ -378,6 +380,9 @@ public class ClientTest {
         }
 
         fileHandle.close();
+        volume.close();
+
+        client.deleteVolume(mrcAddress, auth, userCredentials, VOLUME_NAME_1);
         client.shutdown();
     }
 }
