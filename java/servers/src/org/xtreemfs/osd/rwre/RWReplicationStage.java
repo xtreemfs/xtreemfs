@@ -509,7 +509,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
             if (!file.getObjectsToFetch().isEmpty()) {
                 ObjectVersionMapping o = file.getObjectsToFetch().remove(0);
-                file.setNumObjectsPending(file.getNumObjectsPending() + 1);
+                file.incrementNumObjectsPending();
                 numObjsInFlight++;
                 fetchObject(file, o);
             } else {
@@ -581,17 +581,16 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             final InternalObjectData data = (InternalObjectData) method.getArgs()[2];
             final ErrorResponse error = (ErrorResponse) method.getArgs()[3];
 
+            numObjsInFlight--;
+
             ReplicatedFileState state = files.get(fileId);
             if (state != null) {
-
                 if (error != null) {
-                    numObjsInFlight--;
                     fetchObjects();
 
                     failed(state, error, "processObjectFetched");
                 } else if (data.getData() == null) {
                     // data is null if object was deleted meanwhile.
-                    numObjsInFlight--;
                     fetchObjects();
 
                     ErrorResponse generatedError = ErrorResponse
@@ -618,17 +617,15 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     master.objectReplicated();
                     master.replicatedDataReceived(bytes);
 
-                    numObjsInFlight--;
-                    final int numPendingFile = state.getNumObjectsPending() - 1;
-                    state.setNumObjectsPending(numPendingFile);
+                    state.decrementNumObjectsPending();
                     state.getPolicy().objectFetched(record.getObjectVersion());
                     if (Logging.isDebug())
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
                                 "(R:%s) fetched object for replica, file %s, remaining %d", localID, fileId,
-                                numPendingFile);
+                                state.getNumObjectsPending());
                     fetchObjects();
-                    if (numPendingFile == 0) {
-                        // reset complete!
+                    // If no more objects in flight are pending and the queue is empty, the reset is complete.
+                    if (state.getNumObjectsPending() == 0 && state.getObjectsToFetch().size() == 0) {
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
                                 "(R:%s) RESET complete for file %s", localID, fileId);
                         doResetComplete(state);

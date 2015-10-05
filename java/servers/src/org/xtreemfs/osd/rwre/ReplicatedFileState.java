@@ -151,11 +151,12 @@ public class ReplicatedFileState {
         return numObjectsPending;
     }
 
-    /**
-     * @param numObjectsPending the numObjectsPending to set
-     */
-    public void setNumObjectsPending(int numObjectsPending) {
-        this.numObjectsPending = numObjectsPending;
+    public void incrementNumObjectsPending() {
+        ++numObjectsPending;
+    }
+
+    public void decrementNumObjectsPending() {
+        --numObjectsPending;
     }
 
     /**
