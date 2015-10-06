@@ -100,11 +100,7 @@ import org.xtreemfs.osd.operations.TruncateOperation;
 import org.xtreemfs.osd.operations.VivaldiPingOperation;
 import org.xtreemfs.osd.operations.WriteOperation;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
-import org.xtreemfs.osd.stages.DeletionStage;
-import org.xtreemfs.osd.stages.PreprocStage;
-import org.xtreemfs.osd.stages.ReplicationStage;
-import org.xtreemfs.osd.stages.StorageStage;
-import org.xtreemfs.osd.stages.VivaldiStage;
+import org.xtreemfs.osd.stages.*;
 import org.xtreemfs.osd.storage.CleanupThread;
 import org.xtreemfs.osd.storage.CleanupVersionsThread;
 import org.xtreemfs.osd.storage.HashStorageLayout;
@@ -184,6 +180,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     protected final CleanupVersionsThread               cvThread;
 
     protected final RWReplicationStage                  rwrStage;
+
+    protected final ReqSchedStage                       reqSchedStage;
 
     private List<OSDStatusListener>                     statusListener;
 
@@ -341,7 +339,13 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         rwrStage = new RWReplicationStage(this, serverSSLopts, config.getMaxRequestsQueueLength());
         rwrStage.setLifeCycleListener(this);
-        
+
+        if(config.useQoS()) {
+            reqSchedStage = new ReqSchedStage(this, config.getMaxRequestsQueueLength());
+            reqSchedStage.setLifeCycleListener(this);
+        } else {
+            reqSchedStage = null;
+        }
         // ----------------------------------------
         // initialize TimeSync and Heartbeat thread
         // ----------------------------------------
@@ -551,6 +555,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cThread.start();
             cvThread.start();
             rwrStage.start();
+            if(config.useQoS()) {
+                reqSchedStage.start();
+            }
 
             udpCom.waitForStartup();
             preprocStage.waitForStartup();
@@ -560,6 +567,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cThread.waitForStartup();
             cvThread.waitForStartup();
             rwrStage.waitForStartup();
+            if(config.useQoS()) {
+                reqSchedStage.waitForStartup();
+            }
 
             heartbeatThread.initialize();
             heartbeatThread.start();
@@ -610,6 +620,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cvThread.cleanupStop();
             cvThread.shutdown();
             serviceAvailability.shutdown();
+            if(config.useQoS()) {
+                reqSchedStage.shutdown();
+            }
 
             udpCom.waitForShutdown();
             preprocStage.waitForShutdown();
@@ -620,6 +633,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             vStage.waitForShutdown();
             cThread.waitForShutdown();
             cvThread.waitForShutdown();
+            if(config.useQoS()) {
+                reqSchedStage.waitForShutdown();
+            }
 
             if (statusServer != null) {
                 statusServer.shutdown();
@@ -775,7 +791,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 @Override
                 public void parseComplete(OSDRequest result, ErrorResponse error) {
                     if (error == null) {
-                        result.getOperation().startRequest(result);
+                        if(config.useQoS())
+                            reqSchedStage.addOperation(result, new Object[] { result.getRequestArgs() }, null);
+                        else
+                            result.getOperation().startRequest(result);
                     } else {
                         result.getRPCRequest().sendError(error);
                     }

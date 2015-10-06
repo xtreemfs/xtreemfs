@@ -81,7 +81,8 @@ public class OSDConfig extends ServiceConfig {
             Parameter.STORAGE_THREADS,
             Parameter.USE_RENEWAL_SIGNAL,
             Parameter.USE_MULTIHOMING,
-            Parameter.HEALTH_CHECK
+            Parameter.HEALTH_CHECK,
+            Parameter.USE_QOS
     };
     /*
      * @formatter:on   
@@ -290,5 +291,9 @@ public class OSDConfig extends ServiceConfig {
     
     public String getHealthCheckScript() {
         return (String) parameter.get(Parameter.HEALTH_CHECK);
+    }
+
+    public boolean useQoS() {
+        return (boolean) parameter.get(Parameter.USE_QOS);
     }
 }

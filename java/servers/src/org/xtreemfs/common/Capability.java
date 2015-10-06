@@ -197,5 +197,12 @@ public class Capability {
             return null;
         }
     }
-    
+
+    public int getPriority() {
+        if(xcap.hasPriority()) {
+            return xcap.getPriority();
+        } else {
+            return 0;
+        }
+    }
 }

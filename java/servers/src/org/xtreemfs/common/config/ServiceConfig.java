@@ -123,6 +123,7 @@ public class ServiceConfig extends Config {
         VIVALDI_TIMER_INTERVAL_IN_MS("vivaldi.timer_interval_ms", 60000, Integer.class, false),
         STORAGE_THREADS("storage_threads", 1, Integer.class, false),
         HEALTH_CHECK("health_check", "", String.class, false),
+        USE_QOS("use_qos", false, Boolean.class, false),
 
         /*
          * Benchmark specific configuration parameter
