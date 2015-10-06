@@ -830,6 +830,13 @@ class XCap : public ::google::protobuf::Message {
   inline ::google::protobuf::uint64 snap_timestamp() const;
   inline void set_snap_timestamp(::google::protobuf::uint64 value);
 
+  // optional fixed32 priority = 11;
+  inline bool has_priority() const;
+  inline void clear_priority();
+  static const int kPriorityFieldNumber = 11;
+  inline ::google::protobuf::uint32 priority() const;
+  inline void set_priority(::google::protobuf::uint32 value);
+
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.XCap)
  private:
   inline void set_has_access_mode();
@@ -852,6 +859,8 @@ class XCap : public ::google::protobuf::Message {
   inline void clear_has_snap_config();
   inline void set_has_snap_timestamp();
   inline void clear_has_snap_timestamp();
+  inline void set_has_priority();
+  inline void clear_has_priority();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -865,9 +874,10 @@ class XCap : public ::google::protobuf::Message {
   ::google::protobuf::uint32 truncate_epoch_;
   ::google::protobuf::uint64 snap_timestamp_;
   int snap_config_;
+  ::google::protobuf::uint32 priority_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(10 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(11 + 31) / 32];
 
   friend void  protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto();
@@ -2120,6 +2130,28 @@ inline ::google::protobuf::uint64 XCap::snap_timestamp() const {
 inline void XCap::set_snap_timestamp(::google::protobuf::uint64 value) {
   set_has_snap_timestamp();
   snap_timestamp_ = value;
+}
+
+// optional fixed32 priority = 11;
+inline bool XCap::has_priority() const {
+  return (_has_bits_[0] & 0x00000400u) != 0;
+}
+inline void XCap::set_has_priority() {
+  _has_bits_[0] |= 0x00000400u;
+}
+inline void XCap::clear_has_priority() {
+  _has_bits_[0] &= ~0x00000400u;
+}
+inline void XCap::clear_priority() {
+  priority_ = 0u;
+  clear_has_priority();
+}
+inline ::google::protobuf::uint32 XCap::priority() const {
+  return priority_;
+}
+inline void XCap::set_priority(::google::protobuf::uint32 value) {
+  set_has_priority();
+  priority_ = value;
 }
 
 // -------------------------------------------------------------------
