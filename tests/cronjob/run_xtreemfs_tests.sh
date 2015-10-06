@@ -138,6 +138,7 @@ git clone git@github.com:xtreemfs/xtreemfs.git . &> $TEST_LOG
 # 2012-11-02(mberlin): Try to disable optimizations in client compilation.
 # Build client unit tests.
 export BUILD_CLIENT_TESTS=true
+export BUILD_JNI=true
 export CPPFLAGS=-O0
 make client_debug server hadoop-client &>$TEST_LOG
 if [ $? -ne 0 ]; then

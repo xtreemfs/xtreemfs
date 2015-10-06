@@ -241,10 +241,17 @@ endif
 ifdef BOOST_ROOT
 	CMAKE_BOOST_ROOT = -DBOOST_ROOT="$(BOOST_ROOT)" -DBoost_NO_SYSTEM_PATHS=ON
 endif
+
+# Fix boost problems on centos 6 (see https://public.kitware.com/Bug/view.php?id=15270)
+ifdef NO_BOOST_CMAKE
+	CMAKE_NO_BOOST_CMAKE = -DBoost_NO_BOOST_CMAKE=BOOL:ON
+endif
+
 # Tell CMake if it should ignore a missing Fuse.
 ifdef SKIP_FUSE
 	CMAKE_SKIP_FUSE = -DSKIP_FUSE=true
 endif
+
 # Trigger building the experimental LD_PRELOAD library
 ifdef BUILD_PRELOAD
 	CMAKE_BUILD_PRELOAD = -DBUILD_PRELOAD=true
@@ -291,7 +298,7 @@ client_debug: CLIENT_DEBUG = -DCMAKE_BUILD_TYPE=Debug
 client_debug: client
 
 client: check_client client_thirdparty set_version
-	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG) $(CMAKE_BOOST_ROOT) $(CMAKE_BUILD_CLIENT_TESTS) $(CMAKE_SKIP_FUSE) ${CMAKE_BUILD_PRELOAD} ${CMAKE_BUILD_JNI} ${CMAKE_GENERATE_JNI}
+	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG) $(CMAKE_BOOST_ROOT) $(CMAKE_BUILD_CLIENT_TESTS) $(CMAKE_SKIP_FUSE) ${CMAKE_BUILD_PRELOAD} ${CMAKE_BUILD_JNI} ${CMAKE_GENERATE_JNI} ${CMAKE_NO_BOOST_CMAKE}
 	@$(MAKE) -C $(XTREEMFS_CLIENT_BUILD_DIR)
 	@cd $(XTREEMFS_CLIENT_BUILD_DIR); for i in *.xtreemfs xtfsutil; do [ -f $(XTREEMFS_BINARIES_DIR)/$$i ] && rm -f $(XTREEMFS_BINARIES_DIR)/$$i; done; true
 	@cp   -p $(XTREEMFS_CLIENT_BUILD_DIR)/*.xtreemfs $(XTREEMFS_BINARIES_DIR)

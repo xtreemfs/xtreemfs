@@ -30,6 +30,8 @@ public class XtreemFSFileOutputStream extends OutputStream {
     private boolean         useBuffer;
 
     private ByteBuffer      buffer;
+    
+    private boolean         closed;
 
     public XtreemFSFileOutputStream(UserCredentials userCredentials, FileHandle fileHandle, String fileName,
             boolean useBuffer, int bufferSize) throws IOException {
@@ -42,6 +44,8 @@ public class XtreemFSFileOutputStream extends OutputStream {
         this.fileHandle = fileHandle;
         this.fileName = fileName;
         this.useBuffer = useBuffer;
+        this.closed = false;
+        
         if (useBuffer) {
             this.buffer = ByteBuffer.allocateDirect(bufferSize);
         }
@@ -85,6 +89,12 @@ public class XtreemFSFileOutputStream extends OutputStream {
 
     @Override
     public synchronized void close() throws IOException {
+        if (closed) {
+            Logging.logMessage(Logging.LEVEL_WARN, this,
+                    "Ignoring attempt to close already closed file %s", fileName);
+            return;
+        }
+        
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "Closing file %s", fileName);
         }
@@ -97,6 +107,7 @@ public class XtreemFSFileOutputStream extends OutputStream {
         }
         super.close();
         fileHandle.close();
+        closed = true;
     }
 
     private synchronized void writeToBuffer(byte b[], int off, int len) throws IOException {
