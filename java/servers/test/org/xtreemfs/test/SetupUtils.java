@@ -87,6 +87,7 @@ public class SetupUtils {
         props.setProperty("snmp.port", "" + (port + 1000));
         props.setProperty("snmp.address", "localhost");
         props.setProperty("measure_requests", "false");
+        props.setProperty("use_qos", "true");
         return props;
     }
     
