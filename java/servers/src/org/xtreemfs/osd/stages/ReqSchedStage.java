@@ -77,8 +77,15 @@ public class ReqSchedStage extends Stage {
 
             @Override
             public QualityClass getQualityClass(StageRequest element) {
-                int weight = element.getRequest().getCapability().getPriority();
-                return new QualityClass(element.getRequest().getFileId().split(":")[0], weight);
+                int weight = 0;
+                String volumeUuid = "";
+                if(element.getRequest().getCapability() != null) {
+                    weight = element.getRequest().getCapability().getPriority();
+                }
+                if(element.getRequest().getFileId() != null) {
+                    volumeUuid = element.getRequest().getFileId().split(":")[0];
+                }
+                return new QualityClass(volumeUuid, weight);
             }
 
             @Override
