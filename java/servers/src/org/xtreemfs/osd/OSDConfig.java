@@ -294,6 +294,6 @@ public class OSDConfig extends ServiceConfig {
     }
 
     public boolean useQoS() {
-        return (boolean) parameter.get(Parameter.USE_QOS);
+        return (Boolean) parameter.get(Parameter.USE_QOS);
     }
 }
