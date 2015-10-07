@@ -76,7 +76,7 @@ MkfsOptions::MkfsOptions() : Options() {
          ->default_value(access_policy_type_string),
      "Access-control-policy=NULL|POSIX|VOLUME")
      ("quota,q", po::value(&volume_quota)->default_value(volume_quota),
-       "Quota of the volume in bytes (default value 0, i.e. quota is disabled), format: <value>M|G|T"),
+       "Quota of the volume in bytes (default value 0, i.e. quota is disabled), format: <value>M|G|T")
      ("priority", po::value(&volume_priority)->default_value(volume_priority),
        "Request priority of OSD requests for the volume (default priority 0).");
 
