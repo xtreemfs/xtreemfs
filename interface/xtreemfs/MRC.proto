@@ -40,7 +40,7 @@ import "xtreemfs/GlobalTypes.proto";
 message Stat {
 
     // POSIX attributes
-    
+
     // device number; represented by a hash of the volume id
     required fixed64 dev = 1;
     // inode number; represented by the file ID
@@ -111,7 +111,7 @@ message Volume {
     required StripingPolicy default_striping_policy = 2;
     // volume ID
     required string id = 3;
-    // initial access mode for the root directory 
+    // initial access mode for the root directory
     required fixed32 mode = 4;
     // volume name
     required string name = 5;
@@ -123,6 +123,8 @@ message Volume {
     repeated KeyValuePair attrs = 8;
     // optional volume quota
     optional fixed64 quota = 9;
+    // optional request priority for volume
+    optional fixed32 priority = 10;
 }
 
 // a list of volumes; relevant for the 'xtfs_lsvol' call
@@ -134,14 +136,14 @@ message Volumes {
 message StatVFS {
 
       // POSIX attributes
-      
+
       // size of a block in bytes
-      required fixed32 bsize = 1; 
-      // number of available blocks in the file system for non-privileged users      
+      required fixed32 bsize = 1;
+      // number of available blocks in the file system for non-privileged users
       required fixed64 bavail = 2;
       // number of free blocks in the file system
       optional fixed64 bfree = 13;
-      // total number of blocks in file system        
+      // total number of blocks in file system
       required fixed64 blocks = 3;
       // volume id
       required string fsid = 4;
@@ -149,7 +151,7 @@ message StatVFS {
       required fixed32 namemax = 5;
 
       // XtreemFS-specific attributes
-      
+
       // access control policy of the volume
       required AccessControlPolicyType access_control_policy = 6;
       // default striping policy of the volume
@@ -223,7 +225,7 @@ message getxattrResponse {
   optional bytes value_bytes_string = 2;
 }
 
-// creates a new hardlink to an existing file 
+// creates a new hardlink to an existing file
 message linkRequest {
   // the volume name
   required string volume_name = 1;
@@ -268,7 +270,7 @@ message openRequest {
   // a bitmap open flags, as defined in the specification of the POSIX
   //  'open' call, e.g. O_RDWR, O_RDONLY, O_CREAT, O_EXCL, O_TRUNC ...
   required fixed32 flags = 3;
-  // the initial access mode for a file created w/ O_CREAT 
+  // the initial access mode for a file created w/ O_CREAT
   required fixed32 mode = 4;
   // the initial set of Win32-specific attributes
   required fixed32 attributes = 5;
@@ -332,7 +334,7 @@ message removexattrRequest {
 message renameRequest {
   // the volume name
   required string volume_name = 1;
-  // the pathname to the file or directory to change 
+  // the pathname to the file or directory to change
   required string source_path = 2;
   // the new path name for the file or directory
   required string target_path = 3;
@@ -348,7 +350,7 @@ message renameResponse {
   optional FileCredentials creds = 2;
 }
 
-// deletes an empty directory 
+// deletes an empty directory
 message rmdirRequest {
   // the volume name
   required string volume_name = 1;
@@ -462,7 +464,7 @@ message xtreemfs_check_file_existsResponse {
     REGISTERED=1;
     ABANDONED=2;
   }
-  repeated FILE_STATE file_states = 2 [packed=true]; 
+  repeated FILE_STATE file_states = 2 [packed=true];
 }
 
 // dumps or restores the MRC database
@@ -610,7 +612,7 @@ message xtreemfs_get_file_credentialsRequest{
 }
 
 service MRCService {
-  
+
   option(interface_id)=20001;
 
   // POSIX/FUSE operations ----------------------------------------
@@ -640,7 +642,7 @@ service MRCService {
     option(proc_id)=6;
   };
 
-  // returns the list of extended attributes of a file or directory 
+  // returns the list of extended attributes of a file or directory
   rpc listxattr(listxattrRequest) returns(listxattrResponse) {
     option(proc_id)=7;
   };
@@ -704,14 +706,14 @@ service MRCService {
   rpc unlink(unlinkRequest) returns(unlinkResponse) {
     option(proc_id)=19;
   };
-  
+
   // checks access to a file or directory
   rpc access(accessRequest) returns(emptyResponse) {
     option(proc_id)=20;
   };
 
   //-- XtreemFS specific operations -------------------------------------
-  
+
   // enforces a database checkpoint on the MRC
   rpc xtreemfs_checkpoint(emptyRequest) returns(emptyResponse) {
     option(proc_id)=30;
@@ -760,7 +762,7 @@ service MRCService {
   rpc xtreemfs_replication_to_master(emptyRequest) returns(emptyResponse) {
     option(proc_id)=38;
   };
- 
+
   // adds a replica to a file
   rpc xtreemfs_replica_add(xtreemfs_replica_addRequest) returns(emptyResponse) {
     option(proc_id)=39;
@@ -781,7 +783,7 @@ service MRCService {
     option(proc_id)=42;
   };
 
-  // restores a file on the MRC for which orphaned objects exist on an OSD 
+  // restores a file on the MRC for which orphaned objects exist on an OSD
   rpc xtreemfs_restore_file(xtreemfs_restore_fileRequest) returns(emptyResponse) {
     option(proc_id)=43;
   };
@@ -813,8 +815,8 @@ service MRCService {
 
   // returns a set of file credentials (capability + XLocList) for a file identified by a file ID (privileged users only!)
   rpc xtreemfs_get_file_credentials(xtreemfs_get_file_credentialsRequest) returns(FileCredentials) {
-    option(proc_id)=50;	  
-  }; 
+    option(proc_id)=50;
+  };
 
   // Returns the current xLocSet for the specified file.
   rpc xtreemfs_get_xlocset(xtreemfs_get_xlocsetRequest) returns(XLocSet) {

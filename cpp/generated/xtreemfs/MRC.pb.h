@@ -846,6 +846,13 @@ class Volume : public ::google::protobuf::Message {
   inline ::google::protobuf::uint64 quota() const;
   inline void set_quota(::google::protobuf::uint64 value);
 
+  // optional fixed32 priority = 10;
+  inline bool has_priority() const;
+  inline void clear_priority();
+  static const int kPriorityFieldNumber = 10;
+  inline ::google::protobuf::uint32 priority() const;
+  inline void set_priority(::google::protobuf::uint32 value);
+
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.Volume)
  private:
   inline void set_has_access_control_policy();
@@ -864,6 +871,8 @@ class Volume : public ::google::protobuf::Message {
   inline void clear_has_owner_user_id();
   inline void set_has_quota();
   inline void clear_has_quota();
+  inline void set_has_priority();
+  inline void clear_has_priority();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -876,9 +885,10 @@ class Volume : public ::google::protobuf::Message {
   ::std::string* owner_user_id_;
   ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::KeyValuePair > attrs_;
   ::google::protobuf::uint64 quota_;
+  ::google::protobuf::uint32 priority_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(9 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(10 + 31) / 32];
 
   friend void  protobuf_AddDesc_xtreemfs_2fMRC_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fMRC_2eproto();
@@ -7315,6 +7325,28 @@ inline ::google::protobuf::uint64 Volume::quota() const {
 inline void Volume::set_quota(::google::protobuf::uint64 value) {
   set_has_quota();
   quota_ = value;
+}
+
+// optional fixed32 priority = 10;
+inline bool Volume::has_priority() const {
+  return (_has_bits_[0] & 0x00000200u) != 0;
+}
+inline void Volume::set_has_priority() {
+  _has_bits_[0] |= 0x00000200u;
+}
+inline void Volume::clear_has_priority() {
+  _has_bits_[0] &= ~0x00000200u;
+}
+inline void Volume::clear_priority() {
+  priority_ = 0u;
+  clear_has_priority();
+}
+inline ::google::protobuf::uint32 Volume::priority() const {
+  return priority_;
+}
+inline void Volume::set_priority(::google::protobuf::uint32 value) {
+  set_has_priority();
+  priority_ = value;
 }
 
 // -------------------------------------------------------------------

@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Tue Oct 06 15:01:06 CEST 2015
+//automatically generated from MRC.proto at Wed Oct 07 13:43:25 CEST 2015
 //(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -370,8 +370,8 @@ public class MRCServiceClient {
          return response;
     }
 
-    public RPCResponse xtreemfs_mkvol(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.AccessControlPolicyType access_control_policy, GlobalTypes.StripingPolicy default_striping_policy, String id, int mode, String name, String owner_group_id, String owner_user_id, List<GlobalTypes.KeyValuePair> attrs, long quota) throws IOException {
-         final MRC.Volume msg = MRC.Volume.newBuilder().setAccessControlPolicy(access_control_policy).setDefaultStripingPolicy(default_striping_policy).setId(id).setMode(mode).setName(name).setOwnerGroupId(owner_group_id).setOwnerUserId(owner_user_id).addAllAttrs(attrs).setQuota(quota).build();
+    public RPCResponse xtreemfs_mkvol(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.AccessControlPolicyType access_control_policy, GlobalTypes.StripingPolicy default_striping_policy, String id, int mode, String name, String owner_group_id, String owner_user_id, List<GlobalTypes.KeyValuePair> attrs, long quota, int priority) throws IOException {
+         final MRC.Volume msg = MRC.Volume.newBuilder().setAccessControlPolicy(access_control_policy).setDefaultStripingPolicy(default_striping_policy).setId(id).setMode(mode).setName(name).setOwnerGroupId(owner_group_id).setOwnerUserId(owner_user_id).addAllAttrs(attrs).setQuota(quota).setPriority(priority).build();
          return xtreemfs_mkvol(server, authHeader, userCreds,msg);
     }
 
