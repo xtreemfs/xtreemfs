@@ -117,6 +117,11 @@ public class BabuDBSnapshotVolumeInfo implements VolumeInfo {
     }
 
     @Override
+    public void setRequestPriority(int priority, AtomicDBUpdate update) throws DatabaseException {
+        sMan.throwException();
+    }
+
+    @Override
     public long getNumFiles() throws DatabaseException {
         return 0;
     }
@@ -144,5 +149,10 @@ public class BabuDBSnapshotVolumeInfo implements VolumeInfo {
     @Override
     public long getCreationTime() throws DatabaseException {
         return creationTimestamp;
+    }
+
+    @Override
+    public int getRequestPriority() throws DatabaseException {
+        return 0;
     }
 }

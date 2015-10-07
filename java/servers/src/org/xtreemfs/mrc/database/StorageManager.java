@@ -115,6 +115,8 @@ public interface StorageManager {
     
     public void setVolumeQuota(long quota, AtomicDBUpdate update) throws DatabaseException;
 
+    public void setVolumePriority(int priority, AtomicDBUpdate update) throws DatabaseException;
+
     public void setDefaultReplicationPolicy(long fileId, ReplicationPolicy defaultRp,
         AtomicDBUpdate update) throws DatabaseException;
     
@@ -135,6 +137,8 @@ public interface StorageManager {
     public ReplicationPolicy getDefaultReplicationPolicy(long fileId) throws DatabaseException;
     
     public long getVolumeQuota() throws DatabaseException;
+
+    public int getVolumePriority() throws DatabaseException;
 
     public String getSoftlinkTarget(long fileId) throws DatabaseException;
     

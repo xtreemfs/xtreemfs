@@ -79,8 +79,10 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     
     protected static final String          VOL_ID_ATTR_NAME           = "volId";
     
-    protected static final String          VOL_QUOTA                  = "quota";
-    
+    protected static final String          VOL_QUOTA_ATTR_NAME        = "quota";
+
+    protected static final String          VOL_PRIORITY_ATTR_NAME     = "priority";
+
     protected static final int[]           ALL_INDICES                = { FILE_INDEX, XATTRS_INDEX,
         ACL_INDEX, FILE_ID_INDEX, VOLUME_INDEX                       };
     
@@ -208,11 +210,27 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     
     public long getVolumeQuota() throws DatabaseException {
         try {
-            byte[] quotaBytes = getXAttr(1, SYSTEM_UID, VOL_QUOTA);
+            byte[] quotaBytes = getXAttr(1, SYSTEM_UID, VOL_QUOTA_ATTR_NAME);
             if (quotaBytes == null) {
                 return 0;
             } else {
                 return Long.valueOf(new String(quotaBytes));
+            }
+        } catch (DatabaseException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
+    public int getVolumePriority() throws DatabaseException {
+         try {
+            byte[] priorityBytes = getXAttr(1, SYSTEM_UID, VOL_PRIORITY_ATTR_NAME);
+            if (priorityBytes == null) {
+                return 0;
+            } else {
+                return Integer.valueOf(new String(priorityBytes));
             }
         } catch (DatabaseException exc) {
             throw exc;
@@ -545,6 +563,11 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     
     @Override
     public void setVolumeQuota(long quota, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setVolumePriority(int priority, AtomicDBUpdate update) throws DatabaseException {
         throwException();
     }
 

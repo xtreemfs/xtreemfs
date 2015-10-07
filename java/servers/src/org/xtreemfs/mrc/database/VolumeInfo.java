@@ -109,6 +109,14 @@ public interface VolumeInfo {
      * @return the creation time stamp in milliseconds since 1970
      */
     public long getCreationTime() throws DatabaseException;
+
+    /**
+     * Returns request priority for the volume
+     *
+     * @return request priority
+     * @throws DatabaseException
+     */
+    public int getRequestPriority() throws DatabaseException;
     
     /**
      * Sets the volume's OSD selection policy.
@@ -150,5 +158,14 @@ public interface VolumeInfo {
      *            the difference between the new and the old volume size
      */
     public void updateVolumeSize(long diff, AtomicDBUpdate update) throws DatabaseException;
+
+    /**
+     * Set request priority for the volume
+     *
+     * @param priority
+     * @param update
+     * @throws DatabaseException
+     */
+    public void setRequestPriority(int priority, AtomicDBUpdate update) throws DatabaseException;
     
 }

@@ -125,7 +125,8 @@ public class MRCHelper {
             mark_replica_complete,
             set_repl_update_policy,
             default_rp,
-            quota
+            quota,
+            priority
     }
     
     public enum FileType {
@@ -474,7 +475,10 @@ public class MRCHelper {
                 return Converter.replicationPolicyToJSONString(rp);
 
             case quota:
-                return String.valueOf(sMan.getVolumeInfo().getVolumeQuota());
+                return String.valueOf(sMan.getVolumeQuota());
+
+            case priority:
+                return String.valueOf(sMan.getVolumePriority());
             }
         }
         
@@ -842,6 +846,14 @@ public class MRCHelper {
                 throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "quota must be set on volume root");
 
             sMan.getVolumeInfo().setVolumeQuota((long) Long.valueOf(value), update);
+
+            break;
+
+        case priority:
+            if (file.getId() != 1)
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "priority must be set on volume root");
+
+            sMan.setVolumePriority((int) Integer.valueOf(value), update);
 
             break;
 

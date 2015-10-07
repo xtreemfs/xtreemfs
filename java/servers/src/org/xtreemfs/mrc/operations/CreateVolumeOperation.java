@@ -122,11 +122,14 @@ public class CreateVolumeOperation extends MRCOperation {
                 uid = rq.getDetails().userId;
             if ("".equals(gid))
                 gid = rq.getDetails().groupIds.get(0);
+
+            long quota = volData.hasQuota()?volData.getQuota():0L;
+            int priority = volData.hasPriority()?volData.getPriority():0;
             
             // create the volume locally
             master.getVolumeManager().createVolume(master.getFileAccessManager(), volumeId, volData.getName(),
                     (short) volData.getAccessControlPolicy().getNumber(), uid, gid, volData.getDefaultStripingPolicy(),
-                    volData.getMode(), volData.getQuota(), volData.getAttrsList());
+                    volData.getMode(), quota, priority, volData.getAttrsList());
             
             master.notifyVolumeCreated();
             

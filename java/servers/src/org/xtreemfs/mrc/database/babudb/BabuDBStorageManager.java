@@ -96,6 +96,8 @@ public class BabuDBStorageManager implements StorageManager {
     protected static final String            VOL_ID_ATTR_NAME           = "volId";
     
     protected static final String            VOL_QUOTA_ATTR_NAME        = "quota";
+
+    protected static final String            VOL_PRIORITY_ATTR_NAME     = "priority";
     
     protected static final int[]             ALL_INDICES                = { FILE_INDEX, XATTRS_INDEX, ACL_INDEX,
             FILE_ID_INDEX, VOLUME_INDEX                                };
@@ -161,7 +163,7 @@ public class BabuDBStorageManager implements StorageManager {
     public BabuDBStorageManager(BabuDB dbs, String volumeId, String volumeName, short fileAccessPolicyId,
             short[] osdPolicy, short[] replPolicy, String ownerId, String owningGroupId, int perms, ACLEntry[] acl,
             org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy rootDirDefSp, boolean allowSnaps,
-            long volumeQuota, Map<String, String> attrs) throws DatabaseException {
+            long volumeQuota, int volumePriority, Map<String, String> attrs) throws DatabaseException {
         
         this.dbMan = dbs.getDatabaseManager();
         this.snapMan = dbs.getSnapshotManager();
@@ -179,7 +181,7 @@ public class BabuDBStorageManager implements StorageManager {
         setLastFileId(1, update);
         
         volume.init(this, update.getDatabaseName(), volumeName, osdPolicy, replPolicy, fileAccessPolicyId, allowSnaps,
-                volumeQuota, update);
+                volumeQuota, volumePriority, update);
         
         // set the default striping policy
         if (rootDirDefSp != null)
@@ -577,6 +579,23 @@ public class BabuDBStorageManager implements StorageManager {
     }
 
     @Override
+    public int getVolumePriority() throws DatabaseException {
+        try {
+            byte[] priority = getXAttr(1, SYSTEM_UID, VOL_PRIORITY_ATTR_NAME);
+            if (priority == null)
+                return 0;
+            else {
+                return Integer.valueOf(new String(priority));
+            }
+
+        } catch (DatabaseException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
     public FileMetadata getMetadata(long fileId) throws DatabaseException {
         
         try {
@@ -809,6 +828,11 @@ public class BabuDBStorageManager implements StorageManager {
     @Override
     public void setVolumeQuota(long quota, AtomicDBUpdate update) throws DatabaseException {
         setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_QUOTA_ATTR_NAME, String.valueOf(quota).getBytes(), update);
+    }
+
+    @Override
+    public void setVolumePriority(int priority, AtomicDBUpdate update) throws DatabaseException {
+        setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_PRIORITY_ATTR_NAME, String.valueOf(priority).getBytes(), update);
     }
 
     @Override
