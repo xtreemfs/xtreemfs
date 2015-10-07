@@ -212,6 +212,7 @@ bool getattr(const string& xctl_file,
           cout << "     Striping policy     "
               << replica["striping-policy"]["pattern"].asString()
               << " / " << replica["striping-policy"]["width"].asInt()
+              << " / " << replica["striping-policy"]["parity_width"].asInt()
               << " / " <<replica["striping-policy"]["size"].asInt()
               << "kB" << endl;
           if (is_ronly) {
@@ -278,6 +279,7 @@ bool getattr(const string& xctl_file,
         if (stat.isMember("default_sp")) {
           cout << stat["default_sp"]["pattern"].asString()
               << " / " << stat["default_sp"]["width"].asInt()
+              << " / " << stat["default_sp"]["parity_width"].asInt()
               << " / " <<stat["default_sp"]["size"].asInt()
               << "kB" << endl;
         } else {
@@ -355,6 +357,10 @@ bool SetDefaultSP(const string& xctl_file,
     cerr << "striping-policy-width must be set" << endl;
     return false;
   }
+  if (vm.count("striping-policy-parity-width") == 0) {
+    cerr << "striping-policy-parity-width must be set" << endl;
+    return false;
+  }
   if (vm.count("striping-policy-stripe-size") == 0) {
     cerr << "striping-policy-stripe-size must be set" << endl;
     return false;
@@ -368,6 +374,7 @@ bool SetDefaultSP(const string& xctl_file,
   }
 
   const int width = vm["striping-policy-width"].as<int>();
+  const int parity_width = vm["striping-policy-parity-width"].as<int>();
   const int size = vm["striping-policy-stripe-size"].as<int>();
 
   Json::Value request(Json::objectValue);
@@ -375,17 +382,20 @@ bool SetDefaultSP(const string& xctl_file,
   request["path"] = path;
   if (boost::to_upper_copy(policy) == "RAID0") {
     request["pattern"] = "STRIPING_POLICY_RAID0";
+  } else if (boost::to_upper_copy(policy) == "ERASURECODE") {
+    request["pattern"] = "STRIPING_POLICY_ERASURECODE";
   } else {
-    cerr << "Striping policy must be RAID0." << endl;
+    cerr << "Striping policy must be RAID0 or ERASURECODE." << endl;
     return false;
   }
   request["width"] = width;
+  request["parity_width"] = parity_width;
   request["size"] = size;
   Json::Value response;
   if (executeOperation(xctl_file, request, &response)) {
     cout << "Updated default striping policy to: "
         << request["pattern"].asString() << " / "
-        << width << " / " << size << "kB" << endl;
+        << width << " / " << parity_width << " / " << size << "kB" << endl;
     return true;
   } else {
     cerr << "Setting Default Striping Policy FAILED" << endl;
@@ -1034,6 +1044,8 @@ int main(int argc, char **argv) {
        "striping policy (always RAID0)")
       ("striping-policy-width,w", value<int>(),
        "striping width (number of OSDs)")
+      ("striping-policy-parity-width,e", value<int>(),
+       "parity width (number of OSDs)")
       ("striping-policy-stripe-size,s", value<int>(),
        "stripe size in kB (object size)")
       ("set-drp", "set (change) the default replication policy (volume)")

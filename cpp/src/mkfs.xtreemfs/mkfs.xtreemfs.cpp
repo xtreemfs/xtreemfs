@@ -184,13 +184,15 @@ int main(int argc, char* argv[]) {
              << options.default_stripe_size << "\n"
          << "  Default stripe width (# OSDs):\t"
              << options.default_stripe_width << "\n"
+         << "  Default parity width (# OSDs):\t"
+             << options.default_parity_width << "\n"
          << "\n";
     if (options.volume_attributes.size() > 0) {
       cout << "  Volume attributes (Name = Value)" << endl;
-      for (map<string, string>::const_iterator it = options.volume_attributes.begin();
+      for (list<KeyValuePair*>::iterator it = options.volume_attributes.begin();
            it != options.volume_attributes.end();
            ++it) {
-        cout << "    " << it->first << " = " << it->second << endl;
+        cout << "    " << (*it)->key() << " = " << (*it)->value() << endl;
       }
       cout << endl;
     }
@@ -203,6 +205,9 @@ int main(int argc, char* argv[]) {
         options));
     client->Start();
 
+    cout << "address is " << options.mrc_service_address << endl;
+    cout << "auth is " << auth.auth_data() << endl;
+    cout << "user_credentials are " << user_credentials.username() << " " << user_credentials.groups(0) << endl;
     // Create the volume on the MRC.
     client->CreateVolume(options.mrc_service_address,
                          auth,
@@ -216,6 +221,7 @@ int main(int argc, char* argv[]) {
                          options.default_striping_policy_type,
                          options.default_stripe_size,
                          options.default_stripe_width,
+                         options.default_parity_width,
                          options.volume_attributes);
   } catch (const XtreemFSException& e) {
     success = false;

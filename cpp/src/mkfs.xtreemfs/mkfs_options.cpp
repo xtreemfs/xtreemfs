@@ -82,6 +82,7 @@ MkfsOptions::MkfsOptions() : Options() {
   default_striping_policy_type_string = "RAID0";
   default_stripe_size = 128;
   default_stripe_width = 1;
+  default_parity_width = 0;
 
   po::options_description striping_policy_descriptions_(
       "Striping Policy Options");
@@ -95,7 +96,10 @@ MkfsOptions::MkfsOptions() : Options() {
        "Stripe size in kB.")
       ("striping-policy-width,w",
        po::value(&default_stripe_width)->default_value(default_stripe_width),
-       "Number of OSDs (stripes) per replica.");
+       "Number of OSDs (stripes) per replica.")
+      ("striping-policy-parity-width,r",
+       po::value(&default_parity_width)->default_value(default_parity_width),
+       "Number of OSDs for parity information.");
 
   // Volume Attributes.
   chown_non_root = false;
@@ -120,6 +124,11 @@ MkfsOptions::MkfsOptions() : Options() {
 }
 
 MkfsOptions::~MkfsOptions() {
+  for (list<KeyValuePair*>::iterator it = volume_attributes.begin();
+       it != volume_attributes.end();
+       ++it) {
+    delete *it;  // Free memory.
+  }
 }
 
 
@@ -199,10 +208,12 @@ void MkfsOptions::ParseCommandLine(int argc, char** argv) {
 
   if (boost::iequals(default_striping_policy_type_string, "RAID0")) {
     default_striping_policy_type = xtreemfs::pbrpc::STRIPING_POLICY_RAID0;
+  } else if (boost::iequals(default_striping_policy_type_string, "ERASURECODE")) {
+    default_striping_policy_type = xtreemfs::pbrpc::STRIPING_POLICY_ERASURECODE;
   } else {
-    throw InvalidCommandLineParametersException("Currently the RAID0 striping"
-        "policy is the only one available. Set the stripe width (see -w) to 1"
-        " to disable striping at all.");
+    throw InvalidCommandLineParametersException("Currently the RAID0 and "
+        "ERASURECODE striping policy are the only two available. Set the stripe"
+		" width (see -w) to 1 to disable striping at all.");
   }
 
   // Process volume attributes shortcuts.
@@ -234,12 +245,13 @@ void MkfsOptions::ParseCommandLine(int argc, char** argv) {
     }
 
     // Parse attribute.
-    const std::string key = volume_attributes_strings[i].substr(0, first_match);
-    const std::string value = volume_attributes_strings[i].substr(
+    KeyValuePair* attribute = new KeyValuePair();
+    attribute->set_key(volume_attributes_strings[i].substr(0, first_match));
+    attribute->set_value(volume_attributes_strings[i].substr(
         min(first_match + 1, volume_attributes_strings[i].length()),
         max(static_cast<size_t>(0),
-            volume_attributes_strings[i].length() - first_match));
-    volume_attributes[key] = value;
+            volume_attributes_strings[i].length() - first_match)));
+    volume_attributes.push_back(attribute);
   }
 }
 

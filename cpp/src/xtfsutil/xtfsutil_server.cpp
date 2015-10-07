@@ -243,11 +243,13 @@ void XtfsUtilServer::OpSetDefaultSP(const xtreemfs::pbrpc::UserCredentials& uc,
       || !input["pattern"].isString()
       || !input.isMember("width")
       || !input["width"].isInt()
+      || !input.isMember("parity_width")
+      || !input["parity_width"].isInt()
       || !input.isMember("size")
       || !input["size"].isInt()) {
     (*output)["error"] = Json::Value("One of the following fields is missing or"
                                      " has an invalid value: path, pattern, "
-                                     "width, member");
+                                     "width, parity_width, member");
     return;
   }
   const string path = input["path"].asString();
@@ -256,6 +258,7 @@ void XtfsUtilServer::OpSetDefaultSP(const xtreemfs::pbrpc::UserCredentials& uc,
   xattr_value["pattern"] = input["pattern"];
   xattr_value["size"] = input["size"];
   xattr_value["width"] = input["width"];
+  xattr_value["parity_width"] = input["parity_width"];
 
   Json::FastWriter writer;
   volume_->SetXAttr(uc,

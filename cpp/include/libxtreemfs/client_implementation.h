@@ -111,6 +111,20 @@ class ClientImplementation : public Client {
   virtual void CloseVolume(xtreemfs::Volume* volume);
 
   virtual void CreateVolume(
+      const xtreemfs::pbrpc::Auth& auth,
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      const std::string& volume_name,
+      int mode,
+      const std::string& owner_username,
+      const std::string& owner_groupname,
+      const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
+      long volume_quota,
+      const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
+      int default_stripe_size,
+      int default_stripe_width,
+      const std::map<std::string, std::string>& volume_attributes);
+
+  virtual void CreateVolume(
       const ServiceAddresses& mrc_address,
       const pbrpc::Auth& auth,
       const pbrpc::UserCredentials& user_credentials,
@@ -123,6 +137,7 @@ class ClientImplementation : public Client {
       const pbrpc::StripingPolicyType& default_striping_policy_type,
       int default_stripe_size,
       int default_stripe_width,
+      int default_parity_width,
       const std::list<pbrpc::KeyValuePair*>& volume_attributes);
 
   virtual void CreateVolume(
@@ -134,24 +149,11 @@ class ClientImplementation : public Client {
       const std::string& owner_username,
       const std::string& owner_groupname,
       const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
-      long quota,
-      const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
-      int default_stripe_size,
-      int default_stripe_width,
-      const std::map<std::string, std::string>& volume_attributes);
-
-  virtual void CreateVolume(
-      const xtreemfs::pbrpc::Auth& auth,
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
-      const std::string& volume_name,
-      int mode,
-      const std::string& owner_username,
-      const std::string& owner_groupname,
-      const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
       long volume_quota,
       const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
       int default_stripe_size,
       int default_stripe_width,
+      int default_parity_width,
       const std::map<std::string, std::string>& volume_attributes);
 
   virtual void DeleteVolume(
