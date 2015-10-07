@@ -51,7 +51,7 @@ public class RenewOperation extends MRCOperation {
                 .getCapabilityTimeout(), TimeSync.getGlobalTime() / 1000
             + master.getConfig().getCapabilityTimeout(), cap.getClientIdentity(), cap.getEpochNo(), cap
                 .isReplicateOnClose(), cap.getSnapConfig(), cap.getSnapTimestamp(), master.getConfig()
-                .getCapabilitySecret());
+                .getCapabilitySecret(), cap.getPriority());
         
         // set the response
         rq.setResponse(newCap.getXCap());

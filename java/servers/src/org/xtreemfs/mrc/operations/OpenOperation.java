@@ -310,7 +310,7 @@ public class OpenOperation extends MRCOperation {
                 .isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
             : volume.isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP
                 : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, volume.getCreationTime(), master.getConfig()
-                .getCapabilitySecret());
+                .getCapabilitySecret(), sMan.getVolumePriority());
         
         if (Logging.isDebug())
             Logging
