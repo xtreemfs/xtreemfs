@@ -24,49 +24,53 @@ public class Logging {
          */
         all,
         /**
+         * authorization-related log messages
+         */
+        auth,
+        /**
          * logs messages pertaining to buffers
          */
         buffer,
         /**
-         * log messaages pertaining to service lifecycles (threads)
+         * log messages pertaining to erasure coding
+         */
+        ec,
+        /**
+         * log messages pertaining to service lifecycles (threads)
          */
         lifecycle,
+        /**
+         *
+         */
+        misc,
         /**
          * network-related log messages
          */
         net,
         /**
-         * authorization-related log messages
+         * log messages pertaining to any kind of request processing
          */
-        auth,
+        proc,
+        /**
+         * logs messages pertaining to replication
+         */
+        replication,
         /**
          * log messages pertaining to the request flow through the stages
          */
         stage,
         /**
-         * log messages pertaining to any kind of request processing
-         */
-        proc,
-        /**
-         * 
-         */
-        misc,
-        /**
          * log messages pertaining storage on OSD or database access on MRC/DIR
          */
         storage,
         /**
-         * logs messages pertaining to replication 
+         * logs messages from tests
          */
-        replication,
+        test,
         /**
          * logs messages from additional tools
          */
-        tool,
-        /**
-         * logs messages from tests
-         */
-        test
+        tool
     }
     
     protected static final char      ABBREV_LEVEL_INFO  = 'I';
