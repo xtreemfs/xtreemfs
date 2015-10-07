@@ -414,6 +414,27 @@ bool SetVolumeQuota(const string& xctl_file,
   }
 }
 
+// Sets the volume priority
+bool SetVolumePriority(const string& xctl_file,
+                  const string& path,
+                  const variables_map& vm) {
+
+  const string priority = vm["set-priority"].as<string>();
+
+  Json::Value request(Json::objectValue);
+  request["operation"] = "setVolumePriority";
+  request["path"] = path;
+  request["priority"] = priority;
+  Json::Value response;
+  if (executeOperation(xctl_file, request, &response)) {
+    cout << "Set volume priority to " << priority << "." << endl;
+    return true;
+  } else {
+    cerr << "Setting Volume Priority FAILED" << endl;
+    return false;
+  }
+}
+
 // Sets the default replication policy.
 bool SetDefaultRP(const string& xctl_file,
                   const string& path,
@@ -1069,7 +1090,9 @@ int main(int argc, char **argv) {
       ("del-acl", value<string>(),
        "removes an ACL entry, format: u|g|m|o:<name>")
       ("set-quota", value<string>(),
-       "sets the volume quota in bytes (set quota to 0 to disable the quota), format: <value>M|G|T");
+       "sets the volume quota in bytes (set quota to 0 to disable the quota), format: <value>M|G|T")
+      ("set-priority", value<string>(),
+       "set request priority for OSD operations for the volume (a larger value causes a higher priority)");
 
   options_description snapshot_desc("Snapshot Options");
   snapshot_desc.add_options()
@@ -1282,7 +1305,11 @@ int main(int argc, char **argv) {
   }
   if (vm.count("set-quota") > 0) {
     ++operationsCount;
-	failedOperationsCount += SetVolumeQuota(xctl_file, path_on_volume, vm) ? 0 : 1;
+	  failedOperationsCount += SetVolumeQuota(xctl_file, path_on_volume, vm) ? 0 : 1;
+  }
+  if (vm.count("set-priority") > 0) {
+    ++operationsCount;
+    failedOperationsCount += SetVolumePriority(xctl_file, path_on_volume, vm) ? 0 : 1;
   }
   if(operationsCount == 0){
     ++operationsCount;

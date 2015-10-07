@@ -114,6 +114,8 @@ void XtfsUtilServer::ParseAndExecute(const xtreemfs::pbrpc::UserCredentials& uc,
       OpSetRemoveACL(uc, input, &result);
     } else if (op_name == "setVolumeQuota") {
       OpSetVolumeQuota(uc, input, &result);
+    } else if (op_name == "setVolumePriority") {
+      OpSetVolumePriority(uc, input, &result);
     } else {
       file->set_last_result(
           "{ \"error\":\"Unknown operation '" + op_name + "'.\" }\n");
@@ -668,6 +670,38 @@ void XtfsUtilServer::OpSetVolumeQuota(
 
   volume_->SetXAttr(uc, path, "xtreemfs.quota",
       boost::lexical_cast<std::string>(quota), xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
+  (*output)["result"] = Json::Value(Json::objectValue);
+}
+
+ void XtfsUtilServer::OpSetVolumePriority(
+	    const xtreemfs::pbrpc::UserCredentials& uc,
+	    const Json::Value& input,
+	    Json::Value* output) {
+
+  if (!input.isMember("path") || !input["path"].isString()
+      || !input.isMember("priority") || !input["priority"].isString()) {
+    (*output)["error"] = Json::Value("One of the following fields is missing or"
+        " has an invalid value: path, priority.");
+    return;
+  }
+
+  const string path = input["path"].asString();
+  const long priority = parseByteNumber(input["priority"].asString());
+
+  if (priority == -1) {
+    (*output)["error"] = Json::Value(
+        input["priority"].asString() + " is not a valid priority.");
+    return;
+  }
+
+  if (priority < 0) {
+    (*output)["error"] = "Priority has to be greater or equal zero (was set to: "
+        + boost::lexical_cast<std::string>(priority) + ")";
+    return;
+  }
+
+  volume_->SetXAttr(uc, path, "xtreemfs.priority",
+      boost::lexical_cast<std::string>(priority), xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
   (*output)["result"] = Json::Value(Json::objectValue);
 }
 

@@ -225,6 +225,10 @@ class XtfsUtilServer {
                       const Json::Value& input,
                       Json::Value* output);
 
+  void OpSetVolumePriority(const xtreemfs::pbrpc::UserCredentials& uc,
+                      const Json::Value& input,
+                      Json::Value* output);
+
   /** Mutex to protect xctl_files_. */
   boost::mutex xctl_files_mutex_;
   /** Map of xctl pseudo files. */
