@@ -52,7 +52,7 @@ public class CapabilityTest {
 
         // create and test capability that is valid for an hour
         Capability cap = new Capability("1254" + ((HashStorageLayout.WIN) ? ":" : "_") + "AB", 1, 60,
-                System.currentTimeMillis() / 1000 + 100, "", 1, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, SECRET);
+                System.currentTimeMillis() / 1000 + 100, "", 1, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, SECRET, 0);
 
         assertTrue(cap.isValid());
         assertEquals(cap.getFileId(), "1254" + ((HashStorageLayout.WIN) ? ":" : "_") + "AB");
@@ -61,7 +61,7 @@ public class CapabilityTest {
         // assert that a capability is invalid if it has timed out
         Capability cap4 = new Capability("bla" + ((HashStorageLayout.WIN) ? ":" : "_") + "2", 1, 60,
                 System.currentTimeMillis() / 1000 - 3600, "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0,
-                SECRET);
+                SECRET, 0);
         assertFalse(cap4.isValid());
 
     }

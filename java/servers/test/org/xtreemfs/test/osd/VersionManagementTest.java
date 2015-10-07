@@ -102,7 +102,7 @@ public class VersionManagementTest {
                                 write ? (SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber() | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR
                                         .getNumber()) : SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber(), 60,
                                 System.currentTimeMillis(), "", truncateEpoch, false,
-                                SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, 0, capSecret).getXCap()).setXlocs(xloc).build();
+                                SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, 0, capSecret, 0).getXCap()).setXlocs(xloc).build();
     }
 
     private FileCredentials getFileCredentials(int truncateEpoch, long snapTimestamp) {
@@ -111,7 +111,7 @@ public class VersionManagementTest {
                 .setXcap(
                         new Capability(FILE_ID, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber(), 60, System
                                 .currentTimeMillis(), "", truncateEpoch, false, SnapConfig.SNAP_CONFIG_ACCESS_SNAP,
-                                snapTimestamp, capSecret).getXCap()).setXlocs(xloc).build();
+                                snapTimestamp, capSecret, 0).getXCap()).setXlocs(xloc).build();
     }
 
     @After

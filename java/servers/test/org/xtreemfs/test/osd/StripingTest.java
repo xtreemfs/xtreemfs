@@ -77,7 +77,7 @@ public class StripingTest {
             return new Capability(FILE_ID, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber()
                     | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber(), 60, System.currentTimeMillis(), "",
                     (int) issuedEpoch, false, COW ? SnapConfig.SNAP_CONFIG_ACCESS_CURRENT
-                            : SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, capSecret);
+                            : SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, capSecret, 0);
         }
 
         synchronized long getFileSize() {
@@ -195,7 +195,7 @@ public class StripingTest {
     private Capability getCap(String fname) {
         return new Capability(fname, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber(), 60, System.currentTimeMillis(), "", 0, false,
-                COW ? SnapConfig.SNAP_CONFIG_ACCESS_CURRENT : SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, capSecret);
+                COW ? SnapConfig.SNAP_CONFIG_ACCESS_CURRENT : SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, capSecret, 0);
     }
 
     @After

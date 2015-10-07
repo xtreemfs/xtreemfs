@@ -147,7 +147,7 @@ public class SnapshotTest {
         // create a volume
         invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
                 AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, getDefaultStripingPolicy(), "", 0775,
-                volumeName, "", "", new LinkedList<KeyValuePair>(), 0));
+                volumeName, "", "", new LinkedList<KeyValuePair>(), 0, 0));
 
         // enable snapshots on the volume
         invokeSync(client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "",

@@ -97,7 +97,7 @@ public class RWReplicationFailureTest {
     public void testInvalidCap() throws Exception {
         Capability cap = new Capability(fileId, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 60, System.currentTimeMillis() + 10000, "", 0,
-                false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, configs[0].getCapabilitySecret());
+                false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, configs[0].getCapabilitySecret(), 0);
         List<Replica> rlist = new LinkedList();
         for (OSDConfig osd : this.configs) {
             Replica r = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(1, 128))
@@ -140,7 +140,7 @@ public class RWReplicationFailureTest {
     public void testOfflineOSD() throws Exception {
         Capability cap = new Capability(fileId, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 60, System.currentTimeMillis() + 10000, "", 0,
-                false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, configs[0].getCapabilitySecret());
+                false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, configs[0].getCapabilitySecret(), 0);
         List<Replica> rlist = new LinkedList();
         for (OSDConfig osd : this.configs) {
             Replica r = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(1, 128))

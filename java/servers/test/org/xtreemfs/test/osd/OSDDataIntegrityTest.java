@@ -89,7 +89,7 @@ public class OSDDataIntegrityTest {
         fileId = "ABCDEF:1";
         cap = new Capability(fileId, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 60,
                 System.currentTimeMillis(), "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0,
-                osdConfig.getCapabilitySecret());
+                osdConfig.getCapabilitySecret(), 0);
 
         Replica r = Replica.newBuilder().setReplicationFlags(0).setStripingPolicy(SetupUtils.getStripingPolicy(1, 2))
                 .addOsdUuids(serverID.toString()).build();

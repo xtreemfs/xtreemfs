@@ -108,7 +108,7 @@ public class ReplicationTest {
         objectNo = 0;
         cap = new Capability(fileID, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 60,
                 System.currentTimeMillis(), "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0,
-                configs[0].getCapabilitySecret());
+                configs[0].getCapabilitySecret(), 0);
 
         xLoc = createLocations(4, 3);
     }
