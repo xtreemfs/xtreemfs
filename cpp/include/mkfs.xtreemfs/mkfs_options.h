@@ -69,6 +69,9 @@ class MkfsOptions : public Options {
   /** Quota of the volume*/
   std::string volume_quota;
 
+  /** Request priority of volume */
+  std::string volume_priority;
+
   /** Name of the owner of the new volume. */
   std::string owner_username;
 

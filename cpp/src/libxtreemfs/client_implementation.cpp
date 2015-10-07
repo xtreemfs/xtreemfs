@@ -533,6 +533,7 @@ void ClientImplementation::CreateVolume(
     const std::string& owner_groupname,
     const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
     long volume_quota,
+    int priority,
     const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
     int default_stripe_size,
     int default_stripe_width,
@@ -547,9 +548,8 @@ void ClientImplementation::CreateVolume(
 
   return CreateVolume(mrc_address, auth, user_credentials, volume_name, mode,
                       owner_username, owner_groupname, access_policy_type,
-                      volume_quota, default_striping_policy_type,
-                      default_stripe_size, default_stripe_width,
-                      volume_attributes_map);
+                      volume_quota, priority, default_striping_policy_type,
+                      default_stripe_size, default_stripe_width, volume_attributes_map);
 }
 
 void ClientImplementation::CreateVolume(
@@ -562,6 +562,7 @@ void ClientImplementation::CreateVolume(
     const std::string& owner_groupname,
     const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
     long volume_quota,
+    int priority,
     const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
     int default_stripe_size,
     int default_stripe_width,
@@ -576,6 +577,7 @@ void ClientImplementation::CreateVolume(
   new_volume.set_owner_group_id(owner_groupname);
   new_volume.set_access_control_policy(access_policy_type);
   new_volume.set_quota(volume_quota);
+  new_volume.set_priority(priority);
   new_volume.mutable_default_striping_policy()
       ->set_type(default_striping_policy_type);
   new_volume.mutable_default_striping_policy()
@@ -617,6 +619,7 @@ void ClientImplementation::CreateVolume(
     const std::string& owner_groupname,
     const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
     long volume_quota,
+    int priority,
     const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
     int default_stripe_size,
     int default_stripe_width,
@@ -635,7 +638,7 @@ void ClientImplementation::CreateVolume(
   }
 
   CreateVolume(mrc_address, auth, user_credentials, volume_name, mode,
-               owner_username, owner_groupname, access_policy_type, volume_quota,
+               owner_username, owner_groupname, access_policy_type, volume_quota, priority,
                default_striping_policy_type, default_stripe_size,
                default_stripe_width, volume_attributes);
 }

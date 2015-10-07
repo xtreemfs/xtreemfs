@@ -139,6 +139,17 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    int priority = parseByteNumber(options.volume_priority);
+    if (priority == -1) {
+      cout << "Error: " << options.volume_priority << " is not a valid priority.\n";
+        return 1;
+    }
+
+    if (priority < 0) {
+    	cout << "Error: Priority has to be greater or equal zero \n";
+        return 1;
+    }
+
     Auth auth;
     if (options.admin_password.empty()) {
       auth.set_auth_type(AUTH_NONE);
@@ -213,6 +224,7 @@ int main(int argc, char* argv[]) {
                          options.owner_groupname,
                          options.access_policy_type,
                          quota,
+                         priority,
                          options.default_striping_policy_type,
                          options.default_stripe_size,
                          options.default_stripe_width,

@@ -122,6 +122,8 @@ class Client {
    * @param owner_username  Name of the owner user.
    * @param owner_groupname Name of the owner group.
    * @param access_policy_type  Access policy type (Null, Posix, Volume, ...).
+   * @param quota           Volume quota
+   * @param priority        Request priority
    * @param default_striping_policy_type    Only RAID0 so far.
    * @param default_stripe_size     Size of an object on the OSD (in kBytes).
    * @param default_stripe_width    Number of OSDs objects of a file are striped
@@ -143,6 +145,7 @@ class Client {
       const std::string& owner_groupname,
       const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
       long quota,
+      int priority,
       const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
       int default_stripe_size,
       int default_stripe_width,
@@ -160,6 +163,8 @@ class Client {
    * @param owner_username  Name of the owner user.
    * @param owner_groupname Name of the owner group.
    * @param access_policy_type  Access policy type (Null, Posix, Volume, ...).
+   * @param quota           Volume quota
+   * @param priority        Request priority
    * @param default_striping_policy_type    Only RAID0 so far.
    * @param default_stripe_size     Size of an object on the OSD (in kBytes).
    * @param default_stripe_width    Number of OSDs objects of a file are striped
@@ -181,6 +186,7 @@ class Client {
       const std::string& owner_groupname,
       const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
       long quota,
+      int priority,
       const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
       int default_stripe_size,
       int default_stripe_width,
@@ -197,6 +203,8 @@ class Client {
    * @param owner_username  Name of the owner user.
    * @param owner_groupname Name of the owner group.
    * @param access_policy_type  Access policy type (Null, Posix, Volume, ...).
+   * @param volume_quota    Volume quota
+   * @param priority        Request priority
    * @param default_striping_policy_type    Only RAID0 so far.
    * @param default_stripe_size     Size of an object on the OSD (in kBytes).
    * @param default_stripe_width    Number of OSDs objects of a file are striped
@@ -216,7 +224,8 @@ class Client {
       const std::string& owner_username,
       const std::string& owner_groupname,
       const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
-      long volume_quota,
+      long quota,
+      int priority,
       const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
       int default_stripe_size,
       int default_stripe_width,

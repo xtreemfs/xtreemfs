@@ -59,6 +59,7 @@ void Client::CreateVolume(
                "",
                xtreemfs::pbrpc::ACCESS_CONTROL_POLICY_POSIX,
                0,
+               0,
                xtreemfs::pbrpc::STRIPING_POLICY_RAID0,
                128,
                1,
