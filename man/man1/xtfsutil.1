@@ -9,7 +9,7 @@ xtfsutil \- shows and modifies XtreemFS specific file, directory and volume attr
 
 .SH DESCRIPTION
 .I xtfsutil
-when no options are provided, xtfsutl shows information about a file or directory \fIpath\fP. 
+when no options are provided, xtfsutl shows information about a file or directory \fIpath\fP.
 
 .SH EXAMPLE USAGE
 
@@ -166,6 +166,10 @@ Deletes the snapshot with the name \fIname\fP.
 .TP
 \fB\-\-set-quota [quota size]M|G|T
 Sets the volume quota (set quota to 0 to disable the quota)
+
+.TP
+\fB\-\-set-priority [priority]
+Priority of the volume for OSD requests (default value 0). A higher value causes a higher request priority. The OSD desires proportional fairness for requests with different priorities.
 
 .TP
 FILE OPTIONS:

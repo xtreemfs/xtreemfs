@@ -38,15 +38,18 @@ Mode of the volume's root directory (777 by default).
 Owner of the new volume (by default it is the username of the effective user id).
 .TP
 .BI "-g, \--owner-groupname " groupname
-Owning group of the new volume (by default its the groupname of the effective 
+Owning group of the new volume (by default its the groupname of the effective
 group id).
 .TP
 .BI "-a, \--access-control-policy " NULL|POSIX|VOLUME
 Access Control Policy of the volume. By default
 .IR POSIX .
 .TP
-.BI "-q, \--quota q" quota
+.BI "-q, \--quota " quota
 Quota of the volume in bytes (default value 0, i.e. quota is disabled), format: <value>M|G|T
+.TP
+.BI "--priority " priority
+Priority of the volume for OSD requests (default value 0). A higher value causes a higher request priority. The OSD desires proportional fairness for requests with different priorities.
 
 .TP
 Striping Policy Options:
@@ -58,7 +61,7 @@ is available. Please do not get confused by the name
 .IR RAID0 .
 If the default
 .I \--striping-policy-width
-of 1 is used, all objects of a file are stored on the same OSD and there is no higher failure probability compared to storing files on other file systems. 
+of 1 is used, all objects of a file are stored on the same OSD and there is no higher failure probability compared to storing files on other file systems.
 
 .TP
 .BI "-s, \--striping-policy-stripe-size " stripe-size
@@ -71,7 +74,7 @@ Number of OSDs (stripes) per replica.
 Volume Attributes:
 .TP
 .BI "--volume-attribute " name=value
-Define volume specific attributes of the form 
+Define volume specific attributes of the form
 .IR name=value ,
 e.g. "chown_non_root=true".
 .TP
