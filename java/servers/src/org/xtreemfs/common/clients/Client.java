@@ -124,7 +124,7 @@ public class Client {
             MRCServiceClient m = new MRCServiceClient(mdClient, mrcUUID.getAddress());
             r2 = m.xtreemfs_mkvol(null, authentication, credentials, accessCtrlPolicy, sp, "", permissions,
                 volumeName, credentials.getUsername(), credentials.getGroups(0),
-                new LinkedList<KeyValuePair>(), 0);
+                new LinkedList<KeyValuePair>(), 0, 0);
             r2.get();
             
         } catch (InterruptedException ex) {
@@ -147,7 +147,7 @@ public class Client {
             MRCServiceClient m = new MRCServiceClient(mdClient, uuid.getAddress());
             r = m.xtreemfs_mkvol(uuid.getAddress(), authentication, credentials, accessCtrlPolicy, sp, "", permissions,
                 volumeName, credentials.getUsername(), credentials.getGroups(0),
-                new LinkedList<KeyValuePair>(), 0);
+                new LinkedList<KeyValuePair>(), 0, 0);
             r.get();
             
         } catch (InterruptedException ex) {

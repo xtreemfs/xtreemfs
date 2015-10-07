@@ -72,7 +72,7 @@ public class GetFileCredentialsOperation extends MRCOperation {
                 !volume.isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
                         : volume.isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP
                                 : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, volume.getCreationTime(), master
-                        .getConfig().getCapabilitySecret());
+                        .getConfig().getCapabilitySecret(), sMan.getVolumePriority());
 
         // build new XlocSet with readonlyFileSize set. Necessary to check if replication is complete.
         XLocSet newXlocSet = null;

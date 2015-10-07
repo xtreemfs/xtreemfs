@@ -464,7 +464,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         String sharedSecret = master.getConfig().getCapabilitySecret();
 
         Capability cap = new Capability(fileId, accessMode, validity, expires, clientIdentity, epochNo,
-                replicateOnClose, snapConfig, snapTimestamp, sharedSecret);
+                replicateOnClose, snapConfig, snapTimestamp, sharedSecret, 0);
         return cap;
     }
 
@@ -473,7 +473,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
      * primary didn't respond.
      * 
      * @param fileId
-     * @param capability
+     * @param cap
      * @param xLocSet
      * @param numAcksRequired
      * @throws InterruptedException

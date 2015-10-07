@@ -108,7 +108,7 @@ public class DeleteOperation extends MRCOperation {
                 !volume.isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
                     : volume.isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP
                         : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, volume.getCreationTime(), master.getConfig()
-                        .getCapabilitySecret());
+                        .getCapabilitySecret(), 0);
             
             // set the XCapability and XLocationsList headers
             XLocList xloc = file.getXLocList();

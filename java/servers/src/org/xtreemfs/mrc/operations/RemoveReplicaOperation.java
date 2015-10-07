@@ -250,7 +250,7 @@ public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoord
                 !sMan.getVolumeInfo().isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED : sMan
                         .getVolumeInfo().isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP
                         : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, sMan.getVolumeInfo().getCreationTime(), master
-                        .getConfig().getCapabilitySecret());
+                        .getConfig().getCapabilitySecret(), sMan.getVolumePriority());
 
         // Convert xloc list.
         XLocSet.Builder xLocSet = Converter.xLocListToXLocSet(oldXLocList);

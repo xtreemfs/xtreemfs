@@ -65,12 +65,15 @@ public class Capability {
      *            the shared secret to be used to sign the capability
      */
     public Capability(String fileId, int accessMode, int validity, long expires, String clientIdentity,
-        int epochNo, boolean replicateOnClose, SnapConfig snapConfig, long snapTimestamp, String sharedSecret) {
+        int epochNo, boolean replicateOnClose, SnapConfig snapConfig, long snapTimestamp, String sharedSecret,
+        int priority) {
         
         this.sharedSecret = sharedSecret;
 
-        XCap.Builder builder = XCap.newBuilder().setAccessMode(accessMode).setClientIdentity(clientIdentity).setExpireTimeS(expires).setExpireTimeoutS(validity).
-                setFileId(fileId).setReplicateOnClose(replicateOnClose).setTruncateEpoch(epochNo).setSnapConfig(snapConfig).setSnapTimestamp(snapTimestamp);
+        XCap.Builder builder = XCap.newBuilder().setAccessMode(accessMode).setClientIdentity(clientIdentity).
+                setExpireTimeS(expires).setExpireTimeoutS(validity).setFileId(fileId).
+                setReplicateOnClose(replicateOnClose).setTruncateEpoch(epochNo).setSnapConfig(snapConfig).
+                setSnapTimestamp(snapTimestamp).setPriority(priority);
         
         final String sig = calcSignature(builder);
         builder.setServerSignature(sig);

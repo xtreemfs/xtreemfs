@@ -89,7 +89,7 @@ public class TruncateOperation extends MRCOperation {
                 !sMan.getVolumeInfo().isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED : sMan
                         .getVolumeInfo().isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP
                         : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, sMan.getVolumeInfo().getCreationTime(), master
-                        .getConfig().getCapabilitySecret());
+                        .getConfig().getCapabilitySecret(), sMan.getVolumePriority());
         
         // set the response
         rq.setResponse(truncCap.getXCap());

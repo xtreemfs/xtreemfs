@@ -90,6 +90,7 @@ public class RestoreDBOperation extends MRCOperation {
                             state.currentVolumeACPolicy = Short.parseShort(attributes.getValue(attributes
                                     .getIndex("acPolicy")));
                             state.currentVolumeQuota = Long.valueOf(attributes.getValue(attributes.getIndex("quota")));
+                            state.volumePriority = Integer.valueOf(attributes.getValue(attributes.getIndex("priority")));
                             
                         }
 
