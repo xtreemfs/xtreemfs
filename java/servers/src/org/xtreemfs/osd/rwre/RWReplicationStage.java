@@ -1054,7 +1054,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             ReplicatedFileState state = files.get(fileId);
             if (state == null) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
-                        "received maxObjAvail event for unknow file: %s", fileId);
+                        "received maxObjAvail event for unknown file: %s", fileId);
                 return;
             }
 
@@ -1155,11 +1155,10 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         final RWReplicationCallback callback = (RWReplicationCallback) method.getCallback();
         try {
             final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
+            final String fileId = credentials.getXcap().getFileId();
             final XLocations loc = (XLocations) method.getArgs()[1];
             final Long objVersion = (Long) method.getArgs()[3];
             final Operation op = (Operation) method.getArgs()[4];
-
-            final String fileId = credentials.getXcap().getFileId();
 
             ReplicatedFileState state = getState(credentials, loc, false, false);
 

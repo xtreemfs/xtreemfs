@@ -113,7 +113,7 @@ public class SingleFileStorageLayout extends StorageLayout {
             final long numObjs = (long) Math.ceil((double)fileSize/(double)stripeSize);
 
             for (long i = 0; i < numObjs; i++) {
-                long globalON = sp.getGloablObjectNumber(i);
+                long globalON = sp.getGlobalObjectNumber(i);
 
                 long chkSum = mdfile.readLong();
                 long version = mdfile.readLong();
@@ -123,7 +123,7 @@ public class SingleFileStorageLayout extends StorageLayout {
                     fi.updateObjectChecksum(globalON, chkSum, version);
                 fi.updateObjectVersion(globalON, version);
             }
-            fi.setLastObjectNumber(sp.getGloablObjectNumber(numObjs-1));
+            fi.setLastObjectNumber(sp.getGlobalObjectNumber(numObjs - 1));
             fi.setFilesize((fi.getGlobalLastObjectNumber()-1)*stripeSize+fileSize%stripeSize);
             File tepoch = new File(getFilePath(fileId)+TEPOCH_SUFFIX);
             if (tepoch.exists()) {

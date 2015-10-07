@@ -22,6 +22,7 @@ import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.stages.FleaseMasterEpochStage;
@@ -74,7 +75,7 @@ public class ECStage extends Stage implements FleaseMessageSenderInterface {
 
     private final OSDServiceClient                 osdClient;
 
-    private final Map<String, StripedFileState> files;
+    private final Map<String, StripedFileState>    files;
 
     private final Map<ASCIIString, String>         cellToFileId;
 
@@ -177,12 +178,6 @@ public class ECStage extends Stage implements FleaseMessageSenderInterface {
         super.waitForShutdown();
     }
 
-    public static interface RWReplicationCallback {
-        public void success(long newObjectVersion);
-        public void redirect(String redirectTo);
-        public void failed(ErrorResponse ex);
-    }
-
     protected void enqueueExternalOperation(int stageOp, Object[] arguments, OSDRequest request,
             ReusableBuffer createdViewBuffer, Object callback) {
         if (externalRequestsInQueue.get() >= MAX_EXTERNAL_REQUESTS_IN_Q) {
@@ -208,9 +203,27 @@ public class ECStage extends Stage implements FleaseMessageSenderInterface {
     }
 
     public void prepareOperation(FileCredentials credentials, XLocations xloc, long objNo, long objVersion,
-            Operation op, RWReplicationCallback callback, OSDRequest request) {
+            Operation op, ECCallback callback, OSDRequest request) {
         this.enqueueExternalOperation(STAGEOP_PREPAREOP, new Object[] { credentials, xloc, objNo, objVersion, op },
                 request, null, callback);
+    }
+
+    private void processPrepareOp(StageRequest method) {
+        final ECCallback callback = (ECCallback) method.getCallback();
+
+        try {
+            final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
+            final String fileId = credentials.getXcap().getFileId();
+            final XLocations loc = (XLocations) method.getArgs()[1];
+            final Long objVersion = (Long) method.getArgs()[3];
+            final Operation op = (Operation) method.getArgs()[4];
+
+            StripedFileState state = getState(credentials, loc, false, false);
+            callback.success(1);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            callback.failed(ErrorUtils.getInternalServerError(ex));
+        }
     }
 
     public void receiveFleaseMessage(ReusableBuffer message, InetSocketAddress sender) {
@@ -231,6 +244,12 @@ public class ECStage extends Stage implements FleaseMessageSenderInterface {
 
     public static interface StatusCallback {
         public void statusComplete(Map<String, Map<String, String>> status);
+    }
+
+    public static interface ECCallback {
+        public void success(long newObjectVersion);
+        public void redirect(String redirectTo);
+        public void failed(ErrorResponse ex);
     }
 
     @Override
@@ -256,10 +275,6 @@ public class ECStage extends Stage implements FleaseMessageSenderInterface {
     @Override
     protected void processMethod(StageRequest method) {
         switch (method.getStageMethod()) {
-        case STAGEOP_REPLICATED_WRITE: {
-            externalRequestsInQueue.decrementAndGet();
-            break;
-        }
         case STAGEOP_TRUNCATE: {
             externalRequestsInQueue.decrementAndGet();
             break;
@@ -268,6 +283,7 @@ public class ECStage extends Stage implements FleaseMessageSenderInterface {
         case STAGEOP_PROCESS_FLEASE_MSG: processFleaseMessage(method); break;
         case STAGEOP_PREPAREOP: {
             externalRequestsInQueue.decrementAndGet();
+            processPrepareOp(method);
             break;
         }
         case STAGEOP_INTERNAL_AUTHSTATE:  break;
@@ -301,4 +317,34 @@ public class ECStage extends Stage implements FleaseMessageSenderInterface {
         }
     }
 
+    private StripedFileState getState(FileCredentials credentials, XLocations loc, boolean forceReset,
+                                         boolean invalidated) throws IOException {
+
+        final String fileId = credentials.getXcap().getFileId();
+
+        StripedFileState state = files.get(fileId);
+        if (state == null) {
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.ec, this, "open file: " + fileId);
+            // "open" file
+            state = new StripedFileState();
+            files.put(fileId, state);
+            //state.setCredentials(credentials);
+            //state.setForceReset(forceReset);
+            //state.setInvalidated(invalidated);
+            //cellToFileId.put(state.getPolicy().getCellId(), fileId);
+            //assert (state.getState() == ReplicaState.INITIALIZING);
+
+            //master.getStorageStage().internalGetMaxObjectNo(fileId, loc.getLocalReplica().getStripingPolicy(),
+                    //new InternalGetMaxObjectNoCallback() {
+
+                        //@Override
+                        //public void maxObjectNoCompleted(long maxObjNo, long fileSize, long truncateEpoch,
+                                                         //ErrorResponse error) {
+                            //eventMaxObjAvail(fileId, maxObjNo, fileSize, truncateEpoch, error);
+                        //}
+                    //});
+        }
+        return state;
+    }
 }

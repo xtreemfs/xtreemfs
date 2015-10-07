@@ -34,7 +34,7 @@ void StripeTranslatorRaid0::TranslateWriteRequest(
     for (PolicyContainer::iterator i = policies.begin();
          i != policies.end();
          ++i) {
-      osd_offsets.push_back(obj_number % (*i)->width());
+      osd_offsets.push_back(obj_number % ((*i)->width() - (*i)->parity_width()));
     }
 
     operations->push_back(WriteOperation(
@@ -64,7 +64,7 @@ void StripeTranslatorRaid0::TranslateReadRequest(
     for (PolicyContainer::iterator i = policies.begin();
          i != policies.end();
          ++i) {
-      osd_offsets.push_back(obj_number % (*i)->width());
+      osd_offsets.push_back(obj_number % ((*i)->width() - (*i)->parity_width()));
     }
 
     operations->push_back(ReadOperation(

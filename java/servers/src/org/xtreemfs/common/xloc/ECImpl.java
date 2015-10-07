@@ -1,27 +1,25 @@
 /*
- * Copyright (c) 2008-2011 by Bjoern Kolbeck, Christian Lorenz,
- *               Zuse Institute Berlin
+ * Copyright (c) 2015 by Jan Fajerski, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
  */
-
 package org.xtreemfs.common.xloc;
 
 import java.util.Iterator;
 
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 
-/**
- * 
- * @author bjko
- */
-public class RAID0Impl extends StripingPolicyImpl {
-
+/** TODO: Brief description of the purpose of this type and its relation to other types. */
+public class ECImpl extends StripingPolicyImpl {
     protected final int stripe_size_in_bytes;
 
-    RAID0Impl(Replica replica, int relOsdPosition) {
-        super(replica,relOsdPosition);
+    /**
+     * @param replica
+     * @param relOsdPosition
+     */
+    ECImpl(Replica replica, int relOsdPosition) {
+        super(replica, relOsdPosition);
         stripe_size_in_bytes = policy.getStripeSize() * 1024;
         if (stripe_size_in_bytes <= 0)
             throw new IllegalArgumentException("size must be > 0");
@@ -57,8 +55,9 @@ public class RAID0Impl extends StripingPolicyImpl {
         return getObjectStartOffset(objectNo + 1) - 1;
     }
 
+    @Override
     public String toString() {
-        return "StripingPolicy RAID0: " + policy;
+        return "StripingPolicy ErasureCodes: " + policy;
     }
 
     @Override
@@ -72,8 +71,7 @@ public class RAID0Impl extends StripingPolicyImpl {
     }
 
     @Override
-    public Iterator<Long> getObjectsOfOSD(final int osdIndex, final long startObjectNo,
-            final long endObjectNo) {
+    public Iterator<Long> getObjectsOfOSD(final int osdIndex, final long startObjectNo, final long endObjectNo) {
         return new Iterator<Long>() {
             // first correct objectNo will be set if the first time "next()" is called
             private long object = (getRow(startObjectNo) * getWidth() + osdIndex) - getWidth();
@@ -106,6 +104,6 @@ public class RAID0Impl extends StripingPolicyImpl {
 
     @Override
     public long getGlobalObjectNumber(long osdLocalObjNo) {
-        return osdLocalObjNo*getWidth()+this.relOsdPosition;
+        return osdLocalObjNo * getWidth() + this.relOsdPosition;
     }
 }

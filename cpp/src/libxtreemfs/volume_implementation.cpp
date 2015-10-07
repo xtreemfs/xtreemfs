@@ -98,6 +98,9 @@ void VolumeImplementation::Start() {
 
   // Register StripingPolicies.
   stripe_translators_[STRIPING_POLICY_RAID0] = new StripeTranslatorRaid0();
+  // TODO(janf): rename RAID0 stripe translator since it'll also be used for erasure coded striping.
+  // maybe there's no need for this abstraction anymore
+  stripe_translators_[STRIPING_POLICY_ERASURECODE] = new StripeTranslatorRaid0();
 
   // Start periodic threads.
   xcap_renewal_thread_.reset(new boost::thread(boost::bind(

@@ -15,6 +15,8 @@ import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
@@ -22,6 +24,7 @@ import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.ec.ECStage;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
 import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.stages.StorageStage.WriteObjectCallback;
@@ -74,6 +77,10 @@ public final class WriteOperation extends OSDOperation {
             rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EPERM, "Cannot write on read-only files.");
         } else {
 
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                        "received write op");
+            }
             boolean syncWrite = (rq.getCapability().getAccessMode() & SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_SYNC.getNumber()) > 0;
 
 
@@ -108,6 +115,66 @@ public final class WriteOperation extends OSDOperation {
 
     public void ecWrite(final OSDRequest rq, final writeRequest args, final boolean syncWrite) {
         // TODO(jan): add write code..see how replicatedWrite interacts with RWReplicationStage
+
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                    "erasure coded write started");
+        }
+        master.getECStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(),args.getObjectNumber(),
+                args.getObjectVersion(), ECStage.Operation.WRITE,
+                new ECStage.ECCallback() {
+
+                    @Override
+                    public void success(final long newObjectVersion) {
+                        assert(newObjectVersion > 0);
+
+                        //FIXME: ignore canExecOperation for now...
+                        ReusableBuffer viewBuffer = rq.getRPCRequest().getData().createViewBuffer();
+                        master.getStorageStage().writeObject(args.getFileId(), args.getObjectNumber(),
+                                rq.getLocationList().getLocalReplica().getStripingPolicy(),
+                                args.getOffset(), viewBuffer, rq.getCowPolicy(),
+                                rq.getLocationList(), syncWrite, newObjectVersion, rq, viewBuffer, new WriteObjectCallback() {
+
+                                    @Override
+                                    public void writeComplete(OSDWriteResponse result, ErrorResponse error) {
+                                        if (error != null) {
+                                            if (Logging.isDebug()) {
+                                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                                                        "erasure coded write failed");
+                                            }
+                                            sendResult(rq, null, error);
+                                            // TODO: distributed updates here
+                                        } else {
+                                            if (Logging.isDebug()) {
+                                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                                                        "erasure coded write was successful");
+                                            }
+                                            sendResult(rq, result, null);
+                                            //sendUpdates(rq,args,result,newObjectVersion);
+                                        }
+                                    }
+                                });
+                    }
+
+                    @Override
+                    public void redirect(String redirectTo) {
+                        if (Logging.isDebug()) {
+                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                                    "write was redirected...NOT IMPLEMENTED YET");
+                        }
+                        rq.getRPCRequest().sendRedirect(redirectTo);
+                    }
+
+                    @Override
+                    public void failed(ErrorResponse err) {
+                        if (Logging.isDebug()) {
+                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                                    "write failed");
+                        }
+                        rq.sendError(err);
+                    }
+                }, rq);
+
     }
 
     public void replicatedWrite(final OSDRequest rq, final writeRequest args, final boolean syncWrite) {

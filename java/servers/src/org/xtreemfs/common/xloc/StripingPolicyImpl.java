@@ -38,7 +38,9 @@ public abstract class StripingPolicyImpl {
      */
     public static StripingPolicyImpl getPolicy(Replica replica, int relOsdPosition) {
         if (replica.getStripingPolicy().getType() == StripingPolicyType.STRIPING_POLICY_RAID0) {
-            return new RAID0Impl(replica,relOsdPosition);
+            return new RAID0Impl(replica, relOsdPosition);
+        } else if (replica.getStripingPolicy().getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE) {
+            return new ECImpl(replica,relOsdPosition);
         } else {
             throw new IllegalArgumentException("unknown striping policy requested...request was " +
                     replica.getStripingPolicy().getType());
@@ -52,6 +54,10 @@ public abstract class StripingPolicyImpl {
      */
     public int getWidth() {
         return policy.getWidth();
+    }
+
+    public int getParityWidth() {
+        return policy.getParityWidth();
     }
 
     public int getPolicyId() {
@@ -120,15 +126,11 @@ public abstract class StripingPolicyImpl {
 
     public abstract long getLocalObjectNumber(long objectNo);
 
-    public abstract long getGloablObjectNumber(long osdLocalObjNo);
+    public abstract long getGlobalObjectNumber(long osdLocalObjNo);
 
     /**
      * Returns a virtual iterator which iterates over all objects the given OSD should save. It starts with
      * the correct object in the row of startObjectNo (inclusive) and ends with endObjectNo (maybe inclusive).
-     * 
-     * @param osdIndex
-     * @param filesize
-     * @return
      */
     public abstract Iterator<Long> getObjectsOfOSD(final int osdIndex, final long startObjectNo,
             final long endObjectNo);
