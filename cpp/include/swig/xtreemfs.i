@@ -20,7 +20,7 @@
 %include <enums.swg>
 
 
-// Include protobuf specific functions and 
+// Include protobuf specific functions and
 // assure the protobuf headers are included.
 %include "protobuf.i"
 %{
@@ -43,7 +43,7 @@ LIST(StringList, std::string, String)
 %template(StringMap) std::map<std::string, std::string>;
 
 
-// Include supplementary classes and enums required for libxtreemfs. 
+// Include supplementary classes and enums required for libxtreemfs.
 %{ #include "libxtreemfs/typedefs.h" %}
 namespace xtreemfs {
   class ServiceAddresses {
@@ -55,19 +55,19 @@ namespace xtreemfs {
 
 // Ignore everything except the inner enums.
 %{ #include "libxtreemfs/user_mapping.h" %}
-%rename("$ignore", "not" %$isenum, "not" %$isenumitem, regextarget=1, fullname=1) "^xtreemfs::UserMapping::"; 
+%rename("$ignore", "not" %$isenum, "not" %$isenumitem, regextarget=1, fullname=1) "^xtreemfs::UserMapping::";
 %include "libxtreemfs/user_mapping.h"
 
 // Ignore everything except the inner enums.
 %{ #include <boost/asio/ssl/context.hpp> %}
 %rename("SSLContext") boost::asio::ssl::context_base;
-%rename("$ignore", "not" %$isenum, "not" %$isenumitem, regextarget=1, fullname=1) "^boost::asio::ssl::context_base::"; 
+%rename("$ignore", "not" %$isenum, "not" %$isenumitem, regextarget=1, fullname=1) "^boost::asio::ssl::context_base::";
 %include <boost/asio/ssl/context_base.hpp>
 %import <boost/asio/detail/config.hpp>
 %import <boost/asio/ssl/context.hpp>
 
 
-// Include the Options class. 
+// Include the Options class.
 // Since every option is a public member variable functions can be ignored.
 %{ #include "libxtreemfs/options.h" %}
 %rename (OptionsProxy) xtreemfs::Options;
@@ -79,7 +79,7 @@ namespace xtreemfs {
 // TODO (jdillmann): This could be empty in case HAS_OPENSSL is false.
 %{ #include "rpc/ssl_options.h" %}
 %rename (SSLOptionsProxy) xtreemfs::rpc::SSLOptions;
-%include "rpc/ssl_options.h" 
+%include "rpc/ssl_options.h"
 
 // Include the Logging class.
 %{ #include "util/logging.h" %}
@@ -99,8 +99,8 @@ namespace util {
 %{ #include "libxtreemfs/xtreemfs_exception.h" %}
 // TODO (jdillmann): JNI Error Handling if a method can not be found
 
-%typemap(throws, throws="org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException") 
-    xtreemfs::XtreemFSException, 
+%typemap(throws, throws="org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException")
+    xtreemfs::XtreemFSException,
     xtreemfs::UnknownAddressSchemeException,
     xtreemfs::FileHandleNotFoundException,
     xtreemfs::FileInfoNotFoundException {
@@ -114,21 +114,21 @@ namespace util {
   return $null;
 }
 
-%typemap(throws, throws="org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException") 
+%typemap(throws, throws="org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException")
       xtreemfs::AddressToUUIDNotFoundException {
     jclass clazz =  JCALL1(FindClass, jenv, "org/xtreemfs/common/libxtreemfs/exceptions/AddressToUUIDNotFoundException");
     JCALL2(ThrowNew, jenv, clazz, $1.what());
     return $null;
 }
 
-%typemap(throws, throws="org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException") 
+%typemap(throws, throws="org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException")
       xtreemfs::VolumeNotFoundException {
     jclass clazz =  JCALL1(FindClass, jenv, "org/xtreemfs/common/libxtreemfs/exceptions/VolumeNotFoundException");
     JCALL2(ThrowNew, jenv, clazz, $1.what());
     return $null;
 }
 
-%typemap(throws, throws="org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException") 
+%typemap(throws, throws="org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException")
       xtreemfs::PosixErrorException {
     jclass clazz = JCALL1(FindClass, jenv, "org/xtreemfs/common/libxtreemfs/exceptions/PosixErrorException");
     jmethodID mid = JCALL3(GetMethodID, jenv, clazz, "<init>", "(Lorg/xtreemfs/foundation/pbrpc/generatedinterfaces/RPC$POSIXErrno;Ljava/lang/String;)V");
@@ -148,7 +148,7 @@ namespace util {
   SWIG_JavaThrowException(jenv, SWIG_JavaRuntimeException, $1.what());
 }
 
-%typemap(throws, throws="org.xtreemfs.common.libxtreemfs.exceptions.UUIDNotInXlocSetException") 
+%typemap(throws, throws="org.xtreemfs.common.libxtreemfs.exceptions.UUIDNotInXlocSetException")
       xtreemfs::UUIDNotInXlocSetException {
     jclass clazz =  JCALL1(FindClass, jenv, "org/xtreemfs/common/libxtreemfs/exceptions/UUIDNotInXlocSetException");
     JCALL2(ThrowNew, jenv, clazz, $1.what());
@@ -179,7 +179,7 @@ namespace util {
       SimpleUUIDIterator* uuid_iterator);
 
 // Add Exception Handling
-%catches(const xtreemfs::AddressToUUIDNotFoundException, 
+%catches(const xtreemfs::AddressToUUIDNotFoundException,
          const xtreemfs::UnknownAddressSchemeException,
          const xtreemfs::XtreemFSException) xtreemfs::UUIDResolver::UUIDToAddress;
 %catches(const xtreemfs::VolumeNotFoundException,
@@ -216,6 +216,7 @@ PROTO_ENUM(xtreemfs::pbrpc::StripingPolicyType, org.xtreemfs.pbrpc.generatedinte
       const std::string& owner_groupname,
       const xtreemfs::pbrpc::AccessControlPolicyType& access_policy_type,
       long quota,
+      int priority,
       const xtreemfs::pbrpc::StripingPolicyType& default_striping_policy_type,
       int default_stripe_size,
       int default_stripe_width,
@@ -224,7 +225,7 @@ PROTO_ENUM(xtreemfs::pbrpc::StripingPolicyType, org.xtreemfs.pbrpc.generatedinte
 
 // Add Exception Handling
 %catches(const xtreemfs::XtreemFSException) xtreemfs::Client::Start;
-%catches(const xtreemfs::AddressToUUIDNotFoundException, 
+%catches(const xtreemfs::AddressToUUIDNotFoundException,
          const xtreemfs::UnknownAddressSchemeException,
          const xtreemfs::VolumeNotFoundException,
          const xtreemfs::XtreemFSException) xtreemfs::Client::OpenVolume;
@@ -234,15 +235,15 @@ PROTO_ENUM(xtreemfs::pbrpc::StripingPolicyType, org.xtreemfs.pbrpc.generatedinte
 %catches(const xtreemfs::IOException,
          const xtreemfs::PosixErrorException,
          const xtreemfs::XtreemFSException) xtreemfs::Client::DeleteVolume;
-%catches(const xtreemfs::AddressToUUIDNotFoundException, 
+%catches(const xtreemfs::AddressToUUIDNotFoundException,
          const xtreemfs::IOException,
          const xtreemfs::PosixErrorException,
          const xtreemfs::XtreemFSException) xtreemfs::Client::ListVolumes;
-%catches(const xtreemfs::AddressToUUIDNotFoundException, 
+%catches(const xtreemfs::AddressToUUIDNotFoundException,
          const xtreemfs::IOException,
          const xtreemfs::PosixErrorException,
          const xtreemfs::XtreemFSException) xtreemfs::Client::ListVolumeNames;
-%catches(const xtreemfs::AddressToUUIDNotFoundException, 
+%catches(const xtreemfs::AddressToUUIDNotFoundException,
          const xtreemfs::UnknownAddressSchemeException,
          const xtreemfs::XtreemFSException) xtreemfs::Client::UUIDToAddress;
 
@@ -353,7 +354,7 @@ DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::ReleaseLockOfProcess);
          const xtreemfs::PosixErrorException,
          const xtreemfs::UnknownAddressSchemeException,
          const xtreemfs::UUIDNotInXlocSetException,
-         const xtreemfs::XtreemFSException) 
+         const xtreemfs::XtreemFSException)
     xtreemfs::FileHandle::PingReplica;
 
 %catches(const xtreemfs::AddressToUUIDNotFoundException,
@@ -362,16 +363,16 @@ DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::ReleaseLockOfProcess);
          const xtreemfs::IOException,
          const xtreemfs::PosixErrorException,
          const xtreemfs::UnknownAddressSchemeException,
-         const xtreemfs::XtreemFSException) 
+         const xtreemfs::XtreemFSException)
     xtreemfs::FileHandle::Close;
 
 // Add missing methods from the Java implementation.
 %extend xtreemfs::FileHandle {
-  public: 
+  public:
   int readDirect(char *directBuffer, size_t count, int64_t offset) {
     return $self->Read(directBuffer, count, offset);
   }
-  
+
   int writeDirect(const char *directBuffer, size_t count, int64_t offset) {
     return $self->Write(directBuffer, count, offset);
   }
@@ -379,7 +380,7 @@ DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::ReleaseLockOfProcess);
   int read(char *buf, int buf_offset, size_t count, int64_t offset) {
     return $self->Read(buf + buf_offset, count, offset);
   }
-  
+
   int write(const char *buf, int buf_offset, size_t count, int64_t offset) {
     return $self->Write(buf + buf_offset, count, offset);
   }
@@ -388,13 +389,13 @@ DEFAULT_EXCEPTIONS(xtreemfs::FileHandle::ReleaseLockOfProcess);
 
 
 /*******************************************************************************
- * Garbage collection 
+ * Garbage collection
  ******************************************************************************/
 
 %newobject xtreemfs::Client::CreateClient;
 
-// Altough ServiceAddresses are passed by reference, their content will be 
-// copied when the UUID Iterator is generated. Otherwise they would have to be 
+// Altough ServiceAddresses are passed by reference, their content will be
+// copied when the UUID Iterator is generated. Otherwise they would have to be
 // kept from being gc'ed.
 // UserCredentials are also copied to a new variable.
 

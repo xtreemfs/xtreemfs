@@ -3703,7 +3703,7 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
 }
 
 
-SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtreemfs_1jniJNI_ClientProxy_1createVolume_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jbyteArray jarg3, jbyteArray jarg4, jstring jarg5, jint jarg6, jstring jarg7, jstring jarg8, jint jarg9, jint jarg10, jint jarg11, jint jarg12, jint jarg13, jlong jarg14, jobject jarg14_) {
+SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtreemfs_1jniJNI_ClientProxy_1createVolume_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jbyteArray jarg3, jbyteArray jarg4, jstring jarg5, jint jarg6, jstring jarg7, jstring jarg8, jint jarg9, jint jarg10, jint jarg11, jint jarg12, jint jarg13, jint jarg14, jlong jarg15, jobject jarg15_) {
   xtreemfs::Client *arg1 = (xtreemfs::Client *) 0 ;
   xtreemfs::ServiceAddresses *arg2 = 0 ;
   xtreemfs::pbrpc::Auth *arg3 = 0 ;
@@ -3714,20 +3714,21 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
   std::string *arg8 = 0 ;
   xtreemfs::pbrpc::AccessControlPolicyType *arg9 = 0 ;
   long arg10 ;
-  xtreemfs::pbrpc::StripingPolicyType *arg11 = 0 ;
-  int arg12 ;
+  int arg11 ;
+  xtreemfs::pbrpc::StripingPolicyType *arg12 = 0 ;
   int arg13 ;
-  std::map< std::string,std::string > *arg14 = 0 ;
+  int arg14 ;
+  std::map< std::string,std::string > *arg15 = 0 ;
   xtreemfs::pbrpc::Auth temp3 ;
   xtreemfs::pbrpc::UserCredentials temp4 ;
   xtreemfs::pbrpc::AccessControlPolicyType temp9 ;
-  xtreemfs::pbrpc::StripingPolicyType temp11 ;
+  xtreemfs::pbrpc::StripingPolicyType temp12 ;
   
   (void)jenv;
   (void)jcls;
   (void)jarg1_;
   (void)jarg2_;
-  (void)jarg14_;
+  (void)jarg15_;
   arg1 = *(xtreemfs::Client **)&jarg1; 
   arg2 = *(xtreemfs::ServiceAddresses **)&jarg2;
   if (!arg2) {
@@ -3798,24 +3799,25 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
     arg9 = &temp9;
   }
   arg10 = (long)jarg10; 
+  arg11 = (int)jarg11; 
   {
-    if (! xtreemfs::pbrpc::StripingPolicyType_IsValid(jarg11)) {
+    if (! xtreemfs::pbrpc::StripingPolicyType_IsValid(jarg12)) {
       SWIG_JavaThrowException(jenv,
         SWIG_JavaRuntimeException,
         "Unable to parse xtreemfs::pbrpc::StripingPolicyType enum.");
     }
-    temp11 = static_cast<xtreemfs::pbrpc::StripingPolicyType>(jarg11);
-    arg11 = &temp11;
+    temp12 = static_cast<xtreemfs::pbrpc::StripingPolicyType>(jarg12);
+    arg12 = &temp12;
   }
-  arg12 = (int)jarg12; 
   arg13 = (int)jarg13; 
-  arg14 = *(std::map< std::string,std::string > **)&jarg14;
-  if (!arg14) {
+  arg14 = (int)jarg14; 
+  arg15 = *(std::map< std::string,std::string > **)&jarg15;
+  if (!arg15) {
     SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "std::map< std::string,std::string > const & reference is null");
     return ;
   } 
   try {
-    (arg1)->CreateVolume((xtreemfs::ServiceAddresses const &)*arg2,(xtreemfs::pbrpc::Auth const &)*arg3,(xtreemfs::pbrpc::UserCredentials const &)*arg4,(std::string const &)*arg5,arg6,(std::string const &)*arg7,(std::string const &)*arg8,(xtreemfs::pbrpc::AccessControlPolicyType const &)*arg9,arg10,(xtreemfs::pbrpc::StripingPolicyType const &)*arg11,arg12,arg13,(std::map< std::string,std::string > const &)*arg14);
+    (arg1)->CreateVolume((xtreemfs::ServiceAddresses const &)*arg2,(xtreemfs::pbrpc::Auth const &)*arg3,(xtreemfs::pbrpc::UserCredentials const &)*arg4,(std::string const &)*arg5,arg6,(std::string const &)*arg7,(std::string const &)*arg8,(xtreemfs::pbrpc::AccessControlPolicyType const &)*arg9,arg10,arg11,(xtreemfs::pbrpc::StripingPolicyType const &)*arg12,arg13,arg14,(std::map< std::string,std::string > const &)*arg15);
   }
   catch(xtreemfs::IOException const &_e) {
     {
@@ -3850,7 +3852,7 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
 }
 
 
-SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtreemfs_1jniJNI_ClientProxy_1createVolume_1_1SWIG_12(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jbyteArray jarg2, jbyteArray jarg3, jstring jarg4, jint jarg5, jstring jarg6, jstring jarg7, jint jarg8, jint jarg9, jint jarg10, jint jarg11, jint jarg12, jlong jarg13, jobject jarg13_) {
+SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtreemfs_1jniJNI_ClientProxy_1createVolume_1_1SWIG_12(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jbyteArray jarg2, jbyteArray jarg3, jstring jarg4, jint jarg5, jstring jarg6, jstring jarg7, jint jarg8, jint jarg9, jint jarg10, jint jarg11, jint jarg12, jint jarg13, jlong jarg14, jobject jarg14_) {
   xtreemfs::Client *arg1 = (xtreemfs::Client *) 0 ;
   xtreemfs::pbrpc::Auth *arg2 = 0 ;
   xtreemfs::pbrpc::UserCredentials *arg3 = 0 ;
@@ -3860,19 +3862,20 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
   std::string *arg7 = 0 ;
   xtreemfs::pbrpc::AccessControlPolicyType *arg8 = 0 ;
   long arg9 ;
-  xtreemfs::pbrpc::StripingPolicyType *arg10 = 0 ;
-  int arg11 ;
+  int arg10 ;
+  xtreemfs::pbrpc::StripingPolicyType *arg11 = 0 ;
   int arg12 ;
-  std::map< std::string,std::string > *arg13 = 0 ;
+  int arg13 ;
+  std::map< std::string,std::string > *arg14 = 0 ;
   xtreemfs::pbrpc::Auth temp2 ;
   xtreemfs::pbrpc::UserCredentials temp3 ;
   xtreemfs::pbrpc::AccessControlPolicyType temp8 ;
-  xtreemfs::pbrpc::StripingPolicyType temp10 ;
+  xtreemfs::pbrpc::StripingPolicyType temp11 ;
   
   (void)jenv;
   (void)jcls;
   (void)jarg1_;
-  (void)jarg13_;
+  (void)jarg14_;
   arg1 = *(xtreemfs::Client **)&jarg1; 
   {
     int proto_size = 0;
@@ -3938,24 +3941,25 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
     arg8 = &temp8;
   }
   arg9 = (long)jarg9; 
+  arg10 = (int)jarg10; 
   {
-    if (! xtreemfs::pbrpc::StripingPolicyType_IsValid(jarg10)) {
+    if (! xtreemfs::pbrpc::StripingPolicyType_IsValid(jarg11)) {
       SWIG_JavaThrowException(jenv,
         SWIG_JavaRuntimeException,
         "Unable to parse xtreemfs::pbrpc::StripingPolicyType enum.");
     }
-    temp10 = static_cast<xtreemfs::pbrpc::StripingPolicyType>(jarg10);
-    arg10 = &temp10;
+    temp11 = static_cast<xtreemfs::pbrpc::StripingPolicyType>(jarg11);
+    arg11 = &temp11;
   }
-  arg11 = (int)jarg11; 
   arg12 = (int)jarg12; 
-  arg13 = *(std::map< std::string,std::string > **)&jarg13;
-  if (!arg13) {
+  arg13 = (int)jarg13; 
+  arg14 = *(std::map< std::string,std::string > **)&jarg14;
+  if (!arg14) {
     SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "std::map< std::string,std::string > const & reference is null");
     return ;
   } 
   try {
-    (arg1)->CreateVolume((xtreemfs::pbrpc::Auth const &)*arg2,(xtreemfs::pbrpc::UserCredentials const &)*arg3,(std::string const &)*arg4,arg5,(std::string const &)*arg6,(std::string const &)*arg7,(xtreemfs::pbrpc::AccessControlPolicyType const &)*arg8,arg9,(xtreemfs::pbrpc::StripingPolicyType const &)*arg10,arg11,arg12,(std::map< std::string,std::string > const &)*arg13);
+    (arg1)->CreateVolume((xtreemfs::pbrpc::Auth const &)*arg2,(xtreemfs::pbrpc::UserCredentials const &)*arg3,(std::string const &)*arg4,arg5,(std::string const &)*arg6,(std::string const &)*arg7,(xtreemfs::pbrpc::AccessControlPolicyType const &)*arg8,arg9,arg10,(xtreemfs::pbrpc::StripingPolicyType const &)*arg11,arg12,arg13,(std::map< std::string,std::string > const &)*arg14);
   }
   catch(xtreemfs::IOException const &_e) {
     {

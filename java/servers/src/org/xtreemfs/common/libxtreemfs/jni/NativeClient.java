@@ -119,10 +119,11 @@ public class NativeClient implements Client {
             List<KeyValuePair> volumeAttributes) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException {
         final int quota = 0;
+        final int priority = 0;
 
         StringMap volumeAttributesMap = NativeHelper.keyValueListToMap(volumeAttributes);
         proxy.createVolume(auth, userCredentials, volumeName, mode, ownerUsername, ownerGroupname, accessPolicyType,
-                quota, defaultStripingPolicyType, defaultStripeSize, defaultStripeWidth, volumeAttributesMap);
+                quota, priority, defaultStripingPolicyType, defaultStripeSize, defaultStripeWidth, volumeAttributesMap);
 
         volumeAttributesMap.delete();
     }
@@ -134,10 +135,11 @@ public class NativeClient implements Client {
             List<KeyValuePair> volumeAttributes) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException {
         final int quota = 0;
+        final int priority = 0;
 
         StringMap volumeAttributesMap = NativeHelper.keyValueListToMap(volumeAttributes);
         proxy.createVolume(new ServiceAddresses(mrcAddress), auth, userCredentials, volumeName, mode, ownerUsername,
-                ownerGroupname, accessPolicyType, quota, defaultStripingPolicyType, defaultStripeSize,
+                ownerGroupname, accessPolicyType, quota, priority, defaultStripingPolicyType, defaultStripeSize,
                 defaultStripeWidth, volumeAttributesMap);
 
         volumeAttributesMap.delete();
@@ -150,10 +152,11 @@ public class NativeClient implements Client {
             List<KeyValuePair> volumeAttributes) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException {
         final int quota = 0;
+        final int priority = 0;
 
         StringMap volumeAttributesMap = NativeHelper.keyValueListToMap(volumeAttributes);
         proxy.createVolume(new ServiceAddresses(StringVector.from(mrcAddresses)), auth, userCredentials, volumeName,
-                mode, ownerUsername, ownerGroupname, accessPolicyType, quota, defaultStripingPolicyType,
+                mode, ownerUsername, ownerGroupname, accessPolicyType, quota, priority, defaultStripingPolicyType,
                 defaultStripeSize, defaultStripeWidth, volumeAttributesMap);
 
         volumeAttributesMap.delete();
