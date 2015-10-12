@@ -74,8 +74,8 @@ public class VoucherManager {
 
             long voucherSize = volumeQuotaManager.getVoucher(quotaFileInformation, update);
             long newBlockedSpace = voucherSize;
-            if (voucherSize == QuotaConstants.unlimitedVoucher) {
-                newMaxFileSize = QuotaConstants.unlimitedVoucher;
+            if (voucherSize == QuotaConstants.UNLIMITED_VOUCHER) {
+                newMaxFileSize = QuotaConstants.UNLIMITED_VOUCHER;
                 newBlockedSpace = 0;
             }
 
@@ -98,7 +98,7 @@ public class VoucherManager {
                 fileVoucherClientInfo.addExpireTime(expireTime);
             }
 
-            if (voucherSize != QuotaConstants.unlimitedVoucher) {
+            if (voucherSize != QuotaConstants.UNLIMITED_VOUCHER) {
                 newMaxFileSize = fileVoucherInfo.getFilesize() + fileVoucherInfo.getBlockedSpace();
             }
 
@@ -338,9 +338,9 @@ public class VoucherManager {
                         quotaFileInformation.setReplicaCount(fileVoucherInfo.getReplicaCount());
                         long voucherSize = volumeQuotaManager.getVoucher(quotaFileInformation, update);
 
-                        if (voucherSize == QuotaConstants.unlimitedVoucher) {
+                        if (voucherSize == QuotaConstants.UNLIMITED_VOUCHER) {
                             voucherSize = 0;
-                            newMaxFileSize = QuotaConstants.unlimitedVoucher;
+                            newMaxFileSize = QuotaConstants.UNLIMITED_VOUCHER;
                         }
 
                         fileVoucherInfo.increaseBlockedSpaceByValue(voucherSize);
@@ -349,7 +349,7 @@ public class VoucherManager {
                         fileVoucherClientInfo.addExpireTime(newExpireTime);
                         storageManager.setFileVoucherClientInfo(fileVoucherClientInfo, update);
 
-                        if (voucherSize != QuotaConstants.unlimitedVoucher) {
+                        if (voucherSize != QuotaConstants.UNLIMITED_VOUCHER) {
                             newMaxFileSize = fileVoucherInfo.getFilesize() + fileVoucherInfo.getBlockedSpace();
                         }
 

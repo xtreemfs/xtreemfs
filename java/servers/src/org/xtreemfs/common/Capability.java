@@ -69,7 +69,7 @@ public class Capability {
         int epochNo, boolean replicateOnClose, SnapConfig snapConfig, long snapTimestamp, String sharedSecret) {
         
         this(fileId, accessMode, validity, expires, clientIdentity, epochNo, replicateOnClose, snapConfig,
-                snapTimestamp, QuotaConstants.unlimitedVoucher, 0, sharedSecret);
+                snapTimestamp, QuotaConstants.UNLIMITED_VOUCHER, 0, sharedSecret);
     }
 
     // FIXME(baerhold): delete old constructure, if all (test) cases are adapted

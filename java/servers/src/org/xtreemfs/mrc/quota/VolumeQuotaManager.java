@@ -23,8 +23,8 @@ import org.xtreemfs.mrc.database.StorageManager;
 public class VolumeQuotaManager {
 
     public final static long          defaultVoucherSize      = 250 * 1024 * 1024;            // 250 MB
-    public final static long          defaultUserQuota        = QuotaConstants.unlimitedQuota; // no limit
-    public final static long          defaultGroupQuota       = QuotaConstants.unlimitedQuota; // no limit
+    public final static long          defaultUserQuota        = QuotaConstants.UNLIMITED_QUOTA; // no limit
+    public final static long          defaultGroupQuota       = QuotaConstants.UNLIMITED_QUOTA; // no limit
 
     private final StorageManager      volStorageManager;
     private final QuotaChangeListener quotaChangeListener;
@@ -78,7 +78,7 @@ public class VolumeQuotaManager {
 
     public boolean checkVoucherAvailability(QuotaFileInformation quotaFileInformation) throws UserException {
         long voucherSize = getVoucher(quotaFileInformation, true, null);
-        return voucherSize > 0 || voucherSize == QuotaConstants.unlimitedVoucher;
+        return voucherSize > 0 || voucherSize == QuotaConstants.UNLIMITED_VOUCHER;
     }
 
     public long getVoucher(QuotaFileInformation quotaFileInformation, AtomicDBUpdate update) throws UserException {
@@ -102,11 +102,11 @@ public class VolumeQuotaManager {
         long freeSpace = quotaInformation.getFreeSpace();
 
         long voucherSize = volumeVoucherSize;
-        if (quotaInformation.getVolumeQuota() == QuotaConstants.unlimitedQuota
-                && quotaInformation.getUserQuota() == QuotaConstants.unlimitedQuota
-                && quotaInformation.getGroupQuota() == QuotaConstants.unlimitedQuota) {
+        if (quotaInformation.getVolumeQuota() == QuotaConstants.UNLIMITED_QUOTA
+                && quotaInformation.getUserQuota() == QuotaConstants.UNLIMITED_QUOTA
+                && quotaInformation.getGroupQuota() == QuotaConstants.UNLIMITED_QUOTA) {
             // no quota set at all: unlimited voucher
-            voucherSize = QuotaConstants.unlimitedVoucher;
+            voucherSize = QuotaConstants.UNLIMITED_VOUCHER;
         } else if (freeSpace / replicaCount == 0) { // can't get negative
             throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "The " + quotaInformation.getQuotaType()
                     + " quota has been reached!");
@@ -168,7 +168,7 @@ public class VolumeQuotaManager {
             }
 
             if (blockedSpaceDifference != 0) {
-                if (quotaInformation.getVolumeQuota() != QuotaConstants.unlimitedQuota) {
+                if (quotaInformation.getVolumeQuota() != QuotaConstants.UNLIMITED_QUOTA) {
                     long volumeBlockedSpace = quotaInformation.getVolumeBlockedSpace() + blockedSpaceDifference;
                     checkNegativeValue(volumeBlockedSpace, "volume", false);
                     volStorageManager.setVolumeBlockedSpace(volumeBlockedSpace, update);
@@ -202,7 +202,7 @@ public class VolumeQuotaManager {
             }
 
             if (blockedSpaceDifference != 0) {
-                if (quotaInformation.getUserQuota() != QuotaConstants.unlimitedQuota) {
+                if (quotaInformation.getUserQuota() != QuotaConstants.UNLIMITED_QUOTA) {
                     long userBlockedSpace = quotaInformation.getUserBlockedSpace() + blockedSpaceDifference;
                     checkNegativeValue(userBlockedSpace, "ownerId: " + ownerId, false);
                     volStorageManager.setUserBlockedSpace(ownerId, userBlockedSpace, update);
@@ -237,7 +237,7 @@ public class VolumeQuotaManager {
             }
 
             if (blockedSpaceDifference != 0) {
-                if (quotaInformation.getGroupQuota() != QuotaConstants.unlimitedQuota) {
+                if (quotaInformation.getGroupQuota() != QuotaConstants.UNLIMITED_QUOTA) {
                     long groupBlockedSpace = quotaInformation.getGroupBlockedSpace() + blockedSpaceDifference;
                     checkNegativeValue(groupBlockedSpace, "ownerGroupId: " + ownerGroupId, false);
                     volStorageManager.setGroupBlockedSpace(ownerGroupId, groupBlockedSpace, update);
@@ -305,7 +305,7 @@ public class VolumeQuotaManager {
                 true, update);
 
         // SuppressWarning(unused): Due to checkQuotaOnChown, which is currently a hardcoded switch
-        if (QuotaConstants.checkQuotaOnChown && quotaInformationNewOwner.getFreeSpace() < (filesize + blockedSpace)) {
+        if (QuotaConstants.CHECK_QUOTA_ON_CHOWN && quotaInformationNewOwner.getFreeSpace() < (filesize + blockedSpace)) {
             throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "Not enough space the transfer ownership! The "
                     + quotaInformationNewOwner.getQuotaType() + " quota has been reached!");
         }
@@ -342,7 +342,7 @@ public class VolumeQuotaManager {
                 newQuotaFileInformation, true, update);
 
         // SuppressWarning(unused): Due to checkQuotaOnChown, which is currently a hardcoded switch
-        if (QuotaConstants.checkQuotaOnChown
+        if (QuotaConstants.CHECK_QUOTA_ON_CHOWN
                 && quotaInformationNewOwnerGroup.getFreeSpace() < (filesize + blockedSpace)) {
             throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "Not enough space the transfer ownership! The "
                     + quotaInformationNewOwnerGroup.getQuotaType() + " quota has been reached!");
@@ -393,7 +393,7 @@ public class VolumeQuotaManager {
             quotaInformation.setVolumeUsedSpace(volumeUsedSpace);
 
             // check volume quota
-            if (volumeQuota != QuotaConstants.unlimitedQuota) {
+            if (volumeQuota != QuotaConstants.UNLIMITED_QUOTA) {
                 long volumeBlockedSpace = volStorageManager.getVolumeBlockedSpace();
                 quotaInformation.setVolumeBlockedSpace(volumeBlockedSpace);
 
@@ -430,7 +430,7 @@ public class VolumeQuotaManager {
             quotaInformation.setUserQuota(userQuota);
 
             // check user quota
-            if (userQuota == QuotaConstants.noQuota) {
+            if (userQuota == QuotaConstants.NO_QUOTA) {
                 // set default user quota as new owner quota, if it had no value
                 userQuota = volumeDefaultUserQuota;
                 quotaInformation.setUserQuota(userQuota);
@@ -440,7 +440,7 @@ public class VolumeQuotaManager {
             long userUsedSpace = volStorageManager.getUserUsedSpace(ownerId);
             quotaInformation.setUserUsedSpace(userUsedSpace);
 
-            if (userQuota != QuotaConstants.unlimitedQuota) {
+            if (userQuota != QuotaConstants.UNLIMITED_QUOTA) {
                 long userBlockedSpace = volStorageManager.getUserBlockedSpace(ownerId);
                 quotaInformation.setUserBlockedSpace(userBlockedSpace);
 
@@ -453,7 +453,7 @@ public class VolumeQuotaManager {
 
             // apply newly set quota
             if (saveAppliedDefaultQuota) {
-                if (userQuota != QuotaConstants.unlimitedQuota && userQuotaDefined) {
+                if (userQuota != QuotaConstants.UNLIMITED_QUOTA && userQuotaDefined) {
                     volStorageManager.setUserQuota(ownerId, userQuota, update);
                 }
             }
@@ -483,7 +483,7 @@ public class VolumeQuotaManager {
             quotaInformation.setGroupQuota(groupQuota);
 
             // check group quota
-            if (groupQuota == QuotaConstants.noQuota) {
+            if (groupQuota == QuotaConstants.NO_QUOTA) {
                 // set default group quota as new owner group quota, if it had no value
                 groupQuota = volumeDefaultGroupQuota;
                 quotaInformation.setGroupQuota(groupQuota);
@@ -493,7 +493,7 @@ public class VolumeQuotaManager {
             long groupUsedSpace = volStorageManager.getGroupUsedSpace(ownerGroupId);
             quotaInformation.setGroupUsedSpace(groupUsedSpace);
 
-            if (groupQuota != QuotaConstants.unlimitedQuota) {
+            if (groupQuota != QuotaConstants.UNLIMITED_QUOTA) {
                 long groupBlockedSpace = volStorageManager.getGroupBlockedSpace(ownerGroupId);
                 quotaInformation.setGroupBlockedSpace(groupBlockedSpace);
 
@@ -506,7 +506,7 @@ public class VolumeQuotaManager {
 
             // apply newly set quota
             if (saveAppliedDefaultQuota) {
-                if (groupQuota != QuotaConstants.unlimitedQuota && groupQuotaDefined) {
+                if (groupQuota != QuotaConstants.UNLIMITED_QUOTA && groupQuotaDefined) {
                     volStorageManager.setGroupQuota(ownerGroupId, groupQuota, update);
                 }
             }

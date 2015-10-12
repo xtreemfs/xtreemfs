@@ -102,11 +102,11 @@ public class QuotaTest {
 
         // check default values: unlimited quota
         {
-            assertEquals(Long.toString(QuotaConstants.unlimitedQuota),
+            assertEquals(Long.toString(QuotaConstants.UNLIMITED_QUOTA),
                     volume.getXAttr(userCredentials, "/", "xtreemfs.quota"));
-            assertEquals(Long.toString(QuotaConstants.unlimitedQuota),
+            assertEquals(Long.toString(QuotaConstants.UNLIMITED_QUOTA),
                     volume.getXAttr(userCredentials, "/", "xtreemfs.defaultuserquota"));
-            assertEquals(Long.toString(QuotaConstants.unlimitedQuota),
+            assertEquals(Long.toString(QuotaConstants.UNLIMITED_QUOTA),
                     volume.getXAttr(userCredentials, "/", "xtreemfs.defaultgroupquota"));
         }
 
@@ -135,9 +135,9 @@ public class QuotaTest {
 
         // check user/group quota
         {
-            assertEquals(Long.toString(QuotaConstants.noQuota),
+            assertEquals(Long.toString(QuotaConstants.NO_QUOTA),
                     volume.getXAttr(userCredentials, "/", "xtreemfs.userquota." + USERNAME));
-            assertEquals(Long.toString(QuotaConstants.noQuota),
+            assertEquals(Long.toString(QuotaConstants.NO_QUOTA),
                     volume.getXAttr(userCredentials, "/", "xtreemfs.groupquota." + GROUPNAME));
         }
 
@@ -1007,7 +1007,7 @@ public class QuotaTest {
             firstPass = true;
             volume.setAttr(userCredentials2, FILEPATH, newStat, 6); // 6 = user and group
 
-            if (QuotaConstants.checkQuotaOnChown) {
+            if (QuotaConstants.CHECK_QUOTA_ON_CHOWN) {
                 firstPass = false;
             }
         } catch (PosixErrorException e) {

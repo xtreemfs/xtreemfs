@@ -367,7 +367,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
 
     @Override
     public long getGroupQuota(String groupId) throws DatabaseException {
-        return getOwnerQuotaInfo(OwnerType.GROUP, QuotaInfo.QUOTA, groupId, QuotaConstants.noQuota);
+        return getOwnerQuotaInfo(OwnerType.GROUP, QuotaInfo.QUOTA, groupId, QuotaConstants.NO_QUOTA);
     }
 
     @Override
@@ -382,7 +382,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
 
     @Override
     public long getUserQuota(String userId) throws DatabaseException {
-        return getOwnerQuotaInfo(OwnerType.USER, QuotaInfo.QUOTA, userId, QuotaConstants.noQuota);
+        return getOwnerQuotaInfo(OwnerType.USER, QuotaInfo.QUOTA, userId, QuotaConstants.NO_QUOTA);
     }
 
     @Override
