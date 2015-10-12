@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
     // Create a new instance of a client using the DIR service at
     // 'demo.xtreemfs.org' (default port 32638).
     client = xtreemfs::Client::CreateClient(
-        "localhost:32638",
+        "demo.xtreemfs.org:32638",
         user_credentials,
         NULL,  // No SSL options.
         options);
