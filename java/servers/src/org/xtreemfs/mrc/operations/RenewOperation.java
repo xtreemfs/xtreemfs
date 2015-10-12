@@ -18,7 +18,7 @@ import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
-import org.xtreemfs.mrc.quota.MRCVoucherManager;
+import org.xtreemfs.mrc.quota.VoucherManager;
 import org.xtreemfs.mrc.quota.QuotaFileInformation;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_renew_capabilityRequest;
@@ -61,7 +61,7 @@ public class RenewOperation extends MRCOperation {
         long newExpireMs = TimeSync.getGlobalTime() + master.getConfig().getCapabilityTimeout() * 1000;
         long voucherSize = cap.getVoucherSize();
         
-        if (MRCVoucherManager.checkManageableAccess(cap.getAccessMode())) {
+        if (VoucherManager.checkManageableAccess(cap.getAccessMode())) {
 
             GlobalFileIdResolver globalFileIdResolver = new GlobalFileIdResolver(cap.getFileId());
             StorageManager sMan = master.getVolumeManager().getStorageManager(globalFileIdResolver.getVolumeId());

@@ -27,14 +27,14 @@ import org.xtreemfs.mrc.metadata.FileVoucherInfo;
 /**
  * This class manages all voucher requested affairs and if necessary, it delegates them to reference classes.
  * 
- * TODO: This class is currently thread-safe, but because the MRC has only one operational thread, there is no need for
- * this. False: XLockCoordinator handling add/remove replica works in a separate thread.
+ * This class is currently thread-safe, because e.g. the XLockCoordinator handling add/remove replica works in a
+ * separate thread.
  */
-public class MRCVoucherManager {
+public class VoucherManager {
 
-    private final MRCQuotaManager mrcQuotaManager;
+    private final QuotaManager mrcQuotaManager;
 
-    public MRCVoucherManager(MRCQuotaManager mrcQuotaManager) {
+    public VoucherManager(QuotaManager mrcQuotaManager) {
         this.mrcQuotaManager = mrcQuotaManager;
     }
 

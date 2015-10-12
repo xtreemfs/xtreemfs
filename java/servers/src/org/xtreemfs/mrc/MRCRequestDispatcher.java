@@ -66,8 +66,8 @@ import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.database.babudb.BabuDBVolumeManager;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.osdselection.OSDStatusManager;
-import org.xtreemfs.mrc.quota.MRCQuotaManager;
-import org.xtreemfs.mrc.quota.MRCVoucherManager;
+import org.xtreemfs.mrc.quota.QuotaManager;
+import org.xtreemfs.mrc.quota.VoucherManager;
 import org.xtreemfs.mrc.stages.OnCloseReplicationThread;
 import org.xtreemfs.mrc.stages.ProcessingStage;
 import org.xtreemfs.mrc.stages.XLocSetCoordinator;
@@ -131,9 +131,9 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     private final XLocSetCoordinator       xLocSetCoordinator;
 
-    private final MRCQuotaManager          mrcQuotaManager;
+    private final QuotaManager          mrcQuotaManager;
 
-    private final MRCVoucherManager        mrcVoucherManager;
+    private final VoucherManager        mrcVoucherManager;
 
     private final long                     initTimeMS;
 
@@ -218,8 +218,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
         procStage = new ProcessingStage(this);
 
-        mrcQuotaManager = new MRCQuotaManager();
-        mrcVoucherManager = new MRCVoucherManager(mrcQuotaManager);
+        mrcQuotaManager = new QuotaManager();
+        mrcVoucherManager = new VoucherManager(mrcQuotaManager);
 
         volumeManager = new BabuDBVolumeManager(this, dbConfig);
         fileAccessManager = new FileAccessManager(volumeManager, policyContainer);
@@ -948,14 +948,14 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     /**
      * @return the mrcQuotaManager
      */
-    public MRCQuotaManager getMrcQuotaManager() {
+    public QuotaManager getMrcQuotaManager() {
         return mrcQuotaManager;
     }
 
     /**
      * @return the mrcVoucherManager
      */
-    public MRCVoucherManager getMrcVoucherManager() {
+    public VoucherManager getMrcVoucherManager() {
         return mrcVoucherManager;
     }
 

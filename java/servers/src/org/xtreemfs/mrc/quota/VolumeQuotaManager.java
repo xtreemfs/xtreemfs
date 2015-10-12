@@ -28,7 +28,7 @@ public class VolumeQuotaManager {
 
     private final StorageManager      volStorageManager;
     private final QuotaChangeListener quotaChangeListener;
-    private final MRCQuotaManager     mrcQuotaManager;
+    private final QuotaManager     mrcQuotaManager;
 
     private final String              volumeId;
 
@@ -43,7 +43,7 @@ public class VolumeQuotaManager {
      * 
      * @throws MRCException
      */
-    public VolumeQuotaManager(MRCQuotaManager mrcQuotaManager, StorageManager volStorageManager, String volumeId)
+    public VolumeQuotaManager(QuotaManager mrcQuotaManager, StorageManager volStorageManager, String volumeId)
             throws MRCException {
 
         this.mrcQuotaManager = mrcQuotaManager;

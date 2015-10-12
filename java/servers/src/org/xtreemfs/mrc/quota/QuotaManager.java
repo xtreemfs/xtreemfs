@@ -15,14 +15,14 @@ import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeManager;
 
 /** TODO: Brief description of the purpose of this type and its relation to other types. */
-public class MRCQuotaManager {
+public class QuotaManager {
 
     private final Map<String, VolumeQuotaManager> volQuotaManMap = new HashMap<String, VolumeQuotaManager>();
 
     /**
      * 
      */
-    public MRCQuotaManager() {
+    public QuotaManager() {
     }
 
     /**
