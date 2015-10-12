@@ -154,26 +154,29 @@ public final class NativeHelper {
         }
 
         String path;
+        int pos;
         if ("file".equalsIgnoreCase(classURL.getProtocol())) {
             path = classURL.getPath();
+            path = path.replace(File.separator, "/");
+            pos = path.lastIndexOf("/java/servers/build/classes/");
         } else if ("jar".equalsIgnoreCase(classURL.getProtocol()) && classURL.getPath().startsWith("file:")) {
             // Strip the "file:" prefix and split at the "!"
             path = classURL.getPath().substring(5).split("!")[0];
+            path = path.replace(File.separator, "/");
+            pos = path.lastIndexOf("/java/servers/dist/XtreemFS.jar");
         } else {
             return false;
         }
 
         // Abort if the class file isn't residing within the java build directory,
         // otherwise extract the prefix
-        path = path.replace(File.separator, "/");
-        int pos = path.lastIndexOf("/xtreemfs/java/servers/");
         if (pos < 0) {
             return false;
         }
         path = path.substring(0, pos);
 
         // Try to load the library from the build directory
-        path = path + "/xtreemfs/cpp/build/" + filename;
+        path = path + "/cpp/build/" + filename;
         path = path.replace("/", File.separator);
 
         return tryLoadLibrary(path);
