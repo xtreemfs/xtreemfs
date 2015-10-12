@@ -168,8 +168,11 @@ class XCapManager :
   /** Returns the list of old expire times. */
   std::list< ::google::protobuf::uint64> GetOldExpireTimes();
 
-  /** Returns the mutex related to list of old expire times. */
-  boost::mutex& GetOldExpireTimesMutex();
+  /** Acquires the mutex related to list of old expire times. */
+  void acquireOldExpireTimesMutex();
+
+  /** Releases the mutex related to list of old expire times. */
+  void releaseOldExpireTimesMutex();
 
  private:
   /** Implements callback for an async xtreemfs_renew_capability request. */

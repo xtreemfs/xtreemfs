@@ -1160,8 +1160,12 @@ std::list< ::google::protobuf::uint64> XCapManager::GetOldExpireTimes() {
   return old_expire_times_;
 }
 
-boost::mutex& XCapManager::GetOldExpireTimesMutex() {
-  return old_expire_times_mutex_;
+void XCapManager::acquireOldExpireTimesMutex(){
+  old_expire_times_mutex_.lock();
+}
+
+void XCapManager::releaseOldExpireTimesMutex(){
+  old_expire_times_mutex_.unlock();
 }
 
 void XCapManager::RenewXCapAsync(const RPCOptions& options) {
@@ -1386,7 +1390,7 @@ void VoucherManager::finalizeAndClear(){
   clearVouchersRequest.mutable_creds()->CopyFrom(file_credentials);
 
   {
-    boost::mutex::scoped_lock lock(xcap_manager_->GetOldExpireTimesMutex());
+    xcap_manager_->acquireOldExpireTimesMutex();
     std::list< ::google::protobuf::uint64> oldExpireTimesMs = xcap_manager_->GetOldExpireTimes();
 
     // add old expire times to both requests
@@ -1396,6 +1400,7 @@ void VoucherManager::finalizeAndClear(){
       clearVouchersRequest.add_expire_time_ms(*it);
     }
     oldExpireTimesMs.clear();
+    xcap_manager_->releaseOldExpireTimesMutex();
   }
 
   bool consistentResponses = false;
