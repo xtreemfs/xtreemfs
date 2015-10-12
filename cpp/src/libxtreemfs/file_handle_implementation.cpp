@@ -1283,7 +1283,6 @@ void XCapManager::CallFinished(
     }
   } else {
     // Overwrite current XCap only by a newer one (i.e. later expire time).
-        // FIXME(baerhold): compare expire_time_ms in future
     if (new_xcap->expire_time_ms() > xcap_.expire_time_ms() ||
         (new_xcap->expire_time_ms() == xcap_.expire_time_ms() && new_xcap->voucher_size() > xcap_.voucher_size())) {
       SetXCap(*new_xcap);
@@ -1404,7 +1403,6 @@ void VoucherManager::finalizeAndClear(){
   }
 
   bool consistentResponses = false;
-  // FIXME(baerhold): Don't use "read tries", choose something else...
   for (int curTry = 1; curTry <= volume_options_.max_read_tries; curTry++) {
 
     boost::mutex::scoped_lock cond_lock(cond_mutex_);
@@ -1464,7 +1462,7 @@ void VoucherManager::finalizeVoucher(
     string osd_uuid;
     string osd_address;
     try {
-      osd_uuid = GetOSDUUIDFromXlocSet(xlocs, 0, i);  // FIXME(baerhold) use replica 0 by default
+      osd_uuid = GetOSDUUIDFromXlocSet(xlocs, 0, i);
       uuid_resolver_->UUIDToAddressWithOptions(
           osd_uuid, &osd_address, RPCOptionsFromOptions(volume_options_));
 
