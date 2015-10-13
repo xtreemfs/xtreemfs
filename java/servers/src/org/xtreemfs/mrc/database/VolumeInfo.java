@@ -75,25 +75,25 @@ public interface VolumeInfo {
     public long getVolumeQuota() throws DatabaseException;
 
     /**
-     * Returns the volume's voucher size in bytes.
+     * Returns the size in bytes.
      * 
-     * @return the volume's voucher size in bytes.
+     * @return the size in bytes.
      */
-    public long getVolumeVoucherSize() throws DatabaseException;
+    public long getVoucherSize() throws DatabaseException;
 
     /**
      * Returns the default user quota in bytes.
      * 
      * @return the default user quota in bytes.
      */
-    public long getVolumeDefaultUserQuota() throws DatabaseException;
+    public long getDefaultUserQuota() throws DatabaseException;
 
     /**
      * Returns the default group quota in bytes
      * 
      * @return the default group quota in bytes.
      */
-    public long getVolumeDefaultGroupQuota() throws DatabaseException;
+    public long getDefaultGroupQuota() throws DatabaseException;
 
     /**
      * Returns the number of files currently stored in the volume.
@@ -166,13 +166,13 @@ public interface VolumeInfo {
     public void setVolumeQuota(long quota, AtomicDBUpdate update) throws DatabaseException;
 
     /**
-     * Set the volume's voucher size
+     * Set the voucher size
      * 
      * @param voucherSize
      *            voucher size in bytes
      * @throws DatabaseException
      */
-    public void setVolumeVoucherSize(long voucherSize, AtomicDBUpdate update) throws DatabaseException;
+    public void setVoucherSize(long voucherSize, AtomicDBUpdate update) throws DatabaseException;
 
     /**
      * Set the default user quota
@@ -181,7 +181,7 @@ public interface VolumeInfo {
      *            default user quota in bytes
      * @throws DatabaseException
      */
-    public void setVolumeDefaultUserQuota(long defaultUserQuota, AtomicDBUpdate update) throws DatabaseException;
+    public void setDefaultUserQuota(long defaultUserQuota, AtomicDBUpdate update) throws DatabaseException;
 
     /**
      * Set the default group quota
@@ -190,7 +190,7 @@ public interface VolumeInfo {
      *            default group quota in bytes
      * @throws DatabaseException
      */
-    public void setVolumeDefaultGroupQuota(long defaultGroupQuota, AtomicDBUpdate update) throws DatabaseException;
+    public void setDefaultGroupQuota(long defaultGroupQuota, AtomicDBUpdate update) throws DatabaseException;
 
     /**
      * Adds <code>diff</code> to the current volume size.

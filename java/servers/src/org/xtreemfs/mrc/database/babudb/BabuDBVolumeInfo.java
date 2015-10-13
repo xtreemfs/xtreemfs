@@ -182,17 +182,17 @@ public class BabuDBVolumeInfo implements VolumeInfo {
     }
 
     @Override
-    public long getVolumeVoucherSize() throws DatabaseException {
+    public long getVoucherSize() throws DatabaseException {
         return voucherSize;
     }
 
     @Override
-    public long getVolumeDefaultGroupQuota() throws DatabaseException {
+    public long getDefaultGroupQuota() throws DatabaseException {
         return defaultGroupQuota;
     }
 
     @Override
-    public long getVolumeDefaultUserQuota() throws DatabaseException {
+    public long getDefaultUserQuota() throws DatabaseException {
         return defaultUserQuota;
     }
 
@@ -230,7 +230,7 @@ public class BabuDBVolumeInfo implements VolumeInfo {
     }
 
     @Override
-    public void setVolumeVoucherSize(long voucherSize, AtomicDBUpdate update) throws DatabaseException {
+    public void setVoucherSize(long voucherSize, AtomicDBUpdate update) throws DatabaseException {
         this.voucherSize = voucherSize;
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_VOUCHERSIZE_ATTR_NAME,
                 String.valueOf(voucherSize).getBytes(), update);
@@ -238,7 +238,7 @@ public class BabuDBVolumeInfo implements VolumeInfo {
     }
 
     @Override
-    public void setVolumeDefaultGroupQuota(long defaultGroupQuota, AtomicDBUpdate update) throws DatabaseException {
+    public void setDefaultGroupQuota(long defaultGroupQuota, AtomicDBUpdate update) throws DatabaseException {
         this.defaultGroupQuota = defaultGroupQuota;
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_DEFAULT_G_QUOTA_ATTR_NAME,
                 String.valueOf(defaultGroupQuota).getBytes(), update);
@@ -246,7 +246,7 @@ public class BabuDBVolumeInfo implements VolumeInfo {
     }
 
     @Override
-    public void setVolumeDefaultUserQuota(long defaultUserQuota, AtomicDBUpdate update) throws DatabaseException {
+    public void setDefaultUserQuota(long defaultUserQuota, AtomicDBUpdate update) throws DatabaseException {
         this.defaultUserQuota = defaultUserQuota;
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_DEFAULT_U_QUOTA_ATTR_NAME,
                 String.valueOf(defaultUserQuota).getBytes(), update);

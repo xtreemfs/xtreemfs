@@ -503,13 +503,13 @@ public class MRCHelper {
                 return String.valueOf(sMan.getVolumeInfo().getVolumeQuota());
 
             case vouchersize:
-                return String.valueOf(sMan.getVolumeInfo().getVolumeVoucherSize());
+                return String.valueOf(sMan.getVolumeInfo().getVoucherSize());
 
             case defaultgroupquota:
-                return String.valueOf(sMan.getVolumeInfo().getVolumeDefaultGroupQuota());
+                return String.valueOf(sMan.getVolumeInfo().getDefaultGroupQuota());
 
             case defaultuserquota:
-                return String.valueOf(sMan.getVolumeInfo().getVolumeDefaultUserQuota());
+                return String.valueOf(sMan.getVolumeInfo().getDefaultUserQuota());
 
             case blockedspace:
                 return String.valueOf(sMan.getVolumeBlockedSpace());
@@ -937,7 +937,7 @@ public class MRCHelper {
             if (file.getId() != 1)
                 throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "voucher size must be set on volume root");
 
-            sMan.getVolumeInfo().setVolumeVoucherSize(Long.valueOf(value), update);
+            sMan.getVolumeInfo().setVoucherSize(Long.valueOf(value), update);
 
             break;
 
@@ -945,7 +945,7 @@ public class MRCHelper {
             if (file.getId() != 1)
                 throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "default group quota must be set on volume root");
 
-            sMan.getVolumeInfo().setVolumeDefaultGroupQuota(Long.valueOf(value), update);
+            sMan.getVolumeInfo().setDefaultGroupQuota(Long.valueOf(value), update);
 
             break;
 
@@ -953,7 +953,7 @@ public class MRCHelper {
             if (file.getId() != 1)
                 throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "default user quota must be set on volume root");
 
-            sMan.getVolumeInfo().setVolumeDefaultUserQuota(Long.valueOf(value), update);
+            sMan.getVolumeInfo().setDefaultUserQuota(Long.valueOf(value), update);
 
             break;
 
