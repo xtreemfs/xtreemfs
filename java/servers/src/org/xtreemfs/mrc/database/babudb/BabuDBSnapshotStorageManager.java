@@ -315,7 +315,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     }
 
     @Override
-    public long getVolumeVoucherSize() throws DatabaseException {
+    public long getVoucherSize() throws DatabaseException {
         try {
             byte[] voucherSize = getXAttr(1, SYSTEM_UID, VOL_VOUCHERSIZE_ATTR_NAME);
             if (voucherSize == null)
@@ -332,7 +332,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     }
 
     @Override
-    public long getVolumeDefaultGroupQuota() throws DatabaseException {
+    public long getDefaultGroupQuota() throws DatabaseException {
         try {
             byte[] defaultGroupQuota = getXAttr(1, SYSTEM_UID, VOL_DEFAULT_G_QUOTA_ATTR_NAME);
             if (defaultGroupQuota == null)
@@ -349,7 +349,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     }
 
     @Override
-    public long getVolumeDefaultUserQuota() throws DatabaseException {
+    public long getDefaultUserQuota() throws DatabaseException {
         try {
             byte[] defaultUserQuota = getXAttr(1, SYSTEM_UID, VOL_DEFAULT_U_QUOTA_ATTR_NAME);
             if (defaultUserQuota == null)
@@ -761,17 +761,17 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     }
 
     @Override
-    public void setVolumeVoucherSize(long voucherSize, AtomicDBUpdate update) throws DatabaseException {
+    public void setVoucherSize(long voucherSize, AtomicDBUpdate update) throws DatabaseException {
         throwException();
     }
 
     @Override
-    public void setVolumeDefaultGroupQuota(long defaultGroupQuota, AtomicDBUpdate update) throws DatabaseException {
+    public void setDefaultGroupQuota(long defaultGroupQuota, AtomicDBUpdate update) throws DatabaseException {
         throwException();
     }
 
     @Override
-    public void setVolumeDefaultUserQuota(long defaultUserQuota, AtomicDBUpdate update) throws DatabaseException {
+    public void setDefaultUserQuota(long defaultUserQuota, AtomicDBUpdate update) throws DatabaseException {
         throwException();
     }
 

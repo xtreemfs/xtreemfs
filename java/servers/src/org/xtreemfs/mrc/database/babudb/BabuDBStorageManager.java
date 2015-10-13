@@ -674,7 +674,7 @@ public class BabuDBStorageManager implements StorageManager {
     }
 
     @Override
-    public long getVolumeVoucherSize() throws DatabaseException {
+    public long getVoucherSize() throws DatabaseException {
         try {
             byte[] voucherSize = getXAttr(1, SYSTEM_UID, VOL_VOUCHERSIZE_ATTR_NAME);
             if (voucherSize == null)
@@ -691,7 +691,7 @@ public class BabuDBStorageManager implements StorageManager {
     }
 
     @Override
-    public long getVolumeDefaultGroupQuota() throws DatabaseException {
+    public long getDefaultGroupQuota() throws DatabaseException {
         try {
             byte[] defaultGroupQuota = getXAttr(1, SYSTEM_UID, VOL_DEFAULT_G_QUOTA_ATTR_NAME);
             if (defaultGroupQuota == null)
@@ -708,7 +708,7 @@ public class BabuDBStorageManager implements StorageManager {
     }
 
     @Override
-    public long getVolumeDefaultUserQuota() throws DatabaseException {
+    public long getDefaultUserQuota() throws DatabaseException {
         try {
             byte[] defaultUserQuota = getXAttr(1, SYSTEM_UID, VOL_DEFAULT_U_QUOTA_ATTR_NAME);
             if (defaultUserQuota == null)
@@ -1039,19 +1039,19 @@ public class BabuDBStorageManager implements StorageManager {
     }
 
     @Override
-    public void setVolumeVoucherSize(long voucherSize, AtomicDBUpdate update) throws DatabaseException {
+    public void setVoucherSize(long voucherSize, AtomicDBUpdate update) throws DatabaseException {
         setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_VOUCHERSIZE_ATTR_NAME,
                 String.valueOf(voucherSize).getBytes(), update);
     }
 
     @Override
-    public void setVolumeDefaultGroupQuota(long defaultGroupQuota, AtomicDBUpdate update) throws DatabaseException {
+    public void setDefaultGroupQuota(long defaultGroupQuota, AtomicDBUpdate update) throws DatabaseException {
         setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_DEFAULT_G_QUOTA_ATTR_NAME,
                 String.valueOf(defaultGroupQuota).getBytes(), update);
     }
 
     @Override
-    public void setVolumeDefaultUserQuota(long defaultUserQuota, AtomicDBUpdate update) throws DatabaseException {
+    public void setDefaultUserQuota(long defaultUserQuota, AtomicDBUpdate update) throws DatabaseException {
         setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_DEFAULT_U_QUOTA_ATTR_NAME,
                 String.valueOf(defaultUserQuota).getBytes(), update);
     }

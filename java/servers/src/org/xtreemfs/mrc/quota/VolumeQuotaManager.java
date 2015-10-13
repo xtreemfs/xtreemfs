@@ -63,9 +63,9 @@ public class VolumeQuotaManager {
     public void init() {
         try {
             setVolumeQuota(volStorageManager.getVolumeQuota());
-            setVolumeVoucherSize(volStorageManager.getVolumeVoucherSize());
-            setVolumeDefaultGroupQuota(volStorageManager.getVolumeDefaultGroupQuota());
-            setVolumeDefaultUserQuota(volStorageManager.getVolumeDefaultUserQuota());
+            setVolumeVoucherSize(volStorageManager.getVoucherSize());
+            setVolumeDefaultGroupQuota(volStorageManager.getDefaultGroupQuota());
+            setVolumeDefaultUserQuota(volStorageManager.getDefaultUserQuota());
         } catch (DatabaseException e) {
             e.printStackTrace();
         }

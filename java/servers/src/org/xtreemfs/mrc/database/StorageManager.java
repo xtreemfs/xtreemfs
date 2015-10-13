@@ -126,11 +126,11 @@ public interface StorageManager {
 
     public void setVolumeUsedSpace(long usedSpace, AtomicDBUpdate update) throws DatabaseException;
 
-    public void setVolumeVoucherSize(long voucherSize, AtomicDBUpdate update) throws DatabaseException;
+    public void setVoucherSize(long voucherSize, AtomicDBUpdate update) throws DatabaseException;
 
-    public void setVolumeDefaultUserQuota(long defaultUserQuota, AtomicDBUpdate update) throws DatabaseException;
+    public void setDefaultUserQuota(long defaultUserQuota, AtomicDBUpdate update) throws DatabaseException;
 
-    public void setVolumeDefaultGroupQuota(long defaultGroupQuota, AtomicDBUpdate update) throws DatabaseException;
+    public void setDefaultGroupQuota(long defaultGroupQuota, AtomicDBUpdate update) throws DatabaseException;
 
     public void setGroupQuota(String groupId, Long quota, AtomicDBUpdate update) throws DatabaseException;
 
@@ -175,11 +175,11 @@ public interface StorageManager {
 
     public long getVolumeUsedSpace() throws DatabaseException;
 
-    public long getVolumeVoucherSize() throws DatabaseException;
+    public long getVoucherSize() throws DatabaseException;
 
-    public long getVolumeDefaultUserQuota() throws DatabaseException;
+    public long getDefaultUserQuota() throws DatabaseException;
 
-    public long getVolumeDefaultGroupQuota() throws DatabaseException;
+    public long getDefaultGroupQuota() throws DatabaseException;
 
     public long getUserQuota(String userId) throws DatabaseException;
 

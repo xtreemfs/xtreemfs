@@ -88,17 +88,17 @@ public class BabuDBSnapshotVolumeInfo implements VolumeInfo {
 
     @Override
     public long getVoucherSize() throws DatabaseException {
-        return sMan.getVolumeVoucherSize();
+        return sMan.getVoucherSize();
     }
 
     @Override
     public long getDefaultGroupQuota() throws DatabaseException {
-        return sMan.getVolumeDefaultGroupQuota();
+        return sMan.getDefaultGroupQuota();
     }
 
     @Override
     public long getDefaultUserQuota() throws DatabaseException {
-        return sMan.getVolumeDefaultUserQuota();
+        return sMan.getDefaultUserQuota();
     }
 
     @Override
