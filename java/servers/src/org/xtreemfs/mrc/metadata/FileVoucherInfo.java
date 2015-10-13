@@ -6,7 +6,9 @@
  */
 package org.xtreemfs.mrc.metadata;
 
-/** TODO: Brief description of the purpose of this type and its relation to other types. */
+/**
+ * API for a representation of a file voucher tuple.
+ */
 public interface FileVoucherInfo {
 
     /**

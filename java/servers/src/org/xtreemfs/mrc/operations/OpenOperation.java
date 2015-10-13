@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008-2011 by Bjoern Kolbeck, Jan Stender,
+ *                    2015 by Robert Bärhold
  *               Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.

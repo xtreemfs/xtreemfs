@@ -24,24 +24,20 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersRes
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_finalize_vouchersRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
-/** TODO: Brief description of the purpose of this type and its relation to other types. */
+/**
+ * Operation to covers the finalize request and enqueues the proper operation on the StorageThread.
+ */
 public class FinalizeVouchersOperation extends OSDOperation {
 
     final String      sharedSecret;
     final ServiceUUID localUUID;
 
-    /**
-     * 
-     */
     public FinalizeVouchersOperation(OSDRequestDispatcher master) {
         super(master);
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
     }
 
-    /* (non-Javadoc)
-     * @see org.xtreemfs.osd.operations.OSDOperation#getProcedureId()
-     */
     @Override
     public int getProcedureId() {
         return OSDServiceConstants.PROC_ID_XTREEMFS_FINALIZE_VOUCHERS;
@@ -50,7 +46,6 @@ public class FinalizeVouchersOperation extends OSDOperation {
     @Override
     public void startRequest(final OSDRequest rq) {
         xtreemfs_finalize_vouchersRequest args = (xtreemfs_finalize_vouchersRequest) rq.getRequestArgs();
-
 
         Set<Long> expireTimeSet = new HashSet<Long>(args.getExpireTimeMsList());
         expireTimeSet.add(rq.getCapability().getExpireMs());

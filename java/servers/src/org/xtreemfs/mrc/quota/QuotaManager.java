@@ -14,7 +14,9 @@ import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeManager;
 
-/** TODO: Brief description of the purpose of this type and its relation to other types. */
+/**
+ * This class keeps track of all volume quota managers on an MRC.
+ */
 public class QuotaManager {
 
     private final Map<String, VolumeQuotaManager> volQuotaManMap = new HashMap<String, VolumeQuotaManager>();

@@ -1293,15 +1293,8 @@ void XCapManager::CallFinished(
       }
     } else{
       if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-        // FIXME(remove): No else really needed
         Logging::log->getLog(LEVEL_DEBUG) << "Didn't renewed XCap for file_id: "
-                                          << GetFileId() << ". "
-                                          "Expire Time Old/New (ms): "
-                                          << new_xcap->expire_time_ms() << "/"
-                                          << xcap_.expire_time_ms() << ". "
-                                          "Voucher Size Old/New: "
-                                          << new_xcap->voucher_size() << "/"
-                                          << xcap_.voucher_size() << ". " << endl;
+                                          << GetFileId() << endl;
       }
     }
   }

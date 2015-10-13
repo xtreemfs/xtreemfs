@@ -29,7 +29,9 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersRes
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_clear_vouchersRequest;
 
-/** TODO: Brief description of the purpose of this type and its relation to other types. */
+/**
+ * Operation to handle a clear voucher request to free voucher with the finalize responses of the osds.
+ */
 public class ClearVouchersOperation extends MRCOperation {
 
     public ClearVouchersOperation(MRCRequestDispatcher master) {
