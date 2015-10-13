@@ -14,6 +14,7 @@ import java.util.List;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
+import org.xtreemfs.common.quota.QuotaConstants;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
@@ -317,7 +318,8 @@ public class OpenOperation extends MRCOperation {
         long expireMs = TimeSync.getGlobalTime() + master.getConfig().getCapabilityTimeout() * 1000;
         String clientID = ((InetSocketAddress) rq.getRPCRequest().getSenderAddress()).getAddress().getHostAddress();
 
-        long voucherSize = 0; // FIXME(baerhold): Export default value to a proper place
+        // check quota, if write access is issued
+        long voucherSize = QuotaConstants.UNLIMITED_VOUCHER;
         if (create || truncate || write) {
             QuotaFileInformation quotaFileInformation = new QuotaFileInformation(volume.getId(), file);
             voucherSize = master.getMrcVoucherManager().getVoucher(quotaFileInformation, clientID, expireMs, update);
