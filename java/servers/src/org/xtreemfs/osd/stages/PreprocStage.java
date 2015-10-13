@@ -212,7 +212,6 @@ public class PreprocStage extends Stage {
                     }
                     Logging.logError(Logging.LEVEL_ERROR, this, ex);
 
-                    // FIXME (baerhold) writeComplete - change EACCES to ...?
                     callback.parseComplete(request, ErrorUtils.getErrorResponse(ErrorType.IO_ERROR,
                             POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex));
                 }
