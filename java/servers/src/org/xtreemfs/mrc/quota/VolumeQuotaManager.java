@@ -22,13 +22,13 @@ import org.xtreemfs.mrc.database.StorageManager;
  */
 public class VolumeQuotaManager {
 
-    public final static long          defaultVoucherSize      = 250 * 1024 * 1024;            // 250 MB
-    public final static long          defaultUserQuota        = QuotaConstants.UNLIMITED_QUOTA; // no limit
-    public final static long          defaultGroupQuota       = QuotaConstants.UNLIMITED_QUOTA; // no limit
+    public final static long          DEFAULT_VOUCHER_SIZE    = 250 * 1024 * 1024;             // 250 MB
+    public final static long          DEFAULT_USER_QUOTA      = QuotaConstants.UNLIMITED_QUOTA; // no limit
+    public final static long          DEFAULT_GROUP_QUOTA     = QuotaConstants.UNLIMITED_QUOTA; // no limit
 
     private final StorageManager      volStorageManager;
     private final QuotaChangeListener quotaChangeListener;
-    private final QuotaManager     mrcQuotaManager;
+    private final QuotaManager        mrcQuotaManager;
 
     private final String              volumeId;
 

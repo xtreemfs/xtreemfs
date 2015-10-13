@@ -58,9 +58,9 @@ public class BabuDBVolumeInfo implements VolumeInfo {
         this.acPolicy = acPolicy;
         this.allowSnaps = allowSnaps;
         this.quota = quota;
-        this.voucherSize = VolumeQuotaManager.defaultVoucherSize;
-        this.defaultGroupQuota = VolumeQuotaManager.defaultGroupQuota;
-        this.defaultUserQuota = VolumeQuotaManager.defaultUserQuota;
+        this.voucherSize = VolumeQuotaManager.DEFAULT_VOUCHER_SIZE;
+        this.defaultGroupQuota = VolumeQuotaManager.DEFAULT_GROUP_QUOTA;
+        this.defaultUserQuota = VolumeQuotaManager.DEFAULT_USER_QUOTA;
         
         // set the policies
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_ID_ATTR_NAME, id.getBytes(), true, update);

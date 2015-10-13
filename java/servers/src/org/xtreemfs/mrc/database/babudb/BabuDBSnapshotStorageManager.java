@@ -336,7 +336,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
         try {
             byte[] defaultGroupQuota = getXAttr(1, SYSTEM_UID, VOL_DEFAULT_G_QUOTA_ATTR_NAME);
             if (defaultGroupQuota == null)
-                return VolumeQuotaManager.defaultGroupQuota;
+                return VolumeQuotaManager.DEFAULT_GROUP_QUOTA;
             else {
                 return Long.valueOf(new String(defaultGroupQuota));
             }
@@ -353,7 +353,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
         try {
             byte[] defaultUserQuota = getXAttr(1, SYSTEM_UID, VOL_DEFAULT_U_QUOTA_ATTR_NAME);
             if (defaultUserQuota == null)
-                return VolumeQuotaManager.defaultUserQuota;
+                return VolumeQuotaManager.DEFAULT_USER_QUOTA;
             else {
                 return Long.valueOf(new String(defaultUserQuota));
             }
