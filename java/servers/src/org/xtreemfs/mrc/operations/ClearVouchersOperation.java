@@ -44,7 +44,6 @@ public class ClearVouchersOperation extends MRCOperation {
         if (master.getReplMasterUUID() != null
                 && !master.getReplMasterUUID().equals(master.getConfig().getUUID().toString()))
             throw new DatabaseException(ExceptionType.REDIRECT);
-        // TODO : redirect really necessary? generalize?
 
         final xtreemfs_clear_vouchersRequest cvRequest = (xtreemfs_clear_vouchersRequest) rq.getRequestArgs();
 
