@@ -17,6 +17,8 @@ import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
+import org.xtreemfs.mrc.database.DatabaseException;
+import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.quota.QuotaFileInformation;
@@ -63,6 +65,11 @@ public class RenewOperation extends MRCOperation {
         long voucherSize = cap.getVoucherSize();
         
         if (VoucherManager.checkManageableAccess(cap.getAccessMode())) {
+
+            // perform master redirect if necessary due to DB operation
+            if (master.getReplMasterUUID() != null
+                    && !master.getReplMasterUUID().equals(master.getConfig().getUUID().toString()))
+                throw new DatabaseException(ExceptionType.REDIRECT);
 
             GlobalFileIdResolver globalFileIdResolver = new GlobalFileIdResolver(cap.getFileId());
             StorageManager sMan = master.getVolumeManager().getStorageManager(globalFileIdResolver.getVolumeId());
