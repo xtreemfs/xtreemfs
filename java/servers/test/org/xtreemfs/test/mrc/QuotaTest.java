@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 by Johannes Dillmann, Zuse Institute Berlin
+ * Copyright (c) 2015 by Robert Bärhold, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *

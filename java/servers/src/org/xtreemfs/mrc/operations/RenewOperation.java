@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008-2011 by Jan Stender,
+ *                    2015 by Robert Bärhold,
  *               Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
@@ -18,8 +19,8 @@ import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
-import org.xtreemfs.mrc.quota.VoucherManager;
 import org.xtreemfs.mrc.quota.QuotaFileInformation;
+import org.xtreemfs.mrc.quota.VoucherManager;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_renew_capabilityRequest;
 
