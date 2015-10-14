@@ -465,7 +465,8 @@ message xtreemfs_check_file_existsResponse {
   repeated FILE_STATE file_states = 2 [packed=true]; 
 }
 
-
+// requests are clear voucher on the listed expire times
+// with the proper finalize responses from the OSDs
 message xtreemfs_clear_vouchersRequest {
   // latest xcap containing file id and client id
   required FileCredentials creds = 1;
