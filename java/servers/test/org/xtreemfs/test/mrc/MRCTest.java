@@ -53,7 +53,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Setattrs;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XAttr;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_renew_capabilityRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_update_file_sizeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.test.SetupUtils;
@@ -627,10 +626,8 @@ public class MRCTest {
         Thread.sleep(1000);
         
         // test renewing a capability
-        xtreemfs_renew_capabilityRequest renewCapabilityRequest = xtreemfs_renew_capabilityRequest.newBuilder()
-                .setXcap(xcap).setIncreaseVoucher(false).build();
         XCap newCap = invokeSync(client.xtreemfs_renew_capability(mrcAddress, RPCAuthentication.authNone,
-                RPCAuthentication.userService, renewCapabilityRequest));
+                RPCAuthentication.userService, xcap));
         assertTrue(xcap.getExpireTimeS() < newCap.getExpireTimeS());
         
         // open w/ truncate flag; check whether the epoch number is incremented

@@ -46,7 +46,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.timestampResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_xlocsetRequest;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_renew_capabilityRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_update_file_sizeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
@@ -1009,10 +1008,8 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
         String address = uuidResolver.uuidToAddress(mrcUuidIterator.getUUID());
         InetSocketAddress server = RPCCaller.getInetSocketAddressFromAddress(address, SERVICES.MRC);
 
-        xtreemfs_renew_capabilityRequest renewCapabilityRequest = xtreemfs_renew_capabilityRequest.newBuilder()
-                .setXcap(xcapCopy).setIncreaseVoucher(false).build();
         RPCResponse<XCap> r = mrcServiceClient.xtreemfs_renew_capability(server, authBogus, userCredentialsBogus,
-                renewCapabilityRequest);
+                xcapCopy);
 
         r.registerListener(new RPCResponseAvailableListener<XCap>() {
             @Override

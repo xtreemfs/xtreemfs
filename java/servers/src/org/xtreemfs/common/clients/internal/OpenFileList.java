@@ -18,12 +18,11 @@ import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.CONSTANTS;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_renew_capabilityRequest;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 
 /**
  *
@@ -124,7 +123,6 @@ public class OpenFileList extends Thread {
         this.interrupt();
     }
 
-    @Override
     public void run() {
 
         //check for CAP-renew
@@ -157,10 +155,7 @@ public class OpenFileList extends Thread {
         assert(cap != null);
         RPCResponse<XCap> r = null;
         try {
-            xtreemfs_renew_capabilityRequest renewCapabilityRequest = xtreemfs_renew_capabilityRequest.newBuilder()
-                    .setXcap(cap.getCap()).setIncreaseVoucher(false).build();
-            r = client.xtreemfs_renew_capability(null, RPCAuthentication.authNone, RPCAuthentication.userService,
-                    renewCapabilityRequest);
+            r = client.xtreemfs_renew_capability(null, RPCAuthentication.authNone, RPCAuthentication.userService, cap.getCap());
             XCap newCap = r.get();
             synchronized (capabilities) {
                 cap.updateCap(newCap, TimeSync.getLocalSystemTime()+CONSTANTS.XCAP_RENEW_INTERVAL_IN_MIN.getNumber()*60*1000-1000);
