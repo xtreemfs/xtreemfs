@@ -23,11 +23,6 @@ addons:
       - python
       - valgrind
       - net-tools
-
-script:
-  - true
-
-addons:
   coverity_scan:
     project:
       name: xtreemfs/xtreemfs
@@ -36,3 +31,7 @@ addons:
     build_command_prepend: make distclean
     build_command: make
     branch_pattern: coverity_scan
+
+
+script:
+  - true
