@@ -105,6 +105,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
     /**
      * Capabilitiy for the file, used to authorize against services.
      */
+    // JCIP @GuardedBy("this")
     private XCap                                    xcap;
 
     /**
@@ -565,7 +566,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
                     }
                 });
         // set new XCap received from MRC. Necessary to invoke truncate at OSD.
-        synchronized (xcap) {
+        synchronized (this) {
             xcap = truncateXCap;
         }
         truncatePhaseTwoAndThree(userCredentials, newFileSize, updateOnlyMRC);
@@ -863,7 +864,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
             AddressToUUIDNotFoundException {
         readRequest.Builder readRequestBuilder = readRequest.newBuilder();
         FileCredentials.Builder fileCredentialsBuilder = FileCredentials.newBuilder();
-        synchronized (xcap) {
+        synchronized (this) {
             fileCredentialsBuilder.setXcap(xcap.toBuilder());
         }
         XLocSet xlocs = fileInfo.getXLocSet();
@@ -1031,7 +1032,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
     }
 
     private void setRenewedXcap(XCap newXCap) {
-        synchronized (xcap) {
+        synchronized (this) {
             // Overwrite current XCap only by a newer one (i.e. later expire time)
             if (newXCap.getExpireTimeS() > xcap.getExpireTimeS()) {
                 xcap = newXCap;
