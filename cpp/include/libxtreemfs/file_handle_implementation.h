@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 2011 by Michael Berlin, Zuse Institute Berlin
+ * Copyright (c) 2011 by Michael Berlin,
+ *               2015 by Robert Bärhold
+ *                    Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -66,19 +68,23 @@ class VoucherManager : public rpc::CallbackInterface<xtreemfs::pbrpc::OSDFinaliz
                  const pbrpc::Auth& auth_bogus,
                  const pbrpc::UserCredentials& user_credentials_bogus);
 
+  /** Handles the overall process of the finalize and clear voucher protocol. */
   void finalizeAndClear();
  private:
-  /**  */
+  /** Sends out the finalize voucher request in an asynchronous manner to all relevant OSDs. */
   void finalizeVoucher(xtreemfs::pbrpc::xtreemfs_finalize_vouchersRequest* finalizeVouchersRequest);
 
-  /**  */
+  /** Sends out the clear voucher request to the MRC containing all OSD responses. */
   void clearVoucher(xtreemfs::pbrpc::xtreemfs_clear_vouchersRequest* clearVouchersRequest);
 
+  /** Checks the consistency of all finalize OSD responses and returns true on equality. */
   bool checkResponseConsistency();
 
+  /** Deletes every object in the osdFinalizeVoucherResponseVector_ and clears it. */
   void cleanupOSDResponses();
 
-  /** Implements callback for an async xtreemfs_renew_capability request. */
+  /** Implements callback for the finalize voucher requests from the OSDs,
+   * saving all responses in the osdFinalizeVoucherResponseVector_. */
   virtual void CallFinished(xtreemfs::pbrpc::OSDFinalizeVouchersResponse* response_message,
                             char* data,
                             uint32_t data_length,
@@ -97,8 +103,7 @@ class VoucherManager : public rpc::CallbackInterface<xtreemfs::pbrpc::OSDFinaliz
   /** number of osds, we expect a reponse of. */
   int osdCount;
 
-
-  /** Used to keep save current osd finalize voucher responses*/
+  /** Used to save current finalize voucher responses from the OSDs. */
   std::vector<xtreemfs::pbrpc::OSDFinalizeVouchersResponse*> osdFinalizeVoucherResponseVector_;
 
 
@@ -124,6 +129,7 @@ class VoucherManager : public rpc::CallbackInterface<xtreemfs::pbrpc::OSDFinaliz
   /** UUIDIterator which contains the UUIDs of all replicas. */
   UUIDIterator* osd_uuid_iterator_;
 
+  /** Volume options used in the requests. */
   const Options& volume_options_;
 
   /** Auth needed for ServiceClients. Always set to AUTH_NONE by Volume. */
