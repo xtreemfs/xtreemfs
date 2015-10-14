@@ -58,6 +58,7 @@ import org.xtreemfs.mrc.operations.ReadDirAndStatOperation;
 import org.xtreemfs.mrc.operations.ReadLinkOperation;
 import org.xtreemfs.mrc.operations.RemoveReplicaOperation;
 import org.xtreemfs.mrc.operations.RemoveXAttrOperation;
+import org.xtreemfs.mrc.operations.RenewCapabilityAndVoucherOperation;
 import org.xtreemfs.mrc.operations.RenewOperation;
 import org.xtreemfs.mrc.operations.RestoreDBOperation;
 import org.xtreemfs.mrc.operations.RestoreFileOperation;
@@ -124,6 +125,8 @@ public class ProcessingStage extends MRCStage {
         operations.put(MRCServiceConstants.PROC_ID_REMOVEXATTR, new RemoveXAttrOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_OPEN, new OpenOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_RENEW_CAPABILITY, new RenewOperation(master));
+        operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_RENEW_CAPABILITY_AND_VOUCHER,
+                new RenewCapabilityAndVoucherOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_REPLICA_ADD, new AddReplicaOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_REPLICA_REMOVE,
             new RemoveReplicaOperation(master));
